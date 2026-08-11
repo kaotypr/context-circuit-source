@@ -12,6 +12,12 @@
   repository an empty base commit instead of invented application content.
 - Track intentional empty directories with `.gitkeep`, except `repositories/`,
   which initialization creates only when needed.
+- Keep detailed protocols, host proofs, examples, and maintainer documentation
+  in the source repository. Ship only human-facing getting-started, usage,
+  configuration, and command-reference guides in the wrapper.
+- Treat the generated `context-circuit-0.2.0.tar.gz` as the authoritative release
+  artifact. Exclude macOS metadata and redundant version markers, and retain the
+  generated directory only as an inspectable staging view.
 - Support personal and team wrappers; recommend team mode. Team wrapper changes
   use pull requests; explicitly configured solo mode may use direct commits.
 - Support Codex and Claude Code with one canonical workflow and thin adapters.

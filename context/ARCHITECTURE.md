@@ -12,9 +12,11 @@ bundled Node 22 command at `.agents/bin/cc.mjs`; users install no npm packages.
 The release template is a valid neutral pre-initialization state with no product
 repository assumptions. The host interviews the human and writes a bootstrap
 request; the deterministic command performs only the explicitly authorized Git
-and configuration actions. The fully configured wrapper becomes its first
-commit, while new product repositories receive empty base commits required for
-worktree isolation.
+and configuration actions, including writing project context from approved
+facts. The build replaces maintainer context with neutral templates and packages
+the wrapper as a clean compressed archive. The fully configured wrapper becomes
+its first commit, while new product repositories receive empty base commits
+required for worktree isolation.
 
 Every run normalizes its source into a task brief with stable identity, scope,
 acceptance evidence, test policy, repository ordering, authorization, and claim

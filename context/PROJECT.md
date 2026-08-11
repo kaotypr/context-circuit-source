@@ -14,8 +14,11 @@ and activity integrations add optional lifecycle state; neither is mandatory.
 Version 0.2.0 introduces the Context Circuit identity and a neutral release
 template. Interactive initialization can create the configured wrapper and new
 product Git roots, clone repositories, register local roots, or add submodules
-without shipping a placeholder registration. It also provides numbered planning and approval,
-duplicate-safe task-publication preparation, read-only next-work recommendation,
+without shipping a placeholder registration. The built wrapper receives neutral
+project context populated from the approved initialization request, four focused
+human guides, and a metadata-clean release archive. It also provides numbered
+planning and approval, duplicate-safe task-publication preparation, read-only
+next-work recommendation,
 isolated single- and multi-repository execution, contract-first sequencing,
 independent verification, bounded repair, review preparation, human-invoked
 closeout, append-only contributions, and curated context synchronization.
