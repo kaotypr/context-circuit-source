@@ -78,7 +78,10 @@ test("prepares one append-only contribution and safely removes only a merged cle
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "c10c10c1");
-  await git(workspace.repository, ["merge", "--no-ff", "-m", "merge: closeout fixture", prepared.branch]);
+  await git(workspace.repository, [
+    "-c", "user.name=Merger", "-c", "user.email=merger@example.invalid",
+    "merge", "--no-ff", "-m", "merge: closeout fixture", prepared.branch,
+  ]);
 
   const closeout = await finishWork({
     workspaceRoot: workspace.root,
@@ -149,7 +152,10 @@ test("refuses to remove a merged worktree with uncommitted changes", async (t) =
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "d17d17d1");
-  await git(workspace.repository, ["merge", "--no-ff", "-m", "merge: dirty closeout fixture", prepared.branch]);
+  await git(workspace.repository, [
+    "-c", "user.name=Merger", "-c", "user.email=merger@example.invalid",
+    "merge", "--no-ff", "-m", "merge: dirty closeout fixture", prepared.branch,
+  ]);
   const closeout = await finishWork({
     workspaceRoot: workspace.root,
     runId: prepared.runId,
