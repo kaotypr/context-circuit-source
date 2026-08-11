@@ -3,6 +3,7 @@ import { chmod, cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/prom
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import { create as createTar } from "tar";
 import { neutralWorkspaceContext, renderWorkspaceContext } from "./lib/workspace-context.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -23,7 +24,7 @@ await chmod(binary, 0o755);
 async function removeLocalMetadata(directory: string): Promise<void> {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
-    if (entry.name === ".DS_Store" || entry.name === "__MACOSX") await rm(path, { recursive: true, force: true });
+    if (entry.name === ".DS_Store" || entry.name === "__MACOSX" || entry.name.startsWith("._")) await rm(path, { recursive: true, force: true });
     else if (entry.isDirectory()) await removeLocalMetadata(path);
   }
 }
@@ -49,7 +50,6 @@ for (const path of [
 ]) await rm(join(destination, path), { recursive: true, force: true });
 await removeLocalMetadata(destination);
 const bundleSha256 = createHash("sha256").update(await readFile(join(destination, ".agents", "bin", "cc.mjs"))).digest("hex");
-await writeFile(join(destination, ".template-version"), "0.2.0\n", "utf8");
 await writeFile(join(destination, "template-manifest.json"), `${JSON.stringify({
   name: "context-circuit",
   version: "0.2.0",
@@ -58,4 +58,13 @@ await writeFile(join(destination, "template-manifest.json"), `${JSON.stringify({
   bundle_sha256: bundleSha256,
   excluded_maintainer_inputs: ["PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules/", "fixtures/", "scripts/", "test/"],
 }, null, 2)}\n`, "utf8");
-console.log(JSON.stringify({ version: "0.2.0", destination, binary }, null, 2));
+const archive = join(distributionRoot, "context-circuit-0.2.0.tar.gz");
+await createTar({
+  cwd: distributionRoot,
+  file: archive,
+  gzip: true,
+  noMtime: true,
+  portable: true,
+  filter: (path) => !path.split("/").some((part) => part === ".DS_Store" || part === "__MACOSX" || part.startsWith("._")),
+}, ["context-circuit-0.2.0"]);
+console.log(JSON.stringify({ version: "0.2.0", destination, archive, binary }, null, 2));

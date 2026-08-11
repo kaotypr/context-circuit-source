@@ -14,8 +14,9 @@ npm run check
 npm run build:template
 ```
 
-The build writes `.agents/bin/cc.mjs` and creates the ignored distributable at
-`.dist/context-circuit-0.2.0/`.
+The build writes `.agents/bin/cc.mjs`, creates an inspectable staging directory
+at `.dist/context-circuit-0.2.0/`, and produces the authoritative release archive
+at `.dist/context-circuit-0.2.0.tar.gz`.
 
 ## Source versus output
 
@@ -35,4 +36,5 @@ does not run `npm install`.
 Before a release, run the complete checks, validate every canonical skill,
 inspect the generated file inventory and complete Git diff, and confirm the
 archive excludes credentials, local metadata, maintainer inputs, and placeholder
-repository registration.
+repository registration. Publish the generated archive rather than packaging the
+staging directory manually.

@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { access, readFile, readdir } from "node:fs/promises";
+import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { extract as extractTar, list as listTar } from "tar";
 import { projectRoot } from "./helpers.js";
 
 const build = spawnSync(process.execPath, ["--import", "tsx", "scripts/build-template.ts"], { cwd: projectRoot, encoding: "utf8" });
@@ -16,8 +18,9 @@ test("bundled command validates without TypeScript tooling or installed wrapper 
   assert.match(result.stdout, /Valid workspace/);
 });
 
-test("distributable excludes maintainer-only inputs and records its bundle digest", async () => {
+test("distributable and release archive contain only wrapper inputs", async () => {
   const destination = join(projectRoot, ".dist", "context-circuit-0.2.0");
+  const archive = join(projectRoot, ".dist", "context-circuit-0.2.0.tar.gz");
   const manifest = JSON.parse(await readFile(join(destination, "template-manifest.json"), "utf8"));
   assert.equal(manifest.version, "0.2.0");
   assert.match(manifest.bundle_sha256, /^[a-f0-9]{64}$/);
@@ -26,6 +29,7 @@ test("distributable excludes maintainer-only inputs and records its bundle diges
   }
   await access(join(destination, ".agents", "bin", "cc.mjs"));
   await assert.rejects(access(join(destination, ".agents", "bin", "kao.mjs")));
+  await assert.rejects(access(join(destination, ".template-version")));
   await access(join(destination, "context", "plans", ".gitkeep"));
   await assert.rejects(access(join(destination, "repositories")));
   await assert.rejects(access(join(destination, "agents", "frontend.md")));
@@ -43,7 +47,28 @@ test("distributable excludes maintainer-only inputs and records its bundle diges
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       assert.notEqual(entry.name, ".DS_Store");
       assert.notEqual(entry.name, "__MACOSX");
+      assert.equal(entry.name.startsWith("._"), false);
       if (entry.isDirectory()) pending.push(join(directory, entry.name));
     }
   }
+
+  await access(archive);
+  const archiveEntries: string[] = [];
+  await listTar({ file: archive, onReadEntry: (entry) => archiveEntries.push(entry.path) });
+  assert.ok(archiveEntries.includes("context-circuit-0.2.0/README.md"));
+  assert.ok(archiveEntries.includes("context-circuit-0.2.0/.agents/bin/cc.mjs"));
+  assert.equal(archiveEntries.some((path) => path.endsWith("/.template-version")), false);
+  assert.equal(archiveEntries.some((path) => path.split("/").some((part) => part === ".DS_Store" || part === "__MACOSX" || part.startsWith("._"))), false);
+});
+
+test("release archive validates after extraction without wrapper dependencies", async (t) => {
+  const extractionRoot = await mkdtemp(join(tmpdir(), "context-circuit-release-"));
+  t.after(async () => rm(extractionRoot, { recursive: true, force: true }));
+  await extractTar({ cwd: extractionRoot, file: join(projectRoot, ".dist", "context-circuit-0.2.0.tar.gz") });
+  const wrapperRoot = join(extractionRoot, "context-circuit-0.2.0");
+  const result = spawnSync(process.execPath, [join(wrapperRoot, ".agents", "bin", "cc.mjs"), "validate", "--check-paths", "--check-documents"], {
+    cwd: wrapperRoot,
+    encoding: "utf8",
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
 });

@@ -35,6 +35,7 @@
   "devDependencies": {
     "@types/node": "^24.3.0",
     "esbuild": "^0.28.2",
+    "tar": "^7.5.22",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   },
