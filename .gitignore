@@ -1,2 +1,6 @@
 .DS_Store
 .runtime/
+node_modules/
+
+# Ignored clones are registered exactly; do not ignore repositories/ wholesale.
+repositories/frontend/
