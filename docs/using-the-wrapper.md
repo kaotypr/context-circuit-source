@@ -1,0 +1,61 @@
+# Using the wrapper
+
+Context Circuit coordinates delivery; product repositories continue to own
+their code, build systems, and repository-specific instructions. Work begins
+only after a human selects a concrete request or approves a plan.
+
+## Choose the next action
+
+Use `$run-task` directly when the request already has clear repository scope,
+acceptance criteria, and verification expectations. Use `$create-plan` when the
+work is broad, ordered, or needs review before implementation. Plans and
+activity integrations are optional.
+
+`$whats-next` can recommend one source-backed action from approved plans and
+configured read-only work sources. It does not claim or start work.
+
+## Run scoped work
+
+`$run-task` checks that every base repository is clean, normalizes the request,
+and prepares one branch and isolated Git worktree per repository. A fresh worker
+receives only its authorized scope and acceptance criteria. A separate verifier
+reviews the committed result without modifying it.
+
+For work spanning repositories, Context Circuit orders dependencies and keeps a
+dependent worker locked until the repository owning the shared contract passes
+independent verification.
+
+Failed verification may produce a bounded repair attempt. The repair remains in
+the same isolated worktree and cannot expand the authorized scope silently.
+
+## Review and merge
+
+A passing run prepares review evidence but does not push, open a pull request,
+merge, or deploy automatically. Review the branch, verification results, and
+runtime handoff, then use the normal repository review process. Humans retain
+the merge decision.
+
+## Finish safely
+
+After confirmed merge or deliberate abandonment, invoke `$finish-work`. It
+records an append-only contribution and closeout evidence before any optional
+worktree cleanup. Dirty, unpushed, or otherwise unrecorded work is preserved.
+
+Runtime evidence lives under ignored `.runtime/`. Do not delete it manually.
+
+## Keep durable context useful
+
+Use `$sync-context` to turn completed-work contributions into a focused,
+reviewable update to `context/`. Product facts belong in `PROJECT.md`, structural
+facts in `ARCHITECTURE.md`, established practices in `CONVENTIONS.md`, and durable
+choices with rationale in `DECISIONS.md`.
+
+Live task status belongs in the configured activity system, not canonical
+context. Repository-specific details belong in the corresponding product
+repository.
+
+## Safety boundaries
+
+Context Circuit does not discard dirty work, embed credentials, run a background
+service, merge, or deploy. Creating remotes, pushing branches, publishing tasks,
+opening pull requests, and cleanup require the relevant human authorization.

@@ -14652,18 +14652,10 @@ var init_validation = __esm({
       ".claude/commands/whats-next.md",
       ".claude/commands/publish-plan-tasks.md",
       ".claude/commands/sync-context.md",
-      "docs/initialization.md",
-      "docs/run-task.md",
       "docs/getting-started.md",
-      "docs/development.md",
-      "docs/command.md",
-      "docs/review-lifecycle.md",
-      "docs/finish-work.md",
-      "docs/planning.md",
-      "docs/whats-next.md",
-      "docs/activity-lifecycle.md",
-      "docs/plan-publication.md",
-      "docs/context-sync.md"
+      "docs/using-the-wrapper.md",
+      "docs/configuration.md",
+      "docs/command-reference.md"
     ];
     projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
   }

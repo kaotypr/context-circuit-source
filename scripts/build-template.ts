@@ -32,8 +32,12 @@ const distributionRoot = join(root, ".dist");
 const destination = join(distributionRoot, "context-circuit-0.2.0");
 await rm(distributionRoot, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
-for (const path of ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "contributions", ".agents", ".codex", ".claude", "docs"]) {
+for (const path of ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "contributions", ".agents", ".codex", ".claude"]) {
   await cp(join(root, path), join(destination, path), { recursive: true });
+}
+await mkdir(join(destination, "docs"), { recursive: true });
+for (const path of ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md"]) {
+  await cp(join(root, "docs", path), join(destination, "docs", path));
 }
 for (const [path, contents] of Object.entries(renderWorkspaceContext(neutralWorkspaceContext))) {
   await writeFile(join(destination, path), contents, "utf8");
@@ -41,8 +45,7 @@ for (const [path, contents] of Object.entries(renderWorkspaceContext(neutralWork
 for (const path of [
   "PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules", "fixtures", "scripts", "test", ".dist",
   "docs/phase-0-proof.md", "docs/phase-0-host-results.md", "docs/create-plan-host-results.md", "docs/finish-work-host-results.md",
-  "docs/initialization-host-results.md", "docs/repair-host-results.md", "docs/whats-next-host-results.md",
-  "docs/cross-repository-host-results.md",
+  "docs/initialization-host-results.md", "docs/repair-host-results.md", "docs/whats-next-host-results.md", "docs/cross-repository-host-results.md",
 ]) await rm(join(destination, path), { recursive: true, force: true });
 await removeLocalMetadata(destination);
 const bundleSha256 = createHash("sha256").update(await readFile(join(destination, ".agents", "bin", "cc.mjs"))).digest("hex");

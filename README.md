@@ -9,14 +9,13 @@ The wrapper works with Codex and Claude Code. Plans and activity integrations
 are optional; review, merge, deployment, and destructive cleanup remain human
 decisions.
 
-## Choose your path
+## Get started
 
-- **Use Context Circuit for a project:** read the
-  [wrapper getting-started guide](docs/getting-started.md).
-- **Develop or package Context Circuit itself:** read the
-  [maintainer guide](docs/development.md).
-- **Understand the deterministic command:** read
-  [the wrapper command reference](docs/command.md).
+Start with the [wrapper getting-started guide](docs/getting-started.md). Then use
+the [human workflow guide](docs/using-the-wrapper.md) for day-to-day delivery,
+the [configuration reference](docs/configuration.md) for workspace policy, and
+the [command reference](docs/command-reference.md) for troubleshooting or
+advanced direct use.
 
 The downloadable wrapper requires Git and Node.js 22 or newer. It includes the
 standalone `.agents/bin/cc.mjs` command and does not require npm installation,
