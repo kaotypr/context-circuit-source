@@ -50,6 +50,12 @@ function bootstrapRequest(source: "new" | "clone" | "existing" | "submodule", ur
       activity: { provider: "none", access: "auto", required_capabilities: [], optional_capabilities: [] },
       workflow: { human_gates: ["plan-approval", "task-selection", "merge"], maximum_repair_attempts: 2, wrapper_change_policy: "pull-request" },
     },
+    context: {
+      project_summary: "Example Product provides a small application used to verify workspace initialization.",
+      architecture: ["The app repository owns the product implementation."],
+      conventions: ["Keep product-specific instructions in the app repository."],
+      decisions: ["Use an ignored repository clone for local product work."],
+    },
     wrapper: { initialize_git: true, authorize_initial_commit: true, commit_message: "chore: initialize Context Circuit", author_name: "Test", author_email: "test@example.invalid" },
     repositories: [{
       name: "app",
@@ -83,6 +89,9 @@ test("bootstrap creates a neutral wrapper and new repository with authorized bas
   assert.equal(await git(workspace.root, ["ls-files", "repositories/app"]), "");
   assert.match(await readFile(join(workspace.root, ".gitignore"), "utf8"), /repositories\/app\//);
   assert.match(await readFile(join(workspace.root, "agents", "app.md"), "utf8"), /application role/);
+  assert.match(await readFile(join(workspace.root, "context", "PROJECT.md"), "utf8"), /Example Product provides/);
+  assert.match(await readFile(join(workspace.root, "context", "ARCHITECTURE.md"), "utf8"), /app repository owns/);
+  assert.doesNotMatch(await readFile(join(workspace.root, "context", "PROJECT.md"), "utf8"), /Context Circuit 0\.2\.0/);
   await assert.rejects(access(join(workspace.root, "agents", "frontend.md")));
   assert.equal((await initializeWorkspace({ workspaceRoot: workspace.root, apply: false })).gitignore_changed, false);
 });

@@ -14837,6 +14837,31 @@ var init_git = __esm({
   }
 });
 
+// scripts/lib/workspace-context.ts
+function listDocument(title, values18, empty) {
+  const body = values18.length > 0 ? values18.map((value2) => `- ${value2.trim()}`).join("\n") : empty;
+  return `# ${title}
+
+${body}
+`;
+}
+function renderWorkspaceContext(context) {
+  return {
+    "context/PROJECT.md": `# Project
+
+${context.project_summary.trim()}
+`,
+    "context/ARCHITECTURE.md": listDocument("Architecture", context.architecture, "No project architecture has been recorded yet."),
+    "context/CONVENTIONS.md": listDocument("Conventions", context.conventions, "No project-specific conventions have been recorded yet."),
+    "context/DECISIONS.md": listDocument("Decisions", context.decisions, "No project decisions have been recorded yet.")
+  };
+}
+var init_workspace_context = __esm({
+  "scripts/lib/workspace-context.ts"() {
+    "use strict";
+  }
+});
+
 // scripts/lib/initialize-workspace.ts
 import { access as access2, lstat as lstat3, mkdir as mkdir2, readFile as readFile2, realpath } from "node:fs/promises";
 import { dirname as dirname4, join as join2, relative, resolve as resolve4 } from "node:path";
@@ -15012,6 +15037,9 @@ ${changes}`);
     if (current !== config.workspace.default_branch) throw new Error(`Unborn wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
   }
   await writeTextAtomic(join2(workspaceRoot18, "workspace.yaml"), (0, import_yaml2.stringify)(config));
+  for (const [path2, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
+    await writeTextAtomic(join2(workspaceRoot18, path2), contents);
+  }
   await mkdir2(join2(workspaceRoot18, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
     const agentPath = join2(workspaceRoot18, "agents", `${repository.agent}.md`);
@@ -15169,6 +15197,7 @@ var init_initialize_workspace = __esm({
     init_io();
     init_git();
     init_validation();
+    init_workspace_context();
     ignoredStart = "# context-circuit:ignored-clones:start";
     ignoredEnd = "# context-circuit:ignored-clones:end";
   }

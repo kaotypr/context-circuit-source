@@ -29,6 +29,12 @@
       "wrapper_change_policy": "pull-request"
     }
   },
+  "context": {
+    "project_summary": "Example Product provides the application delivered through this workspace.",
+    "architecture": ["The app repository owns the product implementation."],
+    "conventions": ["Keep product-specific instructions in the app repository."],
+    "decisions": ["Use an ignored repository clone for local product work."]
+  },
   "wrapper": {
     "initialize_git": true,
     "authorize_initial_commit": true,

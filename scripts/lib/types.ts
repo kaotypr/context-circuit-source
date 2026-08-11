@@ -36,9 +36,17 @@ export interface BootstrapGitCommit {
   author_email?: string;
 }
 
+export interface WorkspaceBootstrapContext {
+  project_summary: string;
+  architecture: string[];
+  conventions: string[];
+  decisions: string[];
+}
+
 export interface WorkspaceBootstrapRequest {
   contract_version: 1;
   configuration: WorkspaceConfig;
+  context: WorkspaceBootstrapContext;
   wrapper: BootstrapGitCommit & { initialize_git: boolean };
   repositories: Array<{
     name: string;

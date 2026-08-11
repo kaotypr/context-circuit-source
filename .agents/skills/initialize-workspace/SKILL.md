@@ -9,9 +9,11 @@ description: Inspect, configure, and validate a new Context Circuit wrapper. Use
    context, and available Git state. Determine whether this is a new wrapper or
    an initialized wrapper. Do not treat the absence of `.git` or `repositories/`
    as an error in a fresh release archive.
-2. Ask only for material choices: workspace name, `solo` or `team`, wrapper
-   branch, repositories and roles, repository source, paths, branches, domain
-   agents, context sources, human gates, and optional activity behavior.
+2. Ask only for material choices: workspace name, concise project purpose,
+   `solo` or `team`, wrapper branch, repositories and roles, repository source,
+   paths, branches, domain agents, known architecture, conventions, decisions,
+   context sources, human gates, and optional activity behavior. Record unknown
+   context as empty lists instead of inventing facts.
    Recommend team mode, ignored repositories, `main`, and no activity provider.
    For each repository classify exactly one source:
    - `new`: create a new local Git repository and empty base commit;
@@ -22,16 +24,17 @@ description: Inspect, configure, and validate a new Context Circuit wrapper. Use
    relocate a repository, reset, stash, clean, overwrite authored content, or
    convert repository mode silently. Never accept embedded credentials or ignore
    `repositories/` wholesale.
-4. Normalize the approved configuration and actions into an ignored
-   `.runtime/bootstrap/request.json` document that validates against the
+4. Normalize the approved configuration, project context, and actions into an
+   ignored `.runtime/bootstrap/request.json` document that validates against the
    `workspace-bootstrap-request` contract. For a new or unborn wrapper,
    require explicit authorization for its configured initial commit. For every
    `new` repository, require explicit authorization for its empty base commit.
    Existing, cloned, and submodule repositories must not authorize an artificial
    commit. Use an explicitly supplied commit author only when the human provides
    both name and email; otherwise use their configured Git identity.
-5. Present the exact action plan before running it: files to configure, wrapper
-   Git initialization, repository creation/clone/registration, ignore entries,
+5. Present the exact action plan before running it: files to configure, project
+   context to record, wrapper Git initialization, repository
+   creation/clone/registration, ignore entries,
    domain-agent files, initial commits, and validation. After explicit approval,
    run `node .agents/bin/cc.mjs initialize-workspace --bootstrap .runtime/bootstrap/request.json`.
    The command makes the configured wrapper state its first commit; it does not

@@ -4,10 +4,21 @@
   "title": "Workspace bootstrap request",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "configuration", "wrapper", "repositories"],
+  "required": ["contract_version", "configuration", "context", "wrapper", "repositories"],
   "properties": {
     "contract_version": { "const": 1 },
     "configuration": { "$ref": "workspace.schema.json" },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["project_summary", "architecture", "conventions", "decisions"],
+      "properties": {
+        "project_summary": { "type": "string", "minLength": 1, "maxLength": 5000, "pattern": "\\S" },
+        "architecture": { "$ref": "#/$defs/notes" },
+        "conventions": { "$ref": "#/$defs/notes" },
+        "decisions": { "$ref": "#/$defs/notes" }
+      }
+    },
     "wrapper": {
       "type": "object",
       "additionalProperties": false,
@@ -40,6 +51,11 @@
     }
   },
   "$defs": {
-    "singleLine": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "^[^\\r\\n]+$" }
+    "singleLine": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "^(?=.*\\S)[^\\r\\n]+$" },
+    "notes": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "$ref": "#/$defs/singleLine" }
+    }
   }
 }

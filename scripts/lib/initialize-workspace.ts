@@ -5,6 +5,7 @@ import { assertInside, writeTextAtomic } from "./io.js";
 import { git } from "./git.js";
 import type { BootstrapGitCommit, WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { readData, requiredWorkspaceDocuments, validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "./validation.js";
+import { renderWorkspaceContext } from "./workspace-context.js";
 
 const ignoredStart = "# context-circuit:ignored-clones:start";
 const ignoredEnd = "# context-circuit:ignored-clones:end";
@@ -241,6 +242,9 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   }
 
   await writeTextAtomic(join(workspaceRoot, "workspace.yaml"), stringifyYaml(config));
+  for (const [path, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
+    await writeTextAtomic(join(workspaceRoot, path), contents);
+  }
   await mkdir(join(workspaceRoot, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
     const agentPath = join(workspaceRoot, "agents", `${repository.agent}.md`);

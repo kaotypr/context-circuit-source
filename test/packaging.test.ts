@@ -31,6 +31,9 @@ test("distributable excludes maintainer-only inputs and records its bundle diges
   await assert.rejects(access(join(destination, "agents", "frontend.md")));
   assert.match(await readFile(join(destination, "workspace.yaml"), "utf8"), /repositories: \{\}/);
   assert.doesNotMatch(await readFile(join(destination, ".gitignore"), "utf8"), /repositories\/frontend/);
+  assert.match(await readFile(join(destination, "context", "PROJECT.md"), "utf8"), /has not been initialized/);
+  assert.doesNotMatch(await readFile(join(destination, "context", "PROJECT.md"), "utf8"), /Context Circuit 0\.2\.0/);
+  assert.doesNotMatch(await readFile(join(destination, "WORKFLOW.md"), "utf8"), /template is in team mode/i);
 
   const pending = [destination];
   while (pending.length > 0) {

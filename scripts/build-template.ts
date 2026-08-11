@@ -3,6 +3,7 @@ import { chmod, cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/prom
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
+import { neutralWorkspaceContext, renderWorkspaceContext } from "./lib/workspace-context.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const binary = join(root, ".agents", "bin", "cc.mjs");
@@ -33,6 +34,9 @@ await rm(distributionRoot, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 for (const path of ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "contributions", ".agents", ".codex", ".claude", "docs"]) {
   await cp(join(root, path), join(destination, path), { recursive: true });
+}
+for (const [path, contents] of Object.entries(renderWorkspaceContext(neutralWorkspaceContext))) {
+  await writeFile(join(destination, path), contents, "utf8");
 }
 for (const path of [
   "PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules", "fixtures", "scripts", "test", ".dist",
