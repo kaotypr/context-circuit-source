@@ -15,8 +15,8 @@ npm run build:template
 ```
 
 The build writes `.agents/bin/cc.mjs`, creates an inspectable staging directory
-at `.dist/context-circuit-0.2.0/`, and produces the authoritative release archive
-at `.dist/context-circuit-0.2.0.tar.gz`.
+at `.dist/context-circuit-0.2.1/`, and produces the authoritative release archive
+at `.dist/context-circuit-0.2.1.tar.gz`.
 
 ## Source versus output
 

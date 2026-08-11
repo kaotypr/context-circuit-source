@@ -1,6 +1,6 @@
 # Project
 
-Context Circuit 0.2.0 is a static, provider-neutral wrapper for safe,
+Context Circuit 0.2.1 is a static, provider-neutral wrapper for safe,
 human-reviewed AI-assisted delivery across one or more product repositories.
 The wrapper retains compact context, workflow policy, approved plans, decisions,
 and contribution summaries. Product repositories remain authoritative for code;

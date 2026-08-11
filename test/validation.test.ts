@@ -44,7 +44,7 @@ test("deterministic TypeScript commands avoid sandbox-incompatible tsx IPC", asy
 test("workspace rejects credential fields and duplicate repository paths", async () => {
   const config = {
     version: 1,
-    template_version: "0.2.0",
+    template_version: "0.2.1",
     workspace: { name: "bad", mode: "team", default_branch: "main" },
     repositories: {
       one: { path: "repositories/same", mode: "ignored-clone", role: "app", agent: "frontend", default_branch: "main", token_env: "SECRET" },
@@ -60,7 +60,7 @@ test("workspace rejects credential fields and duplicate repository paths", async
 test("workspace lifecycle policy rejects undeclared and misclassified capabilities", () => {
   const config = {
     version: 1,
-    template_version: "0.2.0",
+    template_version: "0.2.1",
     workspace: { name: "bad-lifecycle", mode: "team", default_branch: "main" },
     repositories: { frontend: { path: "repositories/frontend", mode: "ignored-clone", role: "app", agent: "frontend", default_branch: "main" } },
     activity: {

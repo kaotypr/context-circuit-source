@@ -7,6 +7,11 @@ import { create as createTar } from "tar";
 import { neutralWorkspaceContext, renderWorkspaceContext } from "./lib/workspace-context.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
+const version = packageJson.version;
+if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(version)) {
+  throw new Error(`Source package version is invalid: ${String(version)}`);
+}
 const binary = join(root, ".agents", "bin", "cc.mjs");
 await mkdir(dirname(binary), { recursive: true });
 await build({
@@ -30,7 +35,8 @@ async function removeLocalMetadata(directory: string): Promise<void> {
 }
 
 const distributionRoot = join(root, ".dist");
-const destination = join(distributionRoot, "context-circuit-0.2.0");
+const releaseStem = `context-circuit-${version}`;
+const destination = join(distributionRoot, releaseStem);
 await rm(distributionRoot, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
 for (const path of ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "contributions", ".agents", ".codex", ".claude"]) {
@@ -52,13 +58,13 @@ await removeLocalMetadata(destination);
 const bundleSha256 = createHash("sha256").update(await readFile(join(destination, ".agents", "bin", "cc.mjs"))).digest("hex");
 await writeFile(join(destination, "template-manifest.json"), `${JSON.stringify({
   name: "context-circuit",
-  version: "0.2.0",
+  version,
   node: ">=22",
   command: "node .agents/bin/cc.mjs",
   bundle_sha256: bundleSha256,
   excluded_maintainer_inputs: ["PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules/", "fixtures/", "scripts/", "test/"],
 }, null, 2)}\n`, "utf8");
-const archive = join(distributionRoot, "context-circuit-0.2.0.tar.gz");
+const archive = join(distributionRoot, `${releaseStem}.tar.gz`);
 await createTar({
   cwd: distributionRoot,
   file: archive,
@@ -66,5 +72,5 @@ await createTar({
   noMtime: true,
   portable: true,
   filter: (path) => !path.split("/").some((part) => part === ".DS_Store" || part === "__MACOSX" || part.startsWith("._")),
-}, ["context-circuit-0.2.0"]);
-console.log(JSON.stringify({ version: "0.2.0", destination, archive, binary }, null, 2));
+}, [releaseStem]);
+console.log(JSON.stringify({ version, destination, archive, binary }, null, 2));

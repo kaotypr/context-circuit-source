@@ -8,7 +8,7 @@ export interface RepositoryConfig {
 
 export interface WorkspaceConfig {
   version: 1;
-  template_version: "0.2.0";
+  template_version: "0.2.1";
   workspace: {
     name: string;
     mode: "solo" | "team";
