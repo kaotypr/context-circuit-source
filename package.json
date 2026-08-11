@@ -1,0 +1,44 @@
+{
+  "name": "kao-delivery-workspace-tooling",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npm run typecheck && npm run validate && npm test",
+    "build:template": "node --import tsx scripts/build-template.ts",
+    "create-plan": "node --import tsx scripts/create-plan.ts",
+    "fixture:create": "node --import tsx scripts/create-fixture.ts",
+    "finish-work": "node --import tsx scripts/finish-work.ts",
+    "initialize-workspace": "node --import tsx scripts/initialize-workspace.ts",
+    "prepare-repair": "node --import tsx scripts/prepare-repair.ts",
+    "prepare-review": "node --import tsx scripts/prepare-review.ts",
+    "prepare-lifecycle": "node --import tsx scripts/prepare-lifecycle.ts",
+    "prepare-context-review": "node --import tsx scripts/prepare-context-review.ts",
+    "prepare-plan-publication": "node --import tsx scripts/prepare-plan-publication.ts",
+    "record-result": "node --import tsx scripts/record-result.ts",
+    "record-review-publication": "node --import tsx scripts/record-review-publication.ts",
+    "record-lifecycle-action": "node --import tsx scripts/record-lifecycle-action.ts",
+    "record-plan-publication": "node --import tsx scripts/record-plan-publication.ts",
+    "run-task": "node --import tsx scripts/run-task.ts",
+    "set-plan-state": "node --import tsx scripts/set-plan-state.ts",
+    "sync-context": "node --import tsx scripts/sync-context.ts",
+    "test": "node --import tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "validate": "node --import tsx scripts/validate.ts",
+    "validate-plan": "node --import tsx scripts/validate-plan.ts",
+    "whats-next": "node --import tsx scripts/whats-next.ts"
+  },
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

@@ -1,0 +1,29 @@
+version: 1
+template_version: 0.1.0
+
+workspace:
+  name: kao-delivery-workspace
+  mode: team
+  default_branch: main
+
+repositories:
+  frontend:
+    path: repositories/frontend
+    mode: ignored-clone
+    role: web-application
+    agent: frontend
+    default_branch: main
+
+activity:
+  provider: none
+  access: auto
+  required_capabilities: []
+  optional_capabilities: []
+
+workflow:
+  human_gates:
+    - plan-approval
+    - task-selection
+    - merge
+  maximum_repair_attempts: 2
+  wrapper_change_policy: pull-request

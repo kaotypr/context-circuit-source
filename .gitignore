@@ -1,2 +1,8 @@
 .DS_Store
 .runtime/
+.dist/
+node_modules/
+
+# kao-delivery-workspace:ignored-clones:start
+repositories/frontend/
+# kao-delivery-workspace:ignored-clones:end

@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaotypr.dev/kao-delivery-workspace/runtime-manifest.schema.json",
+  "title": "Run manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "work_id", "run_id", "status", "created_at", "updated_at", "task_brief", "repositories", "evidence", "warnings", "lifecycle_events"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "work_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["preparing", "prepared", "running", "verifying", "passed", "failed", "blocked", "cancelled", "closing", "closed"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "task_brief": { "type": "string", "minLength": 1 },
+    "repositories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "base_path", "base_commit", "branch", "worktree", "worker_input", "verifier_input"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "base_path": { "type": "string", "minLength": 1 },
+          "base_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+          "branch": { "type": "string", "minLength": 1 },
+          "worktree": { "type": "string", "minLength": 1 },
+          "worker_input": { "type": "string", "minLength": 1 },
+          "verifier_input": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["waiting", "prepared", "running", "verifying", "passed", "failed", "blocked", "cancelled", "closing", "closed"] },
+          "depends_on": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
+          "repair_attempts": { "type": "integer", "minimum": 0 },
+          "review_preparation": { "type": "string", "minLength": 1 },
+          "review_publication": { "type": "string", "minLength": 1 },
+          "closeout_record": { "type": "string", "minLength": 1 },
+          "contribution": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "evidence": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "execution_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["stage", "repository", "from_status", "to_status", "inferred", "idempotency_key", "occurred_at"],
+        "properties": {
+          "stage": { "enum": ["worker-started", "worker-result", "verifier-result", "repair-prepared", "repair-exhausted", "review-prepared", "closeout-prepared", "closeout-cleaned"] },
+          "repository": { "type": "string", "minLength": 1 },
+          "from_status": { "enum": ["prepared", "running", "verifying", "passed", "failed", "blocked", "cancelled", "closing"] },
+          "to_status": { "enum": ["running", "verifying", "passed", "failed", "blocked", "closing", "closed"] },
+          "inferred": { "type": "boolean" },
+          "attempt": { "type": "integer", "minimum": 0 },
+          "result_path": { "type": "string", "minLength": 1 },
+          "idempotency_key": { "type": "string", "minLength": 1 },
+          "occurred_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "lifecycle_events": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["event", "status", "idempotency_key", "occurred_at"],
+        "properties": {
+          "event": { "enum": ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"] },
+          "status": { "enum": ["pending", "completed", "failed", "skipped", "manual"] },
+          "idempotency_key": { "type": "string", "minLength": 1 },
+          "occurred_at": { "type": "string", "format": "date-time" },
+          "record": { "type": "string", "minLength": 1 },
+          "actions": { "type": "array", "items": { "$ref": "activity-lifecycle-record.schema.json#/$defs/actionResult" } }
+        }
+      }
+    }
+  }
+}

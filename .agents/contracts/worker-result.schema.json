@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaotypr.dev/kao-delivery-workspace/worker-result.schema.json",
+  "title": "Repository worker result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "work_id", "run_id", "repository", "status", "summary", "branch", "worktree", "commits", "changed_files", "checks", "risks"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "work_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "repository": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["completed", "blocked", "failed"] },
+    "summary": { "type": "string", "minLength": 1 },
+    "branch": { "type": "string", "minLength": 1 },
+    "worktree": { "type": "string", "minLength": 1 },
+    "commits": { "$ref": "#/$defs/strings" },
+    "changed_files": { "$ref": "#/$defs/strings" },
+    "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
+    "risks": { "$ref": "#/$defs/strings" }
+  },
+  "$defs": {
+    "strings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["command", "status", "evidence"],
+      "properties": {
+        "command": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["passed", "failed", "not-run"] },
+        "evidence": { "type": "string" }
+      }
+    }
+  }
+}
