@@ -1,6 +1,6 @@
 ---
 name: create-plan
-description: Codex adapter for drafting, revising, validating, and explicitly approving a Kao Delivery Workspace numbered plan through the canonical planning workflow.
+description: Codex adapter for drafting, revising, validating, and explicitly approving a Context Circuit numbered plan through the canonical planning workflow.
 ---
 
 # Codex adapter

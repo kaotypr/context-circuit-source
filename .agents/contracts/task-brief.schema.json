@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/task-brief.schema.json",
+  "$id": "https://context-circuit.dev/schemas/task-brief.schema.json",
   "title": "Normalized task brief",
   "type": "object",
   "additionalProperties": false,

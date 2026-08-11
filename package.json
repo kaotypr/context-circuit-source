@@ -1,6 +1,6 @@
 {
-  "name": "kao-delivery-workspace-tooling",
-  "version": "0.1.0",
+  "name": "context-circuit-tooling",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {

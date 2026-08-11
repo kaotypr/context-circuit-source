@@ -11,5 +11,5 @@ const { values } = parseArgs({
 });
 if (!values["run-id"] || !values.repository) throw new Error("Usage: prepare-repair --run-id <id> --repository <name>");
 
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 console.log(JSON.stringify(await prepareRepair({ workspaceRoot, runId: values["run-id"], repository: values.repository }), null, 2));

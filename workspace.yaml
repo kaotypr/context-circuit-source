@@ -1,18 +1,12 @@
 version: 1
-template_version: 0.1.0
+template_version: 0.2.0
 
 workspace:
-  name: kao-delivery-workspace
+  name: uninitialized-workspace
   mode: team
   default_branch: main
 
-repositories:
-  frontend:
-    path: repositories/frontend
-    mode: ignored-clone
-    role: web-application
-    agent: frontend
-    default_branch: main
+repositories: {}
 
 activity:
   provider: none

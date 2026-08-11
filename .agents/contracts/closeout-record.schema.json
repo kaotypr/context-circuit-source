@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/closeout-record.schema.json",
+  "$id": "https://context-circuit.dev/schemas/closeout-record.schema.json",
   "title": "Human-invoked run closeout record",
   "type": "object",
   "additionalProperties": false,

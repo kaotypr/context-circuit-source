@@ -14,7 +14,7 @@ const { values } = parseArgs({ options: {
 if (!values["run-id"] || !events.includes(values.event as ActivityEvent) || values.available.some((item) => !capabilities.includes(item as ActivityCapability))) {
   throw new Error("Usage: prepare-lifecycle --run-id <id> --event <semantic-event> [--available <capability>]");
 }
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 console.log(JSON.stringify(await prepareActivityLifecycle({
   workspaceRoot,
   runId: values["run-id"],

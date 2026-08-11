@@ -12,7 +12,7 @@ const { values } = parseArgs({ options: {
 if (!values["run-id"] || !events.includes(values.event as ActivityEvent) || !values.action || !["completed", "failed"].includes(values.status ?? "") || !values.evidence) {
   throw new Error("Usage: record-lifecycle-action --run-id <id> --event <event> --action <id> --status <completed|failed> --evidence <text> [--reference <ref>]");
 }
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 console.log(JSON.stringify(await recordActivityLifecycleAction({
   workspaceRoot, runId: values["run-id"], event: values.event as ActivityEvent, actionId: values.action,
   status: values.status as "completed" | "failed", evidence: values.evidence,

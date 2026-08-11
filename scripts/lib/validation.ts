@@ -5,7 +5,7 @@ import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
 
-export const schemaNames = ["workspace", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
+export const schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
 export type SchemaName = (typeof schemaNames)[number];
 
 export const requiredWorkspaceDocuments = [
@@ -21,7 +21,9 @@ export const requiredWorkspaceDocuments = [
   "agents/coordinator.md",
   "agents/repository-worker.md",
   "agents/verifier.md",
+  ".agents/bin/cc.mjs",
   ".agents/contracts/workspace.schema.json",
+  ".agents/contracts/workspace-bootstrap-request.schema.json",
   ".agents/contracts/review-preparation.schema.json",
   ".agents/contracts/review-publication-record.schema.json",
   ".agents/contracts/closeout-record.schema.json",
@@ -38,24 +40,32 @@ export const requiredWorkspaceDocuments = [
   ".agents/contracts/plan-publication-discovery.schema.json",
   ".agents/contracts/plan-publication-record.schema.json",
   ".agents/skills/initialize-workspace/SKILL.md",
+  ".agents/skills/gather-context/SKILL.md",
+  ".agents/skills/run-task/SKILL.md",
   ".agents/skills/finish-work/SKILL.md",
   ".agents/skills/create-plan/SKILL.md",
   ".agents/skills/whats-next/SKILL.md",
   ".agents/skills/publish-plan-tasks/SKILL.md",
   ".agents/skills/sync-context/SKILL.md",
   ".codex/skills/initialize-workspace/SKILL.md",
+  ".codex/skills/run-task/SKILL.md",
   ".codex/skills/finish-work/SKILL.md",
   ".codex/skills/create-plan/SKILL.md",
   ".codex/skills/whats-next/SKILL.md",
   ".codex/skills/publish-plan-tasks/SKILL.md",
   ".codex/skills/sync-context/SKILL.md",
   ".claude/commands/initialize-workspace.md",
+  ".claude/commands/run-task.md",
   ".claude/commands/finish-work.md",
   ".claude/commands/create-plan.md",
   ".claude/commands/whats-next.md",
   ".claude/commands/publish-plan-tasks.md",
   ".claude/commands/sync-context.md",
   "docs/initialization.md",
+  "docs/run-task.md",
+  "docs/getting-started.md",
+  "docs/development.md",
+  "docs/command.md",
   "docs/review-lifecycle.md",
   "docs/finish-work.md",
   "docs/planning.md",
@@ -75,6 +85,7 @@ export async function readData(path: string): Promise<unknown> {
 export async function validateContract(name: SchemaName, value: unknown): Promise<ErrorObject[]> {
   const schema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", `${name}.schema.json`), "utf8"));
   const ajv = new Ajv2020({ allErrors: true, strict: false });
+  ajv.addFormat("email", { type: "string", validate: (value: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) });
   ajv.addFormat("date-time", {
     type: "string",
     validate: (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && !Number.isNaN(Date.parse(value)),
@@ -87,6 +98,10 @@ export async function validateContract(name: SchemaName, value: unknown): Promis
     const lifecycleSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "activity-lifecycle-record.schema.json"), "utf8"));
     ajv.addSchema(lifecycleSchema);
   }
+  if (name === "workspace-bootstrap-request") {
+    const workspaceSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "workspace.schema.json"), "utf8"));
+    ajv.addSchema(workspaceSchema);
+  }
   const validate = ajv.compile(schema);
   return validate(value) ? [] : [...(validate.errors ?? [])];
 }
@@ -95,7 +110,7 @@ export function workspaceSemanticErrors(config: WorkspaceConfig): string[] {
   const errors: string[] = [];
   const paths = new Map<string, string>();
   for (const [name, repository] of Object.entries(config.repositories)) {
-    const normalized = repository.path.replace(/\/$/, "");
+    const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
     const prior = paths.get(normalized);
     if (prior) errors.push(`repositories.${name}.path duplicates repositories.${prior}.path`);
     paths.set(normalized, name);

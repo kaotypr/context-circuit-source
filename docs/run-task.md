@@ -7,7 +7,7 @@ not launch agents, push branches, open pull requests, merge, or deploy.
 ## Prepare one repository
 
 ```bash
-node .agents/bin/kao.mjs run-task \
+node .agents/bin/cc.mjs run-task \
   --request "Add a reset button to the counter" \
   --repository frontend \
   --scope "src/App.tsx" \
@@ -23,7 +23,7 @@ input remains locked until all dependencies pass independent verification.
 Before launching a worker, record its start:
 
 ```bash
-node .agents/bin/kao.mjs record-result --run-id <run-id> --repository <name> --stage worker-started
+node .agents/bin/cc.mjs record-result --run-id <run-id> --repository <name> --stage worker-started
 ```
 
 ## Codex

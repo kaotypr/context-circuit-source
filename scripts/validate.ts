@@ -16,7 +16,7 @@ const { values, positionals } = parseArgs({
 
 const schema = values.schema as SchemaName;
 if (!schemaNames.includes(schema)) throw new Error(`Unknown schema: ${schema}`);
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const path = resolve(workspaceRoot, positionals[0] ?? "workspace.yaml");
 const value = await readData(path);
 const contractErrors = await validateContract(schema, value);

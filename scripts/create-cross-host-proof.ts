@@ -8,13 +8,14 @@ await rm(proofRoot, { recursive: true, force: true });
 
 for (const host of ["codex", "claude"]) {
   const wrapper = join(proofRoot, host);
-  await cp(join(root, ".dist", "kao-delivery-workspace-0.1.0"), wrapper, { recursive: true });
+  await cp(join(root, ".dist", "context-circuit-0.2.0"), wrapper, { recursive: true });
   await mkdir(join(wrapper, "repositories"), { recursive: true });
   await cp(join(root, "fixtures", "typescript-api"), join(wrapper, "repositories", "backend"), { recursive: true });
   await cp(join(root, "fixtures", "react-app"), join(wrapper, "repositories", "frontend"), { recursive: true });
   await writeFile(join(wrapper, "agents", "backend.md"), "# Backend agent\n\nOwn the application API and its shared response contracts.\n", "utf8");
+  await writeFile(join(wrapper, "agents", "frontend.md"), "# Frontend agent\n\nOwn the web application and consume only independently verified contracts.\n", "utf8");
   await writeFile(join(wrapper, "workspace.yaml"), `version: 1
-template_version: 0.1.0
+template_version: 0.2.0
 workspace: { name: cross-host-${host}, mode: team, default_branch: main }
 repositories:
   backend: { path: repositories/backend, mode: ignored-clone, role: application-api, agent: backend, default_branch: main }

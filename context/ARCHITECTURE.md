@@ -7,7 +7,14 @@ and append-only contributions hold durable outcomes.
 
 Canonical contracts, agents, commands, and skills live under `.agents/`.
 `.codex/` and `.claude/` are thin launch adapters. The distributable includes a
-bundled Node 22 command at `.agents/bin/kao.mjs`; users install no npm packages.
+bundled Node 22 command at `.agents/bin/cc.mjs`; users install no npm packages.
+
+The release template is a valid neutral pre-initialization state with no product
+repository assumptions. The host interviews the human and writes a bootstrap
+request; the deterministic command performs only the explicitly authorized Git
+and configuration actions. The fully configured wrapper becomes its first
+commit, while new product repositories receive empty base commits required for
+worktree isolation.
 
 Every run normalizes its source into a task brief with stable identity, scope,
 acceptance evidence, test policy, repository ordering, authorization, and claim

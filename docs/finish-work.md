@@ -9,7 +9,7 @@ verification, or pull-request metadata.
 Run closeout without cleanup first:
 
 ```bash
-node .agents/bin/kao.mjs finish-work \
+node .agents/bin/cc.mjs finish-work \
   --run-id <run-id> \
   --repository frontend \
   --outcome merged \

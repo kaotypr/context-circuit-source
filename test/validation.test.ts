@@ -44,7 +44,7 @@ test("deterministic TypeScript commands avoid sandbox-incompatible tsx IPC", asy
 test("workspace rejects credential fields and duplicate repository paths", async () => {
   const config = {
     version: 1,
-    template_version: "0.1.0",
+    template_version: "0.2.0",
     workspace: { name: "bad", mode: "team", default_branch: "main" },
     repositories: {
       one: { path: "repositories/same", mode: "ignored-clone", role: "app", agent: "frontend", default_branch: "main", token_env: "SECRET" },
@@ -60,7 +60,7 @@ test("workspace rejects credential fields and duplicate repository paths", async
 test("workspace lifecycle policy rejects undeclared and misclassified capabilities", () => {
   const config = {
     version: 1,
-    template_version: "0.1.0",
+    template_version: "0.2.0",
     workspace: { name: "bad-lifecycle", mode: "team", default_branch: "main" },
     repositories: { frontend: { path: "repositories/frontend", mode: "ignored-clone", role: "app", agent: "frontend", default_branch: "main" } },
     activity: {
@@ -84,11 +84,11 @@ test("workspace document validation reports missing required files", async () =>
   const config = parseYaml(await readFile(join(projectRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
   const errors = await workspaceDocumentErrors(join(projectRoot, "fixtures", "react-app"), config);
   assert.ok(errors.some((error) => error.includes("README.md")));
-  assert.ok(errors.some((error) => error.includes("agents/frontend.md")));
+  assert.ok(errors.some((error) => error.includes("workspace-bootstrap-request.schema.json")));
 });
 
 test("machine-readable contract schemas reject incomplete data", async () => {
-  for (const schema of ["task-brief", "worker-result", "verifier-result", "runtime-manifest", "review-preparation", "closeout-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const) {
+  for (const schema of ["workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "review-preparation", "closeout-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const) {
     assert.notEqual((await validateContract(schema, { contract_version: 1 })).length, 0, schema);
   }
 });

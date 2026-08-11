@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/workspace-bootstrap-request.schema.json",
+  "title": "Workspace bootstrap request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "configuration", "wrapper", "repositories"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "configuration": { "$ref": "workspace.schema.json" },
+    "wrapper": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["initialize_git", "authorize_initial_commit", "commit_message"],
+      "properties": {
+        "initialize_git": { "type": "boolean" },
+        "authorize_initial_commit": { "type": "boolean" },
+        "commit_message": { "$ref": "#/$defs/singleLine" },
+        "author_name": { "$ref": "#/$defs/singleLine" },
+        "author_email": { "type": "string", "format": "email", "maxLength": 254 }
+      }
+    },
+    "repositories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "source", "authorize_initial_commit"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "source": { "enum": ["new", "clone", "existing", "submodule"] },
+          "url": { "$ref": "#/$defs/singleLine" },
+          "authorize_initial_commit": { "type": "boolean" },
+          "commit_message": { "$ref": "#/$defs/singleLine" },
+          "author_name": { "$ref": "#/$defs/singleLine" },
+          "author_email": { "type": "string", "format": "email", "maxLength": 254 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "singleLine": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "^[^\\r\\n]+$" }
+  }
+}

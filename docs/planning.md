@@ -41,9 +41,9 @@ matching `.agents/contracts/plan-draft-request.schema.json`. A minimal example i
 Create and validate it with:
 
 ```bash
-node .agents/bin/kao.mjs create-plan --input .runtime/plan-drafts/billing-v2.json
-node .agents/bin/kao.mjs validate-plan context/plans/billing-v2
-node .agents/bin/kao.mjs validate --check-documents
+node .agents/bin/cc.mjs create-plan --input .runtime/plan-drafts/billing-v2.json
+node .agents/bin/cc.mjs validate-plan context/plans/billing-v2
+node .agents/bin/cc.mjs validate --check-documents
 git diff --check
 ```
 
@@ -61,7 +61,7 @@ before validating again. The human must provide the exact `approved_by` value;
 do not infer it from the host session, Git identity, or email:
 
 ```bash
-node .agents/bin/kao.mjs set-plan-state --plan context/plans/billing-v2 --approve-by kao
+node .agents/bin/cc.mjs set-plan-state --plan context/plans/billing-v2 --approve-by delivery-lead
 ```
 
 The validator recomputes the material digest so an edited numbered document
@@ -72,7 +72,7 @@ the plan to draft, clears approval fields and `approved_digest`, and refreshes
 `material_digest`. Spelling, formatting, and link-only repairs do not revoke
 approval after the human consciously classifies them as non-material. After
 changing an approved plan materially, run
-`node .agents/bin/kao.mjs set-plan-state --plan context/plans/billing-v2
+`node .agents/bin/cc.mjs set-plan-state --plan context/plans/billing-v2
 --material-revision "<reason>"` to revoke approval and increment its version.
 For a non-material repair, replace the final option with
 `--non-material-repair`. Task publication and execution are separate explicit

@@ -13,8 +13,8 @@ description: Recommend one defensible next action from approved plans and availa
    `context/plans/` are always local candidates. Use `--activity-fixture` only
    for an explicit deterministic proof or test; it is not durable task state
    and is not a provider integration.
-3. Run `node .agents/bin/kao.mjs whats-next` with no activity source, or
-   `node .agents/bin/kao.mjs whats-next --activity-fixture <fixture.json>` when the human supplied or requested a
+3. Run `node .agents/bin/cc.mjs whats-next` with no activity source, or
+   `node .agents/bin/cc.mjs whats-next --activity-fixture <fixture.json>` when the human supplied or requested a
    fake-source proof. Do not create an activity fixture merely to manufacture a
    desired recommendation.
 4. Inspect the validated `whats-next-result`. Present exactly one

@@ -1,0 +1,49 @@
+{
+  "contract_version": 1,
+  "configuration": {
+    "version": 1,
+    "template_version": "0.2.0",
+    "workspace": {
+      "name": "example-product",
+      "mode": "team",
+      "default_branch": "main"
+    },
+    "repositories": {
+      "app": {
+        "path": "repositories/app",
+        "mode": "ignored-clone",
+        "role": "application",
+        "agent": "app",
+        "default_branch": "main"
+      }
+    },
+    "activity": {
+      "provider": "none",
+      "access": "auto",
+      "required_capabilities": [],
+      "optional_capabilities": []
+    },
+    "workflow": {
+      "human_gates": ["plan-approval", "task-selection", "merge"],
+      "maximum_repair_attempts": 2,
+      "wrapper_change_policy": "pull-request"
+    }
+  },
+  "wrapper": {
+    "initialize_git": true,
+    "authorize_initial_commit": true,
+    "commit_message": "chore: initialize Context Circuit",
+    "author_name": "Example User",
+    "author_email": "example@example.invalid"
+  },
+  "repositories": [
+    {
+      "name": "app",
+      "source": "new",
+      "authorize_initial_commit": true,
+      "commit_message": "chore: initialize repository",
+      "author_name": "Example User",
+      "author_email": "example@example.invalid"
+    }
+  ]
+}

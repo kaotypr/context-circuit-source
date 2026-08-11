@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/workspace.schema.json",
+  "$id": "https://context-circuit.dev/schemas/workspace.schema.json",
   "title": "Workspace configuration",
   "type": "object",
   "additionalProperties": false,
   "required": ["version", "template_version", "workspace", "repositories", "activity", "workflow"],
   "properties": {
     "version": { "const": 1 },
-    "template_version": { "type": "string", "const": "0.1.0" },
+    "template_version": { "type": "string", "const": "0.2.0" },
     "workspace": {
       "type": "object",
       "additionalProperties": false,
@@ -20,7 +20,6 @@
     },
     "repositories": {
       "type": "object",
-      "minProperties": 1,
       "propertyNames": { "$ref": "#/$defs/identifier" },
       "additionalProperties": { "$ref": "#/$defs/repository" }
     },

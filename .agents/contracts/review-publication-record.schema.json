@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/review-publication-record.schema.json",
+  "$id": "https://context-circuit.dev/schemas/review-publication-record.schema.json",
   "title": "Confirmed draft pull-request publication",
   "type": "object",
   "additionalProperties": false,

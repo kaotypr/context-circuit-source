@@ -49,7 +49,7 @@ Merged.
 - The shared reset response is state.count.
 `, "utf8");
   await writeFile(join(root, "workspace.yaml"), `version: 1
-template_version: 0.1.0
+template_version: 0.2.0
 workspace: { name: sync-test, mode: team, default_branch: main }
 repositories:
   backend: { path: repositories/backend, mode: ignored-clone, role: application-api, agent: backend, default_branch: main }
