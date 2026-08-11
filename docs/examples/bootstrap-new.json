@@ -2,7 +2,7 @@
   "contract_version": 1,
   "configuration": {
     "version": 1,
-    "template_version": "0.2.0",
+    "template_version": "0.2.1",
     "workspace": {
       "name": "example-product",
       "mode": "team",

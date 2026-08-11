@@ -7,15 +7,15 @@ import { syncReleaseArtifact, validateArchiveEntry, validateGeneratedRelease } f
 import { projectRoot } from "./helpers.js";
 
 test("generated release metadata, folder, archive, and tag agree", async () => {
-  const release = await validateGeneratedRelease(join(projectRoot, ".dist"), "v0.2.0");
-  assert.equal(release.version, "0.2.0");
-  await assert.rejects(validateGeneratedRelease(join(projectRoot, ".dist"), "v0.2.1"), /does not match/);
+  const release = await validateGeneratedRelease(join(projectRoot, ".dist"), "v0.2.1");
+  assert.equal(release.version, "0.2.1");
+  await assert.rejects(validateGeneratedRelease(join(projectRoot, ".dist"), "v0.2.2"), /does not match/);
 });
 
 test("archive validation rejects traversal and link entries", () => {
-  assert.throws(() => validateArchiveEntry("context-circuit-0.2.0/../outside", "File", "context-circuit-0.2.0"), /Unsafe archive path/);
-  assert.throws(() => validateArchiveEntry("context-circuit-0.2.0/link", "SymbolicLink", "context-circuit-0.2.0"), /type is not allowed/);
-  assert.throws(() => validateArchiveEntry("context-circuit-0.2.0\\outside", "File", "context-circuit-0.2.0"), /Unsafe archive path/);
+  assert.throws(() => validateArchiveEntry("context-circuit-0.2.1/../outside", "File", "context-circuit-0.2.1"), /Unsafe archive path/);
+  assert.throws(() => validateArchiveEntry("context-circuit-0.2.1/link", "SymbolicLink", "context-circuit-0.2.1"), /type is not allowed/);
+  assert.throws(() => validateArchiveEntry("context-circuit-0.2.1\\outside", "File", "context-circuit-0.2.1"), /Unsafe archive path/);
 });
 
 async function releaseRepository(t: test.TestContext): Promise<string> {
@@ -34,6 +34,9 @@ test("release synchronization is idempotent", async (t) => {
   assert.deepEqual(await syncReleaseArtifact(root, release), { changed: true });
   assert.deepEqual(await syncReleaseArtifact(root, release), { changed: false });
   assert.equal(JSON.parse(await readFile(join(root, "package.json"), "utf8")).version, release.version);
+  const lock = JSON.parse(await readFile(join(root, "package-lock.json"), "utf8"));
+  assert.equal(lock.version, release.version);
+  assert.equal(lock.packages[""].version, release.version);
   assert.equal((await readdir(join(root, "artifact"))).length, 1);
 });
 

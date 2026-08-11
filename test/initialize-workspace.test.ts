@@ -33,7 +33,7 @@ async function prepareNeutralWrapper(): Promise<{ root: string; cleanup: () => P
   const root = await mkdtemp(join(tmpdir(), "context-circuit-bootstrap-"));
   for (const path of requiredWorkspaceDocuments) await ensureFile(join(root, path));
   await ensureFile(join(root, ".gitignore"), ".DS_Store\n.runtime/\n\n# context-circuit:ignored-clones:start\n# context-circuit:ignored-clones:end\n");
-  await ensureFile(join(root, "workspace.yaml"), "version: 1\ntemplate_version: 0.2.0\nworkspace:\n  name: uninitialized-workspace\n  mode: team\n  default_branch: main\nrepositories: {}\nactivity:\n  provider: none\n  access: auto\n  required_capabilities: []\n  optional_capabilities: []\nworkflow:\n  human_gates: [plan-approval, task-selection, merge]\n  maximum_repair_attempts: 2\n  wrapper_change_policy: pull-request\n");
+  await ensureFile(join(root, "workspace.yaml"), "version: 1\ntemplate_version: 0.2.1\nworkspace:\n  name: uninitialized-workspace\n  mode: team\n  default_branch: main\nrepositories: {}\nactivity:\n  provider: none\n  access: auto\n  required_capabilities: []\n  optional_capabilities: []\nworkflow:\n  human_gates: [plan-approval, task-selection, merge]\n  maximum_repair_attempts: 2\n  wrapper_change_policy: pull-request\n");
   return { root, cleanup: async () => rm(root, { recursive: true, force: true }) };
 }
 
@@ -42,7 +42,7 @@ function bootstrapRequest(source: "new" | "clone" | "existing" | "submodule", ur
     contract_version: 1,
     configuration: {
       version: 1,
-      template_version: "0.2.0",
+      template_version: "0.2.1",
       workspace: { name: "example-product", mode: "team", default_branch: "main" },
       repositories: {
         app: { path: "repositories/app", mode: source === "submodule" ? "submodule" : "ignored-clone", role: "application", agent: "app", default_branch: "main" },

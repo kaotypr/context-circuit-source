@@ -19,10 +19,10 @@ test("bundled command validates without TypeScript tooling or installed wrapper 
 });
 
 test("distributable and release archive contain only wrapper inputs", async () => {
-  const destination = join(projectRoot, ".dist", "context-circuit-0.2.0");
-  const archive = join(projectRoot, ".dist", "context-circuit-0.2.0.tar.gz");
+  const destination = join(projectRoot, ".dist", "context-circuit-0.2.1");
+  const archive = join(projectRoot, ".dist", "context-circuit-0.2.1.tar.gz");
   const manifest = JSON.parse(await readFile(join(destination, "template-manifest.json"), "utf8"));
-  assert.equal(manifest.version, "0.2.0");
+  assert.equal(manifest.version, "0.2.1");
   assert.match(manifest.bundle_sha256, /^[a-f0-9]{64}$/);
   for (const path of ["PLAN.md", "package.json", "node_modules", "fixtures", "scripts", "test"]) {
     await assert.rejects(access(join(destination, path)));
@@ -55,8 +55,8 @@ test("distributable and release archive contain only wrapper inputs", async () =
   await access(archive);
   const archiveEntries: string[] = [];
   await listTar({ file: archive, onReadEntry: (entry) => archiveEntries.push(entry.path) });
-  assert.ok(archiveEntries.includes("context-circuit-0.2.0/README.md"));
-  assert.ok(archiveEntries.includes("context-circuit-0.2.0/.agents/bin/cc.mjs"));
+  assert.ok(archiveEntries.includes("context-circuit-0.2.1/README.md"));
+  assert.ok(archiveEntries.includes("context-circuit-0.2.1/.agents/bin/cc.mjs"));
   assert.equal(archiveEntries.some((path) => path.endsWith("/.template-version")), false);
   assert.equal(archiveEntries.some((path) => path.split("/").some((part) => part === ".DS_Store" || part === "__MACOSX" || part.startsWith("._"))), false);
 });
@@ -64,8 +64,8 @@ test("distributable and release archive contain only wrapper inputs", async () =
 test("release archive validates after extraction without wrapper dependencies", async (t) => {
   const extractionRoot = await mkdtemp(join(tmpdir(), "context-circuit-release-"));
   t.after(async () => rm(extractionRoot, { recursive: true, force: true }));
-  await extractTar({ cwd: extractionRoot, file: join(projectRoot, ".dist", "context-circuit-0.2.0.tar.gz") });
-  const wrapperRoot = join(extractionRoot, "context-circuit-0.2.0");
+  await extractTar({ cwd: extractionRoot, file: join(projectRoot, ".dist", "context-circuit-0.2.1.tar.gz") });
+  const wrapperRoot = join(extractionRoot, "context-circuit-0.2.1");
   const result = spawnSync(process.execPath, [join(wrapperRoot, ".agents", "bin", "cc.mjs"), "validate", "--check-paths", "--check-documents"], {
     cwd: wrapperRoot,
     encoding: "utf8",
