@@ -7,7 +7,7 @@ import { git } from "../scripts/lib/git.js";
 export const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 export async function createTestWorkspace(): Promise<{ root: string; repository: string; cleanup: () => Promise<void> }> {
-  const root = await mkdtemp(join(tmpdir(), "kao-delivery-test-"));
+  const root = await mkdtemp(join(tmpdir(), "context-circuit-test-"));
   const repository = join(root, "repositories", "frontend");
   await mkdir(dirname(repository), { recursive: true });
   await cp(join(projectRoot, "fixtures", "react-app"), repository, { recursive: true });
@@ -19,7 +19,7 @@ export async function createTestWorkspace(): Promise<{ root: string; repository:
   await writeFile(join(root, "agents", "repository-worker.md"), "# Worker\n", "utf8");
   await writeFile(join(root, "agents", "verifier.md"), "# Verifier\n", "utf8");
   await writeFile(join(root, "workspace.yaml"), `version: 1
-template_version: 0.1.0
+template_version: 0.2.0
 workspace:
   name: test
   mode: team
@@ -57,7 +57,7 @@ export async function createTwoRepositoryTestWorkspace(): Promise<{ root: string
   await cp(join(projectRoot, "fixtures", "typescript-api"), backend, { recursive: true });
   await writeFile(join(workspace.root, "agents", "backend.md"), "# Backend\n", "utf8");
   await writeFile(join(workspace.root, "workspace.yaml"), `version: 1
-template_version: 0.1.0
+template_version: 0.2.0
 workspace:
   name: test
   mode: team

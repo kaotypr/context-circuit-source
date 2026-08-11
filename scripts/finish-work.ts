@@ -21,7 +21,7 @@ if (!values["run-id"] || !values.repository || !values.outcome || !values.author
 }
 if (values.outcome !== "merged" && values.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
 
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const result = await finishWork({
   workspaceRoot,
   runId: values["run-id"],

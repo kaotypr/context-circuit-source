@@ -1,60 +1,55 @@
 # Initialize a workspace
 
-Create a wrapper from the template, open its root in Codex or Claude Code, and
-invoke the host's `initialize-workspace` adapter. The canonical skill inspects
-existing files before asking about unresolved choices. Team mode and ignored
-local clones are the recommended defaults; solo mode and tracked Git submodules
-remain supported.
+The canonical initializer supports both a neutral release archive and an already
+configured wrapper. The human-facing walkthrough is in
+[getting started](getting-started.md).
 
-## Repository preparation
+## Neutral template
 
-Place every repository at its final path before deterministic validation:
+An unused template has `repositories: {}`, an empty managed ignore block, no
+`repositories/` directory, and no technology-specific domain agent. This state
+is valid for inspection but cannot run work until at least one repository is
+registered.
 
-- For an ignored clone, clone into a path such as `repositories/frontend`. Do
-  not add that clone to the wrapper index.
-- For a submodule, register it with Git at its final path so `.gitmodules` and
-  the wrapper index contain the matching gitlink.
+## Bootstrap contract
 
-Never replace an existing directory, discard local changes, or ignore the whole
-`repositories/` directory. The initializer owns only the marked exact-path block
-in `.gitignore`:
-
-```text
-# kao-delivery-workspace:ignored-clones:start
-repositories/frontend/
-# kao-delivery-workspace:ignored-clones:end
-```
-
-## Review flow
-
-The canonical skill updates `workspace.yaml`, workflow and instruction files,
-domain agents, and verified context with reviewable edits. During development,
-its deterministic checks are:
+After interviewing the human, the host writes an ignored, validated
+`.runtime/bootstrap/request.json` containing the final workspace configuration,
+wrapper Git intent, repository source actions, and explicit initial-commit
+authorization. It presents those actions before executing:
 
 ```bash
-node .agents/bin/kao.mjs initialize-workspace --check-only
-node .agents/bin/kao.mjs initialize-workspace
-node .agents/bin/kao.mjs validate --check-paths --check-documents
+node .agents/bin/cc.mjs initialize-workspace --bootstrap .runtime/bootstrap/request.json
+```
+
+Repository sources are `new`, `clone`, `existing`, and `submodule`. New and
+cloned paths must not exist. Existing paths must already be exact Git roots.
+Submodules are tracked and never ignored. New repositories receive an authorized
+empty base commit so worktree execution has a stable base. Existing and cloned
+repositories receive no artificial commit.
+
+The command configures exact ignore paths before repository creation and makes
+the fully configured wrapper state its first commit. It preserves partial state
+if an external clone or Git operation fails; it never cleans or deletes recovery
+evidence automatically.
+
+## Existing wrapper
+
+For inspection, run:
+
+```bash
+node .agents/bin/cc.mjs initialize-workspace --check-only
+```
+
+For approved configuration edits in an existing wrapper, edit the reviewable
+files and run:
+
+```bash
+node .agents/bin/cc.mjs initialize-workspace
+node .agents/bin/cc.mjs validate --check-paths --check-documents
 git diff --check
 ```
 
-The first command reports repository modes, paths, roles, agents, remotes,
-default and current branches, cleanliness, repository-local instructions,
-required documents, wrapper changes, and warnings without writing. For an
-inspection-only request, stop after this command and the read-only validators;
-do not run the applying command.
-
-The second command reconciles only the managed ignore block. A repeat run with
-unchanged configuration reports `gitignore_changed: false`.
-
-Review the complete diff and initialization summary before approving it. The
-workflow does not commit, push, create a pull request, configure credentials, or
-mutate an activity system without separate human authorization.
-
-## Maintainer source versus distributable
-
-This source repository includes TypeScript tooling and fixtures used to verify
-the release. They are maintainer inputs, not initialized-wrapper content. The
-distributable contains the static wrapper structure and bundled Node command,
-requires Node 22 or newer, and excludes npm metadata, dependencies, fixtures,
-scripts, tests, and development planning artifacts.
+Reruns are idempotent. The initializer does not commit changes in an existing
+wrapper and never pushes, creates remotes or pull requests, mutates activity,
+merges, or deploys.

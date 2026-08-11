@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/activity-lifecycle-record.schema.json",
+  "$id": "https://context-circuit.dev/schemas/activity-lifecycle-record.schema.json",
   "title": "Activity lifecycle event record",
   "$defs": {
     "actionResult": {

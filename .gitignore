@@ -3,6 +3,5 @@
 .dist/
 node_modules/
 
-# kao-delivery-workspace:ignored-clones:start
-repositories/frontend/
-# kao-delivery-workspace:ignored-clones:end
+# context-circuit:ignored-clones:start
+# context-circuit:ignored-clones:end

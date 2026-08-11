@@ -1,6 +1,6 @@
 # Project
 
-Kao Delivery Workspace 0.1.0 is a static, provider-neutral wrapper for safe,
+Context Circuit 0.2.0 is a static, provider-neutral wrapper for safe,
 human-reviewed AI-assisted delivery across one or more product repositories.
 The wrapper retains compact context, workflow policy, approved plans, decisions,
 and contribution summaries. Product repositories remain authoritative for code;
@@ -11,8 +11,14 @@ background service, or provider SDK. A direct request with sufficient scope and
 acceptance evidence can start a planless run. Plans add reviewed delivery intent
 and activity integrations add optional lifecycle state; neither is mandatory.
 
-Version 0.1.0 provides initialization, numbered planning and approval,
-duplicate-safe task-publication preparation, read-only next-work recommendation,
+Version 0.2.0 introduces the Context Circuit identity and a neutral release
+template. Interactive initialization can create the configured wrapper and new
+product Git roots, clone repositories, register local roots, or add submodules
+without shipping a placeholder registration. The built wrapper receives neutral
+project context populated from the approved initialization request, four focused
+human guides, and a metadata-clean release archive. It also provides numbered
+planning and approval, duplicate-safe task-publication preparation, read-only
+next-work recommendation,
 isolated single- and multi-repository execution, contract-first sequencing,
 independent verification, bounded repair, review preparation, human-invoked
 closeout, append-only contributions, and curated context synchronization.

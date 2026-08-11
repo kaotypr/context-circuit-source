@@ -12,7 +12,7 @@ conventions and future tasks are routed as follow-ups instead of silently being
 written as facts.
 
 ```bash
-node .agents/bin/kao.mjs sync-context --request <request.json>
+node .agents/bin/cc.mjs sync-context --request <request.json>
 ```
 
 The command refuses a dirty wrapper and creates a dedicated wrapper branch and
@@ -21,7 +21,7 @@ paths. Every canonical update must cite its source contribution path. After the
 curator commits, validate the review handoff:
 
 ```bash
-node .agents/bin/kao.mjs prepare-context-review --sync-id <sync-id>
+node .agents/bin/cc.mjs prepare-context-review --sync-id <sync-id>
 ```
 
 The handoff rejects uncommitted or out-of-scope changes. Team mode requires an

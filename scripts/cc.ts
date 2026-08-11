@@ -1,6 +1,6 @@
 const command = process.argv[2];
-if (!command) throw new Error("Usage: kao <command> [arguments]");
-process.env.KAO_WORKSPACE_ROOT = process.cwd();
+if (!command) throw new Error("Usage: cc <command> [arguments]");
+process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT = process.cwd();
 process.argv.splice(2, 1);
 
 switch (command) {
@@ -22,5 +22,5 @@ switch (command) {
   case "record-plan-publication": await import("./record-plan-publication.js"); break;
   case "sync-context": await import("./sync-context.js"); break;
   case "prepare-context-review": await import("./prepare-context-review.js"); break;
-  default: throw new Error(`Unknown Kao Delivery Workspace command: ${command}`);
+  default: throw new Error(`Unknown Context Circuit command: ${command}`);
 }

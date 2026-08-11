@@ -1,9 +1,8 @@
 # Workflow
 
-This template is in team mode. The human gates are plan approval when a plan is
-used, explicit task selection, and repository merge. A direct request to run
-known work satisfies task selection. Plans and activity integrations are
-optional.
+Workspace mode, human gates, and wrapper change policy are configured in
+`workspace.yaml`. A direct request to run known work satisfies task selection.
+Plans and activity integrations are optional.
 
 When a plan is used, `create-plan` writes only a numbered draft. Approval must be
 explicit and recorded in the plan index. Material revisions revoke approval,

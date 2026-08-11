@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/plan-work-breakdown.schema.json",
+  "$id": "https://context-circuit.dev/schemas/plan-work-breakdown.schema.json",
   "title": "Parsed plan work breakdown",
   "type": "object",
   "additionalProperties": false,

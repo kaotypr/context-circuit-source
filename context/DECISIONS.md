@@ -1,7 +1,27 @@
 # Decisions
 
-## 2026-08-12 — Version 0.1.0 operating decisions
+## 2026-08-12 — Version 0.2.0 operating decisions
 
+- Use the team-owned product name Context Circuit and the host-neutral
+  `.agents/bin/cc.mjs` command. Keep personal names out of product identifiers.
+- Ship a neutral template with no placeholder repository. Interactive
+  initialization gathers human choices, presents exact actions, and can safely
+  initialize the configured wrapper and product Git roots after explicit commit
+  authorization.
+- Make the configured wrapper state its first commit. Give a new product
+  repository an empty base commit instead of invented application content.
+- Track intentional empty directories with `.gitkeep`, except `repositories/`,
+  which initialization creates only when needed.
+- Keep detailed protocols, host proofs, examples, and maintainer documentation
+  in the source repository. Ship only human-facing getting-started, usage,
+  configuration, and command-reference guides in the wrapper.
+- Treat the generated `context-circuit-0.2.0.tar.gz` as the authoritative release
+  artifact. Exclude macOS metadata and redundant version markers, and retain the
+  generated directory only as an inspectable staging view.
+- Synchronize only that versioned tarball and matching npm metadata to the
+  dedicated release repository on a version tag or explicit dispatch. Require a
+  separately scoped cross-repository token; never reuse the source
+  `GITHUB_TOKEN` or publish npm from the source repository.
 - Support personal and team wrappers; recommend team mode. Team wrapper changes
   use pull requests; explicitly configured solo mode may use direct commits.
 - Support Codex and Claude Code with one canonical workflow and thin adapters.

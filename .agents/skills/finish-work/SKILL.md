@@ -1,6 +1,6 @@
 ---
 name: finish-work
-description: Close a Kao Delivery Workspace run after human-confirmed merge or deliberate abandonment. Use only when a human explicitly invokes closeout and wants an append-only contribution, lifecycle record, or safe worktree cleanup.
+description: Close a Context Circuit run after human-confirmed merge or deliberate abandonment. Use only when a human explicitly invokes closeout and wants an append-only contribution, lifecycle record, or safe worktree cleanup.
 ---
 
 # Finish work
@@ -14,10 +14,10 @@ description: Close a Kao Delivery Workspace run after human-confirmed merge or d
    infer merge or abandonment from a passing verifier alone.
 3. Prepare closeout without cleanup first:
 
-   When an activity provider is configured, first run `node .agents/bin/kao.mjs prepare-lifecycle --run-id <id> --event <task.completed|task.cancelled> [--available <capability>]`. Perform pending actions through the authorized session tool, record only confirmed results with `node .agents/bin/kao.mjs record-lifecycle-action`, and present exact manual fallbacks. A required failure or unfinished manual action blocks closeout without writing a contribution.
+   When an activity provider is configured, first run `node .agents/bin/cc.mjs prepare-lifecycle --run-id <id> --event <task.completed|task.cancelled> [--available <capability>]`. Perform pending actions through the authorized session tool, record only confirmed results with `node .agents/bin/cc.mjs record-lifecycle-action`, and present exact manual fallbacks. A required failure or unfinished manual action blocks closeout without writing a contribution.
 
    ```bash
-   node .agents/bin/kao.mjs finish-work --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug> [--reason <text>] [--pull-request <ref>] [--merge-commit <sha>]
+   node .agents/bin/cc.mjs finish-work --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug> [--reason <text>] [--pull-request <ref>] [--merge-commit <sha>]
    ```
 
    Inspect the schema-valid closeout record and the new append-only contribution.

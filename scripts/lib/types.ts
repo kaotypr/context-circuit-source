@@ -8,7 +8,7 @@ export interface RepositoryConfig {
 
 export interface WorkspaceConfig {
   version: 1;
-  template_version: "0.1.0";
+  template_version: "0.2.0";
   workspace: {
     name: string;
     mode: "solo" | "team";
@@ -27,6 +27,36 @@ export interface WorkspaceConfig {
     maximum_repair_attempts: number;
     wrapper_change_policy: "pull-request" | "direct-commit";
   };
+}
+
+export interface BootstrapGitCommit {
+  authorize_initial_commit: boolean;
+  commit_message: string;
+  author_name?: string;
+  author_email?: string;
+}
+
+export interface WorkspaceBootstrapContext {
+  project_summary: string;
+  architecture: string[];
+  conventions: string[];
+  decisions: string[];
+}
+
+export interface WorkspaceBootstrapRequest {
+  contract_version: 1;
+  configuration: WorkspaceConfig;
+  context: WorkspaceBootstrapContext;
+  wrapper: BootstrapGitCommit & { initialize_git: boolean };
+  repositories: Array<{
+    name: string;
+    source: "new" | "clone" | "existing" | "submodule";
+    url?: string;
+    authorize_initial_commit: boolean;
+    commit_message?: string;
+    author_name?: string;
+    author_email?: string;
+  }>;
 }
 
 export type ActivityCapability = "read-tasks" | "update-status" | "create-tasks" | "assign-task" | "timers";

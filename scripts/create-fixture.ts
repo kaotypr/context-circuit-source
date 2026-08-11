@@ -17,5 +17,5 @@ try {
 await cp(source, destination, { recursive: true, errorOnExist: true, force: false });
 await git(destination, ["init", "--initial-branch=main"]);
 await git(destination, ["add", "."]);
-await git(destination, ["-c", "user.name=Kao Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "chore: initialize React fixture"]);
+await git(destination, ["-c", "user.name=Context Circuit Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "chore: initialize React fixture"]);
 console.log(`Created fixture repository: ${destination}`);

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/worker-result.schema.json",
+  "$id": "https://context-circuit.dev/schemas/worker-result.schema.json",
   "title": "Repository worker result",
   "type": "object",
   "additionalProperties": false,

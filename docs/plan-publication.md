@@ -3,13 +3,13 @@
 Task publication is a separate explicit action. The host first searches the configured destination and writes a credential-free discovery JSON matching `.agents/contracts/plan-publication-discovery.schema.json`. Confirmed stable-work-ID mappings prevent duplicate creation.
 
 ```bash
-node .agents/bin/kao.mjs prepare-plan-publication --plan <plan-id> --discovery <discovery.json>
+node .agents/bin/cc.mjs prepare-plan-publication --plan <plan-id> --discovery <discovery.json>
 ```
 
 Review the returned destination, hierarchy, dependency-first order, existing mappings, proposed creates, and idempotency keys before authorizing writes. After each confirmed external response, record it:
 
 ```bash
-node .agents/bin/kao.mjs record-plan-publication \
+node .agents/bin/cc.mjs record-plan-publication \
   --plan <plan-id> --work <work-id> --status created \
   --reference <external-ref> --evidence "Creation confirmed by the session tool."
 ```

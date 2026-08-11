@@ -7,7 +7,7 @@ import type { ActivityCapability, RunTaskRequest, TestExpectationPolicy } from "
 
 const testPolicies: TestExpectationPolicy[] = ["required", "existing-coverage", "verifier-only", "not-required"];
 const activityCapabilities: ActivityCapability[] = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 
 const { values } = parseArgs({
   options: {

@@ -1,6 +1,6 @@
 ---
 name: finish-work
-description: Codex adapter for the canonical human-invoked Kao Delivery Workspace closeout workflow.
+description: Codex adapter for the canonical human-invoked Context Circuit closeout workflow.
 ---
 
 # Codex adapter

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/review-preparation.schema.json",
+  "$id": "https://context-circuit.dev/schemas/review-preparation.schema.json",
   "title": "Draft pull request preparation",
   "type": "object",
   "additionalProperties": false,

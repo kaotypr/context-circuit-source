@@ -1,12 +1,14 @@
-import { access, readFile, realpath } from "node:fs/promises";
-import { join, relative, resolve } from "node:path";
+import { access, lstat, mkdir, readFile, realpath } from "node:fs/promises";
+import { dirname, join, relative, resolve } from "node:path";
+import { stringify as stringifyYaml } from "yaml";
 import { assertInside, writeTextAtomic } from "./io.js";
 import { git } from "./git.js";
-import type { WorkspaceConfig } from "./types.js";
+import type { BootstrapGitCommit, WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { readData, requiredWorkspaceDocuments, validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "./validation.js";
+import { renderWorkspaceContext } from "./workspace-context.js";
 
-const ignoredStart = "# kao-delivery-workspace:ignored-clones:start";
-const ignoredEnd = "# kao-delivery-workspace:ignored-clones:end";
+const ignoredStart = "# context-circuit:ignored-clones:start";
+const ignoredEnd = "# context-circuit:ignored-clones:end";
 
 export interface InitializationRepositorySummary {
   name: string;
@@ -38,6 +40,18 @@ export interface InitializationSummary {
 export interface InitializeWorkspaceOptions {
   workspaceRoot: string;
   apply?: boolean;
+  allowUnbornWrapper?: boolean;
+}
+
+export interface BootstrapWorkspaceOptions {
+  workspaceRoot: string;
+  request: WorkspaceBootstrapRequest;
+}
+
+export interface BootstrapWorkspaceSummary extends InitializationSummary {
+  status: "initialized";
+  bootstrap_actions: string[];
+  wrapper_initial_commit: string | null;
 }
 
 function normalizedRepositoryPath(path: string): string {
@@ -97,6 +111,182 @@ async function assertDefaultBranch(path: string, repository: string, branch: str
   throw new Error(`Repository ${repository} has no local or origin default branch named ${branch}`);
 }
 
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await lstat(path);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+async function assertSafeRepositoryPath(workspaceRoot: string, path: string, name: string): Promise<void> {
+  if (path === workspaceRoot) throw new Error(`Repository ${name} path cannot be the wrapper root`);
+  let ancestor = dirname(path);
+  while (!await pathExists(ancestor)) {
+    const parent = dirname(ancestor);
+    if (parent === ancestor) throw new Error(`Cannot resolve repository parent for ${name}`);
+    ancestor = parent;
+  }
+  const info = await lstat(ancestor);
+  if (info.isSymbolicLink()) throw new Error(`Repository ${name} parent cannot be a symbolic link`);
+  assertInside(await realpath(workspaceRoot), await realpath(ancestor));
+}
+
+async function hasHead(path: string): Promise<boolean> {
+  try {
+    await git(path, ["rev-parse", "--verify", "HEAD"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function safeRemote(value: string, repository: string): string {
+  const remote = value.trim();
+  if (!remote || /[\r\n]/.test(remote)) throw new Error(`Repository ${repository} requires a single-line clone URL`);
+  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(remote) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(remote)) {
+    throw new Error(`Repository ${repository} clone URL appears to contain credentials`);
+  }
+  return remote;
+}
+
+function commitArgs(commit: BootstrapGitCommit): string[] {
+  if (Boolean(commit.author_name) !== Boolean(commit.author_email)) throw new Error("Commit author_name and author_email must be supplied together");
+  const args: string[] = [];
+  if (commit.author_name && commit.author_email) args.push("-c", `user.name=${commit.author_name}`, "-c", `user.email=${commit.author_email}`);
+  return [...args, "commit", "--allow-empty", "-m", commit.commit_message.trim()];
+}
+
+function agentDocument(name: string, role: string): string {
+  const title = name.split("-").map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" ");
+  return `# ${title} worker\n\nFollow \`repository-worker.md\`. This repository owns the ${role} role. Read its repository-local instructions and preserve its established architecture, conventions, and verification commands.\n`;
+}
+
+async function assertExactGitRoot(path: string, name: string): Promise<void> {
+  const topLevel = await git(path, ["rev-parse", "--show-toplevel"]);
+  if (await realpath(topLevel) !== await realpath(path)) throw new Error(`Repository path is not a Git root: ${name}`);
+}
+
+export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Promise<BootstrapWorkspaceSummary> {
+  const workspaceRoot = resolve(options.workspaceRoot);
+  const requestErrors = await validateContract("workspace-bootstrap-request", options.request);
+  if (requestErrors.length > 0) throw new Error(`Invalid workspace-bootstrap-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  const config = options.request.configuration;
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace configuration: ${semanticErrors.join("; ")}`);
+  if (config.workspace.name === "uninitialized-workspace") throw new Error("Bootstrap requires a human-selected workspace name");
+  const configuredNames = Object.keys(config.repositories).sort();
+  if (configuredNames.length === 0) throw new Error("Bootstrap requires at least one configured repository");
+  const actionsByName = new Map(options.request.repositories.map((action) => [action.name, action]));
+  if (actionsByName.size !== options.request.repositories.length || configuredNames.join("\n") !== [...actionsByName.keys()].sort().join("\n")) {
+    throw new Error("Bootstrap repository actions must match configured repositories exactly");
+  }
+
+  const wrapperGitExists = await pathExists(join(workspaceRoot, ".git"));
+  if (wrapperGitExists === options.request.wrapper.initialize_git) {
+    throw new Error(wrapperGitExists ? "Wrapper is already a Git repository; initialize_git must be false" : "Wrapper is not a Git repository; initialize_git must be true");
+  }
+  if (wrapperGitExists) {
+    await assertExactGitRoot(workspaceRoot, "wrapper");
+    const changes = await git(workspaceRoot, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+    if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:\n${changes}`);
+  }
+  const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot);
+  if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
+  if (wrapperHadHead && options.request.wrapper.authorize_initial_commit) throw new Error("An existing wrapper must not authorize another initial commit");
+  const gitignorePath = join(workspaceRoot, ".gitignore");
+  const currentGitignore = await readFile(gitignorePath, "utf8");
+  const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
+  for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
+    const agentPath = join(workspaceRoot, "agents", `${agent}.md`);
+    if (!await pathExists(agentPath)) continue;
+    const info = await lstat(agentPath);
+    if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Domain agent path must be a regular file: agents/${agent}.md`);
+  }
+
+  for (const name of configuredNames) {
+    const repository = config.repositories[name]!;
+    const action = actionsByName.get(name)!;
+    const path = assertInside(workspaceRoot, resolve(workspaceRoot, repository.path));
+    await assertSafeRepositoryPath(workspaceRoot, path, name);
+    const exists = await pathExists(path);
+    if (action.source === "existing") {
+      if (repository.mode !== "ignored-clone") throw new Error(`Existing repository ${name} must use ignored-clone mode`);
+      if (!exists) throw new Error(`Existing repository path is not accessible: ${repository.path}`);
+      if ((await lstat(path)).isSymbolicLink()) throw new Error(`Existing repository ${name} cannot be a symbolic link`);
+      assertInside(await realpath(workspaceRoot), await realpath(path));
+      await assertExactGitRoot(path, name);
+    } else {
+      if (exists) throw new Error(`Bootstrap refuses to replace existing path for ${name}: ${repository.path}`);
+    }
+    if (action.source === "submodule" && repository.mode !== "submodule") throw new Error(`Submodule action requires submodule mode for ${name}`);
+    if ((action.source === "new" || action.source === "clone") && repository.mode !== "ignored-clone") throw new Error(`${action.source} action requires ignored-clone mode for ${name}`);
+    if ((action.source === "clone" || action.source === "submodule") && !action.url) throw new Error(`${action.source} action requires a URL for ${name}`);
+    if ((action.source === "new" || action.source === "existing") && action.url) throw new Error(`${action.source} repository ${name} must not include a clone URL`);
+    if (action.url) safeRemote(action.url, name);
+    if (action.source === "new" && !action.authorize_initial_commit) throw new Error(`New repository ${name} requires explicit initial-commit authorization`);
+    if (action.source === "new" && !action.commit_message) throw new Error(`New repository ${name} requires an initial commit message`);
+    if (action.source !== "new" && action.authorize_initial_commit) throw new Error(`${action.source} repository ${name} must not authorize an initial commit`);
+    if (action.source !== "new" && (action.commit_message || action.author_name || action.author_email)) throw new Error(`${action.source} repository ${name} must not include artificial commit metadata`);
+  }
+
+  const bootstrapActions: string[] = [];
+  if (!wrapperGitExists) {
+    await git(workspaceRoot, ["init", "--initial-branch", config.workspace.default_branch]);
+    bootstrapActions.push(`initialized wrapper Git repository on ${config.workspace.default_branch}`);
+  } else if (!wrapperHadHead) {
+    const current = await git(workspaceRoot, ["symbolic-ref", "--short", "HEAD"]);
+    if (current !== config.workspace.default_branch) throw new Error(`Unborn wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
+  }
+
+  await writeTextAtomic(join(workspaceRoot, "workspace.yaml"), stringifyYaml(config));
+  for (const [path, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
+    await writeTextAtomic(join(workspaceRoot, path), contents);
+  }
+  await mkdir(join(workspaceRoot, "agents"), { recursive: true });
+  for (const [name, repository] of Object.entries(config.repositories)) {
+    const agentPath = join(workspaceRoot, "agents", `${repository.agent}.md`);
+    if (!await pathExists(agentPath)) await writeTextAtomic(agentPath, agentDocument(name, repository.role));
+  }
+  await writeTextAtomic(gitignorePath, nextGitignore);
+
+  for (const name of configuredNames) {
+    const repository = config.repositories[name]!;
+    const action = actionsByName.get(name)!;
+    const path = assertInside(workspaceRoot, resolve(workspaceRoot, repository.path));
+    if (action.source === "new") {
+      await mkdir(dirname(path), { recursive: true });
+      await mkdir(path);
+      await git(path, ["init", "--initial-branch", repository.default_branch]);
+      await git(path, commitArgs(action as BootstrapGitCommit));
+      bootstrapActions.push(`created ${name} with an empty base commit`);
+    } else if (action.source === "clone") {
+      await mkdir(dirname(path), { recursive: true });
+      await git(workspaceRoot, ["clone", "--branch", repository.default_branch, "--single-branch", "--", safeRemote(action.url!, name), path]);
+      bootstrapActions.push(`cloned ${name} into ${repository.path}`);
+    } else if (action.source === "submodule") {
+      await mkdir(dirname(path), { recursive: true });
+      await git(workspaceRoot, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", safeRemote(action.url!, name), repository.path]);
+      bootstrapActions.push(`registered ${name} as a submodule`);
+    } else {
+      bootstrapActions.push(`registered existing repository ${name}`);
+    }
+  }
+
+  await initializeWorkspace({ workspaceRoot, allowUnbornWrapper: !wrapperHadHead });
+  let wrapperInitialCommit: string | null = null;
+  if (!wrapperHadHead) {
+    await git(workspaceRoot, ["add", "-A"]);
+    await git(workspaceRoot, commitArgs(options.request.wrapper));
+    wrapperInitialCommit = await git(workspaceRoot, ["rev-parse", "HEAD"]);
+    bootstrapActions.push("created configured wrapper initial commit");
+  }
+  const summary = await initializeWorkspace({ workspaceRoot });
+  return { ...summary, status: "initialized", bootstrap_actions: bootstrapActions, wrapper_initial_commit: wrapperInitialCommit };
+}
+
 export async function initializeWorkspace(options: InitializeWorkspaceOptions): Promise<InitializationSummary> {
   const workspaceRoot = resolve(options.workspaceRoot);
   const configPath = join(workspaceRoot, "workspace.yaml");
@@ -114,7 +304,12 @@ export async function initializeWorkspace(options: InitializeWorkspaceOptions): 
   if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot)) {
     throw new Error(`Workspace root is not the wrapper Git root: ${workspaceRoot}`);
   }
-  await assertDefaultBranch(workspaceRoot, "wrapper", config.workspace.default_branch);
+  if (options.allowUnbornWrapper && !await hasHead(workspaceRoot)) {
+    const current = await git(workspaceRoot, ["symbolic-ref", "--short", "HEAD"]);
+    if (current !== config.workspace.default_branch) throw new Error(`Wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
+  } else {
+    await assertDefaultBranch(workspaceRoot, "wrapper", config.workspace.default_branch);
+  }
   let submodulePaths = new Set<string>();
   try {
     submodulePaths = parseSubmodulePaths(await readFile(join(workspaceRoot, ".gitmodules"), "utf8"));

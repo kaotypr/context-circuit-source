@@ -6,7 +6,7 @@ import { recommendWhatsNext } from "./lib/whats-next.js";
 import type { FakeActivitySource } from "./lib/types.js";
 
 const { values } = parseArgs({ options: { "activity-fixture": { type: "string" } } });
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const activity = values["activity-fixture"]
   ? JSON.parse(await readFile(resolve(process.cwd(), values["activity-fixture"]), "utf8")) as FakeActivitySource
   : null;

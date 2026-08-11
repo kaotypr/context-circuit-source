@@ -10,7 +10,7 @@ provider. Explicit execution remains a separate `run-task` request.
 Run the deterministic selector from the wrapper root:
 
 ```bash
-node .agents/bin/kao.mjs whats-next
+node .agents/bin/cc.mjs whats-next
 ```
 
 It validates every real directory under `context/plans/`. Plan work items keep
@@ -32,8 +32,8 @@ Tests and manual proofs may supply a JSON file matching
 `.agents/contracts/fake-activity-source.schema.json`:
 
 ```bash
-node .agents/bin/kao.mjs validate --schema fake-activity-source /tmp/activity.json
-node .agents/bin/kao.mjs whats-next --activity-fixture /tmp/activity.json
+node .agents/bin/cc.mjs validate --schema fake-activity-source /tmp/activity.json
+node .agents/bin/cc.mjs whats-next --activity-fixture /tmp/activity.json
 ```
 
 The fixture may add read-only candidates or facts for a plan `work_id`, such as

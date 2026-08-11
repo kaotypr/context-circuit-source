@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/plan-draft-request.schema.json",
+  "$id": "https://context-circuit.dev/schemas/plan-draft-request.schema.json",
   "title": "Plan draft creation request",
   "type": "object",
   "additionalProperties": false,

@@ -222,7 +222,7 @@ function assertCloseoutLifecycleReady(manifest: RuntimeManifest, config: Workspa
   const event = outcome === "merged" ? "task.completed" : "task.cancelled";
   const lifecycle = manifest.lifecycle_events.find((item) => item.event === event);
   if (!lifecycle) {
-    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/kao.mjs prepare-lifecycle --run-id ${manifest.run_id} --event ${event}`);
+    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/cc.mjs prepare-lifecycle --run-id ${manifest.run_id} --event ${event}`);
   }
   if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
     throw new Error(`Configured activity hook ${event} is ${lifecycle.status}; complete required or manual actions before closeout`);

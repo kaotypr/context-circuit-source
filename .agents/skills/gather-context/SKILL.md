@@ -1,6 +1,6 @@
 ---
 name: gather-context
-description: Resolve the minimum authoritative, task-scoped context for Kao Delivery Workspace work without mutating repositories or external systems. Use internally before planning or execution when source material, repository rules, dependencies, or contradictions must be established.
+description: Resolve the minimum authoritative, task-scoped context for Context Circuit work without mutating repositories or external systems. Use internally before planning or execution when source material, repository rules, dependencies, or contradictions must be established.
 ---
 
 # Gather context

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { createRequire as __kaoCreateRequire } from 'node:module'; const require = __kaoCreateRequire(import.meta.url);
+import { createRequire as __ccCreateRequire } from 'node:module'; const require = __ccCreateRequire(import.meta.url);
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
@@ -14522,6 +14522,7 @@ async function readData(path2) {
 async function validateContract(name, value2) {
   const schema2 = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", `${name}.schema.json`), "utf8"));
   const ajv = new import__.Ajv2020({ allErrors: true, strict: false });
+  ajv.addFormat("email", { type: "string", validate: (value3) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value3) });
   ajv.addFormat("date-time", {
     type: "string",
     validate: (value3) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value3) && !Number.isNaN(Date.parse(value3))
@@ -14534,6 +14535,10 @@ async function validateContract(name, value2) {
     const lifecycleSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "activity-lifecycle-record.schema.json"), "utf8"));
     ajv.addSchema(lifecycleSchema);
   }
+  if (name === "workspace-bootstrap-request") {
+    const workspaceSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "workspace.schema.json"), "utf8"));
+    ajv.addSchema(workspaceSchema);
+  }
   const validate = ajv.compile(schema2);
   return validate(value2) ? [] : [...validate.errors ?? []];
 }
@@ -14541,7 +14546,7 @@ function workspaceSemanticErrors(config) {
   const errors2 = [];
   const paths2 = /* @__PURE__ */ new Map();
   for (const [name, repository] of Object.entries(config.repositories)) {
-    const normalized = repository.path.replace(/\/$/, "");
+    const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
     const prior = paths2.get(normalized);
     if (prior) errors2.push(`repositories.${name}.path duplicates repositories.${prior}.path`);
     paths2.set(normalized, name);
@@ -14593,7 +14598,7 @@ var init_validation = __esm({
     "use strict";
     import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
-    schemaNames = ["workspace", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"];
+    schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"];
     requiredWorkspaceDocuments = [
       "README.md",
       "AGENTS.md",
@@ -14607,7 +14612,9 @@ var init_validation = __esm({
       "agents/coordinator.md",
       "agents/repository-worker.md",
       "agents/verifier.md",
+      ".agents/bin/cc.mjs",
       ".agents/contracts/workspace.schema.json",
+      ".agents/contracts/workspace-bootstrap-request.schema.json",
       ".agents/contracts/review-preparation.schema.json",
       ".agents/contracts/review-publication-record.schema.json",
       ".agents/contracts/closeout-record.schema.json",
@@ -14624,31 +14631,31 @@ var init_validation = __esm({
       ".agents/contracts/plan-publication-discovery.schema.json",
       ".agents/contracts/plan-publication-record.schema.json",
       ".agents/skills/initialize-workspace/SKILL.md",
+      ".agents/skills/gather-context/SKILL.md",
+      ".agents/skills/run-task/SKILL.md",
       ".agents/skills/finish-work/SKILL.md",
       ".agents/skills/create-plan/SKILL.md",
       ".agents/skills/whats-next/SKILL.md",
       ".agents/skills/publish-plan-tasks/SKILL.md",
       ".agents/skills/sync-context/SKILL.md",
       ".codex/skills/initialize-workspace/SKILL.md",
+      ".codex/skills/run-task/SKILL.md",
       ".codex/skills/finish-work/SKILL.md",
       ".codex/skills/create-plan/SKILL.md",
       ".codex/skills/whats-next/SKILL.md",
       ".codex/skills/publish-plan-tasks/SKILL.md",
       ".codex/skills/sync-context/SKILL.md",
       ".claude/commands/initialize-workspace.md",
+      ".claude/commands/run-task.md",
       ".claude/commands/finish-work.md",
       ".claude/commands/create-plan.md",
       ".claude/commands/whats-next.md",
       ".claude/commands/publish-plan-tasks.md",
       ".claude/commands/sync-context.md",
-      "docs/initialization.md",
-      "docs/review-lifecycle.md",
-      "docs/finish-work.md",
-      "docs/planning.md",
-      "docs/whats-next.md",
-      "docs/activity-lifecycle.md",
-      "docs/plan-publication.md",
-      "docs/context-sync.md"
+      "docs/getting-started.md",
+      "docs/using-the-wrapper.md",
+      "docs/configuration.md",
+      "docs/command-reference.md"
     ];
     projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
   }
@@ -14675,7 +14682,7 @@ var init_validate = __esm({
     }));
     schema = values.schema;
     if (!schemaNames.includes(schema)) throw new Error(`Unknown schema: ${schema}`);
-    workspaceRoot = resolve2(process.env.KAO_WORKSPACE_ROOT ?? resolve2(dirname2(fileURLToPath2(import.meta.url)), ".."));
+    workspaceRoot = resolve2(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve2(dirname2(fileURLToPath2(import.meta.url)), ".."));
     path = resolve2(workspaceRoot, positionals[0] ?? "workspace.yaml");
     value = await readData(path);
     contractErrors = await validateContract(schema, value);
@@ -14822,9 +14829,34 @@ var init_git = __esm({
   }
 });
 
+// scripts/lib/workspace-context.ts
+function listDocument(title, values18, empty) {
+  const body = values18.length > 0 ? values18.map((value2) => `- ${value2.trim()}`).join("\n") : empty;
+  return `# ${title}
+
+${body}
+`;
+}
+function renderWorkspaceContext(context) {
+  return {
+    "context/PROJECT.md": `# Project
+
+${context.project_summary.trim()}
+`,
+    "context/ARCHITECTURE.md": listDocument("Architecture", context.architecture, "No project architecture has been recorded yet."),
+    "context/CONVENTIONS.md": listDocument("Conventions", context.conventions, "No project-specific conventions have been recorded yet."),
+    "context/DECISIONS.md": listDocument("Decisions", context.decisions, "No project decisions have been recorded yet.")
+  };
+}
+var init_workspace_context = __esm({
+  "scripts/lib/workspace-context.ts"() {
+    "use strict";
+  }
+});
+
 // scripts/lib/initialize-workspace.ts
-import { access as access2, readFile as readFile2, realpath } from "node:fs/promises";
-import { join as join2, relative, resolve as resolve4 } from "node:path";
+import { access as access2, lstat as lstat3, mkdir as mkdir2, readFile as readFile2, realpath } from "node:fs/promises";
+import { dirname as dirname4, join as join2, relative, resolve as resolve4 } from "node:path";
 function normalizedRepositoryPath(path2) {
   return `${path2.replace(/^\.\//, "").replace(/\/$/, "")}/`;
 }
@@ -14873,6 +14905,172 @@ async function assertDefaultBranch(path2, repository, branch) {
   }
   throw new Error(`Repository ${repository} has no local or origin default branch named ${branch}`);
 }
+async function pathExists(path2) {
+  try {
+    await lstat3(path2);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+async function assertSafeRepositoryPath(workspaceRoot18, path2, name) {
+  if (path2 === workspaceRoot18) throw new Error(`Repository ${name} path cannot be the wrapper root`);
+  let ancestor = dirname4(path2);
+  while (!await pathExists(ancestor)) {
+    const parent = dirname4(ancestor);
+    if (parent === ancestor) throw new Error(`Cannot resolve repository parent for ${name}`);
+    ancestor = parent;
+  }
+  const info = await lstat3(ancestor);
+  if (info.isSymbolicLink()) throw new Error(`Repository ${name} parent cannot be a symbolic link`);
+  assertInside(await realpath(workspaceRoot18), await realpath(ancestor));
+}
+async function hasHead(path2) {
+  try {
+    await git(path2, ["rev-parse", "--verify", "HEAD"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function safeRemote(value2, repository) {
+  const remote = value2.trim();
+  if (!remote || /[\r\n]/.test(remote)) throw new Error(`Repository ${repository} requires a single-line clone URL`);
+  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(remote) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(remote)) {
+    throw new Error(`Repository ${repository} clone URL appears to contain credentials`);
+  }
+  return remote;
+}
+function commitArgs(commit) {
+  if (Boolean(commit.author_name) !== Boolean(commit.author_email)) throw new Error("Commit author_name and author_email must be supplied together");
+  const args = [];
+  if (commit.author_name && commit.author_email) args.push("-c", `user.name=${commit.author_name}`, "-c", `user.email=${commit.author_email}`);
+  return [...args, "commit", "--allow-empty", "-m", commit.commit_message.trim()];
+}
+function agentDocument(name, role) {
+  const title = name.split("-").map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" ");
+  return `# ${title} worker
+
+Follow \`repository-worker.md\`. This repository owns the ${role} role. Read its repository-local instructions and preserve its established architecture, conventions, and verification commands.
+`;
+}
+async function assertExactGitRoot(path2, name) {
+  const topLevel = await git(path2, ["rev-parse", "--show-toplevel"]);
+  if (await realpath(topLevel) !== await realpath(path2)) throw new Error(`Repository path is not a Git root: ${name}`);
+}
+async function bootstrapWorkspace(options) {
+  const workspaceRoot18 = resolve4(options.workspaceRoot);
+  const requestErrors = await validateContract("workspace-bootstrap-request", options.request);
+  if (requestErrors.length > 0) throw new Error(`Invalid workspace-bootstrap-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  const config = options.request.configuration;
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace configuration: ${semanticErrors.join("; ")}`);
+  if (config.workspace.name === "uninitialized-workspace") throw new Error("Bootstrap requires a human-selected workspace name");
+  const configuredNames = Object.keys(config.repositories).sort();
+  if (configuredNames.length === 0) throw new Error("Bootstrap requires at least one configured repository");
+  const actionsByName = new Map(options.request.repositories.map((action) => [action.name, action]));
+  if (actionsByName.size !== options.request.repositories.length || configuredNames.join("\n") !== [...actionsByName.keys()].sort().join("\n")) {
+    throw new Error("Bootstrap repository actions must match configured repositories exactly");
+  }
+  const wrapperGitExists = await pathExists(join2(workspaceRoot18, ".git"));
+  if (wrapperGitExists === options.request.wrapper.initialize_git) {
+    throw new Error(wrapperGitExists ? "Wrapper is already a Git repository; initialize_git must be false" : "Wrapper is not a Git repository; initialize_git must be true");
+  }
+  if (wrapperGitExists) {
+    await assertExactGitRoot(workspaceRoot18, "wrapper");
+    const changes = await git(workspaceRoot18, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+    if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:
+${changes}`);
+  }
+  const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot18);
+  if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
+  if (wrapperHadHead && options.request.wrapper.authorize_initial_commit) throw new Error("An existing wrapper must not authorize another initial commit");
+  const gitignorePath = join2(workspaceRoot18, ".gitignore");
+  const currentGitignore = await readFile2(gitignorePath, "utf8");
+  const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
+  for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
+    const agentPath = join2(workspaceRoot18, "agents", `${agent}.md`);
+    if (!await pathExists(agentPath)) continue;
+    const info = await lstat3(agentPath);
+    if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Domain agent path must be a regular file: agents/${agent}.md`);
+  }
+  for (const name of configuredNames) {
+    const repository = config.repositories[name];
+    const action = actionsByName.get(name);
+    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
+    await assertSafeRepositoryPath(workspaceRoot18, path2, name);
+    const exists = await pathExists(path2);
+    if (action.source === "existing") {
+      if (repository.mode !== "ignored-clone") throw new Error(`Existing repository ${name} must use ignored-clone mode`);
+      if (!exists) throw new Error(`Existing repository path is not accessible: ${repository.path}`);
+      if ((await lstat3(path2)).isSymbolicLink()) throw new Error(`Existing repository ${name} cannot be a symbolic link`);
+      assertInside(await realpath(workspaceRoot18), await realpath(path2));
+      await assertExactGitRoot(path2, name);
+    } else {
+      if (exists) throw new Error(`Bootstrap refuses to replace existing path for ${name}: ${repository.path}`);
+    }
+    if (action.source === "submodule" && repository.mode !== "submodule") throw new Error(`Submodule action requires submodule mode for ${name}`);
+    if ((action.source === "new" || action.source === "clone") && repository.mode !== "ignored-clone") throw new Error(`${action.source} action requires ignored-clone mode for ${name}`);
+    if ((action.source === "clone" || action.source === "submodule") && !action.url) throw new Error(`${action.source} action requires a URL for ${name}`);
+    if ((action.source === "new" || action.source === "existing") && action.url) throw new Error(`${action.source} repository ${name} must not include a clone URL`);
+    if (action.url) safeRemote(action.url, name);
+    if (action.source === "new" && !action.authorize_initial_commit) throw new Error(`New repository ${name} requires explicit initial-commit authorization`);
+    if (action.source === "new" && !action.commit_message) throw new Error(`New repository ${name} requires an initial commit message`);
+    if (action.source !== "new" && action.authorize_initial_commit) throw new Error(`${action.source} repository ${name} must not authorize an initial commit`);
+    if (action.source !== "new" && (action.commit_message || action.author_name || action.author_email)) throw new Error(`${action.source} repository ${name} must not include artificial commit metadata`);
+  }
+  const bootstrapActions = [];
+  if (!wrapperGitExists) {
+    await git(workspaceRoot18, ["init", "--initial-branch", config.workspace.default_branch]);
+    bootstrapActions.push(`initialized wrapper Git repository on ${config.workspace.default_branch}`);
+  } else if (!wrapperHadHead) {
+    const current = await git(workspaceRoot18, ["symbolic-ref", "--short", "HEAD"]);
+    if (current !== config.workspace.default_branch) throw new Error(`Unborn wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
+  }
+  await writeTextAtomic(join2(workspaceRoot18, "workspace.yaml"), (0, import_yaml2.stringify)(config));
+  for (const [path2, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
+    await writeTextAtomic(join2(workspaceRoot18, path2), contents);
+  }
+  await mkdir2(join2(workspaceRoot18, "agents"), { recursive: true });
+  for (const [name, repository] of Object.entries(config.repositories)) {
+    const agentPath = join2(workspaceRoot18, "agents", `${repository.agent}.md`);
+    if (!await pathExists(agentPath)) await writeTextAtomic(agentPath, agentDocument(name, repository.role));
+  }
+  await writeTextAtomic(gitignorePath, nextGitignore);
+  for (const name of configuredNames) {
+    const repository = config.repositories[name];
+    const action = actionsByName.get(name);
+    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
+    if (action.source === "new") {
+      await mkdir2(dirname4(path2), { recursive: true });
+      await mkdir2(path2);
+      await git(path2, ["init", "--initial-branch", repository.default_branch]);
+      await git(path2, commitArgs(action));
+      bootstrapActions.push(`created ${name} with an empty base commit`);
+    } else if (action.source === "clone") {
+      await mkdir2(dirname4(path2), { recursive: true });
+      await git(workspaceRoot18, ["clone", "--branch", repository.default_branch, "--single-branch", "--", safeRemote(action.url, name), path2]);
+      bootstrapActions.push(`cloned ${name} into ${repository.path}`);
+    } else if (action.source === "submodule") {
+      await mkdir2(dirname4(path2), { recursive: true });
+      await git(workspaceRoot18, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", safeRemote(action.url, name), repository.path]);
+      bootstrapActions.push(`registered ${name} as a submodule`);
+    } else {
+      bootstrapActions.push(`registered existing repository ${name}`);
+    }
+  }
+  await initializeWorkspace({ workspaceRoot: workspaceRoot18, allowUnbornWrapper: !wrapperHadHead });
+  let wrapperInitialCommit = null;
+  if (!wrapperHadHead) {
+    await git(workspaceRoot18, ["add", "-A"]);
+    await git(workspaceRoot18, commitArgs(options.request.wrapper));
+    wrapperInitialCommit = await git(workspaceRoot18, ["rev-parse", "HEAD"]);
+    bootstrapActions.push("created configured wrapper initial commit");
+  }
+  const summary2 = await initializeWorkspace({ workspaceRoot: workspaceRoot18 });
+  return { ...summary2, status: "initialized", bootstrap_actions: bootstrapActions, wrapper_initial_commit: wrapperInitialCommit };
+}
 async function initializeWorkspace(options) {
   const workspaceRoot18 = resolve4(options.workspaceRoot);
   const configPath = join2(workspaceRoot18, "workspace.yaml");
@@ -14890,7 +15088,12 @@ async function initializeWorkspace(options) {
   if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot18)) {
     throw new Error(`Workspace root is not the wrapper Git root: ${workspaceRoot18}`);
   }
-  await assertDefaultBranch(workspaceRoot18, "wrapper", config.workspace.default_branch);
+  if (options.allowUnbornWrapper && !await hasHead(workspaceRoot18)) {
+    const current = await git(workspaceRoot18, ["symbolic-ref", "--short", "HEAD"]);
+    if (current !== config.workspace.default_branch) throw new Error(`Wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
+  } else {
+    await assertDefaultBranch(workspaceRoot18, "wrapper", config.workspace.default_branch);
+  }
   let submodulePaths = /* @__PURE__ */ new Set();
   try {
     submodulePaths = parseSubmodulePaths(await readFile2(join2(workspaceRoot18, ".gitmodules"), "utf8"));
@@ -14978,21 +15181,23 @@ async function initializeWorkspace(options) {
     warnings
   };
 }
-var ignoredStart, ignoredEnd;
+var import_yaml2, ignoredStart, ignoredEnd;
 var init_initialize_workspace = __esm({
   "scripts/lib/initialize-workspace.ts"() {
     "use strict";
+    import_yaml2 = __toESM(require_dist(), 1);
     init_io();
     init_git();
     init_validation();
-    ignoredStart = "# kao-delivery-workspace:ignored-clones:start";
-    ignoredEnd = "# kao-delivery-workspace:ignored-clones:end";
+    init_workspace_context();
+    ignoredStart = "# context-circuit:ignored-clones:start";
+    ignoredEnd = "# context-circuit:ignored-clones:end";
   }
 });
 
 // scripts/initialize-workspace.ts
 var initialize_workspace_exports = {};
-import { dirname as dirname4, resolve as resolve5 } from "node:path";
+import { dirname as dirname5, resolve as resolve5 } from "node:path";
 import { parseArgs as parseArgs2 } from "node:util";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 var values2, workspaceRoot2, summary;
@@ -15000,16 +15205,16 @@ var init_initialize_workspace2 = __esm({
   async "scripts/initialize-workspace.ts"() {
     "use strict";
     init_initialize_workspace();
+    init_validation();
     ({ values: values2 } = parseArgs2({
       options: {
-        "check-only": { type: "boolean", default: false }
+        "check-only": { type: "boolean", default: false },
+        bootstrap: { type: "string" }
       }
     }));
-    workspaceRoot2 = resolve5(process.env.KAO_WORKSPACE_ROOT ?? resolve5(dirname4(fileURLToPath3(import.meta.url)), ".."));
-    summary = await initializeWorkspace({
-      workspaceRoot: workspaceRoot2,
-      apply: !values2["check-only"]
-    });
+    workspaceRoot2 = resolve5(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve5(dirname5(fileURLToPath3(import.meta.url)), ".."));
+    if (values2.bootstrap && values2["check-only"]) throw new Error("--bootstrap and --check-only cannot be combined");
+    summary = values2.bootstrap ? await bootstrapWorkspace({ workspaceRoot: workspaceRoot2, request: await readData(resolve5(values2.bootstrap)) }) : await initializeWorkspace({ workspaceRoot: workspaceRoot2, apply: !values2["check-only"] });
     console.log(JSON.stringify(summary, null, 2));
   }
 });
@@ -15067,7 +15272,7 @@ async function assertValid(name, value2) {
   if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
 }
 async function loadConfig(workspaceRoot18) {
-  const config = (0, import_yaml2.parse)(await readFile4(join4(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml3.parse)(await readFile4(join4(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid("workspace", config);
   const errors2 = workspaceSemanticErrors(config);
   if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
@@ -15229,11 +15434,11 @@ async function recordActivityLifecycleAction(options) {
     return record;
   });
 }
-var import_yaml2;
+var import_yaml3;
 var init_activity_lifecycle = __esm({
   "scripts/lib/activity-lifecycle.ts"() {
     "use strict";
-    import_yaml2 = __toESM(require_dist(), 1);
+    import_yaml3 = __toESM(require_dist(), 1);
     init_io();
     init_validation();
   }
@@ -15403,7 +15608,7 @@ function defaultTestRationale(policy) {
 async function preparePlanlessTask(options) {
   const workspaceRoot18 = resolve7(options.workspaceRoot);
   const configPath = join5(workspaceRoot18, "workspace.yaml");
-  const config = (0, import_yaml3.parse)(await readFile5(configPath, "utf8"));
+  const config = (0, import_yaml4.parse)(await readFile5(configPath, "utf8"));
   await assertValid2("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
@@ -15589,7 +15794,7 @@ async function prepareContractFirstTask(options) {
     throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   }
   const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const config = (0, import_yaml3.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml4.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid2("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
@@ -15762,7 +15967,7 @@ async function resumePlanlessTask(options) {
   if (!lifecycle || lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
     throw new Error(`task.starting lifecycle is ${lifecycle?.status ?? "missing"}; complete required or manual actions before resuming`);
   }
-  const config = (0, import_yaml3.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml4.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid2("workspace", config);
   const basePaths = /* @__PURE__ */ new Map();
   for (const repository of manifest2.repositories) {
@@ -15814,11 +16019,11 @@ async function resumePlanlessTask(options) {
     preparationStatus: "prepared"
   };
 }
-var import_yaml3;
+var import_yaml4;
 var init_run_task = __esm({
   "scripts/lib/run-task.ts"() {
     "use strict";
-    import_yaml3 = __toESM(require_dist(), 1);
+    import_yaml4 = __toESM(require_dist(), 1);
     init_git();
     init_ids();
     init_io();
@@ -15829,7 +16034,7 @@ var init_run_task = __esm({
 
 // scripts/run-task.ts
 var run_task_exports = {};
-import { dirname as dirname5, resolve as resolve8 } from "node:path";
+import { dirname as dirname6, resolve as resolve8 } from "node:path";
 import { readFile as readFile6 } from "node:fs/promises";
 import { parseArgs as parseArgs3 } from "node:util";
 import { fileURLToPath as fileURLToPath4 } from "node:url";
@@ -15840,7 +16045,7 @@ var init_run_task2 = __esm({
     init_run_task();
     testPolicies = ["required", "existing-coverage", "verifier-only", "not-required"];
     activityCapabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-    workspaceRoot3 = resolve8(process.env.KAO_WORKSPACE_ROOT ?? resolve8(dirname5(fileURLToPath4(import.meta.url)), ".."));
+    workspaceRoot3 = resolve8(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve8(dirname6(fileURLToPath4(import.meta.url)), ".."));
     ({ values: values3 } = parseArgs3({
       options: {
         request: { type: "string" },
@@ -16145,7 +16350,7 @@ var init_record_result = __esm({
 
 // scripts/record-result.ts
 var record_result_exports = {};
-import { dirname as dirname6, resolve as resolve10 } from "node:path";
+import { dirname as dirname7, resolve as resolve10 } from "node:path";
 import { parseArgs as parseArgs4 } from "node:util";
 import { fileURLToPath as fileURLToPath5 } from "node:url";
 var stages, workspaceRoot4, values4, manifest;
@@ -16154,7 +16359,7 @@ var init_record_result2 = __esm({
     "use strict";
     init_record_result();
     stages = ["worker-started", "worker-result", "verifier-result"];
-    workspaceRoot4 = resolve10(process.env.KAO_WORKSPACE_ROOT ?? resolve10(dirname6(fileURLToPath5(import.meta.url)), ".."));
+    workspaceRoot4 = resolve10(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve10(dirname7(fileURLToPath5(import.meta.url)), ".."));
     ({ values: values4 } = parseArgs4({
       options: {
         "run-id": { type: "string" },
@@ -16219,7 +16424,7 @@ function addExecutionEvent(manifest2, repository, stage, fromStatus, toStatus, a
   manifest2.updated_at = occurredAt;
 }
 async function loadWorkspace(workspaceRoot18) {
-  const config = (0, import_yaml4.parse)(await readFile8(join7(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml5.parse)(await readFile8(join7(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid4("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
@@ -16531,11 +16736,11 @@ async function recordReviewPublication(options) {
     return record;
   });
 }
-var import_yaml4;
+var import_yaml5;
 var init_review_lifecycle = __esm({
   "scripts/lib/review-lifecycle.ts"() {
     "use strict";
-    import_yaml4 = __toESM(require_dist(), 1);
+    import_yaml5 = __toESM(require_dist(), 1);
     init_git();
     init_io();
     init_validation();
@@ -16544,7 +16749,7 @@ var init_review_lifecycle = __esm({
 
 // scripts/prepare-repair.ts
 var prepare_repair_exports = {};
-import { dirname as dirname7, resolve as resolve12 } from "node:path";
+import { dirname as dirname8, resolve as resolve12 } from "node:path";
 import { parseArgs as parseArgs5 } from "node:util";
 import { fileURLToPath as fileURLToPath6 } from "node:url";
 var values5, workspaceRoot5;
@@ -16559,14 +16764,14 @@ var init_prepare_repair = __esm({
       }
     }));
     if (!values5["run-id"] || !values5.repository) throw new Error("Usage: prepare-repair --run-id <id> --repository <name>");
-    workspaceRoot5 = resolve12(process.env.KAO_WORKSPACE_ROOT ?? resolve12(dirname7(fileURLToPath6(import.meta.url)), ".."));
+    workspaceRoot5 = resolve12(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve12(dirname8(fileURLToPath6(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareRepair({ workspaceRoot: workspaceRoot5, runId: values5["run-id"], repository: values5.repository }), null, 2));
   }
 });
 
 // scripts/prepare-review.ts
 var prepare_review_exports = {};
-import { dirname as dirname8, resolve as resolve13 } from "node:path";
+import { dirname as dirname9, resolve as resolve13 } from "node:path";
 import { parseArgs as parseArgs6 } from "node:util";
 import { fileURLToPath as fileURLToPath7 } from "node:url";
 var values6, workspaceRoot6;
@@ -16581,14 +16786,14 @@ var init_prepare_review = __esm({
       }
     }));
     if (!values6["run-id"] || !values6.repository) throw new Error("Usage: prepare-review --run-id <id> --repository <name>");
-    workspaceRoot6 = resolve13(process.env.KAO_WORKSPACE_ROOT ?? resolve13(dirname8(fileURLToPath7(import.meta.url)), ".."));
+    workspaceRoot6 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname9(fileURLToPath7(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareReview({ workspaceRoot: workspaceRoot6, runId: values6["run-id"], repository: values6.repository }), null, 2));
   }
 });
 
 // scripts/record-review-publication.ts
 var record_review_publication_exports = {};
-import { dirname as dirname9, resolve as resolve14 } from "node:path";
+import { dirname as dirname10, resolve as resolve14 } from "node:path";
 import { parseArgs as parseArgs7 } from "node:util";
 import { fileURLToPath as fileURLToPath8 } from "node:url";
 var workspaceRoot7, values7;
@@ -16596,7 +16801,7 @@ var init_record_review_publication = __esm({
   async "scripts/record-review-publication.ts"() {
     "use strict";
     init_review_lifecycle();
-    workspaceRoot7 = resolve14(process.env.KAO_WORKSPACE_ROOT ?? resolve14(dirname9(fileURLToPath8(import.meta.url)), ".."));
+    workspaceRoot7 = resolve14(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve14(dirname10(fileURLToPath8(import.meta.url)), ".."));
     ({ values: values7 } = parseArgs7({ options: {
       "run-id": { type: "string" },
       repository: { type: "string" },
@@ -16606,7 +16811,7 @@ var init_record_review_publication = __esm({
       evidence: { type: "string" }
     } }));
     if (!values7["run-id"] || !values7.repository || !values7.evidence || !["published", "failed"].includes(values7.status ?? "") || !["gh", "glab", "manual"].includes(values7.tool ?? "")) {
-      throw new Error("Usage: kao record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
+      throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
     }
     console.log(JSON.stringify(await recordReviewPublication({
       workspaceRoot: workspaceRoot7,
@@ -16621,7 +16826,7 @@ var init_record_review_publication = __esm({
 });
 
 // scripts/lib/finish-work.ts
-import { access as access4, lstat as lstat3, mkdir as mkdir2, readFile as readFile9, readdir, realpath as realpath2 } from "node:fs/promises";
+import { access as access4, lstat as lstat4, mkdir as mkdir3, readFile as readFile9, readdir, realpath as realpath2 } from "node:fs/promises";
 import { basename, join as join8, relative as relative4, resolve as resolve15 } from "node:path";
 async function readJson4(path2) {
   return JSON.parse(await readFile9(path2, "utf8"));
@@ -16704,7 +16909,7 @@ function contributionDocumentErrors(path2, content, runId) {
   return errors2;
 }
 async function loadWorkspace2(workspaceRoot18) {
-  const config = (0, import_yaml5.parse)(await readFile9(join8(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml6.parse)(await readFile9(join8(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid5("workspace", config);
   const errors2 = workspaceSemanticErrors(config);
   if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
@@ -16756,8 +16961,8 @@ async function findExistingContribution(root, runId, repository) {
   return null;
 }
 async function ensureContributionRoot(workspaceRoot18, path2) {
-  await mkdir2(path2, { recursive: true, mode: 493 });
-  const info = await lstat3(path2);
+  await mkdir3(path2, { recursive: true, mode: 493 });
+  const info = await lstat4(path2);
   if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
   assertInside(await realpath2(workspaceRoot18), await realpath2(path2));
 }
@@ -16796,7 +17001,7 @@ function assertCloseoutLifecycleReady(manifest2, config, outcome) {
   const event = outcome === "merged" ? "task.completed" : "task.cancelled";
   const lifecycle = manifest2.lifecycle_events.find((item) => item.event === event);
   if (!lifecycle) {
-    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/kao.mjs prepare-lifecycle --run-id ${manifest2.run_id} --event ${event}`);
+    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/cc.mjs prepare-lifecycle --run-id ${manifest2.run_id} --event ${event}`);
   }
   if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
     throw new Error(`Configured activity hook ${event} is ${lifecycle.status}; complete required or manual actions before closeout`);
@@ -16978,11 +17183,11 @@ async function finishWork(options) {
     return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
   });
 }
-var import_yaml5, contributionHeadings;
+var import_yaml6, contributionHeadings;
 var init_finish_work = __esm({
   "scripts/lib/finish-work.ts"() {
     "use strict";
-    import_yaml5 = __toESM(require_dist(), 1);
+    import_yaml6 = __toESM(require_dist(), 1);
     init_git();
     init_io();
     init_validation();
@@ -17000,7 +17205,7 @@ var init_finish_work = __esm({
 
 // scripts/finish-work.ts
 var finish_work_exports = {};
-import { dirname as dirname10, resolve as resolve16 } from "node:path";
+import { dirname as dirname11, resolve as resolve16 } from "node:path";
 import { parseArgs as parseArgs8 } from "node:util";
 import { fileURLToPath as fileURLToPath9 } from "node:url";
 var values8, workspaceRoot8, result;
@@ -17024,7 +17229,7 @@ var init_finish_work2 = __esm({
       throw new Error("Required: --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug>");
     }
     if (values8.outcome !== "merged" && values8.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
-    workspaceRoot8 = resolve16(process.env.KAO_WORKSPACE_ROOT ?? resolve16(dirname10(fileURLToPath9(import.meta.url)), ".."));
+    workspaceRoot8 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname11(fileURLToPath9(import.meta.url)), ".."));
     result = await finishWork({
       workspaceRoot: workspaceRoot8,
       runId: values8["run-id"],
@@ -17042,7 +17247,7 @@ var init_finish_work2 = __esm({
 
 // scripts/lib/plans.ts
 import { createHash as createHash2, randomUUID } from "node:crypto";
-import { lstat as lstat4, mkdir as mkdir3, readdir as readdir2, readFile as readFile10, realpath as realpath3, rename as rename2, rm } from "node:fs/promises";
+import { lstat as lstat5, mkdir as mkdir4, readdir as readdir2, readFile as readFile10, realpath as realpath3, rename as rename2, rm } from "node:fs/promises";
 import { basename as basename2, join as join9, resolve as resolve17 } from "node:path";
 function contractMessages(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
@@ -17152,7 +17357,7 @@ function materialDigest(files, names) {
 function parsePlanIndex(raw) {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   if (!match) throw new Error("Plan README must begin with YAML frontmatter");
-  return (0, import_yaml6.parse)(match[1]);
+  return (0, import_yaml7.parse)(match[1]);
 }
 function parseWorkBreakdown(raw, index) {
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
@@ -17179,7 +17384,7 @@ function parseWorkBreakdown(raw, index) {
 }
 async function regularFile(path2) {
   try {
-    const info = await lstat4(path2);
+    const info = await lstat5(path2);
     return info.isFile() && !info.isSymbolicLink();
   } catch {
     return false;
@@ -17191,7 +17396,7 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename2(
   let index = null;
   let breakdown = null;
   try {
-    const info = await lstat4(directory);
+    const info = await lstat5(directory);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Plan path must be a real directory");
     if (!await regularFile(join9(directory, "README.md"))) throw new Error("Plan README must be a real file");
     index = parsePlanIndex(await readFile10(join9(directory, "README.md"), "utf8"));
@@ -17271,7 +17476,7 @@ async function setPlanState(planDirectory3, transition2, now = /* @__PURE__ */ n
   const match = raw.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);
   if (!match) throw new Error("Plan README must begin with YAML frontmatter");
   await writeTextAtomic(readmePath, raw.replace(match[0], `---
-${(0, import_yaml6.stringify)(index).trimEnd()}
+${(0, import_yaml7.stringify)(index).trimEnd()}
 ---
 `));
   const after = await validatePlanDirectory(directory);
@@ -17332,7 +17537,7 @@ Live task status does not belong in this plan. Add confirmed external references
   };
   const links = documents.map((document) => `- [${document.replace(/^[0-9]{4}-|\.md$/g, "").replaceAll("-", " ")}](./${document})`).join("\n");
   files.set("README.md", `---
-${(0, import_yaml6.stringify)(index).trimEnd()}
+${(0, import_yaml7.stringify)(index).trimEnd()}
 ---
 
 # ${request3.title}
@@ -17363,20 +17568,20 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
   const realWorkspace = await realpath3(workspaceRoot18);
   const contextRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, "context"));
   try {
-    const info = await lstat4(contextRoot);
+    const info = await lstat5(contextRoot);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Context root must be a real directory: ${contextRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir3(contextRoot, { mode: 493 });
+    await mkdir4(contextRoot, { mode: 493 });
   }
   if (await realpath3(contextRoot) !== join9(realWorkspace, "context")) throw new Error(`Context root must not traverse symbolic links: ${contextRoot}`);
   const plansRoot = assertInside(contextRoot, join9(contextRoot, "plans"));
   try {
-    const info = await lstat4(plansRoot);
+    const info = await lstat5(plansRoot);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Plan root must be a real directory: ${plansRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir3(plansRoot, { mode: 493 });
+    await mkdir4(plansRoot, { mode: 493 });
   }
   const realPlansRoot = await realpath3(plansRoot);
   assertInside(realWorkspace, realPlansRoot);
@@ -17385,7 +17590,7 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
   }
   const destination = assertInside(realPlansRoot, join9(realPlansRoot, request3.plan_id));
   try {
-    await lstat4(destination);
+    await lstat5(destination);
     throw new Error(`Plan already exists; refusing to overwrite: ${destination}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
@@ -17393,7 +17598,7 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
   const temporary = join9(realPlansRoot, `.${request3.plan_id}.${randomUUID()}.tmp`);
   const rendered = renderPlan(request3, now.toISOString());
   try {
-    await mkdir3(temporary, { mode: 493 });
+    await mkdir4(temporary, { mode: 493 });
     for (const [name, contents] of rendered.files) await writeTextExclusive(join9(temporary, name), contents);
     const validation = await validatePlanDirectory(temporary, request3.plan_id);
     if (validation.errors.length > 0) throw new Error(`Generated plan failed validation:
@@ -17414,11 +17619,11 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
     approval_required: true
   };
 }
-var import_yaml6, documents, tableHeader, tableSeparator;
+var import_yaml7, documents, tableHeader, tableSeparator;
 var init_plans = __esm({
   "scripts/lib/plans.ts"() {
     "use strict";
-    import_yaml6 = __toESM(require_dist(), 1);
+    import_yaml7 = __toESM(require_dist(), 1);
     init_io();
     init_validation();
     documents = [
@@ -17438,7 +17643,7 @@ var init_plans = __esm({
 // scripts/create-plan.ts
 var create_plan_exports = {};
 import { readFile as readFile11 } from "node:fs/promises";
-import { dirname as dirname11, resolve as resolve18 } from "node:path";
+import { dirname as dirname12, resolve as resolve18 } from "node:path";
 import { parseArgs as parseArgs9 } from "node:util";
 import { fileURLToPath as fileURLToPath10 } from "node:url";
 var values9, workspaceRoot9, inputPath, request;
@@ -17449,8 +17654,8 @@ var init_create_plan = __esm({
     ({ values: values9 } = parseArgs9({
       options: { input: { type: "string" } }
     }));
-    if (!values9.input) throw new Error("Usage: kao create-plan --input <plan-draft-request.json>");
-    workspaceRoot9 = resolve18(process.env.KAO_WORKSPACE_ROOT ?? resolve18(dirname11(fileURLToPath10(import.meta.url)), ".."));
+    if (!values9.input) throw new Error("Usage: cc create-plan --input <plan-draft-request.json>");
+    workspaceRoot9 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname12(fileURLToPath10(import.meta.url)), ".."));
     inputPath = resolve18(process.cwd(), values9.input);
     request = JSON.parse(await readFile11(inputPath, "utf8"));
     console.log(JSON.stringify(await createPlanDraft(workspaceRoot9, request), null, 2));
@@ -17467,7 +17672,7 @@ var init_validate_plan = __esm({
     "use strict";
     init_plans();
     ({ positionals: positionals2 } = parseArgs10({ allowPositionals: true }));
-    if (!positionals2[0]) throw new Error("Usage: kao validate-plan context/plans/<plan-id>");
+    if (!positionals2[0]) throw new Error("Usage: cc validate-plan context/plans/<plan-id>");
     planDirectory = resolve19(process.cwd(), positionals2[0]);
     result2 = await validatePlanDirectory(planDirectory);
     if (result2.errors.length > 0) {
@@ -17482,7 +17687,7 @@ var init_validate_plan = __esm({
 
 // scripts/set-plan-state.ts
 var set_plan_state_exports = {};
-import { dirname as dirname12, join as join10, resolve as resolve20 } from "node:path";
+import { dirname as dirname13, join as join10, resolve as resolve20 } from "node:path";
 import { parseArgs as parseArgs11 } from "node:util";
 import { fileURLToPath as fileURLToPath11 } from "node:url";
 var values10, requested, transition, workspaceRoot10, planDirectory2;
@@ -17499,27 +17704,27 @@ var init_set_plan_state = __esm({
         "non-material-repair": { type: "boolean", default: false }
       }
     }));
-    if (!values10.plan) throw new Error("Usage: kao set-plan-state --plan context/plans/<plan-id> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
+    if (!values10.plan) throw new Error("Usage: cc set-plan-state --plan context/plans/<plan-id> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
     requested = [Boolean(values10["approve-by"]), Boolean(values10["material-revision"]), values10["non-material-repair"]].filter(Boolean).length;
     if (requested !== 1) throw new Error("Choose exactly one plan state transition");
     if (values10["approve-by"]) transition = { kind: "approve", approved_by: values10["approve-by"] };
     else if (values10["material-revision"]) transition = { kind: "material-revision", reason: values10["material-revision"] };
     else transition = { kind: "non-material-repair" };
-    workspaceRoot10 = resolve20(process.env.KAO_WORKSPACE_ROOT ?? resolve20(dirname12(fileURLToPath11(import.meta.url)), ".."));
+    workspaceRoot10 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname13(fileURLToPath11(import.meta.url)), ".."));
     planDirectory2 = assertInside(join10(workspaceRoot10, "context", "plans"), resolve20(process.cwd(), values10.plan));
     console.log(JSON.stringify(await setPlanState(planDirectory2, transition), null, 2));
   }
 });
 
 // scripts/lib/whats-next.ts
-import { lstat as lstat5, readdir as readdir3, readFile as readFile12 } from "node:fs/promises";
+import { lstat as lstat6, readdir as readdir3, readFile as readFile12 } from "node:fs/promises";
 import { join as join11, relative as relative5, resolve as resolve21 } from "node:path";
 function contractMessages2(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
 }
 async function isDirectory(path2) {
   try {
-    return (await lstat5(path2)).isDirectory();
+    return (await lstat6(path2)).isDirectory();
   } catch {
     return false;
   }
@@ -17736,7 +17941,7 @@ var init_whats_next = __esm({
 // scripts/whats-next.ts
 var whats_next_exports = {};
 import { readFile as readFile13 } from "node:fs/promises";
-import { dirname as dirname13, resolve as resolve22 } from "node:path";
+import { dirname as dirname14, resolve as resolve22 } from "node:path";
 import { parseArgs as parseArgs12 } from "node:util";
 import { fileURLToPath as fileURLToPath12 } from "node:url";
 var values11, workspaceRoot11, activity;
@@ -17745,7 +17950,7 @@ var init_whats_next2 = __esm({
     "use strict";
     init_whats_next();
     ({ values: values11 } = parseArgs12({ options: { "activity-fixture": { type: "string" } } }));
-    workspaceRoot11 = resolve22(process.env.KAO_WORKSPACE_ROOT ?? resolve22(dirname13(fileURLToPath12(import.meta.url)), ".."));
+    workspaceRoot11 = resolve22(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve22(dirname14(fileURLToPath12(import.meta.url)), ".."));
     activity = values11["activity-fixture"] ? JSON.parse(await readFile13(resolve22(process.cwd(), values11["activity-fixture"]), "utf8")) : null;
     console.log(JSON.stringify(await recommendWhatsNext(workspaceRoot11, activity), null, 2));
   }
@@ -17753,7 +17958,7 @@ var init_whats_next2 = __esm({
 
 // scripts/prepare-lifecycle.ts
 var prepare_lifecycle_exports = {};
-import { dirname as dirname14, resolve as resolve23 } from "node:path";
+import { dirname as dirname15, resolve as resolve23 } from "node:path";
 import { parseArgs as parseArgs13 } from "node:util";
 import { fileURLToPath as fileURLToPath13 } from "node:url";
 var events, capabilities, values12, workspaceRoot12;
@@ -17771,7 +17976,7 @@ var init_prepare_lifecycle = __esm({
     if (!values12["run-id"] || !events.includes(values12.event) || values12.available.some((item) => !capabilities.includes(item))) {
       throw new Error("Usage: prepare-lifecycle --run-id <id> --event <semantic-event> [--available <capability>]");
     }
-    workspaceRoot12 = resolve23(process.env.KAO_WORKSPACE_ROOT ?? resolve23(dirname14(fileURLToPath13(import.meta.url)), ".."));
+    workspaceRoot12 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname15(fileURLToPath13(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareActivityLifecycle({
       workspaceRoot: workspaceRoot12,
       runId: values12["run-id"],
@@ -17783,7 +17988,7 @@ var init_prepare_lifecycle = __esm({
 
 // scripts/record-lifecycle-action.ts
 var record_lifecycle_action_exports = {};
-import { dirname as dirname15, resolve as resolve24 } from "node:path";
+import { dirname as dirname16, resolve as resolve24 } from "node:path";
 import { parseArgs as parseArgs14 } from "node:util";
 import { fileURLToPath as fileURLToPath14 } from "node:url";
 var events2, values13, workspaceRoot13;
@@ -17803,7 +18008,7 @@ var init_record_lifecycle_action = __esm({
     if (!values13["run-id"] || !events2.includes(values13.event) || !values13.action || !["completed", "failed"].includes(values13.status ?? "") || !values13.evidence) {
       throw new Error("Usage: record-lifecycle-action --run-id <id> --event <event> --action <id> --status <completed|failed> --evidence <text> [--reference <ref>]");
     }
-    workspaceRoot13 = resolve24(process.env.KAO_WORKSPACE_ROOT ?? resolve24(dirname15(fileURLToPath14(import.meta.url)), ".."));
+    workspaceRoot13 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname16(fileURLToPath14(import.meta.url)), ".."));
     console.log(JSON.stringify(await recordActivityLifecycleAction({
       workspaceRoot: workspaceRoot13,
       runId: values13["run-id"],
@@ -17855,7 +18060,7 @@ function recordPath(workspaceRoot18, planId) {
 }
 async function preparePlanPublication(options) {
   const workspaceRoot18 = resolve25(options.workspaceRoot);
-  const config = (0, import_yaml7.parse)(await readFile14(join12(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml8.parse)(await readFile14(join12(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid6("workspace", config);
   const semantic = workspaceSemanticErrors(config);
   if (semantic.length) throw new Error(`Invalid workspace: ${semantic.join("; ")}`);
@@ -17949,11 +18154,11 @@ async function recordPlanPublication(options) {
     return record;
   });
 }
-var import_yaml7;
+var import_yaml8;
 var init_plan_publication = __esm({
   "scripts/lib/plan-publication.ts"() {
     "use strict";
-    import_yaml7 = __toESM(require_dist(), 1);
+    import_yaml8 = __toESM(require_dist(), 1);
     init_io();
     init_plans();
     init_validation();
@@ -17963,7 +18168,7 @@ var init_plan_publication = __esm({
 // scripts/prepare-plan-publication.ts
 var prepare_plan_publication_exports = {};
 import { readFile as readFile15 } from "node:fs/promises";
-import { dirname as dirname16, resolve as resolve26 } from "node:path";
+import { dirname as dirname17, resolve as resolve26 } from "node:path";
 import { parseArgs as parseArgs15 } from "node:util";
 import { fileURLToPath as fileURLToPath15 } from "node:url";
 var values14, workspaceRoot14, discovery;
@@ -17973,7 +18178,7 @@ var init_prepare_plan_publication = __esm({
     init_plan_publication();
     ({ values: values14 } = parseArgs15({ options: { plan: { type: "string" }, discovery: { type: "string" } } }));
     if (!values14.plan || !values14.discovery) throw new Error("Usage: prepare-plan-publication --plan <plan-id> --discovery <json>");
-    workspaceRoot14 = resolve26(process.env.KAO_WORKSPACE_ROOT ?? resolve26(dirname16(fileURLToPath15(import.meta.url)), ".."));
+    workspaceRoot14 = resolve26(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve26(dirname17(fileURLToPath15(import.meta.url)), ".."));
     discovery = JSON.parse(await readFile15(resolve26(process.cwd(), values14.discovery), "utf8"));
     console.log(JSON.stringify(await preparePlanPublication({ workspaceRoot: workspaceRoot14, planId: values14.plan, discovery }), null, 2));
   }
@@ -17981,7 +18186,7 @@ var init_prepare_plan_publication = __esm({
 
 // scripts/record-plan-publication.ts
 var record_plan_publication_exports = {};
-import { dirname as dirname17, resolve as resolve27 } from "node:path";
+import { dirname as dirname18, resolve as resolve27 } from "node:path";
 import { parseArgs as parseArgs16 } from "node:util";
 import { fileURLToPath as fileURLToPath16 } from "node:url";
 var values15, workspaceRoot15;
@@ -17991,14 +18196,14 @@ var init_record_plan_publication = __esm({
     init_plan_publication();
     ({ values: values15 } = parseArgs16({ options: { plan: { type: "string" }, work: { type: "string" }, status: { type: "string" }, evidence: { type: "string" }, reference: { type: "string" } } }));
     if (!values15.plan || !values15.work || !["created", "failed"].includes(values15.status ?? "") || !values15.evidence) throw new Error("Usage: record-plan-publication --plan <id> --work <id> --status <created|failed> --evidence <text> [--reference <external-ref>]");
-    workspaceRoot15 = resolve27(process.env.KAO_WORKSPACE_ROOT ?? resolve27(dirname17(fileURLToPath16(import.meta.url)), ".."));
+    workspaceRoot15 = resolve27(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve27(dirname18(fileURLToPath16(import.meta.url)), ".."));
     console.log(JSON.stringify(await recordPlanPublication({ workspaceRoot: workspaceRoot15, planId: values15.plan, workId: values15.work, status: values15.status, evidence: values15.evidence, ...values15.reference ? { externalReference: values15.reference } : {} }), null, 2));
   }
 });
 
 // scripts/lib/context-sync.ts
 import { createHash as createHash3 } from "node:crypto";
-import { lstat as lstat6, readFile as readFile16, realpath as realpath4 } from "node:fs/promises";
+import { lstat as lstat7, readFile as readFile16, realpath as realpath4 } from "node:fs/promises";
 import { join as join13, resolve as resolve28 } from "node:path";
 async function assertValid7(name, value2) {
   const errors2 = await validateContract(name, value2);
@@ -18011,7 +18216,7 @@ function compactTimestamp2(date) {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 async function loadWorkspace3(workspaceRoot18) {
-  const config = (0, import_yaml8.parse)(await readFile16(join13(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml9.parse)(await readFile16(join13(workspaceRoot18, "workspace.yaml"), "utf8"));
   await assertValid7("workspace", config);
   const errors2 = workspaceSemanticErrors(config);
   if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
@@ -18021,7 +18226,7 @@ async function validateRequestSemantics(workspaceRoot18, config, request3) {
   const listed = new Set(request3.contributions);
   for (const contribution of request3.contributions) {
     const path2 = assertInside(workspaceRoot18, join13(workspaceRoot18, contribution));
-    const info = await lstat6(path2);
+    const info = await lstat7(path2);
     if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Contribution must be a regular file: ${contribution}`);
     assertInside(await realpath4(workspaceRoot18), await realpath4(path2));
     const errors2 = contributionDocumentErrors(path2, await readFile16(path2, "utf8"));
@@ -18151,11 +18356,11 @@ async function prepareContextReview(options) {
     return record;
   });
 }
-var import_yaml8;
+var import_yaml9;
 var init_context_sync = __esm({
   "scripts/lib/context-sync.ts"() {
     "use strict";
-    import_yaml8 = __toESM(require_dist(), 1);
+    import_yaml9 = __toESM(require_dist(), 1);
     init_finish_work();
     init_git();
     init_io();
@@ -18166,7 +18371,7 @@ var init_context_sync = __esm({
 // scripts/sync-context.ts
 var sync_context_exports = {};
 import { readFile as readFile17 } from "node:fs/promises";
-import { dirname as dirname18, resolve as resolve29 } from "node:path";
+import { dirname as dirname19, resolve as resolve29 } from "node:path";
 import { parseArgs as parseArgs17 } from "node:util";
 import { fileURLToPath as fileURLToPath17 } from "node:url";
 var workspaceRoot16, values16, request2;
@@ -18174,7 +18379,7 @@ var init_sync_context = __esm({
   async "scripts/sync-context.ts"() {
     "use strict";
     init_context_sync();
-    workspaceRoot16 = resolve29(process.env.KAO_WORKSPACE_ROOT ?? resolve29(dirname18(fileURLToPath17(import.meta.url)), ".."));
+    workspaceRoot16 = resolve29(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve29(dirname19(fileURLToPath17(import.meta.url)), ".."));
     ({ values: values16 } = parseArgs17({ options: { request: { type: "string" } } }));
     if (!values16.request) throw new Error("Usage: sync-context --request <context-sync-request.json>");
     request2 = JSON.parse(await readFile17(resolve29(values16.request), "utf8"));
@@ -18184,7 +18389,7 @@ var init_sync_context = __esm({
 
 // scripts/prepare-context-review.ts
 var prepare_context_review_exports = {};
-import { dirname as dirname19, resolve as resolve30 } from "node:path";
+import { dirname as dirname20, resolve as resolve30 } from "node:path";
 import { parseArgs as parseArgs18 } from "node:util";
 import { fileURLToPath as fileURLToPath18 } from "node:url";
 var workspaceRoot17, values17;
@@ -18192,17 +18397,17 @@ var init_prepare_context_review = __esm({
   async "scripts/prepare-context-review.ts"() {
     "use strict";
     init_context_sync();
-    workspaceRoot17 = resolve30(process.env.KAO_WORKSPACE_ROOT ?? resolve30(dirname19(fileURLToPath18(import.meta.url)), ".."));
+    workspaceRoot17 = resolve30(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve30(dirname20(fileURLToPath18(import.meta.url)), ".."));
     ({ values: values17 } = parseArgs18({ options: { "sync-id": { type: "string" } } }));
     if (!values17["sync-id"]) throw new Error("Usage: prepare-context-review --sync-id <id>");
     console.log(JSON.stringify(await prepareContextReview({ workspaceRoot: workspaceRoot17, syncId: values17["sync-id"] }), null, 2));
   }
 });
 
-// scripts/kao.ts
+// scripts/cc.ts
 var command = process.argv[2];
-if (!command) throw new Error("Usage: kao <command> [arguments]");
-process.env.KAO_WORKSPACE_ROOT = process.cwd();
+if (!command) throw new Error("Usage: cc <command> [arguments]");
+process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT = process.cwd();
 process.argv.splice(2, 1);
 switch (command) {
   case "validate":
@@ -18260,5 +18465,5 @@ switch (command) {
     await init_prepare_context_review().then(() => prepare_context_review_exports);
     break;
   default:
-    throw new Error(`Unknown Kao Delivery Workspace command: ${command}`);
+    throw new Error(`Unknown Context Circuit command: ${command}`);
 }

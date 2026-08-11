@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://kaotypr.dev/kao-delivery-workspace/verifier-result.schema.json",
+  "$id": "https://context-circuit.dev/schemas/verifier-result.schema.json",
   "title": "Independent verifier result",
   "type": "object",
   "additionalProperties": false,

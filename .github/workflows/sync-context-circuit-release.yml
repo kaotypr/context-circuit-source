@@ -1,0 +1,76 @@
+name: Synchronize Context Circuit release
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: context-circuit-release-main
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Context Circuit source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+          package-manager-cache: false
+      - run: npm ci
+      - name: Run complete validation suite
+        run: npm run check
+      - name: Build authoritative wrapper archive
+        run: npm run build:template
+      - name: Check out release repository
+        uses: actions/checkout@v6
+        with:
+          repository: kaotypr/context-circuit-release
+          ref: main
+          path: context-circuit-release
+          token: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN }}
+          persist-credentials: false
+      - name: Validate and synchronize the release package
+        env:
+          RELEASE_TAG: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || '' }}
+        run: node --import tsx scripts/release-artifact.ts .dist context-circuit-release "$RELEASE_TAG"
+      - name: Validate release repository
+        working-directory: context-circuit-release
+        run: |
+          npm ci
+          npm test
+          npm run test:package
+      - name: Commit synchronized release
+        working-directory: context-circuit-release
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Release repository is already synchronized."
+            exit 0
+          fi
+          version=$(node -p "require('./package.json').version")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add artifact package.json package-lock.json
+          git commit -m "Release Context Circuit $version"
+      - name: Push release main when changed
+        working-directory: context-circuit-release
+        env:
+          RELEASE_TOKEN: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN }}
+        shell: bash
+        run: |
+          if [ "$(git rev-list --count origin/main..HEAD)" -eq 0 ]; then
+            echo "Nothing to push."
+            exit 0
+          fi
+          authorization=$(printf 'x-access-token:%s' "$RELEASE_TOKEN" | base64 | tr -d '\n')
+          git -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $authorization" push origin HEAD:main

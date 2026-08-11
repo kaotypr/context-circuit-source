@@ -3,13 +3,13 @@ import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
 import { recordReviewPublication } from "./lib/review-lifecycle.js";
 
-const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
+const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const { values } = parseArgs({ options: {
   "run-id": { type: "string" }, repository: { type: "string" }, status: { type: "string" }, tool: { type: "string" },
   "pull-request": { type: "string" }, evidence: { type: "string" },
 } });
 if (!values["run-id"] || !values.repository || !values.evidence || !["published", "failed"].includes(values.status ?? "") || !["gh", "glab", "manual"].includes(values.tool ?? "")) {
-  throw new Error("Usage: kao record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
+  throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
 }
 console.log(JSON.stringify(await recordReviewPublication({
   workspaceRoot, runId: values["run-id"], repository: values.repository,

@@ -41,7 +41,7 @@ description verbatim and remain unfinished until confirmed.
 Pass only capabilities verified in the current host session:
 
 ```bash
-node .agents/bin/kao.mjs prepare-lifecycle \
+node .agents/bin/cc.mjs prepare-lifecycle \
   --run-id <run-id> \
   --event task.completed \
   --available update-status
@@ -52,7 +52,7 @@ skipped, failed, and manual actions with stable idempotency keys. The host then
 performs a pending action and records the confirmed response:
 
 ```bash
-node .agents/bin/kao.mjs record-lifecycle-action \
+node .agents/bin/cc.mjs record-lifecycle-action \
   --run-id <run-id> \
   --event task.completed \
   --action set-completed \
@@ -68,7 +68,7 @@ Evidence and references must be single-line and credential-free.
 
 When configured starting actions are pending, `run-task` writes preflight
 evidence but creates no branch or worktree. After actions complete,
-`node .agents/bin/kao.mjs run-task --resume-run <run-id>` revalidates repository cleanliness and the
+`node .agents/bin/cc.mjs run-task --resume-run <run-id>` revalidates repository cleanliness and the
 base commit before creating isolated work.
 
 Configured completion or cancellation actions must be completed or safely

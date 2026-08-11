@@ -1,6 +1,6 @@
 ---
 name: initialize-workspace
-description: Codex adapter for configuring and validating a Kao Delivery Workspace wrapper from the canonical initialization workflow.
+description: Codex adapter for configuring and validating a Context Circuit wrapper from the canonical initialization workflow.
 ---
 
 # Codex adapter

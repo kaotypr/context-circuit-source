@@ -1,6 +1,6 @@
 {
-  "name": "kao-delivery-workspace-tooling",
-  "version": "0.1.0",
+  "name": "context-circuit-tooling",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -35,6 +35,7 @@
   "devDependencies": {
     "@types/node": "^24.3.0",
     "esbuild": "^0.28.2",
+    "tar": "^7.5.22",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   },

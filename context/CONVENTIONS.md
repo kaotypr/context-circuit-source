@@ -8,6 +8,9 @@
   stash, clean, or implicitly delete it as workflow recovery.
 - Recommend ignored clones with exact `.gitignore` entries; preserve registered
   submodules and never ignore `repositories/` wholesale.
+- Keep the unused template neutral: no `repositories/` directory, repository
+  registration, or technology-specific agent. Track other intentional empty
+  directories with `.gitkeep`.
 - Keep contributions append-only and cite them in canonical context updates.
 - Keep secrets out of configuration, runtime evidence, plans, and contributions.
 - Require schema-valid compact worker/verifier results and independent evidence.
