@@ -10,7 +10,7 @@ export async function git(cwd: string, args: string[]): Promise<string> {
       encoding: "utf8",
       maxBuffer: 10 * 1024 * 1024,
     });
-    return stdout.trim();
+    return stdout.trimEnd();
   } catch (error) {
     const detail = error as Error & { stderr?: string };
     throw new Error(`git ${args.join(" ")} failed in ${cwd}: ${detail.stderr?.trim() || detail.message}`);

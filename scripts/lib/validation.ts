@@ -1,12 +1,69 @@
-import { readFile } from "node:fs/promises";
+import { lstat, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
 
-export const schemaNames = ["workspace", "task-brief", "worker-result", "verifier-result", "runtime-manifest"] as const;
+export const schemaNames = ["workspace", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
 export type SchemaName = (typeof schemaNames)[number];
+
+export const requiredWorkspaceDocuments = [
+  "README.md",
+  "AGENTS.md",
+  "CLAUDE.md",
+  "WORKFLOW.md",
+  "workspace.yaml",
+  "context/PROJECT.md",
+  "context/ARCHITECTURE.md",
+  "context/CONVENTIONS.md",
+  "context/DECISIONS.md",
+  "agents/coordinator.md",
+  "agents/repository-worker.md",
+  "agents/verifier.md",
+  ".agents/contracts/workspace.schema.json",
+  ".agents/contracts/review-preparation.schema.json",
+  ".agents/contracts/review-publication-record.schema.json",
+  ".agents/contracts/closeout-record.schema.json",
+  ".agents/contracts/run-task-request.schema.json",
+  ".agents/contracts/context-sync-request.schema.json",
+  ".agents/contracts/context-sync-record.schema.json",
+  ".agents/contracts/plan-index.schema.json",
+  ".agents/contracts/plan-work-breakdown.schema.json",
+  ".agents/contracts/plan-draft-request.schema.json",
+  ".agents/contracts/work-candidate.schema.json",
+  ".agents/contracts/fake-activity-source.schema.json",
+  ".agents/contracts/whats-next-result.schema.json",
+  ".agents/contracts/activity-lifecycle-record.schema.json",
+  ".agents/contracts/plan-publication-discovery.schema.json",
+  ".agents/contracts/plan-publication-record.schema.json",
+  ".agents/skills/initialize-workspace/SKILL.md",
+  ".agents/skills/finish-work/SKILL.md",
+  ".agents/skills/create-plan/SKILL.md",
+  ".agents/skills/whats-next/SKILL.md",
+  ".agents/skills/publish-plan-tasks/SKILL.md",
+  ".agents/skills/sync-context/SKILL.md",
+  ".codex/skills/initialize-workspace/SKILL.md",
+  ".codex/skills/finish-work/SKILL.md",
+  ".codex/skills/create-plan/SKILL.md",
+  ".codex/skills/whats-next/SKILL.md",
+  ".codex/skills/publish-plan-tasks/SKILL.md",
+  ".codex/skills/sync-context/SKILL.md",
+  ".claude/commands/initialize-workspace.md",
+  ".claude/commands/finish-work.md",
+  ".claude/commands/create-plan.md",
+  ".claude/commands/whats-next.md",
+  ".claude/commands/publish-plan-tasks.md",
+  ".claude/commands/sync-context.md",
+  "docs/initialization.md",
+  "docs/review-lifecycle.md",
+  "docs/finish-work.md",
+  "docs/planning.md",
+  "docs/whats-next.md",
+  "docs/activity-lifecycle.md",
+  "docs/plan-publication.md",
+  "docs/context-sync.md",
+] as const;
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
@@ -22,6 +79,14 @@ export async function validateContract(name: SchemaName, value: unknown): Promis
     type: "string",
     validate: (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && !Number.isNaN(Date.parse(value)),
   });
+  if (name === "fake-activity-source") {
+    const candidateSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "work-candidate.schema.json"), "utf8"));
+    ajv.addSchema(candidateSchema);
+  }
+  if (name === "runtime-manifest") {
+    const lifecycleSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "activity-lifecycle-record.schema.json"), "utf8"));
+    ajv.addSchema(lifecycleSchema);
+  }
   const validate = ajv.compile(schema);
   return validate(value) ? [] : [...(validate.errors ?? [])];
 }
@@ -36,11 +101,44 @@ export function workspaceSemanticErrors(config: WorkspaceConfig): string[] {
     paths.set(normalized, name);
   }
   const required = new Set(config.activity.required_capabilities);
+  const declared = new Set([...config.activity.required_capabilities, ...config.activity.optional_capabilities]);
   for (const capability of config.activity.optional_capabilities) {
     if (required.has(capability)) errors.push(`activity capability is both required and optional: ${capability}`);
   }
+  const lifecycle = config.activity.lifecycle ?? {};
+  if (config.activity.provider === "none" && Object.values(lifecycle).some((actions) => (actions?.length ?? 0) > 0)) {
+    errors.push("activity.lifecycle cannot configure external actions when provider is none");
+  }
+  for (const [event, actions] of Object.entries(lifecycle)) {
+    const ids = new Set<string>();
+    for (const action of actions ?? []) {
+      if (ids.has(action.id)) errors.push(`activity.lifecycle.${event} has duplicate action id: ${action.id}`);
+      ids.add(action.id);
+      if (!declared.has(action.capability)) errors.push(`activity.lifecycle.${event}.${action.id} uses undeclared capability: ${action.capability}`);
+      if (action.policy === "required" && !required.has(action.capability)) {
+        errors.push(`required lifecycle action ${event}.${action.id} must use a required capability`);
+      }
+    }
+  }
   if (config.workspace.mode === "team" && config.workflow.wrapper_change_policy !== "pull-request") {
     errors.push("team mode requires workflow.wrapper_change_policy: pull-request");
+  }
+  return errors;
+}
+
+export async function workspaceDocumentErrors(workspaceRoot: string, config: WorkspaceConfig): Promise<string[]> {
+  const required = [
+    ...requiredWorkspaceDocuments,
+    ...new Set(Object.values(config.repositories).map((repository) => `agents/${repository.agent}.md`)),
+  ];
+  const errors: string[] = [];
+  for (const path of required) {
+    try {
+      const info = await lstat(resolve(workspaceRoot, path));
+      if (!info.isFile() || info.isSymbolicLink()) throw new Error("not a regular file");
+    } catch {
+      errors.push(`required workspace document is missing: ${path}`);
+    }
   }
   return errors;
 }

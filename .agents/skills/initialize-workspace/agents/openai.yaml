@@ -1,0 +1,4 @@
+interface:
+  display_name: "Initialize Workspace"
+  short_description: "Configure and validate a reusable project wrapper"
+  default_prompt: "Use $initialize-workspace to configure this new project wrapper safely."

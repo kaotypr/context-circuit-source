@@ -46,6 +46,18 @@ npm run record-result -- --run-id <run-id> --repository frontend --stage worker-
    diff, runs verification, and writes a schema-valid verifier result.
 4. Record `verifier-result` and confirm the manifest status matches the verdict.
 
+## Failed verification and repair
+
+For a failing verdict, run `npm run prepare-repair -- --run-id <run-id>
+--repository frontend`. Launch a fresh repair worker with only the emitted input,
+then record its worker result and launch another fresh read-only verifier. Repeat
+only when the command prepares another attempt; stop when it reports `exhausted`.
+
+For a passing verdict, run `npm run prepare-review -- --run-id <run-id>
+--repository frontend` and inspect the validated handoff. The fixture normally
+reports a missing-origin blocker. Do not add a remote, push, or open a pull
+request merely to satisfy this proof.
+
 ## Claude Code proof
 
 1. Invoke `/run-task`, which delegates to the canonical skill.
@@ -64,9 +76,29 @@ host session behavior is the architecture risk being measured.
 The first completed compatibility proof and its observed adapter behavior are
 recorded in `phase-0-host-results.md`.
 
+## Contract-first two-repository proof
+
+Register both fixture repositories as `backend` and `frontend`, with matching
+domain-agent files, then prepare the checked example request:
+
+```bash
+npm run run-task -- --request-file docs/examples/contract-first-run.json
+```
+
+The command creates one branch and one worktree per repository. Start only the
+backend worker because it owns the shared contract and its input is `ready`.
+The frontend input is `waiting` and records `blocked_by: ["backend"]`.
+
+Record the backend worker and verifier results normally. Only a passing,
+independent backend verdict changes the frontend input to `ready: true` and the
+shared-contract approval to `verified`. Reread that input, launch a fresh
+frontend worker, and repeat worker and verifier recording. A verifier failure
+must leave dependent repositories locked. The run passes only when each
+repository has its own passing verifier result; no branch is pushed or merged.
+
 ## Safe recovery
 
 If preparation stops, inspect `.runtime/runs/<run-id>/manifest.json`. Never delete
-a worktree with changes or commits that have not been recorded elsewhere. This
-slice does not implement `finish-work`; cleanup is manual and requires checking
-`git status`, branch commits, and worktree registration first.
+a worktree with changes or commits that have not been recorded elsewhere. Use
+`finish-work` only after human-confirmed merge or deliberate abandonment; until
+then preserve every worktree and runtime artifact.

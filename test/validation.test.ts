@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
-import { validateContract, workspaceSemanticErrors } from "../scripts/lib/validation.js";
+import { validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "../scripts/lib/validation.js";
 import type { WorkspaceConfig } from "../scripts/lib/types.js";
 import { projectRoot } from "./helpers.js";
 
@@ -11,6 +11,34 @@ test("workspace configuration validates", async () => {
   const config = parseYaml(await readFile(join(projectRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
   assert.deepEqual(await validateContract("workspace", config), []);
   assert.deepEqual(workspaceSemanticErrors(config), []);
+});
+
+test("deterministic TypeScript commands avoid sandbox-incompatible tsx IPC", async () => {
+  const packageJson = JSON.parse(await readFile(join(projectRoot, "package.json"), "utf8")) as {
+    scripts?: Record<string, string>;
+  };
+  const deterministicCommands = [
+    "create-plan",
+    "fixture:create",
+    "finish-work",
+    "initialize-workspace",
+    "prepare-repair",
+    "prepare-review",
+    "prepare-lifecycle",
+    "prepare-plan-publication",
+    "record-lifecycle-action",
+    "record-plan-publication",
+    "record-result",
+    "run-task",
+    "set-plan-state",
+    "validate",
+    "validate-plan",
+    "whats-next",
+  ];
+
+  for (const command of deterministicCommands) {
+    assert.match(packageJson.scripts?.[command] ?? "", /^node --import tsx\b/, command);
+  }
 });
 
 test("workspace rejects credential fields and duplicate repository paths", async () => {
@@ -29,8 +57,38 @@ test("workspace rejects credential fields and duplicate repository paths", async
   assert.match(workspaceSemanticErrors(config).join("\n"), /duplicates/);
 });
 
-test("worker, verifier, task brief, and manifest schemas reject incomplete data", async () => {
-  for (const schema of ["task-brief", "worker-result", "verifier-result", "runtime-manifest"] as const) {
+test("workspace lifecycle policy rejects undeclared and misclassified capabilities", () => {
+  const config = {
+    version: 1,
+    template_version: "0.1.0",
+    workspace: { name: "bad-lifecycle", mode: "team", default_branch: "main" },
+    repositories: { frontend: { path: "repositories/frontend", mode: "ignored-clone", role: "app", agent: "frontend", default_branch: "main" } },
+    activity: {
+      provider: "example", access: "auto", required_capabilities: [], optional_capabilities: ["timers"],
+      lifecycle: {
+        "task.starting": [
+          { id: "claim", capability: "assign-task", policy: "required", description: "Claim the task." },
+          { id: "claim", capability: "timers", policy: "optional", description: "Start the timer." },
+        ],
+      },
+    },
+    workflow: { human_gates: ["merge"], maximum_repair_attempts: 2, wrapper_change_policy: "pull-request" },
+  } as unknown as WorkspaceConfig;
+  const errors = workspaceSemanticErrors(config).join("\n");
+  assert.match(errors, /undeclared capability/);
+  assert.match(errors, /required lifecycle action/);
+  assert.match(errors, /duplicate action id/);
+});
+
+test("workspace document validation reports missing required files", async () => {
+  const config = parseYaml(await readFile(join(projectRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
+  const errors = await workspaceDocumentErrors(join(projectRoot, "fixtures", "react-app"), config);
+  assert.ok(errors.some((error) => error.includes("README.md")));
+  assert.ok(errors.some((error) => error.includes("agents/frontend.md")));
+});
+
+test("machine-readable contract schemas reject incomplete data", async () => {
+  for (const schema of ["task-brief", "worker-result", "verifier-result", "runtime-manifest", "review-preparation", "closeout-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const) {
     assert.notEqual((await validateContract(schema, { contract_version: 1 })).length, 0, schema);
   }
 });

@@ -37,6 +37,31 @@ export async function writeJsonAtomic(path: string, value: unknown): Promise<voi
   await chmod(path, 0o600);
 }
 
+export async function writeTextAtomic(path: string, value: string, mode = 0o644): Promise<void> {
+  const temporary = `${path}.${process.pid}.tmp`;
+  const handle = await open(temporary, "wx", mode);
+  try {
+    await handle.writeFile(value, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  await rename(temporary, path);
+  await chmod(path, mode);
+}
+
+export async function writeTextExclusive(path: string, value: string, mode = 0o644): Promise<void> {
+  await mkdir(dirname(path), { recursive: true, mode: 0o755 });
+  const handle = await open(path, "wx", mode);
+  try {
+    await handle.writeFile(value, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  await chmod(path, mode);
+}
+
 export async function withExclusiveFile<T>(path: string, operation: () => Promise<T>): Promise<T> {
   await ensurePrivateDirectory(dirname(path));
   let handle;

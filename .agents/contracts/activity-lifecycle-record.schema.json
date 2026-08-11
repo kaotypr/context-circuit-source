@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaotypr.dev/kao-delivery-workspace/activity-lifecycle-record.schema.json",
+  "title": "Activity lifecycle event record",
+  "$defs": {
+    "actionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "capability", "policy", "description", "status", "idempotency_key", "evidence", "external_reference"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "capability": { "enum": ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"] },
+        "policy": { "enum": ["required", "optional", "manual"] },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "status": { "enum": ["pending", "completed", "failed", "skipped", "manual"] },
+        "idempotency_key": { "type": "string", "minLength": 1 },
+        "evidence": { "type": ["string", "null"], "minLength": 1 },
+        "external_reference": { "type": ["string", "null"], "minLength": 1 }
+      }
+    }
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "work_id", "run_id", "provider", "event", "status", "actions", "warnings", "manual_fallbacks", "prepared_at", "updated_at"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "work_id": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "provider": { "type": "string", "minLength": 1 },
+    "event": { "enum": ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"] },
+    "status": { "enum": ["pending", "completed", "failed", "skipped", "manual"] },
+    "actions": { "type": "array", "items": { "$ref": "#/$defs/actionResult" } },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "manual_fallbacks": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "prepared_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" }
+  }
+}

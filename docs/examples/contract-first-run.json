@@ -1,0 +1,26 @@
+{
+  "contract_version": 1,
+  "request": "Establish the reset-counter response contract, then consume it in the frontend",
+  "acceptance_criteria": ["The frontend and API agree that reset returns count zero"],
+  "shared_contract": { "repository": "backend", "paths": ["src/contract.ts"] },
+  "repositories": [
+    {
+      "name": "backend",
+      "depends_on": [],
+      "scope": ["src/contract.ts", "src/api.ts"],
+      "test_scope": ["src/api.test.ts"],
+      "test_policy": "required",
+      "acceptance_criteria": ["The API reset response contract declares state.count as a number and reset returns zero"],
+      "verification_commands": ["npm test", "npm run typecheck"]
+    },
+    {
+      "name": "frontend",
+      "depends_on": ["backend"],
+      "scope": ["src/App.tsx"],
+      "test_scope": ["src/App.test.tsx"],
+      "test_policy": "existing-coverage",
+      "acceptance_criteria": ["The frontend consumes the verified reset contract and displays count zero after reset"],
+      "verification_commands": ["npm test", "npm run build"]
+    }
+  ]
+}

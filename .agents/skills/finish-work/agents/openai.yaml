@@ -1,0 +1,4 @@
+interface:
+  display_name: "Finish Work"
+  short_description: "Record and safely close a completed or abandoned run"
+  default_prompt: "Use $finish-work to close this run safely after my merge or abandonment decision."

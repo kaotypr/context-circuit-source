@@ -86,8 +86,11 @@ idempotent execution events.
   workers and verifiers. The next increment added a deterministic, validated,
   idempotent result recorder; the preserved proof manifests were subsequently
   advanced to `passed` without putting lifecycle logic in host adapters.
-- Automated launch, repair, pull-request preparation, and safe closeout remain
-  outside the Phase 0 foundation.
+- Automated host launch remains outside the Phase 0 foundation. Bounded repair,
+  non-mutating draft-review preparation, and human-invoked safe closeout are now
+  implemented and proven in both hosts; see
+  [the repair lifecycle results](repair-host-results.md) and
+  [the closeout lifecycle results](finish-work-host-results.md).
 
 ## Outcome
 
@@ -95,3 +98,6 @@ The Phase 0 host-neutrality exit criterion is satisfied for the single-repositor
 fixture proof: a known planless task was delegated to fresh repository workers
 and independently verified in Codex and Claude Code without duplicating canonical
 workflow logic.
+
+The later packaged-template, contract-first proof is recorded in
+[`cross-repository-host-results.md`](cross-repository-host-results.md).

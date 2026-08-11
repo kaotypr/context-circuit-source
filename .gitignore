@@ -1,6 +1,8 @@
 .DS_Store
 .runtime/
+.dist/
 node_modules/
 
-# Ignored clones are registered exactly; do not ignore repositories/ wholesale.
+# kao-delivery-workspace:ignored-clones:start
 repositories/frontend/
+# kao-delivery-workspace:ignored-clones:end

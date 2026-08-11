@@ -51,6 +51,46 @@ workflow:
   };
 }
 
+export async function createTwoRepositoryTestWorkspace(): Promise<{ root: string; frontend: string; backend: string; cleanup: () => Promise<void> }> {
+  const workspace = await createTestWorkspace();
+  const backend = join(workspace.root, "repositories", "backend");
+  await cp(join(projectRoot, "fixtures", "typescript-api"), backend, { recursive: true });
+  await writeFile(join(workspace.root, "agents", "backend.md"), "# Backend\n", "utf8");
+  await writeFile(join(workspace.root, "workspace.yaml"), `version: 1
+template_version: 0.1.0
+workspace:
+  name: test
+  mode: team
+  default_branch: main
+repositories:
+  frontend:
+    path: repositories/frontend
+    mode: ignored-clone
+    role: web-application
+    agent: frontend
+    default_branch: main
+  backend:
+    path: repositories/backend
+    mode: ignored-clone
+    role: application-api
+    agent: backend
+    default_branch: main
+activity:
+  provider: none
+  access: auto
+  required_capabilities: []
+  optional_capabilities: []
+workflow:
+  human_gates: [plan-approval, task-selection, merge]
+  maximum_repair_attempts: 2
+  wrapper_change_policy: pull-request
+`, "utf8");
+  await git(backend, ["init", "--initial-branch=main"]);
+  await git(backend, ["add", "."]);
+  await git(backend, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "fixture"]);
+  return { root: workspace.root, frontend: workspace.repository, backend, cleanup: workspace.cleanup };
+}
+
 export const taskOptions = {
   request: "Add a reset button",
   repository: "frontend",

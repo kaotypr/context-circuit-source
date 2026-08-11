@@ -1,6 +1,6 @@
 ---
 name: run-task
-description: Codex adapter for the canonical planless run-task workflow. Use when coordinating an explicit repository task through Codex with a fresh worker and independent verifier.
+description: Codex adapter for the canonical planless run-task workflow. Use when coordinating an explicit one- or multi-repository task through Codex with fresh scoped workers and independent verifiers.
 ---
 
 # Codex adapter

@@ -32,7 +32,15 @@
         "provider": { "type": "string", "minLength": 1 },
         "access": { "enum": ["auto", "manual"] },
         "required_capabilities": { "$ref": "#/$defs/capabilities" },
-        "optional_capabilities": { "$ref": "#/$defs/capabilities" }
+        "optional_capabilities": { "$ref": "#/$defs/capabilities" },
+        "lifecycle": {
+          "type": "object",
+          "propertyNames": { "enum": ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"] },
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/activityAction" }
+          }
+        }
       }
     },
     "workflow": {
@@ -62,6 +70,17 @@
       "type": "array",
       "uniqueItems": true,
       "items": { "enum": ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"] }
+    },
+    "activityAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "capability", "policy", "description"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "capability": { "enum": ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"] },
+        "policy": { "enum": ["required", "optional", "manual"] },
+        "description": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
     },
     "repository": {
       "type": "object",

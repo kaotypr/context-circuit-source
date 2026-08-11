@@ -13,6 +13,8 @@ interface WorkerInput {
   worktree: string;
   branch: string;
   base_commit: string;
+  ready?: boolean;
+  blocked_by?: string[];
   allowed_scope: string[];
   implementation_scope?: string[];
   test_expectation?: TestExpectation;
@@ -99,8 +101,9 @@ function findRepository(manifest: RuntimeManifest, name: string): RuntimeReposit
   return repository;
 }
 
-function eventKey(runId: string, repository: string, stage: RecordStage): string {
-  return `${runId}:execution:${repository}:${stage}`;
+function eventKey(runId: string, repository: string, stage: RecordStage, attempt: number): string {
+  const suffix = attempt === 0 ? "" : `:attempt-${attempt}`;
+  return `${runId}:execution:${repository}:${stage}${suffix}`;
 }
 
 function appendEvent(
@@ -111,6 +114,7 @@ function appendEvent(
   to: ExecutionEvent["to_status"],
   occurredAt: string,
   inferred: boolean,
+  attempt: number,
   resultPath?: string,
 ): void {
   const event: ExecutionEvent = {
@@ -119,15 +123,50 @@ function appendEvent(
     from_status: from,
     to_status: to,
     inferred,
-    idempotency_key: eventKey(manifest.run_id, repository, stage),
+    attempt,
+    idempotency_key: eventKey(manifest.run_id, repository, stage, attempt),
     occurred_at: occurredAt,
   };
   if (resultPath) event.result_path = resultPath;
   manifest.execution_events ??= [];
   manifest.execution_events.push(event);
-  manifest.status = to;
+  const runtimeRepository = findRepository(manifest, repository);
+  runtimeRepository.status = to;
+  refreshManifestStatus(manifest);
   manifest.updated_at = occurredAt;
   if (resultPath && !manifest.evidence.includes(resultPath)) manifest.evidence.push(resultPath);
+}
+
+function refreshManifestStatus(manifest: RuntimeManifest): void {
+  const statuses = manifest.repositories.map((repository) => repository.status ?? manifest.status);
+  if (statuses.every((status) => status === "passed")) manifest.status = "passed";
+  else if (statuses.includes("failed")) manifest.status = "failed";
+  else if (statuses.includes("blocked")) manifest.status = "blocked";
+  else if (statuses.includes("verifying")) manifest.status = "verifying";
+  else if (statuses.includes("running")) manifest.status = "running";
+  else manifest.status = "prepared";
+}
+
+async function unlockDependents(runtimeRoot: string, manifest: RuntimeManifest): Promise<void> {
+  for (const candidate of manifest.repositories) {
+    if (candidate.status !== "waiting") continue;
+    const dependencies = candidate.depends_on ?? [];
+    if (!dependencies.every((name) => findRepository(manifest, name).status === "passed")) continue;
+    for (const [path, worker] of [[candidate.worker_input, true], [candidate.verifier_input, false]] as const) {
+      const inputPath = assertInside(runtimeRoot, path);
+      const input = await readJson<Record<string, unknown>>(inputPath);
+      if (worker) {
+        input.ready = true;
+        input.blocked_by = [];
+      }
+      if (input.shared_contract && typeof input.shared_contract === "object") {
+        (input.shared_contract as Record<string, unknown>).approval = "verified";
+      }
+      await writeJsonAtomic(inputPath, input);
+    }
+    candidate.status = "prepared";
+  }
+  refreshManifestStatus(manifest);
 }
 
 async function assertWorktree(repository: RuntimeRepository): Promise<string> {
@@ -222,6 +261,7 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     await assertValid("runtime-manifest", manifest);
     assertEqual(manifest.run_id, options.runId, "manifest run_id");
     const repository = findRepository(manifest, options.repository);
+    const attempt = repository.repair_attempts ?? 0;
     assertInside(runtimeRoot, repository.worktree);
     const taskBriefPath = assertInside(runtimeRoot, manifest.task_brief);
     const workerInputPath = assertInside(runtimeRoot, repository.worker_input);
@@ -229,8 +269,10 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     const brief = await readJson<TaskBrief>(taskBriefPath);
     await assertValid("task-brief", brief);
     assertTaskIdentity(manifest, brief, options.repository);
-    const implementationScope = brief.implementation_scope ?? brief.scope;
-    const testExpectation: TestExpectation = brief.test_expectation ?? {
+    const target = brief.repositories.find((candidate) => candidate.name === options.repository)!;
+    const targetScope = target.scope ?? brief.scope;
+    const implementationScope = target.implementation_scope ?? brief.implementation_scope ?? targetScope;
+    const testExpectation: TestExpectation = target.test_expectation ?? brief.test_expectation ?? {
       policy: "verifier-only",
       paths: [],
       rationale: "Legacy task brief has no authorized test edit scope; verifier evidence is required.",
@@ -245,11 +287,11 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     assertEqual(resolve(workerInput.worktree), resolve(repository.worktree), "worker input worktree");
     assertEqual(workerInput.branch, repository.branch, "worker input branch");
     assertEqual(workerInput.base_commit, repository.base_commit, "worker input base_commit");
-    if (!sameMembers(workerInput.allowed_scope, brief.scope)) throw new Error("worker input allowed_scope does not match task brief scope");
-    if (brief.implementation_scope && (!workerInput.implementation_scope || !sameMembers(workerInput.implementation_scope, implementationScope))) {
+    if (!sameMembers(workerInput.allowed_scope, targetScope)) throw new Error("worker input allowed_scope does not match task brief repository scope");
+    if ((target.implementation_scope || brief.implementation_scope) && (!workerInput.implementation_scope || !sameMembers(workerInput.implementation_scope, implementationScope))) {
       throw new Error("worker input implementation_scope does not match task brief");
     }
-    if (brief.test_expectation && (!workerInput.test_expectation || !sameTestExpectation(workerInput.test_expectation, testExpectation))) {
+    if ((target.test_expectation || brief.test_expectation) && (!workerInput.test_expectation || !sameTestExpectation(workerInput.test_expectation, testExpectation))) {
       throw new Error("worker input test_expectation does not match task brief");
     }
     assertEqual(verifierInput.repository, repository.name, "verifier input repository");
@@ -258,35 +300,38 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     assertEqual(verifierInput.branch, repository.branch, "verifier input branch");
     assertEqual(verifierInput.base_commit, repository.base_commit, "verifier input base_commit");
     assertEqual(resolve(verifierInput.worker_result), resolve(workerInput.result_path), "verifier input worker_result");
-    if (!sameMembers(verifierInput.acceptance_criteria, brief.acceptance_criteria)) throw new Error("verifier input acceptance_criteria does not match task brief");
-    if (brief.test_expectation && (!verifierInput.test_expectation || !sameTestExpectation(verifierInput.test_expectation, testExpectation))) {
+    if (!sameMembers(verifierInput.acceptance_criteria, target.acceptance_criteria ?? brief.acceptance_criteria)) throw new Error("verifier input acceptance_criteria does not match task brief repository criteria");
+    if ((target.test_expectation || brief.test_expectation) && (!verifierInput.test_expectation || !sameTestExpectation(verifierInput.test_expectation, testExpectation))) {
       throw new Error("verifier input test_expectation does not match task brief");
     }
 
-    const existing = manifest.execution_events?.find((event) => event.idempotency_key === eventKey(options.runId, options.repository, options.stage));
+    const existing = manifest.execution_events?.find((event) => event.idempotency_key === eventKey(options.runId, options.repository, options.stage, attempt));
     const occurredAt = (options.now ?? new Date()).toISOString();
+    const currentStatus = repository.status ?? manifest.status;
 
     if (options.stage === "worker-started") {
       if (existing) return manifest;
-      if (manifest.status !== "prepared") throw new Error(`worker-started requires prepared status, received ${manifest.status}`);
+      if (currentStatus === "waiting") throw new Error(`worker-started for ${repository.name} is blocked by: ${(repository.depends_on ?? []).join(", ")}`);
+      if (currentStatus !== "prepared") throw new Error(`worker-started requires prepared repository status, received ${currentStatus}`);
       const head = await assertWorktree(repository);
       assertEqual(head, repository.base_commit, "worker start HEAD");
-      appendEvent(manifest, options.stage, options.repository, "prepared", "running", occurredAt, false);
+      appendEvent(manifest, options.stage, options.repository, "prepared", "running", occurredAt, false, attempt);
     } else if (options.stage === "worker-result") {
       const target = await validateWorkerResult(manifest, repository, workerInput, testExpectation);
       await chmod(workerInput.result_path, 0o600);
       if (existing) return manifest;
-      if (manifest.status === "prepared") {
-        appendEvent(manifest, "worker-started", options.repository, "prepared", "running", occurredAt, true);
+      if (currentStatus === "prepared") {
+        appendEvent(manifest, "worker-started", options.repository, "prepared", "running", occurredAt, true, attempt);
       }
-      if (manifest.status !== "running") throw new Error(`worker-result requires running status, received ${manifest.status}`);
-      appendEvent(manifest, options.stage, options.repository, "running", target, occurredAt, false, workerInput.result_path);
+      if ((repository.status ?? manifest.status) !== "running") throw new Error(`worker-result requires running repository status, received ${repository.status ?? manifest.status}`);
+      appendEvent(manifest, options.stage, options.repository, "running", target, occurredAt, false, attempt, workerInput.result_path);
     } else {
       const target = await validateVerifierResult(manifest, repository, verifierInput);
       await chmod(verifierInput.result_path, 0o600);
       if (existing) return manifest;
-      if (manifest.status !== "verifying") throw new Error(`verifier-result requires verifying status, received ${manifest.status}`);
-      appendEvent(manifest, options.stage, options.repository, "verifying", target, occurredAt, false, verifierInput.result_path);
+      if (currentStatus !== "verifying") throw new Error(`verifier-result requires verifying repository status, received ${currentStatus}`);
+      appendEvent(manifest, options.stage, options.repository, "verifying", target, occurredAt, false, attempt, verifierInput.result_path);
+      if (target === "passed") await unlockDependents(runtimeRoot, manifest);
     }
 
     await assertValid("runtime-manifest", manifest);

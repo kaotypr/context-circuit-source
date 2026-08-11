@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { recordResult, type RecordStage } from "./lib/record-result.js";
 
 const stages: RecordStage[] = ["worker-started", "worker-result", "verifier-result"];
-const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const workspaceRoot = resolve(process.env.KAO_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
 const { values } = parseArgs({
   options: {
     "run-id": { type: "string" },
