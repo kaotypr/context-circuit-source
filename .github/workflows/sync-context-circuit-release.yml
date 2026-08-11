@@ -18,11 +18,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out Context Circuit source
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -33,7 +33,7 @@ jobs:
       - name: Build authoritative wrapper archive
         run: npm run build:template
       - name: Check out release repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v6
         with:
           repository: kaotypr/context-circuit-release
           ref: main

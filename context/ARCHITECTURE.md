@@ -18,6 +18,11 @@ the wrapper as a clean compressed archive. The fully configured wrapper becomes
 its first commit, while new product repositories receive empty base commits
 required for worktree isolation.
 
+Version-tagged or manually dispatched source automation validates that archive,
+then synchronizes the single version-matched tarball to the dedicated release
+repository using explicitly configured cross-repository credentials. The release
+repository remains responsible for its interactive npm CLI and npm publication.
+
 Every run normalizes its source into a task brief with stable identity, scope,
 acceptance evidence, test policy, repository ordering, authorization, and claim
 limitations. Each repository receives its own branch, writable worktree, scoped

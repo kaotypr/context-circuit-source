@@ -53,3 +53,9 @@ A repository administrator must create the
 to pushing only `kaotypr/context-circuit-release`; the workflow does not use the
 source repository's `GITHUB_TOKEN` for that cross-repository push and does not
 persist the release token in either checkout.
+
+The destination repository must already exist with a `main` branch, a
+`context-circuit` package manifest and lockfile, and `npm test` plus
+`npm run test:package` scripts. Until those prerequisites and the secret exist,
+the source workflow is safe to merge but release synchronization will stop at
+the destination checkout or validation step without publishing anything.

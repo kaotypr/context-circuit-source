@@ -18,6 +18,10 @@
 - Treat the generated `context-circuit-0.2.0.tar.gz` as the authoritative release
   artifact. Exclude macOS metadata and redundant version markers, and retain the
   generated directory only as an inspectable staging view.
+- Synchronize only that versioned tarball and matching npm metadata to the
+  dedicated release repository on a version tag or explicit dispatch. Require a
+  separately scoped cross-repository token; never reuse the source
+  `GITHUB_TOKEN` or publish npm from the source repository.
 - Support personal and team wrappers; recommend team mode. Team wrapper changes
   use pull requests; explicitly configured solo mode may use direct commits.
 - Support Codex and Claude Code with one canonical workflow and thin adapters.
