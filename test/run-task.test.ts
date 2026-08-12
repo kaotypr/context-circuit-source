@@ -188,6 +188,20 @@ test("approved plan selection preserves stable work IDs and approval evidence", 
     summary: "Verified the selected plan work.", acceptance: [{ criterion: "Reset returns the count to zero.", status: "passed", evidence: "The focused reset behavior was independently verified." }],
     checks: ["npm test"], findings: [], verified_at: "2026-08-11T08:35:00Z",
   }, null, 2)}\n`, "utf8");
+  const untamperedManifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const tamperedManifest = structuredClone(untamperedManifest);
+  const oversizedManifest = structuredClone(untamperedManifest);
+  oversizedManifest.plan_work_items.push({ ...oversizedManifest.plan_work_items[0], work_id: "RESET-999" });
+  assert.notDeepEqual(await validateContract("runtime-manifest", oversizedManifest), []);
+  tamperedManifest.plan_work_items[0].work_id = "RESET-999";
+  assert.deepEqual(await validateContract("runtime-manifest", tamperedManifest), []);
+  await writeFile(prepared.manifest, `${JSON.stringify(tamperedManifest, null, 2)}\n`, "utf8");
+  await assert.rejects(
+    recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" }),
+    /plan work item work_id mismatch/,
+  );
+  assert.equal(JSON.parse(await readFile(prepared.manifest, "utf8")).plan_work_items[0].outcome, "pending");
+  await writeFile(prepared.manifest, `${JSON.stringify(untamperedManifest, null, 2)}\n`, "utf8");
   const passed = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
   assert.deepEqual(passed.plan_work_items?.map((item) => [item.work_id, item.outcome]), [["RESET-001", "passed"]]);
 });
@@ -217,6 +231,14 @@ test("task brief contract rejects inconsistent plan and direct source metadata",
   };
   assert.notDeepEqual(await validateContract("task-brief", { ...base, source: { kind: "plan", reference: "context/plans/reset-flow" }, plan: { reference: null, approval_state: "not-applicable" } }), []);
   assert.notDeepEqual(await validateContract("task-brief", { ...base, work_id: "ADHOC-20260811-001", source: { kind: "direct-request" }, plan: { reference: "context/plans/reset-flow", approval_state: "approved", plan_version: 1, approved_digest: `sha256:${"0".repeat(64)}`, work_ids: ["RESET-001"] } }), []);
+  assert.notDeepEqual(await validateContract("task-brief", { ...base, work_id: "ADHOC-20260811-001", source: { kind: "direct-request" }, plan: { reference: null, approval_state: "not-applicable", plan_version: 1 } }), []);
+  for (const kind of ["issue", "pull-request", "activity-task"] as const) {
+    assert.deepEqual(await validateContract("task-brief", {
+      ...base,
+      source: { kind, reference: `${kind}:123` },
+      plan: { reference: "context/plans/reset-flow", approval_state: "unknown" },
+    }), [], kind);
+  }
 });
 
 test("draft, stale, unknown, and dependency-blocked plans fail before runtime creation", async (t) => {

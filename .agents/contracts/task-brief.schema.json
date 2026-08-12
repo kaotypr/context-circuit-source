@@ -73,11 +73,16 @@
           "source": { "required": ["reference"] },
           "plan": { "required": ["reference", "approval_state", "plan_version", "approved_digest", "work_ids"], "properties": { "reference": { "type": "string", "minLength": 1 }, "approval_state": { "const": "approved" } } }
         }
-      },
-      "else": {
+      }
+    },
+    {
+      "if": { "properties": { "source": { "properties": { "kind": { "const": "direct-request" } }, "required": ["kind"] } }, "required": ["source"] },
+      "then": {
         "properties": {
-          "source": { "properties": { "kind": { "const": "direct-request" } } },
-          "plan": { "properties": { "reference": { "type": "null" }, "approval_state": { "const": "not-applicable" } } }
+          "plan": {
+            "properties": { "reference": { "type": "null" }, "approval_state": { "const": "not-applicable" } },
+            "not": { "anyOf": [{ "required": ["plan_version"] }, { "required": ["approved_digest"] }, { "required": ["work_ids"] }] }
+          }
         }
       }
     }
