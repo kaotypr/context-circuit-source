@@ -6,7 +6,7 @@ and records how it happens.
 
 It provides workspace validation and bootstrap, task normalization, Git
 worktree preparation, result recording, bounded repair, review handoff,
-planning, lifecycle records, closeout, recommendations, publication records,
+planning, lifecycle records, verified human merge confirmation, closeout, recommendations, publication records,
 and context synchronization.
 
 Run it from the wrapper root:

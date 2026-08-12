@@ -367,11 +367,21 @@ export interface RuntimeRepository {
   repair_attempts?: number;
   review_preparation?: string;
   review_publication?: string;
+  review_state?: ReviewState;
+  merge_confirmation?: string;
   closeout_record?: string;
   contribution?: string;
 }
 
 export type RuntimeStatus = "preparing" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked" | "cancelled" | "closing" | "closed";
+
+export type ReviewState = "ready-for-local-review" | "ready-for-publication" | "published-for-review" | "merge-confirmation-required" | "closeout-ready";
+
+export interface ReviewCommand {
+  description: string;
+  argv: string[];
+  shell: string;
+}
 
 export interface ExecutionEvent {
   stage: "worker-started" | "worker-result" | "verifier-result" | "repair-prepared" | "repair-exhausted" | "review-prepared" | "closeout-prepared" | "closeout-cleaned";
@@ -386,11 +396,11 @@ export interface ExecutionEvent {
 }
 
 export interface ReviewPreparation {
-  contract_version: 1;
+  contract_version: 1 | 2;
   work_id: string;
   run_id: string;
   repository: string;
-  status: "ready" | "blocked";
+  status: "ready" | "blocked" | "ready-for-local-review" | "ready-for-publication";
   remote: string | null;
   base_branch: string;
   head_branch: string;
@@ -404,10 +414,23 @@ export interface ReviewPreparation {
   verifier_result: string;
   blockers: string[];
   prepared_at: string;
+  commands?: {
+    diff: ReviewCommand;
+    commits: ReviewCommand;
+    show: ReviewCommand;
+    tests: ReviewCommand[];
+    switch_target: ReviewCommand;
+    merge: ReviewCommand;
+  };
+  merge_handoff?: {
+    status: "merge-confirmation-required";
+    confirmation_argv: string[];
+    confirmation_shell: string;
+  };
 }
 
 export interface ReviewPublicationRecord {
-  contract_version: 1;
+  contract_version: 1 | 2;
   work_id: string;
   run_id: string;
   repository: string;
@@ -418,6 +441,25 @@ export interface ReviewPublicationRecord {
   head_commit: string;
   idempotency_key: string;
   recorded_at: string;
+  review_state?: "published-for-review";
+}
+
+export interface MergeConfirmationRecord {
+  contract_version: 1;
+  work_id: string;
+  run_id: string;
+  repository: string;
+  status: "closeout-ready";
+  base_branch: string;
+  target_ref: string;
+  target_commit: string;
+  head_commit: string;
+  merge_commit: string;
+  evidence: string;
+  finish_work_argv: string[];
+  finish_work_shell: string;
+  idempotency_key: string;
+  confirmed_at: string;
 }
 
 export interface CloseoutRecord {

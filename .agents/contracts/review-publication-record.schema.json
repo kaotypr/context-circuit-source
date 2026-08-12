@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["contract_version", "work_id", "run_id", "repository", "status", "tool", "pull_request", "evidence", "head_commit", "idempotency_key", "recorded_at"],
   "properties": {
-    "contract_version": { "const": 1 },
+    "contract_version": { "enum": [1, 2] },
     "work_id": { "type": "string", "minLength": 1 },
     "run_id": { "type": "string", "minLength": 1 },
     "repository": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
@@ -16,10 +16,12 @@
     "evidence": { "type": "string", "minLength": 1 },
     "head_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
     "idempotency_key": { "type": "string", "minLength": 1 },
-    "recorded_at": { "type": "string", "format": "date-time" }
+    "recorded_at": { "type": "string", "format": "date-time" },
+    "review_state": { "const": "published-for-review" }
   },
   "allOf": [
     { "if": { "properties": { "status": { "const": "published" } } }, "then": { "properties": { "pull_request": { "type": "string", "minLength": 1 } } } },
-    { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "properties": { "pull_request": { "type": "null" } } } }
+    { "if": { "properties": { "status": { "const": "failed" } } }, "then": { "properties": { "pull_request": { "type": "null" } } } },
+    { "if": { "properties": { "contract_version": { "const": 2 } }, "required": ["contract_version"] }, "then": { "required": ["review_state"] } }
   ]
 }

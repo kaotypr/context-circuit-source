@@ -1,43 +1,56 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://context-circuit.dev/schemas/review-preparation.schema.json",
-  "title": "Draft pull request preparation",
+  "title": "Review and human merge preparation",
   "type": "object",
   "additionalProperties": false,
   "required": ["contract_version", "work_id", "run_id", "repository", "status", "remote", "base_branch", "head_branch", "base_commit", "head_commit", "commits", "changed_files", "title", "body", "worker_result", "verifier_result", "blockers", "prepared_at"],
   "properties": {
-    "contract_version": { "const": 1 },
-    "work_id": { "type": "string", "minLength": 1 },
-    "run_id": { "type": "string", "minLength": 1 },
+    "contract_version": { "enum": [1, 2] },
+    "work_id": { "type": "string", "minLength": 1 }, "run_id": { "type": "string", "minLength": 1 },
     "repository": { "type": "string", "minLength": 1 },
-    "status": { "enum": ["ready", "blocked"] },
+    "status": { "enum": ["ready", "blocked", "ready-for-local-review", "ready-for-publication"] },
     "remote": { "type": ["string", "null"], "minLength": 1 },
-    "base_branch": { "type": "string", "minLength": 1 },
-    "head_branch": { "type": "string", "minLength": 1 },
-    "base_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
-    "head_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+    "base_branch": { "type": "string", "minLength": 1 }, "head_branch": { "type": "string", "minLength": 1 },
+    "base_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" }, "head_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
     "commits": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" } },
     "changed_files": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
-    "title": { "type": "string", "minLength": 1 },
-    "body": { "type": "string", "minLength": 1 },
-    "worker_result": { "type": "string", "minLength": 1 },
-    "verifier_result": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 }, "body": { "type": "string", "minLength": 1 },
+    "worker_result": { "type": "string", "minLength": 1 }, "verifier_result": { "type": "string", "minLength": 1 },
     "blockers": { "type": "array", "items": { "type": "string", "minLength": 1 } },
-    "prepared_at": { "type": "string", "format": "date-time" }
-  },
-  "allOf": [
-    {
-      "if": { "properties": { "status": { "const": "ready" } } },
-      "then": {
-        "properties": {
-          "remote": { "type": "string", "minLength": 1 },
-          "blockers": { "maxItems": 0 }
-        }
+    "prepared_at": { "type": "string", "format": "date-time" },
+    "commands": {
+      "type": "object", "additionalProperties": false, "required": ["diff", "commits", "show", "tests", "switch_target", "merge"],
+      "properties": {
+        "diff": { "$ref": "#/$defs/command" }, "commits": { "$ref": "#/$defs/command" }, "show": { "$ref": "#/$defs/command" },
+        "tests": { "type": "array", "items": { "$ref": "#/$defs/command" } },
+        "switch_target": { "$ref": "#/$defs/command" }, "merge": { "$ref": "#/$defs/command" }
       }
     },
-    {
-      "if": { "properties": { "status": { "const": "blocked" } } },
-      "then": { "properties": { "blockers": { "minItems": 1 } } }
+    "merge_handoff": {
+      "type": "object", "additionalProperties": false, "required": ["status", "confirmation_argv", "confirmation_shell"],
+      "properties": {
+        "status": { "const": "merge-confirmation-required" },
+        "confirmation_argv": { "type": "array", "minItems": 2, "items": { "type": "string" } },
+        "confirmation_shell": { "type": "string", "minLength": 1 }
+      }
     }
+  },
+  "$defs": {
+    "command": {
+      "type": "object", "additionalProperties": false, "required": ["description", "argv", "shell"],
+      "properties": { "description": { "type": "string", "minLength": 1 }, "argv": { "type": "array", "minItems": 1, "items": { "type": "string" } }, "shell": { "type": "string", "minLength": 1 } }
+    }
+  },
+  "allOf": [
+    { "if": { "properties": { "contract_version": { "const": 1 } }, "required": ["contract_version"] }, "then": {
+      "properties": { "status": { "enum": ["ready", "blocked"] } },
+      "not": { "anyOf": [{ "required": ["commands"] }, { "required": ["merge_handoff"] }] },
+      "allOf": [
+        { "if": { "properties": { "status": { "const": "ready" } }, "required": ["status"] }, "then": { "properties": { "remote": { "type": "string", "minLength": 1 }, "blockers": { "maxItems": 0 } } } },
+        { "if": { "properties": { "status": { "const": "blocked" } }, "required": ["status"] }, "then": { "properties": { "blockers": { "minItems": 1 } } } }
+      ]
+    } },
+    { "if": { "properties": { "contract_version": { "const": 2 } }, "required": ["contract_version"] }, "then": { "required": ["commands", "merge_handoff"], "properties": { "status": { "enum": ["ready-for-local-review", "ready-for-publication"] }, "blockers": { "maxItems": 0 } } } }
   ]
 }

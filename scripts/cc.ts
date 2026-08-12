@@ -11,6 +11,7 @@ switch (command) {
   case "prepare-repair": await import("./prepare-repair.js"); break;
   case "prepare-review": await import("./prepare-review.js"); break;
   case "record-review-publication": await import("./record-review-publication.js"); break;
+  case "confirm-merge": await import("./confirm-merge.js"); break;
   case "finish-work": await import("./finish-work.js"); break;
   case "create-plan": await import("./create-plan.js"); break;
   case "validate-plan": await import("./validate-plan.js"); break;

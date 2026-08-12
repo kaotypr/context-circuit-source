@@ -34,6 +34,8 @@
           "repair_attempts": { "type": "integer", "minimum": 0 },
           "review_preparation": { "type": "string", "minLength": 1 },
           "review_publication": { "type": "string", "minLength": 1 },
+          "review_state": { "enum": ["ready-for-local-review", "ready-for-publication", "published-for-review", "merge-confirmation-required", "closeout-ready"] },
+          "merge_confirmation": { "type": "string", "minLength": 1 },
           "closeout_record": { "type": "string", "minLength": 1 },
           "contribution": { "type": "string", "minLength": 1 }
         }

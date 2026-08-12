@@ -32,8 +32,9 @@ description: Recommend one defensible next action from approved plans and availa
 5. If nothing is executable, recommend the returned enabling action. Never
    invent implementation work. Unknown dependency state is not completion;
    draft plans are not approved; ownership by another active contributor is a
-   blocker. Present passed work as review/merge work and closing work as
-   closeout/cleanup work. If source states conflict, present the returned
+   blocker. Present `ready-for-local-review`, `ready-for-publication`,
+   `published-for-review`, and `merge-confirmation-required` as review/merge
+   work; present `closeout-ready` and closing work as closeout/cleanup work. If source states conflict, present the returned
    read-only reconciliation action and do not recommend duplicate execution.
 6. Stop after recommendation. If the human explicitly chooses work, invoke the
    separate `run-task` workflow, which must refresh relevant live state and

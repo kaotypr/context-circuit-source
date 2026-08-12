@@ -299,24 +299,24 @@ var require_scope = __commonJS({
           return;
         return vs.get(keyOrRef);
       }
-      scopeRefs(scopeName, values18 = this._values) {
-        return this._reduceValues(values18, (name) => {
+      scopeRefs(scopeName, values19 = this._values) {
+        return this._reduceValues(values19, (name) => {
           if (name.scopePath === void 0)
             throw new Error(`CodeGen: name "${name}" has no value`);
           return (0, code_1._)`${scopeName}${name.scopePath}`;
         });
       }
-      scopeCode(values18 = this._values, usedValues, getCode) {
-        return this._reduceValues(values18, (name) => {
+      scopeCode(values19 = this._values, usedValues, getCode) {
+        return this._reduceValues(values19, (name) => {
           if (name.value === void 0)
             throw new Error(`CodeGen: name "${name}" has no value`);
           return name.value.code;
         }, usedValues, getCode);
       }
-      _reduceValues(values18, valueCode, usedValues = {}, getCode) {
+      _reduceValues(values19, valueCode, usedValues = {}, getCode) {
         let code = code_1.nil;
-        for (const prefix in values18) {
-          const vs = values18[prefix];
+        for (const prefix in values19) {
+          const vs = values19[prefix];
           if (!vs)
             continue;
           const nameSet = usedValues[prefix] = usedValues[prefix] || /* @__PURE__ */ new Map();
@@ -2995,7 +2995,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve31.call(this, root, ref);
+      let _sch = resolve32.call(this, root, ref);
       if (_sch === void 0) {
         const schema2 = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
         const { schemaId } = this.opts;
@@ -3022,7 +3022,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve31(root, ref) {
+    function resolve32(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3653,7 +3653,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve31(baseURI, relativeURI, options) {
+    function resolve32(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const { parsed: baseParsed, malformedAuthorityOrPort: baseMalformed } = parseWithStatus(baseURI, schemelessOptions);
       const { parsed: relativeParsed, malformedAuthorityOrPort: relativeMalformed } = parseWithStatus(relativeURI, schemelessOptions);
@@ -3937,7 +3937,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve31,
+      resolve: resolve32,
       resolveComponent,
       equal,
       serialize,
@@ -14576,7 +14576,7 @@ function workspaceSemanticErrors(config) {
   }
   return errors2;
 }
-async function workspaceDocumentErrors(workspaceRoot18, config) {
+async function workspaceDocumentErrors(workspaceRoot19, config) {
   const required = [
     ...requiredWorkspaceDocuments,
     ...new Set(Object.values(config.repositories).map((repository) => `agents/${repository.agent}.md`))
@@ -14584,7 +14584,7 @@ async function workspaceDocumentErrors(workspaceRoot18, config) {
   const errors2 = [];
   for (const path2 of required) {
     try {
-      const info = await lstat(resolve(workspaceRoot18, path2));
+      const info = await lstat(resolve(workspaceRoot19, path2));
       if (!info.isFile() || info.isSymbolicLink()) throw new Error("not a regular file");
     } catch {
       errors2.push(`required workspace document is missing: ${path2}`);
@@ -14598,7 +14598,7 @@ var init_validation = __esm({
     "use strict";
     import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
-    schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"];
+    schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"];
     requiredWorkspaceDocuments = [
       "README.md",
       "AGENTS.md",
@@ -14617,6 +14617,7 @@ var init_validation = __esm({
       ".agents/contracts/workspace-bootstrap-request.schema.json",
       ".agents/contracts/review-preparation.schema.json",
       ".agents/contracts/review-publication-record.schema.json",
+      ".agents/contracts/merge-confirmation-record.schema.json",
       ".agents/contracts/closeout-record.schema.json",
       ".agents/contracts/run-task-request.schema.json",
       ".agents/contracts/context-sync-request.schema.json",
@@ -14830,8 +14831,8 @@ var init_git = __esm({
 });
 
 // scripts/lib/workspace-context.ts
-function listDocument(title, values18, empty) {
-  const body = values18.length > 0 ? values18.map((value2) => `- ${value2.trim()}`).join("\n") : empty;
+function listDocument(title, values19, empty) {
+  const body = values19.length > 0 ? values19.map((value2) => `- ${value2.trim()}`).join("\n") : empty;
   return `# ${title}
 
 ${body}
@@ -14914,8 +14915,8 @@ async function pathExists(path2) {
     throw error;
   }
 }
-async function assertSafeRepositoryPath(workspaceRoot18, path2, name) {
-  if (path2 === workspaceRoot18) throw new Error(`Repository ${name} path cannot be the wrapper root`);
+async function assertSafeRepositoryPath(workspaceRoot19, path2, name) {
+  if (path2 === workspaceRoot19) throw new Error(`Repository ${name} path cannot be the wrapper root`);
   let ancestor = dirname4(path2);
   while (!await pathExists(ancestor)) {
     const parent = dirname4(ancestor);
@@ -14924,7 +14925,7 @@ async function assertSafeRepositoryPath(workspaceRoot18, path2, name) {
   }
   const info = await lstat3(ancestor);
   if (info.isSymbolicLink()) throw new Error(`Repository ${name} parent cannot be a symbolic link`);
-  assertInside(await realpath(workspaceRoot18), await realpath(ancestor));
+  assertInside(await realpath(workspaceRoot19), await realpath(ancestor));
 }
 async function hasHead(path2) {
   try {
@@ -14960,7 +14961,7 @@ async function assertExactGitRoot(path2, name) {
   if (await realpath(topLevel) !== await realpath(path2)) throw new Error(`Repository path is not a Git root: ${name}`);
 }
 async function bootstrapWorkspace(options) {
-  const workspaceRoot18 = resolve4(options.workspaceRoot);
+  const workspaceRoot19 = resolve4(options.workspaceRoot);
   const requestErrors = await validateContract("workspace-bootstrap-request", options.request);
   if (requestErrors.length > 0) throw new Error(`Invalid workspace-bootstrap-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   const config = options.request.configuration;
@@ -14973,24 +14974,24 @@ async function bootstrapWorkspace(options) {
   if (actionsByName.size !== options.request.repositories.length || configuredNames.join("\n") !== [...actionsByName.keys()].sort().join("\n")) {
     throw new Error("Bootstrap repository actions must match configured repositories exactly");
   }
-  const wrapperGitExists = await pathExists(join2(workspaceRoot18, ".git"));
+  const wrapperGitExists = await pathExists(join2(workspaceRoot19, ".git"));
   if (wrapperGitExists === options.request.wrapper.initialize_git) {
     throw new Error(wrapperGitExists ? "Wrapper is already a Git repository; initialize_git must be false" : "Wrapper is not a Git repository; initialize_git must be true");
   }
   if (wrapperGitExists) {
-    await assertExactGitRoot(workspaceRoot18, "wrapper");
-    const changes = await git(workspaceRoot18, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+    await assertExactGitRoot(workspaceRoot19, "wrapper");
+    const changes = await git(workspaceRoot19, ["status", "--porcelain=v1", "--untracked-files=normal"]);
     if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:
 ${changes}`);
   }
-  const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot18);
+  const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot19);
   if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
   if (wrapperHadHead && options.request.wrapper.authorize_initial_commit) throw new Error("An existing wrapper must not authorize another initial commit");
-  const gitignorePath = join2(workspaceRoot18, ".gitignore");
+  const gitignorePath = join2(workspaceRoot19, ".gitignore");
   const currentGitignore = await readFile2(gitignorePath, "utf8");
   const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
   for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
-    const agentPath = join2(workspaceRoot18, "agents", `${agent}.md`);
+    const agentPath = join2(workspaceRoot19, "agents", `${agent}.md`);
     if (!await pathExists(agentPath)) continue;
     const info = await lstat3(agentPath);
     if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Domain agent path must be a regular file: agents/${agent}.md`);
@@ -14998,14 +14999,14 @@ ${changes}`);
   for (const name of configuredNames) {
     const repository = config.repositories[name];
     const action = actionsByName.get(name);
-    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
-    await assertSafeRepositoryPath(workspaceRoot18, path2, name);
+    const path2 = assertInside(workspaceRoot19, resolve4(workspaceRoot19, repository.path));
+    await assertSafeRepositoryPath(workspaceRoot19, path2, name);
     const exists = await pathExists(path2);
     if (action.source === "existing") {
       if (repository.mode !== "ignored-clone") throw new Error(`Existing repository ${name} must use ignored-clone mode`);
       if (!exists) throw new Error(`Existing repository path is not accessible: ${repository.path}`);
       if ((await lstat3(path2)).isSymbolicLink()) throw new Error(`Existing repository ${name} cannot be a symbolic link`);
-      assertInside(await realpath(workspaceRoot18), await realpath(path2));
+      assertInside(await realpath(workspaceRoot19), await realpath(path2));
       await assertExactGitRoot(path2, name);
     } else {
       if (exists) throw new Error(`Bootstrap refuses to replace existing path for ${name}: ${repository.path}`);
@@ -15022,26 +15023,26 @@ ${changes}`);
   }
   const bootstrapActions = [];
   if (!wrapperGitExists) {
-    await git(workspaceRoot18, ["init", "--initial-branch", config.workspace.default_branch]);
+    await git(workspaceRoot19, ["init", "--initial-branch", config.workspace.default_branch]);
     bootstrapActions.push(`initialized wrapper Git repository on ${config.workspace.default_branch}`);
   } else if (!wrapperHadHead) {
-    const current = await git(workspaceRoot18, ["symbolic-ref", "--short", "HEAD"]);
+    const current = await git(workspaceRoot19, ["symbolic-ref", "--short", "HEAD"]);
     if (current !== config.workspace.default_branch) throw new Error(`Unborn wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
   }
-  await writeTextAtomic(join2(workspaceRoot18, "workspace.yaml"), (0, import_yaml2.stringify)(config));
+  await writeTextAtomic(join2(workspaceRoot19, "workspace.yaml"), (0, import_yaml2.stringify)(config));
   for (const [path2, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
-    await writeTextAtomic(join2(workspaceRoot18, path2), contents);
+    await writeTextAtomic(join2(workspaceRoot19, path2), contents);
   }
-  await mkdir2(join2(workspaceRoot18, "agents"), { recursive: true });
+  await mkdir2(join2(workspaceRoot19, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
-    const agentPath = join2(workspaceRoot18, "agents", `${repository.agent}.md`);
+    const agentPath = join2(workspaceRoot19, "agents", `${repository.agent}.md`);
     if (!await pathExists(agentPath)) await writeTextAtomic(agentPath, agentDocument(name, repository.role));
   }
   await writeTextAtomic(gitignorePath, nextGitignore);
   for (const name of configuredNames) {
     const repository = config.repositories[name];
     const action = actionsByName.get(name);
-    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
+    const path2 = assertInside(workspaceRoot19, resolve4(workspaceRoot19, repository.path));
     if (action.source === "new") {
       await mkdir2(dirname4(path2), { recursive: true });
       await mkdir2(path2);
@@ -15050,70 +15051,70 @@ ${changes}`);
       bootstrapActions.push(`created ${name} with an empty base commit`);
     } else if (action.source === "clone") {
       await mkdir2(dirname4(path2), { recursive: true });
-      await git(workspaceRoot18, ["clone", "--branch", repository.default_branch, "--single-branch", "--", safeRemote(action.url, name), path2]);
+      await git(workspaceRoot19, ["clone", "--branch", repository.default_branch, "--single-branch", "--", safeRemote(action.url, name), path2]);
       bootstrapActions.push(`cloned ${name} into ${repository.path}`);
     } else if (action.source === "submodule") {
       await mkdir2(dirname4(path2), { recursive: true });
-      await git(workspaceRoot18, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", safeRemote(action.url, name), repository.path]);
+      await git(workspaceRoot19, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", safeRemote(action.url, name), repository.path]);
       bootstrapActions.push(`registered ${name} as a submodule`);
     } else {
       bootstrapActions.push(`registered existing repository ${name}`);
     }
   }
-  await initializeWorkspace({ workspaceRoot: workspaceRoot18, allowUnbornWrapper: !wrapperHadHead });
+  await initializeWorkspace({ workspaceRoot: workspaceRoot19, allowUnbornWrapper: !wrapperHadHead });
   let wrapperInitialCommit = null;
   if (!wrapperHadHead) {
-    await git(workspaceRoot18, ["add", "-A"]);
-    await git(workspaceRoot18, commitArgs(options.request.wrapper));
-    wrapperInitialCommit = await git(workspaceRoot18, ["rev-parse", "HEAD"]);
+    await git(workspaceRoot19, ["add", "-A"]);
+    await git(workspaceRoot19, commitArgs(options.request.wrapper));
+    wrapperInitialCommit = await git(workspaceRoot19, ["rev-parse", "HEAD"]);
     bootstrapActions.push("created configured wrapper initial commit");
   }
-  const summary2 = await initializeWorkspace({ workspaceRoot: workspaceRoot18 });
+  const summary2 = await initializeWorkspace({ workspaceRoot: workspaceRoot19 });
   return { ...summary2, status: "initialized", bootstrap_actions: bootstrapActions, wrapper_initial_commit: wrapperInitialCommit };
 }
 async function initializeWorkspace(options) {
-  const workspaceRoot18 = resolve4(options.workspaceRoot);
-  const configPath = join2(workspaceRoot18, "workspace.yaml");
+  const workspaceRoot19 = resolve4(options.workspaceRoot);
+  const configPath = join2(workspaceRoot19, "workspace.yaml");
   const config = await readData(configPath);
   const contractErrors2 = await validateContract("workspace", config);
   const errors2 = [
     ...contractErrors2.map((error) => `${error.instancePath || "/"} ${error.message}`),
     ...workspaceSemanticErrors(config),
-    ...await workspaceDocumentErrors(workspaceRoot18, config)
+    ...await workspaceDocumentErrors(workspaceRoot19, config)
   ];
   if (errors2.length > 0) throw new Error(`Workspace initialization validation failed:
 - ${errors2.join("\n- ")}`);
-  await git(workspaceRoot18, ["rev-parse", "--is-inside-work-tree"]);
-  const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
-  if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot18)) {
-    throw new Error(`Workspace root is not the wrapper Git root: ${workspaceRoot18}`);
+  await git(workspaceRoot19, ["rev-parse", "--is-inside-work-tree"]);
+  const wrapperTopLevel = await git(workspaceRoot19, ["rev-parse", "--show-toplevel"]);
+  if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot19)) {
+    throw new Error(`Workspace root is not the wrapper Git root: ${workspaceRoot19}`);
   }
-  if (options.allowUnbornWrapper && !await hasHead(workspaceRoot18)) {
-    const current = await git(workspaceRoot18, ["symbolic-ref", "--short", "HEAD"]);
+  if (options.allowUnbornWrapper && !await hasHead(workspaceRoot19)) {
+    const current = await git(workspaceRoot19, ["symbolic-ref", "--short", "HEAD"]);
     if (current !== config.workspace.default_branch) throw new Error(`Wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
   } else {
-    await assertDefaultBranch(workspaceRoot18, "wrapper", config.workspace.default_branch);
+    await assertDefaultBranch(workspaceRoot19, "wrapper", config.workspace.default_branch);
   }
   let submodulePaths = /* @__PURE__ */ new Set();
   try {
-    submodulePaths = parseSubmodulePaths(await readFile2(join2(workspaceRoot18, ".gitmodules"), "utf8"));
+    submodulePaths = parseSubmodulePaths(await readFile2(join2(workspaceRoot19, ".gitmodules"), "utf8"));
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
   }
   const repositories = [];
   const warnings = [];
   for (const [name, repository] of Object.entries(config.repositories)) {
-    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
+    const path2 = assertInside(workspaceRoot19, resolve4(workspaceRoot19, repository.path));
     try {
       await access2(path2);
     } catch {
       throw new Error(`Repository ${name} path is not accessible: ${repository.path}`);
     }
-    assertInside(await realpath(workspaceRoot18), await realpath(path2));
+    assertInside(await realpath(workspaceRoot19), await realpath(path2));
     const topLevel = await git(path2, ["rev-parse", "--show-toplevel"]);
     if (await realpath(topLevel) !== await realpath(path2)) throw new Error(`Repository path is not a Git root: ${repository.path}`);
-    const relativePath = relative(workspaceRoot18, path2).replaceAll("\\", "/");
-    const trackedEntry = await git(workspaceRoot18, ["ls-files", "--stage", "--", relativePath]);
+    const relativePath = relative(workspaceRoot19, path2).replaceAll("\\", "/");
+    const trackedEntry = await git(workspaceRoot19, ["ls-files", "--stage", "--", relativePath]);
     if (repository.mode === "submodule" && !submodulePaths.has(relativePath)) {
       throw new Error(`Repository ${name} is configured as a submodule but is not registered in .gitmodules: ${relativePath}`);
     }
@@ -15153,7 +15154,7 @@ async function initializeWorkspace(options) {
     });
   }
   if (config.activity.provider === "none") warnings.push("No activity provider is configured; planless work remains available");
-  const gitignorePath = join2(workspaceRoot18, ".gitignore");
+  const gitignorePath = join2(workspaceRoot19, ".gitignore");
   let currentGitignore = "";
   try {
     currentGitignore = await readFile2(gitignorePath, "utf8");
@@ -15163,7 +15164,7 @@ async function initializeWorkspace(options) {
   const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
   const gitignoreChanged = nextGitignore !== currentGitignore;
   if (options.apply !== false && gitignoreChanged) await writeTextAtomic(gitignorePath, nextGitignore);
-  const wrapperChanges = (await git(workspaceRoot18, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
+  const wrapperChanges = (await git(workspaceRoot19, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
   return {
     workspace: config.workspace.name,
     mode: config.workspace.mode,
@@ -15276,8 +15277,8 @@ async function assertValid(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
 }
-async function loadConfig(workspaceRoot18) {
-  const config = (0, import_yaml3.parse)(await readFile4(join4(workspaceRoot18, "workspace.yaml"), "utf8"));
+async function loadConfig(workspaceRoot19) {
+  const config = (0, import_yaml3.parse)(await readFile4(join4(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid("workspace", config);
   const errors2 = workspaceSemanticErrors(config);
   if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
@@ -15297,7 +15298,7 @@ function overallStatus(actions) {
   if (actions.some((action) => action.status === "manual")) return "manual";
   return actions.length === 0 ? "skipped" : "completed";
 }
-function syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18) {
+function syncManifestEvent(manifest2, record, recordPath2, workspaceRoot19) {
   const existing = manifest2.lifecycle_events.find((item) => item.event === record.event);
   const occurredAt = record.updated_at;
   const value2 = {
@@ -15305,15 +15306,15 @@ function syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18) {
     status: record.status,
     idempotency_key: existing?.idempotency_key ?? `${manifest2.run_id}:lifecycle:${record.event}:${record.provider}`,
     occurred_at: occurredAt,
-    record: relative2(workspaceRoot18, recordPath2).replaceAll("\\", "/"),
+    record: relative2(workspaceRoot19, recordPath2).replaceAll("\\", "/"),
     actions: record.actions
   };
   if (existing) Object.assign(existing, value2);
   else manifest2.lifecycle_events.push(value2);
   manifest2.updated_at = occurredAt;
 }
-function paths(workspaceRoot18, runId, event) {
-  const runtimeRoot = assertInside(workspaceRoot18, join4(workspaceRoot18, ".runtime"));
+function paths(workspaceRoot19, runId, event) {
+  const runtimeRoot = assertInside(workspaceRoot19, join4(workspaceRoot19, ".runtime"));
   const runRoot = assertInside(runtimeRoot, join4(runtimeRoot, "runs", runId));
   return {
     runtimeRoot,
@@ -15322,10 +15323,10 @@ function paths(workspaceRoot18, runId, event) {
   };
 }
 async function prepareActivityLifecycle(options) {
-  const workspaceRoot18 = resolve6(options.workspaceRoot);
-  const config = await loadConfig(workspaceRoot18);
-  const { manifestPath, recordPath: recordPath2 } = paths(workspaceRoot18, options.runId, options.event);
-  await ensurePrivateDirectory(join4(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve6(options.workspaceRoot);
+  const config = await loadConfig(workspaceRoot19);
+  const { manifestPath, recordPath: recordPath2 } = paths(workspaceRoot19, options.runId, options.event);
+  await ensurePrivateDirectory(join4(workspaceRoot19, ".runtime"));
   const lockPath = `${recordPath2}.lock`;
   return withExclusiveFile(lockPath, async () => {
     try {
@@ -15391,7 +15392,7 @@ async function prepareActivityLifecycle(options) {
       updated_at: now
     };
     await assertValid("activity-lifecycle-record", record);
-    syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18);
+    syncManifestEvent(manifest2, record, recordPath2, workspaceRoot19);
     await assertValid("runtime-manifest", manifest2);
     await writeJsonAtomic(recordPath2, record);
     await writeJsonAtomic(manifestPath, manifest2);
@@ -15399,8 +15400,8 @@ async function prepareActivityLifecycle(options) {
   });
 }
 async function recordActivityLifecycleAction(options) {
-  const workspaceRoot18 = resolve6(options.workspaceRoot);
-  const { manifestPath, recordPath: recordPath2 } = paths(workspaceRoot18, options.runId, options.event);
+  const workspaceRoot19 = resolve6(options.workspaceRoot);
+  const { manifestPath, recordPath: recordPath2 } = paths(workspaceRoot19, options.runId, options.event);
   return withExclusiveFile(`${recordPath2}.lock`, async () => {
     const record = await readJson(recordPath2);
     await assertValid("activity-lifecycle-record", record);
@@ -15431,7 +15432,7 @@ async function recordActivityLifecycleAction(options) {
     record.status = overallStatus(record.actions);
     record.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
     const manifest2 = await readJson(manifestPath);
-    syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18);
+    syncManifestEvent(manifest2, record, recordPath2, workspaceRoot19);
     await assertValid("activity-lifecycle-record", record);
     await assertValid("runtime-manifest", manifest2);
     await writeJsonAtomic(recordPath2, record);
@@ -15456,8 +15457,8 @@ import { basename, join as join5, resolve as resolve7 } from "node:path";
 function contractMessages(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
 }
-function markdownList(values18, empty) {
-  return values18.length > 0 ? values18.map((value2) => `- ${value2}`).join("\n") : `- ${empty}`;
+function markdownList(values19, empty) {
+  return values19.length > 0 ? values19.map((value2) => `- ${value2}`).join("\n") : `- ${empty}`;
 }
 function assertMarkdownCell(value2, field) {
   if (value2.includes("|") || /[\r\n]/.test(value2)) throw new Error(`${field} cannot contain a table delimiter or newline`);
@@ -15642,8 +15643,8 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename(p
   let index = null;
   let breakdown = null;
   try {
-    const workspaceRoot18 = resolve7(directory, "../../..");
-    const config = await readData(join5(workspaceRoot18, "workspace.yaml"));
+    const workspaceRoot19 = resolve7(directory, "../../..");
+    const config = await readData(join5(workspaceRoot19, "workspace.yaml"));
     const workspaceErrors = contractMessages(await validateContract("workspace", config));
     workspaceErrors.push(...workspaceSemanticErrors(config));
     if (workspaceErrors.length > 0) throw new Error(`Invalid workspace configuration: ${workspaceErrors.join("; ")}`);
@@ -15825,9 +15826,9 @@ Human approval must explicitly cover scope, solution, delivery order, risks, and
   return { index, breakdown, files };
 }
 async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ */ new Date()) {
-  const workspaceRoot18 = resolve7(workspaceRootInput);
+  const workspaceRoot19 = resolve7(workspaceRootInput);
   const contractErrors2 = contractMessages(await validateContract("plan-draft-request", request3));
-  const config = await readData(join5(workspaceRoot18, "workspace.yaml"));
+  const config = await readData(join5(workspaceRoot19, "workspace.yaml"));
   const workspaceErrors = contractMessages(await validateContract("workspace", config));
   const errors2 = [...contractErrors2, ...workspaceErrors];
   if (contractErrors2.length === 0 && workspaceErrors.length === 0) {
@@ -15835,8 +15836,8 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
   }
   if (errors2.length > 0) throw new Error(`Invalid plan draft request:
 - ${errors2.join("\n- ")}`);
-  const realWorkspace = await realpath2(workspaceRoot18);
-  const contextRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, "context"));
+  const realWorkspace = await realpath2(workspaceRoot19);
+  const contextRoot = assertInside(workspaceRoot19, join5(workspaceRoot19, "context"));
   try {
     const info = await lstat4(contextRoot);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Context root must be a real directory: ${contextRoot}`);
@@ -15981,7 +15982,7 @@ function normalizeContractFirstRequest(input, workId, runId, createdAt) {
       scope,
       implementation_scope: implementationScope,
       test_expectation: testExpectation,
-      verification_commands: repository.verification_commands.map((command2) => command2.trim()).filter(Boolean),
+      verification_commands: repository.verification_commands.map((command3) => command3.trim()).filter(Boolean),
       acceptance_criteria: repositoryAcceptance
     };
   }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
@@ -16100,8 +16101,8 @@ function normalizeDirectRequest(input) {
     created_at: input.createdAt
   };
 }
-function normalizeScope(values18, label) {
-  const normalized = values18.map((item) => item.trim().replace(/\/$/, "")).filter(Boolean);
+function normalizeScope(values19, label) {
+  const normalized = values19.map((item) => item.trim().replace(/\/$/, "")).filter(Boolean);
   for (const path2 of normalized) {
     if (path2.startsWith("/") || path2.includes("\\") || path2.split("/").includes("..")) {
       throw new Error(`${label} entries must be repository-relative paths: ${path2}`);
@@ -16122,26 +16123,26 @@ function defaultTestRationale(policy) {
   }
 }
 async function preparePlanlessTask(options) {
-  const workspaceRoot18 = resolve8(options.workspaceRoot);
-  const configPath = join6(workspaceRoot18, "workspace.yaml");
+  const workspaceRoot19 = resolve8(options.workspaceRoot);
+  const configPath = join6(workspaceRoot19, "workspace.yaml");
   const config = (0, import_yaml5.parse)(await readFile6(configPath, "utf8"));
   await assertValid2("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
   const repositoryConfig = config.repositories[options.repository];
   if (!repositoryConfig) throw new Error(`Unknown repository: ${options.repository}`);
-  const repositoryPath = assertInside(workspaceRoot18, join6(workspaceRoot18, repositoryConfig.path));
+  const repositoryPath = assertInside(workspaceRoot19, join6(workspaceRoot19, repositoryConfig.path));
   await access3(repositoryPath);
   await assertCleanRepository(repositoryPath);
   const baseCommit = await git(repositoryPath, ["rev-parse", repositoryConfig.default_branch]);
   const requiredInstructionPaths = [
-    join6(workspaceRoot18, "AGENTS.md"),
-    join6(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`),
-    join6(workspaceRoot18, "agents", "repository-worker.md"),
-    join6(workspaceRoot18, "agents", "verifier.md")
+    join6(workspaceRoot19, "AGENTS.md"),
+    join6(workspaceRoot19, "agents", `${repositoryConfig.agent}.md`),
+    join6(workspaceRoot19, "agents", "repository-worker.md"),
+    join6(workspaceRoot19, "agents", "verifier.md")
   ];
   await Promise.all(requiredInstructionPaths.map((path2) => access3(path2)));
-  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const runtimeRoot = assertInside(workspaceRoot19, join6(workspaceRoot19, ".runtime"));
   const now = options.now ?? /* @__PURE__ */ new Date();
   const { workId, runId } = await generateIds(runtimeRoot, options.request, now, options.discriminator);
   const createdAt = now.toISOString();
@@ -16180,7 +16181,7 @@ async function preparePlanlessTask(options) {
   await writeJsonAtomic(taskBriefPath, taskBrief);
   const runtimeRepository = {
     name: options.repository,
-    base_path: relative3(workspaceRoot18, repositoryPath),
+    base_path: relative3(workspaceRoot19, repositoryPath),
     base_commit: baseCommit,
     branch,
     worktree,
@@ -16232,7 +16233,7 @@ async function preparePlanlessTask(options) {
     implementation_scope: taskBrief.implementation_scope,
     test_expectation: taskBrief.test_expectation,
     instruction_paths: instructionPaths,
-    result_contract: join6(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+    result_contract: join6(workspaceRoot19, ".agents", "contracts", "worker-result.schema.json"),
     result_path: workerResultPath
   };
   const verifierInput = {
@@ -16248,15 +16249,15 @@ async function preparePlanlessTask(options) {
     acceptance_criteria: taskBrief.acceptance_criteria,
     test_expectation: taskBrief.test_expectation,
     verification_commands: taskBrief.verification_commands,
-    instruction_paths: [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", "verifier.md"), ...instructionPaths.slice(3)],
-    result_contract: join6(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+    instruction_paths: [join6(workspaceRoot19, "AGENTS.md"), join6(workspaceRoot19, "agents", "verifier.md"), ...instructionPaths.slice(3)],
+    result_contract: join6(workspaceRoot19, ".agents", "contracts", "verifier-result.schema.json"),
     result_path: verifierResultPath
   };
   await writeJsonAtomic(workerInputPath, workerInput);
   await writeJsonAtomic(verifierInputPath, verifierInput);
   if (config.activity.provider !== "none") {
     const lifecycle = await prepareActivityLifecycle({
-      workspaceRoot: workspaceRoot18,
+      workspaceRoot: workspaceRoot19,
       runId,
       event: "task.starting",
       availableCapabilities: options.availableCapabilities ?? [],
@@ -16310,8 +16311,8 @@ async function prepareContractFirstTask(options) {
   if (requestErrors.length > 0) {
     throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   }
-  const workspaceRoot18 = resolve8(options.workspaceRoot);
-  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const workspaceRoot19 = resolve8(options.workspaceRoot);
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid2("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
@@ -16319,18 +16320,18 @@ async function prepareContractFirstTask(options) {
   for (const target of options.request.repositories) {
     const registered = config.repositories[target.name];
     if (!registered) throw new Error(`Unknown repository: ${target.name}`);
-    const path2 = assertInside(workspaceRoot18, join6(workspaceRoot18, registered.path));
+    const path2 = assertInside(workspaceRoot19, join6(workspaceRoot19, registered.path));
     await access3(path2);
     await assertCleanRepository(path2);
     repositoryBases.set(target.name, { path: path2, commit: await git(path2, ["rev-parse", registered.default_branch]) });
     await Promise.all([
-      access3(join6(workspaceRoot18, "AGENTS.md")),
-      access3(join6(workspaceRoot18, "agents", `${registered.agent}.md`)),
-      access3(join6(workspaceRoot18, "agents", "repository-worker.md")),
-      access3(join6(workspaceRoot18, "agents", "verifier.md"))
+      access3(join6(workspaceRoot19, "AGENTS.md")),
+      access3(join6(workspaceRoot19, "agents", `${registered.agent}.md`)),
+      access3(join6(workspaceRoot19, "agents", "repository-worker.md")),
+      access3(join6(workspaceRoot19, "agents", "verifier.md"))
     ]);
   }
-  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const runtimeRoot = assertInside(workspaceRoot19, join6(workspaceRoot19, ".runtime"));
   const now = options.now ?? /* @__PURE__ */ new Date();
   const { workId, runId } = await generateIds(runtimeRoot, options.request.request, now, options.discriminator);
   const createdAt = now.toISOString();
@@ -16365,9 +16366,9 @@ async function prepareContractFirstTask(options) {
     const blockedBy = target.depends_on ?? [];
     const ready = blockedBy.length === 0;
     const instructionPaths = [
-      join6(workspaceRoot18, "AGENTS.md"),
-      join6(workspaceRoot18, "agents", `${registered.agent}.md`),
-      join6(workspaceRoot18, "agents", "repository-worker.md")
+      join6(workspaceRoot19, "AGENTS.md"),
+      join6(workspaceRoot19, "agents", `${registered.agent}.md`),
+      join6(workspaceRoot19, "agents", "repository-worker.md")
     ];
     try {
       await access3(join6(base.path, "AGENTS.md"));
@@ -16395,7 +16396,7 @@ async function prepareContractFirstTask(options) {
       implementation_scope: target.implementation_scope,
       test_expectation: target.test_expectation,
       instruction_paths: instructionPaths,
-      result_contract: join6(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+      result_contract: join6(workspaceRoot19, ".agents", "contracts", "worker-result.schema.json"),
       result_path: workerResultPath
     });
     await writeJsonAtomic(verifierInputPath, {
@@ -16412,13 +16413,13 @@ async function prepareContractFirstTask(options) {
       test_expectation: target.test_expectation,
       verification_commands: target.verification_commands,
       shared_contract: sharedContract,
-      instruction_paths: [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join6(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+      instruction_paths: [join6(workspaceRoot19, "AGENTS.md"), join6(workspaceRoot19, "agents", "verifier.md")],
+      result_contract: join6(workspaceRoot19, ".agents", "contracts", "verifier-result.schema.json"),
       result_path: verifierResultPath
     });
     runtimeRepositories.push({
       name: target.name,
-      base_path: relative3(workspaceRoot18, base.path),
+      base_path: relative3(workspaceRoot19, base.path),
       base_commit: base.commit,
       branch,
       worktree,
@@ -16448,7 +16449,7 @@ async function prepareContractFirstTask(options) {
   await assertValid2("runtime-manifest", manifest2);
   await writeJsonAtomic(manifestPath, manifest2);
   if (config.activity.provider !== "none") {
-    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot18, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
+    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot19, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
     if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
       const primary2 = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
       return { workId, runId, branch: primary2.branch, worktree: primary2.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary2.workerInput, verifierInput: primary2.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
@@ -16479,12 +16480,12 @@ async function preparePlanTask(options) {
   if (requestErrors.length > 0) {
     throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   }
-  const workspaceRoot18 = resolve8(options.workspaceRoot);
-  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const workspaceRoot19 = resolve8(options.workspaceRoot);
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid2("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const planDirectory3 = assertInside(join6(workspaceRoot18, "context", "plans"), resolve8(workspaceRoot18, options.request.source.reference));
+  const planDirectory3 = assertInside(join6(workspaceRoot19, "context", "plans"), resolve8(workspaceRoot19, options.request.source.reference));
   const validation = await validatePlanDirectory(planDirectory3);
   if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
     throw new Error(`Plan validation failed: ${validation.errors.join("; ") || "plan metadata is unavailable"}`);
@@ -16510,18 +16511,18 @@ async function preparePlanTask(options) {
   for (const target of [{ name: item.repository }]) {
     const registered = config.repositories[target.name];
     if (!registered) throw new Error(`Unknown repository: ${target.name}`);
-    const path2 = assertInside(workspaceRoot18, join6(workspaceRoot18, registered.path));
+    const path2 = assertInside(workspaceRoot19, join6(workspaceRoot19, registered.path));
     await access3(path2);
     await assertCleanRepository(path2);
     repositoryBases.set(target.name, { path: path2, commit: await git(path2, ["rev-parse", registered.default_branch]) });
     await Promise.all([
-      access3(join6(workspaceRoot18, "AGENTS.md")),
-      access3(join6(workspaceRoot18, "agents", `${registered.agent}.md`)),
-      access3(join6(workspaceRoot18, "agents", "repository-worker.md")),
-      access3(join6(workspaceRoot18, "agents", "verifier.md"))
+      access3(join6(workspaceRoot19, "AGENTS.md")),
+      access3(join6(workspaceRoot19, "agents", `${registered.agent}.md`)),
+      access3(join6(workspaceRoot19, "agents", "repository-worker.md")),
+      access3(join6(workspaceRoot19, "agents", "verifier.md"))
     ]);
   }
-  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const runtimeRoot = assertInside(workspaceRoot19, join6(workspaceRoot19, ".runtime"));
   const now = options.now ?? /* @__PURE__ */ new Date();
   const runId = generateRunId(item.title, now, options.discriminator ?? randomBytes2(4).toString("hex"));
   const createdAt = now.toISOString();
@@ -16555,7 +16556,7 @@ async function preparePlanTask(options) {
     const verifierResultPath = join6(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
     const blockedBy = target.depends_on ?? [];
     const ready = blockedBy.length === 0;
-    const instructionPaths = [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", `${registered.agent}.md`), join6(workspaceRoot18, "agents", "repository-worker.md")];
+    const instructionPaths = [join6(workspaceRoot19, "AGENTS.md"), join6(workspaceRoot19, "agents", `${registered.agent}.md`), join6(workspaceRoot19, "agents", "repository-worker.md")];
     try {
       await access3(join6(base.path, "AGENTS.md"));
       instructionPaths.push(join6(worktree, "AGENTS.md"));
@@ -16575,7 +16576,7 @@ async function preparePlanTask(options) {
       implementation_scope: target.implementation_scope,
       test_expectation: target.test_expectation,
       instruction_paths: instructionPaths,
-      result_contract: join6(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+      result_contract: join6(workspaceRoot19, ".agents", "contracts", "worker-result.schema.json"),
       result_path: workerResultPath
     });
     await writeJsonAtomic(verifierInputPath, {
@@ -16591,11 +16592,11 @@ async function preparePlanTask(options) {
       acceptance_criteria: target.acceptance_criteria,
       test_expectation: target.test_expectation,
       verification_commands: target.verification_commands,
-      instruction_paths: [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join6(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+      instruction_paths: [join6(workspaceRoot19, "AGENTS.md"), join6(workspaceRoot19, "agents", "verifier.md")],
+      result_contract: join6(workspaceRoot19, ".agents", "contracts", "verifier-result.schema.json"),
       result_path: verifierResultPath
     });
-    runtimeRepositories.push({ name: target.name, base_path: relative3(workspaceRoot18, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
+    runtimeRepositories.push({ name: target.name, base_path: relative3(workspaceRoot19, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
     preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
   }
   const manifest2 = {
@@ -16617,7 +16618,7 @@ async function preparePlanTask(options) {
   await assertValid2("runtime-manifest", manifest2);
   await writeJsonAtomic(manifestPath, manifest2);
   if (config.activity.provider !== "none") {
-    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot18, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
+    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot19, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
     if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
       const primary2 = preparedRepositories[0];
       return { workId, runId, branch, worktree: primary2.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary2.workerInput, verifierInput: primary2.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
@@ -16643,8 +16644,8 @@ async function preparePlanTask(options) {
   return { workId, runId, branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
 }
 async function resumePlanlessTask(options) {
-  const workspaceRoot18 = resolve8(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve8(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join6(workspaceRoot19, ".runtime"));
   const manifestPath = assertInside(runtimeRoot, join6(runtimeRoot, "runs", options.runId, "manifest.json"));
   const manifest2 = JSON.parse(await readFile6(manifestPath, "utf8"));
   await assertValid2("runtime-manifest", manifest2);
@@ -16653,13 +16654,13 @@ async function resumePlanlessTask(options) {
   if (!lifecycle || lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
     throw new Error(`task.starting lifecycle is ${lifecycle?.status ?? "missing"}; complete required or manual actions before resuming`);
   }
-  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid2("workspace", config);
   const basePaths = /* @__PURE__ */ new Map();
   for (const repository of manifest2.repositories) {
     const registered = config.repositories[repository.name];
     if (!registered) throw new Error(`Unknown repository: ${repository.name}`);
-    const repositoryPath = assertInside(workspaceRoot18, join6(workspaceRoot18, repository.base_path));
+    const repositoryPath = assertInside(workspaceRoot19, join6(workspaceRoot19, repository.base_path));
     await assertCleanRepository(repositoryPath);
     const currentBase = await git(repositoryPath, ["rev-parse", registered.default_branch]);
     if (currentBase !== repository.base_commit) throw new Error(`Repository base changed during activity preflight for ${repository.name}; prepare a fresh run`);
@@ -16958,8 +16959,8 @@ async function validateVerifierResult(manifest2, repository, input) {
 async function recordResult(options) {
   assertIdentifier(options.runId, "run ID", /^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$/);
   assertIdentifier(options.repository, "repository", /^[a-z][a-z0-9-]*$/);
-  const workspaceRoot18 = resolve10(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve10(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join7(workspaceRoot19, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
   const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
   const lockPath = `${manifestPath}.lock`;
@@ -17133,8 +17134,8 @@ function addExecutionEvent(manifest2, repository, stage, fromStatus, toStatus, a
   else manifest2.status = "prepared";
   manifest2.updated_at = occurredAt;
 }
-async function loadWorkspace(workspaceRoot18) {
-  const config = (0, import_yaml6.parse)(await readFile9(join8(workspaceRoot18, "workspace.yaml"), "utf8"));
+async function loadWorkspace(workspaceRoot19) {
+  const config = (0, import_yaml6.parse)(await readFile9(join8(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid4("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
@@ -17188,12 +17189,12 @@ function repairFindings(verifier) {
   return findings;
 }
 async function prepareRepair(options) {
-  const workspaceRoot18 = resolve12(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join8(workspaceRoot19, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
   const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
   const lockPath = `${manifestPath}.lock`;
-  const config = await loadWorkspace(workspaceRoot18);
+  const config = await loadWorkspace(workspaceRoot19);
   return withExclusiveFile(lockPath, async () => {
     const manifest2 = await readJson3(manifestPath);
     await assertValid4("runtime-manifest", manifest2);
@@ -17243,9 +17244,9 @@ async function prepareRepair(options) {
     const repositoryConfig = config.repositories[repository.name];
     if (!repositoryConfig) throw new Error(`Workspace has no repository named ${repository.name}`);
     const instructionPaths = [
-      join8(workspaceRoot18, "AGENTS.md"),
-      join8(workspaceRoot18, "agents", "repository-worker.md"),
-      join8(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`)
+      join8(workspaceRoot19, "AGENTS.md"),
+      join8(workspaceRoot19, "agents", "repository-worker.md"),
+      join8(workspaceRoot19, "agents", `${repositoryConfig.agent}.md`)
     ];
     const workerInput = {
       contract_version: 1,
@@ -17263,7 +17264,7 @@ async function prepareRepair(options) {
       previous_worker_result: priorWorkerInput.result_path,
       previous_verifier_result: priorVerifierInput.result_path,
       instruction_paths: instructionPaths,
-      result_contract: join8(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+      result_contract: join8(workspaceRoot19, ".agents", "contracts", "worker-result.schema.json"),
       result_path: workerResultPath
     };
     const verifierInput = {
@@ -17280,8 +17281,8 @@ async function prepareRepair(options) {
       acceptance_criteria: taskTarget.acceptance_criteria ?? taskBrief.acceptance_criteria,
       test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
       verification_commands: taskTarget.verification_commands ?? taskBrief.verification_commands,
-      instruction_paths: [join8(workspaceRoot18, "AGENTS.md"), join8(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join8(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+      instruction_paths: [join8(workspaceRoot19, "AGENTS.md"), join8(workspaceRoot19, "agents", "verifier.md")],
+      result_contract: join8(workspaceRoot19, ".agents", "contracts", "verifier-result.schema.json"),
       result_path: verifierResultPath
     };
     await writeJsonAtomic(workerInputPath, workerInput);
@@ -17314,13 +17315,26 @@ ${checks}
 Prepared from run \`${brief.run_id}\`. No push or pull request was performed.
 `;
 }
+function shellQuote(value2) {
+  return `'${value2.replaceAll("'", `'"'"'`)}'`;
+}
+function command(description, argv) {
+  return { description, argv, shell: argv.map(shellQuote).join(" ") };
+}
+async function assertBranchName(repository, branch, label) {
+  try {
+    await git(repository, ["check-ref-format", "--branch", branch]);
+  } catch {
+    throw new Error(`${label} is not a valid Git branch name`);
+  }
+}
 async function prepareReview(options) {
-  const workspaceRoot18 = resolve12(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join8(workspaceRoot19, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
   const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
   const lockPath = `${manifestPath}.lock`;
-  const config = await loadWorkspace(workspaceRoot18);
+  const config = await loadWorkspace(workspaceRoot19);
   return withExclusiveFile(lockPath, async () => {
     const manifest2 = await readJson3(manifestPath);
     await assertValid4("runtime-manifest", manifest2);
@@ -17345,23 +17359,36 @@ async function prepareReview(options) {
     if (repository.review_preparation) {
       const existing = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
       await assertValid4("review-preparation", existing);
-      if (existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
+      if (existing.contract_version === 2 && existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
         return existing;
       }
     }
     const remotes = (await git(repository.worktree, ["remote"])).split("\n").filter(Boolean);
     const remote = remotes.includes("origin") ? "origin" : null;
-    const blockers2 = remote ? [] : ["Repository has no origin remote; configure one before pushing or opening a draft pull request."];
+    const baseBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+    await assertBranchName(repository.worktree, repository.branch, "Recorded source branch");
+    await assertBranchName(repository.worktree, baseBranch, "Configured default branch");
+    const taskTarget = taskBrief.repositories.find((candidate) => candidate.name === repository.name);
+    const testArgv = taskTarget?.verification_commands ?? taskBrief.verification_commands;
+    const commands = {
+      diff: command("Inspect the exact base-to-head diff", ["git", "-C", repository.worktree, "diff", "--stat", `${repository.base_commit}...${headCommit}`]),
+      commits: command("Inspect the exact commit list", ["git", "-C", repository.worktree, "log", "--oneline", `${repository.base_commit}..${headCommit}`]),
+      show: command("Inspect the exact verified head commit", ["git", "-C", repository.worktree, "show", "--stat", "--oneline", headCommit]),
+      tests: testArgv.map((value2) => command(`Run recorded verification: ${value2}`, ["sh", "-lc", value2])),
+      switch_target: command("Switch the base repository to the configured target branch", ["git", "-C", assertInside(workspaceRoot19, join8(workspaceRoot19, repository.base_path)), "switch", baseBranch]),
+      merge: command("Human-only merge of the exact verified head", ["git", "-C", assertInside(workspaceRoot19, join8(workspaceRoot19, repository.base_path)), "merge", "--no-ff", headCommit])
+    };
+    const confirmArgv = ["node", ".agents/bin/cc.mjs", "confirm-merge", "--run-id", manifest2.run_id, "--repository", repository.name, "--merge-commit", "<full-merge-commit>", "--author", "<author-slug>", "--evidence", "<single-line-human-merge-evidence>"];
     const preparedAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
     const preparationPath = join8(runtimeRoot, "runs", options.runId, `${repository.name}-draft-pr.json`);
     const preparation = {
-      contract_version: 1,
+      contract_version: 2,
       work_id: manifest2.work_id,
       run_id: manifest2.run_id,
       repository: repository.name,
-      status: blockers2.length === 0 ? "ready" : "blocked",
+      status: remote ? "ready-for-publication" : "ready-for-local-review",
       remote,
-      base_branch: config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch,
+      base_branch: baseBranch,
       head_branch: repository.branch,
       base_commit: repository.base_commit,
       head_commit: headCommit,
@@ -17371,8 +17398,10 @@ async function prepareReview(options) {
       body: reviewBody(taskBrief, verifier),
       worker_result: workerInput.result_path,
       verifier_result: verifierInput.result_path,
-      blockers: blockers2,
-      prepared_at: preparedAt
+      blockers: [],
+      prepared_at: preparedAt,
+      commands,
+      merge_handoff: { status: "merge-confirmation-required", confirmation_argv: confirmArgv, confirmation_shell: confirmArgv.map(shellQuote).join(" ") }
     };
     if (!sameMembers2(worker.changed_files, changedFiles)) {
       throw new Error("Current Git diff does not match the recorded worker result");
@@ -17380,6 +17409,7 @@ async function prepareReview(options) {
     await assertValid4("review-preparation", preparation);
     await writeJsonAtomic(preparationPath, preparation);
     repository.review_preparation = preparationPath;
+    repository.review_state = preparation.status;
     addEvidence(manifest2, preparationPath);
     const eventKey2 = `${manifest2.run_id}:execution:${repository.name}:review-prepared:attempt-${repository.repair_attempts ?? 0}`;
     if (!manifest2.execution_events?.some((event) => event.idempotency_key === eventKey2)) {
@@ -17397,8 +17427,8 @@ function safeReviewEvidence(value2, label) {
   return trimmed;
 }
 async function recordReviewPublication(options) {
-  const workspaceRoot18 = resolve12(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join8(workspaceRoot19, ".runtime"));
   const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
   return withExclusiveFile(`${manifestPath}.lock`, async () => {
     const manifest2 = await readJson3(manifestPath);
@@ -17408,7 +17438,11 @@ async function recordReviewPublication(options) {
     if (!repository.review_preparation) throw new Error("Prepare the draft pull-request handoff before recording publication");
     const preparation = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
     await assertValid4("review-preparation", preparation);
-    if (preparation.status !== "ready") throw new Error(`Draft pull-request handoff is ${preparation.status}`);
+    if (preparation.work_id !== manifest2.work_id || preparation.run_id !== manifest2.run_id || preparation.repository !== repository.name) throw new Error("Review preparation identity does not match the active run");
+    if (preparation.contract_version !== 2 || preparation.status !== "ready-for-publication" || preparation.remote !== "origin") {
+      throw new Error(`Remote publication requires a ready-for-publication handoff with origin; current state is ${preparation.status}`);
+    }
+    if (!options.authorized) throw new Error("Remote publication recording requires explicit authorization confirmation");
     await assertCleanRepository(repository.worktree);
     const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
     if (headCommit !== preparation.head_commit) throw new Error("Worktree HEAD changed after review preparation");
@@ -17417,7 +17451,7 @@ async function recordReviewPublication(options) {
     if (options.status === "failed" && options.pullRequest) throw new Error("Failed publication cannot record a pull-request reference");
     const recordPath2 = join8(runtimeRoot, "runs", options.runId, `${repository.name}-review-publication.json`);
     const record = {
-      contract_version: 1,
+      contract_version: options.status === "published" ? 2 : 1,
       work_id: manifest2.work_id,
       run_id: manifest2.run_id,
       repository: repository.name,
@@ -17427,7 +17461,8 @@ async function recordReviewPublication(options) {
       evidence,
       head_commit: headCommit,
       idempotency_key: `${manifest2.run_id}:review-publication:${repository.name}`,
-      recorded_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString()
+      recorded_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString(),
+      ...options.status === "published" ? { review_state: "published-for-review" } : {}
     };
     await assertValid4("review-publication-record", record);
     if (repository.review_publication) {
@@ -17439,8 +17474,96 @@ async function recordReviewPublication(options) {
     }
     await writeJsonAtomic(recordPath2, record);
     repository.review_publication = recordPath2;
+    repository.review_state = options.status === "published" ? "published-for-review" : "ready-for-publication";
     addEvidence(manifest2, recordPath2);
     manifest2.updated_at = record.recorded_at;
+    await assertValid4("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+    return record;
+  });
+}
+async function isAncestor(repository, ancestor, descendant) {
+  try {
+    await git(repository, ["merge-base", "--is-ancestor", ancestor, descendant]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function confirmMerge(options) {
+  const workspaceRoot19 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join8(workspaceRoot19, ".runtime"));
+  const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
+  if (!/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("Merge commit must be a full lowercase Git object ID");
+  const author = safeReviewEvidence(options.author, "Author");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(author)) throw new Error("Author must be a lowercase slug");
+  const evidence = safeReviewEvidence(options.evidence, "Merge evidence");
+  const config = await loadWorkspace(workspaceRoot19);
+  return withExclusiveFile(`${manifestPath}.lock`, async () => {
+    const manifest2 = await readJson3(manifestPath);
+    await assertValid4("runtime-manifest", manifest2);
+    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
+    const repository = findRepository2(manifest2, options.repository);
+    if (!repository.review_preparation) throw new Error("Prepare review before confirming a merge");
+    const preparation = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
+    await assertValid4("review-preparation", preparation);
+    if (preparation.work_id !== manifest2.work_id || preparation.run_id !== manifest2.run_id || preparation.repository !== repository.name) throw new Error("Review preparation identity does not match the active run");
+    if (preparation.contract_version !== 2 || preparation.head_commit !== await git(repository.worktree, ["rev-parse", "HEAD"])) throw new Error("Review preparation does not match the current verified head");
+    const baseBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+    if (preparation.base_branch !== baseBranch) throw new Error("Review preparation target differs from the configured default branch");
+    const baseRepository = assertInside(workspaceRoot19, join8(workspaceRoot19, repository.base_path));
+    await git(baseRepository, ["cat-file", "-e", `${options.mergeCommit}^{commit}`]);
+    const targetRefs = [`refs/heads/${baseBranch}`, `refs/remotes/origin/${baseBranch}`];
+    let targetRef = null;
+    let targetCommit = null;
+    for (const ref of targetRefs) {
+      try {
+        const commit = await git(baseRepository, ["rev-parse", "--verify", `${ref}^{commit}`]);
+        if (await isAncestor(baseRepository, options.mergeCommit, commit)) {
+          targetRef = ref;
+          targetCommit = commit;
+          break;
+        }
+      } catch {
+      }
+    }
+    if (!targetRef || !targetCommit) throw new Error(`Reported merge commit is not reachable from the configured default target ${baseBranch}`);
+    if (!await isAncestor(baseRepository, preparation.head_commit, options.mergeCommit)) throw new Error("Verified review head is not reachable from the reported merge commit");
+    if (!await isAncestor(baseRepository, preparation.base_commit, options.mergeCommit)) throw new Error("Recorded base is not reachable from the reported merge commit");
+    const finishArgv = ["node", ".agents/bin/cc.mjs", "finish-work", "--run-id", manifest2.run_id, "--repository", repository.name, "--outcome", "merged", "--author", author, "--merge-commit", options.mergeCommit];
+    const publication = repository.review_publication ? await readJson3(assertInside(runtimeRoot, repository.review_publication)) : null;
+    if (publication?.status === "published" && publication.pull_request) finishArgv.push("--pull-request", publication.pull_request);
+    const record = {
+      contract_version: 1,
+      work_id: manifest2.work_id,
+      run_id: manifest2.run_id,
+      repository: repository.name,
+      status: "closeout-ready",
+      base_branch: baseBranch,
+      target_ref: targetRef,
+      target_commit: targetCommit,
+      head_commit: preparation.head_commit,
+      merge_commit: options.mergeCommit,
+      evidence,
+      finish_work_argv: finishArgv,
+      finish_work_shell: finishArgv.map(shellQuote).join(" "),
+      idempotency_key: `${manifest2.run_id}:merge-confirmation:${repository.name}`,
+      confirmed_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString()
+    };
+    await assertValid4("merge-confirmation-record", record);
+    const recordPath2 = join8(runtimeRoot, "runs", options.runId, `${repository.name}-merge-confirmation.json`);
+    if (repository.merge_confirmation) {
+      const existing = await readJson3(assertInside(runtimeRoot, repository.merge_confirmation));
+      await assertValid4("merge-confirmation-record", existing);
+      const comparable = (value2) => JSON.stringify({ ...value2, confirmed_at: null });
+      if (comparable(existing) !== comparable(record)) throw new Error("Merge was already confirmed with different evidence");
+      return existing;
+    }
+    await writeJsonAtomic(recordPath2, record);
+    repository.merge_confirmation = recordPath2;
+    repository.review_state = "closeout-ready";
+    addEvidence(manifest2, recordPath2);
+    manifest2.updated_at = record.confirmed_at;
     await assertValid4("runtime-manifest", manifest2);
     await writeJsonAtomic(manifestPath, manifest2);
     return record;
@@ -17518,10 +17641,11 @@ var init_record_review_publication = __esm({
       status: { type: "string" },
       tool: { type: "string" },
       "pull-request": { type: "string" },
-      evidence: { type: "string" }
+      evidence: { type: "string" },
+      authorized: { type: "boolean" }
     } }));
     if (!values7["run-id"] || !values7.repository || !values7.evidence || !["published", "failed"].includes(values7.status ?? "") || !["gh", "glab", "manual"].includes(values7.tool ?? "")) {
-      throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
+      throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text> --authorized");
     }
     console.log(JSON.stringify(await recordReviewPublication({
       workspaceRoot: workspaceRoot7,
@@ -17530,14 +17654,47 @@ var init_record_review_publication = __esm({
       status: values7.status,
       tool: values7.tool,
       ...values7["pull-request"] ? { pullRequest: values7["pull-request"] } : {},
-      evidence: values7.evidence
+      evidence: values7.evidence,
+      ...values7.authorized ? { authorized: true } : {}
+    }), null, 2));
+  }
+});
+
+// scripts/confirm-merge.ts
+var confirm_merge_exports = {};
+import { dirname as dirname11, resolve as resolve16 } from "node:path";
+import { parseArgs as parseArgs8 } from "node:util";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
+var values8, workspaceRoot8;
+var init_confirm_merge = __esm({
+  async "scripts/confirm-merge.ts"() {
+    "use strict";
+    init_review_lifecycle();
+    ({ values: values8 } = parseArgs8({ options: {
+      "run-id": { type: "string" },
+      repository: { type: "string" },
+      "merge-commit": { type: "string" },
+      evidence: { type: "string" },
+      author: { type: "string" }
+    } }));
+    if (!values8["run-id"] || !values8.repository || !values8["merge-commit"] || !values8.evidence || !values8.author) {
+      throw new Error("Usage: cc confirm-merge --run-id <id> --repository <name> --merge-commit <full-sha> --author <slug> --evidence <single-line-evidence>");
+    }
+    workspaceRoot8 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname11(fileURLToPath9(import.meta.url)), ".."));
+    console.log(JSON.stringify(await confirmMerge({
+      workspaceRoot: workspaceRoot8,
+      runId: values8["run-id"],
+      repository: values8.repository,
+      mergeCommit: values8["merge-commit"],
+      evidence: values8.evidence,
+      author: values8.author
     }), null, 2));
   }
 });
 
 // scripts/lib/finish-work.ts
 import { access as access4, lstat as lstat5, mkdir as mkdir4, readFile as readFile10, readdir as readdir2, realpath as realpath3 } from "node:fs/promises";
-import { basename as basename2, join as join9, relative as relative4, resolve as resolve16 } from "node:path";
+import { basename as basename2, join as join9, relative as relative4, resolve as resolve17 } from "node:path";
 async function readJson4(path2) {
   return JSON.parse(await readFile10(path2, "utf8"));
 }
@@ -17618,8 +17775,8 @@ function contributionDocumentErrors(path2, content, runId) {
   }
   return errors2;
 }
-async function loadWorkspace2(workspaceRoot18) {
-  const config = (0, import_yaml7.parse)(await readFile10(join9(workspaceRoot18, "workspace.yaml"), "utf8"));
+async function loadWorkspace2(workspaceRoot19) {
+  const config = (0, import_yaml7.parse)(await readFile10(join9(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid5("workspace", config);
   const errors2 = workspaceSemanticErrors(config);
   if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
@@ -17647,7 +17804,7 @@ async function assertCurrentWorker2(runtimeRoot, manifest2, repository, headComm
   if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
     throw new Error("Worker result identity does not match the closeout run");
   }
-  if (worker.status !== "completed" || worker.branch !== repository.branch || resolve16(worker.worktree) !== resolve16(repository.worktree)) {
+  if (worker.status !== "completed" || worker.branch !== repository.branch || resolve17(worker.worktree) !== resolve17(repository.worktree)) {
     throw new Error("Closeout requires the completed worker recorded for this branch and worktree");
   }
   if (worker.commits.at(-1) !== headCommit || worker.commits.join("\n") !== commits.join("\n")) {
@@ -17670,11 +17827,11 @@ async function findExistingContribution(root, runId, repository) {
   }
   return null;
 }
-async function ensureContributionRoot(workspaceRoot18, path2) {
+async function ensureContributionRoot(workspaceRoot19, path2) {
   await mkdir4(path2, { recursive: true, mode: 493 });
   const info = await lstat5(path2);
   if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
-  assertInside(await realpath3(workspaceRoot18), await realpath3(path2));
+  assertInside(await realpath3(workspaceRoot19), await realpath3(path2));
 }
 function addExecutionEvent2(manifest2, repository, stage, from, to, occurredAt, resultPath) {
   const key = `${manifest2.run_id}:execution:${repository.name}:${stage}`;
@@ -17717,13 +17874,32 @@ function assertCloseoutLifecycleReady(manifest2, config, outcome) {
     throw new Error(`Configured activity hook ${event} is ${lifecycle.status}; complete required or manual actions before closeout`);
   }
 }
-async function isAncestor(repository, ancestor, descendant) {
+async function isAncestor2(repository, ancestor, descendant) {
   try {
     await git(repository, ["merge-base", "--is-ancestor", ancestor, descendant]);
     return true;
   } catch {
     return false;
   }
+}
+async function assertVerifiedMergeConfirmation(workspaceRoot19, runtimeRoot, config, manifest2, repository, requestedMergeCommit) {
+  if (!repository.merge_confirmation) throw new Error(`Merged closeout is not ready: record and verify the human merge with node .agents/bin/cc.mjs confirm-merge --run-id ${manifest2.run_id} --repository ${repository.name} --merge-commit <full-sha> --author <slug> --evidence <single-line-evidence>`);
+  const record = await readJson4(assertInside(runtimeRoot, repository.merge_confirmation));
+  await assertValid5("merge-confirmation-record", record);
+  if (record.work_id !== manifest2.work_id || record.run_id !== manifest2.run_id || record.repository !== repository.name || record.head_commit !== await git(repository.worktree, ["rev-parse", "HEAD"])) {
+    throw new Error("Merge confirmation identity or verified head does not match the active run");
+  }
+  if (requestedMergeCommit && requestedMergeCommit !== record.merge_commit) throw new Error("Requested merge commit differs from the verified merge confirmation");
+  const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+  if (record.base_branch !== defaultBranch || ![`refs/heads/${defaultBranch}`, `refs/remotes/origin/${defaultBranch}`].includes(record.target_ref)) {
+    throw new Error("Merge confirmation does not target the configured default branch");
+  }
+  const baseRepository = assertInside(workspaceRoot19, join9(workspaceRoot19, repository.base_path));
+  const currentTarget = await git(baseRepository, ["rev-parse", "--verify", `${record.target_ref}^{commit}`]);
+  if (currentTarget !== record.target_commit || !await isAncestor2(baseRepository, record.merge_commit, currentTarget) || !await isAncestor2(baseRepository, record.head_commit, record.merge_commit)) {
+    throw new Error("Merge confirmation no longer proves the exact reviewed head is reachable from the recorded default target");
+  }
+  return record;
 }
 async function verifiedDefaultRefs(repository, branch) {
   const refs = [];
@@ -17736,12 +17912,12 @@ async function verifiedDefaultRefs(repository, branch) {
   }
   return refs;
 }
-async function cleanupBlockers(workspaceRoot18, config, repository, record) {
+async function cleanupBlockers(workspaceRoot19, config, repository, record) {
   const blockers2 = [];
-  const contributionPath = assertInside(workspaceRoot18, join9(workspaceRoot18, record.contribution));
+  const contributionPath = assertInside(workspaceRoot19, join9(workspaceRoot19, record.contribution));
   try {
-    await git(workspaceRoot18, ["ls-files", "--error-unmatch", "--", record.contribution]);
-    if (await git(workspaceRoot18, ["status", "--porcelain=v1", "--", record.contribution])) {
+    await git(workspaceRoot19, ["ls-files", "--error-unmatch", "--", record.contribution]);
+    if (await git(workspaceRoot19, ["status", "--porcelain=v1", "--", record.contribution])) {
       blockers2.push("Contribution has uncommitted wrapper changes; commit it through the configured wrapper workflow before cleanup.");
     }
   } catch {
@@ -17752,7 +17928,7 @@ async function cleanupBlockers(workspaceRoot18, config, repository, record) {
   } catch {
     blockers2.push("Contribution file is missing; runtime cleanup would discard the only closeout record.");
   }
-  const baseRepository = assertInside(workspaceRoot18, join9(workspaceRoot18, repository.base_path));
+  const baseRepository = assertInside(workspaceRoot19, join9(workspaceRoot19, repository.base_path));
   try {
     if (await git(baseRepository, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Base repository is dirty.");
     if (await git(repository.worktree, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Run worktree has uncommitted changes.");
@@ -17764,12 +17940,12 @@ async function cleanupBlockers(workspaceRoot18, config, repository, record) {
   }
   const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
   const defaultRefs = await verifiedDefaultRefs(baseRepository, defaultBranch);
-  const headOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.head_commit, ref)))).some(Boolean);
+  const headOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor2(baseRepository, record.head_commit, ref)))).some(Boolean);
   if (record.outcome === "merged") {
     let mergeEvidence = headOnDefault;
     if (!mergeEvidence && record.merge_commit) {
-      const mergeOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.merge_commit, ref)))).some(Boolean);
-      mergeEvidence = mergeOnDefault && await isAncestor(baseRepository, record.base_commit, record.merge_commit);
+      const mergeOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor2(baseRepository, record.merge_commit, ref)))).some(Boolean);
+      mergeEvidence = mergeOnDefault && await isAncestor2(baseRepository, record.base_commit, record.merge_commit);
     }
     if (!mergeEvidence) blockers2.push("Merged outcome is not reachable from the configured default branch; fetch the merge or provide a verified merge commit.");
   } else if (record.head_commit !== record.base_commit && !headOnDefault) {
@@ -17778,15 +17954,15 @@ async function cleanupBlockers(workspaceRoot18, config, repository, record) {
   }
   return blockers2;
 }
-async function closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, occurredAt) {
-  const blockers2 = await cleanupBlockers(workspaceRoot18, config, repository, record);
+async function closePreparedRun(workspaceRoot19, manifestPath, manifest2, repository, recordPath2, record, config, occurredAt) {
+  const blockers2 = await cleanupBlockers(workspaceRoot19, config, repository, record);
   if (blockers2.length > 0) {
     const blocked = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: blockers2, updated_at: occurredAt };
     await assertValid5("closeout-record", blocked);
     await writeJsonAtomic(recordPath2, blocked);
     return blocked;
   }
-  const baseRepository = assertInside(workspaceRoot18, join9(workspaceRoot18, repository.base_path));
+  const baseRepository = assertInside(workspaceRoot19, join9(workspaceRoot19, repository.base_path));
   await git(baseRepository, ["worktree", "remove", repository.worktree]);
   const closed = {
     ...record,
@@ -17803,8 +17979,8 @@ async function closePreparedRun(workspaceRoot18, manifestPath, manifest2, reposi
   return closed;
 }
 async function finishWork(options) {
-  const workspaceRoot18 = resolve16(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve17(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join9(workspaceRoot19, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
   const manifestPath = assertInside(runtimeRoot, join9(runtimeRoot, "runs", options.runId, "manifest.json"));
   const lockPath = `${manifestPath}.lock`;
@@ -17812,9 +17988,9 @@ async function finishWork(options) {
   const invocationTime = options.now ?? /* @__PURE__ */ new Date();
   if (options.mergeCommit && !/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("--merge-commit must be a full lowercase Git object ID");
   if (options.pullRequests?.some((reference2) => !reference2.trim() || /[\r\n]/.test(reference2))) throw new Error("Pull-request references must be non-empty single lines");
-  const config = await loadWorkspace2(workspaceRoot18);
-  const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
-  if (await realpath3(wrapperTopLevel) !== await realpath3(workspaceRoot18)) throw new Error("Workspace root must be the wrapper Git root before closeout");
+  const config = await loadWorkspace2(workspaceRoot19);
+  const wrapperTopLevel = await git(workspaceRoot19, ["rev-parse", "--show-toplevel"]);
+  if (await realpath3(wrapperTopLevel) !== await realpath3(workspaceRoot19)) throw new Error("Workspace root must be the wrapper Git root before closeout");
   return withExclusiveFile(lockPath, async () => {
     const manifest2 = await readJson4(manifestPath);
     await assertValid5("runtime-manifest", manifest2);
@@ -17826,13 +18002,15 @@ async function finishWork(options) {
       const existing = await readJson4(assertInside(runtimeRoot, repository.closeout_record));
       await assertValid5("closeout-record", existing);
       if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
+      if (existing.outcome === "merged") await assertVerifiedMergeConfirmation(workspaceRoot19, runtimeRoot, config, manifest2, repository, options.mergeCommit);
       if (existing.status === "closed" || !options.cleanup) return existing;
-      return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, existing, config, invocationTime.toISOString());
+      return closePreparedRun(workspaceRoot19, manifestPath, manifest2, repository, recordPath2, existing, config, invocationTime.toISOString());
     }
     const repositoryStatus = repository.status ?? manifest2.status;
     if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
     if (options.outcome === "merged" && repositoryStatus !== "passed") throw new Error(`Merged closeout requires a passed repository, received ${repositoryStatus}`);
     if (options.outcome === "abandoned" && !options.reason?.trim()) throw new Error("Deliberate abandonment requires --reason");
+    const mergeConfirmation = options.outcome === "merged" ? await assertVerifiedMergeConfirmation(workspaceRoot19, runtimeRoot, config, manifest2, repository, options.mergeCommit) : null;
     const brief = await readJson4(assertInside(runtimeRoot, manifest2.task_brief));
     await assertValid5("task-brief", brief);
     const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
@@ -17844,11 +18022,11 @@ async function finishWork(options) {
     if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
     const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} \u2014 ${item.evidence}`)] : [];
     const preparedAt = invocationTime.toISOString();
-    const contributionsRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, "contributions", "general"));
-    await ensureContributionRoot(workspaceRoot18, contributionsRoot);
+    const contributionsRoot = assertInside(workspaceRoot19, join9(workspaceRoot19, "contributions", "general"));
+    await ensureContributionRoot(workspaceRoot19, contributionsRoot);
     const existingContribution = await findExistingContribution(contributionsRoot, options.runId, repository.name);
     const contributionPath = existingContribution ?? join9(contributionsRoot, `${compactTimestamp(invocationTime)}-${author}-${taskSlug(brief)}-${repository.name}.md`);
-    const contributionRelative = relative4(workspaceRoot18, contributionPath).replaceAll("\\", "/");
+    const contributionRelative = relative4(workspaceRoot19, contributionPath).replaceAll("\\", "/");
     const record = {
       contract_version: 1,
       work_id: manifest2.work_id,
@@ -17862,7 +18040,7 @@ async function finishWork(options) {
       branch: repository.branch,
       base_commit: repository.base_commit,
       head_commit: headCommit,
-      merge_commit: options.mergeCommit ?? null,
+      merge_commit: mergeConfirmation?.merge_commit ?? options.mergeCommit ?? null,
       pull_requests: [...new Set(options.pullRequests ?? [])],
       commits,
       changed_files: changedFiles,
@@ -17890,7 +18068,7 @@ async function finishWork(options) {
     await assertValid5("runtime-manifest", manifest2);
     await writeJsonAtomic(manifestPath, manifest2);
     if (!options.cleanup) return record;
-    return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
+    return closePreparedRun(workspaceRoot19, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
   });
 }
 var import_yaml7, contributionHeadings;
@@ -17915,15 +18093,15 @@ var init_finish_work = __esm({
 
 // scripts/finish-work.ts
 var finish_work_exports = {};
-import { dirname as dirname11, resolve as resolve17 } from "node:path";
-import { parseArgs as parseArgs8 } from "node:util";
-import { fileURLToPath as fileURLToPath9 } from "node:url";
-var values8, workspaceRoot8, result;
+import { dirname as dirname12, resolve as resolve18 } from "node:path";
+import { parseArgs as parseArgs9 } from "node:util";
+import { fileURLToPath as fileURLToPath10 } from "node:url";
+var values9, workspaceRoot9, result;
 var init_finish_work2 = __esm({
   async "scripts/finish-work.ts"() {
     "use strict";
     init_finish_work();
-    ({ values: values8 } = parseArgs8({
+    ({ values: values9 } = parseArgs9({
       options: {
         "run-id": { type: "string" },
         repository: { type: "string" },
@@ -17935,21 +18113,21 @@ var init_finish_work2 = __esm({
         cleanup: { type: "boolean", default: false }
       }
     }));
-    if (!values8["run-id"] || !values8.repository || !values8.outcome || !values8.author) {
+    if (!values9["run-id"] || !values9.repository || !values9.outcome || !values9.author) {
       throw new Error("Required: --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug>");
     }
-    if (values8.outcome !== "merged" && values8.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
-    workspaceRoot8 = resolve17(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve17(dirname11(fileURLToPath9(import.meta.url)), ".."));
+    if (values9.outcome !== "merged" && values9.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
+    workspaceRoot9 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname12(fileURLToPath10(import.meta.url)), ".."));
     result = await finishWork({
-      workspaceRoot: workspaceRoot8,
-      runId: values8["run-id"],
-      repository: values8.repository,
-      outcome: values8.outcome,
-      author: values8.author,
-      cleanup: values8.cleanup,
-      ...values8.reason ? { reason: values8.reason } : {},
-      ...values8["merge-commit"] ? { mergeCommit: values8["merge-commit"] } : {},
-      ...values8["pull-request"] ? { pullRequests: values8["pull-request"] } : {}
+      workspaceRoot: workspaceRoot9,
+      runId: values9["run-id"],
+      repository: values9.repository,
+      outcome: values9.outcome,
+      author: values9.author,
+      cleanup: values9.cleanup,
+      ...values9.reason ? { reason: values9.reason } : {},
+      ...values9["merge-commit"] ? { mergeCommit: values9["merge-commit"] } : {},
+      ...values9["pull-request"] ? { pullRequests: values9["pull-request"] } : {}
     });
     console.log(JSON.stringify(result, null, 2));
   }
@@ -17958,37 +18136,37 @@ var init_finish_work2 = __esm({
 // scripts/create-plan.ts
 var create_plan_exports = {};
 import { readFile as readFile11 } from "node:fs/promises";
-import { dirname as dirname12, resolve as resolve18 } from "node:path";
-import { parseArgs as parseArgs9 } from "node:util";
-import { fileURLToPath as fileURLToPath10 } from "node:url";
-var values9, workspaceRoot9, inputPath, request;
+import { dirname as dirname13, resolve as resolve19 } from "node:path";
+import { parseArgs as parseArgs10 } from "node:util";
+import { fileURLToPath as fileURLToPath11 } from "node:url";
+var values10, workspaceRoot10, inputPath, request;
 var init_create_plan = __esm({
   async "scripts/create-plan.ts"() {
     "use strict";
     init_plans();
-    ({ values: values9 } = parseArgs9({
+    ({ values: values10 } = parseArgs10({
       options: { input: { type: "string" } }
     }));
-    if (!values9.input) throw new Error("Usage: cc create-plan --input <plan-draft-request.json>");
-    workspaceRoot9 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname12(fileURLToPath10(import.meta.url)), ".."));
-    inputPath = resolve18(process.cwd(), values9.input);
+    if (!values10.input) throw new Error("Usage: cc create-plan --input <plan-draft-request.json>");
+    workspaceRoot10 = resolve19(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve19(dirname13(fileURLToPath11(import.meta.url)), ".."));
+    inputPath = resolve19(process.cwd(), values10.input);
     request = JSON.parse(await readFile11(inputPath, "utf8"));
-    console.log(JSON.stringify(await createPlanDraft(workspaceRoot9, request), null, 2));
+    console.log(JSON.stringify(await createPlanDraft(workspaceRoot10, request), null, 2));
   }
 });
 
 // scripts/validate-plan.ts
 var validate_plan_exports = {};
-import { resolve as resolve19 } from "node:path";
-import { parseArgs as parseArgs10 } from "node:util";
+import { resolve as resolve20 } from "node:path";
+import { parseArgs as parseArgs11 } from "node:util";
 var positionals2, planDirectory, result2;
 var init_validate_plan = __esm({
   async "scripts/validate-plan.ts"() {
     "use strict";
     init_plans();
-    ({ positionals: positionals2 } = parseArgs10({ allowPositionals: true }));
+    ({ positionals: positionals2 } = parseArgs11({ allowPositionals: true }));
     if (!positionals2[0]) throw new Error("Usage: cc validate-plan context/plans/<plan-id>");
-    planDirectory = resolve19(process.cwd(), positionals2[0]);
+    planDirectory = resolve20(process.cwd(), positionals2[0]);
     result2 = await validatePlanDirectory(planDirectory);
     if (result2.errors.length > 0) {
       console.error(`Invalid plan ${planDirectory}:`);
@@ -18002,16 +18180,16 @@ var init_validate_plan = __esm({
 
 // scripts/set-plan-state.ts
 var set_plan_state_exports = {};
-import { dirname as dirname13, join as join10, resolve as resolve20 } from "node:path";
-import { parseArgs as parseArgs11 } from "node:util";
-import { fileURLToPath as fileURLToPath11 } from "node:url";
-var values10, requested, transition, workspaceRoot10, planDirectory2;
+import { dirname as dirname14, join as join10, resolve as resolve21 } from "node:path";
+import { parseArgs as parseArgs12 } from "node:util";
+import { fileURLToPath as fileURLToPath12 } from "node:url";
+var values11, requested, transition, workspaceRoot11, planDirectory2;
 var init_set_plan_state = __esm({
   async "scripts/set-plan-state.ts"() {
     "use strict";
     init_io();
     init_plans();
-    ({ values: values10 } = parseArgs11({
+    ({ values: values11 } = parseArgs12({
       options: {
         plan: { type: "string" },
         "approve-by": { type: "string" },
@@ -18019,21 +18197,21 @@ var init_set_plan_state = __esm({
         "non-material-repair": { type: "boolean", default: false }
       }
     }));
-    if (!values10.plan) throw new Error("Usage: cc set-plan-state --plan context/plans/<plan-id> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
-    requested = [Boolean(values10["approve-by"]), Boolean(values10["material-revision"]), values10["non-material-repair"]].filter(Boolean).length;
+    if (!values11.plan) throw new Error("Usage: cc set-plan-state --plan context/plans/<plan-id> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
+    requested = [Boolean(values11["approve-by"]), Boolean(values11["material-revision"]), values11["non-material-repair"]].filter(Boolean).length;
     if (requested !== 1) throw new Error("Choose exactly one plan state transition");
-    if (values10["approve-by"]) transition = { kind: "approve", approved_by: values10["approve-by"] };
-    else if (values10["material-revision"]) transition = { kind: "material-revision", reason: values10["material-revision"] };
+    if (values11["approve-by"]) transition = { kind: "approve", approved_by: values11["approve-by"] };
+    else if (values11["material-revision"]) transition = { kind: "material-revision", reason: values11["material-revision"] };
     else transition = { kind: "non-material-repair" };
-    workspaceRoot10 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname13(fileURLToPath11(import.meta.url)), ".."));
-    planDirectory2 = assertInside(join10(workspaceRoot10, "context", "plans"), resolve20(process.cwd(), values10.plan));
+    workspaceRoot11 = resolve21(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve21(dirname14(fileURLToPath12(import.meta.url)), ".."));
+    planDirectory2 = assertInside(join10(workspaceRoot11, "context", "plans"), resolve21(process.cwd(), values11.plan));
     console.log(JSON.stringify(await setPlanState(planDirectory2, transition), null, 2));
   }
 });
 
 // scripts/lib/whats-next.ts
 import { lstat as lstat6, readdir as readdir3, readFile as readFile12, realpath as realpath4 } from "node:fs/promises";
-import { join as join11, relative as relative5, resolve as resolve21, sep as sep2 } from "node:path";
+import { join as join11, relative as relative5, resolve as resolve22, sep as sep2 } from "node:path";
 function contractMessages2(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
 }
@@ -18045,13 +18223,13 @@ async function isDirectory(path2) {
     return false;
   }
 }
-function reference(workspaceRoot18, path2) {
-  const raw = relative5(workspaceRoot18, path2);
+function reference(workspaceRoot19, path2) {
+  const raw = relative5(workspaceRoot19, path2);
   return raw && !raw.startsWith(`..${sep2}`) && raw !== ".." ? raw.replaceAll("\\", "/") : path2;
 }
 function inside(root, path2) {
-  const resolvedRoot = resolve21(root);
-  const resolvedPath = resolve21(path2);
+  const resolvedRoot = resolve22(root);
+  const resolvedPath = resolve22(path2);
   return resolvedPath === resolvedRoot || resolvedPath.startsWith(`${resolvedRoot}${sep2}`);
 }
 function acceptanceIsSufficient(raw) {
@@ -18066,21 +18244,21 @@ function rank(candidate) {
   return 5;
 }
 function blockers(candidate, currentUser) {
-  const values18 = [];
-  if (candidate.kind === "reconciliation") values18.push("read-only sources report contradictory work states");
-  if (candidate.owner && candidate.owner !== currentUser) values18.push(`owned by another active contributor: ${candidate.owner}`);
+  const values19 = [];
+  if (candidate.kind === "reconciliation") values19.push("read-only sources report contradictory work states");
+  if (candidate.owner && candidate.owner !== currentUser) values19.push(`owned by another active contributor: ${candidate.owner}`);
   for (const dependency of candidate.dependencies) {
-    if (dependency.state !== "completed") values18.push(`dependency ${dependency.reference} is ${dependency.state}`);
+    if (dependency.state !== "completed") values19.push(`dependency ${dependency.reference} is ${dependency.state}`);
   }
   if (candidate.plan_approval_state !== "approved" && candidate.plan_approval_state !== "not-applicable") {
-    values18.push(`governing plan is ${candidate.plan_approval_state}`);
+    values19.push(`governing plan is ${candidate.plan_approval_state}`);
   }
-  if (!candidate.scope_sufficient) values18.push("scope is insufficient");
-  if (!candidate.acceptance_sufficient) values18.push("acceptance criteria are insufficient");
-  if (candidate.repositories.length === 0) values18.push("no affected repository is resolved");
-  if (!candidate.access_available) values18.push("required repository access is unavailable");
-  if (candidate.contract_blocked) values18.push("an unresolved contract decision blocks implementation");
-  return [...new Set(values18)];
+  if (!candidate.scope_sufficient) values19.push("scope is insufficient");
+  if (!candidate.acceptance_sufficient) values19.push("acceptance criteria are insufficient");
+  if (candidate.repositories.length === 0) values19.push("no affected repository is resolved");
+  if (!candidate.access_available) values19.push("required repository access is unavailable");
+  if (candidate.contract_blocked) values19.push("an unresolved contract decision blocks implementation");
+  return [...new Set(values19)];
 }
 function actionKind(candidate, candidateBlockers) {
   if (candidate.kind === "reconciliation") return "reconcile";
@@ -18142,19 +18320,22 @@ function actionTitle(candidate, candidateBlockers, action) {
   if (first.includes("repository")) return `Register or restore repository access for ${candidate.title}`;
   return `Clarify ${first} for ${candidate.title}`;
 }
-async function repositoryAccess(workspaceRoot18, config, repositories) {
+async function repositoryAccess(workspaceRoot19, config, repositories) {
   if (repositories.length === 0) return false;
   for (const name of repositories) {
     const repository = config.repositories[name];
-    if (!repository || !await isDirectory(resolve21(workspaceRoot18, repository.path))) return false;
+    if (!repository || !await isDirectory(resolve22(workspaceRoot19, repository.path))) return false;
   }
   return true;
 }
 function runtimeState(manifest2, workId) {
   const item = manifest2.plan_work_items?.find((candidate) => candidate.work_id === workId);
+  const reviewStates = manifest2.repositories.map((repository) => repository.review_state);
   if (manifest2.status === "cancelled") return "cancelled";
   if (manifest2.status === "closing") return "closeout";
   if (manifest2.status === "closed") return "completed";
+  if (reviewStates.includes("closeout-ready")) return "closeout";
+  if (reviewStates.some((state) => state === "ready-for-local-review" || state === "ready-for-publication" || state === "published-for-review" || state === "merge-confirmation-required")) return "review";
   if (manifest2.status === "passed" || item?.outcome === "passed") return "review";
   if (manifest2.status === "failed" || manifest2.status === "blocked" || item?.outcome === "failed" || item?.outcome === "blocked") return "failed";
   return "in-progress";
@@ -18167,11 +18348,11 @@ async function validatedJson(name, path2) {
   if (errors2.length > 0) throw new Error(errors2.join("; "));
   return value2;
 }
-async function discoverRuntimeObservations(workspaceRoot18) {
+async function discoverRuntimeObservations(workspaceRoot19) {
   const observations = /* @__PURE__ */ new Map();
   const runs = /* @__PURE__ */ new Map();
   const warnings = [];
-  const runsRoot = join11(workspaceRoot18, ".runtime", "runs");
+  const runsRoot = join11(workspaceRoot19, ".runtime", "runs");
   try {
     const rootInfo = await lstat6(runsRoot);
     if (rootInfo.isSymbolicLink()) return { observations, runs, warnings: ["Ignored symlinked runtime runs directory: .runtime/runs"] };
@@ -18198,8 +18379,8 @@ async function discoverRuntimeObservations(workspaceRoot18) {
     try {
       const manifest2 = await validatedJson("runtime-manifest", manifestPath);
       if (manifest2.source_kind !== "plan" || !manifest2.plan_work_items) continue;
-      if (!inside(workspaceRoot18, manifest2.task_brief)) throw new Error("task brief escapes the workspace");
-      if (!inside(await realpath4(workspaceRoot18), await realpath4(manifest2.task_brief))) throw new Error("task brief resolves outside the workspace");
+      if (!inside(workspaceRoot19, manifest2.task_brief)) throw new Error("task brief escapes the workspace");
+      if (!inside(await realpath4(workspaceRoot19), await realpath4(manifest2.task_brief))) throw new Error("task brief resolves outside the workspace");
       const brief = await validatedJson("task-brief", manifest2.task_brief);
       if (brief.source.kind !== "plan" || brief.plan.approval_state !== "approved") throw new Error("task brief is not an approved plan task");
       if (manifest2.run_id !== brief.run_id || manifest2.work_id !== brief.work_id || entry.name !== manifest2.run_id) throw new Error("run or work identity differs between runtime path, manifest, and task brief");
@@ -18209,8 +18390,8 @@ async function discoverRuntimeObservations(workspaceRoot18) {
       if (item.work_id !== manifest2.work_id || brief.plan.work_ids[0] !== item.work_id || item.repository !== repository.name || brief.repositories[0].name !== item.repository) throw new Error("work item or repository identity differs between manifest and task brief");
       if (brief.source.reference !== brief.plan.reference) throw new Error("task brief plan references differ");
       const planReference = brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, "");
-      const planDirectory3 = resolve21(workspaceRoot18, planReference);
-      const plansRoot = resolve21(workspaceRoot18, "context", "plans");
+      const planDirectory3 = resolve22(workspaceRoot19, planReference);
+      const plansRoot = resolve22(workspaceRoot19, "context", "plans");
       if (!inside(plansRoot, planDirectory3) || planDirectory3 === plansRoot) throw new Error("task brief plan reference is outside context/plans");
       const plansInfo = await lstat6(plansRoot);
       if (!plansInfo.isDirectory() || plansInfo.isSymbolicLink() || !inside(await realpath4(plansRoot), await realpath4(planDirectory3))) throw new Error("task brief plan reference resolves outside a real context/plans directory");
@@ -18223,19 +18404,19 @@ async function discoverRuntimeObservations(workspaceRoot18) {
       let closeout;
       let closeoutReference;
       if (repository.closeout_record) {
-        if (!inside(workspaceRoot18, repository.closeout_record)) throw new Error("closeout record escapes the workspace");
-        if (!inside(await realpath4(workspaceRoot18), await realpath4(repository.closeout_record))) throw new Error("closeout record resolves outside the workspace");
+        if (!inside(workspaceRoot19, repository.closeout_record)) throw new Error("closeout record escapes the workspace");
+        if (!inside(await realpath4(workspaceRoot19), await realpath4(repository.closeout_record))) throw new Error("closeout record resolves outside the workspace");
         closeout = await validatedJson("closeout-record", repository.closeout_record);
         if (closeout.run_id !== manifest2.run_id || closeout.work_id !== item.work_id || closeout.repository !== item.repository) throw new Error("closeout identity does not match manifest");
         state = closeout.status === "closed" ? closeout.outcome === "merged" ? "completed" : "cancelled" : "closeout";
-        closeoutReference = reference(workspaceRoot18, repository.closeout_record);
+        closeoutReference = reference(workspaceRoot19, repository.closeout_record);
       }
-      const manifestReference = reference(workspaceRoot18, manifestPath);
-      const briefReference = reference(workspaceRoot18, manifest2.task_brief);
+      const manifestReference = reference(workspaceRoot19, manifestPath);
+      const briefReference = reference(workspaceRoot19, manifest2.task_brief);
       const sources = [manifestReference, briefReference, ...closeoutReference ? [closeoutReference] : []];
-      const values18 = observations.get(item.work_id) ?? [];
-      for (const source_reference of sources) values18.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: planReference, run_id: manifest2.run_id });
-      observations.set(item.work_id, values18);
+      const values19 = observations.get(item.work_id) ?? [];
+      for (const source_reference of sources) values19.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: planReference, run_id: manifest2.run_id });
+      observations.set(item.work_id, values19);
       runs.set(manifest2.run_id, { manifest: manifest2, brief, manifest_reference: manifestReference, brief_reference: briefReference, ...closeout ? { closeout } : {}, ...closeoutReference ? { closeout_reference: closeoutReference } : {} });
     } catch (error) {
       warnings.push(`Ignored malformed runtime evidence ${entry.name}: ${error.message}`);
@@ -18243,10 +18424,10 @@ async function discoverRuntimeObservations(workspaceRoot18) {
   }
   return { observations, runs, warnings };
 }
-async function discoverDurableContributions(workspaceRoot18, runs) {
+async function discoverDurableContributions(workspaceRoot19, runs) {
   const observations = /* @__PURE__ */ new Map();
   const warnings = [];
-  const root = join11(workspaceRoot18, "contributions");
+  const root = join11(workspaceRoot19, "contributions");
   try {
     const rootInfo = await lstat6(root);
     if (rootInfo.isSymbolicLink()) return { observations, warnings: ["Ignored symlinked contributions directory: contributions"] };
@@ -18270,9 +18451,9 @@ async function discoverDurableContributions(workspaceRoot18, runs) {
       }
       if (!file.isFile() || !file.name.endsWith(".md")) continue;
       const path2 = join11(directory, file.name);
-      const source_reference = reference(workspaceRoot18, path2);
+      const source_reference = reference(workspaceRoot19, path2);
       try {
-        await git(workspaceRoot18, ["ls-files", "--error-unmatch", "--", source_reference]);
+        await git(workspaceRoot19, ["ls-files", "--error-unmatch", "--", source_reference]);
       } catch {
         continue;
       }
@@ -18293,9 +18474,9 @@ async function discoverDurableContributions(workspaceRoot18, runs) {
         warnings.push(`Ignored unassociated durable contribution ${source_reference}: cited run and closeout relationship are not validated`);
         continue;
       }
-      const values18 = observations.get(work) ?? [];
-      values18.push({ state: merged ? "completed" : "cancelled", source_reference, precedence: 40, plan_reference: validatedRun.brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, ""), run_id: run });
-      observations.set(work, values18);
+      const values19 = observations.get(work) ?? [];
+      values19.push({ state: merged ? "completed" : "cancelled", source_reference, precedence: 40, plan_reference: validatedRun.brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, ""), run_id: run });
+      observations.set(work, values19);
     }
   }
   return { observations, warnings };
@@ -18305,8 +18486,8 @@ function project(observations) {
   const ordered2 = observations.slice().sort((a, b) => b.precedence - a.precedence || a.source_reference.localeCompare(b.source_reference));
   return { state: ordered2[0].state, observations: ordered2, contradiction: new Set(ordered2.map((item) => item.state)).size > 1 };
 }
-async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, localObservations) {
-  const plansRoot = join11(workspaceRoot18, "context", "plans");
+async function discoverPlanCandidates(workspaceRoot19, config, activityFacts, localObservations) {
+  const plansRoot = join11(workspaceRoot19, "context", "plans");
   if (!await isDirectory(plansRoot)) return { candidates: [], warnings: [], matchedFacts: /* @__PURE__ */ new Set() };
   const entries = (await readdir3(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
   const candidates = [];
@@ -18328,7 +18509,7 @@ async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, lo
     const planDirectory3 = join11(plansRoot, entry.name);
     const validation = validations.get(entry.name);
     if (!validation?.index || !validation.work_breakdown) continue;
-    const planDirectoryReference = relative5(workspaceRoot18, planDirectory3).replaceAll("\\", "/");
+    const planDirectoryReference = relative5(workspaceRoot19, planDirectory3).replaceAll("\\", "/");
     const projectedByWork = /* @__PURE__ */ new Map();
     for (const item of validation.work_breakdown.items) {
       const relevantLocal = (localObservations.get(item.work_id) ?? []).filter((observation) => {
@@ -18356,10 +18537,10 @@ async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, lo
         reference: dependency,
         state: projectedByWork.get(dependency)?.state === "completed" ? "completed" : projectedByWork.has(dependency) ? "pending" : "unknown"
       }));
-      const planReference = relative5(workspaceRoot18, join11(planDirectory3, "README.md"));
+      const planReference = relative5(workspaceRoot19, join11(planDirectory3, "README.md"));
       const state = projection?.state ?? "ready";
       const contradiction = Boolean(projection?.contradiction) || Boolean(projection) && validation.index.status !== "approved" || activityRepositoryMismatch;
-      const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
+      const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative5(workspaceRoot19, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
       candidates.push({
         contract_version: 1,
         candidate_id: `plan:${validation.index.plan_id}:${item.work_id}`,
@@ -18376,9 +18557,9 @@ async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, lo
         scope_sufficient: fact?.scope_sufficient ?? (item.title.trim().length > 0 && repositories.length > 0),
         acceptance_sufficient: fact?.acceptance_sufficient ?? acceptanceSufficient,
         repositories,
-        access_available: (fact?.access_available ?? true) && await repositoryAccess(workspaceRoot18, config, repositories),
+        access_available: (fact?.access_available ?? true) && await repositoryAccess(workspaceRoot19, config, repositories),
         contract_blocked: fact?.contract_blocked ?? false,
-        source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
+        source_reference: `${relative5(workspaceRoot19, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
         state_sources: stateSources,
         risks: [.../* @__PURE__ */ new Set([...fact?.risks ?? [], ...activityRepositoryMismatch ? [`Activity repository evidence does not match approved plan repository ${item.repository}.`] : [], ...contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : []])]
       });
@@ -18387,8 +18568,8 @@ async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, lo
   return { candidates, warnings, matchedFacts };
 }
 async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /* @__PURE__ */ new Date()) {
-  const workspaceRoot18 = resolve21(workspaceRootInput);
-  const config = await readData(join11(workspaceRoot18, "workspace.yaml"));
+  const workspaceRoot19 = resolve22(workspaceRootInput);
+  const config = await readData(join11(workspaceRoot19, "workspace.yaml"));
   const workspaceErrors = contractMessages2(await validateContract("workspace", config));
   workspaceErrors.push(...workspaceSemanticErrors(config));
   if (workspaceErrors.length > 0) throw new Error(`Invalid workspace configuration:
@@ -18401,8 +18582,8 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
   const currentUser = activity2?.current_user ?? "local-user";
   const facts = /* @__PURE__ */ new Map();
   for (const candidate of activity2?.candidates ?? []) if (candidate.work_id) facts.set(candidate.work_id, [...facts.get(candidate.work_id) ?? [], candidate]);
-  const runtime = await discoverRuntimeObservations(workspaceRoot18);
-  const durable = await discoverDurableContributions(workspaceRoot18, runtime.runs);
+  const runtime = await discoverRuntimeObservations(workspaceRoot19);
+  const durable = await discoverDurableContributions(workspaceRoot19, runtime.runs);
   const localObservations = new Map(runtime.observations);
   for (const [workId, observations] of durable.observations) {
     const terminalByRun = new Map(observations.map((observation) => [observation.run_id, observation.state]));
@@ -18412,10 +18593,10 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
     });
     localObservations.set(workId, [...runtimeObservations, ...observations]);
   }
-  const discovered = await discoverPlanCandidates(workspaceRoot18, config, facts, localObservations);
+  const discovered = await discoverPlanCandidates(workspaceRoot19, config, facts, localObservations);
   const external = (activity2?.candidates ?? []).filter((candidate) => !discovered.matchedFacts.has(candidate.candidate_id));
   const hydratedExternal = [];
-  for (const candidate of external) hydratedExternal.push({ ...candidate, state_sources: candidate.state_sources ?? [{ state: candidate.state, source_reference: candidate.source_reference }], access_available: candidate.access_available && await repositoryAccess(workspaceRoot18, config, candidate.repositories) });
+  for (const candidate of external) hydratedExternal.push({ ...candidate, state_sources: candidate.state_sources ?? [{ state: candidate.state, source_reference: candidate.source_reference }], access_available: candidate.access_available && await repositoryAccess(workspaceRoot19, config, candidate.repositories) });
   const candidates = [...discovered.candidates, ...hydratedExternal];
   const duplicateIds = candidates.filter((candidate, index) => candidates.findIndex((value2) => value2.candidate_id === candidate.candidate_id) !== index);
   if (duplicateIds.length > 0) throw new Error(`Duplicate candidate ID: ${duplicateIds[0].candidate_id}`);
@@ -18459,63 +18640,63 @@ var init_whats_next = __esm({
 // scripts/whats-next.ts
 var whats_next_exports = {};
 import { readFile as readFile13 } from "node:fs/promises";
-import { dirname as dirname14, resolve as resolve22 } from "node:path";
-import { parseArgs as parseArgs12 } from "node:util";
-import { fileURLToPath as fileURLToPath12 } from "node:url";
-var values11, workspaceRoot11, activity;
+import { dirname as dirname15, resolve as resolve23 } from "node:path";
+import { parseArgs as parseArgs13 } from "node:util";
+import { fileURLToPath as fileURLToPath13 } from "node:url";
+var values12, workspaceRoot12, activity;
 var init_whats_next2 = __esm({
   async "scripts/whats-next.ts"() {
     "use strict";
     init_whats_next();
-    ({ values: values11 } = parseArgs12({ options: { "activity-fixture": { type: "string" } } }));
-    workspaceRoot11 = resolve22(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve22(dirname14(fileURLToPath12(import.meta.url)), ".."));
-    activity = values11["activity-fixture"] ? JSON.parse(await readFile13(resolve22(process.cwd(), values11["activity-fixture"]), "utf8")) : null;
-    console.log(JSON.stringify(await recommendWhatsNext(workspaceRoot11, activity), null, 2));
+    ({ values: values12 } = parseArgs13({ options: { "activity-fixture": { type: "string" } } }));
+    workspaceRoot12 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname15(fileURLToPath13(import.meta.url)), ".."));
+    activity = values12["activity-fixture"] ? JSON.parse(await readFile13(resolve23(process.cwd(), values12["activity-fixture"]), "utf8")) : null;
+    console.log(JSON.stringify(await recommendWhatsNext(workspaceRoot12, activity), null, 2));
   }
 });
 
 // scripts/prepare-lifecycle.ts
 var prepare_lifecycle_exports = {};
-import { dirname as dirname15, resolve as resolve23 } from "node:path";
-import { parseArgs as parseArgs13 } from "node:util";
-import { fileURLToPath as fileURLToPath13 } from "node:url";
-var events, capabilities, values12, workspaceRoot12;
+import { dirname as dirname16, resolve as resolve24 } from "node:path";
+import { parseArgs as parseArgs14 } from "node:util";
+import { fileURLToPath as fileURLToPath14 } from "node:url";
+var events, capabilities, values13, workspaceRoot13;
 var init_prepare_lifecycle = __esm({
   async "scripts/prepare-lifecycle.ts"() {
     "use strict";
     init_activity_lifecycle();
     events = ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"];
     capabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-    ({ values: values12 } = parseArgs13({ options: {
+    ({ values: values13 } = parseArgs14({ options: {
       "run-id": { type: "string" },
       event: { type: "string" },
       available: { type: "string", multiple: true, default: [] }
     } }));
-    if (!values12["run-id"] || !events.includes(values12.event) || values12.available.some((item) => !capabilities.includes(item))) {
+    if (!values13["run-id"] || !events.includes(values13.event) || values13.available.some((item) => !capabilities.includes(item))) {
       throw new Error("Usage: prepare-lifecycle --run-id <id> --event <semantic-event> [--available <capability>]");
     }
-    workspaceRoot12 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname15(fileURLToPath13(import.meta.url)), ".."));
+    workspaceRoot13 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname16(fileURLToPath14(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareActivityLifecycle({
-      workspaceRoot: workspaceRoot12,
-      runId: values12["run-id"],
-      event: values12.event,
-      availableCapabilities: values12.available
+      workspaceRoot: workspaceRoot13,
+      runId: values13["run-id"],
+      event: values13.event,
+      availableCapabilities: values13.available
     }), null, 2));
   }
 });
 
 // scripts/record-lifecycle-action.ts
 var record_lifecycle_action_exports = {};
-import { dirname as dirname16, resolve as resolve24 } from "node:path";
-import { parseArgs as parseArgs14 } from "node:util";
-import { fileURLToPath as fileURLToPath14 } from "node:url";
-var events2, values13, workspaceRoot13;
+import { dirname as dirname17, resolve as resolve25 } from "node:path";
+import { parseArgs as parseArgs15 } from "node:util";
+import { fileURLToPath as fileURLToPath15 } from "node:url";
+var events2, values14, workspaceRoot14;
 var init_record_lifecycle_action = __esm({
   async "scripts/record-lifecycle-action.ts"() {
     "use strict";
     init_activity_lifecycle();
     events2 = ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"];
-    ({ values: values13 } = parseArgs14({ options: {
+    ({ values: values14 } = parseArgs15({ options: {
       "run-id": { type: "string" },
       event: { type: "string" },
       action: { type: "string" },
@@ -18523,25 +18704,25 @@ var init_record_lifecycle_action = __esm({
       evidence: { type: "string" },
       reference: { type: "string" }
     } }));
-    if (!values13["run-id"] || !events2.includes(values13.event) || !values13.action || !["completed", "failed"].includes(values13.status ?? "") || !values13.evidence) {
+    if (!values14["run-id"] || !events2.includes(values14.event) || !values14.action || !["completed", "failed"].includes(values14.status ?? "") || !values14.evidence) {
       throw new Error("Usage: record-lifecycle-action --run-id <id> --event <event> --action <id> --status <completed|failed> --evidence <text> [--reference <ref>]");
     }
-    workspaceRoot13 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname16(fileURLToPath14(import.meta.url)), ".."));
+    workspaceRoot14 = resolve25(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve25(dirname17(fileURLToPath15(import.meta.url)), ".."));
     console.log(JSON.stringify(await recordActivityLifecycleAction({
-      workspaceRoot: workspaceRoot13,
-      runId: values13["run-id"],
-      event: values13.event,
-      actionId: values13.action,
-      status: values13.status,
-      evidence: values13.evidence,
-      ...values13.reference ? { externalReference: values13.reference } : {}
+      workspaceRoot: workspaceRoot14,
+      runId: values14["run-id"],
+      event: values14.event,
+      actionId: values14.action,
+      status: values14.status,
+      evidence: values14.evidence,
+      ...values14.reference ? { externalReference: values14.reference } : {}
     }), null, 2));
   }
 });
 
 // scripts/lib/plan-publication.ts
 import { readFile as readFile14 } from "node:fs/promises";
-import { join as join12, resolve as resolve25 } from "node:path";
+import { join as join12, resolve as resolve26 } from "node:path";
 async function assertValid6(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
@@ -18573,19 +18754,19 @@ function status(items) {
   if (failed) return "failed";
   return done ? "in-progress" : "proposed";
 }
-function recordPath(workspaceRoot18, planId) {
-  return assertInside(workspaceRoot18, join12(workspaceRoot18, ".runtime", "publications", `${planId}.json`));
+function recordPath(workspaceRoot19, planId) {
+  return assertInside(workspaceRoot19, join12(workspaceRoot19, ".runtime", "publications", `${planId}.json`));
 }
 async function preparePlanPublication(options) {
-  const workspaceRoot18 = resolve25(options.workspaceRoot);
-  const config = (0, import_yaml8.parse)(await readFile14(join12(workspaceRoot18, "workspace.yaml"), "utf8"));
+  const workspaceRoot19 = resolve26(options.workspaceRoot);
+  const config = (0, import_yaml8.parse)(await readFile14(join12(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid6("workspace", config);
   const semantic = workspaceSemanticErrors(config);
   if (semantic.length) throw new Error(`Invalid workspace: ${semantic.join("; ")}`);
   await assertValid6("plan-publication-discovery", options.discovery);
   if (config.activity.provider === "none" || config.activity.provider !== options.discovery.provider) throw new Error("Publication discovery provider must match the configured non-none activity provider");
   if (![...config.activity.required_capabilities, ...config.activity.optional_capabilities].includes("create-tasks")) throw new Error("Configured activity provider does not declare create-tasks capability");
-  const planDirectory3 = assertInside(workspaceRoot18, join12(workspaceRoot18, "context", "plans", options.planId));
+  const planDirectory3 = assertInside(workspaceRoot19, join12(workspaceRoot19, "context", "plans", options.planId));
   const plan = await validatePlanDirectory(planDirectory3);
   if (plan.errors.length || !plan.index || !plan.work_breakdown) throw new Error(`Plan is invalid: ${plan.errors.join("; ")}`);
   if (plan.index.status !== "approved" || !plan.index.approved_digest) throw new Error("Only an approved plan can be published");
@@ -18596,8 +18777,8 @@ async function preparePlanPublication(options) {
     if (discovered.has(mapping.work_id)) throw new Error(`Duplicate discovered mapping: ${mapping.work_id}`);
     discovered.set(mapping.work_id, { reference: safeLine(mapping.external_reference, "External reference"), evidence: safeLine(mapping.evidence, "Evidence") });
   }
-  const path2 = recordPath(workspaceRoot18, options.planId);
-  await ensurePrivateDirectory(join12(workspaceRoot18, ".runtime", "publications"));
+  const path2 = recordPath(workspaceRoot19, options.planId);
+  await ensurePrivateDirectory(join12(workspaceRoot19, ".runtime", "publications"));
   return withExclusiveFile(`${path2}.lock`, async () => {
     try {
       const existing = JSON.parse(await readFile14(path2, "utf8"));
@@ -18639,8 +18820,8 @@ async function writeMapping(planDirectory3, breakdownName, workId, reference2, n
   return (await setPlanState(planDirectory3, { kind: "non-material-repair" }, now)).approved_digest;
 }
 async function recordPlanPublication(options) {
-  const workspaceRoot18 = resolve25(options.workspaceRoot);
-  const path2 = recordPath(workspaceRoot18, options.planId);
+  const workspaceRoot19 = resolve26(options.workspaceRoot);
+  const path2 = recordPath(workspaceRoot19, options.planId);
   return withExclusiveFile(`${path2}.lock`, async () => {
     const record = JSON.parse(await readFile14(path2, "utf8"));
     await assertValid6("plan-publication-record", record);
@@ -18658,7 +18839,7 @@ async function recordPlanPublication(options) {
       item.evidence = evidence;
       item.external_reference = null;
     } else {
-      const planDirectory3 = assertInside(workspaceRoot18, join12(workspaceRoot18, "context", "plans", record.plan_id));
+      const planDirectory3 = assertInside(workspaceRoot19, join12(workspaceRoot19, "context", "plans", record.plan_id));
       const validation = await validatePlanDirectory(planDirectory3);
       if (validation.errors.length || !validation.index || validation.index.status !== "approved" || validation.index.plan_version !== record.plan_version) throw new Error("Approved plan changed during publication");
       record.approved_digest = await writeMapping(planDirectory3, validation.index.work_breakdown, item.work_id, reference2, options.now ?? /* @__PURE__ */ new Date());
@@ -18687,43 +18868,43 @@ var init_plan_publication = __esm({
 // scripts/prepare-plan-publication.ts
 var prepare_plan_publication_exports = {};
 import { readFile as readFile15 } from "node:fs/promises";
-import { dirname as dirname17, resolve as resolve26 } from "node:path";
-import { parseArgs as parseArgs15 } from "node:util";
-import { fileURLToPath as fileURLToPath15 } from "node:url";
-var values14, workspaceRoot14, discovery;
+import { dirname as dirname18, resolve as resolve27 } from "node:path";
+import { parseArgs as parseArgs16 } from "node:util";
+import { fileURLToPath as fileURLToPath16 } from "node:url";
+var values15, workspaceRoot15, discovery;
 var init_prepare_plan_publication = __esm({
   async "scripts/prepare-plan-publication.ts"() {
     "use strict";
     init_plan_publication();
-    ({ values: values14 } = parseArgs15({ options: { plan: { type: "string" }, discovery: { type: "string" } } }));
-    if (!values14.plan || !values14.discovery) throw new Error("Usage: prepare-plan-publication --plan <plan-id> --discovery <json>");
-    workspaceRoot14 = resolve26(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve26(dirname17(fileURLToPath15(import.meta.url)), ".."));
-    discovery = JSON.parse(await readFile15(resolve26(process.cwd(), values14.discovery), "utf8"));
-    console.log(JSON.stringify(await preparePlanPublication({ workspaceRoot: workspaceRoot14, planId: values14.plan, discovery }), null, 2));
+    ({ values: values15 } = parseArgs16({ options: { plan: { type: "string" }, discovery: { type: "string" } } }));
+    if (!values15.plan || !values15.discovery) throw new Error("Usage: prepare-plan-publication --plan <plan-id> --discovery <json>");
+    workspaceRoot15 = resolve27(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve27(dirname18(fileURLToPath16(import.meta.url)), ".."));
+    discovery = JSON.parse(await readFile15(resolve27(process.cwd(), values15.discovery), "utf8"));
+    console.log(JSON.stringify(await preparePlanPublication({ workspaceRoot: workspaceRoot15, planId: values15.plan, discovery }), null, 2));
   }
 });
 
 // scripts/record-plan-publication.ts
 var record_plan_publication_exports = {};
-import { dirname as dirname18, resolve as resolve27 } from "node:path";
-import { parseArgs as parseArgs16 } from "node:util";
-import { fileURLToPath as fileURLToPath16 } from "node:url";
-var values15, workspaceRoot15;
+import { dirname as dirname19, resolve as resolve28 } from "node:path";
+import { parseArgs as parseArgs17 } from "node:util";
+import { fileURLToPath as fileURLToPath17 } from "node:url";
+var values16, workspaceRoot16;
 var init_record_plan_publication = __esm({
   async "scripts/record-plan-publication.ts"() {
     "use strict";
     init_plan_publication();
-    ({ values: values15 } = parseArgs16({ options: { plan: { type: "string" }, work: { type: "string" }, status: { type: "string" }, evidence: { type: "string" }, reference: { type: "string" } } }));
-    if (!values15.plan || !values15.work || !["created", "failed"].includes(values15.status ?? "") || !values15.evidence) throw new Error("Usage: record-plan-publication --plan <id> --work <id> --status <created|failed> --evidence <text> [--reference <external-ref>]");
-    workspaceRoot15 = resolve27(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve27(dirname18(fileURLToPath16(import.meta.url)), ".."));
-    console.log(JSON.stringify(await recordPlanPublication({ workspaceRoot: workspaceRoot15, planId: values15.plan, workId: values15.work, status: values15.status, evidence: values15.evidence, ...values15.reference ? { externalReference: values15.reference } : {} }), null, 2));
+    ({ values: values16 } = parseArgs17({ options: { plan: { type: "string" }, work: { type: "string" }, status: { type: "string" }, evidence: { type: "string" }, reference: { type: "string" } } }));
+    if (!values16.plan || !values16.work || !["created", "failed"].includes(values16.status ?? "") || !values16.evidence) throw new Error("Usage: record-plan-publication --plan <id> --work <id> --status <created|failed> --evidence <text> [--reference <external-ref>]");
+    workspaceRoot16 = resolve28(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve28(dirname19(fileURLToPath17(import.meta.url)), ".."));
+    console.log(JSON.stringify(await recordPlanPublication({ workspaceRoot: workspaceRoot16, planId: values16.plan, workId: values16.work, status: values16.status, evidence: values16.evidence, ...values16.reference ? { externalReference: values16.reference } : {} }), null, 2));
   }
 });
 
 // scripts/lib/context-sync.ts
 import { createHash as createHash3 } from "node:crypto";
 import { lstat as lstat7, readFile as readFile16, realpath as realpath5 } from "node:fs/promises";
-import { join as join13, resolve as resolve28 } from "node:path";
+import { join as join13, resolve as resolve29 } from "node:path";
 async function assertValid7(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
@@ -18734,20 +18915,20 @@ async function readJson5(path2) {
 function compactTimestamp2(date) {
   return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
-async function loadWorkspace3(workspaceRoot18) {
-  const config = (0, import_yaml9.parse)(await readFile16(join13(workspaceRoot18, "workspace.yaml"), "utf8"));
+async function loadWorkspace3(workspaceRoot19) {
+  const config = (0, import_yaml9.parse)(await readFile16(join13(workspaceRoot19, "workspace.yaml"), "utf8"));
   await assertValid7("workspace", config);
   const errors2 = workspaceSemanticErrors(config);
   if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
   return config;
 }
-async function validateRequestSemantics(workspaceRoot18, config, request3) {
+async function validateRequestSemantics(workspaceRoot19, config, request3) {
   const listed = new Set(request3.contributions);
   for (const contribution of request3.contributions) {
-    const path2 = assertInside(workspaceRoot18, join13(workspaceRoot18, contribution));
+    const path2 = assertInside(workspaceRoot19, join13(workspaceRoot19, contribution));
     const info = await lstat7(path2);
     if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Contribution must be a regular file: ${contribution}`);
-    assertInside(await realpath5(workspaceRoot18), await realpath5(path2));
+    assertInside(await realpath5(workspaceRoot19), await realpath5(path2));
     const errors2 = contributionDocumentErrors(path2, await readFile16(path2, "utf8"));
     if (errors2.length > 0) throw new Error(`Invalid contribution ${contribution}: ${errors2.join("; ")}`);
   }
@@ -18756,7 +18937,7 @@ async function validateRequestSemantics(workspaceRoot18, config, request3) {
     if (!listed.has(proposal.source_contribution)) throw new Error(`Proposal source is not listed: ${proposal.source_contribution}`);
     if (proposal.classification === "durable-wrapper") {
       if (!proposal.target || !proposal.proposed_change?.trim() || proposal.target_repository) throw new Error("durable-wrapper proposals require target and proposed_change only");
-      if ((await readFile16(join13(workspaceRoot18, proposal.target), "utf8")).includes(proposal.source_contribution)) {
+      if ((await readFile16(join13(workspaceRoot19, proposal.target), "utf8")).includes(proposal.source_contribution)) {
         throw new Error(`Contribution is already cited by ${proposal.target}: ${proposal.source_contribution}`);
       }
       durableTargets.push(proposal.target);
@@ -18772,21 +18953,21 @@ async function validateRequestSemantics(workspaceRoot18, config, request3) {
   return [...new Set(durableTargets)].sort();
 }
 async function prepareContextSync(options) {
-  const workspaceRoot18 = resolve28(options.workspaceRoot);
+  const workspaceRoot19 = resolve29(options.workspaceRoot);
   await assertValid7("context-sync-request", options.request);
-  const config = await loadWorkspace3(workspaceRoot18);
-  const allowedPaths = await validateRequestSemantics(workspaceRoot18, config, options.request);
-  if (await realpath5(await git(workspaceRoot18, ["rev-parse", "--show-toplevel"])) !== await realpath5(workspaceRoot18)) {
+  const config = await loadWorkspace3(workspaceRoot19);
+  const allowedPaths = await validateRequestSemantics(workspaceRoot19, config, options.request);
+  if (await realpath5(await git(workspaceRoot19, ["rev-parse", "--show-toplevel"])) !== await realpath5(workspaceRoot19)) {
     throw new Error("Workspace root must be the wrapper Git root");
   }
-  await assertCleanRepository(workspaceRoot18);
-  const baseBranch = await git(workspaceRoot18, ["branch", "--show-current"]);
+  await assertCleanRepository(workspaceRoot19);
+  const baseBranch = await git(workspaceRoot19, ["branch", "--show-current"]);
   if (!baseBranch) throw new Error("Context synchronization requires an attached wrapper branch");
-  const baseCommit = await git(workspaceRoot18, ["rev-parse", "HEAD"]);
+  const baseCommit = await git(workspaceRoot19, ["rev-parse", "HEAD"]);
   const now = options.now ?? /* @__PURE__ */ new Date();
   const digest = createHash3("sha256").update(JSON.stringify(options.request)).update(now.toISOString()).digest("hex").slice(0, 8);
   const syncId = `${compactTimestamp2(now)}-${digest}`;
-  const runtimeRoot = assertInside(workspaceRoot18, join13(workspaceRoot18, ".runtime"));
+  const runtimeRoot = assertInside(workspaceRoot19, join13(workspaceRoot19, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
   const syncRoot = assertInside(runtimeRoot, join13(runtimeRoot, "context-sync", syncId));
   await ensurePrivateDirectory(syncRoot);
@@ -18821,7 +19002,7 @@ async function prepareContextSync(options) {
     await ensurePrivateDirectory(join13(runtimeRoot, "worktrees"));
     await ensurePrivateDirectory(join13(runtimeRoot, "worktrees", "context-sync"));
     await ensurePrivateDirectory(join13(runtimeRoot, "worktrees", "context-sync", syncId));
-    await git(workspaceRoot18, ["worktree", "add", "-b", branch, worktree, baseCommit]);
+    await git(workspaceRoot19, ["worktree", "add", "-b", branch, worktree, baseCommit]);
   } catch (error) {
     record.status = "blocked";
     record.blockers = [`Wrapper worktree preparation failed: ${error.message}`];
@@ -18833,20 +19014,20 @@ async function prepareContextSync(options) {
   return record;
 }
 async function prepareContextReview(options) {
-  const workspaceRoot18 = resolve28(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join13(workspaceRoot18, ".runtime"));
+  const workspaceRoot19 = resolve29(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot19, join13(workspaceRoot19, ".runtime"));
   const recordPath2 = assertInside(runtimeRoot, join13(runtimeRoot, "context-sync", options.syncId, "record.json"));
   return withExclusiveFile(`${recordPath2}.lock`, async () => {
     const record = await readJson5(recordPath2);
     await assertValid7("context-sync-record", record);
     if (record.sync_id !== options.syncId) throw new Error("Context sync ID mismatch");
     const worktree = assertInside(runtimeRoot, record.worktree);
-    const config = await loadWorkspace3(workspaceRoot18);
+    const config = await loadWorkspace3(workspaceRoot19);
     const request3 = await readJson5(assertInside(runtimeRoot, record.request));
     await assertValid7("context-sync-request", request3);
-    const recomputedPaths = await validateRequestSemantics(workspaceRoot18, config, request3);
+    const recomputedPaths = await validateRequestSemantics(workspaceRoot19, config, request3);
     if (recomputedPaths.join("\n") !== record.allowed_wrapper_paths.slice().sort().join("\n")) throw new Error("Context sync allowed paths do not match the validated request");
-    const registrations = await git(workspaceRoot18, ["worktree", "list", "--porcelain"]);
+    const registrations = await git(workspaceRoot19, ["worktree", "list", "--porcelain"]);
     if (!registrations.split("\n").includes(`worktree ${await realpath5(worktree)}`)) throw new Error("Context sync worktree is not registered by the wrapper repository");
     await assertCleanRepository(worktree);
     if (await git(worktree, ["branch", "--show-current"]) !== record.branch) throw new Error("Wrapper worktree branch changed");
@@ -18890,45 +19071,45 @@ var init_context_sync = __esm({
 // scripts/sync-context.ts
 var sync_context_exports = {};
 import { readFile as readFile17 } from "node:fs/promises";
-import { dirname as dirname19, resolve as resolve29 } from "node:path";
-import { parseArgs as parseArgs17 } from "node:util";
-import { fileURLToPath as fileURLToPath17 } from "node:url";
-var workspaceRoot16, values16, request2;
+import { dirname as dirname20, resolve as resolve30 } from "node:path";
+import { parseArgs as parseArgs18 } from "node:util";
+import { fileURLToPath as fileURLToPath18 } from "node:url";
+var workspaceRoot17, values17, request2;
 var init_sync_context = __esm({
   async "scripts/sync-context.ts"() {
     "use strict";
     init_context_sync();
-    workspaceRoot16 = resolve29(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve29(dirname19(fileURLToPath17(import.meta.url)), ".."));
-    ({ values: values16 } = parseArgs17({ options: { request: { type: "string" } } }));
-    if (!values16.request) throw new Error("Usage: sync-context --request <context-sync-request.json>");
-    request2 = JSON.parse(await readFile17(resolve29(values16.request), "utf8"));
-    console.log(JSON.stringify(await prepareContextSync({ workspaceRoot: workspaceRoot16, request: request2 }), null, 2));
+    workspaceRoot17 = resolve30(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve30(dirname20(fileURLToPath18(import.meta.url)), ".."));
+    ({ values: values17 } = parseArgs18({ options: { request: { type: "string" } } }));
+    if (!values17.request) throw new Error("Usage: sync-context --request <context-sync-request.json>");
+    request2 = JSON.parse(await readFile17(resolve30(values17.request), "utf8"));
+    console.log(JSON.stringify(await prepareContextSync({ workspaceRoot: workspaceRoot17, request: request2 }), null, 2));
   }
 });
 
 // scripts/prepare-context-review.ts
 var prepare_context_review_exports = {};
-import { dirname as dirname20, resolve as resolve30 } from "node:path";
-import { parseArgs as parseArgs18 } from "node:util";
-import { fileURLToPath as fileURLToPath18 } from "node:url";
-var workspaceRoot17, values17;
+import { dirname as dirname21, resolve as resolve31 } from "node:path";
+import { parseArgs as parseArgs19 } from "node:util";
+import { fileURLToPath as fileURLToPath19 } from "node:url";
+var workspaceRoot18, values18;
 var init_prepare_context_review = __esm({
   async "scripts/prepare-context-review.ts"() {
     "use strict";
     init_context_sync();
-    workspaceRoot17 = resolve30(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve30(dirname20(fileURLToPath18(import.meta.url)), ".."));
-    ({ values: values17 } = parseArgs18({ options: { "sync-id": { type: "string" } } }));
-    if (!values17["sync-id"]) throw new Error("Usage: prepare-context-review --sync-id <id>");
-    console.log(JSON.stringify(await prepareContextReview({ workspaceRoot: workspaceRoot17, syncId: values17["sync-id"] }), null, 2));
+    workspaceRoot18 = resolve31(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve31(dirname21(fileURLToPath19(import.meta.url)), ".."));
+    ({ values: values18 } = parseArgs19({ options: { "sync-id": { type: "string" } } }));
+    if (!values18["sync-id"]) throw new Error("Usage: prepare-context-review --sync-id <id>");
+    console.log(JSON.stringify(await prepareContextReview({ workspaceRoot: workspaceRoot18, syncId: values18["sync-id"] }), null, 2));
   }
 });
 
 // scripts/cc.ts
-var command = process.argv[2];
-if (!command) throw new Error("Usage: cc <command> [arguments]");
+var command2 = process.argv[2];
+if (!command2) throw new Error("Usage: cc <command> [arguments]");
 process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT = process.cwd();
 process.argv.splice(2, 1);
-switch (command) {
+switch (command2) {
   case "validate":
     await init_validate().then(() => validate_exports);
     break;
@@ -18949,6 +19130,9 @@ switch (command) {
     break;
   case "record-review-publication":
     await init_record_review_publication().then(() => record_review_publication_exports);
+    break;
+  case "confirm-merge":
+    await init_confirm_merge().then(() => confirm_merge_exports);
     break;
   case "finish-work":
     await init_finish_work2().then(() => finish_work_exports);
@@ -18984,5 +19168,5 @@ switch (command) {
     await init_prepare_context_review().then(() => prepare_context_review_exports);
     break;
   default:
-    throw new Error(`Unknown Context Circuit command: ${command}`);
+    throw new Error(`Unknown Context Circuit command: ${command2}`);
 }

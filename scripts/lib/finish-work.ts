@@ -3,7 +3,7 @@ import { basename, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { git } from "./git.js";
 import { assertInside, ensurePrivateDirectory, withExclusiveFile, writeJsonAtomic, writeTextExclusive } from "./io.js";
-import type { CloseoutRecord, ExecutionEvent, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
+import type { CloseoutRecord, ExecutionEvent, MergeConfirmationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
 interface ResultInput {
@@ -58,7 +58,7 @@ async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
 }
 
-async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "closeout-record", value: unknown): Promise<void> {
+async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "merge-confirmation-record" | "closeout-record", value: unknown): Promise<void> {
   const errors = await validateContract(name, value);
   if (errors.length > 0) throw new Error(`Invalid ${name}: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
 }
@@ -238,6 +238,28 @@ async function isAncestor(repository: string, ancestor: string, descendant: stri
   }
 }
 
+async function assertVerifiedMergeConfirmation(
+  workspaceRoot: string, runtimeRoot: string, config: WorkspaceConfig, manifest: RuntimeManifest, repository: RuntimeRepository, requestedMergeCommit?: string,
+): Promise<MergeConfirmationRecord> {
+  if (!repository.merge_confirmation) throw new Error(`Merged closeout is not ready: record and verify the human merge with node .agents/bin/cc.mjs confirm-merge --run-id ${manifest.run_id} --repository ${repository.name} --merge-commit <full-sha> --author <slug> --evidence <single-line-evidence>`);
+  const record = await readJson<MergeConfirmationRecord>(assertInside(runtimeRoot, repository.merge_confirmation));
+  await assertValid("merge-confirmation-record", record);
+  if (record.work_id !== manifest.work_id || record.run_id !== manifest.run_id || record.repository !== repository.name || record.head_commit !== await git(repository.worktree, ["rev-parse", "HEAD"])) {
+    throw new Error("Merge confirmation identity or verified head does not match the active run");
+  }
+  if (requestedMergeCommit && requestedMergeCommit !== record.merge_commit) throw new Error("Requested merge commit differs from the verified merge confirmation");
+  const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+  if (record.base_branch !== defaultBranch || ![`refs/heads/${defaultBranch}`, `refs/remotes/origin/${defaultBranch}`].includes(record.target_ref)) {
+    throw new Error("Merge confirmation does not target the configured default branch");
+  }
+  const baseRepository = assertInside(workspaceRoot, join(workspaceRoot, repository.base_path));
+  const currentTarget = await git(baseRepository, ["rev-parse", "--verify", `${record.target_ref}^{commit}`]);
+  if (currentTarget !== record.target_commit || !await isAncestor(baseRepository, record.merge_commit, currentTarget) || !await isAncestor(baseRepository, record.head_commit, record.merge_commit)) {
+    throw new Error("Merge confirmation no longer proves the exact reviewed head is reachable from the recorded default target");
+  }
+  return record;
+}
+
 async function verifiedDefaultRefs(repository: string, branch: string): Promise<string[]> {
   const refs: string[] = [];
   for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
@@ -346,6 +368,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       const existing = await readJson<CloseoutRecord>(assertInside(runtimeRoot, repository.closeout_record));
       await assertValid("closeout-record", existing);
       if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
+      if (existing.outcome === "merged") await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit);
       if (existing.status === "closed" || !options.cleanup) return existing;
       return closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, existing, config, invocationTime.toISOString());
     }
@@ -353,6 +376,9 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
     if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
     if (options.outcome === "merged" && repositoryStatus !== "passed") throw new Error(`Merged closeout requires a passed repository, received ${repositoryStatus}`);
     if (options.outcome === "abandoned" && !options.reason?.trim()) throw new Error("Deliberate abandonment requires --reason");
+    const mergeConfirmation = options.outcome === "merged"
+      ? await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit)
+      : null;
 
     const brief = await readJson<TaskBrief>(assertInside(runtimeRoot, manifest.task_brief));
     await assertValid("task-brief", brief);
@@ -383,7 +409,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       branch: repository.branch,
       base_commit: repository.base_commit,
       head_commit: headCommit,
-      merge_commit: options.mergeCommit ?? null,
+      merge_commit: mergeConfirmation?.merge_commit ?? options.mergeCommit ?? null,
       pull_requests: [...new Set(options.pullRequests ?? [])],
       commits,
       changed_files: changedFiles,

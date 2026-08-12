@@ -29,6 +29,13 @@ The host-neutral result recorder validates both roles and advances the runtime
 manifest through `running`, `verifying`, and a verifier outcome. Runtime evidence
 remains ignored and preserved until deliberate closeout.
 
+Passing work advances through local review, optional explicitly authorized
+publication, human merge, and verified merge confirmation. Missing `origin`
+still permits local review. Review handoffs use exact recorded commits and
+shell-safe commands. Only a human runs the merge; `confirm-merge` is read-only
+with respect to Git and requires the exact reviewed head and reported merge to
+be reachable from the configured default target before closeout is ready.
+
 After human-confirmed merge or deliberate abandonment, `finish-work` first writes
 an append-only contribution and recoverable closeout record. Worktree cleanup is
 a separate explicit rerun after that contribution is tracked, committed, and

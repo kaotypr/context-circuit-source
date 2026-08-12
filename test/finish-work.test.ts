@@ -6,6 +6,7 @@ import { prepareActivityLifecycle, recordActivityLifecycleAction } from "../scri
 import { contributionDocumentErrors, finishWork } from "../scripts/lib/finish-work.js";
 import { git } from "../scripts/lib/git.js";
 import { recordResult } from "../scripts/lib/record-result.js";
+import { confirmMerge, prepareReview } from "../scripts/lib/review-lifecycle.js";
 import { preparePlanlessTask, type PreparedTask } from "../scripts/lib/run-task.js";
 import { validateContract } from "../scripts/lib/validation.js";
 import { createTestWorkspace, taskOptions } from "./helpers.js";
@@ -65,7 +66,15 @@ async function passRun(root: string, discriminator: string): Promise<PreparedTas
     verified_at: "2026-08-11T22:03:00.000Z",
   });
   await recordResult({ workspaceRoot: root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
+  await prepareReview({ workspaceRoot: root, runId: prepared.runId, repository: "frontend" });
   return prepared;
+}
+
+async function mergeAndConfirm(root: string, repository: string, prepared: PreparedTask, author = "kao"): Promise<string> {
+  await git(repository, ["-c", "user.name=Merger", "-c", "user.email=merger@example.invalid", "merge", "--no-ff", "-m", "merge: closeout fixture", prepared.branch]);
+  const mergeCommit = await git(repository, ["rev-parse", "HEAD"]);
+  await confirmMerge({ workspaceRoot: root, runId: prepared.runId, repository: "frontend", mergeCommit, author, evidence: "Human confirmed the reviewed branch merge." });
+  return mergeCommit;
 }
 
 async function commitContribution(root: string, contribution: string): Promise<void> {
@@ -78,10 +87,7 @@ test("prepares one append-only contribution and safely removes only a merged cle
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "c10c10c1");
-  await git(workspace.repository, [
-    "-c", "user.name=Merger", "-c", "user.email=merger@example.invalid",
-    "merge", "--no-ff", "-m", "merge: closeout fixture", prepared.branch,
-  ]);
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared, "kao-typr");
 
   const closeout = await finishWork({
     workspaceRoot: workspace.root,
@@ -152,10 +158,7 @@ test("refuses to remove a merged worktree with uncommitted changes", async (t) =
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "d17d17d1");
-  await git(workspace.repository, [
-    "-c", "user.name=Merger", "-c", "user.email=merger@example.invalid",
-    "merge", "--no-ff", "-m", "merge: dirty closeout fixture", prepared.branch,
-  ]);
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared);
   const closeout = await finishWork({
     workspaceRoot: workspace.root,
     runId: prepared.runId,
@@ -183,11 +186,36 @@ test("contribution validation rejects incomplete or credential-bearing documents
   assert.ok(errors.some((error) => error.includes("credential")));
 });
 
+test("forged merge confirmation cannot unlock closeout or mutate durable state", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await initializeWrapper(workspace.root);
+  const prepared = await passRun(workspace.root, "f0126e00");
+  await git(workspace.repository, ["-c", "user.name=Merger", "-c", "user.email=merger@example.invalid", "merge", "--no-ff", "-m", "merge: closeout fixture", prepared.branch]);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const mergeCommit = await git(workspace.repository, ["rev-parse", "HEAD"]);
+  const forgedPath = join(workspace.root, ".runtime", "runs", prepared.runId, "frontend-merge-confirmation.json");
+  await writeJson(forgedPath, {
+    contract_version: 1, work_id: prepared.workId, run_id: prepared.runId, repository: "frontend", status: "closeout-ready",
+    base_branch: "main", target_ref: "refs/heads/main", target_commit: mergeCommit,
+    head_commit: manifest.repositories[0].base_commit, merge_commit: mergeCommit, evidence: "forged",
+    finish_work_argv: ["node", "finish-work"], finish_work_shell: "'node' 'finish-work'",
+    idempotency_key: `${prepared.runId}:merge-confirmation:frontend`, confirmed_at: "2026-08-12T01:00:00.000Z",
+  });
+  manifest.repositories[0].merge_confirmation = forgedPath;
+  manifest.repositories[0].review_state = "closeout-ready";
+  await writeJson(prepared.manifest, manifest);
+  await assert.rejects(finishWork({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", outcome: "merged", author: "kao" }), /identity or verified head does not match/);
+  await assert.rejects(access(join(workspace.root, "contributions", "general")));
+  assert.equal(await git(workspace.repository, ["rev-parse", "HEAD"]), mergeCommit);
+});
+
 test("stops before closeout mutation when configured activity hooks are unavailable", async (t) => {
   const workspace = await createTestWorkspace();
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "ac710000");
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared);
   const configPath = join(workspace.root, "workspace.yaml");
   await writeFile(configPath, (await readFile(configPath, "utf8"))
     .replace("provider: none", "provider: example")
@@ -227,6 +255,7 @@ test("refuses a symlinked contribution directory", async (t) => {
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "5afe0000");
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared);
   await mkdir(join(workspace.root, "contributions"));
   await symlink(workspace.repository, join(workspace.root, "contributions", "general"), "dir");
   await assert.rejects(
@@ -242,6 +271,7 @@ test("rejects tampered verifier evidence before writing a contribution", async (
   t.after(workspace.cleanup);
   await initializeWrapper(workspace.root);
   const prepared = await passRun(workspace.root, "e71de0ce");
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared);
   const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
   const verifierInput = JSON.parse(await readFile(manifest.repositories[0].verifier_input, "utf8"));
   const verifier = JSON.parse(await readFile(verifierInput.result_path, "utf8"));

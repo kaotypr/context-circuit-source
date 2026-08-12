@@ -30,10 +30,14 @@ the same isolated worktree and cannot expand the authorized scope silently.
 
 ## Review and merge
 
-A passing run prepares review evidence but does not push, open a pull request,
-merge, or deploy automatically. Review the branch, verification results, and
-runtime handoff, then use the normal repository review process. Humans retain
-the merge decision.
+A passing run prepares exact local review commands even when no `origin` exists.
+Remote publication remains optional and explicitly authorized; the workflow
+records only confirmed publication results. It does not push, open a pull
+request, merge, or deploy automatically. Review the branch, verification
+results, and runtime handoff, then use the normal repository review process.
+Humans retain the merge decision and report its full commit through the emitted
+`confirm-merge` command. Closeout becomes ready only after the exact reviewed
+head is verified on the configured default target.
 
 ## Finish safely
 

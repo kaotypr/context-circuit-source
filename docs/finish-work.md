@@ -1,12 +1,16 @@
 # Finish a run safely
 
 `finish-work` is invoked by a human after repository work is merged or when the
-human deliberately abandons it. It does not infer either decision from tests,
-verification, or pull-request metadata.
+human deliberately abandons it. A merged closeout requires the versioned
+`closeout-ready` merge confirmation emitted by `confirm-merge`; it does not infer
+merge from tests, verification, or pull-request metadata.
 
 ## Prepare closeout
 
-Run closeout without cleanup first:
+After the human merge, run the exact confirmation command from review preparation.
+It verifies the configured default target, full reported merge commit, and exact
+reviewed head without changing Git state. Then run its emitted closeout command
+without cleanup first:
 
 ```bash
 node .agents/bin/cc.mjs finish-work \

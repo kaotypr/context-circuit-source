@@ -7,6 +7,7 @@
     "check": "npm run typecheck && npm run validate && npm test",
     "build:template": "node --import tsx scripts/build-template.ts",
     "create-plan": "node --import tsx scripts/create-plan.ts",
+    "confirm-merge": "node --import tsx scripts/confirm-merge.ts",
     "fixture:create": "node --import tsx scripts/create-fixture.ts",
     "finish-work": "node --import tsx scripts/finish-work.ts",
     "initialize-workspace": "node --import tsx scripts/initialize-workspace.ts",

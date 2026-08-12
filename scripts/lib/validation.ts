@@ -5,7 +5,7 @@ import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
 
-export const schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
+export const schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
 export type SchemaName = (typeof schemaNames)[number];
 
 export const requiredWorkspaceDocuments = [
@@ -26,6 +26,7 @@ export const requiredWorkspaceDocuments = [
   ".agents/contracts/workspace-bootstrap-request.schema.json",
   ".agents/contracts/review-preparation.schema.json",
   ".agents/contracts/review-publication-record.schema.json",
+  ".agents/contracts/merge-confirmation-record.schema.json",
   ".agents/contracts/closeout-record.schema.json",
   ".agents/contracts/run-task-request.schema.json",
   ".agents/contracts/context-sync-request.schema.json",

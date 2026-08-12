@@ -186,9 +186,12 @@ async function repositoryAccess(workspaceRoot: string, config: WorkspaceConfig, 
 
 function runtimeState(manifest: RuntimeManifest, workId: string): CandidateState {
   const item = manifest.plan_work_items?.find((candidate) => candidate.work_id === workId);
+  const reviewStates = manifest.repositories.map((repository) => repository.review_state);
   if (manifest.status === "cancelled") return "cancelled";
   if (manifest.status === "closing") return "closeout";
   if (manifest.status === "closed") return "completed";
+  if (reviewStates.includes("closeout-ready")) return "closeout";
+  if (reviewStates.some((state) => state === "ready-for-local-review" || state === "ready-for-publication" || state === "published-for-review" || state === "merge-confirmation-required")) return "review";
   if (manifest.status === "passed" || item?.outcome === "passed") return "review";
   if (manifest.status === "failed" || manifest.status === "blocked" || item?.outcome === "failed" || item?.outcome === "blocked") return "failed";
   return "in-progress";
