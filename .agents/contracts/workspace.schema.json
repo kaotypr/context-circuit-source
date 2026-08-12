@@ -15,7 +15,9 @@
       "properties": {
         "name": { "type": "string", "minLength": 1 },
         "mode": { "enum": ["solo", "team"] },
-        "default_branch": { "$ref": "#/$defs/gitRef" }
+        "default_branch": { "$ref": "#/$defs/gitRef" },
+        "purpose": { "type": "string", "minLength": 1, "maxLength": 5000, "pattern": "\\S" },
+        "remote": { "$ref": "#/$defs/safeReference" }
       }
     },
     "repositories": {
@@ -53,7 +55,20 @@
           "items": { "enum": ["plan-approval", "task-selection", "merge"] }
         },
         "maximum_repair_attempts": { "type": "integer", "minimum": 0, "maximum": 10 },
-        "wrapper_change_policy": { "enum": ["pull-request", "direct-commit"] }
+        "wrapper_change_policy": { "enum": ["pull-request", "direct-commit"] },
+        "review_mode": { "enum": ["local", "remote"] }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authoritative_sources"],
+      "properties": {
+        "authoritative_sources": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "$ref": "#/$defs/contextSource" }
+        }
       }
     }
   },
@@ -64,6 +79,18 @@
       "type": "string",
       "minLength": 1,
       "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$"
+    },
+    "safeReference": { "type": "string", "minLength": 1, "maxLength": 2000, "pattern": "^(?=.*\\S)[^\\r\\n]+$" },
+    "contextSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "reference", "purpose"],
+      "properties": {
+        "kind": { "enum": ["prd", "architecture", "issue", "repository-documentation", "other"] },
+        "reference": { "$ref": "#/$defs/safeReference" },
+        "purpose": { "type": "string", "minLength": 1, "maxLength": 500, "pattern": "\\S" },
+        "repository": { "$ref": "#/$defs/identifier" }
+      }
     },
     "capabilities": {
       "type": "array",
@@ -90,7 +117,8 @@
         "mode": { "enum": ["ignored-clone", "submodule"] },
         "role": { "type": "string", "minLength": 1 },
         "agent": { "$ref": "#/$defs/identifier" },
-        "default_branch": { "$ref": "#/$defs/gitRef" }
+        "default_branch": { "$ref": "#/$defs/gitRef" },
+        "remote": { "$ref": "#/$defs/safeReference" }
       }
     }
   }

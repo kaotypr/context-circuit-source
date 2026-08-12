@@ -4,6 +4,14 @@ export interface RepositoryConfig {
   role: string;
   agent: string;
   default_branch: string;
+  remote?: string;
+}
+
+export interface WorkspaceContextSource {
+  kind: "prd" | "architecture" | "issue" | "repository-documentation" | "other";
+  reference: string;
+  purpose: string;
+  repository?: string;
 }
 
 export interface WorkspaceConfig {
@@ -13,6 +21,8 @@ export interface WorkspaceConfig {
     name: string;
     mode: "solo" | "team";
     default_branch: string;
+    purpose?: string;
+    remote?: string;
   };
   repositories: Record<string, RepositoryConfig>;
   activity: {
@@ -26,6 +36,10 @@ export interface WorkspaceConfig {
     human_gates: string[];
     maximum_repair_attempts: number;
     wrapper_change_policy: "pull-request" | "direct-commit";
+    review_mode?: "local" | "remote";
+  };
+  context?: {
+    authoritative_sources: WorkspaceContextSource[];
   };
 }
 
@@ -41,10 +55,12 @@ export interface WorkspaceBootstrapContext {
   architecture: string[];
   conventions: string[];
   decisions: string[];
+  sources?: WorkspaceContextSource[];
 }
 
 export interface WorkspaceBootstrapRequest {
   contract_version: 1;
+  authorize_reviewable_changes?: boolean;
   configuration: WorkspaceConfig;
   context: WorkspaceBootstrapContext;
   wrapper: BootstrapGitCommit & { initialize_git: boolean };

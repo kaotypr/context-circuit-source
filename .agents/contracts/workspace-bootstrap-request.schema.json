@@ -7,6 +7,7 @@
   "required": ["contract_version", "configuration", "context", "wrapper", "repositories"],
   "properties": {
     "contract_version": { "const": 1 },
+    "authorize_reviewable_changes": { "type": "boolean" },
     "configuration": { "$ref": "workspace.schema.json" },
     "context": {
       "type": "object",
@@ -16,7 +17,12 @@
         "project_summary": { "type": "string", "minLength": 1, "maxLength": 5000, "pattern": "\\S" },
         "architecture": { "$ref": "#/$defs/notes" },
         "conventions": { "$ref": "#/$defs/notes" },
-        "decisions": { "$ref": "#/$defs/notes" }
+        "decisions": { "$ref": "#/$defs/notes" },
+        "sources": {
+          "type": "array",
+          "maxItems": 100,
+          "items": { "$ref": "workspace.schema.json#/$defs/contextSource" }
+        }
       }
     },
     "wrapper": {

@@ -13,7 +13,7 @@ Run it from the wrapper root:
 
 ```bash
 node .agents/bin/cc.mjs validate
-node .agents/bin/cc.mjs initialize-workspace --check-only
+node .agents/bin/cc.mjs configure-workspace --check-only
 node .agents/bin/cc.mjs whats-next
 ```
 
@@ -22,7 +22,9 @@ arguments. The principal skill-to-command mappings are:
 
 | Human action | Codex | Claude Code | Deterministic command |
 | --- | --- | --- | --- |
-| Initialize | `$initialize-workspace` | `/initialize-workspace` | `initialize-workspace` |
+| Configure | `$configure-workspace` | `/configure-workspace` | `configure-workspace` |
+| Initialize (compatibility) | `$initialize-workspace` | `/initialize-workspace` | `initialize-workspace` |
+| Gather context (read-only) | `$gather-context` | `/gather-context` | host read-only tools |
 | Plan | `$create-plan` | `/create-plan` | `create-plan` |
 | Recommend work | `$whats-next` | `/whats-next` | `whats-next` |
 | Run scoped work | `$run-task` | `/run-task` | `run-task` |

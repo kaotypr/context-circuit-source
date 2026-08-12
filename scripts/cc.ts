@@ -6,6 +6,7 @@ process.argv.splice(2, 1);
 switch (command) {
   case "validate": await import("./validate.js"); break;
   case "initialize-workspace": await import("./initialize-workspace.js"); break;
+  case "configure-workspace": await import("./configure-workspace.js"); break;
   case "run-task": await import("./run-task.js"); break;
   case "record-result": await import("./record-result.js"); break;
   case "prepare-repair": await import("./prepare-repair.js"); break;

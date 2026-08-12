@@ -6,6 +6,7 @@ import { git } from "./git.js";
 import type { BootstrapGitCommit, WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { readData, requiredWorkspaceDocuments, validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "./validation.js";
 import { renderWorkspaceContext } from "./workspace-context.js";
+import { reconcileWorkspaceReadme } from "./workspace-readme.js";
 
 const ignoredStart = "# context-circuit:ignored-clones:start";
 const ignoredEnd = "# context-circuit:ignored-clones:end";
@@ -199,6 +200,12 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   const gitignorePath = join(workspaceRoot, ".gitignore");
   const currentGitignore = await readFile(gitignorePath, "utf8");
   const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
+  const readmePath = join(workspaceRoot, "README.md");
+  const currentReadme = await readFile(readmePath, "utf8");
+  const readmeConfig: WorkspaceConfig = config.workspace.purpose
+    ? config
+    : { ...config, workspace: { ...config.workspace, purpose: options.request.context.project_summary } };
+  const nextReadme = reconcileWorkspaceReadme(currentReadme, readmeConfig);
   for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
     const agentPath = join(workspaceRoot, "agents", `${agent}.md`);
     if (!await pathExists(agentPath)) continue;
@@ -245,6 +252,7 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   for (const [path, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
     await writeTextAtomic(join(workspaceRoot, path), contents);
   }
+  await writeTextAtomic(readmePath, nextReadme);
   await mkdir(join(workspaceRoot, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
     const agentPath = join(workspaceRoot, "agents", `${repository.agent}.md`);

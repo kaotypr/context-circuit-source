@@ -28,6 +28,14 @@ test("distributable and release archive contain only wrapper inputs", async () =
     await assert.rejects(access(join(destination, path)));
   }
   await access(join(destination, ".agents", "bin", "cc.mjs"));
+  for (const path of [
+    ".agents/skills/configure-workspace/SKILL.md",
+    ".agents/skills/gather-context/SKILL.md",
+    ".codex/skills/configure-workspace/SKILL.md",
+    ".codex/skills/gather-context/SKILL.md",
+    ".claude/commands/configure-workspace.md",
+    ".claude/commands/gather-context.md",
+  ]) await access(join(destination, path));
   await assert.rejects(access(join(destination, ".agents", "bin", "kao.mjs")));
   await assert.rejects(access(join(destination, ".template-version")));
   await access(join(destination, "context", "plans", ".gitkeep"));

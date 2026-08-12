@@ -18,6 +18,7 @@ test("deterministic TypeScript commands avoid sandbox-incompatible tsx IPC", asy
     scripts?: Record<string, string>;
   };
   const deterministicCommands = [
+    "configure-workspace",
     "create-plan",
     "confirm-merge",
     "fixture:create",
@@ -89,7 +90,7 @@ test("workspace document validation reports missing required files", async () =>
 });
 
 test("machine-readable contract schemas reject incomplete data", async () => {
-  for (const schema of ["workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "review-preparation", "merge-confirmation-record", "closeout-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const) {
+  for (const schema of ["workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "review-preparation", "merge-confirmation-record", "closeout-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const) {
     assert.notEqual((await validateContract(schema, { contract_version: 1 })).length, 0, schema);
   }
 });
