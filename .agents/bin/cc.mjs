@@ -44,9 +44,9 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/ajv/dist/compile/codegen/code.js
+// ../../../../node_modules/ajv/dist/compile/codegen/code.js
 var require_code = __commonJS({
-  "node_modules/ajv/dist/compile/codegen/code.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/codegen/code.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
@@ -198,9 +198,9 @@ var require_code = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/codegen/scope.js
+// ../../../../node_modules/ajv/dist/compile/codegen/scope.js
 var require_scope = __commonJS({
-  "node_modules/ajv/dist/compile/codegen/scope.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/codegen/scope.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ValueScope = exports.ValueScopeName = exports.Scope = exports.varKinds = exports.UsedValueState = void 0;
@@ -343,9 +343,9 @@ var require_scope = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/codegen/index.js
+// ../../../../node_modules/ajv/dist/compile/codegen/index.js
 var require_codegen = __commonJS({
-  "node_modules/ajv/dist/compile/codegen/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/codegen/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.or = exports.and = exports.not = exports.CodeGen = exports.operators = exports.varKinds = exports.ValueScopeName = exports.ValueScope = exports.Scope = exports.Name = exports.regexpCode = exports.stringify = exports.getProperty = exports.nil = exports.strConcat = exports.str = exports._ = void 0;
@@ -1063,9 +1063,9 @@ var require_codegen = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/util.js
+// ../../../../node_modules/ajv/dist/compile/util.js
 var require_util = __commonJS({
-  "node_modules/ajv/dist/compile/util.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/util.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.checkStrictMode = exports.getErrorPath = exports.Type = exports.useFunc = exports.setEvaluated = exports.evaluatedPropsToName = exports.mergeEvaluated = exports.eachItem = exports.unescapeJsonPointer = exports.escapeJsonPointer = exports.escapeFragment = exports.unescapeFragment = exports.schemaRefOrVal = exports.schemaHasRulesButRef = exports.schemaHasRules = exports.checkUnknownRules = exports.alwaysValidSchema = exports.toHash = void 0;
@@ -1230,9 +1230,9 @@ var require_util = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/names.js
+// ../../../../node_modules/ajv/dist/compile/names.js
 var require_names = __commonJS({
-  "node_modules/ajv/dist/compile/names.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/names.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -1269,9 +1269,9 @@ var require_names = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/errors.js
+// ../../../../node_modules/ajv/dist/compile/errors.js
 var require_errors = __commonJS({
-  "node_modules/ajv/dist/compile/errors.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/errors.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.extendErrors = exports.resetErrorsCount = exports.reportExtraError = exports.reportError = exports.keyword$DataError = exports.keywordError = void 0;
@@ -1391,9 +1391,9 @@ var require_errors = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/boolSchema.js
+// ../../../../node_modules/ajv/dist/compile/validate/boolSchema.js
 var require_boolSchema = __commonJS({
-  "node_modules/ajv/dist/compile/validate/boolSchema.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/boolSchema.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.boolOrEmptySchema = exports.topBoolOrEmptySchema = void 0;
@@ -1442,9 +1442,9 @@ var require_boolSchema = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/rules.js
+// ../../../../node_modules/ajv/dist/compile/rules.js
 var require_rules = __commonJS({
-  "node_modules/ajv/dist/compile/rules.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/rules.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getRules = exports.isJSONType = void 0;
@@ -1473,9 +1473,9 @@ var require_rules = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/applicability.js
+// ../../../../node_modules/ajv/dist/compile/validate/applicability.js
 var require_applicability = __commonJS({
-  "node_modules/ajv/dist/compile/validate/applicability.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/applicability.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.shouldUseRule = exports.shouldUseGroup = exports.schemaHasRulesForType = void 0;
@@ -1496,9 +1496,9 @@ var require_applicability = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/dataType.js
+// ../../../../node_modules/ajv/dist/compile/validate/dataType.js
 var require_dataType = __commonJS({
-  "node_modules/ajv/dist/compile/validate/dataType.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/dataType.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.reportTypeError = exports.checkDataTypes = exports.checkDataType = exports.coerceAndCheckDataType = exports.getJSONTypes = exports.getSchemaTypes = exports.DataType = void 0;
@@ -1680,9 +1680,9 @@ var require_dataType = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/defaults.js
+// ../../../../node_modules/ajv/dist/compile/validate/defaults.js
 var require_defaults = __commonJS({
-  "node_modules/ajv/dist/compile/validate/defaults.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/defaults.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.assignDefaults = void 0;
@@ -1717,9 +1717,9 @@ var require_defaults = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/code.js
+// ../../../../node_modules/ajv/dist/vocabularies/code.js
 var require_code2 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/code.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/code.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateUnion = exports.validateArray = exports.usePattern = exports.callValidateCode = exports.schemaProperties = exports.allSchemaProperties = exports.noPropertyInData = exports.propertyInData = exports.isOwnProperty = exports.hasPropFunc = exports.reportMissingProp = exports.checkMissingProp = exports.checkReportMissingProp = void 0;
@@ -1850,9 +1850,9 @@ var require_code2 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/keyword.js
+// ../../../../node_modules/ajv/dist/compile/validate/keyword.js
 var require_keyword = __commonJS({
-  "node_modules/ajv/dist/compile/validate/keyword.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/keyword.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateKeywordUsage = exports.validSchemaType = exports.funcKeywordCode = exports.macroKeywordCode = void 0;
@@ -1968,9 +1968,9 @@ var require_keyword = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/subschema.js
+// ../../../../node_modules/ajv/dist/compile/validate/subschema.js
 var require_subschema = __commonJS({
-  "node_modules/ajv/dist/compile/validate/subschema.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/subschema.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.extendSubschemaMode = exports.extendSubschemaData = exports.getSubschema = void 0;
@@ -2051,9 +2051,9 @@ var require_subschema = __commonJS({
   }
 });
 
-// node_modules/fast-deep-equal/index.js
+// ../../../../node_modules/fast-deep-equal/index.js
 var require_fast_deep_equal = __commonJS({
-  "node_modules/fast-deep-equal/index.js"(exports, module) {
+  "../../../../node_modules/fast-deep-equal/index.js"(exports, module) {
     "use strict";
     module.exports = function equal(a, b) {
       if (a === b) return true;
@@ -2086,9 +2086,9 @@ var require_fast_deep_equal = __commonJS({
   }
 });
 
-// node_modules/json-schema-traverse/index.js
+// ../../../../node_modules/json-schema-traverse/index.js
 var require_json_schema_traverse = __commonJS({
-  "node_modules/json-schema-traverse/index.js"(exports, module) {
+  "../../../../node_modules/json-schema-traverse/index.js"(exports, module) {
     "use strict";
     var traverse = module.exports = function(schema2, opts, cb) {
       if (typeof opts == "function") {
@@ -2174,9 +2174,9 @@ var require_json_schema_traverse = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/resolve.js
+// ../../../../node_modules/ajv/dist/compile/resolve.js
 var require_resolve = __commonJS({
-  "node_modules/ajv/dist/compile/resolve.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/resolve.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getSchemaRefs = exports.resolveUrl = exports.normalizeId = exports._getFullPath = exports.getFullPath = exports.inlineRef = void 0;
@@ -2330,9 +2330,9 @@ var require_resolve = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/validate/index.js
+// ../../../../node_modules/ajv/dist/compile/validate/index.js
 var require_validate = __commonJS({
-  "node_modules/ajv/dist/compile/validate/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/validate/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getData = exports.KeywordCxt = exports.validateFunctionCode = void 0;
@@ -2838,9 +2838,9 @@ var require_validate = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/runtime/validation_error.js
+// ../../../../node_modules/ajv/dist/runtime/validation_error.js
 var require_validation_error = __commonJS({
-  "node_modules/ajv/dist/runtime/validation_error.js"(exports) {
+  "../../../../node_modules/ajv/dist/runtime/validation_error.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ValidationError = class extends Error {
@@ -2854,9 +2854,9 @@ var require_validation_error = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/ref_error.js
+// ../../../../node_modules/ajv/dist/compile/ref_error.js
 var require_ref_error = __commonJS({
-  "node_modules/ajv/dist/compile/ref_error.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/ref_error.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var resolve_1 = require_resolve();
@@ -2871,9 +2871,9 @@ var require_ref_error = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/compile/index.js
+// ../../../../node_modules/ajv/dist/compile/index.js
 var require_compile = __commonJS({
-  "node_modules/ajv/dist/compile/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/compile/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.resolveSchema = exports.getCompilingSchema = exports.resolveRef = exports.compileSchema = exports.SchemaEnv = void 0;
@@ -3095,9 +3095,9 @@ var require_compile = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/data.json
+// ../../../../node_modules/ajv/dist/refs/data.json
 var require_data = __commonJS({
-  "node_modules/ajv/dist/refs/data.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/data.json"(exports, module) {
     module.exports = {
       $id: "https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#",
       description: "Meta-schema for $data reference (JSON AnySchema extension proposal)",
@@ -3114,9 +3114,9 @@ var require_data = __commonJS({
   }
 });
 
-// node_modules/fast-uri/lib/utils.js
+// ../../../../node_modules/fast-uri/lib/utils.js
 var require_utils = __commonJS({
-  "node_modules/fast-uri/lib/utils.js"(exports, module) {
+  "../../../../node_modules/fast-uri/lib/utils.js"(exports, module) {
     "use strict";
     var isUUID = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu);
     var isIPv4 = RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u);
@@ -3427,9 +3427,9 @@ var require_utils = __commonJS({
   }
 });
 
-// node_modules/fast-uri/lib/schemes.js
+// ../../../../node_modules/fast-uri/lib/schemes.js
 var require_schemes = __commonJS({
-  "node_modules/fast-uri/lib/schemes.js"(exports, module) {
+  "../../../../node_modules/fast-uri/lib/schemes.js"(exports, module) {
     "use strict";
     var { isUUID } = require_utils();
     var URN_REG = /([\da-z][\d\-a-z]{0,31}):((?:[\w!$'()*+,\-.:;=@]|%[\da-f]{2})+)/iu;
@@ -3637,9 +3637,9 @@ var require_schemes = __commonJS({
   }
 });
 
-// node_modules/fast-uri/index.js
+// ../../../../node_modules/fast-uri/index.js
 var require_fast_uri = __commonJS({
-  "node_modules/fast-uri/index.js"(exports, module) {
+  "../../../../node_modules/fast-uri/index.js"(exports, module) {
     "use strict";
     var { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizePercentEncoding, normalizePathEncoding, escapePreservingEscapes, reescapeHostDelimiters, isIPv4, nonSimpleDomain } = require_utils();
     var { SCHEMES, getSchemeHandler } = require_schemes();
@@ -3949,9 +3949,9 @@ var require_fast_uri = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/runtime/uri.js
+// ../../../../node_modules/ajv/dist/runtime/uri.js
 var require_uri = __commonJS({
-  "node_modules/ajv/dist/runtime/uri.js"(exports) {
+  "../../../../node_modules/ajv/dist/runtime/uri.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var uri = require_fast_uri();
@@ -3960,9 +3960,9 @@ var require_uri = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/core.js
+// ../../../../node_modules/ajv/dist/core.js
 var require_core = __commonJS({
-  "node_modules/ajv/dist/core.js"(exports) {
+  "../../../../node_modules/ajv/dist/core.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = void 0;
@@ -4571,9 +4571,9 @@ var require_core = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/core/id.js
+// ../../../../node_modules/ajv/dist/vocabularies/core/id.js
 var require_id = __commonJS({
-  "node_modules/ajv/dist/vocabularies/core/id.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/core/id.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var def = {
@@ -4586,9 +4586,9 @@ var require_id = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/core/ref.js
+// ../../../../node_modules/ajv/dist/vocabularies/core/ref.js
 var require_ref = __commonJS({
-  "node_modules/ajv/dist/vocabularies/core/ref.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/core/ref.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.callRef = exports.getValidate = void 0;
@@ -4708,9 +4708,9 @@ var require_ref = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/core/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/core/index.js
 var require_core2 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/core/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/core/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var id_1 = require_id();
@@ -4729,9 +4729,9 @@ var require_core2 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/limitNumber.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/limitNumber.js
 var require_limitNumber = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitNumber.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/limitNumber.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -4761,9 +4761,9 @@ var require_limitNumber = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/multipleOf.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/multipleOf.js
 var require_multipleOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/multipleOf.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/multipleOf.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -4789,9 +4789,9 @@ var require_multipleOf = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/runtime/ucs2length.js
+// ../../../../node_modules/ajv/dist/runtime/ucs2length.js
 var require_ucs2length = __commonJS({
-  "node_modules/ajv/dist/runtime/ucs2length.js"(exports) {
+  "../../../../node_modules/ajv/dist/runtime/ucs2length.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function ucs2length(str) {
@@ -4815,9 +4815,9 @@ var require_ucs2length = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/limitLength.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/limitLength.js
 var require_limitLength = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitLength.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/limitLength.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -4847,9 +4847,9 @@ var require_limitLength = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/pattern.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/pattern.js
 var require_pattern = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/pattern.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/pattern.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
@@ -4884,9 +4884,9 @@ var require_pattern = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/limitProperties.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/limitProperties.js
 var require_limitProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitProperties.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/limitProperties.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -4913,9 +4913,9 @@ var require_limitProperties = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/required.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/required.js
 var require_required = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/required.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/required.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
@@ -4995,9 +4995,9 @@ var require_required = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/limitItems.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/limitItems.js
 var require_limitItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitItems.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/limitItems.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5024,9 +5024,9 @@ var require_limitItems = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/runtime/equal.js
+// ../../../../node_modules/ajv/dist/runtime/equal.js
 var require_equal = __commonJS({
-  "node_modules/ajv/dist/runtime/equal.js"(exports) {
+  "../../../../node_modules/ajv/dist/runtime/equal.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var equal = require_fast_deep_equal();
@@ -5035,9 +5035,9 @@ var require_equal = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/uniqueItems.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/uniqueItems.js
 var require_uniqueItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/uniqueItems.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/uniqueItems.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dataType_1 = require_dataType();
@@ -5102,9 +5102,9 @@ var require_uniqueItems = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/const.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/const.js
 var require_const = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/const.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/const.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5131,9 +5131,9 @@ var require_const = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/enum.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/enum.js
 var require_enum = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/enum.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/enum.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5180,9 +5180,9 @@ var require_enum = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/index.js
 var require_validation = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var limitNumber_1 = require_limitNumber();
@@ -5218,9 +5218,9 @@ var require_validation = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/additionalItems.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/additionalItems.js
 var require_additionalItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/additionalItems.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/additionalItems.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateAdditionalItems = void 0;
@@ -5271,9 +5271,9 @@ var require_additionalItems = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/items.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/items.js
 var require_items = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/items.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/items.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateTuple = void 0;
@@ -5328,9 +5328,9 @@ var require_items = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/prefixItems.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/prefixItems.js
 var require_prefixItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/prefixItems.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/prefixItems.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var items_1 = require_items();
@@ -5345,9 +5345,9 @@ var require_prefixItems = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/items2020.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/items2020.js
 var require_items2020 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/items2020.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/items2020.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5380,9 +5380,9 @@ var require_items2020 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/contains.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/contains.js
 var require_contains = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/contains.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/contains.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5474,9 +5474,9 @@ var require_contains = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/dependencies.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/dependencies.js
 var require_dependencies = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/dependencies.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/dependencies.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateSchemaDeps = exports.validatePropertyDeps = exports.error = void 0;
@@ -5568,9 +5568,9 @@ var require_dependencies = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/propertyNames.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/propertyNames.js
 var require_propertyNames = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/propertyNames.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/propertyNames.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5611,9 +5611,9 @@ var require_propertyNames = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js
 var require_additionalProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
@@ -5717,9 +5717,9 @@ var require_additionalProperties = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/properties.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/properties.js
 var require_properties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/properties.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/properties.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var validate_1 = require_validate();
@@ -5775,9 +5775,9 @@ var require_properties = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/patternProperties.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/patternProperties.js
 var require_patternProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/patternProperties.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/patternProperties.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
@@ -5849,9 +5849,9 @@ var require_patternProperties = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/not.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/not.js
 var require_not = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/not.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/not.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
@@ -5880,9 +5880,9 @@ var require_not = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/anyOf.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/anyOf.js
 var require_anyOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/anyOf.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/anyOf.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
@@ -5897,9 +5897,9 @@ var require_anyOf = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/oneOf.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/oneOf.js
 var require_oneOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/oneOf.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/oneOf.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -5955,9 +5955,9 @@ var require_oneOf = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/allOf.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/allOf.js
 var require_allOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
@@ -5982,9 +5982,9 @@ var require_allOf = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/if.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/if.js
 var require_if = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/if.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/if.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -6051,9 +6051,9 @@ var require_if = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/thenElse.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/thenElse.js
 var require_thenElse = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
@@ -6069,9 +6069,9 @@ var require_thenElse = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/index.js
 var require_applicator = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var additionalItems_1 = require_additionalItems();
@@ -6117,9 +6117,9 @@ var require_applicator = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js
+// ../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js
 var require_dynamicAnchor = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.dynamicAnchor = void 0;
@@ -6152,9 +6152,9 @@ var require_dynamicAnchor = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js
+// ../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js
 var require_dynamicRef = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.dynamicRef = void 0;
@@ -6198,9 +6198,9 @@ var require_dynamicRef = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js
+// ../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js
 var require_recursiveAnchor = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dynamicAnchor_1 = require_dynamicAnchor();
@@ -6219,9 +6219,9 @@ var require_recursiveAnchor = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js
+// ../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js
 var require_recursiveRef = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dynamicRef_1 = require_dynamicRef();
@@ -6234,9 +6234,9 @@ var require_recursiveRef = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/dynamic/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/dynamic/index.js
 var require_dynamic = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/dynamic/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dynamicAnchor_1 = require_dynamicAnchor();
@@ -6248,9 +6248,9 @@ var require_dynamic = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/dependentRequired.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/dependentRequired.js
 var require_dependentRequired = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/dependentRequired.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/dependentRequired.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dependencies_1 = require_dependencies();
@@ -6265,9 +6265,9 @@ var require_dependentRequired = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js
+// ../../../../node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js
 var require_dependentSchemas = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dependencies_1 = require_dependencies();
@@ -6281,9 +6281,9 @@ var require_dependentSchemas = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/validation/limitContains.js
+// ../../../../node_modules/ajv/dist/vocabularies/validation/limitContains.js
 var require_limitContains = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitContains.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/validation/limitContains.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
@@ -6301,9 +6301,9 @@ var require_limitContains = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/next.js
+// ../../../../node_modules/ajv/dist/vocabularies/next.js
 var require_next = __commonJS({
-  "node_modules/ajv/dist/vocabularies/next.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/next.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var dependentRequired_1 = require_dependentRequired();
@@ -6314,9 +6314,9 @@ var require_next = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js
+// ../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js
 var require_unevaluatedProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -6380,9 +6380,9 @@ var require_unevaluatedProperties = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js
+// ../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js
 var require_unevaluatedItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -6424,9 +6424,9 @@ var require_unevaluatedItems = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/unevaluated/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/unevaluated/index.js
 var require_unevaluated = __commonJS({
-  "node_modules/ajv/dist/vocabularies/unevaluated/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/unevaluated/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var unevaluatedProperties_1 = require_unevaluatedProperties();
@@ -6436,9 +6436,9 @@ var require_unevaluated = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/format/format.js
+// ../../../../node_modules/ajv/dist/vocabularies/format/format.js
 var require_format = __commonJS({
-  "node_modules/ajv/dist/vocabularies/format/format.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/format/format.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -6526,9 +6526,9 @@ var require_format = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/format/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/format/index.js
 var require_format2 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/format/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/format/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var format_1 = require_format();
@@ -6537,9 +6537,9 @@ var require_format2 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/metadata.js
+// ../../../../node_modules/ajv/dist/vocabularies/metadata.js
 var require_metadata = __commonJS({
-  "node_modules/ajv/dist/vocabularies/metadata.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/metadata.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.contentVocabulary = exports.metadataVocabulary = void 0;
@@ -6560,9 +6560,9 @@ var require_metadata = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/draft2020.js
+// ../../../../node_modules/ajv/dist/vocabularies/draft2020.js
 var require_draft2020 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/draft2020.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/draft2020.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var core_1 = require_core2();
@@ -6588,9 +6588,9 @@ var require_draft2020 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/discriminator/types.js
+// ../../../../node_modules/ajv/dist/vocabularies/discriminator/types.js
 var require_types = __commonJS({
-  "node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DiscrError = void 0;
@@ -6602,9 +6602,9 @@ var require_types = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/vocabularies/discriminator/index.js
+// ../../../../node_modules/ajv/dist/vocabularies/discriminator/index.js
 var require_discriminator = __commonJS({
-  "node_modules/ajv/dist/vocabularies/discriminator/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/vocabularies/discriminator/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
@@ -6707,9 +6707,9 @@ var require_discriminator = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/schema.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/schema.json
 var require_schema = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/schema.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/schema.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/schema",
@@ -6767,9 +6767,9 @@ var require_schema = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json
 var require_applicator2 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/applicator",
@@ -6820,9 +6820,9 @@ var require_applicator2 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json
 var require_unevaluated2 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/unevaluated",
@@ -6840,9 +6840,9 @@ var require_unevaluated2 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json
 var require_content = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/content",
@@ -6861,9 +6861,9 @@ var require_content = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json
 var require_core3 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/core",
@@ -6917,9 +6917,9 @@ var require_core3 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json
 var require_format_annotation = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/format-annotation",
@@ -6936,9 +6936,9 @@ var require_format_annotation = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json
 var require_meta_data = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/meta-data",
@@ -6977,9 +6977,9 @@ var require_meta_data = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json
 var require_validation2 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json"(exports, module) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/validation",
@@ -7072,9 +7072,9 @@ var require_validation2 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/refs/json-schema-2020-12/index.js
+// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/index.js
 var require_json_schema_2020_12 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/index.js"(exports) {
+  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var metaSchema = require_schema();
@@ -7107,9 +7107,9 @@ var require_json_schema_2020_12 = __commonJS({
   }
 });
 
-// node_modules/ajv/dist/2020.js
+// ../../../../node_modules/ajv/dist/2020.js
 var require__ = __commonJS({
-  "node_modules/ajv/dist/2020.js"(exports, module) {
+  "../../../../node_modules/ajv/dist/2020.js"(exports, module) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv2020 = void 0;
@@ -7184,9 +7184,9 @@ var require__ = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/identity.js
+// ../../../../node_modules/yaml/dist/nodes/identity.js
 var require_identity = __commonJS({
-  "node_modules/yaml/dist/nodes/identity.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/identity.js"(exports) {
     "use strict";
     var ALIAS = /* @__PURE__ */ Symbol.for("yaml.alias");
     var DOC = /* @__PURE__ */ Symbol.for("yaml.document");
@@ -7241,9 +7241,9 @@ var require_identity = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/visit.js
+// ../../../../node_modules/yaml/dist/visit.js
 var require_visit = __commonJS({
-  "node_modules/yaml/dist/visit.js"(exports) {
+  "../../../../node_modules/yaml/dist/visit.js"(exports) {
     "use strict";
     var identity = require_identity();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
@@ -7399,9 +7399,9 @@ var require_visit = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/directives.js
+// ../../../../node_modules/yaml/dist/doc/directives.js
 var require_directives = __commonJS({
-  "node_modules/yaml/dist/doc/directives.js"(exports) {
+  "../../../../node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
     var identity = require_identity();
     var visit = require_visit();
@@ -7570,9 +7570,9 @@ var require_directives = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/anchors.js
+// ../../../../node_modules/yaml/dist/doc/anchors.js
 var require_anchors = __commonJS({
-  "node_modules/yaml/dist/doc/anchors.js"(exports) {
+  "../../../../node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
     var identity = require_identity();
     var visit = require_visit();
@@ -7640,9 +7640,9 @@ var require_anchors = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/applyReviver.js
+// ../../../../node_modules/yaml/dist/doc/applyReviver.js
 var require_applyReviver = __commonJS({
-  "node_modules/yaml/dist/doc/applyReviver.js"(exports) {
+  "../../../../node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
     function applyReviver(reviver, obj, key, val) {
       if (val && typeof val === "object") {
@@ -7690,9 +7690,9 @@ var require_applyReviver = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/toJS.js
+// ../../../../node_modules/yaml/dist/nodes/toJS.js
 var require_toJS = __commonJS({
-  "node_modules/yaml/dist/nodes/toJS.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/toJS.js"(exports) {
     "use strict";
     var identity = require_identity();
     function toJS(value2, arg, ctx) {
@@ -7720,9 +7720,9 @@ var require_toJS = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Node.js
+// ../../../../node_modules/yaml/dist/nodes/Node.js
 var require_Node = __commonJS({
-  "node_modules/yaml/dist/nodes/Node.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/Node.js"(exports) {
     "use strict";
     var applyReviver = require_applyReviver();
     var identity = require_identity();
@@ -7761,9 +7761,9 @@ var require_Node = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Alias.js
+// ../../../../node_modules/yaml/dist/nodes/Alias.js
 var require_Alias = __commonJS({
-  "node_modules/yaml/dist/nodes/Alias.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
     var anchors = require_anchors();
     var visit = require_visit();
@@ -7877,9 +7877,9 @@ var require_Alias = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Scalar.js
+// ../../../../node_modules/yaml/dist/nodes/Scalar.js
 var require_Scalar = __commonJS({
-  "node_modules/yaml/dist/nodes/Scalar.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/Scalar.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Node = require_Node();
@@ -7907,9 +7907,9 @@ var require_Scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/createNode.js
+// ../../../../node_modules/yaml/dist/doc/createNode.js
 var require_createNode = __commonJS({
-  "node_modules/yaml/dist/doc/createNode.js"(exports) {
+  "../../../../node_modules/yaml/dist/doc/createNode.js"(exports) {
     "use strict";
     var Alias = require_Alias();
     var identity = require_identity();
@@ -7982,9 +7982,9 @@ var require_createNode = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Collection.js
+// ../../../../node_modules/yaml/dist/nodes/Collection.js
 var require_Collection = __commonJS({
-  "node_modules/yaml/dist/nodes/Collection.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/Collection.js"(exports) {
     "use strict";
     var createNode = require_createNode();
     var identity = require_identity();
@@ -8125,9 +8125,9 @@ var require_Collection = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyComment.js
+// ../../../../node_modules/yaml/dist/stringify/stringifyComment.js
 var require_stringifyComment = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
     "use strict";
     var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
@@ -8142,9 +8142,9 @@ var require_stringifyComment = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/foldFlowLines.js
+// ../../../../node_modules/yaml/dist/stringify/foldFlowLines.js
 var require_foldFlowLines = __commonJS({
-  "node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
     "use strict";
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
@@ -8278,9 +8278,9 @@ ${indent}${text.slice(fold + 1, end2)}`;
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyString.js
+// ../../../../node_modules/yaml/dist/stringify/stringifyString.js
 var require_stringifyString = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var foldFlowLines = require_foldFlowLines();
@@ -8561,9 +8561,9 @@ ${indent}`);
   }
 });
 
-// node_modules/yaml/dist/stringify/stringify.js
+// ../../../../node_modules/yaml/dist/stringify/stringify.js
 var require_stringify = __commonJS({
-  "node_modules/yaml/dist/stringify/stringify.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringify.js"(exports) {
     "use strict";
     var anchors = require_anchors();
     var identity = require_identity();
@@ -8685,9 +8685,9 @@ ${ctx.indent}${str}`;
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyPair.js
+// ../../../../node_modules/yaml/dist/stringify/stringifyPair.js
 var require_stringifyPair = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
@@ -8818,9 +8818,9 @@ ${ctx.indent}`;
   }
 });
 
-// node_modules/yaml/dist/log.js
+// ../../../../node_modules/yaml/dist/log.js
 var require_log = __commonJS({
-  "node_modules/yaml/dist/log.js"(exports) {
+  "../../../../node_modules/yaml/dist/log.js"(exports) {
     "use strict";
     var node_process = __require("process");
     function debug(logLevel, ...messages) {
@@ -8840,9 +8840,9 @@ var require_log = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/merge.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/merge.js
 var require_merge = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
@@ -8900,9 +8900,9 @@ var require_merge = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/addPairToJSMap.js
+// ../../../../node_modules/yaml/dist/nodes/addPairToJSMap.js
 var require_addPairToJSMap = __commonJS({
-  "node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
     "use strict";
     var log = require_log();
     var merge = require_merge();
@@ -8964,9 +8964,9 @@ var require_addPairToJSMap = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Pair.js
+// ../../../../node_modules/yaml/dist/nodes/Pair.js
 var require_Pair = __commonJS({
-  "node_modules/yaml/dist/nodes/Pair.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/Pair.js"(exports) {
     "use strict";
     var createNode = require_createNode();
     var stringifyPair = require_stringifyPair();
@@ -9004,9 +9004,9 @@ var require_Pair = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyCollection.js
+// ../../../../node_modules/yaml/dist/stringify/stringifyCollection.js
 var require_stringifyCollection = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
     var identity = require_identity();
     var stringify = require_stringify();
@@ -9155,9 +9155,9 @@ ${indent}${end}`;
   }
 });
 
-// node_modules/yaml/dist/nodes/YAMLMap.js
+// ../../../../node_modules/yaml/dist/nodes/YAMLMap.js
 var require_YAMLMap = __commonJS({
-  "node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
     "use strict";
     var stringifyCollection = require_stringifyCollection();
     var addPairToJSMap = require_addPairToJSMap();
@@ -9299,9 +9299,9 @@ var require_YAMLMap = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/map.js
+// ../../../../node_modules/yaml/dist/schema/common/map.js
 var require_map = __commonJS({
-  "node_modules/yaml/dist/schema/common/map.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/common/map.js"(exports) {
     "use strict";
     var identity = require_identity();
     var YAMLMap = require_YAMLMap();
@@ -9321,9 +9321,9 @@ var require_map = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/YAMLSeq.js
+// ../../../../node_modules/yaml/dist/nodes/YAMLSeq.js
 var require_YAMLSeq = __commonJS({
-  "node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
+  "../../../../node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
     "use strict";
     var createNode = require_createNode();
     var stringifyCollection = require_stringifyCollection();
@@ -9437,9 +9437,9 @@ var require_YAMLSeq = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/seq.js
+// ../../../../node_modules/yaml/dist/schema/common/seq.js
 var require_seq = __commonJS({
-  "node_modules/yaml/dist/schema/common/seq.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/common/seq.js"(exports) {
     "use strict";
     var identity = require_identity();
     var YAMLSeq = require_YAMLSeq();
@@ -9459,9 +9459,9 @@ var require_seq = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/string.js
+// ../../../../node_modules/yaml/dist/schema/common/string.js
 var require_string = __commonJS({
-  "node_modules/yaml/dist/schema/common/string.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/common/string.js"(exports) {
     "use strict";
     var stringifyString = require_stringifyString();
     var string = {
@@ -9478,9 +9478,9 @@ var require_string = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/null.js
+// ../../../../node_modules/yaml/dist/schema/common/null.js
 var require_null = __commonJS({
-  "node_modules/yaml/dist/schema/common/null.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/common/null.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var nullTag = {
@@ -9496,9 +9496,9 @@ var require_null = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/bool.js
+// ../../../../node_modules/yaml/dist/schema/core/bool.js
 var require_bool = __commonJS({
-  "node_modules/yaml/dist/schema/core/bool.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/core/bool.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var boolTag = {
@@ -9520,9 +9520,9 @@ var require_bool = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyNumber.js
+// ../../../../node_modules/yaml/dist/stringify/stringifyNumber.js
 var require_stringifyNumber = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
     "use strict";
     function stringifyNumber({ format, minFractionDigits, tag, value: value2 }) {
       if (typeof value2 === "bigint")
@@ -9547,9 +9547,9 @@ var require_stringifyNumber = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/float.js
+// ../../../../node_modules/yaml/dist/schema/core/float.js
 var require_float = __commonJS({
-  "node_modules/yaml/dist/schema/core/float.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/core/float.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var stringifyNumber = require_stringifyNumber();
@@ -9593,9 +9593,9 @@ var require_float = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/int.js
+// ../../../../node_modules/yaml/dist/schema/core/int.js
 var require_int = __commonJS({
-  "node_modules/yaml/dist/schema/core/int.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/core/int.js"(exports) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
@@ -9638,9 +9638,9 @@ var require_int = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/schema.js
+// ../../../../node_modules/yaml/dist/schema/core/schema.js
 var require_schema2 = __commonJS({
-  "node_modules/yaml/dist/schema/core/schema.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/core/schema.js"(exports) {
     "use strict";
     var map = require_map();
     var _null = require_null();
@@ -9666,9 +9666,9 @@ var require_schema2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/json/schema.js
+// ../../../../node_modules/yaml/dist/schema/json/schema.js
 var require_schema3 = __commonJS({
-  "node_modules/yaml/dist/schema/json/schema.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/json/schema.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var map = require_map();
@@ -9733,9 +9733,9 @@ var require_schema3 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/binary.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/binary.js
 var require_binary = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
     "use strict";
     var node_buffer = __require("buffer");
     var Scalar = require_Scalar();
@@ -9799,9 +9799,9 @@ var require_binary = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/pairs.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/pairs.js
 var require_pairs = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Pair = require_Pair();
@@ -9877,9 +9877,9 @@ ${cn.comment}` : item.comment;
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/omap.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/omap.js
 var require_omap = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
     "use strict";
     var identity = require_identity();
     var toJS = require_toJS();
@@ -9955,9 +9955,9 @@ var require_omap = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/bool.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/bool.js
 var require_bool2 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     function boolStringify({ value: value2, source }, ctx) {
@@ -9987,9 +9987,9 @@ var require_bool2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/float.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/float.js
 var require_float2 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var stringifyNumber = require_stringifyNumber();
@@ -10036,9 +10036,9 @@ var require_float2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/int.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/int.js
 var require_int2 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
@@ -10115,9 +10115,9 @@ var require_int2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/set.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/set.js
 var require_set = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Pair = require_Pair();
@@ -10204,9 +10204,9 @@ var require_set = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
 var require_timestamp = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
     "use strict";
     var stringifyNumber = require_stringifyNumber();
     function parseSexagesimal(str, asBigInt) {
@@ -10292,9 +10292,9 @@ var require_timestamp = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/schema.js
+// ../../../../node_modules/yaml/dist/schema/yaml-1.1/schema.js
 var require_schema4 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
     "use strict";
     var map = require_map();
     var _null = require_null();
@@ -10336,9 +10336,9 @@ var require_schema4 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/tags.js
+// ../../../../node_modules/yaml/dist/schema/tags.js
 var require_tags = __commonJS({
-  "node_modules/yaml/dist/schema/tags.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/tags.js"(exports) {
     "use strict";
     var map = require_map();
     var _null = require_null();
@@ -10430,9 +10430,9 @@ var require_tags = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/Schema.js
+// ../../../../node_modules/yaml/dist/schema/Schema.js
 var require_Schema = __commonJS({
-  "node_modules/yaml/dist/schema/Schema.js"(exports) {
+  "../../../../node_modules/yaml/dist/schema/Schema.js"(exports) {
     "use strict";
     var identity = require_identity();
     var map = require_map();
@@ -10462,9 +10462,9 @@ var require_Schema = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyDocument.js
+// ../../../../node_modules/yaml/dist/stringify/stringifyDocument.js
 var require_stringifyDocument = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
+  "../../../../node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
     var identity = require_identity();
     var stringify = require_stringify();
@@ -10542,9 +10542,9 @@ var require_stringifyDocument = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/Document.js
+// ../../../../node_modules/yaml/dist/doc/Document.js
 var require_Document = __commonJS({
-  "node_modules/yaml/dist/doc/Document.js"(exports) {
+  "../../../../node_modules/yaml/dist/doc/Document.js"(exports) {
     "use strict";
     var Alias = require_Alias();
     var Collection = require_Collection();
@@ -10851,9 +10851,9 @@ var require_Document = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/errors.js
+// ../../../../node_modules/yaml/dist/errors.js
 var require_errors2 = __commonJS({
-  "node_modules/yaml/dist/errors.js"(exports) {
+  "../../../../node_modules/yaml/dist/errors.js"(exports) {
     "use strict";
     var YAMLError = class extends Error {
       constructor(name, pos, code, message) {
@@ -10916,9 +10916,9 @@ ${pointer}
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-props.js
+// ../../../../node_modules/yaml/dist/compose/resolve-props.js
 var require_resolve_props = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-props.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-props.js"(exports) {
     "use strict";
     function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
       let spaceBefore = false;
@@ -11050,9 +11050,9 @@ var require_resolve_props = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-contains-newline.js
+// ../../../../node_modules/yaml/dist/compose/util-contains-newline.js
 var require_util_contains_newline = __commonJS({
-  "node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
     "use strict";
     function containsNewline(key) {
       if (!key)
@@ -11092,9 +11092,9 @@ var require_util_contains_newline = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-flow-indent-check.js
+// ../../../../node_modules/yaml/dist/compose/util-flow-indent-check.js
 var require_util_flow_indent_check = __commonJS({
-  "node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
     "use strict";
     var utilContainsNewline = require_util_contains_newline();
     function flowIndentCheck(indent, fc, onError) {
@@ -11110,9 +11110,9 @@ var require_util_flow_indent_check = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-map-includes.js
+// ../../../../node_modules/yaml/dist/compose/util-map-includes.js
 var require_util_map_includes = __commonJS({
-  "node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
     "use strict";
     var identity = require_identity();
     function mapIncludes(ctx, items, search) {
@@ -11126,9 +11126,9 @@ var require_util_map_includes = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-block-map.js
+// ../../../../node_modules/yaml/dist/compose/resolve-block-map.js
 var require_resolve_block_map = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
     "use strict";
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
@@ -11234,9 +11234,9 @@ var require_resolve_block_map = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-block-seq.js
+// ../../../../node_modules/yaml/dist/compose/resolve-block-seq.js
 var require_resolve_block_seq = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
     "use strict";
     var YAMLSeq = require_YAMLSeq();
     var resolveProps = require_resolve_props();
@@ -11285,9 +11285,9 @@ var require_resolve_block_seq = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-end.js
+// ../../../../node_modules/yaml/dist/compose/resolve-end.js
 var require_resolve_end = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-end.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-end.js"(exports) {
     "use strict";
     function resolveEnd(end, offset, reqSpace, onError) {
       let comment = "";
@@ -11328,9 +11328,9 @@ var require_resolve_end = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-flow-collection.js
+// ../../../../node_modules/yaml/dist/compose/resolve-flow-collection.js
 var require_resolve_flow_collection = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Pair = require_Pair();
@@ -11522,9 +11522,9 @@ var require_resolve_flow_collection = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-collection.js
+// ../../../../node_modules/yaml/dist/compose/compose-collection.js
 var require_compose_collection = __commonJS({
-  "node_modules/yaml/dist/compose/compose-collection.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/compose-collection.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
@@ -11587,9 +11587,9 @@ var require_compose_collection = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-block-scalar.js
+// ../../../../node_modules/yaml/dist/compose/resolve-block-scalar.js
 var require_resolve_block_scalar = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     function resolveBlockScalar(ctx, scalar, onError) {
@@ -11770,9 +11770,9 @@ var require_resolve_block_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-flow-scalar.js
+// ../../../../node_modules/yaml/dist/compose/resolve-flow-scalar.js
 var require_resolve_flow_scalar = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
     "use strict";
     var Scalar = require_Scalar();
     var resolveEnd = require_resolve_end();
@@ -11990,9 +11990,9 @@ var require_resolve_flow_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-scalar.js
+// ../../../../node_modules/yaml/dist/compose/compose-scalar.js
 var require_compose_scalar = __commonJS({
-  "node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
     "use strict";
     var identity = require_identity();
     var Scalar = require_Scalar();
@@ -12071,9 +12071,9 @@ var require_compose_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-empty-scalar-position.js
+// ../../../../node_modules/yaml/dist/compose/util-empty-scalar-position.js
 var require_util_empty_scalar_position = __commonJS({
-  "node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
     "use strict";
     function emptyScalarPosition(offset, before, pos) {
       if (before) {
@@ -12101,9 +12101,9 @@ var require_util_empty_scalar_position = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-node.js
+// ../../../../node_modules/yaml/dist/compose/compose-node.js
 var require_compose_node = __commonJS({
-  "node_modules/yaml/dist/compose/compose-node.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/compose-node.js"(exports) {
     "use strict";
     var Alias = require_Alias();
     var identity = require_identity();
@@ -12207,9 +12207,9 @@ var require_compose_node = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-doc.js
+// ../../../../node_modules/yaml/dist/compose/compose-doc.js
 var require_compose_doc = __commonJS({
-  "node_modules/yaml/dist/compose/compose-doc.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
     var Document = require_Document();
     var composeNode = require_compose_node();
@@ -12250,9 +12250,9 @@ var require_compose_doc = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/composer.js
+// ../../../../node_modules/yaml/dist/compose/composer.js
 var require_composer = __commonJS({
-  "node_modules/yaml/dist/compose/composer.js"(exports) {
+  "../../../../node_modules/yaml/dist/compose/composer.js"(exports) {
     "use strict";
     var node_process = __require("process");
     var directives = require_directives();
@@ -12458,9 +12458,9 @@ ${end.comment}` : end.comment;
   }
 });
 
-// node_modules/yaml/dist/parse/cst-scalar.js
+// ../../../../node_modules/yaml/dist/parse/cst-scalar.js
 var require_cst_scalar = __commonJS({
-  "node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
     "use strict";
     var resolveBlockScalar = require_resolve_block_scalar();
     var resolveFlowScalar = require_resolve_flow_scalar();
@@ -12643,9 +12643,9 @@ var require_cst_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/cst-stringify.js
+// ../../../../node_modules/yaml/dist/parse/cst-stringify.js
 var require_cst_stringify = __commonJS({
-  "node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
     var stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
     function stringifyToken(token) {
@@ -12704,9 +12704,9 @@ var require_cst_stringify = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/cst-visit.js
+// ../../../../node_modules/yaml/dist/parse/cst-visit.js
 var require_cst_visit = __commonJS({
-  "node_modules/yaml/dist/parse/cst-visit.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/cst-visit.js"(exports) {
     "use strict";
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
@@ -12766,9 +12766,9 @@ var require_cst_visit = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/cst.js
+// ../../../../node_modules/yaml/dist/parse/cst.js
 var require_cst = __commonJS({
-  "node_modules/yaml/dist/parse/cst.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/cst.js"(exports) {
     "use strict";
     var cstScalar = require_cst_scalar();
     var cstStringify = require_cst_stringify();
@@ -12868,9 +12868,9 @@ var require_cst = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/lexer.js
+// ../../../../node_modules/yaml/dist/parse/lexer.js
 var require_lexer = __commonJS({
-  "node_modules/yaml/dist/parse/lexer.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/lexer.js"(exports) {
     "use strict";
     var cst = require_cst();
     function isEmpty(ch) {
@@ -13457,9 +13457,9 @@ var require_lexer = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/line-counter.js
+// ../../../../node_modules/yaml/dist/parse/line-counter.js
 var require_line_counter = __commonJS({
-  "node_modules/yaml/dist/parse/line-counter.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/line-counter.js"(exports) {
     "use strict";
     var LineCounter = class {
       constructor() {
@@ -13488,9 +13488,9 @@ var require_line_counter = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/parser.js
+// ../../../../node_modules/yaml/dist/parse/parser.js
 var require_parser = __commonJS({
-  "node_modules/yaml/dist/parse/parser.js"(exports) {
+  "../../../../node_modules/yaml/dist/parse/parser.js"(exports) {
     "use strict";
     var node_process = __require("process");
     var cst = require_cst();
@@ -14362,9 +14362,9 @@ var require_parser = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/public-api.js
+// ../../../../node_modules/yaml/dist/public-api.js
 var require_public_api = __commonJS({
-  "node_modules/yaml/dist/public-api.js"(exports) {
+  "../../../../node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     var composer = require_composer();
     var Document = require_Document();
@@ -14459,9 +14459,9 @@ var require_public_api = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/index.js
+// ../../../../node_modules/yaml/dist/index.js
 var require_dist = __commonJS({
-  "node_modules/yaml/dist/index.js"(exports) {
+  "../../../../node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     var composer = require_composer();
     var Document = require_Document();
@@ -15230,12 +15230,18 @@ function utcStamp(now) {
     instant: iso.slice(0, 19).replaceAll("-", "").replaceAll(":", "")
   };
 }
-async function generateIds(runtimeRoot, request3, now = /* @__PURE__ */ new Date(), discriminator = randomBytes(4).toString("hex")) {
+function generateRunId(request3, now, discriminator) {
   if (!/^[a-f0-9]{8}$/.test(discriminator)) {
     throw new Error("Run discriminator must contain exactly eight lowercase hexadecimal characters");
   }
+  const { instant } = utcStamp(now);
+  const requestFingerprint = createHash("sha256").update(request3).digest("hex").slice(0, 4);
+  return `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`;
+}
+async function generateIds(runtimeRoot, request3, now = /* @__PURE__ */ new Date(), discriminator = randomBytes(4).toString("hex")) {
+  const runId = generateRunId(request3, now, discriminator);
   await ensurePrivateDirectory(runtimeRoot);
-  const { day, instant } = utcStamp(now);
+  const { day } = utcStamp(now);
   const statePath = join3(runtimeRoot, "id-state.json");
   let state = { day, next: 1 };
   try {
@@ -15245,10 +15251,9 @@ async function generateIds(runtimeRoot, request3, now = /* @__PURE__ */ new Date
   }
   const sequence = state.day === day ? state.next : 1;
   await writeJsonAtomic(statePath, { day, next: sequence + 1 });
-  const requestFingerprint = createHash("sha256").update(request3).digest("hex").slice(0, 4);
   return {
     workId: `ADHOC-${day}-${String(sequence).padStart(3, "0")}`,
-    runId: `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`
+    runId
   };
 }
 function slugify(value2) {
@@ -15444,1811 +15449,10 @@ var init_activity_lifecycle = __esm({
   }
 });
 
-// scripts/lib/run-task.ts
-import { access as access3, readFile as readFile5 } from "node:fs/promises";
-import { join as join5, relative as relative3, resolve as resolve7 } from "node:path";
-async function assertValid2(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) {
-    throw new Error(`Generated ${name} is invalid: ${errors2.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`);
-  }
-}
-function repositoryExpectation(input) {
-  const paths2 = normalizeScope(input.test_scope, `test scope for ${input.name}`);
-  if ((input.test_policy === "required" || input.test_policy === "existing-coverage") && paths2.length === 0) {
-    throw new Error(`${input.test_policy} test policy requires at least one test scope entry for ${input.name}`);
-  }
-  return { policy: input.test_policy, paths: paths2, rationale: input.test_rationale?.trim() || defaultTestRationale(input.test_policy) };
-}
-function normalizeContractFirstRequest(input, workId, runId, createdAt) {
-  const request3 = input.request.trim();
-  const acceptanceCriteria = input.acceptance_criteria.map((item) => item.trim()).filter(Boolean);
-  if (!request3) throw new Error("A direct request is required");
-  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
-  const names = input.repositories.map((repository) => repository.name);
-  if (new Set(names).size !== names.length) throw new Error("Repository names must be unique");
-  if (!names.includes(input.shared_contract.repository)) throw new Error("Shared contract repository must be included in repositories");
-  const contractPaths = normalizeScope(input.shared_contract.paths, "shared contract paths");
-  const byName = new Map(input.repositories.map((repository) => [repository.name, repository]));
-  for (const repository of input.repositories) {
-    if (repository.depends_on.includes(repository.name)) throw new Error(`${repository.name} cannot depend on itself`);
-    for (const dependency of repository.depends_on) if (!byName.has(dependency)) throw new Error(`${repository.name} has unknown dependency ${dependency}`);
-  }
-  const contractOwner = byName.get(input.shared_contract.repository);
-  if (contractOwner.depends_on.length > 0) throw new Error("Shared contract repository cannot depend on another repository");
-  const visiting = /* @__PURE__ */ new Set();
-  const orders = /* @__PURE__ */ new Map();
-  const orderOf = (name) => {
-    const known = orders.get(name);
-    if (known !== void 0) return known;
-    if (visiting.has(name)) throw new Error(`Repository dependency cycle includes ${name}`);
-    visiting.add(name);
-    const repository = byName.get(name);
-    const order = repository.depends_on.length === 0 ? 0 : Math.max(...repository.depends_on.map(orderOf)) + 1;
-    visiting.delete(name);
-    orders.set(name, order);
-    return order;
-  };
-  const dependsOnContract = (name, seen = /* @__PURE__ */ new Set()) => {
-    if (name === input.shared_contract.repository) return true;
-    if (seen.has(name)) return false;
-    seen.add(name);
-    return byName.get(name).depends_on.some((dependency) => dependsOnContract(dependency, seen));
-  };
-  for (const name of names) {
-    orderOf(name);
-    if (name !== input.shared_contract.repository && !dependsOnContract(name)) throw new Error(`${name} must depend on the shared contract repository`);
-  }
-  const targets = input.repositories.map((repository) => {
-    const implementationScope = normalizeScope(repository.scope, `implementation scope for ${repository.name}`);
-    const testExpectation = repositoryExpectation(repository);
-    const scope = [.../* @__PURE__ */ new Set([...implementationScope, ...testExpectation.policy === "required" ? testExpectation.paths : []])];
-    const repositoryAcceptance = repository.acceptance_criteria.map((criterion) => criterion.trim()).filter(Boolean);
-    if (repositoryAcceptance.length === 0) throw new Error(`At least one acceptance criterion is required for ${repository.name}`);
-    return {
-      name: repository.name,
-      dependency_order: orders.get(repository.name),
-      depends_on: repository.depends_on,
-      scope,
-      implementation_scope: implementationScope,
-      test_expectation: testExpectation,
-      verification_commands: repository.verification_commands.map((command2) => command2.trim()).filter(Boolean),
-      acceptance_criteria: repositoryAcceptance
-    };
-  }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
-  const ownerScope = targets.find((target) => target.name === input.shared_contract.repository).scope;
-  for (const path2 of contractPaths) if (!ownerScope.some((scope) => path2 === scope || path2.startsWith(`${scope}/`))) {
-    throw new Error(`Shared contract path is outside ${input.shared_contract.repository} scope: ${path2}`);
-  }
-  return {
-    contract_version: 1,
-    work_id: workId,
-    run_id: runId,
-    source: { kind: "direct-request" },
-    requested_outcome: request3,
-    scope: [...new Set(targets.flatMap((target) => target.scope))],
-    acceptance_criteria: acceptanceCriteria,
-    repositories: targets,
-    shared_contract: { repository: input.shared_contract.repository, paths: contractPaths },
-    plan: { reference: null, approval_state: "not-applicable" },
-    activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
-    assumptions: ["The direct request is authoritative for this planless run.", "Dependent repositories remain locked until their declared dependencies pass independent verification."],
-    risks: ["No authoritative claim is available; duplicate effort is possible."],
-    verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
-    authorization: { kind: "explicit-user-request", evidence: "The human explicitly invoked run-task for this direct request." },
-    created_at: createdAt
-  };
-}
-function normalizeDirectRequest(input) {
-  const request3 = input.request.trim();
-  const acceptanceCriteria = input.acceptanceCriteria.map((item) => item.trim()).filter(Boolean);
-  const implementationScope = normalizeScope(input.scope, "implementation scope");
-  const testScope = normalizeScope(input.testScope ?? [], "test scope");
-  const testPolicy = input.testPolicy ?? (testScope.length > 0 ? "required" : "verifier-only");
-  if (!request3) throw new Error("A direct request is required");
-  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
-  if (implementationScope.length === 0) throw new Error("At least one implementation scope entry is required");
-  if ((testPolicy === "required" || testPolicy === "existing-coverage") && testScope.length === 0) {
-    throw new Error(`${testPolicy} test policy requires at least one test scope entry`);
-  }
-  const testExpectation = {
-    policy: testPolicy,
-    paths: testScope,
-    rationale: input.testRationale?.trim() || defaultTestRationale(testPolicy)
-  };
-  const scope = [.../* @__PURE__ */ new Set([...implementationScope, ...testPolicy === "required" ? testScope : []])];
-  return {
-    contract_version: 1,
-    work_id: input.workId,
-    run_id: input.runId,
-    source: { kind: "direct-request" },
-    requested_outcome: request3,
-    scope,
-    implementation_scope: implementationScope,
-    test_expectation: testExpectation,
-    acceptance_criteria: acceptanceCriteria,
-    repositories: [{ name: input.repository, dependency_order: 0 }],
-    plan: { reference: null, approval_state: "not-applicable" },
-    activity: {
-      reference: null,
-      claim_status: "not-applicable",
-      duplicate_effort_warning: true
-    },
-    assumptions: ["The direct request is authoritative for this planless run."],
-    risks: ["No authoritative claim is available; duplicate effort is possible."],
-    verification_commands: input.verificationCommands,
-    authorization: {
-      kind: "explicit-user-request",
-      evidence: "The human explicitly invoked run-task for this direct request."
-    },
-    created_at: input.createdAt
-  };
-}
-function normalizeScope(values18, label) {
-  const normalized = values18.map((item) => item.trim().replace(/\/$/, "")).filter(Boolean);
-  for (const path2 of normalized) {
-    if (path2.startsWith("/") || path2.includes("\\") || path2.split("/").includes("..")) {
-      throw new Error(`${label} entries must be repository-relative paths: ${path2}`);
-    }
-  }
-  return [...new Set(normalized)];
-}
-function defaultTestRationale(policy) {
-  switch (policy) {
-    case "required":
-      return "The worker must add or update tests in the declared test scope.";
-    case "existing-coverage":
-      return "Declared existing tests are expected to cover the requested behavior.";
-    case "not-required":
-      return "No repository test change is required for this task.";
-    default:
-      return "No test edit scope is authorized; the verifier must supply independent acceptance evidence.";
-  }
-}
-async function preparePlanlessTask(options) {
-  const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const configPath = join5(workspaceRoot18, "workspace.yaml");
-  const config = (0, import_yaml4.parse)(await readFile5(configPath, "utf8"));
-  await assertValid2("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const repositoryConfig = config.repositories[options.repository];
-  if (!repositoryConfig) throw new Error(`Unknown repository: ${options.repository}`);
-  const repositoryPath = assertInside(workspaceRoot18, join5(workspaceRoot18, repositoryConfig.path));
-  await access3(repositoryPath);
-  await assertCleanRepository(repositoryPath);
-  const baseCommit = await git(repositoryPath, ["rev-parse", repositoryConfig.default_branch]);
-  const requiredInstructionPaths = [
-    join5(workspaceRoot18, "AGENTS.md"),
-    join5(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`),
-    join5(workspaceRoot18, "agents", "repository-worker.md"),
-    join5(workspaceRoot18, "agents", "verifier.md")
-  ];
-  await Promise.all(requiredInstructionPaths.map((path2) => access3(path2)));
-  const runtimeRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, ".runtime"));
-  const now = options.now ?? /* @__PURE__ */ new Date();
-  const { workId, runId } = await generateIds(runtimeRoot, options.request, now, options.discriminator);
-  const createdAt = now.toISOString();
-  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request)}-${runId.slice(-8)}`;
-  const runRoot = assertInside(runtimeRoot, join5(runtimeRoot, "runs", runId));
-  const worktree = assertInside(runtimeRoot, join5(runtimeRoot, "worktrees", runId, options.repository));
-  const taskBriefPath = join5(runtimeRoot, "tasks", `${runId}.json`);
-  const manifestPath = join5(runRoot, "manifest.json");
-  const workerInputPath = join5(runRoot, `${options.repository}-worker-input.json`);
-  const verifierInputPath = join5(runRoot, `${options.repository}-verifier-input.json`);
-  const workerResultPath = join5(runtimeRoot, "results", `${runId}-${options.repository}-worker.json`);
-  const verifierResultPath = join5(runtimeRoot, "results", `${runId}-${options.repository}-verifier.json`);
-  const taskBrief = normalizeDirectRequest({
-    request: options.request,
-    repository: options.repository,
-    acceptanceCriteria: options.acceptanceCriteria,
-    scope: options.scope,
-    ...options.testScope ? { testScope: options.testScope } : {},
-    ...options.testPolicy ? { testPolicy: options.testPolicy } : {},
-    ...options.testRationale ? { testRationale: options.testRationale } : {},
-    verificationCommands: options.verificationCommands ?? [],
-    workId,
-    runId,
-    createdAt
-  });
-  await assertValid2("task-brief", taskBrief);
-  if (taskBrief.test_expectation?.policy === "existing-coverage") {
-    for (const path2 of taskBrief.test_expectation.paths) {
-      try {
-        await access3(assertInside(repositoryPath, join5(repositoryPath, path2)));
-      } catch {
-        throw new Error(`Existing-coverage test path does not exist: ${path2}`);
-      }
-    }
-  }
-  await writeJsonAtomic(taskBriefPath, taskBrief);
-  const runtimeRepository = {
-    name: options.repository,
-    base_path: relative3(workspaceRoot18, repositoryPath),
-    base_commit: baseCommit,
-    branch,
-    worktree,
-    worker_input: workerInputPath,
-    verifier_input: verifierInputPath,
-    repair_attempts: 0
-  };
-  const manifest2 = {
-    contract_version: 1,
-    work_id: workId,
-    run_id: runId,
-    status: "preparing",
-    created_at: createdAt,
-    updated_at: createdAt,
-    task_brief: taskBriefPath,
-    repositories: [runtimeRepository],
-    evidence: [taskBriefPath, manifestPath, workerInputPath, verifierInputPath],
-    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
-    execution_events: [],
-    lifecycle_events: config.activity.provider === "none" ? [{
-      event: "task.starting",
-      status: "skipped",
-      idempotency_key: `${runId}:task.starting:activity-none`,
-      occurred_at: createdAt
-    }] : []
-  };
-  await assertValid2("runtime-manifest", manifest2);
-  await writeJsonAtomic(manifestPath, manifest2);
-  const instructionPaths = [
-    ...requiredInstructionPaths.slice(0, 3)
-  ];
-  try {
-    await access3(join5(repositoryPath, "AGENTS.md"));
-    instructionPaths.push(join5(worktree, "AGENTS.md"));
-  } catch {
-  }
-  const workerInput = {
-    contract_version: 1,
-    role: "repository-worker",
-    task_brief: taskBriefPath,
-    repository: options.repository,
-    worktree,
-    branch,
-    base_commit: baseCommit,
-    ready: true,
-    blocked_by: [],
-    allowed_scope: taskBrief.scope,
-    implementation_scope: taskBrief.implementation_scope,
-    test_expectation: taskBrief.test_expectation,
-    instruction_paths: instructionPaths,
-    result_contract: join5(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
-    result_path: workerResultPath
-  };
-  const verifierInput = {
-    contract_version: 1,
-    role: "verifier",
-    read_only: true,
-    task_brief: taskBriefPath,
-    repository: options.repository,
-    worktree,
-    branch,
-    base_commit: baseCommit,
-    worker_result: workerResultPath,
-    acceptance_criteria: taskBrief.acceptance_criteria,
-    test_expectation: taskBrief.test_expectation,
-    verification_commands: taskBrief.verification_commands,
-    instruction_paths: [join5(workspaceRoot18, "AGENTS.md"), join5(workspaceRoot18, "agents", "verifier.md"), ...instructionPaths.slice(3)],
-    result_contract: join5(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
-    result_path: verifierResultPath
-  };
-  await writeJsonAtomic(workerInputPath, workerInput);
-  await writeJsonAtomic(verifierInputPath, verifierInput);
-  if (config.activity.provider !== "none") {
-    const lifecycle = await prepareActivityLifecycle({
-      workspaceRoot: workspaceRoot18,
-      runId,
-      event: "task.starting",
-      availableCapabilities: options.availableCapabilities ?? [],
-      now
-    });
-    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-      return {
-        workId,
-        runId,
-        branch,
-        worktree,
-        taskBrief: taskBriefPath,
-        manifest: manifestPath,
-        workerInput: workerInputPath,
-        verifierInput: verifierInputPath,
-        repositories: [{ name: options.repository, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready: true, blockedBy: [] }],
-        preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity"
-      };
-    }
-  }
-  try {
-    await ensurePrivateDirectory(join5(runtimeRoot, "worktrees", runId));
-    await git(repositoryPath, ["worktree", "add", "-b", branch, worktree, baseCommit]);
-    runtimeRepository.status = "prepared";
-    manifest2.status = "prepared";
-    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    await assertValid2("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-  } catch (error) {
-    manifest2.status = "blocked";
-    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    manifest2.evidence.push(`Preparation failed: ${error.message}`);
-    await writeJsonAtomic(manifestPath, manifest2);
-    throw error;
-  }
-  return {
-    workId,
-    runId,
-    branch,
-    worktree,
-    taskBrief: taskBriefPath,
-    manifest: manifestPath,
-    workerInput: workerInputPath,
-    verifierInput: verifierInputPath,
-    repositories: [{ name: options.repository, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready: true, blockedBy: [] }],
-    preparationStatus: "prepared"
-  };
-}
-async function prepareContractFirstTask(options) {
-  const requestErrors = await validateContract("run-task-request", options.request);
-  if (requestErrors.length > 0) {
-    throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-  }
-  const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const config = (0, import_yaml4.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid2("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const repositoryBases = /* @__PURE__ */ new Map();
-  for (const target of options.request.repositories) {
-    const registered = config.repositories[target.name];
-    if (!registered) throw new Error(`Unknown repository: ${target.name}`);
-    const path2 = assertInside(workspaceRoot18, join5(workspaceRoot18, registered.path));
-    await access3(path2);
-    await assertCleanRepository(path2);
-    repositoryBases.set(target.name, { path: path2, commit: await git(path2, ["rev-parse", registered.default_branch]) });
-    await Promise.all([
-      access3(join5(workspaceRoot18, "AGENTS.md")),
-      access3(join5(workspaceRoot18, "agents", `${registered.agent}.md`)),
-      access3(join5(workspaceRoot18, "agents", "repository-worker.md")),
-      access3(join5(workspaceRoot18, "agents", "verifier.md"))
-    ]);
-  }
-  const runtimeRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, ".runtime"));
-  const now = options.now ?? /* @__PURE__ */ new Date();
-  const { workId, runId } = await generateIds(runtimeRoot, options.request.request, now, options.discriminator);
-  const createdAt = now.toISOString();
-  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request.request)}-${runId.slice(-8)}`;
-  const runRoot = assertInside(runtimeRoot, join5(runtimeRoot, "runs", runId));
-  const taskBriefPath = join5(runtimeRoot, "tasks", `${runId}.json`);
-  const manifestPath = join5(runRoot, "manifest.json");
-  const taskBrief = normalizeContractFirstRequest(options.request, workId, runId, createdAt);
-  await assertValid2("task-brief", taskBrief);
-  for (const target of taskBrief.repositories) {
-    if (target.test_expectation?.policy !== "existing-coverage") continue;
-    const base = repositoryBases.get(target.name);
-    for (const path2 of target.test_expectation.paths) {
-      try {
-        await access3(assertInside(base.path, join5(base.path, path2)));
-      } catch {
-        throw new Error(`Existing-coverage test path does not exist in ${target.name}: ${path2}`);
-      }
-    }
-  }
-  await writeJsonAtomic(taskBriefPath, taskBrief);
-  const runtimeRepositories = [];
-  const preparedRepositories = [];
-  for (const target of taskBrief.repositories) {
-    const base = repositoryBases.get(target.name);
-    const registered = config.repositories[target.name];
-    const worktree = assertInside(runtimeRoot, join5(runtimeRoot, "worktrees", runId, target.name));
-    const workerInputPath = join5(runRoot, `${target.name}-worker-input.json`);
-    const verifierInputPath = join5(runRoot, `${target.name}-verifier-input.json`);
-    const workerResultPath = join5(runtimeRoot, "results", `${runId}-${target.name}-worker.json`);
-    const verifierResultPath = join5(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
-    const blockedBy = target.depends_on ?? [];
-    const ready = blockedBy.length === 0;
-    const instructionPaths = [
-      join5(workspaceRoot18, "AGENTS.md"),
-      join5(workspaceRoot18, "agents", `${registered.agent}.md`),
-      join5(workspaceRoot18, "agents", "repository-worker.md")
-    ];
-    try {
-      await access3(join5(base.path, "AGENTS.md"));
-      instructionPaths.push(join5(worktree, "AGENTS.md"));
-    } catch {
-    }
-    const sharedContract = {
-      repository: taskBrief.shared_contract.repository,
-      paths: taskBrief.shared_contract.paths,
-      worktree: assertInside(runtimeRoot, join5(runtimeRoot, "worktrees", runId, taskBrief.shared_contract.repository)),
-      approval: target.name === taskBrief.shared_contract.repository ? "must-pass-independent-verification" : "pending"
-    };
-    await writeJsonAtomic(workerInputPath, {
-      contract_version: 1,
-      role: "repository-worker",
-      task_brief: taskBriefPath,
-      repository: target.name,
-      worktree,
-      branch,
-      base_commit: base.commit,
-      ready,
-      blocked_by: blockedBy,
-      shared_contract: sharedContract,
-      allowed_scope: target.scope,
-      implementation_scope: target.implementation_scope,
-      test_expectation: target.test_expectation,
-      instruction_paths: instructionPaths,
-      result_contract: join5(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
-      result_path: workerResultPath
-    });
-    await writeJsonAtomic(verifierInputPath, {
-      contract_version: 1,
-      role: "verifier",
-      read_only: true,
-      task_brief: taskBriefPath,
-      repository: target.name,
-      worktree,
-      branch,
-      base_commit: base.commit,
-      worker_result: workerResultPath,
-      acceptance_criteria: target.acceptance_criteria,
-      test_expectation: target.test_expectation,
-      verification_commands: target.verification_commands,
-      shared_contract: sharedContract,
-      instruction_paths: [join5(workspaceRoot18, "AGENTS.md"), join5(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join5(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
-      result_path: verifierResultPath
-    });
-    runtimeRepositories.push({
-      name: target.name,
-      base_path: relative3(workspaceRoot18, base.path),
-      base_commit: base.commit,
-      branch,
-      worktree,
-      worker_input: workerInputPath,
-      verifier_input: verifierInputPath,
-      status: ready ? "prepared" : "waiting",
-      depends_on: blockedBy,
-      repair_attempts: 0
-    });
-    preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
-  }
-  const manifest2 = {
-    contract_version: 1,
-    work_id: workId,
-    run_id: runId,
-    status: "preparing",
-    created_at: createdAt,
-    updated_at: createdAt,
-    task_brief: taskBriefPath,
-    repositories: runtimeRepositories,
-    evidence: [taskBriefPath, manifestPath, ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
-    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
-    execution_events: [],
-    lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : []
-  };
-  await assertValid2("runtime-manifest", manifest2);
-  await writeJsonAtomic(manifestPath, manifest2);
-  if (config.activity.provider !== "none") {
-    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot18, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
-    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-      const primary2 = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
-      return { workId, runId, branch: primary2.branch, worktree: primary2.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary2.workerInput, verifierInput: primary2.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
-    }
-  }
-  try {
-    await ensurePrivateDirectory(join5(runtimeRoot, "worktrees", runId));
-    for (const repository of runtimeRepositories) {
-      const base = repositoryBases.get(repository.name);
-      await git(base.path, ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
-    }
-    manifest2.status = "prepared";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    await assertValid2("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-  } catch (error) {
-    manifest2.status = "blocked";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    manifest2.evidence.push(`Preparation failed: ${error.message}`);
-    await writeJsonAtomic(manifestPath, manifest2);
-    throw error;
-  }
-  const primary = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
-  return { workId, runId, branch: primary.branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
-}
-async function resumePlanlessTask(options) {
-  const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, ".runtime"));
-  const manifestPath = assertInside(runtimeRoot, join5(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const manifest2 = JSON.parse(await readFile5(manifestPath, "utf8"));
-  await assertValid2("runtime-manifest", manifest2);
-  if (manifest2.run_id !== options.runId || manifest2.status !== "preparing") throw new Error(`Run ${options.runId} is not awaiting preparation`);
-  const lifecycle = manifest2.lifecycle_events.find((event) => event.event === "task.starting");
-  if (!lifecycle || lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-    throw new Error(`task.starting lifecycle is ${lifecycle?.status ?? "missing"}; complete required or manual actions before resuming`);
-  }
-  const config = (0, import_yaml4.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid2("workspace", config);
-  const basePaths = /* @__PURE__ */ new Map();
-  for (const repository of manifest2.repositories) {
-    const registered = config.repositories[repository.name];
-    if (!registered) throw new Error(`Unknown repository: ${repository.name}`);
-    const repositoryPath = assertInside(workspaceRoot18, join5(workspaceRoot18, repository.base_path));
-    await assertCleanRepository(repositoryPath);
-    const currentBase = await git(repositoryPath, ["rev-parse", registered.default_branch]);
-    if (currentBase !== repository.base_commit) throw new Error(`Repository base changed during activity preflight for ${repository.name}; prepare a fresh run`);
-    basePaths.set(repository.name, repositoryPath);
-  }
-  try {
-    await ensurePrivateDirectory(join5(runtimeRoot, "worktrees", options.runId));
-    for (const repository of manifest2.repositories) {
-      await git(basePaths.get(repository.name), ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
-    }
-    manifest2.status = "prepared";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    await assertValid2("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-  } catch (error) {
-    manifest2.status = "blocked";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    manifest2.evidence.push(`Preparation failed: ${error.message}`);
-    await writeJsonAtomic(manifestPath, manifest2);
-    throw error;
-  }
-  const brief = JSON.parse(await readFile5(manifest2.task_brief, "utf8"));
-  const primary = manifest2.repositories.find((repository) => repository.name === brief.shared_contract?.repository) ?? manifest2.repositories[0];
-  const repositories = manifest2.repositories.map((repository) => ({
-    name: repository.name,
-    branch: repository.branch,
-    worktree: repository.worktree,
-    workerInput: repository.worker_input,
-    verifierInput: repository.verifier_input,
-    ready: (repository.depends_on?.length ?? 0) === 0,
-    blockedBy: repository.depends_on ?? []
-  }));
-  return {
-    workId: manifest2.work_id,
-    runId: manifest2.run_id,
-    branch: primary.branch,
-    worktree: primary.worktree,
-    taskBrief: manifest2.task_brief,
-    manifest: manifestPath,
-    workerInput: primary.worker_input,
-    verifierInput: primary.verifier_input,
-    repositories,
-    preparationStatus: "prepared"
-  };
-}
-var import_yaml4;
-var init_run_task = __esm({
-  "scripts/lib/run-task.ts"() {
-    "use strict";
-    import_yaml4 = __toESM(require_dist(), 1);
-    init_git();
-    init_ids();
-    init_io();
-    init_validation();
-    init_activity_lifecycle();
-  }
-});
-
-// scripts/run-task.ts
-var run_task_exports = {};
-import { dirname as dirname6, resolve as resolve8 } from "node:path";
-import { readFile as readFile6 } from "node:fs/promises";
-import { parseArgs as parseArgs3 } from "node:util";
-import { fileURLToPath as fileURLToPath4 } from "node:url";
-var testPolicies, activityCapabilities, workspaceRoot3, values3, prepared;
-var init_run_task2 = __esm({
-  async "scripts/run-task.ts"() {
-    "use strict";
-    init_run_task();
-    testPolicies = ["required", "existing-coverage", "verifier-only", "not-required"];
-    activityCapabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-    workspaceRoot3 = resolve8(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve8(dirname6(fileURLToPath4(import.meta.url)), ".."));
-    ({ values: values3 } = parseArgs3({
-      options: {
-        request: { type: "string" },
-        repository: { type: "string" },
-        acceptance: { type: "string", multiple: true, default: [] },
-        scope: { type: "string", multiple: true, default: [] },
-        "test-scope": { type: "string", multiple: true, default: [] },
-        "test-policy": { type: "string" },
-        "test-rationale": { type: "string" },
-        verify: { type: "string", multiple: true, default: [] },
-        available: { type: "string", multiple: true, default: [] },
-        "resume-run": { type: "string" },
-        "request-file": { type: "string" }
-      }
-    }));
-    if (values3["resume-run"]) {
-      console.log(JSON.stringify(await resumePlanlessTask({ workspaceRoot: workspaceRoot3, runId: values3["resume-run"] }), null, 2));
-      process.exit(0);
-    }
-    if (values3.available.some((capability) => !activityCapabilities.includes(capability))) {
-      throw new Error(`Unknown activity capability; expected one of: ${activityCapabilities.join(", ")}`);
-    }
-    if (values3["request-file"]) {
-      const request3 = JSON.parse(await readFile6(resolve8(values3["request-file"]), "utf8"));
-      console.log(JSON.stringify(await prepareContractFirstTask({
-        workspaceRoot: workspaceRoot3,
-        request: request3,
-        availableCapabilities: values3.available
-      }), null, 2));
-      process.exit(0);
-    }
-    if (!values3.request || !values3.repository || values3["test-policy"] && !testPolicies.includes(values3["test-policy"])) {
-      throw new Error("Usage: run-task --request <text> --repository <name> --acceptance <criterion> --scope <path> [...] | run-task --request-file <json>");
-    }
-    prepared = await preparePlanlessTask({
-      workspaceRoot: workspaceRoot3,
-      request: values3.request,
-      repository: values3.repository,
-      acceptanceCriteria: values3.acceptance,
-      scope: values3.scope,
-      testScope: values3["test-scope"],
-      ...values3["test-policy"] ? { testPolicy: values3["test-policy"] } : {},
-      ...values3["test-rationale"] ? { testRationale: values3["test-rationale"] } : {},
-      verificationCommands: values3.verify,
-      availableCapabilities: values3.available
-    });
-    console.log(JSON.stringify(prepared, null, 2));
-    if (prepared.preparationStatus === "prepared") console.warn("Warning: exclusive ownership is guaranteed only when a configured starting action confirmed it.");
-    else console.warn(`Worktree not created: activity preflight is ${prepared.preparationStatus}. Complete the recorded actions, then rerun with --resume-run ${prepared.runId}.`);
-  }
-});
-
-// scripts/lib/record-result.ts
-import { chmod as chmod2, readFile as readFile7 } from "node:fs/promises";
-import { join as join6, resolve as resolve9 } from "node:path";
-function assertIdentifier(value2, label, pattern) {
-  if (!pattern.test(value2)) throw new Error(`Invalid ${label}: ${value2}`);
-}
-async function readJson2(path2) {
-  return JSON.parse(await readFile7(path2, "utf8"));
-}
-async function assertValid3(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) {
-    throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-  }
-}
-function assertEqual(actual, expected, label) {
-  if (actual !== expected) throw new Error(`${label} mismatch: expected ${String(expected)}, received ${String(actual)}`);
-}
-function inAllowedScope(path2, scopes) {
-  return scopes.some((scope) => {
-    const normalized = scope.replace(/\/$/, "");
-    return path2 === normalized || path2.startsWith(`${normalized}/`);
-  });
-}
-function sameMembers(left, right) {
-  return [...left].sort().join("\n") === [...right].sort().join("\n");
-}
-function sameTestExpectation(left, right) {
-  return left.policy === right.policy && left.rationale === right.rationale && sameMembers(left.paths, right.paths);
-}
-function findRepository(manifest2, name) {
-  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
-  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
-  return repository;
-}
-function eventKey(runId, repository, stage, attempt) {
-  const suffix = attempt === 0 ? "" : `:attempt-${attempt}`;
-  return `${runId}:execution:${repository}:${stage}${suffix}`;
-}
-function appendEvent(manifest2, stage, repository, from, to, occurredAt, inferred, attempt, resultPath) {
-  const event = {
-    stage,
-    repository,
-    from_status: from,
-    to_status: to,
-    inferred,
-    attempt,
-    idempotency_key: eventKey(manifest2.run_id, repository, stage, attempt),
-    occurred_at: occurredAt
-  };
-  if (resultPath) event.result_path = resultPath;
-  manifest2.execution_events ??= [];
-  manifest2.execution_events.push(event);
-  const runtimeRepository = findRepository(manifest2, repository);
-  runtimeRepository.status = to;
-  refreshManifestStatus(manifest2);
-  manifest2.updated_at = occurredAt;
-  if (resultPath && !manifest2.evidence.includes(resultPath)) manifest2.evidence.push(resultPath);
-}
-function refreshManifestStatus(manifest2) {
-  const statuses = manifest2.repositories.map((repository) => repository.status ?? manifest2.status);
-  if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
-  else if (statuses.includes("failed")) manifest2.status = "failed";
-  else if (statuses.includes("blocked")) manifest2.status = "blocked";
-  else if (statuses.includes("verifying")) manifest2.status = "verifying";
-  else if (statuses.includes("running")) manifest2.status = "running";
-  else manifest2.status = "prepared";
-}
-async function unlockDependents(runtimeRoot, manifest2) {
-  for (const candidate of manifest2.repositories) {
-    if (candidate.status !== "waiting") continue;
-    const dependencies = candidate.depends_on ?? [];
-    if (!dependencies.every((name) => findRepository(manifest2, name).status === "passed")) continue;
-    for (const [path2, worker] of [[candidate.worker_input, true], [candidate.verifier_input, false]]) {
-      const inputPath2 = assertInside(runtimeRoot, path2);
-      const input = await readJson2(inputPath2);
-      if (worker) {
-        input.ready = true;
-        input.blocked_by = [];
-      }
-      if (input.shared_contract && typeof input.shared_contract === "object") {
-        input.shared_contract.approval = "verified";
-      }
-      await writeJsonAtomic(inputPath2, input);
-    }
-    candidate.status = "prepared";
-  }
-  refreshManifestStatus(manifest2);
-}
-async function assertWorktree(repository) {
-  await assertCleanRepository(repository.worktree);
-  const branch = await git(repository.worktree, ["branch", "--show-current"]);
-  assertEqual(branch, repository.branch, "worktree branch");
-  return git(repository.worktree, ["rev-parse", "HEAD"]);
-}
-function assertTaskIdentity(manifest2, brief, repository) {
-  assertEqual(brief.work_id, manifest2.work_id, "task brief work_id");
-  assertEqual(brief.run_id, manifest2.run_id, "task brief run_id");
-  if (!brief.repositories.some((candidate) => candidate.name === repository)) {
-    throw new Error(`Task brief does not include repository ${repository}`);
-  }
-}
-async function validateWorkerResult(manifest2, repository, input, testExpectation) {
-  const result3 = await readJson2(input.result_path);
-  await assertValid3("worker-result", result3);
-  assertEqual(result3.work_id, manifest2.work_id, "worker result work_id");
-  assertEqual(result3.run_id, manifest2.run_id, "worker result run_id");
-  assertEqual(result3.repository, repository.name, "worker result repository");
-  assertEqual(result3.branch, repository.branch, "worker result branch");
-  assertEqual(resolve9(result3.worktree), resolve9(repository.worktree), "worker result worktree");
-  if (result3.status === "completed") {
-    if (result3.commits.length === 0) throw new Error("Completed worker result must record at least one commit");
-    if (result3.checks.some((check) => check.status === "failed")) throw new Error("Completed worker result cannot contain a failed check");
-    const head = await assertWorktree(repository);
-    assertEqual(result3.commits.at(-1), head, "worker result final commit");
-    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${head}`])).split("\n").filter(Boolean);
-    if (commits.join("\n") !== result3.commits.join("\n")) throw new Error("worker result commits does not match the ordered base-to-head Git history");
-    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
-    if (!sameMembers(changedFiles, result3.changed_files)) throw new Error("worker result changed_files does not match the base-to-head Git diff");
-    const outsideScope = changedFiles.filter((path2) => !inAllowedScope(path2, input.allowed_scope));
-    if (outsideScope.length > 0) throw new Error(`Worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
-    if (testExpectation.policy === "required" && !changedFiles.some((path2) => inAllowedScope(path2, testExpectation.paths))) {
-      throw new Error(`Required test policy needs a changed file in test scope: ${testExpectation.paths.join(", ")}`);
-    }
-    return "verifying";
-  }
-  return result3.status;
-}
-async function validateVerifierResult(manifest2, repository, input) {
-  const worker = await readJson2(input.worker_result);
-  await assertValid3("worker-result", worker);
-  const result3 = await readJson2(input.result_path);
-  await assertValid3("verifier-result", result3);
-  assertEqual(result3.work_id, manifest2.work_id, "verifier result work_id");
-  assertEqual(result3.run_id, manifest2.run_id, "verifier result run_id");
-  assertEqual(result3.repository, repository.name, "verifier result repository");
-  if (!sameMembers(result3.acceptance.map((item) => item.criterion), input.acceptance_criteria)) {
-    throw new Error("verifier result acceptance criteria do not match verifier input");
-  }
-  const acceptanceStatuses = result3.acceptance.map((item) => item.status);
-  if (result3.status === "pass" && acceptanceStatuses.some((status2) => status2 !== "passed")) {
-    throw new Error("Passing verifier result requires every acceptance criterion to pass");
-  }
-  if (result3.status === "fail" && !acceptanceStatuses.includes("failed")) {
-    throw new Error("Failing verifier result must identify a failed acceptance criterion");
-  }
-  if (result3.status === "blocked" && !acceptanceStatuses.includes("blocked")) {
-    throw new Error("Blocked verifier result must identify a blocked acceptance criterion");
-  }
-  const head = await assertWorktree(repository);
-  assertEqual(worker.commits.at(-1), head, "verified worker commit");
-  return result3.status === "pass" ? "passed" : result3.status === "fail" ? "failed" : "blocked";
-}
-async function recordResult(options) {
-  assertIdentifier(options.runId, "run ID", /^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$/);
-  assertIdentifier(options.repository, "repository", /^[a-z][a-z0-9-]*$/);
-  const workspaceRoot18 = resolve9(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join6(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson2(manifestPath);
-    await assertValid3("runtime-manifest", manifest2);
-    assertEqual(manifest2.run_id, options.runId, "manifest run_id");
-    const repository = findRepository(manifest2, options.repository);
-    const attempt = repository.repair_attempts ?? 0;
-    assertInside(runtimeRoot, repository.worktree);
-    const taskBriefPath = assertInside(runtimeRoot, manifest2.task_brief);
-    const workerInputPath = assertInside(runtimeRoot, repository.worker_input);
-    const verifierInputPath = assertInside(runtimeRoot, repository.verifier_input);
-    const brief = await readJson2(taskBriefPath);
-    await assertValid3("task-brief", brief);
-    assertTaskIdentity(manifest2, brief, options.repository);
-    const target = brief.repositories.find((candidate) => candidate.name === options.repository);
-    const targetScope = target.scope ?? brief.scope;
-    const implementationScope = target.implementation_scope ?? brief.implementation_scope ?? targetScope;
-    const testExpectation = target.test_expectation ?? brief.test_expectation ?? {
-      policy: "verifier-only",
-      paths: [],
-      rationale: "Legacy task brief has no authorized test edit scope; verifier evidence is required."
-    };
-    const workerInput = await readJson2(workerInputPath);
-    const verifierInput = await readJson2(verifierInputPath);
-    assertInside(runtimeRoot, workerInput.result_path);
-    assertInside(runtimeRoot, verifierInput.worker_result);
-    assertInside(runtimeRoot, verifierInput.result_path);
-    assertEqual(workerInput.repository, repository.name, "worker input repository");
-    assertEqual(resolve9(workerInput.task_brief), resolve9(taskBriefPath), "worker input task_brief");
-    assertEqual(resolve9(workerInput.worktree), resolve9(repository.worktree), "worker input worktree");
-    assertEqual(workerInput.branch, repository.branch, "worker input branch");
-    assertEqual(workerInput.base_commit, repository.base_commit, "worker input base_commit");
-    if (!sameMembers(workerInput.allowed_scope, targetScope)) throw new Error("worker input allowed_scope does not match task brief repository scope");
-    if ((target.implementation_scope || brief.implementation_scope) && (!workerInput.implementation_scope || !sameMembers(workerInput.implementation_scope, implementationScope))) {
-      throw new Error("worker input implementation_scope does not match task brief");
-    }
-    if ((target.test_expectation || brief.test_expectation) && (!workerInput.test_expectation || !sameTestExpectation(workerInput.test_expectation, testExpectation))) {
-      throw new Error("worker input test_expectation does not match task brief");
-    }
-    assertEqual(verifierInput.repository, repository.name, "verifier input repository");
-    assertEqual(resolve9(verifierInput.task_brief), resolve9(taskBriefPath), "verifier input task_brief");
-    assertEqual(resolve9(verifierInput.worktree), resolve9(repository.worktree), "verifier input worktree");
-    assertEqual(verifierInput.branch, repository.branch, "verifier input branch");
-    assertEqual(verifierInput.base_commit, repository.base_commit, "verifier input base_commit");
-    assertEqual(resolve9(verifierInput.worker_result), resolve9(workerInput.result_path), "verifier input worker_result");
-    if (!sameMembers(verifierInput.acceptance_criteria, target.acceptance_criteria ?? brief.acceptance_criteria)) throw new Error("verifier input acceptance_criteria does not match task brief repository criteria");
-    if ((target.test_expectation || brief.test_expectation) && (!verifierInput.test_expectation || !sameTestExpectation(verifierInput.test_expectation, testExpectation))) {
-      throw new Error("verifier input test_expectation does not match task brief");
-    }
-    const existing = manifest2.execution_events?.find((event) => event.idempotency_key === eventKey(options.runId, options.repository, options.stage, attempt));
-    const occurredAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const currentStatus = repository.status ?? manifest2.status;
-    if (options.stage === "worker-started") {
-      if (existing) return manifest2;
-      if (currentStatus === "waiting") throw new Error(`worker-started for ${repository.name} is blocked by: ${(repository.depends_on ?? []).join(", ")}`);
-      if (currentStatus !== "prepared") throw new Error(`worker-started requires prepared repository status, received ${currentStatus}`);
-      const head = await assertWorktree(repository);
-      assertEqual(head, repository.base_commit, "worker start HEAD");
-      appendEvent(manifest2, options.stage, options.repository, "prepared", "running", occurredAt, false, attempt);
-    } else if (options.stage === "worker-result") {
-      const target2 = await validateWorkerResult(manifest2, repository, workerInput, testExpectation);
-      await chmod2(workerInput.result_path, 384);
-      if (existing) return manifest2;
-      if (currentStatus === "prepared") {
-        appendEvent(manifest2, "worker-started", options.repository, "prepared", "running", occurredAt, true, attempt);
-      }
-      if ((repository.status ?? manifest2.status) !== "running") throw new Error(`worker-result requires running repository status, received ${repository.status ?? manifest2.status}`);
-      appendEvent(manifest2, options.stage, options.repository, "running", target2, occurredAt, false, attempt, workerInput.result_path);
-    } else {
-      const target2 = await validateVerifierResult(manifest2, repository, verifierInput);
-      await chmod2(verifierInput.result_path, 384);
-      if (existing) return manifest2;
-      if (currentStatus !== "verifying") throw new Error(`verifier-result requires verifying repository status, received ${currentStatus}`);
-      appendEvent(manifest2, options.stage, options.repository, "verifying", target2, occurredAt, false, attempt, verifierInput.result_path);
-      if (target2 === "passed") await unlockDependents(runtimeRoot, manifest2);
-    }
-    await assertValid3("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return manifest2;
-  });
-}
-var init_record_result = __esm({
-  "scripts/lib/record-result.ts"() {
-    "use strict";
-    init_git();
-    init_io();
-    init_validation();
-  }
-});
-
-// scripts/record-result.ts
-var record_result_exports = {};
-import { dirname as dirname7, resolve as resolve10 } from "node:path";
-import { parseArgs as parseArgs4 } from "node:util";
-import { fileURLToPath as fileURLToPath5 } from "node:url";
-var stages, workspaceRoot4, values4, manifest;
-var init_record_result2 = __esm({
-  async "scripts/record-result.ts"() {
-    "use strict";
-    init_record_result();
-    stages = ["worker-started", "worker-result", "verifier-result"];
-    workspaceRoot4 = resolve10(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve10(dirname7(fileURLToPath5(import.meta.url)), ".."));
-    ({ values: values4 } = parseArgs4({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" },
-        stage: { type: "string" }
-      }
-    }));
-    if (!values4["run-id"] || !values4.repository || !values4.stage || !stages.includes(values4.stage)) {
-      throw new Error("Usage: record-result --run-id <id> --repository <name> --stage <worker-started|worker-result|verifier-result>");
-    }
-    manifest = await recordResult({
-      workspaceRoot: workspaceRoot4,
-      runId: values4["run-id"],
-      repository: values4.repository,
-      stage: values4.stage
-    });
-    console.log(JSON.stringify({ runId: manifest.run_id, status: manifest.status, executionEvents: manifest.execution_events?.length ?? 0 }, null, 2));
-  }
-});
-
-// scripts/lib/review-lifecycle.ts
-import { readFile as readFile8 } from "node:fs/promises";
-import { join as join7, resolve as resolve11 } from "node:path";
-async function readJson3(path2) {
-  return JSON.parse(await readFile8(path2, "utf8"));
-}
-async function assertValid4(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-function findRepository2(manifest2, name) {
-  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
-  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
-  return repository;
-}
-function addEvidence(manifest2, ...paths2) {
-  for (const path2 of paths2) if (!manifest2.evidence.includes(path2)) manifest2.evidence.push(path2);
-}
-function addExecutionEvent(manifest2, repository, stage, fromStatus, toStatus, attempt, occurredAt, resultPath) {
-  const event = {
-    stage,
-    repository,
-    from_status: fromStatus,
-    to_status: toStatus,
-    inferred: false,
-    attempt,
-    idempotency_key: `${manifest2.run_id}:execution:${repository}:${stage}:attempt-${attempt}`,
-    occurred_at: occurredAt
-  };
-  if (resultPath) event.result_path = resultPath;
-  manifest2.execution_events ??= [];
-  manifest2.execution_events.push(event);
-  const runtimeRepository = findRepository2(manifest2, repository);
-  runtimeRepository.status = toStatus;
-  const statuses = manifest2.repositories.map((candidate) => candidate.status ?? manifest2.status);
-  if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
-  else if (statuses.includes("failed")) manifest2.status = "failed";
-  else if (statuses.includes("blocked")) manifest2.status = "blocked";
-  else if (statuses.includes("verifying")) manifest2.status = "verifying";
-  else if (statuses.includes("running")) manifest2.status = "running";
-  else manifest2.status = "prepared";
-  manifest2.updated_at = occurredAt;
-}
-async function loadWorkspace(workspaceRoot18) {
-  const config = (0, import_yaml5.parse)(await readFile8(join7(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid4("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  return config;
-}
-function sameMembers2(left, right) {
-  return left.slice().sort().join("\n") === right.slice().sort().join("\n");
-}
-async function assertCurrentWorker(manifest2, repository, workerInput) {
-  const worker = await readJson3(workerInput.result_path);
-  await assertValid4("worker-result", worker);
-  if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
-    throw new Error("Worker result identity does not match the active run");
-  }
-  if (worker.status !== "completed") throw new Error(`Review lifecycle requires a completed worker, received ${worker.status}`);
-  if (worker.branch !== repository.branch || resolve11(worker.worktree) !== resolve11(repository.worktree)) {
-    throw new Error("Worker result branch or worktree does not match the runtime manifest");
-  }
-  await assertCleanRepository(repository.worktree);
-  const branch = await git(repository.worktree, ["branch", "--show-current"]);
-  if (branch !== repository.branch) throw new Error(`Worktree branch mismatch: expected ${repository.branch}, received ${branch}`);
-  const head = await git(repository.worktree, ["rev-parse", "HEAD"]);
-  if (worker.commits.at(-1) !== head) throw new Error("Current worktree HEAD does not match the recorded worker result");
-  const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${head}`])).split("\n").filter(Boolean);
-  const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
-  if (commits.join("\n") !== worker.commits.join("\n") || !sameMembers2(changedFiles, worker.changed_files)) {
-    throw new Error("Worker result no longer matches the current base-to-head Git history");
-  }
-  return worker;
-}
-function assertVerifier(manifest2, repository, brief, verifier) {
-  if (verifier.work_id !== manifest2.work_id || verifier.run_id !== manifest2.run_id || verifier.repository !== repository.name) {
-    throw new Error("Verifier result identity does not match the active run");
-  }
-  const acceptanceCriteria = brief.repositories.find((candidate) => candidate.name === repository.name)?.acceptance_criteria ?? brief.acceptance_criteria;
-  if (!sameMembers2(verifier.acceptance.map((item) => item.criterion), acceptanceCriteria)) {
-    throw new Error("Verifier acceptance criteria do not match the task brief");
-  }
-  if (verifier.status === "pass" && verifier.acceptance.some((item) => item.status !== "passed")) {
-    throw new Error("Passing verifier result no longer has complete passing acceptance evidence");
-  }
-  if (verifier.status === "fail" && !verifier.acceptance.some((item) => item.status === "failed")) {
-    throw new Error("Failing verifier result no longer identifies failed acceptance evidence");
-  }
-}
-function repairFindings(verifier) {
-  const findings = verifier.findings.map((finding) => `[${finding.severity}] ${finding.description} Evidence: ${finding.evidence}`);
-  for (const acceptance of verifier.acceptance) {
-    if (acceptance.status !== "passed") findings.push(`Acceptance ${acceptance.status}: ${acceptance.criterion}. Evidence: ${acceptance.evidence}`);
-  }
-  return findings;
-}
-async function prepareRepair(options) {
-  const workspaceRoot18 = resolve11(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  const config = await loadWorkspace(workspaceRoot18);
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson3(manifestPath);
-    await assertValid4("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    const repository = findRepository2(manifest2, options.repository);
-    const attempt = repository.repair_attempts ?? 0;
-    const maximumAttempts = config.workflow.maximum_repair_attempts;
-    const lastEvent = manifest2.execution_events?.filter((event) => event.repository === repository.name).at(-1);
-    const repositoryStatus = repository.status ?? manifest2.status;
-    if (repositoryStatus === "running" && lastEvent?.stage === "repair-prepared" && lastEvent.attempt === attempt) {
-      return { status: "prepared", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: repository.worker_input, verifier_input: repository.verifier_input };
-    }
-    if (repositoryStatus === "blocked" && lastEvent?.stage === "repair-exhausted") {
-      return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
-    }
-    if (repositoryStatus !== "failed") throw new Error(`Repair preparation requires failed status, received ${repositoryStatus}`);
-    const occurredAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    if (attempt >= maximumAttempts) {
-      addExecutionEvent(manifest2, repository.name, "repair-exhausted", "failed", "blocked", attempt, occurredAt);
-      manifest2.warnings.push(`Maximum repair attempts exhausted for ${repository.name}: ${maximumAttempts}`);
-      await assertValid4("runtime-manifest", manifest2);
-      await writeJsonAtomic(manifestPath, manifest2);
-      return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
-    }
-    const taskBriefPath = assertInside(runtimeRoot, manifest2.task_brief);
-    const taskBrief = await readJson3(taskBriefPath);
-    await assertValid4("task-brief", taskBrief);
-    const taskTarget = taskBrief.repositories.find((candidate) => candidate.name === repository.name);
-    if (!taskTarget) throw new Error(`Task brief does not include repository ${repository.name}`);
-    const priorWorkerInput = await readJson3(assertInside(runtimeRoot, repository.worker_input));
-    const priorVerifierInput = await readJson3(assertInside(runtimeRoot, repository.verifier_input));
-    assertInside(runtimeRoot, priorWorkerInput.result_path);
-    assertInside(runtimeRoot, priorVerifierInput.result_path);
-    await assertCurrentWorker(manifest2, repository, priorWorkerInput);
-    const verifier = await readJson3(priorVerifierInput.result_path);
-    await assertValid4("verifier-result", verifier);
-    assertVerifier(manifest2, repository, taskBrief, verifier);
-    if (verifier.status !== "fail") throw new Error(`Repair preparation requires a failing verifier result, received ${verifier.status}`);
-    const findings = repairFindings(verifier);
-    if (findings.length === 0) throw new Error("Failing verifier result contains no actionable findings");
-    const nextAttempt = attempt + 1;
-    const runRoot = join7(runtimeRoot, "runs", options.runId);
-    const workerInputPath = join7(runRoot, `${repository.name}-repair-${nextAttempt}-worker-input.json`);
-    const verifierInputPath = join7(runRoot, `${repository.name}-repair-${nextAttempt}-verifier-input.json`);
-    const workerResultPath = join7(runtimeRoot, "results", `${options.runId}-${repository.name}-repair-${nextAttempt}-worker.json`);
-    const verifierResultPath = join7(runtimeRoot, "results", `${options.runId}-${repository.name}-repair-${nextAttempt}-verifier.json`);
-    const repositoryConfig = config.repositories[repository.name];
-    if (!repositoryConfig) throw new Error(`Workspace has no repository named ${repository.name}`);
-    const instructionPaths = [
-      join7(workspaceRoot18, "AGENTS.md"),
-      join7(workspaceRoot18, "agents", "repository-worker.md"),
-      join7(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`)
-    ];
-    const workerInput = {
-      contract_version: 1,
-      role: "repair-worker",
-      attempt: nextAttempt,
-      task_brief: taskBriefPath,
-      repository: repository.name,
-      worktree: repository.worktree,
-      branch: repository.branch,
-      base_commit: repository.base_commit,
-      allowed_scope: taskTarget.scope ?? taskBrief.scope,
-      implementation_scope: taskTarget.implementation_scope ?? taskBrief.implementation_scope,
-      test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
-      findings,
-      previous_worker_result: priorWorkerInput.result_path,
-      previous_verifier_result: priorVerifierInput.result_path,
-      instruction_paths: instructionPaths,
-      result_contract: join7(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
-      result_path: workerResultPath
-    };
-    const verifierInput = {
-      contract_version: 1,
-      role: "verifier",
-      read_only: true,
-      attempt: nextAttempt,
-      task_brief: taskBriefPath,
-      repository: repository.name,
-      worktree: repository.worktree,
-      branch: repository.branch,
-      base_commit: repository.base_commit,
-      worker_result: workerResultPath,
-      acceptance_criteria: taskTarget.acceptance_criteria ?? taskBrief.acceptance_criteria,
-      test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
-      verification_commands: taskTarget.verification_commands ?? taskBrief.verification_commands,
-      instruction_paths: [join7(workspaceRoot18, "AGENTS.md"), join7(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join7(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
-      result_path: verifierResultPath
-    };
-    await writeJsonAtomic(workerInputPath, workerInput);
-    await writeJsonAtomic(verifierInputPath, verifierInput);
-    repository.worker_input = workerInputPath;
-    repository.verifier_input = verifierInputPath;
-    repository.repair_attempts = nextAttempt;
-    addEvidence(manifest2, workerInputPath, verifierInputPath);
-    addExecutionEvent(manifest2, repository.name, "repair-prepared", "failed", "running", nextAttempt, occurredAt);
-    await assertValid4("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return { status: "prepared", attempt: nextAttempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: workerInputPath, verifier_input: verifierInputPath };
-  });
-}
-function reviewBody(brief, verifier) {
-  const acceptance = brief.acceptance_criteria.map((criterion) => `- [x] ${criterion}`).join("\n");
-  const checks = verifier.checks.length > 0 ? verifier.checks.map((check) => `- ${check}`).join("\n") : "- No repository command was configured; verifier evidence is recorded.";
-  return `## Summary
-
-${brief.requested_outcome}
-
-## Acceptance
-
-${acceptance}
-
-## Verification
-
-${checks}
-
-Prepared from run \`${brief.run_id}\`. No push or pull request was performed.
-`;
-}
-async function prepareReview(options) {
-  const workspaceRoot18 = resolve11(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  const config = await loadWorkspace(workspaceRoot18);
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson3(manifestPath);
-    await assertValid4("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    const repository = findRepository2(manifest2, options.repository);
-    if (manifest2.status !== "passed") throw new Error(`Draft review preparation requires passed status, received ${manifest2.status}`);
-    const taskBrief = await readJson3(assertInside(runtimeRoot, manifest2.task_brief));
-    await assertValid4("task-brief", taskBrief);
-    const workerInput = await readJson3(assertInside(runtimeRoot, repository.worker_input));
-    const verifierInput = await readJson3(assertInside(runtimeRoot, repository.verifier_input));
-    assertInside(runtimeRoot, workerInput.result_path);
-    assertInside(runtimeRoot, verifierInput.result_path);
-    const worker = await assertCurrentWorker(manifest2, repository, workerInput);
-    const verifier = await readJson3(verifierInput.result_path);
-    await assertValid4("verifier-result", verifier);
-    assertVerifier(manifest2, repository, taskBrief, verifier);
-    if (verifier.status !== "pass") throw new Error(`Draft review preparation requires a passing verifier result, received ${verifier.status}`);
-    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
-    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
-    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
-    if (commits.length === 0 || changedFiles.length === 0) throw new Error("Draft review preparation requires committed changes");
-    if (repository.review_preparation) {
-      const existing = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
-      await assertValid4("review-preparation", existing);
-      if (existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
-        return existing;
-      }
-    }
-    const remotes = (await git(repository.worktree, ["remote"])).split("\n").filter(Boolean);
-    const remote = remotes.includes("origin") ? "origin" : null;
-    const blockers2 = remote ? [] : ["Repository has no origin remote; configure one before pushing or opening a draft pull request."];
-    const preparedAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const preparationPath = join7(runtimeRoot, "runs", options.runId, `${repository.name}-draft-pr.json`);
-    const preparation = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      repository: repository.name,
-      status: blockers2.length === 0 ? "ready" : "blocked",
-      remote,
-      base_branch: config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch,
-      head_branch: repository.branch,
-      base_commit: repository.base_commit,
-      head_commit: headCommit,
-      commits,
-      changed_files: changedFiles,
-      title: `${manifest2.work_id}: ${taskBrief.requested_outcome}`,
-      body: reviewBody(taskBrief, verifier),
-      worker_result: workerInput.result_path,
-      verifier_result: verifierInput.result_path,
-      blockers: blockers2,
-      prepared_at: preparedAt
-    };
-    if (!sameMembers2(worker.changed_files, changedFiles)) {
-      throw new Error("Current Git diff does not match the recorded worker result");
-    }
-    await assertValid4("review-preparation", preparation);
-    await writeJsonAtomic(preparationPath, preparation);
-    repository.review_preparation = preparationPath;
-    addEvidence(manifest2, preparationPath);
-    const eventKey2 = `${manifest2.run_id}:execution:${repository.name}:review-prepared:attempt-${repository.repair_attempts ?? 0}`;
-    if (!manifest2.execution_events?.some((event) => event.idempotency_key === eventKey2)) {
-      addExecutionEvent(manifest2, repository.name, "review-prepared", "passed", "passed", repository.repair_attempts ?? 0, preparedAt, preparationPath);
-    }
-    await assertValid4("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return preparation;
-  });
-}
-function safeReviewEvidence(value2, label) {
-  const trimmed = value2.trim();
-  if (!trimmed || /[\r\n]/.test(trimmed)) throw new Error(`${label} must be a non-empty single line`);
-  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(trimmed)) throw new Error(`${label} appears to contain credentials`);
-  return trimmed;
-}
-async function recordReviewPublication(options) {
-  const workspaceRoot18 = resolve11(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
-  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
-  return withExclusiveFile(`${manifestPath}.lock`, async () => {
-    const manifest2 = await readJson3(manifestPath);
-    await assertValid4("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    const repository = findRepository2(manifest2, options.repository);
-    if (!repository.review_preparation) throw new Error("Prepare the draft pull-request handoff before recording publication");
-    const preparation = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
-    await assertValid4("review-preparation", preparation);
-    if (preparation.status !== "ready") throw new Error(`Draft pull-request handoff is ${preparation.status}`);
-    await assertCleanRepository(repository.worktree);
-    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
-    if (headCommit !== preparation.head_commit) throw new Error("Worktree HEAD changed after review preparation");
-    const evidence = safeReviewEvidence(options.evidence, "Publication evidence");
-    const pullRequest = options.status === "published" ? safeReviewEvidence(options.pullRequest ?? "", "Pull-request reference") : null;
-    if (options.status === "failed" && options.pullRequest) throw new Error("Failed publication cannot record a pull-request reference");
-    const recordPath2 = join7(runtimeRoot, "runs", options.runId, `${repository.name}-review-publication.json`);
-    const record = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      repository: repository.name,
-      status: options.status,
-      tool: options.tool,
-      pull_request: pullRequest,
-      evidence,
-      head_commit: headCommit,
-      idempotency_key: `${manifest2.run_id}:review-publication:${repository.name}`,
-      recorded_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString()
-    };
-    await assertValid4("review-publication-record", record);
-    if (repository.review_publication) {
-      const existing = await readJson3(assertInside(runtimeRoot, repository.review_publication));
-      await assertValid4("review-publication-record", existing);
-      const comparable = (value2) => JSON.stringify({ ...value2, recorded_at: null });
-      if (comparable(existing) !== comparable(record)) throw new Error("Review publication was already recorded with different confirmed evidence");
-      return existing;
-    }
-    await writeJsonAtomic(recordPath2, record);
-    repository.review_publication = recordPath2;
-    addEvidence(manifest2, recordPath2);
-    manifest2.updated_at = record.recorded_at;
-    await assertValid4("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return record;
-  });
-}
-var import_yaml5;
-var init_review_lifecycle = __esm({
-  "scripts/lib/review-lifecycle.ts"() {
-    "use strict";
-    import_yaml5 = __toESM(require_dist(), 1);
-    init_git();
-    init_io();
-    init_validation();
-  }
-});
-
-// scripts/prepare-repair.ts
-var prepare_repair_exports = {};
-import { dirname as dirname8, resolve as resolve12 } from "node:path";
-import { parseArgs as parseArgs5 } from "node:util";
-import { fileURLToPath as fileURLToPath6 } from "node:url";
-var values5, workspaceRoot5;
-var init_prepare_repair = __esm({
-  async "scripts/prepare-repair.ts"() {
-    "use strict";
-    init_review_lifecycle();
-    ({ values: values5 } = parseArgs5({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" }
-      }
-    }));
-    if (!values5["run-id"] || !values5.repository) throw new Error("Usage: prepare-repair --run-id <id> --repository <name>");
-    workspaceRoot5 = resolve12(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve12(dirname8(fileURLToPath6(import.meta.url)), ".."));
-    console.log(JSON.stringify(await prepareRepair({ workspaceRoot: workspaceRoot5, runId: values5["run-id"], repository: values5.repository }), null, 2));
-  }
-});
-
-// scripts/prepare-review.ts
-var prepare_review_exports = {};
-import { dirname as dirname9, resolve as resolve13 } from "node:path";
-import { parseArgs as parseArgs6 } from "node:util";
-import { fileURLToPath as fileURLToPath7 } from "node:url";
-var values6, workspaceRoot6;
-var init_prepare_review = __esm({
-  async "scripts/prepare-review.ts"() {
-    "use strict";
-    init_review_lifecycle();
-    ({ values: values6 } = parseArgs6({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" }
-      }
-    }));
-    if (!values6["run-id"] || !values6.repository) throw new Error("Usage: prepare-review --run-id <id> --repository <name>");
-    workspaceRoot6 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname9(fileURLToPath7(import.meta.url)), ".."));
-    console.log(JSON.stringify(await prepareReview({ workspaceRoot: workspaceRoot6, runId: values6["run-id"], repository: values6.repository }), null, 2));
-  }
-});
-
-// scripts/record-review-publication.ts
-var record_review_publication_exports = {};
-import { dirname as dirname10, resolve as resolve14 } from "node:path";
-import { parseArgs as parseArgs7 } from "node:util";
-import { fileURLToPath as fileURLToPath8 } from "node:url";
-var workspaceRoot7, values7;
-var init_record_review_publication = __esm({
-  async "scripts/record-review-publication.ts"() {
-    "use strict";
-    init_review_lifecycle();
-    workspaceRoot7 = resolve14(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve14(dirname10(fileURLToPath8(import.meta.url)), ".."));
-    ({ values: values7 } = parseArgs7({ options: {
-      "run-id": { type: "string" },
-      repository: { type: "string" },
-      status: { type: "string" },
-      tool: { type: "string" },
-      "pull-request": { type: "string" },
-      evidence: { type: "string" }
-    } }));
-    if (!values7["run-id"] || !values7.repository || !values7.evidence || !["published", "failed"].includes(values7.status ?? "") || !["gh", "glab", "manual"].includes(values7.tool ?? "")) {
-      throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
-    }
-    console.log(JSON.stringify(await recordReviewPublication({
-      workspaceRoot: workspaceRoot7,
-      runId: values7["run-id"],
-      repository: values7.repository,
-      status: values7.status,
-      tool: values7.tool,
-      ...values7["pull-request"] ? { pullRequest: values7["pull-request"] } : {},
-      evidence: values7.evidence
-    }), null, 2));
-  }
-});
-
-// scripts/lib/finish-work.ts
-import { access as access4, lstat as lstat4, mkdir as mkdir3, readFile as readFile9, readdir, realpath as realpath2 } from "node:fs/promises";
-import { basename, join as join8, relative as relative4, resolve as resolve15 } from "node:path";
-async function readJson4(path2) {
-  return JSON.parse(await readFile9(path2, "utf8"));
-}
-async function assertValid5(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-function findRepository3(manifest2, name) {
-  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
-  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
-  return repository;
-}
-function compactTimestamp(date) {
-  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-}
-function safeToken(value2, label) {
-  const normalized = value2.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  if (!normalized || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) throw new Error(`${label} must contain letters or numbers`);
-  return normalized;
-}
-function taskSlug(brief) {
-  return safeToken(brief.requested_outcome, "Task outcome").slice(0, 48).replace(/-$/, "") || "work";
-}
-function list(items, empty) {
-  return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${empty}`;
-}
-function contributionDocument(manifest2, repository, brief, record) {
-  const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
-  const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
-  return `# ${manifest2.work_id}: ${brief.requested_outcome}
-
-- Run: \`${manifest2.run_id}\`
-- Task source: direct request
-- Plan: none
-- Author: \`${record.author}\`
-
-## Outcome
-
-${outcome}
-
-## Affected repositories
-
-- \`${repository.name}\` on branch \`${repository.branch}\`.${changed}
-
-## Pull requests and commits
-
-${list(record.pull_requests.map((item) => `Pull request: ${item}`), "No pull-request reference was recorded.")}
-${list(record.commits.map((item) => `Commit: \`${item}\``), `No commits beyond base \`${repository.base_commit}\`.`)}
-- Recorded head: \`${record.head_commit}\`
-
-## Verification
-
-${list(record.verification, "No verifier evidence was available.")}
-
-## Decisions and deviations
-
-- ${record.outcome === "merged" ? "No closeout deviation was recorded." : "The run was deliberately abandoned instead of merged."}
-
-## Remaining risks and follow-up
-
-- ${record.reason ?? "No closeout-specific follow-up was recorded."}
-
-## Candidate durable learnings
-
-- Review this contribution during the next context synchronization; no canonical-context change is asserted automatically.
-`;
-}
-function contributionDocumentErrors(path2, content, runId) {
-  const errors2 = [];
-  if (!/^\d{8}T\d{6}Z-[a-z0-9]+(?:-[a-z0-9]+)*-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/.test(basename(path2))) {
-    errors2.push("contribution filename must be <UTC timestamp>-<author>-<slug>.md");
-  }
-  for (const heading of contributionHeadings) if (!content.includes(`${heading}
-`)) errors2.push(`contribution is missing ${heading}`);
-  if (runId && !content.includes(`- Run: \`${runId}\``)) errors2.push("contribution does not reference the expected run");
-  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(content)) {
-    errors2.push("contribution appears to contain a credential or private key");
-  }
-  return errors2;
-}
-async function loadWorkspace2(workspaceRoot18) {
-  const config = (0, import_yaml6.parse)(await readFile9(join8(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid5("workspace", config);
-  const errors2 = workspaceSemanticErrors(config);
-  if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
-  return config;
-}
-async function optionalVerifier(runtimeRoot, manifest2, repository) {
-  try {
-    const input = await readJson4(assertInside(runtimeRoot, repository.verifier_input));
-    const resultPath = assertInside(runtimeRoot, input.result_path);
-    const result3 = await readJson4(resultPath);
-    await assertValid5("verifier-result", result3);
-    if (result3.work_id !== manifest2.work_id || result3.run_id !== manifest2.run_id || result3.repository !== repository.name) {
-      throw new Error("Verifier result identity does not match the closeout run");
-    }
-    return result3;
-  } catch (error) {
-    if (error.code === "ENOENT") return null;
-    throw error;
-  }
-}
-async function assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles) {
-  const input = await readJson4(assertInside(runtimeRoot, repository.worker_input));
-  const worker = await readJson4(assertInside(runtimeRoot, input.result_path));
-  await assertValid5("worker-result", worker);
-  if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
-    throw new Error("Worker result identity does not match the closeout run");
-  }
-  if (worker.status !== "completed" || worker.branch !== repository.branch || resolve15(worker.worktree) !== resolve15(repository.worktree)) {
-    throw new Error("Closeout requires the completed worker recorded for this branch and worktree");
-  }
-  if (worker.commits.at(-1) !== headCommit || worker.commits.join("\n") !== commits.join("\n")) {
-    throw new Error("Worktree commits changed after the recorded worker result");
-  }
-  if (worker.changed_files.slice().sort().join("\n") !== changedFiles.slice().sort().join("\n")) {
-    throw new Error("Worktree changed-file set differs from the recorded worker result");
-  }
-}
-async function findExistingContribution(root, runId, repository) {
-  try {
-    for (const entry of await readdir(root, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
-      const path2 = join8(root, entry.name);
-      const content = await readFile9(path2, "utf8");
-      if (content.includes(`- Run: \`${runId}\``) && content.includes(`- \`${repository}\` on branch`)) return path2;
-    }
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  return null;
-}
-async function ensureContributionRoot(workspaceRoot18, path2) {
-  await mkdir3(path2, { recursive: true, mode: 493 });
-  const info = await lstat4(path2);
-  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
-  assertInside(await realpath2(workspaceRoot18), await realpath2(path2));
-}
-function addExecutionEvent2(manifest2, repository, stage, from, to, occurredAt, resultPath) {
-  const key = `${manifest2.run_id}:execution:${repository.name}:${stage}`;
-  if (manifest2.execution_events?.some((event) => event.idempotency_key === key)) return;
-  manifest2.execution_events ??= [];
-  manifest2.execution_events.push({
-    stage,
-    repository: repository.name,
-    from_status: from,
-    to_status: to,
-    inferred: false,
-    attempt: repository.repair_attempts ?? 0,
-    result_path: resultPath,
-    idempotency_key: key,
-    occurred_at: occurredAt
-  });
-  repository.status = to;
-  const statuses = manifest2.repositories.map((candidate) => candidate.status ?? manifest2.status);
-  if (statuses.every((status2) => status2 === "closed")) manifest2.status = "closed";
-  else if (statuses.some((status2) => status2 === "closing" || status2 === "closed")) manifest2.status = "closing";
-  else if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
-  else if (statuses.includes("failed")) manifest2.status = "failed";
-  else if (statuses.includes("blocked")) manifest2.status = "blocked";
-  manifest2.updated_at = occurredAt;
-}
-function addLifecycleEvent(manifest2, outcome, occurredAt) {
-  const event = outcome === "merged" ? "task.completed" : "task.cancelled";
-  const key = `${manifest2.run_id}:lifecycle:${event}:activity-none`;
-  if (manifest2.lifecycle_events.some((item) => item.idempotency_key === key)) return;
-  manifest2.lifecycle_events.push({ event, status: "skipped", idempotency_key: key, occurred_at: occurredAt });
-}
-function assertCloseoutLifecycleReady(manifest2, config, outcome) {
-  if (config.activity.provider === "none") return;
-  const event = outcome === "merged" ? "task.completed" : "task.cancelled";
-  const lifecycle = manifest2.lifecycle_events.find((item) => item.event === event);
-  if (!lifecycle) {
-    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/cc.mjs prepare-lifecycle --run-id ${manifest2.run_id} --event ${event}`);
-  }
-  if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-    throw new Error(`Configured activity hook ${event} is ${lifecycle.status}; complete required or manual actions before closeout`);
-  }
-}
-async function isAncestor(repository, ancestor, descendant) {
-  try {
-    await git(repository, ["merge-base", "--is-ancestor", ancestor, descendant]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-async function verifiedDefaultRefs(repository, branch) {
-  const refs = [];
-  for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
-    try {
-      await git(repository, ["rev-parse", "--verify", ref]);
-      refs.push(ref);
-    } catch {
-    }
-  }
-  return refs;
-}
-async function cleanupBlockers(workspaceRoot18, config, repository, record) {
-  const blockers2 = [];
-  const contributionPath = assertInside(workspaceRoot18, join8(workspaceRoot18, record.contribution));
-  try {
-    await git(workspaceRoot18, ["ls-files", "--error-unmatch", "--", record.contribution]);
-    if (await git(workspaceRoot18, ["status", "--porcelain=v1", "--", record.contribution])) {
-      blockers2.push("Contribution has uncommitted wrapper changes; commit it through the configured wrapper workflow before cleanup.");
-    }
-  } catch {
-    blockers2.push("Contribution is not durably tracked by wrapper Git; commit it before cleanup.");
-  }
-  try {
-    await access4(contributionPath);
-  } catch {
-    blockers2.push("Contribution file is missing; runtime cleanup would discard the only closeout record.");
-  }
-  const baseRepository = assertInside(workspaceRoot18, join8(workspaceRoot18, repository.base_path));
-  try {
-    if (await git(baseRepository, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Base repository is dirty.");
-    if (await git(repository.worktree, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Run worktree has uncommitted changes.");
-    if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) blockers2.push("Run worktree is on an unexpected branch.");
-    if (await git(repository.worktree, ["rev-parse", "HEAD"]) !== record.head_commit) blockers2.push("Run worktree HEAD changed after closeout preparation.");
-  } catch (error) {
-    blockers2.push(`Run worktree is unavailable: ${error.message}`);
-    return blockers2;
-  }
-  const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
-  const defaultRefs = await verifiedDefaultRefs(baseRepository, defaultBranch);
-  const headOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.head_commit, ref)))).some(Boolean);
-  if (record.outcome === "merged") {
-    let mergeEvidence = headOnDefault;
-    if (!mergeEvidence && record.merge_commit) {
-      const mergeOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.merge_commit, ref)))).some(Boolean);
-      mergeEvidence = mergeOnDefault && await isAncestor(baseRepository, record.base_commit, record.merge_commit);
-    }
-    if (!mergeEvidence) blockers2.push("Merged outcome is not reachable from the configured default branch; fetch the merge or provide a verified merge commit.");
-  } else if (record.head_commit !== record.base_commit && !headOnDefault) {
-    const remoteRefs = await git(baseRepository, ["for-each-ref", "--format=%(refname)", "--contains", record.head_commit, "refs/remotes/"]);
-    if (!remoteRefs) blockers2.push("Abandoned branch contains commits that are neither merged nor preserved by a remote ref.");
-  }
-  return blockers2;
-}
-async function closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, occurredAt) {
-  const blockers2 = await cleanupBlockers(workspaceRoot18, config, repository, record);
-  if (blockers2.length > 0) {
-    const blocked = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: blockers2, updated_at: occurredAt };
-    await assertValid5("closeout-record", blocked);
-    await writeJsonAtomic(recordPath2, blocked);
-    return blocked;
-  }
-  const baseRepository = assertInside(workspaceRoot18, join8(workspaceRoot18, repository.base_path));
-  await git(baseRepository, ["worktree", "remove", repository.worktree]);
-  const closed = {
-    ...record,
-    status: "closed",
-    cleanup: { requested: true, worktree_removed: true, branch_preserved: true, runtime_evidence_preserved: true },
-    blockers: [],
-    updated_at: occurredAt
-  };
-  await assertValid5("closeout-record", closed);
-  await writeJsonAtomic(recordPath2, closed);
-  addExecutionEvent2(manifest2, repository, "closeout-cleaned", "closing", "closed", occurredAt, recordPath2);
-  await assertValid5("runtime-manifest", manifest2);
-  await writeJsonAtomic(manifestPath, manifest2);
-  return closed;
-}
-async function finishWork(options) {
-  const workspaceRoot18 = resolve15(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  const author = safeToken(options.author, "Author");
-  const invocationTime = options.now ?? /* @__PURE__ */ new Date();
-  if (options.mergeCommit && !/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("--merge-commit must be a full lowercase Git object ID");
-  if (options.pullRequests?.some((reference) => !reference.trim() || /[\r\n]/.test(reference))) throw new Error("Pull-request references must be non-empty single lines");
-  const config = await loadWorkspace2(workspaceRoot18);
-  const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
-  if (await realpath2(wrapperTopLevel) !== await realpath2(workspaceRoot18)) throw new Error("Workspace root must be the wrapper Git root before closeout");
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson4(manifestPath);
-    await assertValid5("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    assertCloseoutLifecycleReady(manifest2, config, options.outcome);
-    const repository = findRepository3(manifest2, options.repository);
-    const recordPath2 = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, `${repository.name}-closeout.json`));
-    if (repository.closeout_record) {
-      const existing = await readJson4(assertInside(runtimeRoot, repository.closeout_record));
-      await assertValid5("closeout-record", existing);
-      if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
-      if (existing.status === "closed" || !options.cleanup) return existing;
-      return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, existing, config, invocationTime.toISOString());
-    }
-    const repositoryStatus = repository.status ?? manifest2.status;
-    if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
-    if (options.outcome === "merged" && repositoryStatus !== "passed") throw new Error(`Merged closeout requires a passed repository, received ${repositoryStatus}`);
-    if (options.outcome === "abandoned" && !options.reason?.trim()) throw new Error("Deliberate abandonment requires --reason");
-    const brief = await readJson4(assertInside(runtimeRoot, manifest2.task_brief));
-    await assertValid5("task-brief", brief);
-    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
-    if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) throw new Error("Run worktree is on an unexpected branch");
-    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
-    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
-    if (options.outcome === "merged") await assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles);
-    const verifier = await optionalVerifier(runtimeRoot, manifest2, repository);
-    if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
-    const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} \u2014 ${item.evidence}`)] : [];
-    const preparedAt = invocationTime.toISOString();
-    const contributionsRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, "contributions", "general"));
-    await ensureContributionRoot(workspaceRoot18, contributionsRoot);
-    const existingContribution = await findExistingContribution(contributionsRoot, options.runId, repository.name);
-    const contributionPath = existingContribution ?? join8(contributionsRoot, `${compactTimestamp(invocationTime)}-${author}-${taskSlug(brief)}-${repository.name}.md`);
-    const contributionRelative = relative4(workspaceRoot18, contributionPath).replaceAll("\\", "/");
-    const record = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      repository: repository.name,
-      outcome: options.outcome,
-      status: "prepared",
-      author,
-      reason: options.reason?.trim() || null,
-      contribution: contributionRelative,
-      branch: repository.branch,
-      base_commit: repository.base_commit,
-      head_commit: headCommit,
-      merge_commit: options.mergeCommit ?? null,
-      pull_requests: [...new Set(options.pullRequests ?? [])],
-      commits,
-      changed_files: changedFiles,
-      verification,
-      cleanup: { requested: Boolean(options.cleanup), worktree_removed: false, branch_preserved: true, runtime_evidence_preserved: true },
-      blockers: [],
-      prepared_at: preparedAt,
-      updated_at: preparedAt
-    };
-    const document = contributionDocument(manifest2, repository, brief, record);
-    const documentErrors = contributionDocumentErrors(contributionPath, document, options.runId);
-    if (documentErrors.length > 0) throw new Error(`Invalid contribution: ${documentErrors.join("; ")}`);
-    if (existingContribution && await readFile9(existingContribution, "utf8") !== document) {
-      throw new Error("An append-only contribution already exists for this run with different closeout content");
-    }
-    if (!existingContribution) await writeTextExclusive(contributionPath, document);
-    await assertValid5("closeout-record", record);
-    await writeJsonAtomic(recordPath2, record);
-    repository.closeout_record = recordPath2;
-    repository.contribution = contributionRelative;
-    if (!manifest2.evidence.includes(recordPath2)) manifest2.evidence.push(recordPath2);
-    const fromStatus = repositoryStatus;
-    addExecutionEvent2(manifest2, repository, "closeout-prepared", fromStatus, "closing", preparedAt, recordPath2);
-    if (config.activity.provider === "none") addLifecycleEvent(manifest2, options.outcome, preparedAt);
-    await assertValid5("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    if (!options.cleanup) return record;
-    return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
-  });
-}
-var import_yaml6, contributionHeadings;
-var init_finish_work = __esm({
-  "scripts/lib/finish-work.ts"() {
-    "use strict";
-    import_yaml6 = __toESM(require_dist(), 1);
-    init_git();
-    init_io();
-    init_validation();
-    contributionHeadings = [
-      "## Outcome",
-      "## Affected repositories",
-      "## Pull requests and commits",
-      "## Verification",
-      "## Decisions and deviations",
-      "## Remaining risks and follow-up",
-      "## Candidate durable learnings"
-    ];
-  }
-});
-
-// scripts/finish-work.ts
-var finish_work_exports = {};
-import { dirname as dirname11, resolve as resolve16 } from "node:path";
-import { parseArgs as parseArgs8 } from "node:util";
-import { fileURLToPath as fileURLToPath9 } from "node:url";
-var values8, workspaceRoot8, result;
-var init_finish_work2 = __esm({
-  async "scripts/finish-work.ts"() {
-    "use strict";
-    init_finish_work();
-    ({ values: values8 } = parseArgs8({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" },
-        outcome: { type: "string" },
-        author: { type: "string" },
-        reason: { type: "string" },
-        "merge-commit": { type: "string" },
-        "pull-request": { type: "string", multiple: true },
-        cleanup: { type: "boolean", default: false }
-      }
-    }));
-    if (!values8["run-id"] || !values8.repository || !values8.outcome || !values8.author) {
-      throw new Error("Required: --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug>");
-    }
-    if (values8.outcome !== "merged" && values8.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
-    workspaceRoot8 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname11(fileURLToPath9(import.meta.url)), ".."));
-    result = await finishWork({
-      workspaceRoot: workspaceRoot8,
-      runId: values8["run-id"],
-      repository: values8.repository,
-      outcome: values8.outcome,
-      author: values8.author,
-      cleanup: values8.cleanup,
-      ...values8.reason ? { reason: values8.reason } : {},
-      ...values8["merge-commit"] ? { mergeCommit: values8["merge-commit"] } : {},
-      ...values8["pull-request"] ? { pullRequests: values8["pull-request"] } : {}
-    });
-    console.log(JSON.stringify(result, null, 2));
-  }
-});
-
 // scripts/lib/plans.ts
 import { createHash as createHash2, randomUUID } from "node:crypto";
-import { lstat as lstat5, mkdir as mkdir4, readdir as readdir2, readFile as readFile10, realpath as realpath3, rename as rename2, rm } from "node:fs/promises";
-import { basename as basename2, join as join9, resolve as resolve17 } from "node:path";
+import { lstat as lstat4, mkdir as mkdir3, readdir, readFile as readFile5, realpath as realpath2, rename as rename2, rm } from "node:fs/promises";
+import { basename, join as join5, resolve as resolve7 } from "node:path";
 function contractMessages(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
 }
@@ -17357,7 +15561,7 @@ function materialDigest(files, names) {
 function parsePlanIndex(raw) {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
   if (!match) throw new Error("Plan README must begin with YAML frontmatter");
-  return (0, import_yaml7.parse)(match[1]);
+  return (0, import_yaml4.parse)(match[1]);
 }
 function parseWorkBreakdown(raw, index) {
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
@@ -17384,22 +15588,22 @@ function parseWorkBreakdown(raw, index) {
 }
 async function regularFile(path2) {
   try {
-    const info = await lstat5(path2);
+    const info = await lstat4(path2);
     return info.isFile() && !info.isSymbolicLink();
   } catch {
     return false;
   }
 }
-async function validatePlanDirectory(planDirectory3, expectedPlanId = basename2(planDirectory3)) {
-  const directory = resolve17(planDirectory3);
+async function validatePlanDirectory(planDirectory3, expectedPlanId = basename(planDirectory3)) {
+  const directory = resolve7(planDirectory3);
   const errors2 = [];
   let index = null;
   let breakdown = null;
   try {
-    const info = await lstat5(directory);
+    const info = await lstat4(directory);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Plan path must be a real directory");
-    if (!await regularFile(join9(directory, "README.md"))) throw new Error("Plan README must be a real file");
-    index = parsePlanIndex(await readFile10(join9(directory, "README.md"), "utf8"));
+    if (!await regularFile(join5(directory, "README.md"))) throw new Error("Plan README must be a real file");
+    index = parsePlanIndex(await readFile5(join5(directory, "README.md"), "utf8"));
     const indexErrors = contractMessages(await validateContract("plan-index", index));
     errors2.push(...indexErrors);
     if (indexErrors.length > 0) return { index, work_breakdown: null, errors: [...new Set(errors2)] };
@@ -17408,16 +15612,16 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename2(
     const sorted = [...index.documents].sort();
     if (JSON.stringify(sorted) !== JSON.stringify(index.documents)) errors2.push("numbered plan documents must be listed in ascending order");
     if (!index.documents.includes(index.work_breakdown)) errors2.push("work_breakdown must be listed in documents");
-    const actualNumbered = (await readdir2(directory)).filter((name) => /^[0-9]{4}-.+\.md$/.test(name)).sort();
+    const actualNumbered = (await readdir(directory)).filter((name) => /^[0-9]{4}-.+\.md$/.test(name)).sort();
     for (const document of actualNumbered) {
       if (!index.documents.includes(document)) errors2.push(`numbered plan document is not listed in the index: ${document}`);
     }
     for (const document of index.documents) {
-      if (!await regularFile(join9(directory, document))) errors2.push(`plan document is missing or unsafe: ${document}`);
+      if (!await regularFile(join5(directory, document))) errors2.push(`plan document is missing or unsafe: ${document}`);
     }
     if (errors2.length === 0) {
       const material = /* @__PURE__ */ new Map();
-      for (const document of index.documents) material.set(document, await readFile10(join9(directory, document), "utf8"));
+      for (const document of index.documents) material.set(document, await readFile5(join5(directory, document), "utf8"));
       const digest = materialDigest(material, index.documents);
       if (index.material_digest !== digest) errors2.push("material_digest does not match the numbered plan documents");
       if (index.status === "approved" && index.approved_digest !== digest) errors2.push("approved_digest does not match the approved plan material");
@@ -17432,11 +15636,11 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename2(
 }
 async function actualMaterialDigest(directory, index) {
   const material = /* @__PURE__ */ new Map();
-  for (const document of index.documents) material.set(document, await readFile10(join9(directory, document), "utf8"));
+  for (const document of index.documents) material.set(document, await readFile5(join5(directory, document), "utf8"));
   return materialDigest(material, index.documents);
 }
 async function setPlanState(planDirectory3, transition2, now = /* @__PURE__ */ new Date()) {
-  const directory = resolve17(planDirectory3);
+  const directory = resolve7(planDirectory3);
   const validation = await validatePlanDirectory(directory);
   const allowedStaleDigestErrors = /* @__PURE__ */ new Set([
     "material_digest does not match the numbered plan documents",
@@ -17471,12 +15675,12 @@ async function setPlanState(planDirectory3, transition2, now = /* @__PURE__ */ n
     index.approved_digest = digest;
   }
   index.updated_at = now.toISOString();
-  const readmePath = join9(directory, "README.md");
-  const raw = await readFile10(readmePath, "utf8");
+  const readmePath = join5(directory, "README.md");
+  const raw = await readFile5(readmePath, "utf8");
   const match = raw.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);
   if (!match) throw new Error("Plan README must begin with YAML frontmatter");
   await writeTextAtomic(readmePath, raw.replace(match[0], `---
-${(0, import_yaml7.stringify)(index).trimEnd()}
+${(0, import_yaml4.stringify)(index).trimEnd()}
 ---
 `));
   const after = await validatePlanDirectory(directory);
@@ -17537,7 +15741,7 @@ Live task status does not belong in this plan. Add confirmed external references
   };
   const links = documents.map((document) => `- [${document.replace(/^[0-9]{4}-|\.md$/g, "").replaceAll("-", " ")}](./${document})`).join("\n");
   files.set("README.md", `---
-${(0, import_yaml7.stringify)(index).trimEnd()}
+${(0, import_yaml4.stringify)(index).trimEnd()}
 ---
 
 # ${request3.title}
@@ -17555,9 +15759,9 @@ Human approval must explicitly cover scope, solution, delivery order, risks, and
   return { index, breakdown, files };
 }
 async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ */ new Date()) {
-  const workspaceRoot18 = resolve17(workspaceRootInput);
+  const workspaceRoot18 = resolve7(workspaceRootInput);
   const contractErrors2 = contractMessages(await validateContract("plan-draft-request", request3));
-  const config = await readData(join9(workspaceRoot18, "workspace.yaml"));
+  const config = await readData(join5(workspaceRoot18, "workspace.yaml"));
   const workspaceErrors = contractMessages(await validateContract("workspace", config));
   const errors2 = [...contractErrors2, ...workspaceErrors];
   if (contractErrors2.length === 0 && workspaceErrors.length === 0) {
@@ -17565,41 +15769,41 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
   }
   if (errors2.length > 0) throw new Error(`Invalid plan draft request:
 - ${errors2.join("\n- ")}`);
-  const realWorkspace = await realpath3(workspaceRoot18);
-  const contextRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, "context"));
+  const realWorkspace = await realpath2(workspaceRoot18);
+  const contextRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, "context"));
   try {
-    const info = await lstat5(contextRoot);
+    const info = await lstat4(contextRoot);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Context root must be a real directory: ${contextRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir4(contextRoot, { mode: 493 });
+    await mkdir3(contextRoot, { mode: 493 });
   }
-  if (await realpath3(contextRoot) !== join9(realWorkspace, "context")) throw new Error(`Context root must not traverse symbolic links: ${contextRoot}`);
-  const plansRoot = assertInside(contextRoot, join9(contextRoot, "plans"));
+  if (await realpath2(contextRoot) !== join5(realWorkspace, "context")) throw new Error(`Context root must not traverse symbolic links: ${contextRoot}`);
+  const plansRoot = assertInside(contextRoot, join5(contextRoot, "plans"));
   try {
-    const info = await lstat5(plansRoot);
+    const info = await lstat4(plansRoot);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Plan root must be a real directory: ${plansRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir4(plansRoot, { mode: 493 });
+    await mkdir3(plansRoot, { mode: 493 });
   }
-  const realPlansRoot = await realpath3(plansRoot);
+  const realPlansRoot = await realpath2(plansRoot);
   assertInside(realWorkspace, realPlansRoot);
-  if (realPlansRoot !== join9(realWorkspace, "context", "plans")) {
+  if (realPlansRoot !== join5(realWorkspace, "context", "plans")) {
     throw new Error(`Plan root must not traverse symbolic links: ${plansRoot}`);
   }
-  const destination = assertInside(realPlansRoot, join9(realPlansRoot, request3.plan_id));
+  const destination = assertInside(realPlansRoot, join5(realPlansRoot, request3.plan_id));
   try {
-    await lstat5(destination);
+    await lstat4(destination);
     throw new Error(`Plan already exists; refusing to overwrite: ${destination}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
   }
-  const temporary = join9(realPlansRoot, `.${request3.plan_id}.${randomUUID()}.tmp`);
+  const temporary = join5(realPlansRoot, `.${request3.plan_id}.${randomUUID()}.tmp`);
   const rendered = renderPlan(request3, now.toISOString());
   try {
-    await mkdir4(temporary, { mode: 493 });
-    for (const [name, contents] of rendered.files) await writeTextExclusive(join9(temporary, name), contents);
+    await mkdir3(temporary, { mode: 493 });
+    for (const [name, contents] of rendered.files) await writeTextExclusive(join5(temporary, name), contents);
     const validation = await validatePlanDirectory(temporary, request3.plan_id);
     if (validation.errors.length > 0) throw new Error(`Generated plan failed validation:
 - ${validation.errors.join("\n- ")}`);
@@ -17613,17 +15817,17 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
     status: "draft",
     plan_version: 1,
     directory: destination,
-    index: join9(destination, "README.md"),
+    index: join5(destination, "README.md"),
     documents: [...documents],
     work_ids: rendered.breakdown.items.map((item) => item.work_id),
     approval_required: true
   };
 }
-var import_yaml7, documents, tableHeader, tableSeparator;
+var import_yaml4, documents, tableHeader, tableSeparator;
 var init_plans = __esm({
   "scripts/lib/plans.ts"() {
     "use strict";
-    import_yaml7 = __toESM(require_dist(), 1);
+    import_yaml4 = __toESM(require_dist(), 1);
     init_io();
     init_validation();
     documents = [
@@ -17637,6 +15841,2080 @@ var init_plans = __esm({
     ];
     tableHeader = "| Work ID | Title | Parent | Depends on | Area | External reference |";
     tableSeparator = "| --- | --- | --- | --- | --- | --- |";
+  }
+});
+
+// scripts/lib/run-task.ts
+import { randomBytes as randomBytes2 } from "node:crypto";
+import { access as access3, readFile as readFile6 } from "node:fs/promises";
+import { join as join6, relative as relative3, resolve as resolve8 } from "node:path";
+async function assertValid2(name, value2) {
+  const errors2 = await validateContract(name, value2);
+  if (errors2.length > 0) {
+    throw new Error(`Generated ${name} is invalid: ${errors2.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`);
+  }
+}
+function repositoryExpectation(input) {
+  const paths2 = normalizeScope(input.test_scope, `test scope for ${input.name}`);
+  if ((input.test_policy === "required" || input.test_policy === "existing-coverage") && paths2.length === 0) {
+    throw new Error(`${input.test_policy} test policy requires at least one test scope entry for ${input.name}`);
+  }
+  return { policy: input.test_policy, paths: paths2, rationale: input.test_rationale?.trim() || defaultTestRationale(input.test_policy) };
+}
+function normalizeContractFirstRequest(input, workId, runId, createdAt) {
+  const request3 = input.request.trim();
+  const acceptanceCriteria = input.acceptance_criteria.map((item) => item.trim()).filter(Boolean);
+  if (!request3) throw new Error("A direct request is required");
+  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
+  const names = input.repositories.map((repository) => repository.name);
+  if (new Set(names).size !== names.length) throw new Error("Repository names must be unique");
+  if (!names.includes(input.shared_contract.repository)) throw new Error("Shared contract repository must be included in repositories");
+  const contractPaths = normalizeScope(input.shared_contract.paths, "shared contract paths");
+  const byName = new Map(input.repositories.map((repository) => [repository.name, repository]));
+  for (const repository of input.repositories) {
+    if (repository.depends_on.includes(repository.name)) throw new Error(`${repository.name} cannot depend on itself`);
+    for (const dependency of repository.depends_on) if (!byName.has(dependency)) throw new Error(`${repository.name} has unknown dependency ${dependency}`);
+  }
+  const contractOwner = byName.get(input.shared_contract.repository);
+  if (contractOwner.depends_on.length > 0) throw new Error("Shared contract repository cannot depend on another repository");
+  const visiting = /* @__PURE__ */ new Set();
+  const orders = /* @__PURE__ */ new Map();
+  const orderOf = (name) => {
+    const known = orders.get(name);
+    if (known !== void 0) return known;
+    if (visiting.has(name)) throw new Error(`Repository dependency cycle includes ${name}`);
+    visiting.add(name);
+    const repository = byName.get(name);
+    const order = repository.depends_on.length === 0 ? 0 : Math.max(...repository.depends_on.map(orderOf)) + 1;
+    visiting.delete(name);
+    orders.set(name, order);
+    return order;
+  };
+  const dependsOnContract = (name, seen = /* @__PURE__ */ new Set()) => {
+    if (name === input.shared_contract.repository) return true;
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return byName.get(name).depends_on.some((dependency) => dependsOnContract(dependency, seen));
+  };
+  for (const name of names) {
+    orderOf(name);
+    if (name !== input.shared_contract.repository && !dependsOnContract(name)) throw new Error(`${name} must depend on the shared contract repository`);
+  }
+  const targets = input.repositories.map((repository) => {
+    const implementationScope = normalizeScope(repository.scope, `implementation scope for ${repository.name}`);
+    const testExpectation = repositoryExpectation(repository);
+    const scope = [.../* @__PURE__ */ new Set([...implementationScope, ...testExpectation.policy === "required" ? testExpectation.paths : []])];
+    const repositoryAcceptance = repository.acceptance_criteria.map((criterion) => criterion.trim()).filter(Boolean);
+    if (repositoryAcceptance.length === 0) throw new Error(`At least one acceptance criterion is required for ${repository.name}`);
+    return {
+      name: repository.name,
+      dependency_order: orders.get(repository.name),
+      depends_on: repository.depends_on,
+      scope,
+      implementation_scope: implementationScope,
+      test_expectation: testExpectation,
+      verification_commands: repository.verification_commands.map((command2) => command2.trim()).filter(Boolean),
+      acceptance_criteria: repositoryAcceptance
+    };
+  }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
+  const ownerScope = targets.find((target) => target.name === input.shared_contract.repository).scope;
+  for (const path2 of contractPaths) if (!ownerScope.some((scope) => path2 === scope || path2.startsWith(`${scope}/`))) {
+    throw new Error(`Shared contract path is outside ${input.shared_contract.repository} scope: ${path2}`);
+  }
+  return {
+    contract_version: 1,
+    work_id: workId,
+    run_id: runId,
+    source: { kind: "direct-request" },
+    requested_outcome: request3,
+    scope: [...new Set(targets.flatMap((target) => target.scope))],
+    acceptance_criteria: acceptanceCriteria,
+    repositories: targets,
+    shared_contract: { repository: input.shared_contract.repository, paths: contractPaths },
+    plan: { reference: null, approval_state: "not-applicable" },
+    activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
+    assumptions: ["The direct request is authoritative for this planless run.", "Dependent repositories remain locked until their declared dependencies pass independent verification."],
+    risks: ["No authoritative claim is available; duplicate effort is possible."],
+    verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
+    authorization: { kind: "explicit-user-request", evidence: "The human explicitly invoked run-task for this direct request." },
+    created_at: createdAt
+  };
+}
+function normalizePlanRequest(input, runId, createdAt) {
+  const request3 = input.request.trim();
+  const acceptanceCriteria = input.acceptance_criteria.map((item) => item.trim()).filter(Boolean);
+  if (!request3) throw new Error("A plan execution outcome is required");
+  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
+  const names = input.repositories.map((repository) => repository.name);
+  if (new Set(names).size !== names.length) throw new Error("Repository names must be unique");
+  const byName = new Map(input.repositories.map((repository) => [repository.name, repository]));
+  const visiting = /* @__PURE__ */ new Set();
+  const orders = /* @__PURE__ */ new Map();
+  const orderOf = (name) => {
+    const known = orders.get(name);
+    if (known !== void 0) return known;
+    if (visiting.has(name)) throw new Error(`Repository dependency cycle includes ${name}`);
+    visiting.add(name);
+    const repository = byName.get(name);
+    for (const dependency of repository.depends_on) if (!byName.has(dependency)) throw new Error(`${name} has unknown dependency ${dependency}`);
+    const order = repository.depends_on.length === 0 ? 0 : Math.max(...repository.depends_on.map(orderOf)) + 1;
+    visiting.delete(name);
+    orders.set(name, order);
+    return order;
+  };
+  const targets = input.repositories.map((repository) => {
+    if (repository.depends_on.includes(repository.name)) throw new Error(`${repository.name} cannot depend on itself`);
+    const implementationScope = normalizeScope(repository.scope, `implementation scope for ${repository.name}`);
+    const testExpectation = repositoryExpectation(repository);
+    const repositoryAcceptance = repository.acceptance_criteria.map((criterion) => criterion.trim()).filter(Boolean);
+    if (repositoryAcceptance.length === 0) throw new Error(`At least one acceptance criterion is required for ${repository.name}`);
+    return {
+      name: repository.name,
+      dependency_order: orderOf(repository.name),
+      depends_on: repository.depends_on,
+      scope: [.../* @__PURE__ */ new Set([...implementationScope, ...testExpectation.policy === "required" ? testExpectation.paths : []])],
+      implementation_scope: implementationScope,
+      test_expectation: testExpectation,
+      verification_commands: repository.verification_commands.map((command2) => command2.trim()).filter(Boolean),
+      acceptance_criteria: repositoryAcceptance
+    };
+  }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
+  return {
+    contract_version: 1,
+    work_id: input.work_ids[0],
+    run_id: runId,
+    source: { kind: "plan", reference: input.source.reference },
+    requested_outcome: request3,
+    scope: [...new Set(targets.flatMap((target) => target.scope))],
+    acceptance_criteria: acceptanceCriteria,
+    repositories: targets,
+    plan: {
+      reference: input.source.reference,
+      approval_state: "approved",
+      plan_version: input.source.plan_version,
+      approved_digest: input.source.approved_digest,
+      work_ids: input.work_ids
+    },
+    activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
+    assumptions: ["The selected work IDs and approved plan material are authoritative for this run."],
+    risks: ["No authoritative claim is available; duplicate effort is possible."],
+    verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
+    authorization: { kind: "confirmed-selection", evidence: `The human selected approved plan work: ${input.work_ids.join(", ")}.` },
+    created_at: createdAt
+  };
+}
+function normalizeDirectRequest(input) {
+  const request3 = input.request.trim();
+  const acceptanceCriteria = input.acceptanceCriteria.map((item) => item.trim()).filter(Boolean);
+  const implementationScope = normalizeScope(input.scope, "implementation scope");
+  const testScope = normalizeScope(input.testScope ?? [], "test scope");
+  const testPolicy = input.testPolicy ?? (testScope.length > 0 ? "required" : "verifier-only");
+  if (!request3) throw new Error("A direct request is required");
+  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
+  if (implementationScope.length === 0) throw new Error("At least one implementation scope entry is required");
+  if ((testPolicy === "required" || testPolicy === "existing-coverage") && testScope.length === 0) {
+    throw new Error(`${testPolicy} test policy requires at least one test scope entry`);
+  }
+  const testExpectation = {
+    policy: testPolicy,
+    paths: testScope,
+    rationale: input.testRationale?.trim() || defaultTestRationale(testPolicy)
+  };
+  const scope = [.../* @__PURE__ */ new Set([...implementationScope, ...testPolicy === "required" ? testScope : []])];
+  return {
+    contract_version: 1,
+    work_id: input.workId,
+    run_id: input.runId,
+    source: { kind: "direct-request" },
+    requested_outcome: request3,
+    scope,
+    implementation_scope: implementationScope,
+    test_expectation: testExpectation,
+    acceptance_criteria: acceptanceCriteria,
+    repositories: [{ name: input.repository, dependency_order: 0 }],
+    plan: { reference: null, approval_state: "not-applicable" },
+    activity: {
+      reference: null,
+      claim_status: "not-applicable",
+      duplicate_effort_warning: true
+    },
+    assumptions: ["The direct request is authoritative for this planless run."],
+    risks: ["No authoritative claim is available; duplicate effort is possible."],
+    verification_commands: input.verificationCommands,
+    authorization: {
+      kind: "explicit-user-request",
+      evidence: "The human explicitly invoked run-task for this direct request."
+    },
+    created_at: input.createdAt
+  };
+}
+function normalizeScope(values18, label) {
+  const normalized = values18.map((item) => item.trim().replace(/\/$/, "")).filter(Boolean);
+  for (const path2 of normalized) {
+    if (path2.startsWith("/") || path2.includes("\\") || path2.split("/").includes("..")) {
+      throw new Error(`${label} entries must be repository-relative paths: ${path2}`);
+    }
+  }
+  return [...new Set(normalized)];
+}
+function defaultTestRationale(policy) {
+  switch (policy) {
+    case "required":
+      return "The worker must add or update tests in the declared test scope.";
+    case "existing-coverage":
+      return "Declared existing tests are expected to cover the requested behavior.";
+    case "not-required":
+      return "No repository test change is required for this task.";
+    default:
+      return "No test edit scope is authorized; the verifier must supply independent acceptance evidence.";
+  }
+}
+async function preparePlanlessTask(options) {
+  const workspaceRoot18 = resolve8(options.workspaceRoot);
+  const configPath = join6(workspaceRoot18, "workspace.yaml");
+  const config = (0, import_yaml5.parse)(await readFile6(configPath, "utf8"));
+  await assertValid2("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
+  const repositoryConfig = config.repositories[options.repository];
+  if (!repositoryConfig) throw new Error(`Unknown repository: ${options.repository}`);
+  const repositoryPath = assertInside(workspaceRoot18, join6(workspaceRoot18, repositoryConfig.path));
+  await access3(repositoryPath);
+  await assertCleanRepository(repositoryPath);
+  const baseCommit = await git(repositoryPath, ["rev-parse", repositoryConfig.default_branch]);
+  const requiredInstructionPaths = [
+    join6(workspaceRoot18, "AGENTS.md"),
+    join6(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`),
+    join6(workspaceRoot18, "agents", "repository-worker.md"),
+    join6(workspaceRoot18, "agents", "verifier.md")
+  ];
+  await Promise.all(requiredInstructionPaths.map((path2) => access3(path2)));
+  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const now = options.now ?? /* @__PURE__ */ new Date();
+  const { workId, runId } = await generateIds(runtimeRoot, options.request, now, options.discriminator);
+  const createdAt = now.toISOString();
+  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request)}-${runId.slice(-8)}`;
+  const runRoot = assertInside(runtimeRoot, join6(runtimeRoot, "runs", runId));
+  const worktree = assertInside(runtimeRoot, join6(runtimeRoot, "worktrees", runId, options.repository));
+  const taskBriefPath = join6(runtimeRoot, "tasks", `${runId}.json`);
+  const manifestPath = join6(runRoot, "manifest.json");
+  const workerInputPath = join6(runRoot, `${options.repository}-worker-input.json`);
+  const verifierInputPath = join6(runRoot, `${options.repository}-verifier-input.json`);
+  const workerResultPath = join6(runtimeRoot, "results", `${runId}-${options.repository}-worker.json`);
+  const verifierResultPath = join6(runtimeRoot, "results", `${runId}-${options.repository}-verifier.json`);
+  const taskBrief = normalizeDirectRequest({
+    request: options.request,
+    repository: options.repository,
+    acceptanceCriteria: options.acceptanceCriteria,
+    scope: options.scope,
+    ...options.testScope ? { testScope: options.testScope } : {},
+    ...options.testPolicy ? { testPolicy: options.testPolicy } : {},
+    ...options.testRationale ? { testRationale: options.testRationale } : {},
+    verificationCommands: options.verificationCommands ?? [],
+    workId,
+    runId,
+    createdAt
+  });
+  await assertValid2("task-brief", taskBrief);
+  if (taskBrief.test_expectation?.policy === "existing-coverage") {
+    for (const path2 of taskBrief.test_expectation.paths) {
+      try {
+        await access3(assertInside(repositoryPath, join6(repositoryPath, path2)));
+      } catch {
+        throw new Error(`Existing-coverage test path does not exist: ${path2}`);
+      }
+    }
+  }
+  await writeJsonAtomic(taskBriefPath, taskBrief);
+  const runtimeRepository = {
+    name: options.repository,
+    base_path: relative3(workspaceRoot18, repositoryPath),
+    base_commit: baseCommit,
+    branch,
+    worktree,
+    worker_input: workerInputPath,
+    verifier_input: verifierInputPath,
+    repair_attempts: 0
+  };
+  const manifest2 = {
+    contract_version: 1,
+    work_id: workId,
+    run_id: runId,
+    status: "preparing",
+    created_at: createdAt,
+    updated_at: createdAt,
+    task_brief: taskBriefPath,
+    repositories: [runtimeRepository],
+    evidence: [taskBriefPath, manifestPath, workerInputPath, verifierInputPath],
+    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
+    execution_events: [],
+    lifecycle_events: config.activity.provider === "none" ? [{
+      event: "task.starting",
+      status: "skipped",
+      idempotency_key: `${runId}:task.starting:activity-none`,
+      occurred_at: createdAt
+    }] : []
+  };
+  await assertValid2("runtime-manifest", manifest2);
+  await writeJsonAtomic(manifestPath, manifest2);
+  const instructionPaths = [
+    ...requiredInstructionPaths.slice(0, 3)
+  ];
+  try {
+    await access3(join6(repositoryPath, "AGENTS.md"));
+    instructionPaths.push(join6(worktree, "AGENTS.md"));
+  } catch {
+  }
+  const workerInput = {
+    contract_version: 1,
+    role: "repository-worker",
+    task_brief: taskBriefPath,
+    repository: options.repository,
+    worktree,
+    branch,
+    base_commit: baseCommit,
+    ready: true,
+    blocked_by: [],
+    allowed_scope: taskBrief.scope,
+    implementation_scope: taskBrief.implementation_scope,
+    test_expectation: taskBrief.test_expectation,
+    instruction_paths: instructionPaths,
+    result_contract: join6(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+    result_path: workerResultPath
+  };
+  const verifierInput = {
+    contract_version: 1,
+    role: "verifier",
+    read_only: true,
+    task_brief: taskBriefPath,
+    repository: options.repository,
+    worktree,
+    branch,
+    base_commit: baseCommit,
+    worker_result: workerResultPath,
+    acceptance_criteria: taskBrief.acceptance_criteria,
+    test_expectation: taskBrief.test_expectation,
+    verification_commands: taskBrief.verification_commands,
+    instruction_paths: [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", "verifier.md"), ...instructionPaths.slice(3)],
+    result_contract: join6(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+    result_path: verifierResultPath
+  };
+  await writeJsonAtomic(workerInputPath, workerInput);
+  await writeJsonAtomic(verifierInputPath, verifierInput);
+  if (config.activity.provider !== "none") {
+    const lifecycle = await prepareActivityLifecycle({
+      workspaceRoot: workspaceRoot18,
+      runId,
+      event: "task.starting",
+      availableCapabilities: options.availableCapabilities ?? [],
+      now
+    });
+    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+      return {
+        workId,
+        runId,
+        branch,
+        worktree,
+        taskBrief: taskBriefPath,
+        manifest: manifestPath,
+        workerInput: workerInputPath,
+        verifierInput: verifierInputPath,
+        repositories: [{ name: options.repository, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready: true, blockedBy: [] }],
+        preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity"
+      };
+    }
+  }
+  try {
+    await ensurePrivateDirectory(join6(runtimeRoot, "worktrees", runId));
+    await git(repositoryPath, ["worktree", "add", "-b", branch, worktree, baseCommit]);
+    runtimeRepository.status = "prepared";
+    manifest2.status = "prepared";
+    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+    await assertValid2("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+  } catch (error) {
+    manifest2.status = "blocked";
+    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+    manifest2.evidence.push(`Preparation failed: ${error.message}`);
+    await writeJsonAtomic(manifestPath, manifest2);
+    throw error;
+  }
+  return {
+    workId,
+    runId,
+    branch,
+    worktree,
+    taskBrief: taskBriefPath,
+    manifest: manifestPath,
+    workerInput: workerInputPath,
+    verifierInput: verifierInputPath,
+    repositories: [{ name: options.repository, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready: true, blockedBy: [] }],
+    preparationStatus: "prepared"
+  };
+}
+async function prepareContractFirstTask(options) {
+  const requestErrors = await validateContract("run-task-request", options.request);
+  if (requestErrors.length > 0) {
+    throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  }
+  const workspaceRoot18 = resolve8(options.workspaceRoot);
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  await assertValid2("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
+  const repositoryBases = /* @__PURE__ */ new Map();
+  for (const target of options.request.repositories) {
+    const registered = config.repositories[target.name];
+    if (!registered) throw new Error(`Unknown repository: ${target.name}`);
+    const path2 = assertInside(workspaceRoot18, join6(workspaceRoot18, registered.path));
+    await access3(path2);
+    await assertCleanRepository(path2);
+    repositoryBases.set(target.name, { path: path2, commit: await git(path2, ["rev-parse", registered.default_branch]) });
+    await Promise.all([
+      access3(join6(workspaceRoot18, "AGENTS.md")),
+      access3(join6(workspaceRoot18, "agents", `${registered.agent}.md`)),
+      access3(join6(workspaceRoot18, "agents", "repository-worker.md")),
+      access3(join6(workspaceRoot18, "agents", "verifier.md"))
+    ]);
+  }
+  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const now = options.now ?? /* @__PURE__ */ new Date();
+  const { workId, runId } = await generateIds(runtimeRoot, options.request.request, now, options.discriminator);
+  const createdAt = now.toISOString();
+  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request.request)}-${runId.slice(-8)}`;
+  const runRoot = assertInside(runtimeRoot, join6(runtimeRoot, "runs", runId));
+  const taskBriefPath = join6(runtimeRoot, "tasks", `${runId}.json`);
+  const manifestPath = join6(runRoot, "manifest.json");
+  const taskBrief = normalizeContractFirstRequest(options.request, workId, runId, createdAt);
+  await assertValid2("task-brief", taskBrief);
+  for (const target of taskBrief.repositories) {
+    if (target.test_expectation?.policy !== "existing-coverage") continue;
+    const base = repositoryBases.get(target.name);
+    for (const path2 of target.test_expectation.paths) {
+      try {
+        await access3(assertInside(base.path, join6(base.path, path2)));
+      } catch {
+        throw new Error(`Existing-coverage test path does not exist in ${target.name}: ${path2}`);
+      }
+    }
+  }
+  await writeJsonAtomic(taskBriefPath, taskBrief);
+  const runtimeRepositories = [];
+  const preparedRepositories = [];
+  for (const target of taskBrief.repositories) {
+    const base = repositoryBases.get(target.name);
+    const registered = config.repositories[target.name];
+    const worktree = assertInside(runtimeRoot, join6(runtimeRoot, "worktrees", runId, target.name));
+    const workerInputPath = join6(runRoot, `${target.name}-worker-input.json`);
+    const verifierInputPath = join6(runRoot, `${target.name}-verifier-input.json`);
+    const workerResultPath = join6(runtimeRoot, "results", `${runId}-${target.name}-worker.json`);
+    const verifierResultPath = join6(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
+    const blockedBy = target.depends_on ?? [];
+    const ready = blockedBy.length === 0;
+    const instructionPaths = [
+      join6(workspaceRoot18, "AGENTS.md"),
+      join6(workspaceRoot18, "agents", `${registered.agent}.md`),
+      join6(workspaceRoot18, "agents", "repository-worker.md")
+    ];
+    try {
+      await access3(join6(base.path, "AGENTS.md"));
+      instructionPaths.push(join6(worktree, "AGENTS.md"));
+    } catch {
+    }
+    const sharedContract = {
+      repository: taskBrief.shared_contract.repository,
+      paths: taskBrief.shared_contract.paths,
+      worktree: assertInside(runtimeRoot, join6(runtimeRoot, "worktrees", runId, taskBrief.shared_contract.repository)),
+      approval: target.name === taskBrief.shared_contract.repository ? "must-pass-independent-verification" : "pending"
+    };
+    await writeJsonAtomic(workerInputPath, {
+      contract_version: 1,
+      role: "repository-worker",
+      task_brief: taskBriefPath,
+      repository: target.name,
+      worktree,
+      branch,
+      base_commit: base.commit,
+      ready,
+      blocked_by: blockedBy,
+      shared_contract: sharedContract,
+      allowed_scope: target.scope,
+      implementation_scope: target.implementation_scope,
+      test_expectation: target.test_expectation,
+      instruction_paths: instructionPaths,
+      result_contract: join6(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+      result_path: workerResultPath
+    });
+    await writeJsonAtomic(verifierInputPath, {
+      contract_version: 1,
+      role: "verifier",
+      read_only: true,
+      task_brief: taskBriefPath,
+      repository: target.name,
+      worktree,
+      branch,
+      base_commit: base.commit,
+      worker_result: workerResultPath,
+      acceptance_criteria: target.acceptance_criteria,
+      test_expectation: target.test_expectation,
+      verification_commands: target.verification_commands,
+      shared_contract: sharedContract,
+      instruction_paths: [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", "verifier.md")],
+      result_contract: join6(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+      result_path: verifierResultPath
+    });
+    runtimeRepositories.push({
+      name: target.name,
+      base_path: relative3(workspaceRoot18, base.path),
+      base_commit: base.commit,
+      branch,
+      worktree,
+      worker_input: workerInputPath,
+      verifier_input: verifierInputPath,
+      status: ready ? "prepared" : "waiting",
+      depends_on: blockedBy,
+      repair_attempts: 0
+    });
+    preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
+  }
+  const manifest2 = {
+    contract_version: 1,
+    work_id: workId,
+    run_id: runId,
+    status: "preparing",
+    created_at: createdAt,
+    updated_at: createdAt,
+    task_brief: taskBriefPath,
+    repositories: runtimeRepositories,
+    evidence: [taskBriefPath, manifestPath, ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
+    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
+    execution_events: [],
+    lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : []
+  };
+  await assertValid2("runtime-manifest", manifest2);
+  await writeJsonAtomic(manifestPath, manifest2);
+  if (config.activity.provider !== "none") {
+    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot18, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
+    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+      const primary2 = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
+      return { workId, runId, branch: primary2.branch, worktree: primary2.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary2.workerInput, verifierInput: primary2.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
+    }
+  }
+  try {
+    await ensurePrivateDirectory(join6(runtimeRoot, "worktrees", runId));
+    for (const repository of runtimeRepositories) {
+      const base = repositoryBases.get(repository.name);
+      await git(base.path, ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
+    }
+    manifest2.status = "prepared";
+    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    await assertValid2("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+  } catch (error) {
+    manifest2.status = "blocked";
+    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    manifest2.evidence.push(`Preparation failed: ${error.message}`);
+    await writeJsonAtomic(manifestPath, manifest2);
+    throw error;
+  }
+  const primary = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
+  return { workId, runId, branch: primary.branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
+}
+async function preparePlanTask(options) {
+  const requestErrors = await validateContract("run-task-request", options.request);
+  if (requestErrors.length > 0) {
+    throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  }
+  const workspaceRoot18 = resolve8(options.workspaceRoot);
+  const planDirectory3 = assertInside(join6(workspaceRoot18, "context", "plans"), resolve8(workspaceRoot18, options.request.source.reference));
+  const validation = await validatePlanDirectory(planDirectory3);
+  if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
+    throw new Error(`Plan validation failed: ${validation.errors.join("; ") || "plan metadata is unavailable"}`);
+  }
+  const index = validation.index;
+  const breakdown = validation.work_breakdown;
+  if (index.status !== "approved") throw new Error(`Plan ${index.plan_id} is draft; explicit approval is required`);
+  if (options.request.source.plan_version !== index.plan_version) {
+    throw new Error(`Plan version is stale: requested ${options.request.source.plan_version}, current ${index.plan_version}`);
+  }
+  if (options.request.source.approved_digest !== index.approved_digest) {
+    throw new Error("Plan approval digest is stale or does not match the approved plan material");
+  }
+  const selected = new Set(options.request.work_ids);
+  const positions = new Map(options.request.work_ids.map((workId2, position) => [workId2, position]));
+  const items = new Map(breakdown.items.map((item) => [item.work_id, item]));
+  const evidence = /* @__PURE__ */ new Map();
+  for (const entry of options.request.dependency_evidence) {
+    if (evidence.has(entry.work_id)) throw new Error(`Duplicate dependency evidence for ${entry.work_id}`);
+    evidence.set(entry.work_id, entry.evidence.trim());
+  }
+  for (const workId2 of options.request.work_ids) {
+    const item = items.get(workId2);
+    if (!item) throw new Error(`Unknown plan work ID: ${workId2}`);
+    for (const dependency of item.depends_on) {
+      if (selected.has(dependency)) {
+        if (positions.get(dependency) >= positions.get(workId2)) throw new Error(`${workId2} must be selected after dependency ${dependency}`);
+      } else if (!evidence.get(dependency)) {
+        throw new Error(`${workId2} is dependency-blocked by ${dependency}; confirmed completion evidence is required`);
+      }
+    }
+  }
+  for (const workId2 of evidence.keys()) {
+    if (!items.has(workId2)) throw new Error(`Dependency evidence references unknown plan work ID: ${workId2}`);
+    if (selected.has(workId2)) throw new Error(`Dependency evidence must not pre-complete selected work ID: ${workId2}`);
+  }
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  await assertValid2("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
+  const requestedRepositories = new Set(options.request.repositories.map((repository) => repository.name));
+  const requestedByName = new Map(options.request.repositories.map((repository) => [repository.name, repository]));
+  const repositoryDependsOn = (name, dependency, seen = /* @__PURE__ */ new Set()) => {
+    if (name === dependency) return true;
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return (requestedByName.get(name)?.depends_on ?? []).some((candidate) => repositoryDependsOn(candidate, dependency, seen));
+  };
+  for (const workId2 of options.request.work_ids) {
+    const item = items.get(workId2);
+    const repository = item.area;
+    if (!config.repositories[repository]) throw new Error(`Plan work ${workId2} area is not a registered repository: ${repository}`);
+    if (!requestedRepositories.has(repository)) throw new Error(`Plan work ${workId2} requires repository ${repository}`);
+    for (const dependency of item.depends_on.filter((candidate) => selected.has(candidate))) {
+      const dependencyRepository = items.get(dependency).area;
+      if (!repositoryDependsOn(repository, dependencyRepository)) {
+        throw new Error(`Repository ${repository} must depend on ${dependencyRepository} for selected plan dependency ${dependency}`);
+      }
+    }
+  }
+  for (const repository of requestedRepositories) {
+    if (![...selected].some((workId2) => items.get(workId2).area === repository)) {
+      throw new Error(`Repository ${repository} is not affected by the selected plan work`);
+    }
+  }
+  const repositoryBases = /* @__PURE__ */ new Map();
+  for (const target of options.request.repositories) {
+    const registered = config.repositories[target.name];
+    if (!registered) throw new Error(`Unknown repository: ${target.name}`);
+    const path2 = assertInside(workspaceRoot18, join6(workspaceRoot18, registered.path));
+    await access3(path2);
+    await assertCleanRepository(path2);
+    repositoryBases.set(target.name, { path: path2, commit: await git(path2, ["rev-parse", registered.default_branch]) });
+    await Promise.all([
+      access3(join6(workspaceRoot18, "AGENTS.md")),
+      access3(join6(workspaceRoot18, "agents", `${registered.agent}.md`)),
+      access3(join6(workspaceRoot18, "agents", "repository-worker.md")),
+      access3(join6(workspaceRoot18, "agents", "verifier.md"))
+    ]);
+  }
+  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const now = options.now ?? /* @__PURE__ */ new Date();
+  const runId = generateRunId(options.request.request, now, options.discriminator ?? randomBytes2(4).toString("hex"));
+  const workId = options.request.work_ids[0];
+  const createdAt = now.toISOString();
+  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request.request)}-${runId.slice(-8)}`;
+  const runRoot = assertInside(runtimeRoot, join6(runtimeRoot, "runs", runId));
+  const taskBriefPath = join6(runtimeRoot, "tasks", `${runId}.json`);
+  const manifestPath = join6(runRoot, "manifest.json");
+  const taskBrief = normalizePlanRequest(options.request, runId, createdAt);
+  await assertValid2("task-brief", taskBrief);
+  for (const target of taskBrief.repositories) {
+    if (target.test_expectation?.policy !== "existing-coverage") continue;
+    const base = repositoryBases.get(target.name);
+    for (const path2 of target.test_expectation.paths) {
+      try {
+        await access3(assertInside(base.path, join6(base.path, path2)));
+      } catch {
+        throw new Error(`Existing-coverage test path does not exist in ${target.name}: ${path2}`);
+      }
+    }
+  }
+  await writeJsonAtomic(taskBriefPath, taskBrief);
+  const runtimeRepositories = [];
+  const preparedRepositories = [];
+  for (const target of taskBrief.repositories) {
+    const base = repositoryBases.get(target.name);
+    const registered = config.repositories[target.name];
+    const worktree = assertInside(runtimeRoot, join6(runtimeRoot, "worktrees", runId, target.name));
+    const workerInputPath = join6(runRoot, `${target.name}-worker-input.json`);
+    const verifierInputPath = join6(runRoot, `${target.name}-verifier-input.json`);
+    const workerResultPath = join6(runtimeRoot, "results", `${runId}-${target.name}-worker.json`);
+    const verifierResultPath = join6(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
+    const blockedBy = target.depends_on ?? [];
+    const ready = blockedBy.length === 0;
+    const instructionPaths = [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", `${registered.agent}.md`), join6(workspaceRoot18, "agents", "repository-worker.md")];
+    try {
+      await access3(join6(base.path, "AGENTS.md"));
+      instructionPaths.push(join6(worktree, "AGENTS.md"));
+    } catch {
+    }
+    await writeJsonAtomic(workerInputPath, {
+      contract_version: 1,
+      role: "repository-worker",
+      task_brief: taskBriefPath,
+      repository: target.name,
+      worktree,
+      branch,
+      base_commit: base.commit,
+      ready,
+      blocked_by: blockedBy,
+      allowed_scope: target.scope,
+      implementation_scope: target.implementation_scope,
+      test_expectation: target.test_expectation,
+      instruction_paths: instructionPaths,
+      result_contract: join6(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+      result_path: workerResultPath
+    });
+    await writeJsonAtomic(verifierInputPath, {
+      contract_version: 1,
+      role: "verifier",
+      read_only: true,
+      task_brief: taskBriefPath,
+      repository: target.name,
+      worktree,
+      branch,
+      base_commit: base.commit,
+      worker_result: workerResultPath,
+      acceptance_criteria: target.acceptance_criteria,
+      test_expectation: target.test_expectation,
+      verification_commands: target.verification_commands,
+      instruction_paths: [join6(workspaceRoot18, "AGENTS.md"), join6(workspaceRoot18, "agents", "verifier.md")],
+      result_contract: join6(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+      result_path: verifierResultPath
+    });
+    runtimeRepositories.push({ name: target.name, base_path: relative3(workspaceRoot18, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
+    preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
+  }
+  const manifest2 = {
+    contract_version: 1,
+    work_id: workId,
+    run_id: runId,
+    status: "preparing",
+    created_at: createdAt,
+    updated_at: createdAt,
+    task_brief: taskBriefPath,
+    repositories: runtimeRepositories,
+    plan_work_items: options.request.work_ids.map((selectedWorkId) => ({ work_id: selectedWorkId, repository: items.get(selectedWorkId).area, depends_on: items.get(selectedWorkId).depends_on, outcome: "pending" })),
+    evidence: [taskBriefPath, manifestPath, ...options.request.dependency_evidence.map((entry) => `${entry.work_id}: ${entry.evidence}`), ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
+    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
+    execution_events: [],
+    lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : []
+  };
+  await assertValid2("runtime-manifest", manifest2);
+  await writeJsonAtomic(manifestPath, manifest2);
+  if (config.activity.provider !== "none") {
+    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot18, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
+    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+      const primary2 = preparedRepositories[0];
+      return { workId, runId, branch, worktree: primary2.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary2.workerInput, verifierInput: primary2.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
+    }
+  }
+  try {
+    await ensurePrivateDirectory(join6(runtimeRoot, "worktrees", runId));
+    for (const repository of runtimeRepositories) {
+      await git(repositoryBases.get(repository.name).path, ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
+    }
+    manifest2.status = "prepared";
+    manifest2.updated_at = now.toISOString();
+    await assertValid2("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+  } catch (error) {
+    manifest2.status = "blocked";
+    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+    manifest2.evidence.push(`Preparation failed: ${error.message}`);
+    await writeJsonAtomic(manifestPath, manifest2);
+    throw error;
+  }
+  const primary = preparedRepositories[0];
+  return { workId, runId, branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
+}
+async function resumePlanlessTask(options) {
+  const workspaceRoot18 = resolve8(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
+  const manifestPath = assertInside(runtimeRoot, join6(runtimeRoot, "runs", options.runId, "manifest.json"));
+  const manifest2 = JSON.parse(await readFile6(manifestPath, "utf8"));
+  await assertValid2("runtime-manifest", manifest2);
+  if (manifest2.run_id !== options.runId || manifest2.status !== "preparing") throw new Error(`Run ${options.runId} is not awaiting preparation`);
+  const lifecycle = manifest2.lifecycle_events.find((event) => event.event === "task.starting");
+  if (!lifecycle || lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+    throw new Error(`task.starting lifecycle is ${lifecycle?.status ?? "missing"}; complete required or manual actions before resuming`);
+  }
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  await assertValid2("workspace", config);
+  const basePaths = /* @__PURE__ */ new Map();
+  for (const repository of manifest2.repositories) {
+    const registered = config.repositories[repository.name];
+    if (!registered) throw new Error(`Unknown repository: ${repository.name}`);
+    const repositoryPath = assertInside(workspaceRoot18, join6(workspaceRoot18, repository.base_path));
+    await assertCleanRepository(repositoryPath);
+    const currentBase = await git(repositoryPath, ["rev-parse", registered.default_branch]);
+    if (currentBase !== repository.base_commit) throw new Error(`Repository base changed during activity preflight for ${repository.name}; prepare a fresh run`);
+    basePaths.set(repository.name, repositoryPath);
+  }
+  try {
+    await ensurePrivateDirectory(join6(runtimeRoot, "worktrees", options.runId));
+    for (const repository of manifest2.repositories) {
+      await git(basePaths.get(repository.name), ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
+    }
+    manifest2.status = "prepared";
+    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    await assertValid2("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+  } catch (error) {
+    manifest2.status = "blocked";
+    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    manifest2.evidence.push(`Preparation failed: ${error.message}`);
+    await writeJsonAtomic(manifestPath, manifest2);
+    throw error;
+  }
+  const brief = JSON.parse(await readFile6(manifest2.task_brief, "utf8"));
+  const primary = manifest2.repositories.find((repository) => repository.name === brief.shared_contract?.repository) ?? manifest2.repositories[0];
+  const repositories = manifest2.repositories.map((repository) => ({
+    name: repository.name,
+    branch: repository.branch,
+    worktree: repository.worktree,
+    workerInput: repository.worker_input,
+    verifierInput: repository.verifier_input,
+    ready: (repository.depends_on?.length ?? 0) === 0,
+    blockedBy: repository.depends_on ?? []
+  }));
+  return {
+    workId: manifest2.work_id,
+    runId: manifest2.run_id,
+    branch: primary.branch,
+    worktree: primary.worktree,
+    taskBrief: manifest2.task_brief,
+    manifest: manifestPath,
+    workerInput: primary.worker_input,
+    verifierInput: primary.verifier_input,
+    repositories,
+    preparationStatus: "prepared"
+  };
+}
+var import_yaml5;
+var init_run_task = __esm({
+  "scripts/lib/run-task.ts"() {
+    "use strict";
+    import_yaml5 = __toESM(require_dist(), 1);
+    init_git();
+    init_ids();
+    init_io();
+    init_validation();
+    init_activity_lifecycle();
+    init_plans();
+  }
+});
+
+// scripts/run-task.ts
+var run_task_exports = {};
+import { dirname as dirname6, resolve as resolve9 } from "node:path";
+import { readFile as readFile7 } from "node:fs/promises";
+import { parseArgs as parseArgs3 } from "node:util";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
+var testPolicies, activityCapabilities, workspaceRoot3, values3, prepared;
+var init_run_task2 = __esm({
+  async "scripts/run-task.ts"() {
+    "use strict";
+    init_run_task();
+    testPolicies = ["required", "existing-coverage", "verifier-only", "not-required"];
+    activityCapabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
+    workspaceRoot3 = resolve9(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve9(dirname6(fileURLToPath4(import.meta.url)), ".."));
+    ({ values: values3 } = parseArgs3({
+      options: {
+        request: { type: "string" },
+        repository: { type: "string" },
+        acceptance: { type: "string", multiple: true, default: [] },
+        scope: { type: "string", multiple: true, default: [] },
+        "test-scope": { type: "string", multiple: true, default: [] },
+        "test-policy": { type: "string" },
+        "test-rationale": { type: "string" },
+        verify: { type: "string", multiple: true, default: [] },
+        available: { type: "string", multiple: true, default: [] },
+        "resume-run": { type: "string" },
+        "request-file": { type: "string" }
+      }
+    }));
+    if (values3["resume-run"]) {
+      console.log(JSON.stringify(await resumePlanlessTask({ workspaceRoot: workspaceRoot3, runId: values3["resume-run"] }), null, 2));
+      process.exit(0);
+    }
+    if (values3.available.some((capability) => !activityCapabilities.includes(capability))) {
+      throw new Error(`Unknown activity capability; expected one of: ${activityCapabilities.join(", ")}`);
+    }
+    if (values3["request-file"]) {
+      const request3 = JSON.parse(await readFile7(resolve9(values3["request-file"]), "utf8"));
+      const prepared2 = "source" in request3 && request3.source?.kind === "plan" ? await preparePlanTask({ workspaceRoot: workspaceRoot3, request: request3, availableCapabilities: values3.available }) : await prepareContractFirstTask({ workspaceRoot: workspaceRoot3, request: request3, availableCapabilities: values3.available });
+      console.log(JSON.stringify(prepared2, null, 2));
+      process.exit(0);
+    }
+    if (!values3.request || !values3.repository || values3["test-policy"] && !testPolicies.includes(values3["test-policy"])) {
+      throw new Error("Usage: run-task --request <text> --repository <name> --acceptance <criterion> --scope <path> [...] | run-task --request-file <json>");
+    }
+    prepared = await preparePlanlessTask({
+      workspaceRoot: workspaceRoot3,
+      request: values3.request,
+      repository: values3.repository,
+      acceptanceCriteria: values3.acceptance,
+      scope: values3.scope,
+      testScope: values3["test-scope"],
+      ...values3["test-policy"] ? { testPolicy: values3["test-policy"] } : {},
+      ...values3["test-rationale"] ? { testRationale: values3["test-rationale"] } : {},
+      verificationCommands: values3.verify,
+      availableCapabilities: values3.available
+    });
+    console.log(JSON.stringify(prepared, null, 2));
+    if (prepared.preparationStatus === "prepared") console.warn("Warning: exclusive ownership is guaranteed only when a configured starting action confirmed it.");
+    else console.warn(`Worktree not created: activity preflight is ${prepared.preparationStatus}. Complete the recorded actions, then rerun with --resume-run ${prepared.runId}.`);
+  }
+});
+
+// scripts/lib/record-result.ts
+import { chmod as chmod2, readFile as readFile8 } from "node:fs/promises";
+import { join as join7, resolve as resolve10 } from "node:path";
+function assertIdentifier(value2, label, pattern) {
+  if (!pattern.test(value2)) throw new Error(`Invalid ${label}: ${value2}`);
+}
+async function readJson2(path2) {
+  return JSON.parse(await readFile8(path2, "utf8"));
+}
+async function assertValid3(name, value2) {
+  const errors2 = await validateContract(name, value2);
+  if (errors2.length > 0) {
+    throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  }
+}
+function assertEqual(actual, expected, label) {
+  if (actual !== expected) throw new Error(`${label} mismatch: expected ${String(expected)}, received ${String(actual)}`);
+}
+function inAllowedScope(path2, scopes) {
+  return scopes.some((scope) => {
+    const normalized = scope.replace(/\/$/, "");
+    return path2 === normalized || path2.startsWith(`${normalized}/`);
+  });
+}
+function sameMembers(left, right) {
+  return [...left].sort().join("\n") === [...right].sort().join("\n");
+}
+function sameTestExpectation(left, right) {
+  return left.policy === right.policy && left.rationale === right.rationale && sameMembers(left.paths, right.paths);
+}
+function findRepository(manifest2, name) {
+  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
+  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
+  return repository;
+}
+function eventKey(runId, repository, stage, attempt) {
+  const suffix = attempt === 0 ? "" : `:attempt-${attempt}`;
+  return `${runId}:execution:${repository}:${stage}${suffix}`;
+}
+function appendEvent(manifest2, stage, repository, from, to, occurredAt, inferred, attempt, resultPath) {
+  const event = {
+    stage,
+    repository,
+    from_status: from,
+    to_status: to,
+    inferred,
+    attempt,
+    idempotency_key: eventKey(manifest2.run_id, repository, stage, attempt),
+    occurred_at: occurredAt
+  };
+  if (resultPath) event.result_path = resultPath;
+  manifest2.execution_events ??= [];
+  manifest2.execution_events.push(event);
+  const runtimeRepository = findRepository(manifest2, repository);
+  runtimeRepository.status = to;
+  refreshManifestStatus(manifest2);
+  manifest2.updated_at = occurredAt;
+  if (resultPath && !manifest2.evidence.includes(resultPath)) manifest2.evidence.push(resultPath);
+}
+function refreshManifestStatus(manifest2) {
+  const statuses = manifest2.repositories.map((repository) => repository.status ?? manifest2.status);
+  if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
+  else if (statuses.includes("failed")) manifest2.status = "failed";
+  else if (statuses.includes("blocked")) manifest2.status = "blocked";
+  else if (statuses.includes("verifying")) manifest2.status = "verifying";
+  else if (statuses.includes("running")) manifest2.status = "running";
+  else manifest2.status = "prepared";
+}
+async function unlockDependents(runtimeRoot, manifest2) {
+  for (const candidate of manifest2.repositories) {
+    if (candidate.status !== "waiting") continue;
+    const dependencies = candidate.depends_on ?? [];
+    if (!dependencies.every((name) => findRepository(manifest2, name).status === "passed")) continue;
+    for (const [path2, worker] of [[candidate.worker_input, true], [candidate.verifier_input, false]]) {
+      const inputPath2 = assertInside(runtimeRoot, path2);
+      const input = await readJson2(inputPath2);
+      if (worker) {
+        input.ready = true;
+        input.blocked_by = [];
+      }
+      if (input.shared_contract && typeof input.shared_contract === "object") {
+        input.shared_contract.approval = "verified";
+      }
+      await writeJsonAtomic(inputPath2, input);
+    }
+    candidate.status = "prepared";
+  }
+  refreshManifestStatus(manifest2);
+}
+async function assertWorktree(repository) {
+  await assertCleanRepository(repository.worktree);
+  const branch = await git(repository.worktree, ["branch", "--show-current"]);
+  assertEqual(branch, repository.branch, "worktree branch");
+  return git(repository.worktree, ["rev-parse", "HEAD"]);
+}
+function assertTaskIdentity(manifest2, brief, repository) {
+  assertEqual(brief.work_id, manifest2.work_id, "task brief work_id");
+  assertEqual(brief.run_id, manifest2.run_id, "task brief run_id");
+  if (!brief.repositories.some((candidate) => candidate.name === repository)) {
+    throw new Error(`Task brief does not include repository ${repository}`);
+  }
+}
+async function validateWorkerResult(manifest2, repository, input, testExpectation) {
+  const result3 = await readJson2(input.result_path);
+  await assertValid3("worker-result", result3);
+  assertEqual(result3.work_id, manifest2.work_id, "worker result work_id");
+  assertEqual(result3.run_id, manifest2.run_id, "worker result run_id");
+  assertEqual(result3.repository, repository.name, "worker result repository");
+  assertEqual(result3.branch, repository.branch, "worker result branch");
+  assertEqual(resolve10(result3.worktree), resolve10(repository.worktree), "worker result worktree");
+  if (result3.status === "completed") {
+    if (result3.commits.length === 0) throw new Error("Completed worker result must record at least one commit");
+    if (result3.checks.some((check) => check.status === "failed")) throw new Error("Completed worker result cannot contain a failed check");
+    const head = await assertWorktree(repository);
+    assertEqual(result3.commits.at(-1), head, "worker result final commit");
+    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${head}`])).split("\n").filter(Boolean);
+    if (commits.join("\n") !== result3.commits.join("\n")) throw new Error("worker result commits does not match the ordered base-to-head Git history");
+    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
+    if (!sameMembers(changedFiles, result3.changed_files)) throw new Error("worker result changed_files does not match the base-to-head Git diff");
+    const outsideScope = changedFiles.filter((path2) => !inAllowedScope(path2, input.allowed_scope));
+    if (outsideScope.length > 0) throw new Error(`Worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
+    if (testExpectation.policy === "required" && !changedFiles.some((path2) => inAllowedScope(path2, testExpectation.paths))) {
+      throw new Error(`Required test policy needs a changed file in test scope: ${testExpectation.paths.join(", ")}`);
+    }
+    return "verifying";
+  }
+  return result3.status;
+}
+async function validateVerifierResult(manifest2, repository, input) {
+  const worker = await readJson2(input.worker_result);
+  await assertValid3("worker-result", worker);
+  const result3 = await readJson2(input.result_path);
+  await assertValid3("verifier-result", result3);
+  assertEqual(result3.work_id, manifest2.work_id, "verifier result work_id");
+  assertEqual(result3.run_id, manifest2.run_id, "verifier result run_id");
+  assertEqual(result3.repository, repository.name, "verifier result repository");
+  if (!sameMembers(result3.acceptance.map((item) => item.criterion), input.acceptance_criteria)) {
+    throw new Error("verifier result acceptance criteria do not match verifier input");
+  }
+  const acceptanceStatuses = result3.acceptance.map((item) => item.status);
+  if (result3.status === "pass" && acceptanceStatuses.some((status2) => status2 !== "passed")) {
+    throw new Error("Passing verifier result requires every acceptance criterion to pass");
+  }
+  if (result3.status === "fail" && !acceptanceStatuses.includes("failed")) {
+    throw new Error("Failing verifier result must identify a failed acceptance criterion");
+  }
+  if (result3.status === "blocked" && !acceptanceStatuses.includes("blocked")) {
+    throw new Error("Blocked verifier result must identify a blocked acceptance criterion");
+  }
+  const head = await assertWorktree(repository);
+  assertEqual(worker.commits.at(-1), head, "verified worker commit");
+  return result3.status === "pass" ? "passed" : result3.status === "fail" ? "failed" : "blocked";
+}
+async function recordResult(options) {
+  assertIdentifier(options.runId, "run ID", /^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$/);
+  assertIdentifier(options.repository, "repository", /^[a-z][a-z0-9-]*$/);
+  const workspaceRoot18 = resolve10(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
+  await ensurePrivateDirectory(runtimeRoot);
+  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
+  const lockPath = `${manifestPath}.lock`;
+  return withExclusiveFile(lockPath, async () => {
+    const manifest2 = await readJson2(manifestPath);
+    await assertValid3("runtime-manifest", manifest2);
+    assertEqual(manifest2.run_id, options.runId, "manifest run_id");
+    const repository = findRepository(manifest2, options.repository);
+    const attempt = repository.repair_attempts ?? 0;
+    assertInside(runtimeRoot, repository.worktree);
+    const taskBriefPath = assertInside(runtimeRoot, manifest2.task_brief);
+    const workerInputPath = assertInside(runtimeRoot, repository.worker_input);
+    const verifierInputPath = assertInside(runtimeRoot, repository.verifier_input);
+    const brief = await readJson2(taskBriefPath);
+    await assertValid3("task-brief", brief);
+    assertTaskIdentity(manifest2, brief, options.repository);
+    const target = brief.repositories.find((candidate) => candidate.name === options.repository);
+    const targetScope = target.scope ?? brief.scope;
+    const implementationScope = target.implementation_scope ?? brief.implementation_scope ?? targetScope;
+    const testExpectation = target.test_expectation ?? brief.test_expectation ?? {
+      policy: "verifier-only",
+      paths: [],
+      rationale: "Legacy task brief has no authorized test edit scope; verifier evidence is required."
+    };
+    const workerInput = await readJson2(workerInputPath);
+    const verifierInput = await readJson2(verifierInputPath);
+    assertInside(runtimeRoot, workerInput.result_path);
+    assertInside(runtimeRoot, verifierInput.worker_result);
+    assertInside(runtimeRoot, verifierInput.result_path);
+    assertEqual(workerInput.repository, repository.name, "worker input repository");
+    assertEqual(resolve10(workerInput.task_brief), resolve10(taskBriefPath), "worker input task_brief");
+    assertEqual(resolve10(workerInput.worktree), resolve10(repository.worktree), "worker input worktree");
+    assertEqual(workerInput.branch, repository.branch, "worker input branch");
+    assertEqual(workerInput.base_commit, repository.base_commit, "worker input base_commit");
+    if (!sameMembers(workerInput.allowed_scope, targetScope)) throw new Error("worker input allowed_scope does not match task brief repository scope");
+    if ((target.implementation_scope || brief.implementation_scope) && (!workerInput.implementation_scope || !sameMembers(workerInput.implementation_scope, implementationScope))) {
+      throw new Error("worker input implementation_scope does not match task brief");
+    }
+    if ((target.test_expectation || brief.test_expectation) && (!workerInput.test_expectation || !sameTestExpectation(workerInput.test_expectation, testExpectation))) {
+      throw new Error("worker input test_expectation does not match task brief");
+    }
+    assertEqual(verifierInput.repository, repository.name, "verifier input repository");
+    assertEqual(resolve10(verifierInput.task_brief), resolve10(taskBriefPath), "verifier input task_brief");
+    assertEqual(resolve10(verifierInput.worktree), resolve10(repository.worktree), "verifier input worktree");
+    assertEqual(verifierInput.branch, repository.branch, "verifier input branch");
+    assertEqual(verifierInput.base_commit, repository.base_commit, "verifier input base_commit");
+    assertEqual(resolve10(verifierInput.worker_result), resolve10(workerInput.result_path), "verifier input worker_result");
+    if (!sameMembers(verifierInput.acceptance_criteria, target.acceptance_criteria ?? brief.acceptance_criteria)) throw new Error("verifier input acceptance_criteria does not match task brief repository criteria");
+    if ((target.test_expectation || brief.test_expectation) && (!verifierInput.test_expectation || !sameTestExpectation(verifierInput.test_expectation, testExpectation))) {
+      throw new Error("verifier input test_expectation does not match task brief");
+    }
+    const existing = manifest2.execution_events?.find((event) => event.idempotency_key === eventKey(options.runId, options.repository, options.stage, attempt));
+    const occurredAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    const currentStatus = repository.status ?? manifest2.status;
+    if (options.stage === "worker-started") {
+      if (existing) return manifest2;
+      if (currentStatus === "waiting") throw new Error(`worker-started for ${repository.name} is blocked by: ${(repository.depends_on ?? []).join(", ")}`);
+      if (currentStatus !== "prepared") throw new Error(`worker-started requires prepared repository status, received ${currentStatus}`);
+      const head = await assertWorktree(repository);
+      assertEqual(head, repository.base_commit, "worker start HEAD");
+      appendEvent(manifest2, options.stage, options.repository, "prepared", "running", occurredAt, false, attempt);
+    } else if (options.stage === "worker-result") {
+      const target2 = await validateWorkerResult(manifest2, repository, workerInput, testExpectation);
+      await chmod2(workerInput.result_path, 384);
+      if (existing) return manifest2;
+      if (currentStatus === "prepared") {
+        appendEvent(manifest2, "worker-started", options.repository, "prepared", "running", occurredAt, true, attempt);
+      }
+      if ((repository.status ?? manifest2.status) !== "running") throw new Error(`worker-result requires running repository status, received ${repository.status ?? manifest2.status}`);
+      appendEvent(manifest2, options.stage, options.repository, "running", target2, occurredAt, false, attempt, workerInput.result_path);
+    } else {
+      const target2 = await validateVerifierResult(manifest2, repository, verifierInput);
+      await chmod2(verifierInput.result_path, 384);
+      if (existing) return manifest2;
+      if (currentStatus !== "verifying") throw new Error(`verifier-result requires verifying repository status, received ${currentStatus}`);
+      appendEvent(manifest2, options.stage, options.repository, "verifying", target2, occurredAt, false, attempt, verifierInput.result_path);
+      for (const item of manifest2.plan_work_items ?? []) {
+        if (item.repository === options.repository) item.outcome = target2;
+      }
+      if (target2 === "passed") await unlockDependents(runtimeRoot, manifest2);
+    }
+    await assertValid3("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+    return manifest2;
+  });
+}
+var init_record_result = __esm({
+  "scripts/lib/record-result.ts"() {
+    "use strict";
+    init_git();
+    init_io();
+    init_validation();
+  }
+});
+
+// scripts/record-result.ts
+var record_result_exports = {};
+import { dirname as dirname7, resolve as resolve11 } from "node:path";
+import { parseArgs as parseArgs4 } from "node:util";
+import { fileURLToPath as fileURLToPath5 } from "node:url";
+var stages, workspaceRoot4, values4, manifest;
+var init_record_result2 = __esm({
+  async "scripts/record-result.ts"() {
+    "use strict";
+    init_record_result();
+    stages = ["worker-started", "worker-result", "verifier-result"];
+    workspaceRoot4 = resolve11(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve11(dirname7(fileURLToPath5(import.meta.url)), ".."));
+    ({ values: values4 } = parseArgs4({
+      options: {
+        "run-id": { type: "string" },
+        repository: { type: "string" },
+        stage: { type: "string" }
+      }
+    }));
+    if (!values4["run-id"] || !values4.repository || !values4.stage || !stages.includes(values4.stage)) {
+      throw new Error("Usage: record-result --run-id <id> --repository <name> --stage <worker-started|worker-result|verifier-result>");
+    }
+    manifest = await recordResult({
+      workspaceRoot: workspaceRoot4,
+      runId: values4["run-id"],
+      repository: values4.repository,
+      stage: values4.stage
+    });
+    console.log(JSON.stringify({ runId: manifest.run_id, status: manifest.status, executionEvents: manifest.execution_events?.length ?? 0 }, null, 2));
+  }
+});
+
+// scripts/lib/review-lifecycle.ts
+import { readFile as readFile9 } from "node:fs/promises";
+import { join as join8, resolve as resolve12 } from "node:path";
+async function readJson3(path2) {
+  return JSON.parse(await readFile9(path2, "utf8"));
+}
+async function assertValid4(name, value2) {
+  const errors2 = await validateContract(name, value2);
+  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+}
+function findRepository2(manifest2, name) {
+  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
+  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
+  return repository;
+}
+function addEvidence(manifest2, ...paths2) {
+  for (const path2 of paths2) if (!manifest2.evidence.includes(path2)) manifest2.evidence.push(path2);
+}
+function addExecutionEvent(manifest2, repository, stage, fromStatus, toStatus, attempt, occurredAt, resultPath) {
+  const event = {
+    stage,
+    repository,
+    from_status: fromStatus,
+    to_status: toStatus,
+    inferred: false,
+    attempt,
+    idempotency_key: `${manifest2.run_id}:execution:${repository}:${stage}:attempt-${attempt}`,
+    occurred_at: occurredAt
+  };
+  if (resultPath) event.result_path = resultPath;
+  manifest2.execution_events ??= [];
+  manifest2.execution_events.push(event);
+  const runtimeRepository = findRepository2(manifest2, repository);
+  runtimeRepository.status = toStatus;
+  const statuses = manifest2.repositories.map((candidate) => candidate.status ?? manifest2.status);
+  if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
+  else if (statuses.includes("failed")) manifest2.status = "failed";
+  else if (statuses.includes("blocked")) manifest2.status = "blocked";
+  else if (statuses.includes("verifying")) manifest2.status = "verifying";
+  else if (statuses.includes("running")) manifest2.status = "running";
+  else manifest2.status = "prepared";
+  manifest2.updated_at = occurredAt;
+}
+async function loadWorkspace(workspaceRoot18) {
+  const config = (0, import_yaml6.parse)(await readFile9(join8(workspaceRoot18, "workspace.yaml"), "utf8"));
+  await assertValid4("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
+  return config;
+}
+function sameMembers2(left, right) {
+  return left.slice().sort().join("\n") === right.slice().sort().join("\n");
+}
+async function assertCurrentWorker(manifest2, repository, workerInput) {
+  const worker = await readJson3(workerInput.result_path);
+  await assertValid4("worker-result", worker);
+  if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
+    throw new Error("Worker result identity does not match the active run");
+  }
+  if (worker.status !== "completed") throw new Error(`Review lifecycle requires a completed worker, received ${worker.status}`);
+  if (worker.branch !== repository.branch || resolve12(worker.worktree) !== resolve12(repository.worktree)) {
+    throw new Error("Worker result branch or worktree does not match the runtime manifest");
+  }
+  await assertCleanRepository(repository.worktree);
+  const branch = await git(repository.worktree, ["branch", "--show-current"]);
+  if (branch !== repository.branch) throw new Error(`Worktree branch mismatch: expected ${repository.branch}, received ${branch}`);
+  const head = await git(repository.worktree, ["rev-parse", "HEAD"]);
+  if (worker.commits.at(-1) !== head) throw new Error("Current worktree HEAD does not match the recorded worker result");
+  const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${head}`])).split("\n").filter(Boolean);
+  const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
+  if (commits.join("\n") !== worker.commits.join("\n") || !sameMembers2(changedFiles, worker.changed_files)) {
+    throw new Error("Worker result no longer matches the current base-to-head Git history");
+  }
+  return worker;
+}
+function assertVerifier(manifest2, repository, brief, verifier) {
+  if (verifier.work_id !== manifest2.work_id || verifier.run_id !== manifest2.run_id || verifier.repository !== repository.name) {
+    throw new Error("Verifier result identity does not match the active run");
+  }
+  const acceptanceCriteria = brief.repositories.find((candidate) => candidate.name === repository.name)?.acceptance_criteria ?? brief.acceptance_criteria;
+  if (!sameMembers2(verifier.acceptance.map((item) => item.criterion), acceptanceCriteria)) {
+    throw new Error("Verifier acceptance criteria do not match the task brief");
+  }
+  if (verifier.status === "pass" && verifier.acceptance.some((item) => item.status !== "passed")) {
+    throw new Error("Passing verifier result no longer has complete passing acceptance evidence");
+  }
+  if (verifier.status === "fail" && !verifier.acceptance.some((item) => item.status === "failed")) {
+    throw new Error("Failing verifier result no longer identifies failed acceptance evidence");
+  }
+}
+function repairFindings(verifier) {
+  const findings = verifier.findings.map((finding) => `[${finding.severity}] ${finding.description} Evidence: ${finding.evidence}`);
+  for (const acceptance of verifier.acceptance) {
+    if (acceptance.status !== "passed") findings.push(`Acceptance ${acceptance.status}: ${acceptance.criterion}. Evidence: ${acceptance.evidence}`);
+  }
+  return findings;
+}
+async function prepareRepair(options) {
+  const workspaceRoot18 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
+  await ensurePrivateDirectory(runtimeRoot);
+  const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
+  const lockPath = `${manifestPath}.lock`;
+  const config = await loadWorkspace(workspaceRoot18);
+  return withExclusiveFile(lockPath, async () => {
+    const manifest2 = await readJson3(manifestPath);
+    await assertValid4("runtime-manifest", manifest2);
+    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
+    const repository = findRepository2(manifest2, options.repository);
+    const attempt = repository.repair_attempts ?? 0;
+    const maximumAttempts = config.workflow.maximum_repair_attempts;
+    const lastEvent = manifest2.execution_events?.filter((event) => event.repository === repository.name).at(-1);
+    const repositoryStatus = repository.status ?? manifest2.status;
+    if (repositoryStatus === "running" && lastEvent?.stage === "repair-prepared" && lastEvent.attempt === attempt) {
+      return { status: "prepared", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: repository.worker_input, verifier_input: repository.verifier_input };
+    }
+    if (repositoryStatus === "blocked" && lastEvent?.stage === "repair-exhausted") {
+      return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
+    }
+    if (repositoryStatus !== "failed") throw new Error(`Repair preparation requires failed status, received ${repositoryStatus}`);
+    const occurredAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    if (attempt >= maximumAttempts) {
+      addExecutionEvent(manifest2, repository.name, "repair-exhausted", "failed", "blocked", attempt, occurredAt);
+      manifest2.warnings.push(`Maximum repair attempts exhausted for ${repository.name}: ${maximumAttempts}`);
+      await assertValid4("runtime-manifest", manifest2);
+      await writeJsonAtomic(manifestPath, manifest2);
+      return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
+    }
+    const taskBriefPath = assertInside(runtimeRoot, manifest2.task_brief);
+    const taskBrief = await readJson3(taskBriefPath);
+    await assertValid4("task-brief", taskBrief);
+    const taskTarget = taskBrief.repositories.find((candidate) => candidate.name === repository.name);
+    if (!taskTarget) throw new Error(`Task brief does not include repository ${repository.name}`);
+    const priorWorkerInput = await readJson3(assertInside(runtimeRoot, repository.worker_input));
+    const priorVerifierInput = await readJson3(assertInside(runtimeRoot, repository.verifier_input));
+    assertInside(runtimeRoot, priorWorkerInput.result_path);
+    assertInside(runtimeRoot, priorVerifierInput.result_path);
+    await assertCurrentWorker(manifest2, repository, priorWorkerInput);
+    const verifier = await readJson3(priorVerifierInput.result_path);
+    await assertValid4("verifier-result", verifier);
+    assertVerifier(manifest2, repository, taskBrief, verifier);
+    if (verifier.status !== "fail") throw new Error(`Repair preparation requires a failing verifier result, received ${verifier.status}`);
+    const findings = repairFindings(verifier);
+    if (findings.length === 0) throw new Error("Failing verifier result contains no actionable findings");
+    const nextAttempt = attempt + 1;
+    const runRoot = join8(runtimeRoot, "runs", options.runId);
+    const workerInputPath = join8(runRoot, `${repository.name}-repair-${nextAttempt}-worker-input.json`);
+    const verifierInputPath = join8(runRoot, `${repository.name}-repair-${nextAttempt}-verifier-input.json`);
+    const workerResultPath = join8(runtimeRoot, "results", `${options.runId}-${repository.name}-repair-${nextAttempt}-worker.json`);
+    const verifierResultPath = join8(runtimeRoot, "results", `${options.runId}-${repository.name}-repair-${nextAttempt}-verifier.json`);
+    const repositoryConfig = config.repositories[repository.name];
+    if (!repositoryConfig) throw new Error(`Workspace has no repository named ${repository.name}`);
+    const instructionPaths = [
+      join8(workspaceRoot18, "AGENTS.md"),
+      join8(workspaceRoot18, "agents", "repository-worker.md"),
+      join8(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`)
+    ];
+    const workerInput = {
+      contract_version: 1,
+      role: "repair-worker",
+      attempt: nextAttempt,
+      task_brief: taskBriefPath,
+      repository: repository.name,
+      worktree: repository.worktree,
+      branch: repository.branch,
+      base_commit: repository.base_commit,
+      allowed_scope: taskTarget.scope ?? taskBrief.scope,
+      implementation_scope: taskTarget.implementation_scope ?? taskBrief.implementation_scope,
+      test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
+      findings,
+      previous_worker_result: priorWorkerInput.result_path,
+      previous_verifier_result: priorVerifierInput.result_path,
+      instruction_paths: instructionPaths,
+      result_contract: join8(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
+      result_path: workerResultPath
+    };
+    const verifierInput = {
+      contract_version: 1,
+      role: "verifier",
+      read_only: true,
+      attempt: nextAttempt,
+      task_brief: taskBriefPath,
+      repository: repository.name,
+      worktree: repository.worktree,
+      branch: repository.branch,
+      base_commit: repository.base_commit,
+      worker_result: workerResultPath,
+      acceptance_criteria: taskTarget.acceptance_criteria ?? taskBrief.acceptance_criteria,
+      test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
+      verification_commands: taskTarget.verification_commands ?? taskBrief.verification_commands,
+      instruction_paths: [join8(workspaceRoot18, "AGENTS.md"), join8(workspaceRoot18, "agents", "verifier.md")],
+      result_contract: join8(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
+      result_path: verifierResultPath
+    };
+    await writeJsonAtomic(workerInputPath, workerInput);
+    await writeJsonAtomic(verifierInputPath, verifierInput);
+    repository.worker_input = workerInputPath;
+    repository.verifier_input = verifierInputPath;
+    repository.repair_attempts = nextAttempt;
+    addEvidence(manifest2, workerInputPath, verifierInputPath);
+    addExecutionEvent(manifest2, repository.name, "repair-prepared", "failed", "running", nextAttempt, occurredAt);
+    await assertValid4("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+    return { status: "prepared", attempt: nextAttempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: workerInputPath, verifier_input: verifierInputPath };
+  });
+}
+function reviewBody(brief, verifier) {
+  const acceptance = brief.acceptance_criteria.map((criterion) => `- [x] ${criterion}`).join("\n");
+  const checks = verifier.checks.length > 0 ? verifier.checks.map((check) => `- ${check}`).join("\n") : "- No repository command was configured; verifier evidence is recorded.";
+  return `## Summary
+
+${brief.requested_outcome}
+
+## Acceptance
+
+${acceptance}
+
+## Verification
+
+${checks}
+
+Prepared from run \`${brief.run_id}\`. No push or pull request was performed.
+`;
+}
+async function prepareReview(options) {
+  const workspaceRoot18 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
+  await ensurePrivateDirectory(runtimeRoot);
+  const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
+  const lockPath = `${manifestPath}.lock`;
+  const config = await loadWorkspace(workspaceRoot18);
+  return withExclusiveFile(lockPath, async () => {
+    const manifest2 = await readJson3(manifestPath);
+    await assertValid4("runtime-manifest", manifest2);
+    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
+    const repository = findRepository2(manifest2, options.repository);
+    if (manifest2.status !== "passed") throw new Error(`Draft review preparation requires passed status, received ${manifest2.status}`);
+    const taskBrief = await readJson3(assertInside(runtimeRoot, manifest2.task_brief));
+    await assertValid4("task-brief", taskBrief);
+    const workerInput = await readJson3(assertInside(runtimeRoot, repository.worker_input));
+    const verifierInput = await readJson3(assertInside(runtimeRoot, repository.verifier_input));
+    assertInside(runtimeRoot, workerInput.result_path);
+    assertInside(runtimeRoot, verifierInput.result_path);
+    const worker = await assertCurrentWorker(manifest2, repository, workerInput);
+    const verifier = await readJson3(verifierInput.result_path);
+    await assertValid4("verifier-result", verifier);
+    assertVerifier(manifest2, repository, taskBrief, verifier);
+    if (verifier.status !== "pass") throw new Error(`Draft review preparation requires a passing verifier result, received ${verifier.status}`);
+    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
+    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
+    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
+    if (commits.length === 0 || changedFiles.length === 0) throw new Error("Draft review preparation requires committed changes");
+    if (repository.review_preparation) {
+      const existing = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
+      await assertValid4("review-preparation", existing);
+      if (existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
+        return existing;
+      }
+    }
+    const remotes = (await git(repository.worktree, ["remote"])).split("\n").filter(Boolean);
+    const remote = remotes.includes("origin") ? "origin" : null;
+    const blockers2 = remote ? [] : ["Repository has no origin remote; configure one before pushing or opening a draft pull request."];
+    const preparedAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
+    const preparationPath = join8(runtimeRoot, "runs", options.runId, `${repository.name}-draft-pr.json`);
+    const preparation = {
+      contract_version: 1,
+      work_id: manifest2.work_id,
+      run_id: manifest2.run_id,
+      repository: repository.name,
+      status: blockers2.length === 0 ? "ready" : "blocked",
+      remote,
+      base_branch: config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch,
+      head_branch: repository.branch,
+      base_commit: repository.base_commit,
+      head_commit: headCommit,
+      commits,
+      changed_files: changedFiles,
+      title: `${manifest2.work_id}: ${taskBrief.requested_outcome}`,
+      body: reviewBody(taskBrief, verifier),
+      worker_result: workerInput.result_path,
+      verifier_result: verifierInput.result_path,
+      blockers: blockers2,
+      prepared_at: preparedAt
+    };
+    if (!sameMembers2(worker.changed_files, changedFiles)) {
+      throw new Error("Current Git diff does not match the recorded worker result");
+    }
+    await assertValid4("review-preparation", preparation);
+    await writeJsonAtomic(preparationPath, preparation);
+    repository.review_preparation = preparationPath;
+    addEvidence(manifest2, preparationPath);
+    const eventKey2 = `${manifest2.run_id}:execution:${repository.name}:review-prepared:attempt-${repository.repair_attempts ?? 0}`;
+    if (!manifest2.execution_events?.some((event) => event.idempotency_key === eventKey2)) {
+      addExecutionEvent(manifest2, repository.name, "review-prepared", "passed", "passed", repository.repair_attempts ?? 0, preparedAt, preparationPath);
+    }
+    await assertValid4("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+    return preparation;
+  });
+}
+function safeReviewEvidence(value2, label) {
+  const trimmed = value2.trim();
+  if (!trimmed || /[\r\n]/.test(trimmed)) throw new Error(`${label} must be a non-empty single line`);
+  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(trimmed)) throw new Error(`${label} appears to contain credentials`);
+  return trimmed;
+}
+async function recordReviewPublication(options) {
+  const workspaceRoot18 = resolve12(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
+  const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
+  return withExclusiveFile(`${manifestPath}.lock`, async () => {
+    const manifest2 = await readJson3(manifestPath);
+    await assertValid4("runtime-manifest", manifest2);
+    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
+    const repository = findRepository2(manifest2, options.repository);
+    if (!repository.review_preparation) throw new Error("Prepare the draft pull-request handoff before recording publication");
+    const preparation = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
+    await assertValid4("review-preparation", preparation);
+    if (preparation.status !== "ready") throw new Error(`Draft pull-request handoff is ${preparation.status}`);
+    await assertCleanRepository(repository.worktree);
+    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
+    if (headCommit !== preparation.head_commit) throw new Error("Worktree HEAD changed after review preparation");
+    const evidence = safeReviewEvidence(options.evidence, "Publication evidence");
+    const pullRequest = options.status === "published" ? safeReviewEvidence(options.pullRequest ?? "", "Pull-request reference") : null;
+    if (options.status === "failed" && options.pullRequest) throw new Error("Failed publication cannot record a pull-request reference");
+    const recordPath2 = join8(runtimeRoot, "runs", options.runId, `${repository.name}-review-publication.json`);
+    const record = {
+      contract_version: 1,
+      work_id: manifest2.work_id,
+      run_id: manifest2.run_id,
+      repository: repository.name,
+      status: options.status,
+      tool: options.tool,
+      pull_request: pullRequest,
+      evidence,
+      head_commit: headCommit,
+      idempotency_key: `${manifest2.run_id}:review-publication:${repository.name}`,
+      recorded_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString()
+    };
+    await assertValid4("review-publication-record", record);
+    if (repository.review_publication) {
+      const existing = await readJson3(assertInside(runtimeRoot, repository.review_publication));
+      await assertValid4("review-publication-record", existing);
+      const comparable = (value2) => JSON.stringify({ ...value2, recorded_at: null });
+      if (comparable(existing) !== comparable(record)) throw new Error("Review publication was already recorded with different confirmed evidence");
+      return existing;
+    }
+    await writeJsonAtomic(recordPath2, record);
+    repository.review_publication = recordPath2;
+    addEvidence(manifest2, recordPath2);
+    manifest2.updated_at = record.recorded_at;
+    await assertValid4("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+    return record;
+  });
+}
+var import_yaml6;
+var init_review_lifecycle = __esm({
+  "scripts/lib/review-lifecycle.ts"() {
+    "use strict";
+    import_yaml6 = __toESM(require_dist(), 1);
+    init_git();
+    init_io();
+    init_validation();
+  }
+});
+
+// scripts/prepare-repair.ts
+var prepare_repair_exports = {};
+import { dirname as dirname8, resolve as resolve13 } from "node:path";
+import { parseArgs as parseArgs5 } from "node:util";
+import { fileURLToPath as fileURLToPath6 } from "node:url";
+var values5, workspaceRoot5;
+var init_prepare_repair = __esm({
+  async "scripts/prepare-repair.ts"() {
+    "use strict";
+    init_review_lifecycle();
+    ({ values: values5 } = parseArgs5({
+      options: {
+        "run-id": { type: "string" },
+        repository: { type: "string" }
+      }
+    }));
+    if (!values5["run-id"] || !values5.repository) throw new Error("Usage: prepare-repair --run-id <id> --repository <name>");
+    workspaceRoot5 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname8(fileURLToPath6(import.meta.url)), ".."));
+    console.log(JSON.stringify(await prepareRepair({ workspaceRoot: workspaceRoot5, runId: values5["run-id"], repository: values5.repository }), null, 2));
+  }
+});
+
+// scripts/prepare-review.ts
+var prepare_review_exports = {};
+import { dirname as dirname9, resolve as resolve14 } from "node:path";
+import { parseArgs as parseArgs6 } from "node:util";
+import { fileURLToPath as fileURLToPath7 } from "node:url";
+var values6, workspaceRoot6;
+var init_prepare_review = __esm({
+  async "scripts/prepare-review.ts"() {
+    "use strict";
+    init_review_lifecycle();
+    ({ values: values6 } = parseArgs6({
+      options: {
+        "run-id": { type: "string" },
+        repository: { type: "string" }
+      }
+    }));
+    if (!values6["run-id"] || !values6.repository) throw new Error("Usage: prepare-review --run-id <id> --repository <name>");
+    workspaceRoot6 = resolve14(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve14(dirname9(fileURLToPath7(import.meta.url)), ".."));
+    console.log(JSON.stringify(await prepareReview({ workspaceRoot: workspaceRoot6, runId: values6["run-id"], repository: values6.repository }), null, 2));
+  }
+});
+
+// scripts/record-review-publication.ts
+var record_review_publication_exports = {};
+import { dirname as dirname10, resolve as resolve15 } from "node:path";
+import { parseArgs as parseArgs7 } from "node:util";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
+var workspaceRoot7, values7;
+var init_record_review_publication = __esm({
+  async "scripts/record-review-publication.ts"() {
+    "use strict";
+    init_review_lifecycle();
+    workspaceRoot7 = resolve15(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve15(dirname10(fileURLToPath8(import.meta.url)), ".."));
+    ({ values: values7 } = parseArgs7({ options: {
+      "run-id": { type: "string" },
+      repository: { type: "string" },
+      status: { type: "string" },
+      tool: { type: "string" },
+      "pull-request": { type: "string" },
+      evidence: { type: "string" }
+    } }));
+    if (!values7["run-id"] || !values7.repository || !values7.evidence || !["published", "failed"].includes(values7.status ?? "") || !["gh", "glab", "manual"].includes(values7.tool ?? "")) {
+      throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
+    }
+    console.log(JSON.stringify(await recordReviewPublication({
+      workspaceRoot: workspaceRoot7,
+      runId: values7["run-id"],
+      repository: values7.repository,
+      status: values7.status,
+      tool: values7.tool,
+      ...values7["pull-request"] ? { pullRequest: values7["pull-request"] } : {},
+      evidence: values7.evidence
+    }), null, 2));
+  }
+});
+
+// scripts/lib/finish-work.ts
+import { access as access4, lstat as lstat5, mkdir as mkdir4, readFile as readFile10, readdir as readdir2, realpath as realpath3 } from "node:fs/promises";
+import { basename as basename2, join as join9, relative as relative4, resolve as resolve16 } from "node:path";
+async function readJson4(path2) {
+  return JSON.parse(await readFile10(path2, "utf8"));
+}
+async function assertValid5(name, value2) {
+  const errors2 = await validateContract(name, value2);
+  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+}
+function findRepository3(manifest2, name) {
+  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
+  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
+  return repository;
+}
+function compactTimestamp(date) {
+  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+function safeToken(value2, label) {
+  const normalized = value2.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  if (!normalized || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) throw new Error(`${label} must contain letters or numbers`);
+  return normalized;
+}
+function taskSlug(brief) {
+  return safeToken(brief.requested_outcome, "Task outcome").slice(0, 48).replace(/-$/, "") || "work";
+}
+function list(items, empty) {
+  return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${empty}`;
+}
+function contributionDocument(manifest2, repository, brief, record) {
+  const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
+  const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
+  return `# ${manifest2.work_id}: ${brief.requested_outcome}
+
+- Run: \`${manifest2.run_id}\`
+- Task source: direct request
+- Plan: none
+- Author: \`${record.author}\`
+
+## Outcome
+
+${outcome}
+
+## Affected repositories
+
+- \`${repository.name}\` on branch \`${repository.branch}\`.${changed}
+
+## Pull requests and commits
+
+${list(record.pull_requests.map((item) => `Pull request: ${item}`), "No pull-request reference was recorded.")}
+${list(record.commits.map((item) => `Commit: \`${item}\``), `No commits beyond base \`${repository.base_commit}\`.`)}
+- Recorded head: \`${record.head_commit}\`
+
+## Verification
+
+${list(record.verification, "No verifier evidence was available.")}
+
+## Decisions and deviations
+
+- ${record.outcome === "merged" ? "No closeout deviation was recorded." : "The run was deliberately abandoned instead of merged."}
+
+## Remaining risks and follow-up
+
+- ${record.reason ?? "No closeout-specific follow-up was recorded."}
+
+## Candidate durable learnings
+
+- Review this contribution during the next context synchronization; no canonical-context change is asserted automatically.
+`;
+}
+function contributionDocumentErrors(path2, content, runId) {
+  const errors2 = [];
+  if (!/^\d{8}T\d{6}Z-[a-z0-9]+(?:-[a-z0-9]+)*-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/.test(basename2(path2))) {
+    errors2.push("contribution filename must be <UTC timestamp>-<author>-<slug>.md");
+  }
+  for (const heading of contributionHeadings) if (!content.includes(`${heading}
+`)) errors2.push(`contribution is missing ${heading}`);
+  if (runId && !content.includes(`- Run: \`${runId}\``)) errors2.push("contribution does not reference the expected run");
+  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(content)) {
+    errors2.push("contribution appears to contain a credential or private key");
+  }
+  return errors2;
+}
+async function loadWorkspace2(workspaceRoot18) {
+  const config = (0, import_yaml7.parse)(await readFile10(join9(workspaceRoot18, "workspace.yaml"), "utf8"));
+  await assertValid5("workspace", config);
+  const errors2 = workspaceSemanticErrors(config);
+  if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
+  return config;
+}
+async function optionalVerifier(runtimeRoot, manifest2, repository) {
+  try {
+    const input = await readJson4(assertInside(runtimeRoot, repository.verifier_input));
+    const resultPath = assertInside(runtimeRoot, input.result_path);
+    const result3 = await readJson4(resultPath);
+    await assertValid5("verifier-result", result3);
+    if (result3.work_id !== manifest2.work_id || result3.run_id !== manifest2.run_id || result3.repository !== repository.name) {
+      throw new Error("Verifier result identity does not match the closeout run");
+    }
+    return result3;
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+async function assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles) {
+  const input = await readJson4(assertInside(runtimeRoot, repository.worker_input));
+  const worker = await readJson4(assertInside(runtimeRoot, input.result_path));
+  await assertValid5("worker-result", worker);
+  if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
+    throw new Error("Worker result identity does not match the closeout run");
+  }
+  if (worker.status !== "completed" || worker.branch !== repository.branch || resolve16(worker.worktree) !== resolve16(repository.worktree)) {
+    throw new Error("Closeout requires the completed worker recorded for this branch and worktree");
+  }
+  if (worker.commits.at(-1) !== headCommit || worker.commits.join("\n") !== commits.join("\n")) {
+    throw new Error("Worktree commits changed after the recorded worker result");
+  }
+  if (worker.changed_files.slice().sort().join("\n") !== changedFiles.slice().sort().join("\n")) {
+    throw new Error("Worktree changed-file set differs from the recorded worker result");
+  }
+}
+async function findExistingContribution(root, runId, repository) {
+  try {
+    for (const entry of await readdir2(root, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
+      const path2 = join9(root, entry.name);
+      const content = await readFile10(path2, "utf8");
+      if (content.includes(`- Run: \`${runId}\``) && content.includes(`- \`${repository}\` on branch`)) return path2;
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  return null;
+}
+async function ensureContributionRoot(workspaceRoot18, path2) {
+  await mkdir4(path2, { recursive: true, mode: 493 });
+  const info = await lstat5(path2);
+  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
+  assertInside(await realpath3(workspaceRoot18), await realpath3(path2));
+}
+function addExecutionEvent2(manifest2, repository, stage, from, to, occurredAt, resultPath) {
+  const key = `${manifest2.run_id}:execution:${repository.name}:${stage}`;
+  if (manifest2.execution_events?.some((event) => event.idempotency_key === key)) return;
+  manifest2.execution_events ??= [];
+  manifest2.execution_events.push({
+    stage,
+    repository: repository.name,
+    from_status: from,
+    to_status: to,
+    inferred: false,
+    attempt: repository.repair_attempts ?? 0,
+    result_path: resultPath,
+    idempotency_key: key,
+    occurred_at: occurredAt
+  });
+  repository.status = to;
+  const statuses = manifest2.repositories.map((candidate) => candidate.status ?? manifest2.status);
+  if (statuses.every((status2) => status2 === "closed")) manifest2.status = "closed";
+  else if (statuses.some((status2) => status2 === "closing" || status2 === "closed")) manifest2.status = "closing";
+  else if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
+  else if (statuses.includes("failed")) manifest2.status = "failed";
+  else if (statuses.includes("blocked")) manifest2.status = "blocked";
+  manifest2.updated_at = occurredAt;
+}
+function addLifecycleEvent(manifest2, outcome, occurredAt) {
+  const event = outcome === "merged" ? "task.completed" : "task.cancelled";
+  const key = `${manifest2.run_id}:lifecycle:${event}:activity-none`;
+  if (manifest2.lifecycle_events.some((item) => item.idempotency_key === key)) return;
+  manifest2.lifecycle_events.push({ event, status: "skipped", idempotency_key: key, occurred_at: occurredAt });
+}
+function assertCloseoutLifecycleReady(manifest2, config, outcome) {
+  if (config.activity.provider === "none") return;
+  const event = outcome === "merged" ? "task.completed" : "task.cancelled";
+  const lifecycle = manifest2.lifecycle_events.find((item) => item.event === event);
+  if (!lifecycle) {
+    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/cc.mjs prepare-lifecycle --run-id ${manifest2.run_id} --event ${event}`);
+  }
+  if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+    throw new Error(`Configured activity hook ${event} is ${lifecycle.status}; complete required or manual actions before closeout`);
+  }
+}
+async function isAncestor(repository, ancestor, descendant) {
+  try {
+    await git(repository, ["merge-base", "--is-ancestor", ancestor, descendant]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+async function verifiedDefaultRefs(repository, branch) {
+  const refs = [];
+  for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
+    try {
+      await git(repository, ["rev-parse", "--verify", ref]);
+      refs.push(ref);
+    } catch {
+    }
+  }
+  return refs;
+}
+async function cleanupBlockers(workspaceRoot18, config, repository, record) {
+  const blockers2 = [];
+  const contributionPath = assertInside(workspaceRoot18, join9(workspaceRoot18, record.contribution));
+  try {
+    await git(workspaceRoot18, ["ls-files", "--error-unmatch", "--", record.contribution]);
+    if (await git(workspaceRoot18, ["status", "--porcelain=v1", "--", record.contribution])) {
+      blockers2.push("Contribution has uncommitted wrapper changes; commit it through the configured wrapper workflow before cleanup.");
+    }
+  } catch {
+    blockers2.push("Contribution is not durably tracked by wrapper Git; commit it before cleanup.");
+  }
+  try {
+    await access4(contributionPath);
+  } catch {
+    blockers2.push("Contribution file is missing; runtime cleanup would discard the only closeout record.");
+  }
+  const baseRepository = assertInside(workspaceRoot18, join9(workspaceRoot18, repository.base_path));
+  try {
+    if (await git(baseRepository, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Base repository is dirty.");
+    if (await git(repository.worktree, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Run worktree has uncommitted changes.");
+    if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) blockers2.push("Run worktree is on an unexpected branch.");
+    if (await git(repository.worktree, ["rev-parse", "HEAD"]) !== record.head_commit) blockers2.push("Run worktree HEAD changed after closeout preparation.");
+  } catch (error) {
+    blockers2.push(`Run worktree is unavailable: ${error.message}`);
+    return blockers2;
+  }
+  const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+  const defaultRefs = await verifiedDefaultRefs(baseRepository, defaultBranch);
+  const headOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.head_commit, ref)))).some(Boolean);
+  if (record.outcome === "merged") {
+    let mergeEvidence = headOnDefault;
+    if (!mergeEvidence && record.merge_commit) {
+      const mergeOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.merge_commit, ref)))).some(Boolean);
+      mergeEvidence = mergeOnDefault && await isAncestor(baseRepository, record.base_commit, record.merge_commit);
+    }
+    if (!mergeEvidence) blockers2.push("Merged outcome is not reachable from the configured default branch; fetch the merge or provide a verified merge commit.");
+  } else if (record.head_commit !== record.base_commit && !headOnDefault) {
+    const remoteRefs = await git(baseRepository, ["for-each-ref", "--format=%(refname)", "--contains", record.head_commit, "refs/remotes/"]);
+    if (!remoteRefs) blockers2.push("Abandoned branch contains commits that are neither merged nor preserved by a remote ref.");
+  }
+  return blockers2;
+}
+async function closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, occurredAt) {
+  const blockers2 = await cleanupBlockers(workspaceRoot18, config, repository, record);
+  if (blockers2.length > 0) {
+    const blocked = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: blockers2, updated_at: occurredAt };
+    await assertValid5("closeout-record", blocked);
+    await writeJsonAtomic(recordPath2, blocked);
+    return blocked;
+  }
+  const baseRepository = assertInside(workspaceRoot18, join9(workspaceRoot18, repository.base_path));
+  await git(baseRepository, ["worktree", "remove", repository.worktree]);
+  const closed = {
+    ...record,
+    status: "closed",
+    cleanup: { requested: true, worktree_removed: true, branch_preserved: true, runtime_evidence_preserved: true },
+    blockers: [],
+    updated_at: occurredAt
+  };
+  await assertValid5("closeout-record", closed);
+  await writeJsonAtomic(recordPath2, closed);
+  addExecutionEvent2(manifest2, repository, "closeout-cleaned", "closing", "closed", occurredAt, recordPath2);
+  await assertValid5("runtime-manifest", manifest2);
+  await writeJsonAtomic(manifestPath, manifest2);
+  return closed;
+}
+async function finishWork(options) {
+  const workspaceRoot18 = resolve16(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, ".runtime"));
+  await ensurePrivateDirectory(runtimeRoot);
+  const manifestPath = assertInside(runtimeRoot, join9(runtimeRoot, "runs", options.runId, "manifest.json"));
+  const lockPath = `${manifestPath}.lock`;
+  const author = safeToken(options.author, "Author");
+  const invocationTime = options.now ?? /* @__PURE__ */ new Date();
+  if (options.mergeCommit && !/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("--merge-commit must be a full lowercase Git object ID");
+  if (options.pullRequests?.some((reference) => !reference.trim() || /[\r\n]/.test(reference))) throw new Error("Pull-request references must be non-empty single lines");
+  const config = await loadWorkspace2(workspaceRoot18);
+  const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
+  if (await realpath3(wrapperTopLevel) !== await realpath3(workspaceRoot18)) throw new Error("Workspace root must be the wrapper Git root before closeout");
+  return withExclusiveFile(lockPath, async () => {
+    const manifest2 = await readJson4(manifestPath);
+    await assertValid5("runtime-manifest", manifest2);
+    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
+    assertCloseoutLifecycleReady(manifest2, config, options.outcome);
+    const repository = findRepository3(manifest2, options.repository);
+    const recordPath2 = assertInside(runtimeRoot, join9(runtimeRoot, "runs", options.runId, `${repository.name}-closeout.json`));
+    if (repository.closeout_record) {
+      const existing = await readJson4(assertInside(runtimeRoot, repository.closeout_record));
+      await assertValid5("closeout-record", existing);
+      if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
+      if (existing.status === "closed" || !options.cleanup) return existing;
+      return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, existing, config, invocationTime.toISOString());
+    }
+    const repositoryStatus = repository.status ?? manifest2.status;
+    if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
+    if (options.outcome === "merged" && repositoryStatus !== "passed") throw new Error(`Merged closeout requires a passed repository, received ${repositoryStatus}`);
+    if (options.outcome === "abandoned" && !options.reason?.trim()) throw new Error("Deliberate abandonment requires --reason");
+    const brief = await readJson4(assertInside(runtimeRoot, manifest2.task_brief));
+    await assertValid5("task-brief", brief);
+    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
+    if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) throw new Error("Run worktree is on an unexpected branch");
+    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
+    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
+    if (options.outcome === "merged") await assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles);
+    const verifier = await optionalVerifier(runtimeRoot, manifest2, repository);
+    if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
+    const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} \u2014 ${item.evidence}`)] : [];
+    const preparedAt = invocationTime.toISOString();
+    const contributionsRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, "contributions", "general"));
+    await ensureContributionRoot(workspaceRoot18, contributionsRoot);
+    const existingContribution = await findExistingContribution(contributionsRoot, options.runId, repository.name);
+    const contributionPath = existingContribution ?? join9(contributionsRoot, `${compactTimestamp(invocationTime)}-${author}-${taskSlug(brief)}-${repository.name}.md`);
+    const contributionRelative = relative4(workspaceRoot18, contributionPath).replaceAll("\\", "/");
+    const record = {
+      contract_version: 1,
+      work_id: manifest2.work_id,
+      run_id: manifest2.run_id,
+      repository: repository.name,
+      outcome: options.outcome,
+      status: "prepared",
+      author,
+      reason: options.reason?.trim() || null,
+      contribution: contributionRelative,
+      branch: repository.branch,
+      base_commit: repository.base_commit,
+      head_commit: headCommit,
+      merge_commit: options.mergeCommit ?? null,
+      pull_requests: [...new Set(options.pullRequests ?? [])],
+      commits,
+      changed_files: changedFiles,
+      verification,
+      cleanup: { requested: Boolean(options.cleanup), worktree_removed: false, branch_preserved: true, runtime_evidence_preserved: true },
+      blockers: [],
+      prepared_at: preparedAt,
+      updated_at: preparedAt
+    };
+    const document = contributionDocument(manifest2, repository, brief, record);
+    const documentErrors = contributionDocumentErrors(contributionPath, document, options.runId);
+    if (documentErrors.length > 0) throw new Error(`Invalid contribution: ${documentErrors.join("; ")}`);
+    if (existingContribution && await readFile10(existingContribution, "utf8") !== document) {
+      throw new Error("An append-only contribution already exists for this run with different closeout content");
+    }
+    if (!existingContribution) await writeTextExclusive(contributionPath, document);
+    await assertValid5("closeout-record", record);
+    await writeJsonAtomic(recordPath2, record);
+    repository.closeout_record = recordPath2;
+    repository.contribution = contributionRelative;
+    if (!manifest2.evidence.includes(recordPath2)) manifest2.evidence.push(recordPath2);
+    const fromStatus = repositoryStatus;
+    addExecutionEvent2(manifest2, repository, "closeout-prepared", fromStatus, "closing", preparedAt, recordPath2);
+    if (config.activity.provider === "none") addLifecycleEvent(manifest2, options.outcome, preparedAt);
+    await assertValid5("runtime-manifest", manifest2);
+    await writeJsonAtomic(manifestPath, manifest2);
+    if (!options.cleanup) return record;
+    return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
+  });
+}
+var import_yaml7, contributionHeadings;
+var init_finish_work = __esm({
+  "scripts/lib/finish-work.ts"() {
+    "use strict";
+    import_yaml7 = __toESM(require_dist(), 1);
+    init_git();
+    init_io();
+    init_validation();
+    contributionHeadings = [
+      "## Outcome",
+      "## Affected repositories",
+      "## Pull requests and commits",
+      "## Verification",
+      "## Decisions and deviations",
+      "## Remaining risks and follow-up",
+      "## Candidate durable learnings"
+    ];
+  }
+});
+
+// scripts/finish-work.ts
+var finish_work_exports = {};
+import { dirname as dirname11, resolve as resolve17 } from "node:path";
+import { parseArgs as parseArgs8 } from "node:util";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
+var values8, workspaceRoot8, result;
+var init_finish_work2 = __esm({
+  async "scripts/finish-work.ts"() {
+    "use strict";
+    init_finish_work();
+    ({ values: values8 } = parseArgs8({
+      options: {
+        "run-id": { type: "string" },
+        repository: { type: "string" },
+        outcome: { type: "string" },
+        author: { type: "string" },
+        reason: { type: "string" },
+        "merge-commit": { type: "string" },
+        "pull-request": { type: "string", multiple: true },
+        cleanup: { type: "boolean", default: false }
+      }
+    }));
+    if (!values8["run-id"] || !values8.repository || !values8.outcome || !values8.author) {
+      throw new Error("Required: --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug>");
+    }
+    if (values8.outcome !== "merged" && values8.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
+    workspaceRoot8 = resolve17(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve17(dirname11(fileURLToPath9(import.meta.url)), ".."));
+    result = await finishWork({
+      workspaceRoot: workspaceRoot8,
+      runId: values8["run-id"],
+      repository: values8.repository,
+      outcome: values8.outcome,
+      author: values8.author,
+      cleanup: values8.cleanup,
+      ...values8.reason ? { reason: values8.reason } : {},
+      ...values8["merge-commit"] ? { mergeCommit: values8["merge-commit"] } : {},
+      ...values8["pull-request"] ? { pullRequests: values8["pull-request"] } : {}
+    });
+    console.log(JSON.stringify(result, null, 2));
   }
 });
 

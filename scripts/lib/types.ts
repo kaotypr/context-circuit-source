@@ -258,7 +258,7 @@ export interface TaskBrief {
   contract_version: 1;
   work_id: string;
   run_id: string;
-  source: { kind: "direct-request"; reference?: string };
+  source: { kind: "direct-request"; reference?: string } | { kind: "plan"; reference: string };
   requested_outcome: string;
   scope: string[];
   implementation_scope?: string[];
@@ -266,7 +266,9 @@ export interface TaskBrief {
   acceptance_criteria: string[];
   repositories: TaskRepositoryTarget[];
   shared_contract?: SharedContract;
-  plan: { reference: null; approval_state: "not-applicable" };
+  plan:
+    | { reference: null; approval_state: "not-applicable" }
+    | { reference: string; approval_state: "approved"; plan_version: number; approved_digest: string; work_ids: string[] };
   activity: {
     reference: null;
     claim_status: "not-applicable";
@@ -275,7 +277,7 @@ export interface TaskBrief {
   assumptions: string[];
   risks: string[];
   verification_commands: string[];
-  authorization: { kind: "explicit-user-request"; evidence: string };
+  authorization: { kind: "explicit-user-request" | "confirmed-selection"; evidence: string };
   created_at: string;
 }
 
@@ -313,6 +315,23 @@ export interface RunTaskRequest {
   shared_contract: SharedContract;
   repositories: RunTaskRepositoryRequest[];
 }
+
+export interface PlanRunTaskRequest {
+  contract_version: 1;
+  source: {
+    kind: "plan";
+    reference: string;
+    plan_version: number;
+    approved_digest: string;
+  };
+  request: string;
+  work_ids: string[];
+  dependency_evidence: Array<{ work_id: string; evidence: string }>;
+  acceptance_criteria: string[];
+  repositories: RunTaskRepositoryRequest[];
+}
+
+export type StructuredRunTaskRequest = RunTaskRequest | PlanRunTaskRequest;
 
 export type TestExpectationPolicy = "required" | "existing-coverage" | "verifier-only" | "not-required";
 
@@ -426,6 +445,12 @@ export interface RuntimeManifest {
   updated_at: string;
   task_brief: string;
   repositories: RuntimeRepository[];
+  plan_work_items?: Array<{
+    work_id: string;
+    repository: string;
+    depends_on: string[];
+    outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
+  }>;
   evidence: string[];
   warnings: string[];
   execution_events?: ExecutionEvent[];

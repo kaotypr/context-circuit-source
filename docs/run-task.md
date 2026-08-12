@@ -1,7 +1,7 @@
 # Run a task
 
-`run-task` turns an explicit request into scoped, isolated work without requiring
-a plan or activity integration. It prepares artifacts and Git worktrees; it does
+`run-task` turns an explicit direct request or selected approved-plan work into
+scoped, isolated work. It prepares artifacts and Git worktrees; it does
 not launch agents, push branches, open pull requests, merge, or deploy.
 
 ## Prepare one repository
@@ -19,6 +19,48 @@ node .agents/bin/cc.mjs run-task \
 Use `--request-file docs/examples/contract-first-run.json` for contract-first
 multi-repository work. Only inputs marked `ready: true` may start. A dependent
 input remains locked until all dependencies pass independent verification.
+
+## Prepare approved-plan work
+
+Pass a request file whose `source.kind` is `plan`. Its `source.reference` must
+resolve beneath `context/plans/` and include the current `plan_version` and
+`approved_digest`. Select one stable `work_id`, or list a dependency-ordered set:
+
+```json
+{
+  "contract_version": 1,
+  "source": {
+    "kind": "plan",
+    "reference": "context/plans/reset-flow",
+    "plan_version": 1,
+    "approved_digest": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "request": "Implement the approved reset flow",
+  "work_ids": ["RESET-001", "RESET-010"],
+  "dependency_evidence": [],
+  "acceptance_criteria": ["The approved reset flow is implemented and verified."],
+  "repositories": [{
+    "name": "frontend",
+    "depends_on": [],
+    "scope": ["src/App.tsx"],
+    "test_scope": ["src/App.test.tsx"],
+    "test_policy": "required",
+    "verification_commands": ["npm test"],
+    "acceptance_criteria": ["Reset returns the count to zero."]
+  }]
+}
+```
+
+Every dependency outside the selected set requires a `dependency_evidence`
+entry with confirmed completion evidence. The command validates the plan files,
+approval, selected IDs, order, repository mapping, scope, test expectations,
+and acceptance criteria before allocating runtime state or creating worktrees.
+The task brief retains the selected plan IDs and approval evidence. The runtime
+manifest keeps each selected item pending until its repository verifier records
+an outcome, so later or unselected dependencies are never fabricated as passed.
+
+The existing direct-request forms still allocate an `ADHOC-*` work ID and remain
+planless.
 
 Before launching a worker, record its start:
 
@@ -55,4 +97,3 @@ record only a confirmed publication response.
 
 If any step is interrupted, preserve `.runtime/`, branches, and worktrees.
 Never delete, reset, stash, or clean unrecorded work to recover a run.
-

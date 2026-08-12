@@ -2,8 +2,8 @@ import { dirname, resolve } from "node:path";
 import { readFile } from "node:fs/promises";
 import { parseArgs } from "node:util";
 import { fileURLToPath } from "node:url";
-import { prepareContractFirstTask, preparePlanlessTask, resumePlanlessTask } from "./lib/run-task.js";
-import type { ActivityCapability, RunTaskRequest, TestExpectationPolicy } from "./lib/types.js";
+import { prepareContractFirstTask, preparePlanTask, preparePlanlessTask, resumePlanlessTask } from "./lib/run-task.js";
+import type { ActivityCapability, PlanRunTaskRequest, RunTaskRequest, StructuredRunTaskRequest, TestExpectationPolicy } from "./lib/types.js";
 
 const testPolicies: TestExpectationPolicy[] = ["required", "existing-coverage", "verifier-only", "not-required"];
 const activityCapabilities: ActivityCapability[] = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
@@ -35,12 +35,11 @@ if (values.available.some((capability) => !activityCapabilities.includes(capabil
 }
 
 if (values["request-file"]) {
-  const request = JSON.parse(await readFile(resolve(values["request-file"]), "utf8")) as RunTaskRequest;
-  console.log(JSON.stringify(await prepareContractFirstTask({
-    workspaceRoot,
-    request,
-    availableCapabilities: values.available as ActivityCapability[],
-  }), null, 2));
+  const request = JSON.parse(await readFile(resolve(values["request-file"]), "utf8")) as StructuredRunTaskRequest;
+  const prepared = "source" in request && request.source?.kind === "plan"
+    ? await preparePlanTask({ workspaceRoot, request: request as PlanRunTaskRequest, availableCapabilities: values.available as ActivityCapability[] })
+    : await prepareContractFirstTask({ workspaceRoot, request: request as RunTaskRequest, availableCapabilities: values.available as ActivityCapability[] });
+  console.log(JSON.stringify(prepared, null, 2));
   process.exit(0);
 }
 

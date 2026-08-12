@@ -331,6 +331,9 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
       if (existing) return manifest;
       if (currentStatus !== "verifying") throw new Error(`verifier-result requires verifying repository status, received ${currentStatus}`);
       appendEvent(manifest, options.stage, options.repository, "verifying", target, occurredAt, false, attempt, verifierInput.result_path);
+      for (const item of manifest.plan_work_items ?? []) {
+        if (item.repository === options.repository) item.outcome = target;
+      }
       if (target === "passed") await unlockDependents(runtimeRoot, manifest);
     }
 

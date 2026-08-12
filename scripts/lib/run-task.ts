@@ -1,13 +1,15 @@
+import { randomBytes } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { assertCleanRepository, git } from "./git.js";
-import { generateIds, slugify } from "./ids.js";
+import { generateIds, generateRunId, slugify } from "./ids.js";
 import { assertInside, ensurePrivateDirectory, writeJsonAtomic } from "./io.js";
-import type { RunTaskRequest, RuntimeManifest, RuntimeRepository, TaskBrief, TaskRepositoryTarget, TestExpectation, TestExpectationPolicy, WorkspaceConfig } from "./types.js";
+import type { PlanRunTaskRequest, RunTaskRequest, RuntimeManifest, RuntimeRepository, TaskBrief, TaskRepositoryTarget, TestExpectation, TestExpectationPolicy, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 import { prepareActivityLifecycle } from "./activity-lifecycle.js";
 import type { ActivityCapability } from "./types.js";
+import { validatePlanDirectory } from "./plans.js";
 
 export interface PrepareTaskOptions {
   workspaceRoot: string;
@@ -50,6 +52,14 @@ export interface PreparedTaskRepository {
 export interface PrepareContractFirstTaskOptions {
   workspaceRoot: string;
   request: RunTaskRequest;
+  now?: Date;
+  discriminator?: string;
+  availableCapabilities?: ActivityCapability[];
+}
+
+export interface PreparePlanTaskOptions {
+  workspaceRoot: string;
+  request: PlanRunTaskRequest;
   now?: Date;
   discriminator?: string;
   availableCapabilities?: ActivityCapability[];
@@ -148,6 +158,70 @@ function normalizeContractFirstRequest(input: RunTaskRequest, workId: string, ru
     risks: ["No authoritative claim is available; duplicate effort is possible."],
     verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
     authorization: { kind: "explicit-user-request", evidence: "The human explicitly invoked run-task for this direct request." },
+    created_at: createdAt,
+  };
+}
+
+function normalizePlanRequest(input: PlanRunTaskRequest, runId: string, createdAt: string): TaskBrief {
+  const request = input.request.trim();
+  const acceptanceCriteria = input.acceptance_criteria.map((item) => item.trim()).filter(Boolean);
+  if (!request) throw new Error("A plan execution outcome is required");
+  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
+  const names = input.repositories.map((repository) => repository.name);
+  if (new Set(names).size !== names.length) throw new Error("Repository names must be unique");
+  const byName = new Map(input.repositories.map((repository) => [repository.name, repository]));
+  const visiting = new Set<string>();
+  const orders = new Map<string, number>();
+  const orderOf = (name: string): number => {
+    const known = orders.get(name);
+    if (known !== undefined) return known;
+    if (visiting.has(name)) throw new Error(`Repository dependency cycle includes ${name}`);
+    visiting.add(name);
+    const repository = byName.get(name)!;
+    for (const dependency of repository.depends_on) if (!byName.has(dependency)) throw new Error(`${name} has unknown dependency ${dependency}`);
+    const order = repository.depends_on.length === 0 ? 0 : Math.max(...repository.depends_on.map(orderOf)) + 1;
+    visiting.delete(name);
+    orders.set(name, order);
+    return order;
+  };
+  const targets: TaskRepositoryTarget[] = input.repositories.map((repository) => {
+    if (repository.depends_on.includes(repository.name)) throw new Error(`${repository.name} cannot depend on itself`);
+    const implementationScope = normalizeScope(repository.scope, `implementation scope for ${repository.name}`);
+    const testExpectation = repositoryExpectation(repository);
+    const repositoryAcceptance = repository.acceptance_criteria.map((criterion) => criterion.trim()).filter(Boolean);
+    if (repositoryAcceptance.length === 0) throw new Error(`At least one acceptance criterion is required for ${repository.name}`);
+    return {
+      name: repository.name,
+      dependency_order: orderOf(repository.name),
+      depends_on: repository.depends_on,
+      scope: [...new Set([...implementationScope, ...(testExpectation.policy === "required" ? testExpectation.paths : [])])],
+      implementation_scope: implementationScope,
+      test_expectation: testExpectation,
+      verification_commands: repository.verification_commands.map((command) => command.trim()).filter(Boolean),
+      acceptance_criteria: repositoryAcceptance,
+    };
+  }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
+  return {
+    contract_version: 1,
+    work_id: input.work_ids[0]!,
+    run_id: runId,
+    source: { kind: "plan", reference: input.source.reference },
+    requested_outcome: request,
+    scope: [...new Set(targets.flatMap((target) => target.scope!))],
+    acceptance_criteria: acceptanceCriteria,
+    repositories: targets,
+    plan: {
+      reference: input.source.reference,
+      approval_state: "approved",
+      plan_version: input.source.plan_version,
+      approved_digest: input.source.approved_digest,
+      work_ids: input.work_ids,
+    },
+    activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
+    assumptions: ["The selected work IDs and approved plan material are authoritative for this run."],
+    risks: ["No authoritative claim is available; duplicate effort is possible."],
+    verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
+    authorization: { kind: "confirmed-selection", evidence: `The human selected approved plan work: ${input.work_ids.join(", ")}.` },
     created_at: createdAt,
   };
 }
@@ -577,6 +651,184 @@ export async function prepareContractFirstTask(options: PrepareContractFirstTask
   }
   const primary = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract!.repository)!;
   return { workId, runId, branch: primary.branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
+}
+
+export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<PreparedTask> {
+  const requestErrors = await validateContract("run-task-request", options.request);
+  if (requestErrors.length > 0) {
+    throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  }
+  const workspaceRoot = resolve(options.workspaceRoot);
+  const planDirectory = assertInside(join(workspaceRoot, "context", "plans"), resolve(workspaceRoot, options.request.source.reference));
+  const validation = await validatePlanDirectory(planDirectory);
+  if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
+    throw new Error(`Plan validation failed: ${validation.errors.join("; ") || "plan metadata is unavailable"}`);
+  }
+  const index = validation.index;
+  const breakdown = validation.work_breakdown;
+  if (index.status !== "approved") throw new Error(`Plan ${index.plan_id} is draft; explicit approval is required`);
+  if (options.request.source.plan_version !== index.plan_version) {
+    throw new Error(`Plan version is stale: requested ${options.request.source.plan_version}, current ${index.plan_version}`);
+  }
+  if (options.request.source.approved_digest !== index.approved_digest) {
+    throw new Error("Plan approval digest is stale or does not match the approved plan material");
+  }
+  const selected = new Set(options.request.work_ids);
+  const positions = new Map(options.request.work_ids.map((workId, position) => [workId, position]));
+  const items = new Map(breakdown.items.map((item) => [item.work_id, item]));
+  const evidence = new Map<string, string>();
+  for (const entry of options.request.dependency_evidence) {
+    if (evidence.has(entry.work_id)) throw new Error(`Duplicate dependency evidence for ${entry.work_id}`);
+    evidence.set(entry.work_id, entry.evidence.trim());
+  }
+  for (const workId of options.request.work_ids) {
+    const item = items.get(workId);
+    if (!item) throw new Error(`Unknown plan work ID: ${workId}`);
+    for (const dependency of item.depends_on) {
+      if (selected.has(dependency)) {
+        if (positions.get(dependency)! >= positions.get(workId)!) throw new Error(`${workId} must be selected after dependency ${dependency}`);
+      } else if (!evidence.get(dependency)) {
+        throw new Error(`${workId} is dependency-blocked by ${dependency}; confirmed completion evidence is required`);
+      }
+    }
+  }
+  for (const workId of evidence.keys()) {
+    if (!items.has(workId)) throw new Error(`Dependency evidence references unknown plan work ID: ${workId}`);
+    if (selected.has(workId)) throw new Error(`Dependency evidence must not pre-complete selected work ID: ${workId}`);
+  }
+
+  const config = parseYaml(await readFile(join(workspaceRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
+  await assertValid("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
+  const requestedRepositories = new Set(options.request.repositories.map((repository) => repository.name));
+  const requestedByName = new Map(options.request.repositories.map((repository) => [repository.name, repository]));
+  const repositoryDependsOn = (name: string, dependency: string, seen = new Set<string>()): boolean => {
+    if (name === dependency) return true;
+    if (seen.has(name)) return false;
+    seen.add(name);
+    return (requestedByName.get(name)?.depends_on ?? []).some((candidate) => repositoryDependsOn(candidate, dependency, seen));
+  };
+  for (const workId of options.request.work_ids) {
+    const item = items.get(workId)!;
+    const repository = item.area;
+    if (!config.repositories[repository]) throw new Error(`Plan work ${workId} area is not a registered repository: ${repository}`);
+    if (!requestedRepositories.has(repository)) throw new Error(`Plan work ${workId} requires repository ${repository}`);
+    for (const dependency of item.depends_on.filter((candidate) => selected.has(candidate))) {
+      const dependencyRepository = items.get(dependency)!.area;
+      if (!repositoryDependsOn(repository, dependencyRepository)) {
+        throw new Error(`Repository ${repository} must depend on ${dependencyRepository} for selected plan dependency ${dependency}`);
+      }
+    }
+  }
+  for (const repository of requestedRepositories) {
+    if (![...selected].some((workId) => items.get(workId)!.area === repository)) {
+      throw new Error(`Repository ${repository} is not affected by the selected plan work`);
+    }
+  }
+
+  const repositoryBases = new Map<string, { path: string; commit: string }>();
+  for (const target of options.request.repositories) {
+    const registered = config.repositories[target.name];
+    if (!registered) throw new Error(`Unknown repository: ${target.name}`);
+    const path = assertInside(workspaceRoot, join(workspaceRoot, registered.path));
+    await access(path);
+    await assertCleanRepository(path);
+    repositoryBases.set(target.name, { path, commit: await git(path, ["rev-parse", registered.default_branch]) });
+    await Promise.all([
+      access(join(workspaceRoot, "AGENTS.md")),
+      access(join(workspaceRoot, "agents", `${registered.agent}.md`)),
+      access(join(workspaceRoot, "agents", "repository-worker.md")),
+      access(join(workspaceRoot, "agents", "verifier.md")),
+    ]);
+  }
+
+  const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
+  const now = options.now ?? new Date();
+  const runId = generateRunId(options.request.request, now, options.discriminator ?? randomBytes(4).toString("hex"));
+  const workId = options.request.work_ids[0]!;
+  const createdAt = now.toISOString();
+  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request.request)}-${runId.slice(-8)}`;
+  const runRoot = assertInside(runtimeRoot, join(runtimeRoot, "runs", runId));
+  const taskBriefPath = join(runtimeRoot, "tasks", `${runId}.json`);
+  const manifestPath = join(runRoot, "manifest.json");
+  const taskBrief = normalizePlanRequest(options.request, runId, createdAt);
+  await assertValid("task-brief", taskBrief);
+  for (const target of taskBrief.repositories) {
+    if (target.test_expectation?.policy !== "existing-coverage") continue;
+    const base = repositoryBases.get(target.name)!;
+    for (const path of target.test_expectation.paths) {
+      try { await access(assertInside(base.path, join(base.path, path))); }
+      catch { throw new Error(`Existing-coverage test path does not exist in ${target.name}: ${path}`); }
+    }
+  }
+  await writeJsonAtomic(taskBriefPath, taskBrief);
+
+  const runtimeRepositories: RuntimeRepository[] = [];
+  const preparedRepositories: PreparedTaskRepository[] = [];
+  for (const target of taskBrief.repositories) {
+    const base = repositoryBases.get(target.name)!;
+    const registered = config.repositories[target.name]!;
+    const worktree = assertInside(runtimeRoot, join(runtimeRoot, "worktrees", runId, target.name));
+    const workerInputPath = join(runRoot, `${target.name}-worker-input.json`);
+    const verifierInputPath = join(runRoot, `${target.name}-verifier-input.json`);
+    const workerResultPath = join(runtimeRoot, "results", `${runId}-${target.name}-worker.json`);
+    const verifierResultPath = join(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
+    const blockedBy = target.depends_on ?? [];
+    const ready = blockedBy.length === 0;
+    const instructionPaths = [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", `${registered.agent}.md`), join(workspaceRoot, "agents", "repository-worker.md")];
+    try { await access(join(base.path, "AGENTS.md")); instructionPaths.push(join(worktree, "AGENTS.md")); } catch { /* optional */ }
+    await writeJsonAtomic(workerInputPath, {
+      contract_version: 1, role: "repository-worker", task_brief: taskBriefPath, repository: target.name, worktree, branch,
+      base_commit: base.commit, ready, blocked_by: blockedBy, allowed_scope: target.scope, implementation_scope: target.implementation_scope,
+      test_expectation: target.test_expectation, instruction_paths: instructionPaths,
+      result_contract: join(workspaceRoot, ".agents", "contracts", "worker-result.schema.json"), result_path: workerResultPath,
+    });
+    await writeJsonAtomic(verifierInputPath, {
+      contract_version: 1, role: "verifier", read_only: true, task_brief: taskBriefPath, repository: target.name, worktree, branch,
+      base_commit: base.commit, worker_result: workerResultPath, acceptance_criteria: target.acceptance_criteria,
+      test_expectation: target.test_expectation, verification_commands: target.verification_commands,
+      instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")],
+      result_contract: join(workspaceRoot, ".agents", "contracts", "verifier-result.schema.json"), result_path: verifierResultPath,
+    });
+    runtimeRepositories.push({ name: target.name, base_path: relative(workspaceRoot, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
+    preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
+  }
+  const manifest: RuntimeManifest = {
+    contract_version: 1, work_id: workId, run_id: runId, status: "preparing", created_at: createdAt, updated_at: createdAt,
+    task_brief: taskBriefPath, repositories: runtimeRepositories,
+    plan_work_items: options.request.work_ids.map((selectedWorkId) => ({ work_id: selectedWorkId, repository: items.get(selectedWorkId)!.area, depends_on: items.get(selectedWorkId)!.depends_on, outcome: "pending" })),
+    evidence: [taskBriefPath, manifestPath, ...options.request.dependency_evidence.map((entry) => `${entry.work_id}: ${entry.evidence}`), ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
+    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
+    execution_events: [], lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : [],
+  };
+  await assertValid("runtime-manifest", manifest);
+  await writeJsonAtomic(manifestPath, manifest);
+  if (config.activity.provider !== "none") {
+    const lifecycle = await prepareActivityLifecycle({ workspaceRoot, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
+    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+      const primary = preparedRepositories[0]!;
+      return { workId, runId, branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
+    }
+  }
+  try {
+    await ensurePrivateDirectory(join(runtimeRoot, "worktrees", runId));
+    for (const repository of runtimeRepositories) {
+      await git(repositoryBases.get(repository.name)!.path, ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
+    }
+    manifest.status = "prepared";
+    manifest.updated_at = now.toISOString();
+    await assertValid("runtime-manifest", manifest);
+    await writeJsonAtomic(manifestPath, manifest);
+  } catch (error) {
+    manifest.status = "blocked";
+    manifest.updated_at = new Date().toISOString();
+    manifest.evidence.push(`Preparation failed: ${(error as Error).message}`);
+    await writeJsonAtomic(manifestPath, manifest);
+    throw error;
+  }
+  const primary = preparedRepositories[0]!;
+  return { workId, runId, branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
 }
 
 export async function resumePlanlessTask(options: ResumeTaskOptions): Promise<PreparedTask> {
