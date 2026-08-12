@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
-import { configureWorkspace } from "../scripts/lib/configure-workspace.js";
+import { configureWorkspace, interruptedConfigurationArtifacts } from "../scripts/lib/configure-workspace.js";
 import { git } from "../scripts/lib/git.js";
 import type { WorkspaceBootstrapRequest } from "../scripts/lib/types.js";
 import { requiredWorkspaceDocuments } from "../scripts/lib/validation.js";
@@ -130,6 +130,25 @@ test("dirty existing wrappers reject tracked and untracked work without changing
     await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: request(true) }), /must be clean/);
     assert.deepEqual(await readFile(join(workspace.root, "README.md")), beforeReadme);
     assert.deepEqual(await readFile(join(workspace.root, "workspace.yaml")), beforeConfig);
+  }
+});
+
+test("configuration preserves hard-interruption stage and backup artifacts with recovery guidance", async (t) => {
+  for (const suffix of ["stage", "backup"] as const) {
+    const workspace = await neutralWrapper();
+    t.after(workspace.cleanup);
+    await configureWorkspace({ workspaceRoot: workspace.root, request: request() });
+    const target = join(workspace.root, "workspace.yaml");
+    const artifact = `${target}.123.456.deadbeef.${suffix}`;
+    const targetBefore = await readFile(target);
+    await writeFile(artifact, `recoverable ${suffix} bytes\n`, "utf8");
+    assert.deepEqual(await interruptedConfigurationArtifacts(workspace.root), [`workspace.yaml.123.456.deadbeef.${suffix}`]);
+    await assert.rejects(
+      configureWorkspace({ workspaceRoot: workspace.root, request: request() }),
+      /Interrupted workspace configuration artifacts.*will not delete or overwrite.*restore exactly one authoritative target.*rerun configure-workspace/s,
+    );
+    assert.deepEqual(await readFile(target), targetBefore);
+    assert.equal(await readFile(artifact, "utf8"), `recoverable ${suffix} bytes\n`);
   }
 });
 

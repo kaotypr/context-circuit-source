@@ -46,6 +46,10 @@ records an append-only contribution and closeout evidence before any optional
 worktree cleanup. Dirty, unpushed, or otherwise unrecorded work is preserved.
 
 Runtime evidence lives under ignored `.runtime/`. Do not delete it manually.
+Successful cleanup removes only the registered clean worktree and retains its
+branch and all runtime evidence. Cleanup blockers are returned as an ordered
+checklist ending with the exact safe rerun. Runtime pruning is a separate future
+operation, not part of normal closeout.
 
 ## Keep durable context useful
 

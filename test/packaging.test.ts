@@ -31,6 +31,18 @@ test("distributable and release archive contain only wrapper inputs", async () =
     await assert.rejects(access(join(destination, path)));
   }
   await access(join(destination, ".agents", "bin", "cc.mjs"));
+  const canonicalSkills = (await readdir(join(projectRoot, ".agents", "skills"), { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  for (const skill of canonicalSkills) {
+    await access(join(projectRoot, ".agents", "skills", skill, "SKILL.md"));
+    await access(join(projectRoot, ".agents", "skills", skill, "agents", "openai.yaml"));
+    await access(join(projectRoot, ".codex", "skills", skill, "SKILL.md"));
+    await access(join(projectRoot, ".claude", "commands", `${skill}.md`));
+    await access(join(destination, ".agents", "skills", skill, "SKILL.md"));
+    await access(join(destination, ".agents", "skills", skill, "agents", "openai.yaml"));
+    await access(join(destination, ".codex", "skills", skill, "SKILL.md"));
+    await access(join(destination, ".claude", "commands", `${skill}.md`));
+  }
   for (const path of [
     ".agents/skills/configure-workspace/SKILL.md",
     ".agents/skills/gather-context/SKILL.md",

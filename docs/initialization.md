@@ -73,6 +73,15 @@ file is written and synced before any managed target changes. Existing targets
 then move to recoverable backups; a rename failure restores all backups and
 removes staged artifacts before returning an error.
 
+An operating-system shutdown or process kill can interrupt those renames before
+rollback runs. A later `configure-workspace` invocation detects managed-file
+siblings ending in `.stage` or `.backup` and refuses to change configuration.
+It does not guess which copy is authoritative or delete recovery evidence.
+Inspect the named target and sibling files, restore exactly one known-good
+target manually, preserve uncertain copies elsewhere, and rerun the same
+configuration request. Hard interruption cannot be made fully transactional;
+this conservative check keeps recoverable copies from being overwritten.
+
 `initialize-workspace` is retained as a compatibility command. It detects the
 Git state, reports whether it routed to fresh bootstrap or existing inspection,
 and delegates legacy `--bootstrap` requests to configuration. Bootstrap remains

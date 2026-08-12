@@ -61,3 +61,18 @@ A blocked cleanup writes the exact blockers and preserves everything. Successful
 cleanup removes only the registered worktree, preserves its branch and runtime
 evidence, and marks the manifest `closed`. Branch deletion and runtime-evidence
 pruning require separate explicit future operations.
+
+Blocked records return an ordered checklist. Resolve it from top to bottom:
+save the contribution through the configured wrapper policy, make both Git
+roots clean without discarding work, establish merge or remote-preservation
+evidence, then run the exact shell-safe `finish-work --cleanup` command printed
+as the final item. The rerun rechecks every condition.
+
+## Retention boundary
+
+Normal closeout is not a retention or pruning command. It retains the complete
+`.runtime/runs/<run-id>/` evidence, product branch, contribution, and review and
+merge records. A future pruning feature would need a separately invoked,
+bounded, versioned contract with an explicit run or age selection, dry-run
+inventory, and recoverable archive where practical. Until then, preserve closed
+runtime evidence; do not bulk-delete `.runtime/` as part of `finish-work`.

@@ -75,3 +75,18 @@ Configured completion or cancellation actions must be completed or safely
 skipped before `finish-work` creates a contribution. Failure preserves the run
 and worktree for recovery. With `activity.provider: none`, semantic events are
 recorded as skipped and planless execution remains fully available.
+
+## Extensibility boundaries
+
+Lifecycle actions configure provider work on an existing semantic hook such as
+`task.review-ready`. They can be required, optional, or manual, but do not
+create a workflow state. `workflow.human_gates` selects only gates defined by
+the current workspace contract; a gate is a human authorization boundary, not
+an activity action, and action completion never bypasses it.
+
+A new workflow stage or semantic hook changes the state machine. It requires a
+versioned schema, type, recorder, compatibility, bundle, skill, and documentation
+migration. Unknown stage, hook, gate, or action fields are rejected rather than
+treated as extension points. Adding another `task.completed` action is ordinary
+configuration; requiring the existing `merge` gate is policy; adding a
+`deployed` runtime stage is a versioned product change.

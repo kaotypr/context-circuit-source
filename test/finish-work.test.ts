@@ -112,6 +112,8 @@ test("prepares one append-only contribution and safely removes only a merged cle
   const blocked = await finishWork({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", outcome: "merged", author: "kao-typr", cleanup: true });
   assert.equal(blocked.status, "blocked");
   assert.match(blocked.blockers.join("\n"), /durably tracked/i);
+  assert.match(blocked.blockers[0]!, /^1\. /);
+  assert.match(blocked.blockers.at(-1)!, /rerun exactly: 'node' '\.agents\/bin\/cc\.mjs'.*'--cleanup'$/);
   await access(prepared.worktree);
 
   await commitContribution(workspace.root, closeout.contribution);
@@ -119,6 +121,7 @@ test("prepares one append-only contribution and safely removes only a merged cle
   assert.equal(closed.status, "closed");
   assert.equal(closed.cleanup.worktree_removed, true);
   await assert.rejects(access(prepared.worktree));
+  await access(join(workspace.root, ".runtime", "runs", prepared.runId, "manifest.json"));
   assert.equal(await git(workspace.repository, ["show-ref", "--verify", `refs/heads/${prepared.branch}`]).then(() => true), true);
   const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
   assert.equal(manifest.status, "closed");

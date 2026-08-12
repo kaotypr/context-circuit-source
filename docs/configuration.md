@@ -36,6 +36,11 @@ Configured providers may declare required or optional capabilities and lifecycle
 actions. Required failures stop the transition; optional failures warn; manual
 actions remain explicit human steps.
 
+Actions extend only existing semantic hooks. `human_gates` selects only
+contract-defined human authorization boundaries; completing an action cannot
+bypass one. New hooks or runtime stages require a versioned contract and bundle
+migration, so unknown hooks, gates, stages, and fields are rejected.
+
 Do not put API keys, access tokens, credential-bearing URLs, or provider secrets
 in workspace configuration or runtime evidence.
 
@@ -78,3 +83,8 @@ After a configuration edit, run:
 node .agents/bin/cc.mjs configure-workspace --check-only
 node .agents/bin/cc.mjs validate --check-paths --check-documents
 ```
+
+If configuration finds managed `.stage` or `.backup` siblings left by a hard
+interruption, it refuses all writes and names the artifacts. Inspect the target
+and siblings, manually restore the one authoritative target, preserve uncertain
+copies, and rerun. The command never deletes recovery evidence automatically.

@@ -36,11 +36,16 @@ description: Close a Context Circuit run after human-confirmed merge or delibera
    branch or preserved by a remote ref. A supplied merge commit must be reachable
    from the configured default branch.
 6. If cleanup is blocked, preserve the worktree, branch, runtime evidence, and
-   blocker record for recovery. Never reset, clean, force-remove, delete a branch,
-   discard unpushed commits, or claim full completion after a failed closeout.
+   ordered blocker checklist for recovery. Resolve it in order and use the exact
+   shell-safe cleanup rerun printed as its final item. Never reset, clean,
+   force-remove, delete a branch, discard unpushed commits, or claim full
+   completion after a failed closeout.
 7. Successful cleanup removes only the clean registered worktree. It preserves
    the branch and runtime evidence, records the run as closed, and leaves any
    later evidence pruning as a separate explicit operation.
+
+Normal closeout never prunes `.runtime/`. Retention or pruning is not currently
+implemented; do not turn `--cleanup` into wholesale evidence deletion.
 
 Activity integrations remain optional. When none is configured, record the
 semantic completion or cancellation hook as skipped rather than fabricating an

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sync Context"
+  short_description: "Curate durable outcomes into wrapper context"
+  default_prompt: "Use $sync-context to prepare reviewable durable context updates from recorded contributions."

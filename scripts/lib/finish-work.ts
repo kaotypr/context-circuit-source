@@ -83,6 +83,22 @@ function list(items: string[], empty: string): string {
   return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${empty}`;
 }
 
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
+}
+
+function cleanupRerun(record: CloseoutRecord): string {
+  const argv = [
+    "node", ".agents/bin/cc.mjs", "finish-work", "--run-id", record.run_id,
+    "--repository", record.repository, "--outcome", record.outcome, "--author", record.author,
+  ];
+  if (record.reason) argv.push("--reason", record.reason);
+  for (const pullRequest of record.pull_requests) argv.push("--pull-request", pullRequest);
+  if (record.merge_commit) argv.push("--merge-commit", record.merge_commit);
+  argv.push("--cleanup");
+  return argv.map(shellQuote).join(" ");
+}
+
 function contributionDocument(
   manifest: RuntimeManifest,
   repository: RuntimeRepository,
@@ -91,10 +107,11 @@ function contributionDocument(
 ): string {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
+  const planReference = brief.plan.reference ?? "none";
   return `# ${manifest.work_id}: ${brief.requested_outcome}\n\n` +
     `- Run: \`${manifest.run_id}\`\n` +
-    `- Task source: direct request\n` +
-    `- Plan: none\n` +
+    `- Task source: ${manifest.source_kind}\n` +
+    `- Plan: ${planReference === "none" ? "none" : `\`${planReference}\``}\n` +
     `- Author: \`${record.author}\`\n\n` +
     `## Outcome\n\n${outcome}\n\n` +
     `## Affected repositories\n\n- \`${repository.name}\` on branch \`${repository.branch}\`.${changed}\n\n` +
@@ -315,9 +332,11 @@ async function cleanupBlockers(workspaceRoot: string, config: WorkspaceConfig, r
 }
 
 async function closePreparedRun(workspaceRoot: string, manifestPath: string, manifest: RuntimeManifest, repository: RuntimeRepository, recordPath: string, record: CloseoutRecord, config: WorkspaceConfig, occurredAt: string): Promise<CloseoutRecord> {
-  const blockers = await cleanupBlockers(workspaceRoot, config, repository, record);
-  if (blockers.length > 0) {
-    const blocked: CloseoutRecord = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers, updated_at: occurredAt };
+  const detected = await cleanupBlockers(workspaceRoot, config, repository, record);
+  if (detected.length > 0) {
+    const checklist = detected.map((blocker, index) => `${index + 1}. ${blocker}`);
+    checklist.push(`${checklist.length + 1}. After resolving the blockers, rerun exactly: ${cleanupRerun(record)}`);
+    const blocked: CloseoutRecord = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: checklist, updated_at: occurredAt };
     await assertValid("closeout-record", blocked);
     await writeJsonAtomic(recordPath, blocked);
     return blocked;

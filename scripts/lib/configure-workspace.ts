@@ -1,4 +1,4 @@
-import { lstat, readFile, realpath } from "node:fs/promises";
+import { lstat, readFile, readdir, realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { git } from "./git.js";
@@ -28,6 +28,47 @@ async function exists(path: string): Promise<boolean> {
 
 async function hasHead(root: string): Promise<boolean> {
   try { await git(root, ["rev-parse", "--verify", "HEAD"]); return true; } catch { return false; }
+}
+
+const transactionResidue = /\.\d+\.\d+\.[0-9a-f]+\.(?:stage|backup)$/;
+
+/**
+ * A process can be interrupted between the sibling renames used by
+ * writeTextTransaction. Those siblings may be the only recoverable copy of a
+ * managed file, so a later configuration must never silently delete or replace
+ * them.
+ */
+export async function interruptedConfigurationArtifacts(workspaceRoot: string): Promise<string[]> {
+  const root = resolve(workspaceRoot);
+  const directories = [root, join(root, "context"), join(root, "agents")];
+  const artifacts: string[] = [];
+  for (const directory of directories) {
+    let entries;
+    try { entries = await readdir(directory, { withFileTypes: true }); } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") continue;
+      throw error;
+    }
+    for (const entry of entries) {
+      if (!entry.isFile() || !transactionResidue.test(entry.name)) continue;
+      const original = entry.name.replace(transactionResidue, "");
+      const managed = directory === root
+        ? ["workspace.yaml", "README.md", ".gitignore"].includes(original)
+        : directory === join(root, "context")
+          ? original === "SOURCES.md"
+          : /^[a-z][a-z0-9-]*\.md$/.test(original);
+      if (managed) artifacts.push(relative(root, join(directory, entry.name)).replaceAll("\\", "/"));
+    }
+  }
+  return artifacts.sort();
+}
+
+async function assertNoInterruptedConfiguration(workspaceRoot: string): Promise<void> {
+  const artifacts = await interruptedConfigurationArtifacts(workspaceRoot);
+  if (artifacts.length === 0) return;
+  throw new Error(
+    `Interrupted workspace configuration artifacts were found:\n- ${artifacts.join("\n- ")}\n` +
+    "Configuration will not delete or overwrite them. Inspect each target, .stage, and .backup sibling; restore exactly one authoritative target manually; preserve uncertain copies; then rerun configure-workspace.",
+  );
 }
 
 export async function detectWorkspaceConfigurationState(workspaceRoot: string): Promise<WorkspaceConfigurationState> {
@@ -197,6 +238,7 @@ async function reconfigureWorkspace(workspaceRoot: string, request: WorkspaceBoo
 
 export async function configureWorkspace(options: { workspaceRoot: string; request?: WorkspaceBootstrapRequest; checkOnly?: boolean; transactionOptions?: { failRenameAt?: number } }): Promise<ConfigureWorkspaceSummary> {
   const workspaceRoot = resolve(options.workspaceRoot);
+  await assertNoInterruptedConfiguration(workspaceRoot);
   const state = await detectWorkspaceConfigurationState(workspaceRoot);
   if (!options.request) {
     if (state === "fresh") return { route: "inspect-fresh", state, message: "Fresh wrapper detected; collect a configuration request, then run the internal bootstrap phase with exact initial-commit authorization.", result: null };

@@ -48,7 +48,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var define_CC_TEMPLATE_INVENTORY_default;
 var init_define_CC_TEMPLATE_INVENTORY = __esm({
   "<define:__CC_TEMPLATE_INVENTORY__>"() {
-    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/whats-next/SKILL.md", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
+    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
   }
 });
 
@@ -15680,7 +15680,7 @@ var init_initialize_workspace = __esm({
 });
 
 // scripts/lib/configure-workspace.ts
-import { lstat as lstat4, readFile as readFile4, realpath as realpath3 } from "node:fs/promises";
+import { lstat as lstat4, readFile as readFile4, readdir, realpath as realpath3 } from "node:fs/promises";
 import { join as join3, relative as relative2, resolve as resolve5 } from "node:path";
 async function exists(path2) {
   try {
@@ -15698,6 +15698,36 @@ async function hasHead2(root) {
   } catch {
     return false;
   }
+}
+async function interruptedConfigurationArtifacts(workspaceRoot20) {
+  const root = resolve5(workspaceRoot20);
+  const directories = [root, join3(root, "context"), join3(root, "agents")];
+  const artifacts = [];
+  for (const directory of directories) {
+    let entries;
+    try {
+      entries = await readdir(directory, { withFileTypes: true });
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      throw error;
+    }
+    for (const entry of entries) {
+      if (!entry.isFile() || !transactionResidue.test(entry.name)) continue;
+      const original = entry.name.replace(transactionResidue, "");
+      const managed = directory === root ? ["workspace.yaml", "README.md", ".gitignore"].includes(original) : directory === join3(root, "context") ? original === "SOURCES.md" : /^[a-z][a-z0-9-]*\.md$/.test(original);
+      if (managed) artifacts.push(relative2(root, join3(directory, entry.name)).replaceAll("\\", "/"));
+    }
+  }
+  return artifacts.sort();
+}
+async function assertNoInterruptedConfiguration(workspaceRoot20) {
+  const artifacts = await interruptedConfigurationArtifacts(workspaceRoot20);
+  if (artifacts.length === 0) return;
+  throw new Error(
+    `Interrupted workspace configuration artifacts were found:
+- ${artifacts.join("\n- ")}
+Configuration will not delete or overwrite them. Inspect each target, .stage, and .backup sibling; restore exactly one authoritative target manually; preserve uncertain copies; then rerun configure-workspace.`
+  );
 }
 async function detectWorkspaceConfigurationState(workspaceRoot20) {
   const root = resolve5(workspaceRoot20);
@@ -15874,6 +15904,7 @@ Follow \`repository-worker.md\`. This repository owns the ${repository.role} rol
 }
 async function configureWorkspace(options) {
   const workspaceRoot20 = resolve5(options.workspaceRoot);
+  await assertNoInterruptedConfiguration(workspaceRoot20);
   const state = await detectWorkspaceConfigurationState(workspaceRoot20);
   if (!options.request) {
     if (state === "fresh") return { route: "inspect-fresh", state, message: "Fresh wrapper detected; collect a configuration request, then run the internal bootstrap phase with exact initial-commit authorization.", result: null };
@@ -15894,7 +15925,7 @@ async function configureWorkspace(options) {
   const result3 = await reconfigureWorkspace(workspaceRoot20, options.request, options.transactionOptions);
   return { route: "reconfigure", state, message: "Existing wrapper configuration was updated as reviewable, uncommitted changes.", result: result3 };
 }
-var import_yaml3;
+var import_yaml3, transactionResidue;
 var init_configure_workspace = __esm({
   "scripts/lib/configure-workspace.ts"() {
     "use strict";
@@ -15907,6 +15938,7 @@ var init_configure_workspace = __esm({
     init_workspace_context();
     init_workspace_readme();
     init_safe_reference();
+    transactionResidue = /\.\d+\.\d+\.[0-9a-f]+\.(?:stage|backup)$/;
   }
 });
 
@@ -16188,7 +16220,7 @@ var init_activity_lifecycle = __esm({
 
 // scripts/lib/plans.ts
 import { createHash as createHash3, randomUUID } from "node:crypto";
-import { lstat as lstat5, mkdir as mkdir3, readdir, readFile as readFile7, realpath as realpath4, rename as rename2, rm } from "node:fs/promises";
+import { lstat as lstat5, mkdir as mkdir3, readdir as readdir2, readFile as readFile7, realpath as realpath4, rename as rename2, rm } from "node:fs/promises";
 import { basename, join as join6, resolve as resolve9 } from "node:path";
 function contractMessages(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
@@ -16396,7 +16428,7 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename(p
     const sorted = [...index.documents].sort();
     if (JSON.stringify(sorted) !== JSON.stringify(index.documents)) errors2.push("numbered plan documents must be listed in ascending order");
     if (!index.documents.includes(index.work_breakdown)) errors2.push("work_breakdown must be listed in documents");
-    const actualNumbered = (await readdir(directory)).filter((name) => /^[0-9]{4}-.+\.md$/.test(name)).sort();
+    const actualNumbered = (await readdir2(directory)).filter((name) => /^[0-9]{4}-.+\.md$/.test(name)).sort();
     for (const document of actualNumbered) {
       if (!index.documents.includes(document)) errors2.push(`numbered plan document is not listed in the index: ${document}`);
     }
@@ -18436,7 +18468,7 @@ var init_confirm_merge = __esm({
 });
 
 // scripts/lib/finish-work.ts
-import { access as access4, lstat as lstat6, mkdir as mkdir4, readFile as readFile12, readdir as readdir2, realpath as realpath5 } from "node:fs/promises";
+import { access as access4, lstat as lstat6, mkdir as mkdir4, readFile as readFile12, readdir as readdir3, realpath as realpath5 } from "node:fs/promises";
 import { basename as basename2, join as join10, relative as relative5, resolve as resolve19 } from "node:path";
 async function assertValid5(name, value2) {
   const errors2 = await validateContract(name, value2);
@@ -18461,14 +18493,38 @@ function taskSlug(brief) {
 function list(items, empty) {
   return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${empty}`;
 }
+function shellQuote2(value2) {
+  return `'${value2.replaceAll("'", `'\\''`)}'`;
+}
+function cleanupRerun(record) {
+  const argv = [
+    "node",
+    ".agents/bin/cc.mjs",
+    "finish-work",
+    "--run-id",
+    record.run_id,
+    "--repository",
+    record.repository,
+    "--outcome",
+    record.outcome,
+    "--author",
+    record.author
+  ];
+  if (record.reason) argv.push("--reason", record.reason);
+  for (const pullRequest of record.pull_requests) argv.push("--pull-request", pullRequest);
+  if (record.merge_commit) argv.push("--merge-commit", record.merge_commit);
+  argv.push("--cleanup");
+  return argv.map(shellQuote2).join(" ");
+}
 function contributionDocument(manifest2, repository, brief, record) {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
+  const planReference = brief.plan.reference ?? "none";
   return `# ${manifest2.work_id}: ${brief.requested_outcome}
 
 - Run: \`${manifest2.run_id}\`
-- Task source: direct request
-- Plan: none
+- Task source: ${manifest2.source_kind}
+- Plan: ${planReference === "none" ? "none" : `\`${planReference}\``}
 - Author: \`${record.author}\`
 
 ## Outcome
@@ -18556,7 +18612,7 @@ async function assertCurrentWorker2(runtimeRoot, manifest2, repository, headComm
 }
 async function findExistingContribution(root, runId, repository) {
   try {
-    for (const entry of await readdir2(root, { withFileTypes: true })) {
+    for (const entry of await readdir3(root, { withFileTypes: true })) {
       if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
       const path2 = join10(root, entry.name);
       const content = await readFile12(path2, "utf8");
@@ -18695,9 +18751,11 @@ async function cleanupBlockers(workspaceRoot20, config, repository, record) {
   return blockers2;
 }
 async function closePreparedRun(workspaceRoot20, manifestPath, manifest2, repository, recordPath2, record, config, occurredAt) {
-  const blockers2 = await cleanupBlockers(workspaceRoot20, config, repository, record);
-  if (blockers2.length > 0) {
-    const blocked = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: blockers2, updated_at: occurredAt };
+  const detected = await cleanupBlockers(workspaceRoot20, config, repository, record);
+  if (detected.length > 0) {
+    const checklist = detected.map((blocker, index) => `${index + 1}. ${blocker}`);
+    checklist.push(`${checklist.length + 1}. After resolving the blockers, rerun exactly: ${cleanupRerun(record)}`);
+    const blocked = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: checklist, updated_at: occurredAt };
     await assertValid5("closeout-record", blocked);
     await writeJsonAtomic(recordPath2, blocked);
     return blocked;
@@ -18955,7 +19013,7 @@ var init_set_plan_state = __esm({
 });
 
 // scripts/lib/whats-next.ts
-import { lstat as lstat7, readdir as readdir3, readFile as readFile14, realpath as realpath6 } from "node:fs/promises";
+import { lstat as lstat7, readdir as readdir4, readFile as readFile14, realpath as realpath6 } from "node:fs/promises";
 import { join as join12, relative as relative6, resolve as resolve24, sep as sep2 } from "node:path";
 function contractMessages2(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
@@ -19105,7 +19163,7 @@ async function discoverRuntimeObservations(workspaceRoot20) {
   } catch {
     return { observations, runs, warnings };
   }
-  const entries = (await readdir3(runsRoot, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
+  const entries = (await readdir4(runsRoot, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
   for (const entry of entries) {
     if (entry.isSymbolicLink()) {
       warnings.push(`Ignored symlinked runtime evidence ${entry.name}`);
@@ -19180,7 +19238,7 @@ async function discoverDurableContributions(workspaceRoot20, runs) {
   } catch {
     return { observations, warnings };
   }
-  const groups = (await readdir3(root, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
+  const groups = (await readdir4(root, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
   for (const group of groups) {
     if (group.isSymbolicLink()) {
       warnings.push(`Ignored symlinked contribution group ${group.name}`);
@@ -19188,7 +19246,7 @@ async function discoverDurableContributions(workspaceRoot20, runs) {
     }
     if (!group.isDirectory()) continue;
     const directory = join12(root, group.name);
-    const files = (await readdir3(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
+    const files = (await readdir4(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
     for (const file of files) {
       if (file.isSymbolicLink()) {
         warnings.push(`Ignored symlinked contribution ${group.name}/${file.name}`);
@@ -19234,7 +19292,7 @@ function project(observations) {
 async function discoverPlanCandidates(workspaceRoot20, config, activityFacts, localObservations) {
   const plansRoot = join12(workspaceRoot20, "context", "plans");
   if (!await isDirectory(plansRoot)) return { candidates: [], warnings: [], matchedFacts: /* @__PURE__ */ new Set() };
-  const entries = (await readdir3(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+  const entries = (await readdir4(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
   const candidates = [];
   const warnings = [];
   const matchedFacts = /* @__PURE__ */ new Set();
