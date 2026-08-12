@@ -18005,7 +18005,7 @@ var init_set_plan_state = __esm({
 });
 
 // scripts/lib/whats-next.ts
-import { lstat as lstat6, readdir as readdir3, readFile as readFile12 } from "node:fs/promises";
+import { lstat as lstat6, readdir as readdir3, readFile as readFile12, realpath as realpath4 } from "node:fs/promises";
 import { join as join11, relative as relative5, resolve as resolve21, sep as sep2 } from "node:path";
 function contractMessages2(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
@@ -18142,52 +18142,106 @@ async function validatedJson(name, path2) {
 }
 async function discoverRuntimeObservations(workspaceRoot18) {
   const observations = /* @__PURE__ */ new Map();
+  const runs = /* @__PURE__ */ new Map();
   const warnings = [];
   const runsRoot = join11(workspaceRoot18, ".runtime", "runs");
-  if (!await isDirectory(runsRoot)) return { observations, warnings };
-  const entries = (await readdir3(runsRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+  try {
+    const rootInfo = await lstat6(runsRoot);
+    if (rootInfo.isSymbolicLink()) return { observations, runs, warnings: ["Ignored symlinked runtime runs directory: .runtime/runs"] };
+    if (!rootInfo.isDirectory()) return { observations, runs, warnings };
+  } catch {
+    return { observations, runs, warnings };
+  }
+  const entries = (await readdir3(runsRoot, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
   for (const entry of entries) {
+    if (entry.isSymbolicLink()) {
+      warnings.push(`Ignored symlinked runtime evidence ${entry.name}`);
+      continue;
+    }
+    if (!entry.isDirectory()) continue;
     const manifestPath = join11(runsRoot, entry.name, "manifest.json");
     try {
       const info = await lstat6(manifestPath);
       if (!info.isFile() || info.isSymbolicLink()) throw new Error("manifest is not a regular file");
+    } catch (error) {
+      if (error.code === "ENOENT") continue;
+      warnings.push(`Ignored malformed runtime evidence ${entry.name}: ${error.message}`);
+      continue;
+    }
+    try {
       const manifest2 = await validatedJson("runtime-manifest", manifestPath);
       if (manifest2.source_kind !== "plan" || !manifest2.plan_work_items) continue;
       if (!inside(workspaceRoot18, manifest2.task_brief)) throw new Error("task brief escapes the workspace");
+      if (!inside(await realpath4(workspaceRoot18), await realpath4(manifest2.task_brief))) throw new Error("task brief resolves outside the workspace");
       const brief = await validatedJson("task-brief", manifest2.task_brief);
-      if (brief.source.kind !== "plan" || brief.plan.approval_state !== "approved" || brief.work_id !== manifest2.work_id || !brief.plan.work_ids.includes(manifest2.work_id)) throw new Error("plan task brief identity does not match manifest");
-      for (const item of manifest2.plan_work_items) {
-        let state = runtimeState(manifest2, item.work_id);
-        const sources = [reference(workspaceRoot18, manifestPath)];
-        const repository = manifest2.repositories.find((candidate) => candidate.name === item.repository);
-        if (repository?.closeout_record) {
-          if (!inside(workspaceRoot18, repository.closeout_record)) throw new Error("closeout record escapes the workspace");
-          const closeout = await validatedJson("closeout-record", repository.closeout_record);
-          if (closeout.run_id !== manifest2.run_id || closeout.work_id !== item.work_id || closeout.repository !== item.repository) throw new Error("closeout identity does not match manifest");
-          state = closeout.status === "closed" ? closeout.outcome === "merged" ? "completed" : "cancelled" : "closeout";
-          sources.push(reference(workspaceRoot18, repository.closeout_record));
-        }
-        const values18 = observations.get(item.work_id) ?? [];
-        for (const source_reference of sources) values18.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: brief.source.reference.replace(/\/README\.md$/, "").replace(/\/$/, "") });
-        observations.set(item.work_id, values18);
+      if (brief.source.kind !== "plan" || brief.plan.approval_state !== "approved") throw new Error("task brief is not an approved plan task");
+      if (manifest2.run_id !== brief.run_id || manifest2.work_id !== brief.work_id || entry.name !== manifest2.run_id) throw new Error("run or work identity differs between runtime path, manifest, and task brief");
+      if (manifest2.plan_work_items.length !== 1 || manifest2.repositories.length !== 1 || brief.repositories.length !== 1 || brief.plan.work_ids.length !== 1) throw new Error("plan runtime must contain one work item and one repository");
+      const item = manifest2.plan_work_items[0];
+      const repository = manifest2.repositories[0];
+      if (item.work_id !== manifest2.work_id || brief.plan.work_ids[0] !== item.work_id || item.repository !== repository.name || brief.repositories[0].name !== item.repository) throw new Error("work item or repository identity differs between manifest and task brief");
+      if (brief.source.reference !== brief.plan.reference) throw new Error("task brief plan references differ");
+      const planReference = brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, "");
+      const planDirectory3 = resolve21(workspaceRoot18, planReference);
+      const plansRoot = resolve21(workspaceRoot18, "context", "plans");
+      if (!inside(plansRoot, planDirectory3) || planDirectory3 === plansRoot) throw new Error("task brief plan reference is outside context/plans");
+      const plansInfo = await lstat6(plansRoot);
+      if (!plansInfo.isDirectory() || plansInfo.isSymbolicLink() || !inside(await realpath4(plansRoot), await realpath4(planDirectory3))) throw new Error("task brief plan reference resolves outside a real context/plans directory");
+      const plan = await validatePlanDirectory(planDirectory3);
+      if (!plan.index || !plan.work_breakdown || plan.errors.length > 0 || plan.index.status !== "approved") throw new Error(`current plan is not valid and approved: ${plan.errors.join("; ")}`);
+      if (plan.index.plan_version !== brief.plan.plan_version || plan.index.approved_digest !== brief.plan.approved_digest) throw new Error("task brief approval version or digest is stale");
+      const currentItem = plan.work_breakdown.items.find((candidate) => candidate.work_id === item.work_id);
+      if (!currentItem || currentItem.repository !== item.repository) throw new Error("runtime work item does not match the current approved plan");
+      let state = runtimeState(manifest2, item.work_id);
+      let closeout;
+      let closeoutReference;
+      if (repository.closeout_record) {
+        if (!inside(workspaceRoot18, repository.closeout_record)) throw new Error("closeout record escapes the workspace");
+        if (!inside(await realpath4(workspaceRoot18), await realpath4(repository.closeout_record))) throw new Error("closeout record resolves outside the workspace");
+        closeout = await validatedJson("closeout-record", repository.closeout_record);
+        if (closeout.run_id !== manifest2.run_id || closeout.work_id !== item.work_id || closeout.repository !== item.repository) throw new Error("closeout identity does not match manifest");
+        state = closeout.status === "closed" ? closeout.outcome === "merged" ? "completed" : "cancelled" : "closeout";
+        closeoutReference = reference(workspaceRoot18, repository.closeout_record);
       }
+      const manifestReference = reference(workspaceRoot18, manifestPath);
+      const briefReference = reference(workspaceRoot18, manifest2.task_brief);
+      const sources = [manifestReference, briefReference, ...closeoutReference ? [closeoutReference] : []];
+      const values18 = observations.get(item.work_id) ?? [];
+      for (const source_reference of sources) values18.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: planReference, run_id: manifest2.run_id });
+      observations.set(item.work_id, values18);
+      runs.set(manifest2.run_id, { manifest: manifest2, brief, manifest_reference: manifestReference, brief_reference: briefReference, ...closeout ? { closeout } : {}, ...closeoutReference ? { closeout_reference: closeoutReference } : {} });
     } catch (error) {
-      const code = error.code;
-      if (code !== "ENOENT") warnings.push(`Ignored malformed runtime evidence ${entry.name}: ${error.message}`);
+      warnings.push(`Ignored malformed runtime evidence ${entry.name}: ${error.message}`);
     }
   }
-  return { observations, warnings };
+  return { observations, runs, warnings };
 }
-async function discoverDurableContributions(workspaceRoot18) {
+async function discoverDurableContributions(workspaceRoot18, runs) {
   const observations = /* @__PURE__ */ new Map();
   const warnings = [];
   const root = join11(workspaceRoot18, "contributions");
-  if (!await isDirectory(root)) return { observations, warnings };
-  const groups = (await readdir3(root, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+  try {
+    const rootInfo = await lstat6(root);
+    if (rootInfo.isSymbolicLink()) return { observations, warnings: ["Ignored symlinked contributions directory: contributions"] };
+    if (!rootInfo.isDirectory()) return { observations, warnings };
+  } catch {
+    return { observations, warnings };
+  }
+  const groups = (await readdir3(root, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
   for (const group of groups) {
+    if (group.isSymbolicLink()) {
+      warnings.push(`Ignored symlinked contribution group ${group.name}`);
+      continue;
+    }
+    if (!group.isDirectory()) continue;
     const directory = join11(root, group.name);
-    const files = (await readdir3(directory, { withFileTypes: true })).filter((entry) => entry.isFile() && !entry.isSymbolicLink() && entry.name.endsWith(".md")).sort((a, b) => a.name.localeCompare(b.name));
+    const files = (await readdir3(directory, { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name));
     for (const file of files) {
+      if (file.isSymbolicLink()) {
+        warnings.push(`Ignored symlinked contribution ${group.name}/${file.name}`);
+        continue;
+      }
+      if (!file.isFile() || !file.name.endsWith(".md")) continue;
       const path2 = join11(directory, file.name);
       const source_reference = reference(workspaceRoot18, path2);
       try {
@@ -18205,8 +18259,15 @@ async function discoverDurableContributions(workspaceRoot18) {
         warnings.push(`Ignored unrecognized durable contribution ${source_reference}`);
         continue;
       }
+      const validatedRun = runs.get(run);
+      const runtimeRepository = validatedRun?.manifest.repositories[0];
+      const closeout = validatedRun?.closeout;
+      if (!validatedRun || validatedRun.manifest.work_id !== work || !closeout || runtimeRepository?.contribution !== source_reference || closeout.contribution !== source_reference || closeout.outcome !== (merged ? "merged" : "abandoned")) {
+        warnings.push(`Ignored unassociated durable contribution ${source_reference}: cited run and closeout relationship are not validated`);
+        continue;
+      }
       const values18 = observations.get(work) ?? [];
-      values18.push({ state: merged ? "completed" : "cancelled", source_reference, precedence: 40 });
+      values18.push({ state: merged ? "completed" : "cancelled", source_reference, precedence: 40, plan_reference: validatedRun.brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, ""), run_id: run });
       observations.set(work, values18);
     }
   }
@@ -18313,9 +18374,16 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
   const facts = /* @__PURE__ */ new Map();
   for (const candidate of activity2?.candidates ?? []) if (candidate.work_id) facts.set(candidate.work_id, [...facts.get(candidate.work_id) ?? [], candidate]);
   const runtime = await discoverRuntimeObservations(workspaceRoot18);
-  const durable = await discoverDurableContributions(workspaceRoot18);
+  const durable = await discoverDurableContributions(workspaceRoot18, runtime.runs);
   const localObservations = new Map(runtime.observations);
-  for (const [workId, observations] of durable.observations) localObservations.set(workId, [...localObservations.get(workId) ?? [], ...observations]);
+  for (const [workId, observations] of durable.observations) {
+    const terminalByRun = new Map(observations.map((observation) => [observation.run_id, observation.state]));
+    const runtimeObservations = (localObservations.get(workId) ?? []).map((observation) => {
+      const terminal = terminalByRun.get(observation.run_id);
+      return terminal ? { ...observation, state: terminal } : observation;
+    });
+    localObservations.set(workId, [...runtimeObservations, ...observations]);
+  }
   const discovered = await discoverPlanCandidates(workspaceRoot18, config, facts, localObservations);
   const external = (activity2?.candidates ?? []).filter((candidate) => !discovered.matchedFacts.has(candidate.candidate_id));
   const hydratedExternal = [];
@@ -18625,7 +18693,7 @@ var init_record_plan_publication = __esm({
 
 // scripts/lib/context-sync.ts
 import { createHash as createHash3 } from "node:crypto";
-import { lstat as lstat7, readFile as readFile16, realpath as realpath4 } from "node:fs/promises";
+import { lstat as lstat7, readFile as readFile16, realpath as realpath5 } from "node:fs/promises";
 import { join as join13, resolve as resolve28 } from "node:path";
 async function assertValid7(name, value2) {
   const errors2 = await validateContract(name, value2);
@@ -18650,7 +18718,7 @@ async function validateRequestSemantics(workspaceRoot18, config, request3) {
     const path2 = assertInside(workspaceRoot18, join13(workspaceRoot18, contribution));
     const info = await lstat7(path2);
     if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Contribution must be a regular file: ${contribution}`);
-    assertInside(await realpath4(workspaceRoot18), await realpath4(path2));
+    assertInside(await realpath5(workspaceRoot18), await realpath5(path2));
     const errors2 = contributionDocumentErrors(path2, await readFile16(path2, "utf8"));
     if (errors2.length > 0) throw new Error(`Invalid contribution ${contribution}: ${errors2.join("; ")}`);
   }
@@ -18679,7 +18747,7 @@ async function prepareContextSync(options) {
   await assertValid7("context-sync-request", options.request);
   const config = await loadWorkspace3(workspaceRoot18);
   const allowedPaths = await validateRequestSemantics(workspaceRoot18, config, options.request);
-  if (await realpath4(await git(workspaceRoot18, ["rev-parse", "--show-toplevel"])) !== await realpath4(workspaceRoot18)) {
+  if (await realpath5(await git(workspaceRoot18, ["rev-parse", "--show-toplevel"])) !== await realpath5(workspaceRoot18)) {
     throw new Error("Workspace root must be the wrapper Git root");
   }
   await assertCleanRepository(workspaceRoot18);
@@ -18750,7 +18818,7 @@ async function prepareContextReview(options) {
     const recomputedPaths = await validateRequestSemantics(workspaceRoot18, config, request3);
     if (recomputedPaths.join("\n") !== record.allowed_wrapper_paths.slice().sort().join("\n")) throw new Error("Context sync allowed paths do not match the validated request");
     const registrations = await git(workspaceRoot18, ["worktree", "list", "--porcelain"]);
-    if (!registrations.split("\n").includes(`worktree ${await realpath4(worktree)}`)) throw new Error("Context sync worktree is not registered by the wrapper repository");
+    if (!registrations.split("\n").includes(`worktree ${await realpath5(worktree)}`)) throw new Error("Context sync worktree is not registered by the wrapper repository");
     await assertCleanRepository(worktree);
     if (await git(worktree, ["branch", "--show-current"]) !== record.branch) throw new Error("Wrapper worktree branch changed");
     const head = await git(worktree, ["rev-parse", "HEAD"]);

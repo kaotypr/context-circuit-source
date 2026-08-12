@@ -26,21 +26,24 @@ Plan intent is reconciled with four source classes, in descending precedence:
 
 1. Git-tracked, structurally valid completed-work contributions;
 2. validated closeout records associated to the same run, work ID, and repository;
-3. validated plan-linked runtime manifests whose task brief confirms the plan and work ID;
+3. validated plan-linked runtime manifests whose task brief confirms the run,
+   work ID, sole repository, plan reference, and current approval version/digest;
 4. configured read-only activity facts.
 
 Precedence determines the projected state only when the evidence agrees. Any
 different reported state is a contradiction and returns a `reconcile` action
 with every state source cited; it never starts implementation or mutates a
-source. A contribution-only association uses its required `# WORK-ID:` heading
-and run reference and therefore cannot silently override conflicting runtime or
-activity evidence. Untracked contributions are not durable evidence.
+source. A contribution cannot establish completion by itself: its required run
+reference must resolve to that validated plan runtime, and both the manifest and
+matching closeout record must associate the exact contribution path and outcome.
+Untracked or ambiguously associated contributions are not durable work-state
+evidence.
 
 Runtime `passed` evidence becomes a `review` action. Closing or prepared
 closeout evidence becomes a `closeout` action. Closed/merged and cancelled or
 abandoned outcomes are excluded. Malformed, symlinked, planless, and unrelated
-runtime material is ignored safely; malformed relevant evidence is reported in
-`warnings`.
+runtime material is ignored safely; malformed relevant evidence and symlinked
+traversal entries are reported in `warnings`.
 
 The JSON output matches
 `.agents/contracts/whats-next-result.schema.json`. Reconciliation actions rank

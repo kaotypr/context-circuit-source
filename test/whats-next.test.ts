@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, symlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { git } from "../scripts/lib/git.js";
@@ -179,7 +179,32 @@ test("passed plan-linked runtime is recommended for review instead of duplicate 
   assert.equal(result.recommendation.candidate_id, "plan:counter-reset:RESET-001");
   assert.match(result.recommendation.title, /Review or prepare merge/);
   assert.ok(result.recommendation.source_references.some((item) => item.endsWith("/manifest.json")));
+  assert.ok(result.recommendation.source_references.some((item) => item.includes(".runtime/tasks/")));
   assert.equal(result.considered.executable, 1);
+});
+
+test("forged plan task brief run identity and approval digest cannot project runtime state", async (t) => {
+  for (const forgery of ["run", "digest"] as const) {
+    await t.test(forgery, async (t) => {
+      const workspace = await createTestWorkspace();
+      t.after(workspace.cleanup);
+      const prepared = await preparePlanRun(workspace);
+      const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+      manifest.status = "passed";
+      manifest.repositories[0].status = "passed";
+      manifest.plan_work_items[0].outcome = "passed";
+      await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
+      const brief = JSON.parse(await readFile(prepared.taskBrief, "utf8"));
+      if (forgery === "run") brief.run_id = "20260811T093000Z-deadbeef";
+      else brief.plan.approved_digest = `sha256:${"0".repeat(64)}`;
+      await writeFile(prepared.taskBrief, `${JSON.stringify(brief, null, 2)}\n`);
+
+      const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+      assert.equal(result.recommendation.action, "execute");
+      assert.ok(result.warnings.some((item) => item.includes("Ignored malformed runtime evidence") && item.includes(forgery === "run" ? "run or work identity" : "version or digest")));
+    });
+  }
 });
 
 test("closed plan-linked runtime is excluded without an activity provider", async (t) => {
@@ -260,7 +285,7 @@ test("malformed and unrelated runtime evidence is ignored safely", async (t) => 
   assert.ok(!result.warnings.some((item) => item.includes("unrelated")));
 });
 
-test("tracked durable completed-work contribution excludes plan implementation without runtime evidence", async (t) => {
+test("tracked contribution with a nonexistent run is warned and cannot establish completion", async (t) => {
   const workspace = await createTestWorkspace();
   t.after(workspace.cleanup);
   const created = await createPlanDraft(workspace.root, planRequest(), new Date("2026-08-11T08:00:00Z"));
@@ -306,7 +331,89 @@ Merged after human review.
 
   const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
 
+  assert.equal(result.recommendation.action, "execute");
+  assert.equal(result.considered.excluded, 0);
+  assert.ok(result.warnings.some((item) => item.includes("Ignored unassociated durable contribution") && item.includes("cited run and closeout relationship")));
+});
+
+test("tracked contribution only becomes terminal through a matching validated plan closeout", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanRun(workspace);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const contributionDirectory = join(workspace.root, "contributions", "general");
+  const contributionRelative = "contributions/general/20260811T093000Z-reviewer-reset-frontend.md";
+  const contribution = join(workspace.root, contributionRelative);
+  const closeoutPath = join(workspace.root, ".runtime", "runs", prepared.runId, "frontend-closeout.json");
+  await mkdir(contributionDirectory, { recursive: true });
+  await writeFile(contribution, `# RESET-001: Add reset behavior
+
+- Run: \`${prepared.runId}\`
+
+## Outcome
+
+Merged after human review.
+
+## Affected repositories
+
+- \`frontend\`.
+
+## Pull requests and commits
+
+- Recorded.
+
+## Verification
+
+- Passed.
+
+## Decisions and deviations
+
+- None.
+
+## Remaining risks and follow-up
+
+- None.
+
+## Candidate durable learnings
+
+- None.
+`);
+  await writeFile(closeoutPath, `${JSON.stringify({
+    contract_version: 1, work_id: "RESET-001", run_id: prepared.runId, repository: "frontend", outcome: "merged", status: "prepared", author: "reviewer", reason: null,
+    contribution: contributionRelative, branch: manifest.repositories[0].branch, base_commit: manifest.repositories[0].base_commit, head_commit: manifest.repositories[0].base_commit,
+    merge_commit: null, pull_requests: [], commits: [], changed_files: [], verification: ["Passed"], cleanup: { requested: false, worktree_removed: false, branch_preserved: true, runtime_evidence_preserved: true },
+    blockers: [], prepared_at: "2026-08-11T09:30:00Z", updated_at: "2026-08-11T09:30:00Z",
+  }, null, 2)}\n`);
+  manifest.status = "closing";
+  manifest.repositories[0].status = "closing";
+  manifest.repositories[0].closeout_record = closeoutPath;
+  manifest.repositories[0].contribution = contributionRelative;
+  manifest.plan_work_items[0].outcome = "passed";
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
+  await git(workspace.root, ["init", "--initial-branch=main"]);
+  await git(workspace.root, ["add", contributionRelative]);
+  await git(workspace.root, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "record completed work"]);
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
   assert.equal(result.recommendation.candidate_id, null);
   assert.equal(result.considered.excluded, 1);
   assert.equal(result.warnings.length, 0);
+});
+
+test("symlinked runtime and contribution entries are warned and never followed", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, planRequest(), new Date("2026-08-11T08:00:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-11T09:00:00Z"));
+  await mkdir(join(workspace.root, ".runtime", "runs"), { recursive: true });
+  await mkdir(join(workspace.root, "contributions"), { recursive: true });
+  await symlink(workspace.repository, join(workspace.root, ".runtime", "runs", "outside-run"));
+  await symlink(workspace.repository, join(workspace.root, "contributions", "outside-group"));
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.action, "execute");
+  assert.ok(result.warnings.includes("Ignored symlinked runtime evidence outside-run"));
+  assert.ok(result.warnings.includes("Ignored symlinked contribution group outside-group"));
 });

@@ -12,8 +12,10 @@ description: Recommend one defensible next action from approved plans and availa
 2. Inspect only configured read-only sources. Approved numbered plans under
    `context/plans/` are always local candidates. The deterministic projection
    also reads validated plan-linked manifests and closeout records under
-   `.runtime/runs/` plus Git-tracked completed-work contributions. Malformed,
-   symlinked, planless, or unrelated runtime material is ignored with a warning.
+   `.runtime/runs/` plus Git-tracked completed-work contributions associated by
+   a validated run and closeout. Runtime identity must match the current
+   approved plan version and digest. Malformed, symlinked, planless, unrelated,
+   or unassociated evidence is ignored with a warning.
    Use `--activity-fixture` only
    for an explicit deterministic proof or test; it is not durable task state
    and is not a provider integration.
