@@ -379,6 +379,7 @@ export type ReviewState = "ready-for-local-review" | "ready-for-publication" | "
 
 export interface ReviewCommand {
   description: string;
+  cwd: string;
   argv: string[];
   shell: string;
 }

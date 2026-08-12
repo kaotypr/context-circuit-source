@@ -210,6 +210,24 @@ test("forged merge confirmation cannot unlock closeout or mutate durable state",
   assert.equal(await git(workspace.repository, ["rev-parse", "HEAD"]), mergeCommit);
 });
 
+test("symlinked merge confirmation cannot unlock closeout", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await initializeWrapper(workspace.root);
+  const prepared = await passRun(workspace.root, "5a1e1e55");
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const original = manifest.repositories[0].merge_confirmation as string;
+  const linked = join(dirname(original), "frontend-linked-merge-confirmation.json");
+  await symlink(original, linked);
+  manifest.repositories[0].merge_confirmation = linked;
+  await writeJson(prepared.manifest, manifest);
+  const before = await readFile(prepared.manifest, "utf8");
+  await assert.rejects(finishWork({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", outcome: "merged", author: "kao" }), /Merge confirmation record must be a regular file/);
+  assert.equal(await readFile(prepared.manifest, "utf8"), before);
+  await assert.rejects(access(join(workspace.root, "contributions", "general")));
+});
+
 test("stops before closeout mutation when configured activity hooks are unavailable", async (t) => {
   const workspace = await createTestWorkspace();
   t.after(workspace.cleanup);

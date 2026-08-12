@@ -2,7 +2,7 @@ import { access, lstat, mkdir, readFile, readdir, realpath } from "node:fs/promi
 import { basename, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { git } from "./git.js";
-import { assertInside, ensurePrivateDirectory, withExclusiveFile, writeJsonAtomic, writeTextExclusive } from "./io.js";
+import { assertInside, ensurePrivateDirectory, readJsonRegularInside, withExclusiveFile, writeJsonAtomic, writeTextExclusive } from "./io.js";
 import type { CloseoutRecord, ExecutionEvent, MergeConfirmationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
@@ -53,10 +53,6 @@ const contributionHeadings = [
   "## Remaining risks and follow-up",
   "## Candidate durable learnings",
 ] as const;
-
-async function readJson<T>(path: string): Promise<T> {
-  return JSON.parse(await readFile(path, "utf8")) as T;
-}
 
 async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "merge-confirmation-record" | "closeout-record", value: unknown): Promise<void> {
   const errors = await validateContract(name, value);
@@ -132,9 +128,9 @@ async function loadWorkspace(workspaceRoot: string): Promise<WorkspaceConfig> {
 
 async function optionalVerifier(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository): Promise<VerifierResult | null> {
   try {
-    const input = await readJson<ResultInput>(assertInside(runtimeRoot, repository.verifier_input));
+    const input = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.verifier_input, "Verifier input");
     const resultPath = assertInside(runtimeRoot, input.result_path);
-    const result = await readJson<VerifierResult>(resultPath);
+    const result = await readJsonRegularInside<VerifierResult>(runtimeRoot, resultPath, "Verifier result");
     await assertValid("verifier-result", result);
     if (result.work_id !== manifest.work_id || result.run_id !== manifest.run_id || result.repository !== repository.name) {
       throw new Error("Verifier result identity does not match the closeout run");
@@ -147,8 +143,8 @@ async function optionalVerifier(runtimeRoot: string, manifest: RuntimeManifest, 
 }
 
 async function assertCurrentWorker(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository, headCommit: string, commits: string[], changedFiles: string[]): Promise<void> {
-  const input = await readJson<ResultInput>(assertInside(runtimeRoot, repository.worker_input));
-  const worker = await readJson<WorkerResult>(assertInside(runtimeRoot, input.result_path));
+  const input = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.worker_input, "Worker input");
+  const worker = await readJsonRegularInside<WorkerResult>(runtimeRoot, input.result_path, "Worker result");
   await assertValid("worker-result", worker);
   if (worker.work_id !== manifest.work_id || worker.run_id !== manifest.run_id || worker.repository !== repository.name) {
     throw new Error("Worker result identity does not match the closeout run");
@@ -242,7 +238,7 @@ async function assertVerifiedMergeConfirmation(
   workspaceRoot: string, runtimeRoot: string, config: WorkspaceConfig, manifest: RuntimeManifest, repository: RuntimeRepository, requestedMergeCommit?: string,
 ): Promise<MergeConfirmationRecord> {
   if (!repository.merge_confirmation) throw new Error(`Merged closeout is not ready: record and verify the human merge with node .agents/bin/cc.mjs confirm-merge --run-id ${manifest.run_id} --repository ${repository.name} --merge-commit <full-sha> --author <slug> --evidence <single-line-evidence>`);
-  const record = await readJson<MergeConfirmationRecord>(assertInside(runtimeRoot, repository.merge_confirmation));
+  const record = await readJsonRegularInside<MergeConfirmationRecord>(runtimeRoot, repository.merge_confirmation, "Merge confirmation record");
   await assertValid("merge-confirmation-record", record);
   if (record.work_id !== manifest.work_id || record.run_id !== manifest.run_id || record.repository !== repository.name || record.head_commit !== await git(repository.worktree, ["rev-parse", "HEAD"])) {
     throw new Error("Merge confirmation identity or verified head does not match the active run");
@@ -358,14 +354,14 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
   if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot)) throw new Error("Workspace root must be the wrapper Git root before closeout");
 
   return withExclusiveFile(lockPath, async () => {
-    const manifest = await readJson<RuntimeManifest>(manifestPath);
+    const manifest = await readJsonRegularInside<RuntimeManifest>(runtimeRoot, manifestPath, "Runtime manifest");
     await assertValid("runtime-manifest", manifest);
     if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
     assertCloseoutLifecycleReady(manifest, config, options.outcome);
     const repository = findRepository(manifest, options.repository);
     const recordPath = assertInside(runtimeRoot, join(runtimeRoot, "runs", options.runId, `${repository.name}-closeout.json`));
     if (repository.closeout_record) {
-      const existing = await readJson<CloseoutRecord>(assertInside(runtimeRoot, repository.closeout_record));
+      const existing = await readJsonRegularInside<CloseoutRecord>(runtimeRoot, repository.closeout_record, "Closeout record");
       await assertValid("closeout-record", existing);
       if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
       if (existing.outcome === "merged") await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit);
@@ -380,7 +376,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       ? await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit)
       : null;
 
-    const brief = await readJson<TaskBrief>(assertInside(runtimeRoot, manifest.task_brief));
+    const brief = await readJsonRegularInside<TaskBrief>(runtimeRoot, manifest.task_brief, "Task brief");
     await assertValid("task-brief", brief);
     const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
     if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) throw new Error("Run worktree is on an unexpected branch");

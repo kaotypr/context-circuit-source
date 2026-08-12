@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { git } from "../scripts/lib/git.js";
@@ -242,4 +242,81 @@ test("verifies the exact reviewed head on the configured default target before c
   const configPath = join(workspace.root, "workspace.yaml");
   await writeFile(configPath, (await readFile(configPath, "utf8")).replaceAll("default_branch: main", "default_branch: trunk"), "utf8");
   await assert.rejects(confirmMerge({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", mergeCommit, author: "kao", evidence: "Wrong target" }), /target differs from the configured default branch/);
+});
+
+test("review test commands preserve exact shell semantics in a quoted worktree cwd", async (t) => {
+  const workspace = await createTestWorkspace("context circuit 'quoted path' ");
+  t.after(workspace.cleanup);
+  const recorded = `printf '%s\\n' "a b" && test -f src/App.tsx`;
+  const prepared = await preparePlanlessTask({
+    workspaceRoot: workspace.root, ...taskOptions, verificationCommands: [recorded],
+    now: new Date("2026-08-11T21:30:00.000Z"), discriminator: "c0ffee00",
+  });
+  await commitWorkerResult(prepared, "quoted worktree command");
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
+  await writeVerifier(prepared, "pass");
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
+  const review = await prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend" });
+  const testCommand = review.commands!.tests[0]!;
+  assert.equal(testCommand.cwd, prepared.worktree);
+  assert.deepEqual(testCommand.argv, ["sh", "-lc", recorded]);
+  assert.match(testCommand.shell, /^cd -- '/);
+  assert.match(testCommand.shell, /'"'"'/);
+  const { execFile } = await import("node:child_process");
+  const output = await new Promise<string>((resolvePromise, reject) => execFile("sh", ["-lc", testCommand.shell], { encoding: "utf8" }, (error, stdout) => error ? reject(error) : resolvePromise(stdout)));
+  assert.equal(output, "a b\n");
+});
+
+test("publication rejects a symlinked review preparation before manifest mutation", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await git(workspace.repository, ["remote", "add", "origin", "https://example.invalid/project.git"]);
+  const prepared = await preparePlanlessTask({ workspaceRoot: workspace.root, ...taskOptions, now: new Date("2026-08-11T21:40:00.000Z"), discriminator: "1eadf11e" });
+  await commitWorkerResult(prepared, "symlink publication guard");
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
+  await writeVerifier(prepared, "pass");
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
+  await prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend" });
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const originalPreparation = manifest.repositories[0].review_preparation as string;
+  const symlinkPath = join(dirname(originalPreparation), "frontend-symlinked-review.json");
+  await symlink(originalPreparation, symlinkPath);
+  manifest.repositories[0].review_preparation = symlinkPath;
+  await writeJson(prepared.manifest, manifest);
+  const before = await readFile(prepared.manifest, "utf8");
+  await assert.rejects(recordReviewPublication({
+    workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", status: "published", tool: "gh",
+    pullRequest: "https://example.invalid/project/pull/9", evidence: "Forged through symlink", authorized: true,
+  }), /Review preparation must be a regular file/);
+  assert.equal(await readFile(prepared.manifest, "utf8"), before);
+  assert.equal(await git(prepared.worktree, ["status", "--porcelain=v1"]), "");
+});
+
+test("merge confirmation rejects a symlinked publication record before manifest mutation", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await git(workspace.repository, ["remote", "add", "origin", "https://example.invalid/project.git"]);
+  const prepared = await preparePlanlessTask({ workspaceRoot: workspace.root, ...taskOptions, now: new Date("2026-08-11T21:50:00.000Z"), discriminator: "f11e1ead" });
+  await commitWorkerResult(prepared, "publication symlink guard");
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
+  await writeVerifier(prepared, "pass");
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
+  await prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend" });
+  await recordReviewPublication({
+    workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", status: "published", tool: "gh",
+    pullRequest: "https://example.invalid/project/pull/10", evidence: "Confirmed publication", authorized: true,
+  });
+  await git(workspace.repository, ["-c", "user.name=Merger", "-c", "user.email=merger@example.invalid", "merge", "--no-ff", "-m", "merge: publication symlink guard", prepared.branch]);
+  const mergeCommit = await git(workspace.repository, ["rev-parse", "HEAD"]);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const originalPublication = manifest.repositories[0].review_publication as string;
+  const symlinkPath = join(dirname(originalPublication), "frontend-symlinked-publication.json");
+  await symlink(originalPublication, symlinkPath);
+  manifest.repositories[0].review_publication = symlinkPath;
+  await writeJson(prepared.manifest, manifest);
+  const before = await readFile(prepared.manifest, "utf8");
+  await assert.rejects(confirmMerge({
+    workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", mergeCommit, author: "kao", evidence: "Human confirmed merge",
+  }), /Review publication record must be a regular file/);
+  assert.equal(await readFile(prepared.manifest, "utf8"), before);
 });

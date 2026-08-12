@@ -1,4 +1,4 @@
-import { chmod, lstat, mkdir, open, rename, unlink } from "node:fs/promises";
+import { chmod, lstat, mkdir, open, readFile, realpath, rename, unlink } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 
 export function assertInside(root: string, candidate: string): string {
@@ -8,6 +8,16 @@ export function assertInside(root: string, candidate: string): string {
     throw new Error(`Refusing path outside ${resolvedRoot}: ${resolvedCandidate}`);
   }
   return resolvedCandidate;
+}
+
+export async function readJsonRegularInside<T>(root: string, candidate: string, label: string): Promise<T> {
+  const path = assertInside(root, candidate);
+  const info = await lstat(path);
+  if (!info.isFile() || info.isSymbolicLink()) throw new Error(`${label} must be a regular file: ${path}`);
+  const realRoot = await realpath(root);
+  const realPath = await realpath(path);
+  assertInside(realRoot, realPath);
+  return JSON.parse(await readFile(path, "utf8")) as T;
 }
 
 export async function ensurePrivateDirectory(path: string): Promise<void> {

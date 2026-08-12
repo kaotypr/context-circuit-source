@@ -46,7 +46,10 @@ branches and commits, complete changed-file list, title, body, and worker and
 verifier evidence. It also records exact commands both as argv arrays and
 POSIX-shell renderings for diff, commit inspection, showing the verified head,
 recorded tests, switching the base repository to the configured target, and a
-human-only merge. Values are quoted; full commit IDs are used instead of
+human-only merge. Every command records an explicit `cwd`; the shell form begins
+with `cd -- <quoted-cwd> &&`. Recorded verifier strings remain intact as the
+single script argument to `sh -lc`, preserving their semantics without parsing
+arbitrary shell syntax. Values are quoted; full commit IDs are used instead of
 ambiguous or caller-provided refs. It records only the Git remote name, so
 credential-bearing remote URLs cannot enter runtime evidence.
 
@@ -80,3 +83,8 @@ requires the exact prepared head to be an ancestor of the reported merge, and
 the reported merge to be reachable from the exact configured local or `origin`
 default-branch ref. Only then does it record `closeout-ready` and emit the exact
 `finish-work` argv and shell command.
+
+All registered runtime artifacts that can advance publication, merge
+confirmation, or closeout must be real regular files inside `.runtime`; symlinked
+or non-file preparation, publication, confirmation, and closeout evidence is
+rejected before lifecycle mutation.
