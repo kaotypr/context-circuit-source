@@ -10,7 +10,7 @@ idea: Human-approved Product Knowledge design from the Context Circuit RFC discu
 
 ## Affected repositories
 
-- None identified.
+- context-circuit (the Context Circuit framework source itself; Product Knowledge is developed in-place by maintainer commits, not run-task worktree fan-out).
 
 ## Assumptions
 
@@ -24,5 +24,9 @@ idea: Human-approved Product Knowledge design from the Context Circuit RFC discu
 
 ## Open questions
 
-- This neutral source checkout has no registered product repository, so which configured wrapper or repository registration will own execution of the approved implementation plan?
-- Which workspace-specific human roles may confirm business workflows and declare implemented behavior effective during Product Knowledge synchronization?
+Both original open questions were resolved with the human before approval:
+
+- Execution ownership: the Context Circuit framework source repository itself owns execution. It is registered in `workspace.yaml` as `context-circuit` (path `.`, mode `submodule`, agent `repository-worker`, default branch `main`), and every PKNOW work item targets that key. Implementation proceeds as direct maintainer commits on this branch, matching the workflow-continuity precedent, rather than run-task worktree fan-out. The shipped neutral template still ships `repositories: {}` because the template build neutralizes the repositories node.
+- Effective-state confirmation authority: a dedicated, workspace-configured confirming role — distinct from the per-page `owners` and from the merge-gate human — declares business workflows effective during Product Knowledge synchronization (PKNOW-060).
+
+- None outstanding.

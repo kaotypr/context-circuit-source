@@ -48,13 +48,13 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var define_CC_TEMPLATE_INVENTORY_default;
 var init_define_CC_TEMPLATE_INVENTORY = __esm({
   "<define:__CC_TEMPLATE_INVENTORY__>"() {
-    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
+    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/codegen/code.js
+// node_modules/ajv/dist/compile/codegen/code.js
 var require_code = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/codegen/code.js"(exports) {
+  "node_modules/ajv/dist/compile/codegen/code.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -207,9 +207,9 @@ var require_code = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/codegen/scope.js
+// node_modules/ajv/dist/compile/codegen/scope.js
 var require_scope = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/codegen/scope.js"(exports) {
+  "node_modules/ajv/dist/compile/codegen/scope.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -353,9 +353,9 @@ var require_scope = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/codegen/index.js
+// node_modules/ajv/dist/compile/codegen/index.js
 var require_codegen = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/codegen/index.js"(exports) {
+  "node_modules/ajv/dist/compile/codegen/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1074,9 +1074,9 @@ var require_codegen = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/util.js
+// node_modules/ajv/dist/compile/util.js
 var require_util = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/util.js"(exports) {
+  "node_modules/ajv/dist/compile/util.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1242,9 +1242,9 @@ var require_util = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/names.js
+// node_modules/ajv/dist/compile/names.js
 var require_names = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/names.js"(exports) {
+  "node_modules/ajv/dist/compile/names.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1282,9 +1282,9 @@ var require_names = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/errors.js
+// node_modules/ajv/dist/compile/errors.js
 var require_errors = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/errors.js"(exports) {
+  "node_modules/ajv/dist/compile/errors.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1405,9 +1405,9 @@ var require_errors = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/boolSchema.js
+// node_modules/ajv/dist/compile/validate/boolSchema.js
 var require_boolSchema = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/boolSchema.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/boolSchema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1457,9 +1457,9 @@ var require_boolSchema = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/rules.js
+// node_modules/ajv/dist/compile/rules.js
 var require_rules = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/rules.js"(exports) {
+  "node_modules/ajv/dist/compile/rules.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1489,9 +1489,9 @@ var require_rules = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/applicability.js
+// node_modules/ajv/dist/compile/validate/applicability.js
 var require_applicability = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/applicability.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/applicability.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1513,9 +1513,9 @@ var require_applicability = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/dataType.js
+// node_modules/ajv/dist/compile/validate/dataType.js
 var require_dataType = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/dataType.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/dataType.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1698,9 +1698,9 @@ var require_dataType = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/defaults.js
+// node_modules/ajv/dist/compile/validate/defaults.js
 var require_defaults = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/defaults.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/defaults.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1736,9 +1736,9 @@ var require_defaults = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/code.js
+// node_modules/ajv/dist/vocabularies/code.js
 var require_code2 = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/code.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/code.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1870,9 +1870,9 @@ var require_code2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/keyword.js
+// node_modules/ajv/dist/compile/validate/keyword.js
 var require_keyword = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/keyword.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/keyword.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -1989,9 +1989,9 @@ var require_keyword = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/subschema.js
+// node_modules/ajv/dist/compile/validate/subschema.js
 var require_subschema = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/subschema.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/subschema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2073,9 +2073,9 @@ var require_subschema = __commonJS({
   }
 });
 
-// ../../../../node_modules/fast-deep-equal/index.js
+// node_modules/fast-deep-equal/index.js
 var require_fast_deep_equal = __commonJS({
-  "../../../../node_modules/fast-deep-equal/index.js"(exports, module) {
+  "node_modules/fast-deep-equal/index.js"(exports, module) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     module.exports = function equal(a, b) {
@@ -2109,9 +2109,9 @@ var require_fast_deep_equal = __commonJS({
   }
 });
 
-// ../../../../node_modules/json-schema-traverse/index.js
+// node_modules/json-schema-traverse/index.js
 var require_json_schema_traverse = __commonJS({
-  "../../../../node_modules/json-schema-traverse/index.js"(exports, module) {
+  "node_modules/json-schema-traverse/index.js"(exports, module) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var traverse = module.exports = function(schema2, opts, cb) {
@@ -2198,9 +2198,9 @@ var require_json_schema_traverse = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/resolve.js
+// node_modules/ajv/dist/compile/resolve.js
 var require_resolve = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/resolve.js"(exports) {
+  "node_modules/ajv/dist/compile/resolve.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2355,9 +2355,9 @@ var require_resolve = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/validate/index.js
+// node_modules/ajv/dist/compile/validate/index.js
 var require_validate = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/validate/index.js"(exports) {
+  "node_modules/ajv/dist/compile/validate/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2864,9 +2864,9 @@ var require_validate = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/runtime/validation_error.js
+// node_modules/ajv/dist/runtime/validation_error.js
 var require_validation_error = __commonJS({
-  "../../../../node_modules/ajv/dist/runtime/validation_error.js"(exports) {
+  "node_modules/ajv/dist/runtime/validation_error.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2881,9 +2881,9 @@ var require_validation_error = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/ref_error.js
+// node_modules/ajv/dist/compile/ref_error.js
 var require_ref_error = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/ref_error.js"(exports) {
+  "node_modules/ajv/dist/compile/ref_error.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -2899,9 +2899,9 @@ var require_ref_error = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/compile/index.js
+// node_modules/ajv/dist/compile/index.js
 var require_compile = __commonJS({
-  "../../../../node_modules/ajv/dist/compile/index.js"(exports) {
+  "node_modules/ajv/dist/compile/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -3124,9 +3124,9 @@ var require_compile = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/data.json
+// node_modules/ajv/dist/refs/data.json
 var require_data = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/data.json"(exports, module) {
+  "node_modules/ajv/dist/refs/data.json"(exports, module) {
     module.exports = {
       $id: "https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#",
       description: "Meta-schema for $data reference (JSON AnySchema extension proposal)",
@@ -3143,9 +3143,9 @@ var require_data = __commonJS({
   }
 });
 
-// ../../../../node_modules/fast-uri/lib/utils.js
+// node_modules/fast-uri/lib/utils.js
 var require_utils = __commonJS({
-  "../../../../node_modules/fast-uri/lib/utils.js"(exports, module) {
+  "node_modules/fast-uri/lib/utils.js"(exports, module) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var isUUID = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu);
@@ -3457,9 +3457,9 @@ var require_utils = __commonJS({
   }
 });
 
-// ../../../../node_modules/fast-uri/lib/schemes.js
+// node_modules/fast-uri/lib/schemes.js
 var require_schemes = __commonJS({
-  "../../../../node_modules/fast-uri/lib/schemes.js"(exports, module) {
+  "node_modules/fast-uri/lib/schemes.js"(exports, module) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var { isUUID } = require_utils();
@@ -3668,9 +3668,9 @@ var require_schemes = __commonJS({
   }
 });
 
-// ../../../../node_modules/fast-uri/index.js
+// node_modules/fast-uri/index.js
 var require_fast_uri = __commonJS({
-  "../../../../node_modules/fast-uri/index.js"(exports, module) {
+  "node_modules/fast-uri/index.js"(exports, module) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizePercentEncoding, normalizePathEncoding, escapePreservingEscapes, reescapeHostDelimiters, isIPv4, nonSimpleDomain } = require_utils();
@@ -3981,9 +3981,9 @@ var require_fast_uri = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/runtime/uri.js
+// node_modules/ajv/dist/runtime/uri.js
 var require_uri = __commonJS({
-  "../../../../node_modules/ajv/dist/runtime/uri.js"(exports) {
+  "node_modules/ajv/dist/runtime/uri.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -3993,9 +3993,9 @@ var require_uri = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/core.js
+// node_modules/ajv/dist/core.js
 var require_core = __commonJS({
-  "../../../../node_modules/ajv/dist/core.js"(exports) {
+  "node_modules/ajv/dist/core.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4605,9 +4605,9 @@ var require_core = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/core/id.js
+// node_modules/ajv/dist/vocabularies/core/id.js
 var require_id = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/core/id.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/core/id.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4621,9 +4621,9 @@ var require_id = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/core/ref.js
+// node_modules/ajv/dist/vocabularies/core/ref.js
 var require_ref = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/core/ref.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/core/ref.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4744,9 +4744,9 @@ var require_ref = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/core/index.js
+// node_modules/ajv/dist/vocabularies/core/index.js
 var require_core2 = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/core/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/core/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4766,9 +4766,9 @@ var require_core2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/limitNumber.js
+// node_modules/ajv/dist/vocabularies/validation/limitNumber.js
 var require_limitNumber = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/limitNumber.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/limitNumber.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4799,9 +4799,9 @@ var require_limitNumber = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/multipleOf.js
+// node_modules/ajv/dist/vocabularies/validation/multipleOf.js
 var require_multipleOf = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/multipleOf.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/multipleOf.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4828,9 +4828,9 @@ var require_multipleOf = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/runtime/ucs2length.js
+// node_modules/ajv/dist/runtime/ucs2length.js
 var require_ucs2length = __commonJS({
-  "../../../../node_modules/ajv/dist/runtime/ucs2length.js"(exports) {
+  "node_modules/ajv/dist/runtime/ucs2length.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4855,9 +4855,9 @@ var require_ucs2length = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/limitLength.js
+// node_modules/ajv/dist/vocabularies/validation/limitLength.js
 var require_limitLength = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/limitLength.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/limitLength.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4888,9 +4888,9 @@ var require_limitLength = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/pattern.js
+// node_modules/ajv/dist/vocabularies/validation/pattern.js
 var require_pattern = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/pattern.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/pattern.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4926,9 +4926,9 @@ var require_pattern = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/limitProperties.js
+// node_modules/ajv/dist/vocabularies/validation/limitProperties.js
 var require_limitProperties = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/limitProperties.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/limitProperties.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -4956,9 +4956,9 @@ var require_limitProperties = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/required.js
+// node_modules/ajv/dist/vocabularies/validation/required.js
 var require_required = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/required.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/required.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5039,9 +5039,9 @@ var require_required = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/limitItems.js
+// node_modules/ajv/dist/vocabularies/validation/limitItems.js
 var require_limitItems = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/limitItems.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/limitItems.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5069,9 +5069,9 @@ var require_limitItems = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/runtime/equal.js
+// node_modules/ajv/dist/runtime/equal.js
 var require_equal = __commonJS({
-  "../../../../node_modules/ajv/dist/runtime/equal.js"(exports) {
+  "node_modules/ajv/dist/runtime/equal.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5081,9 +5081,9 @@ var require_equal = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/uniqueItems.js
+// node_modules/ajv/dist/vocabularies/validation/uniqueItems.js
 var require_uniqueItems = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/uniqueItems.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/uniqueItems.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5149,9 +5149,9 @@ var require_uniqueItems = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/const.js
+// node_modules/ajv/dist/vocabularies/validation/const.js
 var require_const = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/const.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/const.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5179,9 +5179,9 @@ var require_const = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/enum.js
+// node_modules/ajv/dist/vocabularies/validation/enum.js
 var require_enum = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/enum.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/enum.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5229,9 +5229,9 @@ var require_enum = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/index.js
+// node_modules/ajv/dist/vocabularies/validation/index.js
 var require_validation = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5268,9 +5268,9 @@ var require_validation = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/additionalItems.js
+// node_modules/ajv/dist/vocabularies/applicator/additionalItems.js
 var require_additionalItems = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/additionalItems.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/additionalItems.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5322,9 +5322,9 @@ var require_additionalItems = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/items.js
+// node_modules/ajv/dist/vocabularies/applicator/items.js
 var require_items = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/items.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/items.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5380,9 +5380,9 @@ var require_items = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/prefixItems.js
+// node_modules/ajv/dist/vocabularies/applicator/prefixItems.js
 var require_prefixItems = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/prefixItems.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/prefixItems.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5398,9 +5398,9 @@ var require_prefixItems = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/items2020.js
+// node_modules/ajv/dist/vocabularies/applicator/items2020.js
 var require_items2020 = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/items2020.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/items2020.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5434,9 +5434,9 @@ var require_items2020 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/contains.js
+// node_modules/ajv/dist/vocabularies/applicator/contains.js
 var require_contains = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/contains.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/contains.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5529,9 +5529,9 @@ var require_contains = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/dependencies.js
+// node_modules/ajv/dist/vocabularies/applicator/dependencies.js
 var require_dependencies = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/dependencies.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/dependencies.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5624,9 +5624,9 @@ var require_dependencies = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/propertyNames.js
+// node_modules/ajv/dist/vocabularies/applicator/propertyNames.js
 var require_propertyNames = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/propertyNames.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/propertyNames.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5668,9 +5668,9 @@ var require_propertyNames = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js
+// node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js
 var require_additionalProperties = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5775,9 +5775,9 @@ var require_additionalProperties = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/properties.js
+// node_modules/ajv/dist/vocabularies/applicator/properties.js
 var require_properties = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/properties.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/properties.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5834,9 +5834,9 @@ var require_properties = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/patternProperties.js
+// node_modules/ajv/dist/vocabularies/applicator/patternProperties.js
 var require_patternProperties = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/patternProperties.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/patternProperties.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5909,9 +5909,9 @@ var require_patternProperties = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/not.js
+// node_modules/ajv/dist/vocabularies/applicator/not.js
 var require_not = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/not.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/not.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5941,9 +5941,9 @@ var require_not = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/anyOf.js
+// node_modules/ajv/dist/vocabularies/applicator/anyOf.js
 var require_anyOf = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/anyOf.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/anyOf.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -5959,9 +5959,9 @@ var require_anyOf = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/oneOf.js
+// node_modules/ajv/dist/vocabularies/applicator/oneOf.js
 var require_oneOf = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/oneOf.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/oneOf.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6018,9 +6018,9 @@ var require_oneOf = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/allOf.js
+// node_modules/ajv/dist/vocabularies/applicator/allOf.js
 var require_allOf = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6046,9 +6046,9 @@ var require_allOf = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/if.js
+// node_modules/ajv/dist/vocabularies/applicator/if.js
 var require_if = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/if.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/if.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6116,9 +6116,9 @@ var require_if = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/thenElse.js
+// node_modules/ajv/dist/vocabularies/applicator/thenElse.js
 var require_thenElse = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6135,9 +6135,9 @@ var require_thenElse = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/index.js
+// node_modules/ajv/dist/vocabularies/applicator/index.js
 var require_applicator = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6184,9 +6184,9 @@ var require_applicator = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js
+// node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js
 var require_dynamicAnchor = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6220,9 +6220,9 @@ var require_dynamicAnchor = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js
+// node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js
 var require_dynamicRef = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6267,9 +6267,9 @@ var require_dynamicRef = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js
+// node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js
 var require_recursiveAnchor = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6289,9 +6289,9 @@ var require_recursiveAnchor = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js
+// node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js
 var require_recursiveRef = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6305,9 +6305,9 @@ var require_recursiveRef = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/dynamic/index.js
+// node_modules/ajv/dist/vocabularies/dynamic/index.js
 var require_dynamic = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/dynamic/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/dynamic/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6320,9 +6320,9 @@ var require_dynamic = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/dependentRequired.js
+// node_modules/ajv/dist/vocabularies/validation/dependentRequired.js
 var require_dependentRequired = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/dependentRequired.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/dependentRequired.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6338,9 +6338,9 @@ var require_dependentRequired = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js
+// node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js
 var require_dependentSchemas = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6355,9 +6355,9 @@ var require_dependentSchemas = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/validation/limitContains.js
+// node_modules/ajv/dist/vocabularies/validation/limitContains.js
 var require_limitContains = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/validation/limitContains.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/validation/limitContains.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6376,9 +6376,9 @@ var require_limitContains = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/next.js
+// node_modules/ajv/dist/vocabularies/next.js
 var require_next = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/next.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/next.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6390,9 +6390,9 @@ var require_next = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js
+// node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js
 var require_unevaluatedProperties = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6457,9 +6457,9 @@ var require_unevaluatedProperties = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js
+// node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js
 var require_unevaluatedItems = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6502,9 +6502,9 @@ var require_unevaluatedItems = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/unevaluated/index.js
+// node_modules/ajv/dist/vocabularies/unevaluated/index.js
 var require_unevaluated = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/unevaluated/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/unevaluated/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6515,9 +6515,9 @@ var require_unevaluated = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/format/format.js
+// node_modules/ajv/dist/vocabularies/format/format.js
 var require_format = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/format/format.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/format/format.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6606,9 +6606,9 @@ var require_format = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/format/index.js
+// node_modules/ajv/dist/vocabularies/format/index.js
 var require_format2 = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/format/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/format/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6618,9 +6618,9 @@ var require_format2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/metadata.js
+// node_modules/ajv/dist/vocabularies/metadata.js
 var require_metadata = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/metadata.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/metadata.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6642,9 +6642,9 @@ var require_metadata = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/draft2020.js
+// node_modules/ajv/dist/vocabularies/draft2020.js
 var require_draft2020 = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/draft2020.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/draft2020.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6671,9 +6671,9 @@ var require_draft2020 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/discriminator/types.js
+// node_modules/ajv/dist/vocabularies/discriminator/types.js
 var require_types = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6686,9 +6686,9 @@ var require_types = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/vocabularies/discriminator/index.js
+// node_modules/ajv/dist/vocabularies/discriminator/index.js
 var require_discriminator = __commonJS({
-  "../../../../node_modules/ajv/dist/vocabularies/discriminator/index.js"(exports) {
+  "node_modules/ajv/dist/vocabularies/discriminator/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -6792,9 +6792,9 @@ var require_discriminator = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/schema.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/schema.json
 var require_schema = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/schema.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/schema.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/schema",
@@ -6852,9 +6852,9 @@ var require_schema = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json
 var require_applicator2 = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/applicator",
@@ -6905,9 +6905,9 @@ var require_applicator2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json
 var require_unevaluated2 = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/unevaluated",
@@ -6925,9 +6925,9 @@ var require_unevaluated2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json
 var require_content = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/content",
@@ -6946,9 +6946,9 @@ var require_content = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json
 var require_core3 = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/core",
@@ -7002,9 +7002,9 @@ var require_core3 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json
 var require_format_annotation = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/format-annotation",
@@ -7021,9 +7021,9 @@ var require_format_annotation = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json
 var require_meta_data = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/meta-data",
@@ -7062,9 +7062,9 @@ var require_meta_data = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json
+// node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json
 var require_validation2 = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json"(exports, module) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json"(exports, module) {
     module.exports = {
       $schema: "https://json-schema.org/draft/2020-12/schema",
       $id: "https://json-schema.org/draft/2020-12/meta/validation",
@@ -7157,9 +7157,9 @@ var require_validation2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/refs/json-schema-2020-12/index.js
+// node_modules/ajv/dist/refs/json-schema-2020-12/index.js
 var require_json_schema_2020_12 = __commonJS({
-  "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/index.js"(exports) {
+  "node_modules/ajv/dist/refs/json-schema-2020-12/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7193,9 +7193,9 @@ var require_json_schema_2020_12 = __commonJS({
   }
 });
 
-// ../../../../node_modules/ajv/dist/2020.js
+// node_modules/ajv/dist/2020.js
 var require__ = __commonJS({
-  "../../../../node_modules/ajv/dist/2020.js"(exports, module) {
+  "node_modules/ajv/dist/2020.js"(exports, module) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7271,9 +7271,9 @@ var require__ = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/identity.js
+// node_modules/yaml/dist/nodes/identity.js
 var require_identity = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/identity.js"(exports) {
+  "node_modules/yaml/dist/nodes/identity.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var ALIAS = /* @__PURE__ */ Symbol.for("yaml.alias");
@@ -7329,9 +7329,9 @@ var require_identity = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/visit.js
+// node_modules/yaml/dist/visit.js
 var require_visit = __commonJS({
-  "../../../../node_modules/yaml/dist/visit.js"(exports) {
+  "node_modules/yaml/dist/visit.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -7488,9 +7488,9 @@ var require_visit = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/doc/directives.js
+// node_modules/yaml/dist/doc/directives.js
 var require_directives = __commonJS({
-  "../../../../node_modules/yaml/dist/doc/directives.js"(exports) {
+  "node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -7660,9 +7660,9 @@ var require_directives = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/doc/anchors.js
+// node_modules/yaml/dist/doc/anchors.js
 var require_anchors = __commonJS({
-  "../../../../node_modules/yaml/dist/doc/anchors.js"(exports) {
+  "node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -7731,9 +7731,9 @@ var require_anchors = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/doc/applyReviver.js
+// node_modules/yaml/dist/doc/applyReviver.js
 var require_applyReviver = __commonJS({
-  "../../../../node_modules/yaml/dist/doc/applyReviver.js"(exports) {
+  "node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function applyReviver(reviver, obj, key, val) {
@@ -7782,9 +7782,9 @@ var require_applyReviver = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/toJS.js
+// node_modules/yaml/dist/nodes/toJS.js
 var require_toJS = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/toJS.js"(exports) {
+  "node_modules/yaml/dist/nodes/toJS.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -7813,9 +7813,9 @@ var require_toJS = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/Node.js
+// node_modules/yaml/dist/nodes/Node.js
 var require_Node = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/Node.js"(exports) {
+  "node_modules/yaml/dist/nodes/Node.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var applyReviver = require_applyReviver();
@@ -7855,9 +7855,9 @@ var require_Node = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/Alias.js
+// node_modules/yaml/dist/nodes/Alias.js
 var require_Alias = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/Alias.js"(exports) {
+  "node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
@@ -7972,9 +7972,9 @@ var require_Alias = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/Scalar.js
+// node_modules/yaml/dist/nodes/Scalar.js
 var require_Scalar = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/Scalar.js"(exports) {
+  "node_modules/yaml/dist/nodes/Scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -8003,9 +8003,9 @@ var require_Scalar = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/doc/createNode.js
+// node_modules/yaml/dist/doc/createNode.js
 var require_createNode = __commonJS({
-  "../../../../node_modules/yaml/dist/doc/createNode.js"(exports) {
+  "node_modules/yaml/dist/doc/createNode.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
@@ -8079,9 +8079,9 @@ var require_createNode = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/Collection.js
+// node_modules/yaml/dist/nodes/Collection.js
 var require_Collection = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/Collection.js"(exports) {
+  "node_modules/yaml/dist/nodes/Collection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
@@ -8223,9 +8223,9 @@ var require_Collection = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringifyComment.js
+// node_modules/yaml/dist/stringify/stringifyComment.js
 var require_stringifyComment = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
@@ -8241,9 +8241,9 @@ var require_stringifyComment = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/foldFlowLines.js
+// node_modules/yaml/dist/stringify/foldFlowLines.js
 var require_foldFlowLines = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
+  "node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var FOLD_FLOW = "flow";
@@ -8378,9 +8378,9 @@ ${indent}${text.slice(fold + 1, end2)}`;
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringifyString.js
+// node_modules/yaml/dist/stringify/stringifyString.js
 var require_stringifyString = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -8662,9 +8662,9 @@ ${indent}`);
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringify.js
+// node_modules/yaml/dist/stringify/stringify.js
 var require_stringify = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringify.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringify.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
@@ -8787,9 +8787,9 @@ ${ctx.indent}${str}`;
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringifyPair.js
+// node_modules/yaml/dist/stringify/stringifyPair.js
 var require_stringifyPair = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -8921,9 +8921,9 @@ ${ctx.indent}`;
   }
 });
 
-// ../../../../node_modules/yaml/dist/log.js
+// node_modules/yaml/dist/log.js
 var require_log = __commonJS({
-  "../../../../node_modules/yaml/dist/log.js"(exports) {
+  "node_modules/yaml/dist/log.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
@@ -8944,9 +8944,9 @@ var require_log = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/merge.js
+// node_modules/yaml/dist/schema/yaml-1.1/merge.js
 var require_merge = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -9005,9 +9005,9 @@ var require_merge = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/addPairToJSMap.js
+// node_modules/yaml/dist/nodes/addPairToJSMap.js
 var require_addPairToJSMap = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
+  "node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var log = require_log();
@@ -9070,9 +9070,9 @@ var require_addPairToJSMap = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/Pair.js
+// node_modules/yaml/dist/nodes/Pair.js
 var require_Pair = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/Pair.js"(exports) {
+  "node_modules/yaml/dist/nodes/Pair.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
@@ -9111,9 +9111,9 @@ var require_Pair = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringifyCollection.js
+// node_modules/yaml/dist/stringify/stringifyCollection.js
 var require_stringifyCollection = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -9263,9 +9263,9 @@ ${indent}${end}`;
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/YAMLMap.js
+// node_modules/yaml/dist/nodes/YAMLMap.js
 var require_YAMLMap = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
+  "node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyCollection = require_stringifyCollection();
@@ -9408,9 +9408,9 @@ var require_YAMLMap = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/common/map.js
+// node_modules/yaml/dist/schema/common/map.js
 var require_map = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/common/map.js"(exports) {
+  "node_modules/yaml/dist/schema/common/map.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -9431,9 +9431,9 @@ var require_map = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/nodes/YAMLSeq.js
+// node_modules/yaml/dist/nodes/YAMLSeq.js
 var require_YAMLSeq = __commonJS({
-  "../../../../node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
+  "node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
@@ -9548,9 +9548,9 @@ var require_YAMLSeq = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/common/seq.js
+// node_modules/yaml/dist/schema/common/seq.js
 var require_seq = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/common/seq.js"(exports) {
+  "node_modules/yaml/dist/schema/common/seq.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -9571,9 +9571,9 @@ var require_seq = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/common/string.js
+// node_modules/yaml/dist/schema/common/string.js
 var require_string = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/common/string.js"(exports) {
+  "node_modules/yaml/dist/schema/common/string.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyString = require_stringifyString();
@@ -9591,9 +9591,9 @@ var require_string = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/common/null.js
+// node_modules/yaml/dist/schema/common/null.js
 var require_null = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/common/null.js"(exports) {
+  "node_modules/yaml/dist/schema/common/null.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -9610,9 +9610,9 @@ var require_null = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/core/bool.js
+// node_modules/yaml/dist/schema/core/bool.js
 var require_bool = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/core/bool.js"(exports) {
+  "node_modules/yaml/dist/schema/core/bool.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -9635,9 +9635,9 @@ var require_bool = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringifyNumber.js
+// node_modules/yaml/dist/stringify/stringifyNumber.js
 var require_stringifyNumber = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function stringifyNumber({ format, minFractionDigits, tag, value: value2 }) {
@@ -9663,9 +9663,9 @@ var require_stringifyNumber = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/core/float.js
+// node_modules/yaml/dist/schema/core/float.js
 var require_float = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/core/float.js"(exports) {
+  "node_modules/yaml/dist/schema/core/float.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -9710,9 +9710,9 @@ var require_float = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/core/int.js
+// node_modules/yaml/dist/schema/core/int.js
 var require_int = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/core/int.js"(exports) {
+  "node_modules/yaml/dist/schema/core/int.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
@@ -9756,9 +9756,9 @@ var require_int = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/core/schema.js
+// node_modules/yaml/dist/schema/core/schema.js
 var require_schema2 = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/core/schema.js"(exports) {
+  "node_modules/yaml/dist/schema/core/schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
@@ -9785,9 +9785,9 @@ var require_schema2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/json/schema.js
+// node_modules/yaml/dist/schema/json/schema.js
 var require_schema3 = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/json/schema.js"(exports) {
+  "node_modules/yaml/dist/schema/json/schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -9853,9 +9853,9 @@ var require_schema3 = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/binary.js
+// node_modules/yaml/dist/schema/yaml-1.1/binary.js
 var require_binary = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_buffer = __require("buffer");
@@ -9920,9 +9920,9 @@ var require_binary = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/pairs.js
+// node_modules/yaml/dist/schema/yaml-1.1/pairs.js
 var require_pairs = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -9999,9 +9999,9 @@ ${cn.comment}` : item.comment;
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/omap.js
+// node_modules/yaml/dist/schema/yaml-1.1/omap.js
 var require_omap = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -10078,9 +10078,9 @@ var require_omap = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/bool.js
+// node_modules/yaml/dist/schema/yaml-1.1/bool.js
 var require_bool2 = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -10111,9 +10111,9 @@ var require_bool2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/float.js
+// node_modules/yaml/dist/schema/yaml-1.1/float.js
 var require_float2 = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -10161,9 +10161,9 @@ var require_float2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/int.js
+// node_modules/yaml/dist/schema/yaml-1.1/int.js
 var require_int2 = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
@@ -10241,9 +10241,9 @@ var require_int2 = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/set.js
+// node_modules/yaml/dist/schema/yaml-1.1/set.js
 var require_set = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -10331,9 +10331,9 @@ var require_set = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
+// node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
 var require_timestamp = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
@@ -10420,9 +10420,9 @@ var require_timestamp = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/yaml-1.1/schema.js
+// node_modules/yaml/dist/schema/yaml-1.1/schema.js
 var require_schema4 = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
@@ -10465,9 +10465,9 @@ var require_schema4 = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/tags.js
+// node_modules/yaml/dist/schema/tags.js
 var require_tags = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/tags.js"(exports) {
+  "node_modules/yaml/dist/schema/tags.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
@@ -10560,9 +10560,9 @@ var require_tags = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/schema/Schema.js
+// node_modules/yaml/dist/schema/Schema.js
 var require_Schema = __commonJS({
-  "../../../../node_modules/yaml/dist/schema/Schema.js"(exports) {
+  "node_modules/yaml/dist/schema/Schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -10593,9 +10593,9 @@ var require_Schema = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/stringify/stringifyDocument.js
+// node_modules/yaml/dist/stringify/stringifyDocument.js
 var require_stringifyDocument = __commonJS({
-  "../../../../node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -10674,9 +10674,9 @@ var require_stringifyDocument = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/doc/Document.js
+// node_modules/yaml/dist/doc/Document.js
 var require_Document = __commonJS({
-  "../../../../node_modules/yaml/dist/doc/Document.js"(exports) {
+  "node_modules/yaml/dist/doc/Document.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
@@ -10984,9 +10984,9 @@ var require_Document = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/errors.js
+// node_modules/yaml/dist/errors.js
 var require_errors2 = __commonJS({
-  "../../../../node_modules/yaml/dist/errors.js"(exports) {
+  "node_modules/yaml/dist/errors.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var YAMLError = class extends Error {
@@ -11050,9 +11050,9 @@ ${pointer}
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-props.js
+// node_modules/yaml/dist/compose/resolve-props.js
 var require_resolve_props = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-props.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-props.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
@@ -11185,9 +11185,9 @@ var require_resolve_props = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/util-contains-newline.js
+// node_modules/yaml/dist/compose/util-contains-newline.js
 var require_util_contains_newline = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
+  "node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function containsNewline(key) {
@@ -11228,9 +11228,9 @@ var require_util_contains_newline = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/util-flow-indent-check.js
+// node_modules/yaml/dist/compose/util-flow-indent-check.js
 var require_util_flow_indent_check = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
+  "node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var utilContainsNewline = require_util_contains_newline();
@@ -11247,9 +11247,9 @@ var require_util_flow_indent_check = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/util-map-includes.js
+// node_modules/yaml/dist/compose/util-map-includes.js
 var require_util_map_includes = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
+  "node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -11264,9 +11264,9 @@ var require_util_map_includes = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-block-map.js
+// node_modules/yaml/dist/compose/resolve-block-map.js
 var require_resolve_block_map = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Pair = require_Pair();
@@ -11373,9 +11373,9 @@ var require_resolve_block_map = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-block-seq.js
+// node_modules/yaml/dist/compose/resolve-block-seq.js
 var require_resolve_block_seq = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var YAMLSeq = require_YAMLSeq();
@@ -11425,9 +11425,9 @@ var require_resolve_block_seq = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-end.js
+// node_modules/yaml/dist/compose/resolve-end.js
 var require_resolve_end = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-end.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-end.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function resolveEnd(end, offset, reqSpace, onError) {
@@ -11469,9 +11469,9 @@ var require_resolve_end = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-flow-collection.js
+// node_modules/yaml/dist/compose/resolve-flow-collection.js
 var require_resolve_flow_collection = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -11664,9 +11664,9 @@ var require_resolve_flow_collection = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/compose-collection.js
+// node_modules/yaml/dist/compose/compose-collection.js
 var require_compose_collection = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/compose-collection.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-collection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -11730,9 +11730,9 @@ var require_compose_collection = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-block-scalar.js
+// node_modules/yaml/dist/compose/resolve-block-scalar.js
 var require_resolve_block_scalar = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -11914,9 +11914,9 @@ var require_resolve_block_scalar = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/resolve-flow-scalar.js
+// node_modules/yaml/dist/compose/resolve-flow-scalar.js
 var require_resolve_flow_scalar = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -12135,9 +12135,9 @@ var require_resolve_flow_scalar = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/compose-scalar.js
+// node_modules/yaml/dist/compose/compose-scalar.js
 var require_compose_scalar = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -12217,9 +12217,9 @@ var require_compose_scalar = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/util-empty-scalar-position.js
+// node_modules/yaml/dist/compose/util-empty-scalar-position.js
 var require_util_empty_scalar_position = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
+  "node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function emptyScalarPosition(offset, before, pos) {
@@ -12248,9 +12248,9 @@ var require_util_empty_scalar_position = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/compose-node.js
+// node_modules/yaml/dist/compose/compose-node.js
 var require_compose_node = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/compose-node.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-node.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
@@ -12355,9 +12355,9 @@ var require_compose_node = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/compose-doc.js
+// node_modules/yaml/dist/compose/compose-doc.js
 var require_compose_doc = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/compose-doc.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Document = require_Document();
@@ -12399,9 +12399,9 @@ var require_compose_doc = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/compose/composer.js
+// node_modules/yaml/dist/compose/composer.js
 var require_composer = __commonJS({
-  "../../../../node_modules/yaml/dist/compose/composer.js"(exports) {
+  "node_modules/yaml/dist/compose/composer.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
@@ -12608,9 +12608,9 @@ ${end.comment}` : end.comment;
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/cst-scalar.js
+// node_modules/yaml/dist/parse/cst-scalar.js
 var require_cst_scalar = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
+  "node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var resolveBlockScalar = require_resolve_block_scalar();
@@ -12794,9 +12794,9 @@ var require_cst_scalar = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/cst-stringify.js
+// node_modules/yaml/dist/parse/cst-stringify.js
 var require_cst_stringify = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
+  "node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
@@ -12856,9 +12856,9 @@ var require_cst_stringify = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/cst-visit.js
+// node_modules/yaml/dist/parse/cst-visit.js
 var require_cst_visit = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/cst-visit.js"(exports) {
+  "node_modules/yaml/dist/parse/cst-visit.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
@@ -12919,9 +12919,9 @@ var require_cst_visit = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/cst.js
+// node_modules/yaml/dist/parse/cst.js
 var require_cst = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/cst.js"(exports) {
+  "node_modules/yaml/dist/parse/cst.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var cstScalar = require_cst_scalar();
@@ -13022,9 +13022,9 @@ var require_cst = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/lexer.js
+// node_modules/yaml/dist/parse/lexer.js
 var require_lexer = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/lexer.js"(exports) {
+  "node_modules/yaml/dist/parse/lexer.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var cst = require_cst();
@@ -13612,9 +13612,9 @@ var require_lexer = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/line-counter.js
+// node_modules/yaml/dist/parse/line-counter.js
 var require_line_counter = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/line-counter.js"(exports) {
+  "node_modules/yaml/dist/parse/line-counter.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var LineCounter = class {
@@ -13644,9 +13644,9 @@ var require_line_counter = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/parse/parser.js
+// node_modules/yaml/dist/parse/parser.js
 var require_parser = __commonJS({
-  "../../../../node_modules/yaml/dist/parse/parser.js"(exports) {
+  "node_modules/yaml/dist/parse/parser.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
@@ -14519,9 +14519,9 @@ var require_parser = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/public-api.js
+// node_modules/yaml/dist/public-api.js
 var require_public_api = __commonJS({
-  "../../../../node_modules/yaml/dist/public-api.js"(exports) {
+  "node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
@@ -14617,9 +14617,9 @@ var require_public_api = __commonJS({
   }
 });
 
-// ../../../../node_modules/yaml/dist/index.js
+// node_modules/yaml/dist/index.js
 var require_dist = __commonJS({
-  "../../../../node_modules/yaml/dist/index.js"(exports) {
+  "node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();

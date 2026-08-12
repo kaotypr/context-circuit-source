@@ -2,10 +2,10 @@
 contract_version: 1
 plan_id: product-knowledge
 title: Product Knowledge for Context Circuit
-status: draft
+status: approved
 plan_version: 1
-approved_at: null
-approved_by: null
+approved_at: 2026-08-12T18:09:15.690Z
+approved_by: maintainer
 revision_reason: Initial draft
 source:
   kind: idea
@@ -21,10 +21,10 @@ documents:
   - 0070-risks.md
   - 0080-work-breakdown.md
 work_breakdown: 0080-work-breakdown.md
-material_digest: sha256:f24f5c27119d3a4392923bd2d7b1fbeeab4744748f8739c26ca8198f6e3b9a94
-approved_digest: null
+material_digest: sha256:ccf81c257cfcab66b8c382ce6d2ee509fe3a37631ef460c6f6c2a61d85f1c12d
+approved_digest: sha256:ccf81c257cfcab66b8c382ce6d2ee509fe3a37631ef460c6f6c2a61d85f1c12d
 created_at: 2026-08-12T14:46:22.390Z
-updated_at: 2026-08-12T14:46:22.390Z
+updated_at: 2026-08-12T18:09:15.690Z
 ---
 
 # Product Knowledge for Context Circuit
