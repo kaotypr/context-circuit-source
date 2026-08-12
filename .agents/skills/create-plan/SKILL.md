@@ -17,7 +17,9 @@ description: Turn a PRD, product document, issue, pull request, or explicit idea
 3. Choose a stable lowercase `plan_id` and an uppercase work prefix of 2–16
    alphanumeric characters. Normalize the material into the
    `plan-draft-request` contract. Work-item keys are local creation inputs, not
-   durable task IDs. Do not include credentials, live task status, or fabricated
+   durable task IDs. Give every work item an authoritative repository key,
+   implementation scope, test scope and policy, verification commands, and
+   independently provable acceptance criteria. Do not include credentials, live task status, or fabricated
    external references.
 4. Validate the request, then run `node .agents/bin/cc.mjs create-plan --input <request.json>`.
    The deterministic creator writes a new directory exclusively, assigns sparse

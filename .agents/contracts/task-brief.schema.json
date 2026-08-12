@@ -65,6 +65,23 @@
     },
     "created_at": { "type": "string", "format": "date-time" }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "source": { "properties": { "kind": { "const": "plan" } }, "required": ["kind"] } }, "required": ["source"] },
+      "then": {
+        "properties": {
+          "source": { "required": ["reference"] },
+          "plan": { "required": ["reference", "approval_state", "plan_version", "approved_digest", "work_ids"], "properties": { "reference": { "type": "string", "minLength": 1 }, "approval_state": { "const": "approved" } } }
+        }
+      },
+      "else": {
+        "properties": {
+          "source": { "properties": { "kind": { "const": "direct-request" } } },
+          "plan": { "properties": { "reference": { "type": "null" }, "approval_state": { "const": "not-applicable" } } }
+        }
+      }
+    }
+  ],
   "$defs": {
     "runId": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$" },
     "stringList": { "type": "array", "items": { "type": "string", "minLength": 1 } },

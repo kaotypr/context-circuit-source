@@ -162,54 +162,27 @@ function normalizeContractFirstRequest(input: RunTaskRequest, workId: string, ru
   };
 }
 
-function normalizePlanRequest(input: PlanRunTaskRequest, runId: string, createdAt: string): TaskBrief {
-  const request = input.request.trim();
-  const acceptanceCriteria = input.acceptance_criteria.map((item) => item.trim()).filter(Boolean);
-  if (!request) throw new Error("A plan execution outcome is required");
-  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
-  const names = input.repositories.map((repository) => repository.name);
-  if (new Set(names).size !== names.length) throw new Error("Repository names must be unique");
-  const byName = new Map(input.repositories.map((repository) => [repository.name, repository]));
-  const visiting = new Set<string>();
-  const orders = new Map<string, number>();
-  const orderOf = (name: string): number => {
-    const known = orders.get(name);
-    if (known !== undefined) return known;
-    if (visiting.has(name)) throw new Error(`Repository dependency cycle includes ${name}`);
-    visiting.add(name);
-    const repository = byName.get(name)!;
-    for (const dependency of repository.depends_on) if (!byName.has(dependency)) throw new Error(`${name} has unknown dependency ${dependency}`);
-    const order = repository.depends_on.length === 0 ? 0 : Math.max(...repository.depends_on.map(orderOf)) + 1;
-    visiting.delete(name);
-    orders.set(name, order);
-    return order;
+function normalizePlanRequest(input: PlanRunTaskRequest, item: import("./types.js").PlanWorkItem, runId: string, createdAt: string): TaskBrief {
+  const implementationScope = normalizeScope(item.scope, `implementation scope for ${item.work_id}`);
+  const testExpectation = repositoryExpectation({
+    name: item.repository, depends_on: [], scope: item.scope, test_scope: item.test_scope, test_policy: item.test_policy,
+    ...(item.test_rationale ? { test_rationale: item.test_rationale } : {}), verification_commands: item.verification_commands,
+    acceptance_criteria: item.acceptance_criteria,
+  });
+  const scope = [...new Set([...implementationScope, ...(testExpectation.policy === "required" ? testExpectation.paths : [])])];
+  const target: TaskRepositoryTarget = {
+    name: item.repository, dependency_order: 0, depends_on: [], scope, implementation_scope: implementationScope,
+    test_expectation: testExpectation, verification_commands: item.verification_commands, acceptance_criteria: item.acceptance_criteria,
   };
-  const targets: TaskRepositoryTarget[] = input.repositories.map((repository) => {
-    if (repository.depends_on.includes(repository.name)) throw new Error(`${repository.name} cannot depend on itself`);
-    const implementationScope = normalizeScope(repository.scope, `implementation scope for ${repository.name}`);
-    const testExpectation = repositoryExpectation(repository);
-    const repositoryAcceptance = repository.acceptance_criteria.map((criterion) => criterion.trim()).filter(Boolean);
-    if (repositoryAcceptance.length === 0) throw new Error(`At least one acceptance criterion is required for ${repository.name}`);
-    return {
-      name: repository.name,
-      dependency_order: orderOf(repository.name),
-      depends_on: repository.depends_on,
-      scope: [...new Set([...implementationScope, ...(testExpectation.policy === "required" ? testExpectation.paths : [])])],
-      implementation_scope: implementationScope,
-      test_expectation: testExpectation,
-      verification_commands: repository.verification_commands.map((command) => command.trim()).filter(Boolean),
-      acceptance_criteria: repositoryAcceptance,
-    };
-  }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
   return {
     contract_version: 1,
     work_id: input.work_ids[0]!,
     run_id: runId,
     source: { kind: "plan", reference: input.source.reference },
-    requested_outcome: request,
-    scope: [...new Set(targets.flatMap((target) => target.scope!))],
-    acceptance_criteria: acceptanceCriteria,
-    repositories: targets,
+    requested_outcome: item.title,
+    scope,
+    acceptance_criteria: item.acceptance_criteria,
+    repositories: [target],
     plan: {
       reference: input.source.reference,
       approval_state: "approved",
@@ -220,7 +193,7 @@ function normalizePlanRequest(input: PlanRunTaskRequest, runId: string, createdA
     activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
     assumptions: ["The selected work IDs and approved plan material are authoritative for this run."],
     risks: ["No authoritative claim is available; duplicate effort is possible."],
-    verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
+    verification_commands: item.verification_commands,
     authorization: { kind: "confirmed-selection", evidence: `The human selected approved plan work: ${input.work_ids.join(", ")}.` },
     created_at: createdAt,
   };
@@ -673,62 +646,22 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
   if (options.request.source.approved_digest !== index.approved_digest) {
     throw new Error("Plan approval digest is stale or does not match the approved plan material");
   }
-  const selected = new Set(options.request.work_ids);
-  const positions = new Map(options.request.work_ids.map((workId, position) => [workId, position]));
   const items = new Map(breakdown.items.map((item) => [item.work_id, item]));
-  const evidence = new Map<string, string>();
-  for (const entry of options.request.dependency_evidence) {
-    if (evidence.has(entry.work_id)) throw new Error(`Duplicate dependency evidence for ${entry.work_id}`);
-    evidence.set(entry.work_id, entry.evidence.trim());
-  }
-  for (const workId of options.request.work_ids) {
-    const item = items.get(workId);
-    if (!item) throw new Error(`Unknown plan work ID: ${workId}`);
-    for (const dependency of item.depends_on) {
-      if (selected.has(dependency)) {
-        if (positions.get(dependency)! >= positions.get(workId)!) throw new Error(`${workId} must be selected after dependency ${dependency}`);
-      } else if (!evidence.get(dependency)) {
-        throw new Error(`${workId} is dependency-blocked by ${dependency}; confirmed completion evidence is required`);
-      }
-    }
-  }
-  for (const workId of evidence.keys()) {
-    if (!items.has(workId)) throw new Error(`Dependency evidence references unknown plan work ID: ${workId}`);
-    if (selected.has(workId)) throw new Error(`Dependency evidence must not pre-complete selected work ID: ${workId}`);
+  const workId = options.request.work_ids[0]!;
+  const item = items.get(workId);
+  if (!item) throw new Error(`Unknown plan work ID: ${workId}`);
+  if (item.depends_on.length > 0) {
+    throw new Error(`${workId} is dependency-blocked by ${item.depends_on.join(", ")}; plan execution currently requires an independently executable item`);
   }
 
   const config = parseYaml(await readFile(join(workspaceRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
   await assertValid("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const requestedRepositories = new Set(options.request.repositories.map((repository) => repository.name));
-  const requestedByName = new Map(options.request.repositories.map((repository) => [repository.name, repository]));
-  const repositoryDependsOn = (name: string, dependency: string, seen = new Set<string>()): boolean => {
-    if (name === dependency) return true;
-    if (seen.has(name)) return false;
-    seen.add(name);
-    return (requestedByName.get(name)?.depends_on ?? []).some((candidate) => repositoryDependsOn(candidate, dependency, seen));
-  };
-  for (const workId of options.request.work_ids) {
-    const item = items.get(workId)!;
-    const repository = item.area;
-    if (!config.repositories[repository]) throw new Error(`Plan work ${workId} area is not a registered repository: ${repository}`);
-    if (!requestedRepositories.has(repository)) throw new Error(`Plan work ${workId} requires repository ${repository}`);
-    for (const dependency of item.depends_on.filter((candidate) => selected.has(candidate))) {
-      const dependencyRepository = items.get(dependency)!.area;
-      if (!repositoryDependsOn(repository, dependencyRepository)) {
-        throw new Error(`Repository ${repository} must depend on ${dependencyRepository} for selected plan dependency ${dependency}`);
-      }
-    }
-  }
-  for (const repository of requestedRepositories) {
-    if (![...selected].some((workId) => items.get(workId)!.area === repository)) {
-      throw new Error(`Repository ${repository} is not affected by the selected plan work`);
-    }
-  }
+  if (!config.repositories[item.repository]) throw new Error(`Plan work ${workId} repository is not registered: ${item.repository}`);
 
   const repositoryBases = new Map<string, { path: string; commit: string }>();
-  for (const target of options.request.repositories) {
+  for (const target of [{ name: item.repository }]) {
     const registered = config.repositories[target.name];
     if (!registered) throw new Error(`Unknown repository: ${target.name}`);
     const path = assertInside(workspaceRoot, join(workspaceRoot, registered.path));
@@ -745,14 +678,13 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
 
   const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
   const now = options.now ?? new Date();
-  const runId = generateRunId(options.request.request, now, options.discriminator ?? randomBytes(4).toString("hex"));
-  const workId = options.request.work_ids[0]!;
+  const runId = generateRunId(item.title, now, options.discriminator ?? randomBytes(4).toString("hex"));
   const createdAt = now.toISOString();
-  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request.request)}-${runId.slice(-8)}`;
+  const branch = `agent/${workId.toLowerCase()}-${slugify(item.title)}-${runId.slice(-8)}`;
   const runRoot = assertInside(runtimeRoot, join(runtimeRoot, "runs", runId));
   const taskBriefPath = join(runtimeRoot, "tasks", `${runId}.json`);
   const manifestPath = join(runRoot, "manifest.json");
-  const taskBrief = normalizePlanRequest(options.request, runId, createdAt);
+  const taskBrief = normalizePlanRequest(options.request, item, runId, createdAt);
   await assertValid("task-brief", taskBrief);
   for (const target of taskBrief.repositories) {
     if (target.test_expectation?.policy !== "existing-coverage") continue;
@@ -797,8 +729,8 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
   const manifest: RuntimeManifest = {
     contract_version: 1, work_id: workId, run_id: runId, status: "preparing", created_at: createdAt, updated_at: createdAt,
     task_brief: taskBriefPath, repositories: runtimeRepositories,
-    plan_work_items: options.request.work_ids.map((selectedWorkId) => ({ work_id: selectedWorkId, repository: items.get(selectedWorkId)!.area, depends_on: items.get(selectedWorkId)!.depends_on, outcome: "pending" })),
-    evidence: [taskBriefPath, manifestPath, ...options.request.dependency_evidence.map((entry) => `${entry.work_id}: ${entry.evidence}`), ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
+    plan_work_items: [{ work_id: workId, repository: item.repository, depends_on: item.depends_on, outcome: "pending" }],
+    evidence: [taskBriefPath, manifestPath, ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
     warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
     execution_events: [], lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : [],
   };

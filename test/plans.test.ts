@@ -22,8 +22,8 @@ const request: PlanDraftRequest = {
   verification: ["Verify every acceptance criterion independently."],
   risks: ["Unresolved states could create inconsistent behavior."],
   work_items: [
-    { key: "retry-contract", title: "Establish retry contract", area: "architecture" },
-    { key: "retry-ui", title: "Display retry state", area: "frontend", parent: "retry-contract", depends_on: ["retry-contract"] },
+    { key: "retry-contract", title: "Establish retry contract", area: "architecture", repository: "frontend", scope: ["src/contract.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: ["npm test"], acceptance_criteria: ["The retry contract is explicit."] },
+    { key: "retry-ui", title: "Display retry state", area: "frontend", repository: "frontend", scope: ["src/App.tsx"], test_scope: ["src/App.test.tsx"], test_policy: "required", verification_commands: ["npm test"], acceptance_criteria: ["The retry state is displayed."], parent: "retry-contract", depends_on: ["retry-contract"] },
   ],
 };
 
@@ -88,8 +88,8 @@ test("plan draft rejects unknown repositories and dependency cycles before writi
     plan_id: "invalid-plan",
     affected_repositories: ["backend"],
     work_items: [
-      { key: "one", title: "One", area: "frontend", depends_on: ["two"] },
-      { key: "two", title: "Two", area: "frontend", depends_on: ["one"] },
+      { key: "one", title: "One", area: "frontend", repository: "frontend", scope: ["src/one.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["One passes."], depends_on: ["two"] },
+      { key: "two", title: "Two", area: "frontend", repository: "frontend", scope: ["src/two.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Two passes."], depends_on: ["one"] },
     ],
   };
   await assert.rejects(createPlanDraft(workspace.root, invalid), /not registered|dependency cycle/);

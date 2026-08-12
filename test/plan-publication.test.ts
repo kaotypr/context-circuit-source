@@ -16,9 +16,9 @@ const request: PlanDraftRequest = {
   solution: ["Discover mappings before explicit creation."], delivery: ["Publish parents and dependencies first."],
   verification: ["Validate confirmed mappings."], risks: ["Partial external success must remain recoverable."],
   work_items: [
-    { key: "contract", title: "Define publication contract", area: "frontend" },
-    { key: "implementation", title: "Implement publication", area: "frontend", parent: "contract", depends_on: ["contract"] },
-    { key: "docs", title: "Document publication", area: "frontend", depends_on: ["implementation"] },
+    { key: "contract", title: "Define publication contract", area: "frontend", repository: "frontend", scope: ["src/contract.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Contract is defined."] },
+    { key: "implementation", title: "Implement publication", area: "frontend", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Publication is implemented."], parent: "contract", depends_on: ["contract"] },
+    { key: "docs", title: "Document publication", area: "frontend", repository: "frontend", scope: ["README.md"], test_scope: [], test_policy: "not-required", verification_commands: [], acceptance_criteria: ["Publication is documented."], depends_on: ["implementation"] },
   ],
 };
 

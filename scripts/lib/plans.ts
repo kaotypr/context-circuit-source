@@ -65,6 +65,13 @@ function allocateWorkItems(request: PlanDraftRequest): PlanWorkItem[] {
     parent: item.parent ? ids.get(item.parent) ?? null : null,
     depends_on: (item.depends_on ?? []).map((key) => ids.get(key) ?? key),
     area: item.area,
+    repository: item.repository,
+    scope: item.scope,
+    test_scope: item.test_scope,
+    test_policy: item.test_policy,
+    ...(item.test_rationale ? { test_rationale: item.test_rationale } : {}),
+    verification_commands: item.verification_commands,
+    acceptance_criteria: item.acceptance_criteria,
     external_reference: null,
   }));
 }
@@ -123,6 +130,10 @@ export function planDraftSemanticErrors(request: PlanDraftRequest, config?: Work
     for (const repository of request.affected_repositories) {
       if (!config.repositories[repository]) errors.push(`affected repository is not registered: ${repository}`);
     }
+    for (const item of request.work_items) {
+      if (!config.repositories[item.repository]) errors.push(`work item ${item.key} repository is not registered: ${item.repository}`);
+      if (!request.affected_repositories.includes(item.repository)) errors.push(`work item ${item.key} repository is not affected: ${item.repository}`);
+    }
   }
   return [...new Set(errors)];
 }
@@ -168,13 +179,13 @@ export function parseWorkBreakdown(raw: string, index: PlanIndex): PlanWorkBreak
   if (header === -1 || lines[header + 1] !== tableSeparator) {
     throw new Error("Work breakdown must contain the canonical six-column table and must not add live status columns");
   }
-  const items: PlanWorkItem[] = [];
+  const summaries: Array<Pick<PlanWorkItem, "work_id" | "title" | "parent" | "depends_on" | "area" | "external_reference">> = [];
   for (const line of lines.slice(header + 2)) {
     if (!line.startsWith("|")) break;
     const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
     if (cells.length !== 6) throw new Error(`Invalid work breakdown row: ${line}`);
     const [workId, title, parent, dependencies, area, external] = cells as [string, string, string, string, string, string];
-    items.push({
+    summaries.push({
       work_id: workId,
       title,
       parent: parent === "—" ? null : parent,
@@ -183,6 +194,17 @@ export function parseWorkBreakdown(raw: string, index: PlanIndex): PlanWorkBreak
       external_reference: external === "—" ? null : external,
     });
   }
+  const executionMatch = raw.match(/## Execution contracts\r?\n\r?\n```json\r?\n([\s\S]*?)\r?\n```/);
+  if (!executionMatch) throw new Error("Work breakdown must contain the canonical execution contracts JSON block");
+  const execution = JSON.parse(executionMatch[1]!) as { contract_version: number; items: Array<Omit<PlanWorkItem, "title" | "parent" | "depends_on" | "area" | "external_reference">> };
+  if (execution.contract_version !== 1 || !Array.isArray(execution.items)) throw new Error("Invalid work execution contracts block");
+  const executionById = new Map(execution.items.map((item) => [item.work_id, item]));
+  const items: PlanWorkItem[] = summaries.map((summary) => {
+    const details = executionById.get(summary.work_id);
+    if (!details) throw new Error(`Missing execution contract for ${summary.work_id}`);
+    return { ...summary, ...details };
+  });
+  for (const workId of executionById.keys()) if (!summaries.some((item) => item.work_id === workId)) throw new Error(`Execution contract references unknown work ID: ${workId}`);
   return { contract_version: 1, plan_id: index.plan_id, work_prefix: index.work_prefix, items };
 }
 
@@ -308,7 +330,13 @@ function renderPlan(request: PlanDraftRequest, createdAt: string): { index: Plan
   files.set("0050-verification.md", renderDocument("Verification", [["Verification strategy", markdownList(request.verification, "None recorded.")]]));
   files.set("0070-risks.md", renderDocument("Risks", [["Risks and mitigations", markdownList(request.risks, "None recorded.")]]));
   const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "—"} | ${item.depends_on.join(", ") || "—"} | ${item.area} | — |`).join("\n");
-  files.set("0080-work-breakdown.md", `# Work breakdown\n\n${tableHeader}\n${tableSeparator}\n${rows}\n\nLive task status does not belong in this plan. Add confirmed external references only after an explicit publication action.\n`);
+  const execution = {
+    contract_version: 1,
+    items: workItems.map(({ work_id, repository, scope, test_scope, test_policy, test_rationale, verification_commands, acceptance_criteria }) => ({
+      work_id, repository, scope, test_scope, test_policy, ...(test_rationale ? { test_rationale } : {}), verification_commands, acceptance_criteria,
+    })),
+  };
+  files.set("0080-work-breakdown.md", `# Work breakdown\n\n${tableHeader}\n${tableSeparator}\n${rows}\n\n## Execution contracts\n\n\`\`\`json\n${JSON.stringify(execution, null, 2)}\n\`\`\`\n\nLive task status does not belong in this plan. Add confirmed external references only after an explicit publication action.\n`);
   const index: PlanIndex = {
     contract_version: 1,
     plan_id: request.plan_id,

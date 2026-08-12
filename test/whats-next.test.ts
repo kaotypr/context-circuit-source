@@ -10,7 +10,7 @@ import { validateContract } from "../scripts/lib/validation.js";
 import { createTestWorkspace } from "./helpers.js";
 
 function planRequest(workItems: PlanDraftRequest["work_items"] = [
-  { key: "reset", title: "Add reset behavior", area: "frontend" },
+  { key: "reset", title: "Add reset behavior", area: "frontend", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only" as const, verification_commands: [], acceptance_criteria: ["Reset behavior works."] },
 ]): PlanDraftRequest {
   return {
     contract_version: 1,
@@ -95,8 +95,8 @@ test("fake activity facts safely establish plan dependency completion", async (t
   const workspace = await createTestWorkspace();
   t.after(workspace.cleanup);
   const created = await createPlanDraft(workspace.root, planRequest([
-    { key: "contract", title: "Define reset contract", area: "frontend" },
-    { key: "ui", title: "Implement reset UI", area: "frontend", depends_on: ["contract"] },
+    { key: "contract", title: "Define reset contract", area: "frontend", repository: "frontend", scope: ["src/contract.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Reset contract is defined."] },
+    { key: "ui", title: "Implement reset UI", area: "frontend", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Reset UI is implemented."], depends_on: ["contract"] },
   ]), new Date("2026-08-11T08:00:00Z"));
   await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-11T09:00:00Z"));
   const activity: FakeActivitySource = {

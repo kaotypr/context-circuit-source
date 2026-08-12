@@ -24,7 +24,7 @@ input remains locked until all dependencies pass independent verification.
 
 Pass a request file whose `source.kind` is `plan`. Its `source.reference` must
 resolve beneath `context/plans/` and include the current `plan_version` and
-`approved_digest`. Select one stable `work_id`, or list a dependency-ordered set:
+`approved_digest`. Select exactly one stable, dependency-free `work_id`:
 
 ```json
 {
@@ -35,29 +35,21 @@ resolve beneath `context/plans/` and include the current `plan_version` and
     "plan_version": 1,
     "approved_digest": "sha256:<64 lowercase hexadecimal characters>"
   },
-  "request": "Implement the approved reset flow",
-  "work_ids": ["RESET-001", "RESET-010"],
-  "dependency_evidence": [],
-  "acceptance_criteria": ["The approved reset flow is implemented and verified."],
-  "repositories": [{
-    "name": "frontend",
-    "depends_on": [],
-    "scope": ["src/App.tsx"],
-    "test_scope": ["src/App.test.tsx"],
-    "test_policy": "required",
-    "verification_commands": ["npm test"],
-    "acceptance_criteria": ["Reset returns the count to zero."]
-  }]
+  "work_ids": ["RESET-001"]
 }
 ```
 
-Every dependency outside the selected set requires a `dependency_evidence`
-entry with confirmed completion evidence. The command validates the plan files,
-approval, selected IDs, order, repository mapping, scope, test expectations,
-and acceptance criteria before allocating runtime state or creating worktrees.
-The task brief retains the selected plan IDs and approval evidence. The runtime
-manifest keeps each selected item pending until its repository verifier records
-an outcome, so later or unselected dependencies are never fabricated as passed.
+The approved work breakdown contains a canonical execution-contract JSON block
+for every item: repository, implementation and test paths, test policy,
+verification commands, and acceptance criteria. Because that block is numbered
+plan material, approval covers it and material edits invalidate the digest.
+`run-task` derives its brief from those fields and rejects caller overrides.
+
+The conservative initial execution contract allows one dependency-free plan
+item per run. It does not accept caller-supplied dependency-completion evidence;
+dependent items remain blocked until a later workflow phase provides a trusted
+local work-state projection. A verifier result therefore records exactly one
+selected work-item outcome and cannot complete siblings or later dependencies.
 
 The existing direct-request forms still allocate an `ADHOC-*` work ID and remain
 planless.

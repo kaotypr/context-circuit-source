@@ -85,7 +85,7 @@ export async function preparePlanPublication(options: PreparePublicationOptions)
     const items = ordered(breakdown.items).map<PlanPublicationItem>((item) => {
       const known = item.external_reference ? { reference: item.external_reference, evidence: "Confirmed mapping already stored in the approved plan." } : discovered.get(item.work_id);
       if (item.external_reference && discovered.get(item.work_id)?.reference !== undefined && discovered.get(item.work_id)!.reference !== item.external_reference) throw new Error(`Conflicting external mapping for ${item.work_id}`);
-      return { ...item, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
+      return { work_id: item.work_id, title: item.title, parent: item.parent, depends_on: item.depends_on, area: item.area, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
     });
     for (const workId of discovered.keys()) if (!items.some((item) => item.work_id === workId)) throw new Error(`Discovered mapping references unknown work ID: ${workId}`);
     const now = (options.now ?? new Date()).toISOString();

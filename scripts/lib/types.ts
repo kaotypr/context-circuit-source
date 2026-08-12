@@ -119,6 +119,13 @@ export interface PlanWorkItem {
   parent: string | null;
   depends_on: string[];
   area: string;
+  repository: string;
+  scope: string[];
+  test_scope: string[];
+  test_policy: TestExpectationPolicy;
+  test_rationale?: string;
+  verification_commands: string[];
+  acceptance_criteria: string[];
   external_reference: string | null;
 }
 
@@ -198,6 +205,13 @@ export interface PlanDraftWorkItem {
   key: string;
   title: string;
   area: string;
+  repository: string;
+  scope: string[];
+  test_scope: string[];
+  test_policy: TestExpectationPolicy;
+  test_rationale?: string;
+  verification_commands: string[];
+  acceptance_criteria: string[];
   parent?: string;
   depends_on?: string[];
 }
@@ -324,11 +338,7 @@ export interface PlanRunTaskRequest {
     plan_version: number;
     approved_digest: string;
   };
-  request: string;
   work_ids: string[];
-  dependency_evidence: Array<{ work_id: string; evidence: string }>;
-  acceptance_criteria: string[];
-  repositories: RunTaskRepositoryRequest[];
 }
 
 export type StructuredRunTaskRequest = RunTaskRequest | PlanRunTaskRequest;

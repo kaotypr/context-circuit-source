@@ -32,8 +32,8 @@ matching `.agents/contracts/plan-draft-request.schema.json`. A minimal example i
   "verification": ["Verify every acceptance criterion independently."],
   "risks": ["Unresolved states could create inconsistent behavior."],
   "work_items": [
-    { "key": "retry-contract", "title": "Establish retry contract", "area": "architecture" },
-    { "key": "retry-ui", "title": "Display retry state", "area": "frontend", "parent": "retry-contract", "depends_on": ["retry-contract"] }
+    { "key": "retry-contract", "title": "Establish retry contract", "area": "architecture", "repository": "frontend", "scope": ["src/retry-contract.ts"], "test_scope": [], "test_policy": "verifier-only", "verification_commands": ["npm test"], "acceptance_criteria": ["The retry contract is explicit."] },
+    { "key": "retry-ui", "title": "Display retry state", "area": "frontend", "repository": "frontend", "scope": ["src/App.tsx"], "test_scope": ["src/App.test.tsx"], "test_policy": "required", "verification_commands": ["npm test"], "acceptance_criteria": ["The retry state is visible."], "parent": "retry-contract", "depends_on": ["retry-contract"] }
   ]
 }
 ```
@@ -50,6 +50,10 @@ git diff --check
 Creation is exclusive: an existing plan directory is never overwritten. The
 first item receives `<PREFIX>-001`; later items receive sparse `-010`, `-020`,
 and subsequent IDs. Those IDs must be preserved through revisions.
+Each item also receives a canonical execution contract in the numbered work
+breakdown. Repository, scope, test expectation, verification commands, and
+acceptance criteria are approved plan material and are the authoritative input
+to plan-linked execution.
 
 ## Approval and revision
 
