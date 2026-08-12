@@ -4,11 +4,12 @@
   "title": "Run manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "work_id", "run_id", "status", "created_at", "updated_at", "task_brief", "repositories", "evidence", "warnings", "lifecycle_events"],
+  "required": ["contract_version", "work_id", "run_id", "source_kind", "status", "created_at", "updated_at", "task_brief", "repositories", "evidence", "warnings", "lifecycle_events"],
   "properties": {
     "contract_version": { "const": 1 },
     "work_id": { "type": "string", "minLength": 1 },
     "run_id": { "type": "string", "minLength": 1 },
+    "source_kind": { "enum": ["direct-request", "plan", "issue", "pull-request", "activity-task"] },
     "status": { "enum": ["preparing", "prepared", "running", "verifying", "passed", "failed", "blocked", "cancelled", "closing", "closed"] },
     "created_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" },
@@ -91,5 +92,10 @@
         }
       }
     }
-  }
+  },
+  "allOf": [{
+    "if": { "properties": { "source_kind": { "const": "plan" } }, "required": ["source_kind"] },
+    "then": { "required": ["plan_work_items"] },
+    "else": { "not": { "required": ["plan_work_items"] } }
+  }]
 }

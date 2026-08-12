@@ -101,26 +101,24 @@ function findRepository(manifest: RuntimeManifest, name: string): RuntimeReposit
   return repository;
 }
 
-function assertPlanWorkItemIdentity(manifest: RuntimeManifest): void {
-  if (!manifest.plan_work_items) return;
-  if (manifest.plan_work_items.length !== 1) throw new Error("Plan-linked run must contain exactly one plan work item");
+function assertPlanWorkItemAssociation(manifest: RuntimeManifest, brief: TaskBrief, repository: string): void {
+  assertEqual(manifest.source_kind, brief.source.kind, "manifest source_kind");
+  const planLinked = brief.source.kind === "plan";
+  if (!planLinked) {
+    if (manifest.plan_work_items !== undefined) throw new Error("Non-plan run must not contain plan work items");
+    return;
+  }
+  if (brief.plan.approval_state !== "approved") throw new Error("Plan-linked task brief must contain approved plan metadata");
+  if (!manifest.plan_work_items || manifest.plan_work_items.length !== 1) {
+    throw new Error("Plan-linked run must contain exactly one plan work item");
+  }
   const item = manifest.plan_work_items[0]!;
   assertEqual(item.work_id, manifest.work_id, "plan work item work_id");
-  if (!manifest.repositories.some((repository) => repository.name === item.repository)) {
-    throw new Error(`Plan work item repository is not present in the manifest: ${item.repository}`);
-  }
-}
-
-function assertPlanWorkItemBriefIdentity(manifest: RuntimeManifest, brief: TaskBrief, repository: string): void {
-  if (!manifest.plan_work_items) return;
-  const item = manifest.plan_work_items[0]!;
-  if (brief.source.kind !== "plan" || brief.plan.approval_state !== "approved") {
-    throw new Error("Manifest plan work item requires a plan-linked task brief");
-  }
   if (brief.plan.work_ids.length !== 1 || brief.plan.work_ids[0] !== item.work_id) {
     throw new Error("Plan work item identity does not match task brief work IDs");
   }
-  if (brief.repositories.length !== 1 || brief.repositories[0]!.name !== item.repository || item.repository !== repository) {
+  if (manifest.repositories.length !== 1 || manifest.repositories[0]!.name !== item.repository ||
+      brief.repositories.length !== 1 || brief.repositories[0]!.name !== item.repository || item.repository !== repository) {
     throw new Error("Plan work item repository does not match task brief and recorded repository");
   }
 }
@@ -284,7 +282,6 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     const manifest = await readJson<RuntimeManifest>(manifestPath);
     await assertValid("runtime-manifest", manifest);
     assertEqual(manifest.run_id, options.runId, "manifest run_id");
-    assertPlanWorkItemIdentity(manifest);
     const repository = findRepository(manifest, options.repository);
     const attempt = repository.repair_attempts ?? 0;
     assertInside(runtimeRoot, repository.worktree);
@@ -293,7 +290,7 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     const verifierInputPath = assertInside(runtimeRoot, repository.verifier_input);
     const brief = await readJson<TaskBrief>(taskBriefPath);
     await assertValid("task-brief", brief);
-    assertPlanWorkItemBriefIdentity(manifest, brief, options.repository);
+    assertPlanWorkItemAssociation(manifest, brief, options.repository);
     assertTaskIdentity(manifest, brief, options.repository);
     const target = brief.repositories.find((candidate) => candidate.name === options.repository)!;
     const targetScope = target.scope ?? brief.scope;

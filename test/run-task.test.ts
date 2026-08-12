@@ -167,6 +167,18 @@ test("approved plan selection preserves stable work IDs and approval evidence", 
   assert.deepEqual(await validateContract("runtime-manifest", manifest), []);
   await access(join(prepared.worktree, ".git"));
 
+  const deletedAtStart = structuredClone(manifest);
+  delete deletedAtStart.plan_work_items;
+  assert.notDeepEqual(await validateContract("runtime-manifest", deletedAtStart), []);
+  await writeFile(prepared.manifest, `${JSON.stringify(deletedAtStart, null, 2)}\n`, "utf8");
+  await assert.rejects(
+    recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-started" }),
+    /Invalid runtime-manifest.*plan_work_items/,
+  );
+  assert.equal(JSON.parse(await readFile(prepared.manifest, "utf8")).status, "prepared");
+  assert.deepEqual(JSON.parse(await readFile(prepared.manifest, "utf8")).execution_events, []);
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+
   const worker = JSON.parse(await readFile(prepared.workerInput, "utf8"));
   for (const path of ["src/App.tsx", "src/App.test.tsx"]) {
     const file = join(prepared.worktree, path);
@@ -181,6 +193,16 @@ test("approved plan selection preserves stable work IDs and approval evidence", 
     summary: "Implemented the selected plan work.", branch: prepared.branch, worktree: prepared.worktree, commits: [commit],
     changed_files: ["src/App.test.tsx", "src/App.tsx"], checks: [{ command: "npm test", status: "passed", evidence: "Focused reset tests pass." }], risks: [],
   }, null, 2)}\n`, "utf8");
+  const deletedAtResult = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  delete deletedAtResult.plan_work_items;
+  await writeFile(prepared.manifest, `${JSON.stringify(deletedAtResult, null, 2)}\n`, "utf8");
+  await assert.rejects(
+    recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" }),
+    /Invalid runtime-manifest.*plan_work_items/,
+  );
+  assert.equal(JSON.parse(await readFile(prepared.manifest, "utf8")).status, "prepared");
+  assert.deepEqual(JSON.parse(await readFile(prepared.manifest, "utf8")).execution_events, []);
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
   const verifier = JSON.parse(await readFile(prepared.verifierInput, "utf8"));
   await writeFile(verifier.result_path, `${JSON.stringify({
@@ -204,6 +226,23 @@ test("approved plan selection preserves stable work IDs and approval evidence", 
   await writeFile(prepared.manifest, `${JSON.stringify(untamperedManifest, null, 2)}\n`, "utf8");
   const passed = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
   assert.deepEqual(passed.plan_work_items?.map((item) => [item.work_id, item.outcome]), [["RESET-001", "passed"]]);
+});
+
+test("non-plan run rejects injected plan work items before mutation", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanlessTask({ workspaceRoot: workspace.root, ...taskOptions });
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  manifest.plan_work_items = [{ work_id: "RESET-001", repository: "frontend", depends_on: [], outcome: "pending" }];
+  assert.notDeepEqual(await validateContract("runtime-manifest", manifest), []);
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await assert.rejects(
+    recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-started" }),
+    /Invalid runtime-manifest/,
+  );
+  const unchanged = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  assert.equal(unchanged.status, "prepared");
+  assert.deepEqual(unchanged.execution_events, []);
 });
 
 test("plan execution rejects caller-defined scope, acceptance, and dependency evidence", async (t) => {

@@ -16165,6 +16165,7 @@ async function preparePlanlessTask(options) {
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "direct-request",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -16406,6 +16407,7 @@ async function prepareContractFirstTask(options) {
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "direct-request",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -16573,6 +16575,7 @@ async function preparePlanTask(options) {
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "plan",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -16787,25 +16790,23 @@ function findRepository(manifest2, name) {
   if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
   return repository;
 }
-function assertPlanWorkItemIdentity(manifest2) {
-  if (!manifest2.plan_work_items) return;
-  if (manifest2.plan_work_items.length !== 1) throw new Error("Plan-linked run must contain exactly one plan work item");
+function assertPlanWorkItemAssociation(manifest2, brief, repository) {
+  assertEqual(manifest2.source_kind, brief.source.kind, "manifest source_kind");
+  const planLinked = brief.source.kind === "plan";
+  if (!planLinked) {
+    if (manifest2.plan_work_items !== void 0) throw new Error("Non-plan run must not contain plan work items");
+    return;
+  }
+  if (brief.plan.approval_state !== "approved") throw new Error("Plan-linked task brief must contain approved plan metadata");
+  if (!manifest2.plan_work_items || manifest2.plan_work_items.length !== 1) {
+    throw new Error("Plan-linked run must contain exactly one plan work item");
+  }
   const item = manifest2.plan_work_items[0];
   assertEqual(item.work_id, manifest2.work_id, "plan work item work_id");
-  if (!manifest2.repositories.some((repository) => repository.name === item.repository)) {
-    throw new Error(`Plan work item repository is not present in the manifest: ${item.repository}`);
-  }
-}
-function assertPlanWorkItemBriefIdentity(manifest2, brief, repository) {
-  if (!manifest2.plan_work_items) return;
-  const item = manifest2.plan_work_items[0];
-  if (brief.source.kind !== "plan" || brief.plan.approval_state !== "approved") {
-    throw new Error("Manifest plan work item requires a plan-linked task brief");
-  }
   if (brief.plan.work_ids.length !== 1 || brief.plan.work_ids[0] !== item.work_id) {
     throw new Error("Plan work item identity does not match task brief work IDs");
   }
-  if (brief.repositories.length !== 1 || brief.repositories[0].name !== item.repository || item.repository !== repository) {
+  if (manifest2.repositories.length !== 1 || manifest2.repositories[0].name !== item.repository || brief.repositories.length !== 1 || brief.repositories[0].name !== item.repository || item.repository !== repository) {
     throw new Error("Plan work item repository does not match task brief and recorded repository");
   }
 }
@@ -16939,7 +16940,6 @@ async function recordResult(options) {
     const manifest2 = await readJson2(manifestPath);
     await assertValid3("runtime-manifest", manifest2);
     assertEqual(manifest2.run_id, options.runId, "manifest run_id");
-    assertPlanWorkItemIdentity(manifest2);
     const repository = findRepository(manifest2, options.repository);
     const attempt = repository.repair_attempts ?? 0;
     assertInside(runtimeRoot, repository.worktree);
@@ -16948,7 +16948,7 @@ async function recordResult(options) {
     const verifierInputPath = assertInside(runtimeRoot, repository.verifier_input);
     const brief = await readJson2(taskBriefPath);
     await assertValid3("task-brief", brief);
-    assertPlanWorkItemBriefIdentity(manifest2, brief, options.repository);
+    assertPlanWorkItemAssociation(manifest2, brief, options.repository);
     assertTaskIdentity(manifest2, brief, options.repository);
     const target = brief.repositories.find((candidate) => candidate.name === options.repository);
     const targetScope = target.scope ?? brief.scope;

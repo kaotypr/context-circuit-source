@@ -450,6 +450,7 @@ export interface RuntimeManifest {
   contract_version: 1;
   work_id: string;
   run_id: string;
+  source_kind: "direct-request" | "plan" | "issue" | "pull-request" | "activity-task";
   status: RuntimeStatus;
   created_at: string;
   updated_at: string;

@@ -352,6 +352,7 @@ export async function preparePlanlessTask(options: PrepareTaskOptions): Promise<
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "direct-request",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -584,6 +585,7 @@ export async function prepareContractFirstTask(options: PrepareContractFirstTask
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "direct-request",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -727,7 +729,7 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
     preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
   }
   const manifest: RuntimeManifest = {
-    contract_version: 1, work_id: workId, run_id: runId, status: "preparing", created_at: createdAt, updated_at: createdAt,
+    contract_version: 1, work_id: workId, run_id: runId, source_kind: "plan", status: "preparing", created_at: createdAt, updated_at: createdAt,
     task_brief: taskBriefPath, repositories: runtimeRepositories,
     plan_work_items: [{ work_id: workId, repository: item.repository, depends_on: item.depends_on, outcome: "pending" }],
     evidence: [taskBriefPath, manifestPath, ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
