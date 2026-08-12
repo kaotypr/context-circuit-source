@@ -144,9 +144,10 @@ export type CandidateKind =
   | "activity-task"
   | "repository-item"
   | "contribution-follow-up"
+  | "reconciliation"
   | "plan-work-item";
 
-export type CandidateState = "ready" | "in-progress" | "review" | "failed" | "completed" | "cancelled";
+export type CandidateState = "ready" | "in-progress" | "review" | "closeout" | "failed" | "completed" | "cancelled";
 export type DependencyState = "completed" | "pending" | "unknown";
 export type CandidatePlanState = "approved" | "draft" | "not-applicable" | "unknown";
 
@@ -169,6 +170,7 @@ export interface WorkCandidate {
   access_available: boolean;
   contract_blocked: boolean;
   source_reference: string;
+  state_sources?: Array<{ state: CandidateState; source_reference: string }>;
   risks: string[];
 }
 
@@ -179,7 +181,7 @@ export interface FakeActivitySource {
 }
 
 export interface NextAction {
-  action: "execute" | "enable";
+  action: "execute" | "review" | "closeout" | "reconcile" | "enable";
   candidate_id: string | null;
   title: string;
   why: string;

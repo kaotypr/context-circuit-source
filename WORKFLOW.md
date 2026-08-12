@@ -9,10 +9,16 @@ explicit and recorded in the plan index. Material revisions revoke approval,
 increment the plan version, and preserve existing work IDs. Publishing external
 tasks and beginning implementation are separate actions.
 
-`whats-next` is read-only. It ranks urgent work, actionable work in progress,
-review or verification failures, ready source tasks, and then dependency-ready
-approved-plan items. Unknown dependency status does not count as completion.
-If nothing is executable, it recommends the smallest source-backed enabling
+`whats-next` is read-only. Its work-state projection combines configured
+activity facts with validated plan-linked runtime manifests, closeout records,
+and tracked completed-work contributions. Durable outcomes take precedence over
+closeout, runtime, and activity evidence, but disagreement produces an explicit
+reconciliation action instead of silently choosing a state. It ranks urgent
+work, actionable work in progress or closeout, review or verification failures,
+ready source tasks, and then dependency-ready approved-plan items. Passed work
+is review-ready, closing work is closeout-ready, completed and cancelled work is
+excluded, and unknown dependency status does not count as completion. If
+nothing is executable, it recommends the smallest source-backed enabling
 action. Recommendation never claims work; explicit `run-task` selection is a
 separate human gate.
 

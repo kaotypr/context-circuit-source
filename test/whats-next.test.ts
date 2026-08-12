@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
-import { readFile, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { git } from "../scripts/lib/git.js";
 import { createPlanDraft, setPlanState } from "../scripts/lib/plans.js";
-import type { FakeActivitySource, PlanDraftRequest, WorkCandidate } from "../scripts/lib/types.js";
+import { preparePlanTask } from "../scripts/lib/run-task.js";
+import type { FakeActivitySource, PlanDraftRequest, PlanRunTaskRequest, WorkCandidate } from "../scripts/lib/types.js";
 import { recommendWhatsNext } from "../scripts/lib/whats-next.js";
 import { validateContract } from "../scripts/lib/validation.js";
 import { createTestWorkspace } from "./helpers.js";
@@ -54,6 +55,17 @@ function candidate(overrides: Partial<WorkCandidate> = {}): WorkCandidate {
     risks: [],
     ...overrides,
   };
+}
+
+async function preparePlanRun(workspace: { root: string }, now = new Date("2026-08-11T09:30:00Z")) {
+  const created = await createPlanDraft(workspace.root, planRequest(), new Date("2026-08-11T08:00:00Z"));
+  const approved = await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-11T09:00:00Z"));
+  const request: PlanRunTaskRequest = {
+    contract_version: 1,
+    source: { kind: "plan", reference: "context/plans/counter-reset", plan_version: approved.plan_version, approved_digest: approved.approved_digest! },
+    work_ids: ["RESET-001"],
+  };
+  return preparePlanTask({ workspaceRoot: workspace.root, request, now, discriminator: "abcdef12" });
 }
 
 test("whats-next recommends a dependency-ready item from an approved plan", async (t) => {
@@ -149,4 +161,152 @@ test("whats-next rejects malformed fake activity input before recommendation", a
   t.after(workspace.cleanup);
   const malformed = { contract_version: 1, current_user: "kao", candidates: [{ title: "missing fields" }] } as unknown as FakeActivitySource;
   await assert.rejects(recommendWhatsNext(workspace.root, malformed), /Invalid fake activity source/);
+});
+
+test("passed plan-linked runtime is recommended for review instead of duplicate execution", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanRun(workspace);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  manifest.status = "passed";
+  manifest.repositories[0].status = "passed";
+  manifest.plan_work_items[0].outcome = "passed";
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.action, "review");
+  assert.equal(result.recommendation.candidate_id, "plan:counter-reset:RESET-001");
+  assert.match(result.recommendation.title, /Review or prepare merge/);
+  assert.ok(result.recommendation.source_references.some((item) => item.endsWith("/manifest.json")));
+  assert.equal(result.considered.executable, 1);
+});
+
+test("closed plan-linked runtime is excluded without an activity provider", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanRun(workspace);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  manifest.status = "closed";
+  manifest.repositories[0].status = "closed";
+  manifest.plan_work_items[0].outcome = "passed";
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.candidate_id, null);
+  assert.equal(result.considered.excluded, 1);
+  assert.equal(result.no_state_changed, true);
+});
+
+test("closing plan-linked runtime is recommended for closeout instead of execution", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanRun(workspace);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  manifest.status = "closing";
+  manifest.repositories[0].status = "closing";
+  manifest.plan_work_items[0].outcome = "passed";
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.action, "closeout");
+  assert.match(result.recommendation.title, /Complete closeout or cleanup/);
+  assert.equal(result.no_state_changed, true);
+});
+
+test("runtime and activity contradiction yields read-only reconciliation", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanRun(workspace);
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  manifest.status = "passed";
+  manifest.repositories[0].status = "passed";
+  manifest.plan_work_items[0].outcome = "passed";
+  await writeFile(prepared.manifest, `${JSON.stringify(manifest, null, 2)}\n`);
+  const activity: FakeActivitySource = {
+    contract_version: 1,
+    current_user: "kao",
+    candidates: [candidate({ candidate_id: "activity:stale-reset", work_id: "RESET-001", state: "ready", source_reference: "fake-activity://RESET-001" })],
+  };
+
+  const result = await recommendWhatsNext(workspace.root, activity, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.action, "reconcile");
+  assert.match(result.recommendation.title, /Reconcile contradictory state/);
+  assert.match(result.recommendation.blockers.join("\n"), /contradictory work states/);
+  assert.ok(result.recommendation.source_references.includes("fake-activity://RESET-001"));
+  assert.ok(result.recommendation.source_references.some((item) => item.endsWith("/manifest.json")));
+  assert.equal(result.no_state_changed, true);
+});
+
+test("malformed and unrelated runtime evidence is ignored safely", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, planRequest(), new Date("2026-08-11T08:00:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-11T09:00:00Z"));
+  const malformed = join(workspace.root, ".runtime", "runs", "malformed");
+  const unrelated = join(workspace.root, ".runtime", "runs", "unrelated");
+  await mkdir(malformed, { recursive: true });
+  await mkdir(unrelated, { recursive: true });
+  await writeFile(join(malformed, "manifest.json"), "{ definitely not json\n");
+  await writeFile(join(unrelated, "note.txt"), "not runtime evidence\n");
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.action, "execute");
+  assert.ok(result.warnings.some((item) => item.includes("Ignored malformed runtime evidence malformed")));
+  assert.ok(!result.warnings.some((item) => item.includes("unrelated")));
+});
+
+test("tracked durable completed-work contribution excludes plan implementation without runtime evidence", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, planRequest(), new Date("2026-08-11T08:00:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-11T09:00:00Z"));
+  const contributionDirectory = join(workspace.root, "contributions", "general");
+  const contribution = join(contributionDirectory, "20260811T093000Z-reviewer-reset-frontend.md");
+  await mkdir(contributionDirectory, { recursive: true });
+  await writeFile(contribution, `# RESET-001: Add reset behavior
+
+- Run: \`20260811T090000Z-abcdef12\`
+
+## Outcome
+
+Merged after human review.
+
+## Affected repositories
+
+- \`frontend\`.
+
+## Pull requests and commits
+
+- Recorded.
+
+## Verification
+
+- Passed.
+
+## Decisions and deviations
+
+- None.
+
+## Remaining risks and follow-up
+
+- None.
+
+## Candidate durable learnings
+
+- None.
+`);
+  await git(workspace.root, ["init", "--initial-branch=main"]);
+  await git(workspace.root, ["add", "."]);
+  await git(workspace.root, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "record completed work"]);
+
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+
+  assert.equal(result.recommendation.candidate_id, null);
+  assert.equal(result.considered.excluded, 1);
+  assert.equal(result.warnings.length, 0);
 });

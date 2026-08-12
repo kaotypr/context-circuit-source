@@ -11145,10 +11145,10 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep2, value: value2 } = collItem;
+        const { start, key, sep: sep3, value: value2 } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
-          next: key ?? sep2?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: bm.indent,
@@ -11162,7 +11162,7 @@ var require_resolve_block_map = __commonJS({
             else if ("indent" in key && key.indent !== bm.indent)
               onError(offset, "BAD_INDENT", startColMsg);
           }
-          if (!keyProps.anchor && !keyProps.tag && !sep2) {
+          if (!keyProps.anchor && !keyProps.tag && !sep3) {
             commentEnd = keyProps.end;
             if (keyProps.comment) {
               if (map.comment)
@@ -11186,7 +11186,7 @@ var require_resolve_block_map = __commonJS({
         ctx.atKey = false;
         if (utilMapIncludes.mapIncludes(ctx, map.items, keyNode))
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
-        const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+        const valueProps = resolveProps.resolveProps(sep3 ?? [], {
           indicator: "map-value-ind",
           next: value2,
           offset: keyNode.range[2],
@@ -11202,7 +11202,7 @@ var require_resolve_block_map = __commonJS({
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value2 ? composeNode(ctx, value2, valueProps, onError) : composeEmptyNode(ctx, offset, sep2, null, valueProps, onError);
+          const valueNode = value2 ? composeNode(ctx, value2, valueProps, onError) : composeEmptyNode(ctx, offset, sep3, null, valueProps, onError);
           if (ctx.schema.compat)
             utilFlowIndentCheck.flowIndentCheck(bm.indent, value2, onError);
           offset = valueNode.range[2];
@@ -11293,7 +11293,7 @@ var require_resolve_end = __commonJS({
       let comment = "";
       if (end) {
         let hasSpace = false;
-        let sep2 = "";
+        let sep3 = "";
         for (const token of end) {
           const { source, type } = token;
           switch (type) {
@@ -11307,13 +11307,13 @@ var require_resolve_end = __commonJS({
               if (!comment)
                 comment = cb;
               else
-                comment += sep2 + cb;
-              sep2 = "";
+                comment += sep3 + cb;
+              sep3 = "";
               break;
             }
             case "newline":
               if (comment)
-                sep2 += source;
+                sep3 += source;
               hasSpace = true;
               break;
             default:
@@ -11356,18 +11356,18 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep2, value: value2 } = collItem;
+        const { start, key, sep: sep3, value: value2 } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
-          next: key ?? sep2?.[0],
+          next: key ?? sep3?.[0],
           offset,
           onError,
           parentIndent: fc.indent,
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep2 && !value2) {
+          if (!props.anchor && !props.tag && !sep3 && !value2) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -11421,8 +11421,8 @@ var require_resolve_flow_collection = __commonJS({
             }
           }
         }
-        if (!isMap && !sep2 && !props.found) {
-          const valueNode = value2 ? composeNode(ctx, value2, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
+        if (!isMap && !sep3 && !props.found) {
+          const valueNode = value2 ? composeNode(ctx, value2, props, onError) : composeEmptyNode(ctx, props.end, sep3, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
           if (isBlock(value2))
@@ -11434,7 +11434,7 @@ var require_resolve_flow_collection = __commonJS({
           if (isBlock(key))
             onError(keyNode.range, "BLOCK_IN_FLOW", blockMsg);
           ctx.atKey = false;
-          const valueProps = resolveProps.resolveProps(sep2 ?? [], {
+          const valueProps = resolveProps.resolveProps(sep3 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
             next: value2,
@@ -11445,8 +11445,8 @@ var require_resolve_flow_collection = __commonJS({
           });
           if (valueProps.found) {
             if (!isMap && !props.found && ctx.options.strict) {
-              if (sep2)
-                for (const st of sep2) {
+              if (sep3)
+                for (const st of sep3) {
                   if (st === valueProps.found)
                     break;
                   if (st.type === "newline") {
@@ -11463,7 +11463,7 @@ var require_resolve_flow_collection = __commonJS({
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value2 ? composeNode(ctx, value2, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep2, null, valueProps, onError) : null;
+          const valueNode = value2 ? composeNode(ctx, value2, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep3, null, valueProps, onError) : null;
           if (valueNode) {
             if (isBlock(value2))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
@@ -11643,7 +11643,7 @@ var require_resolve_block_scalar = __commonJS({
           chompStart = i + 1;
       }
       let value2 = "";
-      let sep2 = "";
+      let sep3 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
         value2 += lines[i][0].slice(trimIndent) + "\n";
@@ -11660,24 +11660,24 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value2 += sep2 + indent.slice(trimIndent) + content;
-          sep2 = "\n";
+          value2 += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
-          if (sep2 === " ")
-            sep2 = "\n";
-          else if (!prevMoreIndented && sep2 === "\n")
-            sep2 = "\n\n";
-          value2 += sep2 + indent.slice(trimIndent) + content;
-          sep2 = "\n";
+          if (sep3 === " ")
+            sep3 = "\n";
+          else if (!prevMoreIndented && sep3 === "\n")
+            sep3 = "\n\n";
+          value2 += sep3 + indent.slice(trimIndent) + content;
+          sep3 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
-          if (sep2 === "\n")
+          if (sep3 === "\n")
             value2 += "\n";
           else
-            sep2 = "\n";
+            sep3 = "\n";
         } else {
-          value2 += sep2 + content;
-          sep2 = " ";
+          value2 += sep3 + content;
+          sep3 = " ";
           prevMoreIndented = false;
         }
       }
@@ -11859,25 +11859,25 @@ var require_resolve_flow_scalar = __commonJS({
       if (!match)
         return source;
       let res = match[1];
-      let sep2 = " ";
+      let sep3 = " ";
       let pos = first.lastIndex;
       line.lastIndex = pos;
       while (match = line.exec(source)) {
         if (match[1] === "") {
-          if (sep2 === "\n")
-            res += sep2;
+          if (sep3 === "\n")
+            res += sep3;
           else
-            sep2 = "\n";
+            sep3 = "\n";
         } else {
-          res += sep2 + match[1];
-          sep2 = " ";
+          res += sep3 + match[1];
+          sep3 = " ";
         }
         pos = line.lastIndex;
       }
       const last = /[ \t]*(.*)/sy;
       last.lastIndex = pos;
       match = last.exec(source);
-      return res + sep2 + (match?.[1] ?? "");
+      return res + sep3 + (match?.[1] ?? "");
     }
     function doubleQuotedValue(source, onError) {
       let res = "";
@@ -12687,14 +12687,14 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep2, value: value2 }) {
+    function stringifyItem({ start, key, sep: sep3, value: value2 }) {
       let res = "";
       for (const st of start)
         res += st.source;
       if (key)
         res += stringifyToken(key);
-      if (sep2)
-        for (const st of sep2)
+      if (sep3)
+        for (const st of sep3)
           res += st.source;
       if (value2)
         res += stringifyToken(value2);
@@ -13861,18 +13861,18 @@ var require_parser = __commonJS({
         if (this.type === "map-value-ind") {
           const prev = getPrevProps(this.peek(2));
           const start = getFirstKeyStartProps(prev);
-          let sep2;
+          let sep3;
           if (scalar.end) {
-            sep2 = scalar.end;
-            sep2.push(this.sourceToken);
+            sep3 = scalar.end;
+            sep3.push(this.sourceToken);
             delete scalar.end;
           } else
-            sep2 = [this.sourceToken];
+            sep3 = [this.sourceToken];
           const map = {
             type: "block-map",
             offset: scalar.offset,
             indent: scalar.indent,
-            items: [{ start, key: scalar, sep: sep2 }]
+            items: [{ start, key: scalar, sep: sep3 }]
           };
           this.onKeyLine = true;
           this.stack[this.stack.length - 1] = map;
@@ -14025,15 +14025,15 @@ var require_parser = __commonJS({
                 } else if (isFlowToken(it.key) && !includesToken(it.sep, "newline")) {
                   const start2 = getFirstKeyStartProps(it.start);
                   const key = it.key;
-                  const sep2 = it.sep;
-                  sep2.push(this.sourceToken);
+                  const sep3 = it.sep;
+                  sep3.push(this.sourceToken);
                   delete it.key;
                   delete it.sep;
                   this.stack.push({
                     type: "block-map",
                     offset: this.offset,
                     indent: this.indent,
-                    items: [{ start: start2, key, sep: sep2 }]
+                    items: [{ start: start2, key, sep: sep3 }]
                   });
                 } else if (start.length > 0) {
                   it.sep = it.sep.concat(start, this.sourceToken);
@@ -14227,13 +14227,13 @@ var require_parser = __commonJS({
             const prev = getPrevProps(parent);
             const start = getFirstKeyStartProps(prev);
             fixFlowSeqItems(fc);
-            const sep2 = fc.end.splice(1, fc.end.length);
-            sep2.push(this.sourceToken);
+            const sep3 = fc.end.splice(1, fc.end.length);
+            sep3.push(this.sourceToken);
             const map = {
               type: "block-map",
               offset: fc.offset,
               indent: fc.indent,
-              items: [{ start, key: fc, sep: sep2 }]
+              items: [{ start, key: fc, sep: sep3 }]
             };
             this.onKeyLine = true;
             this.stack[this.stack.length - 1] = map;
@@ -17784,7 +17784,7 @@ async function finishWork(options) {
   const author = safeToken(options.author, "Author");
   const invocationTime = options.now ?? /* @__PURE__ */ new Date();
   if (options.mergeCommit && !/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("--merge-commit must be a full lowercase Git object ID");
-  if (options.pullRequests?.some((reference) => !reference.trim() || /[\r\n]/.test(reference))) throw new Error("Pull-request references must be non-empty single lines");
+  if (options.pullRequests?.some((reference2) => !reference2.trim() || /[\r\n]/.test(reference2))) throw new Error("Pull-request references must be non-empty single lines");
   const config = await loadWorkspace2(workspaceRoot18);
   const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
   if (await realpath3(wrapperTopLevel) !== await realpath3(workspaceRoot18)) throw new Error("Workspace root must be the wrapper Git root before closeout");
@@ -18006,29 +18006,41 @@ var init_set_plan_state = __esm({
 
 // scripts/lib/whats-next.ts
 import { lstat as lstat6, readdir as readdir3, readFile as readFile12 } from "node:fs/promises";
-import { join as join11, relative as relative5, resolve as resolve21 } from "node:path";
+import { join as join11, relative as relative5, resolve as resolve21, sep as sep2 } from "node:path";
 function contractMessages2(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
 }
 async function isDirectory(path2) {
   try {
-    return (await lstat6(path2)).isDirectory();
+    const info = await lstat6(path2);
+    return info.isDirectory() && !info.isSymbolicLink();
   } catch {
     return false;
   }
+}
+function reference(workspaceRoot18, path2) {
+  const raw = relative5(workspaceRoot18, path2);
+  return raw && !raw.startsWith(`..${sep2}`) && raw !== ".." ? raw.replaceAll("\\", "/") : path2;
+}
+function inside(root, path2) {
+  const resolvedRoot = resolve21(root);
+  const resolvedPath = resolve21(path2);
+  return resolvedPath === resolvedRoot || resolvedPath.startsWith(`${resolvedRoot}${sep2}`);
 }
 function acceptanceIsSufficient(raw) {
   return /^- (?!None recorded\.$).+/m.test(raw);
 }
 function rank(candidate) {
+  if (candidate.kind === "reconciliation") return 0;
   if (candidate.urgent) return 1;
-  if (candidate.state === "in-progress") return 2;
-  if (["review", "verification-failure", "ci-failure"].includes(candidate.kind) || candidate.state === "failed") return 3;
+  if (candidate.state === "in-progress" || candidate.state === "closeout") return 2;
+  if (["review", "verification-failure", "ci-failure"].includes(candidate.kind) || candidate.state === "failed" || candidate.state === "review") return 3;
   if (candidate.kind !== "plan-work-item") return 4;
   return 5;
 }
 function blockers(candidate, currentUser) {
   const values18 = [];
+  if (candidate.kind === "reconciliation") values18.push("read-only sources report contradictory work states");
   if (candidate.owner && candidate.owner !== currentUser) values18.push(`owned by another active contributor: ${candidate.owner}`);
   for (const dependency of candidate.dependencies) {
     if (dependency.state !== "completed") values18.push(`dependency ${dependency.reference} is ${dependency.state}`);
@@ -18043,27 +18055,41 @@ function blockers(candidate, currentUser) {
   if (candidate.contract_blocked) values18.push("an unresolved contract decision blocks implementation");
   return [...new Set(values18)];
 }
-function actionFor(candidate, candidateBlockers, config, action) {
+function actionKind(candidate, candidateBlockers) {
+  if (candidate.kind === "reconciliation") return "reconcile";
+  if (candidateBlockers.length > 0) return "enable";
+  if (candidate.state === "review") return "review";
+  if (candidate.state === "closeout") return "closeout";
+  return "execute";
+}
+function actionFor(candidate, candidateBlockers, config) {
+  const action = actionKind(candidate, candidateBlockers);
+  const stateSources = candidate.state_sources?.length ? candidate.state_sources.map((item) => `state ${item.state}: ${item.source_reference}`) : [`state ${candidate.state}: ${candidate.source_reference}`];
   const evidence = [
-    `state: ${candidate.state}`,
+    ...stateSources,
     `plan approval: ${candidate.plan_approval_state}`,
+    `plan approval source: ${candidate.plan_reference ?? candidate.source_reference}`,
     candidate.dependencies.length === 0 ? "dependencies: none" : `dependencies: ${candidate.dependencies.map((item) => `${item.reference}=${item.state}`).join(", ")}`,
+    `dependency source: ${candidate.plan_reference ?? candidate.source_reference}`,
     `scope sufficient: ${candidate.scope_sufficient}`,
+    `scope source: ${candidate.source_reference}`,
     `acceptance sufficient: ${candidate.acceptance_sufficient}`,
-    `repository access available: ${candidate.access_available}`
+    `acceptance source: ${candidate.source_reference}`,
+    `repository access available: ${candidate.access_available}`,
+    "repository access source: workspace.yaml#repositories"
   ];
   const sequence = candidate.repositories.flatMap((repository) => {
     const agent = config.repositories[repository]?.agent ?? repository;
     return [`repository worker (${agent})`, "independent verifier"];
   });
-  const title = action === "execute" ? candidate.title : enablingTitle(candidate, candidateBlockers);
+  const title = action === "execute" ? candidate.title : actionTitle(candidate, candidateBlockers, action);
   return {
     action,
     candidate_id: candidate.candidate_id,
     title,
-    why: action === "execute" ? `${rankingReason(candidate)}; all readiness checks passed.` : `No candidate is currently executable; this is the smallest visible action that addresses the first blocker for ${candidate.title}.`,
+    why: action === "execute" ? `${rankingReason(candidate)}; all readiness checks passed.` : action === "review" ? "Verified implementation evidence is ready for human review or merge preparation; implementation must not be duplicated." : action === "closeout" ? "Implementation has advanced beyond execution and the remaining work is human-gated closeout or cleanup." : action === "reconcile" ? "Configured activity and local outcome evidence disagree; reconcile the cited sources without mutating them or starting duplicate implementation." : `No candidate is currently executable; this is the smallest visible action that addresses the first blocker for ${candidate.title}.`,
     readiness_evidence: evidence,
-    source_references: [.../* @__PURE__ */ new Set([candidate.source_reference, ...candidate.plan_reference ? [candidate.plan_reference] : []])],
+    source_references: [.../* @__PURE__ */ new Set([candidate.source_reference, ...candidate.plan_reference ? [candidate.plan_reference] : [], ...(candidate.state_sources ?? []).map((item) => item.source_reference)])],
     repositories: candidate.repositories,
     agent_sequence: action === "execute" ? [...new Set(sequence)] : [],
     blockers: candidateBlockers,
@@ -18073,13 +18099,14 @@ function actionFor(candidate, candidateBlockers, config, action) {
 function rankingReason(candidate) {
   if (candidate.urgent) return "It is explicitly urgent";
   if (candidate.state === "in-progress") return "It is actionable work already in progress";
-  if (["review", "verification-failure", "ci-failure"].includes(candidate.kind) || candidate.state === "failed") {
-    return "It addresses review, verification, or CI feedback";
-  }
+  if (["review", "verification-failure", "ci-failure"].includes(candidate.kind) || candidate.state === "failed") return "It addresses review, verification, or CI feedback";
   if (candidate.kind !== "plan-work-item") return "It is the highest-priority approved ready source candidate";
   return "It is the next dependency-ready item in an approved plan";
 }
-function enablingTitle(candidate, candidateBlockers) {
+function actionTitle(candidate, candidateBlockers, action) {
+  if (action === "review") return `Review or prepare merge for ${candidate.title}`;
+  if (action === "closeout") return `Complete closeout or cleanup for ${candidate.title}`;
+  if (action === "reconcile") return `Reconcile contradictory state for ${candidate.title}`;
   const first = candidateBlockers[0] ?? "readiness is not established";
   if (first.startsWith("governing plan is draft")) return `Approve the governing plan for ${candidate.title}`;
   if (first.startsWith("dependency ")) return `Resolve or confirm ${first.replace(" is ", " as ")}`;
@@ -18096,13 +18123,109 @@ async function repositoryAccess(workspaceRoot18, config, repositories) {
   }
   return true;
 }
-async function discoverPlanCandidates(workspaceRoot18, config, facts) {
+function runtimeState(manifest2, workId) {
+  const item = manifest2.plan_work_items?.find((candidate) => candidate.work_id === workId);
+  if (manifest2.status === "cancelled") return "cancelled";
+  if (manifest2.status === "closing") return "closeout";
+  if (manifest2.status === "closed") return "completed";
+  if (manifest2.status === "passed" || item?.outcome === "passed") return "review";
+  if (manifest2.status === "failed" || manifest2.status === "blocked" || item?.outcome === "failed" || item?.outcome === "blocked") return "failed";
+  return "in-progress";
+}
+async function validatedJson(name, path2) {
+  const info = await lstat6(path2);
+  if (!info.isFile() || info.isSymbolicLink()) throw new Error(`${name} is not a regular file`);
+  const value2 = JSON.parse(await readFile12(path2, "utf8"));
+  const errors2 = contractMessages2(await validateContract(name, value2));
+  if (errors2.length > 0) throw new Error(errors2.join("; "));
+  return value2;
+}
+async function discoverRuntimeObservations(workspaceRoot18) {
+  const observations = /* @__PURE__ */ new Map();
+  const warnings = [];
+  const runsRoot = join11(workspaceRoot18, ".runtime", "runs");
+  if (!await isDirectory(runsRoot)) return { observations, warnings };
+  const entries = (await readdir3(runsRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+  for (const entry of entries) {
+    const manifestPath = join11(runsRoot, entry.name, "manifest.json");
+    try {
+      const info = await lstat6(manifestPath);
+      if (!info.isFile() || info.isSymbolicLink()) throw new Error("manifest is not a regular file");
+      const manifest2 = await validatedJson("runtime-manifest", manifestPath);
+      if (manifest2.source_kind !== "plan" || !manifest2.plan_work_items) continue;
+      if (!inside(workspaceRoot18, manifest2.task_brief)) throw new Error("task brief escapes the workspace");
+      const brief = await validatedJson("task-brief", manifest2.task_brief);
+      if (brief.source.kind !== "plan" || brief.plan.approval_state !== "approved" || brief.work_id !== manifest2.work_id || !brief.plan.work_ids.includes(manifest2.work_id)) throw new Error("plan task brief identity does not match manifest");
+      for (const item of manifest2.plan_work_items) {
+        let state = runtimeState(manifest2, item.work_id);
+        const sources = [reference(workspaceRoot18, manifestPath)];
+        const repository = manifest2.repositories.find((candidate) => candidate.name === item.repository);
+        if (repository?.closeout_record) {
+          if (!inside(workspaceRoot18, repository.closeout_record)) throw new Error("closeout record escapes the workspace");
+          const closeout = await validatedJson("closeout-record", repository.closeout_record);
+          if (closeout.run_id !== manifest2.run_id || closeout.work_id !== item.work_id || closeout.repository !== item.repository) throw new Error("closeout identity does not match manifest");
+          state = closeout.status === "closed" ? closeout.outcome === "merged" ? "completed" : "cancelled" : "closeout";
+          sources.push(reference(workspaceRoot18, repository.closeout_record));
+        }
+        const values18 = observations.get(item.work_id) ?? [];
+        for (const source_reference of sources) values18.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: brief.source.reference.replace(/\/README\.md$/, "").replace(/\/$/, "") });
+        observations.set(item.work_id, values18);
+      }
+    } catch (error) {
+      const code = error.code;
+      if (code !== "ENOENT") warnings.push(`Ignored malformed runtime evidence ${entry.name}: ${error.message}`);
+    }
+  }
+  return { observations, warnings };
+}
+async function discoverDurableContributions(workspaceRoot18) {
+  const observations = /* @__PURE__ */ new Map();
+  const warnings = [];
+  const root = join11(workspaceRoot18, "contributions");
+  if (!await isDirectory(root)) return { observations, warnings };
+  const groups = (await readdir3(root, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+  for (const group of groups) {
+    const directory = join11(root, group.name);
+    const files = (await readdir3(directory, { withFileTypes: true })).filter((entry) => entry.isFile() && !entry.isSymbolicLink() && entry.name.endsWith(".md")).sort((a, b) => a.name.localeCompare(b.name));
+    for (const file of files) {
+      const path2 = join11(directory, file.name);
+      const source_reference = reference(workspaceRoot18, path2);
+      try {
+        await git(workspaceRoot18, ["ls-files", "--error-unmatch", "--", source_reference]);
+      } catch {
+        continue;
+      }
+      const content = await readFile12(path2, "utf8");
+      const work = content.match(/^# ([A-Z][A-Z0-9]{1,15}-\d{3,}):/m)?.[1];
+      const run = content.match(/^- Run: `([^`]+)`$/m)?.[1];
+      const merged = content.includes("Merged after human review.");
+      const abandoned = content.includes("Deliberately abandoned by the human.");
+      const documentErrors = contributionDocumentErrors(path2, content, run);
+      if (!work || !run || merged === abandoned || documentErrors.length > 0) {
+        warnings.push(`Ignored unrecognized durable contribution ${source_reference}`);
+        continue;
+      }
+      const values18 = observations.get(work) ?? [];
+      values18.push({ state: merged ? "completed" : "cancelled", source_reference, precedence: 40 });
+      observations.set(work, values18);
+    }
+  }
+  return { observations, warnings };
+}
+function project(observations) {
+  if (observations.length === 0) return null;
+  const ordered2 = observations.slice().sort((a, b) => b.precedence - a.precedence || a.source_reference.localeCompare(b.source_reference));
+  return { state: ordered2[0].state, observations: ordered2, contradiction: new Set(ordered2.map((item) => item.state)).size > 1 };
+}
+async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, localObservations) {
   const plansRoot = join11(workspaceRoot18, "context", "plans");
   if (!await isDirectory(plansRoot)) return { candidates: [], warnings: [], matchedFacts: /* @__PURE__ */ new Set() };
-  const entries = (await readdir3(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((left, right) => left.name.localeCompare(right.name));
+  const entries = (await readdir3(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
   const candidates = [];
   const warnings = [];
   const matchedFacts = /* @__PURE__ */ new Set();
+  const validations = /* @__PURE__ */ new Map();
+  const workIdCounts = /* @__PURE__ */ new Map();
   for (const entry of entries) {
     const planDirectory3 = join11(plansRoot, entry.name);
     const validation = await validatePlanDirectory(planDirectory3);
@@ -18110,25 +18233,51 @@ async function discoverPlanCandidates(workspaceRoot18, config, facts) {
       warnings.push(`Skipped invalid plan ${entry.name}: ${validation.errors.join("; ") || "missing parsed plan material"}`);
       continue;
     }
+    validations.set(entry.name, validation);
+    for (const item of validation.work_breakdown.items) workIdCounts.set(item.work_id, (workIdCounts.get(item.work_id) ?? 0) + 1);
+  }
+  for (const entry of entries) {
+    const planDirectory3 = join11(plansRoot, entry.name);
+    const validation = validations.get(entry.name);
+    if (!validation?.index || !validation.work_breakdown) continue;
+    const planDirectoryReference = relative5(workspaceRoot18, planDirectory3).replaceAll("\\", "/");
+    const projectedByWork = /* @__PURE__ */ new Map();
+    for (const item of validation.work_breakdown.items) {
+      const relevantLocal = (localObservations.get(item.work_id) ?? []).filter((observation) => {
+        if (observation.plan_reference) return observation.plan_reference === planDirectoryReference;
+        if (observation.precedence === 40 && workIdCounts.get(item.work_id) > 1) return false;
+        return true;
+      });
+      const activity2 = activityFacts.get(item.work_id) ?? [];
+      const value2 = project([...relevantLocal, ...activity2.map((fact) => ({ state: fact.state, source_reference: fact.source_reference, precedence: 10 }))]);
+      if (value2) projectedByWork.set(item.work_id, value2);
+      if (workIdCounts.get(item.work_id) > 1 && (localObservations.get(item.work_id) ?? []).some((observation) => !observation.plan_reference && observation.precedence === 40)) {
+        warnings.push(`Ignored ambiguous durable contribution for ${item.work_id}: multiple plans use that work ID`);
+      }
+    }
     const requirementPath = join11(planDirectory3, "0010-requirements.md");
     const acceptanceSufficient = acceptanceIsSufficient(await readFile12(requirementPath, "utf8"));
     for (const item of validation.work_breakdown.items) {
-      const fact = facts.get(item.work_id);
-      if (fact) matchedFacts.add(fact.candidate_id);
-      const repositories = fact?.repositories.length ? fact.repositories : config.repositories[item.area] ? [item.area] : [];
-      const dependencyFacts = new Map([...facts.values()].filter((value2) => value2.work_id).map((value2) => [value2.work_id, value2.state]));
-      const dependencies = item.depends_on.map((reference) => ({
-        reference,
-        state: dependencyFacts.get(reference) === "completed" ? "completed" : dependencyFacts.has(reference) ? "pending" : "unknown"
+      const facts = activityFacts.get(item.work_id) ?? [];
+      for (const fact2 of facts) matchedFacts.add(fact2.candidate_id);
+      const fact = facts[0];
+      const projection = projectedByWork.get(item.work_id);
+      const repositories = fact?.repositories.length ? fact.repositories : config.repositories[item.repository] ? [item.repository] : [];
+      const dependencies = item.depends_on.map((dependency) => ({
+        reference: dependency,
+        state: projectedByWork.get(dependency)?.state === "completed" ? "completed" : projectedByWork.has(dependency) ? "pending" : "unknown"
       }));
       const planReference = relative5(workspaceRoot18, join11(planDirectory3, "README.md"));
+      const state = projection?.state ?? "ready";
+      const contradiction = Boolean(projection?.contradiction) || Boolean(projection) && validation.index.status !== "approved";
+      const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
       candidates.push({
         contract_version: 1,
         candidate_id: `plan:${validation.index.plan_id}:${item.work_id}`,
-        kind: "plan-work-item",
+        kind: contradiction ? "reconciliation" : state === "review" ? "review" : "plan-work-item",
         work_id: item.work_id,
         title: item.title,
-        state: fact?.state ?? "ready",
+        state,
         urgent: fact?.urgent ?? false,
         priority: fact?.priority ?? 0,
         owner: fact?.owner ?? null,
@@ -18141,7 +18290,8 @@ async function discoverPlanCandidates(workspaceRoot18, config, facts) {
         access_available: (fact?.access_available ?? true) && await repositoryAccess(workspaceRoot18, config, repositories),
         contract_blocked: fact?.contract_blocked ?? false,
         source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
-        risks: fact?.risks ?? []
+        state_sources: stateSources,
+        risks: [.../* @__PURE__ */ new Set([...fact?.risks ?? [], ...contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : []])]
       });
     }
   }
@@ -18161,58 +18311,40 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
   }
   const currentUser = activity2?.current_user ?? "local-user";
   const facts = /* @__PURE__ */ new Map();
-  for (const candidate of activity2?.candidates ?? []) {
-    if (candidate.work_id) facts.set(candidate.work_id, candidate);
-  }
-  const discovered = await discoverPlanCandidates(workspaceRoot18, config, facts);
+  for (const candidate of activity2?.candidates ?? []) if (candidate.work_id) facts.set(candidate.work_id, [...facts.get(candidate.work_id) ?? [], candidate]);
+  const runtime = await discoverRuntimeObservations(workspaceRoot18);
+  const durable = await discoverDurableContributions(workspaceRoot18);
+  const localObservations = new Map(runtime.observations);
+  for (const [workId, observations] of durable.observations) localObservations.set(workId, [...localObservations.get(workId) ?? [], ...observations]);
+  const discovered = await discoverPlanCandidates(workspaceRoot18, config, facts, localObservations);
   const external = (activity2?.candidates ?? []).filter((candidate) => !discovered.matchedFacts.has(candidate.candidate_id));
   const hydratedExternal = [];
-  for (const candidate of external) {
-    hydratedExternal.push({
-      ...candidate,
-      access_available: candidate.access_available && await repositoryAccess(workspaceRoot18, config, candidate.repositories)
-    });
-  }
+  for (const candidate of external) hydratedExternal.push({ ...candidate, state_sources: candidate.state_sources ?? [{ state: candidate.state, source_reference: candidate.source_reference }], access_available: candidate.access_available && await repositoryAccess(workspaceRoot18, config, candidate.repositories) });
   const candidates = [...discovered.candidates, ...hydratedExternal];
   const duplicateIds = candidates.filter((candidate, index) => candidates.findIndex((value2) => value2.candidate_id === candidate.candidate_id) !== index);
   if (duplicateIds.length > 0) throw new Error(`Duplicate candidate ID: ${duplicateIds[0].candidate_id}`);
   const excluded = candidates.filter((candidate) => candidate.state === "completed" || candidate.state === "cancelled");
   const assessed = candidates.filter((candidate) => candidate.state !== "completed" && candidate.state !== "cancelled").map((candidate) => ({ candidate, blockers: blockers(candidate, currentUser), rank: rank(candidate) }));
-  const ordered2 = [...assessed].sort((left, right) => left.rank - right.rank || right.candidate.priority - left.candidate.priority || left.candidate.candidate_id.localeCompare(right.candidate.candidate_id));
+  const ordered2 = assessed.slice().sort((left, right) => left.rank - right.rank || right.candidate.priority - left.candidate.priority || left.candidate.candidate_id.localeCompare(right.candidate.candidate_id));
   const executable = ordered2.filter((item) => item.blockers.length === 0);
   const blocked = ordered2.filter((item) => item.blockers.length > 0);
+  const reconciliation = blocked.filter((item) => item.candidate.kind === "reconciliation");
   let recommendation;
   let alternatives;
-  if (executable.length > 0) {
-    recommendation = actionFor(executable[0].candidate, [], config, "execute");
-    alternatives = executable.slice(1, 3).map((item) => actionFor(item.candidate, [], config, "execute"));
+  if (reconciliation.length > 0) {
+    recommendation = actionFor(reconciliation[0].candidate, reconciliation[0].blockers, config);
+    alternatives = [...reconciliation.slice(1), ...executable].slice(0, 2).map((item) => actionFor(item.candidate, item.blockers, config));
+  } else if (executable.length > 0) {
+    recommendation = actionFor(executable[0].candidate, [], config);
+    alternatives = executable.slice(1, 3).map((item) => actionFor(item.candidate, [], config));
   } else if (blocked.length > 0) {
-    recommendation = actionFor(blocked[0].candidate, blocked[0].blockers, config, "enable");
-    alternatives = blocked.slice(1, 3).map((item) => actionFor(item.candidate, item.blockers, config, "enable"));
+    recommendation = actionFor(blocked[0].candidate, blocked[0].blockers, config);
+    alternatives = blocked.slice(1, 3).map((item) => actionFor(item.candidate, item.blockers, config));
   } else {
-    recommendation = {
-      action: "enable",
-      candidate_id: null,
-      title: "Create or approve a scoped work source",
-      why: "No executable or blocked candidate was found in the configured read-only sources.",
-      readiness_evidence: ["approved plan candidates: none", "activity candidates: none"],
-      source_references: ["context/plans", "workspace.yaml#activity"],
-      repositories: [],
-      agent_sequence: [],
-      blockers: ["no available candidate provides sufficient scope and acceptance criteria"],
-      risks: []
-    };
+    recommendation = { action: "enable", candidate_id: null, title: "Create or approve a scoped work source", why: "No executable or blocked candidate was found in the configured read-only sources.", readiness_evidence: ["approved plan candidates none: context/plans", "activity candidates none: workspace.yaml#activity", "active runtime candidates none: .runtime/runs", "durable outcome candidates none: contributions"], source_references: ["context/plans", "workspace.yaml#activity", ".runtime/runs", "contributions"], repositories: [], agent_sequence: [], blockers: ["no available candidate provides sufficient scope and acceptance criteria"], risks: [] };
     alternatives = [];
   }
-  const result3 = {
-    contract_version: 1,
-    generated_at: now.toISOString(),
-    recommendation,
-    alternatives,
-    considered: { total: candidates.length, executable: executable.length, blocked: blocked.length, excluded: excluded.length },
-    warnings: discovered.warnings,
-    no_state_changed: true
-  };
+  const result3 = { contract_version: 1, generated_at: now.toISOString(), recommendation, alternatives, considered: { total: candidates.length, executable: executable.length, blocked: blocked.length, excluded: excluded.length }, warnings: [.../* @__PURE__ */ new Set([...runtime.warnings, ...durable.warnings, ...discovered.warnings])], no_state_changed: true };
   const resultErrors = contractMessages2(await validateContract("whats-next-result", result3));
   if (resultErrors.length > 0) throw new Error(`Generated invalid whats-next result:
 - ${resultErrors.join("\n- ")}`);
@@ -18221,6 +18353,8 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
 var init_whats_next = __esm({
   "scripts/lib/whats-next.ts"() {
     "use strict";
+    init_finish_work();
+    init_git();
     init_plans();
     init_validation();
   }
@@ -18390,7 +18524,7 @@ async function preparePlanPublication(options) {
     return record;
   });
 }
-async function writeMapping(planDirectory3, breakdownName, workId, reference, now) {
+async function writeMapping(planDirectory3, breakdownName, workId, reference2, now) {
   const path2 = join12(planDirectory3, breakdownName);
   const raw = await readFile14(path2, "utf8");
   let found = false;
@@ -18398,8 +18532,8 @@ async function writeMapping(planDirectory3, breakdownName, workId, reference, no
     if (!line.startsWith(`| ${workId} |`)) return line;
     const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
     if (cells.length !== 6) throw new Error(`Invalid work-breakdown row for ${workId}`);
-    if (cells[5] !== "\u2014" && cells[5] !== reference) throw new Error(`Plan already maps ${workId} to a different external reference`);
-    cells[5] = reference;
+    if (cells[5] !== "\u2014" && cells[5] !== reference2) throw new Error(`Plan already maps ${workId} to a different external reference`);
+    cells[5] = reference2;
     found = true;
     return `| ${cells.join(" | ")} |`;
   }).join("\n");
@@ -18416,10 +18550,10 @@ async function recordPlanPublication(options) {
     const item = record.items.find((candidate) => candidate.work_id === options.workId);
     if (!item) throw new Error(`Publication has no work item ${options.workId}`);
     const evidence = safeLine(options.evidence, "Evidence");
-    const reference = options.externalReference ? safeLine(options.externalReference, "External reference") : null;
-    if (options.status === "created" && !reference) throw new Error("Created publication result requires a confirmed external reference");
+    const reference2 = options.externalReference ? safeLine(options.externalReference, "External reference") : null;
+    if (options.status === "created" && !reference2) throw new Error("Created publication result requires a confirmed external reference");
     if (item.status === "created" || item.status === "existing") {
-      if (item.external_reference === reference && item.evidence === evidence) return record;
+      if (item.external_reference === reference2 && item.evidence === evidence) return record;
       throw new Error(`${item.work_id} already has a different confirmed mapping`);
     }
     if (options.status === "failed") {
@@ -18430,9 +18564,9 @@ async function recordPlanPublication(options) {
       const planDirectory3 = assertInside(workspaceRoot18, join12(workspaceRoot18, "context", "plans", record.plan_id));
       const validation = await validatePlanDirectory(planDirectory3);
       if (validation.errors.length || !validation.index || validation.index.status !== "approved" || validation.index.plan_version !== record.plan_version) throw new Error("Approved plan changed during publication");
-      record.approved_digest = await writeMapping(planDirectory3, validation.index.work_breakdown, item.work_id, reference, options.now ?? /* @__PURE__ */ new Date());
+      record.approved_digest = await writeMapping(planDirectory3, validation.index.work_breakdown, item.work_id, reference2, options.now ?? /* @__PURE__ */ new Date());
       item.status = "created";
-      item.external_reference = reference;
+      item.external_reference = reference2;
       item.evidence = evidence;
     }
     record.status = status(record.items);

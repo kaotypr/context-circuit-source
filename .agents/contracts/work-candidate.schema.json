@@ -8,10 +8,10 @@
   "properties": {
     "contract_version": { "const": 1 },
     "candidate_id": { "type": "string", "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]*$" },
-    "kind": { "enum": ["assigned-work", "review", "verification-failure", "ci-failure", "activity-task", "repository-item", "contribution-follow-up", "plan-work-item"] },
+    "kind": { "enum": ["assigned-work", "review", "verification-failure", "ci-failure", "activity-task", "repository-item", "contribution-follow-up", "reconciliation", "plan-work-item"] },
     "work_id": { "type": ["string", "null"], "minLength": 1 },
     "title": { "type": "string", "minLength": 1 },
-    "state": { "enum": ["ready", "in-progress", "review", "failed", "completed", "cancelled"] },
+    "state": { "enum": ["ready", "in-progress", "review", "closeout", "failed", "completed", "cancelled"] },
     "urgent": { "type": "boolean" },
     "priority": { "type": "integer", "minimum": 0, "maximum": 100 },
     "owner": { "type": ["string", "null"], "minLength": 1 },
@@ -35,6 +35,19 @@
     "access_available": { "type": "boolean" },
     "contract_blocked": { "type": "boolean" },
     "source_reference": { "type": "string", "minLength": 1 },
+    "state_sources": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["state", "source_reference"],
+        "properties": {
+          "state": { "enum": ["ready", "in-progress", "review", "closeout", "failed", "completed", "cancelled"] },
+          "source_reference": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "risks": { "type": "array", "items": { "type": "string", "minLength": 1 } }
   }
 }

@@ -8,7 +8,7 @@
       "additionalProperties": false,
       "required": ["action", "candidate_id", "title", "why", "readiness_evidence", "source_references", "repositories", "agent_sequence", "blockers", "risks"],
       "properties": {
-        "action": { "enum": ["execute", "enable"] },
+        "action": { "enum": ["execute", "review", "closeout", "reconcile", "enable"] },
         "candidate_id": { "type": ["string", "null"], "minLength": 1 },
         "title": { "type": "string", "minLength": 1 },
         "why": { "type": "string", "minLength": 1 },
