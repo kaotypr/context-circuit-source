@@ -7,6 +7,7 @@ import type { BootstrapGitCommit, WorkspaceBootstrapRequest, WorkspaceConfig } f
 import { readData, requiredWorkspaceDocuments, validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "./validation.js";
 import { renderWorkspaceContext } from "./workspace-context.js";
 import { reconcileWorkspaceReadme } from "./workspace-readme.js";
+import { cloneReferenceError } from "./safe-reference.js";
 
 const ignoredStart = "# context-circuit:ignored-clones:start";
 const ignoredEnd = "# context-circuit:ignored-clones:end";
@@ -146,11 +147,34 @@ async function hasHead(path: string): Promise<boolean> {
 
 function safeRemote(value: string, repository: string): string {
   const remote = value.trim();
-  if (!remote || /[\r\n]/.test(remote)) throw new Error(`Repository ${repository} requires a single-line clone URL`);
-  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(remote) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(remote)) {
-    throw new Error(`Repository ${repository} clone URL appears to contain credentials`);
-  }
+  const error = cloneReferenceError(remote);
+  if (error) throw new Error(`Repository ${repository} clone URL ${error}`);
   return remote;
+}
+
+async function assertExpectedUnbornTemplate(root: string): Promise<void> {
+  const status = (await git(root, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
+  const allowed = new Set<string>([...requiredWorkspaceDocuments, ".gitignore", "template-manifest.json"]);
+  const templateDirectories = [".agents/", ".codex/", ".claude/", "agents/", "context/", "contributions/", "docs/"];
+  try {
+    const manifest = JSON.parse(await readFile(join(root, "template-manifest.json"), "utf8")) as { file_inventory?: unknown };
+    if (Array.isArray(manifest.file_inventory) && manifest.file_inventory.every((path) => typeof path === "string")) {
+      for (const path of manifest.file_inventory as string[]) allowed.add(path);
+      templateDirectories.length = 0;
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+  }
+  const unexpected = status.filter((line) => {
+    if (!line.startsWith("?? ")) return true;
+    const path = line.slice(3);
+    return !allowed.has(path) && !templateDirectories.some((prefix) => path.startsWith(prefix));
+  });
+  if (unexpected.length > 0) throw new Error(`Unborn wrapper contains authored or unexpected changes; refusing bootstrap:\n${unexpected.join("\n")}`);
+  const config = await readData(join(root, "workspace.yaml")) as WorkspaceConfig;
+  if (config.workspace.name !== "uninitialized-workspace" || Object.keys(config.repositories).length !== 0) {
+    throw new Error("Unborn wrapper is not the neutral extracted-template baseline");
+  }
 }
 
 function commitArgs(commit: BootstrapGitCommit): string[] {
@@ -191,8 +215,11 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   }
   if (wrapperGitExists) {
     await assertExactGitRoot(workspaceRoot, "wrapper");
-    const changes = await git(workspaceRoot, ["status", "--porcelain=v1", "--untracked-files=normal"]);
-    if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:\n${changes}`);
+    if (!await hasHead(workspaceRoot)) await assertExpectedUnbornTemplate(workspaceRoot);
+    else {
+      const changes = await git(workspaceRoot, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+      if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:\n${changes}`);
+    }
   }
   const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot);
   if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
@@ -201,7 +228,14 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   const currentGitignore = await readFile(gitignorePath, "utf8");
   const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
   const readmePath = join(workspaceRoot, "README.md");
+  const readmeInfo = await lstat(readmePath);
+  if (!readmeInfo.isFile() || readmeInfo.isSymbolicLink()) throw new Error("README.md must be a regular non-symlink file");
+  assertInside(await realpath(workspaceRoot), await realpath(readmePath));
   const currentReadme = await readFile(readmePath, "utf8");
+  const sourcesPath = join(workspaceRoot, "context", "SOURCES.md");
+  const sourcesInfo = await lstat(sourcesPath);
+  if (!sourcesInfo.isFile() || sourcesInfo.isSymbolicLink()) throw new Error("context/SOURCES.md must be a regular non-symlink file");
+  assertInside(await realpath(workspaceRoot), await realpath(sourcesPath));
   const readmeConfig: WorkspaceConfig = config.workspace.purpose
     ? config
     : { ...config, workspace: { ...config.workspace, purpose: options.request.context.project_summary } };

@@ -59,6 +59,12 @@ The same list is rendered in `context/SOURCES.md`. `$gather-context` reads sourc
 material without mutation; `$sync-context` owns reviewable writes to durable
 context.
 
+Local source references must be relative, forward-slash paths without traversal.
+External references use credential-free HTTPS or an explicit provider form such
+as `github:owner/repository#42`. Wrapper and repository remotes use
+credential-free HTTPS, SSH, Git, or SCP-style Git references; URL userinfo,
+including encoded userinfo, is rejected.
+
 ## Configuration versus upgrade
 
 Configuration changes values supported by the installed schema and template.

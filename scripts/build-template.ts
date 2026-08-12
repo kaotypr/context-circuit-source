@@ -56,12 +56,22 @@ for (const path of [
 ]) await rm(join(destination, path), { recursive: true, force: true });
 await removeLocalMetadata(destination);
 const bundleSha256 = createHash("sha256").update(await readFile(join(destination, ".agents", "bin", "cc.mjs"))).digest("hex");
+async function fileInventory(directory: string, prefix = ""): Promise<string[]> {
+  const files: string[] = [];
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) files.push(...await fileInventory(join(directory, entry.name), relativePath));
+    else if (entry.isFile() && relativePath !== "template-manifest.json") files.push(relativePath);
+  }
+  return files.sort();
+}
 await writeFile(join(destination, "template-manifest.json"), `${JSON.stringify({
   name: "context-circuit",
   version,
   node: ">=22",
   command: "node .agents/bin/cc.mjs",
   bundle_sha256: bundleSha256,
+  file_inventory: [...await fileInventory(destination), "template-manifest.json"].sort(),
   excluded_maintainer_inputs: ["PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules/", "fixtures/", "scripts/", "test/"],
 }, null, 2)}\n`, "utf8");
 const archive = join(distributionRoot, `${releaseStem}.tar.gz`);

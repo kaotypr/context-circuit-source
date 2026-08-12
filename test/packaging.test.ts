@@ -24,6 +24,9 @@ test("distributable and release archive contain only wrapper inputs", async () =
   const manifest = JSON.parse(await readFile(join(destination, "template-manifest.json"), "utf8"));
   assert.equal(manifest.version, "0.2.1");
   assert.match(manifest.bundle_sha256, /^[a-f0-9]{64}$/);
+  assert.ok(Array.isArray(manifest.file_inventory));
+  assert.ok(manifest.file_inventory.includes(".agents/bin/cc.mjs"));
+  assert.ok(manifest.file_inventory.includes("template-manifest.json"));
   for (const path of ["PLAN.md", "package.json", "node_modules", "fixtures", "scripts", "test"]) {
     await assert.rejects(access(join(destination, path)));
   }

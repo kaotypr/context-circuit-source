@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -9,6 +9,7 @@ import { git } from "../scripts/lib/git.js";
 import type { WorkspaceBootstrapRequest } from "../scripts/lib/types.js";
 import { requiredWorkspaceDocuments } from "../scripts/lib/validation.js";
 import { projectRoot } from "./helpers.js";
+import { reconcileWorkspaceReadme } from "../scripts/lib/workspace-readme.js";
 
 async function neutralWrapper(): Promise<{ root: string; cleanup: () => Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), "context-circuit-configure-"));
@@ -82,8 +83,11 @@ test("team reconfiguration preserves authored README and context, active runs, H
   assert.equal(await readFile(join(workspace.root, "context/ARCHITECTURE.md"), "utf8"), "# Architecture\n\nCurated architecture stays authored.\n");
   assert.equal(await readFile(join(workspace.root, ".runtime", "runs", "active", "manifest.json"), "utf8"), "captured-configuration\n");
   const firstStatus = await git(workspace.root, ["status", "--porcelain=v1", "--untracked-files=all"]);
+  assert.notEqual(firstStatus, "");
+  await git(workspace.root, ["add", "-A"]);
+  await git(workspace.root, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", "chore: review configuration"]);
   await configureWorkspace({ workspaceRoot: workspace.root, request: changed });
-  assert.equal(await git(workspace.root, ["status", "--porcelain=v1", "--untracked-files=all"]), firstStatus);
+  assert.equal(await git(workspace.root, ["status", "--porcelain=v1", "--untracked-files=all"]), "");
 });
 
 test("existing configuration requires reviewed authorization and rejects credential-bearing source references without mutation", async (t) => {
@@ -111,4 +115,160 @@ test("legacy initialize invocation reports state-aware compatibility routing", a
   const existing = spawnSync(process.execPath, ["--import", "tsx", join(projectRoot, "scripts/initialize-workspace.ts"), "--check-only"], { cwd: projectRoot, encoding: "utf8", env: { ...process.env, CONTEXT_CIRCUIT_WORKSPACE_ROOT: workspace.root } });
   assert.equal(existing.status, 0, existing.stderr);
   assert.match(existing.stdout, /inspect-existing/);
+});
+
+test("dirty existing wrappers reject tracked and untracked work without changing bytes", async (t) => {
+  for (const kind of ["tracked", "untracked"] as const) {
+    const workspace = await neutralWrapper();
+    t.after(workspace.cleanup);
+    await configureWorkspace({ workspaceRoot: workspace.root, request: request() });
+    const readme = await readFile(join(workspace.root, "README.md"), "utf8");
+    if (kind === "tracked") await writeFile(join(workspace.root, "README.md"), `${readme}authored dirty bytes\n`, "utf8");
+    else await writeFile(join(workspace.root, "authored.txt"), "untracked authored bytes\n", "utf8");
+    const beforeReadme = await readFile(join(workspace.root, "README.md"));
+    const beforeConfig = await readFile(join(workspace.root, "workspace.yaml"));
+    await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: request(true) }), /must be clean/);
+    assert.deepEqual(await readFile(join(workspace.root, "README.md")), beforeReadme);
+    assert.deepEqual(await readFile(join(workspace.root, "workspace.yaml")), beforeConfig);
+  }
+});
+
+test("repository preflight failure leaves every managed file byte-identical", async (t) => {
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  await configureWorkspace({ workspaceRoot: workspace.root, request: request() });
+  const paths = ["README.md", "workspace.yaml", "context/SOURCES.md", ".gitignore"];
+  const before = new Map(await Promise.all(paths.map(async (path) => [path, await readFile(join(workspace.root, path))] as const)));
+  const invalid = request(true);
+  invalid.configuration.repositories.app!.path = "repositories/missing";
+  await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: invalid }), /Repository app/);
+  for (const path of paths) assert.deepEqual(await readFile(join(workspace.root, path)), before.get(path));
+});
+
+test("README reconciliation rejects duplicate and malformed managed blocks", () => {
+  const config = request().configuration;
+  const block = reconcileWorkspaceReadme("", config);
+  assert.throws(() => reconcileWorkspaceReadme(`${block}\n${block}`, config), /at most one/);
+  assert.throws(() => reconcileWorkspaceReadme("<!-- context-circuit:workspace:start -->\n", config), /Malformed/);
+  assert.throws(() => reconcileWorkspaceReadme("<!-- context-circuit:workspace:end -->\n", config), /Malformed/);
+});
+
+test("README and source register symlinks reject before configuration writes", async (t) => {
+  for (const relativePath of ["README.md", "context/SOURCES.md"]) {
+    const workspace = await neutralWrapper();
+    const outside = join(await mkdtemp(join(tmpdir(), "context-circuit-outside-")), "target.md");
+    t.after(workspace.cleanup);
+    t.after(async () => rm(dirname(outside), { recursive: true, force: true }));
+    await configureWorkspace({ workspaceRoot: workspace.root, request: request() });
+    await writeFile(outside, "outside bytes\n", "utf8");
+    await rm(join(workspace.root, relativePath));
+    await symlink(outside, join(workspace.root, relativePath));
+    await git(workspace.root, ["add", relativePath]);
+    await git(workspace.root, ["-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-m", `test: symlink ${relativePath}`]);
+    const configBefore = await readFile(join(workspace.root, "workspace.yaml"));
+    await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: request(true) }), /regular non-symlink/);
+    assert.equal(await readFile(outside, "utf8"), "outside bytes\n");
+    assert.deepEqual(await readFile(join(workspace.root, "workspace.yaml")), configBefore);
+  }
+});
+
+test("context references accept stable forms and reject traversal, absolute, backslash, and userinfo", async (t) => {
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  const unsafe = ["../secret.md", "docs/%2e%2e/secret.md", "/tmp/secret.md", "docs\\secret.md", "https://oauth-token@example.invalid/prd", "https://oauth-token%40example.invalid/prd"];
+  for (const reference of unsafe) {
+    const candidate = request();
+    candidate.context.sources![0]!.reference = reference;
+    candidate.configuration.context!.authoritative_sources[0]!.reference = reference;
+    await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: candidate }), /reference|userinfo|absolute|traversal|backslashes/);
+    await assert.rejects(access(join(workspace.root, ".git")));
+  }
+  const safe = request();
+  safe.context.sources![0]!.reference = "github:sample/app#42";
+  safe.configuration.context!.authoritative_sources[0]!.reference = "github:sample/app#42";
+  assert.equal((await configureWorkspace({ workspaceRoot: workspace.root, request: safe })).route, "bootstrap");
+});
+
+test("wrapper and repository remotes reject plain and percent-encoded URL userinfo", async (t) => {
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  for (const remote of ["https://oauth-token@example.invalid/repo.git", "https://oauth-token%40example.invalid/repo.git", "https://user%3Asecret@example.invalid/repo.git"]) {
+    const candidate = request();
+    candidate.configuration.workspace.remote = remote;
+    await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: candidate }), /credentials|userinfo|invalid|valid URL/);
+    await assert.rejects(access(join(workspace.root, ".git")));
+    candidate.configuration.workspace.remote = "git@example.invalid:sample/wrapper.git";
+    candidate.configuration.repositories.app!.remote = remote;
+    await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: candidate }), /credentials|userinfo|invalid|valid URL/);
+    await assert.rejects(access(join(workspace.root, ".git")));
+  }
+});
+
+test("exact fresh request rerun is a no-op while material changes require review authorization", async (t) => {
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  const original = request();
+  await configureWorkspace({ workspaceRoot: workspace.root, request: original });
+  const head = await git(workspace.root, ["rev-parse", "HEAD"]);
+  const rerun = await configureWorkspace({ workspaceRoot: workspace.root, request: original });
+  assert.equal(rerun.route, "inspect-existing");
+  assert.equal(await git(workspace.root, ["rev-parse", "HEAD"]), head);
+  assert.equal(await git(workspace.root, ["status", "--porcelain=v1"]), "");
+  const changed = request();
+  changed.configuration.workspace.purpose = "Materially changed purpose.";
+  await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: changed }), /authorize_reviewable_changes/);
+});
+
+test("unborn extracted-template Git bootstrap accepts its baseline and rejects extra authored files", async (t) => {
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  await git(workspace.root, ["init", "--initial-branch=main"]);
+  const unborn = request();
+  unborn.wrapper.initialize_git = false;
+  const result = await configureWorkspace({ workspaceRoot: workspace.root, request: unborn });
+  assert.equal(result.route, "bootstrap");
+  assert.equal(await git(workspace.root, ["rev-list", "--count", "HEAD"]), "1");
+
+  const dirty = await neutralWrapper();
+  t.after(dirty.cleanup);
+  await git(dirty.root, ["init", "--initial-branch=main"]);
+  await writeFile(join(dirty.root, "AUTHORED.md"), "do not overwrite\n", "utf8");
+  const dirtyRequest = request();
+  dirtyRequest.wrapper.initialize_git = false;
+  await assert.rejects(configureWorkspace({ workspaceRoot: dirty.root, request: dirtyRequest }), /authored or unexpected/);
+  assert.equal(await readFile(join(dirty.root, "AUTHORED.md"), "utf8"), "do not overwrite\n");
+  await assert.rejects(git(dirty.root, ["rev-parse", "HEAD"]));
+});
+
+test("built bundle enforces request-path safety and exact rerun idempotence", async (t) => {
+  const build = spawnSync(process.execPath, ["--import", "tsx", "scripts/build-template.ts"], { cwd: projectRoot, encoding: "utf8" });
+  assert.equal(build.status, 0, build.stderr || build.stdout);
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  const binary = join(projectRoot, ".agents", "bin", "cc.mjs");
+  await mkdir(join(workspace.root, ".runtime", "bootstrap"), { recursive: true });
+  const requestPath = join(workspace.root, ".runtime", "bootstrap", "request.json");
+  await writeFile(requestPath, `${JSON.stringify(request())}\n`, "utf8");
+  const first = spawnSync(process.execPath, [binary, "configure-workspace", "--request", ".runtime/bootstrap/request.json"], { cwd: workspace.root, encoding: "utf8" });
+  assert.equal(first.status, 0, first.stderr || first.stdout);
+  const head = await git(workspace.root, ["rev-parse", "HEAD"]);
+  const second = spawnSync(process.execPath, [binary, "configure-workspace", "--request", ".runtime/bootstrap/request.json"], { cwd: workspace.root, encoding: "utf8" });
+  assert.equal(second.status, 0, second.stderr || second.stdout);
+  assert.match(second.stdout, /inspect-existing/);
+  assert.equal(await git(workspace.root, ["rev-parse", "HEAD"]), head);
+  assert.equal(await git(workspace.root, ["status", "--porcelain=v1"]), "");
+
+  const outsideDirectory = await mkdtemp(join(tmpdir(), "context-circuit-request-outside-"));
+  t.after(async () => rm(outsideDirectory, { recursive: true, force: true }));
+  const outsideRequest = join(outsideDirectory, "request.json");
+  await writeFile(outsideRequest, `${JSON.stringify(request(true))}\n`, "utf8");
+  const outside = spawnSync(process.execPath, [binary, "configure-workspace", "--request", outsideRequest], { cwd: workspace.root, encoding: "utf8" });
+  assert.notEqual(outside.status, 0);
+  assert.match(outside.stderr, /outside/);
+
+  await rm(requestPath);
+  await symlink(outsideRequest, requestPath);
+  const linked = spawnSync(process.execPath, [binary, "configure-workspace", "--request", ".runtime/bootstrap/request.json"], { cwd: workspace.root, encoding: "utf8" });
+  assert.notEqual(linked.status, 0);
+  assert.match(linked.stderr, /regular file/);
 });

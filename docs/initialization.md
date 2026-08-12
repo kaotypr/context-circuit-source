@@ -54,6 +54,18 @@ Reruns are idempotent. The configurator does not commit changes in an existing
 wrapper and never pushes, creates remotes or pull requests, mutates activity,
 merges, or deploys.
 
+An existing wrapper must be clean before reconfiguration (an ignored request
+under `.runtime/` is permitted). The command completes schema, semantic, path,
+repository, source, managed-README, and output preflight before its first atomic
+write. An exact rerun of the successful fresh-bootstrap request is a read-only
+success; a materially different bootstrap-shaped request requires explicit
+reviewable-change authorization.
+
+If a release archive was initialized with `git init` but still has no `HEAD`,
+the neutral extracted-template inventory is accepted with
+`wrapper.initialize_git: false` and exact initial-commit authorization. Extra
+authored paths stop bootstrap without creating a commit.
+
 `initialize-workspace` is retained as a compatibility command. It detects the
 Git state, reports whether it routed to fresh bootstrap or existing inspection,
 and delegates legacy `--bootstrap` requests to configuration. Bootstrap remains

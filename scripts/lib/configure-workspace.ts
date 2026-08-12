@@ -1,13 +1,14 @@
 import { lstat, mkdir, readFile, realpath } from "node:fs/promises";
-import { join, resolve } from "node:path";
-import { stringify as stringifyYaml } from "yaml";
+import { dirname, join, relative, resolve } from "node:path";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { git } from "./git.js";
-import { writeTextAtomic } from "./io.js";
-import { bootstrapWorkspace, initializeWorkspace, type BootstrapWorkspaceSummary, type InitializationSummary } from "./initialize-workspace.js";
+import { assertInside, writeTextAtomic } from "./io.js";
+import { bootstrapWorkspace, initializeWorkspace, reconcileIgnoredClones, type BootstrapWorkspaceSummary, type InitializationSummary } from "./initialize-workspace.js";
 import type { WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 import { renderWorkspaceContext } from "./workspace-context.js";
 import { reconcileWorkspaceReadme } from "./workspace-readme.js";
+import { cloneReferenceError, contextReferenceError, remoteReferenceError } from "./safe-reference.js";
 
 export type WorkspaceConfigurationState = "fresh" | "existing";
 
@@ -35,20 +36,25 @@ export async function detectWorkspaceConfigurationState(workspaceRoot: string): 
   return "existing";
 }
 
-function containsCredential(value: string): boolean {
-  return /https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(value)
-    || /(?:token|password|passwd|secret|api[_-]?key)\s*[=:]/i.test(value)
-    || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(value);
-}
-
 export function workspaceCredentialErrors(request: WorkspaceBootstrapRequest): string[] {
-  const values: Array<[string, string | undefined]> = [
+  const remotes: Array<[string, string | undefined]> = [
     ["configuration.workspace.remote", request.configuration.workspace.remote],
     ...Object.entries(request.configuration.repositories).map(([name, repository]) => [`configuration.repositories.${name}.remote`, repository.remote] as [string, string | undefined]),
-    ...request.repositories.map((repository) => [`repositories.${repository.name}.url`, repository.url] as [string, string | undefined]),
-    ...(request.context.sources ?? []).map((source, index) => [`context.sources.${index}.reference`, source.reference] as [string, string | undefined]),
   ];
-  return values.filter(([, value]) => value && containsCredential(value)).map(([path]) => `${path} appears to contain credentials`);
+  const errors: string[] = [];
+  for (const [path, value] of remotes) {
+    const error = value ? remoteReferenceError(value) : null;
+    if (error) errors.push(`${path} ${error}`);
+  }
+  for (const [index, repository] of request.repositories.entries()) {
+    const error = repository.url ? cloneReferenceError(repository.url) : null;
+    if (error) errors.push(`repositories.${index}.url ${error}`);
+  }
+  for (const [index, source] of (request.context.sources ?? []).entries()) {
+    const error = contextReferenceError(source.reference);
+    if (error) errors.push(`context.sources.${index}.reference ${error}`);
+  }
+  return errors;
 }
 
 function assertSourceConsistency(request: WorkspaceBootstrapRequest): void {
@@ -78,8 +84,72 @@ async function validateRequest(request: WorkspaceBootstrapRequest): Promise<void
   assertSourceConsistency(request);
 }
 
+async function readRegularInside(root: string, path: string, label: string): Promise<string> {
+  const candidate = assertInside(root, path);
+  const info = await lstat(candidate);
+  if (!info.isFile() || info.isSymbolicLink()) throw new Error(`${label} must be a regular non-symlink file`);
+  assertInside(await realpath(root), await realpath(candidate));
+  return readFile(candidate, "utf8");
+}
+
+async function assertExactGitRoot(path: string, label: string): Promise<void> {
+  let info;
+  try { info = await lstat(path); } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") throw new Error(`${label} path does not exist`);
+    throw error;
+  }
+  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`${label} must be a real directory`);
+  const top = await git(path, ["rev-parse", "--show-toplevel"]);
+  if (await realpath(top) !== await realpath(path)) throw new Error(`${label} is not an exact Git root`);
+}
+
+async function assertBranch(path: string, name: string, branch: string): Promise<void> {
+  for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
+    try { await git(path, ["rev-parse", "--verify", ref]); return; } catch { /* next */ }
+  }
+  throw new Error(`Repository ${name} has no local or origin default branch named ${branch}`);
+}
+
+async function preflightExistingRepositories(root: string, request: WorkspaceBootstrapRequest): Promise<void> {
+  let submodules = "";
+  try { submodules = await readFile(join(root, ".gitmodules"), "utf8"); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  for (const [name, repository] of Object.entries(request.configuration.repositories)) {
+    const path = assertInside(root, resolve(root, repository.path));
+    await assertExactGitRoot(path, `Repository ${name}`);
+    await assertBranch(path, name, repository.default_branch);
+    const relativePath = relative(root, path).replaceAll("\\", "/");
+    const tracked = await git(root, ["ls-files", "--stage", "--", relativePath]);
+    const registered = new RegExp(`^\\s*path\\s*=\\s*${relativePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "m").test(submodules);
+    if (repository.mode === "submodule" && (!registered || !tracked.startsWith("160000 "))) throw new Error(`Repository ${name} is not a tracked submodule: ${relativePath}`);
+    if (repository.mode === "ignored-clone" && (registered || tracked)) throw new Error(`Repository ${name} is tracked but configured as an ignored clone`);
+  }
+}
+
+async function exactBootstrapRerun(root: string, request: WorkspaceBootstrapRequest): Promise<boolean> {
+  if (request.authorize_reviewable_changes || !request.wrapper.authorize_initial_commit) return false;
+  let installed: WorkspaceConfig;
+  try { installed = parseYaml(await readFile(join(root, "workspace.yaml"), "utf8")) as WorkspaceConfig; } catch { return false; }
+  if (JSON.stringify(installed) !== JSON.stringify(request.configuration)) return false;
+  const readme = await readRegularInside(root, join(root, "README.md"), "README.md");
+  const sources = await readRegularInside(root, join(root, "context", "SOURCES.md"), "context/SOURCES.md");
+  const readmeConfig: WorkspaceConfig = request.configuration.workspace.purpose
+    ? request.configuration
+    : { ...request.configuration, workspace: { ...request.configuration.workspace, purpose: request.context.project_summary } };
+  if (reconcileWorkspaceReadme(readme, readmeConfig) !== readme) return false;
+  if (renderWorkspaceContext(request.context)["context/SOURCES.md"] !== sources) return false;
+  try {
+    await preflightExistingRepositories(root, {
+      ...request,
+      repositories: request.repositories.map((repository) => ({ name: repository.name, source: "existing", authorize_initial_commit: false })),
+    });
+  } catch { return false; }
+  return true;
+}
+
 async function reconfigureWorkspace(workspaceRoot: string, request: WorkspaceBootstrapRequest): Promise<InitializationSummary> {
   const root = resolve(workspaceRoot);
+  const changes = await git(root, ["status", "--porcelain=v1", "--untracked-files=all"]);
+  if (changes) throw new Error(`Wrapper must be clean before reconfiguration; refusing to overwrite existing work:\n${changes}`);
   if (request.authorize_reviewable_changes !== true) throw new Error("Existing wrapper reconfiguration requires explicit authorize_reviewable_changes: true");
   if (request.wrapper.initialize_git || request.wrapper.authorize_initial_commit) {
     throw new Error("An existing wrapper must not initialize Git or authorize an initial commit");
@@ -97,16 +167,27 @@ async function reconfigureWorkspace(workspaceRoot: string, request: WorkspaceBoo
   }
   const top = await git(root, ["rev-parse", "--show-toplevel"]);
   if (await realpath(top) !== await realpath(root)) throw new Error("Workspace root is not the wrapper Git root");
-  const current = await readFile(join(root, "README.md"), "utf8");
+  const current = await readRegularInside(root, join(root, "README.md"), "README.md");
+  await readRegularInside(root, join(root, "context", "SOURCES.md"), "context/SOURCES.md");
   const sources = renderWorkspaceContext(request.context)["context/SOURCES.md"]!;
-  await writeTextAtomic(join(root, "workspace.yaml"), stringifyYaml(request.configuration));
-  await writeTextAtomic(join(root, "context/SOURCES.md"), sources);
-  await mkdir(join(root, "agents"), { recursive: true });
+  const readme = reconcileWorkspaceReadme(current, request.configuration);
+  const gitignorePath = join(root, ".gitignore");
+  const gitignore = reconcileIgnoredClones(await readRegularInside(root, gitignorePath, ".gitignore"), request.configuration);
+  await preflightExistingRepositories(root, request);
+  const agentWrites: Array<[string, string]> = [];
   for (const [name, repository] of Object.entries(request.configuration.repositories)) {
     const path = join(root, "agents", `${repository.agent}.md`);
-    if (!await exists(path)) await writeTextAtomic(path, `# ${repository.agent}\n\nFollow \`repository-worker.md\`. This repository owns the ${repository.role} role. Read ${name}'s repository-local instructions before work.\n`);
+    if (await exists(path)) await readRegularInside(root, path, `agents/${repository.agent}.md`);
+    else agentWrites.push([path, `# ${repository.agent}\n\nFollow \`repository-worker.md\`. This repository owns the ${repository.role} role. Read ${name}'s repository-local instructions before work.\n`]);
   }
-  await writeTextAtomic(join(root, "README.md"), reconcileWorkspaceReadme(current, request.configuration));
+  const workspace = stringifyYaml(request.configuration);
+  // All validation and output computation above is read-only. Writes begin here.
+  await writeTextAtomic(join(root, "workspace.yaml"), workspace);
+  await writeTextAtomic(join(root, "context/SOURCES.md"), sources);
+  await mkdir(join(root, "agents"), { recursive: true });
+  for (const [path, contents] of agentWrites) await writeTextAtomic(path, contents);
+  await writeTextAtomic(join(root, "README.md"), readme);
+  await writeTextAtomic(gitignorePath, gitignore);
   return initializeWorkspace({ workspaceRoot: root });
 }
 
@@ -124,6 +205,10 @@ export async function configureWorkspace(options: { workspaceRoot: string; reque
     if (options.request.authorize_reviewable_changes) throw new Error("Fresh bootstrap must not authorize existing-wrapper reconfiguration");
     const result = await bootstrapWorkspace({ workspaceRoot, request: options.request });
     return { route: "bootstrap", state, message: "Fresh wrapper configured through the explicit bootstrap phase.", result };
+  }
+  if (await exactBootstrapRerun(workspaceRoot, options.request)) {
+    const result = await initializeWorkspace({ workspaceRoot, apply: false });
+    return { route: "inspect-existing", state, message: "Exact completed bootstrap request detected; configuration is already current and no files or commits changed.", result };
   }
   const result = await reconfigureWorkspace(workspaceRoot, options.request);
   return { route: "reconfigure", state, message: "Existing wrapper configuration was updated as reviewable, uncommitted changes.", result };

@@ -3333,9 +3333,9 @@ var require_utils = __commonJS({
           const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             const normalizedHex = hex.toUpperCase();
-            const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
-            if (decodeUnreserved && isUnreserved(decoded)) {
-              output += decoded;
+            const decoded2 = String.fromCharCode(parseInt(normalizedHex, 16));
+            if (decodeUnreserved && isUnreserved(decoded2)) {
+              output += decoded2;
             } else {
               output += "%" + normalizedHex;
             }
@@ -3354,9 +3354,9 @@ var require_utils = __commonJS({
           const hex = input.slice(i + 1, i + 3);
           if (isHexPair(hex)) {
             const normalizedHex = hex.toUpperCase();
-            const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
-            if (decoded !== "." && isUnreserved(decoded)) {
-              output += decoded;
+            const decoded2 = String.fromCharCode(parseInt(normalizedHex, 16));
+            if (decoded2 !== "." && isUnreserved(decoded2)) {
+              output += decoded2;
             } else {
               output += "%" + normalizedHex;
             }
@@ -3664,49 +3664,49 @@ var require_fast_uri = __commonJS({
       schemelessOptions.skipEscape = true;
       return serialize(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative6, options, skipNormalization) {
+    function resolveComponent(base, relative7, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse(serialize(base, options), options);
-        relative6 = parse(serialize(relative6, options), options);
+        relative7 = parse(serialize(relative7, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative6.scheme) {
-        target.scheme = relative6.scheme;
-        target.userinfo = relative6.userinfo;
-        target.host = relative6.host;
-        target.port = relative6.port;
-        target.path = removeDotSegments(relative6.path || "");
-        target.query = relative6.query;
+      if (!options.tolerant && relative7.scheme) {
+        target.scheme = relative7.scheme;
+        target.userinfo = relative7.userinfo;
+        target.host = relative7.host;
+        target.port = relative7.port;
+        target.path = removeDotSegments(relative7.path || "");
+        target.query = relative7.query;
       } else {
-        if (relative6.userinfo !== void 0 || relative6.host !== void 0 || relative6.port !== void 0) {
-          target.userinfo = relative6.userinfo;
-          target.host = relative6.host;
-          target.port = relative6.port;
-          target.path = removeDotSegments(relative6.path || "");
-          target.query = relative6.query;
+        if (relative7.userinfo !== void 0 || relative7.host !== void 0 || relative7.port !== void 0) {
+          target.userinfo = relative7.userinfo;
+          target.host = relative7.host;
+          target.port = relative7.port;
+          target.path = removeDotSegments(relative7.path || "");
+          target.query = relative7.query;
         } else {
-          if (!relative6.path) {
+          if (!relative7.path) {
             target.path = base.path;
-            if (relative6.query !== void 0) {
-              target.query = relative6.query;
+            if (relative7.query !== void 0) {
+              target.query = relative7.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative6.path[0] === "/") {
-              target.path = removeDotSegments(relative6.path);
+            if (relative7.path[0] === "/") {
+              target.path = removeDotSegments(relative7.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative6.path;
+                target.path = "/" + relative7.path;
               } else if (!base.path) {
-                target.path = relative6.path;
+                target.path = relative7.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative6.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative7.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative6.query;
+            target.query = relative7.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -3714,7 +3714,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative6.fragment;
+      target.fragment = relative7.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -14511,6 +14511,70 @@ var require_dist = __commonJS({
   }
 });
 
+// scripts/lib/safe-reference.ts
+function decoded(value2) {
+  try {
+    return decodeURIComponent(value2);
+  } catch {
+    return value2;
+  }
+}
+function urlError(value2, allowedSchemes) {
+  let parsed;
+  try {
+    parsed = new URL(value2);
+  } catch {
+    return "is not a valid URL";
+  }
+  if (!allowedSchemes.has(parsed.protocol)) return `uses unsupported URL scheme ${parsed.protocol}`;
+  const authority = value2.slice(value2.indexOf("://") + 3).split(/[/?#]/, 1)[0] ?? "";
+  if (authority.includes("@") || parsed.username || parsed.password || decoded(parsed.username) || decoded(parsed.password)) return "appears to contain credentials in URL userinfo";
+  if (secretPattern.test(decoded(value2))) return "appears to contain credentials";
+  return null;
+}
+function remoteReferenceError(value2) {
+  const reference2 = value2.trim();
+  if (!reference2 || /[\r\n]/.test(reference2)) return "must be a non-empty single-line reference";
+  if (secretPattern.test(decoded(reference2))) return "appears to contain credentials";
+  if (schemePattern.test(reference2)) return urlError(reference2, /* @__PURE__ */ new Set(["https:", "ssh:", "git:"]));
+  if (scpPattern.test(reference2)) return null;
+  if (/^[^\s@/:]+@[^\s:]+:/.test(reference2)) return "contains unsupported remote userinfo";
+  if (/https?:/i.test(reference2) || /%40/i.test(reference2)) return "contains invalid or encoded URL userinfo";
+  return "must be a credential-free HTTPS, SSH, Git, or SCP-style remote";
+}
+function cloneReferenceError(value2) {
+  const remoteError = remoteReferenceError(value2);
+  if (!remoteError) return null;
+  const reference2 = value2.trim();
+  if (secretPattern.test(decoded(reference2)) || /[\r\n]/.test(reference2) || /%40/i.test(reference2)) return remoteError;
+  if (reference2.startsWith("/") || localSourcePattern.test(reference2)) return null;
+  return remoteError;
+}
+function contextReferenceError(value2) {
+  const reference2 = value2.trim();
+  if (!reference2 || /[\r\n\\]/.test(reference2)) return "must be a non-empty single-line reference without backslashes";
+  const decodedReference = decoded(reference2);
+  if (secretPattern.test(decodedReference)) return "appears to contain credentials";
+  if (/\\/.test(decodedReference)) return "must not contain encoded backslashes";
+  if (schemePattern.test(reference2)) return urlError(reference2, /* @__PURE__ */ new Set(["https:"]));
+  if (providerPattern.test(reference2)) return null;
+  if (reference2.startsWith("/") || decodedReference.startsWith("/") || /^[A-Za-z]:/.test(decodedReference)) return "must not be an absolute local path";
+  if (decodedReference.split("/").some((part) => part === ".." || part === ".")) return "must not contain traversal segments";
+  if (!localSourcePattern.test(reference2)) return "must be a safe relative path or allowed provider reference";
+  return null;
+}
+var secretPattern, schemePattern, scpPattern, providerPattern, localSourcePattern;
+var init_safe_reference = __esm({
+  "scripts/lib/safe-reference.ts"() {
+    "use strict";
+    secretPattern = /(?:token|password|passwd|secret|api[_-]?key)\s*[=:]|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i;
+    schemePattern = /^[A-Za-z][A-Za-z0-9+.-]*:\/\//;
+    scpPattern = /^(?:git|ssh)@[A-Za-z0-9.-]+:[A-Za-z0-9._~/-]+$/;
+    providerPattern = /^(?:github|gitlab|linear|jira|notion):[A-Za-z0-9][A-Za-z0-9._/@#:+-]*$/;
+    localSourcePattern = /^(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@#:+%=-]+(?:\/[A-Za-z0-9._@#:+%=-]+)*$/;
+  }
+});
+
 // scripts/lib/validation.ts
 import { lstat, readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
@@ -14549,13 +14613,18 @@ async function validateContract(name, value2) {
 function workspaceSemanticErrors(config) {
   const errors2 = [];
   const paths2 = /* @__PURE__ */ new Map();
-  const credentialPattern = /https?:\/\/[^\s/@:]+:[^\s/@]+@|(?:token|password|passwd|secret|api[_-]?key)\s*[=:]|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i;
-  const references = [
+  const remotes = [
     ["workspace.remote", config.workspace.remote],
-    ...Object.entries(config.repositories).map(([name, repository]) => [`repositories.${name}.remote`, repository.remote]),
-    ...(config.context?.authoritative_sources ?? []).map((source, index) => [`context.authoritative_sources.${index}.reference`, source.reference])
+    ...Object.entries(config.repositories).map(([name, repository]) => [`repositories.${name}.remote`, repository.remote])
   ];
-  for (const [path2, value2] of references) if (value2 && credentialPattern.test(value2)) errors2.push(`${path2} appears to contain credentials`);
+  for (const [path2, value2] of remotes) {
+    const error = value2 ? remoteReferenceError(value2) : null;
+    if (error) errors2.push(`${path2} ${error}`);
+  }
+  for (const [index, source] of (config.context?.authoritative_sources ?? []).entries()) {
+    const error = contextReferenceError(source.reference);
+    if (error) errors2.push(`context.authoritative_sources.${index}.reference ${error}`);
+  }
   for (const [name, repository] of Object.entries(config.repositories)) {
     const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
     const prior = paths2.get(normalized);
@@ -14612,6 +14681,7 @@ var init_validation = __esm({
     "use strict";
     import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
+    init_safe_reference();
     schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"];
     requiredWorkspaceDocuments = [
       "README.md",
@@ -14943,8 +15013,11 @@ ${managedEnd}`;
 }
 function reconcileWorkspaceReadme(current, config) {
   const managed = renderManagedWorkspaceReadme(config);
-  const start = current.indexOf(managedStart);
-  const end = current.indexOf(managedEnd);
+  const starts = [...current.matchAll(new RegExp(managedStart.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  const ends = [...current.matchAll(new RegExp(managedEnd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  if (starts.length > 1 || ends.length > 1) throw new Error("README.md must contain at most one managed workspace block");
+  const start = starts[0]?.index ?? -1;
+  const end = ends[0]?.index ?? -1;
   if (start === -1 !== (end === -1) || start !== -1 && end < start) throw new Error("Malformed managed workspace block in README.md");
   if (start !== -1) {
     const after = end + managedEnd.length;
@@ -15058,11 +15131,34 @@ async function hasHead(path2) {
 }
 function safeRemote(value2, repository) {
   const remote = value2.trim();
-  if (!remote || /[\r\n]/.test(remote)) throw new Error(`Repository ${repository} requires a single-line clone URL`);
-  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(remote) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(remote)) {
-    throw new Error(`Repository ${repository} clone URL appears to contain credentials`);
-  }
+  const error = cloneReferenceError(remote);
+  if (error) throw new Error(`Repository ${repository} clone URL ${error}`);
   return remote;
+}
+async function assertExpectedUnbornTemplate(root) {
+  const status2 = (await git(root, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
+  const allowed = /* @__PURE__ */ new Set([...requiredWorkspaceDocuments, ".gitignore", "template-manifest.json"]);
+  const templateDirectories = [".agents/", ".codex/", ".claude/", "agents/", "context/", "contributions/", "docs/"];
+  try {
+    const manifest2 = JSON.parse(await readFile3(join2(root, "template-manifest.json"), "utf8"));
+    if (Array.isArray(manifest2.file_inventory) && manifest2.file_inventory.every((path2) => typeof path2 === "string")) {
+      for (const path2 of manifest2.file_inventory) allowed.add(path2);
+      templateDirectories.length = 0;
+    }
+  } catch (error) {
+    if (error.code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+  }
+  const unexpected = status2.filter((line) => {
+    if (!line.startsWith("?? ")) return true;
+    const path2 = line.slice(3);
+    return !allowed.has(path2) && !templateDirectories.some((prefix) => path2.startsWith(prefix));
+  });
+  if (unexpected.length > 0) throw new Error(`Unborn wrapper contains authored or unexpected changes; refusing bootstrap:
+${unexpected.join("\n")}`);
+  const config = await readData(join2(root, "workspace.yaml"));
+  if (config.workspace.name !== "uninitialized-workspace" || Object.keys(config.repositories).length !== 0) {
+    throw new Error("Unborn wrapper is not the neutral extracted-template baseline");
+  }
 }
 function commitArgs(commit) {
   if (Boolean(commit.author_name) !== Boolean(commit.author_email)) throw new Error("Commit author_name and author_email must be supplied together");
@@ -15101,9 +15197,12 @@ async function bootstrapWorkspace(options) {
   }
   if (wrapperGitExists) {
     await assertExactGitRoot(workspaceRoot20, "wrapper");
-    const changes = await git(workspaceRoot20, ["status", "--porcelain=v1", "--untracked-files=normal"]);
-    if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:
+    if (!await hasHead(workspaceRoot20)) await assertExpectedUnbornTemplate(workspaceRoot20);
+    else {
+      const changes = await git(workspaceRoot20, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+      if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:
 ${changes}`);
+    }
   }
   const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot20);
   if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
@@ -15112,7 +15211,14 @@ ${changes}`);
   const currentGitignore = await readFile3(gitignorePath, "utf8");
   const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
   const readmePath = join2(workspaceRoot20, "README.md");
+  const readmeInfo = await lstat3(readmePath);
+  if (!readmeInfo.isFile() || readmeInfo.isSymbolicLink()) throw new Error("README.md must be a regular non-symlink file");
+  assertInside(await realpath2(workspaceRoot20), await realpath2(readmePath));
   const currentReadme = await readFile3(readmePath, "utf8");
+  const sourcesPath = join2(workspaceRoot20, "context", "SOURCES.md");
+  const sourcesInfo = await lstat3(sourcesPath);
+  if (!sourcesInfo.isFile() || sourcesInfo.isSymbolicLink()) throw new Error("context/SOURCES.md must be a regular non-symlink file");
+  assertInside(await realpath2(workspaceRoot20), await realpath2(sourcesPath));
   const readmeConfig = config.workspace.purpose ? config : { ...config, workspace: { ...config.workspace, purpose: options.request.context.project_summary } };
   const nextReadme = reconcileWorkspaceReadme(currentReadme, readmeConfig);
   for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
@@ -15318,6 +15424,7 @@ var init_initialize_workspace = __esm({
     init_validation();
     init_workspace_context();
     init_workspace_readme();
+    init_safe_reference();
     ignoredStart = "# context-circuit:ignored-clones:start";
     ignoredEnd = "# context-circuit:ignored-clones:end";
   }
@@ -15325,7 +15432,7 @@ var init_initialize_workspace = __esm({
 
 // scripts/lib/configure-workspace.ts
 import { lstat as lstat4, mkdir as mkdir3, readFile as readFile4, realpath as realpath3 } from "node:fs/promises";
-import { join as join3, resolve as resolve5 } from "node:path";
+import { join as join3, relative as relative2, resolve as resolve5 } from "node:path";
 async function exists(path2) {
   try {
     await lstat4(path2);
@@ -15348,17 +15455,25 @@ async function detectWorkspaceConfigurationState(workspaceRoot20) {
   if (!await exists(join3(root, ".git")) || !await hasHead2(root)) return "fresh";
   return "existing";
 }
-function containsCredential(value2) {
-  return /https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(value2) || /(?:token|password|passwd|secret|api[_-]?key)\s*[=:]/i.test(value2) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(value2);
-}
 function workspaceCredentialErrors(request4) {
-  const values20 = [
+  const remotes = [
     ["configuration.workspace.remote", request4.configuration.workspace.remote],
-    ...Object.entries(request4.configuration.repositories).map(([name, repository]) => [`configuration.repositories.${name}.remote`, repository.remote]),
-    ...request4.repositories.map((repository) => [`repositories.${repository.name}.url`, repository.url]),
-    ...(request4.context.sources ?? []).map((source, index) => [`context.sources.${index}.reference`, source.reference])
+    ...Object.entries(request4.configuration.repositories).map(([name, repository]) => [`configuration.repositories.${name}.remote`, repository.remote])
   ];
-  return values20.filter(([, value2]) => value2 && containsCredential(value2)).map(([path2]) => `${path2} appears to contain credentials`);
+  const errors2 = [];
+  for (const [path2, value2] of remotes) {
+    const error = value2 ? remoteReferenceError(value2) : null;
+    if (error) errors2.push(`${path2} ${error}`);
+  }
+  for (const [index, repository] of request4.repositories.entries()) {
+    const error = repository.url ? cloneReferenceError(repository.url) : null;
+    if (error) errors2.push(`repositories.${index}.url ${error}`);
+  }
+  for (const [index, source] of (request4.context.sources ?? []).entries()) {
+    const error = contextReferenceError(source.reference);
+    if (error) errors2.push(`context.sources.${index}.reference ${error}`);
+  }
+  return errors2;
 }
 function assertSourceConsistency(request4) {
   const configured = request4.configuration.context?.authoritative_sources ?? [];
@@ -15386,8 +15501,82 @@ async function validateRequest(request4) {
 - ${errors2.join("\n- ")}`);
   assertSourceConsistency(request4);
 }
+async function readRegularInside(root, path2, label) {
+  const candidate = assertInside(root, path2);
+  const info = await lstat4(candidate);
+  if (!info.isFile() || info.isSymbolicLink()) throw new Error(`${label} must be a regular non-symlink file`);
+  assertInside(await realpath3(root), await realpath3(candidate));
+  return readFile4(candidate, "utf8");
+}
+async function assertExactGitRoot2(path2, label) {
+  let info;
+  try {
+    info = await lstat4(path2);
+  } catch (error) {
+    if (error.code === "ENOENT") throw new Error(`${label} path does not exist`);
+    throw error;
+  }
+  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`${label} must be a real directory`);
+  const top = await git(path2, ["rev-parse", "--show-toplevel"]);
+  if (await realpath3(top) !== await realpath3(path2)) throw new Error(`${label} is not an exact Git root`);
+}
+async function assertBranch(path2, name, branch) {
+  for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
+    try {
+      await git(path2, ["rev-parse", "--verify", ref]);
+      return;
+    } catch {
+    }
+  }
+  throw new Error(`Repository ${name} has no local or origin default branch named ${branch}`);
+}
+async function preflightExistingRepositories(root, request4) {
+  let submodules = "";
+  try {
+    submodules = await readFile4(join3(root, ".gitmodules"), "utf8");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  for (const [name, repository] of Object.entries(request4.configuration.repositories)) {
+    const path2 = assertInside(root, resolve5(root, repository.path));
+    await assertExactGitRoot2(path2, `Repository ${name}`);
+    await assertBranch(path2, name, repository.default_branch);
+    const relativePath = relative2(root, path2).replaceAll("\\", "/");
+    const tracked = await git(root, ["ls-files", "--stage", "--", relativePath]);
+    const registered = new RegExp(`^\\s*path\\s*=\\s*${relativePath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*$`, "m").test(submodules);
+    if (repository.mode === "submodule" && (!registered || !tracked.startsWith("160000 "))) throw new Error(`Repository ${name} is not a tracked submodule: ${relativePath}`);
+    if (repository.mode === "ignored-clone" && (registered || tracked)) throw new Error(`Repository ${name} is tracked but configured as an ignored clone`);
+  }
+}
+async function exactBootstrapRerun(root, request4) {
+  if (request4.authorize_reviewable_changes || !request4.wrapper.authorize_initial_commit) return false;
+  let installed;
+  try {
+    installed = (0, import_yaml3.parse)(await readFile4(join3(root, "workspace.yaml"), "utf8"));
+  } catch {
+    return false;
+  }
+  if (JSON.stringify(installed) !== JSON.stringify(request4.configuration)) return false;
+  const readme = await readRegularInside(root, join3(root, "README.md"), "README.md");
+  const sources = await readRegularInside(root, join3(root, "context", "SOURCES.md"), "context/SOURCES.md");
+  const readmeConfig = request4.configuration.workspace.purpose ? request4.configuration : { ...request4.configuration, workspace: { ...request4.configuration.workspace, purpose: request4.context.project_summary } };
+  if (reconcileWorkspaceReadme(readme, readmeConfig) !== readme) return false;
+  if (renderWorkspaceContext(request4.context)["context/SOURCES.md"] !== sources) return false;
+  try {
+    await preflightExistingRepositories(root, {
+      ...request4,
+      repositories: request4.repositories.map((repository) => ({ name: repository.name, source: "existing", authorize_initial_commit: false }))
+    });
+  } catch {
+    return false;
+  }
+  return true;
+}
 async function reconfigureWorkspace(workspaceRoot20, request4) {
   const root = resolve5(workspaceRoot20);
+  const changes = await git(root, ["status", "--porcelain=v1", "--untracked-files=all"]);
+  if (changes) throw new Error(`Wrapper must be clean before reconfiguration; refusing to overwrite existing work:
+${changes}`);
   if (request4.authorize_reviewable_changes !== true) throw new Error("Existing wrapper reconfiguration requires explicit authorize_reviewable_changes: true");
   if (request4.wrapper.initialize_git || request4.wrapper.authorize_initial_commit) {
     throw new Error("An existing wrapper must not initialize Git or authorize an initial commit");
@@ -15405,19 +15594,29 @@ async function reconfigureWorkspace(workspaceRoot20, request4) {
   }
   const top = await git(root, ["rev-parse", "--show-toplevel"]);
   if (await realpath3(top) !== await realpath3(root)) throw new Error("Workspace root is not the wrapper Git root");
-  const current = await readFile4(join3(root, "README.md"), "utf8");
+  const current = await readRegularInside(root, join3(root, "README.md"), "README.md");
+  await readRegularInside(root, join3(root, "context", "SOURCES.md"), "context/SOURCES.md");
   const sources = renderWorkspaceContext(request4.context)["context/SOURCES.md"];
-  await writeTextAtomic(join3(root, "workspace.yaml"), (0, import_yaml3.stringify)(request4.configuration));
-  await writeTextAtomic(join3(root, "context/SOURCES.md"), sources);
-  await mkdir3(join3(root, "agents"), { recursive: true });
+  const readme = reconcileWorkspaceReadme(current, request4.configuration);
+  const gitignorePath = join3(root, ".gitignore");
+  const gitignore = reconcileIgnoredClones(await readRegularInside(root, gitignorePath, ".gitignore"), request4.configuration);
+  await preflightExistingRepositories(root, request4);
+  const agentWrites = [];
   for (const [name, repository] of Object.entries(request4.configuration.repositories)) {
     const path2 = join3(root, "agents", `${repository.agent}.md`);
-    if (!await exists(path2)) await writeTextAtomic(path2, `# ${repository.agent}
+    if (await exists(path2)) await readRegularInside(root, path2, `agents/${repository.agent}.md`);
+    else agentWrites.push([path2, `# ${repository.agent}
 
 Follow \`repository-worker.md\`. This repository owns the ${repository.role} role. Read ${name}'s repository-local instructions before work.
-`);
+`]);
   }
-  await writeTextAtomic(join3(root, "README.md"), reconcileWorkspaceReadme(current, request4.configuration));
+  const workspace = (0, import_yaml3.stringify)(request4.configuration);
+  await writeTextAtomic(join3(root, "workspace.yaml"), workspace);
+  await writeTextAtomic(join3(root, "context/SOURCES.md"), sources);
+  await mkdir3(join3(root, "agents"), { recursive: true });
+  for (const [path2, contents] of agentWrites) await writeTextAtomic(path2, contents);
+  await writeTextAtomic(join3(root, "README.md"), readme);
+  await writeTextAtomic(gitignorePath, gitignore);
   return initializeWorkspace({ workspaceRoot: root });
 }
 async function configureWorkspace(options) {
@@ -15435,6 +15634,10 @@ async function configureWorkspace(options) {
     const result4 = await bootstrapWorkspace({ workspaceRoot: workspaceRoot20, request: options.request });
     return { route: "bootstrap", state, message: "Fresh wrapper configured through the explicit bootstrap phase.", result: result4 };
   }
+  if (await exactBootstrapRerun(workspaceRoot20, options.request)) {
+    const result4 = await initializeWorkspace({ workspaceRoot: workspaceRoot20, apply: false });
+    return { route: "inspect-existing", state, message: "Exact completed bootstrap request detected; configuration is already current and no files or commits changed.", result: result4 };
+  }
   const result3 = await reconfigureWorkspace(workspaceRoot20, options.request);
   return { route: "reconfigure", state, message: "Existing wrapper configuration was updated as reviewable, uncommitted changes.", result: result3 };
 }
@@ -15449,12 +15652,13 @@ var init_configure_workspace = __esm({
     init_validation();
     init_workspace_context();
     init_workspace_readme();
+    init_safe_reference();
   }
 });
 
 // scripts/initialize-workspace.ts
 var initialize_workspace_exports = {};
-import { dirname as dirname5, resolve as resolve6 } from "node:path";
+import { dirname as dirname6, resolve as resolve6 } from "node:path";
 import { parseArgs as parseArgs2 } from "node:util";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
 var values2, workspaceRoot2, summary;
@@ -15462,23 +15666,23 @@ var init_initialize_workspace2 = __esm({
   async "scripts/initialize-workspace.ts"() {
     "use strict";
     init_configure_workspace();
-    init_validation();
+    init_io();
     ({ values: values2 } = parseArgs2({
       options: {
         "check-only": { type: "boolean", default: false },
         bootstrap: { type: "string" }
       }
     }));
-    workspaceRoot2 = resolve6(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve6(dirname5(fileURLToPath3(import.meta.url)), ".."));
+    workspaceRoot2 = resolve6(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve6(dirname6(fileURLToPath3(import.meta.url)), ".."));
     if (values2.bootstrap && values2["check-only"]) throw new Error("--bootstrap and --check-only cannot be combined");
-    summary = values2.bootstrap ? await configureWorkspace({ workspaceRoot: workspaceRoot2, request: await readData(resolve6(values2.bootstrap)) }) : await configureWorkspace({ workspaceRoot: workspaceRoot2, checkOnly: values2["check-only"] });
+    summary = values2.bootstrap ? await configureWorkspace({ workspaceRoot: workspaceRoot2, request: await readJsonRegularInside(workspaceRoot2, resolve6(workspaceRoot2, values2.bootstrap), "Workspace bootstrap request") }) : await configureWorkspace({ workspaceRoot: workspaceRoot2, checkOnly: values2["check-only"] });
     console.log(JSON.stringify(summary, null, 2));
   }
 });
 
 // scripts/configure-workspace.ts
 var configure_workspace_exports = {};
-import { dirname as dirname6, resolve as resolve7 } from "node:path";
+import { dirname as dirname7, resolve as resolve7 } from "node:path";
 import { parseArgs as parseArgs3 } from "node:util";
 import { fileURLToPath as fileURLToPath4 } from "node:url";
 var values3, workspaceRoot3, request;
@@ -15486,10 +15690,10 @@ var init_configure_workspace2 = __esm({
   async "scripts/configure-workspace.ts"() {
     "use strict";
     init_configure_workspace();
-    init_validation();
+    init_io();
     ({ values: values3 } = parseArgs3({ options: { request: { type: "string" }, "check-only": { type: "boolean", default: false } } }));
-    workspaceRoot3 = resolve7(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve7(dirname6(fileURLToPath4(import.meta.url)), ".."));
-    request = values3.request ? await readData(resolve7(values3.request)) : void 0;
+    workspaceRoot3 = resolve7(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve7(dirname7(fileURLToPath4(import.meta.url)), ".."));
+    request = values3.request ? await readJsonRegularInside(workspaceRoot3, resolve7(workspaceRoot3, values3.request), "Workspace configuration request") : void 0;
     console.log(JSON.stringify(await configureWorkspace({ workspaceRoot: workspaceRoot3, ...request ? { request } : {}, checkOnly: values3["check-only"] }), null, 2));
   }
 });
@@ -15543,7 +15747,7 @@ var init_ids = __esm({
 
 // scripts/lib/activity-lifecycle.ts
 import { readFile as readFile6 } from "node:fs/promises";
-import { join as join5, relative as relative2, resolve as resolve8 } from "node:path";
+import { join as join5, relative as relative3, resolve as resolve8 } from "node:path";
 async function readJson(path2) {
   return JSON.parse(await readFile6(path2, "utf8"));
 }
@@ -15580,7 +15784,7 @@ function syncManifestEvent(manifest2, record, recordPath2, workspaceRoot20) {
     status: record.status,
     idempotency_key: existing?.idempotency_key ?? `${manifest2.run_id}:lifecycle:${record.event}:${record.provider}`,
     occurred_at: occurredAt,
-    record: relative2(workspaceRoot20, recordPath2).replaceAll("\\", "/"),
+    record: relative3(workspaceRoot20, recordPath2).replaceAll("\\", "/"),
     actions: record.actions
   };
   if (existing) Object.assign(existing, value2);
@@ -16190,7 +16394,7 @@ var init_plans = __esm({
 // scripts/lib/run-task.ts
 import { randomBytes as randomBytes2 } from "node:crypto";
 import { access as access3, readFile as readFile8 } from "node:fs/promises";
-import { join as join7, relative as relative3, resolve as resolve10 } from "node:path";
+import { join as join7, relative as relative4, resolve as resolve10 } from "node:path";
 async function assertValid2(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length > 0) {
@@ -16455,7 +16659,7 @@ async function preparePlanlessTask(options) {
   await writeJsonAtomic(taskBriefPath, taskBrief);
   const runtimeRepository = {
     name: options.repository,
-    base_path: relative3(workspaceRoot20, repositoryPath),
+    base_path: relative4(workspaceRoot20, repositoryPath),
     base_commit: baseCommit,
     branch,
     worktree,
@@ -16693,7 +16897,7 @@ async function prepareContractFirstTask(options) {
     });
     runtimeRepositories.push({
       name: target.name,
-      base_path: relative3(workspaceRoot20, base.path),
+      base_path: relative4(workspaceRoot20, base.path),
       base_commit: base.commit,
       branch,
       worktree,
@@ -16870,7 +17074,7 @@ async function preparePlanTask(options) {
       result_contract: join7(workspaceRoot20, ".agents", "contracts", "verifier-result.schema.json"),
       result_path: verifierResultPath
     });
-    runtimeRepositories.push({ name: target.name, base_path: relative3(workspaceRoot20, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
+    runtimeRepositories.push({ name: target.name, base_path: relative4(workspaceRoot20, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
     preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
   }
   const manifest2 = {
@@ -16996,7 +17200,7 @@ var init_run_task = __esm({
 
 // scripts/run-task.ts
 var run_task_exports = {};
-import { dirname as dirname7, resolve as resolve11 } from "node:path";
+import { dirname as dirname8, resolve as resolve11 } from "node:path";
 import { readFile as readFile9 } from "node:fs/promises";
 import { parseArgs as parseArgs4 } from "node:util";
 import { fileURLToPath as fileURLToPath5 } from "node:url";
@@ -17007,7 +17211,7 @@ var init_run_task2 = __esm({
     init_run_task();
     testPolicies = ["required", "existing-coverage", "verifier-only", "not-required"];
     activityCapabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-    workspaceRoot4 = resolve11(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve11(dirname7(fileURLToPath5(import.meta.url)), ".."));
+    workspaceRoot4 = resolve11(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve11(dirname8(fileURLToPath5(import.meta.url)), ".."));
     ({ values: values4 } = parseArgs4({
       options: {
         request: { type: "string" },
@@ -17335,7 +17539,7 @@ var init_record_result = __esm({
 
 // scripts/record-result.ts
 var record_result_exports = {};
-import { dirname as dirname8, resolve as resolve13 } from "node:path";
+import { dirname as dirname9, resolve as resolve13 } from "node:path";
 import { parseArgs as parseArgs5 } from "node:util";
 import { fileURLToPath as fileURLToPath6 } from "node:url";
 var stages, workspaceRoot5, values5, manifest;
@@ -17344,7 +17548,7 @@ var init_record_result2 = __esm({
     "use strict";
     init_record_result();
     stages = ["worker-started", "worker-result", "verifier-result"];
-    workspaceRoot5 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname8(fileURLToPath6(import.meta.url)), ".."));
+    workspaceRoot5 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname9(fileURLToPath6(import.meta.url)), ".."));
     ({ values: values5 } = parseArgs5({
       options: {
         "run-id": { type: "string" },
@@ -17853,7 +18057,7 @@ var init_review_lifecycle = __esm({
 
 // scripts/prepare-repair.ts
 var prepare_repair_exports = {};
-import { dirname as dirname9, resolve as resolve15 } from "node:path";
+import { dirname as dirname10, resolve as resolve15 } from "node:path";
 import { parseArgs as parseArgs6 } from "node:util";
 import { fileURLToPath as fileURLToPath7 } from "node:url";
 var values6, workspaceRoot6;
@@ -17868,14 +18072,14 @@ var init_prepare_repair = __esm({
       }
     }));
     if (!values6["run-id"] || !values6.repository) throw new Error("Usage: prepare-repair --run-id <id> --repository <name>");
-    workspaceRoot6 = resolve15(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve15(dirname9(fileURLToPath7(import.meta.url)), ".."));
+    workspaceRoot6 = resolve15(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve15(dirname10(fileURLToPath7(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareRepair({ workspaceRoot: workspaceRoot6, runId: values6["run-id"], repository: values6.repository }), null, 2));
   }
 });
 
 // scripts/prepare-review.ts
 var prepare_review_exports = {};
-import { dirname as dirname10, resolve as resolve16 } from "node:path";
+import { dirname as dirname11, resolve as resolve16 } from "node:path";
 import { parseArgs as parseArgs7 } from "node:util";
 import { fileURLToPath as fileURLToPath8 } from "node:url";
 var values7, workspaceRoot7;
@@ -17890,14 +18094,14 @@ var init_prepare_review = __esm({
       }
     }));
     if (!values7["run-id"] || !values7.repository) throw new Error("Usage: prepare-review --run-id <id> --repository <name>");
-    workspaceRoot7 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname10(fileURLToPath8(import.meta.url)), ".."));
+    workspaceRoot7 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname11(fileURLToPath8(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareReview({ workspaceRoot: workspaceRoot7, runId: values7["run-id"], repository: values7.repository }), null, 2));
   }
 });
 
 // scripts/record-review-publication.ts
 var record_review_publication_exports = {};
-import { dirname as dirname11, resolve as resolve17 } from "node:path";
+import { dirname as dirname12, resolve as resolve17 } from "node:path";
 import { parseArgs as parseArgs8 } from "node:util";
 import { fileURLToPath as fileURLToPath9 } from "node:url";
 var workspaceRoot8, values8;
@@ -17905,7 +18109,7 @@ var init_record_review_publication = __esm({
   async "scripts/record-review-publication.ts"() {
     "use strict";
     init_review_lifecycle();
-    workspaceRoot8 = resolve17(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve17(dirname11(fileURLToPath9(import.meta.url)), ".."));
+    workspaceRoot8 = resolve17(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve17(dirname12(fileURLToPath9(import.meta.url)), ".."));
     ({ values: values8 } = parseArgs8({ options: {
       "run-id": { type: "string" },
       repository: { type: "string" },
@@ -17933,7 +18137,7 @@ var init_record_review_publication = __esm({
 
 // scripts/confirm-merge.ts
 var confirm_merge_exports = {};
-import { dirname as dirname12, resolve as resolve18 } from "node:path";
+import { dirname as dirname13, resolve as resolve18 } from "node:path";
 import { parseArgs as parseArgs9 } from "node:util";
 import { fileURLToPath as fileURLToPath10 } from "node:url";
 var values9, workspaceRoot9;
@@ -17951,7 +18155,7 @@ var init_confirm_merge = __esm({
     if (!values9["run-id"] || !values9.repository || !values9["merge-commit"] || !values9.evidence || !values9.author) {
       throw new Error("Usage: cc confirm-merge --run-id <id> --repository <name> --merge-commit <full-sha> --author <slug> --evidence <single-line-evidence>");
     }
-    workspaceRoot9 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname12(fileURLToPath10(import.meta.url)), ".."));
+    workspaceRoot9 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname13(fileURLToPath10(import.meta.url)), ".."));
     console.log(JSON.stringify(await confirmMerge({
       workspaceRoot: workspaceRoot9,
       runId: values9["run-id"],
@@ -17965,7 +18169,7 @@ var init_confirm_merge = __esm({
 
 // scripts/lib/finish-work.ts
 import { access as access4, lstat as lstat6, mkdir as mkdir5, readFile as readFile12, readdir as readdir2, realpath as realpath5 } from "node:fs/promises";
-import { basename as basename2, join as join10, relative as relative4, resolve as resolve19 } from "node:path";
+import { basename as basename2, join as join10, relative as relative5, resolve as resolve19 } from "node:path";
 async function assertValid5(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
@@ -18294,7 +18498,7 @@ async function finishWork(options) {
     await ensureContributionRoot(workspaceRoot20, contributionsRoot);
     const existingContribution = await findExistingContribution(contributionsRoot, options.runId, repository.name);
     const contributionPath = existingContribution ?? join10(contributionsRoot, `${compactTimestamp(invocationTime)}-${author}-${taskSlug(brief)}-${repository.name}.md`);
-    const contributionRelative = relative4(workspaceRoot20, contributionPath).replaceAll("\\", "/");
+    const contributionRelative = relative5(workspaceRoot20, contributionPath).replaceAll("\\", "/");
     const record = {
       contract_version: 1,
       work_id: manifest2.work_id,
@@ -18361,7 +18565,7 @@ var init_finish_work = __esm({
 
 // scripts/finish-work.ts
 var finish_work_exports = {};
-import { dirname as dirname13, resolve as resolve20 } from "node:path";
+import { dirname as dirname14, resolve as resolve20 } from "node:path";
 import { parseArgs as parseArgs10 } from "node:util";
 import { fileURLToPath as fileURLToPath11 } from "node:url";
 var values10, workspaceRoot10, result;
@@ -18385,7 +18589,7 @@ var init_finish_work2 = __esm({
       throw new Error("Required: --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug>");
     }
     if (values10.outcome !== "merged" && values10.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
-    workspaceRoot10 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname13(fileURLToPath11(import.meta.url)), ".."));
+    workspaceRoot10 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname14(fileURLToPath11(import.meta.url)), ".."));
     result = await finishWork({
       workspaceRoot: workspaceRoot10,
       runId: values10["run-id"],
@@ -18404,7 +18608,7 @@ var init_finish_work2 = __esm({
 // scripts/create-plan.ts
 var create_plan_exports = {};
 import { readFile as readFile13 } from "node:fs/promises";
-import { dirname as dirname14, resolve as resolve21 } from "node:path";
+import { dirname as dirname15, resolve as resolve21 } from "node:path";
 import { parseArgs as parseArgs11 } from "node:util";
 import { fileURLToPath as fileURLToPath12 } from "node:url";
 var values11, workspaceRoot11, inputPath, request2;
@@ -18416,7 +18620,7 @@ var init_create_plan = __esm({
       options: { input: { type: "string" } }
     }));
     if (!values11.input) throw new Error("Usage: cc create-plan --input <plan-draft-request.json>");
-    workspaceRoot11 = resolve21(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve21(dirname14(fileURLToPath12(import.meta.url)), ".."));
+    workspaceRoot11 = resolve21(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve21(dirname15(fileURLToPath12(import.meta.url)), ".."));
     inputPath = resolve21(process.cwd(), values11.input);
     request2 = JSON.parse(await readFile13(inputPath, "utf8"));
     console.log(JSON.stringify(await createPlanDraft(workspaceRoot11, request2), null, 2));
@@ -18448,7 +18652,7 @@ var init_validate_plan = __esm({
 
 // scripts/set-plan-state.ts
 var set_plan_state_exports = {};
-import { dirname as dirname15, join as join11, resolve as resolve23 } from "node:path";
+import { dirname as dirname16, join as join11, resolve as resolve23 } from "node:path";
 import { parseArgs as parseArgs13 } from "node:util";
 import { fileURLToPath as fileURLToPath13 } from "node:url";
 var values12, requested, transition, workspaceRoot12, planDirectory2;
@@ -18471,7 +18675,7 @@ var init_set_plan_state = __esm({
     if (values12["approve-by"]) transition = { kind: "approve", approved_by: values12["approve-by"] };
     else if (values12["material-revision"]) transition = { kind: "material-revision", reason: values12["material-revision"] };
     else transition = { kind: "non-material-repair" };
-    workspaceRoot12 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname15(fileURLToPath13(import.meta.url)), ".."));
+    workspaceRoot12 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname16(fileURLToPath13(import.meta.url)), ".."));
     planDirectory2 = assertInside(join11(workspaceRoot12, "context", "plans"), resolve23(process.cwd(), values12.plan));
     console.log(JSON.stringify(await setPlanState(planDirectory2, transition), null, 2));
   }
@@ -18479,7 +18683,7 @@ var init_set_plan_state = __esm({
 
 // scripts/lib/whats-next.ts
 import { lstat as lstat7, readdir as readdir3, readFile as readFile14, realpath as realpath6 } from "node:fs/promises";
-import { join as join12, relative as relative5, resolve as resolve24, sep as sep2 } from "node:path";
+import { join as join12, relative as relative6, resolve as resolve24, sep as sep2 } from "node:path";
 function contractMessages2(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
 }
@@ -18492,7 +18696,7 @@ async function isDirectory(path2) {
   }
 }
 function reference(workspaceRoot20, path2) {
-  const raw = relative5(workspaceRoot20, path2);
+  const raw = relative6(workspaceRoot20, path2);
   return raw && !raw.startsWith(`..${sep2}`) && raw !== ".." ? raw.replaceAll("\\", "/") : path2;
 }
 function inside(root, path2) {
@@ -18777,7 +18981,7 @@ async function discoverPlanCandidates(workspaceRoot20, config, activityFacts, lo
     const planDirectory3 = join12(plansRoot, entry.name);
     const validation = validations.get(entry.name);
     if (!validation?.index || !validation.work_breakdown) continue;
-    const planDirectoryReference = relative5(workspaceRoot20, planDirectory3).replaceAll("\\", "/");
+    const planDirectoryReference = relative6(workspaceRoot20, planDirectory3).replaceAll("\\", "/");
     const projectedByWork = /* @__PURE__ */ new Map();
     for (const item of validation.work_breakdown.items) {
       const relevantLocal = (localObservations.get(item.work_id) ?? []).filter((observation) => {
@@ -18805,10 +19009,10 @@ async function discoverPlanCandidates(workspaceRoot20, config, activityFacts, lo
         reference: dependency,
         state: projectedByWork.get(dependency)?.state === "completed" ? "completed" : projectedByWork.has(dependency) ? "pending" : "unknown"
       }));
-      const planReference = relative5(workspaceRoot20, join12(planDirectory3, "README.md"));
+      const planReference = relative6(workspaceRoot20, join12(planDirectory3, "README.md"));
       const state = projection?.state ?? "ready";
       const contradiction = Boolean(projection?.contradiction) || Boolean(projection) && validation.index.status !== "approved" || activityRepositoryMismatch;
-      const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative5(workspaceRoot20, join12(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
+      const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative6(workspaceRoot20, join12(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
       candidates.push({
         contract_version: 1,
         candidate_id: `plan:${validation.index.plan_id}:${item.work_id}`,
@@ -18827,7 +19031,7 @@ async function discoverPlanCandidates(workspaceRoot20, config, activityFacts, lo
         repositories,
         access_available: (fact?.access_available ?? true) && await repositoryAccess(workspaceRoot20, config, repositories),
         contract_blocked: fact?.contract_blocked ?? false,
-        source_reference: `${relative5(workspaceRoot20, join12(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
+        source_reference: `${relative6(workspaceRoot20, join12(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
         state_sources: stateSources,
         risks: [.../* @__PURE__ */ new Set([...fact?.risks ?? [], ...activityRepositoryMismatch ? [`Activity repository evidence does not match approved plan repository ${item.repository}.`] : [], ...contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : []])]
       });
@@ -18908,7 +19112,7 @@ var init_whats_next = __esm({
 // scripts/whats-next.ts
 var whats_next_exports = {};
 import { readFile as readFile15 } from "node:fs/promises";
-import { dirname as dirname16, resolve as resolve25 } from "node:path";
+import { dirname as dirname17, resolve as resolve25 } from "node:path";
 import { parseArgs as parseArgs14 } from "node:util";
 import { fileURLToPath as fileURLToPath14 } from "node:url";
 var values13, workspaceRoot13, activity;
@@ -18917,7 +19121,7 @@ var init_whats_next2 = __esm({
     "use strict";
     init_whats_next();
     ({ values: values13 } = parseArgs14({ options: { "activity-fixture": { type: "string" } } }));
-    workspaceRoot13 = resolve25(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve25(dirname16(fileURLToPath14(import.meta.url)), ".."));
+    workspaceRoot13 = resolve25(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve25(dirname17(fileURLToPath14(import.meta.url)), ".."));
     activity = values13["activity-fixture"] ? JSON.parse(await readFile15(resolve25(process.cwd(), values13["activity-fixture"]), "utf8")) : null;
     console.log(JSON.stringify(await recommendWhatsNext(workspaceRoot13, activity), null, 2));
   }
@@ -18925,7 +19129,7 @@ var init_whats_next2 = __esm({
 
 // scripts/prepare-lifecycle.ts
 var prepare_lifecycle_exports = {};
-import { dirname as dirname17, resolve as resolve26 } from "node:path";
+import { dirname as dirname18, resolve as resolve26 } from "node:path";
 import { parseArgs as parseArgs15 } from "node:util";
 import { fileURLToPath as fileURLToPath15 } from "node:url";
 var events, capabilities, values14, workspaceRoot14;
@@ -18943,7 +19147,7 @@ var init_prepare_lifecycle = __esm({
     if (!values14["run-id"] || !events.includes(values14.event) || values14.available.some((item) => !capabilities.includes(item))) {
       throw new Error("Usage: prepare-lifecycle --run-id <id> --event <semantic-event> [--available <capability>]");
     }
-    workspaceRoot14 = resolve26(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve26(dirname17(fileURLToPath15(import.meta.url)), ".."));
+    workspaceRoot14 = resolve26(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve26(dirname18(fileURLToPath15(import.meta.url)), ".."));
     console.log(JSON.stringify(await prepareActivityLifecycle({
       workspaceRoot: workspaceRoot14,
       runId: values14["run-id"],
@@ -18955,7 +19159,7 @@ var init_prepare_lifecycle = __esm({
 
 // scripts/record-lifecycle-action.ts
 var record_lifecycle_action_exports = {};
-import { dirname as dirname18, resolve as resolve27 } from "node:path";
+import { dirname as dirname19, resolve as resolve27 } from "node:path";
 import { parseArgs as parseArgs16 } from "node:util";
 import { fileURLToPath as fileURLToPath16 } from "node:url";
 var events2, values15, workspaceRoot15;
@@ -18975,7 +19179,7 @@ var init_record_lifecycle_action = __esm({
     if (!values15["run-id"] || !events2.includes(values15.event) || !values15.action || !["completed", "failed"].includes(values15.status ?? "") || !values15.evidence) {
       throw new Error("Usage: record-lifecycle-action --run-id <id> --event <event> --action <id> --status <completed|failed> --evidence <text> [--reference <ref>]");
     }
-    workspaceRoot15 = resolve27(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve27(dirname18(fileURLToPath16(import.meta.url)), ".."));
+    workspaceRoot15 = resolve27(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve27(dirname19(fileURLToPath16(import.meta.url)), ".."));
     console.log(JSON.stringify(await recordActivityLifecycleAction({
       workspaceRoot: workspaceRoot15,
       runId: values15["run-id"],
@@ -19136,7 +19340,7 @@ var init_plan_publication = __esm({
 // scripts/prepare-plan-publication.ts
 var prepare_plan_publication_exports = {};
 import { readFile as readFile17 } from "node:fs/promises";
-import { dirname as dirname19, resolve as resolve29 } from "node:path";
+import { dirname as dirname20, resolve as resolve29 } from "node:path";
 import { parseArgs as parseArgs17 } from "node:util";
 import { fileURLToPath as fileURLToPath17 } from "node:url";
 var values16, workspaceRoot16, discovery;
@@ -19146,7 +19350,7 @@ var init_prepare_plan_publication = __esm({
     init_plan_publication();
     ({ values: values16 } = parseArgs17({ options: { plan: { type: "string" }, discovery: { type: "string" } } }));
     if (!values16.plan || !values16.discovery) throw new Error("Usage: prepare-plan-publication --plan <plan-id> --discovery <json>");
-    workspaceRoot16 = resolve29(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve29(dirname19(fileURLToPath17(import.meta.url)), ".."));
+    workspaceRoot16 = resolve29(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve29(dirname20(fileURLToPath17(import.meta.url)), ".."));
     discovery = JSON.parse(await readFile17(resolve29(process.cwd(), values16.discovery), "utf8"));
     console.log(JSON.stringify(await preparePlanPublication({ workspaceRoot: workspaceRoot16, planId: values16.plan, discovery }), null, 2));
   }
@@ -19154,7 +19358,7 @@ var init_prepare_plan_publication = __esm({
 
 // scripts/record-plan-publication.ts
 var record_plan_publication_exports = {};
-import { dirname as dirname20, resolve as resolve30 } from "node:path";
+import { dirname as dirname21, resolve as resolve30 } from "node:path";
 import { parseArgs as parseArgs18 } from "node:util";
 import { fileURLToPath as fileURLToPath18 } from "node:url";
 var values17, workspaceRoot17;
@@ -19164,7 +19368,7 @@ var init_record_plan_publication = __esm({
     init_plan_publication();
     ({ values: values17 } = parseArgs18({ options: { plan: { type: "string" }, work: { type: "string" }, status: { type: "string" }, evidence: { type: "string" }, reference: { type: "string" } } }));
     if (!values17.plan || !values17.work || !["created", "failed"].includes(values17.status ?? "") || !values17.evidence) throw new Error("Usage: record-plan-publication --plan <id> --work <id> --status <created|failed> --evidence <text> [--reference <external-ref>]");
-    workspaceRoot17 = resolve30(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve30(dirname20(fileURLToPath18(import.meta.url)), ".."));
+    workspaceRoot17 = resolve30(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve30(dirname21(fileURLToPath18(import.meta.url)), ".."));
     console.log(JSON.stringify(await recordPlanPublication({ workspaceRoot: workspaceRoot17, planId: values17.plan, workId: values17.work, status: values17.status, evidence: values17.evidence, ...values17.reference ? { externalReference: values17.reference } : {} }), null, 2));
   }
 });
@@ -19339,7 +19543,7 @@ var init_context_sync = __esm({
 // scripts/sync-context.ts
 var sync_context_exports = {};
 import { readFile as readFile19 } from "node:fs/promises";
-import { dirname as dirname21, resolve as resolve32 } from "node:path";
+import { dirname as dirname22, resolve as resolve32 } from "node:path";
 import { parseArgs as parseArgs19 } from "node:util";
 import { fileURLToPath as fileURLToPath19 } from "node:url";
 var workspaceRoot18, values18, request3;
@@ -19347,7 +19551,7 @@ var init_sync_context = __esm({
   async "scripts/sync-context.ts"() {
     "use strict";
     init_context_sync();
-    workspaceRoot18 = resolve32(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve32(dirname21(fileURLToPath19(import.meta.url)), ".."));
+    workspaceRoot18 = resolve32(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve32(dirname22(fileURLToPath19(import.meta.url)), ".."));
     ({ values: values18 } = parseArgs19({ options: { request: { type: "string" } } }));
     if (!values18.request) throw new Error("Usage: sync-context --request <context-sync-request.json>");
     request3 = JSON.parse(await readFile19(resolve32(values18.request), "utf8"));
@@ -19357,7 +19561,7 @@ var init_sync_context = __esm({
 
 // scripts/prepare-context-review.ts
 var prepare_context_review_exports = {};
-import { dirname as dirname22, resolve as resolve33 } from "node:path";
+import { dirname as dirname23, resolve as resolve33 } from "node:path";
 import { parseArgs as parseArgs20 } from "node:util";
 import { fileURLToPath as fileURLToPath20 } from "node:url";
 var workspaceRoot19, values19;
@@ -19365,7 +19569,7 @@ var init_prepare_context_review = __esm({
   async "scripts/prepare-context-review.ts"() {
     "use strict";
     init_context_sync();
-    workspaceRoot19 = resolve33(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve33(dirname22(fileURLToPath20(import.meta.url)), ".."));
+    workspaceRoot19 = resolve33(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve33(dirname23(fileURLToPath20(import.meta.url)), ".."));
     ({ values: values19 } = parseArgs20({ options: { "sync-id": { type: "string" } } }));
     if (!values19["sync-id"]) throw new Error("Usage: prepare-context-review --sync-id <id>");
     console.log(JSON.stringify(await prepareContextReview({ workspaceRoot: workspaceRoot19, syncId: values19["sync-id"] }), null, 2));

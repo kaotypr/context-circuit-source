@@ -58,8 +58,11 @@ ${managedEnd}`;
 
 export function reconcileWorkspaceReadme(current: string, config: WorkspaceConfig): string {
   const managed = renderManagedWorkspaceReadme(config);
-  const start = current.indexOf(managedStart);
-  const end = current.indexOf(managedEnd);
+  const starts = [...current.matchAll(new RegExp(managedStart.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  const ends = [...current.matchAll(new RegExp(managedEnd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  if (starts.length > 1 || ends.length > 1) throw new Error("README.md must contain at most one managed workspace block");
+  const start = starts[0]?.index ?? -1;
+  const end = ends[0]?.index ?? -1;
   if ((start === -1) !== (end === -1) || (start !== -1 && end < start)) throw new Error("Malformed managed workspace block in README.md");
   if (start !== -1) {
     const after = end + managedEnd.length;
@@ -72,4 +75,3 @@ export function reconcileWorkspaceReadme(current: string, config: WorkspaceConfi
   }
   return `${managed}\n\n${existing}\n`;
 }
-

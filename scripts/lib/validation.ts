@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
+import { contextReferenceError, remoteReferenceError } from "./safe-reference.js";
 
 export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
 export type SchemaName = (typeof schemaNames)[number];
@@ -113,13 +114,18 @@ export async function validateContract(name: SchemaName, value: unknown): Promis
 export function workspaceSemanticErrors(config: WorkspaceConfig): string[] {
   const errors: string[] = [];
   const paths = new Map<string, string>();
-  const credentialPattern = /https?:\/\/[^\s/@:]+:[^\s/@]+@|(?:token|password|passwd|secret|api[_-]?key)\s*[=:]|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i;
-  const references: Array<[string, string | undefined]> = [
+  const remotes: Array<[string, string | undefined]> = [
     ["workspace.remote", config.workspace.remote],
     ...Object.entries(config.repositories).map(([name, repository]) => [`repositories.${name}.remote`, repository.remote] as [string, string | undefined]),
-    ...(config.context?.authoritative_sources ?? []).map((source, index) => [`context.authoritative_sources.${index}.reference`, source.reference] as [string, string | undefined]),
   ];
-  for (const [path, value] of references) if (value && credentialPattern.test(value)) errors.push(`${path} appears to contain credentials`);
+  for (const [path, value] of remotes) {
+    const error = value ? remoteReferenceError(value) : null;
+    if (error) errors.push(`${path} ${error}`);
+  }
+  for (const [index, source] of (config.context?.authoritative_sources ?? []).entries()) {
+    const error = contextReferenceError(source.reference);
+    if (error) errors.push(`context.authoritative_sources.${index}.reference ${error}`);
+  }
   for (const [name, repository] of Object.entries(config.repositories)) {
     const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
     const prior = paths.get(normalized);
