@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import test from "node:test";
 import { extract as extractTar, list as listTar } from "tar";
 import { projectRoot } from "./helpers.js";
@@ -53,6 +53,7 @@ test("distributable and release archive contain only wrapper inputs", async () =
   assert.doesNotMatch(await readFile(join(destination, "WORKFLOW.md"), "utf8"), /template is in team mode/i);
 
   const pending = [destination];
+  const actualInventory: string[] = [];
   while (pending.length > 0) {
     const directory = pending.pop()!;
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -60,8 +61,10 @@ test("distributable and release archive contain only wrapper inputs", async () =
       assert.notEqual(entry.name, "__MACOSX");
       assert.equal(entry.name.startsWith("._"), false);
       if (entry.isDirectory()) pending.push(join(directory, entry.name));
+      else if (entry.isFile()) actualInventory.push(relative(destination, join(directory, entry.name)).replaceAll("\\", "/"));
     }
   }
+  assert.deepEqual(actualInventory.sort(), manifest.file_inventory);
 
   await access(archive);
   const archiveEntries: string[] = [];

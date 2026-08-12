@@ -64,7 +64,14 @@ reviewable-change authorization.
 If a release archive was initialized with `git init` but still has no `HEAD`,
 the neutral extracted-template inventory is accepted with
 `wrapper.initialize_git: false` and exact initial-commit authorization. Extra
-authored paths stop bootstrap without creating a commit.
+authored paths stop bootstrap without creating a commit. The standalone engine
+contains the trusted release inventory and checks both the editable manifest and
+bundled-command digest against it; the manifest cannot whitelist extra files.
+
+Existing-wrapper output uses a cross-file transaction. Every sibling temporary
+file is written and synced before any managed target changes. Existing targets
+then move to recoverable backups; a rename failure restores all backups and
+removes staged artifacts before returning an error.
 
 `initialize-workspace` is retained as a compatibility command. It detects the
 Git state, reports whether it routed to fresh bootstrap or existing inspection,

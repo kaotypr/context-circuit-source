@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
+import { access, chmod, cp, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -271,4 +271,59 @@ test("built bundle enforces request-path safety and exact rerun idempotence", as
   const linked = spawnSync(process.execPath, [binary, "configure-workspace", "--request", ".runtime/bootstrap/request.json"], { cwd: workspace.root, encoding: "utf8" });
   assert.notEqual(linked.status, 0);
   assert.match(linked.stderr, /regular file/);
+});
+
+async function managedSnapshot(root: string): Promise<Map<string, Buffer>> {
+  const paths = ["workspace.yaml", "README.md", "context/SOURCES.md", ".gitignore", "agents/app.md"];
+  return new Map(await Promise.all(paths.map(async (path) => [path, await readFile(join(root, path))] as const)));
+}
+
+test("cross-file transaction stages all outputs before mutation and rolls back rename failures", async (t) => {
+  const workspace = await neutralWrapper();
+  t.after(workspace.cleanup);
+  await configureWorkspace({ workspaceRoot: workspace.root, request: request() });
+  const changed = request(true);
+  changed.configuration.workspace.purpose = "Transactionally updated purpose.";
+  const before = await managedSnapshot(workspace.root);
+  const beforeStatus = await git(workspace.root, ["status", "--porcelain=v1", "--untracked-files=all"]);
+
+  await chmod(join(workspace.root, "context"), 0o555);
+  try {
+    await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: changed }), /EACCES|permission denied|read-only/i);
+  } finally {
+    await chmod(join(workspace.root, "context"), 0o755);
+  }
+  for (const [path, bytes] of before) assert.deepEqual(await readFile(join(workspace.root, path)), bytes);
+  assert.equal(await git(workspace.root, ["status", "--porcelain=v1", "--untracked-files=all"]), beforeStatus);
+
+  await assert.rejects(configureWorkspace({ workspaceRoot: workspace.root, request: changed, transactionOptions: { failRenameAt: 3 } }), /Injected transaction rename failure/);
+  for (const [path, bytes] of before) assert.deepEqual(await readFile(join(workspace.root, path)), bytes);
+  assert.equal(await git(workspace.root, ["status", "--porcelain=v1", "--untracked-files=all"]), beforeStatus);
+  for (const directory of [workspace.root, join(workspace.root, "context"), join(workspace.root, "agents")]) {
+    assert.equal((await readdir(directory)).some((name) => /\.(?:stage|backup)$/.test(name)), false);
+  }
+});
+
+test("built bundle rejects forged template inventory before committing unborn wrapper", async (t) => {
+  const build = spawnSync(process.execPath, ["--import", "tsx", "scripts/build-template.ts"], { cwd: projectRoot, encoding: "utf8" });
+  assert.equal(build.status, 0, build.stderr || build.stdout);
+  const root = await mkdtemp(join(tmpdir(), "context-circuit-forged-inventory-"));
+  t.after(async () => rm(root, { recursive: true, force: true }));
+  await cp(join(projectRoot, ".dist", "context-circuit-0.2.1"), root, { recursive: true });
+  const manifestPath = join(root, "template-manifest.json");
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  manifest.file_inventory.push("AUTHORED.md");
+  manifest.file_inventory.sort();
+  await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
+  await writeFile(join(root, "AUTHORED.md"), "must survive\n", "utf8");
+  await git(root, ["init", "--initial-branch=main"]);
+  await mkdir(join(root, ".runtime", "bootstrap"), { recursive: true });
+  const forgedRequest = request();
+  forgedRequest.wrapper.initialize_git = false;
+  await writeFile(join(root, ".runtime", "bootstrap", "request.json"), `${JSON.stringify(forgedRequest)}\n`, "utf8");
+  const result = spawnSync(process.execPath, [join(root, ".agents", "bin", "cc.mjs"), "configure-workspace", "--request", ".runtime/bootstrap/request.json"], { cwd: root, encoding: "utf8" });
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /manifest or inventory has been modified/);
+  assert.equal(await readFile(join(root, "AUTHORED.md"), "utf8"), "must survive\n");
+  await assert.rejects(git(root, ["rev-parse", "HEAD"]));
 });

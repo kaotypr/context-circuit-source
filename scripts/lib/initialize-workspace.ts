@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { access, lstat, mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
@@ -11,6 +12,7 @@ import { cloneReferenceError } from "./safe-reference.js";
 
 const ignoredStart = "# context-circuit:ignored-clones:start";
 const ignoredEnd = "# context-circuit:ignored-clones:end";
+declare const __CC_TEMPLATE_INVENTORY__: string[] | undefined;
 
 export interface InitializationRepositorySummary {
   name: string;
@@ -156,14 +158,20 @@ async function assertExpectedUnbornTemplate(root: string): Promise<void> {
   const status = (await git(root, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
   const allowed = new Set<string>([...requiredWorkspaceDocuments, ".gitignore", "template-manifest.json"]);
   const templateDirectories = [".agents/", ".codex/", ".claude/", "agents/", "context/", "contributions/", "docs/"];
-  try {
-    const manifest = JSON.parse(await readFile(join(root, "template-manifest.json"), "utf8")) as { file_inventory?: unknown };
-    if (Array.isArray(manifest.file_inventory) && manifest.file_inventory.every((path) => typeof path === "string")) {
-      for (const path of manifest.file_inventory as string[]) allowed.add(path);
-      templateDirectories.length = 0;
+  const trustedInventory = typeof __CC_TEMPLATE_INVENTORY__ === "undefined" ? null : __CC_TEMPLATE_INVENTORY__;
+  if (trustedInventory) {
+    const manifestPath = join(root, "template-manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<string, unknown>;
+    const inventory = manifest.file_inventory;
+    if (manifest.name !== "context-circuit" || manifest.version !== "0.2.1" || manifest.node !== ">=22" || manifest.command !== "node .agents/bin/cc.mjs"
+      || !Array.isArray(inventory) || JSON.stringify(inventory) !== JSON.stringify(trustedInventory)) {
+      throw new Error("Extracted template manifest or inventory has been modified");
     }
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+    const expectedBundle = createHash("sha256").update(await readFile(join(root, ".agents", "bin", "cc.mjs"))).digest("hex");
+    if (manifest.bundle_sha256 !== expectedBundle) throw new Error("Extracted template manifest bundle digest has been modified");
+    allowed.clear();
+    for (const path of trustedInventory) allowed.add(path);
+    templateDirectories.length = 0;
   }
   const unexpected = status.filter((line) => {
     if (!line.startsWith("?? ")) return true;

@@ -60,6 +60,71 @@ export async function writeTextAtomic(path: string, value: string, mode = 0o644)
   await chmod(path, mode);
 }
 
+export interface TextTransactionEntry { path: string; value: string; mode?: number }
+
+export async function writeTextTransaction(entries: TextTransactionEntry[], options: { failRenameAt?: number } = {}): Promise<void> {
+  const unique = new Set(entries.map((entry) => resolve(entry.path)));
+  if (unique.size !== entries.length) throw new Error("Text transaction targets must be unique");
+  const nonce = `${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}`;
+  const staged: Array<{ target: string; temporary: string; backup: string; existed: boolean }> = [];
+  const backedUp: typeof staged = [];
+  const installed: typeof staged = [];
+  let renameCount = 0;
+  const transactionRename = async (from: string, to: string): Promise<void> => {
+    renameCount += 1;
+    if (options.failRenameAt === renameCount) throw new Error(`Injected transaction rename failure at ${renameCount}`);
+    await rename(from, to);
+  };
+  try {
+    // Stage every sibling first. Any permissions, space, or open failure occurs before a target changes.
+    for (const entry of entries) {
+      const target = resolve(entry.path);
+      const temporary = `${target}.${nonce}.stage`;
+      const backup = `${target}.${nonce}.backup`;
+      let existed = false;
+      let mode = entry.mode ?? 0o644;
+      try {
+        const info = await lstat(target);
+        if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Transaction target must be a regular file: ${target}`);
+        existed = true;
+        mode = info.mode & 0o777;
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      }
+      const handle = await open(temporary, "wx", mode);
+      try { await handle.writeFile(entry.value, "utf8"); await handle.sync(); } finally { await handle.close(); }
+      await chmod(temporary, mode);
+      staged.push({ target, temporary, backup, existed });
+    }
+    for (const item of staged) {
+      if (!item.existed) continue;
+      await transactionRename(item.target, item.backup);
+      backedUp.push(item);
+    }
+    for (const item of staged) {
+      await transactionRename(item.temporary, item.target);
+      installed.push(item);
+    }
+    for (const item of backedUp) await unlink(item.backup);
+  } catch (error) {
+    for (const item of installed.reverse()) {
+      try { await unlink(item.target); } catch (cleanupError) { if ((cleanupError as NodeJS.ErrnoException).code !== "ENOENT") throw cleanupError; }
+    }
+    for (const item of backedUp.reverse()) {
+      try { await rename(item.backup, item.target); } catch (rollbackError) {
+        throw new AggregateError([error, rollbackError], `Text transaction failed and rollback could not restore ${item.target}`);
+      }
+    }
+    throw error;
+  } finally {
+    for (const item of staged) {
+      for (const path of [item.temporary, item.backup]) {
+        try { await unlink(path); } catch (cleanupError) { if ((cleanupError as NodeJS.ErrnoException).code !== "ENOENT") throw cleanupError; }
+      }
+    }
+  }
+}
+
 export async function writeTextExclusive(path: string, value: string, mode = 0o644): Promise<void> {
   await mkdir(dirname(path), { recursive: true, mode: 0o755 });
   const handle = await open(path, "wx", mode);

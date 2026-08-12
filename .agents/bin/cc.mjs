@@ -44,10 +44,19 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
+// <define:__CC_TEMPLATE_INVENTORY__>
+var define_CC_TEMPLATE_INVENTORY_default;
+var init_define_CC_TEMPLATE_INVENTORY = __esm({
+  "<define:__CC_TEMPLATE_INVENTORY__>"() {
+    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/whats-next/SKILL.md", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
+  }
+});
+
 // ../../../../node_modules/ajv/dist/compile/codegen/code.js
 var require_code = __commonJS({
   "../../../../node_modules/ajv/dist/compile/codegen/code.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
     var _CodeOrName = class {
@@ -202,6 +211,7 @@ var require_code = __commonJS({
 var require_scope = __commonJS({
   "../../../../node_modules/ajv/dist/compile/codegen/scope.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ValueScope = exports.ValueScopeName = exports.Scope = exports.varKinds = exports.UsedValueState = void 0;
     var code_1 = require_code();
@@ -347,6 +357,7 @@ var require_scope = __commonJS({
 var require_codegen = __commonJS({
   "../../../../node_modules/ajv/dist/compile/codegen/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.or = exports.and = exports.not = exports.CodeGen = exports.operators = exports.varKinds = exports.ValueScopeName = exports.ValueScope = exports.Scope = exports.Name = exports.regexpCode = exports.stringify = exports.getProperty = exports.nil = exports.strConcat = exports.str = exports._ = void 0;
     var code_1 = require_code();
@@ -1067,6 +1078,7 @@ var require_codegen = __commonJS({
 var require_util = __commonJS({
   "../../../../node_modules/ajv/dist/compile/util.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.checkStrictMode = exports.getErrorPath = exports.Type = exports.useFunc = exports.setEvaluated = exports.evaluatedPropsToName = exports.mergeEvaluated = exports.eachItem = exports.unescapeJsonPointer = exports.escapeJsonPointer = exports.escapeFragment = exports.unescapeFragment = exports.schemaRefOrVal = exports.schemaHasRulesButRef = exports.schemaHasRules = exports.checkUnknownRules = exports.alwaysValidSchema = exports.toHash = void 0;
     var codegen_1 = require_codegen();
@@ -1234,6 +1246,7 @@ var require_util = __commonJS({
 var require_names = __commonJS({
   "../../../../node_modules/ajv/dist/compile/names.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var names = {
@@ -1273,6 +1286,7 @@ var require_names = __commonJS({
 var require_errors = __commonJS({
   "../../../../node_modules/ajv/dist/compile/errors.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.extendErrors = exports.resetErrorsCount = exports.reportExtraError = exports.reportError = exports.keyword$DataError = exports.keywordError = void 0;
     var codegen_1 = require_codegen();
@@ -1395,6 +1409,7 @@ var require_errors = __commonJS({
 var require_boolSchema = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/boolSchema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.boolOrEmptySchema = exports.topBoolOrEmptySchema = void 0;
     var errors_1 = require_errors();
@@ -1446,6 +1461,7 @@ var require_boolSchema = __commonJS({
 var require_rules = __commonJS({
   "../../../../node_modules/ajv/dist/compile/rules.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getRules = exports.isJSONType = void 0;
     var _jsonTypes = ["string", "number", "integer", "boolean", "null", "object", "array"];
@@ -1477,6 +1493,7 @@ var require_rules = __commonJS({
 var require_applicability = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/applicability.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.shouldUseRule = exports.shouldUseGroup = exports.schemaHasRulesForType = void 0;
     function schemaHasRulesForType({ schema: schema2, self }, type) {
@@ -1500,6 +1517,7 @@ var require_applicability = __commonJS({
 var require_dataType = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/dataType.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.reportTypeError = exports.checkDataTypes = exports.checkDataType = exports.coerceAndCheckDataType = exports.getJSONTypes = exports.getSchemaTypes = exports.DataType = void 0;
     var rules_1 = require_rules();
@@ -1684,6 +1702,7 @@ var require_dataType = __commonJS({
 var require_defaults = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/defaults.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.assignDefaults = void 0;
     var codegen_1 = require_codegen();
@@ -1721,6 +1740,7 @@ var require_defaults = __commonJS({
 var require_code2 = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/code.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateUnion = exports.validateArray = exports.usePattern = exports.callValidateCode = exports.schemaProperties = exports.allSchemaProperties = exports.noPropertyInData = exports.propertyInData = exports.isOwnProperty = exports.hasPropFunc = exports.reportMissingProp = exports.checkMissingProp = exports.checkReportMissingProp = void 0;
     var codegen_1 = require_codegen();
@@ -1854,6 +1874,7 @@ var require_code2 = __commonJS({
 var require_keyword = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/keyword.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateKeywordUsage = exports.validSchemaType = exports.funcKeywordCode = exports.macroKeywordCode = void 0;
     var codegen_1 = require_codegen();
@@ -1972,6 +1993,7 @@ var require_keyword = __commonJS({
 var require_subschema = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/subschema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.extendSubschemaMode = exports.extendSubschemaData = exports.getSubschema = void 0;
     var codegen_1 = require_codegen();
@@ -2055,6 +2077,7 @@ var require_subschema = __commonJS({
 var require_fast_deep_equal = __commonJS({
   "../../../../node_modules/fast-deep-equal/index.js"(exports, module) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     module.exports = function equal(a, b) {
       if (a === b) return true;
       if (a && b && typeof a == "object" && typeof b == "object") {
@@ -2090,6 +2113,7 @@ var require_fast_deep_equal = __commonJS({
 var require_json_schema_traverse = __commonJS({
   "../../../../node_modules/json-schema-traverse/index.js"(exports, module) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var traverse = module.exports = function(schema2, opts, cb) {
       if (typeof opts == "function") {
         cb = opts;
@@ -2178,6 +2202,7 @@ var require_json_schema_traverse = __commonJS({
 var require_resolve = __commonJS({
   "../../../../node_modules/ajv/dist/compile/resolve.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getSchemaRefs = exports.resolveUrl = exports.normalizeId = exports._getFullPath = exports.getFullPath = exports.inlineRef = void 0;
     var util_1 = require_util();
@@ -2334,6 +2359,7 @@ var require_resolve = __commonJS({
 var require_validate = __commonJS({
   "../../../../node_modules/ajv/dist/compile/validate/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.getData = exports.KeywordCxt = exports.validateFunctionCode = void 0;
     var boolSchema_1 = require_boolSchema();
@@ -2842,6 +2868,7 @@ var require_validate = __commonJS({
 var require_validation_error = __commonJS({
   "../../../../node_modules/ajv/dist/runtime/validation_error.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var ValidationError = class extends Error {
       constructor(errors2) {
@@ -2858,6 +2885,7 @@ var require_validation_error = __commonJS({
 var require_ref_error = __commonJS({
   "../../../../node_modules/ajv/dist/compile/ref_error.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var resolve_1 = require_resolve();
     var MissingRefError = class extends Error {
@@ -2875,6 +2903,7 @@ var require_ref_error = __commonJS({
 var require_compile = __commonJS({
   "../../../../node_modules/ajv/dist/compile/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.resolveSchema = exports.getCompilingSchema = exports.resolveRef = exports.compileSchema = exports.SchemaEnv = void 0;
     var codegen_1 = require_codegen();
@@ -3118,6 +3147,7 @@ var require_data = __commonJS({
 var require_utils = __commonJS({
   "../../../../node_modules/fast-uri/lib/utils.js"(exports, module) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var isUUID = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu);
     var isIPv4 = RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u);
     var isHexPair = RegExp.prototype.test.bind(/^[\da-f]{2}$/iu);
@@ -3431,6 +3461,7 @@ var require_utils = __commonJS({
 var require_schemes = __commonJS({
   "../../../../node_modules/fast-uri/lib/schemes.js"(exports, module) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var { isUUID } = require_utils();
     var URN_REG = /([\da-z][\d\-a-z]{0,31}):((?:[\w!$'()*+,\-.:;=@]|%[\da-f]{2})+)/iu;
     var supportedSchemeNames = (
@@ -3641,6 +3672,7 @@ var require_schemes = __commonJS({
 var require_fast_uri = __commonJS({
   "../../../../node_modules/fast-uri/index.js"(exports, module) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizePercentEncoding, normalizePathEncoding, escapePreservingEscapes, reescapeHostDelimiters, isIPv4, nonSimpleDomain } = require_utils();
     var { SCHEMES, getSchemeHandler } = require_schemes();
     function normalize(uri, options) {
@@ -3953,6 +3985,7 @@ var require_fast_uri = __commonJS({
 var require_uri = __commonJS({
   "../../../../node_modules/ajv/dist/runtime/uri.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var uri = require_fast_uri();
     uri.code = 'require("ajv/dist/runtime/uri").default';
@@ -3964,6 +3997,7 @@ var require_uri = __commonJS({
 var require_core = __commonJS({
   "../../../../node_modules/ajv/dist/core.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = void 0;
     var validate_1 = require_validate();
@@ -4575,6 +4609,7 @@ var require_core = __commonJS({
 var require_id = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/core/id.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var def = {
       keyword: "id",
@@ -4590,6 +4625,7 @@ var require_id = __commonJS({
 var require_ref = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/core/ref.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.callRef = exports.getValidate = void 0;
     var ref_error_1 = require_ref_error();
@@ -4712,6 +4748,7 @@ var require_ref = __commonJS({
 var require_core2 = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/core/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var id_1 = require_id();
     var ref_1 = require_ref();
@@ -4733,6 +4770,7 @@ var require_core2 = __commonJS({
 var require_limitNumber = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/limitNumber.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var ops = codegen_1.operators;
@@ -4765,6 +4803,7 @@ var require_limitNumber = __commonJS({
 var require_multipleOf = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/multipleOf.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var error = {
@@ -4793,6 +4832,7 @@ var require_multipleOf = __commonJS({
 var require_ucs2length = __commonJS({
   "../../../../node_modules/ajv/dist/runtime/ucs2length.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     function ucs2length(str) {
       const len = str.length;
@@ -4819,6 +4859,7 @@ var require_ucs2length = __commonJS({
 var require_limitLength = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/limitLength.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -4851,6 +4892,7 @@ var require_limitLength = __commonJS({
 var require_pattern = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/pattern.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
     var util_1 = require_util();
@@ -4888,6 +4930,7 @@ var require_pattern = __commonJS({
 var require_limitProperties = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/limitProperties.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var error = {
@@ -4917,6 +4960,7 @@ var require_limitProperties = __commonJS({
 var require_required = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/required.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
     var codegen_1 = require_codegen();
@@ -4999,6 +5043,7 @@ var require_required = __commonJS({
 var require_limitItems = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/limitItems.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var error = {
@@ -5028,6 +5073,7 @@ var require_limitItems = __commonJS({
 var require_equal = __commonJS({
   "../../../../node_modules/ajv/dist/runtime/equal.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var equal = require_fast_deep_equal();
     equal.code = 'require("ajv/dist/runtime/equal").default';
@@ -5039,6 +5085,7 @@ var require_equal = __commonJS({
 var require_uniqueItems = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/uniqueItems.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dataType_1 = require_dataType();
     var codegen_1 = require_codegen();
@@ -5106,6 +5153,7 @@ var require_uniqueItems = __commonJS({
 var require_const = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/const.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -5135,6 +5183,7 @@ var require_const = __commonJS({
 var require_enum = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/enum.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -5184,6 +5233,7 @@ var require_enum = __commonJS({
 var require_validation = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var limitNumber_1 = require_limitNumber();
     var multipleOf_1 = require_multipleOf();
@@ -5222,6 +5272,7 @@ var require_validation = __commonJS({
 var require_additionalItems = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/additionalItems.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateAdditionalItems = void 0;
     var codegen_1 = require_codegen();
@@ -5275,6 +5326,7 @@ var require_additionalItems = __commonJS({
 var require_items = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/items.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateTuple = void 0;
     var codegen_1 = require_codegen();
@@ -5332,6 +5384,7 @@ var require_items = __commonJS({
 var require_prefixItems = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/prefixItems.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var items_1 = require_items();
     var def = {
@@ -5349,6 +5402,7 @@ var require_prefixItems = __commonJS({
 var require_items2020 = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/items2020.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -5384,6 +5438,7 @@ var require_items2020 = __commonJS({
 var require_contains = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/contains.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -5478,6 +5533,7 @@ var require_contains = __commonJS({
 var require_dependencies = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/dependencies.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.validateSchemaDeps = exports.validatePropertyDeps = exports.error = void 0;
     var codegen_1 = require_codegen();
@@ -5572,6 +5628,7 @@ var require_dependencies = __commonJS({
 var require_propertyNames = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/propertyNames.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -5615,6 +5672,7 @@ var require_propertyNames = __commonJS({
 var require_additionalProperties = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
     var codegen_1 = require_codegen();
@@ -5721,6 +5779,7 @@ var require_additionalProperties = __commonJS({
 var require_properties = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/properties.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var validate_1 = require_validate();
     var code_1 = require_code2();
@@ -5779,6 +5838,7 @@ var require_properties = __commonJS({
 var require_patternProperties = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/patternProperties.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
     var codegen_1 = require_codegen();
@@ -5853,6 +5913,7 @@ var require_patternProperties = __commonJS({
 var require_not = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/not.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
     var def = {
@@ -5884,6 +5945,7 @@ var require_not = __commonJS({
 var require_anyOf = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/anyOf.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var code_1 = require_code2();
     var def = {
@@ -5901,6 +5963,7 @@ var require_anyOf = __commonJS({
 var require_oneOf = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/oneOf.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -5959,6 +6022,7 @@ var require_oneOf = __commonJS({
 var require_allOf = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
     var def = {
@@ -5986,6 +6050,7 @@ var require_allOf = __commonJS({
 var require_if = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/if.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -6055,6 +6120,7 @@ var require_if = __commonJS({
 var require_thenElse = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
     var def = {
@@ -6073,6 +6139,7 @@ var require_thenElse = __commonJS({
 var require_applicator = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var additionalItems_1 = require_additionalItems();
     var prefixItems_1 = require_prefixItems();
@@ -6121,6 +6188,7 @@ var require_applicator = __commonJS({
 var require_dynamicAnchor = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.dynamicAnchor = void 0;
     var codegen_1 = require_codegen();
@@ -6156,6 +6224,7 @@ var require_dynamicAnchor = __commonJS({
 var require_dynamicRef = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.dynamicRef = void 0;
     var codegen_1 = require_codegen();
@@ -6202,6 +6271,7 @@ var require_dynamicRef = __commonJS({
 var require_recursiveAnchor = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dynamicAnchor_1 = require_dynamicAnchor();
     var util_1 = require_util();
@@ -6223,6 +6293,7 @@ var require_recursiveAnchor = __commonJS({
 var require_recursiveRef = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dynamicRef_1 = require_dynamicRef();
     var def = {
@@ -6238,6 +6309,7 @@ var require_recursiveRef = __commonJS({
 var require_dynamic = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/dynamic/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dynamicAnchor_1 = require_dynamicAnchor();
     var dynamicRef_1 = require_dynamicRef();
@@ -6252,6 +6324,7 @@ var require_dynamic = __commonJS({
 var require_dependentRequired = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/dependentRequired.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dependencies_1 = require_dependencies();
     var def = {
@@ -6269,6 +6342,7 @@ var require_dependentRequired = __commonJS({
 var require_dependentSchemas = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dependencies_1 = require_dependencies();
     var def = {
@@ -6285,6 +6359,7 @@ var require_dependentSchemas = __commonJS({
 var require_limitContains = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/validation/limitContains.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var util_1 = require_util();
     var def = {
@@ -6305,6 +6380,7 @@ var require_limitContains = __commonJS({
 var require_next = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/next.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var dependentRequired_1 = require_dependentRequired();
     var dependentSchemas_1 = require_dependentSchemas();
@@ -6318,6 +6394,7 @@ var require_next = __commonJS({
 var require_unevaluatedProperties = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -6384,6 +6461,7 @@ var require_unevaluatedProperties = __commonJS({
 var require_unevaluatedItems = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var util_1 = require_util();
@@ -6428,6 +6506,7 @@ var require_unevaluatedItems = __commonJS({
 var require_unevaluated = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/unevaluated/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var unevaluatedProperties_1 = require_unevaluatedProperties();
     var unevaluatedItems_1 = require_unevaluatedItems();
@@ -6440,6 +6519,7 @@ var require_unevaluated = __commonJS({
 var require_format = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/format/format.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var error = {
@@ -6530,6 +6610,7 @@ var require_format = __commonJS({
 var require_format2 = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/format/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var format_1 = require_format();
     var format = [format_1.default];
@@ -6541,6 +6622,7 @@ var require_format2 = __commonJS({
 var require_metadata = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/metadata.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.contentVocabulary = exports.metadataVocabulary = void 0;
     exports.metadataVocabulary = [
@@ -6564,6 +6646,7 @@ var require_metadata = __commonJS({
 var require_draft2020 = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/draft2020.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var core_1 = require_core2();
     var validation_1 = require_validation();
@@ -6592,6 +6675,7 @@ var require_draft2020 = __commonJS({
 var require_types = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DiscrError = void 0;
     var DiscrError;
@@ -6606,6 +6690,7 @@ var require_types = __commonJS({
 var require_discriminator = __commonJS({
   "../../../../node_modules/ajv/dist/vocabularies/discriminator/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var codegen_1 = require_codegen();
     var types_1 = require_types();
@@ -7076,6 +7161,7 @@ var require_validation2 = __commonJS({
 var require_json_schema_2020_12 = __commonJS({
   "../../../../node_modules/ajv/dist/refs/json-schema-2020-12/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     var metaSchema = require_schema();
     var applicator = require_applicator2();
@@ -7111,6 +7197,7 @@ var require_json_schema_2020_12 = __commonJS({
 var require__ = __commonJS({
   "../../../../node_modules/ajv/dist/2020.js"(exports, module) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv2020 = void 0;
     var core_1 = require_core();
@@ -7188,6 +7275,7 @@ var require__ = __commonJS({
 var require_identity = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/identity.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var ALIAS = /* @__PURE__ */ Symbol.for("yaml.alias");
     var DOC = /* @__PURE__ */ Symbol.for("yaml.document");
     var MAP = /* @__PURE__ */ Symbol.for("yaml.map");
@@ -7245,6 +7333,7 @@ var require_identity = __commonJS({
 var require_visit = __commonJS({
   "../../../../node_modules/yaml/dist/visit.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
@@ -7403,6 +7492,7 @@ var require_visit = __commonJS({
 var require_directives = __commonJS({
   "../../../../node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var visit = require_visit();
     var escapeChars = {
@@ -7574,6 +7664,7 @@ var require_directives = __commonJS({
 var require_anchors = __commonJS({
   "../../../../node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var visit = require_visit();
     function anchorIsValid(anchor) {
@@ -7644,6 +7735,7 @@ var require_anchors = __commonJS({
 var require_applyReviver = __commonJS({
   "../../../../node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function applyReviver(reviver, obj, key, val) {
       if (val && typeof val === "object") {
         if (Array.isArray(val)) {
@@ -7694,6 +7786,7 @@ var require_applyReviver = __commonJS({
 var require_toJS = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/toJS.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     function toJS(value2, arg, ctx) {
       if (Array.isArray(value2))
@@ -7724,6 +7817,7 @@ var require_toJS = __commonJS({
 var require_Node = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/Node.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var applyReviver = require_applyReviver();
     var identity = require_identity();
     var toJS = require_toJS();
@@ -7765,6 +7859,7 @@ var require_Node = __commonJS({
 var require_Alias = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
     var visit = require_visit();
     var identity = require_identity();
@@ -7881,6 +7976,7 @@ var require_Alias = __commonJS({
 var require_Scalar = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/Scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Node = require_Node();
     var toJS = require_toJS();
@@ -7911,6 +8007,7 @@ var require_Scalar = __commonJS({
 var require_createNode = __commonJS({
   "../../../../node_modules/yaml/dist/doc/createNode.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
     var identity = require_identity();
     var Scalar = require_Scalar();
@@ -7986,6 +8083,7 @@ var require_createNode = __commonJS({
 var require_Collection = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/Collection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
@@ -8129,6 +8227,7 @@ var require_Collection = __commonJS({
 var require_stringifyComment = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
       if (/^\n+$/.test(comment))
@@ -8146,6 +8245,7 @@ var require_stringifyComment = __commonJS({
 var require_foldFlowLines = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
@@ -8282,6 +8382,7 @@ ${indent}${text.slice(fold + 1, end2)}`;
 var require_stringifyString = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var foldFlowLines = require_foldFlowLines();
     var getFoldOptions = (ctx, isBlock) => ({
@@ -8565,6 +8666,7 @@ ${indent}`);
 var require_stringify = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringify.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
     var identity = require_identity();
     var stringifyComment = require_stringifyComment();
@@ -8689,6 +8791,7 @@ ${ctx.indent}${str}`;
 var require_stringifyPair = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var stringify = require_stringify();
@@ -8822,6 +8925,7 @@ ${ctx.indent}`;
 var require_log = __commonJS({
   "../../../../node_modules/yaml/dist/log.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
     function debug(logLevel, ...messages) {
       if (logLevel === "debug")
@@ -8844,6 +8948,7 @@ var require_log = __commonJS({
 var require_merge = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var MERGE_KEY = "<<";
@@ -8904,6 +9009,7 @@ var require_merge = __commonJS({
 var require_addPairToJSMap = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var log = require_log();
     var merge = require_merge();
     var stringify = require_stringify();
@@ -8968,6 +9074,7 @@ var require_addPairToJSMap = __commonJS({
 var require_Pair = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/Pair.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
     var stringifyPair = require_stringifyPair();
     var addPairToJSMap = require_addPairToJSMap();
@@ -9008,6 +9115,7 @@ var require_Pair = __commonJS({
 var require_stringifyCollection = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var stringify = require_stringify();
     var stringifyComment = require_stringifyComment();
@@ -9159,6 +9267,7 @@ ${indent}${end}`;
 var require_YAMLMap = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyCollection = require_stringifyCollection();
     var addPairToJSMap = require_addPairToJSMap();
     var Collection = require_Collection();
@@ -9303,6 +9412,7 @@ var require_YAMLMap = __commonJS({
 var require_map = __commonJS({
   "../../../../node_modules/yaml/dist/schema/common/map.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var YAMLMap = require_YAMLMap();
     var map = {
@@ -9325,6 +9435,7 @@ var require_map = __commonJS({
 var require_YAMLSeq = __commonJS({
   "../../../../node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
     var stringifyCollection = require_stringifyCollection();
     var Collection = require_Collection();
@@ -9441,6 +9552,7 @@ var require_YAMLSeq = __commonJS({
 var require_seq = __commonJS({
   "../../../../node_modules/yaml/dist/schema/common/seq.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var YAMLSeq = require_YAMLSeq();
     var seq = {
@@ -9463,6 +9575,7 @@ var require_seq = __commonJS({
 var require_string = __commonJS({
   "../../../../node_modules/yaml/dist/schema/common/string.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyString = require_stringifyString();
     var string = {
       identify: (value2) => typeof value2 === "string",
@@ -9482,6 +9595,7 @@ var require_string = __commonJS({
 var require_null = __commonJS({
   "../../../../node_modules/yaml/dist/schema/common/null.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var nullTag = {
       identify: (value2) => value2 == null,
@@ -9500,6 +9614,7 @@ var require_null = __commonJS({
 var require_bool = __commonJS({
   "../../../../node_modules/yaml/dist/schema/core/bool.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var boolTag = {
       identify: (value2) => typeof value2 === "boolean",
@@ -9524,6 +9639,7 @@ var require_bool = __commonJS({
 var require_stringifyNumber = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function stringifyNumber({ format, minFractionDigits, tag, value: value2 }) {
       if (typeof value2 === "bigint")
         return String(value2);
@@ -9551,6 +9667,7 @@ var require_stringifyNumber = __commonJS({
 var require_float = __commonJS({
   "../../../../node_modules/yaml/dist/schema/core/float.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var stringifyNumber = require_stringifyNumber();
     var floatNaN = {
@@ -9597,6 +9714,7 @@ var require_float = __commonJS({
 var require_int = __commonJS({
   "../../../../node_modules/yaml/dist/schema/core/int.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
     var intResolve = (str, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix);
@@ -9642,6 +9760,7 @@ var require_int = __commonJS({
 var require_schema2 = __commonJS({
   "../../../../node_modules/yaml/dist/schema/core/schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
     var _null = require_null();
     var seq = require_seq();
@@ -9670,6 +9789,7 @@ var require_schema2 = __commonJS({
 var require_schema3 = __commonJS({
   "../../../../node_modules/yaml/dist/schema/json/schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var map = require_map();
     var seq = require_seq();
@@ -9737,6 +9857,7 @@ var require_schema3 = __commonJS({
 var require_binary = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_buffer = __require("buffer");
     var Scalar = require_Scalar();
     var stringifyString = require_stringifyString();
@@ -9803,6 +9924,7 @@ var require_binary = __commonJS({
 var require_pairs = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Pair = require_Pair();
     var Scalar = require_Scalar();
@@ -9881,6 +10003,7 @@ ${cn.comment}` : item.comment;
 var require_omap = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var toJS = require_toJS();
     var YAMLMap = require_YAMLMap();
@@ -9959,6 +10082,7 @@ var require_omap = __commonJS({
 var require_bool2 = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     function boolStringify({ value: value2, source }, ctx) {
       const boolObj = value2 ? trueTag : falseTag;
@@ -9991,6 +10115,7 @@ var require_bool2 = __commonJS({
 var require_float2 = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var stringifyNumber = require_stringifyNumber();
     var floatNaN = {
@@ -10040,6 +10165,7 @@ var require_float2 = __commonJS({
 var require_int2 = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
     var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
     function intResolve(str, offset, radix, { intAsBigInt }) {
@@ -10119,6 +10245,7 @@ var require_int2 = __commonJS({
 var require_set = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
@@ -10208,6 +10335,7 @@ var require_set = __commonJS({
 var require_timestamp = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
     function parseSexagesimal(str, asBigInt) {
       const sign = str[0];
@@ -10296,6 +10424,7 @@ var require_timestamp = __commonJS({
 var require_schema4 = __commonJS({
   "../../../../node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
     var _null = require_null();
     var seq = require_seq();
@@ -10340,6 +10469,7 @@ var require_schema4 = __commonJS({
 var require_tags = __commonJS({
   "../../../../node_modules/yaml/dist/schema/tags.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
     var _null = require_null();
     var seq = require_seq();
@@ -10434,6 +10564,7 @@ var require_tags = __commonJS({
 var require_Schema = __commonJS({
   "../../../../node_modules/yaml/dist/schema/Schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var map = require_map();
     var seq = require_seq();
@@ -10466,6 +10597,7 @@ var require_Schema = __commonJS({
 var require_stringifyDocument = __commonJS({
   "../../../../node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var stringify = require_stringify();
     var stringifyComment = require_stringifyComment();
@@ -10546,6 +10678,7 @@ var require_stringifyDocument = __commonJS({
 var require_Document = __commonJS({
   "../../../../node_modules/yaml/dist/doc/Document.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
     var Collection = require_Collection();
     var identity = require_identity();
@@ -10855,6 +10988,7 @@ var require_Document = __commonJS({
 var require_errors2 = __commonJS({
   "../../../../node_modules/yaml/dist/errors.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var YAMLError = class extends Error {
       constructor(name, pos, code, message) {
         super();
@@ -10920,6 +11054,7 @@ ${pointer}
 var require_resolve_props = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-props.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
       let spaceBefore = false;
       let atNewline = startOnNewline;
@@ -11054,6 +11189,7 @@ var require_resolve_props = __commonJS({
 var require_util_contains_newline = __commonJS({
   "../../../../node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function containsNewline(key) {
       if (!key)
         return null;
@@ -11096,6 +11232,7 @@ var require_util_contains_newline = __commonJS({
 var require_util_flow_indent_check = __commonJS({
   "../../../../node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var utilContainsNewline = require_util_contains_newline();
     function flowIndentCheck(indent, fc, onError) {
       if (fc?.type === "flow-collection") {
@@ -11114,6 +11251,7 @@ var require_util_flow_indent_check = __commonJS({
 var require_util_map_includes = __commonJS({
   "../../../../node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     function mapIncludes(ctx, items, search) {
       const { uniqueKeys } = ctx.options;
@@ -11130,6 +11268,7 @@ var require_util_map_includes = __commonJS({
 var require_resolve_block_map = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
     var resolveProps = require_resolve_props();
@@ -11238,6 +11377,7 @@ var require_resolve_block_map = __commonJS({
 var require_resolve_block_seq = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var YAMLSeq = require_YAMLSeq();
     var resolveProps = require_resolve_props();
     var utilFlowIndentCheck = require_util_flow_indent_check();
@@ -11289,6 +11429,7 @@ var require_resolve_block_seq = __commonJS({
 var require_resolve_end = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-end.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function resolveEnd(end, offset, reqSpace, onError) {
       let comment = "";
       if (end) {
@@ -11332,6 +11473,7 @@ var require_resolve_end = __commonJS({
 var require_resolve_flow_collection = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
@@ -11526,6 +11668,7 @@ var require_resolve_flow_collection = __commonJS({
 var require_compose_collection = __commonJS({
   "../../../../node_modules/yaml/dist/compose/compose-collection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var YAMLMap = require_YAMLMap();
@@ -11591,6 +11734,7 @@ var require_compose_collection = __commonJS({
 var require_resolve_block_scalar = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     function resolveBlockScalar(ctx, scalar, onError) {
       const start = scalar.offset;
@@ -11774,6 +11918,7 @@ var require_resolve_block_scalar = __commonJS({
 var require_resolve_flow_scalar = __commonJS({
   "../../../../node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var resolveEnd = require_resolve_end();
     function resolveFlowScalar(scalar, strict, onError) {
@@ -11994,6 +12139,7 @@ var require_resolve_flow_scalar = __commonJS({
 var require_compose_scalar = __commonJS({
   "../../../../node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var resolveBlockScalar = require_resolve_block_scalar();
@@ -12075,6 +12221,7 @@ var require_compose_scalar = __commonJS({
 var require_util_empty_scalar_position = __commonJS({
   "../../../../node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function emptyScalarPosition(offset, before, pos) {
       if (before) {
         pos ?? (pos = before.length);
@@ -12105,6 +12252,7 @@ var require_util_empty_scalar_position = __commonJS({
 var require_compose_node = __commonJS({
   "../../../../node_modules/yaml/dist/compose/compose-node.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
     var identity = require_identity();
     var composeCollection = require_compose_collection();
@@ -12211,6 +12359,7 @@ var require_compose_node = __commonJS({
 var require_compose_doc = __commonJS({
   "../../../../node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Document = require_Document();
     var composeNode = require_compose_node();
     var resolveEnd = require_resolve_end();
@@ -12254,6 +12403,7 @@ var require_compose_doc = __commonJS({
 var require_composer = __commonJS({
   "../../../../node_modules/yaml/dist/compose/composer.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
     var directives = require_directives();
     var Document = require_Document();
@@ -12462,6 +12612,7 @@ ${end.comment}` : end.comment;
 var require_cst_scalar = __commonJS({
   "../../../../node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var resolveBlockScalar = require_resolve_block_scalar();
     var resolveFlowScalar = require_resolve_flow_scalar();
     var errors2 = require_errors2();
@@ -12647,6 +12798,7 @@ var require_cst_scalar = __commonJS({
 var require_cst_stringify = __commonJS({
   "../../../../node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
     function stringifyToken(token) {
       switch (token.type) {
@@ -12708,6 +12860,7 @@ var require_cst_stringify = __commonJS({
 var require_cst_visit = __commonJS({
   "../../../../node_modules/yaml/dist/parse/cst-visit.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove item");
@@ -12770,6 +12923,7 @@ var require_cst_visit = __commonJS({
 var require_cst = __commonJS({
   "../../../../node_modules/yaml/dist/parse/cst.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var cstScalar = require_cst_scalar();
     var cstStringify = require_cst_stringify();
     var cstVisit = require_cst_visit();
@@ -12872,6 +13026,7 @@ var require_cst = __commonJS({
 var require_lexer = __commonJS({
   "../../../../node_modules/yaml/dist/parse/lexer.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var cst = require_cst();
     function isEmpty(ch) {
       switch (ch) {
@@ -13461,6 +13616,7 @@ var require_lexer = __commonJS({
 var require_line_counter = __commonJS({
   "../../../../node_modules/yaml/dist/parse/line-counter.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var LineCounter = class {
       constructor() {
         this.lineStarts = [];
@@ -13492,6 +13648,7 @@ var require_line_counter = __commonJS({
 var require_parser = __commonJS({
   "../../../../node_modules/yaml/dist/parse/parser.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
     var cst = require_cst();
     var lexer = require_lexer();
@@ -14366,6 +14523,7 @@ var require_parser = __commonJS({
 var require_public_api = __commonJS({
   "../../../../node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
     var Document = require_Document();
     var errors2 = require_errors2();
@@ -14463,6 +14621,7 @@ var require_public_api = __commonJS({
 var require_dist = __commonJS({
   "../../../../node_modules/yaml/dist/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
     var Document = require_Document();
     var Schema = require_Schema();
@@ -14567,6 +14726,7 @@ var secretPattern, schemePattern, scpPattern, providerPattern, localSourcePatter
 var init_safe_reference = __esm({
   "scripts/lib/safe-reference.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     secretPattern = /(?:token|password|passwd|secret|api[_-]?key)\s*[=:]|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i;
     schemePattern = /^[A-Za-z][A-Za-z0-9+.-]*:\/\//;
     scpPattern = /^(?:git|ssh)@[A-Za-z0-9.-]+:[A-Za-z0-9._~/-]+$/;
@@ -14679,6 +14839,7 @@ var import__, import_yaml, schemaNames, requiredWorkspaceDocuments, projectRoot;
 var init_validation = __esm({
   "scripts/lib/validation.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
     init_safe_reference();
@@ -14763,6 +14924,7 @@ var values, positionals, schema, workspaceRoot, path, value, contractErrors, err
 var init_validate = __esm({
   async "scripts/validate.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_validation();
     ({ values, positionals } = parseArgs({
       options: {
@@ -14831,6 +14993,7 @@ var execFileAsync;
 var init_git = __esm({
   "scripts/lib/git.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     execFileAsync = promisify(execFile);
   }
 });
@@ -14893,6 +15056,82 @@ async function writeTextAtomic(path2, value2, mode = 420) {
   await rename(temporary, path2);
   await chmod(path2, mode);
 }
+async function writeTextTransaction(entries, options = {}) {
+  const unique = new Set(entries.map((entry) => resolve3(entry.path)));
+  if (unique.size !== entries.length) throw new Error("Text transaction targets must be unique");
+  const nonce = `${process.pid}.${Date.now()}.${Math.random().toString(16).slice(2)}`;
+  const staged = [];
+  const backedUp = [];
+  const installed = [];
+  let renameCount = 0;
+  const transactionRename = async (from, to) => {
+    renameCount += 1;
+    if (options.failRenameAt === renameCount) throw new Error(`Injected transaction rename failure at ${renameCount}`);
+    await rename(from, to);
+  };
+  try {
+    for (const entry of entries) {
+      const target = resolve3(entry.path);
+      const temporary = `${target}.${nonce}.stage`;
+      const backup = `${target}.${nonce}.backup`;
+      let existed = false;
+      let mode = entry.mode ?? 420;
+      try {
+        const info = await lstat2(target);
+        if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Transaction target must be a regular file: ${target}`);
+        existed = true;
+        mode = info.mode & 511;
+      } catch (error) {
+        if (error.code !== "ENOENT") throw error;
+      }
+      const handle = await open(temporary, "wx", mode);
+      try {
+        await handle.writeFile(entry.value, "utf8");
+        await handle.sync();
+      } finally {
+        await handle.close();
+      }
+      await chmod(temporary, mode);
+      staged.push({ target, temporary, backup, existed });
+    }
+    for (const item of staged) {
+      if (!item.existed) continue;
+      await transactionRename(item.target, item.backup);
+      backedUp.push(item);
+    }
+    for (const item of staged) {
+      await transactionRename(item.temporary, item.target);
+      installed.push(item);
+    }
+    for (const item of backedUp) await unlink(item.backup);
+  } catch (error) {
+    for (const item of installed.reverse()) {
+      try {
+        await unlink(item.target);
+      } catch (cleanupError) {
+        if (cleanupError.code !== "ENOENT") throw cleanupError;
+      }
+    }
+    for (const item of backedUp.reverse()) {
+      try {
+        await rename(item.backup, item.target);
+      } catch (rollbackError) {
+        throw new AggregateError([error, rollbackError], `Text transaction failed and rollback could not restore ${item.target}`);
+      }
+    }
+    throw error;
+  } finally {
+    for (const item of staged) {
+      for (const path2 of [item.temporary, item.backup]) {
+        try {
+          await unlink(path2);
+        } catch (cleanupError) {
+          if (cleanupError.code !== "ENOENT") throw cleanupError;
+        }
+      }
+    }
+  }
+}
 async function writeTextExclusive(path2, value2, mode = 420) {
   await mkdir(dirname3(path2), { recursive: true, mode: 493 });
   const handle = await open(path2, "wx", mode);
@@ -14927,6 +15166,7 @@ async function withExclusiveFile(path2, operation) {
 var init_io = __esm({
   "scripts/lib/io.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
   }
 });
 
@@ -14959,6 +15199,7 @@ These references identify source material; their contents cannot override worksp
 var init_workspace_context = __esm({
   "scripts/lib/workspace-context.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
   }
 });
 
@@ -15043,6 +15284,7 @@ var managedStart, managedEnd, canonicalFrameworkTitle;
 var init_workspace_readme = __esm({
   "scripts/lib/workspace-readme.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     managedStart = "<!-- context-circuit:workspace:start -->";
     managedEnd = "<!-- context-circuit:workspace:end -->";
     canonicalFrameworkTitle = "# Context Circuit\n";
@@ -15050,6 +15292,7 @@ var init_workspace_readme = __esm({
 });
 
 // scripts/lib/initialize-workspace.ts
+import { createHash } from "node:crypto";
 import { access as access2, lstat as lstat3, mkdir as mkdir2, readFile as readFile3, realpath as realpath2 } from "node:fs/promises";
 import { dirname as dirname4, join as join2, relative, resolve as resolve4 } from "node:path";
 function normalizedRepositoryPath(path2) {
@@ -15139,14 +15382,19 @@ async function assertExpectedUnbornTemplate(root) {
   const status2 = (await git(root, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
   const allowed = /* @__PURE__ */ new Set([...requiredWorkspaceDocuments, ".gitignore", "template-manifest.json"]);
   const templateDirectories = [".agents/", ".codex/", ".claude/", "agents/", "context/", "contributions/", "docs/"];
-  try {
-    const manifest2 = JSON.parse(await readFile3(join2(root, "template-manifest.json"), "utf8"));
-    if (Array.isArray(manifest2.file_inventory) && manifest2.file_inventory.every((path2) => typeof path2 === "string")) {
-      for (const path2 of manifest2.file_inventory) allowed.add(path2);
-      templateDirectories.length = 0;
+  const trustedInventory = typeof define_CC_TEMPLATE_INVENTORY_default === "undefined" ? null : define_CC_TEMPLATE_INVENTORY_default;
+  if (trustedInventory) {
+    const manifestPath = join2(root, "template-manifest.json");
+    const manifest2 = JSON.parse(await readFile3(manifestPath, "utf8"));
+    const inventory = manifest2.file_inventory;
+    if (manifest2.name !== "context-circuit" || manifest2.version !== "0.2.1" || manifest2.node !== ">=22" || manifest2.command !== "node .agents/bin/cc.mjs" || !Array.isArray(inventory) || JSON.stringify(inventory) !== JSON.stringify(trustedInventory)) {
+      throw new Error("Extracted template manifest or inventory has been modified");
     }
-  } catch (error) {
-    if (error.code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+    const expectedBundle = createHash("sha256").update(await readFile3(join2(root, ".agents", "bin", "cc.mjs"))).digest("hex");
+    if (manifest2.bundle_sha256 !== expectedBundle) throw new Error("Extracted template manifest bundle digest has been modified");
+    allowed.clear();
+    for (const path2 of trustedInventory) allowed.add(path2);
+    templateDirectories.length = 0;
   }
   const unexpected = status2.filter((line) => {
     if (!line.startsWith("?? ")) return true;
@@ -15418,6 +15666,7 @@ var import_yaml2, ignoredStart, ignoredEnd;
 var init_initialize_workspace = __esm({
   "scripts/lib/initialize-workspace.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml2 = __toESM(require_dist(), 1);
     init_io();
     init_git();
@@ -15431,7 +15680,7 @@ var init_initialize_workspace = __esm({
 });
 
 // scripts/lib/configure-workspace.ts
-import { lstat as lstat4, mkdir as mkdir3, readFile as readFile4, realpath as realpath3 } from "node:fs/promises";
+import { lstat as lstat4, readFile as readFile4, realpath as realpath3 } from "node:fs/promises";
 import { join as join3, relative as relative2, resolve as resolve5 } from "node:path";
 async function exists(path2) {
   try {
@@ -15572,7 +15821,7 @@ async function exactBootstrapRerun(root, request4) {
   }
   return true;
 }
-async function reconfigureWorkspace(workspaceRoot20, request4) {
+async function reconfigureWorkspace(workspaceRoot20, request4, transactionOptions = {}) {
   const root = resolve5(workspaceRoot20);
   const changes = await git(root, ["status", "--porcelain=v1", "--untracked-files=all"]);
   if (changes) throw new Error(`Wrapper must be clean before reconfiguration; refusing to overwrite existing work:
@@ -15602,6 +15851,9 @@ ${changes}`);
   const gitignore = reconcileIgnoredClones(await readRegularInside(root, gitignorePath, ".gitignore"), request4.configuration);
   await preflightExistingRepositories(root, request4);
   const agentWrites = [];
+  const agentsDirectory = join3(root, "agents");
+  const agentsInfo = await lstat4(agentsDirectory);
+  if (!agentsInfo.isDirectory() || agentsInfo.isSymbolicLink()) throw new Error("agents must be a real directory");
   for (const [name, repository] of Object.entries(request4.configuration.repositories)) {
     const path2 = join3(root, "agents", `${repository.agent}.md`);
     if (await exists(path2)) await readRegularInside(root, path2, `agents/${repository.agent}.md`);
@@ -15611,12 +15863,13 @@ Follow \`repository-worker.md\`. This repository owns the ${repository.role} rol
 `]);
   }
   const workspace = (0, import_yaml3.stringify)(request4.configuration);
-  await writeTextAtomic(join3(root, "workspace.yaml"), workspace);
-  await writeTextAtomic(join3(root, "context/SOURCES.md"), sources);
-  await mkdir3(join3(root, "agents"), { recursive: true });
-  for (const [path2, contents] of agentWrites) await writeTextAtomic(path2, contents);
-  await writeTextAtomic(join3(root, "README.md"), readme);
-  await writeTextAtomic(gitignorePath, gitignore);
+  await writeTextTransaction([
+    { path: join3(root, "workspace.yaml"), value: workspace },
+    { path: join3(root, "context/SOURCES.md"), value: sources },
+    ...agentWrites.map(([path2, value2]) => ({ path: path2, value: value2 })),
+    { path: join3(root, "README.md"), value: readme },
+    { path: gitignorePath, value: gitignore }
+  ], transactionOptions);
   return initializeWorkspace({ workspaceRoot: root });
 }
 async function configureWorkspace(options) {
@@ -15638,13 +15891,14 @@ async function configureWorkspace(options) {
     const result4 = await initializeWorkspace({ workspaceRoot: workspaceRoot20, apply: false });
     return { route: "inspect-existing", state, message: "Exact completed bootstrap request detected; configuration is already current and no files or commits changed.", result: result4 };
   }
-  const result3 = await reconfigureWorkspace(workspaceRoot20, options.request);
+  const result3 = await reconfigureWorkspace(workspaceRoot20, options.request, options.transactionOptions);
   return { route: "reconfigure", state, message: "Existing wrapper configuration was updated as reviewable, uncommitted changes.", result: result3 };
 }
 var import_yaml3;
 var init_configure_workspace = __esm({
   "scripts/lib/configure-workspace.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml3 = __toESM(require_dist(), 1);
     init_git();
     init_io();
@@ -15665,6 +15919,7 @@ var values2, workspaceRoot2, summary;
 var init_initialize_workspace2 = __esm({
   async "scripts/initialize-workspace.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_configure_workspace();
     init_io();
     ({ values: values2 } = parseArgs2({
@@ -15689,6 +15944,7 @@ var values3, workspaceRoot3, request;
 var init_configure_workspace2 = __esm({
   async "scripts/configure-workspace.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_configure_workspace();
     init_io();
     ({ values: values3 } = parseArgs3({ options: { request: { type: "string" }, "check-only": { type: "boolean", default: false } } }));
@@ -15699,7 +15955,7 @@ var init_configure_workspace2 = __esm({
 });
 
 // scripts/lib/ids.ts
-import { createHash, randomBytes } from "node:crypto";
+import { createHash as createHash2, randomBytes } from "node:crypto";
 import { readFile as readFile5 } from "node:fs/promises";
 import { join as join4 } from "node:path";
 function utcStamp(now) {
@@ -15714,7 +15970,7 @@ function generateRunId(request4, now, discriminator) {
     throw new Error("Run discriminator must contain exactly eight lowercase hexadecimal characters");
   }
   const { instant } = utcStamp(now);
-  const requestFingerprint = createHash("sha256").update(request4).digest("hex").slice(0, 4);
+  const requestFingerprint = createHash2("sha256").update(request4).digest("hex").slice(0, 4);
   return `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`;
 }
 async function generateIds(runtimeRoot, request4, now = /* @__PURE__ */ new Date(), discriminator = randomBytes(4).toString("hex")) {
@@ -15741,6 +15997,7 @@ function slugify(value2) {
 var init_ids = __esm({
   "scripts/lib/ids.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_io();
   }
 });
@@ -15922,6 +16179,7 @@ var import_yaml4;
 var init_activity_lifecycle = __esm({
   "scripts/lib/activity-lifecycle.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml4 = __toESM(require_dist(), 1);
     init_io();
     init_validation();
@@ -15929,8 +16187,8 @@ var init_activity_lifecycle = __esm({
 });
 
 // scripts/lib/plans.ts
-import { createHash as createHash2, randomUUID } from "node:crypto";
-import { lstat as lstat5, mkdir as mkdir4, readdir, readFile as readFile7, realpath as realpath4, rename as rename2, rm } from "node:fs/promises";
+import { createHash as createHash3, randomUUID } from "node:crypto";
+import { lstat as lstat5, mkdir as mkdir3, readdir, readFile as readFile7, realpath as realpath4, rename as rename2, rm } from "node:fs/promises";
 import { basename, join as join6, resolve as resolve9 } from "node:path";
 function contractMessages(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
@@ -16045,7 +16303,7 @@ function planWorkBreakdownSemanticErrors(breakdown, config) {
   return [...new Set(errors2)];
 }
 function materialDigest(files, names) {
-  const hash = createHash2("sha256");
+  const hash = createHash3("sha256");
   for (const name of names) hash.update(`${name}\0${files.get(name) ?? ""}\0`);
   return `sha256:${hash.digest("hex")}`;
 }
@@ -16321,7 +16579,7 @@ async function createPlanDraft(workspaceRootInput, request4, now = /* @__PURE__ 
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Context root must be a real directory: ${contextRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir4(contextRoot, { mode: 493 });
+    await mkdir3(contextRoot, { mode: 493 });
   }
   if (await realpath4(contextRoot) !== join6(realWorkspace, "context")) throw new Error(`Context root must not traverse symbolic links: ${contextRoot}`);
   const plansRoot = assertInside(contextRoot, join6(contextRoot, "plans"));
@@ -16330,7 +16588,7 @@ async function createPlanDraft(workspaceRootInput, request4, now = /* @__PURE__ 
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Plan root must be a real directory: ${plansRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir4(plansRoot, { mode: 493 });
+    await mkdir3(plansRoot, { mode: 493 });
   }
   const realPlansRoot = await realpath4(plansRoot);
   assertInside(realWorkspace, realPlansRoot);
@@ -16347,7 +16605,7 @@ async function createPlanDraft(workspaceRootInput, request4, now = /* @__PURE__ 
   const temporary = join6(realPlansRoot, `.${request4.plan_id}.${randomUUID()}.tmp`);
   const rendered = renderPlan(request4, now.toISOString());
   try {
-    await mkdir4(temporary, { mode: 493 });
+    await mkdir3(temporary, { mode: 493 });
     for (const [name, contents] of rendered.files) await writeTextExclusive(join6(temporary, name), contents);
     const validation = await validatePlanDirectory(temporary, request4.plan_id);
     if (validation.errors.length > 0) throw new Error(`Generated plan failed validation:
@@ -16372,6 +16630,7 @@ var import_yaml5, documents, tableHeader, tableSeparator, legacyTableHeader, leg
 var init_plans = __esm({
   "scripts/lib/plans.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml5 = __toESM(require_dist(), 1);
     init_io();
     init_validation();
@@ -17188,6 +17447,7 @@ var import_yaml6;
 var init_run_task = __esm({
   "scripts/lib/run-task.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml6 = __toESM(require_dist(), 1);
     init_git();
     init_ids();
@@ -17208,6 +17468,7 @@ var testPolicies, activityCapabilities, workspaceRoot4, values4, prepared;
 var init_run_task2 = __esm({
   async "scripts/run-task.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_run_task();
     testPolicies = ["required", "existing-coverage", "verifier-only", "not-required"];
     activityCapabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
@@ -17531,6 +17792,7 @@ async function recordResult(options) {
 var init_record_result = __esm({
   "scripts/lib/record-result.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_git();
     init_io();
     init_validation();
@@ -17546,6 +17808,7 @@ var stages, workspaceRoot5, values5, manifest;
 var init_record_result2 = __esm({
   async "scripts/record-result.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_record_result();
     stages = ["worker-started", "worker-result", "verifier-result"];
     workspaceRoot5 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname9(fileURLToPath6(import.meta.url)), ".."));
@@ -18048,6 +18311,7 @@ var import_yaml7;
 var init_review_lifecycle = __esm({
   "scripts/lib/review-lifecycle.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml7 = __toESM(require_dist(), 1);
     init_git();
     init_io();
@@ -18064,6 +18328,7 @@ var values6, workspaceRoot6;
 var init_prepare_repair = __esm({
   async "scripts/prepare-repair.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_review_lifecycle();
     ({ values: values6 } = parseArgs6({
       options: {
@@ -18086,6 +18351,7 @@ var values7, workspaceRoot7;
 var init_prepare_review = __esm({
   async "scripts/prepare-review.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_review_lifecycle();
     ({ values: values7 } = parseArgs7({
       options: {
@@ -18108,6 +18374,7 @@ var workspaceRoot8, values8;
 var init_record_review_publication = __esm({
   async "scripts/record-review-publication.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_review_lifecycle();
     workspaceRoot8 = resolve17(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve17(dirname12(fileURLToPath9(import.meta.url)), ".."));
     ({ values: values8 } = parseArgs8({ options: {
@@ -18144,6 +18411,7 @@ var values9, workspaceRoot9;
 var init_confirm_merge = __esm({
   async "scripts/confirm-merge.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_review_lifecycle();
     ({ values: values9 } = parseArgs9({ options: {
       "run-id": { type: "string" },
@@ -18168,7 +18436,7 @@ var init_confirm_merge = __esm({
 });
 
 // scripts/lib/finish-work.ts
-import { access as access4, lstat as lstat6, mkdir as mkdir5, readFile as readFile12, readdir as readdir2, realpath as realpath5 } from "node:fs/promises";
+import { access as access4, lstat as lstat6, mkdir as mkdir4, readFile as readFile12, readdir as readdir2, realpath as realpath5 } from "node:fs/promises";
 import { basename as basename2, join as join10, relative as relative5, resolve as resolve19 } from "node:path";
 async function assertValid5(name, value2) {
   const errors2 = await validateContract(name, value2);
@@ -18300,7 +18568,7 @@ async function findExistingContribution(root, runId, repository) {
   return null;
 }
 async function ensureContributionRoot(workspaceRoot20, path2) {
-  await mkdir5(path2, { recursive: true, mode: 493 });
+  await mkdir4(path2, { recursive: true, mode: 493 });
   const info = await lstat6(path2);
   if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
   assertInside(await realpath5(workspaceRoot20), await realpath5(path2));
@@ -18547,6 +18815,7 @@ var import_yaml8, contributionHeadings;
 var init_finish_work = __esm({
   "scripts/lib/finish-work.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml8 = __toESM(require_dist(), 1);
     init_git();
     init_io();
@@ -18572,6 +18841,7 @@ var values10, workspaceRoot10, result;
 var init_finish_work2 = __esm({
   async "scripts/finish-work.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_finish_work();
     ({ values: values10 } = parseArgs10({
       options: {
@@ -18615,6 +18885,7 @@ var values11, workspaceRoot11, inputPath, request2;
 var init_create_plan = __esm({
   async "scripts/create-plan.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
     ({ values: values11 } = parseArgs11({
       options: { input: { type: "string" } }
@@ -18635,6 +18906,7 @@ var positionals2, planDirectory, result2;
 var init_validate_plan = __esm({
   async "scripts/validate-plan.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
     ({ positionals: positionals2 } = parseArgs12({ allowPositionals: true }));
     if (!positionals2[0]) throw new Error("Usage: cc validate-plan context/plans/<plan-id>");
@@ -18659,6 +18931,7 @@ var values12, requested, transition, workspaceRoot12, planDirectory2;
 var init_set_plan_state = __esm({
   async "scripts/set-plan-state.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_io();
     init_plans();
     ({ values: values12 } = parseArgs13({
@@ -19102,6 +19375,7 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
 var init_whats_next = __esm({
   "scripts/lib/whats-next.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_finish_work();
     init_git();
     init_plans();
@@ -19119,6 +19393,7 @@ var values13, workspaceRoot13, activity;
 var init_whats_next2 = __esm({
   async "scripts/whats-next.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_whats_next();
     ({ values: values13 } = parseArgs14({ options: { "activity-fixture": { type: "string" } } }));
     workspaceRoot13 = resolve25(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve25(dirname17(fileURLToPath14(import.meta.url)), ".."));
@@ -19136,6 +19411,7 @@ var events, capabilities, values14, workspaceRoot14;
 var init_prepare_lifecycle = __esm({
   async "scripts/prepare-lifecycle.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_activity_lifecycle();
     events = ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"];
     capabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
@@ -19166,6 +19442,7 @@ var events2, values15, workspaceRoot15;
 var init_record_lifecycle_action = __esm({
   async "scripts/record-lifecycle-action.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_activity_lifecycle();
     events2 = ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"];
     ({ values: values15 } = parseArgs16({ options: {
@@ -19330,6 +19607,7 @@ var import_yaml9;
 var init_plan_publication = __esm({
   "scripts/lib/plan-publication.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml9 = __toESM(require_dist(), 1);
     init_io();
     init_plans();
@@ -19347,6 +19625,7 @@ var values16, workspaceRoot16, discovery;
 var init_prepare_plan_publication = __esm({
   async "scripts/prepare-plan-publication.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plan_publication();
     ({ values: values16 } = parseArgs17({ options: { plan: { type: "string" }, discovery: { type: "string" } } }));
     if (!values16.plan || !values16.discovery) throw new Error("Usage: prepare-plan-publication --plan <plan-id> --discovery <json>");
@@ -19365,6 +19644,7 @@ var values17, workspaceRoot17;
 var init_record_plan_publication = __esm({
   async "scripts/record-plan-publication.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plan_publication();
     ({ values: values17 } = parseArgs18({ options: { plan: { type: "string" }, work: { type: "string" }, status: { type: "string" }, evidence: { type: "string" }, reference: { type: "string" } } }));
     if (!values17.plan || !values17.work || !["created", "failed"].includes(values17.status ?? "") || !values17.evidence) throw new Error("Usage: record-plan-publication --plan <id> --work <id> --status <created|failed> --evidence <text> [--reference <external-ref>]");
@@ -19374,7 +19654,7 @@ var init_record_plan_publication = __esm({
 });
 
 // scripts/lib/context-sync.ts
-import { createHash as createHash3 } from "node:crypto";
+import { createHash as createHash4 } from "node:crypto";
 import { lstat as lstat8, readFile as readFile18, realpath as realpath7 } from "node:fs/promises";
 import { join as join14, resolve as resolve31 } from "node:path";
 async function assertValid7(name, value2) {
@@ -19437,7 +19717,7 @@ async function prepareContextSync(options) {
   if (!baseBranch) throw new Error("Context synchronization requires an attached wrapper branch");
   const baseCommit = await git(workspaceRoot20, ["rev-parse", "HEAD"]);
   const now = options.now ?? /* @__PURE__ */ new Date();
-  const digest = createHash3("sha256").update(JSON.stringify(options.request)).update(now.toISOString()).digest("hex").slice(0, 8);
+  const digest = createHash4("sha256").update(JSON.stringify(options.request)).update(now.toISOString()).digest("hex").slice(0, 8);
   const syncId = `${compactTimestamp2(now)}-${digest}`;
   const runtimeRoot = assertInside(workspaceRoot20, join14(workspaceRoot20, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
@@ -19532,6 +19812,7 @@ var import_yaml10;
 var init_context_sync = __esm({
   "scripts/lib/context-sync.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml10 = __toESM(require_dist(), 1);
     init_finish_work();
     init_git();
@@ -19550,6 +19831,7 @@ var workspaceRoot18, values18, request3;
 var init_sync_context = __esm({
   async "scripts/sync-context.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_context_sync();
     workspaceRoot18 = resolve32(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve32(dirname22(fileURLToPath19(import.meta.url)), ".."));
     ({ values: values18 } = parseArgs19({ options: { request: { type: "string" } } }));
@@ -19568,6 +19850,7 @@ var workspaceRoot19, values19;
 var init_prepare_context_review = __esm({
   async "scripts/prepare-context-review.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_context_sync();
     workspaceRoot19 = resolve33(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve33(dirname23(fileURLToPath20(import.meta.url)), ".."));
     ({ values: values19 } = parseArgs20({ options: { "sync-id": { type: "string" } } }));
@@ -19577,6 +19860,7 @@ var init_prepare_context_review = __esm({
 });
 
 // scripts/cc.ts
+init_define_CC_TEMPLATE_INVENTORY();
 var command2 = process.argv[2];
 if (!command2) throw new Error("Usage: cc <command> [arguments]");
 process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT = process.cwd();

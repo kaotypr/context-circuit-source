@@ -14,6 +14,27 @@ if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(v
 }
 const binary = join(root, ".agents", "bin", "cc.mjs");
 await mkdir(dirname(binary), { recursive: true });
+const copiedRoots = ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "contributions", ".agents", ".codex", ".claude"];
+const copiedDocs = ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md"];
+async function sourceInventory(path: string, prefix: string): Promise<string[]> {
+  const entries = await readdir(path, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) files.push(...await sourceInventory(join(path, entry.name), relativePath));
+    else if (entry.isFile()) files.push(relativePath);
+  }
+  return files;
+}
+const trustedTemplateInventory = ["template-manifest.json"];
+for (const path of copiedRoots) {
+  const entries = await sourceInventory(dirname(join(root, path)), "");
+  if ((await readdir(dirname(join(root, path)), { withFileTypes: true })).find((entry) => entry.name === path)?.isDirectory()) {
+    trustedTemplateInventory.push(...await sourceInventory(join(root, path), path));
+  } else trustedTemplateInventory.push(path);
+}
+trustedTemplateInventory.push(...copiedDocs.map((path) => `docs/${path}`));
+trustedTemplateInventory.sort();
 await build({
   entryPoints: [join(root, "scripts", "cc.ts")],
   outfile: binary,
@@ -23,6 +44,7 @@ await build({
   target: "node22",
   banner: { js: "#!/usr/bin/env node\nimport { createRequire as __ccCreateRequire } from 'node:module'; const require = __ccCreateRequire(import.meta.url);" },
   legalComments: "none",
+  define: { __CC_TEMPLATE_INVENTORY__: JSON.stringify(trustedTemplateInventory) },
 });
 await chmod(binary, 0o755);
 
@@ -39,11 +61,11 @@ const releaseStem = `context-circuit-${version}`;
 const destination = join(distributionRoot, releaseStem);
 await rm(distributionRoot, { recursive: true, force: true });
 await mkdir(destination, { recursive: true });
-for (const path of ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "contributions", ".agents", ".codex", ".claude"]) {
+for (const path of copiedRoots) {
   await cp(join(root, path), join(destination, path), { recursive: true });
 }
 await mkdir(join(destination, "docs"), { recursive: true });
-for (const path of ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md"]) {
+for (const path of copiedDocs) {
   await cp(join(root, "docs", path), join(destination, "docs", path));
 }
 for (const [path, contents] of Object.entries(renderWorkspaceContext(neutralWorkspaceContext))) {
@@ -71,7 +93,7 @@ await writeFile(join(destination, "template-manifest.json"), `${JSON.stringify({
   node: ">=22",
   command: "node .agents/bin/cc.mjs",
   bundle_sha256: bundleSha256,
-  file_inventory: [...await fileInventory(destination), "template-manifest.json"].sort(),
+  file_inventory: trustedTemplateInventory,
   excluded_maintainer_inputs: ["PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules/", "fixtures/", "scripts/", "test/"],
 }, null, 2)}\n`, "utf8");
 const archive = join(distributionRoot, `${releaseStem}.tar.gz`);

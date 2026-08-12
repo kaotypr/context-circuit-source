@@ -1,8 +1,8 @@
-import { lstat, mkdir, readFile, realpath } from "node:fs/promises";
+import { lstat, readFile, realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { git } from "./git.js";
-import { assertInside, writeTextAtomic } from "./io.js";
+import { assertInside, writeTextTransaction } from "./io.js";
 import { bootstrapWorkspace, initializeWorkspace, reconcileIgnoredClones, type BootstrapWorkspaceSummary, type InitializationSummary } from "./initialize-workspace.js";
 import type { WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
@@ -146,7 +146,7 @@ async function exactBootstrapRerun(root: string, request: WorkspaceBootstrapRequ
   return true;
 }
 
-async function reconfigureWorkspace(workspaceRoot: string, request: WorkspaceBootstrapRequest): Promise<InitializationSummary> {
+async function reconfigureWorkspace(workspaceRoot: string, request: WorkspaceBootstrapRequest, transactionOptions: { failRenameAt?: number } = {}): Promise<InitializationSummary> {
   const root = resolve(workspaceRoot);
   const changes = await git(root, ["status", "--porcelain=v1", "--untracked-files=all"]);
   if (changes) throw new Error(`Wrapper must be clean before reconfiguration; refusing to overwrite existing work:\n${changes}`);
@@ -175,23 +175,27 @@ async function reconfigureWorkspace(workspaceRoot: string, request: WorkspaceBoo
   const gitignore = reconcileIgnoredClones(await readRegularInside(root, gitignorePath, ".gitignore"), request.configuration);
   await preflightExistingRepositories(root, request);
   const agentWrites: Array<[string, string]> = [];
+  const agentsDirectory = join(root, "agents");
+  const agentsInfo = await lstat(agentsDirectory);
+  if (!agentsInfo.isDirectory() || agentsInfo.isSymbolicLink()) throw new Error("agents must be a real directory");
   for (const [name, repository] of Object.entries(request.configuration.repositories)) {
     const path = join(root, "agents", `${repository.agent}.md`);
     if (await exists(path)) await readRegularInside(root, path, `agents/${repository.agent}.md`);
     else agentWrites.push([path, `# ${repository.agent}\n\nFollow \`repository-worker.md\`. This repository owns the ${repository.role} role. Read ${name}'s repository-local instructions before work.\n`]);
   }
   const workspace = stringifyYaml(request.configuration);
-  // All validation and output computation above is read-only. Writes begin here.
-  await writeTextAtomic(join(root, "workspace.yaml"), workspace);
-  await writeTextAtomic(join(root, "context/SOURCES.md"), sources);
-  await mkdir(join(root, "agents"), { recursive: true });
-  for (const [path, contents] of agentWrites) await writeTextAtomic(path, contents);
-  await writeTextAtomic(join(root, "README.md"), readme);
-  await writeTextAtomic(gitignorePath, gitignore);
+  // All validation and output computation above is read-only. The transaction stages every sibling before changing any target.
+  await writeTextTransaction([
+    { path: join(root, "workspace.yaml"), value: workspace },
+    { path: join(root, "context/SOURCES.md"), value: sources },
+    ...agentWrites.map(([path, value]) => ({ path, value })),
+    { path: join(root, "README.md"), value: readme },
+    { path: gitignorePath, value: gitignore },
+  ], transactionOptions);
   return initializeWorkspace({ workspaceRoot: root });
 }
 
-export async function configureWorkspace(options: { workspaceRoot: string; request?: WorkspaceBootstrapRequest; checkOnly?: boolean }): Promise<ConfigureWorkspaceSummary> {
+export async function configureWorkspace(options: { workspaceRoot: string; request?: WorkspaceBootstrapRequest; checkOnly?: boolean; transactionOptions?: { failRenameAt?: number } }): Promise<ConfigureWorkspaceSummary> {
   const workspaceRoot = resolve(options.workspaceRoot);
   const state = await detectWorkspaceConfigurationState(workspaceRoot);
   if (!options.request) {
@@ -210,6 +214,6 @@ export async function configureWorkspace(options: { workspaceRoot: string; reque
     const result = await initializeWorkspace({ workspaceRoot, apply: false });
     return { route: "inspect-existing", state, message: "Exact completed bootstrap request detected; configuration is already current and no files or commits changed.", result };
   }
-  const result = await reconfigureWorkspace(workspaceRoot, options.request);
+  const result = await reconfigureWorkspace(workspaceRoot, options.request, options.transactionOptions);
   return { route: "reconfigure", state, message: "Existing wrapper configuration was updated as reviewable, uncommitted changes.", result };
 }
