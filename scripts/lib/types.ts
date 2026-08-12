@@ -126,6 +126,20 @@ export interface ActivityLifecycleRecord {
 
 export type PlanSourceKind = "idea" | "prd" | "document" | "issue" | "pull-request";
 
+export type ProductKnowledgeImpact =
+  | "none"
+  | "documentation-correction"
+  | "implementation-only"
+  | "behavior-change"
+  | "new-workflow"
+  | "retired-workflow";
+
+export interface ProductKnowledgePlanDeclaration {
+  impact: ProductKnowledgeImpact;
+  references: string[];
+  proposed_change?: string;
+}
+
 export interface PlanIndex {
   contract_version: 1;
   plan_id: string;
@@ -143,6 +157,7 @@ export interface PlanIndex {
   approved_digest: string | null;
   created_at: string;
   updated_at: string;
+  product_knowledge?: ProductKnowledgePlanDeclaration;
 }
 
 export interface PlanWorkItem {
@@ -266,6 +281,7 @@ export interface PlanDraftRequest {
   verification: string[];
   risks: string[];
   work_items: PlanDraftWorkItem[];
+  product_knowledge?: ProductKnowledgePlanDeclaration;
 }
 
 export interface PlanPublicationDiscovery {

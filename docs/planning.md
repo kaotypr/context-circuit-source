@@ -34,9 +34,24 @@ matching `.agents/contracts/plan-draft-request.schema.json`. A minimal example i
   "work_items": [
     { "key": "retry-contract", "title": "Establish retry contract", "area": "application foundation", "repository": "frontend", "scope": ["src/retry-contract.ts"], "test_scope": [], "test_policy": "verifier-only", "verification_commands": ["npm test"], "acceptance_criteria": ["The retry contract is explicit."] },
     { "key": "retry-ui", "title": "Display retry state", "area": "customer retry experience", "repository": "frontend", "scope": ["src/App.tsx"], "test_scope": ["src/App.test.tsx"], "test_policy": "required", "verification_commands": ["npm test"], "acceptance_criteria": ["The retry state is visible."], "parent": "retry-contract", "depends_on": ["retry-contract"] }
-  ]
+  ],
+  "product_knowledge": {
+    "impact": "behavior-change",
+    "references": ["context/domains/checkout/workflows/place-order.md"],
+    "proposed_change": "Retry a declined card once before failing the order."
+  }
 }
 ```
+
+The optional `product_knowledge` declaration links a plan to the Product Knowledge
+it touches. `references` are relative role, domain, and workflow page paths;
+`impact` is one of `none`, `documentation-correction`, `implementation-only`,
+`behavior-change`, `new-workflow`, or `retired-workflow`; and `proposed_change`
+summarizes the behavior change (required for `behavior-change`, `new-workflow`, and
+`retired-workflow`, and forbidden for `none`). The declaration is recorded in the
+plan index and the overview document, so it is part of approved material and a
+material change revokes approval. Planning never rewrites canonical workflow or
+role pages — it describes proposed behavior only.
 
 Create and validate it with:
 

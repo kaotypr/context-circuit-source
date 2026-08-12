@@ -54,11 +54,22 @@
           "then": { "properties": { "test_scope": { "minItems": 1 } } }
         }]
       }
-    }
+    },
+    "product_knowledge": { "$ref": "#/$defs/productKnowledge" }
   },
   "$defs": {
     "stringList": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "nonEmptyStringList": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
-    "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$" }
+    "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$" },
+    "productKnowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impact", "references"],
+      "properties": {
+        "impact": { "enum": ["none", "documentation-correction", "implementation-only", "behavior-change", "new-workflow", "retired-workflow"] },
+        "references": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+\\.md$" } },
+        "proposed_change": { "type": "string", "minLength": 1 }
+      }
+    }
   }
 }

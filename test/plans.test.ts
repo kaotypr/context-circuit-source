@@ -148,3 +148,62 @@ test("plan draft rejects unknown repositories and dependency cycles before writi
   await assert.rejects(createPlanDraft(workspace.root, invalid), /not registered|dependency cycle/);
   await assert.rejects(createPlanDraft(workspace.root, {} as PlanDraftRequest), /Invalid plan draft request/);
 });
+
+const productKnowledgeRequest: PlanDraftRequest = {
+  ...request,
+  plan_id: "checkout-retry",
+  work_prefix: "CKO",
+  product_knowledge: {
+    impact: "behavior-change",
+    references: ["context/domains/checkout/workflows/place-order.md", "context/roles/shopper.md"],
+    proposed_change: "Auto-retry a declined card once before failing the order.",
+  },
+};
+
+test("create-plan records Product Knowledge references and impact", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, productKnowledgeRequest, new Date("2026-08-11T08:30:00Z"));
+  const validation = await validatePlanDirectory(created.directory);
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.index?.product_knowledge?.impact, "behavior-change");
+  assert.deepEqual(validation.index?.product_knowledge?.references, [
+    "context/domains/checkout/workflows/place-order.md",
+    "context/roles/shopper.md",
+  ]);
+  const overview = await readFile(join(created.directory, "0001-overview.md"), "utf8");
+  assert.match(overview, /## Product impact/);
+  assert.match(overview, /Auto-retry a declined card once/);
+});
+
+test("Product Knowledge impact survives approval", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, productKnowledgeRequest, new Date("2026-08-11T08:30:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "maintainer" }, new Date("2026-08-11T09:00:00Z"));
+  const index = parsePlanIndex(await readFile(join(created.directory, "README.md"), "utf8"));
+  assert.equal(index.status, "approved");
+  assert.equal(index.product_knowledge?.impact, "behavior-change");
+});
+
+test("a behavior-changing plan requires a proposed change summary", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const invalid: PlanDraftRequest = {
+    ...productKnowledgeRequest,
+    plan_id: "checkout-retry-invalid",
+    product_knowledge: { impact: "new-workflow", references: [] },
+  };
+  await assert.rejects(createPlanDraft(workspace.root, invalid), /requires a proposed_change/);
+});
+
+test("an impact of none must not include a proposed change", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const invalid: PlanDraftRequest = {
+    ...productKnowledgeRequest,
+    plan_id: "checkout-none-invalid",
+    product_knowledge: { impact: "none", references: [], proposed_change: "Should not be here." },
+  };
+  await assert.rejects(createPlanDraft(workspace.root, invalid), /must not include a proposed_change/);
+});

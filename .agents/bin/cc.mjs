@@ -16586,6 +16586,19 @@ function contractMessages(errors2) {
 function markdownList(values20, empty) {
   return values20.length > 0 ? values20.map((value2) => `- ${value2}`).join("\n") : `- ${empty}`;
 }
+function productImpactBody(declaration) {
+  const references = markdownList(declaration.references, "None referenced.");
+  const proposed = declaration.proposed_change ?? "No product behavior change is proposed.";
+  return `- Impact: ${declaration.impact}
+
+Referenced Product Knowledge:
+
+${references}
+
+Proposed change:
+
+${proposed}`;
+}
 function assertMarkdownCell(value2, field) {
   if (value2.includes("|") || /[\r\n]/.test(value2)) throw new Error(`${field} cannot contain a table delimiter or newline`);
 }
@@ -16653,6 +16666,16 @@ function planDraftSemanticErrors(request4, config) {
     for (const dependency of item.depends_on ?? []) {
       if (!keys.has(dependency)) errors2.push(`work item ${item.key} has unknown dependency: ${dependency}`);
       if (dependency === item.key) errors2.push(`work item ${item.key} cannot depend on itself`);
+    }
+  }
+  const productKnowledge = request4.product_knowledge;
+  if (productKnowledge) {
+    const requiresChange = ["behavior-change", "new-workflow", "retired-workflow"];
+    if (requiresChange.includes(productKnowledge.impact) && !productKnowledge.proposed_change?.trim()) {
+      errors2.push(`product knowledge impact '${productKnowledge.impact}' requires a proposed_change summary`);
+    }
+    if (productKnowledge.impact === "none" && productKnowledge.proposed_change) {
+      errors2.push("product knowledge impact 'none' must not include a proposed_change");
     }
   }
   const keyedDependencies = request4.work_items.map((item) => ({ work_id: item.key, depends_on: item.depends_on ?? [] }));
@@ -16874,13 +16897,17 @@ function renderPlan(request4, createdAt) {
   const workItems = allocateWorkItems(request4);
   const breakdown = { contract_version: 2, plan_id: request4.plan_id, work_prefix: request4.work_prefix, items: workItems };
   const files = /* @__PURE__ */ new Map();
-  files.set("0001-overview.md", renderDocument("Overview", [
+  const overviewSections = [
     ["Summary", request4.summary],
     ["Source", `${request4.source.kind}: ${request4.source.reference}`],
-    ["Affected repositories", markdownList(request4.affected_repositories, "None identified.")],
+    ["Affected repositories", markdownList(request4.affected_repositories, "None identified.")]
+  ];
+  if (request4.product_knowledge) overviewSections.push(["Product impact", productImpactBody(request4.product_knowledge)]);
+  overviewSections.push(
     ["Assumptions", markdownList(request4.assumptions, "None recorded.")],
     ["Open questions", markdownList(request4.open_questions, "None recorded.")]
-  ]));
+  );
+  files.set("0001-overview.md", renderDocument("Overview", overviewSections));
   files.set("0010-requirements.md", renderDocument("Requirements", [["Requirements and acceptance criteria", markdownList(request4.requirements, "None recorded.")]]));
   files.set("0020-solution.md", renderDocument("Solution", [["Proposed solution", markdownList(request4.solution, "None recorded.")]]));
   files.set("0040-delivery.md", renderDocument("Delivery", [["Delivery order", markdownList(request4.delivery, "None recorded.")]]));
@@ -16930,7 +16957,8 @@ Live task status does not belong in this plan. Add confirmed external references
     material_digest: materialDigest(files, documents),
     approved_digest: null,
     created_at: createdAt,
-    updated_at: createdAt
+    updated_at: createdAt,
+    ...request4.product_knowledge ? { product_knowledge: request4.product_knowledge } : {}
   };
   const links = documents.map((document) => `- [${document.replace(/^[0-9]{4}-|\.md$/g, "").replaceAll("-", " ")}](./${document})`).join("\n");
   files.set("README.md", `---

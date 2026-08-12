@@ -22,7 +22,13 @@ description: Turn a PRD, product document, issue, pull request, or explicit idea
    area text as repository identity. Give every item an
    implementation scope, test scope and policy, verification commands, and
    independently provable acceptance criteria. Do not include credentials, live task status, or fabricated
-   external references.
+   external references. When the plan can change user-visible or business
+   behavior, add an optional `product_knowledge` declaration: the relevant role,
+   domain, and workflow page `references`, an `impact` of `none`,
+   `documentation-correction`, `implementation-only`, `behavior-change`,
+   `new-workflow`, or `retired-workflow`, and a `proposed_change` summary for any
+   behavior-changing impact. The plan describes proposed behavior only; canonical
+   workflow and role pages are never rewritten during planning.
 4. Validate the request, then run `node .agents/bin/cc.mjs create-plan --input <request.json>`.
    The deterministic creator writes a new directory exclusively, assigns sparse
    stable work IDs, produces the minimum numbered document set, and refuses to

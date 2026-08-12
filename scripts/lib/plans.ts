@@ -3,7 +3,7 @@ import { lstat, mkdir, readdir, readFile, realpath, rename, rm } from "node:fs/p
 import { basename, join, resolve } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { assertInside, writeTextAtomic, writeTextExclusive } from "./io.js";
-import type { PlanDraftRequest, PlanIndex, PlanWorkBreakdown, PlanWorkItem, WorkspaceConfig } from "./types.js";
+import type { PlanDraftRequest, PlanIndex, PlanWorkBreakdown, PlanWorkItem, ProductKnowledgePlanDeclaration, WorkspaceConfig } from "./types.js";
 import { readData, validateContract, workspaceSemanticErrors } from "./validation.js";
 
 const documents = [
@@ -49,6 +49,12 @@ function contractMessages(errors: Awaited<ReturnType<typeof validateContract>>):
 
 function markdownList(values: string[], empty: string): string {
   return values.length > 0 ? values.map((value) => `- ${value}`).join("\n") : `- ${empty}`;
+}
+
+function productImpactBody(declaration: ProductKnowledgePlanDeclaration): string {
+  const references = markdownList(declaration.references, "None referenced.");
+  const proposed = declaration.proposed_change ?? "No product behavior change is proposed.";
+  return `- Impact: ${declaration.impact}\n\nReferenced Product Knowledge:\n\n${references}\n\nProposed change:\n\n${proposed}`;
 }
 
 function assertMarkdownCell(value: string, field: string): void {
@@ -123,6 +129,16 @@ export function planDraftSemanticErrors(request: PlanDraftRequest, config?: Work
     for (const dependency of item.depends_on ?? []) {
       if (!keys.has(dependency)) errors.push(`work item ${item.key} has unknown dependency: ${dependency}`);
       if (dependency === item.key) errors.push(`work item ${item.key} cannot depend on itself`);
+    }
+  }
+  const productKnowledge = request.product_knowledge;
+  if (productKnowledge) {
+    const requiresChange = ["behavior-change", "new-workflow", "retired-workflow"];
+    if (requiresChange.includes(productKnowledge.impact) && !productKnowledge.proposed_change?.trim()) {
+      errors.push(`product knowledge impact '${productKnowledge.impact}' requires a proposed_change summary`);
+    }
+    if (productKnowledge.impact === "none" && productKnowledge.proposed_change) {
+      errors.push("product knowledge impact 'none' must not include a proposed_change");
     }
   }
   const keyedDependencies = request.work_items.map((item) => ({ work_id: item.key, depends_on: item.depends_on ?? [] }));
@@ -344,13 +360,17 @@ function renderPlan(request: PlanDraftRequest, createdAt: string): { index: Plan
   const workItems = allocateWorkItems(request);
   const breakdown: PlanWorkBreakdown = { contract_version: 2, plan_id: request.plan_id, work_prefix: request.work_prefix, items: workItems };
   const files = new Map<string, string>();
-  files.set("0001-overview.md", renderDocument("Overview", [
+  const overviewSections: Array<[string, string]> = [
     ["Summary", request.summary],
     ["Source", `${request.source.kind}: ${request.source.reference}`],
     ["Affected repositories", markdownList(request.affected_repositories, "None identified.")],
+  ];
+  if (request.product_knowledge) overviewSections.push(["Product impact", productImpactBody(request.product_knowledge)]);
+  overviewSections.push(
     ["Assumptions", markdownList(request.assumptions, "None recorded.")],
     ["Open questions", markdownList(request.open_questions, "None recorded.")],
-  ]));
+  );
+  files.set("0001-overview.md", renderDocument("Overview", overviewSections));
   files.set("0010-requirements.md", renderDocument("Requirements", [["Requirements and acceptance criteria", markdownList(request.requirements, "None recorded.")]]));
   files.set("0020-solution.md", renderDocument("Solution", [["Proposed solution", markdownList(request.solution, "None recorded.")]]));
   files.set("0040-delivery.md", renderDocument("Delivery", [["Delivery order", markdownList(request.delivery, "None recorded.")]]));
@@ -381,6 +401,7 @@ function renderPlan(request: PlanDraftRequest, createdAt: string): { index: Plan
     approved_digest: null,
     created_at: createdAt,
     updated_at: createdAt,
+    ...(request.product_knowledge ? { product_knowledge: request.product_knowledge } : {}),
   };
   const links = documents.map((document) => `- [${document.replace(/^[0-9]{4}-|\.md$/g, "").replaceAll("-", " ")}](./${document})`).join("\n");
   files.set("README.md", `---\n${stringifyYaml(index).trimEnd()}\n---\n\n# ${request.title}\n\n${request.summary}\n\n## Plan documents\n\n${links}\n\n## Approval gate\n\nHuman approval must explicitly cover scope, solution, delivery order, risks, and acceptance criteria before the metadata status changes to \`approved\`. The machine-readable frontmatter status is authoritative; approval updates metadata without rewriting this prose.\n`);
