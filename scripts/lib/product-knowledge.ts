@@ -1,8 +1,9 @@
 import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
-import { parse as parseYaml } from "yaml";
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { validateContract } from "./validation.js";
 import type { SchemaName } from "./validation.js";
+import type { ProductKnowledgeBaselineSpec } from "./types.js";
 
 export type ProductKnowledgeKind = "role" | "workflow" | "domain" | "product-map";
 
@@ -212,4 +213,114 @@ export async function validateProductKnowledgeTree(contextDir: string): Promise<
   }
 
   return { present: true, pages, errors: [...new Set(errors)] };
+}
+
+function slugify(name: string): string {
+  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!slug) throw new Error(`Cannot derive a Product Knowledge slug from '${name}'`);
+  return slug;
+}
+
+function frontmatterBlock(data: Record<string, unknown>): string {
+  return `---\n${stringifyYaml(data).trimEnd()}\n---\n`;
+}
+
+const placeholder = "Not documented yet.";
+
+/**
+ * Render a minimal, reviewable Product Knowledge baseline as workspace-relative
+ * files under `context/`. The baseline records what a human already knows (product
+ * purpose, major roles, major domains, and their known workflows) and keeps every
+ * unknown explicit rather than inventing detail. The output is a valid tree under
+ * the PKNOW-001 contracts, so coverage can grow one page at a time.
+ */
+export function renderProductKnowledgeBaseline(spec: ProductKnowledgeBaselineSpec): Record<string, string> {
+  const roleSlugs = new Map<string, string>();
+  for (const role of spec.roles) {
+    const slug = slugify(role);
+    if ([...roleSlugs.values()].includes(slug)) throw new Error(`Duplicate role slug in baseline: ${slug}`);
+    roleSlugs.set(role, slug);
+  }
+  const domainSlugs = new Map<string, string>();
+  for (const domain of spec.domains) {
+    const slug = slugify(domain.name);
+    if ([...domainSlugs.values()].includes(slug)) throw new Error(`Duplicate domain slug in baseline: ${slug}`);
+    domainSlugs.set(domain.name, slug);
+  }
+  const gaps = spec.unknowns.length > 0 ? spec.unknowns : ["No unknowns recorded yet."];
+  const owners = ["Unassigned — record the owner."];
+  const files: Record<string, string> = {};
+
+  const roleList = spec.roles.length > 0
+    ? spec.roles.map((role) => `- [${role}](roles/${roleSlugs.get(role)}.md)`).join("\n")
+    : "- None documented yet.";
+  const domainList = spec.domains.length > 0
+    ? spec.domains.map((domain) => `- [${domain.name}](domains/${domainSlugs.get(domain.name)}/README.md)`).join("\n")
+    : "- None documented yet.";
+  files["context/PROJECT.md"] = `${frontmatterBlock({
+    kind: "product-map",
+    title: spec.title,
+    roles: spec.roles.map((role) => `roles/${roleSlugs.get(role)}.md`),
+    domains: spec.domains.map((domain) => `domains/${domainSlugs.get(domain.name)}/README.md`),
+    sources: spec.sources,
+    review_date: spec.review_date,
+    known_gaps: gaps,
+  })}\n# ${spec.title}\n\n${spec.purpose}\n\n## Roles\n\n${roleList}\n\n## Domains\n\n${domainList}\n`;
+
+  files["context/GLOSSARY.md"] = "# Glossary\n\nDefine business terms here as they are confirmed.\n";
+  const roleIndexList = spec.roles.length > 0
+    ? spec.roles.map((role) => `- [${role}](${roleSlugs.get(role)}.md)`).join("\n")
+    : "- None documented yet.";
+  files["context/roles/README.md"] = `# Roles\n\n${roleIndexList}\n`;
+
+  const relevantDomains = spec.domains.map((domain) => `../domains/${domainSlugs.get(domain.name)}/README.md`);
+  const relatedWorkflows = spec.domains
+    .filter((domain) => (domain.workflows ?? []).length > 0)
+    .map((domain) => `../domains/${domainSlugs.get(domain.name)}/workflows/${slugify(domain.workflows![0]!)}.md`);
+  const relatedList = relatedWorkflows.length > 0
+    ? relatedWorkflows.map((reference) => `- [Workflow](${reference})`).join("\n")
+    : "None documented yet.";
+  for (const role of spec.roles) {
+    files[`context/roles/${roleSlugs.get(role)}.md`] = `${frontmatterBlock({
+      kind: "role",
+      title: role,
+      owners,
+      sources: spec.sources,
+      review_date: spec.review_date,
+      relevant_domains: relevantDomains,
+      related_workflows: relatedWorkflows,
+      known_gaps: gaps,
+    })}\n# ${role}\n\n## Role definition\n\n${placeholder}\n\n## Primary outcomes\n\n${placeholder}\n\n## Product surfaces\n\n${placeholder}\n\n## End-to-end role story\n\n${placeholder}\n\n## Related workflows\n\n${relatedList}\n\n## Role-specific behavior\n\n${placeholder}\n\n## Limitations\n\n${placeholder}\n`;
+  }
+
+  for (const domain of spec.domains) {
+    const domainSlug = domainSlugs.get(domain.name)!;
+    const workflows = domain.workflows ?? [];
+    const workflowSlugs = workflows.map((workflow) => slugify(workflow));
+    const workflowList = workflows.length > 0
+      ? workflows.map((workflow, index) => `- [${workflow}](workflows/${workflowSlugs[index]}.md)`).join("\n")
+      : "None documented yet.";
+    files[`context/domains/${domainSlug}/README.md`] = `${frontmatterBlock({
+      kind: "domain",
+      title: domain.name,
+      owners,
+      sources: spec.sources,
+      review_date: spec.review_date,
+      workflows: workflowSlugs.map((slug) => `workflows/${slug}.md`),
+      known_gaps: gaps,
+    })}\n# ${domain.name}\n\n## Summary\n\n${placeholder}\n\n## Workflows\n\n${workflowList}\n`;
+    workflows.forEach((workflow, index) => {
+      files[`context/domains/${domainSlug}/workflows/${workflowSlugs[index]}.md`] = `${frontmatterBlock({
+        kind: "workflow",
+        title: workflow,
+        owners,
+        sources: spec.sources,
+        review_date: spec.review_date,
+        implementation_ownership: "Unassigned — record the implementing repository or team.",
+        known_gaps: gaps,
+      })}\n# ${workflow}\n\n## Outcome\n\n${placeholder}\n\n## Actors\n\n${placeholder}\n\n## Entry points\n\n${placeholder}\n\n## Current flow\n\n${placeholder}\n\n## Variations\n\n${placeholder}\n\n## Business rules\n\n${placeholder}\n`;
+    });
+  }
+
+  return files;
 }

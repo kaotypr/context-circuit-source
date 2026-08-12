@@ -7,6 +7,7 @@ import { git } from "./git.js";
 import type { BootstrapGitCommit, WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { readData, requiredWorkspaceDocuments, validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "./validation.js";
 import { renderWorkspaceContext } from "./workspace-context.js";
+import { renderProductKnowledgeBaseline, validateProductKnowledgeTree } from "./product-knowledge.js";
 import { reconcileWorkspaceReadme } from "./workspace-readme.js";
 import { cloneReferenceError } from "./safe-reference.js";
 
@@ -294,6 +295,13 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   for (const [path, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
     await writeTextAtomic(join(workspaceRoot, path), contents);
   }
+  if (options.request.context.product_knowledge) {
+    for (const [path, contents] of Object.entries(renderProductKnowledgeBaseline(options.request.context.product_knowledge))) {
+      const full = assertInside(workspaceRoot, resolve(workspaceRoot, path));
+      await mkdir(dirname(full), { recursive: true });
+      await writeTextAtomic(full, contents);
+    }
+  }
   await writeTextAtomic(readmePath, nextReadme);
   await mkdir(join(workspaceRoot, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
@@ -342,10 +350,12 @@ export async function initializeWorkspace(options: InitializeWorkspaceOptions): 
   const configPath = join(workspaceRoot, "workspace.yaml");
   const config = await readData(configPath) as WorkspaceConfig;
   const contractErrors = await validateContract("workspace", config);
+  const productKnowledge = await validateProductKnowledgeTree(join(workspaceRoot, "context"));
   const errors = [
     ...contractErrors.map((error) => `${error.instancePath || "/"} ${error.message}`),
     ...workspaceSemanticErrors(config),
     ...await workspaceDocumentErrors(workspaceRoot, config),
+    ...productKnowledge.errors.map((error) => `product-knowledge ${error}`),
   ];
   if (errors.length > 0) throw new Error(`Workspace initialization validation failed:\n- ${errors.join("\n- ")}`);
 

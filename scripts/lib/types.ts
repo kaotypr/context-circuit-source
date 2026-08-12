@@ -50,12 +50,28 @@ export interface BootstrapGitCommit {
   author_email?: string;
 }
 
+export interface ProductKnowledgeBaselineDomain {
+  name: string;
+  workflows?: string[];
+}
+
+export interface ProductKnowledgeBaselineSpec {
+  title: string;
+  purpose: string;
+  sources: string[];
+  review_date: string;
+  roles: string[];
+  domains: ProductKnowledgeBaselineDomain[];
+  unknowns: string[];
+}
+
 export interface WorkspaceBootstrapContext {
   project_summary: string;
   architecture: string[];
   conventions: string[];
   decisions: string[];
   sources?: WorkspaceContextSource[];
+  product_knowledge?: ProductKnowledgeBaselineSpec;
 }
 
 export interface WorkspaceBootstrapRequest {

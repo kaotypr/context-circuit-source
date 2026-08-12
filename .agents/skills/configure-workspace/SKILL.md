@@ -14,4 +14,15 @@ description: Configure or reconfigure a Context Circuit wrapper, its repositorie
 7. Reconcile the generated README workspace block while preserving all content outside its managed markers. It must lead with project identity, purpose, repository roles and paths, common actions, and context links; framework documentation remains secondary. Record unknown context explicitly rather than inventing it.
 8. Run configuration check-only, `node .agents/bin/cc.mjs validate --check-paths --check-documents`, and `git diff --check`. Report the detected route, exact initial commit if created, repository state, sources, warnings, and reviewable wrapper changes.
 
+Optionally, a fresh bootstrap request may include `context.product_knowledge` to
+create a minimal reviewed Product Knowledge baseline: a product `title` and
+`purpose`, authoritative `sources`, a `review_date`, the major `roles`, the major
+`domains` with any already-known `workflows`, and explicit `unknowns`. Record only
+what a human already knows; unknowns stay explicit and are never invented, and no
+complete application inventory is attempted. The baseline is written under
+`context/` as a valid Product Knowledge tree (product map, role pages, domain
+summaries, and any named workflow pages) and validated during initialization.
+Omitting the field leaves an existing wrapper without Product Knowledge valid;
+adoption is incremental and can grow one page at a time later.
+
 Reruns must be idempotent. Ordinary configuration is not a template or schema upgrade: stop and use a separately versioned upgrade workflow when the installed `template_version` or contract version requires migration. Do not retroactively rewrite active run evidence.
