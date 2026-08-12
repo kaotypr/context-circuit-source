@@ -23,6 +23,14 @@ isolated single- and multi-repository execution, contract-first sequencing,
 independent verification, bounded repair, review preparation, human-invoked
 closeout, append-only contributions, and curated context synchronization.
 
+Version 0.2.x continues this into one linked journey: approved plans execute
+under their stable work IDs and stay tied to their runtime, review, and closeout
+evidence; `whats-next` reconciles that evidence read-only and excludes completed
+work; review advances through explicit local-review, publication, merge-
+confirmation, and closeout states behind the human merge gate; and
+`configure-workspace` sets up fresh or existing wrappers with recoverable,
+reviewable configuration and cited authoritative context sources.
+
 This release does not implement automatic merge or deployment, scheduling, a
 workflow UI, a central task database, permanent agent sessions, Cursor support,
 or a universal activity-provider abstraction.

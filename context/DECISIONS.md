@@ -46,4 +46,34 @@
 - Ship a dependency-free bundle and exclude maintainer tooling, fixtures, tests,
   package metadata, and development planning material from the template.
 
+## 2026-08-12 — Workflow continuity decisions
+
+- Execute approved plan items under their stable plan work IDs and approval
+  digest rather than normalizing them to `ADHOC-*`. Fail draft, stale, unknown,
+  or dependency-blocked plan inputs before any branch or worktree is created;
+  keep direct planless requests on the unchanged `ADHOC-*` path.
+- Project `whats-next` state from activity facts, validated plan-linked runtime
+  manifests, closeout records, and durable contributions. Let durable outcomes
+  outrank closeout, runtime, and activity evidence, but resolve contradictions
+  with an explicit read-only reconciliation action instead of silently choosing
+  a state or mutating any source. Exclude completed and cancelled work.
+- Carry an explicit repository key on plan work items, validated against
+  `workspace.yaml`; keep `area` as a human description only. Never resolve a
+  repository from free-form area text.
+- Model review as distinct local-review, publication, published, merge-
+  confirmation, and closeout-ready states instead of a generic missing-remote
+  blocker. Require explicit authorization before publishing, and require the
+  exact reviewed head and reported merge to be reachable from the default target
+  before closeout. Keep `confirm-merge` read-only with respect to Git.
+- Make `configure-workspace` the primary flow for fresh and existing wrappers,
+  keep bootstrap as an explicit internal phase, and retain `initialize-workspace`
+  as a routed compatibility alias. Apply cross-file configuration updates as a
+  recoverable transaction. Full rollback covers caught errors, permission
+  failures, and rename failures; a hard signal or crash mid-rename can leave
+  recoverable `.stage`/`.backup` residue that the next run detects and refuses
+  with manual recovery guidance. Do not claim full crash consistency.
+- Record authoritative PRD, architecture, and repository context as cited,
+  non-overriding source references; external content never overrides workspace
+  or repository instructions.
+
 Append new durable decisions with date, context, and rationale.
