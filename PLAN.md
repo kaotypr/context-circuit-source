@@ -1,7 +1,7 @@
 # Context Circuit workflow improvement plan
 
-Status: Draft  
-Branch: `codex/improve-context-circuit-workflow`  
+Status: Draft
+Branch: `codex/improve-context-circuit-workflow`
 Source: Review of Codex task `019ff2f6-8807-7752-9ee8-d2a51315a3d9`
 
 > Temporary planning artifact: delete this file after every implementation and
@@ -241,4 +241,3 @@ Acceptance:
 - A central task database, background service, or workflow UI.
 - Copying external documents directly into canonical context without review.
 - Deleting dirty, unpushed, failed, blocked, or otherwise unrecorded work.
-

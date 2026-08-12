@@ -1,8 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { access, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { access, cp, lstat, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import test from "node:test";
 import { configureWorkspace } from "../scripts/lib/configure-workspace.js";
 import { finishWork } from "../scripts/lib/finish-work.js";
@@ -11,7 +11,7 @@ import { createPlanDraft, setPlanState } from "../scripts/lib/plans.js";
 import { recordResult } from "../scripts/lib/record-result.js";
 import { confirmMerge, prepareReview, recordReviewPublication } from "../scripts/lib/review-lifecycle.js";
 import { preparePlanTask, type PreparedTask } from "../scripts/lib/run-task.js";
-import type { PlanDraftRequest, ReviewCommand, WorkspaceBootstrapRequest } from "../scripts/lib/types.js";
+import type { PlanDraftRequest, ReviewCommand, TaskBrief, TestExpectation, WorkspaceBootstrapRequest } from "../scripts/lib/types.js";
 import { recommendWhatsNext } from "../scripts/lib/whats-next.js";
 import { requiredWorkspaceDocuments, validateContract } from "../scripts/lib/validation.js";
 import { projectRoot } from "./helpers.js";
@@ -55,6 +55,24 @@ interface CommandEvidence {
   stderr: string;
 }
 
+interface ScopedVerifierInput {
+  contract_version: 1;
+  role: "verifier";
+  read_only: true;
+  task_brief: string;
+  repository: string;
+  worktree: string;
+  branch: string;
+  base_commit: string;
+  worker_result: string;
+  acceptance_criteria: string[];
+  test_expectation: TestExpectation;
+  verification_commands: string[];
+  instruction_paths: string[];
+  result_contract: string;
+  result_path: string;
+}
+
 async function writeJson(path: string, value: unknown): Promise<void> {
   await mkdir(dirname(path), { recursive: true });
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
@@ -74,6 +92,20 @@ function executeReviewCommand(value: ReviewCommand): CommandEvidence {
 
 function concise(value: string): string {
   return value.trim().replace(/\s+/g, " ").slice(0, 300);
+}
+
+function assertInside(root: string, candidate: string, label: string): string {
+  const resolvedRoot = resolve(root);
+  const resolved = resolve(candidate);
+  assert.ok(resolved === resolvedRoot || resolved.startsWith(`${resolvedRoot}${sep}`), `${label} must stay inside the fixture workspace`);
+  return resolved;
+}
+
+async function readRegularJson<T>(root: string, candidate: string, label: string): Promise<T> {
+  const path = assertInside(root, candidate, label);
+  const info = await lstat(path);
+  assert.equal(info.isFile() && !info.isSymbolicLink(), true, `${label} must be a regular file`);
+  return JSON.parse(await readFile(path, "utf8")) as T;
 }
 
 function bootstrapRequest(): WorkspaceBootstrapRequest {
@@ -135,7 +167,7 @@ async function configuredFixture(): Promise<ConfiguredFixture> {
   return { root, repository, cleanup: () => rm(root, { recursive: true, force: true }) };
 }
 
-async function runWorker(root: string, prepared: PreparedTask): Promise<{ head: string; test: CommandEvidence }> {
+async function runWorker(root: string, prepared: PreparedTask): Promise<CommandEvidence> {
   const app = join(prepared.worktree, "src", "App.tsx");
   await writeFile(app, (await readFile(app, "utf8")).replace("'pending'", "'delivered'"), "utf8");
   await git(prepared.worktree, ["add", "src/App.tsx"]);
@@ -153,37 +185,60 @@ async function runWorker(root: string, prepared: PreparedTask): Promise<{ head: 
   });
   const manifest = await recordResult({ workspaceRoot: root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
   assert.equal(manifest.status, "verifying");
-  return { head, test: testRun };
+  return testRun;
 }
 
-async function runIndependentVerifier(root: string, prepared: PreparedTask, head: string): Promise<CommandEvidence> {
+async function runIndependentVerifier(root: string, verifierInputPath: string): Promise<{ testRuns: CommandEvidence[]; resultPath: string }> {
   assert.notEqual(workerIdentity, verifierIdentity);
-  const manifestBefore = JSON.parse(await readFile(prepared.manifest, "utf8"));
-  const base = manifestBefore.repositories[0].base_commit as string;
-  const inspected = execute(prepared.worktree, "git", ["diff", "--check", `${base}...${head}`]);
+
+  // Validate the emitted verifier boundary and its task contract before running
+  // any repository inspection or configured command.
+  const verifier = await readRegularJson<ScopedVerifierInput>(root, verifierInputPath, "Verifier input");
+  assert.equal(verifier.contract_version, 1);
+  assert.equal(verifier.role, "verifier");
+  assert.equal(verifier.read_only, true);
+  assert.match(verifier.repository, /^[a-z][a-z0-9-]*$/);
+  assert.match(verifier.base_commit, /^[a-f0-9]{40,64}$/);
+  assert.ok(verifier.acceptance_criteria.length > 0);
+  assert.ok(verifier.verification_commands.length > 0);
+  assert.ok(verifier.verification_commands.every((command) => command.trim() && !/[\r\n]/.test(command)));
+  assertInside(root, verifier.worktree, "Verifier worktree");
+  assertInside(join(root, ".runtime"), verifier.result_path, "Verifier result path");
+  const brief = await readRegularJson<TaskBrief>(root, verifier.task_brief, "Verifier task brief");
+  assert.deepEqual(await validateContract("task-brief", brief), []);
+  assert.equal(brief.run_id.length > 0, true);
+  const target = brief.repositories.find((candidate) => candidate.name === verifier.repository);
+  assert.ok(target, `Verifier repository ${verifier.repository} must exist in the task brief`);
+  assert.deepEqual(verifier.acceptance_criteria, target.acceptance_criteria);
+  assert.deepEqual(verifier.verification_commands, target.verification_commands);
+  assert.deepEqual(verifier.test_expectation, target.test_expectation);
+
+  const head = await git(verifier.worktree, ["rev-parse", "HEAD"]);
+  assert.equal(await git(verifier.worktree, ["branch", "--show-current"]), verifier.branch);
+  const inspected = execute(verifier.worktree, "git", ["diff", "--check", `${verifier.base_commit}...${head}`]);
   assert.equal(inspected.status, 0, inspected.stderr);
-  const diff = execute(prepared.worktree, "git", ["diff", "--unified=0", `${base}...${head}`, "--", "src/App.tsx"]);
+  const changedFiles = (await git(verifier.worktree, ["diff", "--name-only", `${verifier.base_commit}...${head}`])).split("\n").filter(Boolean);
+  assert.ok(changedFiles.length > 0);
+  assert.ok(changedFiles.every((path) => brief.scope.includes(path)), `Verifier diff escaped task scope: ${changedFiles.join(", ")}`);
+  const diff = execute(verifier.worktree, "git", ["diff", "--unified=0", `${verifier.base_commit}...${head}`, "--", ...changedFiles]);
   assert.equal(diff.status, 0, diff.stderr);
   assert.match(diff.stdout, /selectedBehavior = 'delivered'/);
-  const testRun = execute(prepared.worktree, "npm", ["test"]);
-  assert.equal(testRun.status, 0, testRun.stderr);
-  assert.match(`${testRun.stdout}\n${testRun.stderr}`, /behavior-check: delivered/);
-  const verifier = JSON.parse(await readFile(prepared.verifierInput, "utf8"));
+  const testRuns = verifier.verification_commands.map((command) => execute(verifier.worktree, "sh", ["-lc", command]));
+  for (const testRun of testRuns) {
+    assert.equal(testRun.status, 0, `${testRun.command}: ${testRun.stderr}`);
+    assert.match(`${testRun.stdout}\n${testRun.stderr}`, /behavior-check: delivered/);
+  }
   await writeJson(verifier.result_path, {
-    contract_version: 1, work_id: prepared.workId, run_id: prepared.runId, repository: "frontend", status: "pass",
+    contract_version: 1, work_id: brief.work_id, run_id: brief.run_id, repository: verifier.repository, status: "pass",
     summary: `${verifierIdentity} independently inspected the committed diff and reran the configured command.`,
-    acceptance: [{ criterion: acceptanceCriterion, status: "passed", evidence: `Diff contains delivered behavior; npm test exit ${testRun.status}.` }],
-    checks: [`git diff --check exit ${inspected.status}`, `npm test exit ${testRun.status}: ${concise(testRun.stdout)}`], findings: [], verified_at: "2026-08-12T03:04:00Z",
+    acceptance: verifier.acceptance_criteria.map((criterion) => ({ criterion, status: "passed", evidence: `Exact ${verifier.base_commit}...${head} diff stayed in scope and configured checks passed.` })),
+    checks: [`git diff --check exit ${inspected.status}`, ...testRuns.map((run) => `${run.command} exit ${run.status}: ${concise(run.stdout)}`)], findings: [], verified_at: "2026-08-12T03:04:00Z",
   });
-  const manifest = await recordResult({ workspaceRoot: root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
+  const manifest = await recordResult({ workspaceRoot: root, runId: brief.run_id, repository: verifier.repository, stage: "verifier-result" });
   assert.equal(manifest.status, "passed");
   assert.deepEqual(manifest.execution_events?.slice(-2).map((event) => event.stage), ["worker-result", "verifier-result"]);
   assert.deepEqual(await validateContract("runtime-manifest", manifest), []);
-  const workerResult = JSON.parse(await readFile(JSON.parse(await readFile(prepared.workerInput, "utf8")).result_path, "utf8"));
-  const verifierResult = JSON.parse(await readFile(verifier.result_path, "utf8"));
-  assert.match(workerResult.summary, new RegExp(`^${workerIdentity}`));
-  assert.match(verifierResult.summary, new RegExp(`^${verifierIdentity}`));
-  return testRun;
+  return { testRuns, resultPath: verifier.result_path };
 }
 
 async function preparePassedPlanRun(root: string, discriminator: string): Promise<PreparedTask> {
@@ -196,10 +251,19 @@ async function preparePassedPlanRun(root: string, discriminator: string): Promis
     request: { contract_version: 1, source: { kind: "plan", reference: "context/plans/journey", plan_version: approved.plan_version, approved_digest: approved.approved_digest! }, work_ids: ["JOURNEY-001"] },
     discriminator, now: new Date("2026-08-12T03:02:00Z"),
   });
-  const worker = await runWorker(root, prepared);
-  const verifier = await runIndependentVerifier(root, prepared, worker.head);
-  assert.equal(worker.test.command, verifier.command);
-  assert.equal(worker.test.cwd, verifier.cwd);
+  const workerTest = await runWorker(root, prepared);
+  const emittedVerifier = await readRegularJson<ScopedVerifierInput>(root, prepared.verifierInput, "Verifier input");
+  const tamperedPath = join(root, ".runtime", "runs", prepared.runId, "tampered-verifier-input.json");
+  await writeJson(tamperedPath, { ...emittedVerifier, repository: "backend" });
+  await assert.rejects(runIndependentVerifier(root, tamperedPath), /must exist in the task brief/);
+  await assert.rejects(access(emittedVerifier.result_path));
+  const verifier = await runIndependentVerifier(root, prepared.verifierInput);
+  assert.equal(workerTest.command, verifier.testRuns[0]?.command.replace(/^sh -lc /, ""));
+  assert.equal(workerTest.cwd, verifier.testRuns[0]?.cwd);
+  const workerResult = JSON.parse(await readFile(JSON.parse(await readFile(prepared.workerInput, "utf8")).result_path, "utf8"));
+  const verifierResult = JSON.parse(await readFile(verifier.resultPath, "utf8"));
+  assert.match(workerResult.summary, new RegExp(`^${workerIdentity}`));
+  assert.match(verifierResult.summary, new RegExp(`^${verifierIdentity}`));
   return prepared;
 }
 
