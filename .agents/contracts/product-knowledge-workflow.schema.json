@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/product-knowledge-workflow.schema.json",
+  "title": "Product Knowledge workflow page metadata",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["kind", "title", "owners", "sources", "review_date", "implementation_ownership", "known_gaps"],
+  "properties": {
+    "kind": { "const": "workflow" },
+    "title": { "type": "string", "minLength": 1 },
+    "owners": { "$ref": "#/$defs/nonEmptyStringList" },
+    "sources": { "$ref": "#/$defs/nonEmptyStringList" },
+    "review_date": { "$ref": "#/$defs/date" },
+    "implementation_ownership": { "type": "string", "minLength": 1 },
+    "known_gaps": { "$ref": "#/$defs/stringList" }
+  },
+  "$defs": {
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "stringList": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "nonEmptyStringList": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+  }
+}
