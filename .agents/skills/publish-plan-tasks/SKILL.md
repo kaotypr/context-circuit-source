@@ -5,7 +5,7 @@ description: Publish work items from an explicitly approved numbered plan into a
 
 # Publish plan tasks
 
-1. Read `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, and the complete selected plan. Require explicit human publication intent, approved metadata with a valid digest, and configured `read-tasks` and `create-tasks` access.
+1. Read `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, and the complete selected plan. Require every explicit work-item repository to match a registered key; never resolve a repository from descriptive area text. Require explicit human publication intent, approved metadata with a valid digest, and configured `read-tasks` and `create-tasks` access.
 2. Search the destination read-only for every stable work ID. Normalize only confirmed matches into `plan-publication-discovery`; never infer a mapping from title similarity alone.
 3. Run `node .agents/bin/cc.mjs prepare-plan-publication --plan <plan-id> --discovery <json>`. Present the ordered tasks, hierarchy, dependencies, destination, existing mappings, create actions, and idempotency keys. Stop for human review before external writes.
 4. Create one proposed task at a time through the authorized session MCP/CLI, preserving the stable work ID in its description or metadata. Follow record order so parents and dependencies exist first.

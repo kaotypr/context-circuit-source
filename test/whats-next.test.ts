@@ -11,7 +11,7 @@ import { validateContract } from "../scripts/lib/validation.js";
 import { createTestWorkspace } from "./helpers.js";
 
 function planRequest(workItems: PlanDraftRequest["work_items"] = [
-  { key: "reset", title: "Add reset behavior", area: "frontend", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only" as const, verification_commands: [], acceptance_criteria: ["Reset behavior works."] },
+  { key: "reset", title: "Add reset behavior", area: "application foundation", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only" as const, verification_commands: [], acceptance_criteria: ["Reset behavior works."] },
 ]): PlanDraftRequest {
   return {
     contract_version: 1,
@@ -82,6 +82,18 @@ test("whats-next recommends a dependency-ready item from an approved plan", asyn
   assert.deepEqual(result.recommendation.repositories, ["frontend"]);
   assert.equal(result.no_state_changed, true);
   assert.deepEqual(await validateContract("whats-next-result", result), []);
+});
+
+test("whats-next skips plans whose explicit repository is no longer registered", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, planRequest(), new Date("2026-08-11T08:00:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-11T09:00:00Z"));
+  const workspacePath = join(workspace.root, "workspace.yaml");
+  await writeFile(workspacePath, (await readFile(workspacePath, "utf8")).replace("  frontend:\n", "  replacement:\n"), "utf8");
+  const result = await recommendWhatsNext(workspace.root, null, new Date("2026-08-11T10:00:00Z"));
+  assert.equal(result.recommendation.action, "enable");
+  assert.match(result.warnings.join("\n"), /repository is not registered: frontend/);
 });
 
 test("whats-next ranks urgent work before in-progress and priority-ready work", async (t) => {

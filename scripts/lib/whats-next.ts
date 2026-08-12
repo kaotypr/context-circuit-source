@@ -394,14 +394,15 @@ async function discoverPlanCandidates(
       for (const fact of facts) matchedFacts.add(fact.candidate_id);
       const fact = facts[0];
       const projection = projectedByWork.get(item.work_id);
-      const repositories = fact?.repositories.length ? fact.repositories : (config.repositories[item.repository] ? [item.repository] : []);
+      const repositories = config.repositories[item.repository] ? [item.repository] : [];
+      const activityRepositoryMismatch = Boolean(fact?.repositories.length) && (fact!.repositories.length !== 1 || fact!.repositories[0] !== item.repository);
       const dependencies = item.depends_on.map((dependency) => ({
         reference: dependency,
         state: projectedByWork.get(dependency)?.state === "completed" ? "completed" as const : projectedByWork.has(dependency) ? "pending" as const : "unknown" as const,
       }));
       const planReference = relative(workspaceRoot, join(planDirectory, "README.md"));
       const state = projection?.state ?? "ready";
-      const contradiction = Boolean(projection?.contradiction) || (Boolean(projection) && validation.index.status !== "approved");
+      const contradiction = Boolean(projection?.contradiction) || (Boolean(projection) && validation.index.status !== "approved") || activityRepositoryMismatch;
       const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready" as const, source_reference: `${relative(workspaceRoot, join(planDirectory, validation.index.work_breakdown))}#${item.work_id}` }];
       candidates.push({
         contract_version: 1,
@@ -423,7 +424,7 @@ async function discoverPlanCandidates(
         contract_blocked: fact?.contract_blocked ?? false,
         source_reference: `${relative(workspaceRoot, join(planDirectory, validation.index.work_breakdown))}#${item.work_id}`,
         state_sources: stateSources,
-        risks: [...new Set([...(fact?.risks ?? []), ...(contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : [])])],
+        risks: [...new Set([...(fact?.risks ?? []), ...(activityRepositoryMismatch ? [`Activity repository evidence does not match approved plan repository ${item.repository}.`] : []), ...(contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : [])])],
       });
     }
   }

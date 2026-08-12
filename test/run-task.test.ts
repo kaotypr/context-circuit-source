@@ -228,6 +228,19 @@ test("approved plan selection preserves stable work IDs and approval evidence", 
   assert.deepEqual(passed.plan_work_items?.map((item) => [item.work_id, item.outcome]), [["RESET-001", "passed"]]);
 });
 
+test("plan execution revalidates the explicit repository before creating runtime state", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, { ...planDraft, plan_id: "removed-repository" }, new Date("2026-08-11T07:00:00Z"));
+  const approved = await setPlanState(created.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-11T07:30:00Z"));
+  const workspacePath = join(workspace.root, "workspace.yaml");
+  await writeFile(workspacePath, (await readFile(workspacePath, "utf8")).replace("  frontend:\n", "  replacement:\n"), "utf8");
+  await assert.rejects(preparePlanTask({
+    workspaceRoot: workspace.root,
+    request: { ...planRequest(approved.plan_version, approved.approved_digest!), source: { kind: "plan", reference: "context/plans/removed-repository", plan_version: approved.plan_version, approved_digest: approved.approved_digest! } },
+  }), /repository is not registered: frontend/);
+});
+
 test("non-plan run rejects injected plan work items before mutation", async (t) => {
   const workspace = await createTestWorkspace();
   t.after(workspace.cleanup);

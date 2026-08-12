@@ -634,6 +634,10 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
     throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   }
   const workspaceRoot = resolve(options.workspaceRoot);
+  const config = parseYaml(await readFile(join(workspaceRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
+  await assertValid("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
   const planDirectory = assertInside(join(workspaceRoot, "context", "plans"), resolve(workspaceRoot, options.request.source.reference));
   const validation = await validatePlanDirectory(planDirectory);
   if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
@@ -656,10 +660,6 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
     throw new Error(`${workId} is dependency-blocked by ${item.depends_on.join(", ")}; plan execution currently requires an independently executable item`);
   }
 
-  const config = parseYaml(await readFile(join(workspaceRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
-  await assertValid("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
   if (!config.repositories[item.repository]) throw new Error(`Plan work ${workId} repository is not registered: ${item.repository}`);
 
   const repositoryBases = new Map<string, { path: string; commit: string }>();

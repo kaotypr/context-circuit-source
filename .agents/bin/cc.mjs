@@ -15542,7 +15542,7 @@ function planDraftSemanticErrors(request3, config) {
   }
   return [...new Set(errors2)];
 }
-function planWorkBreakdownSemanticErrors(breakdown) {
+function planWorkBreakdownSemanticErrors(breakdown, config) {
   const errors2 = [];
   const ids = /* @__PURE__ */ new Set();
   for (const item of breakdown.items) {
@@ -15559,6 +15559,7 @@ function planWorkBreakdownSemanticErrors(breakdown) {
       if (!ids.has(dependency)) errors2.push(`${item.work_id} has unknown dependency: ${dependency}`);
       if (dependency === item.work_id) errors2.push(`${item.work_id} cannot depend on itself`);
     }
+    if (config && !config.repositories[item.repository]) errors2.push(`${item.work_id} repository is not registered: ${item.repository}`);
   }
   errors2.push(...cycleErrors(breakdown.items));
   errors2.push(...parentCycleErrors(breakdown.items));
@@ -15574,23 +15575,30 @@ function parsePlanIndex(raw) {
   if (!match) throw new Error("Plan README must begin with YAML frontmatter");
   return (0, import_yaml4.parse)(match[1]);
 }
-function parseWorkBreakdown(raw, index) {
+function parseWorkBreakdown(raw, index, config) {
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
-  const header = lines.indexOf(tableHeader);
-  if (header === -1 || lines[header + 1] !== tableSeparator) {
-    throw new Error("Work breakdown must contain the canonical six-column table and must not add live status columns");
+  const currentHeader = lines.indexOf(tableHeader);
+  const legacyHeader = lines.indexOf(legacyTableHeader);
+  const legacy = currentHeader === -1 && legacyHeader !== -1;
+  const header = currentHeader === -1 ? legacyHeader : currentHeader;
+  if (header === -1 || lines[header + 1] !== (legacy ? legacyTableSeparator : tableSeparator)) {
+    throw new Error("Work breakdown must contain the canonical seven-column table and must not add live status columns");
   }
   const summaries = [];
   for (const line of lines.slice(header + 2)) {
     if (!line.startsWith("|")) break;
     const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
-    if (cells.length !== 6) throw new Error(`Invalid work breakdown row: ${line}`);
-    const [workId, title, parent, dependencies, area, external] = cells;
+    if (cells.length !== (legacy ? 6 : 7)) throw new Error(`Invalid work breakdown row: ${line}`);
+    const [workId, title, parent, dependencies] = cells;
+    const repository = legacy ? null : cells[4];
+    const area = cells[legacy ? 4 : 5];
+    const external = cells[legacy ? 5 : 6];
     summaries.push({
       work_id: workId,
       title,
       parent: parent === "\u2014" ? null : parent,
       depends_on: dependencies === "\u2014" ? [] : dependencies.split(",").map((value2) => value2.trim()),
+      repository,
       area,
       external_reference: external === "\u2014" ? null : external
     });
@@ -15598,15 +15606,27 @@ function parseWorkBreakdown(raw, index) {
   const executionMatch = raw.match(/## Execution contracts\r?\n\r?\n```json\r?\n([\s\S]*?)\r?\n```/);
   if (!executionMatch) throw new Error("Work breakdown must contain the canonical execution contracts JSON block");
   const execution = JSON.parse(executionMatch[1]);
-  if (execution.contract_version !== 1 || !Array.isArray(execution.items)) throw new Error("Invalid work execution contracts block");
+  if (![1, 2].includes(execution.contract_version) || !Array.isArray(execution.items)) throw new Error("Invalid work execution contracts block");
+  if (!legacy && execution.contract_version !== 2) throw new Error("The canonical seven-column work breakdown requires execution contract version 2");
+  if (legacy && execution.contract_version !== 1) throw new Error("The legacy six-column work breakdown requires execution contract version 1");
   const executionById = new Map(execution.items.map((item) => [item.work_id, item]));
   const items = summaries.map((summary2) => {
     const details = executionById.get(summary2.work_id);
     if (!details) throw new Error(`Missing execution contract for ${summary2.work_id}`);
-    return { ...summary2, ...details };
+    let repository = details.repository ?? summary2.repository;
+    if (summary2.repository && details.repository && summary2.repository !== details.repository) {
+      throw new Error(`Repository mismatch for ${summary2.work_id}: table has ${summary2.repository}, execution contract has ${details.repository}`);
+    }
+    if (!repository && legacy && execution.contract_version === 1) {
+      if (!config) throw new Error(`Legacy work item ${summary2.work_id} has no repository; validate it inside a configured workspace or migrate the plan`);
+      repository = config.repositories[summary2.area] ? summary2.area : null;
+      if (!repository) throw new Error(`Legacy work item ${summary2.work_id} has no repository and area '${summary2.area}' is not an exact registered repository key; add an explicit repository through a material plan revision`);
+    }
+    if (!repository) throw new Error(`Work item ${summary2.work_id} has no explicit repository`);
+    return { ...summary2, ...details, repository };
   });
   for (const workId of executionById.keys()) if (!summaries.some((item) => item.work_id === workId)) throw new Error(`Execution contract references unknown work ID: ${workId}`);
-  return { contract_version: 1, plan_id: index.plan_id, work_prefix: index.work_prefix, items };
+  return { contract_version: 2, plan_id: index.plan_id, work_prefix: index.work_prefix, items };
 }
 async function regularFile(path2) {
   try {
@@ -15622,6 +15642,11 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename(p
   let index = null;
   let breakdown = null;
   try {
+    const workspaceRoot18 = resolve7(directory, "../../..");
+    const config = await readData(join5(workspaceRoot18, "workspace.yaml"));
+    const workspaceErrors = contractMessages(await validateContract("workspace", config));
+    workspaceErrors.push(...workspaceSemanticErrors(config));
+    if (workspaceErrors.length > 0) throw new Error(`Invalid workspace configuration: ${workspaceErrors.join("; ")}`);
     const info = await lstat4(directory);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Plan path must be a real directory");
     if (!await regularFile(join5(directory, "README.md"))) throw new Error("Plan README must be a real file");
@@ -15647,9 +15672,9 @@ async function validatePlanDirectory(planDirectory3, expectedPlanId = basename(p
       const digest = materialDigest(material, index.documents);
       if (index.material_digest !== digest) errors2.push("material_digest does not match the numbered plan documents");
       if (index.status === "approved" && index.approved_digest !== digest) errors2.push("approved_digest does not match the approved plan material");
-      breakdown = parseWorkBreakdown(material.get(index.work_breakdown), index);
+      breakdown = parseWorkBreakdown(material.get(index.work_breakdown), index, config);
       errors2.push(...contractMessages(await validateContract("plan-work-breakdown", breakdown)));
-      errors2.push(...planWorkBreakdownSemanticErrors(breakdown));
+      errors2.push(...planWorkBreakdownSemanticErrors(breakdown, config));
     }
   } catch (error) {
     errors2.push(error.message);
@@ -15720,7 +15745,7 @@ ${body}`).join("\n\n")}
 }
 function renderPlan(request3, createdAt) {
   const workItems = allocateWorkItems(request3);
-  const breakdown = { contract_version: 1, plan_id: request3.plan_id, work_prefix: request3.work_prefix, items: workItems };
+  const breakdown = { contract_version: 2, plan_id: request3.plan_id, work_prefix: request3.work_prefix, items: workItems };
   const files = /* @__PURE__ */ new Map();
   files.set("0001-overview.md", renderDocument("Overview", [
     ["Summary", request3.summary],
@@ -15734,9 +15759,9 @@ function renderPlan(request3, createdAt) {
   files.set("0040-delivery.md", renderDocument("Delivery", [["Delivery order", markdownList(request3.delivery, "None recorded.")]]));
   files.set("0050-verification.md", renderDocument("Verification", [["Verification strategy", markdownList(request3.verification, "None recorded.")]]));
   files.set("0070-risks.md", renderDocument("Risks", [["Risks and mitigations", markdownList(request3.risks, "None recorded.")]]));
-  const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "\u2014"} | ${item.depends_on.join(", ") || "\u2014"} | ${item.area} | \u2014 |`).join("\n");
+  const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "\u2014"} | ${item.depends_on.join(", ") || "\u2014"} | ${item.repository} | ${item.area} | \u2014 |`).join("\n");
   const execution = {
-    contract_version: 1,
+    contract_version: 2,
     items: workItems.map(({ work_id, repository, scope, test_scope, test_policy, test_rationale, verification_commands, acceptance_criteria }) => ({
       work_id,
       repository,
@@ -15864,7 +15889,7 @@ async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ 
     approval_required: true
   };
 }
-var import_yaml4, documents, tableHeader, tableSeparator;
+var import_yaml4, documents, tableHeader, tableSeparator, legacyTableHeader, legacyTableSeparator;
 var init_plans = __esm({
   "scripts/lib/plans.ts"() {
     "use strict";
@@ -15880,8 +15905,10 @@ var init_plans = __esm({
       "0070-risks.md",
       "0080-work-breakdown.md"
     ];
-    tableHeader = "| Work ID | Title | Parent | Depends on | Area | External reference |";
-    tableSeparator = "| --- | --- | --- | --- | --- | --- |";
+    tableHeader = "| Work ID | Title | Parent | Depends on | Repository | Area | External reference |";
+    tableSeparator = "| --- | --- | --- | --- | --- | --- | --- |";
+    legacyTableHeader = "| Work ID | Title | Parent | Depends on | Area | External reference |";
+    legacyTableSeparator = "| --- | --- | --- | --- | --- | --- |";
   }
 });
 
@@ -16453,6 +16480,10 @@ async function preparePlanTask(options) {
     throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   }
   const workspaceRoot18 = resolve8(options.workspaceRoot);
+  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
+  await assertValid2("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
   const planDirectory3 = assertInside(join6(workspaceRoot18, "context", "plans"), resolve8(workspaceRoot18, options.request.source.reference));
   const validation = await validatePlanDirectory(planDirectory3);
   if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
@@ -16474,10 +16505,6 @@ async function preparePlanTask(options) {
   if (item.depends_on.length > 0) {
     throw new Error(`${workId} is dependency-blocked by ${item.depends_on.join(", ")}; plan execution currently requires an independently executable item`);
   }
-  const config = (0, import_yaml5.parse)(await readFile6(join6(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid2("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
   if (!config.repositories[item.repository]) throw new Error(`Plan work ${workId} repository is not registered: ${item.repository}`);
   const repositoryBases = /* @__PURE__ */ new Map();
   for (const target of [{ name: item.repository }]) {
@@ -18323,14 +18350,15 @@ async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, lo
       for (const fact2 of facts) matchedFacts.add(fact2.candidate_id);
       const fact = facts[0];
       const projection = projectedByWork.get(item.work_id);
-      const repositories = fact?.repositories.length ? fact.repositories : config.repositories[item.repository] ? [item.repository] : [];
+      const repositories = config.repositories[item.repository] ? [item.repository] : [];
+      const activityRepositoryMismatch = Boolean(fact?.repositories.length) && (fact.repositories.length !== 1 || fact.repositories[0] !== item.repository);
       const dependencies = item.depends_on.map((dependency) => ({
         reference: dependency,
         state: projectedByWork.get(dependency)?.state === "completed" ? "completed" : projectedByWork.has(dependency) ? "pending" : "unknown"
       }));
       const planReference = relative5(workspaceRoot18, join11(planDirectory3, "README.md"));
       const state = projection?.state ?? "ready";
-      const contradiction = Boolean(projection?.contradiction) || Boolean(projection) && validation.index.status !== "approved";
+      const contradiction = Boolean(projection?.contradiction) || Boolean(projection) && validation.index.status !== "approved" || activityRepositoryMismatch;
       const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
       candidates.push({
         contract_version: 1,
@@ -18352,7 +18380,7 @@ async function discoverPlanCandidates(workspaceRoot18, config, activityFacts, lo
         contract_blocked: fact?.contract_blocked ?? false,
         source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
         state_sources: stateSources,
-        risks: [.../* @__PURE__ */ new Set([...fact?.risks ?? [], ...contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : []])]
+        risks: [.../* @__PURE__ */ new Set([...fact?.risks ?? [], ...activityRepositoryMismatch ? [`Activity repository evidence does not match approved plan repository ${item.repository}.`] : [], ...contradiction ? ["Starting implementation before reconciliation could duplicate or overwrite completed work."] : []])]
       });
     }
   }
@@ -18582,11 +18610,11 @@ async function preparePlanPublication(options) {
     const items = ordered(breakdown.items).map((item) => {
       const known = item.external_reference ? { reference: item.external_reference, evidence: "Confirmed mapping already stored in the approved plan." } : discovered.get(item.work_id);
       if (item.external_reference && discovered.get(item.work_id)?.reference !== void 0 && discovered.get(item.work_id).reference !== item.external_reference) throw new Error(`Conflicting external mapping for ${item.work_id}`);
-      return { work_id: item.work_id, title: item.title, parent: item.parent, depends_on: item.depends_on, area: item.area, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
+      return { work_id: item.work_id, title: item.title, parent: item.parent, depends_on: item.depends_on, area: item.area, repository: item.repository, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
     });
     for (const workId of discovered.keys()) if (!items.some((item) => item.work_id === workId)) throw new Error(`Discovered mapping references unknown work ID: ${workId}`);
     const now = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const record = { contract_version: 1, plan_id: index.plan_id, plan_version: index.plan_version, approved_digest: index.approved_digest, provider: options.discovery.provider, destination: safeLine(options.discovery.destination, "Destination"), status: status(items), items, warnings: [], prepared_at: now, updated_at: now };
+    const record = { contract_version: 2, plan_id: index.plan_id, plan_version: index.plan_version, approved_digest: index.approved_digest, provider: options.discovery.provider, destination: safeLine(options.discovery.destination, "Destination"), status: status(items), items, warnings: [], prepared_at: now, updated_at: now };
     await assertValid6("plan-publication-record", record);
     await writeJsonAtomic(path2, record);
     return record;
@@ -18599,9 +18627,10 @@ async function writeMapping(planDirectory3, breakdownName, workId, reference2, n
   const updated = raw.split("\n").map((line) => {
     if (!line.startsWith(`| ${workId} |`)) return line;
     const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
-    if (cells.length !== 6) throw new Error(`Invalid work-breakdown row for ${workId}`);
-    if (cells[5] !== "\u2014" && cells[5] !== reference2) throw new Error(`Plan already maps ${workId} to a different external reference`);
-    cells[5] = reference2;
+    if (![6, 7].includes(cells.length)) throw new Error(`Invalid work-breakdown row for ${workId}`);
+    const referenceCell = cells.length - 1;
+    if (cells[referenceCell] !== "\u2014" && cells[referenceCell] !== reference2) throw new Error(`Plan already maps ${workId} to a different external reference`);
+    cells[referenceCell] = reference2;
     found = true;
     return `| ${cells.join(" | ")} |`;
   }).join("\n");

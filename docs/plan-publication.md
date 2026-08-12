@@ -6,7 +6,15 @@ Task publication is a separate explicit action. The host first searches the conf
 node .agents/bin/cc.mjs prepare-plan-publication --plan <plan-id> --discovery <discovery.json>
 ```
 
-Review the returned destination, hierarchy, dependency-first order, existing mappings, proposed creates, and idempotency keys before authorizing writes. After each confirmed external response, record it:
+Review the returned destination, hierarchy, dependency-first order, explicit
+repository key, descriptive area, existing mappings, proposed creates, and
+idempotency keys before authorizing writes. Preparation revalidates every
+repository key against `workspace.yaml`; an unknown or removed registration
+blocks publication before any external write. After each confirmed external
+response, record it:
+
+Publication record contract version 2 carries both `repository` and `area` for
+each item so external task preparation preserves the same identity boundary.
 
 ```bash
 node .agents/bin/cc.mjs record-plan-publication \

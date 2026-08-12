@@ -130,7 +130,7 @@ export interface PlanWorkItem {
 }
 
 export interface PlanWorkBreakdown {
-  contract_version: 1;
+  contract_version: 2;
   plan_id: string;
   work_prefix: string;
   items: PlanWorkItem[];
@@ -249,6 +249,7 @@ export interface PlanPublicationItem {
   parent: string | null;
   depends_on: string[];
   area: string;
+  repository: string;
   action: "create" | "skip-existing";
   status: "proposed" | "existing" | "created" | "failed";
   external_reference: string | null;
@@ -257,7 +258,7 @@ export interface PlanPublicationItem {
 }
 
 export interface PlanPublicationRecord {
-  contract_version: 1;
+  contract_version: 2;
   plan_id: string;
   plan_version: number;
   approved_digest: string;

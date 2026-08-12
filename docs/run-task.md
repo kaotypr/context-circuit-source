@@ -44,6 +44,9 @@ for every item: repository, implementation and test paths, test policy,
 verification commands, and acceptance criteria. Because that block is numbered
 plan material, approval covers it and material edits invalidate the digest.
 `run-task` derives its brief from those fields and rejects caller overrides.
+The repository comes only from the explicit execution contract and must be an
+exact current key in `workspace.yaml`; descriptive `area` text is never used for
+execution routing.
 
 The conservative initial execution contract allows one dependency-free plan
 item per run. It does not accept caller-supplied dependency-completion evidence;

@@ -15,10 +15,13 @@ node .agents/bin/cc.mjs whats-next
 
 It validates every real directory under `context/plans/`. Plan work items keep
 live state out of plan Markdown. A root item can be ready when its plan is
-approved, its repository resolves to a registered repository, the plan contains
+approved, its explicit repository key resolves to a registered repository, the plan contains
 acceptance criteria, and repository access is available. A dependent item is
 blocked until its prerequisite completion can be verified. Draft plans yield
 an approval action rather than implementation work.
+The descriptive `area` never participates in repository resolution. Invalid or
+legacy-ambiguous plans are skipped with an actionable warning rather than
+guessed from area prefixes.
 
 ## Read-only work-state projection
 

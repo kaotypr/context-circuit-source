@@ -85,11 +85,11 @@ export async function preparePlanPublication(options: PreparePublicationOptions)
     const items = ordered(breakdown.items).map<PlanPublicationItem>((item) => {
       const known = item.external_reference ? { reference: item.external_reference, evidence: "Confirmed mapping already stored in the approved plan." } : discovered.get(item.work_id);
       if (item.external_reference && discovered.get(item.work_id)?.reference !== undefined && discovered.get(item.work_id)!.reference !== item.external_reference) throw new Error(`Conflicting external mapping for ${item.work_id}`);
-      return { work_id: item.work_id, title: item.title, parent: item.parent, depends_on: item.depends_on, area: item.area, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
+      return { work_id: item.work_id, title: item.title, parent: item.parent, depends_on: item.depends_on, area: item.area, repository: item.repository, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
     });
     for (const workId of discovered.keys()) if (!items.some((item) => item.work_id === workId)) throw new Error(`Discovered mapping references unknown work ID: ${workId}`);
     const now = (options.now ?? new Date()).toISOString();
-    const record: PlanPublicationRecord = { contract_version: 1, plan_id: index.plan_id, plan_version: index.plan_version, approved_digest: index.approved_digest!, provider: options.discovery.provider, destination: safeLine(options.discovery.destination, "Destination"), status: status(items), items, warnings: [], prepared_at: now, updated_at: now };
+    const record: PlanPublicationRecord = { contract_version: 2, plan_id: index.plan_id, plan_version: index.plan_version, approved_digest: index.approved_digest!, provider: options.discovery.provider, destination: safeLine(options.discovery.destination, "Destination"), status: status(items), items, warnings: [], prepared_at: now, updated_at: now };
     await assertValid("plan-publication-record", record);
     await writeJsonAtomic(path, record);
     return record;
@@ -103,9 +103,10 @@ async function writeMapping(planDirectory: string, breakdownName: string, workId
   const updated = raw.split("\n").map((line) => {
     if (!line.startsWith(`| ${workId} |`)) return line;
     const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
-    if (cells.length !== 6) throw new Error(`Invalid work-breakdown row for ${workId}`);
-    if (cells[5] !== "—" && cells[5] !== reference) throw new Error(`Plan already maps ${workId} to a different external reference`);
-    cells[5] = reference;
+    if (![6, 7].includes(cells.length)) throw new Error(`Invalid work-breakdown row for ${workId}`);
+    const referenceCell = cells.length - 1;
+    if (cells[referenceCell] !== "—" && cells[referenceCell] !== reference) throw new Error(`Plan already maps ${workId} to a different external reference`);
+    cells[referenceCell] = reference;
     found = true;
     return `| ${cells.join(" | ")} |`;
   }).join("\n");
