@@ -20,6 +20,12 @@ description: Resolve the minimum authoritative, task-scoped context for Context 
    contradictions, open questions, and source citations. Ask only about an
    unknown that materially changes scope or safety; preserve lesser uncertainty
    as an explicit assumption.
-5. Remain read-only. Do not claim work, publish tasks, create branches or
+5. When a Product Knowledge tree exists under `context/`, traverse `PROJECT.md`
+   to only the relevant role, domain, and workflow pages for the request; do not
+   load the whole tree. Reconcile requested sources and repository evidence
+   against those pages. Record every credential-free candidate, contradiction, or
+   gap as ignored runtime discovery evidence under `.runtime/product-knowledge/`;
+   never edit, add, or delete canonical Product Knowledge pages during discovery.
+6. Remain read-only. Do not claim work, publish tasks, create branches or
    worktrees, edit files, commit, push, open pull requests, merge, or deploy.
 

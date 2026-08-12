@@ -8,6 +8,10 @@ function decoded(value: string): string {
   try { return decodeURIComponent(value); } catch { return value; }
 }
 
+export function containsSecret(value: string): boolean {
+  return secretPattern.test(value) || secretPattern.test(decoded(value));
+}
+
 function urlError(value: string, allowedSchemes: Set<string>): string | null {
   let parsed: URL;
   try { parsed = new URL(value); } catch { return "is not a valid URL"; }
