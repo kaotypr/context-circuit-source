@@ -6,7 +6,7 @@ import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
 import { contextReferenceError, remoteReferenceError } from "./safe-reference.js";
 
-export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record", "onboarding-pack"] as const;
+export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "plan-generation-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record", "onboarding-pack"] as const;
 export type SchemaName = (typeof schemaNames)[number];
 
 export const requiredWorkspaceDocuments = [
@@ -37,6 +37,7 @@ export const requiredWorkspaceDocuments = [
   ".agents/contracts/plan-index.schema.json",
   ".agents/contracts/plan-work-breakdown.schema.json",
   ".agents/contracts/plan-draft-request.schema.json",
+  ".agents/contracts/plan-generation-request.schema.json",
   ".agents/contracts/work-candidate.schema.json",
   ".agents/contracts/fake-activity-source.schema.json",
   ".agents/contracts/whats-next-result.schema.json",

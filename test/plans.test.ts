@@ -1,9 +1,9 @@
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { access, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { createPlanDraft, parsePlanIndex, setPlanState, validatePlanDirectory } from "../scripts/lib/plans.js";
-import type { PlanDraftRequest } from "../scripts/lib/types.js";
+import { archivePlan, createPlanDraft, generatePlanBatch, migrateCurrentPlans, parsePlanIndex, setPlanState, validatePlanDirectory } from "../scripts/lib/plans.js";
+import type { PlanDraftRequest, PlanGenerationRequest } from "../scripts/lib/types.js";
 import { createTestWorkspace } from "./helpers.js";
 
 const request: PlanDraftRequest = {
@@ -206,4 +206,79 @@ test("an impact of none must not include a proposed change", async (t) => {
     product_knowledge: { impact: "none", references: [], proposed_change: "Should not be here." },
   };
   await assert.rejects(createPlanDraft(workspace.root, invalid), /must not include a proposed_change/);
+});
+
+const generationRequest: PlanGenerationRequest = {
+  contract_version: 2,
+  source: { kind: "prd", reference: "docs/runtime.md" },
+  plans: [
+    {
+      plan_id: "registry-foundation", title: "Registry foundation", repository: "frontend", work_prefix: "REG",
+      summary: "Create the registry foundation.", assumptions: [], open_questions: [], requirements: ["The registry is exact."],
+      solution: ["Use repository-scoped collections."], delivery: ["Generate the foundation first."], verification: ["Validate the generated inventory."], risks: [],
+      work_items: [{ key: "registry", title: "Create registry", area: "planning", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["The registry is created."] }],
+    },
+    {
+      plan_id: "registry-ui", title: "Registry UI", repository: "frontend", work_prefix: "REGUI", plan_number: 2, depends_on_plans: ["registry-foundation"],
+      summary: "Expose the registry.", assumptions: [], open_questions: [], requirements: ["The registry is visible."], solution: ["Render the registry."], delivery: ["Build on the foundation."], verification: ["Verify the registry."], risks: [],
+      work_items: [{ key: "ui", title: "Render registry", area: "planning", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["The registry is visible."] }],
+    },
+  ],
+};
+
+test("root generation creates ordered peer plans in one exact repository collection", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, generationRequest, new Date("2026-08-14T08:30:00Z"));
+  assert.equal(generated.atomic, true);
+  assert.deepEqual(generated.plans.map((plan) => plan.plan_number), [1, 2]);
+  assert.equal(generated.plans.every((plan) => plan.repository_collection === "frontend-plans"), true);
+  assert.equal(generated.plans[0]?.directory.endsWith("plans/frontend-plans/001-registry-foundation"), true);
+  assert.equal(generated.plans[1]?.directory.endsWith("plans/frontend-plans/002-registry-ui"), true);
+  for (const plan of generated.plans) {
+    const validation = await validatePlanDirectory(plan.directory);
+    assert.deepEqual(validation.errors, []);
+    assert.equal(validation.index?.contract_version, 2);
+    assert.equal(validation.work_breakdown?.items.length, 1);
+  }
+  assert.match(await readFile(join(workspace.root, "plans", "README.md"), "utf8"), /frontend-plans/);
+  assert.match(await readFile(join(generated.plans[0]!.directory, "tasks", "REG-001.md"), "utf8"), /task_id: REG-001/);
+});
+
+test("root generation refuses a conceptual collection and leaves no partial plan output", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const invalid = structuredClone(generationRequest);
+  invalid.plans[0]!.repository_collection = "foundation-plans";
+  await assert.rejects(generatePlanBatch(workspace.root, invalid), /exact registered collection/);
+  await assert.rejects(access(join(workspace.root, "plans")));
+});
+
+test("BAU plans use an independent collection sequence and explicit archive moves", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const request = structuredClone(generationRequest);
+  request.plans = [structuredClone(request.plans[0]!)];
+  request.plans[0]!.plan_id = "maintenance-refresh";
+  request.plans[0]!.track = "bau";
+  const generated = await generatePlanBatch(workspace.root, request);
+  const plan = generated.plans[0]!;
+  await setPlanState(plan.directory, { kind: "approve", approved_by: "owner" });
+  const archived = await archivePlan(workspace.root, plan.plan_reference, "owner", "Explicitly archived for test coverage.");
+  assert.equal(archived.destination.endsWith("archived/plans/frontend-plans/__BAU__/maintenance-refresh"), true);
+  assert.equal((await validatePlanDirectory(archived.destination)).index?.status, "archived");
+  await assert.rejects(access(plan.directory));
+});
+
+test("current context plans migrate once to the root collection while preserving work IDs", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const legacy = await createPlanDraft(workspace.root, request, new Date("2026-08-14T10:00:00Z"));
+  await setPlanState(legacy.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-14T10:00:01Z"));
+  const migrated = await migrateCurrentPlans(workspace.root, new Date("2026-08-14T10:01:00Z"));
+  assert.equal(migrated.migrated.length, 1);
+  assert.equal(migrated.migrated[0]!.repository_collection, "frontend-plans");
+  assert.deepEqual(migrated.migrated[0]!.work_ids, ["BILLING-001", "BILLING-010"]);
+  assert.equal((await validatePlanDirectory(migrated.migrated[0]!.directory)).index?.status, "approved");
+  await assert.rejects(access(join(workspace.root, "context", "plans", "billing-v2")));
 });

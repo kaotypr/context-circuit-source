@@ -129,6 +129,15 @@ export interface ActivityLifecycleRecord {
 
 export type PlanSourceKind = "idea" | "prd" | "document" | "issue" | "pull-request";
 
+export type PlanTrack = "epic" | "bau";
+export type PlanLifecycleStatus = "draft" | "approved" | "in-progress" | "blocked" | "review-ready" | "merge-pending" | "completed" | "archived";
+
+export interface PlanConnection {
+  type: "depends-on" | "integrates-with" | "blocks" | "related" | "supersedes";
+  target: string;
+  description?: string;
+}
+
 export type ProductKnowledgeImpact =
   | "none"
   | "documentation-correction"
@@ -153,10 +162,10 @@ export interface TaskContextPackage {
 }
 
 export interface PlanIndex {
-  contract_version: 1;
+  contract_version: 1 | 2;
   plan_id: string;
   title: string;
-  status: "draft" | "approved";
+  status: PlanLifecycleStatus;
   plan_version: number;
   approved_at: string | null;
   approved_by: string | null;
@@ -170,6 +179,20 @@ export interface PlanIndex {
   created_at: string;
   updated_at: string;
   product_knowledge?: ProductKnowledgePlanDeclaration;
+  repository_collection?: string;
+  track?: PlanTrack;
+  plan_number?: number;
+  plan_reference?: string;
+  source_reference?: string;
+  status_updated_at?: string;
+  status_reason?: string;
+  status_actor?: string;
+  status_evidence?: string | null;
+  archived_at?: string | null;
+  affected_repositories?: string[];
+  depends_on_plans?: string[];
+  connections?: PlanConnection[];
+  task_index?: string;
 }
 
 export interface PlanWorkItem {
@@ -186,6 +209,9 @@ export interface PlanWorkItem {
   verification_commands: string[];
   acceptance_criteria: string[];
   external_reference: string | null;
+  description?: string;
+  subtasks?: string[];
+  connections?: PlanConnection[];
 }
 
 export interface PlanWorkBreakdown {
@@ -208,7 +234,7 @@ export type CandidateKind =
 
 export type CandidateState = "ready" | "in-progress" | "review" | "closeout" | "failed" | "completed" | "cancelled";
 export type DependencyState = "completed" | "pending" | "unknown";
-export type CandidatePlanState = "approved" | "draft" | "not-applicable" | "unknown";
+export type CandidatePlanState = PlanLifecycleStatus | "not-applicable" | "unknown";
 
 export interface WorkCandidate {
   contract_version: 1;
@@ -264,6 +290,7 @@ export interface WhatsNextResult {
 
 export interface PlanDraftWorkItem {
   key: string;
+  work_id?: string;
   title: string;
   area: string;
   repository: string;
@@ -275,6 +302,9 @@ export interface PlanDraftWorkItem {
   acceptance_criteria: string[];
   parent?: string;
   depends_on?: string[];
+  description?: string;
+  subtasks?: string[];
+  connections?: PlanConnection[];
 }
 
 export interface PlanDraftRequest {
@@ -294,6 +324,37 @@ export interface PlanDraftRequest {
   risks: string[];
   work_items: PlanDraftWorkItem[];
   product_knowledge?: ProductKnowledgePlanDeclaration;
+}
+
+export interface PlanGenerationDefinition extends Omit<PlanDraftRequest, "contract_version" | "plan_id" | "title" | "source" | "work_prefix" | "affected_repositories"> {
+  plan_id: string;
+  title: string;
+  repository: string;
+  repository_collection?: string;
+  track?: PlanTrack;
+  plan_number?: number;
+  slug?: string;
+  source?: { kind: PlanSourceKind; reference: string };
+  work_prefix: string;
+  affected_repositories?: string[];
+  depends_on_plans?: string[];
+  connections?: PlanConnection[];
+}
+
+export interface PlanGenerationRequest {
+  contract_version: 2;
+  source: { kind: PlanSourceKind; reference: string };
+  plans: PlanGenerationDefinition[];
+}
+
+export interface PlanExecutionRequest {
+  contract_version: 1;
+  source: {
+    kind: "plan";
+    reference: string;
+    plan_version: number;
+    approved_digest: string;
+  };
 }
 
 export interface PlanPublicationDiscovery {
@@ -559,7 +620,7 @@ export interface CloseoutRecord {
 }
 
 export interface RuntimeManifest {
-  contract_version: 1;
+  contract_version: 1 | 2;
   work_id: string;
   run_id: string;
   source_kind: "direct-request" | "plan" | "issue" | "pull-request" | "activity-task";
@@ -573,6 +634,20 @@ export interface RuntimeManifest {
     repository: string;
     depends_on: string[];
     outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
+    task_input?: string;
+    verifier_input?: string;
+  }>;
+  plan_reference?: string;
+  plan_id?: string;
+  plan_version?: number;
+  approved_digest?: string;
+  task_graph?: Array<{
+    work_id: string;
+    repository: string;
+    depends_on: string[];
+    outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
+    worker_input: string;
+    verifier_input: string;
   }>;
   evidence: string[];
   warnings: string[];
