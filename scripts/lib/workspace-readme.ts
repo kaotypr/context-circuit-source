@@ -39,8 +39,9 @@ ${repositoryRows(config)}
 
 - Configure this wrapper: \`$cc-configure-workspace\` (Codex) or \`/cc-configure-workspace\` (Claude Code).
 - Choose reviewed work: \`$cc-whats-next\`.
-- Run explicitly selected work: \`$cc-run-task\`.
-- Create an optional reviewed plan: \`$cc-create-plan\`.
+- Execute an approved numbered plan: \`$cc-execute-plan\`.
+- Run one rare manual task: \`$cc-run-task\`.
+- Create and review numbered plans: \`$cc-create-plan\`.
 - Curate completed-work learning: \`$cc-sync-context\`.
 
 ## Project context
@@ -50,7 +51,7 @@ ${repositoryRows(config)}
 - [Conventions](context/CONVENTIONS.md)
 - [Decisions](context/DECISIONS.md)
 ${sourceLinks(config)}
-- [Approved and draft plans](context/plans/)
+- [Root plan roadmap](plans/)
 
 Workspace mode: **${config.workspace.mode}**. Review mode: **${config.workflow.review_mode ?? (config.workflow.wrapper_change_policy === "pull-request" ? "remote" : "local")}**.
 ${managedEnd}`;

@@ -10,6 +10,7 @@ import { projectRoot } from "./helpers.js";
 const hostWorkflows = [
   "cc-configure-workspace",
   "cc-create-plan",
+  "cc-execute-plan",
   "cc-finish-work",
   "cc-gather-context",
   "cc-import-context",
@@ -23,6 +24,7 @@ const hostWorkflows = [
 const displayLabels = new Map([
   ["cc-configure-workspace", "CC Configure Workspace"],
   ["cc-create-plan", "CC Create Plan"],
+  ["cc-execute-plan", "CC Execute Plan"],
   ["cc-finish-work", "CC Finish Work"],
   ["cc-gather-context", "CC Gather Context"],
   ["cc-import-context", "CC Import Context"],
@@ -130,7 +132,7 @@ test("distributable and release archive contain only wrapper inputs", async () =
   await assert.rejects(access(join(destination, "repositories")));
   await assert.rejects(access(join(destination, "agents", "frontend.md")));
   const distributedDocs = (await readdir(join(destination, "docs"))).sort();
-  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "context-sync.md", "getting-started.md", "product-knowledge.md", "using-the-wrapper.md"]);
+  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "context-sync.md", "execute-plan.md", "finish-work.md", "getting-started.md", "planning.md", "product-knowledge.md", "review-lifecycle.md", "run-task.md", "using-the-wrapper.md", "whats-next.md"]);
   assert.match(await readFile(join(destination, "workspace.yaml"), "utf8"), /repositories: \{\}/);
   assert.doesNotMatch(await readFile(join(destination, ".gitignore"), "utf8"), /repositories\/frontend/);
   assert.match(await readFile(join(destination, "context", "PROJECT.md"), "utf8"), /has not been initialized/);

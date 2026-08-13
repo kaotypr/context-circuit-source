@@ -3,9 +3,10 @@
 `whats-next` recommends one executable task, or the smallest concrete action
 needed to make known work executable. It never claims a task, edits a plan,
 creates runtime records, branches, or worktrees, and never invokes an activity
-provider. Explicit execution remains a separate `run-task` request.
+provider. For approved numbered plans, the executable action is `execute-plan`;
+`run-task` remains only a rare manual single-task escape hatch.
 
-## Local approved plans
+## Root roadmap and repository collections
 
 Run the deterministic selector from the wrapper root:
 
@@ -13,7 +14,8 @@ Run the deterministic selector from the wrapper root:
 node .agents/bin/cc.mjs whats-next
 ```
 
-It validates every real directory under `context/plans/`. Plan work items keep
+It validates every real numbered plan under `plans/<repository-key>-plans/` and
+its `__BAU__` track. Plan work items keep
 live state out of plan Markdown. A root item can be ready when its plan is
 approved, its explicit repository key resolves to a registered repository, the plan contains
 acceptance criteria, and repository access is available. A dependent item is

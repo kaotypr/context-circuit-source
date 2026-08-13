@@ -1,5 +1,9 @@
 Read and follow the canonical `.agents/skills/cc-run-task/SKILL.md`.
 
+This is a rare manual single-task escape hatch. Use `cc-execute-plan` for an
+approved numbered plan and never use this command to advance plan lifecycle,
+review, or closeout.
+
 After the deterministic preparation command succeeds, launch a fresh Claude Code
 worker with only the emitted worker-input JSON and its referenced instruction
 files. Launch a separate fresh, read-only verifier with only verifier-input JSON.

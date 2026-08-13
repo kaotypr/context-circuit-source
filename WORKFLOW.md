@@ -22,12 +22,17 @@ nothing is executable, it recommends the smallest source-backed enabling
 action. Recommendation never claims work; explicit `run-task` selection is a
 separate human gate.
 
-`run-task` prepares isolated work but does not launch a provider SDK, push,
+`execute-plan` is the core approved-plan workflow: it prepares one cumulative
+runtime per numbered plan, schedules tasks by dependency, invokes a holistic
+verifier, and prepares one review handoff per affected repository. It does not
+launch a provider SDK, push,
 open a pull request, merge, or deploy. A fresh worker implements in its assigned
 worktree. A separate fresh verifier inspects the result without modifying it.
 The host-neutral result recorder validates both roles and advances the runtime
 manifest through `running`, `verifying`, and a verifier outcome. Runtime evidence
 remains ignored and preserved until deliberate closeout.
+`run-task` is retained only as a rare manual escape hatch for one exact task; it
+must not advance plan lifecycle, holistic review, publication, merge, or closeout.
 
 Passing work advances through local review, optional explicitly authorized
 publication, human merge, and verified merge confirmation. Missing `origin`

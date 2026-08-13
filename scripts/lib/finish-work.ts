@@ -391,7 +391,7 @@ async function cleanupBlockers(workspaceRoot: string, config: WorkspaceConfig, r
   return blockers;
 }
 
-async function refreshTarget(workspaceRoot: string, config: WorkspaceConfig, repository: RuntimeRepository): Promise<CloseoutRecord["refresh"]> {
+async function refreshTarget(workspaceRoot: string, config: WorkspaceConfig, repository: RuntimeRepository): Promise<NonNullable<CloseoutRecord["refresh"]>> {
   const baseRepository = assertInside(workspaceRoot, join(workspaceRoot, repository.base_path));
   if (await git(baseRepository, ["status", "--porcelain=v1", "--untracked-files=normal"])) throw new Error("Cannot refresh a dirty base repository");
   const branch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
@@ -438,8 +438,9 @@ async function closePreparedRun(workspaceRoot: string, manifestPath: string, man
   return closed;
 }
 
-async function completePlanAfterCloseout(workspaceRoot: string, manifest: RuntimeManifest, evidence: string, now: Date): Promise<void> {
+async function completePlanAfterCloseout(workspaceRoot: string, manifest: RuntimeManifest, evidence: string, closeout: CloseoutRecord, now: Date): Promise<void> {
   if (manifest.source_kind !== "plan" || !manifest.plan_reference || !manifest.repositories.every((repository) => repository.status === "closed")) return;
+  if (closeout.outcome === "merged" && !closeout.refresh) return;
   const planDirectory = await resolveRootPlanDirectory(workspaceRoot, manifest.plan_reference);
   await setPlanState(planDirectory, { kind: "lifecycle", status: "completed", reason: "All affected repositories completed human merge closeout and target refresh.", actor: "engine", evidence }, now);
 }
@@ -469,10 +470,21 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       const existing = await readJsonRegularInside<CloseoutRecord>(runtimeRoot, repository.closeout_record, "Closeout record");
       await assertValid("closeout-record", existing);
       if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
+      if (existing.status === "closed") {
+        if (options.refresh && existing.outcome === "merged" && !existing.refresh) {
+          const refreshed = await refreshTarget(workspaceRoot, config, repository);
+          const updated: CloseoutRecord = { ...existing, refresh: refreshed, updated_at: invocationTime.toISOString() };
+          await assertValid("closeout-record", updated);
+          await writeJsonAtomic(recordPath, updated);
+          await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, updated, invocationTime);
+          return updated;
+        }
+        return existing;
+      }
       if (existing.outcome === "merged") await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit);
-      if (existing.status === "closed" || !options.cleanup) return existing;
+      if (!options.cleanup) return existing;
       const closed = await closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, existing, config, invocationTime.toISOString(), Boolean(options.refresh));
-      await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, invocationTime);
+      await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, closed, invocationTime);
       return closed;
     }
     const repositoryStatus = repository.status ?? manifest.status;
@@ -545,7 +557,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
     await writeJsonAtomic(manifestPath, manifest);
     if (!options.cleanup) return record;
     const closed = await closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, record, config, preparedAt, Boolean(options.refresh));
-    await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, invocationTime);
+    await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, closed, invocationTime);
     return closed;
   });
 }
