@@ -1,4 +1,0 @@
-interface:
-  display_name: "Run Task"
-  short_description: "Prepare and coordinate an isolated planless task"
-  default_prompt: "Use $w-run-task to prepare this explicit task in an isolated repository worktree."

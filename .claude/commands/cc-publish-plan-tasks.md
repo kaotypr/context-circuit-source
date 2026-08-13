@@ -1,0 +1,1 @@
+Read and follow `.agents/skills/cc-publish-plan-tasks/SKILL.md`. Use authorized Claude Code session tools only for read-only discovery and explicitly approved task creation. Do not duplicate publication, ordering, mapping, or retry logic in this adapter.

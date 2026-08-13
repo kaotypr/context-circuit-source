@@ -11,7 +11,7 @@ scripts, and thin host adapter.
 
 Both hosts:
 
-- Read their thin adapter and the canonical `.agents/skills/w-create-plan/SKILL.md`.
+- Read their thin adapter and the canonical `.agents/skills/cc-create-plan/SKILL.md`.
 - Normalized the same source into a valid draft request.
 - Created exactly eight plan files without touching product code.
 - Produced a draft version 1 with `RETRY-001`, `RETRY-010`, and `RETRY-020`.

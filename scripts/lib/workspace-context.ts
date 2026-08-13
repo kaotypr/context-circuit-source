@@ -1,7 +1,7 @@
 import type { WorkspaceBootstrapContext } from "./types.js";
 
 export const neutralWorkspaceContext: WorkspaceBootstrapContext = {
-  project_summary: "This workspace has not been initialized. Run the w-initialize-workspace skill to record the product purpose and authoritative sources.",
+  project_summary: "This workspace has not been initialized. Run the cc-initialize-workspace skill to record the product purpose and authoritative sources.",
   architecture: [],
   conventions: [],
   decisions: [],

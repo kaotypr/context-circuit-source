@@ -8,9 +8,9 @@ documents.
 
 ## Create a draft
 
-Invoke `$w-create-plan` in Codex or `/w-create-plan` in Claude Code with a PRD,
+Invoke `$cc-create-plan` in Codex or `/cc-create-plan` in Claude Code with a PRD,
 document, issue, pull request, or explicit idea. Both adapters delegate to
-`.agents/skills/w-create-plan/SKILL.md`; planning rules do not live in host files.
+`.agents/skills/cc-create-plan/SKILL.md`; planning rules do not live in host files.
 
 The host gathers relevant context and normalizes it into a temporary JSON file
 matching `.agents/contracts/plan-draft-request.schema.json`. A minimal example is:
@@ -112,8 +112,8 @@ workflows.
 
 ## Manual two-host proof
 
-For Codex, invoke `$w-create-plan` with the same source and inspect the generated
-files and validation output. For Claude Code, invoke `/w-create-plan` with that
+For Codex, invoke `$cc-create-plan` with the same source and inspect the generated
+files and validation output. For Claude Code, invoke `/cc-create-plan` with that
 source in a clean wrapper copy. Confirm both hosts create the same frontmatter
 contract, document names, table columns, and work-ID allocation; confirm a
 second creation attempt refuses to overwrite the plan. Approval remains a human

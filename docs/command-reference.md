@@ -22,14 +22,14 @@ arguments. The principal skill-to-command mappings are:
 
 | Human action | Codex | Claude Code | Deterministic command |
 | --- | --- | --- | --- |
-| Configure | `$w-configure-workspace` | `/w-configure-workspace` | `configure-workspace` |
-| Initialize (compatibility) | `$w-initialize-workspace` | `/w-initialize-workspace` | `initialize-workspace` |
-| Gather context (read-only) | `$w-gather-context` | `/w-gather-context` | host read-only tools |
-| Plan | `$w-create-plan` | `/w-create-plan` | `create-plan` |
-| Recommend work | `$w-whats-next` | `/w-whats-next` | `whats-next` |
-| Run scoped work | `$w-run-task` | `/w-run-task` | `run-task` |
-| Finish a run | `$w-finish-work` | `/w-finish-work` | `finish-work` |
-| Curate context | `$w-sync-context` | `/w-sync-context` | `sync-context` |
+| Configure | `$cc-configure-workspace` | `/cc-configure-workspace` | `configure-workspace` |
+| Initialize (compatibility) | `$cc-initialize-workspace` | `/cc-initialize-workspace` | `initialize-workspace` |
+| Gather context (read-only) | `$cc-gather-context` | `/cc-gather-context` | host read-only tools |
+| Plan | `$cc-create-plan` | `/cc-create-plan` | `create-plan` |
+| Recommend work | `$cc-whats-next` | `/cc-whats-next` | `whats-next` |
+| Run scoped work | `$cc-run-task` | `/cc-run-task` | `run-task` |
+| Finish a run | `$cc-finish-work` | `/cc-finish-work` | `finish-work` |
+| Curate context | `$cc-sync-context` | `/cc-sync-context` | `sync-context` |
 | Onboarding pack | host skill | host skill | `onboarding-pack` |
 
 `onboarding-pack --roles <role[,role...]>` generates a revision-stamped Product

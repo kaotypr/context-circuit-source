@@ -73,9 +73,9 @@ activity-provider SDK.
 
 ## Manual host proof
 
-In Codex, invoke `$w-whats-next`. In Claude Code, invoke `/w-whats-next`. Use the
+In Codex, invoke `$cc-whats-next`. In Claude Code, invoke `/cc-whats-next`. Use the
 same wrapper state and, when testing activity ordering, the same fixture path.
-Confirm both hosts delegate to `.agents/skills/w-whats-next/SKILL.md`, produce the
+Confirm both hosts delegate to `.agents/skills/cc-whats-next/SKILL.md`, produce the
 same recommendation and alternatives, cite the same readiness evidence, and
 say that no state changed. Before and after each run, compare `git status
 --short`, `git worktree list --porcelain`, and the relevant plan files. No task

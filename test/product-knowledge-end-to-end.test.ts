@@ -133,7 +133,7 @@ test("an existing wrapper without Product Knowledge stays valid", async () => {
 });
 
 test("host adapters remain thin delegates to the canonical Product Knowledge behavior", async () => {
-  for (const skill of ["w-gather-context", "w-sync-context", "w-create-plan", "w-initialize-workspace"]) {
+  for (const skill of ["cc-gather-context", "cc-sync-context", "cc-create-plan", "cc-initialize-workspace"]) {
     const codex = await readFile(join(projectRoot, ".codex", "skills", skill, "SKILL.md"), "utf8");
     assert.match(codex, new RegExp(`\\.agents/skills/${skill}/SKILL\\.md`));
     const claude = await readFile(join(projectRoot, ".claude", "commands", `${skill}.md`), "utf8");

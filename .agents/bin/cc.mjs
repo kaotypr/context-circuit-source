@@ -48,7 +48,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var define_CC_TEMPLATE_INVENTORY_default;
 var init_define_CC_TEMPLATE_INVENTORY = __esm({
   "<define:__CC_TEMPLATE_INVENTORY__>"() {
-    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/onboarding-pack.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/product-knowledge-candidate.schema.json", ".agents/contracts/product-knowledge-domain.schema.json", ".agents/contracts/product-knowledge-project.schema.json", ".agents/contracts/product-knowledge-role.schema.json", ".agents/contracts/product-knowledge-sync-record.schema.json", ".agents/contracts/product-knowledge-workflow.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/task-context-package.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/w-configure-workspace/SKILL.md", ".agents/skills/w-configure-workspace/agents/openai.yaml", ".agents/skills/w-create-plan/SKILL.md", ".agents/skills/w-create-plan/agents/openai.yaml", ".agents/skills/w-finish-work/SKILL.md", ".agents/skills/w-finish-work/agents/openai.yaml", ".agents/skills/w-gather-context/SKILL.md", ".agents/skills/w-gather-context/agents/openai.yaml", ".agents/skills/w-initialize-workspace/SKILL.md", ".agents/skills/w-initialize-workspace/agents/openai.yaml", ".agents/skills/w-publish-plan-tasks/SKILL.md", ".agents/skills/w-publish-plan-tasks/agents/openai.yaml", ".agents/skills/w-run-task/SKILL.md", ".agents/skills/w-run-task/agents/openai.yaml", ".agents/skills/w-sync-context/SKILL.md", ".agents/skills/w-sync-context/agents/openai.yaml", ".agents/skills/w-whats-next/SKILL.md", ".agents/skills/w-whats-next/agents/openai.yaml", ".agents/templates/product-knowledge/GLOSSARY.md", ".agents/templates/product-knowledge/PROJECT.md", ".agents/templates/product-knowledge/domains/domain/README.md", ".agents/templates/product-knowledge/domains/domain/workflows/workflow.md", ".agents/templates/product-knowledge/roles/README.md", ".agents/templates/product-knowledge/roles/role.md", ".claude/commands/w-configure-workspace.md", ".claude/commands/w-create-plan.md", ".claude/commands/w-finish-work.md", ".claude/commands/w-gather-context.md", ".claude/commands/w-initialize-workspace.md", ".claude/commands/w-publish-plan-tasks.md", ".claude/commands/w-run-task.md", ".claude/commands/w-sync-context.md", ".claude/commands/w-whats-next.md", ".codex/skills/w-configure-workspace/SKILL.md", ".codex/skills/w-create-plan/SKILL.md", ".codex/skills/w-finish-work/SKILL.md", ".codex/skills/w-gather-context/SKILL.md", ".codex/skills/w-initialize-workspace/SKILL.md", ".codex/skills/w-publish-plan-tasks/SKILL.md", ".codex/skills/w-run-task/SKILL.md", ".codex/skills/w-sync-context/SKILL.md", ".codex/skills/w-whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/product-knowledge.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
+    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/onboarding-pack.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/product-knowledge-candidate.schema.json", ".agents/contracts/product-knowledge-domain.schema.json", ".agents/contracts/product-knowledge-project.schema.json", ".agents/contracts/product-knowledge-role.schema.json", ".agents/contracts/product-knowledge-sync-record.schema.json", ".agents/contracts/product-knowledge-workflow.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/task-context-package.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/cc-configure-workspace/SKILL.md", ".agents/skills/cc-configure-workspace/agents/openai.yaml", ".agents/skills/cc-create-plan/SKILL.md", ".agents/skills/cc-create-plan/agents/openai.yaml", ".agents/skills/cc-finish-work/SKILL.md", ".agents/skills/cc-finish-work/agents/openai.yaml", ".agents/skills/cc-gather-context/SKILL.md", ".agents/skills/cc-gather-context/agents/openai.yaml", ".agents/skills/cc-initialize-workspace/SKILL.md", ".agents/skills/cc-initialize-workspace/agents/openai.yaml", ".agents/skills/cc-publish-plan-tasks/SKILL.md", ".agents/skills/cc-publish-plan-tasks/agents/openai.yaml", ".agents/skills/cc-run-task/SKILL.md", ".agents/skills/cc-run-task/agents/openai.yaml", ".agents/skills/cc-sync-context/SKILL.md", ".agents/skills/cc-sync-context/agents/openai.yaml", ".agents/skills/cc-whats-next/SKILL.md", ".agents/skills/cc-whats-next/agents/openai.yaml", ".agents/templates/product-knowledge/GLOSSARY.md", ".agents/templates/product-knowledge/PROJECT.md", ".agents/templates/product-knowledge/domains/domain/README.md", ".agents/templates/product-knowledge/domains/domain/workflows/workflow.md", ".agents/templates/product-knowledge/roles/README.md", ".agents/templates/product-knowledge/roles/role.md", ".claude/commands/cc-configure-workspace.md", ".claude/commands/cc-create-plan.md", ".claude/commands/cc-finish-work.md", ".claude/commands/cc-gather-context.md", ".claude/commands/cc-initialize-workspace.md", ".claude/commands/cc-publish-plan-tasks.md", ".claude/commands/cc-run-task.md", ".claude/commands/cc-sync-context.md", ".claude/commands/cc-whats-next.md", ".codex/skills/cc-configure-workspace/SKILL.md", ".codex/skills/cc-create-plan/SKILL.md", ".codex/skills/cc-finish-work/SKILL.md", ".codex/skills/cc-gather-context/SKILL.md", ".codex/skills/cc-initialize-workspace/SKILL.md", ".codex/skills/cc-publish-plan-tasks/SKILL.md", ".codex/skills/cc-run-task/SKILL.md", ".codex/skills/cc-sync-context/SKILL.md", ".codex/skills/cc-whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/product-knowledge.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
   }
 });
 
@@ -14886,33 +14886,33 @@ var init_validation = __esm({
       ".agents/contracts/task-context-package.schema.json",
       ".agents/contracts/product-knowledge-sync-record.schema.json",
       ".agents/contracts/onboarding-pack.schema.json",
-      ".agents/skills/w-initialize-workspace/SKILL.md",
-      ".agents/skills/w-configure-workspace/SKILL.md",
-      ".agents/skills/w-gather-context/SKILL.md",
-      ".agents/skills/w-run-task/SKILL.md",
-      ".agents/skills/w-finish-work/SKILL.md",
-      ".agents/skills/w-create-plan/SKILL.md",
-      ".agents/skills/w-whats-next/SKILL.md",
-      ".agents/skills/w-publish-plan-tasks/SKILL.md",
-      ".agents/skills/w-sync-context/SKILL.md",
-      ".codex/skills/w-initialize-workspace/SKILL.md",
-      ".codex/skills/w-configure-workspace/SKILL.md",
-      ".codex/skills/w-gather-context/SKILL.md",
-      ".codex/skills/w-run-task/SKILL.md",
-      ".codex/skills/w-finish-work/SKILL.md",
-      ".codex/skills/w-create-plan/SKILL.md",
-      ".codex/skills/w-whats-next/SKILL.md",
-      ".codex/skills/w-publish-plan-tasks/SKILL.md",
-      ".codex/skills/w-sync-context/SKILL.md",
-      ".claude/commands/w-initialize-workspace.md",
-      ".claude/commands/w-configure-workspace.md",
-      ".claude/commands/w-gather-context.md",
-      ".claude/commands/w-run-task.md",
-      ".claude/commands/w-finish-work.md",
-      ".claude/commands/w-create-plan.md",
-      ".claude/commands/w-whats-next.md",
-      ".claude/commands/w-publish-plan-tasks.md",
-      ".claude/commands/w-sync-context.md",
+      ".agents/skills/cc-initialize-workspace/SKILL.md",
+      ".agents/skills/cc-configure-workspace/SKILL.md",
+      ".agents/skills/cc-gather-context/SKILL.md",
+      ".agents/skills/cc-run-task/SKILL.md",
+      ".agents/skills/cc-finish-work/SKILL.md",
+      ".agents/skills/cc-create-plan/SKILL.md",
+      ".agents/skills/cc-whats-next/SKILL.md",
+      ".agents/skills/cc-publish-plan-tasks/SKILL.md",
+      ".agents/skills/cc-sync-context/SKILL.md",
+      ".codex/skills/cc-initialize-workspace/SKILL.md",
+      ".codex/skills/cc-configure-workspace/SKILL.md",
+      ".codex/skills/cc-gather-context/SKILL.md",
+      ".codex/skills/cc-run-task/SKILL.md",
+      ".codex/skills/cc-finish-work/SKILL.md",
+      ".codex/skills/cc-create-plan/SKILL.md",
+      ".codex/skills/cc-whats-next/SKILL.md",
+      ".codex/skills/cc-publish-plan-tasks/SKILL.md",
+      ".codex/skills/cc-sync-context/SKILL.md",
+      ".claude/commands/cc-initialize-workspace.md",
+      ".claude/commands/cc-configure-workspace.md",
+      ".claude/commands/cc-gather-context.md",
+      ".claude/commands/cc-run-task.md",
+      ".claude/commands/cc-finish-work.md",
+      ".claude/commands/cc-create-plan.md",
+      ".claude/commands/cc-whats-next.md",
+      ".claude/commands/cc-publish-plan-tasks.md",
+      ".claude/commands/cc-sync-context.md",
       "docs/getting-started.md",
       "docs/using-the-wrapper.md",
       "docs/configuration.md",
@@ -15611,11 +15611,11 @@ ${repositoryRows(config)}
 
 ## Common actions
 
-- Configure this wrapper: \`$w-configure-workspace\` (Codex) or \`/w-configure-workspace\` (Claude Code).
-- Choose reviewed work: \`$w-whats-next\`.
-- Run explicitly selected work: \`$w-run-task\`.
-- Create an optional reviewed plan: \`$w-create-plan\`.
-- Curate completed-work learning: \`$w-sync-context\`.
+- Configure this wrapper: \`$cc-configure-workspace\` (Codex) or \`/cc-configure-workspace\` (Claude Code).
+- Choose reviewed work: \`$cc-whats-next\`.
+- Run explicitly selected work: \`$cc-run-task\`.
+- Create an optional reviewed plan: \`$cc-create-plan\`.
+- Curate completed-work learning: \`$cc-sync-context\`.
 
 ## Project context
 

@@ -17,8 +17,8 @@ placeholder repository first.
 
 ## Configure interactively
 
-In Codex, invoke `$w-configure-workspace`. In Claude Code, invoke
-`/w-configure-workspace`. Describe whether the project is new or existing and how
+In Codex, invoke `$cc-configure-workspace`. In Claude Code, invoke
+`/cc-configure-workspace`. Describe whether the project is new or existing and how
 each repository should be sourced.
 
 For a greenfield application:
@@ -77,15 +77,15 @@ pull-request publication remains unavailable until the relevant remote exists.
 
 ## Start work
 
-Use `$w-run-task` for a concrete request with known scope and acceptance criteria.
-Use `$w-create-plan` first for broad greenfield work or decisions that need human
+Use `$cc-run-task` for a concrete request with known scope and acceptance criteria.
+Use `$cc-create-plan` first for broad greenfield work or decisions that need human
 review. Continue with [Using the wrapper](using-the-wrapper.md), or review the
 [configuration reference](configuration.md) before changing workspace policy.
 
 Runtime evidence is stored under ignored `.runtime/`. Preserve it until a human
-invokes `$w-finish-work` after merge or deliberate abandonment.
+invokes `$cc-finish-work` after merge or deliberate abandonment.
 
-`$w-initialize-workspace` and `/w-initialize-workspace` remain compatible aliases.
+`$cc-initialize-workspace` and `/cc-initialize-workspace` remain compatible aliases.
 They report whether they detected a fresh or existing wrapper and route to this
 same workflow. Ordinary reconfiguration never rewrites active run evidence and
 never performs a template/schema upgrade.

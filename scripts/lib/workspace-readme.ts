@@ -37,11 +37,11 @@ ${repositoryRows(config)}
 
 ## Common actions
 
-- Configure this wrapper: \`$w-configure-workspace\` (Codex) or \`/w-configure-workspace\` (Claude Code).
-- Choose reviewed work: \`$w-whats-next\`.
-- Run explicitly selected work: \`$w-run-task\`.
-- Create an optional reviewed plan: \`$w-create-plan\`.
-- Curate completed-work learning: \`$w-sync-context\`.
+- Configure this wrapper: \`$cc-configure-workspace\` (Codex) or \`/cc-configure-workspace\` (Claude Code).
+- Choose reviewed work: \`$cc-whats-next\`.
+- Run explicitly selected work: \`$cc-run-task\`.
+- Create an optional reviewed plan: \`$cc-create-plan\`.
+- Curate completed-work learning: \`$cc-sync-context\`.
 
 ## Project context
 

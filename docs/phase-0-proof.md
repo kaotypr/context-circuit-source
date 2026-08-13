@@ -36,7 +36,7 @@ npm run record-result -- --run-id <run-id> --repository frontend --stage worker-
 
 ## Codex proof
 
-1. Invoke `$w-run-task` or ask Codex to follow `.codex/skills/w-run-task/SKILL.md`.
+1. Invoke `$cc-run-task` or ask Codex to follow `.codex/skills/cc-run-task/SKILL.md`.
 2. Give a fresh worker sub-agent only the generated worker-input JSON. Confirm it
    edits only the emitted worktree, runs fixture checks, commits, and writes a
    schema-valid worker result. Confirm the implementation and its required test
@@ -60,7 +60,7 @@ request merely to satisfy this proof.
 
 ## Claude Code proof
 
-1. Invoke `/w-run-task`, which delegates to the canonical skill.
+1. Invoke `/cc-run-task`, which delegates to the canonical skill.
 2. Start a fresh Claude Code worker session with only worker-input JSON and its
    referenced files. Require the same commit and worker-result behavior.
 3. Record `worker-result`, then start a separate Claude Code verifier session
