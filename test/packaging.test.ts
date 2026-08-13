@@ -12,6 +12,7 @@ const hostWorkflows = [
   "cc-create-plan",
   "cc-finish-work",
   "cc-gather-context",
+  "cc-import-context",
   "cc-initialize-workspace",
   "cc-publish-plan-tasks",
   "cc-run-task",
@@ -24,12 +25,23 @@ const displayLabels = new Map([
   ["cc-create-plan", "CC Create Plan"],
   ["cc-finish-work", "CC Finish Work"],
   ["cc-gather-context", "CC Gather Context"],
+  ["cc-import-context", "CC Import Context"],
   ["cc-initialize-workspace", "CC Initialize Workspace"],
   ["cc-publish-plan-tasks", "CC Publish Plan Tasks"],
   ["cc-run-task", "CC Run Task"],
   ["cc-sync-context", "CC Sync Context"],
   ["cc-whats-next", "CC What's Next"],
 ]);
+
+const importContextAssets = [
+  ".agents/contracts/import-context-request.schema.json",
+  ".agents/skills/cc-import-context/SKILL.md",
+  ".agents/skills/cc-import-context/agents/openai.yaml",
+  ".codex/skills/cc-import-context/SKILL.md",
+  ".claude/commands/cc-import-context.md",
+  "docs/command-reference.md",
+  "docs/context-sync.md",
+] as const;
 
 const build = spawnSync(process.execPath, ["--import", "tsx", "scripts/build-template.ts"], { cwd: projectRoot, encoding: "utf8" });
 if (build.status !== 0) throw new Error(build.stderr || build.stdout);
@@ -52,6 +64,11 @@ test("distributable and release archive contain only wrapper inputs", async () =
   assert.ok(manifest.file_inventory.includes(".agents/bin/cc.mjs"));
   assert.ok(manifest.file_inventory.includes("template-manifest.json"));
   assert.ok(manifest.file_inventory.includes(".agents/skills/cc-run-task/SKILL.md"));
+  for (const path of importContextAssets) {
+    await access(join(projectRoot, path));
+    assert.ok(manifest.file_inventory.includes(path), `${path} is missing from the trusted source inventory`);
+    await access(join(destination, path));
+  }
   assert.equal(manifest.file_inventory.some((path: string) => path.includes("/w-") || path.includes("/configure-workspace/") || path.includes("/run-task/")), false);
   for (const path of ["PLAN.md", "package.json", "node_modules", "fixtures", "scripts", "test"]) {
     await assert.rejects(access(join(destination, path)));
@@ -101,6 +118,9 @@ test("distributable and release archive contain only wrapper inputs", async () =
   assert.doesNotMatch(bundled, /\.agents\/skills\/w-run-task\/SKILL\.md/);
   assert.match(bundled, /run-task/);
   assert.match(bundled, /whats-next/);
+  assert.match(bundled, /Usage: import-context --request <import-context-request\.json>/);
+  assert.match(bundled, /sync-context.*--request/);
+  for (const path of importContextAssets) assert.ok(bundled.includes(path), `${path} is missing from the standalone bundle inventory`);
   const generatedReadme = await readFile(join(destination, "README.md"), "utf8");
   assert.match(generatedReadme, /\$cc-run-task/);
   assert.doesNotMatch(generatedReadme, /\$w-run-task|\/w-run-task/);
@@ -110,7 +130,7 @@ test("distributable and release archive contain only wrapper inputs", async () =
   await assert.rejects(access(join(destination, "repositories")));
   await assert.rejects(access(join(destination, "agents", "frontend.md")));
   const distributedDocs = (await readdir(join(destination, "docs"))).sort();
-  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "getting-started.md", "product-knowledge.md", "using-the-wrapper.md"]);
+  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "context-sync.md", "getting-started.md", "product-knowledge.md", "using-the-wrapper.md"]);
   assert.match(await readFile(join(destination, "workspace.yaml"), "utf8"), /repositories: \{\}/);
   assert.doesNotMatch(await readFile(join(destination, ".gitignore"), "utf8"), /repositories\/frontend/);
   assert.match(await readFile(join(destination, "context", "PROJECT.md"), "utf8"), /has not been initialized/);
@@ -136,6 +156,7 @@ test("distributable and release archive contain only wrapper inputs", async () =
   await listTar({ file: archive, onReadEntry: (entry) => archiveEntries.push(entry.path) });
   assert.ok(archiveEntries.includes("context-circuit-0.2.1/README.md"));
   assert.ok(archiveEntries.includes("context-circuit-0.2.1/.agents/bin/cc.mjs"));
+  for (const path of importContextAssets) assert.ok(archiveEntries.includes(`context-circuit-0.2.1/${path}`), `${path} is missing from the release archive`);
   assert.equal(archiveEntries.some((path) => path.endsWith("/.template-version")), false);
   assert.equal(archiveEntries.some((path) => path.split("/").some((part) => part === ".DS_Store" || part === "__MACOSX" || part.startsWith("._"))), false);
 });

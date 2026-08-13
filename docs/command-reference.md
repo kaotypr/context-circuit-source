@@ -25,6 +25,7 @@ arguments. The principal skill-to-command mappings are:
 | Configure | `$cc-configure-workspace` | `/cc-configure-workspace` | `configure-workspace` |
 | Initialize (compatibility) | `$cc-initialize-workspace` | `/cc-initialize-workspace` | `initialize-workspace` |
 | Gather context (read-only) | `$cc-gather-context` | `/cc-gather-context` | host read-only tools |
+| Import repository context | `$cc-import-context` | `/cc-import-context` | `import-context` |
 | Plan | `$cc-create-plan` | `/cc-create-plan` | `create-plan` |
 | Recommend work | `$cc-whats-next` | `/cc-whats-next` | `whats-next` |
 | Run scoped work | `$cc-run-task` | `/cc-run-task` | `run-task` |
@@ -35,6 +36,12 @@ arguments. The principal skill-to-command mappings are:
 `onboarding-pack --roles <role[,role...]>` generates a revision-stamped Product
 Knowledge onboarding view. See [product-knowledge.md](product-knowledge.md) for the
 full Product Knowledge lifecycle.
+
+`import-context --request <request.json>` discovers bounded evidence from one
+registered repository without modifying it and emits a source-cited contribution
+snapshot. The `cc-import-context` skill reviews and curates that evidence before
+using the existing `sync-context` and `prepare-context-review` commands. See
+[context-sync.md](context-sync.md) for the complete handoff and safety boundaries.
 
 Additional recorder and preparation subcommands are internal workflow steps.
 Use them only when a skill or generated runtime instruction provides the exact
