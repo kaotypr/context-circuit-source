@@ -70,6 +70,14 @@
           "items": { "$ref": "#/$defs/contextSource" }
         }
       }
+    },
+    "product_knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirming_role"],
+      "properties": {
+        "confirming_role": { "$ref": "#/$defs/identifier" }
+      }
     }
   },
   "$defs": {

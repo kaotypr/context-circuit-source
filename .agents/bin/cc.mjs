@@ -48,7 +48,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var define_CC_TEMPLATE_INVENTORY_default;
 var init_define_CC_TEMPLATE_INVENTORY = __esm({
   "<define:__CC_TEMPLATE_INVENTORY__>"() {
-    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/product-knowledge-candidate.schema.json", ".agents/contracts/product-knowledge-domain.schema.json", ".agents/contracts/product-knowledge-project.schema.json", ".agents/contracts/product-knowledge-role.schema.json", ".agents/contracts/product-knowledge-workflow.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/task-context-package.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".agents/templates/product-knowledge/GLOSSARY.md", ".agents/templates/product-knowledge/PROJECT.md", ".agents/templates/product-knowledge/domains/domain/README.md", ".agents/templates/product-knowledge/domains/domain/workflows/workflow.md", ".agents/templates/product-knowledge/roles/README.md", ".agents/templates/product-knowledge/roles/role.md", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
+    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/product-knowledge-candidate.schema.json", ".agents/contracts/product-knowledge-domain.schema.json", ".agents/contracts/product-knowledge-project.schema.json", ".agents/contracts/product-knowledge-role.schema.json", ".agents/contracts/product-knowledge-sync-record.schema.json", ".agents/contracts/product-knowledge-workflow.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/task-context-package.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".agents/templates/product-knowledge/GLOSSARY.md", ".agents/templates/product-knowledge/PROJECT.md", ".agents/templates/product-knowledge/domains/domain/README.md", ".agents/templates/product-knowledge/domains/domain/workflows/workflow.md", ".agents/templates/product-knowledge/roles/README.md", ".agents/templates/product-knowledge/roles/role.md", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
   }
 });
 
@@ -14843,7 +14843,7 @@ var init_validation = __esm({
     import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
     init_safe_reference();
-    schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package"];
+    schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record"];
     requiredWorkspaceDocuments = [
       "README.md",
       "AGENTS.md",
@@ -14884,6 +14884,7 @@ var init_validation = __esm({
       ".agents/contracts/product-knowledge-domain.schema.json",
       ".agents/contracts/product-knowledge-candidate.schema.json",
       ".agents/contracts/task-context-package.schema.json",
+      ".agents/contracts/product-knowledge-sync-record.schema.json",
       ".agents/skills/initialize-workspace/SKILL.md",
       ".agents/skills/configure-workspace/SKILL.md",
       ".agents/skills/gather-context/SKILL.md",
@@ -15211,7 +15212,7 @@ var init_workspace_context = __esm({
 
 // scripts/lib/product-knowledge.ts
 import { createHash } from "node:crypto";
-import { access as access2, readdir, readFile as readFile3 } from "node:fs/promises";
+import { access as access2, mkdir as mkdir2, readdir, readFile as readFile3, rm } from "node:fs/promises";
 import { dirname as dirname4, join as join2, relative, resolve as resolve4 } from "node:path";
 function parsePage(raw) {
   const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n([\s\S]*))?$/);
@@ -15548,6 +15549,7 @@ var init_product_knowledge = __esm({
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     import_yaml2 = __toESM(require_dist(), 1);
+    init_io();
     init_validation();
     schemaByKind = {
       role: "product-knowledge-role",
@@ -15667,7 +15669,7 @@ var init_workspace_readme = __esm({
 
 // scripts/lib/initialize-workspace.ts
 import { createHash as createHash2 } from "node:crypto";
-import { access as access3, lstat as lstat3, mkdir as mkdir2, readFile as readFile4, realpath as realpath2 } from "node:fs/promises";
+import { access as access3, lstat as lstat3, mkdir as mkdir3, readFile as readFile4, realpath as realpath2 } from "node:fs/promises";
 import { dirname as dirname5, join as join3, relative as relative2, resolve as resolve5 } from "node:path";
 function normalizedRepositoryPath(path2) {
   return `${path2.replace(/^\.\//, "").replace(/\/$/, "")}/`;
@@ -15889,12 +15891,12 @@ ${changes}`);
   if (options.request.context.product_knowledge) {
     for (const [path2, contents] of Object.entries(renderProductKnowledgeBaseline(options.request.context.product_knowledge))) {
       const full = assertInside(workspaceRoot20, resolve5(workspaceRoot20, path2));
-      await mkdir2(dirname5(full), { recursive: true });
+      await mkdir3(dirname5(full), { recursive: true });
       await writeTextAtomic(full, contents);
     }
   }
   await writeTextAtomic(readmePath, nextReadme);
-  await mkdir2(join3(workspaceRoot20, "agents"), { recursive: true });
+  await mkdir3(join3(workspaceRoot20, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
     const agentPath = join3(workspaceRoot20, "agents", `${repository.agent}.md`);
     if (!await pathExists(agentPath)) await writeTextAtomic(agentPath, agentDocument(name, repository.role));
@@ -15905,17 +15907,17 @@ ${changes}`);
     const action = actionsByName.get(name);
     const path2 = assertInside(workspaceRoot20, resolve5(workspaceRoot20, repository.path));
     if (action.source === "new") {
-      await mkdir2(dirname5(path2), { recursive: true });
-      await mkdir2(path2);
+      await mkdir3(dirname5(path2), { recursive: true });
+      await mkdir3(path2);
       await git(path2, ["init", "--initial-branch", repository.default_branch]);
       await git(path2, commitArgs(action));
       bootstrapActions.push(`created ${name} with an empty base commit`);
     } else if (action.source === "clone") {
-      await mkdir2(dirname5(path2), { recursive: true });
+      await mkdir3(dirname5(path2), { recursive: true });
       await git(workspaceRoot20, ["clone", "--branch", repository.default_branch, "--single-branch", "--", safeRemote(action.url, name), path2]);
       bootstrapActions.push(`cloned ${name} into ${repository.path}`);
     } else if (action.source === "submodule") {
-      await mkdir2(dirname5(path2), { recursive: true });
+      await mkdir3(dirname5(path2), { recursive: true });
       await git(workspaceRoot20, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", safeRemote(action.url, name), repository.path]);
       bootstrapActions.push(`registered ${name} as a submodule`);
     } else {
@@ -16604,7 +16606,7 @@ var init_activity_lifecycle = __esm({
 
 // scripts/lib/plans.ts
 import { createHash as createHash4, randomUUID } from "node:crypto";
-import { lstat as lstat5, mkdir as mkdir3, readdir as readdir3, readFile as readFile8, realpath as realpath4, rename as rename2, rm } from "node:fs/promises";
+import { lstat as lstat5, mkdir as mkdir4, readdir as readdir3, readFile as readFile8, realpath as realpath4, rename as rename2, rm as rm2 } from "node:fs/promises";
 import { basename, join as join7, resolve as resolve10 } from "node:path";
 function contractMessages(errors2) {
   return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
@@ -17023,7 +17025,7 @@ async function createPlanDraft(workspaceRootInput, request4, now = /* @__PURE__ 
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Context root must be a real directory: ${contextRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir3(contextRoot, { mode: 493 });
+    await mkdir4(contextRoot, { mode: 493 });
   }
   if (await realpath4(contextRoot) !== join7(realWorkspace, "context")) throw new Error(`Context root must not traverse symbolic links: ${contextRoot}`);
   const plansRoot = assertInside(contextRoot, join7(contextRoot, "plans"));
@@ -17032,7 +17034,7 @@ async function createPlanDraft(workspaceRootInput, request4, now = /* @__PURE__ 
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Plan root must be a real directory: ${plansRoot}`);
   } catch (error) {
     if (error.code !== "ENOENT") throw error;
-    await mkdir3(plansRoot, { mode: 493 });
+    await mkdir4(plansRoot, { mode: 493 });
   }
   const realPlansRoot = await realpath4(plansRoot);
   assertInside(realWorkspace, realPlansRoot);
@@ -17049,14 +17051,14 @@ async function createPlanDraft(workspaceRootInput, request4, now = /* @__PURE__ 
   const temporary = join7(realPlansRoot, `.${request4.plan_id}.${randomUUID()}.tmp`);
   const rendered = renderPlan(request4, now.toISOString());
   try {
-    await mkdir3(temporary, { mode: 493 });
+    await mkdir4(temporary, { mode: 493 });
     for (const [name, contents] of rendered.files) await writeTextExclusive(join7(temporary, name), contents);
     const validation = await validatePlanDirectory(temporary, request4.plan_id);
     if (validation.errors.length > 0) throw new Error(`Generated plan failed validation:
 - ${validation.errors.join("\n- ")}`);
     await rename2(temporary, destination);
   } catch (error) {
-    await rm(temporary, { recursive: true, force: true });
+    await rm2(temporary, { recursive: true, force: true });
     throw error;
   }
   return {
@@ -18900,7 +18902,7 @@ var init_confirm_merge = __esm({
 });
 
 // scripts/lib/finish-work.ts
-import { access as access5, lstat as lstat6, mkdir as mkdir4, readFile as readFile13, readdir as readdir4, realpath as realpath5 } from "node:fs/promises";
+import { access as access5, lstat as lstat6, mkdir as mkdir5, readFile as readFile13, readdir as readdir4, realpath as realpath5 } from "node:fs/promises";
 import { basename as basename2, join as join11, relative as relative6, resolve as resolve20 } from "node:path";
 function resolveProductKnowledgeCloseout(reports) {
   const present = reports.filter((report) => Boolean(report));
@@ -19083,7 +19085,7 @@ async function findExistingContribution(root, runId, repository) {
   return null;
 }
 async function ensureContributionRoot(workspaceRoot20, path2) {
-  await mkdir4(path2, { recursive: true, mode: 493 });
+  await mkdir5(path2, { recursive: true, mode: 493 });
   const info = await lstat6(path2);
   if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
   assertInside(await realpath5(workspaceRoot20), await realpath5(path2));

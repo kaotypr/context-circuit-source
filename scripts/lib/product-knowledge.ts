@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
-import { access, readdir, readFile } from "node:fs/promises";
+import { access, mkdir, readdir, readFile, rm } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
+import { writeTextAtomic } from "./io.js";
 import { validateContract } from "./validation.js";
 import type { SchemaName } from "./validation.js";
-import type { ProductKnowledgeBaselineSpec, ProductKnowledgeImpact, TaskContextPackage } from "./types.js";
+import type { ProductKnowledgeBaselineSpec, ProductKnowledgeImpact, TaskContextPackage, WorkspaceConfig } from "./types.js";
 
 export type ProductKnowledgeKind = "role" | "workflow" | "domain" | "product-map";
 
@@ -214,6 +215,102 @@ export async function validateProductKnowledgeTree(contextDir: string): Promise<
   }
 
   return { present: true, pages, errors: [...new Set(errors)] };
+}
+
+export interface ProductKnowledgeSyncUpdate {
+  target: string;
+  content: string;
+  source_contribution?: string;
+}
+
+export interface ProductKnowledgeSyncInput {
+  workspaceRoot: string;
+  confirming_role: string;
+  confirmed_effective: boolean;
+  updates: ProductKnowledgeSyncUpdate[];
+  synced_at: string;
+}
+
+export interface ProductKnowledgeSyncRecord {
+  contract_version: 1;
+  synced_at: string;
+  confirming_role: string;
+  updated_pages: string[];
+  source_contributions: string[];
+}
+
+function currentBehaviorPageKind(contextRelative: string): "role" | "domain" | "workflow" | null {
+  const normalized = contextRelative.replace(/\\/g, "/");
+  if (/^roles\/(?!README\.md$)[^/]+\.md$/.test(normalized)) return "role";
+  if (/^domains\/[^/]+\/README\.md$/.test(normalized)) return "domain";
+  if (/^domains\/[^/]+\/workflows\/[^/]+\.md$/.test(normalized)) return "workflow";
+  return null;
+}
+
+/**
+ * Synchronize canonical Product Knowledge only after a dedicated, workspace
+ * configured confirming role declares the behavior effective. This is the single
+ * gate that writes current-behavior pages: without an explicit effectiveness
+ * confirmation from the configured role, nothing is written and the behavior
+ * remains proposed. Only referenced role, domain, and workflow pages may change,
+ * and the resulting tree must validate or every write is rolled back.
+ */
+export async function synchronizeProductKnowledge(input: ProductKnowledgeSyncInput): Promise<ProductKnowledgeSyncRecord> {
+  const root = resolve(input.workspaceRoot);
+  const config = parseYaml(await readFile(join(root, "workspace.yaml"), "utf8")) as WorkspaceConfig;
+  const confirmingRole = config.product_knowledge?.confirming_role;
+  if (!confirmingRole) throw new Error("Workspace has no configured Product Knowledge confirming role; synchronization is not permitted");
+  if (!input.confirmed_effective) throw new Error("Product Knowledge synchronization requires an explicit effectiveness confirmation; the behavior remains proposed");
+  if (input.confirming_role !== confirmingRole) throw new Error(`Confirming role '${input.confirming_role}' is not the configured Product Knowledge confirming role '${confirmingRole}'`);
+  if (input.updates.length === 0) throw new Error("Synchronization requires at least one referenced current-behavior page");
+
+  const contextDir = join(root, "context");
+  const targets = new Map<string, { absolute: string; previous: string | null }>();
+  for (const update of input.updates) {
+    const contextRelative = update.target.replace(/^context\//, "");
+    if (!currentBehaviorPageKind(contextRelative)) throw new Error(`Synchronization target is not a current-behavior page: ${update.target}`);
+    const absolute = resolve(contextDir, contextRelative);
+    if (relative(contextDir, absolute).startsWith("..")) throw new Error(`Synchronization target escapes context: ${update.target}`);
+    if (targets.has(absolute)) throw new Error(`Duplicate synchronization target: ${update.target}`);
+    let previous: string | null = null;
+    try {
+      previous = await readFile(absolute, "utf8");
+    } catch {
+      previous = null;
+    }
+    targets.set(absolute, { absolute, previous });
+  }
+
+  const applied: string[] = [];
+  try {
+    for (const update of input.updates) {
+      const contextRelative = update.target.replace(/^context\//, "");
+      const absolute = resolve(contextDir, contextRelative);
+      await mkdir(dirname(absolute), { recursive: true });
+      await writeTextAtomic(absolute, update.content);
+      applied.push(absolute);
+    }
+    const validation = await validateProductKnowledgeTree(contextDir);
+    if (validation.errors.length > 0) throw new Error(`Synchronized Product Knowledge is invalid: ${validation.errors.join("; ")}`);
+  } catch (error) {
+    for (const absolute of applied) {
+      const snapshot = targets.get(absolute)!;
+      if (snapshot.previous === null) await rm(absolute, { force: true });
+      else await writeTextAtomic(absolute, snapshot.previous);
+    }
+    throw error;
+  }
+
+  const record: ProductKnowledgeSyncRecord = {
+    contract_version: 1,
+    synced_at: input.synced_at,
+    confirming_role: input.confirming_role,
+    updated_pages: input.updates.map((update) => update.target),
+    source_contributions: [...new Set(input.updates.map((update) => update.source_contribution).filter((value): value is string => Boolean(value)))],
+  };
+  const errors = await validateContract("product-knowledge-sync-record", record);
+  if (errors.length > 0) throw new Error(`Invalid Product Knowledge sync record: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  return record;
 }
 
 /**

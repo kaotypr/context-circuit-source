@@ -41,6 +41,9 @@ export interface WorkspaceConfig {
   context?: {
     authoritative_sources: WorkspaceContextSource[];
   };
+  product_knowledge?: {
+    confirming_role: string;
+  };
 }
 
 export interface BootstrapGitCommit {
