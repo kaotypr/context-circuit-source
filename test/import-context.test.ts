@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import { prepareImportContext } from "../scripts/lib/import-context.js";
 import { git } from "../scripts/lib/git.js";
 import { validateContract } from "../scripts/lib/validation.js";
+
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const tsxImport = fileURLToPath(import.meta.resolve("tsx"));
 
 async function fixture(options: { instructions?: boolean; repositoryContext?: boolean } = {}): Promise<{ root: string; repository: string; cleanup: () => Promise<void> }> {
   const root = await mkdtemp(join(tmpdir(), "context-import-"));
@@ -93,4 +98,35 @@ test("refuses dirty source state without altering unrecorded work", async (t) =>
   await writeFile(unrecorded, "preserve\n", "utf8");
   await assert.rejects(prepareImportContext({ workspaceRoot: workspace.root, request }), /Dirty source Git state/);
   assert.equal(await readFile(unrecorded, "utf8"), "preserve\n");
+});
+
+test("prepare CLI parses its request, delegates discovery, and emits exact sync and review handoffs", async (t) => {
+  const workspace = await fixture();
+  t.after(workspace.cleanup);
+  const requestPath = join(workspace.root, ".runtime", "import-context-request.json");
+  await mkdir(dirname(requestPath), { recursive: true });
+  await writeFile(requestPath, `${JSON.stringify(request)}\n`, "utf8");
+
+  const result = spawnSync(
+    process.execPath,
+    ["--import", tsxImport, join(projectRoot, "scripts", "cc.ts"), "import-context", "--request", ".runtime/import-context-request.json"],
+    { cwd: workspace.root, encoding: "utf8" },
+  );
+
+  assert.equal(result.status, 0, result.stderr);
+  const output = JSON.parse(result.stdout);
+  assert.match(output.contribution, /^contributions\/import-context\/product\/\d{8}T\d{6}Z-import-context-product\.md$/);
+  assert.equal(output.evidence[0].path, "AGENTS.md");
+  assert.deepEqual(output.handoff, {
+    context_sync_request: {
+      contribution: output.contribution,
+      guidance: "Curate the discovered evidence into a context-sync-request JSON; preserve source citations and explicit unknowns.",
+      required_command: ["node", ".agents/bin/cc.mjs", "sync-context", "--request", "<context-sync-request.json>"],
+    },
+    context_review: {
+      guidance: "After sync-context returns a sync_id and the curated changes are committed, prepare the review handoff.",
+      required_command: ["node", ".agents/bin/cc.mjs", "prepare-context-review", "--sync-id", "<sync-id>"],
+    },
+  });
+  assert.equal(await git(workspace.repository, ["status", "--porcelain"]), "");
 });
