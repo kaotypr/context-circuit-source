@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
-import { access, readFile, writeFile } from "node:fs/promises";
+import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
 import { prepareExecutePlan } from "../scripts/lib/execute-plan.js";
+import { generateRunId } from "../scripts/lib/ids.js";
+import { git } from "../scripts/lib/git.js";
 import { generatePlanBatch, setPlanState } from "../scripts/lib/plans.js";
 import type { PlanGenerationRequest } from "../scripts/lib/types.js";
 import { createTestWorkspace } from "./helpers.js";
@@ -69,4 +71,32 @@ test("execute-plan refuses dirty bases without mutating the plan or runtime", as
   await assert.rejects(prepareExecutePlan({ workspaceRoot: workspace.root, request: { contract_version: 1, source: { kind: "plan", reference: approved.plan_reference!, plan_version: 1, approved_digest: approved.approved_digest! } } }), /unresolved local changes/);
   assert.equal(await readFile(join(workspace.repository, "unrecorded.txt"), "utf8"), "keep me\n");
   await assert.rejects(access(join(workspace.root, ".runtime")));
+});
+
+test("execute-plan rolls back partial runtime output after a pre-worktree failure", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, request());
+  const plan = generated.plans[0]!;
+  const approved = await setPlanState(plan.directory, { kind: "approve", approved_by: "owner" });
+  const now = new Date("2026-08-14T09:02:00Z");
+  const discriminator = "87654321";
+  const runId = generateRunId(`execute-plan:${approved.plan_reference!}`, now, discriminator);
+  const branch = `plan/complete-runtime-${runId.slice(-8)}`;
+  const branchLock = join(workspace.repository, ".git", "refs", "heads", "plan", `complete-runtime-${runId.slice(-8)}.lock`);
+  await mkdir(join(workspace.repository, ".git", "refs", "heads", "plan"), { recursive: true });
+  await writeFile(branchLock, "", "utf8");
+
+  await assert.rejects(prepareExecutePlan({
+    workspaceRoot: workspace.root,
+    request: { contract_version: 1, source: { kind: "plan", reference: approved.plan_reference!, plan_version: approved.plan_version, approved_digest: approved.approved_digest! } },
+    now,
+    discriminator,
+  }));
+
+  await assert.rejects(access(join(workspace.root, ".runtime", "plans", `${runId}.json`)));
+  await assert.rejects(access(join(workspace.root, ".runtime", "runs", runId)));
+  await assert.rejects(access(join(workspace.root, ".runtime", "worktrees", runId)));
+  await assert.rejects(git(workspace.repository, ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`]));
+  assert.equal(await readFile(branchLock, "utf8"), "");
 });

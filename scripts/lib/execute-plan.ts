@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { access, lstat, readFile } from "node:fs/promises";
+import { access, lstat, readFile, rm } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { assertCleanRepository, git } from "./git.js";
@@ -148,7 +148,7 @@ async function assertBranchAvailable(base: RepositoryBase, branch: string): Prom
 }
 
 async function removeCreatedWorktrees(created: Array<{ base: RepositoryBase; worktree: string; branch: string }>): Promise<void> {
-  for (const item of created.reverse()) {
+  for (const item of [...created].reverse()) {
     try { await git(item.base.path, ["worktree", "remove", "--force", item.worktree]); } catch { /* only remove output created by this attempt */ }
     try { await git(item.base.path, ["branch", "-D", item.branch]); } catch { /* branch may not have been created */ }
   }
@@ -201,6 +201,7 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
   const createdAt = now.toISOString();
   const planBriefPath = join(runtimeRoot, "plans", `${runId}.json`);
   const manifestPath = join(runRoot, "manifest.json");
+  if (!(await isAbsent(planBriefPath))) throw new Error(`Runtime collision: ${runId}`);
   const planBrief = taskBrief(index, items, runId, createdAt);
   const runtimeRepositories: RuntimeRepository[] = [];
   const preparedRepositories: PreparedPlanRepository[] = affectedRepositories.map((name) => ({ name, branch: branches.get(name)!, worktree: assertInside(runtimeRoot, join(worktreeRoot, name)), ready: items.filter((item) => item.repository === name && item.depends_on.length === 0).length > 0, blockedBy: [], taskInputs: [], verifierInputs: [] }));
@@ -267,28 +268,31 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
   const manifestErrors = contractMessages(await validateContract("runtime-manifest", manifest));
   if (manifestErrors.length > 0) throw new Error(`Generated runtime-manifest is invalid: ${manifestErrors.join("; ")}`);
   await ensurePrivateDirectory(runtimeRoot);
+  const createdWorktrees: Array<{ base: RepositoryBase; worktree: string; branch: string }> = [];
+  let ownsPlanBrief = false;
+  let ownsRunRoot = false;
+  let ownsWorktreeRoot = false;
   try {
+    ownsPlanBrief = true;
     await writeJsonAtomic(planBriefPath, planBrief);
+    ownsRunRoot = true;
     await writeJsonAtomic(manifestPath, manifest);
+    ownsWorktreeRoot = true;
     await ensurePrivateDirectory(worktreeRoot);
-    const created: Array<{ base: RepositoryBase; worktree: string; branch: string }> = [];
-    try {
-      for (const repository of preparedRepositories) {
-        const base = bases.get(repository.name)!;
-        await git(base.path, ["worktree", "add", "-b", repository.branch, repository.worktree, base.commit]);
-        created.push({ base, worktree: repository.worktree, branch: repository.branch });
-      }
-    } catch (error) {
-      await removeCreatedWorktrees(created);
-      throw error;
+    for (const repository of preparedRepositories) {
+      const base = bases.get(repository.name)!;
+      await git(base.path, ["worktree", "add", "-b", repository.branch, repository.worktree, base.commit]);
+      createdWorktrees.push({ base, worktree: repository.worktree, branch: repository.branch });
     }
     manifest.status = "prepared";
     manifest.updated_at = new Date().toISOString();
     await writeJsonAtomic(manifestPath, manifest);
     await setPlanState(planDirectory, { kind: "lifecycle", status: "in-progress", reason: "Approved plan runtime prepared.", actor: "engine", evidence: manifestPath }, new Date());
   } catch (error) {
-    try { await removeCreatedWorktrees(preparedRepositories.map((repository) => ({ base: bases.get(repository.name)!, worktree: repository.worktree, branch: repository.branch }))); } catch { /* best-effort rollback of this run only */ }
-    try { await import("node:fs/promises").then(({ rm }) => rm(runRoot, { recursive: true, force: true })); } catch { /* preserve original error */ }
+    await removeCreatedWorktrees(createdWorktrees);
+    if (ownsWorktreeRoot) try { await rm(worktreeRoot, { recursive: true, force: true }); } catch { /* preserve original error */ }
+    if (ownsRunRoot) try { await rm(runRoot, { recursive: true, force: true }); } catch { /* preserve original error */ }
+    if (ownsPlanBrief) try { await rm(planBriefPath, { force: true }); } catch { /* preserve original error */ }
     throw error;
   }
   return { planId: index.plan_id, planReference: index.plan_reference!, planVersion: index.plan_version, approvedDigest: index.approved_digest!, runId, manifest: manifestPath, planBrief: planBriefPath, repositories: preparedRepositories, preparationStatus: "prepared" };
