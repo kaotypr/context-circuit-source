@@ -36,6 +36,7 @@ export interface PrepareLifecycleOptions {
   workspaceRoot: string;
   runId: string;
   repository: string;
+  taskId?: string;
   now?: Date;
 }
 
@@ -46,6 +47,72 @@ export interface RepairPreparation {
   manifest: string;
   worker_input?: string;
   verifier_input?: string;
+}
+
+async function preparePlanTaskRepair(options: PrepareLifecycleOptions, runtimeRoot: string, manifestPath: string, manifest: RuntimeManifest, repository: RuntimeRepository, config: WorkspaceConfig): Promise<RepairPreparation> {
+  if (!options.taskId) throw new Error("Cumulative plan repair requires a task ID");
+  const task = manifest.task_graph?.find((candidate) => (candidate.task_id ?? candidate.work_id) === options.taskId);
+  if (!task || task.repository !== repository.name) throw new Error(`Plan repair task does not belong to ${repository.name}: ${options.taskId}`);
+  const attempt = task.attempt ?? 0;
+  const maximumAttempts = config.workflow.maximum_repair_attempts;
+  const lastEvent = manifest.execution_events?.filter((event) => event.repository === repository.name && event.idempotency_key.includes(`:${options.taskId}:`)).at(-1);
+  if (task.status === "prepared" && lastEvent?.stage === "repair-prepared" && lastEvent.attempt === attempt) {
+    return { status: "prepared", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: task.worker_input, verifier_input: task.verifier_input };
+  }
+  if (task.status !== "failed" && task.status !== "blocked") throw new Error(`Plan repair preparation requires failed or blocked task status, received ${task.status ?? "pending"}`);
+  const occurredAt = (options.now ?? new Date()).toISOString();
+  if (attempt >= maximumAttempts) {
+    task.status = "blocked";
+    task.outcome = "blocked";
+    manifest.execution_events ??= [];
+    manifest.execution_events.push({ stage: "repair-exhausted", repository: repository.name, from_status: task.status, to_status: "blocked", inferred: false, attempt, idempotency_key: `${manifest.run_id}:execution:${repository.name}:${options.taskId}:repair-exhausted:attempt-${attempt}`, occurred_at: occurredAt });
+    manifest.status = "blocked";
+    manifest.updated_at = occurredAt;
+    await assertValid("runtime-manifest", manifest);
+    await writeJsonAtomic(manifestPath, manifest);
+    return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
+  }
+  const priorWorkerInput = await readJsonRegularInside<Record<string, unknown>>(runtimeRoot, task.worker_input, "Plan worker input");
+  const priorVerifierInput = await readJsonRegularInside<Record<string, unknown>>(runtimeRoot, task.verifier_input, "Plan verifier input");
+  const nextAttempt = attempt + 1;
+  const runRoot = join(runtimeRoot, "runs", options.runId);
+  const workerInputPath = join(runRoot, `${options.taskId}-repair-${nextAttempt}-worker-input.json`);
+  const verifierInputPath = join(runRoot, `${options.taskId}-repair-${nextAttempt}-verifier-input.json`);
+  const workerResultPath = join(runtimeRoot, "results", `${options.runId}-${options.taskId}-repair-${nextAttempt}-worker.json`);
+  const verifierResultPath = join(runtimeRoot, "results", `${options.runId}-${options.taskId}-repair-${nextAttempt}-verifier.json`);
+  const workerInput = { ...priorWorkerInput, role: "repair-worker", attempt: nextAttempt, findings: ["Repair the failed or blocked plan task using the prior independent evidence."], previous_worker_result: priorWorkerInput.result_path, previous_verifier_result: priorVerifierInput.result_path, result_path: workerResultPath, ready: true, blocked_by: [] };
+  const verifierInput = { ...priorVerifierInput, role: "verifier", attempt: nextAttempt, worker_result: workerResultPath, result_path: verifierResultPath, ready: true, blocked_by: [] };
+  await writeJsonAtomic(workerInputPath, workerInput);
+  await writeJsonAtomic(verifierInputPath, verifierInput);
+  task.worker_input = workerInputPath;
+  task.verifier_input = verifierInputPath;
+  task.attempt = nextAttempt;
+  task.status = "prepared";
+  task.outcome = "pending";
+  task.ready = true;
+  task.blocked_by = [];
+  const summary = manifest.plan_work_items?.find((candidate) => candidate.work_id === task.work_id);
+  if (summary) {
+    summary.task_input = workerInputPath;
+    summary.verifier_input = verifierInputPath;
+    summary.attempt = nextAttempt;
+    summary.status = "prepared";
+    summary.outcome = "pending";
+    summary.ready = true;
+    summary.blocked_by = [];
+  }
+  repository.worker_input = workerInputPath;
+  repository.verifier_input = verifierInputPath;
+  repository.repair_attempts = Math.max(repository.repair_attempts ?? 0, nextAttempt);
+  manifest.execution_events ??= [];
+  manifest.execution_events.push({ stage: "repair-prepared", repository: repository.name, from_status: "failed", to_status: "running", inferred: false, attempt: nextAttempt, idempotency_key: `${manifest.run_id}:execution:${repository.name}:${options.taskId}:repair-prepared:attempt-${nextAttempt}`, occurred_at: occurredAt });
+  manifest.evidence.push(workerInputPath, verifierInputPath);
+  repository.status = "prepared";
+  manifest.status = "prepared";
+  manifest.updated_at = occurredAt;
+  await assertValid("runtime-manifest", manifest);
+  await writeJsonAtomic(manifestPath, manifest);
+  return { status: "prepared", attempt: nextAttempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: workerInputPath, verifier_input: verifierInputPath };
 }
 
 export interface RecordReviewPublicationOptions {
@@ -192,6 +259,7 @@ export async function prepareRepair(options: PrepareLifecycleOptions): Promise<R
     await assertValid("runtime-manifest", manifest);
     if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
     const repository = findRepository(manifest, options.repository);
+    if (manifest.task_graph && options.taskId) return preparePlanTaskRepair(options, runtimeRoot, manifestPath, manifest, repository, config);
     const attempt = repository.repair_attempts ?? 0;
     const maximumAttempts = config.workflow.maximum_repair_attempts;
     const lastEvent = manifest.execution_events?.filter((event) => event.repository === repository.name).at(-1);

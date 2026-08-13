@@ -494,6 +494,10 @@ export interface RuntimeRepository {
   worktree: string;
   worker_input: string;
   verifier_input: string;
+  task_inputs?: string[];
+  verifier_inputs?: string[];
+  active_task_id?: string;
+  lock_path?: string;
   status?: "waiting" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked" | "cancelled" | "closing" | "closed";
   depends_on?: string[];
   repair_attempts?: number;
@@ -517,7 +521,7 @@ export interface ReviewCommand {
 }
 
 export interface ExecutionEvent {
-  stage: "worker-started" | "worker-result" | "verifier-result" | "repair-prepared" | "repair-exhausted" | "review-prepared" | "closeout-prepared" | "closeout-cleaned";
+  stage: "worker-started" | "worker-result" | "verifier-result" | "plan-verifier-result" | "repair-prepared" | "repair-exhausted" | "review-prepared" | "closeout-prepared" | "closeout-cleaned";
   repository: string;
   from_status: "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked" | "cancelled" | "closing";
   to_status: "running" | "verifying" | "passed" | "failed" | "blocked" | "closing" | "closed";
@@ -630,7 +634,7 @@ export interface CloseoutRecord {
 }
 
 export interface RuntimeManifest {
-  contract_version: 1 | 2;
+  contract_version: 1 | 2 | 3;
   work_id: string;
   run_id: string;
   source_kind: "direct-request" | "plan" | "issue" | "pull-request" | "activity-task";
@@ -646,10 +650,21 @@ export interface RuntimeManifest {
     outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
     task_input?: string;
     verifier_input?: string;
+    plan_reference?: string;
+    task_id?: string;
+    plan_revision?: number;
+    attempt?: number;
+    start_commit?: string | null;
+    ready?: boolean;
+    blocked_by?: string[];
+    status?: "waiting" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked";
+    worker_result?: string;
+    verifier_result?: string;
   }>;
   plan_reference?: string;
   plan_id?: string;
   plan_version?: number;
+  plan_revision?: number;
   approved_digest?: string;
   task_graph?: Array<{
     work_id: string;
@@ -658,7 +673,20 @@ export interface RuntimeManifest {
     outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
     worker_input: string;
     verifier_input: string;
+    plan_reference?: string;
+    task_id?: string;
+    plan_revision?: number;
+    attempt?: number;
+    start_commit?: string | null;
+    ready?: boolean;
+    blocked_by?: string[];
+    status?: "waiting" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked";
+    worker_result?: string;
+    verifier_result?: string;
   }>;
+  plan_verifier_input?: string;
+  plan_verifier_result?: string;
+  plan_verifier_status?: "pending" | "running" | "passed" | "failed" | "blocked";
   evidence: string[];
   warnings: string[];
   execution_events?: ExecutionEvent[];

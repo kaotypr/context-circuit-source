@@ -204,28 +204,36 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
   if (!(await isAbsent(planBriefPath))) throw new Error(`Runtime collision: ${runId}`);
   const planBrief = taskBrief(index, items, runId, createdAt);
   const runtimeRepositories: RuntimeRepository[] = [];
-  const preparedRepositories: PreparedPlanRepository[] = affectedRepositories.map((name) => ({ name, branch: branches.get(name)!, worktree: assertInside(runtimeRoot, join(worktreeRoot, name)), ready: items.filter((item) => item.repository === name && item.depends_on.length === 0).length > 0, blockedBy: [], taskInputs: [], verifierInputs: [] }));
+  const preparedRepositories: PreparedPlanRepository[] = affectedRepositories.map((name) => ({ name, branch: branches.get(name)!, worktree: assertInside(runtimeRoot, join(worktreeRoot, name)), ready: false, blockedBy: [], taskInputs: [], verifierInputs: [] }));
   const taskGraph: NonNullable<RuntimeManifest["task_graph"]> = [];
   const planWorkItems: NonNullable<RuntimeManifest["plan_work_items"]> = [];
+  const firstReadyByRepository = new Set<string>();
   for (const item of items) {
     const repository = preparedRepositories.find((entry) => entry.name === item.repository)!;
     const workerInput = join(runRoot, `${item.work_id}-worker-input.json`);
     const verifierInput = join(runRoot, `${item.work_id}-verifier-input.json`);
+    const verifierResultPath = join(runtimeRoot, "results", `${runId}-${item.work_id}-verifier.json`);
     const base = bases.get(item.repository)!;
-    const ready = item.depends_on.length === 0;
+    const ready = item.depends_on.length === 0 && !firstReadyByRepository.has(item.repository);
+    if (ready) firstReadyByRepository.add(item.repository);
+    const startCommit = ready ? base.commit : null;
+    const attempt = 0;
     const common = {
-      contract_version: 1,
+      contract_version: 2,
       plan_reference: index.plan_reference!,
       plan_version: index.plan_version,
+      plan_revision: index.plan_version,
       approved_digest: index.approved_digest,
       task_id: item.work_id,
-      work_id: item.work_id,
       repository: item.repository,
+      run_id: runId,
       worktree: repository.worktree,
       branch: repository.branch,
       base_commit: base.commit,
+      start_commit: startCommit,
+      attempt,
       ready,
-      blocked_by: item.depends_on,
+      blocked_by: ready ? [] : item.depends_on,
       allowed_scope: taskScope(item),
       implementation_scope: item.scope,
       test_expectation: { policy: item.test_policy, paths: item.test_scope, rationale: item.test_rationale ?? "The approved plan task contract is authoritative." },
@@ -234,16 +242,40 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
       result_path: join(runtimeRoot, "results", `${runId}-${item.work_id}-worker.json`),
     };
     await writeJsonAtomic(workerInput, { ...common, role: "repository-worker" });
-    await writeJsonAtomic(verifierInput, { ...common, role: "verifier", read_only: true, worker_result: common.result_path, acceptance_criteria: item.acceptance_criteria, verification_commands: item.verification_commands, instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")] });
+    await writeJsonAtomic(verifierInput, { ...common, role: "verifier", read_only: true, worker_result: common.result_path, result_path: verifierResultPath, acceptance_criteria: item.acceptance_criteria, verification_commands: item.verification_commands, instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")] });
     repository.taskInputs.push(workerInput);
     repository.verifierInputs.push(verifierInput);
-    taskGraph.push({ work_id: item.work_id, repository: item.repository, depends_on: item.depends_on, outcome: "pending", worker_input: workerInput, verifier_input: verifierInput });
-    planWorkItems.push({ work_id: item.work_id, repository: item.repository, depends_on: item.depends_on, outcome: "pending", task_input: workerInput, verifier_input: verifierInput });
+    taskGraph.push({ work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: ready ? "prepared" : "waiting", depends_on: item.depends_on, outcome: "pending", worker_input: workerInput, verifier_input: verifierInput });
+    planWorkItems.push({ work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: ready ? "prepared" : "waiting", depends_on: item.depends_on, outcome: "pending", task_input: workerInput, verifier_input: verifierInput });
+    if (ready) repository.ready = true;
   }
   for (const repository of preparedRepositories) {
     const base = bases.get(repository.name)!;
-    runtimeRepositories.push({ name: repository.name, base_path: relative(workspaceRoot, base.path), base_commit: base.commit, branch: repository.branch, worktree: repository.worktree, worker_input: repository.taskInputs[0] ?? join(runRoot, `${repository.name}-worker-input.json`), verifier_input: repository.verifierInputs[0] ?? join(runRoot, `${repository.name}-verifier-input.json`), status: repository.ready ? "prepared" : "waiting", repair_attempts: 0 });
+    runtimeRepositories.push({ name: repository.name, base_path: relative(workspaceRoot, base.path), base_commit: base.commit, branch: repository.branch, worktree: repository.worktree, worker_input: repository.taskInputs[0] ?? join(runRoot, `${repository.name}-worker-input.json`), verifier_input: repository.verifierInputs[0] ?? join(runRoot, `${repository.name}-verifier-input.json`), task_inputs: repository.taskInputs, verifier_inputs: repository.verifierInputs, lock_path: join(runRoot, `${repository.name}.task.lock`), status: repository.ready ? "prepared" : "waiting", repair_attempts: 0 });
   }
+  const planVerifierInput = join(runRoot, "plan-verifier-input.json");
+  const planVerifierResult = join(runtimeRoot, "results", `${runId}-plan-verifier-attempt-0.json`);
+  await writeJsonAtomic(planVerifierInput, {
+    contract_version: 1,
+    role: "plan-verifier",
+    read_only: true,
+    plan_reference: index.plan_reference!,
+    plan_id: index.plan_id,
+    plan_revision: index.plan_version,
+    plan_version: index.plan_version,
+    run_id: runId,
+    task_id: `PLAN-${index.plan_id}`,
+    repository: "plan",
+    attempt: 0,
+    ready: false,
+    worktrees: runtimeRepositories.map((repository) => ({ name: repository.name, worktree: repository.worktree, branch: repository.branch, base_commit: repository.base_commit })),
+    tasks: taskGraph.map((task) => ({ task_id: task.task_id, repository: task.repository, worker_result: task.worker_input, verifier_result: task.verifier_input })),
+    acceptance_criteria: ["Every approved plan task is independently verified.", "The cumulative repository worktrees pass holistic verification."],
+    verification_commands: [...new Set(items.flatMap((item) => item.verification_commands))],
+    instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")],
+    result_contract: join(workspaceRoot, ".agents", "contracts", "plan-verifier-result.schema.json"),
+    result_path: planVerifierResult,
+  });
   const manifest: RuntimeManifest = {
     contract_version: 2,
     work_id: `PLAN-${index.plan_id}`,
@@ -257,10 +289,13 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
     plan_reference: index.plan_reference!,
     plan_id: index.plan_id,
     plan_version: index.plan_version,
+    plan_revision: index.plan_version,
     approved_digest: index.approved_digest!,
     plan_work_items: planWorkItems,
     task_graph: taskGraph,
-    evidence: [planBriefPath, manifestPath, ...taskGraph.flatMap((task) => [task.worker_input, task.verifier_input])],
+    plan_verifier_input: planVerifierInput,
+    plan_verifier_status: "pending",
+    evidence: [planBriefPath, manifestPath, planVerifierInput, ...taskGraph.flatMap((task) => [task.worker_input, task.verifier_input])],
     warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
     execution_events: [],
     lifecycle_events: [{ event: "task.starting", status: config.activity.provider === "none" ? "skipped" : "pending", idempotency_key: `${runId}:task.starting`, occurred_at: createdAt }],

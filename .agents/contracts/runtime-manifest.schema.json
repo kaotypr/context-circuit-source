@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["contract_version", "work_id", "run_id", "source_kind", "status", "created_at", "updated_at", "task_brief", "repositories", "evidence", "warnings", "lifecycle_events"],
   "properties": {
-    "contract_version": { "enum": [1, 2] },
+    "contract_version": { "enum": [1, 2, 3] },
     "work_id": { "type": "string", "minLength": 1 },
     "run_id": { "type": "string", "minLength": 1 },
     "source_kind": { "enum": ["direct-request", "plan", "issue", "pull-request", "activity-task"] },
@@ -33,6 +33,10 @@
           "worktree": { "type": "string", "minLength": 1 },
           "worker_input": { "type": "string", "minLength": 1 },
           "verifier_input": { "type": "string", "minLength": 1 },
+          "task_inputs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "verifier_inputs": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "active_task_id": { "type": "string", "minLength": 1 },
+          "lock_path": { "type": "string", "minLength": 1 },
           "status": { "enum": ["waiting", "prepared", "running", "verifying", "passed", "failed", "blocked", "cancelled", "closing", "closed"] },
           "depends_on": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" } },
           "repair_attempts": { "type": "integer", "minimum": 0 },
@@ -58,7 +62,17 @@
           "depends_on": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
           "outcome": { "enum": ["pending", "passed", "failed", "blocked", "cancelled"] },
           "task_input": { "type": "string", "minLength": 1 },
-          "verifier_input": { "type": "string", "minLength": 1 }
+          "verifier_input": { "type": "string", "minLength": 1 },
+          "plan_reference": { "type": "string", "minLength": 1 },
+          "task_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3,}$" },
+          "plan_revision": { "type": "integer", "minimum": 1 },
+          "attempt": { "type": "integer", "minimum": 0 },
+          "start_commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+          "ready": { "type": "boolean" },
+          "blocked_by": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "status": { "enum": ["waiting", "prepared", "running", "verifying", "passed", "failed", "blocked"] },
+          "worker_result": { "type": "string", "minLength": 1 },
+          "verifier_result": { "type": "string", "minLength": 1 }
         }
       }
     },
@@ -75,10 +89,24 @@
           "depends_on": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
           "outcome": { "enum": ["pending", "passed", "failed", "blocked", "cancelled"] },
           "worker_input": { "type": "string", "minLength": 1 },
-          "verifier_input": { "type": "string", "minLength": 1 }
+          "verifier_input": { "type": "string", "minLength": 1 },
+          "plan_reference": { "type": "string", "minLength": 1 },
+          "task_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3,}$" },
+          "plan_revision": { "type": "integer", "minimum": 1 },
+          "attempt": { "type": "integer", "minimum": 0 },
+          "start_commit": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40,64}$" },
+          "ready": { "type": "boolean" },
+          "blocked_by": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "status": { "enum": ["waiting", "prepared", "running", "verifying", "passed", "failed", "blocked"] },
+          "worker_result": { "type": "string", "minLength": 1 },
+          "verifier_result": { "type": "string", "minLength": 1 }
         }
       }
     },
+    "plan_revision": { "type": "integer", "minimum": 1 },
+    "plan_verifier_input": { "type": "string", "minLength": 1 },
+    "plan_verifier_result": { "type": "string", "minLength": 1 },
+    "plan_verifier_status": { "enum": ["pending", "running", "passed", "failed", "blocked"] },
     "evidence": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "execution_events": {
@@ -88,7 +116,7 @@
         "additionalProperties": false,
         "required": ["stage", "repository", "from_status", "to_status", "inferred", "idempotency_key", "occurred_at"],
         "properties": {
-          "stage": { "enum": ["worker-started", "worker-result", "verifier-result", "repair-prepared", "repair-exhausted", "review-prepared", "closeout-prepared", "closeout-cleaned"] },
+        "stage": { "enum": ["worker-started", "worker-result", "verifier-result", "plan-verifier-result", "repair-prepared", "repair-exhausted", "review-prepared", "closeout-prepared", "closeout-cleaned"] },
           "repository": { "type": "string", "minLength": 1 },
           "from_status": { "enum": ["prepared", "running", "verifying", "passed", "failed", "blocked", "cancelled", "closing"] },
           "to_status": { "enum": ["running", "verifying", "passed", "failed", "blocked", "closing", "closed"] },
@@ -124,5 +152,8 @@
   }, {
     "if": { "properties": { "contract_version": { "const": 1 } }, "required": ["contract_version"] },
     "then": { "properties": { "plan_work_items": { "maxItems": 1 } } }
+  }, {
+    "if": { "properties": { "contract_version": { "const": 3 } }, "required": ["contract_version"] },
+    "then": { "required": ["plan_id", "plan_version", "plan_revision", "plan_verifier_input", "plan_verifier_status", "task_graph"] }
   }]
 }
