@@ -15,7 +15,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["work_id", "title", "parent", "depends_on", "area", "repository", "scope", "test_scope", "test_policy", "verification_commands", "acceptance_criteria", "external_reference"],
+        "required": ["work_id", "title", "description", "parent", "depends_on", "area", "repository", "scope", "test_scope", "test_policy", "verification_commands", "acceptance_criteria", "external_reference"],
         "properties": {
           "work_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3,}$" },
           "title": { "type": "string", "minLength": 1 },

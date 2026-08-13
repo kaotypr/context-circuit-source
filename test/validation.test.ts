@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import { parse as parseYaml } from "yaml";
 import { validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "../scripts/lib/validation.js";
 import type { WorkspaceConfig } from "../scripts/lib/types.js";
@@ -106,6 +107,25 @@ test("machine-readable contract schemas reject incomplete data", async () => {
   for (const schema of ["workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "review-preparation", "merge-confirmation-record", "closeout-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const) {
     assert.notEqual((await validateContract(schema, { contract_version: 1 })).length, 0, schema);
   }
+});
+
+test("numbered-plan task and connection contracts reject authored live status", async () => {
+  const connectionSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "plan-connection.schema.json"), "utf8"));
+  const taskSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "plan-task.schema.json"), "utf8"));
+  const ajv = new Ajv2020({ allErrors: true, strict: false });
+  ajv.addSchema(connectionSchema);
+  const validate = ajv.compile(taskSchema);
+  const task = {
+    task_id: "GRAPH-001",
+    plan_id: "graph-plan",
+    repository: "frontend",
+    parent_task: null,
+    depends_on: [],
+    connections: [{ type: "related", target: "GRAPH-010" }],
+  };
+  assert.equal(validate(task), true);
+  assert.equal(validate({ ...task, status: "in-progress" }), false);
+  assert.equal(validate({ ...task, connections: [{ type: "unknown", target: "GRAPH-010" }] }), false);
 });
 
 test("complete worker and verifier results validate", async () => {

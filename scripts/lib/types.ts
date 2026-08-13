@@ -138,6 +138,16 @@ export interface PlanConnection {
   description?: string;
 }
 
+export interface PlanTaskContract {
+  task_id: string;
+  plan_id: string;
+  repository: string;
+  parent_task: string | null;
+  depends_on: string[];
+  subtasks?: string[];
+  connections: PlanConnection[];
+}
+
 export type ProductKnowledgeImpact =
   | "none"
   | "documentation-correction"

@@ -68,7 +68,7 @@
     "rootPlan": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["contract_version", "plan_id", "title", "repository_collection", "track", "plan_number", "plan_reference", "status", "status_updated_at", "status_reason", "status_actor", "status_evidence", "archived_at", "plan_version", "source", "source_reference", "documents", "work_breakdown", "task_index", "material_digest", "approved_digest", "affected_repositories", "depends_on_plans", "connections", "created_at", "updated_at"],
+      "required": ["contract_version", "plan_id", "title", "repository_collection", "track", "plan_number", "plan_reference", "status", "status_updated_at", "status_reason", "status_actor", "status_evidence", "archived_at", "plan_version", "approved_at", "approved_by", "revision_reason", "source", "source_reference", "work_prefix", "documents", "work_breakdown", "task_index", "material_digest", "approved_digest", "affected_repositories", "depends_on_plans", "connections", "created_at", "updated_at"],
       "properties": {
         "contract_version": { "const": 2 },
         "plan_id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
@@ -90,7 +90,7 @@
         "source": { "$ref": "#/$defs/source" },
         "source_reference": { "type": "string", "minLength": 1 },
         "work_prefix": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}$" },
-        "documents": { "type": "array", "minItems": 7, "uniqueItems": true, "items": { "type": "string", "pattern": "^(?:overview|requirements|acceptance-criteria|solution|delivery|verification|risks)\\.md$" } },
+        "documents": { "type": "array", "minItems": 7, "maxItems": 7, "uniqueItems": true, "items": { "type": "string", "pattern": "^(?:overview|requirements|acceptance-criteria|solution|delivery|verification|risks)\\.md$" } },
         "work_breakdown": { "const": "tasks/README.md" },
         "task_index": { "const": "tasks/README.md" },
         "material_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
@@ -102,10 +102,16 @@
         "updated_at": { "type": "string", "format": "date-time" },
         "product_knowledge": { "$ref": "#/$defs/productKnowledge" }
       },
-      "allOf": [{
-        "if": { "properties": { "status": { "const": "draft" } }, "required": ["status"] },
-        "then": { "properties": { "approved_at": { "type": "null" }, "approved_by": { "type": "null" }, "approved_digest": { "type": "null" } } }
-      }]
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "approved" } }, "required": ["status"] },
+          "then": { "properties": { "approved_at": { "type": "string", "format": "date-time" }, "approved_by": { "type": "string", "minLength": 1 }, "approved_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "draft" } }, "required": ["status"] },
+          "then": { "properties": { "approved_at": { "type": "null" }, "approved_by": { "type": "null" }, "approved_digest": { "type": "null" } } }
+        }
+      ]
     }
   }
 }

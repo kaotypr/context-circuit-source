@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { cp, lstat, mkdir, readdir, readFile, realpath, rename, rm } from "node:fs/promises";
 import { basename, dirname, join, relative, resolve } from "node:path";
+import { Ajv2020 } from "ajv/dist/2020.js";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { assertInside, writeTextAtomic, writeTextExclusive } from "./io.js";
-import type { PlanDraftRequest, PlanGenerationDefinition, PlanGenerationRequest, PlanIndex, PlanLifecycleStatus, PlanTrack, PlanWorkBreakdown, PlanWorkItem, ProductKnowledgePlanDeclaration, WorkspaceConfig } from "./types.js";
+import type { PlanDraftRequest, PlanGenerationDefinition, PlanGenerationRequest, PlanIndex, PlanLifecycleStatus, PlanTaskContract, PlanTrack, PlanWorkBreakdown, PlanWorkItem, ProductKnowledgePlanDeclaration, WorkspaceConfig } from "./types.js";
 import { readData, validateContract, workspaceSemanticErrors } from "./validation.js";
 
 const documents = [
@@ -83,6 +84,14 @@ function allocateWorkItems(request: PlanDraftRequest): PlanWorkItem[] {
     verification_commands: item.verification_commands,
     acceptance_criteria: item.acceptance_criteria,
     external_reference: null,
+    description: item.description?.trim() || item.title.trim(),
+    ...(item.subtasks ? { subtasks: item.subtasks.map((key) => ids.get(key) ?? key) } : {}),
+    ...(item.connections ? {
+      connections: normalizeConnectionList(item.connections).map((connection) => ({
+        ...connection,
+        target: ids.get(connection.target) ?? connection.target,
+      })),
+    } : {}),
   }));
 }
 
@@ -175,9 +184,18 @@ export function planWorkBreakdownSemanticErrors(breakdown: PlanWorkBreakdown, co
       if (!ids.has(dependency)) errors.push(`${item.work_id} has unknown dependency: ${dependency}`);
       if (dependency === item.work_id) errors.push(`${item.work_id} cannot depend on itself`);
     }
+    for (const subtask of item.subtasks ?? []) {
+      if (!ids.has(subtask)) errors.push(`${item.work_id} has unknown subtask: ${subtask}`);
+      if (subtask === item.work_id) errors.push(`${item.work_id} cannot list itself as a subtask`);
+      const child = breakdown.items.find((candidate) => candidate.work_id === subtask);
+      if (child && child.parent !== item.work_id) errors.push(`${item.work_id} lists ${subtask} as a subtask but its parent is ${child.parent ?? "none"}`);
+    }
     if (config && !config.repositories[item.repository]) errors.push(`${item.work_id} repository is not registered: ${item.repository}`);
   }
-  errors.push(...cycleErrors(breakdown.items));
+  errors.push(...cycleErrors(breakdown.items.map((item) => ({
+    work_id: item.work_id,
+    depends_on: [...item.depends_on, ...(item.connections ?? []).filter((connection) => connection.type === "depends-on" && ids.has(connection.target)).map((connection) => connection.target)],
+  }))));
   errors.push(...parentCycleErrors(breakdown.items));
   return [...new Set(errors)];
 }
@@ -268,25 +286,148 @@ async function workspaceRootForPlan(directory: string): Promise<string> {
   throw new Error(`Unable to locate workspace.yaml for plan: ${directory}`);
 }
 
-async function validateRootPlanDirectory(directory: string, index: PlanIndex, config: WorkspaceConfig, errors: string[]): Promise<PlanWorkBreakdown | null> {
+function matchingPlanIndexes(indexes: PlanIndex[], reference: string): PlanIndex[] {
+  const normalized = planDependencyKey(reference);
+  return indexes.filter((candidate) => candidate.plan_id === reference || planDependencyKey(candidate.plan_reference ?? "") === normalized);
+}
+
+function planReferenceErrors(current: PlanIndex, indexes: PlanIndex[]): string[] {
+  const errors: string[] = [];
+  const all = [...indexes.filter((candidate) => candidate.plan_id !== current.plan_id), current];
+  const dependencies = new Map<string, string[]>();
+  for (const candidate of all) {
+    const edges: string[] = [];
+    for (const reference of candidate.depends_on_plans ?? []) {
+      const matches = matchingPlanIndexes(all, reference);
+      if (matches.length === 0) {
+        if (candidate.plan_id === current.plan_id) errors.push(`${candidate.plan_id} references unknown plan: ${reference}`);
+        continue;
+      }
+      if (matches.length > 1) {
+        if (candidate.plan_id === current.plan_id) errors.push(`Plan reference is ambiguous: ${reference}`);
+        continue;
+      }
+      if (matches[0]!.plan_id === candidate.plan_id) errors.push(`plan ${candidate.plan_id} cannot depend on itself`);
+      edges.push(matches[0]!.plan_id);
+    }
+    for (const connection of candidate.connections ?? []) {
+      const matches = matchingPlanIndexes(all, connection.target);
+      if (matches.length === 0) {
+        if (candidate.plan_id === current.plan_id) errors.push(`${candidate.plan_id} has an unresolved connection target: ${connection.target}`);
+        continue;
+      }
+      if (matches.length > 1) {
+        if (candidate.plan_id === current.plan_id) errors.push(`Plan connection target is ambiguous: ${connection.target}`);
+        continue;
+      }
+      if (connection.type === "depends-on") {
+        if (matches[0]!.plan_id === candidate.plan_id) errors.push(`plan ${candidate.plan_id} cannot depend on itself`);
+        edges.push(matches[0]!.plan_id);
+      }
+    }
+    dependencies.set(candidate.plan_id, edges);
+  }
+  errors.push(...cycleErrors([...dependencies.entries()].map(([work_id, depends_on]) => ({ work_id, depends_on }))).map((error) => error.replace("work dependency cycle", "plan dependency cycle")));
+  return [...new Set(errors)];
+}
+
+async function validateRootTaskFiles(
+  workspaceRoot: string,
+  directory: string,
+  index: PlanIndex,
+  breakdown: PlanWorkBreakdown,
+  material: Map<string, string>,
+  knownPlans: PlanIndex[],
+  resolveExternalPlanReferences: boolean,
+  errors: string[],
+): Promise<void> {
+  const taskDirectory = join(directory, "tasks");
+  if (!await regularDirectory(taskDirectory)) {
+    errors.push("tasks/ must be a real directory");
+    return;
+  }
+  const entries = await readdir(taskDirectory, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.name === "README.md") continue;
+    if (entry.isDirectory() || entry.isSymbolicLink()) errors.push(`tasks/ contains an unsafe or unexpected entry: ${entry.name}`);
+  }
+  const expected = new Map(breakdown.items.map((item) => [item.work_id, item]));
+  for (const entry of entries) {
+    if (!entry.name.endsWith(".md") || entry.name === "README.md") continue;
+    const taskId = entry.name.slice(0, -3);
+    if (!expected.has(taskId)) errors.push(`task file does not resolve to a task contract: ${entry.name}`);
+  }
+  for (const item of breakdown.items) {
+    const name = `tasks/${item.work_id}.md`;
+    const raw = material.get(name);
+    if (raw === undefined) {
+      errors.push(`task file is missing: ${name}`);
+      continue;
+    }
+    const parsed = parseTaskFrontmatter(raw);
+    errors.push(...parsed.errors.map((error) => `${name}: ${error}`));
+    const frontmatter = parsed.value as Partial<PlanTaskContract> | null;
+    if (!frontmatter || typeof frontmatter !== "object") continue;
+    errors.push(...(await validatePlanTaskContract(workspaceRoot, frontmatter)).map((error) => `${name}: ${error}`));
+    if (frontmatter.task_id !== item.work_id) errors.push(`${name}: task_id does not match its stable filename`);
+    if (frontmatter.plan_id !== index.plan_id) errors.push(`${name}: plan_id does not match the containing plan`);
+    if (frontmatter.repository !== item.repository) errors.push(`${name}: repository does not match the task graph`);
+    if (frontmatter.parent_task !== item.parent) errors.push(`${name}: parent_task does not match the task graph`);
+    if (!sameStringList(frontmatter.depends_on, item.depends_on)) errors.push(`${name}: depends_on does not match the task graph`);
+    if (!sameStringList(frontmatter.subtasks, item.subtasks ?? [])) errors.push(`${name}: subtasks does not match the task graph`);
+    if (JSON.stringify(frontmatter.connections ?? []) !== JSON.stringify(item.connections ?? [])) errors.push(`${name}: connections do not match the task graph`);
+    const markdown = markdownSections(parsed.body);
+    errors.push(...markdown.errors.map((error) => `${name}: ${error}`));
+    if (markdown.title !== item.title) errors.push(`${name}: Markdown title does not match the task graph`);
+    errors.push(...authoredLiveStatusErrors(raw).map((error) => `${name}: ${error}`));
+    for (const connection of item.connections ?? []) {
+      if (expected.has(connection.target)) continue;
+      if (!resolveExternalPlanReferences) continue;
+      const matches = matchingPlanIndexes(knownPlans, connection.target);
+      if (matches.length === 0) errors.push(`${name}: connection target does not resolve exactly: ${connection.target}`);
+      else if (matches.length > 1) errors.push(`${name}: connection target is ambiguous: ${connection.target}`);
+    }
+  }
+}
+
+async function validateRootPlanDirectory(
+  directory: string,
+  index: PlanIndex,
+  config: WorkspaceConfig,
+  errors: string[],
+  resolveExternalPlanReferences = true,
+  suppliedPlanIndexes?: PlanIndex[],
+): Promise<PlanWorkBreakdown | null> {
   const expectedFolder = index.plan_reference?.replace(/^.*\//, "").replace(/@v[0-9]+$/, "");
-  if (expectedFolder && basename(directory) !== expectedFolder) errors.push(`plan folder does not match plan reference: ${basename(directory)}`);
+  const archivedFolder = expectedFolder?.replace(/^\d{3,}-/, "");
+  if (expectedFolder && basename(directory) !== expectedFolder && basename(directory) !== archivedFolder) errors.push(`plan folder does not match plan reference: ${basename(directory)}`);
   if (!index.repository_collection || !index.track || index.plan_number === undefined || !index.task_index) {
     errors.push("root plan metadata is incomplete");
     return null;
   }
-  if (index.repository_collection !== `${index.affected_repositories?.[0] ?? index.repository_collection.replace(/-plans$/, "")}-plans`) {
-    errors.push("repository_collection must be derived from the exact primary repository key");
+  const primaryRepository = index.repository_collection.replace(/-plans$/, "");
+  if (!config.repositories[primaryRepository] || !index.affected_repositories?.includes(primaryRepository)) {
+    errors.push("repository_collection must be derived from an exact affected repository key");
   }
-  if (!index.documents.every((document) => ROOT_PLAN_DOCUMENTS.includes(document as typeof ROOT_PLAN_DOCUMENTS[number]))) errors.push("root plan documents must use the fixed unnumbered inventory");
+  const expectedDocuments = [...ROOT_PLAN_DOCUMENTS];
+  if (JSON.stringify([...index.documents].sort()) !== JSON.stringify([...expectedDocuments].sort())) errors.push("root plan documents must use the fixed unnumbered inventory");
   const material = new Map<string, string>();
-  for (const document of index.documents) {
+  for (const document of expectedDocuments) {
     if (!await regularFile(join(directory, document))) errors.push(`plan document is missing or unsafe: ${document}`);
-    else material.set(document, await readFile(join(directory, document), "utf8"));
+    else {
+      const raw = await readFile(join(directory, document), "utf8");
+      material.set(document, raw);
+      errors.push(...authoredLiveStatusErrors(raw).map((error) => `${document}: ${error}`));
+    }
   }
-  const taskIndexPath = join(directory, index.task_index);
+  const taskIndexPath = join(directory, "tasks", "README.md");
+  if (index.task_index !== "tasks/README.md" || index.work_breakdown !== "tasks/README.md") errors.push("root plan task index must be tasks/README.md");
   if (!await regularFile(taskIndexPath)) errors.push("tasks/README.md is missing or unsafe");
-  else material.set(index.task_index, await readFile(taskIndexPath, "utf8"));
+  else {
+    const raw = await readFile(taskIndexPath, "utf8");
+    material.set("tasks/README.md", raw);
+    errors.push(...authoredLiveStatusErrors(raw).map((error) => `tasks/README.md: ${error}`));
+  }
   if (await regularDirectory(join(directory, "tasks"))) {
     for (const entry of await readdir(join(directory, "tasks"))) {
       if (entry === "README.md" || !entry.endsWith(".md")) continue;
@@ -297,7 +438,7 @@ async function validateRootPlanDirectory(directory: string, index: PlanIndex, co
   const digest = rootMaterialDigest(material);
   if (index.material_digest !== digest) errors.push("material_digest does not match root plan documents and task files");
   if (index.status === "approved" && index.approved_digest !== digest) errors.push("approved_digest does not match the approved root plan material");
-  const rawTasks = material.get(index.task_index);
+  const rawTasks = material.get("tasks/README.md");
   const executionMatch = rawTasks?.match(/```json\r?\n([\s\S]*?)\r?\n```/);
   if (!executionMatch) {
     errors.push("tasks/README.md must contain the complete task graph JSON");
@@ -307,6 +448,14 @@ async function validateRootPlanDirectory(directory: string, index: PlanIndex, co
     const breakdown = JSON.parse(executionMatch[1]!) as PlanWorkBreakdown;
     const contractErrors = contractMessages(await validateContract("plan-work-breakdown", breakdown));
     errors.push(...contractErrors, ...planWorkBreakdownSemanticErrors(breakdown, config));
+    if (breakdown.plan_id !== index.plan_id) errors.push("task graph plan_id does not match the plan README");
+    if (breakdown.work_prefix !== index.work_prefix) errors.push("task graph work_prefix does not match the plan README");
+    const knownPlans = suppliedPlanIndexes ?? (resolveExternalPlanReferences ? [
+      ...(await readRootIndexesIfPresent(join(await workspaceRootForPlan(directory), "plans"))),
+      ...(await readRootIndexesIfPresent(join(await workspaceRootForPlan(directory), "archived", "plans"))),
+    ] : [index]);
+    if (resolveExternalPlanReferences) errors.push(...planReferenceErrors(index, knownPlans));
+    await validateRootTaskFiles(await workspaceRootForPlan(directory), directory, index, breakdown, material, knownPlans, resolveExternalPlanReferences, errors);
     return breakdown;
   } catch (error) {
     errors.push(`Invalid root task graph: ${(error as Error).message}`);
@@ -387,6 +536,8 @@ export async function setPlanState(planDirectory: string, transition: PlanStateT
   const allowedStaleDigestErrors = new Set([
     "material_digest does not match the numbered plan documents",
     "approved_digest does not match the approved plan material",
+    "material_digest does not match root plan documents and task files",
+    "approved_digest does not match the approved root plan material",
   ]);
   const blocking = validation.errors.filter((error) => !allowedStaleDigestErrors.has(error));
   if (!validation.index || blocking.length > 0) throw new Error(`Plan state transition validation failed:\n- ${blocking.join("\n- ")}`);
@@ -487,8 +638,9 @@ function renderPlan(request: PlanDraftRequest, createdAt: string): { index: Plan
   const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "—"} | ${item.depends_on.join(", ") || "—"} | ${item.repository} | ${item.area} | — |`).join("\n");
   const execution = {
     contract_version: 2,
-    items: workItems.map(({ work_id, repository, scope, test_scope, test_policy, test_rationale, verification_commands, acceptance_criteria }) => ({
-      work_id, repository, scope, test_scope, test_policy, ...(test_rationale ? { test_rationale } : {}), verification_commands, acceptance_criteria,
+    items: workItems.map(({ work_id, repository, scope, test_scope, test_policy, test_rationale, verification_commands, acceptance_criteria, description, subtasks, connections }) => ({
+      work_id, repository, scope, test_scope, test_policy, ...(test_rationale ? { test_rationale } : {}), verification_commands, acceptance_criteria, description,
+      ...(subtasks ? { subtasks } : {}), ...(connections ? { connections } : {}),
     })),
   };
   files.set("0080-work-breakdown.md", `# Work breakdown\n\n${tableHeader}\n${tableSeparator}\n${rows}\n\n## Execution contracts\n\n\`\`\`json\n${JSON.stringify(execution, null, 2)}\n\`\`\`\n\nLive task status does not belong in this plan. Add confirmed external references only after an explicit publication action.\n`);
@@ -645,6 +797,70 @@ function rootMaterialDigest(files: Map<string, string>): string {
   return materialDigest(files, names);
 }
 
+const TASK_BODY_SECTIONS = [
+  "Description",
+  "Scope",
+  "Test expectation",
+  "Verification commands",
+  "Acceptance criteria",
+] as const;
+
+function authoredLiveStatusErrors(raw: string): string[] {
+  const errors: string[] = [];
+  if (/^status\s*:/im.test(raw)) errors.push("authored Markdown must not contain a live status field");
+  if (/^#{2,6}\s+status\b/im.test(raw)) errors.push("authored Markdown must not contain a live Status section");
+  if (/\|\s*status\s*\|/i.test(raw)) errors.push("authored Markdown must not contain a live Status column");
+  return errors;
+}
+
+function markdownSections(raw: string): { title: string | null; sections: Map<string, string>; errors: string[] } {
+  const errors: string[] = [];
+  const frontmatter = raw.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);
+  const body = frontmatter ? raw.slice(frontmatter[0].length) : raw;
+  const title = body.match(/^#\s+([^\r\n]+)\r?$/m)?.[1]?.trim() ?? null;
+  const headings = [...body.matchAll(/^##\s+([^\r\n]+)\r?$/gm)];
+  const sections = new Map<string, string>();
+  for (const [index, heading] of headings.entries()) {
+    const name = heading[1]!.trim();
+    if (sections.has(name)) errors.push(`duplicate Markdown section: ${name}`);
+    const start = (heading.index ?? 0) + heading[0].length;
+    const end = headings[index + 1]?.index ?? body.length;
+    sections.set(name, body.slice(start, end).trim());
+  }
+  for (const section of TASK_BODY_SECTIONS) {
+    if (!sections.has(section)) errors.push(`task Markdown is missing the ${section} section`);
+    else if (!sections.get(section)) errors.push(`task Markdown section is empty: ${section}`);
+  }
+  return { title, sections, errors };
+}
+
+function parseTaskFrontmatter(raw: string): { value: unknown; body: string; errors: string[] } {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  if (!match) return { value: null, body: raw, errors: ["task Markdown must begin with YAML frontmatter"] };
+  try {
+    return { value: parseYaml(match[1]!), body: raw.slice(match[0].length), errors: [] };
+  } catch (error) {
+    return { value: null, body: raw.slice(match[0].length), errors: [`invalid task frontmatter: ${(error as Error).message}`] };
+  }
+}
+
+async function validatePlanTaskContract(workspaceRoot: string, value: unknown): Promise<string[]> {
+  try {
+    const connectionSchema = await readData(join(workspaceRoot, ".agents", "contracts", "plan-connection.schema.json")) as Record<string, unknown>;
+    const taskSchema = await readData(join(workspaceRoot, ".agents", "contracts", "plan-task.schema.json")) as Record<string, unknown>;
+    const ajv = new Ajv2020({ allErrors: true, strict: false });
+    ajv.addSchema(connectionSchema);
+    const validate = ajv.compile(taskSchema);
+    return validate(value) ? [] : (validate.errors ?? []).map((error) => `${error.instancePath || "/"} ${error.message ?? "is invalid"}`);
+  } catch (error) {
+    return [`unable to validate task frontmatter: ${(error as Error).message}`];
+  }
+}
+
+function sameStringList(left: string[] | undefined, right: string[]): boolean {
+  return JSON.stringify(left ?? []) === JSON.stringify(right);
+}
+
 function normalizeConnectionList(value: unknown): Array<{ type: "depends-on" | "integrates-with" | "blocks" | "related" | "supersedes"; target: string; description?: string }> {
   if (!Array.isArray(value)) return [];
   return value.map((entry) => {
@@ -673,9 +889,9 @@ function rootWorkItems(definition: PlanGenerationDefinition): PlanWorkItem[] {
     ids.set(item.key, candidate);
     ids.set(candidate, candidate);
   });
-  return definition.work_items.map((item) => {
+  const items = definition.work_items.map((item) => {
     const workId = ids.get(item.key)!;
-    const parent = item.parent ? ids.get(item.parent) ?? null : null;
+    const parent = item.parent ? ids.get(item.parent) ?? item.parent : null;
     const dependsOn = (item.depends_on ?? []).map((dependency) => ids.get(dependency) ?? dependency);
     const subtasks = (item.subtasks ?? []).map((subtask) => ids.get(subtask) ?? subtask);
     return {
@@ -692,11 +908,23 @@ function rootWorkItems(definition: PlanGenerationDefinition): PlanWorkItem[] {
       verification_commands: [...item.verification_commands],
       acceptance_criteria: [...item.acceptance_criteria],
       external_reference: null,
-      ...(item.description?.trim() ? { description: item.description.trim() } : {}),
+      description: item.description?.trim() || item.title.trim(),
       ...(subtasks.length > 0 ? { subtasks } : {}),
-      ...(item.connections ? { connections: normalizeConnectionList(item.connections) } : {}),
+      ...(item.connections ? {
+        connections: normalizeConnectionList(item.connections).map((connection) => ({
+          ...connection,
+          target: ids.get(connection.target) ?? connection.target,
+        })),
+      } : {}),
     };
   });
+  const byId = new Map(items.map((item) => [item.work_id, item]));
+  for (const item of items) {
+    if (!item.parent || !byId.has(item.parent)) continue;
+    const parent = byId.get(item.parent)!;
+    if (!parent.subtasks?.includes(item.work_id)) parent.subtasks = [...(parent.subtasks ?? []), item.work_id];
+  }
+  return items;
 }
 
 function rootPlanSemanticErrors(request: PlanGenerationRequest, config: WorkspaceConfig): string[] {
@@ -757,6 +985,7 @@ function renderTaskFile(planId: string, item: PlanWorkItem): string {
     repository: item.repository,
     parent_task: item.parent,
     depends_on: item.depends_on,
+    ...(item.subtasks && item.subtasks.length > 0 ? { subtasks: item.subtasks } : {}),
     ...(item.connections ? { connections: item.connections } : { connections: [] }),
   };
   return `---\n${stringifyYaml(frontmatter).trimEnd()}\n---\n\n# ${item.title}\n\n## Description\n\n${item.description ?? item.title}\n\n## Scope\n\n${markdownList(item.scope, "No implementation scope recorded.")}\n\n## Test expectation\n\n- Policy: ${item.test_policy}\n- Paths: ${item.test_scope.length > 0 ? item.test_scope.join(", ") : "None"}\n${item.test_rationale ? `- Rationale: ${item.test_rationale}\n` : ""}\n## Verification commands\n\n${markdownList(item.verification_commands, "No command recorded.")}\n\n## Acceptance criteria\n\n${markdownList(item.acceptance_criteria, "None recorded.")}\n`;
@@ -785,7 +1014,8 @@ function renderRootPlan(definition: PlanGenerationDefinition, number: number, cr
   files.set("verification.md", renderDocument("Verification", [["Verification strategy", markdownList(definition.verification, "None recorded.")]]));
   files.set("risks.md", renderDocument("Risks", [["Risks and mitigations", markdownList(definition.risks, "None recorded.")]]));
   const execution = { contract_version: 2, plan_id: definition.plan_id, work_prefix: definition.work_prefix, items };
-  files.set("tasks/README.md", `# Tasks\n\nThe task files below are the complete immutable task graph for this plan.\n\n## Task contracts\n\n\`\`\`json\n${JSON.stringify(execution, null, 2)}\n\`\`\`\n`);
+  const taskLinks = items.map((item) => `- [${item.work_id}](./${item.work_id}.md)`).join("\n");
+  files.set("tasks/README.md", `# Tasks\n\nThe task files below are the complete immutable task graph for this plan.\n\n## Task files\n\n${taskLinks}\n\n## Task contracts\n\n\`\`\`json\n${JSON.stringify(execution, null, 2)}\n\`\`\`\n`);
   for (const item of items) files.set(`tasks/${item.work_id}.md`, renderTaskFile(definition.plan_id, item));
   const digest = rootMaterialDigest(files);
   const affected = [...new Set([definition.repository, ...(definition.affected_repositories ?? [])])];
@@ -869,34 +1099,40 @@ async function readRootIndexes(root: string): Promise<PlanIndex[]> {
   return indexes;
 }
 
+async function readRootIndexesIfPresent(root: string): Promise<PlanIndex[]> {
+  return await regularDirectory(root) ? readRootIndexes(root) : [];
+}
+
 function planDependencyKey(value: string): string {
   return value.replace(/^plans\//, "").replace(/@v[0-9]+$/, "");
 }
 
-async function assertRootPlanReferences(root: string, definitions: PlanGenerationDefinition[], rendered: Array<{ index: PlanIndex }>): Promise<void> {
+async function assertRootPlanReferences(root: string, definitions: PlanGenerationDefinition[], rendered: Array<{ index: PlanIndex; files: Map<string, string> }>): Promise<void> {
   const existing = await regularDirectory(root) ? await readRootIndexes(root) : [];
   const all = [...existing, ...rendered.map((item) => item.index)];
-  const byId = new Map<string, PlanIndex[]>();
-  const byReference = new Map<string, PlanIndex>();
-  for (const index of all) {
-    const bucket = byId.get(index.plan_id) ?? [];
-    bucket.push(index);
-    byId.set(index.plan_id, bucket);
-    if (index.plan_reference) byReference.set(planDependencyKey(index.plan_reference), index);
-  }
-  const batchIds = new Set(definitions.map((definition) => definition.plan_id));
+  const graph = new Map<string, string[]>();
+  for (const index of all) graph.set(index.plan_id, []);
   for (const [position, definition] of definitions.entries()) {
-    const refs = [...(definition.depends_on_plans ?? []), ...normalizeConnectionList(definition.connections).map((connection) => connection.target)];
+    const plan = rendered[position]!.index;
+    const refs = [...(plan.depends_on_plans ?? []), ...(plan.connections ?? []).map((connection) => connection.target)];
     for (const reference of refs) {
-      if (batchIds.has(reference)) continue;
-      const matches = byId.get(reference) ?? (byReference.has(planDependencyKey(reference)) ? [byReference.get(planDependencyKey(reference))!] : []);
+      const matches = matchingPlanIndexes(all, reference);
       if (matches.length === 0) throw new Error(`Plan ${definition.plan_id} references unknown plan: ${reference}`);
       if (matches.length > 1) throw new Error(`Plan reference is ambiguous: ${reference}`);
+      if ((plan.depends_on_plans ?? []).includes(reference) || plan.connections?.some((connection) => connection.type === "depends-on" && connection.target === reference)) {
+        graph.get(plan.plan_id)!.push(matches[0]!.plan_id);
+      }
+    }
+    const taskGraph = JSON.parse(rendered[position]!.files.get("tasks/README.md")!.match(/```json\n([\s\S]*?)\n```/)![1]!) as PlanWorkBreakdown;
+    const taskIds = new Set(taskGraph.items.map((item) => item.work_id));
+    for (const item of taskGraph.items) for (const connection of item.connections ?? []) {
+      if (taskIds.has(connection.target)) continue;
+      const matches = matchingPlanIndexes(all, connection.target);
+      if (matches.length === 0) throw new Error(`Task ${item.work_id} references unknown plan or task: ${connection.target}`);
+      if (matches.length > 1) throw new Error(`Task connection target is ambiguous: ${connection.target}`);
     }
     if (definition.plan_number !== undefined && rendered[position]?.index.plan_number !== definition.plan_number) throw new Error(`Plan number allocation changed during validation for ${definition.plan_id}`);
   }
-  const graph = new Map<string, string[]>();
-  for (const index of all) graph.set(index.plan_id, index.depends_on_plans ?? []);
   const cycle = cycleErrors([...graph.entries()].map(([work_id, depends_on]) => ({ work_id, depends_on })));
   if (cycle.length > 0) throw new Error(cycle.join("; ").replaceAll("work dependency cycle", "plan dependency cycle"));
 }
@@ -907,18 +1143,11 @@ async function validateRenderedRootPlan(directory: string, expected: PlanIndex):
   const errors = contractMessages(await validateContract("plan-index", index));
   if (errors.length > 0) throw new Error(`Generated root plan index is invalid: ${errors.join("; ")}`);
   if (index.plan_id !== expected.plan_id || index.plan_reference !== expected.plan_reference) throw new Error("Generated plan identity changed during validation");
-  const files = new Map<string, string>();
-  for (const document of ROOT_PLAN_DOCUMENTS) files.set(document, await readFile(join(directory, document), "utf8"));
-  files.set("tasks/README.md", await readFile(join(directory, "tasks/README.md"), "utf8"));
-  const taskNames = (await readdir(join(directory, "tasks"))).filter((name) => name.endsWith(".md") && name !== "README.md").sort();
-  for (const task of taskNames) files.set(`tasks/${task}`, await readFile(join(directory, "tasks", task), "utf8"));
-  if (rootMaterialDigest(files) !== index.material_digest) throw new Error(`Generated plan material digest does not match: ${index.plan_id}`);
-  const contractMatch = files.get("tasks/README.md")!.match(/```json\n([\s\S]*?)\n```/);
-  if (!contractMatch) throw new Error(`Task index has no complete task graph: ${index.plan_id}`);
-  const breakdown = JSON.parse(contractMatch[1]!) as PlanWorkBreakdown;
-  const breakdownErrors = contractMessages(await validateContract("plan-work-breakdown", breakdown));
-  breakdownErrors.push(...planWorkBreakdownSemanticErrors(breakdown));
-  if (breakdownErrors.length > 0) throw new Error(`Generated task graph is invalid: ${breakdownErrors.join("; ")}`);
+  const workspaceRoot = await workspaceRootForPlan(directory);
+  const config = await readData(join(workspaceRoot, "workspace.yaml")) as WorkspaceConfig;
+  const generatedErrors: string[] = [];
+  await validateRootPlanDirectory(directory, index, config, generatedErrors, false, [index]);
+  if (generatedErrors.length > 0) throw new Error(`Generated root plan is invalid: ${generatedErrors.join("; ")}`);
 }
 
 function collectionReadme(indexes: PlanIndex[], collection: string): string {
