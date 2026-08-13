@@ -36,7 +36,17 @@
     },
     "blockers": { "$ref": "#/$defs/strings" },
     "prepared_at": { "type": "string", "format": "date-time" },
-    "updated_at": { "type": "string", "format": "date-time" }
+    "updated_at": { "type": "string", "format": "date-time" },
+    "product_knowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impact", "synchronization"],
+      "properties": {
+        "impact": { "enum": ["absent", "matches-declared", "broader-than-declared", "contradicts-current", "not-reported"] },
+        "synchronization": { "enum": ["not-required", "pending-review"] },
+        "notes": { "type": "string", "minLength": 1 }
+      }
+    }
   },
   "$defs": {
     "strings": { "type": "array", "items": { "type": "string", "minLength": 1 } }

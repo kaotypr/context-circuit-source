@@ -1,6 +1,5 @@
 Read and follow the canonical `.agents/skills/initialize-workspace/SKILL.md`.
 
-Inspect existing wrapper files, repositories, and project sources before asking
-for unresolved material decisions. Use the shared deterministic initialization
-and validation commands; do not reproduce configuration, ignore, or submodule
+This compatibility invocation detects fresh versus existing state and routes to
+the canonical configuration workflow. Do not reproduce routing or configuration
 logic in this command.

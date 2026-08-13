@@ -13,9 +13,10 @@ decisions.
 
 Start with the [wrapper getting-started guide](docs/getting-started.md). Then use
 the [human workflow guide](docs/using-the-wrapper.md) for day-to-day delivery,
-the [configuration reference](docs/configuration.md) for workspace policy, and
-the [command reference](docs/command-reference.md) for troubleshooting or
-advanced direct use.
+the [configuration reference](docs/configuration.md) for workspace policy, the
+[command reference](docs/command-reference.md) for troubleshooting or advanced
+direct use, and the [Product Knowledge guide](docs/product-knowledge.md) for the
+optional business-context capability.
 
 The downloadable wrapper requires Git and Node.js 22 or newer. It includes the
 standalone `.agents/bin/cc.mjs` command and does not require npm installation,
@@ -23,8 +24,8 @@ TypeScript, a database, a background service, or a provider SDK.
 
 ## Core workflow
 
-1. `$initialize-workspace` interviews the human and bootstraps new, cloned,
-   existing, or submodule repositories safely.
+1. `$configure-workspace` configures fresh or existing wrappers and safely uses
+   an internal bootstrap phase only for first-time Git and base commits.
 2. `$create-plan` optionally records reviewed delivery intent.
 3. `$whats-next` recommends one source-backed action without changing state.
 4. `$run-task` prepares isolated worktrees for scoped workers and independent
@@ -33,4 +34,5 @@ TypeScript, a database, a background service, or a provider SDK.
 6. `$sync-context` curates reusable learning through a reviewable wrapper change.
 
 Canonical behavior lives under `.agents/`. `.codex/` and `.claude/` contain thin
-host adapters only.
+host adapters only. `$initialize-workspace` remains a state-detecting compatibility
+alias.

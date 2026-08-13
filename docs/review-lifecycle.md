@@ -32,7 +32,7 @@ advances the run to `running`. If another failure reaches
 `repair-exhausted`, changes the run to `blocked`, and emits no new writable input.
 Preserve the branch, worktree, and evidence for human recovery.
 
-## Draft pull-request handoff
+## Local review, optional publication, and merge handoff
 
 After independent verification passes, prepare review metadata:
 
@@ -40,15 +40,25 @@ After independent verification passes, prepare review metadata:
 node .agents/bin/cc.mjs prepare-review --run-id <run-id> --repository frontend
 ```
 
-The generated document validates against
+The version 2 generated document validates against
 `.agents/contracts/review-preparation.schema.json`. It contains the base and head
 branches and commits, complete changed-file list, title, body, and worker and
-verifier evidence. It records only the Git remote name, so credential-bearing
-remote URLs cannot enter runtime evidence.
+verifier evidence. It also records exact commands both as argv arrays and
+POSIX-shell renderings for diff, commit inspection, showing the verified head,
+recorded tests, switching the base repository to the configured target, and a
+human-only merge. Every command records an explicit `cwd`; the shell form begins
+with `cd -- <quoted-cwd> &&`. Recorded verifier strings remain intact as the
+single script argument to `sh -lc`, preserving their semantics without parsing
+arbitrary shell syntax. Values are quoted; full commit IDs are used instead of
+ambiguous or caller-provided refs. It records only the Git remote name, so
+credential-bearing remote URLs cannot enter runtime evidence.
 
-The handoff is `ready` when an `origin` remote exists and `blocked` with an
-explicit explanation when it does not. Preparation is idempotent for an
-unchanged verified commit and performs no external mutation.
+The handoff is `ready-for-publication` when `origin` exists and
+`ready-for-local-review` when it does not. Missing remote configuration never
+blocks local review. Preparation is idempotent for an unchanged verified commit
+and performs no external mutation. Legacy version 1 `ready` and `blocked`
+records remain schema-readable and are regenerated as version 2 when review is
+prepared again.
 
 With explicit authorization, the coordinator may push only the prepared branch
 and use an authenticated host-native `gh` or `glab` command to open a draft pull
@@ -57,11 +67,24 @@ request from the prepared title and body. Record the confirmed response:
 ```bash
 node .agents/bin/cc.mjs record-review-publication \
   --run-id <run-id> --repository frontend --status published --tool gh \
-  --pull-request <reference> --evidence "gh confirmed the draft pull request"
+  --pull-request <reference> --evidence "gh confirmed the draft pull request" --authorized
 ```
 
 The recorder revalidates the clean worktree and exact prepared head, rejects
 credential-bearing or conflicting evidence, and is idempotent. It never invokes
 the remote tool itself. Missing authorization/tooling returns a manual handoff;
 failure must not be represented as a published pull request. Merge and cleanup
-remain human-gated.
+remain human-gated. A successful record advances to `published-for-review`.
+
+After review, the human runs the emitted target-switch and merge commands. The
+agent never runs them. The human then reports the full merge commit through the
+emitted `confirm-merge` command. That command performs no Git mutation: it
+requires the exact prepared head to be an ancestor of the reported merge, and
+the reported merge to be reachable from the exact configured local or `origin`
+default-branch ref. Only then does it record `closeout-ready` and emit the exact
+`finish-work` argv and shell command.
+
+All registered runtime artifacts that can advance publication, merge
+confirmation, or closeout must be real regular files inside `.runtime`; symlinked
+or non-file preparation, publication, confirmation, and closeout evidence is
+rejected before lifecycle mutation.

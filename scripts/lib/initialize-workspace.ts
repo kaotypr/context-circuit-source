@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { access, lstat, mkdir, readFile, realpath } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { stringify as stringifyYaml } from "yaml";
@@ -6,9 +7,13 @@ import { git } from "./git.js";
 import type { BootstrapGitCommit, WorkspaceBootstrapRequest, WorkspaceConfig } from "./types.js";
 import { readData, requiredWorkspaceDocuments, validateContract, workspaceDocumentErrors, workspaceSemanticErrors } from "./validation.js";
 import { renderWorkspaceContext } from "./workspace-context.js";
+import { renderProductKnowledgeBaseline, validateProductKnowledgeTree } from "./product-knowledge.js";
+import { reconcileWorkspaceReadme } from "./workspace-readme.js";
+import { cloneReferenceError } from "./safe-reference.js";
 
 const ignoredStart = "# context-circuit:ignored-clones:start";
 const ignoredEnd = "# context-circuit:ignored-clones:end";
+declare const __CC_TEMPLATE_INVENTORY__: string[] | undefined;
 
 export interface InitializationRepositorySummary {
   name: string;
@@ -145,11 +150,40 @@ async function hasHead(path: string): Promise<boolean> {
 
 function safeRemote(value: string, repository: string): string {
   const remote = value.trim();
-  if (!remote || /[\r\n]/.test(remote)) throw new Error(`Repository ${repository} requires a single-line clone URL`);
-  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(remote) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(remote)) {
-    throw new Error(`Repository ${repository} clone URL appears to contain credentials`);
-  }
+  const error = cloneReferenceError(remote);
+  if (error) throw new Error(`Repository ${repository} clone URL ${error}`);
   return remote;
+}
+
+async function assertExpectedUnbornTemplate(root: string): Promise<void> {
+  const status = (await git(root, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
+  const allowed = new Set<string>([...requiredWorkspaceDocuments, ".gitignore", "template-manifest.json"]);
+  const templateDirectories = [".agents/", ".codex/", ".claude/", "agents/", "context/", "contributions/", "docs/"];
+  const trustedInventory = typeof __CC_TEMPLATE_INVENTORY__ === "undefined" ? null : __CC_TEMPLATE_INVENTORY__;
+  if (trustedInventory) {
+    const manifestPath = join(root, "template-manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as Record<string, unknown>;
+    const inventory = manifest.file_inventory;
+    if (manifest.name !== "context-circuit" || manifest.version !== "0.2.1" || manifest.node !== ">=22" || manifest.command !== "node .agents/bin/cc.mjs"
+      || !Array.isArray(inventory) || JSON.stringify(inventory) !== JSON.stringify(trustedInventory)) {
+      throw new Error("Extracted template manifest or inventory has been modified");
+    }
+    const expectedBundle = createHash("sha256").update(await readFile(join(root, ".agents", "bin", "cc.mjs"))).digest("hex");
+    if (manifest.bundle_sha256 !== expectedBundle) throw new Error("Extracted template manifest bundle digest has been modified");
+    allowed.clear();
+    for (const path of trustedInventory) allowed.add(path);
+    templateDirectories.length = 0;
+  }
+  const unexpected = status.filter((line) => {
+    if (!line.startsWith("?? ")) return true;
+    const path = line.slice(3);
+    return !allowed.has(path) && !templateDirectories.some((prefix) => path.startsWith(prefix));
+  });
+  if (unexpected.length > 0) throw new Error(`Unborn wrapper contains authored or unexpected changes; refusing bootstrap:\n${unexpected.join("\n")}`);
+  const config = await readData(join(root, "workspace.yaml")) as WorkspaceConfig;
+  if (config.workspace.name !== "uninitialized-workspace" || Object.keys(config.repositories).length !== 0) {
+    throw new Error("Unborn wrapper is not the neutral extracted-template baseline");
+  }
 }
 
 function commitArgs(commit: BootstrapGitCommit): string[] {
@@ -190,8 +224,11 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   }
   if (wrapperGitExists) {
     await assertExactGitRoot(workspaceRoot, "wrapper");
-    const changes = await git(workspaceRoot, ["status", "--porcelain=v1", "--untracked-files=normal"]);
-    if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:\n${changes}`);
+    if (!await hasHead(workspaceRoot)) await assertExpectedUnbornTemplate(workspaceRoot);
+    else {
+      const changes = await git(workspaceRoot, ["status", "--porcelain=v1", "--untracked-files=normal"]);
+      if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:\n${changes}`);
+    }
   }
   const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot);
   if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
@@ -199,6 +236,19 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   const gitignorePath = join(workspaceRoot, ".gitignore");
   const currentGitignore = await readFile(gitignorePath, "utf8");
   const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
+  const readmePath = join(workspaceRoot, "README.md");
+  const readmeInfo = await lstat(readmePath);
+  if (!readmeInfo.isFile() || readmeInfo.isSymbolicLink()) throw new Error("README.md must be a regular non-symlink file");
+  assertInside(await realpath(workspaceRoot), await realpath(readmePath));
+  const currentReadme = await readFile(readmePath, "utf8");
+  const sourcesPath = join(workspaceRoot, "context", "SOURCES.md");
+  const sourcesInfo = await lstat(sourcesPath);
+  if (!sourcesInfo.isFile() || sourcesInfo.isSymbolicLink()) throw new Error("context/SOURCES.md must be a regular non-symlink file");
+  assertInside(await realpath(workspaceRoot), await realpath(sourcesPath));
+  const readmeConfig: WorkspaceConfig = config.workspace.purpose
+    ? config
+    : { ...config, workspace: { ...config.workspace, purpose: options.request.context.project_summary } };
+  const nextReadme = reconcileWorkspaceReadme(currentReadme, readmeConfig);
   for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
     const agentPath = join(workspaceRoot, "agents", `${agent}.md`);
     if (!await pathExists(agentPath)) continue;
@@ -245,6 +295,14 @@ export async function bootstrapWorkspace(options: BootstrapWorkspaceOptions): Pr
   for (const [path, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
     await writeTextAtomic(join(workspaceRoot, path), contents);
   }
+  if (options.request.context.product_knowledge) {
+    for (const [path, contents] of Object.entries(renderProductKnowledgeBaseline(options.request.context.product_knowledge))) {
+      const full = assertInside(workspaceRoot, resolve(workspaceRoot, path));
+      await mkdir(dirname(full), { recursive: true });
+      await writeTextAtomic(full, contents);
+    }
+  }
+  await writeTextAtomic(readmePath, nextReadme);
   await mkdir(join(workspaceRoot, "agents"), { recursive: true });
   for (const [name, repository] of Object.entries(config.repositories)) {
     const agentPath = join(workspaceRoot, "agents", `${repository.agent}.md`);
@@ -292,10 +350,12 @@ export async function initializeWorkspace(options: InitializeWorkspaceOptions): 
   const configPath = join(workspaceRoot, "workspace.yaml");
   const config = await readData(configPath) as WorkspaceConfig;
   const contractErrors = await validateContract("workspace", config);
+  const productKnowledge = await validateProductKnowledgeTree(join(workspaceRoot, "context"));
   const errors = [
     ...contractErrors.map((error) => `${error.instancePath || "/"} ${error.message}`),
     ...workspaceSemanticErrors(config),
     ...await workspaceDocumentErrors(workspaceRoot, config),
+    ...productKnowledge.errors.map((error) => `product-knowledge ${error}`),
   ];
   if (errors.length > 0) throw new Error(`Workspace initialization validation failed:\n- ${errors.join("\n- ")}`);
 

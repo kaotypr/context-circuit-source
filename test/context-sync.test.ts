@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { prepareContextReview, prepareContextSync } from "../scripts/lib/context-sync.js";
+import { synchronizeProductKnowledge, validateProductKnowledgeTree } from "../scripts/lib/product-knowledge.js";
 import { git } from "../scripts/lib/git.js";
 import type { ContextSyncRequest } from "../scripts/lib/types.js";
+import { projectRoot } from "./helpers.js";
 
 const contribution = "contributions/general/20260812T030000Z-kao-reset-contract.md";
 
@@ -130,4 +132,118 @@ test("review requires the canonical update to cite its contribution", async (t) 
   await git(record.worktree, ["add", "context/ARCHITECTURE.md"]);
   await git(record.worktree, ["-c", "user.name=Curator", "-c", "user.email=curator@example.invalid", "commit", "-m", "docs: omit evidence"]);
   await assert.rejects(prepareContextReview({ workspaceRoot: fixture.root, syncId: record.sync_id }), /must cite source contribution/);
+});
+
+const smallFixture = join(projectRoot, "fixtures", "product-knowledge-small");
+
+async function productKnowledgeWorkspace(confirmingRole: string | null): Promise<{ root: string; cleanup: () => Promise<void> }> {
+  const root = await mkdtemp(join(tmpdir(), "kao-pk-sync-"));
+  await cp(smallFixture, join(root, "context"), { recursive: true });
+  const pk = confirmingRole ? `product_knowledge:\n  confirming_role: ${confirmingRole}\n` : "";
+  await writeFile(join(root, "workspace.yaml"), `version: 1\ntemplate_version: 0.2.1\nworkspace:\n  name: pk\n  mode: team\n  default_branch: main\nrepositories: {}\nactivity:\n  provider: none\n  access: auto\n  required_capabilities: []\n  optional_capabilities: []\nworkflow:\n  human_gates: [plan-approval, task-selection, merge]\n  maximum_repair_attempts: 2\n  wrapper_change_policy: pull-request\n${pk}`, "utf8");
+  return { root, cleanup: async () => rm(root, { recursive: true, force: true }) };
+}
+
+const workflowPage = `---
+kind: workflow
+title: Place an order
+owners:
+  - Checkout team
+sources:
+  - Acme Storefront PRD v3
+review_date: 2026-02-01
+implementation_ownership: storefront-api (orders service)
+known_gaps:
+  - None.
+---
+
+# Place an order
+
+## Outcome
+
+A shopper's cart becomes a paid, confirmed order.
+
+## Actors
+
+Shopper; orders service; payment provider.
+
+## Entry points
+
+The shopper selects "Place order".
+
+## Current flow
+
+1. Validate the cart.
+2. Authorize payment, retrying once after a declined card.
+3. Create and confirm the order.
+
+## Variations
+
+Guests enter an address inline.
+
+## Business rules
+
+An order is confirmed after payment authorization succeeds.
+`;
+
+test("effective synchronization updates a confirmed page and records it", async (t) => {
+  const ws = await productKnowledgeWorkspace("product-owner");
+  t.after(ws.cleanup);
+  const record = await synchronizeProductKnowledge({
+    workspaceRoot: ws.root,
+    confirming_role: "product-owner",
+    confirmed_effective: true,
+    updates: [{ target: "context/domains/checkout/workflows/place-order.md", content: workflowPage, source_contribution: "contributions/general/20260201T000000Z-kao-retry.md" }],
+    synced_at: "2026-02-01T10:00:00.000Z",
+  });
+  assert.deepEqual(record.updated_pages, ["context/domains/checkout/workflows/place-order.md"]);
+  assert.deepEqual(record.source_contributions, ["contributions/general/20260201T000000Z-kao-retry.md"]);
+  const page = await readFile(join(ws.root, "context", "domains", "checkout", "workflows", "place-order.md"), "utf8");
+  assert.match(page, /retrying once after a declined card/);
+  assert.deepEqual((await validateProductKnowledgeTree(join(ws.root, "context"))).errors, []);
+});
+
+test("synchronization without an effectiveness confirmation is refused", async (t) => {
+  const ws = await productKnowledgeWorkspace("product-owner");
+  t.after(ws.cleanup);
+  const before = await readFile(join(ws.root, "context", "domains", "checkout", "workflows", "place-order.md"), "utf8");
+  await assert.rejects(synchronizeProductKnowledge({
+    workspaceRoot: ws.root, confirming_role: "product-owner", confirmed_effective: false,
+    updates: [{ target: "context/domains/checkout/workflows/place-order.md", content: workflowPage }], synced_at: "2026-02-01T10:00:00.000Z",
+  }), /remains proposed/);
+  assert.equal(await readFile(join(ws.root, "context", "domains", "checkout", "workflows", "place-order.md"), "utf8"), before);
+});
+
+test("synchronization by the wrong role or with no configured role is refused", async (t) => {
+  const ws = await productKnowledgeWorkspace("product-owner");
+  t.after(ws.cleanup);
+  await assert.rejects(synchronizeProductKnowledge({
+    workspaceRoot: ws.root, confirming_role: "random-dev", confirmed_effective: true,
+    updates: [{ target: "context/domains/checkout/workflows/place-order.md", content: workflowPage }], synced_at: "2026-02-01T10:00:00.000Z",
+  }), /is not the configured/);
+
+  const none = await productKnowledgeWorkspace(null);
+  t.after(none.cleanup);
+  await assert.rejects(synchronizeProductKnowledge({
+    workspaceRoot: none.root, confirming_role: "product-owner", confirmed_effective: true,
+    updates: [{ target: "context/domains/checkout/workflows/place-order.md", content: workflowPage }], synced_at: "2026-02-01T10:00:00.000Z",
+  }), /no configured Product Knowledge confirming role/);
+});
+
+test("synchronization rejects non-current-behavior targets and rolls back invalid writes", async (t) => {
+  const ws = await productKnowledgeWorkspace("product-owner");
+  t.after(ws.cleanup);
+  await assert.rejects(synchronizeProductKnowledge({
+    workspaceRoot: ws.root, confirming_role: "product-owner", confirmed_effective: true,
+    updates: [{ target: "context/PROJECT.md", content: "# Product\n" }], synced_at: "2026-02-01T10:00:00.000Z",
+  }), /not a current-behavior page/);
+
+  const before = await readFile(join(ws.root, "context", "domains", "checkout", "workflows", "place-order.md"), "utf8");
+  await assert.rejects(synchronizeProductKnowledge({
+    workspaceRoot: ws.root, confirming_role: "product-owner", confirmed_effective: true,
+    updates: [{ target: "context/domains/checkout/workflows/place-order.md", content: "---\nkind: workflow\n---\n\n# Broken\n" }],
+    synced_at: "2026-02-01T10:00:00.000Z",
+  }), /is invalid/);
+  // The invalid write was rolled back.
+  assert.equal(await readFile(join(ws.root, "context", "domains", "checkout", "workflows", "place-order.md"), "utf8"), before);
 });

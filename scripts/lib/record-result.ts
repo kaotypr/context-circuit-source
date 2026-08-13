@@ -101,6 +101,28 @@ function findRepository(manifest: RuntimeManifest, name: string): RuntimeReposit
   return repository;
 }
 
+function assertPlanWorkItemAssociation(manifest: RuntimeManifest, brief: TaskBrief, repository: string): void {
+  assertEqual(manifest.source_kind, brief.source.kind, "manifest source_kind");
+  const planLinked = brief.source.kind === "plan";
+  if (!planLinked) {
+    if (manifest.plan_work_items !== undefined) throw new Error("Non-plan run must not contain plan work items");
+    return;
+  }
+  if (brief.plan.approval_state !== "approved") throw new Error("Plan-linked task brief must contain approved plan metadata");
+  if (!manifest.plan_work_items || manifest.plan_work_items.length !== 1) {
+    throw new Error("Plan-linked run must contain exactly one plan work item");
+  }
+  const item = manifest.plan_work_items[0]!;
+  assertEqual(item.work_id, manifest.work_id, "plan work item work_id");
+  if (brief.plan.work_ids.length !== 1 || brief.plan.work_ids[0] !== item.work_id) {
+    throw new Error("Plan work item identity does not match task brief work IDs");
+  }
+  if (manifest.repositories.length !== 1 || manifest.repositories[0]!.name !== item.repository ||
+      brief.repositories.length !== 1 || brief.repositories[0]!.name !== item.repository || item.repository !== repository) {
+    throw new Error("Plan work item repository does not match task brief and recorded repository");
+  }
+}
+
 function eventKey(runId: string, repository: string, stage: RecordStage, attempt: number): string {
   const suffix = attempt === 0 ? "" : `:attempt-${attempt}`;
   return `${runId}:execution:${repository}:${stage}${suffix}`;
@@ -268,6 +290,7 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     const verifierInputPath = assertInside(runtimeRoot, repository.verifier_input);
     const brief = await readJson<TaskBrief>(taskBriefPath);
     await assertValid("task-brief", brief);
+    assertPlanWorkItemAssociation(manifest, brief, options.repository);
     assertTaskIdentity(manifest, brief, options.repository);
     const target = brief.repositories.find((candidate) => candidate.name === options.repository)!;
     const targetScope = target.scope ?? brief.scope;
@@ -331,6 +354,11 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
       if (existing) return manifest;
       if (currentStatus !== "verifying") throw new Error(`verifier-result requires verifying repository status, received ${currentStatus}`);
       appendEvent(manifest, options.stage, options.repository, "verifying", target, occurredAt, false, attempt, verifierInput.result_path);
+      const item = manifest.plan_work_items?.find((candidate) => candidate.work_id === manifest.work_id);
+      if (manifest.plan_work_items && (!item || item.repository !== options.repository)) {
+        throw new Error("Plan work item identity does not match the verified manifest work and repository");
+      }
+      if (item) item.outcome = target;
       if (target === "passed") await unlockDependents(runtimeRoot, manifest);
     }
 

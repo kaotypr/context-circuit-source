@@ -6,8 +6,8 @@ import { git } from "../scripts/lib/git.js";
 
 export const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-export async function createTestWorkspace(): Promise<{ root: string; repository: string; cleanup: () => Promise<void> }> {
-  const root = await mkdtemp(join(tmpdir(), "context-circuit-test-"));
+export async function createTestWorkspace(prefix = "context-circuit-test-"): Promise<{ root: string; repository: string; cleanup: () => Promise<void> }> {
+  const root = await mkdtemp(join(tmpdir(), prefix));
   const repository = join(root, "repositories", "frontend");
   await mkdir(dirname(repository), { recursive: true });
   await cp(join(projectRoot, "fixtures", "react-app"), repository, { recursive: true });

@@ -1,12 +1,16 @@
 # Finish a run safely
 
 `finish-work` is invoked by a human after repository work is merged or when the
-human deliberately abandons it. It does not infer either decision from tests,
-verification, or pull-request metadata.
+human deliberately abandons it. A merged closeout requires the versioned
+`closeout-ready` merge confirmation emitted by `confirm-merge`; it does not infer
+merge from tests, verification, or pull-request metadata.
 
 ## Prepare closeout
 
-Run closeout without cleanup first:
+After the human merge, run the exact confirmation command from review preparation.
+It verifies the configured default target, full reported merge commit, and exact
+reviewed head without changing Git state. Then run its emitted closeout command
+without cleanup first:
 
 ```bash
 node .agents/bin/cc.mjs finish-work \
@@ -57,3 +61,18 @@ A blocked cleanup writes the exact blockers and preserves everything. Successful
 cleanup removes only the registered worktree, preserves its branch and runtime
 evidence, and marks the manifest `closed`. Branch deletion and runtime-evidence
 pruning require separate explicit future operations.
+
+Blocked records return an ordered checklist. Resolve it from top to bottom:
+save the contribution through the configured wrapper policy, make both Git
+roots clean without discarding work, establish merge or remote-preservation
+evidence, then run the exact shell-safe `finish-work --cleanup` command printed
+as the final item. The rerun rechecks every condition.
+
+## Retention boundary
+
+Normal closeout is not a retention or pruning command. It retains the complete
+`.runtime/runs/<run-id>/` evidence, product branch, contribution, and review and
+merge records. A future pruning feature would need a separately invoked,
+bounded, versioned contract with an explicit run or age selection, dry-run
+inventory, and recoverable archive where practical. Until then, preserve closed
+runtime evidence; do not bulk-delete `.runtime/` as part of `finish-work`.

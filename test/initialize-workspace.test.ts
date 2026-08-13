@@ -6,6 +6,7 @@ import test from "node:test";
 import { stringify as stringifyYaml } from "yaml";
 import { git } from "../scripts/lib/git.js";
 import { bootstrapWorkspace, initializeWorkspace, reconcileIgnoredClones } from "../scripts/lib/initialize-workspace.js";
+import { validateProductKnowledgeTree } from "../scripts/lib/product-knowledge.js";
 import type { WorkspaceBootstrapRequest, WorkspaceConfig } from "../scripts/lib/types.js";
 import { requiredWorkspaceDocuments } from "../scripts/lib/validation.js";
 import { createTestWorkspace } from "./helpers.js";
@@ -234,4 +235,55 @@ test("ignore reconciliation refuses malformed managed markers", () => {
     repositories: { frontend: { path: "repositories/frontend", mode: "ignored-clone" } },
   } as unknown as WorkspaceConfig;
   assert.throws(() => reconcileIgnoredClones("# context-circuit:ignored-clones:start\n", config), /Malformed managed/);
+});
+
+function baselineRequest(): WorkspaceBootstrapRequest {
+  const request = bootstrapRequest("new");
+  request.context.product_knowledge = {
+    title: "Example Product",
+    purpose: "A small application used to verify the Product Knowledge baseline.",
+    sources: ["Example Product PRD"],
+    review_date: "2026-03-01",
+    roles: ["Shopper", "Support Agent"],
+    domains: [
+      { name: "Checkout", workflows: ["Place an order"] },
+      { name: "Account" },
+    ],
+    unknowns: ["Refunds are not documented yet."],
+  };
+  return request;
+}
+
+test("bootstrap can create a minimal, valid Product Knowledge baseline", async (t) => {
+  const workspace = await prepareNeutralWrapper();
+  t.after(workspace.cleanup);
+
+  const summary = await bootstrapWorkspace({ workspaceRoot: workspace.root, request: baselineRequest() });
+  assert.equal(summary.status, "initialized");
+  assert.equal(await git(workspace.root, ["status", "--porcelain=v1"]), "");
+
+  const tree = await validateProductKnowledgeTree(join(workspace.root, "context"));
+  assert.equal(tree.present, true);
+  assert.deepEqual(tree.errors, []);
+
+  const project = await readFile(join(workspace.root, "context", "PROJECT.md"), "utf8");
+  assert.match(project, /kind: product-map/);
+  assert.match(project, /A small application used to verify the Product Knowledge baseline\./);
+
+  // Explicit unknowns are preserved rather than invented.
+  const role = await readFile(join(workspace.root, "context", "roles", "shopper.md"), "utf8");
+  assert.match(role, /Refunds are not documented yet\./);
+  // A domain without declared workflows still produces a valid summary page.
+  const account = await readFile(join(workspace.root, "context", "domains", "account", "README.md"), "utf8");
+  assert.match(account, /None documented yet\./);
+});
+
+test("bootstrap without a Product Knowledge baseline leaves the tree absent", async (t) => {
+  const workspace = await prepareNeutralWrapper();
+  t.after(workspace.cleanup);
+
+  await bootstrapWorkspace({ workspaceRoot: workspace.root, request: bootstrapRequest("new") });
+  const tree = await validateProductKnowledgeTree(join(workspace.root, "context"));
+  assert.deepEqual(tree, { present: false, pages: 0, errors: [] });
+  await assert.rejects(access(join(workspace.root, "context", "roles")));
 });

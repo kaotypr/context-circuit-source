@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { access, mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import test from "node:test";
 import { extract as extractTar, list as listTar } from "tar";
 import { projectRoot } from "./helpers.js";
@@ -24,17 +24,40 @@ test("distributable and release archive contain only wrapper inputs", async () =
   const manifest = JSON.parse(await readFile(join(destination, "template-manifest.json"), "utf8"));
   assert.equal(manifest.version, "0.2.1");
   assert.match(manifest.bundle_sha256, /^[a-f0-9]{64}$/);
+  assert.ok(Array.isArray(manifest.file_inventory));
+  assert.ok(manifest.file_inventory.includes(".agents/bin/cc.mjs"));
+  assert.ok(manifest.file_inventory.includes("template-manifest.json"));
   for (const path of ["PLAN.md", "package.json", "node_modules", "fixtures", "scripts", "test"]) {
     await assert.rejects(access(join(destination, path)));
   }
   await access(join(destination, ".agents", "bin", "cc.mjs"));
+  const canonicalSkills = (await readdir(join(projectRoot, ".agents", "skills"), { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  for (const skill of canonicalSkills) {
+    await access(join(projectRoot, ".agents", "skills", skill, "SKILL.md"));
+    await access(join(projectRoot, ".agents", "skills", skill, "agents", "openai.yaml"));
+    await access(join(projectRoot, ".codex", "skills", skill, "SKILL.md"));
+    await access(join(projectRoot, ".claude", "commands", `${skill}.md`));
+    await access(join(destination, ".agents", "skills", skill, "SKILL.md"));
+    await access(join(destination, ".agents", "skills", skill, "agents", "openai.yaml"));
+    await access(join(destination, ".codex", "skills", skill, "SKILL.md"));
+    await access(join(destination, ".claude", "commands", `${skill}.md`));
+  }
+  for (const path of [
+    ".agents/skills/configure-workspace/SKILL.md",
+    ".agents/skills/gather-context/SKILL.md",
+    ".codex/skills/configure-workspace/SKILL.md",
+    ".codex/skills/gather-context/SKILL.md",
+    ".claude/commands/configure-workspace.md",
+    ".claude/commands/gather-context.md",
+  ]) await access(join(destination, path));
   await assert.rejects(access(join(destination, ".agents", "bin", "kao.mjs")));
   await assert.rejects(access(join(destination, ".template-version")));
   await access(join(destination, "context", "plans", ".gitkeep"));
   await assert.rejects(access(join(destination, "repositories")));
   await assert.rejects(access(join(destination, "agents", "frontend.md")));
   const distributedDocs = (await readdir(join(destination, "docs"))).sort();
-  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "getting-started.md", "using-the-wrapper.md"]);
+  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "getting-started.md", "product-knowledge.md", "using-the-wrapper.md"]);
   assert.match(await readFile(join(destination, "workspace.yaml"), "utf8"), /repositories: \{\}/);
   assert.doesNotMatch(await readFile(join(destination, ".gitignore"), "utf8"), /repositories\/frontend/);
   assert.match(await readFile(join(destination, "context", "PROJECT.md"), "utf8"), /has not been initialized/);
@@ -42,6 +65,7 @@ test("distributable and release archive contain only wrapper inputs", async () =
   assert.doesNotMatch(await readFile(join(destination, "WORKFLOW.md"), "utf8"), /template is in team mode/i);
 
   const pending = [destination];
+  const actualInventory: string[] = [];
   while (pending.length > 0) {
     const directory = pending.pop()!;
     for (const entry of await readdir(directory, { withFileTypes: true })) {
@@ -49,8 +73,10 @@ test("distributable and release archive contain only wrapper inputs", async () =
       assert.notEqual(entry.name, "__MACOSX");
       assert.equal(entry.name.startsWith("._"), false);
       if (entry.isDirectory()) pending.push(join(directory, entry.name));
+      else if (entry.isFile()) actualInventory.push(relative(destination, join(directory, entry.name)).replaceAll("\\", "/"));
     }
   }
+  assert.deepEqual(actualInventory.sort(), manifest.file_inventory);
 
   await access(archive);
   const archiveEntries: string[] = [];

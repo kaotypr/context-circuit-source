@@ -1,13 +1,35 @@
+import { randomBytes } from "node:crypto";
 import { access, readFile } from "node:fs/promises";
 import { join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { assertCleanRepository, git } from "./git.js";
-import { generateIds, slugify } from "./ids.js";
+import { generateIds, generateRunId, slugify } from "./ids.js";
 import { assertInside, ensurePrivateDirectory, writeJsonAtomic } from "./io.js";
-import type { RunTaskRequest, RuntimeManifest, RuntimeRepository, TaskBrief, TaskRepositoryTarget, TestExpectation, TestExpectationPolicy, WorkspaceConfig } from "./types.js";
+import type { PlanRunTaskRequest, RunTaskRequest, RuntimeManifest, RuntimeRepository, TaskBrief, TaskRepositoryTarget, TestExpectation, TestExpectationPolicy, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 import { prepareActivityLifecycle } from "./activity-lifecycle.js";
-import type { ActivityCapability } from "./types.js";
+import type { ActivityCapability, ProductKnowledgePlanDeclaration } from "./types.js";
+import { validatePlanDirectory } from "./plans.js";
+import { buildTaskContextPackage } from "./product-knowledge.js";
+
+async function resolveContextRevision(workspaceRoot: string): Promise<string | undefined> {
+  try {
+    return await git(workspaceRoot, ["rev-parse", "HEAD"]);
+  } catch {
+    return undefined;
+  }
+}
+
+async function attachProductKnowledge(taskBrief: TaskBrief, workspaceRoot: string, declaration: ProductKnowledgePlanDeclaration): Promise<void> {
+  const revision = await resolveContextRevision(workspaceRoot);
+  taskBrief.product_knowledge = await buildTaskContextPackage({
+    workspaceRoot,
+    references: declaration.references,
+    impact: declaration.impact,
+    proposed_change: declaration.proposed_change ?? null,
+    ...(revision ? { revision } : {}),
+  });
+}
 
 export interface PrepareTaskOptions {
   workspaceRoot: string;
@@ -22,6 +44,7 @@ export interface PrepareTaskOptions {
   now?: Date;
   discriminator?: string;
   availableCapabilities?: ActivityCapability[];
+  productKnowledge?: import("./types.js").ProductKnowledgePlanDeclaration;
 }
 
 export interface PreparedTask {
@@ -50,6 +73,14 @@ export interface PreparedTaskRepository {
 export interface PrepareContractFirstTaskOptions {
   workspaceRoot: string;
   request: RunTaskRequest;
+  now?: Date;
+  discriminator?: string;
+  availableCapabilities?: ActivityCapability[];
+}
+
+export interface PreparePlanTaskOptions {
+  workspaceRoot: string;
+  request: PlanRunTaskRequest;
   now?: Date;
   discriminator?: string;
   availableCapabilities?: ActivityCapability[];
@@ -148,6 +179,43 @@ function normalizeContractFirstRequest(input: RunTaskRequest, workId: string, ru
     risks: ["No authoritative claim is available; duplicate effort is possible."],
     verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
     authorization: { kind: "explicit-user-request", evidence: "The human explicitly invoked run-task for this direct request." },
+    created_at: createdAt,
+  };
+}
+
+function normalizePlanRequest(input: PlanRunTaskRequest, item: import("./types.js").PlanWorkItem, runId: string, createdAt: string): TaskBrief {
+  const implementationScope = normalizeScope(item.scope, `implementation scope for ${item.work_id}`);
+  const testExpectation = repositoryExpectation({
+    name: item.repository, depends_on: [], scope: item.scope, test_scope: item.test_scope, test_policy: item.test_policy,
+    ...(item.test_rationale ? { test_rationale: item.test_rationale } : {}), verification_commands: item.verification_commands,
+    acceptance_criteria: item.acceptance_criteria,
+  });
+  const scope = [...new Set([...implementationScope, ...(testExpectation.policy === "required" ? testExpectation.paths : [])])];
+  const target: TaskRepositoryTarget = {
+    name: item.repository, dependency_order: 0, depends_on: [], scope, implementation_scope: implementationScope,
+    test_expectation: testExpectation, verification_commands: item.verification_commands, acceptance_criteria: item.acceptance_criteria,
+  };
+  return {
+    contract_version: 1,
+    work_id: input.work_ids[0]!,
+    run_id: runId,
+    source: { kind: "plan", reference: input.source.reference },
+    requested_outcome: item.title,
+    scope,
+    acceptance_criteria: item.acceptance_criteria,
+    repositories: [target],
+    plan: {
+      reference: input.source.reference,
+      approval_state: "approved",
+      plan_version: input.source.plan_version,
+      approved_digest: input.source.approved_digest,
+      work_ids: input.work_ids,
+    },
+    activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
+    assumptions: ["The selected work IDs and approved plan material are authoritative for this run."],
+    risks: ["No authoritative claim is available; duplicate effort is possible."],
+    verification_commands: item.verification_commands,
+    authorization: { kind: "confirmed-selection", evidence: `The human selected approved plan work: ${input.work_ids.join(", ")}.` },
     created_at: createdAt,
   };
 }
@@ -279,6 +347,7 @@ export async function preparePlanlessTask(options: PrepareTaskOptions): Promise<
     runId,
     createdAt,
   });
+  if (options.productKnowledge) await attachProductKnowledge(taskBrief, workspaceRoot, options.productKnowledge);
   await assertValid("task-brief", taskBrief);
   if (taskBrief.test_expectation?.policy === "existing-coverage") {
     for (const path of taskBrief.test_expectation.paths) {
@@ -305,6 +374,7 @@ export async function preparePlanlessTask(options: PrepareTaskOptions): Promise<
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "direct-request",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -537,6 +607,7 @@ export async function prepareContractFirstTask(options: PrepareContractFirstTask
     contract_version: 1,
     work_id: workId,
     run_id: runId,
+    source_kind: "direct-request",
     status: "preparing",
     created_at: createdAt,
     updated_at: createdAt,
@@ -577,6 +648,144 @@ export async function prepareContractFirstTask(options: PrepareContractFirstTask
   }
   const primary = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract!.repository)!;
   return { workId, runId, branch: primary.branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
+}
+
+export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<PreparedTask> {
+  const requestErrors = await validateContract("run-task-request", options.request);
+  if (requestErrors.length > 0) {
+    throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
+  }
+  const workspaceRoot = resolve(options.workspaceRoot);
+  const config = parseYaml(await readFile(join(workspaceRoot, "workspace.yaml"), "utf8")) as WorkspaceConfig;
+  await assertValid("workspace", config);
+  const semanticErrors = workspaceSemanticErrors(config);
+  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
+  const planDirectory = assertInside(join(workspaceRoot, "context", "plans"), resolve(workspaceRoot, options.request.source.reference));
+  const validation = await validatePlanDirectory(planDirectory);
+  if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
+    throw new Error(`Plan validation failed: ${validation.errors.join("; ") || "plan metadata is unavailable"}`);
+  }
+  const index = validation.index;
+  const breakdown = validation.work_breakdown;
+  if (index.status !== "approved") throw new Error(`Plan ${index.plan_id} is draft; explicit approval is required`);
+  if (options.request.source.plan_version !== index.plan_version) {
+    throw new Error(`Plan version is stale: requested ${options.request.source.plan_version}, current ${index.plan_version}`);
+  }
+  if (options.request.source.approved_digest !== index.approved_digest) {
+    throw new Error("Plan approval digest is stale or does not match the approved plan material");
+  }
+  const items = new Map(breakdown.items.map((item) => [item.work_id, item]));
+  const workId = options.request.work_ids[0]!;
+  const item = items.get(workId);
+  if (!item) throw new Error(`Unknown plan work ID: ${workId}`);
+  if (item.depends_on.length > 0) {
+    throw new Error(`${workId} is dependency-blocked by ${item.depends_on.join(", ")}; plan execution currently requires an independently executable item`);
+  }
+
+  if (!config.repositories[item.repository]) throw new Error(`Plan work ${workId} repository is not registered: ${item.repository}`);
+
+  const repositoryBases = new Map<string, { path: string; commit: string }>();
+  for (const target of [{ name: item.repository }]) {
+    const registered = config.repositories[target.name];
+    if (!registered) throw new Error(`Unknown repository: ${target.name}`);
+    const path = assertInside(workspaceRoot, join(workspaceRoot, registered.path));
+    await access(path);
+    await assertCleanRepository(path);
+    repositoryBases.set(target.name, { path, commit: await git(path, ["rev-parse", registered.default_branch]) });
+    await Promise.all([
+      access(join(workspaceRoot, "AGENTS.md")),
+      access(join(workspaceRoot, "agents", `${registered.agent}.md`)),
+      access(join(workspaceRoot, "agents", "repository-worker.md")),
+      access(join(workspaceRoot, "agents", "verifier.md")),
+    ]);
+  }
+
+  const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
+  const now = options.now ?? new Date();
+  const runId = generateRunId(item.title, now, options.discriminator ?? randomBytes(4).toString("hex"));
+  const createdAt = now.toISOString();
+  const branch = `agent/${workId.toLowerCase()}-${slugify(item.title)}-${runId.slice(-8)}`;
+  const runRoot = assertInside(runtimeRoot, join(runtimeRoot, "runs", runId));
+  const taskBriefPath = join(runtimeRoot, "tasks", `${runId}.json`);
+  const manifestPath = join(runRoot, "manifest.json");
+  const taskBrief = normalizePlanRequest(options.request, item, runId, createdAt);
+  if (index.product_knowledge) await attachProductKnowledge(taskBrief, workspaceRoot, index.product_knowledge);
+  await assertValid("task-brief", taskBrief);
+  for (const target of taskBrief.repositories) {
+    if (target.test_expectation?.policy !== "existing-coverage") continue;
+    const base = repositoryBases.get(target.name)!;
+    for (const path of target.test_expectation.paths) {
+      try { await access(assertInside(base.path, join(base.path, path))); }
+      catch { throw new Error(`Existing-coverage test path does not exist in ${target.name}: ${path}`); }
+    }
+  }
+  await writeJsonAtomic(taskBriefPath, taskBrief);
+
+  const runtimeRepositories: RuntimeRepository[] = [];
+  const preparedRepositories: PreparedTaskRepository[] = [];
+  for (const target of taskBrief.repositories) {
+    const base = repositoryBases.get(target.name)!;
+    const registered = config.repositories[target.name]!;
+    const worktree = assertInside(runtimeRoot, join(runtimeRoot, "worktrees", runId, target.name));
+    const workerInputPath = join(runRoot, `${target.name}-worker-input.json`);
+    const verifierInputPath = join(runRoot, `${target.name}-verifier-input.json`);
+    const workerResultPath = join(runtimeRoot, "results", `${runId}-${target.name}-worker.json`);
+    const verifierResultPath = join(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
+    const blockedBy = target.depends_on ?? [];
+    const ready = blockedBy.length === 0;
+    const instructionPaths = [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", `${registered.agent}.md`), join(workspaceRoot, "agents", "repository-worker.md")];
+    try { await access(join(base.path, "AGENTS.md")); instructionPaths.push(join(worktree, "AGENTS.md")); } catch { /* optional */ }
+    await writeJsonAtomic(workerInputPath, {
+      contract_version: 1, role: "repository-worker", task_brief: taskBriefPath, repository: target.name, worktree, branch,
+      base_commit: base.commit, ready, blocked_by: blockedBy, allowed_scope: target.scope, implementation_scope: target.implementation_scope,
+      test_expectation: target.test_expectation, instruction_paths: instructionPaths,
+      result_contract: join(workspaceRoot, ".agents", "contracts", "worker-result.schema.json"), result_path: workerResultPath,
+    });
+    await writeJsonAtomic(verifierInputPath, {
+      contract_version: 1, role: "verifier", read_only: true, task_brief: taskBriefPath, repository: target.name, worktree, branch,
+      base_commit: base.commit, worker_result: workerResultPath, acceptance_criteria: target.acceptance_criteria,
+      test_expectation: target.test_expectation, verification_commands: target.verification_commands,
+      instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")],
+      result_contract: join(workspaceRoot, ".agents", "contracts", "verifier-result.schema.json"), result_path: verifierResultPath,
+    });
+    runtimeRepositories.push({ name: target.name, base_path: relative(workspaceRoot, base.path), base_commit: base.commit, branch, worktree, worker_input: workerInputPath, verifier_input: verifierInputPath, status: ready ? "prepared" : "waiting", depends_on: blockedBy, repair_attempts: 0 });
+    preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
+  }
+  const manifest: RuntimeManifest = {
+    contract_version: 1, work_id: workId, run_id: runId, source_kind: "plan", status: "preparing", created_at: createdAt, updated_at: createdAt,
+    task_brief: taskBriefPath, repositories: runtimeRepositories,
+    plan_work_items: [{ work_id: workId, repository: item.repository, depends_on: item.depends_on, outcome: "pending" }],
+    evidence: [taskBriefPath, manifestPath, ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
+    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
+    execution_events: [], lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : [],
+  };
+  await assertValid("runtime-manifest", manifest);
+  await writeJsonAtomic(manifestPath, manifest);
+  if (config.activity.provider !== "none") {
+    const lifecycle = await prepareActivityLifecycle({ workspaceRoot, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
+    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
+      const primary = preparedRepositories[0]!;
+      return { workId, runId, branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
+    }
+  }
+  try {
+    await ensurePrivateDirectory(join(runtimeRoot, "worktrees", runId));
+    for (const repository of runtimeRepositories) {
+      await git(repositoryBases.get(repository.name)!.path, ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
+    }
+    manifest.status = "prepared";
+    manifest.updated_at = now.toISOString();
+    await assertValid("runtime-manifest", manifest);
+    await writeJsonAtomic(manifestPath, manifest);
+  } catch (error) {
+    manifest.status = "blocked";
+    manifest.updated_at = new Date().toISOString();
+    manifest.evidence.push(`Preparation failed: ${(error as Error).message}`);
+    await writeJsonAtomic(manifestPath, manifest);
+    throw error;
+  }
+  const primary = preparedRepositories[0]!;
+  return { workId, runId, branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
 }
 
 export async function resumePlanlessTask(options: ResumeTaskOptions): Promise<PreparedTask> {

@@ -22,8 +22,8 @@ const request: PlanDraftRequest = {
   verification: ["Verify every acceptance criterion independently."],
   risks: ["Unresolved states could create inconsistent behavior."],
   work_items: [
-    { key: "retry-contract", title: "Establish retry contract", area: "architecture" },
-    { key: "retry-ui", title: "Display retry state", area: "frontend", parent: "retry-contract", depends_on: ["retry-contract"] },
+    { key: "retry-contract", title: "Establish retry contract", area: "architecture", repository: "frontend", scope: ["src/contract.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: ["npm test"], acceptance_criteria: ["The retry contract is explicit."] },
+    { key: "retry-ui", title: "Display retry state", area: "frontend", repository: "frontend", scope: ["src/App.tsx"], test_scope: ["src/App.test.tsx"], test_policy: "required", verification_commands: ["npm test"], acceptance_criteria: ["The retry state is displayed."], parent: "retry-contract", depends_on: ["retry-contract"] },
   ],
 };
 
@@ -40,6 +40,9 @@ test("create-plan writes a validated numbered draft with stable work IDs", async
   const validation = await validatePlanDirectory(created.directory);
   assert.deepEqual(validation.errors, []);
   assert.equal(validation.index?.approved_at, null);
+  assert.equal(validation.work_breakdown?.contract_version, 2);
+  assert.equal(validation.work_breakdown?.items[0]?.repository, "frontend");
+  assert.equal(validation.work_breakdown?.items[0]?.area, "architecture");
   assert.equal(validation.work_breakdown?.items[1]?.parent, "BILLING-001");
   assert.deepEqual(validation.work_breakdown?.items[1]?.depends_on, ["BILLING-001"]);
   assert.doesNotMatch(await readFile(join(created.directory, "0080-work-breakdown.md"), "utf8"), /\| Status \|/);
@@ -77,7 +80,57 @@ test("plan validation rejects a live-status table shape", async (t) => {
   const breakdownPath = join(created.directory, "0080-work-breakdown.md");
   const raw = await readFile(breakdownPath, "utf8");
   await writeFile(breakdownPath, raw.replace("| Work ID | Title |", "| Work ID | Status | Title |"), "utf8");
-  assert.match((await validatePlanDirectory(created.directory)).errors.join("\n"), /canonical six-column table/);
+  assert.match((await validatePlanDirectory(created.directory)).errors.join("\n"), /canonical seven-column table/);
+});
+
+test("plan approval rejects an unknown explicit repository after draft creation", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, request, new Date("2026-08-11T08:30:00Z"));
+  const breakdownPath = join(created.directory, "0080-work-breakdown.md");
+  const raw = await readFile(breakdownPath, "utf8");
+  await writeFile(breakdownPath, raw.replaceAll("| frontend |", "| missing |").replaceAll('"repository": "frontend"', '"repository": "missing"'), "utf8");
+  assert.match((await validatePlanDirectory(created.directory)).errors.join("\n"), /repository is not registered: missing/);
+  await assert.rejects(setPlanState(created.directory, { kind: "approve", approved_by: "kao" }), /repository is not registered: missing/);
+});
+
+test("legacy area-only plans normalize only an exact registered repository key without changing approved material", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const legacyRequest: PlanDraftRequest = { ...request, plan_id: "legacy-plan", work_items: [{ ...request.work_items[0]!, area: "frontend" }] };
+  const created = await createPlanDraft(workspace.root, legacyRequest, new Date("2026-08-11T08:30:00Z"));
+  const breakdownPath = join(created.directory, "0080-work-breakdown.md");
+  const current = await readFile(breakdownPath, "utf8");
+  const legacy = current
+    .replace("| Work ID | Title | Parent | Depends on | Repository | Area | External reference |", "| Work ID | Title | Parent | Depends on | Area | External reference |")
+    .replace("| --- | --- | --- | --- | --- | --- | --- |", "| --- | --- | --- | --- | --- | --- |")
+    .replace("| BILLING-001 | Establish retry contract | — | — | frontend | frontend | — |", "| BILLING-001 | Establish retry contract | — | — | frontend | — |")
+    .replace('"contract_version": 2', '"contract_version": 1')
+    .replace(/\n      "repository": "frontend",/, "");
+  await writeFile(breakdownPath, legacy, "utf8");
+  const approved = await setPlanState(created.directory, { kind: "approve", approved_by: "kao" }, new Date("2026-08-11T09:00:00Z"));
+  const approvedMaterial = await readFile(breakdownPath, "utf8");
+  const validation = await validatePlanDirectory(created.directory);
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.work_breakdown?.items[0]?.repository, "frontend");
+  assert.equal(validation.index?.approved_digest, approved.approved_digest);
+  assert.equal(await readFile(breakdownPath, "utf8"), approvedMaterial);
+});
+
+test("legacy area-only plans do not guess repositories from descriptive text", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, { ...request, plan_id: "legacy-description", work_items: [request.work_items[0]!] }, new Date("2026-08-11T08:30:00Z"));
+  const breakdownPath = join(created.directory, "0080-work-breakdown.md");
+  const current = await readFile(breakdownPath, "utf8");
+  const legacy = current
+    .replace("| Work ID | Title | Parent | Depends on | Repository | Area | External reference |", "| Work ID | Title | Parent | Depends on | Area | External reference |")
+    .replace("| --- | --- | --- | --- | --- | --- | --- |", "| --- | --- | --- | --- | --- | --- |")
+    .replace("| BILLING-001 | Establish retry contract | — | — | frontend | architecture | — |", "| BILLING-001 | Establish retry contract | — | — | application foundation | — |")
+    .replace('"contract_version": 2', '"contract_version": 1')
+    .replace(/\n      "repository": "frontend",/, "");
+  await writeFile(breakdownPath, legacy, "utf8");
+  await assert.rejects(setPlanState(created.directory, { kind: "approve", approved_by: "kao" }), /not an exact registered repository key/);
 });
 
 test("plan draft rejects unknown repositories and dependency cycles before writing", async (t) => {
@@ -88,10 +141,69 @@ test("plan draft rejects unknown repositories and dependency cycles before writi
     plan_id: "invalid-plan",
     affected_repositories: ["backend"],
     work_items: [
-      { key: "one", title: "One", area: "frontend", depends_on: ["two"] },
-      { key: "two", title: "Two", area: "frontend", depends_on: ["one"] },
+      { key: "one", title: "One", area: "frontend", repository: "frontend", scope: ["src/one.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["One passes."], depends_on: ["two"] },
+      { key: "two", title: "Two", area: "frontend", repository: "frontend", scope: ["src/two.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Two passes."], depends_on: ["one"] },
     ],
   };
   await assert.rejects(createPlanDraft(workspace.root, invalid), /not registered|dependency cycle/);
   await assert.rejects(createPlanDraft(workspace.root, {} as PlanDraftRequest), /Invalid plan draft request/);
+});
+
+const productKnowledgeRequest: PlanDraftRequest = {
+  ...request,
+  plan_id: "checkout-retry",
+  work_prefix: "CKO",
+  product_knowledge: {
+    impact: "behavior-change",
+    references: ["context/domains/checkout/workflows/place-order.md", "context/roles/shopper.md"],
+    proposed_change: "Auto-retry a declined card once before failing the order.",
+  },
+};
+
+test("create-plan records Product Knowledge references and impact", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, productKnowledgeRequest, new Date("2026-08-11T08:30:00Z"));
+  const validation = await validatePlanDirectory(created.directory);
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.index?.product_knowledge?.impact, "behavior-change");
+  assert.deepEqual(validation.index?.product_knowledge?.references, [
+    "context/domains/checkout/workflows/place-order.md",
+    "context/roles/shopper.md",
+  ]);
+  const overview = await readFile(join(created.directory, "0001-overview.md"), "utf8");
+  assert.match(overview, /## Product impact/);
+  assert.match(overview, /Auto-retry a declined card once/);
+});
+
+test("Product Knowledge impact survives approval", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const created = await createPlanDraft(workspace.root, productKnowledgeRequest, new Date("2026-08-11T08:30:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "maintainer" }, new Date("2026-08-11T09:00:00Z"));
+  const index = parsePlanIndex(await readFile(join(created.directory, "README.md"), "utf8"));
+  assert.equal(index.status, "approved");
+  assert.equal(index.product_knowledge?.impact, "behavior-change");
+});
+
+test("a behavior-changing plan requires a proposed change summary", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const invalid: PlanDraftRequest = {
+    ...productKnowledgeRequest,
+    plan_id: "checkout-retry-invalid",
+    product_knowledge: { impact: "new-workflow", references: [] },
+  };
+  await assert.rejects(createPlanDraft(workspace.root, invalid), /requires a proposed_change/);
+});
+
+test("an impact of none must not include a proposed change", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const invalid: PlanDraftRequest = {
+    ...productKnowledgeRequest,
+    plan_id: "checkout-none-invalid",
+    product_knowledge: { impact: "none", references: [], proposed_change: "Should not be here." },
+  };
+  await assert.rejects(createPlanDraft(workspace.root, invalid), /must not include a proposed_change/);
 });

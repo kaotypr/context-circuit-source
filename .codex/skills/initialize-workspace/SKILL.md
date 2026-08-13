@@ -1,11 +1,8 @@
 ---
 name: initialize-workspace
-description: Codex adapter for configuring and validating a Context Circuit wrapper from the canonical initialization workflow.
+description: Codex compatibility adapter that routes initialization requests to the canonical configure-workspace workflow.
 ---
 
 # Codex adapter
 
-Read and follow `../../../.agents/skills/initialize-workspace/SKILL.md`. Use
-Codex inspection and reviewable file edits for unresolved initialization choices.
-Do not duplicate configuration rules, validation, or ignored-clone/submodule
-reconciliation in this adapter.
+Read and follow `../../../.agents/skills/initialize-workspace/SKILL.md`. It will route to the canonical configuration workflow after detecting fresh or existing state. Do not duplicate routing or configuration rules in this adapter.

@@ -3,7 +3,7 @@ import { lstat, mkdir, readdir, readFile, realpath, rename, rm } from "node:fs/p
 import { basename, join, resolve } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { assertInside, writeTextAtomic, writeTextExclusive } from "./io.js";
-import type { PlanDraftRequest, PlanIndex, PlanWorkBreakdown, PlanWorkItem, WorkspaceConfig } from "./types.js";
+import type { PlanDraftRequest, PlanIndex, PlanWorkBreakdown, PlanWorkItem, ProductKnowledgePlanDeclaration, WorkspaceConfig } from "./types.js";
 import { readData, validateContract, workspaceSemanticErrors } from "./validation.js";
 
 const documents = [
@@ -16,8 +16,10 @@ const documents = [
   "0080-work-breakdown.md",
 ] as const;
 
-const tableHeader = "| Work ID | Title | Parent | Depends on | Area | External reference |";
-const tableSeparator = "| --- | --- | --- | --- | --- | --- |";
+const tableHeader = "| Work ID | Title | Parent | Depends on | Repository | Area | External reference |";
+const tableSeparator = "| --- | --- | --- | --- | --- | --- | --- |";
+const legacyTableHeader = "| Work ID | Title | Parent | Depends on | Area | External reference |";
+const legacyTableSeparator = "| --- | --- | --- | --- | --- | --- |";
 
 export interface PlanValidationResult {
   index: PlanIndex | null;
@@ -49,6 +51,12 @@ function markdownList(values: string[], empty: string): string {
   return values.length > 0 ? values.map((value) => `- ${value}`).join("\n") : `- ${empty}`;
 }
 
+function productImpactBody(declaration: ProductKnowledgePlanDeclaration): string {
+  const references = markdownList(declaration.references, "None referenced.");
+  const proposed = declaration.proposed_change ?? "No product behavior change is proposed.";
+  return `- Impact: ${declaration.impact}\n\nReferenced Product Knowledge:\n\n${references}\n\nProposed change:\n\n${proposed}`;
+}
+
 function assertMarkdownCell(value: string, field: string): void {
   if (value.includes("|") || /[\r\n]/.test(value)) throw new Error(`${field} cannot contain a table delimiter or newline`);
 }
@@ -65,6 +73,13 @@ function allocateWorkItems(request: PlanDraftRequest): PlanWorkItem[] {
     parent: item.parent ? ids.get(item.parent) ?? null : null,
     depends_on: (item.depends_on ?? []).map((key) => ids.get(key) ?? key),
     area: item.area,
+    repository: item.repository,
+    scope: item.scope,
+    test_scope: item.test_scope,
+    test_policy: item.test_policy,
+    ...(item.test_rationale ? { test_rationale: item.test_rationale } : {}),
+    verification_commands: item.verification_commands,
+    acceptance_criteria: item.acceptance_criteria,
     external_reference: null,
   }));
 }
@@ -116,6 +131,16 @@ export function planDraftSemanticErrors(request: PlanDraftRequest, config?: Work
       if (dependency === item.key) errors.push(`work item ${item.key} cannot depend on itself`);
     }
   }
+  const productKnowledge = request.product_knowledge;
+  if (productKnowledge) {
+    const requiresChange = ["behavior-change", "new-workflow", "retired-workflow"];
+    if (requiresChange.includes(productKnowledge.impact) && !productKnowledge.proposed_change?.trim()) {
+      errors.push(`product knowledge impact '${productKnowledge.impact}' requires a proposed_change summary`);
+    }
+    if (productKnowledge.impact === "none" && productKnowledge.proposed_change) {
+      errors.push("product knowledge impact 'none' must not include a proposed_change");
+    }
+  }
   const keyedDependencies = request.work_items.map((item) => ({ work_id: item.key, depends_on: item.depends_on ?? [] }));
   errors.push(...cycleErrors(keyedDependencies));
   errors.push(...parentCycleErrors(request.work_items.map((item) => ({ work_id: item.key, parent: item.parent ?? null }))));
@@ -123,11 +148,15 @@ export function planDraftSemanticErrors(request: PlanDraftRequest, config?: Work
     for (const repository of request.affected_repositories) {
       if (!config.repositories[repository]) errors.push(`affected repository is not registered: ${repository}`);
     }
+    for (const item of request.work_items) {
+      if (!config.repositories[item.repository]) errors.push(`work item ${item.key} repository is not registered: ${item.repository}`);
+      if (!request.affected_repositories.includes(item.repository)) errors.push(`work item ${item.key} repository is not affected: ${item.repository}`);
+    }
   }
   return [...new Set(errors)];
 }
 
-export function planWorkBreakdownSemanticErrors(breakdown: PlanWorkBreakdown): string[] {
+export function planWorkBreakdownSemanticErrors(breakdown: PlanWorkBreakdown, config?: WorkspaceConfig): string[] {
   const errors: string[] = [];
   const ids = new Set<string>();
   for (const item of breakdown.items) {
@@ -144,6 +173,7 @@ export function planWorkBreakdownSemanticErrors(breakdown: PlanWorkBreakdown): s
       if (!ids.has(dependency)) errors.push(`${item.work_id} has unknown dependency: ${dependency}`);
       if (dependency === item.work_id) errors.push(`${item.work_id} cannot depend on itself`);
     }
+    if (config && !config.repositories[item.repository]) errors.push(`${item.work_id} repository is not registered: ${item.repository}`);
   }
   errors.push(...cycleErrors(breakdown.items));
   errors.push(...parentCycleErrors(breakdown.items));
@@ -162,28 +192,58 @@ export function parsePlanIndex(raw: string): PlanIndex {
   return parseYaml(match[1]!) as PlanIndex;
 }
 
-export function parseWorkBreakdown(raw: string, index: PlanIndex): PlanWorkBreakdown {
+export function parseWorkBreakdown(raw: string, index: PlanIndex, config?: WorkspaceConfig): PlanWorkBreakdown {
   const lines = raw.replace(/\r\n/g, "\n").split("\n");
-  const header = lines.indexOf(tableHeader);
-  if (header === -1 || lines[header + 1] !== tableSeparator) {
-    throw new Error("Work breakdown must contain the canonical six-column table and must not add live status columns");
+  const currentHeader = lines.indexOf(tableHeader);
+  const legacyHeader = lines.indexOf(legacyTableHeader);
+  const legacy = currentHeader === -1 && legacyHeader !== -1;
+  const header = currentHeader === -1 ? legacyHeader : currentHeader;
+  if (header === -1 || lines[header + 1] !== (legacy ? legacyTableSeparator : tableSeparator)) {
+    throw new Error("Work breakdown must contain the canonical seven-column table and must not add live status columns");
   }
-  const items: PlanWorkItem[] = [];
+  const summaries: Array<Pick<PlanWorkItem, "work_id" | "title" | "parent" | "depends_on" | "area" | "external_reference"> & { repository: string | null }> = [];
   for (const line of lines.slice(header + 2)) {
     if (!line.startsWith("|")) break;
     const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
-    if (cells.length !== 6) throw new Error(`Invalid work breakdown row: ${line}`);
-    const [workId, title, parent, dependencies, area, external] = cells as [string, string, string, string, string, string];
-    items.push({
-      work_id: workId,
-      title,
-      parent: parent === "—" ? null : parent,
-      depends_on: dependencies === "—" ? [] : dependencies.split(",").map((value) => value.trim()),
+    if (cells.length !== (legacy ? 6 : 7)) throw new Error(`Invalid work breakdown row: ${line}`);
+    const [workId, title, parent, dependencies] = cells;
+    const repository = legacy ? null : cells[4]!;
+    const area = cells[legacy ? 4 : 5]!;
+    const external = cells[legacy ? 5 : 6]!;
+    summaries.push({
+      work_id: workId!,
+      title: title!,
+      parent: parent === "—" ? null : parent!,
+      depends_on: dependencies === "—" ? [] : dependencies!.split(",").map((value) => value.trim()),
+      repository,
       area,
       external_reference: external === "—" ? null : external,
     });
   }
-  return { contract_version: 1, plan_id: index.plan_id, work_prefix: index.work_prefix, items };
+  const executionMatch = raw.match(/## Execution contracts\r?\n\r?\n```json\r?\n([\s\S]*?)\r?\n```/);
+  if (!executionMatch) throw new Error("Work breakdown must contain the canonical execution contracts JSON block");
+  const execution = JSON.parse(executionMatch[1]!) as { contract_version: number; items: Array<Partial<Omit<PlanWorkItem, "title" | "parent" | "depends_on" | "area" | "external_reference">> & { work_id: string }> };
+  if (![1, 2].includes(execution.contract_version) || !Array.isArray(execution.items)) throw new Error("Invalid work execution contracts block");
+  if (!legacy && execution.contract_version !== 2) throw new Error("The canonical seven-column work breakdown requires execution contract version 2");
+  if (legacy && execution.contract_version !== 1) throw new Error("The legacy six-column work breakdown requires execution contract version 1");
+  const executionById = new Map(execution.items.map((item) => [item.work_id, item]));
+  const items: PlanWorkItem[] = summaries.map((summary) => {
+    const details = executionById.get(summary.work_id);
+    if (!details) throw new Error(`Missing execution contract for ${summary.work_id}`);
+    let repository = details.repository ?? summary.repository;
+    if (summary.repository && details.repository && summary.repository !== details.repository) {
+      throw new Error(`Repository mismatch for ${summary.work_id}: table has ${summary.repository}, execution contract has ${details.repository}`);
+    }
+    if (!repository && legacy && execution.contract_version === 1) {
+      if (!config) throw new Error(`Legacy work item ${summary.work_id} has no repository; validate it inside a configured workspace or migrate the plan`);
+      repository = config.repositories[summary.area] ? summary.area : null;
+      if (!repository) throw new Error(`Legacy work item ${summary.work_id} has no repository and area '${summary.area}' is not an exact registered repository key; add an explicit repository through a material plan revision`);
+    }
+    if (!repository) throw new Error(`Work item ${summary.work_id} has no explicit repository`);
+    return { ...summary, ...details, repository } as PlanWorkItem;
+  });
+  for (const workId of executionById.keys()) if (!summaries.some((item) => item.work_id === workId)) throw new Error(`Execution contract references unknown work ID: ${workId}`);
+  return { contract_version: 2, plan_id: index.plan_id, work_prefix: index.work_prefix, items };
 }
 
 async function regularFile(path: string): Promise<boolean> {
@@ -201,6 +261,11 @@ export async function validatePlanDirectory(planDirectory: string, expectedPlanI
   let index: PlanIndex | null = null;
   let breakdown: PlanWorkBreakdown | null = null;
   try {
+    const workspaceRoot = resolve(directory, "../../..");
+    const config = await readData(join(workspaceRoot, "workspace.yaml")) as WorkspaceConfig;
+    const workspaceErrors = contractMessages(await validateContract("workspace", config));
+    workspaceErrors.push(...workspaceSemanticErrors(config));
+    if (workspaceErrors.length > 0) throw new Error(`Invalid workspace configuration: ${workspaceErrors.join("; ")}`);
     const info = await lstat(directory);
     if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Plan path must be a real directory");
     if (!await regularFile(join(directory, "README.md"))) throw new Error("Plan README must be a real file");
@@ -226,9 +291,9 @@ export async function validatePlanDirectory(planDirectory: string, expectedPlanI
       const digest = materialDigest(material, index.documents);
       if (index.material_digest !== digest) errors.push("material_digest does not match the numbered plan documents");
       if (index.status === "approved" && index.approved_digest !== digest) errors.push("approved_digest does not match the approved plan material");
-      breakdown = parseWorkBreakdown(material.get(index.work_breakdown)!, index);
+      breakdown = parseWorkBreakdown(material.get(index.work_breakdown)!, index, config);
       errors.push(...contractMessages(await validateContract("plan-work-breakdown", breakdown)));
-      errors.push(...planWorkBreakdownSemanticErrors(breakdown));
+      errors.push(...planWorkBreakdownSemanticErrors(breakdown, config));
     }
   } catch (error) {
     errors.push((error as Error).message);
@@ -293,22 +358,32 @@ function renderDocument(title: string, sections: Array<[string, string]>): strin
 
 function renderPlan(request: PlanDraftRequest, createdAt: string): { index: PlanIndex; breakdown: PlanWorkBreakdown; files: Map<string, string> } {
   const workItems = allocateWorkItems(request);
-  const breakdown: PlanWorkBreakdown = { contract_version: 1, plan_id: request.plan_id, work_prefix: request.work_prefix, items: workItems };
+  const breakdown: PlanWorkBreakdown = { contract_version: 2, plan_id: request.plan_id, work_prefix: request.work_prefix, items: workItems };
   const files = new Map<string, string>();
-  files.set("0001-overview.md", renderDocument("Overview", [
+  const overviewSections: Array<[string, string]> = [
     ["Summary", request.summary],
     ["Source", `${request.source.kind}: ${request.source.reference}`],
     ["Affected repositories", markdownList(request.affected_repositories, "None identified.")],
+  ];
+  if (request.product_knowledge) overviewSections.push(["Product impact", productImpactBody(request.product_knowledge)]);
+  overviewSections.push(
     ["Assumptions", markdownList(request.assumptions, "None recorded.")],
     ["Open questions", markdownList(request.open_questions, "None recorded.")],
-  ]));
+  );
+  files.set("0001-overview.md", renderDocument("Overview", overviewSections));
   files.set("0010-requirements.md", renderDocument("Requirements", [["Requirements and acceptance criteria", markdownList(request.requirements, "None recorded.")]]));
   files.set("0020-solution.md", renderDocument("Solution", [["Proposed solution", markdownList(request.solution, "None recorded.")]]));
   files.set("0040-delivery.md", renderDocument("Delivery", [["Delivery order", markdownList(request.delivery, "None recorded.")]]));
   files.set("0050-verification.md", renderDocument("Verification", [["Verification strategy", markdownList(request.verification, "None recorded.")]]));
   files.set("0070-risks.md", renderDocument("Risks", [["Risks and mitigations", markdownList(request.risks, "None recorded.")]]));
-  const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "—"} | ${item.depends_on.join(", ") || "—"} | ${item.area} | — |`).join("\n");
-  files.set("0080-work-breakdown.md", `# Work breakdown\n\n${tableHeader}\n${tableSeparator}\n${rows}\n\nLive task status does not belong in this plan. Add confirmed external references only after an explicit publication action.\n`);
+  const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "—"} | ${item.depends_on.join(", ") || "—"} | ${item.repository} | ${item.area} | — |`).join("\n");
+  const execution = {
+    contract_version: 2,
+    items: workItems.map(({ work_id, repository, scope, test_scope, test_policy, test_rationale, verification_commands, acceptance_criteria }) => ({
+      work_id, repository, scope, test_scope, test_policy, ...(test_rationale ? { test_rationale } : {}), verification_commands, acceptance_criteria,
+    })),
+  };
+  files.set("0080-work-breakdown.md", `# Work breakdown\n\n${tableHeader}\n${tableSeparator}\n${rows}\n\n## Execution contracts\n\n\`\`\`json\n${JSON.stringify(execution, null, 2)}\n\`\`\`\n\nLive task status does not belong in this plan. Add confirmed external references only after an explicit publication action.\n`);
   const index: PlanIndex = {
     contract_version: 1,
     plan_id: request.plan_id,
@@ -326,6 +401,7 @@ function renderPlan(request: PlanDraftRequest, createdAt: string): { index: Plan
     approved_digest: null,
     created_at: createdAt,
     updated_at: createdAt,
+    ...(request.product_knowledge ? { product_knowledge: request.product_knowledge } : {}),
   };
   const links = documents.map((document) => `- [${document.replace(/^[0-9]{4}-|\.md$/g, "").replaceAll("-", " ")}](./${document})`).join("\n");
   files.set("README.md", `---\n${stringifyYaml(index).trimEnd()}\n---\n\n# ${request.title}\n\n${request.summary}\n\n## Plan documents\n\n${links}\n\n## Approval gate\n\nHuman approval must explicitly cover scope, solution, delivery order, risks, and acceptance criteria before the metadata status changes to \`approved\`. The machine-readable frontmatter status is authoritative; approval updates metadata without rewriting this prose.\n`);

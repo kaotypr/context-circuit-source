@@ -16,9 +16,9 @@ const request: PlanDraftRequest = {
   solution: ["Discover mappings before explicit creation."], delivery: ["Publish parents and dependencies first."],
   verification: ["Validate confirmed mappings."], risks: ["Partial external success must remain recoverable."],
   work_items: [
-    { key: "contract", title: "Define publication contract", area: "frontend" },
-    { key: "implementation", title: "Implement publication", area: "frontend", parent: "contract", depends_on: ["contract"] },
-    { key: "docs", title: "Document publication", area: "frontend", depends_on: ["implementation"] },
+    { key: "contract", title: "Define publication contract", area: "publication architecture", repository: "frontend", scope: ["src/contract.ts"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Contract is defined."] },
+    { key: "implementation", title: "Implement publication", area: "delivery workflow", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["Publication is implemented."], parent: "contract", depends_on: ["contract"] },
+    { key: "docs", title: "Document publication", area: "operator guidance", repository: "frontend", scope: ["README.md"], test_scope: [], test_policy: "not-required", verification_commands: [], acceptance_criteria: ["Publication is documented."], depends_on: ["implementation"] },
   ],
 };
 
@@ -46,7 +46,9 @@ test("approved plan publication discovers mappings, orders dependencies, and rec
   });
   assert.deepEqual(prepared.items.map((item) => item.work_id), ["PUB-001", "PUB-010", "PUB-020"]);
   assert.deepEqual(prepared.items.map((item) => item.status), ["existing", "proposed", "proposed"]);
+  assert.equal(prepared.contract_version, 2);
   assert.equal(prepared.items[0]?.action, "skip-existing");
+  assert.deepEqual(prepared.items.map((item) => item.repository), ["frontend", "frontend", "frontend"]);
   assert.deepEqual(await validateContract("plan-publication-record", prepared), []);
 
   const first = await recordPlanPublication({ workspaceRoot: workspace.root, planId: request.plan_id, workId: "PUB-010", status: "created", evidence: "Create response confirmed.", externalReference: "TASK-2", now: new Date("2026-08-12T03:11:00Z") });
@@ -85,4 +87,15 @@ test("publication rejects draft plans and conflicting discovered mappings", asyn
   await assert.rejects(preparePlanPublication({ workspaceRoot: workspace.root, planId: "draft-proof", discovery: discovery([
     { work_id: "UNKNOWN-001", external_reference: "TASK-X", evidence: "Discovery." },
   ]) }), /unknown work ID/i);
+});
+
+test("publication revalidates plan repositories against current workspace configuration", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await configure(workspace.root);
+  const created = await createPlanDraft(workspace.root, { ...request, plan_id: "removed-repository" }, new Date("2026-08-12T03:00:00Z"));
+  await setPlanState(created.directory, { kind: "approve", approved_by: "reviewer" }, new Date("2026-08-12T03:05:00Z"));
+  const workspacePath = join(workspace.root, "workspace.yaml");
+  await writeFile(workspacePath, (await readFile(workspacePath, "utf8")).replace("  frontend:\n", "  replacement:\n"), "utf8");
+  await assert.rejects(preparePlanPublication({ workspaceRoot: workspace.root, planId: "removed-repository", discovery: discovery() }), /repository is not registered: frontend/);
 });

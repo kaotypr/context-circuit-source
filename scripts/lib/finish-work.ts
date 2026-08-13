@@ -2,13 +2,15 @@ import { access, lstat, mkdir, readFile, readdir, realpath } from "node:fs/promi
 import { basename, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { git } from "./git.js";
-import { assertInside, ensurePrivateDirectory, withExclusiveFile, writeJsonAtomic, writeTextExclusive } from "./io.js";
-import type { CloseoutRecord, ExecutionEvent, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
+import { assertInside, ensurePrivateDirectory, readJsonRegularInside, withExclusiveFile, writeJsonAtomic, writeTextExclusive } from "./io.js";
+import type { CloseoutRecord, ExecutionEvent, MergeConfirmationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
 interface ResultInput {
   result_path: string;
 }
+
+type ProductKnowledgeImpactReport = "absent" | "matches-declared" | "broader-than-declared" | "contradicts-current";
 
 interface VerifierResult {
   work_id: string;
@@ -18,6 +20,7 @@ interface VerifierResult {
   summary: string;
   checks: string[];
   acceptance: Array<{ criterion: string; status: string; evidence: string }>;
+  product_knowledge_impact?: ProductKnowledgeImpactReport;
 }
 
 interface WorkerResult {
@@ -29,6 +32,19 @@ interface WorkerResult {
   worktree: string;
   commits: string[];
   changed_files: string[];
+  product_knowledge_impact?: ProductKnowledgeImpactReport;
+}
+
+const impactSeverity: ProductKnowledgeImpactReport[] = ["absent", "matches-declared", "broader-than-declared", "contradicts-current"];
+
+export function resolveProductKnowledgeCloseout(reports: Array<ProductKnowledgeImpactReport | undefined>): NonNullable<CloseoutRecord["product_knowledge"]> {
+  const present = reports.filter((report): report is ProductKnowledgeImpactReport => Boolean(report));
+  if (present.length === 0) return { impact: "not-reported", synchronization: "not-required" };
+  const worst = present.reduce((a, b) => (impactSeverity.indexOf(b) > impactSeverity.indexOf(a) ? b : a));
+  const unexpected = worst === "broader-than-declared" || worst === "contradicts-current";
+  return unexpected
+    ? { impact: worst, synchronization: "pending-review", notes: "Unexpected Product Knowledge impact was reported; canonical synchronization is withheld for human review." }
+    : { impact: worst, synchronization: "not-required" };
 }
 
 export interface FinishWorkOptions {
@@ -54,11 +70,7 @@ const contributionHeadings = [
   "## Candidate durable learnings",
 ] as const;
 
-async function readJson<T>(path: string): Promise<T> {
-  return JSON.parse(await readFile(path, "utf8")) as T;
-}
-
-async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "closeout-record", value: unknown): Promise<void> {
+async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "merge-confirmation-record" | "closeout-record", value: unknown): Promise<void> {
   const errors = await validateContract(name, value);
   if (errors.length > 0) throw new Error(`Invalid ${name}: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
 }
@@ -87,23 +99,43 @@ function list(items: string[], empty: string): string {
   return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${empty}`;
 }
 
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'\\''`)}'`;
+}
+
+function cleanupRerun(record: CloseoutRecord): string {
+  const argv = [
+    "node", ".agents/bin/cc.mjs", "finish-work", "--run-id", record.run_id,
+    "--repository", record.repository, "--outcome", record.outcome, "--author", record.author,
+  ];
+  if (record.reason) argv.push("--reason", record.reason);
+  for (const pullRequest of record.pull_requests) argv.push("--pull-request", pullRequest);
+  if (record.merge_commit) argv.push("--merge-commit", record.merge_commit);
+  argv.push("--cleanup");
+  return argv.map(shellQuote).join(" ");
+}
+
 function contributionDocument(
   manifest: RuntimeManifest,
   repository: RuntimeRepository,
   brief: TaskBrief,
-  record: Pick<CloseoutRecord, "outcome" | "author" | "reason" | "pull_requests" | "commits" | "changed_files" | "verification" | "head_commit">,
+  record: Pick<CloseoutRecord, "outcome" | "author" | "reason" | "pull_requests" | "commits" | "changed_files" | "verification" | "head_commit" | "product_knowledge">,
 ): string {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
+  const planReference = brief.plan.reference ?? "none";
+  const productKnowledge = record.product_knowledge ?? { impact: "not-reported" as const, synchronization: "not-required" as const };
+  const productKnowledgeBody = `- Impact: ${productKnowledge.impact}\n- Synchronization: ${productKnowledge.synchronization}${productKnowledge.notes ? `\n- ${productKnowledge.notes}` : ""}`;
   return `# ${manifest.work_id}: ${brief.requested_outcome}\n\n` +
     `- Run: \`${manifest.run_id}\`\n` +
-    `- Task source: direct request\n` +
-    `- Plan: none\n` +
+    `- Task source: ${manifest.source_kind}\n` +
+    `- Plan: ${planReference === "none" ? "none" : `\`${planReference}\``}\n` +
     `- Author: \`${record.author}\`\n\n` +
     `## Outcome\n\n${outcome}\n\n` +
     `## Affected repositories\n\n- \`${repository.name}\` on branch \`${repository.branch}\`.${changed}\n\n` +
     `## Pull requests and commits\n\n${list(record.pull_requests.map((item) => `Pull request: ${item}`), "No pull-request reference was recorded.")}\n${list(record.commits.map((item) => `Commit: \`${item}\``), `No commits beyond base \`${repository.base_commit}\`.`)}\n- Recorded head: \`${record.head_commit}\`\n\n` +
     `## Verification\n\n${list(record.verification, "No verifier evidence was available.")}\n\n` +
+    `## Product Knowledge impact\n\n${productKnowledgeBody}\n\n` +
     `## Decisions and deviations\n\n- ${record.outcome === "merged" ? "No closeout deviation was recorded." : "The run was deliberately abandoned instead of merged."}\n\n` +
     `## Remaining risks and follow-up\n\n- ${record.reason ?? "No closeout-specific follow-up was recorded."}\n\n` +
     `## Candidate durable learnings\n\n- Review this contribution during the next context synchronization; no canonical-context change is asserted automatically.\n`;
@@ -132,9 +164,9 @@ async function loadWorkspace(workspaceRoot: string): Promise<WorkspaceConfig> {
 
 async function optionalVerifier(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository): Promise<VerifierResult | null> {
   try {
-    const input = await readJson<ResultInput>(assertInside(runtimeRoot, repository.verifier_input));
+    const input = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.verifier_input, "Verifier input");
     const resultPath = assertInside(runtimeRoot, input.result_path);
-    const result = await readJson<VerifierResult>(resultPath);
+    const result = await readJsonRegularInside<VerifierResult>(runtimeRoot, resultPath, "Verifier result");
     await assertValid("verifier-result", result);
     if (result.work_id !== manifest.work_id || result.run_id !== manifest.run_id || result.repository !== repository.name) {
       throw new Error("Verifier result identity does not match the closeout run");
@@ -146,9 +178,22 @@ async function optionalVerifier(runtimeRoot: string, manifest: RuntimeManifest, 
   }
 }
 
+async function optionalWorker(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository): Promise<WorkerResult | null> {
+  try {
+    const input = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.worker_input, "Worker input");
+    const result = await readJsonRegularInside<WorkerResult>(runtimeRoot, assertInside(runtimeRoot, input.result_path), "Worker result");
+    await assertValid("worker-result", result);
+    if (result.work_id !== manifest.work_id || result.run_id !== manifest.run_id || result.repository !== repository.name) return null;
+    return result;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 async function assertCurrentWorker(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository, headCommit: string, commits: string[], changedFiles: string[]): Promise<void> {
-  const input = await readJson<ResultInput>(assertInside(runtimeRoot, repository.worker_input));
-  const worker = await readJson<WorkerResult>(assertInside(runtimeRoot, input.result_path));
+  const input = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.worker_input, "Worker input");
+  const worker = await readJsonRegularInside<WorkerResult>(runtimeRoot, input.result_path, "Worker result");
   await assertValid("worker-result", worker);
   if (worker.work_id !== manifest.work_id || worker.run_id !== manifest.run_id || worker.repository !== repository.name) {
     throw new Error("Worker result identity does not match the closeout run");
@@ -238,6 +283,28 @@ async function isAncestor(repository: string, ancestor: string, descendant: stri
   }
 }
 
+async function assertVerifiedMergeConfirmation(
+  workspaceRoot: string, runtimeRoot: string, config: WorkspaceConfig, manifest: RuntimeManifest, repository: RuntimeRepository, requestedMergeCommit?: string,
+): Promise<MergeConfirmationRecord> {
+  if (!repository.merge_confirmation) throw new Error(`Merged closeout is not ready: record and verify the human merge with node .agents/bin/cc.mjs confirm-merge --run-id ${manifest.run_id} --repository ${repository.name} --merge-commit <full-sha> --author <slug> --evidence <single-line-evidence>`);
+  const record = await readJsonRegularInside<MergeConfirmationRecord>(runtimeRoot, repository.merge_confirmation, "Merge confirmation record");
+  await assertValid("merge-confirmation-record", record);
+  if (record.work_id !== manifest.work_id || record.run_id !== manifest.run_id || record.repository !== repository.name || record.head_commit !== await git(repository.worktree, ["rev-parse", "HEAD"])) {
+    throw new Error("Merge confirmation identity or verified head does not match the active run");
+  }
+  if (requestedMergeCommit && requestedMergeCommit !== record.merge_commit) throw new Error("Requested merge commit differs from the verified merge confirmation");
+  const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+  if (record.base_branch !== defaultBranch || ![`refs/heads/${defaultBranch}`, `refs/remotes/origin/${defaultBranch}`].includes(record.target_ref)) {
+    throw new Error("Merge confirmation does not target the configured default branch");
+  }
+  const baseRepository = assertInside(workspaceRoot, join(workspaceRoot, repository.base_path));
+  const currentTarget = await git(baseRepository, ["rev-parse", "--verify", `${record.target_ref}^{commit}`]);
+  if (currentTarget !== record.target_commit || !await isAncestor(baseRepository, record.merge_commit, currentTarget) || !await isAncestor(baseRepository, record.head_commit, record.merge_commit)) {
+    throw new Error("Merge confirmation no longer proves the exact reviewed head is reachable from the recorded default target");
+  }
+  return record;
+}
+
 async function verifiedDefaultRefs(repository: string, branch: string): Promise<string[]> {
   const refs: string[] = [];
   for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
@@ -297,9 +364,11 @@ async function cleanupBlockers(workspaceRoot: string, config: WorkspaceConfig, r
 }
 
 async function closePreparedRun(workspaceRoot: string, manifestPath: string, manifest: RuntimeManifest, repository: RuntimeRepository, recordPath: string, record: CloseoutRecord, config: WorkspaceConfig, occurredAt: string): Promise<CloseoutRecord> {
-  const blockers = await cleanupBlockers(workspaceRoot, config, repository, record);
-  if (blockers.length > 0) {
-    const blocked: CloseoutRecord = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers, updated_at: occurredAt };
+  const detected = await cleanupBlockers(workspaceRoot, config, repository, record);
+  if (detected.length > 0) {
+    const checklist = detected.map((blocker, index) => `${index + 1}. ${blocker}`);
+    checklist.push(`${checklist.length + 1}. After resolving the blockers, rerun exactly: ${cleanupRerun(record)}`);
+    const blocked: CloseoutRecord = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: checklist, updated_at: occurredAt };
     await assertValid("closeout-record", blocked);
     await writeJsonAtomic(recordPath, blocked);
     return blocked;
@@ -336,16 +405,17 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
   if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot)) throw new Error("Workspace root must be the wrapper Git root before closeout");
 
   return withExclusiveFile(lockPath, async () => {
-    const manifest = await readJson<RuntimeManifest>(manifestPath);
+    const manifest = await readJsonRegularInside<RuntimeManifest>(runtimeRoot, manifestPath, "Runtime manifest");
     await assertValid("runtime-manifest", manifest);
     if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
     assertCloseoutLifecycleReady(manifest, config, options.outcome);
     const repository = findRepository(manifest, options.repository);
     const recordPath = assertInside(runtimeRoot, join(runtimeRoot, "runs", options.runId, `${repository.name}-closeout.json`));
     if (repository.closeout_record) {
-      const existing = await readJson<CloseoutRecord>(assertInside(runtimeRoot, repository.closeout_record));
+      const existing = await readJsonRegularInside<CloseoutRecord>(runtimeRoot, repository.closeout_record, "Closeout record");
       await assertValid("closeout-record", existing);
       if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
+      if (existing.outcome === "merged") await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit);
       if (existing.status === "closed" || !options.cleanup) return existing;
       return closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, existing, config, invocationTime.toISOString());
     }
@@ -353,8 +423,11 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
     if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
     if (options.outcome === "merged" && repositoryStatus !== "passed") throw new Error(`Merged closeout requires a passed repository, received ${repositoryStatus}`);
     if (options.outcome === "abandoned" && !options.reason?.trim()) throw new Error("Deliberate abandonment requires --reason");
+    const mergeConfirmation = options.outcome === "merged"
+      ? await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit)
+      : null;
 
-    const brief = await readJson<TaskBrief>(assertInside(runtimeRoot, manifest.task_brief));
+    const brief = await readJsonRegularInside<TaskBrief>(runtimeRoot, manifest.task_brief, "Task brief");
     await assertValid("task-brief", brief);
     const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
     if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) throw new Error("Run worktree is on an unexpected branch");
@@ -363,6 +436,8 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
     if (options.outcome === "merged") await assertCurrentWorker(runtimeRoot, manifest, repository, headCommit, commits, changedFiles);
     const verifier = await optionalVerifier(runtimeRoot, manifest, repository);
     if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
+    const worker = await optionalWorker(runtimeRoot, manifest, repository);
+    const productKnowledge = resolveProductKnowledgeCloseout([worker?.product_knowledge_impact, verifier?.product_knowledge_impact]);
     const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} — ${item.evidence}`)] : [];
     const preparedAt = invocationTime.toISOString();
     const contributionsRoot = assertInside(workspaceRoot, join(workspaceRoot, "contributions", "general"));
@@ -383,7 +458,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       branch: repository.branch,
       base_commit: repository.base_commit,
       head_commit: headCommit,
-      merge_commit: options.mergeCommit ?? null,
+      merge_commit: mergeConfirmation?.merge_commit ?? options.mergeCommit ?? null,
       pull_requests: [...new Set(options.pullRequests ?? [])],
       commits,
       changed_files: changedFiles,
@@ -392,6 +467,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       blockers: [],
       prepared_at: preparedAt,
       updated_at: preparedAt,
+      product_knowledge: productKnowledge,
     };
     const document = contributionDocument(manifest, repository, brief, record);
     const documentErrors = contributionDocumentErrors(contributionPath, document, options.runId);

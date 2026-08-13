@@ -13,4 +13,17 @@ description: Curate durable knowledge from completed-work contributions into con
 6. Run `node .agents/bin/cc.mjs prepare-context-review --sync-id <id>`. Stop if the commit changes anything outside the approved canonical paths or omits source references.
 7. In team mode, present the review handoff and require the wrapper's normal pull-request workflow. In explicitly configured solo direct-commit mode, present the commit for human confirmation. The deterministic scripts never push, open, merge, or delete a branch or worktree.
 
+## Effective Product Knowledge synchronization
+
+Canonical Product Knowledge pages (role, domain, and workflow pages under
+`context/`) describe current effective behavior. Synchronize them only after the
+behavior is confirmed effective — merged but disabled or unreleased behavior stays
+proposed in a plan or recorded in contribution evidence, never written into a
+current-behavior page. The write is gated on a dedicated, workspace-configured
+`product_knowledge.confirming_role` that is distinct from the per-page owners and
+the merge-gate human; without an explicit effectiveness confirmation from that
+role, nothing is written. Synchronization changes only the referenced pages, must
+leave the Product Knowledge tree valid, and preserves recorded contradictions and
+runtime discovery evidence for human review.
+
 Preserve contributions as append-only evidence. Canonical context is concise and curated; it is not a ledger of every implementation detail.

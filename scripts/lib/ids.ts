@@ -11,17 +11,24 @@ function utcStamp(now: Date): { day: string; instant: string } {
   };
 }
 
+export function generateRunId(request: string, now: Date, discriminator: string): string {
+  if (!/^[a-f0-9]{8}$/.test(discriminator)) {
+    throw new Error("Run discriminator must contain exactly eight lowercase hexadecimal characters");
+  }
+  const { instant } = utcStamp(now);
+  const requestFingerprint = createHash("sha256").update(request).digest("hex").slice(0, 4);
+  return `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`;
+}
+
 export async function generateIds(
   runtimeRoot: string,
   request: string,
   now = new Date(),
   discriminator = randomBytes(4).toString("hex"),
 ): Promise<{ workId: string; runId: string }> {
-  if (!/^[a-f0-9]{8}$/.test(discriminator)) {
-    throw new Error("Run discriminator must contain exactly eight lowercase hexadecimal characters");
-  }
+  const runId = generateRunId(request, now, discriminator);
   await ensurePrivateDirectory(runtimeRoot);
-  const { day, instant } = utcStamp(now);
+  const { day } = utcStamp(now);
   const statePath = join(runtimeRoot, "id-state.json");
   let state: { day: string; next: number } = { day, next: 1 };
   try {
@@ -31,10 +38,9 @@ export async function generateIds(
   }
   const sequence = state.day === day ? state.next : 1;
   await writeJsonAtomic(statePath, { day, next: sequence + 1 });
-  const requestFingerprint = createHash("sha256").update(request).digest("hex").slice(0, 4);
   return {
     workId: `ADHOC-${day}-${String(sequence).padStart(3, "0")}`,
-    runId: `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`,
+    runId,
   };
 }
 

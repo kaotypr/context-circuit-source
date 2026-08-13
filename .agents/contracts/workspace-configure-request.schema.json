@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/workspace-configure-request.schema.json",
+  "title": "Workspace configuration request",
+  "$ref": "workspace-bootstrap-request.schema.json"
+}

@@ -4,6 +4,14 @@ export interface RepositoryConfig {
   role: string;
   agent: string;
   default_branch: string;
+  remote?: string;
+}
+
+export interface WorkspaceContextSource {
+  kind: "prd" | "architecture" | "issue" | "repository-documentation" | "other";
+  reference: string;
+  purpose: string;
+  repository?: string;
 }
 
 export interface WorkspaceConfig {
@@ -13,6 +21,8 @@ export interface WorkspaceConfig {
     name: string;
     mode: "solo" | "team";
     default_branch: string;
+    purpose?: string;
+    remote?: string;
   };
   repositories: Record<string, RepositoryConfig>;
   activity: {
@@ -26,6 +36,13 @@ export interface WorkspaceConfig {
     human_gates: string[];
     maximum_repair_attempts: number;
     wrapper_change_policy: "pull-request" | "direct-commit";
+    review_mode?: "local" | "remote";
+  };
+  context?: {
+    authoritative_sources: WorkspaceContextSource[];
+  };
+  product_knowledge?: {
+    confirming_role: string;
   };
 }
 
@@ -36,15 +53,33 @@ export interface BootstrapGitCommit {
   author_email?: string;
 }
 
+export interface ProductKnowledgeBaselineDomain {
+  name: string;
+  workflows?: string[];
+}
+
+export interface ProductKnowledgeBaselineSpec {
+  title: string;
+  purpose: string;
+  sources: string[];
+  review_date: string;
+  roles: string[];
+  domains: ProductKnowledgeBaselineDomain[];
+  unknowns: string[];
+}
+
 export interface WorkspaceBootstrapContext {
   project_summary: string;
   architecture: string[];
   conventions: string[];
   decisions: string[];
+  sources?: WorkspaceContextSource[];
+  product_knowledge?: ProductKnowledgeBaselineSpec;
 }
 
 export interface WorkspaceBootstrapRequest {
   contract_version: 1;
+  authorize_reviewable_changes?: boolean;
   configuration: WorkspaceConfig;
   context: WorkspaceBootstrapContext;
   wrapper: BootstrapGitCommit & { initialize_git: boolean };
@@ -94,6 +129,29 @@ export interface ActivityLifecycleRecord {
 
 export type PlanSourceKind = "idea" | "prd" | "document" | "issue" | "pull-request";
 
+export type ProductKnowledgeImpact =
+  | "none"
+  | "documentation-correction"
+  | "implementation-only"
+  | "behavior-change"
+  | "new-workflow"
+  | "retired-workflow";
+
+export interface ProductKnowledgePlanDeclaration {
+  impact: ProductKnowledgeImpact;
+  references: string[];
+  proposed_change?: string;
+}
+
+export interface TaskContextPackage {
+  contract_version: 1;
+  revision: string;
+  content_digest: string;
+  context_paths: string[];
+  impact: ProductKnowledgeImpact;
+  proposed_change: string | null;
+}
+
 export interface PlanIndex {
   contract_version: 1;
   plan_id: string;
@@ -111,6 +169,7 @@ export interface PlanIndex {
   approved_digest: string | null;
   created_at: string;
   updated_at: string;
+  product_knowledge?: ProductKnowledgePlanDeclaration;
 }
 
 export interface PlanWorkItem {
@@ -119,11 +178,18 @@ export interface PlanWorkItem {
   parent: string | null;
   depends_on: string[];
   area: string;
+  repository: string;
+  scope: string[];
+  test_scope: string[];
+  test_policy: TestExpectationPolicy;
+  test_rationale?: string;
+  verification_commands: string[];
+  acceptance_criteria: string[];
   external_reference: string | null;
 }
 
 export interface PlanWorkBreakdown {
-  contract_version: 1;
+  contract_version: 2;
   plan_id: string;
   work_prefix: string;
   items: PlanWorkItem[];
@@ -137,9 +203,10 @@ export type CandidateKind =
   | "activity-task"
   | "repository-item"
   | "contribution-follow-up"
+  | "reconciliation"
   | "plan-work-item";
 
-export type CandidateState = "ready" | "in-progress" | "review" | "failed" | "completed" | "cancelled";
+export type CandidateState = "ready" | "in-progress" | "review" | "closeout" | "failed" | "completed" | "cancelled";
 export type DependencyState = "completed" | "pending" | "unknown";
 export type CandidatePlanState = "approved" | "draft" | "not-applicable" | "unknown";
 
@@ -162,6 +229,7 @@ export interface WorkCandidate {
   access_available: boolean;
   contract_blocked: boolean;
   source_reference: string;
+  state_sources?: Array<{ state: CandidateState; source_reference: string }>;
   risks: string[];
 }
 
@@ -172,7 +240,7 @@ export interface FakeActivitySource {
 }
 
 export interface NextAction {
-  action: "execute" | "enable";
+  action: "execute" | "review" | "closeout" | "reconcile" | "enable";
   candidate_id: string | null;
   title: string;
   why: string;
@@ -198,6 +266,13 @@ export interface PlanDraftWorkItem {
   key: string;
   title: string;
   area: string;
+  repository: string;
+  scope: string[];
+  test_scope: string[];
+  test_policy: TestExpectationPolicy;
+  test_rationale?: string;
+  verification_commands: string[];
+  acceptance_criteria: string[];
   parent?: string;
   depends_on?: string[];
 }
@@ -218,6 +293,7 @@ export interface PlanDraftRequest {
   verification: string[];
   risks: string[];
   work_items: PlanDraftWorkItem[];
+  product_knowledge?: ProductKnowledgePlanDeclaration;
 }
 
 export interface PlanPublicationDiscovery {
@@ -233,6 +309,7 @@ export interface PlanPublicationItem {
   parent: string | null;
   depends_on: string[];
   area: string;
+  repository: string;
   action: "create" | "skip-existing";
   status: "proposed" | "existing" | "created" | "failed";
   external_reference: string | null;
@@ -241,7 +318,7 @@ export interface PlanPublicationItem {
 }
 
 export interface PlanPublicationRecord {
-  contract_version: 1;
+  contract_version: 2;
   plan_id: string;
   plan_version: number;
   approved_digest: string;
@@ -258,7 +335,7 @@ export interface TaskBrief {
   contract_version: 1;
   work_id: string;
   run_id: string;
-  source: { kind: "direct-request"; reference?: string };
+  source: { kind: "direct-request"; reference?: string } | { kind: "plan"; reference: string };
   requested_outcome: string;
   scope: string[];
   implementation_scope?: string[];
@@ -266,7 +343,9 @@ export interface TaskBrief {
   acceptance_criteria: string[];
   repositories: TaskRepositoryTarget[];
   shared_contract?: SharedContract;
-  plan: { reference: null; approval_state: "not-applicable" };
+  plan:
+    | { reference: null; approval_state: "not-applicable" }
+    | { reference: string; approval_state: "approved"; plan_version: number; approved_digest: string; work_ids: string[] };
   activity: {
     reference: null;
     claim_status: "not-applicable";
@@ -275,8 +354,9 @@ export interface TaskBrief {
   assumptions: string[];
   risks: string[];
   verification_commands: string[];
-  authorization: { kind: "explicit-user-request"; evidence: string };
+  authorization: { kind: "explicit-user-request" | "confirmed-selection"; evidence: string };
   created_at: string;
+  product_knowledge?: TaskContextPackage;
 }
 
 export interface TaskRepositoryTarget {
@@ -314,6 +394,19 @@ export interface RunTaskRequest {
   repositories: RunTaskRepositoryRequest[];
 }
 
+export interface PlanRunTaskRequest {
+  contract_version: 1;
+  source: {
+    kind: "plan";
+    reference: string;
+    plan_version: number;
+    approved_digest: string;
+  };
+  work_ids: string[];
+}
+
+export type StructuredRunTaskRequest = RunTaskRequest | PlanRunTaskRequest;
+
 export type TestExpectationPolicy = "required" | "existing-coverage" | "verifier-only" | "not-required";
 
 export interface TestExpectation {
@@ -335,11 +428,22 @@ export interface RuntimeRepository {
   repair_attempts?: number;
   review_preparation?: string;
   review_publication?: string;
+  review_state?: ReviewState;
+  merge_confirmation?: string;
   closeout_record?: string;
   contribution?: string;
 }
 
 export type RuntimeStatus = "preparing" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked" | "cancelled" | "closing" | "closed";
+
+export type ReviewState = "ready-for-local-review" | "ready-for-publication" | "published-for-review" | "merge-confirmation-required" | "closeout-ready";
+
+export interface ReviewCommand {
+  description: string;
+  cwd: string;
+  argv: string[];
+  shell: string;
+}
 
 export interface ExecutionEvent {
   stage: "worker-started" | "worker-result" | "verifier-result" | "repair-prepared" | "repair-exhausted" | "review-prepared" | "closeout-prepared" | "closeout-cleaned";
@@ -354,11 +458,11 @@ export interface ExecutionEvent {
 }
 
 export interface ReviewPreparation {
-  contract_version: 1;
+  contract_version: 1 | 2;
   work_id: string;
   run_id: string;
   repository: string;
-  status: "ready" | "blocked";
+  status: "ready" | "blocked" | "ready-for-local-review" | "ready-for-publication";
   remote: string | null;
   base_branch: string;
   head_branch: string;
@@ -372,10 +476,23 @@ export interface ReviewPreparation {
   verifier_result: string;
   blockers: string[];
   prepared_at: string;
+  commands?: {
+    diff: ReviewCommand;
+    commits: ReviewCommand;
+    show: ReviewCommand;
+    tests: ReviewCommand[];
+    switch_target: ReviewCommand;
+    merge: ReviewCommand;
+  };
+  merge_handoff?: {
+    status: "merge-confirmation-required";
+    confirmation_argv: string[];
+    confirmation_shell: string;
+  };
 }
 
 export interface ReviewPublicationRecord {
-  contract_version: 1;
+  contract_version: 1 | 2;
   work_id: string;
   run_id: string;
   repository: string;
@@ -386,6 +503,25 @@ export interface ReviewPublicationRecord {
   head_commit: string;
   idempotency_key: string;
   recorded_at: string;
+  review_state?: "published-for-review";
+}
+
+export interface MergeConfirmationRecord {
+  contract_version: 1;
+  work_id: string;
+  run_id: string;
+  repository: string;
+  status: "closeout-ready";
+  base_branch: string;
+  target_ref: string;
+  target_commit: string;
+  head_commit: string;
+  merge_commit: string;
+  evidence: string;
+  finish_work_argv: string[];
+  finish_work_shell: string;
+  idempotency_key: string;
+  confirmed_at: string;
 }
 
 export interface CloseoutRecord {
@@ -415,17 +551,29 @@ export interface CloseoutRecord {
   blockers: string[];
   prepared_at: string;
   updated_at: string;
+  product_knowledge?: {
+    impact: "absent" | "matches-declared" | "broader-than-declared" | "contradicts-current" | "not-reported";
+    synchronization: "not-required" | "pending-review";
+    notes?: string;
+  };
 }
 
 export interface RuntimeManifest {
   contract_version: 1;
   work_id: string;
   run_id: string;
+  source_kind: "direct-request" | "plan" | "issue" | "pull-request" | "activity-task";
   status: RuntimeStatus;
   created_at: string;
   updated_at: string;
   task_brief: string;
   repositories: RuntimeRepository[];
+  plan_work_items?: Array<{
+    work_id: string;
+    repository: string;
+    depends_on: string[];
+    outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
+  }>;
   evidence: string[];
   warnings: string[];
   execution_events?: ExecutionEvent[];

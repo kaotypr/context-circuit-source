@@ -34,19 +34,42 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["key", "title", "area"],
+        "required": ["key", "title", "area", "repository", "scope", "test_scope", "test_policy", "verification_commands", "acceptance_criteria"],
         "properties": {
           "key": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$" },
           "title": { "type": "string", "minLength": 1 },
           "area": { "type": "string", "minLength": 1 },
+          "repository": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "scope": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/path" } },
+          "test_scope": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/path" } },
+          "test_policy": { "enum": ["required", "existing-coverage", "verifier-only", "not-required"] },
+          "test_rationale": { "type": "string", "minLength": 1 },
+          "verification_commands": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "acceptance_criteria": { "$ref": "#/$defs/nonEmptyStringList" },
           "parent": { "type": "string", "minLength": 1 },
           "depends_on": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
-        }
+        },
+        "allOf": [{
+          "if": { "properties": { "test_policy": { "enum": ["required", "existing-coverage"] } }, "required": ["test_policy"] },
+          "then": { "properties": { "test_scope": { "minItems": 1 } } }
+        }]
       }
-    }
+    },
+    "product_knowledge": { "$ref": "#/$defs/productKnowledge" }
   },
   "$defs": {
     "stringList": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
-    "nonEmptyStringList": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } }
+    "nonEmptyStringList": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$" },
+    "productKnowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impact", "references"],
+      "properties": {
+        "impact": { "enum": ["none", "documentation-correction", "implementation-only", "behavior-change", "new-workflow", "retired-workflow"] },
+        "references": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+\\.md$" } },
+        "proposed_change": { "type": "string", "minLength": 1 }
+      }
+    }
   }
 }

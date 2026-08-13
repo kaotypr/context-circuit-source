@@ -6,11 +6,13 @@ process.argv.splice(2, 1);
 switch (command) {
   case "validate": await import("./validate.js"); break;
   case "initialize-workspace": await import("./initialize-workspace.js"); break;
+  case "configure-workspace": await import("./configure-workspace.js"); break;
   case "run-task": await import("./run-task.js"); break;
   case "record-result": await import("./record-result.js"); break;
   case "prepare-repair": await import("./prepare-repair.js"); break;
   case "prepare-review": await import("./prepare-review.js"); break;
   case "record-review-publication": await import("./record-review-publication.js"); break;
+  case "confirm-merge": await import("./confirm-merge.js"); break;
   case "finish-work": await import("./finish-work.js"); break;
   case "create-plan": await import("./create-plan.js"); break;
   case "validate-plan": await import("./validate-plan.js"); break;
@@ -22,5 +24,6 @@ switch (command) {
   case "record-plan-publication": await import("./record-plan-publication.js"); break;
   case "sync-context": await import("./sync-context.js"); break;
   case "prepare-context-review": await import("./prepare-context-review.js"); break;
+  case "onboarding-pack": await import("./onboarding-pack.js"); break;
   default: throw new Error(`Unknown Context Circuit command: ${command}`);
 }

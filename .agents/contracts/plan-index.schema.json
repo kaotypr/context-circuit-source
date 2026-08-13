@@ -34,7 +34,20 @@
     "material_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "approved_digest": { "type": ["string", "null"], "pattern": "^sha256:[a-f0-9]{64}$" },
     "created_at": { "type": "string", "format": "date-time" },
-    "updated_at": { "type": "string", "format": "date-time" }
+    "updated_at": { "type": "string", "format": "date-time" },
+    "product_knowledge": { "$ref": "#/$defs/productKnowledge" }
+  },
+  "$defs": {
+    "productKnowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["impact", "references"],
+      "properties": {
+        "impact": { "enum": ["none", "documentation-correction", "implementation-only", "behavior-change", "new-workflow", "retired-workflow"] },
+        "references": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+\\.md$" } },
+        "proposed_change": { "type": "string", "minLength": 1 }
+      }
+    }
   },
   "allOf": [
     {

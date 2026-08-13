@@ -1,7 +1,7 @@
 # Run a task
 
-`run-task` turns an explicit request into scoped, isolated work without requiring
-a plan or activity integration. It prepares artifacts and Git worktrees; it does
+`run-task` turns an explicit direct request or selected approved-plan work into
+scoped, isolated work. It prepares artifacts and Git worktrees; it does
 not launch agents, push branches, open pull requests, merge, or deploy.
 
 ## Prepare one repository
@@ -19,6 +19,43 @@ node .agents/bin/cc.mjs run-task \
 Use `--request-file docs/examples/contract-first-run.json` for contract-first
 multi-repository work. Only inputs marked `ready: true` may start. A dependent
 input remains locked until all dependencies pass independent verification.
+
+## Prepare approved-plan work
+
+Pass a request file whose `source.kind` is `plan`. Its `source.reference` must
+resolve beneath `context/plans/` and include the current `plan_version` and
+`approved_digest`. Select exactly one stable, dependency-free `work_id`:
+
+```json
+{
+  "contract_version": 1,
+  "source": {
+    "kind": "plan",
+    "reference": "context/plans/reset-flow",
+    "plan_version": 1,
+    "approved_digest": "sha256:<64 lowercase hexadecimal characters>"
+  },
+  "work_ids": ["RESET-001"]
+}
+```
+
+The approved work breakdown contains a canonical execution-contract JSON block
+for every item: repository, implementation and test paths, test policy,
+verification commands, and acceptance criteria. Because that block is numbered
+plan material, approval covers it and material edits invalidate the digest.
+`run-task` derives its brief from those fields and rejects caller overrides.
+The repository comes only from the explicit execution contract and must be an
+exact current key in `workspace.yaml`; descriptive `area` text is never used for
+execution routing.
+
+The conservative initial execution contract allows one dependency-free plan
+item per run. It does not accept caller-supplied dependency-completion evidence;
+dependent items remain blocked until a later workflow phase provides a trusted
+local work-state projection. A verifier result therefore records exactly one
+selected work-item outcome and cannot complete siblings or later dependencies.
+
+The existing direct-request forms still allocate an `ADHOC-*` work ID and remain
+planless.
 
 Before launching a worker, record its start:
 
@@ -55,4 +92,3 @@ record only a confirmed publication response.
 
 If any step is interrupted, preserve `.runtime/`, branches, and worktrees.
 Never delete, reset, stash, or clean unrecorded work to recover a run.
-

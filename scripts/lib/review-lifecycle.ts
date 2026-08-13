@@ -2,8 +2,8 @@ import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { assertCleanRepository, git } from "./git.js";
-import { assertInside, ensurePrivateDirectory, withExclusiveFile, writeJsonAtomic } from "./io.js";
-import type { ExecutionEvent, ReviewPreparation, ReviewPublicationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
+import { assertInside, ensurePrivateDirectory, readJsonRegularInside, withExclusiveFile, writeJsonAtomic } from "./io.js";
+import type { ExecutionEvent, MergeConfirmationRecord, ReviewCommand, ReviewPreparation, ReviewPublicationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
 interface ResultInput {
@@ -56,14 +56,21 @@ export interface RecordReviewPublicationOptions {
   tool: "gh" | "glab" | "manual";
   pullRequest?: string;
   evidence: string;
+  authorized?: boolean;
   now?: Date;
 }
 
-async function readJson<T>(path: string): Promise<T> {
-  return JSON.parse(await readFile(path, "utf8")) as T;
+export interface ConfirmMergeOptions {
+  workspaceRoot: string;
+  runId: string;
+  repository: string;
+  mergeCommit: string;
+  evidence: string;
+  author: string;
+  now?: Date;
 }
 
-async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "review-preparation" | "review-publication-record", value: unknown): Promise<void> {
+async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "review-preparation" | "review-publication-record" | "merge-confirmation-record", value: unknown): Promise<void> {
   const errors = await validateContract(name, value);
   if (errors.length > 0) throw new Error(`Invalid ${name}: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
 }
@@ -125,8 +132,8 @@ function sameMembers(left: string[], right: string[]): boolean {
   return left.slice().sort().join("\n") === right.slice().sort().join("\n");
 }
 
-async function assertCurrentWorker(manifest: RuntimeManifest, repository: RuntimeRepository, workerInput: ResultInput): Promise<WorkerResult> {
-  const worker = await readJson<WorkerResult>(workerInput.result_path);
+async function assertCurrentWorker(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository, workerInput: ResultInput): Promise<WorkerResult> {
+  const worker = await readJsonRegularInside<WorkerResult>(runtimeRoot, workerInput.result_path, "Worker result");
   await assertValid("worker-result", worker);
   if (worker.work_id !== manifest.work_id || worker.run_id !== manifest.run_id || worker.repository !== repository.name) {
     throw new Error("Worker result identity does not match the active run");
@@ -181,7 +188,7 @@ export async function prepareRepair(options: PrepareLifecycleOptions): Promise<R
   const config = await loadWorkspace(workspaceRoot);
 
   return withExclusiveFile(lockPath, async () => {
-    const manifest = await readJson<RuntimeManifest>(manifestPath);
+    const manifest = await readJsonRegularInside<RuntimeManifest>(runtimeRoot, manifestPath, "Runtime manifest");
     await assertValid("runtime-manifest", manifest);
     if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
     const repository = findRepository(manifest, options.repository);
@@ -207,16 +214,16 @@ export async function prepareRepair(options: PrepareLifecycleOptions): Promise<R
     }
 
     const taskBriefPath = assertInside(runtimeRoot, manifest.task_brief);
-    const taskBrief = await readJson<TaskBrief>(taskBriefPath);
+    const taskBrief = await readJsonRegularInside<TaskBrief>(runtimeRoot, taskBriefPath, "Task brief");
     await assertValid("task-brief", taskBrief);
     const taskTarget = taskBrief.repositories.find((candidate) => candidate.name === repository.name);
     if (!taskTarget) throw new Error(`Task brief does not include repository ${repository.name}`);
-    const priorWorkerInput = await readJson<ResultInput>(assertInside(runtimeRoot, repository.worker_input));
-    const priorVerifierInput = await readJson<ResultInput>(assertInside(runtimeRoot, repository.verifier_input));
+    const priorWorkerInput = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.worker_input, "Worker input");
+    const priorVerifierInput = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.verifier_input, "Verifier input");
     assertInside(runtimeRoot, priorWorkerInput.result_path);
     assertInside(runtimeRoot, priorVerifierInput.result_path);
-    await assertCurrentWorker(manifest, repository, priorWorkerInput);
-    const verifier = await readJson<VerifierResult>(priorVerifierInput.result_path);
+    await assertCurrentWorker(runtimeRoot, manifest, repository, priorWorkerInput);
+    const verifier = await readJsonRegularInside<VerifierResult>(runtimeRoot, priorVerifierInput.result_path, "Verifier result");
     await assertValid("verifier-result", verifier);
     assertVerifier(manifest, repository, taskBrief, verifier);
     if (verifier.status !== "fail") throw new Error(`Repair preparation requires a failing verifier result, received ${verifier.status}`);
@@ -292,6 +299,22 @@ function reviewBody(brief: TaskBrief, verifier: VerifierResult): string {
   return `## Summary\n\n${brief.requested_outcome}\n\n## Acceptance\n\n${acceptance}\n\n## Verification\n\n${checks}\n\nPrepared from run \`${brief.run_id}\`. No push or pull request was performed.\n`;
 }
 
+function shellQuote(value: string): string {
+  return `'${value.replaceAll("'", `'"'"'`)}'`;
+}
+
+function command(description: string, cwd: string, argv: string[]): ReviewCommand {
+  return { description, cwd, argv, shell: `cd -- ${shellQuote(cwd)} && ${argv.map(shellQuote).join(" ")}` };
+}
+
+async function assertBranchName(repository: string, branch: string, label: string): Promise<void> {
+  try {
+    await git(repository, ["check-ref-format", "--branch", branch]);
+  } catch {
+    throw new Error(`${label} is not a valid Git branch name`);
+  }
+}
+
 export async function prepareReview(options: PrepareLifecycleOptions): Promise<ReviewPreparation> {
   const workspaceRoot = resolve(options.workspaceRoot);
   const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
@@ -301,19 +324,19 @@ export async function prepareReview(options: PrepareLifecycleOptions): Promise<R
   const config = await loadWorkspace(workspaceRoot);
 
   return withExclusiveFile(lockPath, async () => {
-    const manifest = await readJson<RuntimeManifest>(manifestPath);
+    const manifest = await readJsonRegularInside<RuntimeManifest>(runtimeRoot, manifestPath, "Runtime manifest");
     await assertValid("runtime-manifest", manifest);
     if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
     const repository = findRepository(manifest, options.repository);
     if (manifest.status !== "passed") throw new Error(`Draft review preparation requires passed status, received ${manifest.status}`);
-    const taskBrief = await readJson<TaskBrief>(assertInside(runtimeRoot, manifest.task_brief));
+    const taskBrief = await readJsonRegularInside<TaskBrief>(runtimeRoot, manifest.task_brief, "Task brief");
     await assertValid("task-brief", taskBrief);
-    const workerInput = await readJson<ResultInput>(assertInside(runtimeRoot, repository.worker_input));
-    const verifierInput = await readJson<ResultInput>(assertInside(runtimeRoot, repository.verifier_input));
+    const workerInput = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.worker_input, "Worker input");
+    const verifierInput = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.verifier_input, "Verifier input");
     assertInside(runtimeRoot, workerInput.result_path);
     assertInside(runtimeRoot, verifierInput.result_path);
-    const worker = await assertCurrentWorker(manifest, repository, workerInput);
-    const verifier = await readJson<VerifierResult>(verifierInput.result_path);
+    const worker = await assertCurrentWorker(runtimeRoot, manifest, repository, workerInput);
+    const verifier = await readJsonRegularInside<VerifierResult>(runtimeRoot, verifierInput.result_path, "Verifier result");
     await assertValid("verifier-result", verifier);
     assertVerifier(manifest, repository, taskBrief, verifier);
     if (verifier.status !== "pass") throw new Error(`Draft review preparation requires a passing verifier result, received ${verifier.status}`);
@@ -322,25 +345,38 @@ export async function prepareReview(options: PrepareLifecycleOptions): Promise<R
     const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
     if (commits.length === 0 || changedFiles.length === 0) throw new Error("Draft review preparation requires committed changes");
     if (repository.review_preparation) {
-      const existing = await readJson<ReviewPreparation>(assertInside(runtimeRoot, repository.review_preparation));
+      const existing = await readJsonRegularInside<ReviewPreparation>(runtimeRoot, repository.review_preparation, "Review preparation");
       await assertValid("review-preparation", existing);
-      if (existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
+      if (existing.contract_version === 2 && existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
         return existing;
       }
     }
     const remotes = (await git(repository.worktree, ["remote"])).split("\n").filter(Boolean);
     const remote = remotes.includes("origin") ? "origin" : null;
-    const blockers = remote ? [] : ["Repository has no origin remote; configure one before pushing or opening a draft pull request."];
+    const baseBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+    await assertBranchName(repository.worktree, repository.branch, "Recorded source branch");
+    await assertBranchName(repository.worktree, baseBranch, "Configured default branch");
+    const taskTarget = taskBrief.repositories.find((candidate) => candidate.name === repository.name);
+    const testArgv = taskTarget?.verification_commands ?? taskBrief.verification_commands;
+    const commands = {
+      diff: command("Inspect the exact base-to-head diff", repository.worktree, ["git", "diff", "--stat", `${repository.base_commit}...${headCommit}`]),
+      commits: command("Inspect the exact commit list", repository.worktree, ["git", "log", "--oneline", `${repository.base_commit}..${headCommit}`]),
+      show: command("Inspect the exact verified head commit", repository.worktree, ["git", "show", "--stat", "--oneline", headCommit]),
+      tests: testArgv.map((value) => command(`Run recorded verification: ${value}`, repository.worktree, ["sh", "-lc", value])),
+      switch_target: command("Switch the base repository to the configured target branch", assertInside(workspaceRoot, join(workspaceRoot, repository.base_path)), ["git", "switch", baseBranch]),
+      merge: command("Human-only merge of the exact verified head", assertInside(workspaceRoot, join(workspaceRoot, repository.base_path)), ["git", "merge", "--no-ff", headCommit]),
+    };
+    const confirmArgv = ["node", ".agents/bin/cc.mjs", "confirm-merge", "--run-id", manifest.run_id, "--repository", repository.name, "--merge-commit", "<full-merge-commit>", "--author", "<author-slug>", "--evidence", "<single-line-human-merge-evidence>"];
     const preparedAt = (options.now ?? new Date()).toISOString();
     const preparationPath = join(runtimeRoot, "runs", options.runId, `${repository.name}-draft-pr.json`);
     const preparation: ReviewPreparation = {
-      contract_version: 1,
+      contract_version: 2,
       work_id: manifest.work_id,
       run_id: manifest.run_id,
       repository: repository.name,
-      status: blockers.length === 0 ? "ready" : "blocked",
+      status: remote ? "ready-for-publication" : "ready-for-local-review",
       remote,
-      base_branch: config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch,
+      base_branch: baseBranch,
       head_branch: repository.branch,
       base_commit: repository.base_commit,
       head_commit: headCommit,
@@ -350,8 +386,10 @@ export async function prepareReview(options: PrepareLifecycleOptions): Promise<R
       body: reviewBody(taskBrief, verifier),
       worker_result: workerInput.result_path,
       verifier_result: verifierInput.result_path,
-      blockers,
+      blockers: [],
       prepared_at: preparedAt,
+      commands,
+      merge_handoff: { status: "merge-confirmation-required", confirmation_argv: confirmArgv, confirmation_shell: confirmArgv.map(shellQuote).join(" ") },
     };
     if (!sameMembers(worker.changed_files, changedFiles)) {
       throw new Error("Current Git diff does not match the recorded worker result");
@@ -359,6 +397,7 @@ export async function prepareReview(options: PrepareLifecycleOptions): Promise<R
     await assertValid("review-preparation", preparation);
     await writeJsonAtomic(preparationPath, preparation);
     repository.review_preparation = preparationPath;
+    repository.review_state = preparation.status as "ready-for-local-review" | "ready-for-publication";
     addEvidence(manifest, preparationPath);
     const eventKey = `${manifest.run_id}:execution:${repository.name}:review-prepared:attempt-${repository.repair_attempts ?? 0}`;
     if (!manifest.execution_events?.some((event) => event.idempotency_key === eventKey)) {
@@ -382,14 +421,18 @@ export async function recordReviewPublication(options: RecordReviewPublicationOp
   const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
   const manifestPath = assertInside(runtimeRoot, join(runtimeRoot, "runs", options.runId, "manifest.json"));
   return withExclusiveFile(`${manifestPath}.lock`, async () => {
-    const manifest = await readJson<RuntimeManifest>(manifestPath);
+    const manifest = await readJsonRegularInside<RuntimeManifest>(runtimeRoot, manifestPath, "Runtime manifest");
     await assertValid("runtime-manifest", manifest);
     if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
     const repository = findRepository(manifest, options.repository);
     if (!repository.review_preparation) throw new Error("Prepare the draft pull-request handoff before recording publication");
-    const preparation = await readJson<ReviewPreparation>(assertInside(runtimeRoot, repository.review_preparation));
+    const preparation = await readJsonRegularInside<ReviewPreparation>(runtimeRoot, repository.review_preparation, "Review preparation");
     await assertValid("review-preparation", preparation);
-    if (preparation.status !== "ready") throw new Error(`Draft pull-request handoff is ${preparation.status}`);
+    if (preparation.work_id !== manifest.work_id || preparation.run_id !== manifest.run_id || preparation.repository !== repository.name) throw new Error("Review preparation identity does not match the active run");
+    if (preparation.contract_version !== 2 || preparation.status !== "ready-for-publication" || preparation.remote !== "origin") {
+      throw new Error(`Remote publication requires a ready-for-publication handoff with origin; current state is ${preparation.status}`);
+    }
+    if (!options.authorized) throw new Error("Remote publication recording requires explicit authorization confirmation");
     await assertCleanRepository(repository.worktree);
     const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
     if (headCommit !== preparation.head_commit) throw new Error("Worktree HEAD changed after review preparation");
@@ -398,7 +441,7 @@ export async function recordReviewPublication(options: RecordReviewPublicationOp
     if (options.status === "failed" && options.pullRequest) throw new Error("Failed publication cannot record a pull-request reference");
     const recordPath = join(runtimeRoot, "runs", options.runId, `${repository.name}-review-publication.json`);
     const record: ReviewPublicationRecord = {
-      contract_version: 1,
+      contract_version: options.status === "published" ? 2 : 1,
       work_id: manifest.work_id,
       run_id: manifest.run_id,
       repository: repository.name,
@@ -409,10 +452,11 @@ export async function recordReviewPublication(options: RecordReviewPublicationOp
       head_commit: headCommit,
       idempotency_key: `${manifest.run_id}:review-publication:${repository.name}`,
       recorded_at: (options.now ?? new Date()).toISOString(),
+      ...(options.status === "published" ? { review_state: "published-for-review" as const } : {}),
     };
     await assertValid("review-publication-record", record);
     if (repository.review_publication) {
-      const existing = await readJson<ReviewPublicationRecord>(assertInside(runtimeRoot, repository.review_publication));
+      const existing = await readJsonRegularInside<ReviewPublicationRecord>(runtimeRoot, repository.review_publication, "Review publication record");
       await assertValid("review-publication-record", existing);
       const comparable = (value: ReviewPublicationRecord) => JSON.stringify({ ...value, recorded_at: null });
       if (comparable(existing) !== comparable(record)) throw new Error("Review publication was already recorded with different confirmed evidence");
@@ -420,8 +464,78 @@ export async function recordReviewPublication(options: RecordReviewPublicationOp
     }
     await writeJsonAtomic(recordPath, record);
     repository.review_publication = recordPath;
+    repository.review_state = options.status === "published" ? "published-for-review" : "ready-for-publication";
     addEvidence(manifest, recordPath);
     manifest.updated_at = record.recorded_at;
+    await assertValid("runtime-manifest", manifest);
+    await writeJsonAtomic(manifestPath, manifest);
+    return record;
+  });
+}
+
+async function isAncestor(repository: string, ancestor: string, descendant: string): Promise<boolean> {
+  try { await git(repository, ["merge-base", "--is-ancestor", ancestor, descendant]); return true; } catch { return false; }
+}
+
+export async function confirmMerge(options: ConfirmMergeOptions): Promise<MergeConfirmationRecord> {
+  const workspaceRoot = resolve(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
+  const manifestPath = assertInside(runtimeRoot, join(runtimeRoot, "runs", options.runId, "manifest.json"));
+  if (!/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("Merge commit must be a full lowercase Git object ID");
+  const author = safeReviewEvidence(options.author, "Author");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(author)) throw new Error("Author must be a lowercase slug");
+  const evidence = safeReviewEvidence(options.evidence, "Merge evidence");
+  const config = await loadWorkspace(workspaceRoot);
+  return withExclusiveFile(`${manifestPath}.lock`, async () => {
+    const manifest = await readJsonRegularInside<RuntimeManifest>(runtimeRoot, manifestPath, "Runtime manifest");
+    await assertValid("runtime-manifest", manifest);
+    if (manifest.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
+    const repository = findRepository(manifest, options.repository);
+    if (!repository.review_preparation) throw new Error("Prepare review before confirming a merge");
+    const preparation = await readJsonRegularInside<ReviewPreparation>(runtimeRoot, repository.review_preparation, "Review preparation");
+    await assertValid("review-preparation", preparation);
+    if (preparation.work_id !== manifest.work_id || preparation.run_id !== manifest.run_id || preparation.repository !== repository.name) throw new Error("Review preparation identity does not match the active run");
+    if (preparation.contract_version !== 2 || preparation.head_commit !== await git(repository.worktree, ["rev-parse", "HEAD"])) throw new Error("Review preparation does not match the current verified head");
+    const baseBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+    if (preparation.base_branch !== baseBranch) throw new Error("Review preparation target differs from the configured default branch");
+    const baseRepository = assertInside(workspaceRoot, join(workspaceRoot, repository.base_path));
+    await git(baseRepository, ["cat-file", "-e", `${options.mergeCommit}^{commit}`]);
+    const targetRefs = [`refs/heads/${baseBranch}`, `refs/remotes/origin/${baseBranch}`];
+    let targetRef: string | null = null;
+    let targetCommit: string | null = null;
+    for (const ref of targetRefs) {
+      try {
+        const commit = await git(baseRepository, ["rev-parse", "--verify", `${ref}^{commit}`]);
+        if (await isAncestor(baseRepository, options.mergeCommit, commit)) { targetRef = ref; targetCommit = commit; break; }
+      } catch { /* Missing exact configured target ref is not merge evidence. */ }
+    }
+    if (!targetRef || !targetCommit) throw new Error(`Reported merge commit is not reachable from the configured default target ${baseBranch}`);
+    if (!await isAncestor(baseRepository, preparation.head_commit, options.mergeCommit)) throw new Error("Verified review head is not reachable from the reported merge commit");
+    if (!await isAncestor(baseRepository, preparation.base_commit, options.mergeCommit)) throw new Error("Recorded base is not reachable from the reported merge commit");
+    const finishArgv = ["node", ".agents/bin/cc.mjs", "finish-work", "--run-id", manifest.run_id, "--repository", repository.name, "--outcome", "merged", "--author", author, "--merge-commit", options.mergeCommit];
+    const publication = repository.review_publication ? await readJsonRegularInside<ReviewPublicationRecord>(runtimeRoot, repository.review_publication, "Review publication record") : null;
+    if (publication?.status === "published" && publication.pull_request) finishArgv.push("--pull-request", publication.pull_request);
+    const record: MergeConfirmationRecord = {
+      contract_version: 1, work_id: manifest.work_id, run_id: manifest.run_id, repository: repository.name,
+      status: "closeout-ready", base_branch: baseBranch, target_ref: targetRef, target_commit: targetCommit,
+      head_commit: preparation.head_commit, merge_commit: options.mergeCommit, evidence,
+      finish_work_argv: finishArgv, finish_work_shell: finishArgv.map(shellQuote).join(" "),
+      idempotency_key: `${manifest.run_id}:merge-confirmation:${repository.name}`, confirmed_at: (options.now ?? new Date()).toISOString(),
+    };
+    await assertValid("merge-confirmation-record", record);
+    const recordPath = join(runtimeRoot, "runs", options.runId, `${repository.name}-merge-confirmation.json`);
+    if (repository.merge_confirmation) {
+      const existing = await readJsonRegularInside<MergeConfirmationRecord>(runtimeRoot, repository.merge_confirmation, "Merge confirmation record");
+      await assertValid("merge-confirmation-record", existing);
+      const comparable = (value: MergeConfirmationRecord) => JSON.stringify({ ...value, confirmed_at: null });
+      if (comparable(existing) !== comparable(record)) throw new Error("Merge was already confirmed with different evidence");
+      return existing;
+    }
+    await writeJsonAtomic(recordPath, record);
+    repository.merge_confirmation = recordPath;
+    repository.review_state = "closeout-ready";
+    addEvidence(manifest, recordPath);
+    manifest.updated_at = record.confirmed_at;
     await assertValid("runtime-manifest", manifest);
     await writeJsonAtomic(manifestPath, manifest);
     return record;

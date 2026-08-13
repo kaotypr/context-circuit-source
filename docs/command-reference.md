@@ -6,14 +6,14 @@ and records how it happens.
 
 It provides workspace validation and bootstrap, task normalization, Git
 worktree preparation, result recording, bounded repair, review handoff,
-planning, lifecycle records, closeout, recommendations, publication records,
+planning, lifecycle records, verified human merge confirmation, closeout, recommendations, publication records,
 and context synchronization.
 
 Run it from the wrapper root:
 
 ```bash
 node .agents/bin/cc.mjs validate
-node .agents/bin/cc.mjs initialize-workspace --check-only
+node .agents/bin/cc.mjs configure-workspace --check-only
 node .agents/bin/cc.mjs whats-next
 ```
 
@@ -22,12 +22,19 @@ arguments. The principal skill-to-command mappings are:
 
 | Human action | Codex | Claude Code | Deterministic command |
 | --- | --- | --- | --- |
-| Initialize | `$initialize-workspace` | `/initialize-workspace` | `initialize-workspace` |
+| Configure | `$configure-workspace` | `/configure-workspace` | `configure-workspace` |
+| Initialize (compatibility) | `$initialize-workspace` | `/initialize-workspace` | `initialize-workspace` |
+| Gather context (read-only) | `$gather-context` | `/gather-context` | host read-only tools |
 | Plan | `$create-plan` | `/create-plan` | `create-plan` |
 | Recommend work | `$whats-next` | `/whats-next` | `whats-next` |
 | Run scoped work | `$run-task` | `/run-task` | `run-task` |
 | Finish a run | `$finish-work` | `/finish-work` | `finish-work` |
 | Curate context | `$sync-context` | `/sync-context` | `sync-context` |
+| Onboarding pack | host skill | host skill | `onboarding-pack` |
+
+`onboarding-pack --roles <role[,role...]>` generates a revision-stamped Product
+Knowledge onboarding view. See [product-knowledge.md](product-knowledge.md) for the
+full Product Knowledge lifecycle.
 
 Additional recorder and preparation subcommands are internal workflow steps.
 Use them only when a skill or generated runtime instruction provides the exact

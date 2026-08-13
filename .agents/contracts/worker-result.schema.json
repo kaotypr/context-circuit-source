@@ -17,7 +17,8 @@
     "commits": { "$ref": "#/$defs/strings" },
     "changed_files": { "$ref": "#/$defs/strings" },
     "checks": { "type": "array", "items": { "$ref": "#/$defs/check" } },
-    "risks": { "$ref": "#/$defs/strings" }
+    "risks": { "$ref": "#/$defs/strings" },
+    "product_knowledge_impact": { "enum": ["absent", "matches-declared", "broader-than-declared", "contradicts-current"] }
   },
   "$defs": {
     "strings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
