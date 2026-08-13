@@ -30,6 +30,11 @@ arguments. The principal skill-to-command mappings are:
 | Run scoped work | `$run-task` | `/run-task` | `run-task` |
 | Finish a run | `$finish-work` | `/finish-work` | `finish-work` |
 | Curate context | `$sync-context` | `/sync-context` | `sync-context` |
+| Onboarding pack | host skill | host skill | `onboarding-pack` |
+
+`onboarding-pack --roles <role[,role...]>` generates a revision-stamped Product
+Knowledge onboarding view. See [product-knowledge.md](product-knowledge.md) for the
+full Product Knowledge lifecycle.
 
 Additional recorder and preparation subcommands are internal workflow steps.
 Use them only when a skill or generated runtime instruction provides the exact

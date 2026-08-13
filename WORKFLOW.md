@@ -50,6 +50,14 @@ independent acceptance evidence.
 Ignored clones are recommended. Each ignored clone must have an exact
 `.gitignore` entry so tracked submodules can coexist under `repositories/`.
 
+Product Knowledge is an optional, incremental business-context view under
+`context/` (product map, roles, domains, and workflow pages). It is validated when
+present and absent-safe when not. Plans declare Product Knowledge impact, tasks
+carry a bounded immutable context package to worker and verifier, evidence reports
+observed impact, and canonical current-behavior pages change only after a
+dedicated confirming role declares the behavior effective. See
+`docs/product-knowledge.md`.
+
 Configured activity actions use semantic lifecycle events. Required actions
 block their transition on failure; optional actions warn and degrade; manual
 actions present their exact description for human completion. The active host

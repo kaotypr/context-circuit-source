@@ -13,9 +13,10 @@ decisions.
 
 Start with the [wrapper getting-started guide](docs/getting-started.md). Then use
 the [human workflow guide](docs/using-the-wrapper.md) for day-to-day delivery,
-the [configuration reference](docs/configuration.md) for workspace policy, and
-the [command reference](docs/command-reference.md) for troubleshooting or
-advanced direct use.
+the [configuration reference](docs/configuration.md) for workspace policy, the
+[command reference](docs/command-reference.md) for troubleshooting or advanced
+direct use, and the [Product Knowledge guide](docs/product-knowledge.md) for the
+optional business-context capability.
 
 The downloadable wrapper requires Git and Node.js 22 or newer. It includes the
 standalone `.agents/bin/cc.mjs` command and does not require npm installation,

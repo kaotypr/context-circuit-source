@@ -64,6 +64,16 @@ Live task status belongs in the configured activity system, not canonical
 context. Repository-specific details belong in the corresponding product
 repository.
 
+## Product Knowledge
+
+Optionally, keep a lean business view — product map, roles, domains, and workflow
+pages under `context/` — that gives humans and agents task-relevant business
+context without loading the whole application. It is additive and incremental: a
+wrapper without it stays valid, and plans, tasks, evidence, and onboarding packs
+carry Product Knowledge impact when it exists. Canonical current-behavior pages
+change only after a dedicated confirming role declares the behavior effective. See
+[product-knowledge.md](product-knowledge.md).
+
 ## Safety boundaries
 
 Context Circuit does not discard dirty work, embed credentials, run a background

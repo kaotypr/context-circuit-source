@@ -57,7 +57,7 @@ test("distributable and release archive contain only wrapper inputs", async () =
   await assert.rejects(access(join(destination, "repositories")));
   await assert.rejects(access(join(destination, "agents", "frontend.md")));
   const distributedDocs = (await readdir(join(destination, "docs"))).sort();
-  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "getting-started.md", "using-the-wrapper.md"]);
+  assert.deepEqual(distributedDocs, ["command-reference.md", "configuration.md", "getting-started.md", "product-knowledge.md", "using-the-wrapper.md"]);
   assert.match(await readFile(join(destination, "workspace.yaml"), "utf8"), /repositories: \{\}/);
   assert.doesNotMatch(await readFile(join(destination, ".gitignore"), "utf8"), /repositories\/frontend/);
   assert.match(await readFile(join(destination, "context", "PROJECT.md"), "utf8"), /has not been initialized/);
