@@ -478,7 +478,10 @@ export async function resumeExecutePlan(options: ResumePlanOptions): Promise<Pre
     if (!repository) throw new Error(`Revised task targets an unprepared repository: ${item.repository}`);
     const prior = oldTasks.get(item.work_id);
     if (preserved.includes(item.work_id) && prior) {
-      const preservedTask = { ...prior, plan_version: index.plan_version, plan_revision: index.plan_version, approved_digest: index.approved_digest! };
+      const preservedTask: NonNullable<RuntimeManifest["task_graph"]>[number] = { ...prior, plan_version: index.plan_version, plan_revision: index.plan_version, approved_digest: index.approved_digest! };
+      if (prior.plan_version !== undefined) preservedTask.evidence_plan_version = prior.plan_version;
+      if (prior.plan_revision !== undefined) preservedTask.evidence_plan_revision = prior.plan_revision;
+      if (prior.approved_digest !== undefined) preservedTask.evidence_approved_digest = prior.approved_digest;
       taskGraph.push(preservedTask);
       const preservedSummary: NonNullable<RuntimeManifest["plan_work_items"]>[number] = { work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt: prior.attempt ?? 0, start_commit: prior.start_commit ?? repository.base_commit, ready: true, blocked_by: [], status: "passed", depends_on: item.depends_on, outcome: "passed", task_input: prior.worker_input, verifier_input: prior.verifier_input };
       if (prior.worker_result) preservedSummary.worker_result = prior.worker_result;

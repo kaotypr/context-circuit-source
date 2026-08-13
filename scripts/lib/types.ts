@@ -647,6 +647,12 @@ export interface CloseoutRecord {
   blockers: string[];
   prepared_at: string;
   updated_at: string;
+  refresh?: {
+    target_ref: string;
+    before_commit: string;
+    refreshed_commit: string;
+    refreshed_at: string;
+  };
   product_knowledge?: {
     impact: "absent" | "matches-declared" | "broader-than-declared" | "contradicts-current" | "not-reported";
     synchronization: "not-required" | "pending-review";
@@ -674,6 +680,9 @@ export interface RuntimeManifest {
     plan_reference?: string;
     task_id?: string;
     plan_revision?: number;
+    evidence_plan_version?: number;
+    evidence_plan_revision?: number;
+    evidence_approved_digest?: string;
     attempt?: number;
     start_commit?: string | null;
     ready?: boolean;
@@ -701,6 +710,9 @@ export interface RuntimeManifest {
     approved_digest?: string;
     task_id?: string;
     plan_revision?: number;
+    evidence_plan_version?: number;
+    evidence_plan_revision?: number;
+    evidence_approved_digest?: string;
     attempt?: number;
     start_commit?: string | null;
     ready?: boolean;

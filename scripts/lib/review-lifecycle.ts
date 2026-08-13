@@ -3,6 +3,7 @@ import { join, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { assertCleanRepository, git } from "./git.js";
 import { assertInside, ensurePrivateDirectory, readJsonRegularInside, withExclusiveFile, writeJsonAtomic } from "./io.js";
+import { resolveRootPlanDirectory, setPlanState } from "./plans.js";
 import type { ExecutionEvent, MergeConfirmationRecord, ReviewCommand, ReviewPreparation, ReviewPublicationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
@@ -470,8 +471,11 @@ async function loadApprovedPlanForReview(runtimeRoot: string, manifest: RuntimeM
     const taskVerifier = await readJsonRegularInside<VerifierResult>(runtimeRoot, task.verifier_result!, "Plan task verifier result");
     await assertValid("worker-result", worker);
     await assertValid("verifier-result", taskVerifier);
-    if (worker.run_id !== manifest.run_id || worker.plan_id !== manifest.plan_id || worker.plan_reference !== manifest.plan_reference || worker.plan_version !== manifest.plan_version || worker.plan_revision !== manifest.plan_revision || worker.approved_digest !== manifest.approved_digest || worker.task_id !== (task.task_id ?? task.work_id) || worker.attempt !== (task.attempt ?? 0) || worker.repository !== task.repository || worker.branch !== taskRepository.branch || resolve(worker.worktree) !== resolve(taskRepository.worktree) || worker.start_commit !== task.start_commit || worker.status !== "completed") throw new Error(`Plan worker evidence identity is invalid for ${task.task_id ?? task.work_id}`);
-    if (taskVerifier.run_id !== manifest.run_id || taskVerifier.plan_id !== manifest.plan_id || taskVerifier.plan_reference !== manifest.plan_reference || taskVerifier.plan_version !== manifest.plan_version || taskVerifier.plan_revision !== manifest.plan_revision || taskVerifier.approved_digest !== manifest.approved_digest || taskVerifier.task_id !== (task.task_id ?? task.work_id) || taskVerifier.attempt !== (task.attempt ?? 0) || taskVerifier.repository !== task.repository || taskVerifier.branch !== taskRepository.branch || resolve(taskVerifier.worktree ?? "") !== resolve(taskRepository.worktree) || taskVerifier.start_commit !== task.start_commit || taskVerifier.status !== "pass") throw new Error(`Plan task verifier evidence identity is invalid for ${task.task_id ?? task.work_id}`);
+    const evidenceVersion = task.evidence_plan_version ?? manifest.plan_version;
+    const evidenceRevision = task.evidence_plan_revision ?? manifest.plan_revision;
+    const evidenceDigest = task.evidence_approved_digest ?? manifest.approved_digest;
+    if (worker.run_id !== manifest.run_id || worker.plan_id !== manifest.plan_id || worker.plan_reference !== manifest.plan_reference || worker.plan_version !== evidenceVersion || worker.plan_revision !== evidenceRevision || worker.approved_digest !== evidenceDigest || worker.task_id !== (task.task_id ?? task.work_id) || worker.attempt !== (task.attempt ?? 0) || worker.repository !== task.repository || worker.branch !== taskRepository.branch || resolve(worker.worktree) !== resolve(taskRepository.worktree) || worker.start_commit !== task.start_commit || worker.status !== "completed") throw new Error(`Plan worker evidence identity is invalid for ${task.task_id ?? task.work_id}`);
+    if (taskVerifier.run_id !== manifest.run_id || taskVerifier.plan_id !== manifest.plan_id || taskVerifier.plan_reference !== manifest.plan_reference || taskVerifier.plan_version !== evidenceVersion || taskVerifier.plan_revision !== evidenceRevision || taskVerifier.approved_digest !== evidenceDigest || taskVerifier.task_id !== (task.task_id ?? task.work_id) || taskVerifier.attempt !== (task.attempt ?? 0) || taskVerifier.repository !== task.repository || taskVerifier.branch !== taskRepository.branch || resolve(taskVerifier.worktree ?? "") !== resolve(taskRepository.worktree) || taskVerifier.start_commit !== task.start_commit || taskVerifier.status !== "pass") throw new Error(`Plan task verifier evidence identity is invalid for ${task.task_id ?? task.work_id}`);
     const head = await git(taskRepository.worktree, ["rev-parse", "HEAD"]);
     if (worker.commits.at(-1) !== head || taskVerifier.acceptance.some((item) => item.status !== "passed")) throw new Error(`Plan task evidence is stale or incomplete for ${task.task_id ?? task.work_id}`);
   }
@@ -525,6 +529,10 @@ async function preparePlanReview(options: PrepareLifecycleOptions, workspaceRoot
   if (!manifest.execution_events?.some((event) => event.idempotency_key === eventKey)) addExecutionEvent(manifest, repository.name, "review-prepared", "passed", "passed", repository.repair_attempts ?? 0, preparedAt, preparationPath);
   await assertValid("runtime-manifest", manifest);
   await writeJsonAtomic(manifestPath, manifest);
+  if (manifest.plan_reference) {
+    const planDirectory = await resolveRootPlanDirectory(workspaceRoot, manifest.plan_reference);
+    await setPlanState(planDirectory, { kind: "lifecycle", status: "merge-pending", reason: "Cumulative plan review handoff prepared.", actor: "engine", evidence: preparationPath }, options.now ?? new Date());
+  }
   return preparation;
 }
 
