@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/import-context-request.schema.json",
+  "title": "Import context discovery request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "repository", "authorize_contribution_write"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "repository": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "authorize_contribution_write": { "const": true },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "max_files": { "type": "integer", "minimum": 1, "maximum": 200 },
+        "max_file_bytes": { "type": "integer", "minimum": 256, "maximum": 1048576 },
+        "max_total_bytes": { "type": "integer", "minimum": 256, "maximum": 10485760 }
+      }
+    }
+  }
+}
