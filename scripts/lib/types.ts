@@ -605,6 +605,46 @@ export interface ContextSyncRequest {
   proposals: ContextSyncProposal[];
 }
 
+export interface ImportContextLimits {
+  max_files?: number;
+  max_file_bytes?: number;
+  max_total_bytes?: number;
+}
+
+export interface ImportContextRequest {
+  contract_version: 1;
+  repository: string;
+  authorize_contribution_write: true;
+  limits?: ImportContextLimits;
+}
+
+export type ImportContextEvidenceKind = "root-instruction" | "documentation" | "repository-instruction" | "structural-signal" | "repository-context";
+
+export interface ImportContextEvidence {
+  path: string;
+  kind: ImportContextEvidenceKind;
+  trust: "standard" | "high";
+  bytes: number;
+  excerpt: string;
+}
+
+export interface ImportContextManifest {
+  contract_version: 1;
+  repository: string;
+  source_root: string;
+  source_commit: string;
+  evidence: ImportContextEvidence[];
+  limits: Required<ImportContextLimits>;
+  contribution: string;
+  generated_at: string;
+}
+
+export interface ImportContextResult {
+  contribution: string;
+  manifest: string;
+  evidence: ImportContextEvidence[];
+}
+
 export interface ContextSyncRecord {
   contract_version: 1;
   sync_id: string;
