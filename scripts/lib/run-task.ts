@@ -8,8 +8,28 @@ import { assertInside, ensurePrivateDirectory, writeJsonAtomic } from "./io.js";
 import type { PlanRunTaskRequest, RunTaskRequest, RuntimeManifest, RuntimeRepository, TaskBrief, TaskRepositoryTarget, TestExpectation, TestExpectationPolicy, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 import { prepareActivityLifecycle } from "./activity-lifecycle.js";
-import type { ActivityCapability } from "./types.js";
+import type { ActivityCapability, ProductKnowledgePlanDeclaration } from "./types.js";
 import { validatePlanDirectory } from "./plans.js";
+import { buildTaskContextPackage } from "./product-knowledge.js";
+
+async function resolveContextRevision(workspaceRoot: string): Promise<string | undefined> {
+  try {
+    return await git(workspaceRoot, ["rev-parse", "HEAD"]);
+  } catch {
+    return undefined;
+  }
+}
+
+async function attachProductKnowledge(taskBrief: TaskBrief, workspaceRoot: string, declaration: ProductKnowledgePlanDeclaration): Promise<void> {
+  const revision = await resolveContextRevision(workspaceRoot);
+  taskBrief.product_knowledge = await buildTaskContextPackage({
+    workspaceRoot,
+    references: declaration.references,
+    impact: declaration.impact,
+    proposed_change: declaration.proposed_change ?? null,
+    ...(revision ? { revision } : {}),
+  });
+}
 
 export interface PrepareTaskOptions {
   workspaceRoot: string;
@@ -24,6 +44,7 @@ export interface PrepareTaskOptions {
   now?: Date;
   discriminator?: string;
   availableCapabilities?: ActivityCapability[];
+  productKnowledge?: import("./types.js").ProductKnowledgePlanDeclaration;
 }
 
 export interface PreparedTask {
@@ -326,6 +347,7 @@ export async function preparePlanlessTask(options: PrepareTaskOptions): Promise<
     runId,
     createdAt,
   });
+  if (options.productKnowledge) await attachProductKnowledge(taskBrief, workspaceRoot, options.productKnowledge);
   await assertValid("task-brief", taskBrief);
   if (taskBrief.test_expectation?.policy === "existing-coverage") {
     for (const path of taskBrief.test_expectation.paths) {
@@ -687,6 +709,7 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
   const taskBriefPath = join(runtimeRoot, "tasks", `${runId}.json`);
   const manifestPath = join(runRoot, "manifest.json");
   const taskBrief = normalizePlanRequest(options.request, item, runId, createdAt);
+  if (index.product_knowledge) await attachProductKnowledge(taskBrief, workspaceRoot, index.product_knowledge);
   await assertValid("task-brief", taskBrief);
   for (const target of taskBrief.repositories) {
     if (target.test_expectation?.policy !== "existing-coverage") continue;

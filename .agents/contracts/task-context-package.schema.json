@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/task-context-package.schema.json",
+  "title": "Bounded Product Knowledge task context package",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "revision", "content_digest", "context_paths", "impact", "proposed_change"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "revision": { "type": "string", "minLength": 1 },
+    "content_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "context_paths": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$" } },
+    "impact": { "enum": ["none", "documentation-correction", "implementation-only", "behavior-change", "new-workflow", "retired-workflow"] },
+    "proposed_change": { "type": ["string", "null"], "minLength": 1 }
+  }
+}

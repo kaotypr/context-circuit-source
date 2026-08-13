@@ -1,9 +1,10 @@
+import { createHash } from "node:crypto";
 import { access, readdir, readFile } from "node:fs/promises";
 import { dirname, join, relative, resolve } from "node:path";
 import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
 import { validateContract } from "./validation.js";
 import type { SchemaName } from "./validation.js";
-import type { ProductKnowledgeBaselineSpec } from "./types.js";
+import type { ProductKnowledgeBaselineSpec, ProductKnowledgeImpact, TaskContextPackage } from "./types.js";
 
 export type ProductKnowledgeKind = "role" | "workflow" | "domain" | "product-map";
 
@@ -213,6 +214,46 @@ export async function validateProductKnowledgeTree(contextDir: string): Promise<
   }
 
   return { present: true, pages, errors: [...new Set(errors)] };
+}
+
+/**
+ * Resolve a compact, immutable Product Knowledge package for a task. Only the
+ * referenced pages that actually exist are included (the bounded business
+ * baseline, not the whole tree), and their content is pinned by a digest so a
+ * worker and an independent verifier share the exact same baseline. Missing
+ * references are proposed pages and are intentionally excluded from the snapshot.
+ */
+export async function buildTaskContextPackage(input: {
+  workspaceRoot: string;
+  references: string[];
+  impact: ProductKnowledgeImpact;
+  proposed_change?: string | null;
+  revision?: string;
+}): Promise<TaskContextPackage> {
+  const root = resolve(input.workspaceRoot);
+  const contents = new Map<string, string>();
+  for (const reference of input.references) {
+    const target = resolve(root, reference);
+    if (relative(root, target).startsWith("..")) throw new Error(`Product Knowledge reference escapes the workspace: ${reference}`);
+    try {
+      contents.set(reference, await readFile(target, "utf8"));
+    } catch {
+      // A referenced page that does not exist yet is proposed, not part of the
+      // current baseline snapshot.
+    }
+  }
+  const contextPaths = [...contents.keys()].sort();
+  const hash = createHash("sha256");
+  for (const path of contextPaths) hash.update(`${path}\0${contents.get(path)}\0`);
+  const contentDigest = `sha256:${hash.digest("hex")}`;
+  return {
+    contract_version: 1,
+    revision: input.revision?.trim() || contentDigest,
+    content_digest: contentDigest,
+    context_paths: contextPaths,
+    impact: input.impact,
+    proposed_change: input.proposed_change ?? null,
+  };
 }
 
 function slugify(name: string): string {

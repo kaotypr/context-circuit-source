@@ -140,6 +140,15 @@ export interface ProductKnowledgePlanDeclaration {
   proposed_change?: string;
 }
 
+export interface TaskContextPackage {
+  contract_version: 1;
+  revision: string;
+  content_digest: string;
+  context_paths: string[];
+  impact: ProductKnowledgeImpact;
+  proposed_change: string | null;
+}
+
 export interface PlanIndex {
   contract_version: 1;
   plan_id: string;
@@ -344,6 +353,7 @@ export interface TaskBrief {
   verification_commands: string[];
   authorization: { kind: "explicit-user-request" | "confirmed-selection"; evidence: string };
   created_at: string;
+  product_knowledge?: TaskContextPackage;
 }
 
 export interface TaskRepositoryTarget {

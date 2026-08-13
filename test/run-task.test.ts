@@ -316,3 +316,72 @@ test("draft, stale, unknown, and dependency-blocked plans fail before runtime cr
     } finally { await workspace.cleanup(); }
   });
 });
+
+async function writeContextPage(root: string, relativePath: string, body: string): Promise<void> {
+  const full = join(root, relativePath);
+  await mkdir(dirname(full), { recursive: true });
+  await writeFile(full, body, "utf8");
+}
+
+test("an approved plan carries a bounded Product Knowledge package into the shared brief", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await writeContextPage(workspace.root, "context/roles/shopper.md", "# Shopper\n\nRole page.\n");
+  await writeContextPage(workspace.root, "context/domains/checkout/workflows/place-order.md", "# Place an order\n\nWorkflow page.\n");
+
+  const draft: PlanDraftRequest = {
+    ...planDraft,
+    plan_id: "reset-pk",
+    product_knowledge: {
+      impact: "behavior-change",
+      references: [
+        "context/roles/shopper.md",
+        "context/domains/checkout/workflows/place-order.md",
+        "context/domains/loyalty/README.md",
+      ],
+      proposed_change: "Reset also clears the saved cart.",
+    },
+  };
+  const created = await createPlanDraft(workspace.root, draft, new Date("2026-08-11T07:00:00Z"));
+  const approved = await setPlanState(created.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-11T07:30:00Z"));
+  const prepared = await preparePlanTask({
+    workspaceRoot: workspace.root,
+    request: { contract_version: 1, source: { kind: "plan", reference: "context/plans/reset-pk", plan_version: approved.plan_version, approved_digest: approved.approved_digest! }, work_ids: ["RESET-001"] },
+    now: new Date("2026-08-11T08:30:00Z"),
+    discriminator: "abcd1234",
+  });
+
+  const brief = JSON.parse(await readFile(prepared.taskBrief, "utf8"));
+  assert.deepEqual(await validateContract("task-brief", brief), []);
+  assert.equal(brief.product_knowledge.impact, "behavior-change");
+  assert.equal(brief.product_knowledge.proposed_change, "Reset also clears the saved cart.");
+  // Bounded: only the referenced pages that exist, not the missing proposed one.
+  assert.deepEqual(brief.product_knowledge.context_paths, [
+    "context/domains/checkout/workflows/place-order.md",
+    "context/roles/shopper.md",
+  ]);
+  assert.match(brief.product_knowledge.content_digest, /^sha256:[a-f0-9]{64}$/);
+  // Worker and verifier read the same brief, so they share the identical baseline.
+  const worker = JSON.parse(await readFile(prepared.workerInput, "utf8"));
+  const verifier = JSON.parse(await readFile(prepared.verifierInput, "utf8"));
+  assert.equal(worker.task_brief, prepared.taskBrief);
+  assert.equal(verifier.task_brief, prepared.taskBrief);
+});
+
+test("a planless task carries a Product Knowledge package when the request declares one", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await writeContextPage(workspace.root, "context/roles/shopper.md", "# Shopper\n\nRole page.\n");
+  const prepared = await preparePlanlessTask({
+    workspaceRoot: workspace.root,
+    ...taskOptions,
+    productKnowledge: { impact: "implementation-only", references: ["context/roles/shopper.md"] },
+    now: new Date("2026-08-11T08:30:00.000Z"),
+    discriminator: "abcd1234",
+  });
+  const brief = JSON.parse(await readFile(prepared.taskBrief, "utf8"));
+  assert.deepEqual(await validateContract("task-brief", brief), []);
+  assert.equal(brief.product_knowledge.impact, "implementation-only");
+  assert.deepEqual(brief.product_knowledge.context_paths, ["context/roles/shopper.md"]);
+  assert.equal(brief.product_knowledge.proposed_change, null);
+});

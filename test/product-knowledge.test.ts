@@ -4,7 +4,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { parse as parseYaml } from "yaml";
-import { validateProductKnowledgeTree } from "../scripts/lib/product-knowledge.js";
+import { buildTaskContextPackage, validateProductKnowledgeTree } from "../scripts/lib/product-knowledge.js";
+import { validateContract } from "../scripts/lib/validation.js";
 import { projectRoot } from "./helpers.js";
 
 const smallFixture = join(projectRoot, "fixtures", "product-knowledge-small");
@@ -122,4 +123,29 @@ test("a page whose frontmatter kind mismatches its location is reported", async 
     await writeFile(path, raw.replace("kind: role", "kind: workflow"));
   });
   assert.ok(result.errors.some((error) => error.includes("shopper.md") && error.includes("kind")));
+});
+
+test("a task context package resolves only the referenced pages and pins their content", async () => {
+  const references = [
+    "domains/checkout/README.md",
+    "domains/checkout/workflows/place-order.md",
+    "roles/shopper.md",
+    "domains/loyalty/README.md", // does not exist; proposed, excluded from the snapshot
+  ];
+  const pkg = await buildTaskContextPackage({ workspaceRoot: largeFixture, references, impact: "behavior-change", proposed_change: "Retry once." });
+  assert.deepEqual(pkg.context_paths, [
+    "domains/checkout/README.md",
+    "domains/checkout/workflows/place-order.md",
+    "roles/shopper.md",
+  ]);
+  assert.ok(!pkg.context_paths.some((path) => path.includes("catalog") || path.includes("payments")));
+  assert.match(pkg.content_digest, /^sha256:[a-f0-9]{64}$/);
+  assert.equal(pkg.revision, pkg.content_digest); // no git revision supplied → digest identifies the baseline
+  assert.equal(pkg.impact, "behavior-change");
+  assert.equal(pkg.proposed_change, "Retry once.");
+  assert.deepEqual(await validateContract("task-context-package", pkg), []);
+
+  // The snapshot is deterministic for the same inputs.
+  const again = await buildTaskContextPackage({ workspaceRoot: largeFixture, references, impact: "behavior-change", proposed_change: "Retry once." });
+  assert.equal(again.content_digest, pkg.content_digest);
 });

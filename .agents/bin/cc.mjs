@@ -48,7 +48,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 var define_CC_TEMPLATE_INVENTORY_default;
 var init_define_CC_TEMPLATE_INVENTORY = __esm({
   "<define:__CC_TEMPLATE_INVENTORY__>"() {
-    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/product-knowledge-candidate.schema.json", ".agents/contracts/product-knowledge-domain.schema.json", ".agents/contracts/product-knowledge-project.schema.json", ".agents/contracts/product-knowledge-role.schema.json", ".agents/contracts/product-knowledge-workflow.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".agents/templates/product-knowledge/GLOSSARY.md", ".agents/templates/product-knowledge/PROJECT.md", ".agents/templates/product-knowledge/domains/domain/README.md", ".agents/templates/product-knowledge/domains/domain/workflows/workflow.md", ".agents/templates/product-knowledge/roles/README.md", ".agents/templates/product-knowledge/roles/role.md", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
+    define_CC_TEMPLATE_INVENTORY_default = [".agents/bin/cc.mjs", ".agents/contracts/activity-lifecycle-record.schema.json", ".agents/contracts/closeout-record.schema.json", ".agents/contracts/context-sync-record.schema.json", ".agents/contracts/context-sync-request.schema.json", ".agents/contracts/fake-activity-source.schema.json", ".agents/contracts/merge-confirmation-record.schema.json", ".agents/contracts/plan-draft-request.schema.json", ".agents/contracts/plan-index.schema.json", ".agents/contracts/plan-publication-discovery.schema.json", ".agents/contracts/plan-publication-record.schema.json", ".agents/contracts/plan-work-breakdown.schema.json", ".agents/contracts/product-knowledge-candidate.schema.json", ".agents/contracts/product-knowledge-domain.schema.json", ".agents/contracts/product-knowledge-project.schema.json", ".agents/contracts/product-knowledge-role.schema.json", ".agents/contracts/product-knowledge-workflow.schema.json", ".agents/contracts/review-preparation.schema.json", ".agents/contracts/review-publication-record.schema.json", ".agents/contracts/run-task-request.schema.json", ".agents/contracts/runtime-manifest.schema.json", ".agents/contracts/task-brief.schema.json", ".agents/contracts/task-context-package.schema.json", ".agents/contracts/verifier-result.schema.json", ".agents/contracts/whats-next-result.schema.json", ".agents/contracts/work-candidate.schema.json", ".agents/contracts/worker-result.schema.json", ".agents/contracts/workspace-bootstrap-request.schema.json", ".agents/contracts/workspace-configure-request.schema.json", ".agents/contracts/workspace.schema.json", ".agents/skills/configure-workspace/SKILL.md", ".agents/skills/configure-workspace/agents/openai.yaml", ".agents/skills/create-plan/SKILL.md", ".agents/skills/create-plan/agents/openai.yaml", ".agents/skills/finish-work/SKILL.md", ".agents/skills/finish-work/agents/openai.yaml", ".agents/skills/gather-context/SKILL.md", ".agents/skills/gather-context/agents/openai.yaml", ".agents/skills/initialize-workspace/SKILL.md", ".agents/skills/initialize-workspace/agents/openai.yaml", ".agents/skills/publish-plan-tasks/SKILL.md", ".agents/skills/publish-plan-tasks/agents/openai.yaml", ".agents/skills/run-task/SKILL.md", ".agents/skills/run-task/agents/openai.yaml", ".agents/skills/sync-context/SKILL.md", ".agents/skills/sync-context/agents/openai.yaml", ".agents/skills/whats-next/SKILL.md", ".agents/skills/whats-next/agents/openai.yaml", ".agents/templates/product-knowledge/GLOSSARY.md", ".agents/templates/product-knowledge/PROJECT.md", ".agents/templates/product-knowledge/domains/domain/README.md", ".agents/templates/product-knowledge/domains/domain/workflows/workflow.md", ".agents/templates/product-knowledge/roles/README.md", ".agents/templates/product-knowledge/roles/role.md", ".claude/commands/configure-workspace.md", ".claude/commands/create-plan.md", ".claude/commands/finish-work.md", ".claude/commands/gather-context.md", ".claude/commands/initialize-workspace.md", ".claude/commands/publish-plan-tasks.md", ".claude/commands/run-task.md", ".claude/commands/sync-context.md", ".claude/commands/whats-next.md", ".codex/skills/configure-workspace/SKILL.md", ".codex/skills/create-plan/SKILL.md", ".codex/skills/finish-work/SKILL.md", ".codex/skills/gather-context/SKILL.md", ".codex/skills/initialize-workspace/SKILL.md", ".codex/skills/publish-plan-tasks/SKILL.md", ".codex/skills/run-task/SKILL.md", ".codex/skills/sync-context/SKILL.md", ".codex/skills/whats-next/SKILL.md", ".gitignore", "AGENTS.md", "CLAUDE.md", "README.md", "WORKFLOW.md", "agents/coordinator.md", "agents/repository-worker.md", "agents/verifier.md", "context/ARCHITECTURE.md", "context/CONVENTIONS.md", "context/DECISIONS.md", "context/PROJECT.md", "context/SOURCES.md", "context/plans/.gitkeep", "context/plans/product-knowledge/0001-overview.md", "context/plans/product-knowledge/0010-requirements.md", "context/plans/product-knowledge/0020-solution.md", "context/plans/product-knowledge/0040-delivery.md", "context/plans/product-knowledge/0050-verification.md", "context/plans/product-knowledge/0070-risks.md", "context/plans/product-knowledge/0080-work-breakdown.md", "context/plans/product-knowledge/README.md", "contributions/general/.gitkeep", "docs/command-reference.md", "docs/configuration.md", "docs/getting-started.md", "docs/using-the-wrapper.md", "template-manifest.json", "workspace.yaml"];
   }
 });
 
@@ -14843,7 +14843,7 @@ var init_validation = __esm({
     import__ = __toESM(require__(), 1);
     import_yaml = __toESM(require_dist(), 1);
     init_safe_reference();
-    schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate"];
+    schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package"];
     requiredWorkspaceDocuments = [
       "README.md",
       "AGENTS.md",
@@ -14883,6 +14883,7 @@ var init_validation = __esm({
       ".agents/contracts/product-knowledge-workflow.schema.json",
       ".agents/contracts/product-knowledge-domain.schema.json",
       ".agents/contracts/product-knowledge-candidate.schema.json",
+      ".agents/contracts/task-context-package.schema.json",
       ".agents/skills/initialize-workspace/SKILL.md",
       ".agents/skills/configure-workspace/SKILL.md",
       ".agents/skills/gather-context/SKILL.md",
@@ -15209,6 +15210,7 @@ var init_workspace_context = __esm({
 });
 
 // scripts/lib/product-knowledge.ts
+import { createHash } from "node:crypto";
 import { access as access2, readdir, readFile as readFile3 } from "node:fs/promises";
 import { dirname as dirname4, join as join2, relative, resolve as resolve4 } from "node:path";
 function parsePage(raw) {
@@ -15350,6 +15352,30 @@ async function validateProductKnowledgeTree(contextDir) {
     }
   }
   return { present: true, pages, errors: [...new Set(errors2)] };
+}
+async function buildTaskContextPackage(input) {
+  const root = resolve4(input.workspaceRoot);
+  const contents = /* @__PURE__ */ new Map();
+  for (const reference2 of input.references) {
+    const target = resolve4(root, reference2);
+    if (relative(root, target).startsWith("..")) throw new Error(`Product Knowledge reference escapes the workspace: ${reference2}`);
+    try {
+      contents.set(reference2, await readFile3(target, "utf8"));
+    } catch {
+    }
+  }
+  const contextPaths = [...contents.keys()].sort();
+  const hash = createHash("sha256");
+  for (const path2 of contextPaths) hash.update(`${path2}\0${contents.get(path2)}\0`);
+  const contentDigest = `sha256:${hash.digest("hex")}`;
+  return {
+    contract_version: 1,
+    revision: input.revision?.trim() || contentDigest,
+    content_digest: contentDigest,
+    context_paths: contextPaths,
+    impact: input.impact,
+    proposed_change: input.proposed_change ?? null
+  };
 }
 function slugify(name) {
   const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -15640,7 +15666,7 @@ var init_workspace_readme = __esm({
 });
 
 // scripts/lib/initialize-workspace.ts
-import { createHash } from "node:crypto";
+import { createHash as createHash2 } from "node:crypto";
 import { access as access3, lstat as lstat3, mkdir as mkdir2, readFile as readFile4, realpath as realpath2 } from "node:fs/promises";
 import { dirname as dirname5, join as join3, relative as relative2, resolve as resolve5 } from "node:path";
 function normalizedRepositoryPath(path2) {
@@ -15738,7 +15764,7 @@ async function assertExpectedUnbornTemplate(root) {
     if (manifest2.name !== "context-circuit" || manifest2.version !== "0.2.1" || manifest2.node !== ">=22" || manifest2.command !== "node .agents/bin/cc.mjs" || !Array.isArray(inventory) || JSON.stringify(inventory) !== JSON.stringify(trustedInventory)) {
       throw new Error("Extracted template manifest or inventory has been modified");
     }
-    const expectedBundle = createHash("sha256").update(await readFile4(join3(root, ".agents", "bin", "cc.mjs"))).digest("hex");
+    const expectedBundle = createHash2("sha256").update(await readFile4(join3(root, ".agents", "bin", "cc.mjs"))).digest("hex");
     if (manifest2.bundle_sha256 !== expectedBundle) throw new Error("Extracted template manifest bundle digest has been modified");
     allowed.clear();
     for (const path2 of trustedInventory) allowed.add(path2);
@@ -16345,7 +16371,7 @@ var init_configure_workspace2 = __esm({
 });
 
 // scripts/lib/ids.ts
-import { createHash as createHash2, randomBytes } from "node:crypto";
+import { createHash as createHash3, randomBytes } from "node:crypto";
 import { readFile as readFile6 } from "node:fs/promises";
 import { join as join5 } from "node:path";
 function utcStamp(now) {
@@ -16360,7 +16386,7 @@ function generateRunId(request4, now, discriminator) {
     throw new Error("Run discriminator must contain exactly eight lowercase hexadecimal characters");
   }
   const { instant } = utcStamp(now);
-  const requestFingerprint = createHash2("sha256").update(request4).digest("hex").slice(0, 4);
+  const requestFingerprint = createHash3("sha256").update(request4).digest("hex").slice(0, 4);
   return `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`;
 }
 async function generateIds(runtimeRoot, request4, now = /* @__PURE__ */ new Date(), discriminator = randomBytes(4).toString("hex")) {
@@ -16577,7 +16603,7 @@ var init_activity_lifecycle = __esm({
 });
 
 // scripts/lib/plans.ts
-import { createHash as createHash3, randomUUID } from "node:crypto";
+import { createHash as createHash4, randomUUID } from "node:crypto";
 import { lstat as lstat5, mkdir as mkdir3, readdir as readdir3, readFile as readFile8, realpath as realpath4, rename as rename2, rm } from "node:fs/promises";
 import { basename, join as join7, resolve as resolve10 } from "node:path";
 function contractMessages(errors2) {
@@ -16716,7 +16742,7 @@ function planWorkBreakdownSemanticErrors(breakdown, config) {
   return [...new Set(errors2)];
 }
 function materialDigest(files, names) {
-  const hash = createHash3("sha256");
+  const hash = createHash4("sha256");
   for (const name of names) hash.update(`${name}\0${files.get(name) ?? ""}\0`);
   return `sha256:${hash.digest("hex")}`;
 }
@@ -17072,6 +17098,23 @@ var init_plans = __esm({
 import { randomBytes as randomBytes2 } from "node:crypto";
 import { access as access4, readFile as readFile9 } from "node:fs/promises";
 import { join as join8, relative as relative5, resolve as resolve11 } from "node:path";
+async function resolveContextRevision(workspaceRoot20) {
+  try {
+    return await git(workspaceRoot20, ["rev-parse", "HEAD"]);
+  } catch {
+    return void 0;
+  }
+}
+async function attachProductKnowledge(taskBrief, workspaceRoot20, declaration) {
+  const revision = await resolveContextRevision(workspaceRoot20);
+  taskBrief.product_knowledge = await buildTaskContextPackage({
+    workspaceRoot: workspaceRoot20,
+    references: declaration.references,
+    impact: declaration.impact,
+    proposed_change: declaration.proposed_change ?? null,
+    ...revision ? { revision } : {}
+  });
+}
 async function assertValid2(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length > 0) {
@@ -17323,6 +17366,7 @@ async function preparePlanlessTask(options) {
     runId,
     createdAt
   });
+  if (options.productKnowledge) await attachProductKnowledge(taskBrief, workspaceRoot20, options.productKnowledge);
   await assertValid2("task-brief", taskBrief);
   if (taskBrief.test_expectation?.policy === "existing-coverage") {
     for (const path2 of taskBrief.test_expectation.paths) {
@@ -17686,6 +17730,7 @@ async function preparePlanTask(options) {
   const taskBriefPath = join8(runtimeRoot, "tasks", `${runId}.json`);
   const manifestPath = join8(runRoot, "manifest.json");
   const taskBrief = normalizePlanRequest(options.request, item, runId, createdAt);
+  if (index.product_knowledge) await attachProductKnowledge(taskBrief, workspaceRoot20, index.product_knowledge);
   await assertValid2("task-brief", taskBrief);
   for (const target of taskBrief.repositories) {
     if (target.test_expectation?.policy !== "existing-coverage") continue;
@@ -17873,6 +17918,7 @@ var init_run_task = __esm({
     init_validation();
     init_activity_lifecycle();
     init_plans();
+    init_product_knowledge();
   }
 });
 
@@ -20098,7 +20144,7 @@ var init_record_plan_publication = __esm({
 });
 
 // scripts/lib/context-sync.ts
-import { createHash as createHash4 } from "node:crypto";
+import { createHash as createHash5 } from "node:crypto";
 import { lstat as lstat8, readFile as readFile19, realpath as realpath7 } from "node:fs/promises";
 import { join as join15, resolve as resolve32 } from "node:path";
 async function assertValid7(name, value2) {
@@ -20161,7 +20207,7 @@ async function prepareContextSync(options) {
   if (!baseBranch) throw new Error("Context synchronization requires an attached wrapper branch");
   const baseCommit = await git(workspaceRoot20, ["rev-parse", "HEAD"]);
   const now = options.now ?? /* @__PURE__ */ new Date();
-  const digest = createHash4("sha256").update(JSON.stringify(options.request)).update(now.toISOString()).digest("hex").slice(0, 8);
+  const digest = createHash5("sha256").update(JSON.stringify(options.request)).update(now.toISOString()).digest("hex").slice(0, 8);
   const syncId = `${compactTimestamp2(now)}-${digest}`;
   const runtimeRoot = assertInside(workspaceRoot20, join15(workspaceRoot20, ".runtime"));
   await ensurePrivateDirectory(runtimeRoot);
