@@ -10,8 +10,8 @@ and product repository history were not mutated.
 
 | Scenario | Codex | Claude Code | Shared deterministic result |
 | --- | --- | --- | --- |
-| Approved plans only | `$whats-next` passed | `/whats-next` passed | `plan:host-proof:PROOF-001` selected; no alternatives |
-| Explicit `activity.json` fixture | `$whats-next` passed | `/whats-next` passed | `activity:urgent-proof` selected; approved plan item returned as the sole alternative |
+| Approved plans only | `$w-whats-next` passed | `/w-whats-next` passed | `plan:host-proof:PROOF-001` selected; no alternatives |
+| Explicit `activity.json` fixture | `$w-whats-next` passed | `/w-whats-next` passed | `activity:urgent-proof` selected; approved plan item returned as the sole alternative |
 
 Both hosts reported the same readiness facts: ready lifecycle state, applicable
 plan approval, completed or absent dependencies, sufficient scope and
@@ -23,12 +23,12 @@ or external write.
 
 ## Host observations
 
-- Codex resolved the project skill through `.codex/skills/whats-next/SKILL.md`
+- Codex resolved the project skill through `.codex/skills/w-whats-next/SKILL.md`
   and delegated to the canonical `.agents` skill. It ran in a read-only sandbox.
   Its first discovery command used raw `sed` before reading the included RTK
   instruction; subsequent commands used RTK. This ordering difference made no
   mutation and does not change the shared recommendation contract.
-- Claude Code resolved `.claude/commands/whats-next.md` and delegated to the same
+- Claude Code resolved `.claude/commands/w-whats-next.md` and delegated to the same
   canonical skill. In non-interactive `dontAsk` mode it refused the deterministic
   Bash command, correctly stopping instead of reproducing ranking in the host.
   The disposable proof was rerun with permission bypass and write/edit tools

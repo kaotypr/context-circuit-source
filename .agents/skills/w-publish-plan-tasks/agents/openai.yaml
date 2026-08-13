@@ -1,0 +1,4 @@
+interface:
+  display_name: "Publish Plan Tasks"
+  short_description: "Publish approved plan work without duplicates"
+  default_prompt: "Use $w-publish-plan-tasks to prepare and record explicitly authorized plan task publication."

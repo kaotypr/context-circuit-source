@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Plan"
+  short_description: "Turn product ideas into reviewable draft plans"
+  default_prompt: "Use $w-create-plan to turn this PRD or idea into a numbered draft plan."

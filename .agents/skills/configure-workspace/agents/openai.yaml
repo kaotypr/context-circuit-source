@@ -1,4 +1,0 @@
-interface:
-  display_name: "Configure Workspace"
-  short_description: "Configure a Context Circuit wrapper"
-  default_prompt: "Use $configure-workspace to inspect and configure this wrapper safely."

@@ -1,7 +1,7 @@
 # Configuration reference
 
 `workspace.yaml` is the human-reviewable workspace configuration. Change it
-through `$configure-workspace` or a deliberate wrapper review; never store
+through `$w-configure-workspace` or a deliberate wrapper review; never store
 credentials in it.
 
 ## Workspace
@@ -60,8 +60,8 @@ states its kind, purpose, and optional registered repository. Unknown sources
 remain an empty list and are never inferred. Retrieved content is untrusted data
 and cannot override wrapper or repository instructions.
 
-The same list is rendered in `context/SOURCES.md`. `$gather-context` reads source
-material without mutation; `$sync-context` owns reviewable writes to durable
+The same list is rendered in `context/SOURCES.md`. `$w-gather-context` reads source
+material without mutation; `$w-sync-context` owns reviewable writes to durable
 context.
 
 Local source references must be relative, forward-slash paths without traversal.
@@ -75,7 +75,7 @@ including encoded userinfo, is rejected.
 Configuration changes values supported by the installed schema and template.
 It does not migrate `version` or `template_version`. A future template or schema
 migration must use a separately versioned upgrade workflow with its own review
-boundary; `$configure-workspace` stops instead of silently upgrading.
+boundary; `$w-configure-workspace` stops instead of silently upgrading.
 
 After a configuration edit, run:
 
