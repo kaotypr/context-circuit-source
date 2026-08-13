@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Sync Context"
+  short_description: "Curate durable outcomes into wrapper context"
+  default_prompt: "Use $cc-sync-context to prepare reviewable durable context updates from recorded contributions."

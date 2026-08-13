@@ -65,7 +65,7 @@ node .agents/bin/cc.mjs record-result --run-id <run-id> --repository <name> --st
 
 ## Codex
 
-Invoke `$w-run-task`. Give a fresh worker sub-agent only the emitted worker-input
+Invoke `$cc-run-task`. Give a fresh worker sub-agent only the emitted worker-input
 JSON and referenced instructions. The worker operates only in the emitted
 worktree, runs the required checks, commits its changes, and writes its result.
 Record `worker-result`, then give a different fresh, read-only verifier only the
@@ -73,7 +73,7 @@ verifier-input JSON. Record `verifier-result` after it writes its result.
 
 ## Claude Code
 
-Invoke `/w-run-task`. Start a fresh Claude Code worker with only the emitted
+Invoke `/cc-run-task`. Start a fresh Claude Code worker with only the emitted
 worker-input JSON and referenced instructions. After recording `worker-result`,
 start a separate fresh, read-only Claude Code verifier with only the emitted
 verifier input, then record `verifier-result`.

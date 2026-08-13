@@ -7,6 +7,30 @@ import test from "node:test";
 import { extract as extractTar, list as listTar } from "tar";
 import { projectRoot } from "./helpers.js";
 
+const hostWorkflows = [
+  "cc-configure-workspace",
+  "cc-create-plan",
+  "cc-finish-work",
+  "cc-gather-context",
+  "cc-initialize-workspace",
+  "cc-publish-plan-tasks",
+  "cc-run-task",
+  "cc-sync-context",
+  "cc-whats-next",
+] as const;
+
+const displayLabels = new Map([
+  ["cc-configure-workspace", "CC Configure Workspace"],
+  ["cc-create-plan", "CC Create Plan"],
+  ["cc-finish-work", "CC Finish Work"],
+  ["cc-gather-context", "CC Gather Context"],
+  ["cc-initialize-workspace", "CC Initialize Workspace"],
+  ["cc-publish-plan-tasks", "CC Publish Plan Tasks"],
+  ["cc-run-task", "CC Run Task"],
+  ["cc-sync-context", "CC Sync Context"],
+  ["cc-whats-next", "CC What's Next"],
+]);
+
 const build = spawnSync(process.execPath, ["--import", "tsx", "scripts/build-template.ts"], { cwd: projectRoot, encoding: "utf8" });
 if (build.status !== 0) throw new Error(build.stderr || build.stdout);
 
@@ -27,25 +51,17 @@ test("distributable and release archive contain only wrapper inputs", async () =
   assert.ok(Array.isArray(manifest.file_inventory));
   assert.ok(manifest.file_inventory.includes(".agents/bin/cc.mjs"));
   assert.ok(manifest.file_inventory.includes("template-manifest.json"));
+  assert.ok(manifest.file_inventory.includes(".agents/skills/cc-run-task/SKILL.md"));
+  assert.equal(manifest.file_inventory.some((path: string) => path.includes("/w-") || path.includes("/configure-workspace/") || path.includes("/run-task/")), false);
   for (const path of ["PLAN.md", "package.json", "node_modules", "fixtures", "scripts", "test"]) {
     await assert.rejects(access(join(destination, path)));
   }
   await access(join(destination, ".agents", "bin", "cc.mjs"));
   const canonicalSkills = (await readdir(join(projectRoot, ".agents", "skills"), { withFileTypes: true }))
     .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
-  const expectedHostSkills = [
-    "w-configure-workspace",
-    "w-create-plan",
-    "w-finish-work",
-    "w-gather-context",
-    "w-initialize-workspace",
-    "w-publish-plan-tasks",
-    "w-run-task",
-    "w-sync-context",
-    "w-whats-next",
-  ];
-  assert.deepEqual(canonicalSkills, expectedHostSkills);
-  assert.ok(canonicalSkills.every((skill) => skill.startsWith("w-")));
+  assert.deepEqual(canonicalSkills, hostWorkflows);
+  assert.ok(canonicalSkills.every((skill) => skill.startsWith("cc-")));
+  assert.equal(canonicalSkills.some((skill) => skill.startsWith("w-")), false);
   for (const skill of canonicalSkills) {
     await access(join(projectRoot, ".agents", "skills", skill, "SKILL.md"));
     await access(join(projectRoot, ".agents", "skills", skill, "agents", "openai.yaml"));
@@ -55,33 +71,39 @@ test("distributable and release archive contain only wrapper inputs", async () =
     await access(join(destination, ".agents", "skills", skill, "agents", "openai.yaml"));
     await access(join(destination, ".codex", "skills", skill, "SKILL.md"));
     await access(join(destination, ".claude", "commands", `${skill}.md`));
+    assert.match(await readFile(join(projectRoot, ".agents", "skills", skill, "agents", "openai.yaml"), "utf8"), new RegExp(`display_name: "${displayLabels.get(skill)}"`));
+    for (const path of [
+      join(projectRoot, ".agents", "skills", skill, "SKILL.md"),
+      join(projectRoot, ".codex", "skills", skill, "SKILL.md"),
+      join(projectRoot, ".claude", "commands", `${skill}.md`),
+    ]) assert.doesNotMatch(await readFile(path, "utf8"), /\bw-(?:configure-workspace|create-plan|finish-work|gather-context|initialize-workspace|publish-plan-tasks|run-task|sync-context|whats-next)\b/);
   }
   for (const path of [
-    ".agents/skills/w-configure-workspace/SKILL.md",
-    ".agents/skills/w-gather-context/SKILL.md",
-    ".codex/skills/w-configure-workspace/SKILL.md",
-    ".codex/skills/w-gather-context/SKILL.md",
-    ".claude/commands/w-configure-workspace.md",
-    ".claude/commands/w-gather-context.md",
+    ".agents/skills/cc-configure-workspace/SKILL.md",
+    ".agents/skills/cc-gather-context/SKILL.md",
+    ".codex/skills/cc-configure-workspace/SKILL.md",
+    ".codex/skills/cc-gather-context/SKILL.md",
+    ".claude/commands/cc-configure-workspace.md",
+    ".claude/commands/cc-gather-context.md",
   ]) await access(join(destination, path));
-  for (const skill of [
-    "configure-workspace",
-    "create-plan",
-    "finish-work",
-    "gather-context",
-    "initialize-workspace",
-    "publish-plan-tasks",
-    "run-task",
-    "sync-context",
-    "whats-next",
-  ]) {
-    await assert.rejects(access(join(projectRoot, ".agents", "skills", skill)));
-    await assert.rejects(access(join(projectRoot, ".codex", "skills", skill)));
-    await assert.rejects(access(join(projectRoot, ".claude", "commands", `${skill}.md`)));
-    await assert.rejects(access(join(destination, ".agents", "skills", skill)));
-    await assert.rejects(access(join(destination, ".codex", "skills", skill)));
-    await assert.rejects(access(join(destination, ".claude", "commands", `${skill}.md`)));
+  for (const prefix of ["w-", ""]) {
+    for (const skill of hostWorkflows.map((workflow) => workflow.slice(3))) {
+      await assert.rejects(access(join(projectRoot, ".agents", "skills", `${prefix}${skill}`)));
+      await assert.rejects(access(join(projectRoot, ".codex", "skills", `${prefix}${skill}`)));
+      await assert.rejects(access(join(projectRoot, ".claude", "commands", `${prefix}${skill}.md`)));
+      await assert.rejects(access(join(destination, ".agents", "skills", `${prefix}${skill}`)));
+      await assert.rejects(access(join(destination, ".codex", "skills", `${prefix}${skill}`)));
+      await assert.rejects(access(join(destination, ".claude", "commands", `${prefix}${skill}.md`)));
+    }
   }
+  const bundled = await readFile(join(projectRoot, ".agents", "bin", "cc.mjs"), "utf8");
+  assert.match(bundled, /\.agents\/skills\/cc-run-task\/SKILL\.md/);
+  assert.doesNotMatch(bundled, /\.agents\/skills\/w-run-task\/SKILL\.md/);
+  assert.match(bundled, /run-task/);
+  assert.match(bundled, /whats-next/);
+  const generatedReadme = await readFile(join(destination, "README.md"), "utf8");
+  assert.match(generatedReadme, /\$cc-run-task/);
+  assert.doesNotMatch(generatedReadme, /\$w-run-task|\/w-run-task/);
   await assert.rejects(access(join(destination, ".agents", "bin", "kao.mjs")));
   await assert.rejects(access(join(destination, ".template-version")));
   await access(join(destination, "context", "plans", ".gitkeep"));
