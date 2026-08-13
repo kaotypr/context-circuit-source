@@ -13,6 +13,7 @@
     "fixture:create": "node --import tsx scripts/create-fixture.ts",
     "finish-work": "node --import tsx scripts/finish-work.ts",
     "initialize-workspace": "node --import tsx scripts/initialize-workspace.ts",
+    "onboarding-pack": "node --import tsx scripts/onboarding-pack.ts",
     "prepare-repair": "node --import tsx scripts/prepare-repair.ts",
     "prepare-review": "node --import tsx scripts/prepare-review.ts",
     "prepare-lifecycle": "node --import tsx scripts/prepare-lifecycle.ts",

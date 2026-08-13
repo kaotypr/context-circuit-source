@@ -24,6 +24,7 @@ test("deterministic TypeScript commands avoid sandbox-incompatible tsx IPC", asy
     "fixture:create",
     "finish-work",
     "initialize-workspace",
+    "onboarding-pack",
     "prepare-repair",
     "prepare-review",
     "prepare-lifecycle",

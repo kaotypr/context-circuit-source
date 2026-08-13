@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/onboarding-pack.schema.json",
+  "title": "Generated Product Knowledge onboarding pack manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contract_version", "generated_at", "revision", "roles", "included_paths", "known_gaps", "generated_view"],
+  "properties": {
+    "contract_version": { "const": 1 },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "revision": { "type": "string", "minLength": 1 },
+    "roles": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "included_paths": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))(?!.*\\\\).+$" } },
+    "known_gaps": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
+    "generated_view": { "const": true }
+  }
+}
