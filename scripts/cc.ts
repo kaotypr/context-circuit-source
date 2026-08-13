@@ -24,6 +24,7 @@ switch (command) {
   case "record-plan-publication": await import("./record-plan-publication.js"); break;
   case "sync-context": await import("./sync-context.js"); break;
   case "prepare-context-review": await import("./prepare-context-review.js"); break;
+  case "import-context": await import("./import-context.js"); break;
   case "onboarding-pack": await import("./onboarding-pack.js"); break;
   default: throw new Error(`Unknown Context Circuit command: ${command}`);
 }
