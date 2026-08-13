@@ -673,7 +673,10 @@ export interface RuntimeManifest {
     outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
     worker_input: string;
     verifier_input: string;
+    plan_id?: string;
     plan_reference?: string;
+    plan_version?: number;
+    approved_digest?: string;
     task_id?: string;
     plan_revision?: number;
     attempt?: number;

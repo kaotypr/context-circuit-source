@@ -10,10 +10,16 @@
     "work_id": { "type": "string", "minLength": 1 },
     "run_id": { "type": "string", "minLength": 1 },
     "plan_reference": { "type": "string", "minLength": 1 },
+    "plan_id": { "type": "string", "minLength": 1 },
+    "plan_version": { "type": "integer", "minimum": 1 },
     "task_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3,}$" },
     "plan_revision": { "type": "integer", "minimum": 1 },
+    "approved_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
     "attempt": { "type": "integer", "minimum": 0 },
     "repository": { "type": "string", "minLength": 1 },
+    "branch": { "type": "string", "minLength": 1 },
+    "worktree": { "type": "string", "minLength": 1 },
+    "start_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
     "status": { "enum": ["pass", "fail", "blocked"] },
     "summary": { "type": "string", "minLength": 1 },
     "acceptance": {
@@ -49,6 +55,6 @@
   },
   "allOf": [
     { "if": { "properties": { "contract_version": { "const": 1 } }, "required": ["contract_version"] }, "then": { "required": ["work_id", "run_id"] } },
-    { "if": { "properties": { "contract_version": { "const": 2 } }, "required": ["contract_version"] }, "then": { "required": ["plan_reference", "task_id", "plan_revision", "attempt"] } }
+    { "if": { "properties": { "contract_version": { "const": 2 } }, "required": ["contract_version"] }, "then": { "required": ["run_id", "plan_reference", "plan_id", "plan_version", "task_id", "plan_revision", "approved_digest", "attempt", "repository", "branch", "worktree", "start_commit"] } }
   ]
 }

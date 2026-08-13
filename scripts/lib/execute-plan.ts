@@ -221,6 +221,7 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
     const common = {
       contract_version: 2,
       plan_reference: index.plan_reference!,
+      plan_id: index.plan_id,
       plan_version: index.plan_version,
       plan_revision: index.plan_version,
       approved_digest: index.approved_digest,
@@ -245,7 +246,7 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
     await writeJsonAtomic(verifierInput, { ...common, role: "verifier", read_only: true, worker_result: common.result_path, result_path: verifierResultPath, acceptance_criteria: item.acceptance_criteria, verification_commands: item.verification_commands, instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")] });
     repository.taskInputs.push(workerInput);
     repository.verifierInputs.push(verifierInput);
-    taskGraph.push({ work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: ready ? "prepared" : "waiting", depends_on: item.depends_on, outcome: "pending", worker_input: workerInput, verifier_input: verifierInput });
+    taskGraph.push({ work_id: item.work_id, task_id: item.work_id, plan_id: index.plan_id, plan_reference: index.plan_reference!, plan_version: index.plan_version, approved_digest: index.approved_digest!, repository: item.repository, plan_revision: index.plan_version, attempt, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: ready ? "prepared" : "waiting", depends_on: item.depends_on, outcome: "pending", worker_input: workerInput, verifier_input: verifierInput });
     planWorkItems.push({ work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: ready ? "prepared" : "waiting", depends_on: item.depends_on, outcome: "pending", task_input: workerInput, verifier_input: verifierInput });
     if (ready) repository.ready = true;
   }
@@ -264,6 +265,7 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
     plan_revision: index.plan_version,
     plan_version: index.plan_version,
     run_id: runId,
+    approved_digest: index.approved_digest!,
     task_id: `PLAN-${index.plan_id}`,
     repository: "plan",
     attempt: 0,

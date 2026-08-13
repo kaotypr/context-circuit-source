@@ -13,6 +13,15 @@ interface WorkerInput {
   worktree: string;
   branch: string;
   base_commit: string;
+  plan_id?: string;
+  plan_reference?: string;
+  plan_version?: number;
+  plan_revision?: number;
+  approved_digest?: string;
+  task_id?: string;
+  run_id?: string;
+  attempt?: number;
+  start_commit?: string | null;
   ready?: boolean;
   blocked_by?: string[];
   allowed_scope: string[];
@@ -27,6 +36,15 @@ interface VerifierInput {
   worktree: string;
   branch: string;
   base_commit: string;
+  plan_id?: string;
+  plan_reference?: string;
+  plan_version?: number;
+  plan_revision?: number;
+  approved_digest?: string;
+  task_id?: string;
+  run_id?: string;
+  attempt?: number;
+  start_commit?: string | null;
   worker_result: string;
   acceptance_criteria: string[];
   test_expectation?: TestExpectation;
@@ -35,8 +53,11 @@ interface VerifierInput {
 
 interface PlanTaskInput extends WorkerInput {
   run_id: string;
+  plan_id: string;
   plan_reference: string;
+  plan_version: number;
   plan_revision: number;
+  approved_digest: string;
   task_id: string;
   attempt: number;
   start_commit: string | null;
@@ -49,6 +70,8 @@ interface PlanVerifierInput {
   role: "plan-verifier";
   plan_reference: string;
   plan_id: string;
+  plan_version: number;
+  approved_digest: string;
   plan_revision: number;
   run_id: string;
   task_id: string;
@@ -66,13 +89,17 @@ interface WorkerResult {
   work_id?: string;
   run_id?: string;
   plan_reference?: string;
+  plan_id?: string;
+  plan_version?: number;
   task_id?: string;
   plan_revision?: number;
+  approved_digest?: string;
   attempt?: number;
   repository: string;
   status: "completed" | "blocked" | "failed";
   branch: string;
   worktree: string;
+  start_commit?: string;
   commits: string[];
   changed_files: string[];
   checks: Array<{ status: "passed" | "failed" | "not-run" }>;
@@ -83,10 +110,16 @@ interface VerifierResult {
   work_id?: string;
   run_id?: string;
   plan_reference?: string;
+  plan_id?: string;
+  plan_version?: number;
   task_id?: string;
   plan_revision?: number;
+  approved_digest?: string;
   attempt?: number;
   repository: string;
+  branch?: string;
+  worktree?: string;
+  start_commit?: string;
   status: "pass" | "fail" | "blocked";
   acceptance: Array<{ criterion: string; status: string; evidence: string }>;
 }
@@ -108,8 +141,8 @@ async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
 }
 
-async function assertValid(name: "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result", value: unknown): Promise<void> {
-  const errors = await validateContract(name, value);
+async function assertValid(name: "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "plan-verifier-result", value: unknown): Promise<void> {
+  const errors = await validateContract(name as Parameters<typeof validateContract>[0], value);
   if (errors.length > 0) {
     throw new Error(`Invalid ${name}: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
   }
@@ -350,7 +383,10 @@ function refreshPlanRepositories(manifest: RuntimeManifest): void {
     const prepared = repositoryTasks.find((task) => task.status === "prepared");
     const allPassed = repositoryTasks.length > 0 && repositoryTasks.every((task) => task.outcome === "passed");
     if (active?.task_id) repository.active_task_id = active.task_id;
-    else if (!repository.active_task_id || !repositoryTasks.some((task) => task.task_id === repository.active_task_id)) delete repository.active_task_id;
+    else if (repository.active_task_id) {
+      const lockedTask = repositoryTasks.find((task) => (task.task_id ?? task.work_id) === repository.active_task_id);
+      if (!lockedTask || (lockedTask.outcome !== "failed" && lockedTask.outcome !== "blocked")) delete repository.active_task_id;
+    }
     if (active) repository.status = active.status === "verifying" ? "verifying" : "running";
     else if (blocked) repository.status = "blocked";
     else if (failed) repository.status = "failed";
@@ -374,10 +410,19 @@ function refreshPlanManifestStatus(manifest: RuntimeManifest): void {
   else manifest.status = "prepared";
 }
 
+function assertPlanRepositoryLock(repository: RuntimeRepository, taskId: string): void {
+  if (repository.active_task_id && repository.active_task_id !== taskId) {
+    throw new Error(`Repository ${repository.name} is locked by task ${repository.active_task_id}`);
+  }
+}
+
 function assertPlanInputIdentity(manifest: RuntimeManifest, task: PlanTaskRecord, repository: RuntimeRepository, input: PlanTaskInput): void {
   assertEqual(input.run_id, manifest.run_id, "plan task input run_id");
+  assertEqual(input.plan_id, manifest.plan_id, "plan task input plan_id");
   assertEqual(input.plan_reference, manifest.plan_reference, "plan task input plan_reference");
+  assertEqual(input.plan_version, manifest.plan_version, "plan task input plan_version");
   assertEqual(input.plan_revision, manifest.plan_revision ?? manifest.plan_version, "plan task input plan_revision");
+  assertEqual(input.approved_digest, manifest.approved_digest, "plan task input approved_digest");
   assertEqual(input.task_id, task.task_id ?? task.work_id, "plan task input task_id");
   assertEqual(input.repository, repository.name, "plan task input repository");
   assertEqual(resolve(input.worktree), resolve(repository.worktree), "plan task input worktree");
@@ -391,13 +436,18 @@ async function validatePlanWorkerResult(manifest: RuntimeManifest, task: PlanTas
   const result = await readJson<WorkerResult>(input.result_path);
   await assertValid("worker-result", result);
   assertEqual(result.contract_version, 2, "plan worker result contract_version");
+  assertEqual(result.run_id, manifest.run_id, "plan worker result run_id");
+  assertEqual(result.plan_id, manifest.plan_id, "plan worker result plan_id");
   assertEqual(result.plan_reference, manifest.plan_reference, "plan worker result plan_reference");
+  assertEqual(result.plan_version, manifest.plan_version, "plan worker result plan_version");
   assertEqual(result.plan_revision, manifest.plan_revision ?? manifest.plan_version, "plan worker result plan_revision");
+  assertEqual(result.approved_digest, manifest.approved_digest, "plan worker result approved_digest");
   assertEqual(result.task_id, task.task_id ?? task.work_id, "plan worker result task_id");
   assertEqual(result.attempt, planTaskAttempt(task), "plan worker result attempt");
   assertEqual(result.repository, repository.name, "plan worker result repository");
   assertEqual(result.branch, repository.branch, "plan worker result branch");
   assertEqual(resolve(result.worktree), resolve(repository.worktree), "plan worker result worktree");
+  assertEqual(result.start_commit, task.start_commit, "plan worker result start_commit");
   const head = await assertWorktree(repository);
   if (task.start_commit === null || task.start_commit === undefined) throw new Error("Plan task has no immutable start commit");
   if (result.status === "completed") {
@@ -452,7 +502,7 @@ async function unlockPlanDependents(runtimeRoot: string, manifest: RuntimeManife
   refreshPlanManifestStatus(manifest);
 }
 
-function assertPlanVerifierShape(value: unknown): asserts value is { contract_version: 1; plan_reference: string; plan_id: string; run_id: string; plan_revision: number; attempt: number; status: "pass" | "fail" | "blocked"; tasks: Array<{ task_id: string; repository: string; status: "passed"; head_commit: string; evidence: string }>; checks: string[]; findings: Array<{ severity: string; description: string; evidence: string }>; verified_at: string } {
+function assertPlanVerifierShape(value: unknown): asserts value is { contract_version: 1; plan_reference: string; plan_id: string; plan_version: number; approved_digest: string; run_id: string; task_id: string; repository: "plan"; plan_revision: number; attempt: number; status: "pass" | "fail" | "blocked"; summary: string; tasks: Array<{ task_id: string; repository: string; status: "passed"; head_commit: string; evidence: string }>; acceptance: Array<{ criterion: string; status: string; evidence: string }>; checks: string[]; findings: Array<{ severity: string; description: string; evidence: string }>; verified_at: string } {
   if (!value || typeof value !== "object") throw new Error("Plan verifier result must be an object");
   const result = value as Record<string, unknown>;
   for (const key of ["plan_reference", "plan_id", "run_id", "summary", "verified_at"]) if (typeof result[key] !== "string" || !result[key]) throw new Error(`Plan verifier result is missing ${key}`);
@@ -470,18 +520,27 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
     const input = await readJson<PlanVerifierInput>(inputPath);
     assertEqual(input.plan_reference, manifest.plan_reference, "plan verifier input plan_reference");
     assertEqual(input.plan_id, manifest.plan_id, "plan verifier input plan_id");
+    assertEqual(input.plan_version, manifest.plan_version, "plan verifier input plan_version");
+    assertEqual(input.approved_digest, manifest.approved_digest, "plan verifier input approved_digest");
     assertEqual(input.plan_revision, manifest.plan_revision ?? manifest.plan_version, "plan verifier input plan_revision");
     assertEqual(input.run_id, manifest.run_id, "plan verifier input run_id");
+    assertEqual(input.task_id, `PLAN-${manifest.plan_id}`, "plan verifier input task_id");
+    assertEqual(input.repository, "plan", "plan verifier input repository");
     assertEqual(input.attempt, 0, "plan verifier input attempt");
     if (!input.ready) throw new Error("Plan final verifier is still locked");
     const tasks = manifest.task_graph ?? [];
     if (!tasks.every((task) => task.outcome === "passed")) throw new Error("Plan final verifier requires every task to pass independently");
     assertInside(runtimeRoot, input.result_path);
     const result = await readJson<Record<string, unknown>>(input.result_path);
+    await assertValid("plan-verifier-result", result);
     assertPlanVerifierShape(result);
     assertEqual(result.plan_reference, manifest.plan_reference, "plan verifier result plan_reference");
     assertEqual(result.plan_id, manifest.plan_id, "plan verifier result plan_id");
+    assertEqual(result.plan_version, manifest.plan_version, "plan verifier result plan_version");
+    assertEqual(result.approved_digest, manifest.approved_digest, "plan verifier result approved_digest");
     assertEqual(result.run_id, manifest.run_id, "plan verifier result run_id");
+    assertEqual(result.task_id, `PLAN-${manifest.plan_id}`, "plan verifier result task_id");
+    assertEqual(result.repository, "plan", "plan verifier result repository");
     assertEqual(result.plan_revision, manifest.plan_revision ?? manifest.plan_version, "plan verifier result plan_revision");
     assertEqual(result.attempt, 0, "plan verifier result attempt");
     const expected = tasks.map((task) => `${task.task_id ?? task.work_id}:${task.repository}`).sort();
@@ -492,6 +551,13 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
       const head = await assertWorktree(repository);
       assertEqual(task.head_commit, head, `plan verifier head for ${task.task_id}`);
     }
+    const acceptance = result.acceptance as Array<{ criterion: string; status: string }>;
+    if (input.acceptance_criteria.length !== acceptance.length || !sameMembers(acceptance.map((item) => item.criterion), input.acceptance_criteria)) {
+      throw new Error("Plan verifier acceptance criteria do not match verifier input");
+    }
+    if (result.status === "pass" && acceptance.some((item) => item.status !== "passed")) throw new Error("Passing plan verifier result requires every plan acceptance criterion to pass");
+    if (result.status === "fail" && !acceptance.some((item) => item.status === "failed")) throw new Error("Failing plan verifier result must identify a failed plan acceptance criterion");
+    if (result.status === "blocked" && !acceptance.some((item) => item.status === "blocked")) throw new Error("Blocked plan verifier result must identify a blocked plan acceptance criterion");
     const existing = manifest.execution_events?.find((event) => event.idempotency_key === planEventKey(manifest, input.task_id, "plan", options.stage, 0));
     if (existing) return manifest;
     await chmod(input.result_path, 0o600);
@@ -526,7 +592,7 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
 
   if (options.stage === "worker-started") {
     if (task.status !== "prepared" || !task.ready) throw new Error(`Plan task ${taskId} is not ready: ${(task.blocked_by ?? task.depends_on).join(", ") || "repository lock"}`);
-    if (repository.active_task_id && repository.active_task_id !== taskId) throw new Error(`Repository ${repository.name} is locked by task ${repository.active_task_id}`);
+    assertPlanRepositoryLock(repository, taskId);
     const head = await assertWorktree(repository);
     assertEqual(head, task.start_commit, "plan task start HEAD");
     repository.active_task_id = taskId;
@@ -534,6 +600,7 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
     manifest.execution_events ??= [];
     manifest.execution_events.push({ stage: options.stage, repository: repository.name, from_status: "prepared", to_status: "running", inferred: false, attempt, idempotency_key: planEventKey(manifest, taskId, repository.name, options.stage, attempt), occurred_at: occurredAt });
   } else if (options.stage === "worker-result") {
+    assertPlanRepositoryLock(repository, taskId);
     const result = await validatePlanWorkerResult(manifest, task, repository, workerInput);
     await chmod(workerInput.result_path, 0o600);
     if (task.status === "prepared") {
@@ -546,20 +613,28 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
     task.worker_result = workerInput.result_path;
     const target = result.status === "completed" ? "verifying" : result.status;
     setPlanTask(manifest, task, target, target === "verifying" ? undefined : target);
-    if (target !== "verifying") delete repository.active_task_id;
     manifest.execution_events ??= [];
     manifest.execution_events.push({ stage: options.stage, repository: repository.name, from_status: "running", to_status: target, inferred: false, attempt, result_path: workerInput.result_path, idempotency_key: planEventKey(manifest, taskId, repository.name, options.stage, attempt), occurred_at: occurredAt });
   } else {
     if (task.status !== "verifying") throw new Error(`Plan verifier-result requires verifying task status, received ${task.status ?? "pending"}`);
+    if (repository.active_task_id !== taskId) throw new Error(`Repository ${repository.name} is not locked by task ${taskId}`);
     const worker = await validatePlanWorkerResult(manifest, task, repository, workerInput);
     const result = await readJson<VerifierResult>(verifierInput.result_path);
     await assertValid("verifier-result", result);
     assertEqual(result.contract_version, 2, "plan verifier result contract_version");
+    assertEqual(result.run_id, manifest.run_id, "plan verifier result run_id");
+    assertEqual(result.plan_id, manifest.plan_id, "plan verifier result plan_id");
     assertEqual(result.plan_reference, manifest.plan_reference, "plan verifier result plan_reference");
+    assertEqual(result.plan_version, manifest.plan_version, "plan verifier result plan_version");
     assertEqual(result.plan_revision, manifest.plan_revision ?? manifest.plan_version, "plan verifier result plan_revision");
+    assertEqual(result.approved_digest, manifest.approved_digest, "plan verifier result approved_digest");
     assertEqual(result.task_id, taskId, "plan verifier result task_id");
     assertEqual(result.attempt, attempt, "plan verifier result attempt");
     assertEqual(result.repository, repository.name, "plan verifier result repository");
+    assertEqual(result.branch, repository.branch, "plan verifier result branch");
+    if (!result.worktree) throw new Error("Plan verifier result is missing worktree");
+    assertEqual(resolve(result.worktree), resolve(repository.worktree), "plan verifier result worktree");
+    assertEqual(result.start_commit, task.start_commit, "plan verifier result start_commit");
     if (!sameMembers(result.acceptance.map((item) => item.criterion), verifierInput.acceptance_criteria)) throw new Error("Plan verifier acceptance criteria do not match verifier input");
     const acceptanceStatuses = result.acceptance.map((item) => item.status);
     if (result.status === "pass" && acceptanceStatuses.some((status) => status !== "passed")) throw new Error("Passing plan verifier result requires every acceptance criterion to pass");
@@ -570,7 +645,7 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
     const target = result.status === "pass" ? "passed" : result.status === "fail" ? "failed" : "blocked";
     task.verifier_result = verifierInput.result_path;
     setPlanTask(manifest, task, target, target);
-    delete repository.active_task_id;
+    if (target === "passed") delete repository.active_task_id;
     manifest.execution_events ??= [];
     manifest.execution_events.push({ stage: options.stage, repository: repository.name, from_status: "verifying", to_status: target, inferred: false, attempt, result_path: verifierInput.result_path, idempotency_key: planEventKey(manifest, taskId, repository.name, options.stage, attempt), occurred_at: occurredAt });
     if (target === "passed") await unlockPlanDependents(runtimeRoot, manifest);
