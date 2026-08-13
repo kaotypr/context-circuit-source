@@ -367,6 +367,27 @@ export interface PlanExecutionRequest {
   };
 }
 
+export interface PlanRuntimeRevision {
+  contract_version: 1;
+  kind: "approved-plan-runtime-revision";
+  plan_reference: string;
+  plan_id: string;
+  run_id: string;
+  prior_plan_version: number;
+  prior_approved_digest: string;
+  plan_version: number;
+  approved_digest: string;
+  plan_revision: number;
+  reason: string;
+  changed_task_ids: string[];
+  added_task_ids: string[];
+  removed_task_ids: string[];
+  invalidated_task_ids: string[];
+  preserved_task_ids: string[];
+  prior_manifest: string;
+  created_at: string;
+}
+
 export interface PlanPublicationDiscovery {
   contract_version: 1;
   provider: string;
@@ -666,6 +687,7 @@ export interface RuntimeManifest {
   plan_version?: number;
   plan_revision?: number;
   approved_digest?: string;
+  plan_revisions?: string[];
   task_graph?: Array<{
     work_id: string;
     repository: string;

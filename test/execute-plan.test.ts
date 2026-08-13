@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { prepareExecutePlan } from "../scripts/lib/execute-plan.js";
+import { prepareExecutePlan, resumeExecutePlan } from "../scripts/lib/execute-plan.js";
 import { generateRunId } from "../scripts/lib/ids.js";
 import { git } from "../scripts/lib/git.js";
 import { generatePlanBatch, setPlanState } from "../scripts/lib/plans.js";
@@ -99,4 +99,37 @@ test("execute-plan rolls back partial runtime output after a pre-worktree failur
   await assert.rejects(access(join(workspace.root, ".runtime", "worktrees", runId)));
   await assert.rejects(git(workspace.repository, ["show-ref", "--verify", "--quiet", `refs/heads/${branch}`]));
   assert.equal(await readFile(branchLock, "utf8"), "");
+});
+
+test("approved plan revision resumes the same runtime and records append-only lineage", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, request(), new Date("2026-08-14T09:00:00Z"));
+  const plan = generated.plans[0]!;
+  const first = await setPlanState(plan.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-14T09:01:00Z"));
+  const prepared = await prepareExecutePlan({
+    workspaceRoot: workspace.root,
+    request: { contract_version: 1, source: { kind: "plan", reference: first.plan_reference!, plan_version: first.plan_version, approved_digest: first.approved_digest! } },
+    now: new Date("2026-08-14T09:02:00Z"), discriminator: "12345678",
+  });
+  await setPlanState(plan.directory, { kind: "material-revision", reason: "Clarified the second task." }, new Date("2026-08-14T09:03:00Z"));
+  await writeFile(join(plan.directory, "overview.md"), "\nRevision clarification.\n", { encoding: "utf8", flag: "a" });
+  const revised = await setPlanState(plan.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-14T09:04:00Z"));
+  const resumed = await resumeExecutePlan({
+    workspaceRoot: workspace.root, runId: prepared.runId, reason: "Clarified the approved task contract.",
+    request: { contract_version: 1, source: { kind: "plan", reference: revised.plan_reference!, plan_version: revised.plan_version, approved_digest: revised.approved_digest! } },
+    now: new Date("2026-08-14T09:05:00Z"),
+  });
+  assert.equal(resumed.runId, prepared.runId);
+  assert.equal(resumed.planVersion, 2);
+  assert.equal(resumed.repositories[0]!.worktree, prepared.repositories[0]!.worktree);
+  const manifest = JSON.parse(await readFile(resumed.manifest, "utf8"));
+  assert.equal(manifest.plan_version, 2);
+  assert.equal(manifest.plan_revisions.length, 1);
+  assert.equal(manifest.plan_verifier_status, "pending");
+  const revision = JSON.parse(await readFile(manifest.plan_revisions[0], "utf8"));
+  assert.equal(revision.prior_plan_version, 1);
+  assert.equal(revision.plan_version, 2);
+  assert.equal(revision.run_id, prepared.runId);
+  assert.deepEqual(revision.invalidated_task_ids, []);
 });

@@ -561,7 +561,7 @@ export async function setPlanState(planDirectory: string, transition: PlanStateT
       index.status_evidence = index.approved_digest;
     }
   } else if (transition.kind === "material-revision") {
-    if (index.status !== "approved") throw new Error("Material revision transition requires an approved plan");
+    if (!["approved", "in-progress", "review-ready", "merge-pending"].includes(index.status)) throw new Error("Material revision transition requires an approved or unmerged active plan");
     if (!transition.reason.trim()) throw new Error("Material revision requires a reason");
     index.status = "draft";
     index.plan_version += 1;

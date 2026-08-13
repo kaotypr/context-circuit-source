@@ -6,7 +6,7 @@ import { assertCleanRepository, git } from "./git.js";
 import { generateRunId, slugify } from "./ids.js";
 import { assertInside, ensurePrivateDirectory, writeJsonAtomic } from "./io.js";
 import { resolveRootPlanDirectory, setPlanState, validatePlanDirectory } from "./plans.js";
-import type { ActivityCapability, PlanExecutionRequest, PlanIndex, PlanWorkItem, RuntimeManifest, RuntimeRepository, WorkspaceConfig } from "./types.js";
+import type { ActivityCapability, PlanExecutionRequest, PlanIndex, PlanRuntimeRevision, PlanWorkItem, RuntimeManifest, RuntimeRepository, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
 export interface PreparedPlanRepository {
@@ -37,6 +37,14 @@ export interface PreparePlanOptions {
   now?: Date;
   discriminator?: string;
   availableCapabilities?: ActivityCapability[];
+}
+
+export interface ResumePlanOptions {
+  workspaceRoot: string;
+  runId: string;
+  request: PlanExecutionRequest;
+  reason: string;
+  now?: Date;
 }
 
 interface RepositoryBase {
@@ -84,6 +92,58 @@ function graphErrors(items: PlanWorkItem[]): string[] {
     visit(item.work_id);
   }
   return [...new Set(errors)];
+}
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).sort().join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function taskExecutionContract(item: PlanWorkItem): Record<string, unknown> {
+  return {
+    repository: item.repository,
+    scope: item.scope,
+    test_scope: item.test_scope,
+    test_policy: item.test_policy,
+    test_rationale: item.test_rationale ?? "The approved plan task contract is authoritative.",
+    verification_commands: item.verification_commands,
+    acceptance_criteria: item.acceptance_criteria,
+    description: item.description ?? "",
+    parent: item.parent,
+    depends_on: item.depends_on,
+  };
+}
+
+function inputExecutionContract(input: Record<string, unknown>): Record<string, unknown> {
+  const expectation = (input.test_expectation ?? {}) as Record<string, unknown>;
+  return {
+    repository: input.repository,
+    scope: input.implementation_scope ?? input.allowed_scope,
+    test_scope: expectation.paths ?? [],
+    test_policy: expectation.policy,
+    test_rationale: expectation.rationale,
+    verification_commands: input.verification_commands ?? [],
+    acceptance_criteria: input.acceptance_criteria ?? [],
+    description: input.description ?? "",
+    parent: input.parent ?? null,
+    depends_on: input.depends_on ?? [],
+  };
+}
+
+function dependentClosure(items: PlanWorkItem[], roots: Set<string>): Set<string> {
+  const closure = new Set(roots);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const item of items) {
+      if (!closure.has(item.work_id) && item.depends_on.some((dependency) => closure.has(dependency))) {
+        closure.add(item.work_id);
+        changed = true;
+      }
+    }
+  }
+  return closure;
 }
 
 async function assertPlanDependencies(workspaceRoot: string, index: PlanIndex): Promise<void> {
@@ -237,6 +297,9 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
       blocked_by: ready ? [] : item.depends_on,
       allowed_scope: taskScope(item),
       implementation_scope: item.scope,
+      description: item.description ?? "",
+      parent: item.parent,
+      depends_on: item.depends_on,
       test_expectation: { policy: item.test_policy, paths: item.test_scope, rationale: item.test_rationale ?? "The approved plan task contract is authoritative." },
       instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", `${base.agent}.md`), join(workspaceRoot, "agents", "repository-worker.md")],
       result_contract: join(workspaceRoot, ".agents", "contracts", "worker-result.schema.json"),
@@ -333,4 +396,180 @@ export async function prepareExecutePlan(options: PreparePlanOptions): Promise<P
     throw error;
   }
   return { planId: index.plan_id, planReference: index.plan_reference!, planVersion: index.plan_version, approvedDigest: index.approved_digest!, runId, manifest: manifestPath, planBrief: planBriefPath, repositories: preparedRepositories, preparationStatus: "prepared" };
+}
+
+/** Resume one unmerged plan runtime after a newly approved material revision. */
+export async function resumeExecutePlan(options: ResumePlanOptions): Promise<PreparedPlan> {
+  if (!options.reason.trim()) throw new Error("An approved plan runtime revision requires a reason");
+  const workspaceRoot = resolve(options.workspaceRoot);
+  const runtimeRoot = assertInside(workspaceRoot, join(workspaceRoot, ".runtime"));
+  const runRoot = assertInside(runtimeRoot, join(runtimeRoot, "runs", options.runId));
+  const manifestPath = assertInside(runRoot, join(runRoot, "manifest.json"));
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8")) as RuntimeManifest;
+  const manifestErrors = contractMessages(await validateContract("runtime-manifest", manifest));
+  if (manifestErrors.length > 0) throw new Error(`Invalid runtime-manifest: ${manifestErrors.join("; ")}`);
+  if (manifest.source_kind !== "plan" || !manifest.task_graph || !manifest.plan_id || !manifest.plan_reference || !manifest.plan_version || !manifest.approved_digest) {
+    throw new Error("Only an approved numbered-plan runtime can be resumed");
+  }
+  if (["closing", "closed"].includes(manifest.status)) throw new Error("A closed plan runtime cannot be revised");
+  if (manifest.repositories.some((repository) => repository.active_task_id || repository.status === "running" || repository.status === "verifying")) {
+    throw new Error("Pause active workers and verifiers before resuming an approved plan revision");
+  }
+  if (options.request.contract_version !== 1 || options.request.source.kind !== "plan" || options.request.source.reference !== manifest.plan_reference) {
+    throw new Error("Plan revision must target the exact runtime plan reference");
+  }
+  const planDirectory = await resolveRootPlanDirectory(workspaceRoot, manifest.plan_reference);
+  const validation = await validatePlanDirectory(planDirectory);
+  if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) throw new Error(`Revised plan validation failed: ${validation.errors.join("; ") || "plan metadata is unavailable"}`);
+  const index = validation.index;
+  if (index.status !== "approved") throw new Error("The revised plan must be explicitly approved before runtime resume");
+  if (index.plan_id !== manifest.plan_id || index.plan_reference !== manifest.plan_reference) throw new Error("Revised plan identity does not match the existing runtime");
+  if (index.plan_version <= manifest.plan_version) throw new Error(`Plan revision must be newer than runtime version ${manifest.plan_version}`);
+  if (options.request.source.plan_version !== index.plan_version) throw new Error("Plan revision version is stale");
+  if (options.request.source.approved_digest !== index.approved_digest) throw new Error("Plan revision approval digest is stale or does not match the approved plan material");
+  const items = validation.work_breakdown.items;
+  const graphIssues = graphErrors(items);
+  if (graphIssues.length > 0) throw new Error(`Invalid revised task graph: ${graphIssues.join("; ")}`);
+
+  const oldTasks = new Map(manifest.task_graph.map((task) => [(task.task_id ?? task.work_id), task]));
+  const oldInputContracts = new Map<string, Record<string, unknown>>();
+  for (const [taskId, task] of oldTasks) {
+    try {
+      const raw = JSON.parse(await readFile(assertInside(runtimeRoot, task.verifier_input), "utf8")) as Record<string, unknown>;
+      oldInputContracts.set(taskId, inputExecutionContract(raw));
+    } catch {
+      oldInputContracts.set(taskId, {});
+    }
+  }
+  const changed = new Set<string>();
+  const added = new Set<string>();
+  for (const item of items) {
+    const prior = oldTasks.get(item.work_id);
+    if (!prior) { added.add(item.work_id); changed.add(item.work_id); continue; }
+    if (stableJson(oldInputContracts.get(item.work_id) ?? {}) !== stableJson(taskExecutionContract(item))) changed.add(item.work_id);
+  }
+  const removed = [...oldTasks.keys()].filter((taskId) => !items.some((item) => item.work_id === taskId));
+  const invalidated = dependentClosure(items, changed);
+  const preserved = items.filter((item) => {
+    const prior = oldTasks.get(item.work_id);
+    return Boolean(prior && prior.outcome === "passed" && prior.worker_result && prior.verifier_result && !invalidated.has(item.work_id));
+  }).map((item) => item.work_id);
+  for (const taskId of preserved) invalidated.delete(taskId);
+
+  const now = (options.now ?? new Date()).toISOString();
+  const planBriefPath = join(runtimeRoot, "plans", `${options.runId}-revision-${index.plan_version}.json`);
+  const revisionPath = join(runRoot, "revisions", `revision-${String(index.plan_version).padStart(4, "0")}.json`);
+  const worktreeRoot = join(runtimeRoot, "worktrees", options.runId);
+  const currentHeads = new Map<string, string>();
+  for (const repository of manifest.repositories) {
+    await assertCleanRepository(repository.worktree);
+    const branch = await git(repository.worktree, ["branch", "--show-current"]);
+    if (branch !== repository.branch) throw new Error(`Runtime repository ${repository.name} is no longer on its prepared branch`);
+    currentHeads.set(repository.name, await git(repository.worktree, ["rev-parse", "HEAD"]));
+  }
+  const planBrief = taskBrief(index, items, options.runId, now);
+  const taskGraph: NonNullable<RuntimeManifest["task_graph"]> = [];
+  const planWorkItems: NonNullable<RuntimeManifest["plan_work_items"]> = [];
+  const repositoryByName = new Map(manifest.repositories.map((repository) => [repository.name, repository]));
+  const firstReadyByRepository = new Set<string>();
+  const passed = new Set(preserved);
+  for (const item of items) {
+    const repository = repositoryByName.get(item.repository);
+    if (!repository) throw new Error(`Revised task targets an unprepared repository: ${item.repository}`);
+    const prior = oldTasks.get(item.work_id);
+    if (preserved.includes(item.work_id) && prior) {
+      const preservedTask = { ...prior, plan_version: index.plan_version, plan_revision: index.plan_version, approved_digest: index.approved_digest! };
+      taskGraph.push(preservedTask);
+      const preservedSummary: NonNullable<RuntimeManifest["plan_work_items"]>[number] = { work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt: prior.attempt ?? 0, start_commit: prior.start_commit ?? repository.base_commit, ready: true, blocked_by: [], status: "passed", depends_on: item.depends_on, outcome: "passed", task_input: prior.worker_input, verifier_input: prior.verifier_input };
+      if (prior.worker_result) preservedSummary.worker_result = prior.worker_result;
+      if (prior.verifier_result) preservedSummary.verifier_result = prior.verifier_result;
+      planWorkItems.push(preservedSummary);
+      repository.task_inputs ??= [];
+      repository.verifier_inputs ??= [];
+      repository.task_inputs.push(prior.worker_input);
+      repository.verifier_inputs.push(prior.verifier_input);
+      continue;
+    }
+    const workerInput = join(runRoot, `${item.work_id}-revision-${index.plan_version}-worker-input.json`);
+    const verifierInput = join(runRoot, `${item.work_id}-revision-${index.plan_version}-verifier-input.json`);
+    const baseCommit = repository.base_commit;
+    const ready = !firstReadyByRepository.has(item.repository) && item.depends_on.every((dependency) => passed.has(dependency));
+    if (ready) firstReadyByRepository.add(item.repository);
+    const startCommit = ready ? currentHeads.get(item.repository)! : null;
+    const common = {
+      contract_version: 2,
+      plan_reference: index.plan_reference!, plan_id: index.plan_id, plan_version: index.plan_version, plan_revision: index.plan_version,
+      approved_digest: index.approved_digest!, task_id: item.work_id, repository: item.repository, run_id: options.runId,
+      worktree: repository.worktree, branch: repository.branch, base_commit: baseCommit, start_commit: startCommit,
+      attempt: 0, ready, blocked_by: ready ? [] : item.depends_on, allowed_scope: taskScope(item), implementation_scope: item.scope,
+      description: item.description ?? "", parent: item.parent, depends_on: item.depends_on,
+      test_expectation: { policy: item.test_policy, paths: item.test_scope, rationale: item.test_rationale ?? "The approved plan task contract is authoritative." },
+      result_contract: join(workspaceRoot, ".agents", "contracts", "worker-result.schema.json"),
+      result_path: join(runtimeRoot, "results", `${options.runId}-${item.work_id}-revision-${index.plan_version}-worker.json`),
+    };
+    const verifierResultPath = join(runtimeRoot, "results", `${options.runId}-${item.work_id}-revision-${index.plan_version}-verifier.json`);
+    await writeJsonAtomic(workerInput, { ...common, role: "repository-worker", task_brief: planBriefPath });
+    await writeJsonAtomic(verifierInput, { ...common, role: "verifier", read_only: true, task_brief: planBriefPath, worker_result: common.result_path, result_path: verifierResultPath, acceptance_criteria: item.acceptance_criteria, verification_commands: item.verification_commands, result_contract: join(workspaceRoot, ".agents", "contracts", "verifier-result.schema.json") });
+    repository.task_inputs ??= [];
+    repository.verifier_inputs ??= [];
+    repository.task_inputs.push(workerInput);
+    repository.verifier_inputs.push(verifierInput);
+    const task = { work_id: item.work_id, task_id: item.work_id, plan_id: index.plan_id, plan_reference: index.plan_reference!, plan_version: index.plan_version, approved_digest: index.approved_digest!, repository: item.repository, plan_revision: index.plan_version, attempt: 0, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: ready ? "prepared" as const : "waiting" as const, depends_on: item.depends_on, outcome: "pending" as const, worker_input: workerInput, verifier_input: verifierInput };
+    taskGraph.push(task);
+    planWorkItems.push({ work_id: item.work_id, task_id: item.work_id, plan_reference: index.plan_reference!, repository: item.repository, plan_revision: index.plan_version, attempt: 0, start_commit: startCommit, ready, blocked_by: ready ? [] : item.depends_on, status: task.status, depends_on: item.depends_on, outcome: "pending", task_input: workerInput, verifier_input: verifierInput });
+  }
+  const planVerifierInput = join(runRoot, `plan-verifier-input-revision-${index.plan_version}.json`);
+  const planVerifierResult = join(runtimeRoot, "results", `${options.runId}-plan-verifier-attempt-0-revision-${index.plan_version}.json`);
+  await writeJsonAtomic(planVerifierInput, {
+    contract_version: 1, role: "plan-verifier", read_only: true, plan_reference: index.plan_reference!, plan_id: index.plan_id,
+    plan_revision: index.plan_version, plan_version: index.plan_version, run_id: options.runId, approved_digest: index.approved_digest!,
+    task_id: `PLAN-${index.plan_id}`, repository: "plan", attempt: 0, ready: taskGraph.every((task) => task.outcome === "passed"),
+    worktrees: manifest.repositories.map((repository) => ({ name: repository.name, worktree: repository.worktree, branch: repository.branch, base_commit: repository.base_commit })),
+    tasks: taskGraph.map((task) => ({ task_id: task.task_id, repository: task.repository, worker_result: task.worker_input, verifier_result: task.verifier_input })),
+    acceptance_criteria: ["Every approved plan task is independently verified.", "The cumulative repository worktrees pass holistic verification."],
+    verification_commands: [...new Set(items.flatMap((item) => item.verification_commands))], instruction_paths: [join(workspaceRoot, "AGENTS.md"), join(workspaceRoot, "agents", "verifier.md")],
+    result_contract: join(workspaceRoot, ".agents", "contracts", "plan-verifier-result.schema.json"), result_path: planVerifierResult,
+  });
+  const revision: PlanRuntimeRevision = {
+    contract_version: 1, kind: "approved-plan-runtime-revision", plan_reference: index.plan_reference!, plan_id: index.plan_id, run_id: options.runId,
+    prior_plan_version: manifest.plan_version, prior_approved_digest: manifest.approved_digest, plan_version: index.plan_version, approved_digest: index.approved_digest!, plan_revision: index.plan_version,
+    reason: options.reason.trim(), changed_task_ids: [...changed].sort(), added_task_ids: [...added].sort(), removed_task_ids: removed.sort(), invalidated_task_ids: [...invalidated].sort(), preserved_task_ids: preserved.sort(), prior_manifest: manifestPath, created_at: now,
+  };
+  const revisionErrors = contractMessages(await validateContract("plan-runtime-revision", revision));
+  if (revisionErrors.length > 0) throw new Error(`Invalid plan-runtime-revision: ${revisionErrors.join("; ")}`);
+  await writeJsonAtomic(planBriefPath, planBrief);
+  await writeJsonAtomic(revisionPath, revision);
+  const { plan_verifier_result: _stalePlanVerifier, ...manifestWithoutStaleFinal } = manifest;
+  const nextManifest: RuntimeManifest = {
+    ...manifestWithoutStaleFinal,
+    task_brief: planBriefPath,
+    plan_version: index.plan_version,
+    plan_revision: index.plan_version,
+    approved_digest: index.approved_digest!,
+    plan_work_items: planWorkItems,
+    task_graph: taskGraph,
+    plan_verifier_input: planVerifierInput,
+    plan_verifier_status: "pending",
+    plan_revisions: [...(manifest.plan_revisions ?? []), revisionPath],
+    status: taskGraph.every((task) => task.outcome === "passed") ? "verifying" : "prepared",
+    updated_at: now,
+    evidence: [...new Set([...manifest.evidence, planBriefPath, revisionPath, planVerifierInput, ...taskGraph.flatMap((task) => [task.worker_input, task.verifier_input])])],
+    repositories: manifest.repositories.map((repository) => {
+      const next = { ...repository, status: (taskGraph.filter((task) => task.repository === repository.name).every((task) => task.outcome === "passed") ? "passed" : taskGraph.some((task) => task.repository === repository.name && task.status === "prepared") ? "prepared" : "waiting") as NonNullable<RuntimeRepository["status"]> };
+      delete next.review_preparation;
+      delete next.review_publication;
+      delete next.review_state;
+      delete next.merge_confirmation;
+      delete next.closeout_record;
+      return next;
+    }),
+  };
+  const nextErrors = contractMessages(await validateContract("runtime-manifest", nextManifest));
+  if (nextErrors.length > 0) throw new Error(`Revised runtime-manifest is invalid: ${nextErrors.join("; ")}`);
+  await writeJsonAtomic(manifestPath, nextManifest);
+  await setPlanState(planDirectory, { kind: "lifecycle", status: "in-progress", reason: `Approved plan revision ${index.plan_version} resumed in the existing runtime.`, actor: "engine", evidence: revisionPath }, options.now ?? new Date());
+  return {
+    planId: index.plan_id, planReference: index.plan_reference!, planVersion: index.plan_version, approvedDigest: index.approved_digest!, runId: options.runId,
+    manifest: manifestPath, planBrief: planBriefPath, repositories: manifest.repositories.map((repository) => ({ name: repository.name, branch: repository.branch, worktree: repository.worktree, ready: repository.status === "prepared", blockedBy: [], taskInputs: repository.task_inputs ?? [], verifierInputs: repository.verifier_inputs ?? [] })), preparationStatus: "prepared",
+  };
 }
