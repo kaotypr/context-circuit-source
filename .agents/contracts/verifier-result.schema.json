@@ -40,6 +40,7 @@
         }
       }
     },
-    "verified_at": { "type": "string", "format": "date-time" }
+    "verified_at": { "type": "string", "format": "date-time" },
+    "product_knowledge_impact": { "enum": ["absent", "matches-declared", "broader-than-declared", "contradicts-current"] }
   }
 }

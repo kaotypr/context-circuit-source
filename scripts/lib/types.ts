@@ -548,6 +548,11 @@ export interface CloseoutRecord {
   blockers: string[];
   prepared_at: string;
   updated_at: string;
+  product_knowledge?: {
+    impact: "absent" | "matches-declared" | "broader-than-declared" | "contradicts-current" | "not-reported";
+    synchronization: "not-required" | "pending-review";
+    notes?: string;
+  };
 }
 
 export interface RuntimeManifest {

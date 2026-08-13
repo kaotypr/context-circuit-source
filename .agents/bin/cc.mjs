@@ -18902,6 +18902,13 @@ var init_confirm_merge = __esm({
 // scripts/lib/finish-work.ts
 import { access as access5, lstat as lstat6, mkdir as mkdir4, readFile as readFile13, readdir as readdir4, realpath as realpath5 } from "node:fs/promises";
 import { basename as basename2, join as join11, relative as relative6, resolve as resolve20 } from "node:path";
+function resolveProductKnowledgeCloseout(reports) {
+  const present = reports.filter((report) => Boolean(report));
+  if (present.length === 0) return { impact: "not-reported", synchronization: "not-required" };
+  const worst = present.reduce((a, b) => impactSeverity.indexOf(b) > impactSeverity.indexOf(a) ? b : a);
+  const unexpected = worst === "broader-than-declared" || worst === "contradicts-current";
+  return unexpected ? { impact: worst, synchronization: "pending-review", notes: "Unexpected Product Knowledge impact was reported; canonical synchronization is withheld for human review." } : { impact: worst, synchronization: "not-required" };
+}
 async function assertValid5(name, value2) {
   const errors2 = await validateContract(name, value2);
   if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
@@ -18952,6 +18959,10 @@ function contributionDocument(manifest2, repository, brief, record) {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
   const planReference = brief.plan.reference ?? "none";
+  const productKnowledge = record.product_knowledge ?? { impact: "not-reported", synchronization: "not-required" };
+  const productKnowledgeBody = `- Impact: ${productKnowledge.impact}
+- Synchronization: ${productKnowledge.synchronization}${productKnowledge.notes ? `
+- ${productKnowledge.notes}` : ""}`;
   return `# ${manifest2.work_id}: ${brief.requested_outcome}
 
 - Run: \`${manifest2.run_id}\`
@@ -18976,6 +18987,10 @@ ${list(record.commits.map((item) => `Commit: \`${item}\``), `No commits beyond b
 ## Verification
 
 ${list(record.verification, "No verifier evidence was available.")}
+
+## Product Knowledge impact
+
+${productKnowledgeBody}
 
 ## Decisions and deviations
 
@@ -19019,6 +19034,18 @@ async function optionalVerifier(runtimeRoot, manifest2, repository) {
     if (result3.work_id !== manifest2.work_id || result3.run_id !== manifest2.run_id || result3.repository !== repository.name) {
       throw new Error("Verifier result identity does not match the closeout run");
     }
+    return result3;
+  } catch (error) {
+    if (error.code === "ENOENT") return null;
+    throw error;
+  }
+}
+async function optionalWorker(runtimeRoot, manifest2, repository) {
+  try {
+    const input = await readJsonRegularInside(runtimeRoot, repository.worker_input, "Worker input");
+    const result3 = await readJsonRegularInside(runtimeRoot, assertInside(runtimeRoot, input.result_path), "Worker result");
+    await assertValid5("worker-result", result3);
+    if (result3.work_id !== manifest2.work_id || result3.run_id !== manifest2.run_id || result3.repository !== repository.name) return null;
     return result3;
   } catch (error) {
     if (error.code === "ENOENT") return null;
@@ -19250,6 +19277,8 @@ async function finishWork(options) {
     if (options.outcome === "merged") await assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles);
     const verifier = await optionalVerifier(runtimeRoot, manifest2, repository);
     if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
+    const worker = await optionalWorker(runtimeRoot, manifest2, repository);
+    const productKnowledge = resolveProductKnowledgeCloseout([worker?.product_knowledge_impact, verifier?.product_knowledge_impact]);
     const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} \u2014 ${item.evidence}`)] : [];
     const preparedAt = invocationTime.toISOString();
     const contributionsRoot = assertInside(workspaceRoot20, join11(workspaceRoot20, "contributions", "general"));
@@ -19278,7 +19307,8 @@ async function finishWork(options) {
       cleanup: { requested: Boolean(options.cleanup), worktree_removed: false, branch_preserved: true, runtime_evidence_preserved: true },
       blockers: [],
       prepared_at: preparedAt,
-      updated_at: preparedAt
+      updated_at: preparedAt,
+      product_knowledge: productKnowledge
     };
     const document = contributionDocument(manifest2, repository, brief, record);
     const documentErrors = contributionDocumentErrors(contributionPath, document, options.runId);
@@ -19301,7 +19331,7 @@ async function finishWork(options) {
     return closePreparedRun(workspaceRoot20, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
   });
 }
-var import_yaml9, contributionHeadings;
+var import_yaml9, impactSeverity, contributionHeadings;
 var init_finish_work = __esm({
   "scripts/lib/finish-work.ts"() {
     "use strict";
@@ -19310,6 +19340,7 @@ var init_finish_work = __esm({
     init_git();
     init_io();
     init_validation();
+    impactSeverity = ["absent", "matches-declared", "broader-than-declared", "contradicts-current"];
     contributionHeadings = [
       "## Outcome",
       "## Affected repositories",

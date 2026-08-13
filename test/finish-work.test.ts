@@ -3,7 +3,7 @@ import { access, mkdir, readFile, readdir, symlink, writeFile } from "node:fs/pr
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { prepareActivityLifecycle, recordActivityLifecycleAction } from "../scripts/lib/activity-lifecycle.js";
-import { contributionDocumentErrors, finishWork } from "../scripts/lib/finish-work.js";
+import { contributionDocumentErrors, finishWork, resolveProductKnowledgeCloseout } from "../scripts/lib/finish-work.js";
 import { git } from "../scripts/lib/git.js";
 import { recordResult } from "../scripts/lib/record-result.js";
 import { confirmMerge, prepareReview } from "../scripts/lib/review-lifecycle.js";
@@ -23,7 +23,7 @@ async function initializeWrapper(root: string): Promise<void> {
   await git(root, ["-c", "user.name=Wrapper", "-c", "user.email=wrapper@example.invalid", "commit", "-m", "test: initialize wrapper"]);
 }
 
-async function passRun(root: string, discriminator: string): Promise<PreparedTask> {
+async function passRun(root: string, discriminator: string, impacts: { worker?: string; verifier?: string } = {}): Promise<PreparedTask> {
   const prepared = await preparePlanlessTask({
     workspaceRoot: root,
     ...taskOptions,
@@ -50,6 +50,7 @@ async function passRun(root: string, discriminator: string): Promise<PreparedTas
     changed_files: ["src/App.tsx"],
     checks: [{ command: "npm test", status: "passed", evidence: "Fixture evidence" }],
     risks: [],
+    ...(impacts.worker ? { product_knowledge_impact: impacts.worker } : {}),
   });
   await recordResult({ workspaceRoot: root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
   const verifierInput = JSON.parse(await readFile(manifest.repositories[0].verifier_input, "utf8"));
@@ -64,6 +65,7 @@ async function passRun(root: string, discriminator: string): Promise<PreparedTas
     checks: ["npm test passed"],
     findings: [],
     verified_at: "2026-08-11T22:03:00.000Z",
+    ...(impacts.verifier ? { product_knowledge_impact: impacts.verifier } : {}),
   });
   await recordResult({ workspaceRoot: root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
   await prepareReview({ workspaceRoot: root, runId: prepared.runId, repository: "frontend" });
@@ -303,4 +305,49 @@ test("rejects tampered verifier evidence before writing a contribution", async (
     /Verifier result identity does not match/,
   );
   await assert.rejects(access(join(workspace.root, "contributions", "general")));
+});
+
+test("closeout resolution takes the most severe reported Product Knowledge impact", () => {
+  assert.deepEqual(resolveProductKnowledgeCloseout([undefined, undefined]), { impact: "not-reported", synchronization: "not-required" });
+  assert.deepEqual(resolveProductKnowledgeCloseout(["absent", "matches-declared"]), { impact: "matches-declared", synchronization: "not-required" });
+  const broader = resolveProductKnowledgeCloseout(["broader-than-declared", "matches-declared"]);
+  assert.equal(broader.impact, "broader-than-declared");
+  assert.equal(broader.synchronization, "pending-review");
+  assert.match(broader.notes!, /withheld/);
+  assert.equal(resolveProductKnowledgeCloseout([undefined, "contradicts-current"]).synchronization, "pending-review");
+});
+
+test("a merged closeout records the reported Product Knowledge impact", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await initializeWrapper(workspace.root);
+  const prepared = await passRun(workspace.root, "d20d20d2", { worker: "matches-declared", verifier: "matches-declared" });
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared, "kao");
+
+  const closeout = await finishWork({
+    workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend",
+    outcome: "merged", author: "kao", now: new Date("2026-08-11T22:10:00.000Z"),
+  });
+  assert.deepEqual(await validateContract("closeout-record", closeout), []);
+  assert.deepEqual(closeout.product_knowledge, { impact: "matches-declared", synchronization: "not-required" });
+  const contribution = await readFile(join(workspace.root, closeout.contribution), "utf8");
+  assert.match(contribution, /## Product Knowledge impact/);
+  assert.match(contribution, /Impact: matches-declared/);
+});
+
+test("unexpected impact withholds synchronization for human review", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  await initializeWrapper(workspace.root);
+  const prepared = await passRun(workspace.root, "e30e30e3", { verifier: "contradicts-current" });
+  await mergeAndConfirm(workspace.root, workspace.repository, prepared, "kao");
+
+  const closeout = await finishWork({
+    workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend",
+    outcome: "merged", author: "kao", now: new Date("2026-08-11T22:10:00.000Z"),
+  });
+  assert.equal(closeout.product_knowledge?.impact, "contradicts-current");
+  assert.equal(closeout.product_knowledge?.synchronization, "pending-review");
+  const contribution = await readFile(join(workspace.root, closeout.contribution), "utf8");
+  assert.match(contribution, /Synchronization: pending-review/);
 });

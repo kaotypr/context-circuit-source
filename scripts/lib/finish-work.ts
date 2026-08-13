@@ -10,6 +10,8 @@ interface ResultInput {
   result_path: string;
 }
 
+type ProductKnowledgeImpactReport = "absent" | "matches-declared" | "broader-than-declared" | "contradicts-current";
+
 interface VerifierResult {
   work_id: string;
   run_id: string;
@@ -18,6 +20,7 @@ interface VerifierResult {
   summary: string;
   checks: string[];
   acceptance: Array<{ criterion: string; status: string; evidence: string }>;
+  product_knowledge_impact?: ProductKnowledgeImpactReport;
 }
 
 interface WorkerResult {
@@ -29,6 +32,19 @@ interface WorkerResult {
   worktree: string;
   commits: string[];
   changed_files: string[];
+  product_knowledge_impact?: ProductKnowledgeImpactReport;
+}
+
+const impactSeverity: ProductKnowledgeImpactReport[] = ["absent", "matches-declared", "broader-than-declared", "contradicts-current"];
+
+export function resolveProductKnowledgeCloseout(reports: Array<ProductKnowledgeImpactReport | undefined>): NonNullable<CloseoutRecord["product_knowledge"]> {
+  const present = reports.filter((report): report is ProductKnowledgeImpactReport => Boolean(report));
+  if (present.length === 0) return { impact: "not-reported", synchronization: "not-required" };
+  const worst = present.reduce((a, b) => (impactSeverity.indexOf(b) > impactSeverity.indexOf(a) ? b : a));
+  const unexpected = worst === "broader-than-declared" || worst === "contradicts-current";
+  return unexpected
+    ? { impact: worst, synchronization: "pending-review", notes: "Unexpected Product Knowledge impact was reported; canonical synchronization is withheld for human review." }
+    : { impact: worst, synchronization: "not-required" };
 }
 
 export interface FinishWorkOptions {
@@ -103,11 +119,13 @@ function contributionDocument(
   manifest: RuntimeManifest,
   repository: RuntimeRepository,
   brief: TaskBrief,
-  record: Pick<CloseoutRecord, "outcome" | "author" | "reason" | "pull_requests" | "commits" | "changed_files" | "verification" | "head_commit">,
+  record: Pick<CloseoutRecord, "outcome" | "author" | "reason" | "pull_requests" | "commits" | "changed_files" | "verification" | "head_commit" | "product_knowledge">,
 ): string {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
   const planReference = brief.plan.reference ?? "none";
+  const productKnowledge = record.product_knowledge ?? { impact: "not-reported" as const, synchronization: "not-required" as const };
+  const productKnowledgeBody = `- Impact: ${productKnowledge.impact}\n- Synchronization: ${productKnowledge.synchronization}${productKnowledge.notes ? `\n- ${productKnowledge.notes}` : ""}`;
   return `# ${manifest.work_id}: ${brief.requested_outcome}\n\n` +
     `- Run: \`${manifest.run_id}\`\n` +
     `- Task source: ${manifest.source_kind}\n` +
@@ -117,6 +135,7 @@ function contributionDocument(
     `## Affected repositories\n\n- \`${repository.name}\` on branch \`${repository.branch}\`.${changed}\n\n` +
     `## Pull requests and commits\n\n${list(record.pull_requests.map((item) => `Pull request: ${item}`), "No pull-request reference was recorded.")}\n${list(record.commits.map((item) => `Commit: \`${item}\``), `No commits beyond base \`${repository.base_commit}\`.`)}\n- Recorded head: \`${record.head_commit}\`\n\n` +
     `## Verification\n\n${list(record.verification, "No verifier evidence was available.")}\n\n` +
+    `## Product Knowledge impact\n\n${productKnowledgeBody}\n\n` +
     `## Decisions and deviations\n\n- ${record.outcome === "merged" ? "No closeout deviation was recorded." : "The run was deliberately abandoned instead of merged."}\n\n` +
     `## Remaining risks and follow-up\n\n- ${record.reason ?? "No closeout-specific follow-up was recorded."}\n\n` +
     `## Candidate durable learnings\n\n- Review this contribution during the next context synchronization; no canonical-context change is asserted automatically.\n`;
@@ -152,6 +171,19 @@ async function optionalVerifier(runtimeRoot: string, manifest: RuntimeManifest, 
     if (result.work_id !== manifest.work_id || result.run_id !== manifest.run_id || result.repository !== repository.name) {
       throw new Error("Verifier result identity does not match the closeout run");
     }
+    return result;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+    throw error;
+  }
+}
+
+async function optionalWorker(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository): Promise<WorkerResult | null> {
+  try {
+    const input = await readJsonRegularInside<ResultInput>(runtimeRoot, repository.worker_input, "Worker input");
+    const result = await readJsonRegularInside<WorkerResult>(runtimeRoot, assertInside(runtimeRoot, input.result_path), "Worker result");
+    await assertValid("worker-result", result);
+    if (result.work_id !== manifest.work_id || result.run_id !== manifest.run_id || result.repository !== repository.name) return null;
     return result;
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
@@ -404,6 +436,8 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
     if (options.outcome === "merged") await assertCurrentWorker(runtimeRoot, manifest, repository, headCommit, commits, changedFiles);
     const verifier = await optionalVerifier(runtimeRoot, manifest, repository);
     if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
+    const worker = await optionalWorker(runtimeRoot, manifest, repository);
+    const productKnowledge = resolveProductKnowledgeCloseout([worker?.product_knowledge_impact, verifier?.product_knowledge_impact]);
     const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} — ${item.evidence}`)] : [];
     const preparedAt = invocationTime.toISOString();
     const contributionsRoot = assertInside(workspaceRoot, join(workspaceRoot, "contributions", "general"));
@@ -433,6 +467,7 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       blockers: [],
       prepared_at: preparedAt,
       updated_at: preparedAt,
+      product_knowledge: productKnowledge,
     };
     const document = contributionDocument(manifest, repository, brief, record);
     const documentErrors = contributionDocumentErrors(contributionPath, document, options.runId);
