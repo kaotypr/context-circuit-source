@@ -33,6 +33,19 @@ test("distributable and release archive contain only wrapper inputs", async () =
   await access(join(destination, ".agents", "bin", "cc.mjs"));
   const canonicalSkills = (await readdir(join(projectRoot, ".agents", "skills"), { withFileTypes: true }))
     .filter((entry) => entry.isDirectory()).map((entry) => entry.name).sort();
+  const expectedHostSkills = [
+    "w-configure-workspace",
+    "w-create-plan",
+    "w-finish-work",
+    "w-gather-context",
+    "w-initialize-workspace",
+    "w-publish-plan-tasks",
+    "w-run-task",
+    "w-sync-context",
+    "w-whats-next",
+  ];
+  assert.deepEqual(canonicalSkills, expectedHostSkills);
+  assert.ok(canonicalSkills.every((skill) => skill.startsWith("w-")));
   for (const skill of canonicalSkills) {
     await access(join(projectRoot, ".agents", "skills", skill, "SKILL.md"));
     await access(join(projectRoot, ".agents", "skills", skill, "agents", "openai.yaml"));
@@ -44,13 +57,31 @@ test("distributable and release archive contain only wrapper inputs", async () =
     await access(join(destination, ".claude", "commands", `${skill}.md`));
   }
   for (const path of [
-    ".agents/skills/configure-workspace/SKILL.md",
-    ".agents/skills/gather-context/SKILL.md",
-    ".codex/skills/configure-workspace/SKILL.md",
-    ".codex/skills/gather-context/SKILL.md",
-    ".claude/commands/configure-workspace.md",
-    ".claude/commands/gather-context.md",
+    ".agents/skills/w-configure-workspace/SKILL.md",
+    ".agents/skills/w-gather-context/SKILL.md",
+    ".codex/skills/w-configure-workspace/SKILL.md",
+    ".codex/skills/w-gather-context/SKILL.md",
+    ".claude/commands/w-configure-workspace.md",
+    ".claude/commands/w-gather-context.md",
   ]) await access(join(destination, path));
+  for (const skill of [
+    "configure-workspace",
+    "create-plan",
+    "finish-work",
+    "gather-context",
+    "initialize-workspace",
+    "publish-plan-tasks",
+    "run-task",
+    "sync-context",
+    "whats-next",
+  ]) {
+    await assert.rejects(access(join(projectRoot, ".agents", "skills", skill)));
+    await assert.rejects(access(join(projectRoot, ".codex", "skills", skill)));
+    await assert.rejects(access(join(projectRoot, ".claude", "commands", `${skill}.md`)));
+    await assert.rejects(access(join(destination, ".agents", "skills", skill)));
+    await assert.rejects(access(join(destination, ".codex", "skills", skill)));
+    await assert.rejects(access(join(destination, ".claude", "commands", `${skill}.md`)));
+  }
   await assert.rejects(access(join(destination, ".agents", "bin", "kao.mjs")));
   await assert.rejects(access(join(destination, ".template-version")));
   await access(join(destination, "context", "plans", ".gitkeep"));

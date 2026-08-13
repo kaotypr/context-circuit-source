@@ -6,17 +6,17 @@ only after a human selects a concrete request or approves a plan.
 
 ## Choose the next action
 
-Use `$run-task` directly when the request already has clear repository scope,
-acceptance criteria, and verification expectations. Use `$create-plan` when the
+Use `$w-run-task` directly when the request already has clear repository scope,
+acceptance criteria, and verification expectations. Use `$w-create-plan` when the
 work is broad, ordered, or needs review before implementation. Plans and
 activity integrations are optional.
 
-`$whats-next` can recommend one source-backed action from approved plans and
+`$w-whats-next` can recommend one source-backed action from approved plans and
 configured read-only work sources. It does not claim or start work.
 
 ## Run scoped work
 
-`$run-task` checks that every base repository is clean, normalizes the request,
+`$w-run-task` checks that every base repository is clean, normalizes the request,
 and prepares one branch and isolated Git worktree per repository. A fresh worker
 receives only its authorized scope and acceptance criteria. A separate verifier
 reviews the committed result without modifying it.
@@ -41,7 +41,7 @@ head is verified on the configured default target.
 
 ## Finish safely
 
-After confirmed merge or deliberate abandonment, invoke `$finish-work`. It
+After confirmed merge or deliberate abandonment, invoke `$w-finish-work`. It
 records an append-only contribution and closeout evidence before any optional
 worktree cleanup. Dirty, unpushed, or otherwise unrecorded work is preserved.
 
@@ -53,9 +53,9 @@ operation, not part of normal closeout.
 
 ## Keep durable context useful
 
-Use `$gather-context` to resolve and cite the minimum authoritative source
+Use `$w-gather-context` to resolve and cite the minimum authoritative source
 material without changing repositories, external systems, or durable context.
-Use `$sync-context` to turn completed-work contributions into a focused,
+Use `$w-sync-context` to turn completed-work contributions into a focused,
 reviewable update to `context/`. Product facts belong in `PROJECT.md`, structural
 facts in `ARCHITECTURE.md`, established practices in `CONVENTIONS.md`, and durable
 choices with rationale in `DECISIONS.md`.

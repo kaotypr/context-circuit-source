@@ -22,14 +22,14 @@ arguments. The principal skill-to-command mappings are:
 
 | Human action | Codex | Claude Code | Deterministic command |
 | --- | --- | --- | --- |
-| Configure | `$configure-workspace` | `/configure-workspace` | `configure-workspace` |
-| Initialize (compatibility) | `$initialize-workspace` | `/initialize-workspace` | `initialize-workspace` |
-| Gather context (read-only) | `$gather-context` | `/gather-context` | host read-only tools |
-| Plan | `$create-plan` | `/create-plan` | `create-plan` |
-| Recommend work | `$whats-next` | `/whats-next` | `whats-next` |
-| Run scoped work | `$run-task` | `/run-task` | `run-task` |
-| Finish a run | `$finish-work` | `/finish-work` | `finish-work` |
-| Curate context | `$sync-context` | `/sync-context` | `sync-context` |
+| Configure | `$w-configure-workspace` | `/w-configure-workspace` | `configure-workspace` |
+| Initialize (compatibility) | `$w-initialize-workspace` | `/w-initialize-workspace` | `initialize-workspace` |
+| Gather context (read-only) | `$w-gather-context` | `/w-gather-context` | host read-only tools |
+| Plan | `$w-create-plan` | `/w-create-plan` | `create-plan` |
+| Recommend work | `$w-whats-next` | `/w-whats-next` | `whats-next` |
+| Run scoped work | `$w-run-task` | `/w-run-task` | `run-task` |
+| Finish a run | `$w-finish-work` | `/w-finish-work` | `finish-work` |
+| Curate context | `$w-sync-context` | `/w-sync-context` | `sync-context` |
 | Onboarding pack | host skill | host skill | `onboarding-pack` |
 
 `onboarding-pack --roles <role[,role...]>` generates a revision-stamped Product
