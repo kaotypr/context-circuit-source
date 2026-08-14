@@ -113,7 +113,7 @@ printf '%s\n' \
   'role: implementer' \
   'objective: Implement one bounded task' \
   'scope:' \
-  '  plan: plans/context-circuit-plans/0001-agent-workspace-workflow' \
+  '  plan: plans/context-circuit-plans/0001-example' \
   '  task: AWF-0001' \
   '  paths:' \
   '    - AGENTS.md' \
@@ -131,7 +131,7 @@ printf '%s\n' \
   'role: implementer' \
   'objective: Implement one bounded task' \
   'scope:' \
-  '  plan: plans/context-circuit-plans/0001-agent-workspace-workflow' \
+  '  plan: plans/context-circuit-plans/0001-example' \
   '  task: AWF-0001' \
   '  paths:' \
   '    - AGENTS.md' \
@@ -195,7 +195,7 @@ contains "$runtime/sessions/verifier-001/delegation.yaml" 'write_worktree: false
 
 printf '%s\n' \
   'schema_version: 1' \
-  'plan: plans/context-circuit-plans/0001-agent-workspace-workflow' \
+  'plan: plans/context-circuit-plans/0001-example' \
   'session_id: child-001' \
   'root_session_id: root-001' \
   'worktree: .runtime/worktrees/context-circuit/plan-alpha' \
@@ -208,7 +208,7 @@ printf '%s\n' \
 printf '%s\n' \
   'session_id: child-001' \
   'root_session_id: root-001' \
-  'plan: plans/context-circuit-plans/0001-agent-workspace-workflow' \
+  'plan: plans/context-circuit-plans/0001-example' \
   'worktree: .runtime/worktrees/context-circuit/plan-alpha' \
   > "$runtime/plans/plan-alpha/lease.lock/owner.yaml"
 
