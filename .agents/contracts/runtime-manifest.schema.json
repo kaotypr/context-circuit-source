@@ -117,6 +117,7 @@
     "plan_verifier_input": { "type": "string", "minLength": 1 },
     "plan_verifier_result": { "type": "string", "minLength": 1 },
     "plan_verifier_status": { "enum": ["pending", "running", "passed", "failed", "blocked"] },
+    "scope_approvals": { "type": "array", "uniqueItems": true, "items": { "type": "string", "minLength": 1 } },
     "evidence": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } },
     "execution_events": {

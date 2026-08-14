@@ -1,8 +1,8 @@
 import { chmod, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { assertCleanRepository, git } from "./git.js";
-import { assertInside, ensurePrivateDirectory, withExclusiveFile, writeJsonAtomic } from "./io.js";
-import type { ExecutionEvent, RuntimeManifest, RuntimeRepository, TaskBrief, TestExpectation } from "./types.js";
+import { assertInside, ensurePrivateDirectory, readJsonRegularInside, withExclusiveFile, writeJsonAtomic } from "./io.js";
+import type { ExecutionEvent, RuntimeManifest, RuntimeRepository, ScopeApproval, ScopeAuthorization, TaskBrief, TestExpectation } from "./types.js";
 import { validateContract } from "./validation.js";
 
 export type RecordStage = "worker-started" | "worker-result" | "verifier-result" | "plan-verifier-result";
@@ -27,6 +27,7 @@ interface WorkerInput {
   allowed_scope: string[];
   implementation_scope?: string[];
   test_expectation?: TestExpectation;
+  scope_authorization?: ScopeAuthorization;
   result_path: string;
 }
 
@@ -48,6 +49,7 @@ interface VerifierInput {
   worker_result: string;
   acceptance_criteria: string[];
   test_expectation?: TestExpectation;
+  scope_authorization?: ScopeAuthorization;
   result_path: string;
 }
 
@@ -141,7 +143,7 @@ async function readJson<T>(path: string): Promise<T> {
   return JSON.parse(await readFile(path, "utf8")) as T;
 }
 
-async function assertValid(name: "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "plan-verifier-result", value: unknown): Promise<void> {
+async function assertValid(name: "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "plan-verifier-result" | "scope-approval", value: unknown): Promise<void> {
   const errors = await validateContract(name as Parameters<typeof validateContract>[0], value);
   if (errors.length > 0) {
     throw new Error(`Invalid ${name}: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
@@ -165,6 +167,40 @@ function sameMembers(left: string[], right: string[]): boolean {
 
 function sameTestExpectation(left: TestExpectation, right: TestExpectation): boolean {
   return left.policy === right.policy && left.rationale === right.rationale && sameMembers(left.paths, right.paths);
+}
+
+function sameScopeAuthorization(left: ScopeAuthorization | undefined, right: ScopeAuthorization | undefined): boolean {
+  if (!left && !right) return true;
+  return left?.mode === right?.mode && left?.approval_path === right?.approval_path;
+}
+
+function assertMatchingScopeAuthorization(workerInput: { scope_authorization?: ScopeAuthorization }, verifierInput: { scope_authorization?: ScopeAuthorization }): void {
+  if (!sameScopeAuthorization(workerInput.scope_authorization, verifierInput.scope_authorization)) {
+    throw new Error("Worker and verifier scope authorizations do not match");
+  }
+}
+
+async function hasApprovedScopeExpansion(
+  runtimeRoot: string,
+  manifest: RuntimeManifest,
+  repository: RuntimeRepository,
+  taskId: string,
+  authorization: ScopeAuthorization | undefined,
+): Promise<boolean> {
+  if (!authorization) return false;
+  if (authorization.mode !== "task-level-expansion") throw new Error(`Unknown scope authorization mode: ${authorization.mode}`);
+  const approvalPath = assertInside(runtimeRoot, authorization.approval_path);
+  if (!(manifest.scope_approvals ?? []).some((path) => resolve(path) === approvalPath)) {
+    throw new Error("Scope authorization is not recorded in the runtime manifest");
+  }
+  const approval = await readJsonRegularInside<ScopeApproval>(runtimeRoot, approvalPath, "Scope approval");
+  await assertValid("scope-approval", approval);
+  assertEqual(approval.scope_approval_id, `${manifest.run_id}:scope-expansion:${repository.name}:${taskId}`, "scope approval ID");
+  assertEqual(approval.run_id, manifest.run_id, "scope approval run_id");
+  assertEqual(approval.work_id, manifest.work_id, "scope approval work_id");
+  assertEqual(approval.task_id, taskId, "scope approval task_id");
+  assertEqual(approval.repository, repository.name, "scope approval repository");
+  return true;
 }
 
 function findRepository(manifest: RuntimeManifest, name: string): RuntimeRepository {
@@ -280,9 +316,11 @@ function assertTaskIdentity(manifest: RuntimeManifest, brief: TaskBrief, reposit
 
 async function validateWorkerResult(
   manifest: RuntimeManifest,
+  runtimeRoot: string,
   repository: RuntimeRepository,
   input: WorkerInput,
   testExpectation: TestExpectation,
+  taskId: string,
 ): Promise<"verifying" | "failed" | "blocked"> {
   const result = await readJson<WorkerResult>(input.result_path);
   await assertValid("worker-result", result);
@@ -301,8 +339,9 @@ async function validateWorkerResult(
     if (commits.join("\n") !== result.commits.join("\n")) throw new Error("worker result commits does not match the ordered base-to-head Git history");
     const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
     if (!sameMembers(changedFiles, result.changed_files)) throw new Error("worker result changed_files does not match the base-to-head Git diff");
+    const scopeExpansionApproved = await hasApprovedScopeExpansion(runtimeRoot, manifest, repository, taskId, input.scope_authorization);
     const outsideScope = changedFiles.filter((path) => !inAllowedScope(path, input.allowed_scope));
-    if (outsideScope.length > 0) throw new Error(`Worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
+    if (!scopeExpansionApproved && outsideScope.length > 0) throw new Error(`Worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
     if (testExpectation.policy === "required" && !changedFiles.some((path) => inAllowedScope(path, testExpectation.paths))) {
       throw new Error(`Required test policy needs a changed file in test scope: ${testExpectation.paths.join(", ")}`);
     }
@@ -432,7 +471,7 @@ function assertPlanInputIdentity(manifest: RuntimeManifest, task: PlanTaskRecord
   assertEqual(input.start_commit, task.start_commit, "plan task input start_commit");
 }
 
-async function validatePlanWorkerResult(manifest: RuntimeManifest, task: PlanTaskRecord, repository: RuntimeRepository, input: PlanTaskInput): Promise<WorkerResult> {
+async function validatePlanWorkerResult(manifest: RuntimeManifest, runtimeRoot: string, task: PlanTaskRecord, repository: RuntimeRepository, input: PlanTaskInput): Promise<WorkerResult> {
   const result = await readJson<WorkerResult>(input.result_path);
   await assertValid("worker-result", result);
   assertEqual(result.contract_version, 2, "plan worker result contract_version");
@@ -458,8 +497,9 @@ async function validatePlanWorkerResult(manifest: RuntimeManifest, task: PlanTas
     if (commits.join("\n") !== result.commits.join("\n")) throw new Error("Plan worker result commits does not match the task-local start-to-head history");
     const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${task.start_commit}...${head}`])).split("\n").filter(Boolean);
     if (!sameMembers(changedFiles, result.changed_files)) throw new Error("Plan worker result changed_files does not match the task-local start-to-head diff");
+    const scopeExpansionApproved = await hasApprovedScopeExpansion(runtimeRoot, manifest, repository, task.task_id ?? task.work_id, input.scope_authorization);
     const outsideScope = changedFiles.filter((path) => !inAllowedScope(path, input.allowed_scope));
-    if (outsideScope.length > 0) throw new Error(`Plan worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
+    if (!scopeExpansionApproved && outsideScope.length > 0) throw new Error(`Plan worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
     const expectation = input.test_expectation;
     if (expectation?.policy === "required" && !changedFiles.some((path) => inAllowedScope(path, expectation.paths))) {
       throw new Error(`Required test policy needs a changed file in test scope: ${expectation.paths.join(", ")}`);
@@ -585,6 +625,7 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
   const verifierInput = await readJson<PlanTaskInput>(verifierPath);
   assertPlanInputIdentity(manifest, task, repository, workerInput);
   assertPlanInputIdentity(manifest, task, repository, verifierInput);
+  assertMatchingScopeAuthorization(workerInput, verifierInput);
   assertEqual(resolve(verifierInput.worker_result!), resolve(workerInput.result_path), "plan verifier input worker_result");
   const attempt = planTaskAttempt(task);
   const existing = manifest.execution_events?.find((event) => event.idempotency_key === planEventKey(manifest, taskId, repository.name, options.stage, attempt));
@@ -601,7 +642,7 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
     manifest.execution_events.push({ stage: options.stage, repository: repository.name, from_status: "prepared", to_status: "running", inferred: false, attempt, idempotency_key: planEventKey(manifest, taskId, repository.name, options.stage, attempt), occurred_at: occurredAt });
   } else if (options.stage === "worker-result") {
     assertPlanRepositoryLock(repository, taskId);
-    const result = await validatePlanWorkerResult(manifest, task, repository, workerInput);
+    const result = await validatePlanWorkerResult(manifest, runtimeRoot, task, repository, workerInput);
     await chmod(workerInput.result_path, 0o600);
     if (task.status === "prepared") {
       repository.active_task_id = taskId;
@@ -618,7 +659,7 @@ async function recordCumulativePlanResult(options: RecordResultOptions, runtimeR
   } else {
     if (task.status !== "verifying") throw new Error(`Plan verifier-result requires verifying task status, received ${task.status ?? "pending"}`);
     if (repository.active_task_id !== taskId) throw new Error(`Repository ${repository.name} is not locked by task ${taskId}`);
-    const worker = await validatePlanWorkerResult(manifest, task, repository, workerInput);
+    const worker = await validatePlanWorkerResult(manifest, runtimeRoot, task, repository, workerInput);
     const result = await readJson<VerifierResult>(verifierInput.result_path);
     await assertValid("verifier-result", result);
     assertEqual(result.contract_version, 2, "plan verifier result contract_version");
@@ -694,6 +735,7 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
     };
     const workerInput = await readJson<WorkerInput>(workerInputPath);
     const verifierInput = await readJson<VerifierInput>(verifierInputPath);
+    assertMatchingScopeAuthorization(workerInput, verifierInput);
     assertInside(runtimeRoot, workerInput.result_path);
     assertInside(runtimeRoot, verifierInput.worker_result);
     assertInside(runtimeRoot, verifierInput.result_path);
@@ -731,7 +773,7 @@ export async function recordResult(options: RecordResultOptions): Promise<Runtim
       assertEqual(head, repository.base_commit, "worker start HEAD");
       appendEvent(manifest, options.stage, options.repository, "prepared", "running", occurredAt, false, attempt);
     } else if (options.stage === "worker-result") {
-      const target = await validateWorkerResult(manifest, repository, workerInput, testExpectation);
+      const target = await validateWorkerResult(manifest, runtimeRoot, repository, workerInput, testExpectation, manifest.work_id);
       await chmod(workerInput.result_path, 0o600);
       if (existing) return manifest;
       if (currentStatus === "prepared") {

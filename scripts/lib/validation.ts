@@ -6,7 +6,7 @@ import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
 import { contextReferenceError, remoteReferenceError } from "./safe-reference.js";
 
-export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "plan-verifier-result", "runtime-manifest", "plan-runtime-revision", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-task", "plan-connection", "plan-draft-request", "plan-generation-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record", "onboarding-pack"] as const;
+export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "plan-verifier-result", "runtime-manifest", "plan-runtime-revision", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-task", "plan-connection", "plan-draft-request", "plan-generation-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "scope-approval", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record", "onboarding-pack"] as const;
 export type SchemaName = (typeof schemaNames)[number];
 
 export const requiredWorkspaceDocuments = [
@@ -47,6 +47,7 @@ export const requiredWorkspaceDocuments = [
   ".agents/contracts/fake-activity-source.schema.json",
   ".agents/contracts/whats-next-result.schema.json",
   ".agents/contracts/activity-lifecycle-record.schema.json",
+  ".agents/contracts/scope-approval.schema.json",
   ".agents/contracts/plan-publication-discovery.schema.json",
   ".agents/contracts/plan-publication-record.schema.json",
   ".agents/contracts/product-knowledge-project.schema.json",

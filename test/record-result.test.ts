@@ -6,6 +6,7 @@ import { git } from "../scripts/lib/git.js";
 import { recordResult } from "../scripts/lib/record-result.js";
 import { prepareExecutePlan } from "../scripts/lib/execute-plan.js";
 import { preparePlanlessTask, type PreparedTask } from "../scripts/lib/run-task.js";
+import { approveScopeExpansion } from "../scripts/lib/scope-approval.js";
 import { generatePlanBatch, setPlanState } from "../scripts/lib/plans.js";
 import { validateContract } from "../scripts/lib/validation.js";
 import type { PlanGenerationRequest } from "../scripts/lib/types.js";
@@ -196,6 +197,149 @@ test("accepts a completed worker that changes required implementation and test s
   await implementFixture(prepared, true);
   const manifest = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
   assert.equal(manifest.status, "verifying");
+});
+
+test("accepts additional changed files after task-level scope approval", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const prepared = await preparePlanlessTask({
+    workspaceRoot: workspace.root,
+    ...taskOptions,
+    now: new Date("2026-08-11T17:00:00.000Z"),
+    discriminator: "a1b2c3d4",
+  });
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-started" });
+
+  const appPath = join(prepared.worktree, "src", "App.tsx");
+  const packagePath = join(prepared.worktree, "package.json");
+  await writeFile(appPath, `${await readFile(appPath, "utf8")}\n// approved scope expansion fixture\n`, "utf8");
+  await writeFile(packagePath, `${await readFile(packagePath, "utf8")}\n`, "utf8");
+  await git(prepared.worktree, ["add", "src/App.tsx", "package.json"]);
+  await git(prepared.worktree, ["-c", "user.name=Worker", "-c", "user.email=worker@example.invalid", "commit", "-m", "test: use approved scope expansion"]);
+  const head = await git(prepared.worktree, ["rev-parse", "HEAD"]);
+  const workerInput = JSON.parse(await readFile(prepared.workerInput, "utf8"));
+  await writeJson(workerInput.result_path, {
+    contract_version: 1,
+    work_id: prepared.workId,
+    run_id: prepared.runId,
+    repository: "frontend",
+    status: "completed",
+    summary: "Changed an additional repository file required by the task.",
+    branch: prepared.branch,
+    worktree: prepared.worktree,
+    commits: [head],
+    changed_files: ["src/App.tsx", "package.json"],
+    checks: [{ command: "npm test", status: "not-run", evidence: "Scope expansion fixture" }],
+    risks: [],
+  });
+
+  await assert.rejects(
+    recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" }),
+    /Worker changed files outside allowed scope: package\.json/,
+  );
+
+  const approval = await approveScopeExpansion({
+    workspaceRoot: workspace.root,
+    runId: prepared.runId,
+    repository: "frontend",
+    approvedBy: "owner",
+    reason: "Additional repository files are reasonably necessary for the existing acceptance criteria.",
+    now: new Date("2026-08-11T17:01:00.000Z"),
+  });
+  assert.equal(approval.approval.mode, "task-level-expansion");
+  assert.equal("changed_files" in approval.approval, false);
+  assert.equal("paths" in approval.approval, false);
+  assert.equal(JSON.parse(await readFile(prepared.workerInput, "utf8")).scope_authorization.approval_path, approval.approval_path);
+
+  let manifest = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "worker-result" });
+  assert.equal(manifest.status, "verifying");
+  assert.deepEqual(manifest.scope_approvals, [approval.approval_path]);
+
+  const verifierPath = await writePassingVerifier(prepared);
+  manifest = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", stage: "verifier-result" });
+  assert.equal(manifest.status, "passed");
+  assert.ok(manifest.evidence.includes(verifierPath));
+});
+
+test("accepts additional changed files after task-level approval in a cumulative plan", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const request: PlanGenerationRequest = {
+    contract_version: 2,
+    source: { kind: "prd", reference: "docs/scope-expansion.md" },
+    plans: [{
+      plan_id: "approved-scope-expansion", title: "Approved scope expansion", repository: "frontend", work_prefix: "SCP",
+      summary: "Allow a human-approved task-level scope expansion.", assumptions: [], open_questions: [],
+      requirements: ["Additional task files may be approved at runtime."],
+      solution: ["Record the approval outside immutable plan material."],
+      delivery: ["Validate the expanded cumulative task."],
+      verification: ["The worker result is accepted only after approval."], risks: [],
+      work_items: [{
+        key: "task", title: "Change the app", area: "application", repository: "frontend",
+        scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [],
+        acceptance_criteria: ["The app change is committed."],
+      }],
+    }],
+  };
+  const generated = await generatePlanBatch(workspace.root, request, new Date("2026-08-11T18:00:00.000Z"));
+  const approved = await setPlanState(generated.plans[0]!.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-11T18:01:00.000Z"));
+  const prepared = await prepareExecutePlan({
+    workspaceRoot: workspace.root,
+    request: { contract_version: 1, source: { kind: "plan", reference: approved.plan_reference!, plan_version: approved.plan_version, approved_digest: approved.approved_digest! } },
+    now: new Date("2026-08-11T18:02:00.000Z"), discriminator: "b1c2d3e4",
+  });
+  const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const task = manifest.task_graph[0];
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", taskId: task.task_id, stage: "worker-started" });
+
+  const appPath = join(prepared.repositories[0]!.worktree, "src", "App.tsx");
+  const packagePath = join(prepared.repositories[0]!.worktree, "package.json");
+  await writeFile(appPath, `${await readFile(appPath, "utf8")}\n// approved cumulative expansion fixture\n`, "utf8");
+  await writeFile(packagePath, `${await readFile(packagePath, "utf8")}\n`, "utf8");
+  await git(prepared.repositories[0]!.worktree, ["add", "src/App.tsx", "package.json"]);
+  await git(prepared.repositories[0]!.worktree, ["-c", "user.name=Worker", "-c", "user.email=worker@example.invalid", "commit", "-m", "test: use approved cumulative scope expansion"]);
+  const head = await git(prepared.repositories[0]!.worktree, ["rev-parse", "HEAD"]);
+  const workerInput = JSON.parse(await readFile(task.worker_input, "utf8"));
+  await writeJson(workerInput.result_path, {
+    contract_version: 2,
+    plan_reference: workerInput.plan_reference,
+    plan_id: workerInput.plan_id,
+    plan_version: workerInput.plan_version,
+    approved_digest: workerInput.approved_digest,
+    task_id: task.task_id,
+    repository: "frontend",
+    plan_revision: workerInput.plan_revision,
+    attempt: workerInput.attempt,
+    run_id: prepared.runId,
+    status: "completed",
+    summary: "Changed an additional repository file required by the plan task.",
+    branch: workerInput.branch,
+    worktree: workerInput.worktree,
+    start_commit: workerInput.start_commit,
+    commits: [head],
+    changed_files: ["src/App.tsx", "package.json"],
+    checks: [{ command: "git diff --check", status: "passed", evidence: "clean" }],
+    risks: [],
+  });
+  await assert.rejects(
+    recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", taskId: task.task_id, stage: "worker-result" }),
+    /Plan worker changed files outside allowed scope: package\.json/,
+  );
+
+  const approval = await approveScopeExpansion({
+    workspaceRoot: workspace.root,
+    runId: prepared.runId,
+    repository: "frontend",
+    taskId: task.task_id,
+    approvedBy: "owner",
+    reason: "Additional repository files are reasonably necessary for the existing acceptance criteria.",
+    now: new Date("2026-08-11T18:03:00.000Z"),
+  });
+  const authorizedVerifierInput = JSON.parse(await readFile(task.verifier_input, "utf8"));
+  assert.equal(authorizedVerifierInput.scope_authorization.approval_path, approval.approval_path);
+  const afterApproval = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", taskId: task.task_id, stage: "worker-result" });
+  assert.equal(afterApproval.task_graph?.[0]?.status, "verifying");
+  assert.deepEqual(afterApproval.scope_approvals, [approval.approval_path]);
 });
 
 test("executes a cumulative plan in dependency order and gates review on holistic verification", async (t) => {

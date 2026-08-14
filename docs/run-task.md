@@ -60,6 +60,24 @@ selected work-item outcome and cannot complete siblings or later dependencies.
 The existing direct-request forms still allocate an `ADHOC-*` work ID and remain
 planless.
 
+## Approve additional task files
+
+The declared scope is the initial expected scope. If a worker discovers that
+additional files in the same repository are reasonably necessary for the
+existing acceptance criteria, pause it and obtain human approval:
+
+```bash
+node .agents/bin/cc.mjs approve-scope-expansion \
+  --run-id <run-id> --repository <name> [--task-id <task-id>] \
+  --approved-by <human-identifier> \
+  --reason "Additional files are necessary for the existing task acceptance."
+```
+
+This writes append-only runtime evidence and updates the worker and verifier
+inputs. It does not change the approved plan material or name individual paths.
+The verifier reviews the complete resulting diff. A new requirement, shared
+contract, or repository still requires a plan revision.
+
 Before launching a worker, record its start:
 
 ```bash

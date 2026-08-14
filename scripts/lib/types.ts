@@ -507,6 +507,24 @@ export interface TestExpectation {
   rationale: string;
 }
 
+export interface ScopeAuthorization {
+  mode: "task-level-expansion";
+  approval_path: string;
+}
+
+export interface ScopeApproval {
+  contract_version: 1;
+  scope_approval_id: string;
+  work_id: string;
+  run_id: string;
+  task_id: string;
+  repository: string;
+  mode: "task-level-expansion";
+  reason: string;
+  approved_by: string;
+  approved_at: string;
+}
+
 export interface RuntimeRepository {
   name: string;
   base_path: string;
@@ -724,6 +742,7 @@ export interface RuntimeManifest {
   plan_verifier_input?: string;
   plan_verifier_result?: string;
   plan_verifier_status?: "pending" | "running" | "passed" | "failed" | "blocked";
+  scope_approvals?: string[];
   evidence: string[];
   warnings: string[];
   execution_events?: ExecutionEvent[];

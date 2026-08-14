@@ -9,7 +9,7 @@ description: Execute one explicitly approved numbered plan as a continuous depen
    roadmap, exact repository collection, approved numbered plan, and repository
    instructions. Use only the exact approved plan reference, version, and digest.
 2. Prepare with `node .agents/bin/cc.mjs execute-plan --plan <reference> --version <version> --approved-digest <digest>`. The command derives the complete authoritative graph and creates one branch and isolated worktree per affected repository.
-3. Launch fresh workers and independent read-only verifiers only from emitted task inputs. Same-repository tasks remain serialized; independent repositories proceed only when declared dependencies pass. Record every result through `record-result`.
+3. Launch fresh workers and independent read-only verifiers only from emitted task inputs. Same-repository tasks remain serialized; independent repositories proceed only when declared dependencies pass. If a worker needs additional files, pause for the human `scope-expansion` gate and run `approve-scope-expansion`; the approval is runtime evidence and does not revise the approved plan material. Record every result through `record-result`.
 4. Use bounded repair with fresh roles for failed or blocked tasks. After every task passes, run the holistic verifier from the emitted plan-verifier input and record `plan-verifier-result`.
 5. Prepare exactly one review handoff per affected repository. Publish only after explicit authorization; never merge or deploy automatically.
 6. After human merge, record exact merge confirmation for every repository, then use `finish-work --cleanup --refresh` to fast-forward the configured integration target and preserve the refreshed commit.

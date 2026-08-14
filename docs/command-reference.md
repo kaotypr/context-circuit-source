@@ -30,6 +30,7 @@ arguments. The principal skill-to-command mappings are:
 | Recommend work | `$cc-whats-next` | `/cc-whats-next` | `whats-next` |
 | Execute approved plan | `$cc-execute-plan` | `/cc-execute-plan` | `execute-plan` |
 | Run one manual task | `$cc-run-task` | `/cc-run-task` | `run-task` |
+| Approve additional task files | human gate | human gate | `approve-scope-expansion` |
 | Finish a run | `$cc-finish-work` | `/cc-finish-work` | `finish-work` |
 | Curate context | `$cc-sync-context` | `/cc-sync-context` | `sync-context` |
 | Onboarding pack | host skill | host skill | `onboarding-pack` |

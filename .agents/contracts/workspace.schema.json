@@ -52,7 +52,7 @@
         "human_gates": {
           "type": "array",
           "uniqueItems": true,
-          "items": { "enum": ["plan-approval", "task-selection", "merge"] }
+          "items": { "enum": ["plan-approval", "task-selection", "scope-expansion", "merge"] }
         },
         "maximum_repair_attempts": { "type": "integer", "minimum": 0, "maximum": 10 },
         "wrapper_change_policy": { "enum": ["pull-request", "direct-commit"] },
