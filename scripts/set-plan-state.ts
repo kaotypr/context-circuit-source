@@ -1,27 +1,10 @@
-import { dirname, join, resolve } from "node:path";
-import { parseArgs } from "node:util";
-import { fileURLToPath } from "node:url";
-import { assertInside } from "./lib/io.js";
-import { resolveRootPlanDirectory, setPlanState, type PlanStateTransition } from "./lib/plans.js";
+import { dirname, resolve } from "node:path"
+import { parseArgs } from "node:util"
+import { fileURLToPath } from "node:url"
+import { setPlanStatus } from "./lib/plans.js"
+import type { PlanStatus } from "./lib/types.js"
 
-const { values } = parseArgs({
-  options: {
-    plan: { type: "string" },
-    "approve-by": { type: "string" },
-    "material-revision": { type: "string" },
-    "non-material-repair": { type: "boolean", default: false },
-  },
-});
-if (!values.plan) throw new Error("Usage: cc set-plan-state --plan plans/<repository-key>-plans/<number>-<slug> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
-const requested = [Boolean(values["approve-by"]), Boolean(values["material-revision"]), values["non-material-repair"]].filter(Boolean).length;
-if (requested !== 1) throw new Error("Choose exactly one plan state transition");
-let transition: PlanStateTransition;
-if (values["approve-by"]) transition = { kind: "approve", approved_by: values["approve-by"] };
-else if (values["material-revision"]) transition = { kind: "material-revision", reason: values["material-revision"] };
-else transition = { kind: "non-material-repair" };
-const workspaceRoot = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."));
-const planReference = values.plan.trim();
-const planDirectory = planReference.startsWith("context/plans/")
-  ? assertInside(join(workspaceRoot, "context", "plans"), resolve(workspaceRoot, planReference))
-  : await resolveRootPlanDirectory(workspaceRoot, planReference);
-console.log(JSON.stringify(await setPlanState(planDirectory, transition), null, 2));
+const { values } = parseArgs({ options: { plan: { type: "string" }, status: { type: "string" } } })
+if (!values.plan || !values.status || !["draft", "approved", "done"].includes(values.status)) throw new Error("Usage: cc set-plan-state --plan <reference> --status <draft|approved|done>")
+const root = resolve(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve(dirname(fileURLToPath(import.meta.url)), ".."))
+console.log(JSON.stringify(await setPlanStatus(root, values.plan, values.status as PlanStatus), null, 2))

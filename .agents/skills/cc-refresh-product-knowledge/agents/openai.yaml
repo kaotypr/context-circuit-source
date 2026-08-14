@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Refresh Product Knowledge"
+  short_description: "Propose Product Knowledge refreshes"
+  default_prompt: "Use $cc-refresh-product-knowledge to detect changed sources and propose a human-reviewed refresh."

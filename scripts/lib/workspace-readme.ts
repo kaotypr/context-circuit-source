@@ -39,10 +39,14 @@ ${repositoryRows(config)}
 
 - Configure this wrapper: \`$cc-configure-workspace\` (Codex) or \`/cc-configure-workspace\` (Claude Code).
 - Choose reviewed work: \`$cc-whats-next\`.
-- Execute an approved numbered plan: \`$cc-execute-plan\`.
-- Run one rare manual task: \`$cc-run-task\`.
-- Create and review numbered plans: \`$cc-create-plan\`.
-- Curate completed-work learning: \`$cc-sync-context\`.
+  - Import or refresh Product Knowledge: \`$cc-import-product-knowledge\`, \`$cc-refresh-product-knowledge\`.
+  - Shape an empty workspace idea: \`$cc-idea-brief\`.
+  - Create and review numbered plans: \`$cc-create-plan\`.
+  - Choose reviewed work: \`$cc-whats-next\`.
+  - Optionally publish the plan and tasks before execution: \`$cc-publish-plan\`.
+  - Run one approved plan continuously in its isolated domain worktree: \`$cc-run-task\`.
+  - Review the whole plan once: \`$cc-review-plan\`.
+  - Publish, archive, or unarchive plans only when explicitly requested.
 
 ## Project context
 
@@ -53,7 +57,7 @@ ${repositoryRows(config)}
 ${sourceLinks(config)}
 - [Root plan roadmap](plans/)
 
-Workspace mode: **${config.workspace.mode}**. Review mode: **${config.workflow.review_mode ?? (config.workflow.wrapper_change_policy === "pull-request" ? "remote" : "local")}**.
+Workspace mode: **${config.workspace.mode}**. Human control is required for Idea Brief confirmation, plan approval, plan selection, publication, review, status changes, and archiving.
 ${managedEnd}`;
 }
 

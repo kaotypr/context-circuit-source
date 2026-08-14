@@ -1,55 +1,23 @@
 # Command reference
 
-`.agents/bin/cc.mjs` is the dependency-free deterministic engine shared by
-Codex and Claude Code. Skills decide what should happen; the command validates
-and records how it happens.
+All commands are available through `node .agents/bin/cc.mjs <command>`.
 
-It provides workspace validation and bootstrap, task normalization, Git
-worktree preparation, result recording, bounded repair, review handoff,
-planning, lifecycle records, verified human merge confirmation, closeout, recommendations, publication records,
-and context synchronization.
+| Command | Purpose |
+| --- | --- |
+| `configure-workspace --request <file>` | Configure a wrapper or inspect it with `--check-only`. |
+| Skill `$cc-idea-brief` | Discuss an early idea and create a human-reviewed `context/IDEA-BRIEF.md`. |
+| `import-product-knowledge --source <path>` | Record a source and create missing Product Knowledge pages. |
+| `refresh-product-knowledge` | Print a proposal for changed sources. |
+| `create-plan --input <file>` | Create one or more numbered draft plans. |
+| `validate-plan <path>` | Check one plan, its tasks, references, and dependency graph. |
+| `validate` | Check workspace, Product Knowledge, all active and archived plans, and collisions. |
+| `whats-next` | Read-only recommendation from approved plans. |
+| `run-task --plan <ref>` | Run the whole approved plan continuously in its plan-scoped domain worktree. |
+| `review-plan --plan <ref> --worktree <path>` | Optional read-only review summary for the whole plan after execution. |
+| `set-plan-state --plan <ref> --status <status>` | Explicitly set `draft`, `approved`, or `done`. |
+| `set-task-state --plan <ref> --task <id> --status <status>` | Explicitly set a task status. |
+| `publish-plan --plan <ref> --references <file>` | Optionally store plan/task external URLs before execution, without status changes. |
+| `archive-plan <ref>` | Move one exact plan to `archives/plans/<repository-key>-plans/`. |
+| `unarchive-plan <ref>` | Restore one archived plan to `plans/<repository-key>-plans/` after collision checks. |
 
-Run it from the wrapper root:
-
-```bash
-node .agents/bin/cc.mjs validate
-node .agents/bin/cc.mjs configure-workspace --check-only
-node .agents/bin/cc.mjs whats-next
-```
-
-Humans normally invoke host skills rather than assembling low-level command
-arguments. The principal skill-to-command mappings are:
-
-| Human action | Codex | Claude Code | Deterministic command |
-| --- | --- | --- | --- |
-| Configure | `$cc-configure-workspace` | `/cc-configure-workspace` | `configure-workspace` |
-| Initialize (compatibility) | `$cc-initialize-workspace` | `/cc-initialize-workspace` | `initialize-workspace` |
-| Gather context (read-only) | `$cc-gather-context` | `/cc-gather-context` | host read-only tools |
-| Import repository context | `$cc-import-context` | `/cc-import-context` | `import-context` |
-| Plan | `$cc-create-plan` | `/cc-create-plan` | `create-plan` |
-| Recommend work | `$cc-whats-next` | `/cc-whats-next` | `whats-next` |
-| Execute approved plan | `$cc-execute-plan` | `/cc-execute-plan` | `execute-plan` |
-| Run one manual task | `$cc-run-task` | `/cc-run-task` | `run-task` |
-| Approve additional task files | human gate | human gate | `approve-scope-expansion` |
-| Finish a run | `$cc-finish-work` | `/cc-finish-work` | `finish-work` |
-| Curate context | `$cc-sync-context` | `/cc-sync-context` | `sync-context` |
-| Onboarding pack | host skill | host skill | `onboarding-pack` |
-
-`onboarding-pack --roles <role[,role...]>` generates a revision-stamped Product
-Knowledge onboarding view. See [product-knowledge.md](product-knowledge.md) for the
-full Product Knowledge lifecycle.
-
-`import-context --request <request.json>` discovers bounded evidence from one
-registered repository without modifying it and emits a source-cited contribution
-snapshot. The `cc-import-context` skill reviews and curates that evidence before
-using the existing `sync-context` and `prepare-context-review` commands. See
-[context-sync.md](context-sync.md) for the complete handoff and safety boundaries.
-
-Additional recorder and preparation subcommands are internal workflow steps.
-Use them only when a skill or generated runtime instruction provides the exact
-arguments. Run `validate --check-paths --check-documents` for the strongest
-general workspace check.
-
-The bundle does not call an AI model, store credentials, run a service, push,
-merge, or deploy. Host adapters remain responsible for fresh agent sessions and
-explicitly authorized external tools.
+Commands do not create external activity records or require generated schema files. Publication providers are optional adapters and external URLs are the only publication state stored in plan/task YAML.
