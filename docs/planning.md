@@ -1,15 +1,24 @@
 # Planning
 
-Plans are numbered peer documents, not workflow contracts. A plan is located at:
+Plans define human-reviewed intended work. They are not the workspace session
+itself and they do not replace runtime execution state.
 
-```text
-plans/<repository-key>-plans/<number>-<slug>/
-```
+A plan should have:
 
-`plan.yaml` contains the plan ID, number, title, track, status, source, repositories, plan dependencies, connections, and optional Product Knowledge references. The seven companion Markdown files explain the overview, requirements, acceptance criteria, solution, delivery, verification, and risks.
+- one repository domain where code changes are expected;
+- a clear objective and source;
+- implementation scope and non-goals;
+- Product Knowledge references;
+- dependencies and connections;
+- acceptance criteria;
+- test scope and verification commands;
+- risks, assumptions, and open questions;
+- tasks with explicit dependencies and bounded scopes.
 
-Task files use YAML frontmatter. Useful fields include `id`, `plan_id`, `title`, `status`, `description`, `repository`, `area`, `parent_task`, `dependencies`, `subtasks`, `connections`, `implementation_scope`, `test_scope`, `test_expectations`, `verification_commands`, `acceptance_criteria`, Product Knowledge references, and an optional external URL.
+Plans and tasks begin as draft. Human approval is explicit. Runtime session
+state may say that a plan is being executed, blocked, or awaiting review, but it
+must never silently change the plan or task status.
 
-Fields may be omitted when they do not apply. Lightweight validation checks YAML parsing, core statuses, identity and reference resolution, registered repositories, local references, and dependency cycles. It does not demand placeholder evidence, hashes, digests, or empty ceremony.
-
-New plans and tasks begin as `draft`. Approval and completion are explicit human actions. Editing approved content should prompt the human to consider reapproval, but Context Circuit does not manufacture digest or lifecycle evidence.
+For large projects, prefer several coherent plans by domain or repository
+boundary rather than one unbounded plan. Multiple approved plans may execute
+concurrently when their worktrees and ownership are distinct.

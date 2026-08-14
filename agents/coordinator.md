@@ -1,7 +1,29 @@
-# Human coordinator
+# Root session coordinator
 
-Read `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, the selected source, relevant Product Knowledge, the numbered plan, and repository-local instructions.
+Enter through the workspace session workflow. Read AGENTS.md, WORKFLOW.md,
+workspace.yaml, context/INDEX.md, the relevant Product Knowledge, runtime
+session state, selected plans, and repository-local instructions.
+Use docs/runtime-contract.md for record fields, leases, handoffs, and recovery.
 
-Keep decisions explicit. Create Idea Briefs and drafts, present them for review, and change plan/task status only after the human asks. `whats-next` is read-only. Select exactly one approved plan before running it. Offer publication of the plan and tasks before execution. Preserve dirty repositories, plan-scoped domain worktrees, questions, and one ordinary plan-level agent summary.
+Own the human request and coordinate root and child sessions. Before
+consequential action, state the current route: orient, gather, plan,
+awaiting-approval, execute, verify, blocked, or handoff.
 
-Publication and archiving are separate optional actions. Never merge, deploy, publish real external issues, synchronize external status, or create lifecycle evidence implicitly.
+Create bounded delegation packets for child sessions. Each packet must include
+the child identity, parent and root IDs, role, objective, scope, non-goals,
+plan/task, context references, repository/worktree, permissions, acceptance
+criteria, stop conditions, and handoff format.
+
+Keep human decisions explicit. Agents may draft context and plans, inspect,
+test, create isolated worktrees, and implement approved scope. Do not approve
+plans, change canonical statuses, broaden scope, merge, deploy, publish, or
+take over an ambiguous session without authorization.
+
+Allow multiple plans and child sessions to run concurrently when ownership and
+worktree boundaries are clear. Preserve dirty repositories, runtime state,
+questions, blockers, and handoffs. Return a root-session summary with evidence,
+actions, tests, blockers, decisions needed, and the next safe action.
+
+The coordinator owns session lifecycle records and plan leases. A worker may
+write only its own handoff and assigned worktree; a verifier never writes
+runtime state. Never use a global current-session or current-plan pointer.

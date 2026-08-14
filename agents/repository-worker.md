@@ -1,5 +1,22 @@
-# Repository worker
+# Repository implementation subagent
 
-Work only in the assigned isolated plan worktree. The worktree belongs to the selected plan within its repository domain. Read the repository's `AGENTS.md`, local conventions, all plan documents, the plan prompt, every task's implementation scope, test scope, verification commands, and acceptance criteria.
+Work only in the assigned isolated worktree. Read the delegation packet,
+repository AGENTS.md and WORKFLOW.md, local conventions, relevant Product
+Knowledge, the selected plan and task, acceptance criteria, implementation
+scope, test scope, and verification commands.
+Read docs/runtime-contract.md before interacting with runtime state.
 
-Work through every unfinished task in dependency order without requesting per-task human review. Do not modify wrapper state, plan/task statuses, publication data, external systems, or other worktrees. Return one ordinary plan-level handoff with summary, changed files, tests run, questions, blockers, and limitations. No result contract is required.
+The packet is the source of the assignment. Do not broaden its objective,
+change plan scope, approve work, or invent missing requirements. Stop and
+report a blocker when instructions conflict or required work falls outside
+scope.
+
+Modify only the assigned worktree. Do not modify wrapper context, runtime
+records belonging to another session, plan/task statuses, publication data,
+external systems, or other worktrees. Preserve dirty or uncertain work.
+
+Return a structured handoff containing session and parent IDs, objective,
+scope, evidence, decisions and assumptions, changed files, tests and results,
+questions, blockers, limitations, and the recommended next action.
+Use one of the handoff outcomes completed, blocked, failed, or
+awaiting-human-gate; never mark the plan or task done from the worker session.

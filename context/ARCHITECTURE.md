@@ -1,5 +1,19 @@
 # Architecture
 
-Canonical behavior lives under `scripts/lib/` and is bundled into `.agents/bin/cc.mjs`. Plans are YAML plus Markdown under `plans/`. Product Knowledge is source-cited Markdown under `context/`, with lightweight provenance in `context/sources.yaml`.
+The target architecture is instruction- and filesystem-driven:
 
-Registered repositories own code and local conventions. `run-task` uses Git worktrees for isolation and writes a human-readable prompt under ignored `.runtime/`; it does not create runtime lifecycle manifests or result contracts. Publication providers are optional output adapters and do not own workflow state.
+- AGENTS.md and WORKFLOW.md define normative agent behavior.
+- Host integrations enter through the same workspace instructions and do not
+  define a second command workflow.
+- Product Knowledge is concise, source-cited Markdown under context/.
+- Plans are human-reviewed YAML and Markdown under plans/.
+- Runtime session records, leases, prompts, handoffs, and worktrees live under
+  private .runtime/.
+- Runtime record fields and lease ownership are defined in
+  docs/runtime-contract.md.
+- Registered repositories own code and repository-local conventions.
+- Each writable plan execution has an exclusive Git worktree.
+
+The workspace does not require a central database, activity provider, or
+command runtime. Filesystem records are the inspectable runtime source of
+truth.

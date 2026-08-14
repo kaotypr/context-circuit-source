@@ -4,16 +4,16 @@ template_version: 0.3.0
 workspace:
   name: uninitialized-workspace
   mode: team
-  default_branch: main
+  default_branch: development
 
 repositories:
   context-circuit:
     path: .
     mode: submodule
-    role: Context Circuit framework source; Product Knowledge and workflow capability
-      is developed in-place by maintainer commits, not run-task worktree fan-out.
+    role: Context Circuit framework source; Product Knowledge and workflow
+      capability is developed through plan-scoped repository worktrees.
     agent: repository-worker
-    default_branch: main
+    default_branch: development
 
 context:
   sources_file: context/sources.yaml

@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC What's Next"
-  short_description: "Recommend one safe next action"
-  default_prompt: "Use $cc-whats-next to recommend one read-only, source-backed next action."

@@ -1,12 +1,34 @@
-# Plan execution
+# Plan execution in the agent workspace
 
-`run-task` is the explicit execution gate for one approved plan. It reads the plan, Product Knowledge references, repository instructions, plan documents, and all unfinished tasks. It requires one repository domain and a clean repository base when the plan worktree is first created, then creates or reuses one isolated branch/worktree and writes a plan-level Markdown prompt under `.runtime/plans/`.
+Plan execution is one stage of the workspace session workflow, not a command
+the user invokes.
 
-```sh
-node .agents/bin/cc.mjs run-task \
-  --plan plans/api-plans/0010-checkout
-```
+A root session executes an approved plan by:
 
-The handoff includes the plan domain, worktree, branch, base commit, prompt, changed-file review commands, and every task's acceptance/test expectations. The agent works through unfinished tasks in dependency order in the same worktree without asking for human review between tasks.
+1. Confirming the plan is approved and has unfinished work.
+2. Acquiring the plan lease.
+3. Creating or reusing the plan's exclusive repository worktree.
+4. Writing a session-scoped delegation packet or plan prompt.
+5. Delegating bounded implementation and verification work.
+6. Continuing through dependency-ready tasks within approved scope.
+7. Recording tests, findings, blockers, and the next handoff.
 
-The agent returns one ordinary plan-level summary. No machine-readable result artifact or automatic status change is required. `$cc-review-plan` is the one optional whole-plan review after execution.
+A plan has at most one active writing owner. Read-only research and verification
+sessions may inspect its worktree, but two writing sessions must never share it.
+
+The runtime contract uses an exclusive plan lease and records the owning
+session, root session, worktree, heartbeat, and release state. A same-plan
+contender becomes blocked; it must not modify the plan, task, lease, or worker
+worktree. Different plans may proceed concurrently.
+
+The session must stop and ask for a human decision when the scope, acceptance
+criteria, repository boundary, or safety assumptions materially change. It must
+not change plan or task status merely because implementation or tests appear
+complete.
+
+There is no run-task command. The coordinator and repository-worker
+instructions define the execution behavior, while the filesystem lease,
+worktree, prompt, and handoff records make the state resumable and inspectable.
+
+See docs/runtime-contract.md for record fields, atomic acquisition, recovery,
+and handoff rules.

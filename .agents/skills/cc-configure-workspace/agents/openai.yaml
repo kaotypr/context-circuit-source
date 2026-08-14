@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Configure Workspace"
-  short_description: "Configure a Context Circuit wrapper"
-  default_prompt: "Use $cc-configure-workspace to inspect and configure this wrapper safely."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Import Product Knowledge"
-  short_description: "Import source-cited Product Knowledge"
-  default_prompt: "Use $cc-import-product-knowledge to import this source into concise, cited Product Knowledge."

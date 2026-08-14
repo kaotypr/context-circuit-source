@@ -1,80 +1,77 @@
-# Getting started
+# Getting started as an AI agent
 
-Context Circuit stores wrapper context in `context/`, plans in `plans/`, and registered repositories in `workspace.yaml`.
+Context Circuit is entered through a host agent session. The user should be
+able to say:
 
-## 0. Start with an Idea Brief when the workspace is empty
+> Start or resume work in this workspace.
 
-If there are no useful source documents, plans, or registered repositories yet, use `$cc-idea-brief`. Discuss the problem, users, desired outcome, scope, constraints, and unknowns, then create the human-reviewed `context/IDEA-BRIEF.md`.
+## 1. Enter and orient
 
-After the human confirms the brief, import it as source-cited Product Knowledge:
+Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md, relevant
+Product Knowledge, active runtime sessions, plans, repository instructions,
+and observed Git state.
 
-```sh
-node .agents/bin/cc.mjs import-product-knowledge --source context/IDEA-BRIEF.md
-```
+Identify whether this is:
 
-Configure a repository/domain and create a numbered plan only after the idea has enough shape.
+- a new workspace or project;
+- a new PRD or source;
+- an unfinished root session;
+- a delegated child session;
+- an approved plan ready to execute;
+- a verification, review, or blocked session.
 
-## 1. Configure
+Explain the selected route before consequential action.
 
-Use `$cc-configure-workspace` or create a setup request and run:
+## 2. Start with a PRD or source
 
-```sh
-node .agents/bin/cc.mjs configure-workspace --request setup.json
-```
+When the user provides a PRD, source document, or repository evidence:
 
-The setup request is ordinary JSON/YAML-shaped data. It names the workspace, repositories, default branches, and any explicitly authorized Git initialization. It must not contain credentials.
+1. Read the source.
+2. Separate stated requirements, current behavior, assumptions, unknowns, and
+   evidence.
+3. Draft concise Product Knowledge with source references.
+4. Present the draft for human confirmation.
+5. Do not silently replace accepted context.
 
-## 2. Import Product Knowledge
+If no useful source or repository exists, ask focused discovery questions before
+creating Product Knowledge or a plan.
 
-```sh
-node .agents/bin/cc.mjs import-product-knowledge --source docs/product-requirements.md
-node .agents/bin/cc.mjs refresh-product-knowledge
-```
+## 3. Create and approve work
 
-The source register is `context/sources.yaml`. A refresh prints a proposal; it never silently overwrites canonical pages.
+When context is sufficient:
 
-## 3. Create and approve a plan
+1. Propose one or more plans by coherent domain or repository boundary.
+2. Include dependencies, acceptance criteria, implementation scope, test scope,
+   and verification commands.
+3. Present plans as drafts.
+4. Wait for explicit human approval.
+5. Do not infer approval from conversation tone, tests, or agent output.
 
-Prepare a request with a title, source, repository, and tasks, then run:
+## 4. Execute with sessions
 
-```sh
-node .agents/bin/cc.mjs create-plan --input plan-request.json
-node .agents/bin/cc.mjs validate-plan plans/my-repo-plans/0010-example
-node .agents/bin/cc.mjs set-plan-state --plan plans/my-repo-plans/0010-example --status approved
-```
+After approval, the root session may:
 
-The generated layout is:
+- claim a plan execution;
+- create or reuse its exclusive worktree;
+- delegate research, implementation, or verification subagents;
+- continue through dependency-ready tasks;
+- iterate between implementation and verification within approved scope;
+- pause when scope or assumptions materially change.
 
-```text
-plans/my-repo-plans/0010-example/
-  plan.yaml
-  overview.md
-  requirements.md
-  acceptance-criteria.md
-  solution.md
-  delivery.md
-  verification.md
-  risks.md
-  tasks/README.md
-  tasks/MY-0001.md
-```
+Every child session receives a bounded delegation packet and returns a structured
+handoff to its parent.
 
-## 4. Choose and run a plan
+## 5. Resume and finish
 
-```sh
-node .agents/bin/cc.mjs whats-next
-node .agents/bin/cc.mjs publish-plan --plan plans/my-repo-plans/0010-example --references publication-urls.json
-node .agents/bin/cc.mjs run-task --plan plans/my-repo-plans/0010-example
-```
+At the end of each session, record:
 
-Publication is optional and must happen before execution if chosen. `run-task` creates or reuses the plan/domain worktree and gives the agent one prompt containing the whole plan and all unfinished tasks. The agent continues through the tasks in dependency order and returns one plan-level handoff.
+- session and parent identifiers;
+- objective and current route;
+- evidence and decisions;
+- changed files and tests;
+- blockers and open questions;
+- next safe action.
 
-## 5. Review and finish manually
-
-After the agent finishes, optionally review the whole plan once:
-
-```sh
-node .agents/bin/cc.mjs review-plan --plan plans/my-repo-plans/0010-example --worktree .runtime/worktrees/my-repo/0010-example
-```
-
-Then explicitly mark tasks and the plan done when the human is satisfied. Archiving is a separate explicit action.
+The next session reads this handoff instead of relying on conversation history.
+Human review and explicit status changes remain required before work is
+considered complete.

@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Review Plan"
-  short_description: "Review one completed plan run"
-  default_prompt: "Use $cc-review-plan to review this executed plan once, read-only, against all task acceptance criteria."

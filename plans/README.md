@@ -4,4 +4,6 @@ Numbered peer plans live under `plans/<repository-key>-plans/`. Each plan is a h
 
 Active plans use `<number>-<slug>`. Manual archival moves the exact directory to `archives/plans/<repository-key>-plans/<number>-<slug>/`; archived plans are ignored by `whats-next`.
 
-Create a draft with `cc create-plan`, approve it explicitly with `cc set-plan-state`, and execute one selected task with `cc run-task`.
+Agents draft plans as Markdown and YAML, present them for explicit human
+approval, and execute approved work through session records, leases, and
+worktrees. There is no command-specific plan lifecycle.

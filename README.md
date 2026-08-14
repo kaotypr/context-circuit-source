@@ -1,36 +1,52 @@
 # Context Circuit
 
-Context Circuit is a small, human-controlled context, planning, and agent-work tool. It keeps Product Knowledge, numbered plans, task dependencies, and isolated plan worktrees in ordinary YAML and Markdown.
+Context Circuit is an AI-agent workspace for understanding a project,
+coordinating root and subagent sessions, executing approved work, and
+continuing development across sessions.
 
-The normal journey is:
+The only user-facing interaction is an agent session:
 
-1. If the workspace is empty, use `$cc-idea-brief` to discuss the idea and create `context/IDEA-BRIEF.md`.
-2. After human confirmation, import useful, source-cited facts into Product Knowledge.
-3. Create a structured draft plan and task breakdown.
-4. Human explicitly approves the plan.
-5. `whats-next` recommends an approved plan with unfinished work.
-6. Optionally publish the plan and its tasks before execution.
-7. Run the plan; the agent works continuously through its tasks in one isolated domain worktree.
-8. Human reviews the whole plan once, then explicitly marks tasks and the plan done.
-9. Archive the plan manually whenever useful.
+> Start or resume work in this workspace.
 
-Plans and task statuses are exactly `draft`, `approved`, or `done`. They are not inferred from Git, tests, publication, external issues, or agent output.
+The agent reads the workspace instructions and current runtime state, routes the
+request, delegates bounded work when useful, works in isolated repository
+worktrees, verifies results, and leaves a durable handoff. The user does not
+need to operate an internal command-line interface.
 
-## Commands
+## Workspace layers
 
-The bundled command is `node .agents/bin/cc.mjs`.
+- AGENTS.md — safety, authority, and agent behavior.
+- WORKFLOW.md — session entry, delegation, human gates, and development loop.
+- workspace.yaml — repositories, branches, and workspace configuration.
+- context/ — durable, source-cited Product Knowledge and decisions.
+- plans/ — human-reviewed intended work and task dependencies.
+- .runtime/ — private sessions, leases, prompts, handoffs, and worktrees.
+- Registered repositories — product code and repository-local conventions.
 
-- `configure-workspace` — configure or inspect the wrapper.
-- `import-product-knowledge` — import source-cited knowledge and record provenance.
-- `refresh-product-knowledge` — detect changed sources and propose a reviewable refresh.
-- `create-plan` — create numbered draft plans and tasks.
-- `whats-next` — read-only dependency-aware recommendation.
-- `cc-idea-brief` — discuss an early idea and create a human-reviewed Idea Brief.
-- `run-task --plan <ref>` — run the entire approved plan continuously in its isolated domain worktree.
-- `review-plan` — optional read-only review of the whole plan after execution.
-- `publish-plan` — optional publication of the plan and its tasks before execution.
-- `archive-plan` / `unarchive-plan` — manual location-based plan archival.
-- `set-plan-state` / `set-task-state` — explicit human status changes.
-- `validate` / `validate-plan` — lightweight YAML, Markdown, reference, and graph checks.
+## Session model
 
-See [getting started](docs/getting-started.md) and [the command reference](docs/command-reference.md).
+A root session owns the human request and may coordinate multiple child
+sessions. Each child receives an explicit objective, scope, permissions, plan or
+task, context references, stop conditions, and handoff format.
+
+Multiple sessions and plans may run concurrently. A plan has at most one active
+writing owner, and each writable worktree is exclusive.
+
+## Development loop
+
+The normal loop is:
+
+orient → gather → draft context → draft plan → human approval → execute →
+verify → review or repair within scope → handoff → resume or close.
+
+Plans and tasks remain human-controlled. Agents do not infer approval or
+completion from tests, Git state, child output, or external systems.
+
+## Documentation
+
+Read the agreed workflow contract in
+docs/agent-workspace-workflow.md, then use context/INDEX.md to find the
+smallest relevant project context.
+
+There is no user-facing command layer. Hosts enter through the same agent
+instructions and use the filesystem records as the coordination surface.

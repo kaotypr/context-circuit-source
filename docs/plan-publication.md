@@ -1,12 +1,27 @@
-# Publish a plan before execution
+# Publication
 
-Publication is optional and human-controlled. After a plan is approved and before execution, the human may publish the plan and selected tasks through a provider adapter.
+Publication is an optional human-authorized action after a plan is approved and
+before external execution or collaboration.
 
-```sh
-node .agents/bin/cc.mjs publish-plan \
-  --plan plans/api-plans/0010-checkout \
-  --provider github \
-  --references publication-urls.json
-```
+The root session may prepare publication information and explain:
 
-The references file contains stable IDs and URLs for the plan or its tasks. Publication preserves plan/task IDs and may store the current external URLs in `plan.yaml` and task frontmatter. It does not change statuses, start execution, monitor external state, or synchronize completion back into Context Circuit.
+- which plan and tasks would be published;
+- which external provider or destination is involved;
+- what identifiers or URLs would be stored;
+- what publication cannot change;
+- what risks or irreversible effects exist.
+
+The human explicitly authorizes publication. The agent must not publish, merge,
+deploy, create external issues, or synchronize external status implicitly.
+
+Publication does not:
+
+- approve a plan;
+- change plan or task status;
+- start a session;
+- monitor external status;
+- synchronize completion back into the workspace.
+
+Publication is outside the filesystem execution protocol. If a host or
+provider integration is later added, it must remain an explicitly authorized
+adapter and must not redefine session, plan, or completion state.

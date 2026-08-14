@@ -1,5 +1,21 @@
-# Whats next
+# Choosing the next action
 
-`whats-next` is read-only. It ignores archived plans, considers only plans with `status: approved` and unfinished tasks, and requires every declared plan dependency to be done. The result recommends a whole plan, lists its remaining tasks, explains why it is ready, and includes the plan and Product Knowledge references.
+Choosing the next action is part of root-session entry, not a separate command
+the user must operate.
 
-If a source in `context/sources.yaml` has changed, the result warns that Product Knowledge may need a refresh. If nothing is executable, it recommends reviewing a draft plan or creating one. It never claims, publishes, or updates work.
+The root session inspects:
+
+- approved plans with unfinished tasks;
+- declared plan dependencies;
+- active plan leases and session ownership;
+- source freshness and Product Knowledge warnings;
+- repository cleanliness and worktree availability;
+- blockers and pending human gates.
+
+It may recommend or claim only work that is dependency-ready, explicitly scoped,
+and not already owned by another writing session. When no work is executable,
+the session should explain whether it needs context, a draft plan, human
+approval, a review, or a decision about a blocker.
+
+The recommendation is evidence-backed and read-only until the root session or
+human explicitly performs the next consequential action.
