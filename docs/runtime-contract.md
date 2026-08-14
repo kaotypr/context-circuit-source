@@ -24,6 +24,7 @@ The runtime root is .runtime/ in the workspace that owns the plan:
         owner.yaml
       lease.yaml
       prompt.md
+      completion.yaml
       handoffs/
         <session-id>-<sequence>.md
   worktrees/
@@ -38,6 +39,13 @@ session-owned handoff.
 There is deliberately no .runtime/current-session.yaml,
 .runtime/current-plan.yaml, or other global pointer. Every lookup is scoped by
 an explicit session, root session, plan, task, or repository key.
+
+On fresh root entry, the coordinator creates its own session record before
+delegating work or claiming a plan. The root record uses `kind: root`,
+`parent_session_id: null`, and a unique session ID. If no session record is
+present, the route is `orienting`; it must not be treated as an implicit active
+session. Resume reads the explicit record and latest handoff before choosing
+the next action.
 
 ## Safe identifiers and write rules
 
@@ -147,6 +155,11 @@ children concurrently, but each write-enabled child receives a different
 worktree and a non-overlapping ownership assignment unless the parent has an
 explicit integration step.
 
+For a verifier, `write_worktree`, `write_plan`, and `write_activity` must be
+false. `write_runtime_session: true` permits writes only to that verifier's own
+session directory and handoff; it does not permit changing worker, lease, plan,
+worktree, or activity records.
+
 ## Plan lease
 
 The live lease is .runtime/plans/<plan-id>/lease.yaml, guarded by the
@@ -188,6 +201,29 @@ worker must verify its current Git root, branch, and path before writing. The
 base checkout, another plan worktree, wrapper context, and external activity
 state are outside the worker's write scope. A verifier may inspect a worktree
 but has write_worktree: false.
+
+## Completion gate
+
+The coordinator may prepare `.runtime/plans/<plan-id>/completion.yaml` only
+after every task has a durable evidence record, the independent verifier has a
+completed passing handoff, and no blocking or failed evidence remains. The
+runtime completion record may use `status: blocked` or
+`status: ready-for-human-status-change` and must identify the verifier and
+human gate evidence.
+
+Its minimum evidence fields are:
+
+~~~yaml
+schema_version: 1
+plan: plans/context-circuit-plans/0001-example
+status: ready-for-human-status-change
+verifier_session_id: sess-002
+verification_handoff: .runtime/sessions/sess-002/handoff.md
+human_gate: status-change
+canonical_status_changed: false
+~~~
+
+The completion record is evidence, not canonical intent. The canonical plan/task status remains unchanged until the human status-change gate is explicitly satisfied. A failed verifier, missing task evidence, or missing human gate keeps completion blocked.
 
 ## Handoffs
 

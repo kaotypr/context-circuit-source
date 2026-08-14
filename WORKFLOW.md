@@ -23,6 +23,10 @@ The agent must:
 6. Explain whether it is orienting, gathering context, planning, awaiting
    approval, executing, verifying, blocked, or handing off.
 
+On fresh root entry, create the root session record before claiming work. On
+resume, use the explicit session record and latest handoff; never infer a
+current session from conversation history or a global pointer.
+
 The user should be able to say “start or resume work in this workspace” without
 knowing the internal command implementation.
 

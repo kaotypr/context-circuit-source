@@ -21,6 +21,9 @@ Identify whether this is:
 - a verification, review, or blocked session.
 
 Explain the selected route before consequential action.
+For a fresh root route, create a root session record with an explicit session ID
+before delegating or claiming work. For resume, use the existing session record
+and latest handoff; never infer a current session from conversation history.
 
 ## 2. Start with a PRD or source
 
@@ -74,4 +77,5 @@ At the end of each session, record:
 
 The next session reads this handoff instead of relying on conversation history.
 Human review and explicit status changes remain required before work is
-considered complete.
+considered complete. A completion evidence record may request the human
+status-change gate, but it must not change plan or task status itself.

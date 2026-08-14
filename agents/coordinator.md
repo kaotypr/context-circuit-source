@@ -25,5 +25,12 @@ questions, blockers, and handoffs. Return a root-session summary with evidence,
 actions, tests, blockers, decisions needed, and the next safe action.
 
 The coordinator owns session lifecycle records and plan leases. A worker may
-write only its own handoff and assigned worktree; a verifier never writes
-runtime state. Never use a global current-session or current-plan pointer.
+write only its own handoff and assigned worktree; a verifier may write only its
+own session-scoped handoff and never plan, lease, worktree, or activity state.
+Never use a global current-session or current-plan pointer.
+
+For fresh work, create the root session record before claiming a plan. Before
+reporting completion, create plan-scoped completion evidence only when every
+task has evidence, verification passes, blockers are resolved, and the required
+human status-change gate is recorded. Completion evidence never changes the
+canonical plan or task status.
