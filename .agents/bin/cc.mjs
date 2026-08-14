@@ -17554,7 +17554,7 @@ function renderRootPlan(definition, number, createdAt, collection) {
   const track = definition.track ?? "epic";
   const slug = planSlug(definition.slug ?? definition.plan_id);
   const folder = rootPlanPath(collection, track, number, slug);
-  const planReference = rootPlanReference(collection, track, number, slug, 1);
+  const planReference2 = rootPlanReference(collection, track, number, slug, 1);
   const source = definition.source ?? { kind: "document", reference: "generated request" };
   const items = rootWorkItems(definition);
   const taskFiles = items.map((item) => `tasks/${item.work_id}.md`);
@@ -17598,12 +17598,12 @@ ${JSON.stringify(execution, null, 2)}
     repository_collection: collection,
     track,
     plan_number: number,
-    plan_reference: planReference,
+    plan_reference: planReference2,
     status: "draft",
     status_updated_at: createdAt,
     status_reason: "Generated plan draft",
     status_actor: "engine",
-    status_evidence: planReference,
+    status_evidence: planReference2,
     archived_at: null,
     plan_version: 1,
     approved_at: null,
@@ -17642,7 +17642,7 @@ ${links}
 - Collection: ${collection}
 - Track: ${track}
 - Stable number: ${number}
-- Plan reference: ${planReference}
+- Plan reference: ${planReference2}
 
 Human approval is required before execution. Live task status belongs in runtime evidence, not this plan.
 `);
@@ -21054,7 +21054,7 @@ function cleanupRerun(record) {
 function contributionDocument(manifest2, repository, brief, record) {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
-  const planReference = manifest2.plan_reference ?? brief.plan?.reference ?? "none";
+  const planReference2 = manifest2.plan_reference ?? brief.plan?.reference ?? "none";
   const productKnowledge = record.product_knowledge ?? { impact: "not-reported", synchronization: "not-required" };
   const productKnowledgeBody = `- Impact: ${productKnowledge.impact}
 - Synchronization: ${productKnowledge.synchronization}${productKnowledge.notes ? `
@@ -21063,7 +21063,7 @@ function contributionDocument(manifest2, repository, brief, record) {
 
 - Run: \`${manifest2.run_id}\`
 - Task source: ${manifest2.source_kind}
-- Plan: ${planReference === "none" ? "none" : `\`${planReference}\``}
+- Plan: ${planReference2 === "none" ? "none" : `\`${planReference2}\``}
 - Author: \`${record.author}\`
 
 ## Outcome
@@ -21598,7 +21598,7 @@ var init_validate_plan = __esm({
     init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
     ({ positionals: positionals2 } = parseArgs13({ allowPositionals: true }));
-    if (!positionals2[0]) throw new Error("Usage: cc validate-plan context/plans/<plan-id>");
+    if (!positionals2[0]) throw new Error("Usage: cc validate-plan plans/<repository-key>-plans/<number>-<slug>");
     planDirectory = resolve25(process.cwd(), positionals2[0]);
     result2 = await validatePlanDirectory(planDirectory);
     if (result2.errors.length > 0) {
@@ -21616,7 +21616,7 @@ var set_plan_state_exports = {};
 import { dirname as dirname19, join as join13, resolve as resolve26 } from "node:path";
 import { parseArgs as parseArgs14 } from "node:util";
 import { fileURLToPath as fileURLToPath14 } from "node:url";
-var values13, requested, transition, workspaceRoot13, planDirectory2;
+var values13, requested, transition, workspaceRoot13, planReference, planDirectory2;
 var init_set_plan_state = __esm({
   async "scripts/set-plan-state.ts"() {
     "use strict";
@@ -21631,14 +21631,15 @@ var init_set_plan_state = __esm({
         "non-material-repair": { type: "boolean", default: false }
       }
     }));
-    if (!values13.plan) throw new Error("Usage: cc set-plan-state --plan context/plans/<plan-id> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
+    if (!values13.plan) throw new Error("Usage: cc set-plan-state --plan plans/<repository-key>-plans/<number>-<slug> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
     requested = [Boolean(values13["approve-by"]), Boolean(values13["material-revision"]), values13["non-material-repair"]].filter(Boolean).length;
     if (requested !== 1) throw new Error("Choose exactly one plan state transition");
     if (values13["approve-by"]) transition = { kind: "approve", approved_by: values13["approve-by"] };
     else if (values13["material-revision"]) transition = { kind: "material-revision", reason: values13["material-revision"] };
     else transition = { kind: "non-material-repair" };
     workspaceRoot13 = resolve26(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve26(dirname19(fileURLToPath14(import.meta.url)), ".."));
-    planDirectory2 = assertInside(join13(workspaceRoot13, "context", "plans"), resolve26(process.cwd(), values13.plan));
+    planReference = values13.plan.trim();
+    planDirectory2 = planReference.startsWith("context/plans/") ? assertInside(join13(workspaceRoot13, "context", "plans"), resolve26(workspaceRoot13, planReference)) : await resolveRootPlanDirectory(workspaceRoot13, planReference);
     console.log(JSON.stringify(await setPlanState(planDirectory2, transition), null, 2));
   }
 });
@@ -21817,14 +21818,14 @@ async function discoverRuntimeObservations(workspaceRoot23) {
         const planDirectory4 = await resolveRootPlanDirectory(workspaceRoot23, manifest2.plan_reference);
         const plan2 = await validatePlanDirectory(planDirectory4);
         if (!plan2.index || !plan2.work_breakdown || plan2.errors.length > 0 || plan2.index.plan_id !== manifest2.plan_id) throw new Error("root plan runtime does not match a valid numbered plan");
-        const planReference2 = relative9(workspaceRoot23, planDirectory4).replaceAll("\\", "/");
+        const planReference3 = relative9(workspaceRoot23, planDirectory4).replaceAll("\\", "/");
         for (const item2 of manifest2.plan_work_items) {
           const currentItem2 = plan2.work_breakdown.items.find((candidate) => candidate.work_id === item2.work_id);
           if (!currentItem2 || currentItem2.repository !== item2.repository) throw new Error(`root plan runtime task does not match current approved plan: ${item2.work_id}`);
           const state2 = runtimeState(manifest2, item2.work_id);
           const source_reference = reference(workspaceRoot23, manifestPath);
           const values24 = observations.get(item2.work_id) ?? [];
-          values24.push({ state: state2, source_reference, precedence: 20, plan_reference: planReference2, run_id: manifest2.run_id });
+          values24.push({ state: state2, source_reference, precedence: 20, plan_reference: planReference3, run_id: manifest2.run_id });
           observations.set(item2.work_id, values24);
         }
         continue;
@@ -21839,8 +21840,8 @@ async function discoverRuntimeObservations(workspaceRoot23) {
       const repository = manifest2.repositories[0];
       if (item.work_id !== manifest2.work_id || brief.plan.work_ids[0] !== item.work_id || item.repository !== repository.name || brief.repositories[0].name !== item.repository) throw new Error("work item or repository identity differs between manifest and task brief");
       if (brief.source.reference !== brief.plan.reference) throw new Error("task brief plan references differ");
-      const planReference = brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, "");
-      const planDirectory3 = resolve27(workspaceRoot23, planReference);
+      const planReference2 = brief.plan.reference.replace(/\/README\.md$/, "").replace(/\/$/, "");
+      const planDirectory3 = resolve27(workspaceRoot23, planReference2);
       const plansRoot = resolve27(workspaceRoot23, "context", "plans");
       if (!inside(plansRoot, planDirectory3) || planDirectory3 === plansRoot) throw new Error("task brief plan reference is outside context/plans");
       const plansInfo = await lstat8(plansRoot);
@@ -21865,7 +21866,7 @@ async function discoverRuntimeObservations(workspaceRoot23) {
       const briefReference = reference(workspaceRoot23, manifest2.task_brief);
       const sources = [manifestReference, briefReference, ...closeoutReference ? [closeoutReference] : []];
       const values23 = observations.get(item.work_id) ?? [];
-      for (const source_reference of sources) values23.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: planReference, run_id: manifest2.run_id });
+      for (const source_reference of sources) values23.push({ state, source_reference, precedence: state === "completed" || state === "cancelled" ? 30 : 20, plan_reference: planReference2, run_id: manifest2.run_id });
       observations.set(item.work_id, values23);
       runs.set(manifest2.run_id, { manifest: manifest2, brief, manifest_reference: manifestReference, brief_reference: briefReference, ...closeout ? { closeout } : {}, ...closeoutReference ? { closeout_reference: closeoutReference } : {} });
     } catch (error) {
@@ -22001,7 +22002,7 @@ async function discoverPlanCandidates(workspaceRoot23, config, activityFacts, lo
         reference: dependency,
         state: projectedByWork.get(dependency)?.state === "completed" ? "completed" : projectedByWork.has(dependency) ? "pending" : "unknown"
       }));
-      const planReference = relative9(workspaceRoot23, rootMode ? planDirectory3 : join14(planDirectory3, "README.md")).replaceAll("\\", "/");
+      const planReference2 = relative9(workspaceRoot23, rootMode ? planDirectory3 : join14(planDirectory3, "README.md")).replaceAll("\\", "/");
       const state = projection?.state ?? "ready";
       const contradiction = Boolean(projection?.contradiction) || Boolean(projection) && validation.index.status !== "approved" && !rootMode || activityRepositoryMismatch;
       const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready", source_reference: `${relative9(workspaceRoot23, join14(planDirectory3, validation.index.work_breakdown))}#${item.work_id}` }];
@@ -22015,7 +22016,7 @@ async function discoverPlanCandidates(workspaceRoot23, config, activityFacts, lo
         urgent: fact?.urgent ?? false,
         priority: fact?.priority ?? 0,
         owner: fact?.owner ?? null,
-        plan_reference: planReference,
+        plan_reference: planReference2,
         plan_approval_state: validation.index.status,
         dependencies,
         scope_sufficient: fact?.scope_sufficient ?? (item.title.trim().length > 0 && repositories.length > 0),
@@ -22082,7 +22083,7 @@ async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /*
     recommendation = actionFor(blocked[0].candidate, blocked[0].blockers, config);
     alternatives = blocked.slice(1, 3).map((item) => actionFor(item.candidate, item.blockers, config));
   } else {
-    recommendation = { action: "enable", candidate_id: null, title: "Create or approve a scoped work source", why: "No executable or blocked candidate was found in the configured read-only sources.", readiness_evidence: ["approved plan candidates none: context/plans", "activity candidates none: workspace.yaml#activity", "active runtime candidates none: .runtime/runs", "durable outcome candidates none: contributions"], source_references: ["context/plans", "workspace.yaml#activity", ".runtime/runs", "contributions"], repositories: [], agent_sequence: [], blockers: ["no available candidate provides sufficient scope and acceptance criteria"], risks: [] };
+    recommendation = { action: "enable", candidate_id: null, title: "Create or approve a scoped work source", why: "No executable or blocked candidate was found in the configured read-only sources.", readiness_evidence: ["approved plan candidates none: plans", "activity candidates none: workspace.yaml#activity", "active runtime candidates none: .runtime/runs", "durable outcome candidates none: contributions"], source_references: ["plans", "workspace.yaml#activity", ".runtime/runs", "contributions"], repositories: [], agent_sequence: [], blockers: ["no available candidate provides sufficient scope and acceptance criteria"], risks: [] };
     alternatives = [];
   }
   const result3 = { contract_version: 1, generated_at: now.toISOString(), recommendation, alternatives, considered: { total: candidates.length, executable: executable.length, blocked: blocked.length, excluded: excluded.length }, warnings: [.../* @__PURE__ */ new Set([...runtime.warnings, ...durable.warnings, ...discovered.warnings])], no_state_changed: true };
