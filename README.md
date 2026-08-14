@@ -1,36 +1,36 @@
 # Context Circuit
 
-Context Circuit is a team-owned, reusable project wrapper for coordinating
-AI-assisted delivery across one or more Git repositories. It keeps workflow
-policy, durable context, plans, verification evidence, and host-neutral agent
-behavior separate from product code.
+Context Circuit is a small, human-controlled context, planning, and agent-work tool. It keeps Product Knowledge, numbered plans, task dependencies, and isolated plan worktrees in ordinary YAML and Markdown.
 
-The wrapper works with Codex and Claude Code. Plans and activity integrations
-are optional; review, merge, deployment, and destructive cleanup remain human
-decisions.
+The normal journey is:
 
-## Get started
+1. If the workspace is empty, use `$cc-idea-brief` to discuss the idea and create `context/IDEA-BRIEF.md`.
+2. After human confirmation, import useful, source-cited facts into Product Knowledge.
+3. Create a structured draft plan and task breakdown.
+4. Human explicitly approves the plan.
+5. `whats-next` recommends an approved plan with unfinished work.
+6. Optionally publish the plan and its tasks before execution.
+7. Run the plan; the agent works continuously through its tasks in one isolated domain worktree.
+8. Human reviews the whole plan once, then explicitly marks tasks and the plan done.
+9. Archive the plan manually whenever useful.
 
-Start with the [wrapper getting-started guide](docs/getting-started.md). Then use
-the [human workflow guide](docs/using-the-wrapper.md) for day-to-day delivery,
-the [configuration reference](docs/configuration.md) for workspace policy, and
-the [command reference](docs/command-reference.md) for troubleshooting or
-advanced direct use.
+Plans and task statuses are exactly `draft`, `approved`, or `done`. They are not inferred from Git, tests, publication, external issues, or agent output.
 
-The downloadable wrapper requires Git and Node.js 22 or newer. It includes the
-standalone `.agents/bin/cc.mjs` command and does not require npm installation,
-TypeScript, a database, a background service, or a provider SDK.
+## Commands
 
-## Core workflow
+The bundled command is `node .agents/bin/cc.mjs`.
 
-1. `$initialize-workspace` interviews the human and bootstraps new, cloned,
-   existing, or submodule repositories safely.
-2. `$create-plan` optionally records reviewed delivery intent.
-3. `$whats-next` recommends one source-backed action without changing state.
-4. `$run-task` prepares isolated worktrees for scoped workers and independent
-   verifiers.
-5. `$finish-work` records durable outcomes after merge or abandonment.
-6. `$sync-context` curates reusable learning through a reviewable wrapper change.
+- `configure-workspace` — configure or inspect the wrapper.
+- `import-product-knowledge` — import source-cited knowledge and record provenance.
+- `refresh-product-knowledge` — detect changed sources and propose a reviewable refresh.
+- `create-plan` — create numbered draft plans and tasks.
+- `whats-next` — read-only dependency-aware recommendation.
+- `cc-idea-brief` — discuss an early idea and create a human-reviewed Idea Brief.
+- `run-task --plan <ref>` — run the entire approved plan continuously in its isolated domain worktree.
+- `review-plan` — optional read-only review of the whole plan after execution.
+- `publish-plan` — optional publication of the plan and its tasks before execution.
+- `archive-plan` / `unarchive-plan` — manual location-based plan archival.
+- `set-plan-state` / `set-task-state` — explicit human status changes.
+- `validate` / `validate-plan` — lightweight YAML, Markdown, reference, and graph checks.
 
-Canonical behavior lives under `.agents/`. `.codex/` and `.claude/` contain thin
-host adapters only.
+See [getting started](docs/getting-started.md) and [the command reference](docs/command-reference.md).

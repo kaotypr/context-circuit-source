@@ -1,0 +1,82 @@
+import type { WorkspaceConfig } from "./types.js";
+
+const managedStart = "<!-- context-circuit:workspace:start -->";
+const managedEnd = "<!-- context-circuit:workspace:end -->";
+
+const canonicalFrameworkTitle = "# Context Circuit\n";
+
+function repositoryRows(config: WorkspaceConfig): string {
+  const repositories = Object.entries(config.repositories).sort(([left], [right]) => left.localeCompare(right));
+  if (repositories.length === 0) return "No product repositories are registered yet.";
+  return [
+    "| Repository | Role | Path | Base branch | Remote |",
+    "| --- | --- | --- | --- | --- |",
+    ...repositories.map(([name, repository]) => `| ${name} | ${repository.role} | \`${repository.path}\` | \`${repository.default_branch}\` | ${repository.remote ?? "Not recorded"} |`),
+  ].join("\n");
+}
+
+function sourceLinks(config: WorkspaceConfig): string {
+  const sources = config.context?.authoritative_sources ?? [];
+  if (sources.length === 0) return "- [Context source register](context/SOURCES.md) — no authoritative sources recorded; unknowns remain explicit.";
+  return [
+    "- [Context source register](context/SOURCES.md)",
+    ...sources.map((source) => `- ${source.kind}: ${source.reference} — ${source.purpose}`),
+  ].join("\n");
+}
+
+export function renderManagedWorkspaceReadme(config: WorkspaceConfig): string {
+  const purpose = config.workspace.purpose ?? "Project purpose has not been recorded yet.";
+  return `${managedStart}
+# ${config.workspace.name}
+
+${purpose}
+
+## Product repositories
+
+${repositoryRows(config)}
+
+## Common actions
+
+- Configure this wrapper: \`$cc-configure-workspace\` (Codex) or \`/cc-configure-workspace\` (Claude Code).
+- Choose reviewed work: \`$cc-whats-next\`.
+  - Import or refresh Product Knowledge: \`$cc-import-product-knowledge\`, \`$cc-refresh-product-knowledge\`.
+  - Shape an empty workspace idea: \`$cc-idea-brief\`.
+  - Create and review numbered plans: \`$cc-create-plan\`.
+  - Choose reviewed work: \`$cc-whats-next\`.
+  - Optionally publish the plan and tasks before execution: \`$cc-publish-plan\`.
+  - Run one approved plan continuously in its isolated domain worktree: \`$cc-run-task\`.
+  - Review the whole plan once: \`$cc-review-plan\`.
+  - Publish, archive, or unarchive plans only when explicitly requested.
+
+## Project context
+
+- [Project summary](context/PROJECT.md)
+- [Architecture](context/ARCHITECTURE.md)
+- [Conventions](context/CONVENTIONS.md)
+- [Decisions](context/DECISIONS.md)
+${sourceLinks(config)}
+- [Root plan roadmap](plans/)
+
+Workspace mode: **${config.workspace.mode}**. Human control is required for Idea Brief confirmation, plan approval, plan selection, publication, review, status changes, and archiving.
+${managedEnd}`;
+}
+
+export function reconcileWorkspaceReadme(current: string, config: WorkspaceConfig): string {
+  const managed = renderManagedWorkspaceReadme(config);
+  const starts = [...current.matchAll(new RegExp(managedStart.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  const ends = [...current.matchAll(new RegExp(managedEnd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  if (starts.length > 1 || ends.length > 1) throw new Error("README.md must contain at most one managed workspace block");
+  const start = starts[0]?.index ?? -1;
+  const end = ends[0]?.index ?? -1;
+  if ((start === -1) !== (end === -1) || (start !== -1 && end < start)) throw new Error("Malformed managed workspace block in README.md");
+  if (start !== -1) {
+    const after = end + managedEnd.length;
+    return `${current.slice(0, start)}${managed}${current.slice(after)}`.replace(/\s*$/, "\n");
+  }
+  const existing = current.trim();
+  if (!existing) return `${managed}\n`;
+  if (existing.startsWith(canonicalFrameworkTitle)) {
+    return `${managed}\n\n## Context Circuit framework\n\n${existing.slice(canonicalFrameworkTitle.length).trimStart()}\n`;
+  }
+  return `${managed}\n\n${existing}\n`;
+}

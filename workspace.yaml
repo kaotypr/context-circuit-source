@@ -1,23 +1,28 @@
 version: 1
-template_version: 0.2.1
+template_version: 0.3.0
 
 workspace:
   name: uninitialized-workspace
   mode: team
   default_branch: main
 
-repositories: {}
+repositories:
+  context-circuit:
+    path: .
+    mode: submodule
+    role: Context Circuit framework source; Product Knowledge and workflow capability
+      is developed in-place by maintainer commits, not run-task worktree fan-out.
+    agent: repository-worker
+    default_branch: main
 
-activity:
-  provider: none
-  access: auto
-  required_capabilities: []
-  optional_capabilities: []
+context:
+  sources_file: context/sources.yaml
 
 workflow:
   human_gates:
     - plan-approval
     - task-selection
-    - merge
-  maximum_repair_attempts: 2
+    - status-change
+    - publication
+    - archive
   wrapper_change_policy: pull-request

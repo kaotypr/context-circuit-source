@@ -12,4 +12,4 @@ Canonical workflow behavior lives under `.agents/`; host adapters must remain th
 - Workers may only modify their assigned worktree and must not mutate activity state.
 - Verifiers are read-only and independent from workers.
 - Do not merge, deploy, publish, or store credentials.
-- Preserve `.runtime/` until a human invokes a safe closeout workflow.
+- Preserve `.runtime/` until a human explicitly chooses cleanup.

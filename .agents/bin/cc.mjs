@@ -44,7150 +44,17 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
   mod
 ));
 
-// node_modules/ajv/dist/compile/codegen/code.js
-var require_code = __commonJS({
-  "node_modules/ajv/dist/compile/codegen/code.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
-    var _CodeOrName = class {
-    };
-    exports._CodeOrName = _CodeOrName;
-    exports.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
-    var Name = class extends _CodeOrName {
-      constructor(s) {
-        super();
-        if (!exports.IDENTIFIER.test(s))
-          throw new Error("CodeGen: name must be a valid identifier");
-        this.str = s;
-      }
-      toString() {
-        return this.str;
-      }
-      emptyStr() {
-        return false;
-      }
-      get names() {
-        return { [this.str]: 1 };
-      }
-    };
-    exports.Name = Name;
-    var _Code = class extends _CodeOrName {
-      constructor(code) {
-        super();
-        this._items = typeof code === "string" ? [code] : code;
-      }
-      toString() {
-        return this.str;
-      }
-      emptyStr() {
-        if (this._items.length > 1)
-          return false;
-        const item = this._items[0];
-        return item === "" || item === '""';
-      }
-      get str() {
-        var _a;
-        return (_a = this._str) !== null && _a !== void 0 ? _a : this._str = this._items.reduce((s, c) => `${s}${c}`, "");
-      }
-      get names() {
-        var _a;
-        return (_a = this._names) !== null && _a !== void 0 ? _a : this._names = this._items.reduce((names, c) => {
-          if (c instanceof Name)
-            names[c.str] = (names[c.str] || 0) + 1;
-          return names;
-        }, {});
-      }
-    };
-    exports._Code = _Code;
-    exports.nil = new _Code("");
-    function _(strs, ...args) {
-      const code = [strs[0]];
-      let i = 0;
-      while (i < args.length) {
-        addCodeArg(code, args[i]);
-        code.push(strs[++i]);
-      }
-      return new _Code(code);
-    }
-    exports._ = _;
-    var plus = new _Code("+");
-    function str(strs, ...args) {
-      const expr = [safeStringify(strs[0])];
-      let i = 0;
-      while (i < args.length) {
-        expr.push(plus);
-        addCodeArg(expr, args[i]);
-        expr.push(plus, safeStringify(strs[++i]));
-      }
-      optimize(expr);
-      return new _Code(expr);
-    }
-    exports.str = str;
-    function addCodeArg(code, arg) {
-      if (arg instanceof _Code)
-        code.push(...arg._items);
-      else if (arg instanceof Name)
-        code.push(arg);
-      else
-        code.push(interpolate(arg));
-    }
-    exports.addCodeArg = addCodeArg;
-    function optimize(expr) {
-      let i = 1;
-      while (i < expr.length - 1) {
-        if (expr[i] === plus) {
-          const res = mergeExprItems(expr[i - 1], expr[i + 1]);
-          if (res !== void 0) {
-            expr.splice(i - 1, 3, res);
-            continue;
-          }
-          expr[i++] = "+";
-        }
-        i++;
-      }
-    }
-    function mergeExprItems(a, b) {
-      if (b === '""')
-        return a;
-      if (a === '""')
-        return b;
-      if (typeof a == "string") {
-        if (b instanceof Name || a[a.length - 1] !== '"')
-          return;
-        if (typeof b != "string")
-          return `${a.slice(0, -1)}${b}"`;
-        if (b[0] === '"')
-          return a.slice(0, -1) + b.slice(1);
-        return;
-      }
-      if (typeof b == "string" && b[0] === '"' && !(a instanceof Name))
-        return `"${a}${b.slice(1)}`;
-      return;
-    }
-    function strConcat(c1, c2) {
-      return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str`${c1}${c2}`;
-    }
-    exports.strConcat = strConcat;
-    function interpolate(x) {
-      return typeof x == "number" || typeof x == "boolean" || x === null ? x : safeStringify(Array.isArray(x) ? x.join(",") : x);
-    }
-    function stringify(x) {
-      return new _Code(safeStringify(x));
-    }
-    exports.stringify = stringify;
-    function safeStringify(x) {
-      return JSON.stringify(x).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-    }
-    exports.safeStringify = safeStringify;
-    function getProperty(key) {
-      return typeof key == "string" && exports.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
-    }
-    exports.getProperty = getProperty;
-    function getEsmExportName(key) {
-      if (typeof key == "string" && exports.IDENTIFIER.test(key)) {
-        return new _Code(`${key}`);
-      }
-      throw new Error(`CodeGen: invalid export name: ${key}, use explicit $id name mapping`);
-    }
-    exports.getEsmExportName = getEsmExportName;
-    function regexpCode(rx) {
-      return new _Code(rx.toString());
-    }
-    exports.regexpCode = regexpCode;
+// <define:__CC_TEMPLATE_INVENTORY__>
+var init_define_CC_TEMPLATE_INVENTORY = __esm({
+  "<define:__CC_TEMPLATE_INVENTORY__>"() {
   }
 });
 
-// node_modules/ajv/dist/compile/codegen/scope.js
-var require_scope = __commonJS({
-  "node_modules/ajv/dist/compile/codegen/scope.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.ValueScope = exports.ValueScopeName = exports.Scope = exports.varKinds = exports.UsedValueState = void 0;
-    var code_1 = require_code();
-    var ValueError = class extends Error {
-      constructor(name) {
-        super(`CodeGen: "code" for ${name} not defined`);
-        this.value = name.value;
-      }
-    };
-    var UsedValueState;
-    (function(UsedValueState2) {
-      UsedValueState2[UsedValueState2["Started"] = 0] = "Started";
-      UsedValueState2[UsedValueState2["Completed"] = 1] = "Completed";
-    })(UsedValueState || (exports.UsedValueState = UsedValueState = {}));
-    exports.varKinds = {
-      const: new code_1.Name("const"),
-      let: new code_1.Name("let"),
-      var: new code_1.Name("var")
-    };
-    var Scope = class {
-      constructor({ prefixes, parent } = {}) {
-        this._names = {};
-        this._prefixes = prefixes;
-        this._parent = parent;
-      }
-      toName(nameOrPrefix) {
-        return nameOrPrefix instanceof code_1.Name ? nameOrPrefix : this.name(nameOrPrefix);
-      }
-      name(prefix) {
-        return new code_1.Name(this._newName(prefix));
-      }
-      _newName(prefix) {
-        const ng = this._names[prefix] || this._nameGroup(prefix);
-        return `${prefix}${ng.index++}`;
-      }
-      _nameGroup(prefix) {
-        var _a, _b;
-        if (((_b = (_a = this._parent) === null || _a === void 0 ? void 0 : _a._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
-          throw new Error(`CodeGen: prefix "${prefix}" is not allowed in this scope`);
-        }
-        return this._names[prefix] = { prefix, index: 0 };
-      }
-    };
-    exports.Scope = Scope;
-    var ValueScopeName = class extends code_1.Name {
-      constructor(prefix, nameStr) {
-        super(nameStr);
-        this.prefix = prefix;
-      }
-      setValue(value2, { property, itemIndex }) {
-        this.value = value2;
-        this.scopePath = (0, code_1._)`.${new code_1.Name(property)}[${itemIndex}]`;
-      }
-    };
-    exports.ValueScopeName = ValueScopeName;
-    var line = (0, code_1._)`\n`;
-    var ValueScope = class extends Scope {
-      constructor(opts) {
-        super(opts);
-        this._values = {};
-        this._scope = opts.scope;
-        this.opts = { ...opts, _n: opts.lines ? line : code_1.nil };
-      }
-      get() {
-        return this._scope;
-      }
-      name(prefix) {
-        return new ValueScopeName(prefix, this._newName(prefix));
-      }
-      value(nameOrPrefix, value2) {
-        var _a;
-        if (value2.ref === void 0)
-          throw new Error("CodeGen: ref must be passed in value");
-        const name = this.toName(nameOrPrefix);
-        const { prefix } = name;
-        const valueKey = (_a = value2.key) !== null && _a !== void 0 ? _a : value2.ref;
-        let vs = this._values[prefix];
-        if (vs) {
-          const _name = vs.get(valueKey);
-          if (_name)
-            return _name;
-        } else {
-          vs = this._values[prefix] = /* @__PURE__ */ new Map();
-        }
-        vs.set(valueKey, name);
-        const s = this._scope[prefix] || (this._scope[prefix] = []);
-        const itemIndex = s.length;
-        s[itemIndex] = value2.ref;
-        name.setValue(value2, { property: prefix, itemIndex });
-        return name;
-      }
-      getValue(prefix, keyOrRef) {
-        const vs = this._values[prefix];
-        if (!vs)
-          return;
-        return vs.get(keyOrRef);
-      }
-      scopeRefs(scopeName, values18 = this._values) {
-        return this._reduceValues(values18, (name) => {
-          if (name.scopePath === void 0)
-            throw new Error(`CodeGen: name "${name}" has no value`);
-          return (0, code_1._)`${scopeName}${name.scopePath}`;
-        });
-      }
-      scopeCode(values18 = this._values, usedValues, getCode) {
-        return this._reduceValues(values18, (name) => {
-          if (name.value === void 0)
-            throw new Error(`CodeGen: name "${name}" has no value`);
-          return name.value.code;
-        }, usedValues, getCode);
-      }
-      _reduceValues(values18, valueCode, usedValues = {}, getCode) {
-        let code = code_1.nil;
-        for (const prefix in values18) {
-          const vs = values18[prefix];
-          if (!vs)
-            continue;
-          const nameSet = usedValues[prefix] = usedValues[prefix] || /* @__PURE__ */ new Map();
-          vs.forEach((name) => {
-            if (nameSet.has(name))
-              return;
-            nameSet.set(name, UsedValueState.Started);
-            let c = valueCode(name);
-            if (c) {
-              const def = this.opts.es5 ? exports.varKinds.var : exports.varKinds.const;
-              code = (0, code_1._)`${code}${def} ${name} = ${c};${this.opts._n}`;
-            } else if (c = getCode === null || getCode === void 0 ? void 0 : getCode(name)) {
-              code = (0, code_1._)`${code}${c}${this.opts._n}`;
-            } else {
-              throw new ValueError(name);
-            }
-            nameSet.set(name, UsedValueState.Completed);
-          });
-        }
-        return code;
-      }
-    };
-    exports.ValueScope = ValueScope;
-  }
-});
-
-// node_modules/ajv/dist/compile/codegen/index.js
-var require_codegen = __commonJS({
-  "node_modules/ajv/dist/compile/codegen/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.or = exports.and = exports.not = exports.CodeGen = exports.operators = exports.varKinds = exports.ValueScopeName = exports.ValueScope = exports.Scope = exports.Name = exports.regexpCode = exports.stringify = exports.getProperty = exports.nil = exports.strConcat = exports.str = exports._ = void 0;
-    var code_1 = require_code();
-    var scope_1 = require_scope();
-    var code_2 = require_code();
-    Object.defineProperty(exports, "_", { enumerable: true, get: function() {
-      return code_2._;
-    } });
-    Object.defineProperty(exports, "str", { enumerable: true, get: function() {
-      return code_2.str;
-    } });
-    Object.defineProperty(exports, "strConcat", { enumerable: true, get: function() {
-      return code_2.strConcat;
-    } });
-    Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
-      return code_2.nil;
-    } });
-    Object.defineProperty(exports, "getProperty", { enumerable: true, get: function() {
-      return code_2.getProperty;
-    } });
-    Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
-      return code_2.stringify;
-    } });
-    Object.defineProperty(exports, "regexpCode", { enumerable: true, get: function() {
-      return code_2.regexpCode;
-    } });
-    Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
-      return code_2.Name;
-    } });
-    var scope_2 = require_scope();
-    Object.defineProperty(exports, "Scope", { enumerable: true, get: function() {
-      return scope_2.Scope;
-    } });
-    Object.defineProperty(exports, "ValueScope", { enumerable: true, get: function() {
-      return scope_2.ValueScope;
-    } });
-    Object.defineProperty(exports, "ValueScopeName", { enumerable: true, get: function() {
-      return scope_2.ValueScopeName;
-    } });
-    Object.defineProperty(exports, "varKinds", { enumerable: true, get: function() {
-      return scope_2.varKinds;
-    } });
-    exports.operators = {
-      GT: new code_1._Code(">"),
-      GTE: new code_1._Code(">="),
-      LT: new code_1._Code("<"),
-      LTE: new code_1._Code("<="),
-      EQ: new code_1._Code("==="),
-      NEQ: new code_1._Code("!=="),
-      NOT: new code_1._Code("!"),
-      OR: new code_1._Code("||"),
-      AND: new code_1._Code("&&"),
-      ADD: new code_1._Code("+")
-    };
-    var Node = class {
-      optimizeNodes() {
-        return this;
-      }
-      optimizeNames(_names, _constants) {
-        return this;
-      }
-    };
-    var Def = class extends Node {
-      constructor(varKind, name, rhs) {
-        super();
-        this.varKind = varKind;
-        this.name = name;
-        this.rhs = rhs;
-      }
-      render({ es5, _n }) {
-        const varKind = es5 ? scope_1.varKinds.var : this.varKind;
-        const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
-        return `${varKind} ${this.name}${rhs};` + _n;
-      }
-      optimizeNames(names, constants) {
-        if (!names[this.name.str])
-          return;
-        if (this.rhs)
-          this.rhs = optimizeExpr(this.rhs, names, constants);
-        return this;
-      }
-      get names() {
-        return this.rhs instanceof code_1._CodeOrName ? this.rhs.names : {};
-      }
-    };
-    var Assign = class extends Node {
-      constructor(lhs, rhs, sideEffects) {
-        super();
-        this.lhs = lhs;
-        this.rhs = rhs;
-        this.sideEffects = sideEffects;
-      }
-      render({ _n }) {
-        return `${this.lhs} = ${this.rhs};` + _n;
-      }
-      optimizeNames(names, constants) {
-        if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
-          return;
-        this.rhs = optimizeExpr(this.rhs, names, constants);
-        return this;
-      }
-      get names() {
-        const names = this.lhs instanceof code_1.Name ? {} : { ...this.lhs.names };
-        return addExprNames(names, this.rhs);
-      }
-    };
-    var AssignOp = class extends Assign {
-      constructor(lhs, op, rhs, sideEffects) {
-        super(lhs, rhs, sideEffects);
-        this.op = op;
-      }
-      render({ _n }) {
-        return `${this.lhs} ${this.op}= ${this.rhs};` + _n;
-      }
-    };
-    var Label = class extends Node {
-      constructor(label) {
-        super();
-        this.label = label;
-        this.names = {};
-      }
-      render({ _n }) {
-        return `${this.label}:` + _n;
-      }
-    };
-    var Break = class extends Node {
-      constructor(label) {
-        super();
-        this.label = label;
-        this.names = {};
-      }
-      render({ _n }) {
-        const label = this.label ? ` ${this.label}` : "";
-        return `break${label};` + _n;
-      }
-    };
-    var Throw = class extends Node {
-      constructor(error) {
-        super();
-        this.error = error;
-      }
-      render({ _n }) {
-        return `throw ${this.error};` + _n;
-      }
-      get names() {
-        return this.error.names;
-      }
-    };
-    var AnyCode = class extends Node {
-      constructor(code) {
-        super();
-        this.code = code;
-      }
-      render({ _n }) {
-        return `${this.code};` + _n;
-      }
-      optimizeNodes() {
-        return `${this.code}` ? this : void 0;
-      }
-      optimizeNames(names, constants) {
-        this.code = optimizeExpr(this.code, names, constants);
-        return this;
-      }
-      get names() {
-        return this.code instanceof code_1._CodeOrName ? this.code.names : {};
-      }
-    };
-    var ParentNode = class extends Node {
-      constructor(nodes = []) {
-        super();
-        this.nodes = nodes;
-      }
-      render(opts) {
-        return this.nodes.reduce((code, n) => code + n.render(opts), "");
-      }
-      optimizeNodes() {
-        const { nodes } = this;
-        let i = nodes.length;
-        while (i--) {
-          const n = nodes[i].optimizeNodes();
-          if (Array.isArray(n))
-            nodes.splice(i, 1, ...n);
-          else if (n)
-            nodes[i] = n;
-          else
-            nodes.splice(i, 1);
-        }
-        return nodes.length > 0 ? this : void 0;
-      }
-      optimizeNames(names, constants) {
-        const { nodes } = this;
-        let i = nodes.length;
-        while (i--) {
-          const n = nodes[i];
-          if (n.optimizeNames(names, constants))
-            continue;
-          subtractNames(names, n.names);
-          nodes.splice(i, 1);
-        }
-        return nodes.length > 0 ? this : void 0;
-      }
-      get names() {
-        return this.nodes.reduce((names, n) => addNames(names, n.names), {});
-      }
-    };
-    var BlockNode = class extends ParentNode {
-      render(opts) {
-        return "{" + opts._n + super.render(opts) + "}" + opts._n;
-      }
-    };
-    var Root = class extends ParentNode {
-    };
-    var Else = class extends BlockNode {
-    };
-    Else.kind = "else";
-    var If = class _If extends BlockNode {
-      constructor(condition, nodes) {
-        super(nodes);
-        this.condition = condition;
-      }
-      render(opts) {
-        let code = `if(${this.condition})` + super.render(opts);
-        if (this.else)
-          code += "else " + this.else.render(opts);
-        return code;
-      }
-      optimizeNodes() {
-        super.optimizeNodes();
-        const cond = this.condition;
-        if (cond === true)
-          return this.nodes;
-        let e = this.else;
-        if (e) {
-          const ns = e.optimizeNodes();
-          e = this.else = Array.isArray(ns) ? new Else(ns) : ns;
-        }
-        if (e) {
-          if (cond === false)
-            return e instanceof _If ? e : e.nodes;
-          if (this.nodes.length)
-            return this;
-          return new _If(not(cond), e instanceof _If ? [e] : e.nodes);
-        }
-        if (cond === false || !this.nodes.length)
-          return void 0;
-        return this;
-      }
-      optimizeNames(names, constants) {
-        var _a;
-        this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
-        if (!(super.optimizeNames(names, constants) || this.else))
-          return;
-        this.condition = optimizeExpr(this.condition, names, constants);
-        return this;
-      }
-      get names() {
-        const names = super.names;
-        addExprNames(names, this.condition);
-        if (this.else)
-          addNames(names, this.else.names);
-        return names;
-      }
-    };
-    If.kind = "if";
-    var For = class extends BlockNode {
-    };
-    For.kind = "for";
-    var ForLoop = class extends For {
-      constructor(iteration) {
-        super();
-        this.iteration = iteration;
-      }
-      render(opts) {
-        return `for(${this.iteration})` + super.render(opts);
-      }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
-          return;
-        this.iteration = optimizeExpr(this.iteration, names, constants);
-        return this;
-      }
-      get names() {
-        return addNames(super.names, this.iteration.names);
-      }
-    };
-    var ForRange = class extends For {
-      constructor(varKind, name, from, to) {
-        super();
-        this.varKind = varKind;
-        this.name = name;
-        this.from = from;
-        this.to = to;
-      }
-      render(opts) {
-        const varKind = opts.es5 ? scope_1.varKinds.var : this.varKind;
-        const { name, from, to } = this;
-        return `for(${varKind} ${name}=${from}; ${name}<${to}; ${name}++)` + super.render(opts);
-      }
-      get names() {
-        const names = addExprNames(super.names, this.from);
-        return addExprNames(names, this.to);
-      }
-    };
-    var ForIter = class extends For {
-      constructor(loop, varKind, name, iterable) {
-        super();
-        this.loop = loop;
-        this.varKind = varKind;
-        this.name = name;
-        this.iterable = iterable;
-      }
-      render(opts) {
-        return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
-      }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
-          return;
-        this.iterable = optimizeExpr(this.iterable, names, constants);
-        return this;
-      }
-      get names() {
-        return addNames(super.names, this.iterable.names);
-      }
-    };
-    var Func = class extends BlockNode {
-      constructor(name, args, async) {
-        super();
-        this.name = name;
-        this.args = args;
-        this.async = async;
-      }
-      render(opts) {
-        const _async = this.async ? "async " : "";
-        return `${_async}function ${this.name}(${this.args})` + super.render(opts);
-      }
-    };
-    Func.kind = "func";
-    var Return = class extends ParentNode {
-      render(opts) {
-        return "return " + super.render(opts);
-      }
-    };
-    Return.kind = "return";
-    var Try = class extends BlockNode {
-      render(opts) {
-        let code = "try" + super.render(opts);
-        if (this.catch)
-          code += this.catch.render(opts);
-        if (this.finally)
-          code += this.finally.render(opts);
-        return code;
-      }
-      optimizeNodes() {
-        var _a, _b;
-        super.optimizeNodes();
-        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNodes();
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
-        return this;
-      }
-      optimizeNames(names, constants) {
-        var _a, _b;
-        super.optimizeNames(names, constants);
-        (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names, constants);
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
-        return this;
-      }
-      get names() {
-        const names = super.names;
-        if (this.catch)
-          addNames(names, this.catch.names);
-        if (this.finally)
-          addNames(names, this.finally.names);
-        return names;
-      }
-    };
-    var Catch = class extends BlockNode {
-      constructor(error) {
-        super();
-        this.error = error;
-      }
-      render(opts) {
-        return `catch(${this.error})` + super.render(opts);
-      }
-    };
-    Catch.kind = "catch";
-    var Finally = class extends BlockNode {
-      render(opts) {
-        return "finally" + super.render(opts);
-      }
-    };
-    Finally.kind = "finally";
-    var CodeGen = class {
-      constructor(extScope, opts = {}) {
-        this._values = {};
-        this._blockStarts = [];
-        this._constants = {};
-        this.opts = { ...opts, _n: opts.lines ? "\n" : "" };
-        this._extScope = extScope;
-        this._scope = new scope_1.Scope({ parent: extScope });
-        this._nodes = [new Root()];
-      }
-      toString() {
-        return this._root.render(this.opts);
-      }
-      // returns unique name in the internal scope
-      name(prefix) {
-        return this._scope.name(prefix);
-      }
-      // reserves unique name in the external scope
-      scopeName(prefix) {
-        return this._extScope.name(prefix);
-      }
-      // reserves unique name in the external scope and assigns value to it
-      scopeValue(prefixOrName, value2) {
-        const name = this._extScope.value(prefixOrName, value2);
-        const vs = this._values[name.prefix] || (this._values[name.prefix] = /* @__PURE__ */ new Set());
-        vs.add(name);
-        return name;
-      }
-      getScopeValue(prefix, keyOrRef) {
-        return this._extScope.getValue(prefix, keyOrRef);
-      }
-      // return code that assigns values in the external scope to the names that are used internally
-      // (same names that were returned by gen.scopeName or gen.scopeValue)
-      scopeRefs(scopeName) {
-        return this._extScope.scopeRefs(scopeName, this._values);
-      }
-      scopeCode() {
-        return this._extScope.scopeCode(this._values);
-      }
-      _def(varKind, nameOrPrefix, rhs, constant) {
-        const name = this._scope.toName(nameOrPrefix);
-        if (rhs !== void 0 && constant)
-          this._constants[name.str] = rhs;
-        this._leafNode(new Def(varKind, name, rhs));
-        return name;
-      }
-      // `const` declaration (`var` in es5 mode)
-      const(nameOrPrefix, rhs, _constant) {
-        return this._def(scope_1.varKinds.const, nameOrPrefix, rhs, _constant);
-      }
-      // `let` declaration with optional assignment (`var` in es5 mode)
-      let(nameOrPrefix, rhs, _constant) {
-        return this._def(scope_1.varKinds.let, nameOrPrefix, rhs, _constant);
-      }
-      // `var` declaration with optional assignment
-      var(nameOrPrefix, rhs, _constant) {
-        return this._def(scope_1.varKinds.var, nameOrPrefix, rhs, _constant);
-      }
-      // assignment code
-      assign(lhs, rhs, sideEffects) {
-        return this._leafNode(new Assign(lhs, rhs, sideEffects));
-      }
-      // `+=` code
-      add(lhs, rhs) {
-        return this._leafNode(new AssignOp(lhs, exports.operators.ADD, rhs));
-      }
-      // appends passed SafeExpr to code or executes Block
-      code(c) {
-        if (typeof c == "function")
-          c();
-        else if (c !== code_1.nil)
-          this._leafNode(new AnyCode(c));
-        return this;
-      }
-      // returns code for object literal for the passed argument list of key-value pairs
-      object(...keyValues) {
-        const code = ["{"];
-        for (const [key, value2] of keyValues) {
-          if (code.length > 1)
-            code.push(",");
-          code.push(key);
-          if (key !== value2 || this.opts.es5) {
-            code.push(":");
-            (0, code_1.addCodeArg)(code, value2);
-          }
-        }
-        code.push("}");
-        return new code_1._Code(code);
-      }
-      // `if` clause (or statement if `thenBody` and, optionally, `elseBody` are passed)
-      if(condition, thenBody, elseBody) {
-        this._blockNode(new If(condition));
-        if (thenBody && elseBody) {
-          this.code(thenBody).else().code(elseBody).endIf();
-        } else if (thenBody) {
-          this.code(thenBody).endIf();
-        } else if (elseBody) {
-          throw new Error('CodeGen: "else" body without "then" body');
-        }
-        return this;
-      }
-      // `else if` clause - invalid without `if` or after `else` clauses
-      elseIf(condition) {
-        return this._elseNode(new If(condition));
-      }
-      // `else` clause - only valid after `if` or `else if` clauses
-      else() {
-        return this._elseNode(new Else());
-      }
-      // end `if` statement (needed if gen.if was used only with condition)
-      endIf() {
-        return this._endBlockNode(If, Else);
-      }
-      _for(node, forBody) {
-        this._blockNode(node);
-        if (forBody)
-          this.code(forBody).endFor();
-        return this;
-      }
-      // a generic `for` clause (or statement if `forBody` is passed)
-      for(iteration, forBody) {
-        return this._for(new ForLoop(iteration), forBody);
-      }
-      // `for` statement for a range of values
-      forRange(nameOrPrefix, from, to, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.let) {
-        const name = this._scope.toName(nameOrPrefix);
-        return this._for(new ForRange(varKind, name, from, to), () => forBody(name));
-      }
-      // `for-of` statement (in es5 mode replace with a normal for loop)
-      forOf(nameOrPrefix, iterable, forBody, varKind = scope_1.varKinds.const) {
-        const name = this._scope.toName(nameOrPrefix);
-        if (this.opts.es5) {
-          const arr = iterable instanceof code_1.Name ? iterable : this.var("_arr", iterable);
-          return this.forRange("_i", 0, (0, code_1._)`${arr}.length`, (i) => {
-            this.var(name, (0, code_1._)`${arr}[${i}]`);
-            forBody(name);
-          });
-        }
-        return this._for(new ForIter("of", varKind, name, iterable), () => forBody(name));
-      }
-      // `for-in` statement.
-      // With option `ownProperties` replaced with a `for-of` loop for object keys
-      forIn(nameOrPrefix, obj, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.const) {
-        if (this.opts.ownProperties) {
-          return this.forOf(nameOrPrefix, (0, code_1._)`Object.keys(${obj})`, forBody);
-        }
-        const name = this._scope.toName(nameOrPrefix);
-        return this._for(new ForIter("in", varKind, name, obj), () => forBody(name));
-      }
-      // end `for` loop
-      endFor() {
-        return this._endBlockNode(For);
-      }
-      // `label` statement
-      label(label) {
-        return this._leafNode(new Label(label));
-      }
-      // `break` statement
-      break(label) {
-        return this._leafNode(new Break(label));
-      }
-      // `return` statement
-      return(value2) {
-        const node = new Return();
-        this._blockNode(node);
-        this.code(value2);
-        if (node.nodes.length !== 1)
-          throw new Error('CodeGen: "return" should have one node');
-        return this._endBlockNode(Return);
-      }
-      // `try` statement
-      try(tryBody, catchCode, finallyCode) {
-        if (!catchCode && !finallyCode)
-          throw new Error('CodeGen: "try" without "catch" and "finally"');
-        const node = new Try();
-        this._blockNode(node);
-        this.code(tryBody);
-        if (catchCode) {
-          const error = this.name("e");
-          this._currNode = node.catch = new Catch(error);
-          catchCode(error);
-        }
-        if (finallyCode) {
-          this._currNode = node.finally = new Finally();
-          this.code(finallyCode);
-        }
-        return this._endBlockNode(Catch, Finally);
-      }
-      // `throw` statement
-      throw(error) {
-        return this._leafNode(new Throw(error));
-      }
-      // start self-balancing block
-      block(body, nodeCount) {
-        this._blockStarts.push(this._nodes.length);
-        if (body)
-          this.code(body).endBlock(nodeCount);
-        return this;
-      }
-      // end the current self-balancing block
-      endBlock(nodeCount) {
-        const len = this._blockStarts.pop();
-        if (len === void 0)
-          throw new Error("CodeGen: not in self-balancing block");
-        const toClose = this._nodes.length - len;
-        if (toClose < 0 || nodeCount !== void 0 && toClose !== nodeCount) {
-          throw new Error(`CodeGen: wrong number of nodes: ${toClose} vs ${nodeCount} expected`);
-        }
-        this._nodes.length = len;
-        return this;
-      }
-      // `function` heading (or definition if funcBody is passed)
-      func(name, args = code_1.nil, async, funcBody) {
-        this._blockNode(new Func(name, args, async));
-        if (funcBody)
-          this.code(funcBody).endFunc();
-        return this;
-      }
-      // end function definition
-      endFunc() {
-        return this._endBlockNode(Func);
-      }
-      optimize(n = 1) {
-        while (n-- > 0) {
-          this._root.optimizeNodes();
-          this._root.optimizeNames(this._root.names, this._constants);
-        }
-      }
-      _leafNode(node) {
-        this._currNode.nodes.push(node);
-        return this;
-      }
-      _blockNode(node) {
-        this._currNode.nodes.push(node);
-        this._nodes.push(node);
-      }
-      _endBlockNode(N1, N2) {
-        const n = this._currNode;
-        if (n instanceof N1 || N2 && n instanceof N2) {
-          this._nodes.pop();
-          return this;
-        }
-        throw new Error(`CodeGen: not in block "${N2 ? `${N1.kind}/${N2.kind}` : N1.kind}"`);
-      }
-      _elseNode(node) {
-        const n = this._currNode;
-        if (!(n instanceof If)) {
-          throw new Error('CodeGen: "else" without "if"');
-        }
-        this._currNode = n.else = node;
-        return this;
-      }
-      get _root() {
-        return this._nodes[0];
-      }
-      get _currNode() {
-        const ns = this._nodes;
-        return ns[ns.length - 1];
-      }
-      set _currNode(node) {
-        const ns = this._nodes;
-        ns[ns.length - 1] = node;
-      }
-    };
-    exports.CodeGen = CodeGen;
-    function addNames(names, from) {
-      for (const n in from)
-        names[n] = (names[n] || 0) + (from[n] || 0);
-      return names;
-    }
-    function addExprNames(names, from) {
-      return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
-    }
-    function optimizeExpr(expr, names, constants) {
-      if (expr instanceof code_1.Name)
-        return replaceName(expr);
-      if (!canOptimize(expr))
-        return expr;
-      return new code_1._Code(expr._items.reduce((items, c) => {
-        if (c instanceof code_1.Name)
-          c = replaceName(c);
-        if (c instanceof code_1._Code)
-          items.push(...c._items);
-        else
-          items.push(c);
-        return items;
-      }, []));
-      function replaceName(n) {
-        const c = constants[n.str];
-        if (c === void 0 || names[n.str] !== 1)
-          return n;
-        delete names[n.str];
-        return c;
-      }
-      function canOptimize(e) {
-        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== void 0);
-      }
-    }
-    function subtractNames(names, from) {
-      for (const n in from)
-        names[n] = (names[n] || 0) - (from[n] || 0);
-    }
-    function not(x) {
-      return typeof x == "boolean" || typeof x == "number" || x === null ? !x : (0, code_1._)`!${par(x)}`;
-    }
-    exports.not = not;
-    var andCode = mappend(exports.operators.AND);
-    function and(...args) {
-      return args.reduce(andCode);
-    }
-    exports.and = and;
-    var orCode = mappend(exports.operators.OR);
-    function or(...args) {
-      return args.reduce(orCode);
-    }
-    exports.or = or;
-    function mappend(op) {
-      return (x, y) => x === code_1.nil ? y : y === code_1.nil ? x : (0, code_1._)`${par(x)} ${op} ${par(y)}`;
-    }
-    function par(x) {
-      return x instanceof code_1.Name ? x : (0, code_1._)`(${x})`;
-    }
-  }
-});
-
-// node_modules/ajv/dist/compile/util.js
-var require_util = __commonJS({
-  "node_modules/ajv/dist/compile/util.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.checkStrictMode = exports.getErrorPath = exports.Type = exports.useFunc = exports.setEvaluated = exports.evaluatedPropsToName = exports.mergeEvaluated = exports.eachItem = exports.unescapeJsonPointer = exports.escapeJsonPointer = exports.escapeFragment = exports.unescapeFragment = exports.schemaRefOrVal = exports.schemaHasRulesButRef = exports.schemaHasRules = exports.checkUnknownRules = exports.alwaysValidSchema = exports.toHash = void 0;
-    var codegen_1 = require_codegen();
-    var code_1 = require_code();
-    function toHash(arr) {
-      const hash = {};
-      for (const item of arr)
-        hash[item] = true;
-      return hash;
-    }
-    exports.toHash = toHash;
-    function alwaysValidSchema(it, schema2) {
-      if (typeof schema2 == "boolean")
-        return schema2;
-      if (Object.keys(schema2).length === 0)
-        return true;
-      checkUnknownRules(it, schema2);
-      return !schemaHasRules(schema2, it.self.RULES.all);
-    }
-    exports.alwaysValidSchema = alwaysValidSchema;
-    function checkUnknownRules(it, schema2 = it.schema) {
-      const { opts, self } = it;
-      if (!opts.strictSchema)
-        return;
-      if (typeof schema2 === "boolean")
-        return;
-      const rules = self.RULES.keywords;
-      for (const key in schema2) {
-        if (!rules[key])
-          checkStrictMode(it, `unknown keyword: "${key}"`);
-      }
-    }
-    exports.checkUnknownRules = checkUnknownRules;
-    function schemaHasRules(schema2, rules) {
-      if (typeof schema2 == "boolean")
-        return !schema2;
-      for (const key in schema2)
-        if (rules[key])
-          return true;
-      return false;
-    }
-    exports.schemaHasRules = schemaHasRules;
-    function schemaHasRulesButRef(schema2, RULES) {
-      if (typeof schema2 == "boolean")
-        return !schema2;
-      for (const key in schema2)
-        if (key !== "$ref" && RULES.all[key])
-          return true;
-      return false;
-    }
-    exports.schemaHasRulesButRef = schemaHasRulesButRef;
-    function schemaRefOrVal({ topSchemaRef, schemaPath }, schema2, keyword, $data) {
-      if (!$data) {
-        if (typeof schema2 == "number" || typeof schema2 == "boolean")
-          return schema2;
-        if (typeof schema2 == "string")
-          return (0, codegen_1._)`${schema2}`;
-      }
-      return (0, codegen_1._)`${topSchemaRef}${schemaPath}${(0, codegen_1.getProperty)(keyword)}`;
-    }
-    exports.schemaRefOrVal = schemaRefOrVal;
-    function unescapeFragment(str) {
-      return unescapeJsonPointer(decodeURIComponent(str));
-    }
-    exports.unescapeFragment = unescapeFragment;
-    function escapeFragment(str) {
-      return encodeURIComponent(escapeJsonPointer(str));
-    }
-    exports.escapeFragment = escapeFragment;
-    function escapeJsonPointer(str) {
-      if (typeof str == "number")
-        return `${str}`;
-      return str.replace(/~/g, "~0").replace(/\//g, "~1");
-    }
-    exports.escapeJsonPointer = escapeJsonPointer;
-    function unescapeJsonPointer(str) {
-      return str.replace(/~1/g, "/").replace(/~0/g, "~");
-    }
-    exports.unescapeJsonPointer = unescapeJsonPointer;
-    function eachItem(xs, f) {
-      if (Array.isArray(xs)) {
-        for (const x of xs)
-          f(x);
-      } else {
-        f(xs);
-      }
-    }
-    exports.eachItem = eachItem;
-    function makeMergeEvaluated({ mergeNames, mergeToName, mergeValues, resultToName }) {
-      return (gen, from, to, toName) => {
-        const res = to === void 0 ? from : to instanceof codegen_1.Name ? (from instanceof codegen_1.Name ? mergeNames(gen, from, to) : mergeToName(gen, from, to), to) : from instanceof codegen_1.Name ? (mergeToName(gen, to, from), from) : mergeValues(from, to);
-        return toName === codegen_1.Name && !(res instanceof codegen_1.Name) ? resultToName(gen, res) : res;
-      };
-    }
-    exports.mergeEvaluated = {
-      props: makeMergeEvaluated({
-        mergeNames: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true && ${from} !== undefined`, () => {
-          gen.if((0, codegen_1._)`${from} === true`, () => gen.assign(to, true), () => gen.assign(to, (0, codegen_1._)`${to} || {}`).code((0, codegen_1._)`Object.assign(${to}, ${from})`));
-        }),
-        mergeToName: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true`, () => {
-          if (from === true) {
-            gen.assign(to, true);
-          } else {
-            gen.assign(to, (0, codegen_1._)`${to} || {}`);
-            setEvaluated(gen, to, from);
-          }
-        }),
-        mergeValues: (from, to) => from === true ? true : { ...from, ...to },
-        resultToName: evaluatedPropsToName
-      }),
-      items: makeMergeEvaluated({
-        mergeNames: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true && ${from} !== undefined`, () => gen.assign(to, (0, codegen_1._)`${from} === true ? true : ${to} > ${from} ? ${to} : ${from}`)),
-        mergeToName: (gen, from, to) => gen.if((0, codegen_1._)`${to} !== true`, () => gen.assign(to, from === true ? true : (0, codegen_1._)`${to} > ${from} ? ${to} : ${from}`)),
-        mergeValues: (from, to) => from === true ? true : Math.max(from, to),
-        resultToName: (gen, items) => gen.var("items", items)
-      })
-    };
-    function evaluatedPropsToName(gen, ps) {
-      if (ps === true)
-        return gen.var("props", true);
-      const props = gen.var("props", (0, codegen_1._)`{}`);
-      if (ps !== void 0)
-        setEvaluated(gen, props, ps);
-      return props;
-    }
-    exports.evaluatedPropsToName = evaluatedPropsToName;
-    function setEvaluated(gen, props, ps) {
-      Object.keys(ps).forEach((p) => gen.assign((0, codegen_1._)`${props}${(0, codegen_1.getProperty)(p)}`, true));
-    }
-    exports.setEvaluated = setEvaluated;
-    var snippets = {};
-    function useFunc(gen, f) {
-      return gen.scopeValue("func", {
-        ref: f,
-        code: snippets[f.code] || (snippets[f.code] = new code_1._Code(f.code))
-      });
-    }
-    exports.useFunc = useFunc;
-    var Type;
-    (function(Type2) {
-      Type2[Type2["Num"] = 0] = "Num";
-      Type2[Type2["Str"] = 1] = "Str";
-    })(Type || (exports.Type = Type = {}));
-    function getErrorPath(dataProp, dataPropType, jsPropertySyntax) {
-      if (dataProp instanceof codegen_1.Name) {
-        const isNumber = dataPropType === Type.Num;
-        return jsPropertySyntax ? isNumber ? (0, codegen_1._)`"[" + ${dataProp} + "]"` : (0, codegen_1._)`"['" + ${dataProp} + "']"` : isNumber ? (0, codegen_1._)`"/" + ${dataProp}` : (0, codegen_1._)`"/" + ${dataProp}.replace(/~/g, "~0").replace(/\\//g, "~1")`;
-      }
-      return jsPropertySyntax ? (0, codegen_1.getProperty)(dataProp).toString() : "/" + escapeJsonPointer(dataProp);
-    }
-    exports.getErrorPath = getErrorPath;
-    function checkStrictMode(it, msg, mode = it.opts.strictSchema) {
-      if (!mode)
-        return;
-      msg = `strict mode: ${msg}`;
-      if (mode === true)
-        throw new Error(msg);
-      it.self.logger.warn(msg);
-    }
-    exports.checkStrictMode = checkStrictMode;
-  }
-});
-
-// node_modules/ajv/dist/compile/names.js
-var require_names = __commonJS({
-  "node_modules/ajv/dist/compile/names.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var names = {
-      // validation function arguments
-      data: new codegen_1.Name("data"),
-      // data passed to validation function
-      // args passed from referencing schema
-      valCxt: new codegen_1.Name("valCxt"),
-      // validation/data context - should not be used directly, it is destructured to the names below
-      instancePath: new codegen_1.Name("instancePath"),
-      parentData: new codegen_1.Name("parentData"),
-      parentDataProperty: new codegen_1.Name("parentDataProperty"),
-      rootData: new codegen_1.Name("rootData"),
-      // root data - same as the data passed to the first/top validation function
-      dynamicAnchors: new codegen_1.Name("dynamicAnchors"),
-      // used to support recursiveRef and dynamicRef
-      // function scoped variables
-      vErrors: new codegen_1.Name("vErrors"),
-      // null or array of validation errors
-      errors: new codegen_1.Name("errors"),
-      // counter of validation errors
-      this: new codegen_1.Name("this"),
-      // "globals"
-      self: new codegen_1.Name("self"),
-      scope: new codegen_1.Name("scope"),
-      // JTD serialize/parse name for JSON string and position
-      json: new codegen_1.Name("json"),
-      jsonPos: new codegen_1.Name("jsonPos"),
-      jsonLen: new codegen_1.Name("jsonLen"),
-      jsonPart: new codegen_1.Name("jsonPart")
-    };
-    exports.default = names;
-  }
-});
-
-// node_modules/ajv/dist/compile/errors.js
-var require_errors = __commonJS({
-  "node_modules/ajv/dist/compile/errors.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.extendErrors = exports.resetErrorsCount = exports.reportExtraError = exports.reportError = exports.keyword$DataError = exports.keywordError = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var names_1 = require_names();
-    exports.keywordError = {
-      message: ({ keyword }) => (0, codegen_1.str)`must pass "${keyword}" keyword validation`
-    };
-    exports.keyword$DataError = {
-      message: ({ keyword, schemaType }) => schemaType ? (0, codegen_1.str)`"${keyword}" keyword must be ${schemaType} ($data)` : (0, codegen_1.str)`"${keyword}" keyword is invalid ($data)`
-    };
-    function reportError(cxt, error = exports.keywordError, errorPaths, overrideAllErrors) {
-      const { it } = cxt;
-      const { gen, compositeRule, allErrors } = it;
-      const errObj = errorObjectCode(cxt, error, errorPaths);
-      if (overrideAllErrors !== null && overrideAllErrors !== void 0 ? overrideAllErrors : compositeRule || allErrors) {
-        addError(gen, errObj);
-      } else {
-        returnErrors(it, (0, codegen_1._)`[${errObj}]`);
-      }
-    }
-    exports.reportError = reportError;
-    function reportExtraError(cxt, error = exports.keywordError, errorPaths) {
-      const { it } = cxt;
-      const { gen, compositeRule, allErrors } = it;
-      const errObj = errorObjectCode(cxt, error, errorPaths);
-      addError(gen, errObj);
-      if (!(compositeRule || allErrors)) {
-        returnErrors(it, names_1.default.vErrors);
-      }
-    }
-    exports.reportExtraError = reportExtraError;
-    function resetErrorsCount(gen, errsCount) {
-      gen.assign(names_1.default.errors, errsCount);
-      gen.if((0, codegen_1._)`${names_1.default.vErrors} !== null`, () => gen.if(errsCount, () => gen.assign((0, codegen_1._)`${names_1.default.vErrors}.length`, errsCount), () => gen.assign(names_1.default.vErrors, null)));
-    }
-    exports.resetErrorsCount = resetErrorsCount;
-    function extendErrors({ gen, keyword, schemaValue, data, errsCount, it }) {
-      if (errsCount === void 0)
-        throw new Error("ajv implementation error");
-      const err = gen.name("err");
-      gen.forRange("i", errsCount, names_1.default.errors, (i) => {
-        gen.const(err, (0, codegen_1._)`${names_1.default.vErrors}[${i}]`);
-        gen.if((0, codegen_1._)`${err}.instancePath === undefined`, () => gen.assign((0, codegen_1._)`${err}.instancePath`, (0, codegen_1.strConcat)(names_1.default.instancePath, it.errorPath)));
-        gen.assign((0, codegen_1._)`${err}.schemaPath`, (0, codegen_1.str)`${it.errSchemaPath}/${keyword}`);
-        if (it.opts.verbose) {
-          gen.assign((0, codegen_1._)`${err}.schema`, schemaValue);
-          gen.assign((0, codegen_1._)`${err}.data`, data);
-        }
-      });
-    }
-    exports.extendErrors = extendErrors;
-    function addError(gen, errObj) {
-      const err = gen.const("err", errObj);
-      gen.if((0, codegen_1._)`${names_1.default.vErrors} === null`, () => gen.assign(names_1.default.vErrors, (0, codegen_1._)`[${err}]`), (0, codegen_1._)`${names_1.default.vErrors}.push(${err})`);
-      gen.code((0, codegen_1._)`${names_1.default.errors}++`);
-    }
-    function returnErrors(it, errs) {
-      const { gen, validateName, schemaEnv } = it;
-      if (schemaEnv.$async) {
-        gen.throw((0, codegen_1._)`new ${it.ValidationError}(${errs})`);
-      } else {
-        gen.assign((0, codegen_1._)`${validateName}.errors`, errs);
-        gen.return(false);
-      }
-    }
-    var E = {
-      keyword: new codegen_1.Name("keyword"),
-      schemaPath: new codegen_1.Name("schemaPath"),
-      // also used in JTD errors
-      params: new codegen_1.Name("params"),
-      propertyName: new codegen_1.Name("propertyName"),
-      message: new codegen_1.Name("message"),
-      schema: new codegen_1.Name("schema"),
-      parentSchema: new codegen_1.Name("parentSchema")
-    };
-    function errorObjectCode(cxt, error, errorPaths) {
-      const { createErrors } = cxt.it;
-      if (createErrors === false)
-        return (0, codegen_1._)`{}`;
-      return errorObject(cxt, error, errorPaths);
-    }
-    function errorObject(cxt, error, errorPaths = {}) {
-      const { gen, it } = cxt;
-      const keyValues = [
-        errorInstancePath(it, errorPaths),
-        errorSchemaPath(cxt, errorPaths)
-      ];
-      extraErrorProps(cxt, error, keyValues);
-      return gen.object(...keyValues);
-    }
-    function errorInstancePath({ errorPath }, { instancePath }) {
-      const instPath = instancePath ? (0, codegen_1.str)`${errorPath}${(0, util_1.getErrorPath)(instancePath, util_1.Type.Str)}` : errorPath;
-      return [names_1.default.instancePath, (0, codegen_1.strConcat)(names_1.default.instancePath, instPath)];
-    }
-    function errorSchemaPath({ keyword, it: { errSchemaPath } }, { schemaPath, parentSchema }) {
-      let schPath = parentSchema ? errSchemaPath : (0, codegen_1.str)`${errSchemaPath}/${keyword}`;
-      if (schemaPath) {
-        schPath = (0, codegen_1.str)`${schPath}${(0, util_1.getErrorPath)(schemaPath, util_1.Type.Str)}`;
-      }
-      return [E.schemaPath, schPath];
-    }
-    function extraErrorProps(cxt, { params, message }, keyValues) {
-      const { keyword, data, schemaValue, it } = cxt;
-      const { opts, propertyName, topSchemaRef, schemaPath } = it;
-      keyValues.push([E.keyword, keyword], [E.params, typeof params == "function" ? params(cxt) : params || (0, codegen_1._)`{}`]);
-      if (opts.messages) {
-        keyValues.push([E.message, typeof message == "function" ? message(cxt) : message]);
-      }
-      if (opts.verbose) {
-        keyValues.push([E.schema, schemaValue], [E.parentSchema, (0, codegen_1._)`${topSchemaRef}${schemaPath}`], [names_1.default.data, data]);
-      }
-      if (propertyName)
-        keyValues.push([E.propertyName, propertyName]);
-    }
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/boolSchema.js
-var require_boolSchema = __commonJS({
-  "node_modules/ajv/dist/compile/validate/boolSchema.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.boolOrEmptySchema = exports.topBoolOrEmptySchema = void 0;
-    var errors_1 = require_errors();
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var boolError = {
-      message: "boolean schema is false"
-    };
-    function topBoolOrEmptySchema(it) {
-      const { gen, schema: schema2, validateName } = it;
-      if (schema2 === false) {
-        falseSchemaError(it, false);
-      } else if (typeof schema2 == "object" && schema2.$async === true) {
-        gen.return(names_1.default.data);
-      } else {
-        gen.assign((0, codegen_1._)`${validateName}.errors`, null);
-        gen.return(true);
-      }
-    }
-    exports.topBoolOrEmptySchema = topBoolOrEmptySchema;
-    function boolOrEmptySchema(it, valid) {
-      const { gen, schema: schema2 } = it;
-      if (schema2 === false) {
-        gen.var(valid, false);
-        falseSchemaError(it);
-      } else {
-        gen.var(valid, true);
-      }
-    }
-    exports.boolOrEmptySchema = boolOrEmptySchema;
-    function falseSchemaError(it, overrideAllErrors) {
-      const { gen, data } = it;
-      const cxt = {
-        gen,
-        keyword: "false schema",
-        data,
-        schema: false,
-        schemaCode: false,
-        schemaValue: false,
-        params: {},
-        it
-      };
-      (0, errors_1.reportError)(cxt, boolError, void 0, overrideAllErrors);
-    }
-  }
-});
-
-// node_modules/ajv/dist/compile/rules.js
-var require_rules = __commonJS({
-  "node_modules/ajv/dist/compile/rules.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getRules = exports.isJSONType = void 0;
-    var _jsonTypes = ["string", "number", "integer", "boolean", "null", "object", "array"];
-    var jsonTypes = new Set(_jsonTypes);
-    function isJSONType(x) {
-      return typeof x == "string" && jsonTypes.has(x);
-    }
-    exports.isJSONType = isJSONType;
-    function getRules() {
-      const groups = {
-        number: { type: "number", rules: [] },
-        string: { type: "string", rules: [] },
-        array: { type: "array", rules: [] },
-        object: { type: "object", rules: [] }
-      };
-      return {
-        types: { ...groups, integer: true, boolean: true, null: true },
-        rules: [{ rules: [] }, groups.number, groups.string, groups.array, groups.object],
-        post: { rules: [] },
-        all: {},
-        keywords: {}
-      };
-    }
-    exports.getRules = getRules;
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/applicability.js
-var require_applicability = __commonJS({
-  "node_modules/ajv/dist/compile/validate/applicability.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.shouldUseRule = exports.shouldUseGroup = exports.schemaHasRulesForType = void 0;
-    function schemaHasRulesForType({ schema: schema2, self }, type) {
-      const group = self.RULES.types[type];
-      return group && group !== true && shouldUseGroup(schema2, group);
-    }
-    exports.schemaHasRulesForType = schemaHasRulesForType;
-    function shouldUseGroup(schema2, group) {
-      return group.rules.some((rule) => shouldUseRule(schema2, rule));
-    }
-    exports.shouldUseGroup = shouldUseGroup;
-    function shouldUseRule(schema2, rule) {
-      var _a;
-      return schema2[rule.keyword] !== void 0 || ((_a = rule.definition.implements) === null || _a === void 0 ? void 0 : _a.some((kwd) => schema2[kwd] !== void 0));
-    }
-    exports.shouldUseRule = shouldUseRule;
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/dataType.js
-var require_dataType = __commonJS({
-  "node_modules/ajv/dist/compile/validate/dataType.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.reportTypeError = exports.checkDataTypes = exports.checkDataType = exports.coerceAndCheckDataType = exports.getJSONTypes = exports.getSchemaTypes = exports.DataType = void 0;
-    var rules_1 = require_rules();
-    var applicability_1 = require_applicability();
-    var errors_1 = require_errors();
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var DataType;
-    (function(DataType2) {
-      DataType2[DataType2["Correct"] = 0] = "Correct";
-      DataType2[DataType2["Wrong"] = 1] = "Wrong";
-    })(DataType || (exports.DataType = DataType = {}));
-    function getSchemaTypes(schema2) {
-      const types = getJSONTypes(schema2.type);
-      const hasNull = types.includes("null");
-      if (hasNull) {
-        if (schema2.nullable === false)
-          throw new Error("type: null contradicts nullable: false");
-      } else {
-        if (!types.length && schema2.nullable !== void 0) {
-          throw new Error('"nullable" cannot be used without "type"');
-        }
-        if (schema2.nullable === true)
-          types.push("null");
-      }
-      return types;
-    }
-    exports.getSchemaTypes = getSchemaTypes;
-    function getJSONTypes(ts) {
-      const types = Array.isArray(ts) ? ts : ts ? [ts] : [];
-      if (types.every(rules_1.isJSONType))
-        return types;
-      throw new Error("type must be JSONType or JSONType[]: " + types.join(","));
-    }
-    exports.getJSONTypes = getJSONTypes;
-    function coerceAndCheckDataType(it, types) {
-      const { gen, data, opts } = it;
-      const coerceTo = coerceToTypes(types, opts.coerceTypes);
-      const checkTypes = types.length > 0 && !(coerceTo.length === 0 && types.length === 1 && (0, applicability_1.schemaHasRulesForType)(it, types[0]));
-      if (checkTypes) {
-        const wrongType = checkDataTypes(types, data, opts.strictNumbers, DataType.Wrong);
-        gen.if(wrongType, () => {
-          if (coerceTo.length)
-            coerceData(it, types, coerceTo);
-          else
-            reportTypeError(it);
-        });
-      }
-      return checkTypes;
-    }
-    exports.coerceAndCheckDataType = coerceAndCheckDataType;
-    var COERCIBLE = /* @__PURE__ */ new Set(["string", "number", "integer", "boolean", "null"]);
-    function coerceToTypes(types, coerceTypes) {
-      return coerceTypes ? types.filter((t) => COERCIBLE.has(t) || coerceTypes === "array" && t === "array") : [];
-    }
-    function coerceData(it, types, coerceTo) {
-      const { gen, data, opts } = it;
-      const dataType = gen.let("dataType", (0, codegen_1._)`typeof ${data}`);
-      const coerced = gen.let("coerced", (0, codegen_1._)`undefined`);
-      if (opts.coerceTypes === "array") {
-        gen.if((0, codegen_1._)`${dataType} == 'object' && Array.isArray(${data}) && ${data}.length == 1`, () => gen.assign(data, (0, codegen_1._)`${data}[0]`).assign(dataType, (0, codegen_1._)`typeof ${data}`).if(checkDataTypes(types, data, opts.strictNumbers), () => gen.assign(coerced, data)));
-      }
-      gen.if((0, codegen_1._)`${coerced} !== undefined`);
-      for (const t of coerceTo) {
-        if (COERCIBLE.has(t) || t === "array" && opts.coerceTypes === "array") {
-          coerceSpecificType(t);
-        }
-      }
-      gen.else();
-      reportTypeError(it);
-      gen.endIf();
-      gen.if((0, codegen_1._)`${coerced} !== undefined`, () => {
-        gen.assign(data, coerced);
-        assignParentData(it, coerced);
-      });
-      function coerceSpecificType(t) {
-        switch (t) {
-          case "string":
-            gen.elseIf((0, codegen_1._)`${dataType} == "number" || ${dataType} == "boolean"`).assign(coerced, (0, codegen_1._)`"" + ${data}`).elseIf((0, codegen_1._)`${data} === null`).assign(coerced, (0, codegen_1._)`""`);
-            return;
-          case "number":
-            gen.elseIf((0, codegen_1._)`${dataType} == "boolean" || ${data} === null
-              || (${dataType} == "string" && ${data} && ${data} == +${data})`).assign(coerced, (0, codegen_1._)`+${data}`);
-            return;
-          case "integer":
-            gen.elseIf((0, codegen_1._)`${dataType} === "boolean" || ${data} === null
-              || (${dataType} === "string" && ${data} && ${data} == +${data} && !(${data} % 1))`).assign(coerced, (0, codegen_1._)`+${data}`);
-            return;
-          case "boolean":
-            gen.elseIf((0, codegen_1._)`${data} === "false" || ${data} === 0 || ${data} === null`).assign(coerced, false).elseIf((0, codegen_1._)`${data} === "true" || ${data} === 1`).assign(coerced, true);
-            return;
-          case "null":
-            gen.elseIf((0, codegen_1._)`${data} === "" || ${data} === 0 || ${data} === false`);
-            gen.assign(coerced, null);
-            return;
-          case "array":
-            gen.elseIf((0, codegen_1._)`${dataType} === "string" || ${dataType} === "number"
-              || ${dataType} === "boolean" || ${data} === null`).assign(coerced, (0, codegen_1._)`[${data}]`);
-        }
-      }
-    }
-    function assignParentData({ gen, parentData, parentDataProperty }, expr) {
-      gen.if((0, codegen_1._)`${parentData} !== undefined`, () => gen.assign((0, codegen_1._)`${parentData}[${parentDataProperty}]`, expr));
-    }
-    function checkDataType(dataType, data, strictNums, correct = DataType.Correct) {
-      const EQ = correct === DataType.Correct ? codegen_1.operators.EQ : codegen_1.operators.NEQ;
-      let cond;
-      switch (dataType) {
-        case "null":
-          return (0, codegen_1._)`${data} ${EQ} null`;
-        case "array":
-          cond = (0, codegen_1._)`Array.isArray(${data})`;
-          break;
-        case "object":
-          cond = (0, codegen_1._)`${data} && typeof ${data} == "object" && !Array.isArray(${data})`;
-          break;
-        case "integer":
-          cond = numCond((0, codegen_1._)`!(${data} % 1) && !isNaN(${data})`);
-          break;
-        case "number":
-          cond = numCond();
-          break;
-        default:
-          return (0, codegen_1._)`typeof ${data} ${EQ} ${dataType}`;
-      }
-      return correct === DataType.Correct ? cond : (0, codegen_1.not)(cond);
-      function numCond(_cond = codegen_1.nil) {
-        return (0, codegen_1.and)((0, codegen_1._)`typeof ${data} == "number"`, _cond, strictNums ? (0, codegen_1._)`isFinite(${data})` : codegen_1.nil);
-      }
-    }
-    exports.checkDataType = checkDataType;
-    function checkDataTypes(dataTypes, data, strictNums, correct) {
-      if (dataTypes.length === 1) {
-        return checkDataType(dataTypes[0], data, strictNums, correct);
-      }
-      let cond;
-      const types = (0, util_1.toHash)(dataTypes);
-      if (types.array && types.object) {
-        const notObj = (0, codegen_1._)`typeof ${data} != "object"`;
-        cond = types.null ? notObj : (0, codegen_1._)`!${data} || ${notObj}`;
-        delete types.null;
-        delete types.array;
-        delete types.object;
-      } else {
-        cond = codegen_1.nil;
-      }
-      if (types.number)
-        delete types.integer;
-      for (const t in types)
-        cond = (0, codegen_1.and)(cond, checkDataType(t, data, strictNums, correct));
-      return cond;
-    }
-    exports.checkDataTypes = checkDataTypes;
-    var typeError = {
-      message: ({ schema: schema2 }) => `must be ${schema2}`,
-      params: ({ schema: schema2, schemaValue }) => typeof schema2 == "string" ? (0, codegen_1._)`{type: ${schema2}}` : (0, codegen_1._)`{type: ${schemaValue}}`
-    };
-    function reportTypeError(it) {
-      const cxt = getTypeErrorContext(it);
-      (0, errors_1.reportError)(cxt, typeError);
-    }
-    exports.reportTypeError = reportTypeError;
-    function getTypeErrorContext(it) {
-      const { gen, data, schema: schema2 } = it;
-      const schemaCode = (0, util_1.schemaRefOrVal)(it, schema2, "type");
-      return {
-        gen,
-        keyword: "type",
-        data,
-        schema: schema2.type,
-        schemaCode,
-        schemaValue: schemaCode,
-        parentSchema: schema2,
-        params: {},
-        it
-      };
-    }
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/defaults.js
-var require_defaults = __commonJS({
-  "node_modules/ajv/dist/compile/validate/defaults.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.assignDefaults = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    function assignDefaults(it, ty) {
-      const { properties, items } = it.schema;
-      if (ty === "object" && properties) {
-        for (const key in properties) {
-          assignDefault(it, key, properties[key].default);
-        }
-      } else if (ty === "array" && Array.isArray(items)) {
-        items.forEach((sch, i) => assignDefault(it, i, sch.default));
-      }
-    }
-    exports.assignDefaults = assignDefaults;
-    function assignDefault(it, prop, defaultValue) {
-      const { gen, compositeRule, data, opts } = it;
-      if (defaultValue === void 0)
-        return;
-      const childData = (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(prop)}`;
-      if (compositeRule) {
-        (0, util_1.checkStrictMode)(it, `default is ignored for: ${childData}`);
-        return;
-      }
-      let condition = (0, codegen_1._)`${childData} === undefined`;
-      if (opts.useDefaults === "empty") {
-        condition = (0, codegen_1._)`${condition} || ${childData} === null || ${childData} === ""`;
-      }
-      gen.if(condition, (0, codegen_1._)`${childData} = ${(0, codegen_1.stringify)(defaultValue)}`);
-    }
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/code.js
-var require_code2 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/code.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.validateUnion = exports.validateArray = exports.usePattern = exports.callValidateCode = exports.schemaProperties = exports.allSchemaProperties = exports.noPropertyInData = exports.propertyInData = exports.isOwnProperty = exports.hasPropFunc = exports.reportMissingProp = exports.checkMissingProp = exports.checkReportMissingProp = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var names_1 = require_names();
-    var util_2 = require_util();
-    function checkReportMissingProp(cxt, prop) {
-      const { gen, data, it } = cxt;
-      gen.if(noPropertyInData(gen, data, prop, it.opts.ownProperties), () => {
-        cxt.setParams({ missingProperty: (0, codegen_1._)`${prop}` }, true);
-        cxt.error();
-      });
-    }
-    exports.checkReportMissingProp = checkReportMissingProp;
-    function checkMissingProp({ gen, data, it: { opts } }, properties, missing) {
-      return (0, codegen_1.or)(...properties.map((prop) => (0, codegen_1.and)(noPropertyInData(gen, data, prop, opts.ownProperties), (0, codegen_1._)`${missing} = ${prop}`)));
-    }
-    exports.checkMissingProp = checkMissingProp;
-    function reportMissingProp(cxt, missing) {
-      cxt.setParams({ missingProperty: missing }, true);
-      cxt.error();
-    }
-    exports.reportMissingProp = reportMissingProp;
-    function hasPropFunc(gen) {
-      return gen.scopeValue("func", {
-        // eslint-disable-next-line @typescript-eslint/unbound-method
-        ref: Object.prototype.hasOwnProperty,
-        code: (0, codegen_1._)`Object.prototype.hasOwnProperty`
-      });
-    }
-    exports.hasPropFunc = hasPropFunc;
-    function isOwnProperty(gen, data, property) {
-      return (0, codegen_1._)`${hasPropFunc(gen)}.call(${data}, ${property})`;
-    }
-    exports.isOwnProperty = isOwnProperty;
-    function propertyInData(gen, data, property, ownProperties) {
-      const cond = (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(property)} !== undefined`;
-      return ownProperties ? (0, codegen_1._)`${cond} && ${isOwnProperty(gen, data, property)}` : cond;
-    }
-    exports.propertyInData = propertyInData;
-    function noPropertyInData(gen, data, property, ownProperties) {
-      const cond = (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(property)} === undefined`;
-      return ownProperties ? (0, codegen_1.or)(cond, (0, codegen_1.not)(isOwnProperty(gen, data, property))) : cond;
-    }
-    exports.noPropertyInData = noPropertyInData;
-    function allSchemaProperties(schemaMap) {
-      return schemaMap ? Object.keys(schemaMap).filter((p) => p !== "__proto__") : [];
-    }
-    exports.allSchemaProperties = allSchemaProperties;
-    function schemaProperties(it, schemaMap) {
-      return allSchemaProperties(schemaMap).filter((p) => !(0, util_1.alwaysValidSchema)(it, schemaMap[p]));
-    }
-    exports.schemaProperties = schemaProperties;
-    function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it }, func, context, passSchema) {
-      const dataAndSchema = passSchema ? (0, codegen_1._)`${schemaCode}, ${data}, ${topSchemaRef}${schemaPath}` : data;
-      const valCxt = [
-        [names_1.default.instancePath, (0, codegen_1.strConcat)(names_1.default.instancePath, errorPath)],
-        [names_1.default.parentData, it.parentData],
-        [names_1.default.parentDataProperty, it.parentDataProperty],
-        [names_1.default.rootData, names_1.default.rootData]
-      ];
-      if (it.opts.dynamicRef)
-        valCxt.push([names_1.default.dynamicAnchors, names_1.default.dynamicAnchors]);
-      const args = (0, codegen_1._)`${dataAndSchema}, ${gen.object(...valCxt)}`;
-      return context !== codegen_1.nil ? (0, codegen_1._)`${func}.call(${context}, ${args})` : (0, codegen_1._)`${func}(${args})`;
-    }
-    exports.callValidateCode = callValidateCode;
-    var newRegExp = (0, codegen_1._)`new RegExp`;
-    function usePattern({ gen, it: { opts } }, pattern) {
-      const u = opts.unicodeRegExp ? "u" : "";
-      const { regExp } = opts.code;
-      const rx = regExp(pattern, u);
-      return gen.scopeValue("pattern", {
-        key: rx.toString(),
-        ref: rx,
-        code: (0, codegen_1._)`${regExp.code === "new RegExp" ? newRegExp : (0, util_2.useFunc)(gen, regExp)}(${pattern}, ${u})`
-      });
-    }
-    exports.usePattern = usePattern;
-    function validateArray(cxt) {
-      const { gen, data, keyword, it } = cxt;
-      const valid = gen.name("valid");
-      if (it.allErrors) {
-        const validArr = gen.let("valid", true);
-        validateItems(() => gen.assign(validArr, false));
-        return validArr;
-      }
-      gen.var(valid, true);
-      validateItems(() => gen.break());
-      return valid;
-      function validateItems(notValid) {
-        const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-        gen.forRange("i", 0, len, (i) => {
-          cxt.subschema({
-            keyword,
-            dataProp: i,
-            dataPropType: util_1.Type.Num
-          }, valid);
-          gen.if((0, codegen_1.not)(valid), notValid);
-        });
-      }
-    }
-    exports.validateArray = validateArray;
-    function validateUnion(cxt) {
-      const { gen, schema: schema2, keyword, it } = cxt;
-      if (!Array.isArray(schema2))
-        throw new Error("ajv implementation error");
-      const alwaysValid = schema2.some((sch) => (0, util_1.alwaysValidSchema)(it, sch));
-      if (alwaysValid && !it.opts.unevaluated)
-        return;
-      const valid = gen.let("valid", false);
-      const schValid = gen.name("_valid");
-      gen.block(() => schema2.forEach((_sch, i) => {
-        const schCxt = cxt.subschema({
-          keyword,
-          schemaProp: i,
-          compositeRule: true
-        }, schValid);
-        gen.assign(valid, (0, codegen_1._)`${valid} || ${schValid}`);
-        const merged = cxt.mergeValidEvaluated(schCxt, schValid);
-        if (!merged)
-          gen.if((0, codegen_1.not)(valid));
-      }));
-      cxt.result(valid, () => cxt.reset(), () => cxt.error(true));
-    }
-    exports.validateUnion = validateUnion;
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/keyword.js
-var require_keyword = __commonJS({
-  "node_modules/ajv/dist/compile/validate/keyword.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.validateKeywordUsage = exports.validSchemaType = exports.funcKeywordCode = exports.macroKeywordCode = void 0;
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var code_1 = require_code2();
-    var errors_1 = require_errors();
-    function macroKeywordCode(cxt, def) {
-      const { gen, keyword, schema: schema2, parentSchema, it } = cxt;
-      const macroSchema = def.macro.call(it.self, schema2, parentSchema, it);
-      const schemaRef = useKeyword(gen, keyword, macroSchema);
-      if (it.opts.validateSchema !== false)
-        it.self.validateSchema(macroSchema, true);
-      const valid = gen.name("valid");
-      cxt.subschema({
-        schema: macroSchema,
-        schemaPath: codegen_1.nil,
-        errSchemaPath: `${it.errSchemaPath}/${keyword}`,
-        topSchemaRef: schemaRef,
-        compositeRule: true
-      }, valid);
-      cxt.pass(valid, () => cxt.error(true));
-    }
-    exports.macroKeywordCode = macroKeywordCode;
-    function funcKeywordCode(cxt, def) {
-      var _a;
-      const { gen, keyword, schema: schema2, parentSchema, $data, it } = cxt;
-      checkAsyncKeyword(it, def);
-      const validate = !$data && def.compile ? def.compile.call(it.self, schema2, parentSchema, it) : def.validate;
-      const validateRef = useKeyword(gen, keyword, validate);
-      const valid = gen.let("valid");
-      cxt.block$data(valid, validateKeyword);
-      cxt.ok((_a = def.valid) !== null && _a !== void 0 ? _a : valid);
-      function validateKeyword() {
-        if (def.errors === false) {
-          assignValid();
-          if (def.modifying)
-            modifyData(cxt);
-          reportErrs(() => cxt.error());
-        } else {
-          const ruleErrs = def.async ? validateAsync() : validateSync();
-          if (def.modifying)
-            modifyData(cxt);
-          reportErrs(() => addErrs(cxt, ruleErrs));
-        }
-      }
-      function validateAsync() {
-        const ruleErrs = gen.let("ruleErrs", null);
-        gen.try(() => assignValid((0, codegen_1._)`await `), (e) => gen.assign(valid, false).if((0, codegen_1._)`${e} instanceof ${it.ValidationError}`, () => gen.assign(ruleErrs, (0, codegen_1._)`${e}.errors`), () => gen.throw(e)));
-        return ruleErrs;
-      }
-      function validateSync() {
-        const validateErrs = (0, codegen_1._)`${validateRef}.errors`;
-        gen.assign(validateErrs, null);
-        assignValid(codegen_1.nil);
-        return validateErrs;
-      }
-      function assignValid(_await = def.async ? (0, codegen_1._)`await ` : codegen_1.nil) {
-        const passCxt = it.opts.passContext ? names_1.default.this : names_1.default.self;
-        const passSchema = !("compile" in def && !$data || def.schema === false);
-        gen.assign(valid, (0, codegen_1._)`${_await}${(0, code_1.callValidateCode)(cxt, validateRef, passCxt, passSchema)}`, def.modifying);
-      }
-      function reportErrs(errors2) {
-        var _a2;
-        gen.if((0, codegen_1.not)((_a2 = def.valid) !== null && _a2 !== void 0 ? _a2 : valid), errors2);
-      }
-    }
-    exports.funcKeywordCode = funcKeywordCode;
-    function modifyData(cxt) {
-      const { gen, data, it } = cxt;
-      gen.if(it.parentData, () => gen.assign(data, (0, codegen_1._)`${it.parentData}[${it.parentDataProperty}]`));
-    }
-    function addErrs(cxt, errs) {
-      const { gen } = cxt;
-      gen.if((0, codegen_1._)`Array.isArray(${errs})`, () => {
-        gen.assign(names_1.default.vErrors, (0, codegen_1._)`${names_1.default.vErrors} === null ? ${errs} : ${names_1.default.vErrors}.concat(${errs})`).assign(names_1.default.errors, (0, codegen_1._)`${names_1.default.vErrors}.length`);
-        (0, errors_1.extendErrors)(cxt);
-      }, () => cxt.error());
-    }
-    function checkAsyncKeyword({ schemaEnv }, def) {
-      if (def.async && !schemaEnv.$async)
-        throw new Error("async keyword in sync schema");
-    }
-    function useKeyword(gen, keyword, result3) {
-      if (result3 === void 0)
-        throw new Error(`keyword "${keyword}" failed to compile`);
-      return gen.scopeValue("keyword", typeof result3 == "function" ? { ref: result3 } : { ref: result3, code: (0, codegen_1.stringify)(result3) });
-    }
-    function validSchemaType(schema2, schemaType, allowUndefined = false) {
-      return !schemaType.length || schemaType.some((st) => st === "array" ? Array.isArray(schema2) : st === "object" ? schema2 && typeof schema2 == "object" && !Array.isArray(schema2) : typeof schema2 == st || allowUndefined && typeof schema2 == "undefined");
-    }
-    exports.validSchemaType = validSchemaType;
-    function validateKeywordUsage({ schema: schema2, opts, self, errSchemaPath }, def, keyword) {
-      if (Array.isArray(def.keyword) ? !def.keyword.includes(keyword) : def.keyword !== keyword) {
-        throw new Error("ajv implementation error");
-      }
-      const deps = def.dependencies;
-      if (deps === null || deps === void 0 ? void 0 : deps.some((kwd) => !Object.prototype.hasOwnProperty.call(schema2, kwd))) {
-        throw new Error(`parent schema must have dependencies of ${keyword}: ${deps.join(",")}`);
-      }
-      if (def.validateSchema) {
-        const valid = def.validateSchema(schema2[keyword]);
-        if (!valid) {
-          const msg = `keyword "${keyword}" value is invalid at path "${errSchemaPath}": ` + self.errorsText(def.validateSchema.errors);
-          if (opts.validateSchema === "log")
-            self.logger.error(msg);
-          else
-            throw new Error(msg);
-        }
-      }
-    }
-    exports.validateKeywordUsage = validateKeywordUsage;
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/subschema.js
-var require_subschema = __commonJS({
-  "node_modules/ajv/dist/compile/validate/subschema.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.extendSubschemaMode = exports.extendSubschemaData = exports.getSubschema = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    function getSubschema(it, { keyword, schemaProp, schema: schema2, schemaPath, errSchemaPath, topSchemaRef }) {
-      if (keyword !== void 0 && schema2 !== void 0) {
-        throw new Error('both "keyword" and "schema" passed, only one allowed');
-      }
-      if (keyword !== void 0) {
-        const sch = it.schema[keyword];
-        return schemaProp === void 0 ? {
-          schema: sch,
-          schemaPath: (0, codegen_1._)`${it.schemaPath}${(0, codegen_1.getProperty)(keyword)}`,
-          errSchemaPath: `${it.errSchemaPath}/${keyword}`
-        } : {
-          schema: sch[schemaProp],
-          schemaPath: (0, codegen_1._)`${it.schemaPath}${(0, codegen_1.getProperty)(keyword)}${(0, codegen_1.getProperty)(schemaProp)}`,
-          errSchemaPath: `${it.errSchemaPath}/${keyword}/${(0, util_1.escapeFragment)(schemaProp)}`
-        };
-      }
-      if (schema2 !== void 0) {
-        if (schemaPath === void 0 || errSchemaPath === void 0 || topSchemaRef === void 0) {
-          throw new Error('"schemaPath", "errSchemaPath" and "topSchemaRef" are required with "schema"');
-        }
-        return {
-          schema: schema2,
-          schemaPath,
-          topSchemaRef,
-          errSchemaPath
-        };
-      }
-      throw new Error('either "keyword" or "schema" must be passed');
-    }
-    exports.getSubschema = getSubschema;
-    function extendSubschemaData(subschema, it, { dataProp, dataPropType: dpType, data, dataTypes, propertyName }) {
-      if (data !== void 0 && dataProp !== void 0) {
-        throw new Error('both "data" and "dataProp" passed, only one allowed');
-      }
-      const { gen } = it;
-      if (dataProp !== void 0) {
-        const { errorPath, dataPathArr, opts } = it;
-        const nextData = gen.let("data", (0, codegen_1._)`${it.data}${(0, codegen_1.getProperty)(dataProp)}`, true);
-        dataContextProps(nextData);
-        subschema.errorPath = (0, codegen_1.str)`${errorPath}${(0, util_1.getErrorPath)(dataProp, dpType, opts.jsPropertySyntax)}`;
-        subschema.parentDataProperty = (0, codegen_1._)`${dataProp}`;
-        subschema.dataPathArr = [...dataPathArr, subschema.parentDataProperty];
-      }
-      if (data !== void 0) {
-        const nextData = data instanceof codegen_1.Name ? data : gen.let("data", data, true);
-        dataContextProps(nextData);
-        if (propertyName !== void 0)
-          subschema.propertyName = propertyName;
-      }
-      if (dataTypes)
-        subschema.dataTypes = dataTypes;
-      function dataContextProps(_nextData) {
-        subschema.data = _nextData;
-        subschema.dataLevel = it.dataLevel + 1;
-        subschema.dataTypes = [];
-        it.definedProperties = /* @__PURE__ */ new Set();
-        subschema.parentData = it.data;
-        subschema.dataNames = [...it.dataNames, _nextData];
-      }
-    }
-    exports.extendSubschemaData = extendSubschemaData;
-    function extendSubschemaMode(subschema, { jtdDiscriminator, jtdMetadata, compositeRule, createErrors, allErrors }) {
-      if (compositeRule !== void 0)
-        subschema.compositeRule = compositeRule;
-      if (createErrors !== void 0)
-        subschema.createErrors = createErrors;
-      if (allErrors !== void 0)
-        subschema.allErrors = allErrors;
-      subschema.jtdDiscriminator = jtdDiscriminator;
-      subschema.jtdMetadata = jtdMetadata;
-    }
-    exports.extendSubschemaMode = extendSubschemaMode;
-  }
-});
-
-// node_modules/fast-deep-equal/index.js
-var require_fast_deep_equal = __commonJS({
-  "node_modules/fast-deep-equal/index.js"(exports, module) {
-    "use strict";
-    module.exports = function equal(a, b) {
-      if (a === b) return true;
-      if (a && b && typeof a == "object" && typeof b == "object") {
-        if (a.constructor !== b.constructor) return false;
-        var length, i, keys;
-        if (Array.isArray(a)) {
-          length = a.length;
-          if (length != b.length) return false;
-          for (i = length; i-- !== 0; )
-            if (!equal(a[i], b[i])) return false;
-          return true;
-        }
-        if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
-        if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
-        if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
-        keys = Object.keys(a);
-        length = keys.length;
-        if (length !== Object.keys(b).length) return false;
-        for (i = length; i-- !== 0; )
-          if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
-        for (i = length; i-- !== 0; ) {
-          var key = keys[i];
-          if (!equal(a[key], b[key])) return false;
-        }
-        return true;
-      }
-      return a !== a && b !== b;
-    };
-  }
-});
-
-// node_modules/json-schema-traverse/index.js
-var require_json_schema_traverse = __commonJS({
-  "node_modules/json-schema-traverse/index.js"(exports, module) {
-    "use strict";
-    var traverse = module.exports = function(schema2, opts, cb) {
-      if (typeof opts == "function") {
-        cb = opts;
-        opts = {};
-      }
-      cb = opts.cb || cb;
-      var pre = typeof cb == "function" ? cb : cb.pre || function() {
-      };
-      var post = cb.post || function() {
-      };
-      _traverse(opts, pre, post, schema2, "", schema2);
-    };
-    traverse.keywords = {
-      additionalItems: true,
-      items: true,
-      contains: true,
-      additionalProperties: true,
-      propertyNames: true,
-      not: true,
-      if: true,
-      then: true,
-      else: true
-    };
-    traverse.arrayKeywords = {
-      items: true,
-      allOf: true,
-      anyOf: true,
-      oneOf: true
-    };
-    traverse.propsKeywords = {
-      $defs: true,
-      definitions: true,
-      properties: true,
-      patternProperties: true,
-      dependencies: true
-    };
-    traverse.skipKeywords = {
-      default: true,
-      enum: true,
-      const: true,
-      required: true,
-      maximum: true,
-      minimum: true,
-      exclusiveMaximum: true,
-      exclusiveMinimum: true,
-      multipleOf: true,
-      maxLength: true,
-      minLength: true,
-      pattern: true,
-      format: true,
-      maxItems: true,
-      minItems: true,
-      uniqueItems: true,
-      maxProperties: true,
-      minProperties: true
-    };
-    function _traverse(opts, pre, post, schema2, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex) {
-      if (schema2 && typeof schema2 == "object" && !Array.isArray(schema2)) {
-        pre(schema2, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
-        for (var key in schema2) {
-          var sch = schema2[key];
-          if (Array.isArray(sch)) {
-            if (key in traverse.arrayKeywords) {
-              for (var i = 0; i < sch.length; i++)
-                _traverse(opts, pre, post, sch[i], jsonPtr + "/" + key + "/" + i, rootSchema, jsonPtr, key, schema2, i);
-            }
-          } else if (key in traverse.propsKeywords) {
-            if (sch && typeof sch == "object") {
-              for (var prop in sch)
-                _traverse(opts, pre, post, sch[prop], jsonPtr + "/" + key + "/" + escapeJsonPtr(prop), rootSchema, jsonPtr, key, schema2, prop);
-            }
-          } else if (key in traverse.keywords || opts.allKeys && !(key in traverse.skipKeywords)) {
-            _traverse(opts, pre, post, sch, jsonPtr + "/" + key, rootSchema, jsonPtr, key, schema2);
-          }
-        }
-        post(schema2, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
-      }
-    }
-    function escapeJsonPtr(str) {
-      return str.replace(/~/g, "~0").replace(/\//g, "~1");
-    }
-  }
-});
-
-// node_modules/ajv/dist/compile/resolve.js
-var require_resolve = __commonJS({
-  "node_modules/ajv/dist/compile/resolve.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getSchemaRefs = exports.resolveUrl = exports.normalizeId = exports._getFullPath = exports.getFullPath = exports.inlineRef = void 0;
-    var util_1 = require_util();
-    var equal = require_fast_deep_equal();
-    var traverse = require_json_schema_traverse();
-    var SIMPLE_INLINED = /* @__PURE__ */ new Set([
-      "type",
-      "format",
-      "pattern",
-      "maxLength",
-      "minLength",
-      "maxProperties",
-      "minProperties",
-      "maxItems",
-      "minItems",
-      "maximum",
-      "minimum",
-      "uniqueItems",
-      "multipleOf",
-      "required",
-      "enum",
-      "const"
-    ]);
-    function inlineRef(schema2, limit = true) {
-      if (typeof schema2 == "boolean")
-        return true;
-      if (limit === true)
-        return !hasRef(schema2);
-      if (!limit)
-        return false;
-      return countKeys(schema2) <= limit;
-    }
-    exports.inlineRef = inlineRef;
-    var REF_KEYWORDS = /* @__PURE__ */ new Set([
-      "$ref",
-      "$recursiveRef",
-      "$recursiveAnchor",
-      "$dynamicRef",
-      "$dynamicAnchor"
-    ]);
-    function hasRef(schema2) {
-      for (const key in schema2) {
-        if (REF_KEYWORDS.has(key))
-          return true;
-        const sch = schema2[key];
-        if (Array.isArray(sch) && sch.some(hasRef))
-          return true;
-        if (typeof sch == "object" && hasRef(sch))
-          return true;
-      }
-      return false;
-    }
-    function countKeys(schema2) {
-      let count = 0;
-      for (const key in schema2) {
-        if (key === "$ref")
-          return Infinity;
-        count++;
-        if (SIMPLE_INLINED.has(key))
-          continue;
-        if (typeof schema2[key] == "object") {
-          (0, util_1.eachItem)(schema2[key], (sch) => count += countKeys(sch));
-        }
-        if (count === Infinity)
-          return Infinity;
-      }
-      return count;
-    }
-    function getFullPath(resolver, id = "", normalize) {
-      if (normalize !== false)
-        id = normalizeId(id);
-      const p = resolver.parse(id);
-      return _getFullPath(resolver, p);
-    }
-    exports.getFullPath = getFullPath;
-    function _getFullPath(resolver, p) {
-      const serialized = resolver.serialize(p);
-      return serialized.split("#")[0] + "#";
-    }
-    exports._getFullPath = _getFullPath;
-    var TRAILING_SLASH_HASH = /#\/?$/;
-    function normalizeId(id) {
-      return id ? id.replace(TRAILING_SLASH_HASH, "") : "";
-    }
-    exports.normalizeId = normalizeId;
-    function resolveUrl(resolver, baseId, id) {
-      id = normalizeId(id);
-      return resolver.resolve(baseId, id);
-    }
-    exports.resolveUrl = resolveUrl;
-    var ANCHOR = /^[a-z_][-a-z0-9._]*$/i;
-    function getSchemaRefs(schema2, baseId) {
-      if (typeof schema2 == "boolean")
-        return {};
-      const { schemaId, uriResolver } = this.opts;
-      const schId = normalizeId(schema2[schemaId] || baseId);
-      const baseIds = { "": schId };
-      const pathPrefix = getFullPath(uriResolver, schId, false);
-      const localRefs = {};
-      const schemaRefs = /* @__PURE__ */ new Set();
-      traverse(schema2, { allKeys: true }, (sch, jsonPtr, _, parentJsonPtr) => {
-        if (parentJsonPtr === void 0)
-          return;
-        const fullPath = pathPrefix + jsonPtr;
-        let innerBaseId = baseIds[parentJsonPtr];
-        if (typeof sch[schemaId] == "string")
-          innerBaseId = addRef.call(this, sch[schemaId]);
-        addAnchor.call(this, sch.$anchor);
-        addAnchor.call(this, sch.$dynamicAnchor);
-        baseIds[jsonPtr] = innerBaseId;
-        function addRef(ref) {
-          const _resolve = this.opts.uriResolver.resolve;
-          ref = normalizeId(innerBaseId ? _resolve(innerBaseId, ref) : ref);
-          if (schemaRefs.has(ref))
-            throw ambiguos(ref);
-          schemaRefs.add(ref);
-          let schOrRef = this.refs[ref];
-          if (typeof schOrRef == "string")
-            schOrRef = this.refs[schOrRef];
-          if (typeof schOrRef == "object") {
-            checkAmbiguosRef(sch, schOrRef.schema, ref);
-          } else if (ref !== normalizeId(fullPath)) {
-            if (ref[0] === "#") {
-              checkAmbiguosRef(sch, localRefs[ref], ref);
-              localRefs[ref] = sch;
-            } else {
-              this.refs[ref] = fullPath;
-            }
-          }
-          return ref;
-        }
-        function addAnchor(anchor) {
-          if (typeof anchor == "string") {
-            if (!ANCHOR.test(anchor))
-              throw new Error(`invalid anchor "${anchor}"`);
-            addRef.call(this, `#${anchor}`);
-          }
-        }
-      });
-      return localRefs;
-      function checkAmbiguosRef(sch1, sch2, ref) {
-        if (sch2 !== void 0 && !equal(sch1, sch2))
-          throw ambiguos(ref);
-      }
-      function ambiguos(ref) {
-        return new Error(`reference "${ref}" resolves to more than one schema`);
-      }
-    }
-    exports.getSchemaRefs = getSchemaRefs;
-  }
-});
-
-// node_modules/ajv/dist/compile/validate/index.js
-var require_validate = __commonJS({
-  "node_modules/ajv/dist/compile/validate/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.getData = exports.KeywordCxt = exports.validateFunctionCode = void 0;
-    var boolSchema_1 = require_boolSchema();
-    var dataType_1 = require_dataType();
-    var applicability_1 = require_applicability();
-    var dataType_2 = require_dataType();
-    var defaults_1 = require_defaults();
-    var keyword_1 = require_keyword();
-    var subschema_1 = require_subschema();
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var resolve_1 = require_resolve();
-    var util_1 = require_util();
-    var errors_1 = require_errors();
-    function validateFunctionCode(it) {
-      if (isSchemaObj(it)) {
-        checkKeywords(it);
-        if (schemaCxtHasRules(it)) {
-          topSchemaObjCode(it);
-          return;
-        }
-      }
-      validateFunction(it, () => (0, boolSchema_1.topBoolOrEmptySchema)(it));
-    }
-    exports.validateFunctionCode = validateFunctionCode;
-    function validateFunction({ gen, validateName, schema: schema2, schemaEnv, opts }, body) {
-      if (opts.code.es5) {
-        gen.func(validateName, (0, codegen_1._)`${names_1.default.data}, ${names_1.default.valCxt}`, schemaEnv.$async, () => {
-          gen.code((0, codegen_1._)`"use strict"; ${funcSourceUrl(schema2, opts)}`);
-          destructureValCxtES5(gen, opts);
-          gen.code(body);
-        });
-      } else {
-        gen.func(validateName, (0, codegen_1._)`${names_1.default.data}, ${destructureValCxt(opts)}`, schemaEnv.$async, () => gen.code(funcSourceUrl(schema2, opts)).code(body));
-      }
-    }
-    function destructureValCxt(opts) {
-      return (0, codegen_1._)`{${names_1.default.instancePath}="", ${names_1.default.parentData}, ${names_1.default.parentDataProperty}, ${names_1.default.rootData}=${names_1.default.data}${opts.dynamicRef ? (0, codegen_1._)`, ${names_1.default.dynamicAnchors}={}` : codegen_1.nil}}={}`;
-    }
-    function destructureValCxtES5(gen, opts) {
-      gen.if(names_1.default.valCxt, () => {
-        gen.var(names_1.default.instancePath, (0, codegen_1._)`${names_1.default.valCxt}.${names_1.default.instancePath}`);
-        gen.var(names_1.default.parentData, (0, codegen_1._)`${names_1.default.valCxt}.${names_1.default.parentData}`);
-        gen.var(names_1.default.parentDataProperty, (0, codegen_1._)`${names_1.default.valCxt}.${names_1.default.parentDataProperty}`);
-        gen.var(names_1.default.rootData, (0, codegen_1._)`${names_1.default.valCxt}.${names_1.default.rootData}`);
-        if (opts.dynamicRef)
-          gen.var(names_1.default.dynamicAnchors, (0, codegen_1._)`${names_1.default.valCxt}.${names_1.default.dynamicAnchors}`);
-      }, () => {
-        gen.var(names_1.default.instancePath, (0, codegen_1._)`""`);
-        gen.var(names_1.default.parentData, (0, codegen_1._)`undefined`);
-        gen.var(names_1.default.parentDataProperty, (0, codegen_1._)`undefined`);
-        gen.var(names_1.default.rootData, names_1.default.data);
-        if (opts.dynamicRef)
-          gen.var(names_1.default.dynamicAnchors, (0, codegen_1._)`{}`);
-      });
-    }
-    function topSchemaObjCode(it) {
-      const { schema: schema2, opts, gen } = it;
-      validateFunction(it, () => {
-        if (opts.$comment && schema2.$comment)
-          commentKeyword(it);
-        checkNoDefault(it);
-        gen.let(names_1.default.vErrors, null);
-        gen.let(names_1.default.errors, 0);
-        if (opts.unevaluated)
-          resetEvaluated(it);
-        typeAndKeywords(it);
-        returnResults(it);
-      });
-      return;
-    }
-    function resetEvaluated(it) {
-      const { gen, validateName } = it;
-      it.evaluated = gen.const("evaluated", (0, codegen_1._)`${validateName}.evaluated`);
-      gen.if((0, codegen_1._)`${it.evaluated}.dynamicProps`, () => gen.assign((0, codegen_1._)`${it.evaluated}.props`, (0, codegen_1._)`undefined`));
-      gen.if((0, codegen_1._)`${it.evaluated}.dynamicItems`, () => gen.assign((0, codegen_1._)`${it.evaluated}.items`, (0, codegen_1._)`undefined`));
-    }
-    function funcSourceUrl(schema2, opts) {
-      const schId = typeof schema2 == "object" && schema2[opts.schemaId];
-      return schId && (opts.code.source || opts.code.process) ? (0, codegen_1._)`/*# sourceURL=${schId} */` : codegen_1.nil;
-    }
-    function subschemaCode(it, valid) {
-      if (isSchemaObj(it)) {
-        checkKeywords(it);
-        if (schemaCxtHasRules(it)) {
-          subSchemaObjCode(it, valid);
-          return;
-        }
-      }
-      (0, boolSchema_1.boolOrEmptySchema)(it, valid);
-    }
-    function schemaCxtHasRules({ schema: schema2, self }) {
-      if (typeof schema2 == "boolean")
-        return !schema2;
-      for (const key in schema2)
-        if (self.RULES.all[key])
-          return true;
-      return false;
-    }
-    function isSchemaObj(it) {
-      return typeof it.schema != "boolean";
-    }
-    function subSchemaObjCode(it, valid) {
-      const { schema: schema2, gen, opts } = it;
-      if (opts.$comment && schema2.$comment)
-        commentKeyword(it);
-      updateContext(it);
-      checkAsyncSchema(it);
-      const errsCount = gen.const("_errs", names_1.default.errors);
-      typeAndKeywords(it, errsCount);
-      gen.var(valid, (0, codegen_1._)`${errsCount} === ${names_1.default.errors}`);
-    }
-    function checkKeywords(it) {
-      (0, util_1.checkUnknownRules)(it);
-      checkRefsAndKeywords(it);
-    }
-    function typeAndKeywords(it, errsCount) {
-      if (it.opts.jtd)
-        return schemaKeywords(it, [], false, errsCount);
-      const types = (0, dataType_1.getSchemaTypes)(it.schema);
-      const checkedTypes = (0, dataType_1.coerceAndCheckDataType)(it, types);
-      schemaKeywords(it, types, !checkedTypes, errsCount);
-    }
-    function checkRefsAndKeywords(it) {
-      const { schema: schema2, errSchemaPath, opts, self } = it;
-      if (schema2.$ref && opts.ignoreKeywordsWithRef && (0, util_1.schemaHasRulesButRef)(schema2, self.RULES)) {
-        self.logger.warn(`$ref: keywords ignored in schema at path "${errSchemaPath}"`);
-      }
-    }
-    function checkNoDefault(it) {
-      const { schema: schema2, opts } = it;
-      if (schema2.default !== void 0 && opts.useDefaults && opts.strictSchema) {
-        (0, util_1.checkStrictMode)(it, "default is ignored in the schema root");
-      }
-    }
-    function updateContext(it) {
-      const schId = it.schema[it.opts.schemaId];
-      if (schId)
-        it.baseId = (0, resolve_1.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
-    }
-    function checkAsyncSchema(it) {
-      if (it.schema.$async && !it.schemaEnv.$async)
-        throw new Error("async schema in sync schema");
-    }
-    function commentKeyword({ gen, schemaEnv, schema: schema2, errSchemaPath, opts }) {
-      const msg = schema2.$comment;
-      if (opts.$comment === true) {
-        gen.code((0, codegen_1._)`${names_1.default.self}.logger.log(${msg})`);
-      } else if (typeof opts.$comment == "function") {
-        const schemaPath = (0, codegen_1.str)`${errSchemaPath}/$comment`;
-        const rootName = gen.scopeValue("root", { ref: schemaEnv.root });
-        gen.code((0, codegen_1._)`${names_1.default.self}.opts.$comment(${msg}, ${schemaPath}, ${rootName}.schema)`);
-      }
-    }
-    function returnResults(it) {
-      const { gen, schemaEnv, validateName, ValidationError, opts } = it;
-      if (schemaEnv.$async) {
-        gen.if((0, codegen_1._)`${names_1.default.errors} === 0`, () => gen.return(names_1.default.data), () => gen.throw((0, codegen_1._)`new ${ValidationError}(${names_1.default.vErrors})`));
-      } else {
-        gen.assign((0, codegen_1._)`${validateName}.errors`, names_1.default.vErrors);
-        if (opts.unevaluated)
-          assignEvaluated(it);
-        gen.return((0, codegen_1._)`${names_1.default.errors} === 0`);
-      }
-    }
-    function assignEvaluated({ gen, evaluated, props, items }) {
-      if (props instanceof codegen_1.Name)
-        gen.assign((0, codegen_1._)`${evaluated}.props`, props);
-      if (items instanceof codegen_1.Name)
-        gen.assign((0, codegen_1._)`${evaluated}.items`, items);
-    }
-    function schemaKeywords(it, types, typeErrors, errsCount) {
-      const { gen, schema: schema2, data, allErrors, opts, self } = it;
-      const { RULES } = self;
-      if (schema2.$ref && (opts.ignoreKeywordsWithRef || !(0, util_1.schemaHasRulesButRef)(schema2, RULES))) {
-        gen.block(() => keywordCode(it, "$ref", RULES.all.$ref.definition));
-        return;
-      }
-      if (!opts.jtd)
-        checkStrictTypes(it, types);
-      gen.block(() => {
-        for (const group of RULES.rules)
-          groupKeywords(group);
-        groupKeywords(RULES.post);
-      });
-      function groupKeywords(group) {
-        if (!(0, applicability_1.shouldUseGroup)(schema2, group))
-          return;
-        if (group.type) {
-          gen.if((0, dataType_2.checkDataType)(group.type, data, opts.strictNumbers));
-          iterateKeywords(it, group);
-          if (types.length === 1 && types[0] === group.type && typeErrors) {
-            gen.else();
-            (0, dataType_2.reportTypeError)(it);
-          }
-          gen.endIf();
-        } else {
-          iterateKeywords(it, group);
-        }
-        if (!allErrors)
-          gen.if((0, codegen_1._)`${names_1.default.errors} === ${errsCount || 0}`);
-      }
-    }
-    function iterateKeywords(it, group) {
-      const { gen, schema: schema2, opts: { useDefaults } } = it;
-      if (useDefaults)
-        (0, defaults_1.assignDefaults)(it, group.type);
-      gen.block(() => {
-        for (const rule of group.rules) {
-          if ((0, applicability_1.shouldUseRule)(schema2, rule)) {
-            keywordCode(it, rule.keyword, rule.definition, group.type);
-          }
-        }
-      });
-    }
-    function checkStrictTypes(it, types) {
-      if (it.schemaEnv.meta || !it.opts.strictTypes)
-        return;
-      checkContextTypes(it, types);
-      if (!it.opts.allowUnionTypes)
-        checkMultipleTypes(it, types);
-      checkKeywordTypes(it, it.dataTypes);
-    }
-    function checkContextTypes(it, types) {
-      if (!types.length)
-        return;
-      if (!it.dataTypes.length) {
-        it.dataTypes = types;
-        return;
-      }
-      types.forEach((t) => {
-        if (!includesType(it.dataTypes, t)) {
-          strictTypesError(it, `type "${t}" not allowed by context "${it.dataTypes.join(",")}"`);
-        }
-      });
-      narrowSchemaTypes(it, types);
-    }
-    function checkMultipleTypes(it, ts) {
-      if (ts.length > 1 && !(ts.length === 2 && ts.includes("null"))) {
-        strictTypesError(it, "use allowUnionTypes to allow union type keyword");
-      }
-    }
-    function checkKeywordTypes(it, ts) {
-      const rules = it.self.RULES.all;
-      for (const keyword in rules) {
-        const rule = rules[keyword];
-        if (typeof rule == "object" && (0, applicability_1.shouldUseRule)(it.schema, rule)) {
-          const { type } = rule.definition;
-          if (type.length && !type.some((t) => hasApplicableType(ts, t))) {
-            strictTypesError(it, `missing type "${type.join(",")}" for keyword "${keyword}"`);
-          }
-        }
-      }
-    }
-    function hasApplicableType(schTs, kwdT) {
-      return schTs.includes(kwdT) || kwdT === "number" && schTs.includes("integer");
-    }
-    function includesType(ts, t) {
-      return ts.includes(t) || t === "integer" && ts.includes("number");
-    }
-    function narrowSchemaTypes(it, withTypes) {
-      const ts = [];
-      for (const t of it.dataTypes) {
-        if (includesType(withTypes, t))
-          ts.push(t);
-        else if (withTypes.includes("integer") && t === "number")
-          ts.push("integer");
-      }
-      it.dataTypes = ts;
-    }
-    function strictTypesError(it, msg) {
-      const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
-      msg += ` at "${schemaPath}" (strictTypes)`;
-      (0, util_1.checkStrictMode)(it, msg, it.opts.strictTypes);
-    }
-    var KeywordCxt = class {
-      constructor(it, def, keyword) {
-        (0, keyword_1.validateKeywordUsage)(it, def, keyword);
-        this.gen = it.gen;
-        this.allErrors = it.allErrors;
-        this.keyword = keyword;
-        this.data = it.data;
-        this.schema = it.schema[keyword];
-        this.$data = def.$data && it.opts.$data && this.schema && this.schema.$data;
-        this.schemaValue = (0, util_1.schemaRefOrVal)(it, this.schema, keyword, this.$data);
-        this.schemaType = def.schemaType;
-        this.parentSchema = it.schema;
-        this.params = {};
-        this.it = it;
-        this.def = def;
-        if (this.$data) {
-          this.schemaCode = it.gen.const("vSchema", getData(this.$data, it));
-        } else {
-          this.schemaCode = this.schemaValue;
-          if (!(0, keyword_1.validSchemaType)(this.schema, def.schemaType, def.allowUndefined)) {
-            throw new Error(`${keyword} value must be ${JSON.stringify(def.schemaType)}`);
-          }
-        }
-        if ("code" in def ? def.trackErrors : def.errors !== false) {
-          this.errsCount = it.gen.const("_errs", names_1.default.errors);
-        }
-      }
-      result(condition, successAction, failAction) {
-        this.failResult((0, codegen_1.not)(condition), successAction, failAction);
-      }
-      failResult(condition, successAction, failAction) {
-        this.gen.if(condition);
-        if (failAction)
-          failAction();
-        else
-          this.error();
-        if (successAction) {
-          this.gen.else();
-          successAction();
-          if (this.allErrors)
-            this.gen.endIf();
-        } else {
-          if (this.allErrors)
-            this.gen.endIf();
-          else
-            this.gen.else();
-        }
-      }
-      pass(condition, failAction) {
-        this.failResult((0, codegen_1.not)(condition), void 0, failAction);
-      }
-      fail(condition) {
-        if (condition === void 0) {
-          this.error();
-          if (!this.allErrors)
-            this.gen.if(false);
-          return;
-        }
-        this.gen.if(condition);
-        this.error();
-        if (this.allErrors)
-          this.gen.endIf();
-        else
-          this.gen.else();
-      }
-      fail$data(condition) {
-        if (!this.$data)
-          return this.fail(condition);
-        const { schemaCode } = this;
-        this.fail((0, codegen_1._)`${schemaCode} !== undefined && (${(0, codegen_1.or)(this.invalid$data(), condition)})`);
-      }
-      error(append, errorParams, errorPaths) {
-        if (errorParams) {
-          this.setParams(errorParams);
-          this._error(append, errorPaths);
-          this.setParams({});
-          return;
-        }
-        this._error(append, errorPaths);
-      }
-      _error(append, errorPaths) {
-        ;
-        (append ? errors_1.reportExtraError : errors_1.reportError)(this, this.def.error, errorPaths);
-      }
-      $dataError() {
-        (0, errors_1.reportError)(this, this.def.$dataError || errors_1.keyword$DataError);
-      }
-      reset() {
-        if (this.errsCount === void 0)
-          throw new Error('add "trackErrors" to keyword definition');
-        (0, errors_1.resetErrorsCount)(this.gen, this.errsCount);
-      }
-      ok(cond) {
-        if (!this.allErrors)
-          this.gen.if(cond);
-      }
-      setParams(obj, assign) {
-        if (assign)
-          Object.assign(this.params, obj);
-        else
-          this.params = obj;
-      }
-      block$data(valid, codeBlock, $dataValid = codegen_1.nil) {
-        this.gen.block(() => {
-          this.check$data(valid, $dataValid);
-          codeBlock();
-        });
-      }
-      check$data(valid = codegen_1.nil, $dataValid = codegen_1.nil) {
-        if (!this.$data)
-          return;
-        const { gen, schemaCode, schemaType, def } = this;
-        gen.if((0, codegen_1.or)((0, codegen_1._)`${schemaCode} === undefined`, $dataValid));
-        if (valid !== codegen_1.nil)
-          gen.assign(valid, true);
-        if (schemaType.length || def.validateSchema) {
-          gen.elseIf(this.invalid$data());
-          this.$dataError();
-          if (valid !== codegen_1.nil)
-            gen.assign(valid, false);
-        }
-        gen.else();
-      }
-      invalid$data() {
-        const { gen, schemaCode, schemaType, def, it } = this;
-        return (0, codegen_1.or)(wrong$DataType(), invalid$DataSchema());
-        function wrong$DataType() {
-          if (schemaType.length) {
-            if (!(schemaCode instanceof codegen_1.Name))
-              throw new Error("ajv implementation error");
-            const st = Array.isArray(schemaType) ? schemaType : [schemaType];
-            return (0, codegen_1._)`${(0, dataType_2.checkDataTypes)(st, schemaCode, it.opts.strictNumbers, dataType_2.DataType.Wrong)}`;
-          }
-          return codegen_1.nil;
-        }
-        function invalid$DataSchema() {
-          if (def.validateSchema) {
-            const validateSchemaRef = gen.scopeValue("validate$data", { ref: def.validateSchema });
-            return (0, codegen_1._)`!${validateSchemaRef}(${schemaCode})`;
-          }
-          return codegen_1.nil;
-        }
-      }
-      subschema(appl, valid) {
-        const subschema = (0, subschema_1.getSubschema)(this.it, appl);
-        (0, subschema_1.extendSubschemaData)(subschema, this.it, appl);
-        (0, subschema_1.extendSubschemaMode)(subschema, appl);
-        const nextContext = { ...this.it, ...subschema, items: void 0, props: void 0 };
-        subschemaCode(nextContext, valid);
-        return nextContext;
-      }
-      mergeEvaluated(schemaCxt, toName) {
-        const { it, gen } = this;
-        if (!it.opts.unevaluated)
-          return;
-        if (it.props !== true && schemaCxt.props !== void 0) {
-          it.props = util_1.mergeEvaluated.props(gen, schemaCxt.props, it.props, toName);
-        }
-        if (it.items !== true && schemaCxt.items !== void 0) {
-          it.items = util_1.mergeEvaluated.items(gen, schemaCxt.items, it.items, toName);
-        }
-      }
-      mergeValidEvaluated(schemaCxt, valid) {
-        const { it, gen } = this;
-        if (it.opts.unevaluated && (it.props !== true || it.items !== true)) {
-          gen.if(valid, () => this.mergeEvaluated(schemaCxt, codegen_1.Name));
-          return true;
-        }
-      }
-    };
-    exports.KeywordCxt = KeywordCxt;
-    function keywordCode(it, keyword, def, ruleType) {
-      const cxt = new KeywordCxt(it, def, keyword);
-      if ("code" in def) {
-        def.code(cxt, ruleType);
-      } else if (cxt.$data && def.validate) {
-        (0, keyword_1.funcKeywordCode)(cxt, def);
-      } else if ("macro" in def) {
-        (0, keyword_1.macroKeywordCode)(cxt, def);
-      } else if (def.compile || def.validate) {
-        (0, keyword_1.funcKeywordCode)(cxt, def);
-      }
-    }
-    var JSON_POINTER = /^\/(?:[^~]|~0|~1)*$/;
-    var RELATIVE_JSON_POINTER = /^([0-9]+)(#|\/(?:[^~]|~0|~1)*)?$/;
-    function getData($data, { dataLevel, dataNames, dataPathArr }) {
-      let jsonPointer;
-      let data;
-      if ($data === "")
-        return names_1.default.rootData;
-      if ($data[0] === "/") {
-        if (!JSON_POINTER.test($data))
-          throw new Error(`Invalid JSON-pointer: ${$data}`);
-        jsonPointer = $data;
-        data = names_1.default.rootData;
-      } else {
-        const matches = RELATIVE_JSON_POINTER.exec($data);
-        if (!matches)
-          throw new Error(`Invalid JSON-pointer: ${$data}`);
-        const up = +matches[1];
-        jsonPointer = matches[2];
-        if (jsonPointer === "#") {
-          if (up >= dataLevel)
-            throw new Error(errorMsg("property/index", up));
-          return dataPathArr[dataLevel - up];
-        }
-        if (up > dataLevel)
-          throw new Error(errorMsg("data", up));
-        data = dataNames[dataLevel - up];
-        if (!jsonPointer)
-          return data;
-      }
-      let expr = data;
-      const segments = jsonPointer.split("/");
-      for (const segment of segments) {
-        if (segment) {
-          data = (0, codegen_1._)`${data}${(0, codegen_1.getProperty)((0, util_1.unescapeJsonPointer)(segment))}`;
-          expr = (0, codegen_1._)`${expr} && ${data}`;
-        }
-      }
-      return expr;
-      function errorMsg(pointerType, up) {
-        return `Cannot access ${pointerType} ${up} levels up, current level is ${dataLevel}`;
-      }
-    }
-    exports.getData = getData;
-  }
-});
-
-// node_modules/ajv/dist/runtime/validation_error.js
-var require_validation_error = __commonJS({
-  "node_modules/ajv/dist/runtime/validation_error.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var ValidationError = class extends Error {
-      constructor(errors2) {
-        super("validation failed");
-        this.errors = errors2;
-        this.ajv = this.validation = true;
-      }
-    };
-    exports.default = ValidationError;
-  }
-});
-
-// node_modules/ajv/dist/compile/ref_error.js
-var require_ref_error = __commonJS({
-  "node_modules/ajv/dist/compile/ref_error.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var resolve_1 = require_resolve();
-    var MissingRefError = class extends Error {
-      constructor(resolver, baseId, ref, msg) {
-        super(msg || `can't resolve reference ${ref} from id ${baseId}`);
-        this.missingRef = (0, resolve_1.resolveUrl)(resolver, baseId, ref);
-        this.missingSchema = (0, resolve_1.normalizeId)((0, resolve_1.getFullPath)(resolver, this.missingRef));
-      }
-    };
-    exports.default = MissingRefError;
-  }
-});
-
-// node_modules/ajv/dist/compile/index.js
-var require_compile = __commonJS({
-  "node_modules/ajv/dist/compile/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.resolveSchema = exports.getCompilingSchema = exports.resolveRef = exports.compileSchema = exports.SchemaEnv = void 0;
-    var codegen_1 = require_codegen();
-    var validation_error_1 = require_validation_error();
-    var names_1 = require_names();
-    var resolve_1 = require_resolve();
-    var util_1 = require_util();
-    var validate_1 = require_validate();
-    var SchemaEnv = class {
-      constructor(env) {
-        var _a;
-        this.refs = {};
-        this.dynamicAnchors = {};
-        let schema2;
-        if (typeof env.schema == "object")
-          schema2 = env.schema;
-        this.schema = env.schema;
-        this.schemaId = env.schemaId;
-        this.root = env.root || this;
-        this.baseId = (_a = env.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema2 === null || schema2 === void 0 ? void 0 : schema2[env.schemaId || "$id"]);
-        this.schemaPath = env.schemaPath;
-        this.localRefs = env.localRefs;
-        this.meta = env.meta;
-        this.$async = schema2 === null || schema2 === void 0 ? void 0 : schema2.$async;
-        this.refs = {};
-      }
-    };
-    exports.SchemaEnv = SchemaEnv;
-    function compileSchema(sch) {
-      const _sch = getCompilingSchema.call(this, sch);
-      if (_sch)
-        return _sch;
-      const rootId = (0, resolve_1.getFullPath)(this.opts.uriResolver, sch.root.baseId);
-      const { es5, lines } = this.opts.code;
-      const { ownProperties } = this.opts;
-      const gen = new codegen_1.CodeGen(this.scope, { es5, lines, ownProperties });
-      let _ValidationError;
-      if (sch.$async) {
-        _ValidationError = gen.scopeValue("Error", {
-          ref: validation_error_1.default,
-          code: (0, codegen_1._)`require("ajv/dist/runtime/validation_error").default`
-        });
-      }
-      const validateName = gen.scopeName("validate");
-      sch.validateName = validateName;
-      const schemaCxt = {
-        gen,
-        allErrors: this.opts.allErrors,
-        data: names_1.default.data,
-        parentData: names_1.default.parentData,
-        parentDataProperty: names_1.default.parentDataProperty,
-        dataNames: [names_1.default.data],
-        dataPathArr: [codegen_1.nil],
-        // TODO can its length be used as dataLevel if nil is removed?
-        dataLevel: 0,
-        dataTypes: [],
-        definedProperties: /* @__PURE__ */ new Set(),
-        topSchemaRef: gen.scopeValue("schema", this.opts.code.source === true ? { ref: sch.schema, code: (0, codegen_1.stringify)(sch.schema) } : { ref: sch.schema }),
-        validateName,
-        ValidationError: _ValidationError,
-        schema: sch.schema,
-        schemaEnv: sch,
-        rootId,
-        baseId: sch.baseId || rootId,
-        schemaPath: codegen_1.nil,
-        errSchemaPath: sch.schemaPath || (this.opts.jtd ? "" : "#"),
-        errorPath: (0, codegen_1._)`""`,
-        opts: this.opts,
-        self: this
-      };
-      let sourceCode;
-      try {
-        this._compilations.add(sch);
-        (0, validate_1.validateFunctionCode)(schemaCxt);
-        gen.optimize(this.opts.code.optimize);
-        const validateCode = gen.toString();
-        sourceCode = `${gen.scopeRefs(names_1.default.scope)}return ${validateCode}`;
-        if (this.opts.code.process)
-          sourceCode = this.opts.code.process(sourceCode, sch);
-        const makeValidate = new Function(`${names_1.default.self}`, `${names_1.default.scope}`, sourceCode);
-        const validate = makeValidate(this, this.scope.get());
-        this.scope.value(validateName, { ref: validate });
-        validate.errors = null;
-        validate.schema = sch.schema;
-        validate.schemaEnv = sch;
-        if (sch.$async)
-          validate.$async = true;
-        if (this.opts.code.source === true) {
-          validate.source = { validateName, validateCode, scopeValues: gen._values };
-        }
-        if (this.opts.unevaluated) {
-          const { props, items } = schemaCxt;
-          validate.evaluated = {
-            props: props instanceof codegen_1.Name ? void 0 : props,
-            items: items instanceof codegen_1.Name ? void 0 : items,
-            dynamicProps: props instanceof codegen_1.Name,
-            dynamicItems: items instanceof codegen_1.Name
-          };
-          if (validate.source)
-            validate.source.evaluated = (0, codegen_1.stringify)(validate.evaluated);
-        }
-        sch.validate = validate;
-        return sch;
-      } catch (e) {
-        delete sch.validate;
-        delete sch.validateName;
-        if (sourceCode)
-          this.logger.error("Error compiling schema, function code:", sourceCode);
-        throw e;
-      } finally {
-        this._compilations.delete(sch);
-      }
-    }
-    exports.compileSchema = compileSchema;
-    function resolveRef(root, baseId, ref) {
-      var _a;
-      ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, ref);
-      const schOrFunc = root.refs[ref];
-      if (schOrFunc)
-        return schOrFunc;
-      let _sch = resolve31.call(this, root, ref);
-      if (_sch === void 0) {
-        const schema2 = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref];
-        const { schemaId } = this.opts;
-        if (schema2)
-          _sch = new SchemaEnv({ schema: schema2, schemaId, root, baseId });
-      }
-      if (_sch === void 0)
-        return;
-      return root.refs[ref] = inlineOrCompile.call(this, _sch);
-    }
-    exports.resolveRef = resolveRef;
-    function inlineOrCompile(sch) {
-      if ((0, resolve_1.inlineRef)(sch.schema, this.opts.inlineRefs))
-        return sch.schema;
-      return sch.validate ? sch : compileSchema.call(this, sch);
-    }
-    function getCompilingSchema(schEnv) {
-      for (const sch of this._compilations) {
-        if (sameSchemaEnv(sch, schEnv))
-          return sch;
-      }
-    }
-    exports.getCompilingSchema = getCompilingSchema;
-    function sameSchemaEnv(s1, s2) {
-      return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
-    }
-    function resolve31(root, ref) {
-      let sch;
-      while (typeof (sch = this.refs[ref]) == "string")
-        ref = sch;
-      return sch || this.schemas[ref] || resolveSchema.call(this, root, ref);
-    }
-    function resolveSchema(root, ref) {
-      const p = this.opts.uriResolver.parse(ref);
-      const refPath = (0, resolve_1._getFullPath)(this.opts.uriResolver, p);
-      let baseId = (0, resolve_1.getFullPath)(this.opts.uriResolver, root.baseId, void 0);
-      if (Object.keys(root.schema).length > 0 && refPath === baseId) {
-        return getJsonPointer.call(this, p, root);
-      }
-      const id = (0, resolve_1.normalizeId)(refPath);
-      const schOrRef = this.refs[id] || this.schemas[id];
-      if (typeof schOrRef == "string") {
-        const sch = resolveSchema.call(this, root, schOrRef);
-        if (typeof (sch === null || sch === void 0 ? void 0 : sch.schema) !== "object")
-          return;
-        return getJsonPointer.call(this, p, sch);
-      }
-      if (typeof (schOrRef === null || schOrRef === void 0 ? void 0 : schOrRef.schema) !== "object")
-        return;
-      if (!schOrRef.validate)
-        compileSchema.call(this, schOrRef);
-      if (id === (0, resolve_1.normalizeId)(ref)) {
-        const { schema: schema2 } = schOrRef;
-        const { schemaId } = this.opts;
-        const schId = schema2[schemaId];
-        if (schId)
-          baseId = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schId);
-        return new SchemaEnv({ schema: schema2, schemaId, root, baseId });
-      }
-      return getJsonPointer.call(this, p, schOrRef);
-    }
-    exports.resolveSchema = resolveSchema;
-    var PREVENT_SCOPE_CHANGE = /* @__PURE__ */ new Set([
-      "properties",
-      "patternProperties",
-      "enum",
-      "dependencies",
-      "definitions"
-    ]);
-    function getJsonPointer(parsedRef, { baseId, schema: schema2, root }) {
-      var _a;
-      if (((_a = parsedRef.fragment) === null || _a === void 0 ? void 0 : _a[0]) !== "/")
-        return;
-      for (const part of parsedRef.fragment.slice(1).split("/")) {
-        if (typeof schema2 === "boolean")
-          return;
-        const partSchema = schema2[(0, util_1.unescapeFragment)(part)];
-        if (partSchema === void 0)
-          return;
-        schema2 = partSchema;
-        const schId = typeof schema2 === "object" && schema2[this.opts.schemaId];
-        if (!PREVENT_SCOPE_CHANGE.has(part) && schId) {
-          baseId = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schId);
-        }
-      }
-      let env;
-      if (typeof schema2 != "boolean" && schema2.$ref && !(0, util_1.schemaHasRulesButRef)(schema2, this.RULES)) {
-        const $ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schema2.$ref);
-        env = resolveSchema.call(this, root, $ref);
-      }
-      const { schemaId } = this.opts;
-      env = env || new SchemaEnv({ schema: schema2, schemaId, root, baseId });
-      if (env.schema !== env.root.schema)
-        return env;
-      return void 0;
-    }
-  }
-});
-
-// node_modules/ajv/dist/refs/data.json
-var require_data = __commonJS({
-  "node_modules/ajv/dist/refs/data.json"(exports, module) {
-    module.exports = {
-      $id: "https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#",
-      description: "Meta-schema for $data reference (JSON AnySchema extension proposal)",
-      type: "object",
-      required: ["$data"],
-      properties: {
-        $data: {
-          type: "string",
-          anyOf: [{ format: "relative-json-pointer" }, { format: "json-pointer" }]
-        }
-      },
-      additionalProperties: false
-    };
-  }
-});
-
-// node_modules/fast-uri/lib/utils.js
-var require_utils = __commonJS({
-  "node_modules/fast-uri/lib/utils.js"(exports, module) {
-    "use strict";
-    var isUUID = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu);
-    var isIPv4 = RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u);
-    var isHexPair = RegExp.prototype.test.bind(/^[\da-f]{2}$/iu);
-    var isUnreserved = RegExp.prototype.test.bind(/^[\da-z\-._~]$/iu);
-    var isPathCharacter = RegExp.prototype.test.bind(/^[\da-z\-._~!$&'()*+,;=:@/]$/iu);
-    function stringArrayToHexStripped(input) {
-      let acc = "";
-      let code = 0;
-      let i = 0;
-      for (i = 0; i < input.length; i++) {
-        code = input[i].charCodeAt(0);
-        if (code === 48) {
-          continue;
-        }
-        if (!(code >= 48 && code <= 57 || code >= 65 && code <= 70 || code >= 97 && code <= 102)) {
-          return "";
-        }
-        acc += input[i];
-        break;
-      }
-      for (i += 1; i < input.length; i++) {
-        code = input[i].charCodeAt(0);
-        if (!(code >= 48 && code <= 57 || code >= 65 && code <= 70 || code >= 97 && code <= 102)) {
-          return "";
-        }
-        acc += input[i];
-      }
-      return acc;
-    }
-    var nonSimpleDomain = RegExp.prototype.test.bind(/[^!"$&'()*+,\-.;=_`a-z{}~]/u);
-    function consumeIsZone(buffer) {
-      buffer.length = 0;
-      return true;
-    }
-    function consumeHextets(buffer, address, output) {
-      if (buffer.length) {
-        const hex = stringArrayToHexStripped(buffer);
-        if (hex !== "") {
-          address.push(hex);
-        } else {
-          output.error = true;
-          return false;
-        }
-        buffer.length = 0;
-      }
-      return true;
-    }
-    function getIPV6(input) {
-      let tokenCount = 0;
-      const output = { error: false, address: "", zone: "" };
-      const address = [];
-      const buffer = [];
-      let endipv6Encountered = false;
-      let endIpv6 = false;
-      let consume = consumeHextets;
-      for (let i = 0; i < input.length; i++) {
-        const cursor = input[i];
-        if (cursor === "[" || cursor === "]") {
-          continue;
-        }
-        if (cursor === ":") {
-          if (endipv6Encountered === true) {
-            endIpv6 = true;
-          }
-          if (!consume(buffer, address, output)) {
-            break;
-          }
-          if (++tokenCount > 7) {
-            output.error = true;
-            break;
-          }
-          if (i > 0 && input[i - 1] === ":") {
-            endipv6Encountered = true;
-          }
-          address.push(":");
-          continue;
-        } else if (cursor === "%") {
-          if (!consume(buffer, address, output)) {
-            break;
-          }
-          consume = consumeIsZone;
-        } else {
-          buffer.push(cursor);
-          continue;
-        }
-      }
-      if (buffer.length) {
-        if (consume === consumeIsZone) {
-          output.zone = buffer.join("");
-        } else if (endIpv6) {
-          address.push(buffer.join(""));
-        } else {
-          address.push(stringArrayToHexStripped(buffer));
-        }
-      }
-      output.address = address.join("");
-      return output;
-    }
-    function normalizeIPv6(host) {
-      if (findToken(host, ":") < 2) {
-        return { host, isIPV6: false };
-      }
-      const ipv6 = getIPV6(host);
-      if (!ipv6.error) {
-        let newHost = ipv6.address;
-        let escapedHost = ipv6.address;
-        if (ipv6.zone) {
-          newHost += "%" + ipv6.zone;
-          escapedHost += "%25" + ipv6.zone;
-        }
-        return { host: newHost, isIPV6: true, escapedHost };
-      } else {
-        return { host, isIPV6: false };
-      }
-    }
-    function findToken(str, token) {
-      let ind = 0;
-      for (let i = 0; i < str.length; i++) {
-        if (str[i] === token) ind++;
-      }
-      return ind;
-    }
-    function removeDotSegments(path2) {
-      let input = path2;
-      const output = [];
-      let nextSlash = -1;
-      let len = 0;
-      while (len = input.length) {
-        if (len === 1) {
-          if (input === ".") {
-            break;
-          } else if (input === "/") {
-            output.push("/");
-            break;
-          } else {
-            output.push(input);
-            break;
-          }
-        } else if (len === 2) {
-          if (input[0] === ".") {
-            if (input[1] === ".") {
-              break;
-            } else if (input[1] === "/") {
-              input = input.slice(2);
-              continue;
-            }
-          } else if (input[0] === "/") {
-            if (input[1] === "." || input[1] === "/") {
-              output.push("/");
-              break;
-            }
-          }
-        } else if (len === 3) {
-          if (input === "/..") {
-            if (output.length !== 0) {
-              output.pop();
-            }
-            output.push("/");
-            break;
-          }
-        }
-        if (input[0] === ".") {
-          if (input[1] === ".") {
-            if (input[2] === "/") {
-              input = input.slice(3);
-              continue;
-            }
-          } else if (input[1] === "/") {
-            input = input.slice(2);
-            continue;
-          }
-        } else if (input[0] === "/") {
-          if (input[1] === ".") {
-            if (input[2] === "/") {
-              input = input.slice(2);
-              continue;
-            } else if (input[2] === ".") {
-              if (input[3] === "/") {
-                input = input.slice(3);
-                if (output.length !== 0) {
-                  output.pop();
-                }
-                continue;
-              }
-            }
-          }
-        }
-        if ((nextSlash = input.indexOf("/", 1)) === -1) {
-          output.push(input);
-          break;
-        } else {
-          output.push(input.slice(0, nextSlash));
-          input = input.slice(nextSlash);
-        }
-      }
-      return output.join("");
-    }
-    var HOST_DELIMS = { "@": "%40", "/": "%2F", "?": "%3F", "#": "%23", ":": "%3A" };
-    var HOST_DELIM_RE = /[@/?#:]/g;
-    var HOST_DELIM_NO_COLON_RE = /[@/?#]/g;
-    function reescapeHostDelimiters(host, isIP) {
-      const re = isIP ? HOST_DELIM_NO_COLON_RE : HOST_DELIM_RE;
-      re.lastIndex = 0;
-      return host.replace(re, (ch) => HOST_DELIMS[ch]);
-    }
-    function normalizePercentEncoding(input, decodeUnreserved = false) {
-      if (input.indexOf("%") === -1) {
-        return input;
-      }
-      let output = "";
-      for (let i = 0; i < input.length; i++) {
-        if (input[i] === "%" && i + 2 < input.length) {
-          const hex = input.slice(i + 1, i + 3);
-          if (isHexPair(hex)) {
-            const normalizedHex = hex.toUpperCase();
-            const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
-            if (decodeUnreserved && isUnreserved(decoded)) {
-              output += decoded;
-            } else {
-              output += "%" + normalizedHex;
-            }
-            i += 2;
-            continue;
-          }
-        }
-        output += input[i];
-      }
-      return output;
-    }
-    function normalizePathEncoding(input) {
-      let output = "";
-      for (let i = 0; i < input.length; i++) {
-        if (input[i] === "%" && i + 2 < input.length) {
-          const hex = input.slice(i + 1, i + 3);
-          if (isHexPair(hex)) {
-            const normalizedHex = hex.toUpperCase();
-            const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
-            if (decoded !== "." && isUnreserved(decoded)) {
-              output += decoded;
-            } else {
-              output += "%" + normalizedHex;
-            }
-            i += 2;
-            continue;
-          }
-        }
-        if (isPathCharacter(input[i])) {
-          output += input[i];
-        } else {
-          output += escape(input[i]);
-        }
-      }
-      return output;
-    }
-    function escapePreservingEscapes(input) {
-      let output = "";
-      for (let i = 0; i < input.length; i++) {
-        if (input[i] === "%" && i + 2 < input.length) {
-          const hex = input.slice(i + 1, i + 3);
-          if (isHexPair(hex)) {
-            output += "%" + hex.toUpperCase();
-            i += 2;
-            continue;
-          }
-        }
-        output += escape(input[i]);
-      }
-      return output;
-    }
-    function recomposeAuthority(component) {
-      const uriTokens = [];
-      if (component.userinfo !== void 0) {
-        uriTokens.push(component.userinfo);
-        uriTokens.push("@");
-      }
-      if (component.host !== void 0) {
-        let host = unescape(component.host);
-        if (!isIPv4(host)) {
-          const ipV6res = normalizeIPv6(host);
-          if (ipV6res.isIPV6 === true) {
-            host = `[${ipV6res.escapedHost}]`;
-          } else {
-            host = reescapeHostDelimiters(host, false);
-          }
-        }
-        uriTokens.push(host);
-      }
-      if (typeof component.port === "number" || typeof component.port === "string") {
-        uriTokens.push(":");
-        uriTokens.push(String(component.port));
-      }
-      return uriTokens.length ? uriTokens.join("") : void 0;
-    }
-    module.exports = {
-      nonSimpleDomain,
-      recomposeAuthority,
-      reescapeHostDelimiters,
-      normalizePercentEncoding,
-      normalizePathEncoding,
-      escapePreservingEscapes,
-      removeDotSegments,
-      isIPv4,
-      isUUID,
-      normalizeIPv6,
-      stringArrayToHexStripped
-    };
-  }
-});
-
-// node_modules/fast-uri/lib/schemes.js
-var require_schemes = __commonJS({
-  "node_modules/fast-uri/lib/schemes.js"(exports, module) {
-    "use strict";
-    var { isUUID } = require_utils();
-    var URN_REG = /([\da-z][\d\-a-z]{0,31}):((?:[\w!$'()*+,\-.:;=@]|%[\da-f]{2})+)/iu;
-    var supportedSchemeNames = (
-      /** @type {const} */
-      [
-        "http",
-        "https",
-        "ws",
-        "wss",
-        "urn",
-        "urn:uuid"
-      ]
-    );
-    function isValidSchemeName(name) {
-      return supportedSchemeNames.indexOf(
-        /** @type {*} */
-        name
-      ) !== -1;
-    }
-    function wsIsSecure(wsComponent) {
-      if (wsComponent.secure === true) {
-        return true;
-      } else if (wsComponent.secure === false) {
-        return false;
-      } else if (wsComponent.scheme) {
-        return wsComponent.scheme.length === 3 && (wsComponent.scheme[0] === "w" || wsComponent.scheme[0] === "W") && (wsComponent.scheme[1] === "s" || wsComponent.scheme[1] === "S") && (wsComponent.scheme[2] === "s" || wsComponent.scheme[2] === "S");
-      } else {
-        return false;
-      }
-    }
-    function httpParse(component) {
-      if (!component.host) {
-        component.error = component.error || "HTTP URIs must have a host.";
-      }
-      return component;
-    }
-    function httpSerialize(component) {
-      const secure = String(component.scheme).toLowerCase() === "https";
-      if (component.port === (secure ? 443 : 80) || component.port === "") {
-        component.port = void 0;
-      }
-      if (!component.path) {
-        component.path = "/";
-      }
-      return component;
-    }
-    function wsParse(wsComponent) {
-      wsComponent.secure = wsIsSecure(wsComponent);
-      wsComponent.resourceName = (wsComponent.path || "/") + (wsComponent.query ? "?" + wsComponent.query : "");
-      wsComponent.path = void 0;
-      wsComponent.query = void 0;
-      return wsComponent;
-    }
-    function wsSerialize(wsComponent) {
-      if (wsComponent.port === (wsIsSecure(wsComponent) ? 443 : 80) || wsComponent.port === "") {
-        wsComponent.port = void 0;
-      }
-      if (typeof wsComponent.secure === "boolean") {
-        wsComponent.scheme = wsComponent.secure ? "wss" : "ws";
-        wsComponent.secure = void 0;
-      }
-      if (wsComponent.resourceName) {
-        const [path2, query] = wsComponent.resourceName.split("?");
-        wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
-        wsComponent.query = query;
-        wsComponent.resourceName = void 0;
-      }
-      wsComponent.fragment = void 0;
-      return wsComponent;
-    }
-    function urnParse(urnComponent, options) {
-      if (!urnComponent.path) {
-        urnComponent.error = "URN can not be parsed";
-        return urnComponent;
-      }
-      const matches = urnComponent.path.match(URN_REG);
-      if (matches) {
-        const scheme = options.scheme || urnComponent.scheme || "urn";
-        urnComponent.nid = matches[1].toLowerCase();
-        urnComponent.nss = matches[2];
-        const urnScheme = `${scheme}:${options.nid || urnComponent.nid}`;
-        const schemeHandler = getSchemeHandler(urnScheme);
-        urnComponent.path = void 0;
-        if (schemeHandler) {
-          urnComponent = schemeHandler.parse(urnComponent, options);
-        }
-      } else {
-        urnComponent.error = urnComponent.error || "URN can not be parsed.";
-      }
-      return urnComponent;
-    }
-    function urnSerialize(urnComponent, options) {
-      if (urnComponent.nid === void 0) {
-        throw new Error("URN without nid cannot be serialized");
-      }
-      const scheme = options.scheme || urnComponent.scheme || "urn";
-      const nid = urnComponent.nid.toLowerCase();
-      const urnScheme = `${scheme}:${options.nid || nid}`;
-      const schemeHandler = getSchemeHandler(urnScheme);
-      if (schemeHandler) {
-        urnComponent = schemeHandler.serialize(urnComponent, options);
-      }
-      const uriComponent = urnComponent;
-      const nss = urnComponent.nss;
-      uriComponent.path = `${nid || options.nid}:${nss}`;
-      options.skipEscape = true;
-      return uriComponent;
-    }
-    function urnuuidParse(urnComponent, options) {
-      const uuidComponent = urnComponent;
-      uuidComponent.uuid = uuidComponent.nss;
-      uuidComponent.nss = void 0;
-      if (!options.tolerant && (!uuidComponent.uuid || !isUUID(uuidComponent.uuid))) {
-        uuidComponent.error = uuidComponent.error || "UUID is not valid.";
-      }
-      return uuidComponent;
-    }
-    function urnuuidSerialize(uuidComponent) {
-      const urnComponent = uuidComponent;
-      urnComponent.nss = (uuidComponent.uuid || "").toLowerCase();
-      return urnComponent;
-    }
-    var http = (
-      /** @type {SchemeHandler} */
-      {
-        scheme: "http",
-        domainHost: true,
-        parse: httpParse,
-        serialize: httpSerialize
-      }
-    );
-    var https = (
-      /** @type {SchemeHandler} */
-      {
-        scheme: "https",
-        domainHost: http.domainHost,
-        parse: httpParse,
-        serialize: httpSerialize
-      }
-    );
-    var ws = (
-      /** @type {SchemeHandler} */
-      {
-        scheme: "ws",
-        domainHost: true,
-        parse: wsParse,
-        serialize: wsSerialize
-      }
-    );
-    var wss = (
-      /** @type {SchemeHandler} */
-      {
-        scheme: "wss",
-        domainHost: ws.domainHost,
-        parse: ws.parse,
-        serialize: ws.serialize
-      }
-    );
-    var urn = (
-      /** @type {SchemeHandler} */
-      {
-        scheme: "urn",
-        parse: urnParse,
-        serialize: urnSerialize,
-        skipNormalize: true
-      }
-    );
-    var urnuuid = (
-      /** @type {SchemeHandler} */
-      {
-        scheme: "urn:uuid",
-        parse: urnuuidParse,
-        serialize: urnuuidSerialize,
-        skipNormalize: true
-      }
-    );
-    var SCHEMES = (
-      /** @type {Record<SchemeName, SchemeHandler>} */
-      {
-        http,
-        https,
-        ws,
-        wss,
-        urn,
-        "urn:uuid": urnuuid
-      }
-    );
-    Object.setPrototypeOf(SCHEMES, null);
-    function getSchemeHandler(scheme) {
-      return scheme && (SCHEMES[
-        /** @type {SchemeName} */
-        scheme
-      ] || SCHEMES[
-        /** @type {SchemeName} */
-        scheme.toLowerCase()
-      ]) || void 0;
-    }
-    module.exports = {
-      wsIsSecure,
-      SCHEMES,
-      isValidSchemeName,
-      getSchemeHandler
-    };
-  }
-});
-
-// node_modules/fast-uri/index.js
-var require_fast_uri = __commonJS({
-  "node_modules/fast-uri/index.js"(exports, module) {
-    "use strict";
-    var { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizePercentEncoding, normalizePathEncoding, escapePreservingEscapes, reescapeHostDelimiters, isIPv4, nonSimpleDomain } = require_utils();
-    var { SCHEMES, getSchemeHandler } = require_schemes();
-    function normalize(uri, options) {
-      if (typeof uri === "string") {
-        uri = /** @type {T} */
-        normalizeString(uri, options);
-      } else if (typeof uri === "object") {
-        uri = /** @type {T} */
-        parse(serialize(uri, options), options);
-      }
-      return uri;
-    }
-    function resolve31(baseURI, relativeURI, options) {
-      const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
-      const { parsed: baseParsed, malformedAuthorityOrPort: baseMalformed } = parseWithStatus(baseURI, schemelessOptions);
-      const { parsed: relativeParsed, malformedAuthorityOrPort: relativeMalformed } = parseWithStatus(relativeURI, schemelessOptions);
-      if (baseMalformed || relativeMalformed) {
-        throw new Error(baseParsed.error || relativeParsed.error || "URI is malformed.");
-      }
-      const resolved = resolveComponent(baseParsed, relativeParsed, schemelessOptions, true);
-      schemelessOptions.skipEscape = true;
-      return serialize(resolved, schemelessOptions);
-    }
-    function resolveComponent(base, relative6, options, skipNormalization) {
-      const target = {};
-      if (!skipNormalization) {
-        base = parse(serialize(base, options), options);
-        relative6 = parse(serialize(relative6, options), options);
-      }
-      options = options || {};
-      if (!options.tolerant && relative6.scheme) {
-        target.scheme = relative6.scheme;
-        target.userinfo = relative6.userinfo;
-        target.host = relative6.host;
-        target.port = relative6.port;
-        target.path = removeDotSegments(relative6.path || "");
-        target.query = relative6.query;
-      } else {
-        if (relative6.userinfo !== void 0 || relative6.host !== void 0 || relative6.port !== void 0) {
-          target.userinfo = relative6.userinfo;
-          target.host = relative6.host;
-          target.port = relative6.port;
-          target.path = removeDotSegments(relative6.path || "");
-          target.query = relative6.query;
-        } else {
-          if (!relative6.path) {
-            target.path = base.path;
-            if (relative6.query !== void 0) {
-              target.query = relative6.query;
-            } else {
-              target.query = base.query;
-            }
-          } else {
-            if (relative6.path[0] === "/") {
-              target.path = removeDotSegments(relative6.path);
-            } else {
-              if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative6.path;
-              } else if (!base.path) {
-                target.path = relative6.path;
-              } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative6.path;
-              }
-              target.path = removeDotSegments(target.path);
-            }
-            target.query = relative6.query;
-          }
-          target.userinfo = base.userinfo;
-          target.host = base.host;
-          target.port = base.port;
-        }
-        target.scheme = base.scheme;
-      }
-      target.fragment = relative6.fragment;
-      return target;
-    }
-    function equal(uriA, uriB, options) {
-      const normalizedA = normalizeComparableURI(uriA, options);
-      const normalizedB = normalizeComparableURI(uriB, options);
-      return normalizedA !== void 0 && normalizedB !== void 0 && normalizedA.toLowerCase() === normalizedB.toLowerCase();
-    }
-    function serialize(cmpts, opts) {
-      const component = {
-        host: cmpts.host,
-        scheme: cmpts.scheme,
-        userinfo: cmpts.userinfo,
-        port: cmpts.port,
-        path: cmpts.path,
-        query: cmpts.query,
-        nid: cmpts.nid,
-        nss: cmpts.nss,
-        uuid: cmpts.uuid,
-        fragment: cmpts.fragment,
-        reference: cmpts.reference,
-        resourceName: cmpts.resourceName,
-        secure: cmpts.secure,
-        error: ""
-      };
-      const options = Object.assign({}, opts);
-      const uriTokens = [];
-      const schemeHandler = getSchemeHandler(options.scheme || component.scheme);
-      if (schemeHandler && schemeHandler.serialize) schemeHandler.serialize(component, options);
-      if (component.path !== void 0) {
-        if (!options.skipEscape) {
-          component.path = escapePreservingEscapes(component.path);
-          if (component.scheme !== void 0) {
-            component.path = component.path.split("%3A").join(":");
-          }
-        } else {
-          component.path = normalizePercentEncoding(component.path);
-        }
-      }
-      if (options.reference !== "suffix" && component.scheme) {
-        uriTokens.push(component.scheme, ":");
-      }
-      const authority = recomposeAuthority(component);
-      if (authority !== void 0) {
-        if (options.reference !== "suffix") {
-          uriTokens.push("//");
-        }
-        uriTokens.push(authority);
-        if (component.path && component.path[0] !== "/") {
-          uriTokens.push("/");
-        }
-      }
-      if (component.path !== void 0) {
-        let s = component.path;
-        if (!options.absolutePath && (!schemeHandler || !schemeHandler.absolutePath)) {
-          s = removeDotSegments(s);
-        }
-        if (authority === void 0 && s[0] === "/" && s[1] === "/") {
-          s = "/%2F" + s.slice(2);
-        }
-        uriTokens.push(s);
-      }
-      if (component.query !== void 0) {
-        uriTokens.push("?", component.query);
-      }
-      if (component.fragment !== void 0) {
-        uriTokens.push("#", component.fragment);
-      }
-      return uriTokens.join("");
-    }
-    var URI_PARSE = /^(?:([^#/:?]+):)?(?:\/\/((?:([^#/?@]*)@)?(\[[^#/?\]]+\]|[^#/:?]*)(?::(\d*))?))?([^#?]*)(?:\?([^#]*))?(?:#((?:.|[\n\r])*))?/u;
-    var AUTHORITY_PREFIX = /^(?:[^#/:?]+:)?\/\/([^/?#]*)/;
-    var AUTHORITY_INTRODUCER_REGION = /^(?:[^#/:?]+:)?([/\\\t\n\r]*)/;
-    function getParseError(parsed, matches) {
-      if (matches[2] !== void 0 && parsed.path && parsed.path[0] !== "/") {
-        return 'URI path must start with "/" when authority is present.';
-      }
-      if (typeof parsed.port === "number" && (parsed.port < 0 || parsed.port > 65535)) {
-        return "URI port is malformed.";
-      }
-      return void 0;
-    }
-    function parseWithStatus(uri, opts) {
-      const options = Object.assign({}, opts);
-      const parsed = {
-        scheme: void 0,
-        userinfo: void 0,
-        host: "",
-        port: void 0,
-        path: "",
-        query: void 0,
-        fragment: void 0
-      };
-      let malformedAuthorityOrPort = false;
-      let isIP = false;
-      if (options.reference === "suffix") {
-        if (options.scheme) {
-          uri = options.scheme + ":" + uri;
-        } else {
-          uri = "//" + uri;
-        }
-      }
-      const authorityMatch = uri.match(AUTHORITY_PREFIX);
-      if (authorityMatch !== null && authorityMatch[1].indexOf("\\") !== -1) {
-        parsed.error = "URI authority must not contain a literal backslash.";
-        malformedAuthorityOrPort = true;
-      }
-      const introducerMatch = uri.match(AUTHORITY_INTRODUCER_REGION);
-      if (introducerMatch !== null) {
-        const region = introducerMatch[1];
-        const normalizedRegion = region.replace(/[\t\n\r]/g, "");
-        if (normalizedRegion.length >= 2) {
-          if (normalizedRegion.slice(0, 2) !== "//") {
-            parsed.error = parsed.error || "URI authority must not contain a literal backslash.";
-            malformedAuthorityOrPort = true;
-          } else if (region.length !== normalizedRegion.length) {
-            parsed.error = parsed.error || "URI authority introducer must not contain whitespace.";
-            malformedAuthorityOrPort = true;
-          }
-        }
-      }
-      const matches = uri.match(URI_PARSE);
-      if (matches) {
-        parsed.scheme = matches[1];
-        parsed.userinfo = matches[3];
-        parsed.host = matches[4];
-        parsed.port = parseInt(matches[5], 10);
-        parsed.path = matches[6] || "";
-        parsed.query = matches[7];
-        parsed.fragment = matches[8];
-        if (isNaN(parsed.port)) {
-          parsed.port = matches[5];
-        }
-        const parseError = getParseError(parsed, matches);
-        if (parseError !== void 0) {
-          parsed.error = parsed.error || parseError;
-          malformedAuthorityOrPort = true;
-        }
-        if (parsed.host) {
-          const ipv4result = isIPv4(parsed.host);
-          if (ipv4result === false) {
-            const ipv6result = normalizeIPv6(parsed.host);
-            parsed.host = ipv6result.host.toLowerCase();
-            isIP = ipv6result.isIPV6;
-          } else {
-            isIP = true;
-          }
-        }
-        if (parsed.scheme === void 0 && parsed.userinfo === void 0 && parsed.host === void 0 && parsed.port === void 0 && parsed.query === void 0 && !parsed.path) {
-          parsed.reference = "same-document";
-        } else if (parsed.scheme === void 0) {
-          parsed.reference = "relative";
-        } else if (parsed.fragment === void 0) {
-          parsed.reference = "absolute";
-        } else {
-          parsed.reference = "uri";
-        }
-        if (options.reference && options.reference !== "suffix" && options.reference !== parsed.reference) {
-          parsed.error = parsed.error || "URI is not a " + options.reference + " reference.";
-        }
-        const schemeHandler = getSchemeHandler(options.scheme || parsed.scheme);
-        if (!options.unicodeSupport && (!schemeHandler || !schemeHandler.unicodeSupport)) {
-          if (parsed.host && (options.domainHost || schemeHandler && schemeHandler.domainHost) && isIP === false && nonSimpleDomain(parsed.host)) {
-            try {
-              parsed.host = new URL("http://" + parsed.host).hostname;
-            } catch (e) {
-              parsed.error = parsed.error || "Host's domain name can not be converted to ASCII: " + e;
-            }
-          }
-        }
-        if (!schemeHandler || schemeHandler && !schemeHandler.skipNormalize) {
-          if (uri.indexOf("%") !== -1) {
-            if (parsed.scheme !== void 0) {
-              parsed.scheme = unescape(parsed.scheme);
-            }
-            if (parsed.host !== void 0) {
-              parsed.host = reescapeHostDelimiters(unescape(parsed.host), isIP);
-            }
-          }
-          if (parsed.path) {
-            parsed.path = normalizePathEncoding(parsed.path);
-          }
-          if (parsed.fragment) {
-            try {
-              parsed.fragment = encodeURI(decodeURIComponent(parsed.fragment));
-            } catch {
-              parsed.error = parsed.error || "URI malformed";
-            }
-          }
-        }
-        if (schemeHandler && schemeHandler.parse) {
-          schemeHandler.parse(parsed, options);
-        }
-      } else {
-        parsed.error = parsed.error || "URI can not be parsed.";
-      }
-      return { parsed, malformedAuthorityOrPort };
-    }
-    function parse(uri, opts) {
-      return parseWithStatus(uri, opts).parsed;
-    }
-    function normalizeString(uri, opts) {
-      return normalizeStringWithStatus(uri, opts).normalized;
-    }
-    function normalizeStringWithStatus(uri, opts) {
-      const { parsed, malformedAuthorityOrPort } = parseWithStatus(uri, opts);
-      return {
-        normalized: malformedAuthorityOrPort ? uri : serialize(parsed, opts),
-        malformedAuthorityOrPort
-      };
-    }
-    function normalizeComparableURI(uri, opts) {
-      if (typeof uri === "string") {
-        const { normalized, malformedAuthorityOrPort } = normalizeStringWithStatus(uri, opts);
-        return malformedAuthorityOrPort ? void 0 : normalized;
-      }
-      if (typeof uri === "object") {
-        return serialize(uri, opts);
-      }
-    }
-    var fastUri = {
-      SCHEMES,
-      normalize,
-      resolve: resolve31,
-      resolveComponent,
-      equal,
-      serialize,
-      parse
-    };
-    module.exports = fastUri;
-    module.exports.default = fastUri;
-    module.exports.fastUri = fastUri;
-  }
-});
-
-// node_modules/ajv/dist/runtime/uri.js
-var require_uri = __commonJS({
-  "node_modules/ajv/dist/runtime/uri.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var uri = require_fast_uri();
-    uri.code = 'require("ajv/dist/runtime/uri").default';
-    exports.default = uri;
-  }
-});
-
-// node_modules/ajv/dist/core.js
-var require_core = __commonJS({
-  "node_modules/ajv/dist/core.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = void 0;
-    var validate_1 = require_validate();
-    Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
-      return validate_1.KeywordCxt;
-    } });
-    var codegen_1 = require_codegen();
-    Object.defineProperty(exports, "_", { enumerable: true, get: function() {
-      return codegen_1._;
-    } });
-    Object.defineProperty(exports, "str", { enumerable: true, get: function() {
-      return codegen_1.str;
-    } });
-    Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
-      return codegen_1.stringify;
-    } });
-    Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
-      return codegen_1.nil;
-    } });
-    Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
-      return codegen_1.Name;
-    } });
-    Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
-      return codegen_1.CodeGen;
-    } });
-    var validation_error_1 = require_validation_error();
-    var ref_error_1 = require_ref_error();
-    var rules_1 = require_rules();
-    var compile_1 = require_compile();
-    var codegen_2 = require_codegen();
-    var resolve_1 = require_resolve();
-    var dataType_1 = require_dataType();
-    var util_1 = require_util();
-    var $dataRefSchema = require_data();
-    var uri_1 = require_uri();
-    var defaultRegExp = (str, flags) => new RegExp(str, flags);
-    defaultRegExp.code = "new RegExp";
-    var META_IGNORE_OPTIONS = ["removeAdditional", "useDefaults", "coerceTypes"];
-    var EXT_SCOPE_NAMES = /* @__PURE__ */ new Set([
-      "validate",
-      "serialize",
-      "parse",
-      "wrapper",
-      "root",
-      "schema",
-      "keyword",
-      "pattern",
-      "formats",
-      "validate$data",
-      "func",
-      "obj",
-      "Error"
-    ]);
-    var removedOptions = {
-      errorDataPath: "",
-      format: "`validateFormats: false` can be used instead.",
-      nullable: '"nullable" keyword is supported by default.',
-      jsonPointers: "Deprecated jsPropertySyntax can be used instead.",
-      extendRefs: "Deprecated ignoreKeywordsWithRef can be used instead.",
-      missingRefs: "Pass empty schema with $id that should be ignored to ajv.addSchema.",
-      processCode: "Use option `code: {process: (code, schemaEnv: object) => string}`",
-      sourceCode: "Use option `code: {source: true}`",
-      strictDefaults: "It is default now, see option `strict`.",
-      strictKeywords: "It is default now, see option `strict`.",
-      uniqueItems: '"uniqueItems" keyword is always validated.',
-      unknownFormats: "Disable strict mode or pass `true` to `ajv.addFormat` (or `formats` option).",
-      cache: "Map is used as cache, schema object as key.",
-      serialize: "Map is used as cache, schema object as key.",
-      ajvErrors: "It is default now."
-    };
-    var deprecatedOptions = {
-      ignoreKeywordsWithRef: "",
-      jsPropertySyntax: "",
-      unicode: '"minLength"/"maxLength" account for unicode characters by default.'
-    };
-    var MAX_EXPRESSION = 200;
-    function requiredOptions(o) {
-      var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
-      const s = o.strict;
-      const _optz = (_a = o.code) === null || _a === void 0 ? void 0 : _a.optimize;
-      const optimize = _optz === true || _optz === void 0 ? 1 : _optz || 0;
-      const regExp = (_c = (_b = o.code) === null || _b === void 0 ? void 0 : _b.regExp) !== null && _c !== void 0 ? _c : defaultRegExp;
-      const uriResolver = (_d = o.uriResolver) !== null && _d !== void 0 ? _d : uri_1.default;
-      return {
-        strictSchema: (_f = (_e = o.strictSchema) !== null && _e !== void 0 ? _e : s) !== null && _f !== void 0 ? _f : true,
-        strictNumbers: (_h = (_g = o.strictNumbers) !== null && _g !== void 0 ? _g : s) !== null && _h !== void 0 ? _h : true,
-        strictTypes: (_k = (_j = o.strictTypes) !== null && _j !== void 0 ? _j : s) !== null && _k !== void 0 ? _k : "log",
-        strictTuples: (_m = (_l = o.strictTuples) !== null && _l !== void 0 ? _l : s) !== null && _m !== void 0 ? _m : "log",
-        strictRequired: (_p = (_o = o.strictRequired) !== null && _o !== void 0 ? _o : s) !== null && _p !== void 0 ? _p : false,
-        code: o.code ? { ...o.code, optimize, regExp } : { optimize, regExp },
-        loopRequired: (_q = o.loopRequired) !== null && _q !== void 0 ? _q : MAX_EXPRESSION,
-        loopEnum: (_r = o.loopEnum) !== null && _r !== void 0 ? _r : MAX_EXPRESSION,
-        meta: (_s = o.meta) !== null && _s !== void 0 ? _s : true,
-        messages: (_t = o.messages) !== null && _t !== void 0 ? _t : true,
-        inlineRefs: (_u = o.inlineRefs) !== null && _u !== void 0 ? _u : true,
-        schemaId: (_v = o.schemaId) !== null && _v !== void 0 ? _v : "$id",
-        addUsedSchema: (_w = o.addUsedSchema) !== null && _w !== void 0 ? _w : true,
-        validateSchema: (_x = o.validateSchema) !== null && _x !== void 0 ? _x : true,
-        validateFormats: (_y = o.validateFormats) !== null && _y !== void 0 ? _y : true,
-        unicodeRegExp: (_z = o.unicodeRegExp) !== null && _z !== void 0 ? _z : true,
-        int32range: (_0 = o.int32range) !== null && _0 !== void 0 ? _0 : true,
-        uriResolver
-      };
-    }
-    var Ajv = class {
-      constructor(opts = {}) {
-        this.schemas = {};
-        this.refs = {};
-        this.formats = /* @__PURE__ */ Object.create(null);
-        this._compilations = /* @__PURE__ */ new Set();
-        this._loading = {};
-        this._cache = /* @__PURE__ */ new Map();
-        opts = this.opts = { ...opts, ...requiredOptions(opts) };
-        const { es5, lines } = this.opts.code;
-        this.scope = new codegen_2.ValueScope({ scope: {}, prefixes: EXT_SCOPE_NAMES, es5, lines });
-        this.logger = getLogger(opts.logger);
-        const formatOpt = opts.validateFormats;
-        opts.validateFormats = false;
-        this.RULES = (0, rules_1.getRules)();
-        checkOptions.call(this, removedOptions, opts, "NOT SUPPORTED");
-        checkOptions.call(this, deprecatedOptions, opts, "DEPRECATED", "warn");
-        this._metaOpts = getMetaSchemaOptions.call(this);
-        if (opts.formats)
-          addInitialFormats.call(this);
-        this._addVocabularies();
-        this._addDefaultMetaSchema();
-        if (opts.keywords)
-          addInitialKeywords.call(this, opts.keywords);
-        if (typeof opts.meta == "object")
-          this.addMetaSchema(opts.meta);
-        addInitialSchemas.call(this);
-        opts.validateFormats = formatOpt;
-      }
-      _addVocabularies() {
-        this.addKeyword("$async");
-      }
-      _addDefaultMetaSchema() {
-        const { $data, meta, schemaId } = this.opts;
-        let _dataRefSchema = $dataRefSchema;
-        if (schemaId === "id") {
-          _dataRefSchema = { ...$dataRefSchema };
-          _dataRefSchema.id = _dataRefSchema.$id;
-          delete _dataRefSchema.$id;
-        }
-        if (meta && $data)
-          this.addMetaSchema(_dataRefSchema, _dataRefSchema[schemaId], false);
-      }
-      defaultMeta() {
-        const { meta, schemaId } = this.opts;
-        return this.opts.defaultMeta = typeof meta == "object" ? meta[schemaId] || meta : void 0;
-      }
-      validate(schemaKeyRef, data) {
-        let v;
-        if (typeof schemaKeyRef == "string") {
-          v = this.getSchema(schemaKeyRef);
-          if (!v)
-            throw new Error(`no schema with key or ref "${schemaKeyRef}"`);
-        } else {
-          v = this.compile(schemaKeyRef);
-        }
-        const valid = v(data);
-        if (!("$async" in v))
-          this.errors = v.errors;
-        return valid;
-      }
-      compile(schema2, _meta) {
-        const sch = this._addSchema(schema2, _meta);
-        return sch.validate || this._compileSchemaEnv(sch);
-      }
-      compileAsync(schema2, meta) {
-        if (typeof this.opts.loadSchema != "function") {
-          throw new Error("options.loadSchema should be a function");
-        }
-        const { loadSchema } = this.opts;
-        return runCompileAsync.call(this, schema2, meta);
-        async function runCompileAsync(_schema, _meta) {
-          await loadMetaSchema.call(this, _schema.$schema);
-          const sch = this._addSchema(_schema, _meta);
-          return sch.validate || _compileAsync.call(this, sch);
-        }
-        async function loadMetaSchema($ref) {
-          if ($ref && !this.getSchema($ref)) {
-            await runCompileAsync.call(this, { $ref }, true);
-          }
-        }
-        async function _compileAsync(sch) {
-          try {
-            return this._compileSchemaEnv(sch);
-          } catch (e) {
-            if (!(e instanceof ref_error_1.default))
-              throw e;
-            checkLoaded.call(this, e);
-            await loadMissingSchema.call(this, e.missingSchema);
-            return _compileAsync.call(this, sch);
-          }
-        }
-        function checkLoaded({ missingSchema: ref, missingRef }) {
-          if (this.refs[ref]) {
-            throw new Error(`AnySchema ${ref} is loaded but ${missingRef} cannot be resolved`);
-          }
-        }
-        async function loadMissingSchema(ref) {
-          const _schema = await _loadSchema.call(this, ref);
-          if (!this.refs[ref])
-            await loadMetaSchema.call(this, _schema.$schema);
-          if (!this.refs[ref])
-            this.addSchema(_schema, ref, meta);
-        }
-        async function _loadSchema(ref) {
-          const p = this._loading[ref];
-          if (p)
-            return p;
-          try {
-            return await (this._loading[ref] = loadSchema(ref));
-          } finally {
-            delete this._loading[ref];
-          }
-        }
-      }
-      // Adds schema to the instance
-      addSchema(schema2, key, _meta, _validateSchema = this.opts.validateSchema) {
-        if (Array.isArray(schema2)) {
-          for (const sch of schema2)
-            this.addSchema(sch, void 0, _meta, _validateSchema);
-          return this;
-        }
-        let id;
-        if (typeof schema2 === "object") {
-          const { schemaId } = this.opts;
-          id = schema2[schemaId];
-          if (id !== void 0 && typeof id != "string") {
-            throw new Error(`schema ${schemaId} must be string`);
-          }
-        }
-        key = (0, resolve_1.normalizeId)(key || id);
-        this._checkUnique(key);
-        this.schemas[key] = this._addSchema(schema2, _meta, key, _validateSchema, true);
-        return this;
-      }
-      // Add schema that will be used to validate other schemas
-      // options in META_IGNORE_OPTIONS are alway set to false
-      addMetaSchema(schema2, key, _validateSchema = this.opts.validateSchema) {
-        this.addSchema(schema2, key, true, _validateSchema);
-        return this;
-      }
-      //  Validate schema against its meta-schema
-      validateSchema(schema2, throwOrLogError) {
-        if (typeof schema2 == "boolean")
-          return true;
-        let $schema;
-        $schema = schema2.$schema;
-        if ($schema !== void 0 && typeof $schema != "string") {
-          throw new Error("$schema must be a string");
-        }
-        $schema = $schema || this.opts.defaultMeta || this.defaultMeta();
-        if (!$schema) {
-          this.logger.warn("meta-schema not available");
-          this.errors = null;
-          return true;
-        }
-        const valid = this.validate($schema, schema2);
-        if (!valid && throwOrLogError) {
-          const message = "schema is invalid: " + this.errorsText();
-          if (this.opts.validateSchema === "log")
-            this.logger.error(message);
-          else
-            throw new Error(message);
-        }
-        return valid;
-      }
-      // Get compiled schema by `key` or `ref`.
-      // (`key` that was passed to `addSchema` or full schema reference - `schema.$id` or resolved id)
-      getSchema(keyRef) {
-        let sch;
-        while (typeof (sch = getSchEnv.call(this, keyRef)) == "string")
-          keyRef = sch;
-        if (sch === void 0) {
-          const { schemaId } = this.opts;
-          const root = new compile_1.SchemaEnv({ schema: {}, schemaId });
-          sch = compile_1.resolveSchema.call(this, root, keyRef);
-          if (!sch)
-            return;
-          this.refs[keyRef] = sch;
-        }
-        return sch.validate || this._compileSchemaEnv(sch);
-      }
-      // Remove cached schema(s).
-      // If no parameter is passed all schemas but meta-schemas are removed.
-      // If RegExp is passed all schemas with key/id matching pattern but meta-schemas are removed.
-      // Even if schema is referenced by other schemas it still can be removed as other schemas have local references.
-      removeSchema(schemaKeyRef) {
-        if (schemaKeyRef instanceof RegExp) {
-          this._removeAllSchemas(this.schemas, schemaKeyRef);
-          this._removeAllSchemas(this.refs, schemaKeyRef);
-          return this;
-        }
-        switch (typeof schemaKeyRef) {
-          case "undefined":
-            this._removeAllSchemas(this.schemas);
-            this._removeAllSchemas(this.refs);
-            this._cache.clear();
-            return this;
-          case "string": {
-            const sch = getSchEnv.call(this, schemaKeyRef);
-            if (typeof sch == "object")
-              this._cache.delete(sch.schema);
-            delete this.schemas[schemaKeyRef];
-            delete this.refs[schemaKeyRef];
-            return this;
-          }
-          case "object": {
-            const cacheKey = schemaKeyRef;
-            this._cache.delete(cacheKey);
-            let id = schemaKeyRef[this.opts.schemaId];
-            if (id) {
-              id = (0, resolve_1.normalizeId)(id);
-              delete this.schemas[id];
-              delete this.refs[id];
-            }
-            return this;
-          }
-          default:
-            throw new Error("ajv.removeSchema: invalid parameter");
-        }
-      }
-      // add "vocabulary" - a collection of keywords
-      addVocabulary(definitions) {
-        for (const def of definitions)
-          this.addKeyword(def);
-        return this;
-      }
-      addKeyword(kwdOrDef, def) {
-        let keyword;
-        if (typeof kwdOrDef == "string") {
-          keyword = kwdOrDef;
-          if (typeof def == "object") {
-            this.logger.warn("these parameters are deprecated, see docs for addKeyword");
-            def.keyword = keyword;
-          }
-        } else if (typeof kwdOrDef == "object" && def === void 0) {
-          def = kwdOrDef;
-          keyword = def.keyword;
-          if (Array.isArray(keyword) && !keyword.length) {
-            throw new Error("addKeywords: keyword must be string or non-empty array");
-          }
-        } else {
-          throw new Error("invalid addKeywords parameters");
-        }
-        checkKeyword.call(this, keyword, def);
-        if (!def) {
-          (0, util_1.eachItem)(keyword, (kwd) => addRule.call(this, kwd));
-          return this;
-        }
-        keywordMetaschema.call(this, def);
-        const definition = {
-          ...def,
-          type: (0, dataType_1.getJSONTypes)(def.type),
-          schemaType: (0, dataType_1.getJSONTypes)(def.schemaType)
-        };
-        (0, util_1.eachItem)(keyword, definition.type.length === 0 ? (k) => addRule.call(this, k, definition) : (k) => definition.type.forEach((t) => addRule.call(this, k, definition, t)));
-        return this;
-      }
-      getKeyword(keyword) {
-        const rule = this.RULES.all[keyword];
-        return typeof rule == "object" ? rule.definition : !!rule;
-      }
-      // Remove keyword
-      removeKeyword(keyword) {
-        const { RULES } = this;
-        delete RULES.keywords[keyword];
-        delete RULES.all[keyword];
-        for (const group of RULES.rules) {
-          const i = group.rules.findIndex((rule) => rule.keyword === keyword);
-          if (i >= 0)
-            group.rules.splice(i, 1);
-        }
-        return this;
-      }
-      // Add format
-      addFormat(name, format) {
-        if (typeof format == "string")
-          format = new RegExp(format);
-        this.formats[name] = format;
-        return this;
-      }
-      errorsText(errors2 = this.errors, { separator = ", ", dataVar = "data" } = {}) {
-        if (!errors2 || errors2.length === 0)
-          return "No errors";
-        return errors2.map((e) => `${dataVar}${e.instancePath} ${e.message}`).reduce((text, msg) => text + separator + msg);
-      }
-      $dataMetaSchema(metaSchema, keywordsJsonPointers) {
-        const rules = this.RULES.all;
-        metaSchema = JSON.parse(JSON.stringify(metaSchema));
-        for (const jsonPointer of keywordsJsonPointers) {
-          const segments = jsonPointer.split("/").slice(1);
-          let keywords = metaSchema;
-          for (const seg of segments)
-            keywords = keywords[seg];
-          for (const key in rules) {
-            const rule = rules[key];
-            if (typeof rule != "object")
-              continue;
-            const { $data } = rule.definition;
-            const schema2 = keywords[key];
-            if ($data && schema2)
-              keywords[key] = schemaOrData(schema2);
-          }
-        }
-        return metaSchema;
-      }
-      _removeAllSchemas(schemas, regex) {
-        for (const keyRef in schemas) {
-          const sch = schemas[keyRef];
-          if (!regex || regex.test(keyRef)) {
-            if (typeof sch == "string") {
-              delete schemas[keyRef];
-            } else if (sch && !sch.meta) {
-              this._cache.delete(sch.schema);
-              delete schemas[keyRef];
-            }
-          }
-        }
-      }
-      _addSchema(schema2, meta, baseId, validateSchema = this.opts.validateSchema, addSchema = this.opts.addUsedSchema) {
-        let id;
-        const { schemaId } = this.opts;
-        if (typeof schema2 == "object") {
-          id = schema2[schemaId];
-        } else {
-          if (this.opts.jtd)
-            throw new Error("schema must be object");
-          else if (typeof schema2 != "boolean")
-            throw new Error("schema must be object or boolean");
-        }
-        let sch = this._cache.get(schema2);
-        if (sch !== void 0)
-          return sch;
-        baseId = (0, resolve_1.normalizeId)(id || baseId);
-        const localRefs = resolve_1.getSchemaRefs.call(this, schema2, baseId);
-        sch = new compile_1.SchemaEnv({ schema: schema2, schemaId, meta, baseId, localRefs });
-        this._cache.set(sch.schema, sch);
-        if (addSchema && !baseId.startsWith("#")) {
-          if (baseId)
-            this._checkUnique(baseId);
-          this.refs[baseId] = sch;
-        }
-        if (validateSchema)
-          this.validateSchema(schema2, true);
-        return sch;
-      }
-      _checkUnique(id) {
-        if (this.schemas[id] || this.refs[id]) {
-          throw new Error(`schema with key or id "${id}" already exists`);
-        }
-      }
-      _compileSchemaEnv(sch) {
-        if (sch.meta)
-          this._compileMetaSchema(sch);
-        else
-          compile_1.compileSchema.call(this, sch);
-        if (!sch.validate)
-          throw new Error("ajv implementation error");
-        return sch.validate;
-      }
-      _compileMetaSchema(sch) {
-        const currentOpts = this.opts;
-        this.opts = this._metaOpts;
-        try {
-          compile_1.compileSchema.call(this, sch);
-        } finally {
-          this.opts = currentOpts;
-        }
-      }
-    };
-    Ajv.ValidationError = validation_error_1.default;
-    Ajv.MissingRefError = ref_error_1.default;
-    exports.default = Ajv;
-    function checkOptions(checkOpts, options, msg, log = "error") {
-      for (const key in checkOpts) {
-        const opt = key;
-        if (opt in options)
-          this.logger[log](`${msg}: option ${key}. ${checkOpts[opt]}`);
-      }
-    }
-    function getSchEnv(keyRef) {
-      keyRef = (0, resolve_1.normalizeId)(keyRef);
-      return this.schemas[keyRef] || this.refs[keyRef];
-    }
-    function addInitialSchemas() {
-      const optsSchemas = this.opts.schemas;
-      if (!optsSchemas)
-        return;
-      if (Array.isArray(optsSchemas))
-        this.addSchema(optsSchemas);
-      else
-        for (const key in optsSchemas)
-          this.addSchema(optsSchemas[key], key);
-    }
-    function addInitialFormats() {
-      for (const name in this.opts.formats) {
-        const format = this.opts.formats[name];
-        if (format)
-          this.addFormat(name, format);
-      }
-    }
-    function addInitialKeywords(defs) {
-      if (Array.isArray(defs)) {
-        this.addVocabulary(defs);
-        return;
-      }
-      this.logger.warn("keywords option as map is deprecated, pass array");
-      for (const keyword in defs) {
-        const def = defs[keyword];
-        if (!def.keyword)
-          def.keyword = keyword;
-        this.addKeyword(def);
-      }
-    }
-    function getMetaSchemaOptions() {
-      const metaOpts = { ...this.opts };
-      for (const opt of META_IGNORE_OPTIONS)
-        delete metaOpts[opt];
-      return metaOpts;
-    }
-    var noLogs = { log() {
-    }, warn() {
-    }, error() {
-    } };
-    function getLogger(logger) {
-      if (logger === false)
-        return noLogs;
-      if (logger === void 0)
-        return console;
-      if (logger.log && logger.warn && logger.error)
-        return logger;
-      throw new Error("logger must implement log, warn and error methods");
-    }
-    var KEYWORD_NAME = /^[a-z_$][a-z0-9_$:-]*$/i;
-    function checkKeyword(keyword, def) {
-      const { RULES } = this;
-      (0, util_1.eachItem)(keyword, (kwd) => {
-        if (RULES.keywords[kwd])
-          throw new Error(`Keyword ${kwd} is already defined`);
-        if (!KEYWORD_NAME.test(kwd))
-          throw new Error(`Keyword ${kwd} has invalid name`);
-      });
-      if (!def)
-        return;
-      if (def.$data && !("code" in def || "validate" in def)) {
-        throw new Error('$data keyword must have "code" or "validate" function');
-      }
-    }
-    function addRule(keyword, definition, dataType) {
-      var _a;
-      const post = definition === null || definition === void 0 ? void 0 : definition.post;
-      if (dataType && post)
-        throw new Error('keyword with "post" flag cannot have "type"');
-      const { RULES } = this;
-      let ruleGroup = post ? RULES.post : RULES.rules.find(({ type: t }) => t === dataType);
-      if (!ruleGroup) {
-        ruleGroup = { type: dataType, rules: [] };
-        RULES.rules.push(ruleGroup);
-      }
-      RULES.keywords[keyword] = true;
-      if (!definition)
-        return;
-      const rule = {
-        keyword,
-        definition: {
-          ...definition,
-          type: (0, dataType_1.getJSONTypes)(definition.type),
-          schemaType: (0, dataType_1.getJSONTypes)(definition.schemaType)
-        }
-      };
-      if (definition.before)
-        addBeforeRule.call(this, ruleGroup, rule, definition.before);
-      else
-        ruleGroup.rules.push(rule);
-      RULES.all[keyword] = rule;
-      (_a = definition.implements) === null || _a === void 0 ? void 0 : _a.forEach((kwd) => this.addKeyword(kwd));
-    }
-    function addBeforeRule(ruleGroup, rule, before) {
-      const i = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
-      if (i >= 0) {
-        ruleGroup.rules.splice(i, 0, rule);
-      } else {
-        ruleGroup.rules.push(rule);
-        this.logger.warn(`rule ${before} is not defined`);
-      }
-    }
-    function keywordMetaschema(def) {
-      let { metaSchema } = def;
-      if (metaSchema === void 0)
-        return;
-      if (def.$data && this.opts.$data)
-        metaSchema = schemaOrData(metaSchema);
-      def.validateSchema = this.compile(metaSchema, true);
-    }
-    var $dataRef = {
-      $ref: "https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#"
-    };
-    function schemaOrData(schema2) {
-      return { anyOf: [schema2, $dataRef] };
-    }
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/core/id.js
-var require_id = __commonJS({
-  "node_modules/ajv/dist/vocabularies/core/id.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var def = {
-      keyword: "id",
-      code() {
-        throw new Error('NOT SUPPORTED: keyword "id", use "$id" for schema ID');
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/core/ref.js
-var require_ref = __commonJS({
-  "node_modules/ajv/dist/vocabularies/core/ref.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.callRef = exports.getValidate = void 0;
-    var ref_error_1 = require_ref_error();
-    var code_1 = require_code2();
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var compile_1 = require_compile();
-    var util_1 = require_util();
-    var def = {
-      keyword: "$ref",
-      schemaType: "string",
-      code(cxt) {
-        const { gen, schema: $ref, it } = cxt;
-        const { baseId, schemaEnv: env, validateName, opts, self } = it;
-        const { root } = env;
-        if (($ref === "#" || $ref === "#/") && baseId === root.baseId)
-          return callRootRef();
-        const schOrEnv = compile_1.resolveRef.call(self, root, baseId, $ref);
-        if (schOrEnv === void 0)
-          throw new ref_error_1.default(it.opts.uriResolver, baseId, $ref);
-        if (schOrEnv instanceof compile_1.SchemaEnv)
-          return callValidate(schOrEnv);
-        return inlineRefSchema(schOrEnv);
-        function callRootRef() {
-          if (env === root)
-            return callRef(cxt, validateName, env, env.$async);
-          const rootName = gen.scopeValue("root", { ref: root });
-          return callRef(cxt, (0, codegen_1._)`${rootName}.validate`, root, root.$async);
-        }
-        function callValidate(sch) {
-          const v = getValidate(cxt, sch);
-          callRef(cxt, v, sch, sch.$async);
-        }
-        function inlineRefSchema(sch) {
-          const schName = gen.scopeValue("schema", opts.code.source === true ? { ref: sch, code: (0, codegen_1.stringify)(sch) } : { ref: sch });
-          const valid = gen.name("valid");
-          const schCxt = cxt.subschema({
-            schema: sch,
-            dataTypes: [],
-            schemaPath: codegen_1.nil,
-            topSchemaRef: schName,
-            errSchemaPath: $ref
-          }, valid);
-          cxt.mergeEvaluated(schCxt);
-          cxt.ok(valid);
-        }
-      }
-    };
-    function getValidate(cxt, sch) {
-      const { gen } = cxt;
-      return sch.validate ? gen.scopeValue("validate", { ref: sch.validate }) : (0, codegen_1._)`${gen.scopeValue("wrapper", { ref: sch })}.validate`;
-    }
-    exports.getValidate = getValidate;
-    function callRef(cxt, v, sch, $async) {
-      const { gen, it } = cxt;
-      const { allErrors, schemaEnv: env, opts } = it;
-      const passCxt = opts.passContext ? names_1.default.this : codegen_1.nil;
-      if ($async)
-        callAsyncRef();
-      else
-        callSyncRef();
-      function callAsyncRef() {
-        if (!env.$async)
-          throw new Error("async schema referenced by sync schema");
-        const valid = gen.let("valid");
-        gen.try(() => {
-          gen.code((0, codegen_1._)`await ${(0, code_1.callValidateCode)(cxt, v, passCxt)}`);
-          addEvaluatedFrom(v);
-          if (!allErrors)
-            gen.assign(valid, true);
-        }, (e) => {
-          gen.if((0, codegen_1._)`!(${e} instanceof ${it.ValidationError})`, () => gen.throw(e));
-          addErrorsFrom(e);
-          if (!allErrors)
-            gen.assign(valid, false);
-        });
-        cxt.ok(valid);
-      }
-      function callSyncRef() {
-        cxt.result((0, code_1.callValidateCode)(cxt, v, passCxt), () => addEvaluatedFrom(v), () => addErrorsFrom(v));
-      }
-      function addErrorsFrom(source) {
-        const errs = (0, codegen_1._)`${source}.errors`;
-        gen.assign(names_1.default.vErrors, (0, codegen_1._)`${names_1.default.vErrors} === null ? ${errs} : ${names_1.default.vErrors}.concat(${errs})`);
-        gen.assign(names_1.default.errors, (0, codegen_1._)`${names_1.default.vErrors}.length`);
-      }
-      function addEvaluatedFrom(source) {
-        var _a;
-        if (!it.opts.unevaluated)
-          return;
-        const schEvaluated = (_a = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a === void 0 ? void 0 : _a.evaluated;
-        if (it.props !== true) {
-          if (schEvaluated && !schEvaluated.dynamicProps) {
-            if (schEvaluated.props !== void 0) {
-              it.props = util_1.mergeEvaluated.props(gen, schEvaluated.props, it.props);
-            }
-          } else {
-            const props = gen.var("props", (0, codegen_1._)`${source}.evaluated.props`);
-            it.props = util_1.mergeEvaluated.props(gen, props, it.props, codegen_1.Name);
-          }
-        }
-        if (it.items !== true) {
-          if (schEvaluated && !schEvaluated.dynamicItems) {
-            if (schEvaluated.items !== void 0) {
-              it.items = util_1.mergeEvaluated.items(gen, schEvaluated.items, it.items);
-            }
-          } else {
-            const items = gen.var("items", (0, codegen_1._)`${source}.evaluated.items`);
-            it.items = util_1.mergeEvaluated.items(gen, items, it.items, codegen_1.Name);
-          }
-        }
-      }
-    }
-    exports.callRef = callRef;
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/core/index.js
-var require_core2 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/core/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var id_1 = require_id();
-    var ref_1 = require_ref();
-    var core = [
-      "$schema",
-      "$id",
-      "$defs",
-      "$vocabulary",
-      { keyword: "$comment" },
-      "definitions",
-      id_1.default,
-      ref_1.default
-    ];
-    exports.default = core;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/limitNumber.js
-var require_limitNumber = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitNumber.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var ops = codegen_1.operators;
-    var KWDs = {
-      maximum: { okStr: "<=", ok: ops.LTE, fail: ops.GT },
-      minimum: { okStr: ">=", ok: ops.GTE, fail: ops.LT },
-      exclusiveMaximum: { okStr: "<", ok: ops.LT, fail: ops.GTE },
-      exclusiveMinimum: { okStr: ">", ok: ops.GT, fail: ops.LTE }
-    };
-    var error = {
-      message: ({ keyword, schemaCode }) => (0, codegen_1.str)`must be ${KWDs[keyword].okStr} ${schemaCode}`,
-      params: ({ keyword, schemaCode }) => (0, codegen_1._)`{comparison: ${KWDs[keyword].okStr}, limit: ${schemaCode}}`
-    };
-    var def = {
-      keyword: Object.keys(KWDs),
-      type: "number",
-      schemaType: "number",
-      $data: true,
-      error,
-      code(cxt) {
-        const { keyword, data, schemaCode } = cxt;
-        cxt.fail$data((0, codegen_1._)`${data} ${KWDs[keyword].fail} ${schemaCode} || isNaN(${data})`);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/multipleOf.js
-var require_multipleOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/multipleOf.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var error = {
-      message: ({ schemaCode }) => (0, codegen_1.str)`must be multiple of ${schemaCode}`,
-      params: ({ schemaCode }) => (0, codegen_1._)`{multipleOf: ${schemaCode}}`
-    };
-    var def = {
-      keyword: "multipleOf",
-      type: "number",
-      schemaType: "number",
-      $data: true,
-      error,
-      code(cxt) {
-        const { gen, data, schemaCode, it } = cxt;
-        const prec = it.opts.multipleOfPrecision;
-        const res = gen.let("res");
-        const invalid = prec ? (0, codegen_1._)`Math.abs(Math.round(${res}) - ${res}) > 1e-${prec}` : (0, codegen_1._)`${res} !== parseInt(${res})`;
-        cxt.fail$data((0, codegen_1._)`(${schemaCode} === 0 || (${res} = ${data}/${schemaCode}, ${invalid}))`);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/runtime/ucs2length.js
-var require_ucs2length = __commonJS({
-  "node_modules/ajv/dist/runtime/ucs2length.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    function ucs2length(str) {
-      const len = str.length;
-      let length = 0;
-      let pos = 0;
-      let value2;
-      while (pos < len) {
-        length++;
-        value2 = str.charCodeAt(pos++);
-        if (value2 >= 55296 && value2 <= 56319 && pos < len) {
-          value2 = str.charCodeAt(pos);
-          if ((value2 & 64512) === 56320)
-            pos++;
-        }
-      }
-      return length;
-    }
-    exports.default = ucs2length;
-    ucs2length.code = 'require("ajv/dist/runtime/ucs2length").default';
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/limitLength.js
-var require_limitLength = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitLength.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var ucs2length_1 = require_ucs2length();
-    var error = {
-      message({ keyword, schemaCode }) {
-        const comp = keyword === "maxLength" ? "more" : "fewer";
-        return (0, codegen_1.str)`must NOT have ${comp} than ${schemaCode} characters`;
-      },
-      params: ({ schemaCode }) => (0, codegen_1._)`{limit: ${schemaCode}}`
-    };
-    var def = {
-      keyword: ["maxLength", "minLength"],
-      type: "string",
-      schemaType: "number",
-      $data: true,
-      error,
-      code(cxt) {
-        const { keyword, data, schemaCode, it } = cxt;
-        const op = keyword === "maxLength" ? codegen_1.operators.GT : codegen_1.operators.LT;
-        const len = it.opts.unicode === false ? (0, codegen_1._)`${data}.length` : (0, codegen_1._)`${(0, util_1.useFunc)(cxt.gen, ucs2length_1.default)}(${data})`;
-        cxt.fail$data((0, codegen_1._)`${len} ${op} ${schemaCode}`);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/pattern.js
-var require_pattern = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/pattern.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var code_1 = require_code2();
-    var util_1 = require_util();
-    var codegen_1 = require_codegen();
-    var error = {
-      message: ({ schemaCode }) => (0, codegen_1.str)`must match pattern "${schemaCode}"`,
-      params: ({ schemaCode }) => (0, codegen_1._)`{pattern: ${schemaCode}}`
-    };
-    var def = {
-      keyword: "pattern",
-      type: "string",
-      schemaType: "string",
-      $data: true,
-      error,
-      code(cxt) {
-        const { gen, data, $data, schema: schema2, schemaCode, it } = cxt;
-        const u = it.opts.unicodeRegExp ? "u" : "";
-        if ($data) {
-          const { regExp } = it.opts.code;
-          const regExpCode = regExp.code === "new RegExp" ? (0, codegen_1._)`new RegExp` : (0, util_1.useFunc)(gen, regExp);
-          const valid = gen.let("valid");
-          gen.try(() => gen.assign(valid, (0, codegen_1._)`${regExpCode}(${schemaCode}, ${u}).test(${data})`), () => gen.assign(valid, false));
-          cxt.fail$data((0, codegen_1._)`!${valid}`);
-        } else {
-          const regExp = (0, code_1.usePattern)(cxt, schema2);
-          cxt.fail$data((0, codegen_1._)`!${regExp}.test(${data})`);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/limitProperties.js
-var require_limitProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitProperties.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var error = {
-      message({ keyword, schemaCode }) {
-        const comp = keyword === "maxProperties" ? "more" : "fewer";
-        return (0, codegen_1.str)`must NOT have ${comp} than ${schemaCode} properties`;
-      },
-      params: ({ schemaCode }) => (0, codegen_1._)`{limit: ${schemaCode}}`
-    };
-    var def = {
-      keyword: ["maxProperties", "minProperties"],
-      type: "object",
-      schemaType: "number",
-      $data: true,
-      error,
-      code(cxt) {
-        const { keyword, data, schemaCode } = cxt;
-        const op = keyword === "maxProperties" ? codegen_1.operators.GT : codegen_1.operators.LT;
-        cxt.fail$data((0, codegen_1._)`Object.keys(${data}).length ${op} ${schemaCode}`);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/required.js
-var require_required = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/required.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var code_1 = require_code2();
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: ({ params: { missingProperty } }) => (0, codegen_1.str)`must have required property '${missingProperty}'`,
-      params: ({ params: { missingProperty } }) => (0, codegen_1._)`{missingProperty: ${missingProperty}}`
-    };
-    var def = {
-      keyword: "required",
-      type: "object",
-      schemaType: "array",
-      $data: true,
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, schemaCode, data, $data, it } = cxt;
-        const { opts } = it;
-        if (!$data && schema2.length === 0)
-          return;
-        const useLoop = schema2.length >= opts.loopRequired;
-        if (it.allErrors)
-          allErrorsMode();
-        else
-          exitOnErrorMode();
-        if (opts.strictRequired) {
-          const props = cxt.parentSchema.properties;
-          const { definedProperties } = cxt.it;
-          for (const requiredKey of schema2) {
-            if ((props === null || props === void 0 ? void 0 : props[requiredKey]) === void 0 && !definedProperties.has(requiredKey)) {
-              const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
-              const msg = `required property "${requiredKey}" is not defined at "${schemaPath}" (strictRequired)`;
-              (0, util_1.checkStrictMode)(it, msg, it.opts.strictRequired);
-            }
-          }
-        }
-        function allErrorsMode() {
-          if (useLoop || $data) {
-            cxt.block$data(codegen_1.nil, loopAllRequired);
-          } else {
-            for (const prop of schema2) {
-              (0, code_1.checkReportMissingProp)(cxt, prop);
-            }
-          }
-        }
-        function exitOnErrorMode() {
-          const missing = gen.let("missing");
-          if (useLoop || $data) {
-            const valid = gen.let("valid", true);
-            cxt.block$data(valid, () => loopUntilMissing(missing, valid));
-            cxt.ok(valid);
-          } else {
-            gen.if((0, code_1.checkMissingProp)(cxt, schema2, missing));
-            (0, code_1.reportMissingProp)(cxt, missing);
-            gen.else();
-          }
-        }
-        function loopAllRequired() {
-          gen.forOf("prop", schemaCode, (prop) => {
-            cxt.setParams({ missingProperty: prop });
-            gen.if((0, code_1.noPropertyInData)(gen, data, prop, opts.ownProperties), () => cxt.error());
-          });
-        }
-        function loopUntilMissing(missing, valid) {
-          cxt.setParams({ missingProperty: missing });
-          gen.forOf(missing, schemaCode, () => {
-            gen.assign(valid, (0, code_1.propertyInData)(gen, data, missing, opts.ownProperties));
-            gen.if((0, codegen_1.not)(valid), () => {
-              cxt.error();
-              gen.break();
-            });
-          }, codegen_1.nil);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/limitItems.js
-var require_limitItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitItems.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var error = {
-      message({ keyword, schemaCode }) {
-        const comp = keyword === "maxItems" ? "more" : "fewer";
-        return (0, codegen_1.str)`must NOT have ${comp} than ${schemaCode} items`;
-      },
-      params: ({ schemaCode }) => (0, codegen_1._)`{limit: ${schemaCode}}`
-    };
-    var def = {
-      keyword: ["maxItems", "minItems"],
-      type: "array",
-      schemaType: "number",
-      $data: true,
-      error,
-      code(cxt) {
-        const { keyword, data, schemaCode } = cxt;
-        const op = keyword === "maxItems" ? codegen_1.operators.GT : codegen_1.operators.LT;
-        cxt.fail$data((0, codegen_1._)`${data}.length ${op} ${schemaCode}`);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/runtime/equal.js
-var require_equal = __commonJS({
-  "node_modules/ajv/dist/runtime/equal.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var equal = require_fast_deep_equal();
-    equal.code = 'require("ajv/dist/runtime/equal").default';
-    exports.default = equal;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/uniqueItems.js
-var require_uniqueItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/uniqueItems.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dataType_1 = require_dataType();
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var equal_1 = require_equal();
-    var error = {
-      message: ({ params: { i, j } }) => (0, codegen_1.str)`must NOT have duplicate items (items ## ${j} and ${i} are identical)`,
-      params: ({ params: { i, j } }) => (0, codegen_1._)`{i: ${i}, j: ${j}}`
-    };
-    var def = {
-      keyword: "uniqueItems",
-      type: "array",
-      schemaType: "boolean",
-      $data: true,
-      error,
-      code(cxt) {
-        const { gen, data, $data, schema: schema2, parentSchema, schemaCode, it } = cxt;
-        if (!$data && !schema2)
-          return;
-        const valid = gen.let("valid");
-        const itemTypes = parentSchema.items ? (0, dataType_1.getSchemaTypes)(parentSchema.items) : [];
-        cxt.block$data(valid, validateUniqueItems, (0, codegen_1._)`${schemaCode} === false`);
-        cxt.ok(valid);
-        function validateUniqueItems() {
-          const i = gen.let("i", (0, codegen_1._)`${data}.length`);
-          const j = gen.let("j");
-          cxt.setParams({ i, j });
-          gen.assign(valid, true);
-          gen.if((0, codegen_1._)`${i} > 1`, () => (canOptimize() ? loopN : loopN2)(i, j));
-        }
-        function canOptimize() {
-          return itemTypes.length > 0 && !itemTypes.some((t) => t === "object" || t === "array");
-        }
-        function loopN(i, j) {
-          const item = gen.name("item");
-          const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it.opts.strictNumbers, dataType_1.DataType.Wrong);
-          const indices = gen.const("indices", (0, codegen_1._)`{}`);
-          gen.for((0, codegen_1._)`;${i}--;`, () => {
-            gen.let(item, (0, codegen_1._)`${data}[${i}]`);
-            gen.if(wrongType, (0, codegen_1._)`continue`);
-            if (itemTypes.length > 1)
-              gen.if((0, codegen_1._)`typeof ${item} == "string"`, (0, codegen_1._)`${item} += "_"`);
-            gen.if((0, codegen_1._)`typeof ${indices}[${item}] == "number"`, () => {
-              gen.assign(j, (0, codegen_1._)`${indices}[${item}]`);
-              cxt.error();
-              gen.assign(valid, false).break();
-            }).code((0, codegen_1._)`${indices}[${item}] = ${i}`);
-          });
-        }
-        function loopN2(i, j) {
-          const eql = (0, util_1.useFunc)(gen, equal_1.default);
-          const outer = gen.name("outer");
-          gen.label(outer).for((0, codegen_1._)`;${i}--;`, () => gen.for((0, codegen_1._)`${j} = ${i}; ${j}--;`, () => gen.if((0, codegen_1._)`${eql}(${data}[${i}], ${data}[${j}])`, () => {
-            cxt.error();
-            gen.assign(valid, false).break(outer);
-          })));
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/const.js
-var require_const = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/const.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var equal_1 = require_equal();
-    var error = {
-      message: "must be equal to constant",
-      params: ({ schemaCode }) => (0, codegen_1._)`{allowedValue: ${schemaCode}}`
-    };
-    var def = {
-      keyword: "const",
-      $data: true,
-      error,
-      code(cxt) {
-        const { gen, data, $data, schemaCode, schema: schema2 } = cxt;
-        if ($data || schema2 && typeof schema2 == "object") {
-          cxt.fail$data((0, codegen_1._)`!${(0, util_1.useFunc)(gen, equal_1.default)}(${data}, ${schemaCode})`);
-        } else {
-          cxt.fail((0, codegen_1._)`${schema2} !== ${data}`);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/enum.js
-var require_enum = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/enum.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var equal_1 = require_equal();
-    var error = {
-      message: "must be equal to one of the allowed values",
-      params: ({ schemaCode }) => (0, codegen_1._)`{allowedValues: ${schemaCode}}`
-    };
-    var def = {
-      keyword: "enum",
-      schemaType: "array",
-      $data: true,
-      error,
-      code(cxt) {
-        const { gen, data, $data, schema: schema2, schemaCode, it } = cxt;
-        if (!$data && schema2.length === 0)
-          throw new Error("enum must have non-empty array");
-        const useLoop = schema2.length >= it.opts.loopEnum;
-        let eql;
-        const getEql = () => eql !== null && eql !== void 0 ? eql : eql = (0, util_1.useFunc)(gen, equal_1.default);
-        let valid;
-        if (useLoop || $data) {
-          valid = gen.let("valid");
-          cxt.block$data(valid, loopEnum);
-        } else {
-          if (!Array.isArray(schema2))
-            throw new Error("ajv implementation error");
-          const vSchema = gen.const("vSchema", schemaCode);
-          valid = (0, codegen_1.or)(...schema2.map((_x, i) => equalCode(vSchema, i)));
-        }
-        cxt.pass(valid);
-        function loopEnum() {
-          gen.assign(valid, false);
-          gen.forOf("v", schemaCode, (v) => gen.if((0, codegen_1._)`${getEql()}(${data}, ${v})`, () => gen.assign(valid, true).break()));
-        }
-        function equalCode(vSchema, i) {
-          const sch = schema2[i];
-          return typeof sch === "object" && sch !== null ? (0, codegen_1._)`${getEql()}(${data}, ${vSchema}[${i}])` : (0, codegen_1._)`${data} === ${sch}`;
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/index.js
-var require_validation = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var limitNumber_1 = require_limitNumber();
-    var multipleOf_1 = require_multipleOf();
-    var limitLength_1 = require_limitLength();
-    var pattern_1 = require_pattern();
-    var limitProperties_1 = require_limitProperties();
-    var required_1 = require_required();
-    var limitItems_1 = require_limitItems();
-    var uniqueItems_1 = require_uniqueItems();
-    var const_1 = require_const();
-    var enum_1 = require_enum();
-    var validation = [
-      // number
-      limitNumber_1.default,
-      multipleOf_1.default,
-      // string
-      limitLength_1.default,
-      pattern_1.default,
-      // object
-      limitProperties_1.default,
-      required_1.default,
-      // array
-      limitItems_1.default,
-      uniqueItems_1.default,
-      // any
-      { keyword: "type", schemaType: ["string", "array"] },
-      { keyword: "nullable", schemaType: "boolean" },
-      const_1.default,
-      enum_1.default
-    ];
-    exports.default = validation;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/additionalItems.js
-var require_additionalItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/additionalItems.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.validateAdditionalItems = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: ({ params: { len } }) => (0, codegen_1.str)`must NOT have more than ${len} items`,
-      params: ({ params: { len } }) => (0, codegen_1._)`{limit: ${len}}`
-    };
-    var def = {
-      keyword: "additionalItems",
-      type: "array",
-      schemaType: ["boolean", "object"],
-      before: "uniqueItems",
-      error,
-      code(cxt) {
-        const { parentSchema, it } = cxt;
-        const { items } = parentSchema;
-        if (!Array.isArray(items)) {
-          (0, util_1.checkStrictMode)(it, '"additionalItems" is ignored when "items" is not an array of schemas');
-          return;
-        }
-        validateAdditionalItems(cxt, items);
-      }
-    };
-    function validateAdditionalItems(cxt, items) {
-      const { gen, schema: schema2, data, keyword, it } = cxt;
-      it.items = true;
-      const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-      if (schema2 === false) {
-        cxt.setParams({ len: items.length });
-        cxt.pass((0, codegen_1._)`${len} <= ${items.length}`);
-      } else if (typeof schema2 == "object" && !(0, util_1.alwaysValidSchema)(it, schema2)) {
-        const valid = gen.var("valid", (0, codegen_1._)`${len} <= ${items.length}`);
-        gen.if((0, codegen_1.not)(valid), () => validateItems(valid));
-        cxt.ok(valid);
-      }
-      function validateItems(valid) {
-        gen.forRange("i", items.length, len, (i) => {
-          cxt.subschema({ keyword, dataProp: i, dataPropType: util_1.Type.Num }, valid);
-          if (!it.allErrors)
-            gen.if((0, codegen_1.not)(valid), () => gen.break());
-        });
-      }
-    }
-    exports.validateAdditionalItems = validateAdditionalItems;
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/items.js
-var require_items = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/items.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.validateTuple = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var code_1 = require_code2();
-    var def = {
-      keyword: "items",
-      type: "array",
-      schemaType: ["object", "array", "boolean"],
-      before: "uniqueItems",
-      code(cxt) {
-        const { schema: schema2, it } = cxt;
-        if (Array.isArray(schema2))
-          return validateTuple(cxt, "additionalItems", schema2);
-        it.items = true;
-        if ((0, util_1.alwaysValidSchema)(it, schema2))
-          return;
-        cxt.ok((0, code_1.validateArray)(cxt));
-      }
-    };
-    function validateTuple(cxt, extraItems, schArr = cxt.schema) {
-      const { gen, parentSchema, data, keyword, it } = cxt;
-      checkStrictTuple(parentSchema);
-      if (it.opts.unevaluated && schArr.length && it.items !== true) {
-        it.items = util_1.mergeEvaluated.items(gen, schArr.length, it.items);
-      }
-      const valid = gen.name("valid");
-      const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-      schArr.forEach((sch, i) => {
-        if ((0, util_1.alwaysValidSchema)(it, sch))
-          return;
-        gen.if((0, codegen_1._)`${len} > ${i}`, () => cxt.subschema({
-          keyword,
-          schemaProp: i,
-          dataProp: i
-        }, valid));
-        cxt.ok(valid);
-      });
-      function checkStrictTuple(sch) {
-        const { opts, errSchemaPath } = it;
-        const l = schArr.length;
-        const fullTuple = l === sch.minItems && (l === sch.maxItems || sch[extraItems] === false);
-        if (opts.strictTuples && !fullTuple) {
-          const msg = `"${keyword}" is ${l}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`;
-          (0, util_1.checkStrictMode)(it, msg, opts.strictTuples);
-        }
-      }
-    }
-    exports.validateTuple = validateTuple;
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/prefixItems.js
-var require_prefixItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/prefixItems.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var items_1 = require_items();
-    var def = {
-      keyword: "prefixItems",
-      type: "array",
-      schemaType: ["array"],
-      before: "uniqueItems",
-      code: (cxt) => (0, items_1.validateTuple)(cxt, "items")
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/items2020.js
-var require_items2020 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/items2020.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var code_1 = require_code2();
-    var additionalItems_1 = require_additionalItems();
-    var error = {
-      message: ({ params: { len } }) => (0, codegen_1.str)`must NOT have more than ${len} items`,
-      params: ({ params: { len } }) => (0, codegen_1._)`{limit: ${len}}`
-    };
-    var def = {
-      keyword: "items",
-      type: "array",
-      schemaType: ["object", "boolean"],
-      before: "uniqueItems",
-      error,
-      code(cxt) {
-        const { schema: schema2, parentSchema, it } = cxt;
-        const { prefixItems } = parentSchema;
-        it.items = true;
-        if ((0, util_1.alwaysValidSchema)(it, schema2))
-          return;
-        if (prefixItems)
-          (0, additionalItems_1.validateAdditionalItems)(cxt, prefixItems);
-        else
-          cxt.ok((0, code_1.validateArray)(cxt));
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/contains.js
-var require_contains = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/contains.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1.str)`must contain at least ${min} valid item(s)` : (0, codegen_1.str)`must contain at least ${min} and no more than ${max} valid item(s)`,
-      params: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1._)`{minContains: ${min}}` : (0, codegen_1._)`{minContains: ${min}, maxContains: ${max}}`
-    };
-    var def = {
-      keyword: "contains",
-      type: "array",
-      schemaType: ["object", "boolean"],
-      before: "uniqueItems",
-      trackErrors: true,
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, parentSchema, data, it } = cxt;
-        let min;
-        let max;
-        const { minContains, maxContains } = parentSchema;
-        if (it.opts.next) {
-          min = minContains === void 0 ? 1 : minContains;
-          max = maxContains;
-        } else {
-          min = 1;
-        }
-        const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-        cxt.setParams({ min, max });
-        if (max === void 0 && min === 0) {
-          (0, util_1.checkStrictMode)(it, `"minContains" == 0 without "maxContains": "contains" keyword ignored`);
-          return;
-        }
-        if (max !== void 0 && min > max) {
-          (0, util_1.checkStrictMode)(it, `"minContains" > "maxContains" is always invalid`);
-          cxt.fail();
-          return;
-        }
-        if ((0, util_1.alwaysValidSchema)(it, schema2)) {
-          let cond = (0, codegen_1._)`${len} >= ${min}`;
-          if (max !== void 0)
-            cond = (0, codegen_1._)`${cond} && ${len} <= ${max}`;
-          cxt.pass(cond);
-          return;
-        }
-        it.items = true;
-        const valid = gen.name("valid");
-        if (max === void 0 && min === 1) {
-          validateItems(valid, () => gen.if(valid, () => gen.break()));
-        } else if (min === 0) {
-          gen.let(valid, true);
-          if (max !== void 0)
-            gen.if((0, codegen_1._)`${data}.length > 0`, validateItemsWithCount);
-        } else {
-          gen.let(valid, false);
-          validateItemsWithCount();
-        }
-        cxt.result(valid, () => cxt.reset());
-        function validateItemsWithCount() {
-          const schValid = gen.name("_valid");
-          const count = gen.let("count", 0);
-          validateItems(schValid, () => gen.if(schValid, () => checkLimits(count)));
-        }
-        function validateItems(_valid, block) {
-          gen.forRange("i", 0, len, (i) => {
-            cxt.subschema({
-              keyword: "contains",
-              dataProp: i,
-              dataPropType: util_1.Type.Num,
-              compositeRule: true
-            }, _valid);
-            block();
-          });
-        }
-        function checkLimits(count) {
-          gen.code((0, codegen_1._)`${count}++`);
-          if (max === void 0) {
-            gen.if((0, codegen_1._)`${count} >= ${min}`, () => gen.assign(valid, true).break());
-          } else {
-            gen.if((0, codegen_1._)`${count} > ${max}`, () => gen.assign(valid, false).break());
-            if (min === 1)
-              gen.assign(valid, true);
-            else
-              gen.if((0, codegen_1._)`${count} >= ${min}`, () => gen.assign(valid, true));
-          }
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/dependencies.js
-var require_dependencies = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/dependencies.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.validateSchemaDeps = exports.validatePropertyDeps = exports.error = void 0;
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var code_1 = require_code2();
-    exports.error = {
-      message: ({ params: { property, depsCount, deps } }) => {
-        const property_ies = depsCount === 1 ? "property" : "properties";
-        return (0, codegen_1.str)`must have ${property_ies} ${deps} when property ${property} is present`;
-      },
-      params: ({ params: { property, depsCount, deps, missingProperty } }) => (0, codegen_1._)`{property: ${property},
-    missingProperty: ${missingProperty},
-    depsCount: ${depsCount},
-    deps: ${deps}}`
-      // TODO change to reference
-    };
-    var def = {
-      keyword: "dependencies",
-      type: "object",
-      schemaType: "object",
-      error: exports.error,
-      code(cxt) {
-        const [propDeps, schDeps] = splitDependencies(cxt);
-        validatePropertyDeps(cxt, propDeps);
-        validateSchemaDeps(cxt, schDeps);
-      }
-    };
-    function splitDependencies({ schema: schema2 }) {
-      const propertyDeps = {};
-      const schemaDeps = {};
-      for (const key in schema2) {
-        if (key === "__proto__")
-          continue;
-        const deps = Array.isArray(schema2[key]) ? propertyDeps : schemaDeps;
-        deps[key] = schema2[key];
-      }
-      return [propertyDeps, schemaDeps];
-    }
-    function validatePropertyDeps(cxt, propertyDeps = cxt.schema) {
-      const { gen, data, it } = cxt;
-      if (Object.keys(propertyDeps).length === 0)
-        return;
-      const missing = gen.let("missing");
-      for (const prop in propertyDeps) {
-        const deps = propertyDeps[prop];
-        if (deps.length === 0)
-          continue;
-        const hasProperty = (0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties);
-        cxt.setParams({
-          property: prop,
-          depsCount: deps.length,
-          deps: deps.join(", ")
-        });
-        if (it.allErrors) {
-          gen.if(hasProperty, () => {
-            for (const depProp of deps) {
-              (0, code_1.checkReportMissingProp)(cxt, depProp);
-            }
-          });
-        } else {
-          gen.if((0, codegen_1._)`${hasProperty} && (${(0, code_1.checkMissingProp)(cxt, deps, missing)})`);
-          (0, code_1.reportMissingProp)(cxt, missing);
-          gen.else();
-        }
-      }
-    }
-    exports.validatePropertyDeps = validatePropertyDeps;
-    function validateSchemaDeps(cxt, schemaDeps = cxt.schema) {
-      const { gen, data, keyword, it } = cxt;
-      const valid = gen.name("valid");
-      for (const prop in schemaDeps) {
-        if ((0, util_1.alwaysValidSchema)(it, schemaDeps[prop]))
-          continue;
-        gen.if(
-          (0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties),
-          () => {
-            const schCxt = cxt.subschema({ keyword, schemaProp: prop }, valid);
-            cxt.mergeValidEvaluated(schCxt, valid);
-          },
-          () => gen.var(valid, true)
-          // TODO var
-        );
-        cxt.ok(valid);
-      }
-    }
-    exports.validateSchemaDeps = validateSchemaDeps;
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/propertyNames.js
-var require_propertyNames = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/propertyNames.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: "property name must be valid",
-      params: ({ params }) => (0, codegen_1._)`{propertyName: ${params.propertyName}}`
-    };
-    var def = {
-      keyword: "propertyNames",
-      type: "object",
-      schemaType: ["object", "boolean"],
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, data, it } = cxt;
-        if ((0, util_1.alwaysValidSchema)(it, schema2))
-          return;
-        const valid = gen.name("valid");
-        gen.forIn("key", data, (key) => {
-          cxt.setParams({ propertyName: key });
-          cxt.subschema({
-            keyword: "propertyNames",
-            data: key,
-            dataTypes: ["string"],
-            propertyName: key,
-            compositeRule: true
-          }, valid);
-          gen.if((0, codegen_1.not)(valid), () => {
-            cxt.error(true);
-            if (!it.allErrors)
-              gen.break();
-          });
-        });
-        cxt.ok(valid);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js
-var require_additionalProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/additionalProperties.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var code_1 = require_code2();
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var util_1 = require_util();
-    var error = {
-      message: "must NOT have additional properties",
-      params: ({ params }) => (0, codegen_1._)`{additionalProperty: ${params.additionalProperty}}`
-    };
-    var def = {
-      keyword: "additionalProperties",
-      type: ["object"],
-      schemaType: ["boolean", "object"],
-      allowUndefined: true,
-      trackErrors: true,
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, parentSchema, data, errsCount, it } = cxt;
-        if (!errsCount)
-          throw new Error("ajv implementation error");
-        const { allErrors, opts } = it;
-        it.props = true;
-        if (opts.removeAdditional !== "all" && (0, util_1.alwaysValidSchema)(it, schema2))
-          return;
-        const props = (0, code_1.allSchemaProperties)(parentSchema.properties);
-        const patProps = (0, code_1.allSchemaProperties)(parentSchema.patternProperties);
-        checkAdditionalProperties();
-        cxt.ok((0, codegen_1._)`${errsCount} === ${names_1.default.errors}`);
-        function checkAdditionalProperties() {
-          gen.forIn("key", data, (key) => {
-            if (!props.length && !patProps.length)
-              additionalPropertyCode(key);
-            else
-              gen.if(isAdditional(key), () => additionalPropertyCode(key));
-          });
-        }
-        function isAdditional(key) {
-          let definedProp;
-          if (props.length > 8) {
-            const propsSchema = (0, util_1.schemaRefOrVal)(it, parentSchema.properties, "properties");
-            definedProp = (0, code_1.isOwnProperty)(gen, propsSchema, key);
-          } else if (props.length) {
-            definedProp = (0, codegen_1.or)(...props.map((p) => (0, codegen_1._)`${key} === ${p}`));
-          } else {
-            definedProp = codegen_1.nil;
-          }
-          if (patProps.length) {
-            definedProp = (0, codegen_1.or)(definedProp, ...patProps.map((p) => (0, codegen_1._)`${(0, code_1.usePattern)(cxt, p)}.test(${key})`));
-          }
-          return (0, codegen_1.not)(definedProp);
-        }
-        function deleteAdditional(key) {
-          gen.code((0, codegen_1._)`delete ${data}[${key}]`);
-        }
-        function additionalPropertyCode(key) {
-          if (opts.removeAdditional === "all" || opts.removeAdditional && schema2 === false) {
-            deleteAdditional(key);
-            return;
-          }
-          if (schema2 === false) {
-            cxt.setParams({ additionalProperty: key });
-            cxt.error();
-            if (!allErrors)
-              gen.break();
-            return;
-          }
-          if (typeof schema2 == "object" && !(0, util_1.alwaysValidSchema)(it, schema2)) {
-            const valid = gen.name("valid");
-            if (opts.removeAdditional === "failing") {
-              applyAdditionalSchema(key, valid, false);
-              gen.if((0, codegen_1.not)(valid), () => {
-                cxt.reset();
-                deleteAdditional(key);
-              });
-            } else {
-              applyAdditionalSchema(key, valid);
-              if (!allErrors)
-                gen.if((0, codegen_1.not)(valid), () => gen.break());
-            }
-          }
-        }
-        function applyAdditionalSchema(key, valid, errors2) {
-          const subschema = {
-            keyword: "additionalProperties",
-            dataProp: key,
-            dataPropType: util_1.Type.Str
-          };
-          if (errors2 === false) {
-            Object.assign(subschema, {
-              compositeRule: true,
-              createErrors: false,
-              allErrors: false
-            });
-          }
-          cxt.subschema(subschema, valid);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/properties.js
-var require_properties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/properties.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var validate_1 = require_validate();
-    var code_1 = require_code2();
-    var util_1 = require_util();
-    var additionalProperties_1 = require_additionalProperties();
-    var def = {
-      keyword: "properties",
-      type: "object",
-      schemaType: "object",
-      code(cxt) {
-        const { gen, schema: schema2, parentSchema, data, it } = cxt;
-        if (it.opts.removeAdditional === "all" && parentSchema.additionalProperties === void 0) {
-          additionalProperties_1.default.code(new validate_1.KeywordCxt(it, additionalProperties_1.default, "additionalProperties"));
-        }
-        const allProps = (0, code_1.allSchemaProperties)(schema2);
-        for (const prop of allProps) {
-          it.definedProperties.add(prop);
-        }
-        if (it.opts.unevaluated && allProps.length && it.props !== true) {
-          it.props = util_1.mergeEvaluated.props(gen, (0, util_1.toHash)(allProps), it.props);
-        }
-        const properties = allProps.filter((p) => !(0, util_1.alwaysValidSchema)(it, schema2[p]));
-        if (properties.length === 0)
-          return;
-        const valid = gen.name("valid");
-        for (const prop of properties) {
-          if (hasDefault(prop)) {
-            applyPropertySchema(prop);
-          } else {
-            gen.if((0, code_1.propertyInData)(gen, data, prop, it.opts.ownProperties));
-            applyPropertySchema(prop);
-            if (!it.allErrors)
-              gen.else().var(valid, true);
-            gen.endIf();
-          }
-          cxt.it.definedProperties.add(prop);
-          cxt.ok(valid);
-        }
-        function hasDefault(prop) {
-          return it.opts.useDefaults && !it.compositeRule && schema2[prop].default !== void 0;
-        }
-        function applyPropertySchema(prop) {
-          cxt.subschema({
-            keyword: "properties",
-            schemaProp: prop,
-            dataProp: prop
-          }, valid);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/patternProperties.js
-var require_patternProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/patternProperties.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var code_1 = require_code2();
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var util_2 = require_util();
-    var def = {
-      keyword: "patternProperties",
-      type: "object",
-      schemaType: "object",
-      code(cxt) {
-        const { gen, schema: schema2, data, parentSchema, it } = cxt;
-        const { opts } = it;
-        const patterns = (0, code_1.allSchemaProperties)(schema2);
-        const alwaysValidPatterns = patterns.filter((p) => (0, util_1.alwaysValidSchema)(it, schema2[p]));
-        if (patterns.length === 0 || alwaysValidPatterns.length === patterns.length && (!it.opts.unevaluated || it.props === true)) {
-          return;
-        }
-        const checkProperties = opts.strictSchema && !opts.allowMatchingProperties && parentSchema.properties;
-        const valid = gen.name("valid");
-        if (it.props !== true && !(it.props instanceof codegen_1.Name)) {
-          it.props = (0, util_2.evaluatedPropsToName)(gen, it.props);
-        }
-        const { props } = it;
-        validatePatternProperties();
-        function validatePatternProperties() {
-          for (const pat of patterns) {
-            if (checkProperties)
-              checkMatchingProperties(pat);
-            if (it.allErrors) {
-              validateProperties(pat);
-            } else {
-              gen.var(valid, true);
-              validateProperties(pat);
-              gen.if(valid);
-            }
-          }
-        }
-        function checkMatchingProperties(pat) {
-          for (const prop in checkProperties) {
-            if (new RegExp(pat).test(prop)) {
-              (0, util_1.checkStrictMode)(it, `property ${prop} matches pattern ${pat} (use allowMatchingProperties)`);
-            }
-          }
-        }
-        function validateProperties(pat) {
-          gen.forIn("key", data, (key) => {
-            gen.if((0, codegen_1._)`${(0, code_1.usePattern)(cxt, pat)}.test(${key})`, () => {
-              const alwaysValid = alwaysValidPatterns.includes(pat);
-              if (!alwaysValid) {
-                cxt.subschema({
-                  keyword: "patternProperties",
-                  schemaProp: pat,
-                  dataProp: key,
-                  dataPropType: util_2.Type.Str
-                }, valid);
-              }
-              if (it.opts.unevaluated && props !== true) {
-                gen.assign((0, codegen_1._)`${props}[${key}]`, true);
-              } else if (!alwaysValid && !it.allErrors) {
-                gen.if((0, codegen_1.not)(valid), () => gen.break());
-              }
-            });
-          });
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/not.js
-var require_not = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/not.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var util_1 = require_util();
-    var def = {
-      keyword: "not",
-      schemaType: ["object", "boolean"],
-      trackErrors: true,
-      code(cxt) {
-        const { gen, schema: schema2, it } = cxt;
-        if ((0, util_1.alwaysValidSchema)(it, schema2)) {
-          cxt.fail();
-          return;
-        }
-        const valid = gen.name("valid");
-        cxt.subschema({
-          keyword: "not",
-          compositeRule: true,
-          createErrors: false,
-          allErrors: false
-        }, valid);
-        cxt.failResult(valid, () => cxt.reset(), () => cxt.error());
-      },
-      error: { message: "must NOT be valid" }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/anyOf.js
-var require_anyOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/anyOf.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var code_1 = require_code2();
-    var def = {
-      keyword: "anyOf",
-      schemaType: "array",
-      trackErrors: true,
-      code: code_1.validateUnion,
-      error: { message: "must match a schema in anyOf" }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/oneOf.js
-var require_oneOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/oneOf.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: "must match exactly one schema in oneOf",
-      params: ({ params }) => (0, codegen_1._)`{passingSchemas: ${params.passing}}`
-    };
-    var def = {
-      keyword: "oneOf",
-      schemaType: "array",
-      trackErrors: true,
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, parentSchema, it } = cxt;
-        if (!Array.isArray(schema2))
-          throw new Error("ajv implementation error");
-        if (it.opts.discriminator && parentSchema.discriminator)
-          return;
-        const schArr = schema2;
-        const valid = gen.let("valid", false);
-        const passing = gen.let("passing", null);
-        const schValid = gen.name("_valid");
-        cxt.setParams({ passing });
-        gen.block(validateOneOf);
-        cxt.result(valid, () => cxt.reset(), () => cxt.error(true));
-        function validateOneOf() {
-          schArr.forEach((sch, i) => {
-            let schCxt;
-            if ((0, util_1.alwaysValidSchema)(it, sch)) {
-              gen.var(schValid, true);
-            } else {
-              schCxt = cxt.subschema({
-                keyword: "oneOf",
-                schemaProp: i,
-                compositeRule: true
-              }, schValid);
-            }
-            if (i > 0) {
-              gen.if((0, codegen_1._)`${schValid} && ${valid}`).assign(valid, false).assign(passing, (0, codegen_1._)`[${passing}, ${i}]`).else();
-            }
-            gen.if(schValid, () => {
-              gen.assign(valid, true);
-              gen.assign(passing, i);
-              if (schCxt)
-                cxt.mergeEvaluated(schCxt, codegen_1.Name);
-            });
-          });
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/allOf.js
-var require_allOf = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/allOf.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var util_1 = require_util();
-    var def = {
-      keyword: "allOf",
-      schemaType: "array",
-      code(cxt) {
-        const { gen, schema: schema2, it } = cxt;
-        if (!Array.isArray(schema2))
-          throw new Error("ajv implementation error");
-        const valid = gen.name("valid");
-        schema2.forEach((sch, i) => {
-          if ((0, util_1.alwaysValidSchema)(it, sch))
-            return;
-          const schCxt = cxt.subschema({ keyword: "allOf", schemaProp: i }, valid);
-          cxt.ok(valid);
-          cxt.mergeEvaluated(schCxt);
-        });
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/if.js
-var require_if = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/if.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: ({ params }) => (0, codegen_1.str)`must match "${params.ifClause}" schema`,
-      params: ({ params }) => (0, codegen_1._)`{failingKeyword: ${params.ifClause}}`
-    };
-    var def = {
-      keyword: "if",
-      schemaType: ["object", "boolean"],
-      trackErrors: true,
-      error,
-      code(cxt) {
-        const { gen, parentSchema, it } = cxt;
-        if (parentSchema.then === void 0 && parentSchema.else === void 0) {
-          (0, util_1.checkStrictMode)(it, '"if" without "then" and "else" is ignored');
-        }
-        const hasThen = hasSchema(it, "then");
-        const hasElse = hasSchema(it, "else");
-        if (!hasThen && !hasElse)
-          return;
-        const valid = gen.let("valid", true);
-        const schValid = gen.name("_valid");
-        validateIf();
-        cxt.reset();
-        if (hasThen && hasElse) {
-          const ifClause = gen.let("ifClause");
-          cxt.setParams({ ifClause });
-          gen.if(schValid, validateClause("then", ifClause), validateClause("else", ifClause));
-        } else if (hasThen) {
-          gen.if(schValid, validateClause("then"));
-        } else {
-          gen.if((0, codegen_1.not)(schValid), validateClause("else"));
-        }
-        cxt.pass(valid, () => cxt.error(true));
-        function validateIf() {
-          const schCxt = cxt.subschema({
-            keyword: "if",
-            compositeRule: true,
-            createErrors: false,
-            allErrors: false
-          }, schValid);
-          cxt.mergeEvaluated(schCxt);
-        }
-        function validateClause(keyword, ifClause) {
-          return () => {
-            const schCxt = cxt.subschema({ keyword }, schValid);
-            gen.assign(valid, schValid);
-            cxt.mergeValidEvaluated(schCxt, valid);
-            if (ifClause)
-              gen.assign(ifClause, (0, codegen_1._)`${keyword}`);
-            else
-              cxt.setParams({ ifClause: keyword });
-          };
-        }
-      }
-    };
-    function hasSchema(it, keyword) {
-      const schema2 = it.schema[keyword];
-      return schema2 !== void 0 && !(0, util_1.alwaysValidSchema)(it, schema2);
-    }
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/thenElse.js
-var require_thenElse = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/thenElse.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var util_1 = require_util();
-    var def = {
-      keyword: ["then", "else"],
-      schemaType: ["object", "boolean"],
-      code({ keyword, parentSchema, it }) {
-        if (parentSchema.if === void 0)
-          (0, util_1.checkStrictMode)(it, `"${keyword}" without "if" is ignored`);
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/index.js
-var require_applicator = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var additionalItems_1 = require_additionalItems();
-    var prefixItems_1 = require_prefixItems();
-    var items_1 = require_items();
-    var items2020_1 = require_items2020();
-    var contains_1 = require_contains();
-    var dependencies_1 = require_dependencies();
-    var propertyNames_1 = require_propertyNames();
-    var additionalProperties_1 = require_additionalProperties();
-    var properties_1 = require_properties();
-    var patternProperties_1 = require_patternProperties();
-    var not_1 = require_not();
-    var anyOf_1 = require_anyOf();
-    var oneOf_1 = require_oneOf();
-    var allOf_1 = require_allOf();
-    var if_1 = require_if();
-    var thenElse_1 = require_thenElse();
-    function getApplicator(draft2020 = false) {
-      const applicator = [
-        // any
-        not_1.default,
-        anyOf_1.default,
-        oneOf_1.default,
-        allOf_1.default,
-        if_1.default,
-        thenElse_1.default,
-        // object
-        propertyNames_1.default,
-        additionalProperties_1.default,
-        dependencies_1.default,
-        properties_1.default,
-        patternProperties_1.default
-      ];
-      if (draft2020)
-        applicator.push(prefixItems_1.default, items2020_1.default);
-      else
-        applicator.push(additionalItems_1.default, items_1.default);
-      applicator.push(contains_1.default);
-      return applicator;
-    }
-    exports.default = getApplicator;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js
-var require_dynamicAnchor = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/dynamicAnchor.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.dynamicAnchor = void 0;
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var compile_1 = require_compile();
-    var ref_1 = require_ref();
-    var def = {
-      keyword: "$dynamicAnchor",
-      schemaType: "string",
-      code: (cxt) => dynamicAnchor(cxt, cxt.schema)
-    };
-    function dynamicAnchor(cxt, anchor) {
-      const { gen, it } = cxt;
-      it.schemaEnv.root.dynamicAnchors[anchor] = true;
-      const v = (0, codegen_1._)`${names_1.default.dynamicAnchors}${(0, codegen_1.getProperty)(anchor)}`;
-      const validate = it.errSchemaPath === "#" ? it.validateName : _getValidate(cxt);
-      gen.if((0, codegen_1._)`!${v}`, () => gen.assign(v, validate));
-    }
-    exports.dynamicAnchor = dynamicAnchor;
-    function _getValidate(cxt) {
-      const { schemaEnv, schema: schema2, self } = cxt.it;
-      const { root, baseId, localRefs, meta } = schemaEnv.root;
-      const { schemaId } = self.opts;
-      const sch = new compile_1.SchemaEnv({ schema: schema2, schemaId, root, baseId, localRefs, meta });
-      compile_1.compileSchema.call(self, sch);
-      return (0, ref_1.getValidate)(cxt, sch);
-    }
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js
-var require_dynamicRef = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/dynamicRef.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.dynamicRef = void 0;
-    var codegen_1 = require_codegen();
-    var names_1 = require_names();
-    var ref_1 = require_ref();
-    var def = {
-      keyword: "$dynamicRef",
-      schemaType: "string",
-      code: (cxt) => dynamicRef(cxt, cxt.schema)
-    };
-    function dynamicRef(cxt, ref) {
-      const { gen, keyword, it } = cxt;
-      if (ref[0] !== "#")
-        throw new Error(`"${keyword}" only supports hash fragment reference`);
-      const anchor = ref.slice(1);
-      if (it.allErrors) {
-        _dynamicRef();
-      } else {
-        const valid = gen.let("valid", false);
-        _dynamicRef(valid);
-        cxt.ok(valid);
-      }
-      function _dynamicRef(valid) {
-        if (it.schemaEnv.root.dynamicAnchors[anchor]) {
-          const v = gen.let("_v", (0, codegen_1._)`${names_1.default.dynamicAnchors}${(0, codegen_1.getProperty)(anchor)}`);
-          gen.if(v, _callRef(v, valid), _callRef(it.validateName, valid));
-        } else {
-          _callRef(it.validateName, valid)();
-        }
-      }
-      function _callRef(validate, valid) {
-        return valid ? () => gen.block(() => {
-          (0, ref_1.callRef)(cxt, validate);
-          gen.let(valid, true);
-        }) : () => (0, ref_1.callRef)(cxt, validate);
-      }
-    }
-    exports.dynamicRef = dynamicRef;
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js
-var require_recursiveAnchor = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/recursiveAnchor.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dynamicAnchor_1 = require_dynamicAnchor();
-    var util_1 = require_util();
-    var def = {
-      keyword: "$recursiveAnchor",
-      schemaType: "boolean",
-      code(cxt) {
-        if (cxt.schema)
-          (0, dynamicAnchor_1.dynamicAnchor)(cxt, "");
-        else
-          (0, util_1.checkStrictMode)(cxt.it, "$recursiveAnchor: false is ignored");
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js
-var require_recursiveRef = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/recursiveRef.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dynamicRef_1 = require_dynamicRef();
-    var def = {
-      keyword: "$recursiveRef",
-      schemaType: "string",
-      code: (cxt) => (0, dynamicRef_1.dynamicRef)(cxt, cxt.schema)
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/dynamic/index.js
-var require_dynamic = __commonJS({
-  "node_modules/ajv/dist/vocabularies/dynamic/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dynamicAnchor_1 = require_dynamicAnchor();
-    var dynamicRef_1 = require_dynamicRef();
-    var recursiveAnchor_1 = require_recursiveAnchor();
-    var recursiveRef_1 = require_recursiveRef();
-    var dynamic = [dynamicAnchor_1.default, dynamicRef_1.default, recursiveAnchor_1.default, recursiveRef_1.default];
-    exports.default = dynamic;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/dependentRequired.js
-var require_dependentRequired = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/dependentRequired.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dependencies_1 = require_dependencies();
-    var def = {
-      keyword: "dependentRequired",
-      type: "object",
-      schemaType: "object",
-      error: dependencies_1.error,
-      code: (cxt) => (0, dependencies_1.validatePropertyDeps)(cxt)
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js
-var require_dependentSchemas = __commonJS({
-  "node_modules/ajv/dist/vocabularies/applicator/dependentSchemas.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dependencies_1 = require_dependencies();
-    var def = {
-      keyword: "dependentSchemas",
-      type: "object",
-      schemaType: "object",
-      code: (cxt) => (0, dependencies_1.validateSchemaDeps)(cxt)
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/validation/limitContains.js
-var require_limitContains = __commonJS({
-  "node_modules/ajv/dist/vocabularies/validation/limitContains.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var util_1 = require_util();
-    var def = {
-      keyword: ["maxContains", "minContains"],
-      type: "array",
-      schemaType: "number",
-      code({ keyword, parentSchema, it }) {
-        if (parentSchema.contains === void 0) {
-          (0, util_1.checkStrictMode)(it, `"${keyword}" without "contains" is ignored`);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/next.js
-var require_next = __commonJS({
-  "node_modules/ajv/dist/vocabularies/next.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var dependentRequired_1 = require_dependentRequired();
-    var dependentSchemas_1 = require_dependentSchemas();
-    var limitContains_1 = require_limitContains();
-    var next = [dependentRequired_1.default, dependentSchemas_1.default, limitContains_1.default];
-    exports.default = next;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js
-var require_unevaluatedProperties = __commonJS({
-  "node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedProperties.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var names_1 = require_names();
-    var error = {
-      message: "must NOT have unevaluated properties",
-      params: ({ params }) => (0, codegen_1._)`{unevaluatedProperty: ${params.unevaluatedProperty}}`
-    };
-    var def = {
-      keyword: "unevaluatedProperties",
-      type: "object",
-      schemaType: ["boolean", "object"],
-      trackErrors: true,
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, data, errsCount, it } = cxt;
-        if (!errsCount)
-          throw new Error("ajv implementation error");
-        const { allErrors, props } = it;
-        if (props instanceof codegen_1.Name) {
-          gen.if((0, codegen_1._)`${props} !== true`, () => gen.forIn("key", data, (key) => gen.if(unevaluatedDynamic(props, key), () => unevaluatedPropCode(key))));
-        } else if (props !== true) {
-          gen.forIn("key", data, (key) => props === void 0 ? unevaluatedPropCode(key) : gen.if(unevaluatedStatic(props, key), () => unevaluatedPropCode(key)));
-        }
-        it.props = true;
-        cxt.ok((0, codegen_1._)`${errsCount} === ${names_1.default.errors}`);
-        function unevaluatedPropCode(key) {
-          if (schema2 === false) {
-            cxt.setParams({ unevaluatedProperty: key });
-            cxt.error();
-            if (!allErrors)
-              gen.break();
-            return;
-          }
-          if (!(0, util_1.alwaysValidSchema)(it, schema2)) {
-            const valid = gen.name("valid");
-            cxt.subschema({
-              keyword: "unevaluatedProperties",
-              dataProp: key,
-              dataPropType: util_1.Type.Str
-            }, valid);
-            if (!allErrors)
-              gen.if((0, codegen_1.not)(valid), () => gen.break());
-          }
-        }
-        function unevaluatedDynamic(evaluatedProps, key) {
-          return (0, codegen_1._)`!${evaluatedProps} || !${evaluatedProps}[${key}]`;
-        }
-        function unevaluatedStatic(evaluatedProps, key) {
-          const ps = [];
-          for (const p in evaluatedProps) {
-            if (evaluatedProps[p] === true)
-              ps.push((0, codegen_1._)`${key} !== ${p}`);
-          }
-          return (0, codegen_1.and)(...ps);
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js
-var require_unevaluatedItems = __commonJS({
-  "node_modules/ajv/dist/vocabularies/unevaluated/unevaluatedItems.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var util_1 = require_util();
-    var error = {
-      message: ({ params: { len } }) => (0, codegen_1.str)`must NOT have more than ${len} items`,
-      params: ({ params: { len } }) => (0, codegen_1._)`{limit: ${len}}`
-    };
-    var def = {
-      keyword: "unevaluatedItems",
-      type: "array",
-      schemaType: ["boolean", "object"],
-      error,
-      code(cxt) {
-        const { gen, schema: schema2, data, it } = cxt;
-        const items = it.items || 0;
-        if (items === true)
-          return;
-        const len = gen.const("len", (0, codegen_1._)`${data}.length`);
-        if (schema2 === false) {
-          cxt.setParams({ len: items });
-          cxt.fail((0, codegen_1._)`${len} > ${items}`);
-        } else if (typeof schema2 == "object" && !(0, util_1.alwaysValidSchema)(it, schema2)) {
-          const valid = gen.var("valid", (0, codegen_1._)`${len} <= ${items}`);
-          gen.if((0, codegen_1.not)(valid), () => validateItems(valid, items));
-          cxt.ok(valid);
-        }
-        it.items = true;
-        function validateItems(valid, from) {
-          gen.forRange("i", from, len, (i) => {
-            cxt.subschema({ keyword: "unevaluatedItems", dataProp: i, dataPropType: util_1.Type.Num }, valid);
-            if (!it.allErrors)
-              gen.if((0, codegen_1.not)(valid), () => gen.break());
-          });
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/unevaluated/index.js
-var require_unevaluated = __commonJS({
-  "node_modules/ajv/dist/vocabularies/unevaluated/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var unevaluatedProperties_1 = require_unevaluatedProperties();
-    var unevaluatedItems_1 = require_unevaluatedItems();
-    var unevaluated = [unevaluatedProperties_1.default, unevaluatedItems_1.default];
-    exports.default = unevaluated;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/format/format.js
-var require_format = __commonJS({
-  "node_modules/ajv/dist/vocabularies/format/format.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var error = {
-      message: ({ schemaCode }) => (0, codegen_1.str)`must match format "${schemaCode}"`,
-      params: ({ schemaCode }) => (0, codegen_1._)`{format: ${schemaCode}}`
-    };
-    var def = {
-      keyword: "format",
-      type: ["number", "string"],
-      schemaType: "string",
-      $data: true,
-      error,
-      code(cxt, ruleType) {
-        const { gen, data, $data, schema: schema2, schemaCode, it } = cxt;
-        const { opts, errSchemaPath, schemaEnv, self } = it;
-        if (!opts.validateFormats)
-          return;
-        if ($data)
-          validate$DataFormat();
-        else
-          validateFormat();
-        function validate$DataFormat() {
-          const fmts = gen.scopeValue("formats", {
-            ref: self.formats,
-            code: opts.code.formats
-          });
-          const fDef = gen.const("fDef", (0, codegen_1._)`${fmts}[${schemaCode}]`);
-          const fType = gen.let("fType");
-          const format = gen.let("format");
-          gen.if((0, codegen_1._)`typeof ${fDef} == "object" && !(${fDef} instanceof RegExp)`, () => gen.assign(fType, (0, codegen_1._)`${fDef}.type || "string"`).assign(format, (0, codegen_1._)`${fDef}.validate`), () => gen.assign(fType, (0, codegen_1._)`"string"`).assign(format, fDef));
-          cxt.fail$data((0, codegen_1.or)(unknownFmt(), invalidFmt()));
-          function unknownFmt() {
-            if (opts.strictSchema === false)
-              return codegen_1.nil;
-            return (0, codegen_1._)`${schemaCode} && !${format}`;
-          }
-          function invalidFmt() {
-            const callFormat = schemaEnv.$async ? (0, codegen_1._)`(${fDef}.async ? await ${format}(${data}) : ${format}(${data}))` : (0, codegen_1._)`${format}(${data})`;
-            const validData = (0, codegen_1._)`(typeof ${format} == "function" ? ${callFormat} : ${format}.test(${data}))`;
-            return (0, codegen_1._)`${format} && ${format} !== true && ${fType} === ${ruleType} && !${validData}`;
-          }
-        }
-        function validateFormat() {
-          const formatDef = self.formats[schema2];
-          if (!formatDef) {
-            unknownFormat();
-            return;
-          }
-          if (formatDef === true)
-            return;
-          const [fmtType, format, fmtRef] = getFormat(formatDef);
-          if (fmtType === ruleType)
-            cxt.pass(validCondition());
-          function unknownFormat() {
-            if (opts.strictSchema === false) {
-              self.logger.warn(unknownMsg());
-              return;
-            }
-            throw new Error(unknownMsg());
-            function unknownMsg() {
-              return `unknown format "${schema2}" ignored in schema at path "${errSchemaPath}"`;
-            }
-          }
-          function getFormat(fmtDef) {
-            const code = fmtDef instanceof RegExp ? (0, codegen_1.regexpCode)(fmtDef) : opts.code.formats ? (0, codegen_1._)`${opts.code.formats}${(0, codegen_1.getProperty)(schema2)}` : void 0;
-            const fmt = gen.scopeValue("formats", { key: schema2, ref: fmtDef, code });
-            if (typeof fmtDef == "object" && !(fmtDef instanceof RegExp)) {
-              return [fmtDef.type || "string", fmtDef.validate, (0, codegen_1._)`${fmt}.validate`];
-            }
-            return ["string", fmtDef, fmt];
-          }
-          function validCondition() {
-            if (typeof formatDef == "object" && !(formatDef instanceof RegExp) && formatDef.async) {
-              if (!schemaEnv.$async)
-                throw new Error("async format in sync schema");
-              return (0, codegen_1._)`await ${fmtRef}(${data})`;
-            }
-            return typeof format == "function" ? (0, codegen_1._)`${fmtRef}(${data})` : (0, codegen_1._)`${fmtRef}.test(${data})`;
-          }
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/format/index.js
-var require_format2 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/format/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var format_1 = require_format();
-    var format = [format_1.default];
-    exports.default = format;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/metadata.js
-var require_metadata = __commonJS({
-  "node_modules/ajv/dist/vocabularies/metadata.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.contentVocabulary = exports.metadataVocabulary = void 0;
-    exports.metadataVocabulary = [
-      "title",
-      "description",
-      "default",
-      "deprecated",
-      "readOnly",
-      "writeOnly",
-      "examples"
-    ];
-    exports.contentVocabulary = [
-      "contentMediaType",
-      "contentEncoding",
-      "contentSchema"
-    ];
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/draft2020.js
-var require_draft2020 = __commonJS({
-  "node_modules/ajv/dist/vocabularies/draft2020.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var core_1 = require_core2();
-    var validation_1 = require_validation();
-    var applicator_1 = require_applicator();
-    var dynamic_1 = require_dynamic();
-    var next_1 = require_next();
-    var unevaluated_1 = require_unevaluated();
-    var format_1 = require_format2();
-    var metadata_1 = require_metadata();
-    var draft2020Vocabularies = [
-      dynamic_1.default,
-      core_1.default,
-      validation_1.default,
-      (0, applicator_1.default)(true),
-      format_1.default,
-      metadata_1.metadataVocabulary,
-      metadata_1.contentVocabulary,
-      next_1.default,
-      unevaluated_1.default
-    ];
-    exports.default = draft2020Vocabularies;
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/discriminator/types.js
-var require_types = __commonJS({
-  "node_modules/ajv/dist/vocabularies/discriminator/types.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.DiscrError = void 0;
-    var DiscrError;
-    (function(DiscrError2) {
-      DiscrError2["Tag"] = "tag";
-      DiscrError2["Mapping"] = "mapping";
-    })(DiscrError || (exports.DiscrError = DiscrError = {}));
-  }
-});
-
-// node_modules/ajv/dist/vocabularies/discriminator/index.js
-var require_discriminator = __commonJS({
-  "node_modules/ajv/dist/vocabularies/discriminator/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var codegen_1 = require_codegen();
-    var types_1 = require_types();
-    var compile_1 = require_compile();
-    var ref_error_1 = require_ref_error();
-    var util_1 = require_util();
-    var error = {
-      message: ({ params: { discrError, tagName } }) => discrError === types_1.DiscrError.Tag ? `tag "${tagName}" must be string` : `value of tag "${tagName}" must be in oneOf`,
-      params: ({ params: { discrError, tag, tagName } }) => (0, codegen_1._)`{error: ${discrError}, tag: ${tagName}, tagValue: ${tag}}`
-    };
-    var def = {
-      keyword: "discriminator",
-      type: "object",
-      schemaType: "object",
-      error,
-      code(cxt) {
-        const { gen, data, schema: schema2, parentSchema, it } = cxt;
-        const { oneOf } = parentSchema;
-        if (!it.opts.discriminator) {
-          throw new Error("discriminator: requires discriminator option");
-        }
-        const tagName = schema2.propertyName;
-        if (typeof tagName != "string")
-          throw new Error("discriminator: requires propertyName");
-        if (schema2.mapping)
-          throw new Error("discriminator: mapping is not supported");
-        if (!oneOf)
-          throw new Error("discriminator: requires oneOf keyword");
-        const valid = gen.let("valid", false);
-        const tag = gen.const("tag", (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(tagName)}`);
-        gen.if((0, codegen_1._)`typeof ${tag} == "string"`, () => validateMapping(), () => cxt.error(false, { discrError: types_1.DiscrError.Tag, tag, tagName }));
-        cxt.ok(valid);
-        function validateMapping() {
-          const mapping = getMapping();
-          gen.if(false);
-          for (const tagValue in mapping) {
-            gen.elseIf((0, codegen_1._)`${tag} === ${tagValue}`);
-            gen.assign(valid, applyTagSchema(mapping[tagValue]));
-          }
-          gen.else();
-          cxt.error(false, { discrError: types_1.DiscrError.Mapping, tag, tagName });
-          gen.endIf();
-        }
-        function applyTagSchema(schemaProp) {
-          const _valid = gen.name("valid");
-          const schCxt = cxt.subschema({ keyword: "oneOf", schemaProp }, _valid);
-          cxt.mergeEvaluated(schCxt, codegen_1.Name);
-          return _valid;
-        }
-        function getMapping() {
-          var _a;
-          const oneOfMapping = {};
-          const topRequired = hasRequired(parentSchema);
-          let tagRequired = true;
-          for (let i = 0; i < oneOf.length; i++) {
-            let sch = oneOf[i];
-            if ((sch === null || sch === void 0 ? void 0 : sch.$ref) && !(0, util_1.schemaHasRulesButRef)(sch, it.self.RULES)) {
-              const ref = sch.$ref;
-              sch = compile_1.resolveRef.call(it.self, it.schemaEnv.root, it.baseId, ref);
-              if (sch instanceof compile_1.SchemaEnv)
-                sch = sch.schema;
-              if (sch === void 0)
-                throw new ref_error_1.default(it.opts.uriResolver, it.baseId, ref);
-            }
-            const propSch = (_a = sch === null || sch === void 0 ? void 0 : sch.properties) === null || _a === void 0 ? void 0 : _a[tagName];
-            if (typeof propSch != "object") {
-              throw new Error(`discriminator: oneOf subschemas (or referenced schemas) must have "properties/${tagName}"`);
-            }
-            tagRequired = tagRequired && (topRequired || hasRequired(sch));
-            addMappings(propSch, i);
-          }
-          if (!tagRequired)
-            throw new Error(`discriminator: "${tagName}" must be required`);
-          return oneOfMapping;
-          function hasRequired({ required }) {
-            return Array.isArray(required) && required.includes(tagName);
-          }
-          function addMappings(sch, i) {
-            if (sch.const) {
-              addMapping(sch.const, i);
-            } else if (sch.enum) {
-              for (const tagValue of sch.enum) {
-                addMapping(tagValue, i);
-              }
-            } else {
-              throw new Error(`discriminator: "properties/${tagName}" must have "const" or "enum"`);
-            }
-          }
-          function addMapping(tagValue, i) {
-            if (typeof tagValue != "string" || tagValue in oneOfMapping) {
-              throw new Error(`discriminator: "${tagName}" values must be unique strings`);
-            }
-            oneOfMapping[tagValue] = i;
-          }
-        }
-      }
-    };
-    exports.default = def;
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/schema.json
-var require_schema = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/schema.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/schema",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/core": true,
-        "https://json-schema.org/draft/2020-12/vocab/applicator": true,
-        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true,
-        "https://json-schema.org/draft/2020-12/vocab/validation": true,
-        "https://json-schema.org/draft/2020-12/vocab/meta-data": true,
-        "https://json-schema.org/draft/2020-12/vocab/format-annotation": true,
-        "https://json-schema.org/draft/2020-12/vocab/content": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Core and Validation specifications meta-schema",
-      allOf: [
-        { $ref: "meta/core" },
-        { $ref: "meta/applicator" },
-        { $ref: "meta/unevaluated" },
-        { $ref: "meta/validation" },
-        { $ref: "meta/meta-data" },
-        { $ref: "meta/format-annotation" },
-        { $ref: "meta/content" }
-      ],
-      type: ["object", "boolean"],
-      $comment: "This meta-schema also defines keywords that have appeared in previous drafts in order to prevent incompatible extensions as they remain in common use.",
-      properties: {
-        definitions: {
-          $comment: '"definitions" has been replaced by "$defs".',
-          type: "object",
-          additionalProperties: { $dynamicRef: "#meta" },
-          deprecated: true,
-          default: {}
-        },
-        dependencies: {
-          $comment: '"dependencies" has been split and replaced by "dependentSchemas" and "dependentRequired" in order to serve their differing semantics.',
-          type: "object",
-          additionalProperties: {
-            anyOf: [{ $dynamicRef: "#meta" }, { $ref: "meta/validation#/$defs/stringArray" }]
-          },
-          deprecated: true,
-          default: {}
-        },
-        $recursiveAnchor: {
-          $comment: '"$recursiveAnchor" has been replaced by "$dynamicAnchor".',
-          $ref: "meta/core#/$defs/anchorString",
-          deprecated: true
-        },
-        $recursiveRef: {
-          $comment: '"$recursiveRef" has been replaced by "$dynamicRef".',
-          $ref: "meta/core#/$defs/uriReferenceString",
-          deprecated: true
-        }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json
-var require_applicator2 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/applicator.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/applicator",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/applicator": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Applicator vocabulary meta-schema",
-      type: ["object", "boolean"],
-      properties: {
-        prefixItems: { $ref: "#/$defs/schemaArray" },
-        items: { $dynamicRef: "#meta" },
-        contains: { $dynamicRef: "#meta" },
-        additionalProperties: { $dynamicRef: "#meta" },
-        properties: {
-          type: "object",
-          additionalProperties: { $dynamicRef: "#meta" },
-          default: {}
-        },
-        patternProperties: {
-          type: "object",
-          additionalProperties: { $dynamicRef: "#meta" },
-          propertyNames: { format: "regex" },
-          default: {}
-        },
-        dependentSchemas: {
-          type: "object",
-          additionalProperties: { $dynamicRef: "#meta" },
-          default: {}
-        },
-        propertyNames: { $dynamicRef: "#meta" },
-        if: { $dynamicRef: "#meta" },
-        then: { $dynamicRef: "#meta" },
-        else: { $dynamicRef: "#meta" },
-        allOf: { $ref: "#/$defs/schemaArray" },
-        anyOf: { $ref: "#/$defs/schemaArray" },
-        oneOf: { $ref: "#/$defs/schemaArray" },
-        not: { $dynamicRef: "#meta" }
-      },
-      $defs: {
-        schemaArray: {
-          type: "array",
-          minItems: 1,
-          items: { $dynamicRef: "#meta" }
-        }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json
-var require_unevaluated2 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/unevaluated.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/unevaluated",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/unevaluated": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Unevaluated applicator vocabulary meta-schema",
-      type: ["object", "boolean"],
-      properties: {
-        unevaluatedItems: { $dynamicRef: "#meta" },
-        unevaluatedProperties: { $dynamicRef: "#meta" }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json
-var require_content = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/content.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/content",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/content": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Content vocabulary meta-schema",
-      type: ["object", "boolean"],
-      properties: {
-        contentEncoding: { type: "string" },
-        contentMediaType: { type: "string" },
-        contentSchema: { $dynamicRef: "#meta" }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json
-var require_core3 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/core.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/core",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/core": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Core vocabulary meta-schema",
-      type: ["object", "boolean"],
-      properties: {
-        $id: {
-          $ref: "#/$defs/uriReferenceString",
-          $comment: "Non-empty fragments not allowed.",
-          pattern: "^[^#]*#?$"
-        },
-        $schema: { $ref: "#/$defs/uriString" },
-        $ref: { $ref: "#/$defs/uriReferenceString" },
-        $anchor: { $ref: "#/$defs/anchorString" },
-        $dynamicRef: { $ref: "#/$defs/uriReferenceString" },
-        $dynamicAnchor: { $ref: "#/$defs/anchorString" },
-        $vocabulary: {
-          type: "object",
-          propertyNames: { $ref: "#/$defs/uriString" },
-          additionalProperties: {
-            type: "boolean"
-          }
-        },
-        $comment: {
-          type: "string"
-        },
-        $defs: {
-          type: "object",
-          additionalProperties: { $dynamicRef: "#meta" }
-        }
-      },
-      $defs: {
-        anchorString: {
-          type: "string",
-          pattern: "^[A-Za-z_][-A-Za-z0-9._]*$"
-        },
-        uriString: {
-          type: "string",
-          format: "uri"
-        },
-        uriReferenceString: {
-          type: "string",
-          format: "uri-reference"
-        }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json
-var require_format_annotation = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/format-annotation.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/format-annotation",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/format-annotation": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Format vocabulary meta-schema for annotation results",
-      type: ["object", "boolean"],
-      properties: {
-        format: { type: "string" }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json
-var require_meta_data = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/meta-data.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/meta-data",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/meta-data": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Meta-data vocabulary meta-schema",
-      type: ["object", "boolean"],
-      properties: {
-        title: {
-          type: "string"
-        },
-        description: {
-          type: "string"
-        },
-        default: true,
-        deprecated: {
-          type: "boolean",
-          default: false
-        },
-        readOnly: {
-          type: "boolean",
-          default: false
-        },
-        writeOnly: {
-          type: "boolean",
-          default: false
-        },
-        examples: {
-          type: "array",
-          items: true
-        }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json
-var require_validation2 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/meta/validation.json"(exports, module) {
-    module.exports = {
-      $schema: "https://json-schema.org/draft/2020-12/schema",
-      $id: "https://json-schema.org/draft/2020-12/meta/validation",
-      $vocabulary: {
-        "https://json-schema.org/draft/2020-12/vocab/validation": true
-      },
-      $dynamicAnchor: "meta",
-      title: "Validation vocabulary meta-schema",
-      type: ["object", "boolean"],
-      properties: {
-        type: {
-          anyOf: [
-            { $ref: "#/$defs/simpleTypes" },
-            {
-              type: "array",
-              items: { $ref: "#/$defs/simpleTypes" },
-              minItems: 1,
-              uniqueItems: true
-            }
-          ]
-        },
-        const: true,
-        enum: {
-          type: "array",
-          items: true
-        },
-        multipleOf: {
-          type: "number",
-          exclusiveMinimum: 0
-        },
-        maximum: {
-          type: "number"
-        },
-        exclusiveMaximum: {
-          type: "number"
-        },
-        minimum: {
-          type: "number"
-        },
-        exclusiveMinimum: {
-          type: "number"
-        },
-        maxLength: { $ref: "#/$defs/nonNegativeInteger" },
-        minLength: { $ref: "#/$defs/nonNegativeIntegerDefault0" },
-        pattern: {
-          type: "string",
-          format: "regex"
-        },
-        maxItems: { $ref: "#/$defs/nonNegativeInteger" },
-        minItems: { $ref: "#/$defs/nonNegativeIntegerDefault0" },
-        uniqueItems: {
-          type: "boolean",
-          default: false
-        },
-        maxContains: { $ref: "#/$defs/nonNegativeInteger" },
-        minContains: {
-          $ref: "#/$defs/nonNegativeInteger",
-          default: 1
-        },
-        maxProperties: { $ref: "#/$defs/nonNegativeInteger" },
-        minProperties: { $ref: "#/$defs/nonNegativeIntegerDefault0" },
-        required: { $ref: "#/$defs/stringArray" },
-        dependentRequired: {
-          type: "object",
-          additionalProperties: {
-            $ref: "#/$defs/stringArray"
-          }
-        }
-      },
-      $defs: {
-        nonNegativeInteger: {
-          type: "integer",
-          minimum: 0
-        },
-        nonNegativeIntegerDefault0: {
-          $ref: "#/$defs/nonNegativeInteger",
-          default: 0
-        },
-        simpleTypes: {
-          enum: ["array", "boolean", "integer", "null", "number", "object", "string"]
-        },
-        stringArray: {
-          type: "array",
-          items: { type: "string" },
-          uniqueItems: true,
-          default: []
-        }
-      }
-    };
-  }
-});
-
-// node_modules/ajv/dist/refs/json-schema-2020-12/index.js
-var require_json_schema_2020_12 = __commonJS({
-  "node_modules/ajv/dist/refs/json-schema-2020-12/index.js"(exports) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    var metaSchema = require_schema();
-    var applicator = require_applicator2();
-    var unevaluated = require_unevaluated2();
-    var content = require_content();
-    var core = require_core3();
-    var format = require_format_annotation();
-    var metadata = require_meta_data();
-    var validation = require_validation2();
-    var META_SUPPORT_DATA = ["/properties"];
-    function addMetaSchema2020($data) {
-      ;
-      [
-        metaSchema,
-        applicator,
-        unevaluated,
-        content,
-        core,
-        with$data(this, format),
-        metadata,
-        with$data(this, validation)
-      ].forEach((sch) => this.addMetaSchema(sch, void 0, false));
-      return this;
-      function with$data(ajv, sch) {
-        return $data ? ajv.$dataMetaSchema(sch, META_SUPPORT_DATA) : sch;
-      }
-    }
-    exports.default = addMetaSchema2020;
-  }
-});
-
-// node_modules/ajv/dist/2020.js
-var require__ = __commonJS({
-  "node_modules/ajv/dist/2020.js"(exports, module) {
-    "use strict";
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv2020 = void 0;
-    var core_1 = require_core();
-    var draft2020_1 = require_draft2020();
-    var discriminator_1 = require_discriminator();
-    var json_schema_2020_12_1 = require_json_schema_2020_12();
-    var META_SCHEMA_ID = "https://json-schema.org/draft/2020-12/schema";
-    var Ajv20202 = class extends core_1.default {
-      constructor(opts = {}) {
-        super({
-          ...opts,
-          dynamicRef: true,
-          next: true,
-          unevaluated: true
-        });
-      }
-      _addVocabularies() {
-        super._addVocabularies();
-        draft2020_1.default.forEach((v) => this.addVocabulary(v));
-        if (this.opts.discriminator)
-          this.addKeyword(discriminator_1.default);
-      }
-      _addDefaultMetaSchema() {
-        super._addDefaultMetaSchema();
-        const { $data, meta } = this.opts;
-        if (!meta)
-          return;
-        json_schema_2020_12_1.default.call(this, $data);
-        this.refs["http://json-schema.org/schema"] = META_SCHEMA_ID;
-      }
-      defaultMeta() {
-        return this.opts.defaultMeta = super.defaultMeta() || (this.getSchema(META_SCHEMA_ID) ? META_SCHEMA_ID : void 0);
-      }
-    };
-    exports.Ajv2020 = Ajv20202;
-    module.exports = exports = Ajv20202;
-    module.exports.Ajv2020 = Ajv20202;
-    Object.defineProperty(exports, "__esModule", { value: true });
-    exports.default = Ajv20202;
-    var validate_1 = require_validate();
-    Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
-      return validate_1.KeywordCxt;
-    } });
-    var codegen_1 = require_codegen();
-    Object.defineProperty(exports, "_", { enumerable: true, get: function() {
-      return codegen_1._;
-    } });
-    Object.defineProperty(exports, "str", { enumerable: true, get: function() {
-      return codegen_1.str;
-    } });
-    Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
-      return codegen_1.stringify;
-    } });
-    Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
-      return codegen_1.nil;
-    } });
-    Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
-      return codegen_1.Name;
-    } });
-    Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
-      return codegen_1.CodeGen;
-    } });
-    var validation_error_1 = require_validation_error();
-    Object.defineProperty(exports, "ValidationError", { enumerable: true, get: function() {
-      return validation_error_1.default;
-    } });
-    var ref_error_1 = require_ref_error();
-    Object.defineProperty(exports, "MissingRefError", { enumerable: true, get: function() {
-      return ref_error_1.default;
-    } });
-  }
-});
-
-// node_modules/yaml/dist/nodes/identity.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/identity.js
 var require_identity = __commonJS({
-  "node_modules/yaml/dist/nodes/identity.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/identity.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var ALIAS = /* @__PURE__ */ Symbol.for("yaml.alias");
     var DOC = /* @__PURE__ */ Symbol.for("yaml.document");
     var MAP = /* @__PURE__ */ Symbol.for("yaml.map");
@@ -7241,10 +108,11 @@ var require_identity = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/visit.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/visit.js
 var require_visit = __commonJS({
-  "node_modules/yaml/dist/visit.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/visit.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
@@ -7261,17 +129,17 @@ var require_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    function visit_(key, node, visitor, path2) {
-      const ctrl = callVisitor(key, node, visitor, path2);
+    function visit_(key, node, visitor, path) {
+      const ctrl = callVisitor(key, node, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path2, ctrl);
-        return visit_(key, ctrl, visitor, path2);
+        replaceNode(key, path, ctrl);
+        return visit_(key, ctrl, visitor, path);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path2 = Object.freeze(path2.concat(node));
+          path = Object.freeze(path.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = visit_(i, node.items[i], visitor, path2);
+            const ci = visit_(i, node.items[i], visitor, path);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -7282,13 +150,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path2 = Object.freeze(path2.concat(node));
-          const ck = visit_("key", node.key, visitor, path2);
+          path = Object.freeze(path.concat(node));
+          const ck = visit_("key", node.key, visitor, path);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = visit_("value", node.value, visitor, path2);
+          const cv = visit_("value", node.value, visitor, path);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -7309,17 +177,17 @@ var require_visit = __commonJS({
     visitAsync.BREAK = BREAK;
     visitAsync.SKIP = SKIP;
     visitAsync.REMOVE = REMOVE;
-    async function visitAsync_(key, node, visitor, path2) {
-      const ctrl = await callVisitor(key, node, visitor, path2);
+    async function visitAsync_(key, node, visitor, path) {
+      const ctrl = await callVisitor(key, node, visitor, path);
       if (identity.isNode(ctrl) || identity.isPair(ctrl)) {
-        replaceNode(key, path2, ctrl);
-        return visitAsync_(key, ctrl, visitor, path2);
+        replaceNode(key, path, ctrl);
+        return visitAsync_(key, ctrl, visitor, path);
       }
       if (typeof ctrl !== "symbol") {
         if (identity.isCollection(node)) {
-          path2 = Object.freeze(path2.concat(node));
+          path = Object.freeze(path.concat(node));
           for (let i = 0; i < node.items.length; ++i) {
-            const ci = await visitAsync_(i, node.items[i], visitor, path2);
+            const ci = await visitAsync_(i, node.items[i], visitor, path);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -7330,13 +198,13 @@ var require_visit = __commonJS({
             }
           }
         } else if (identity.isPair(node)) {
-          path2 = Object.freeze(path2.concat(node));
-          const ck = await visitAsync_("key", node.key, visitor, path2);
+          path = Object.freeze(path.concat(node));
+          const ck = await visitAsync_("key", node.key, visitor, path);
           if (ck === BREAK)
             return BREAK;
           else if (ck === REMOVE)
             node.key = null;
-          const cv = await visitAsync_("value", node.value, visitor, path2);
+          const cv = await visitAsync_("value", node.value, visitor, path);
           if (cv === BREAK)
             return BREAK;
           else if (cv === REMOVE)
@@ -7363,23 +231,23 @@ var require_visit = __commonJS({
       }
       return visitor;
     }
-    function callVisitor(key, node, visitor, path2) {
+    function callVisitor(key, node, visitor, path) {
       if (typeof visitor === "function")
-        return visitor(key, node, path2);
+        return visitor(key, node, path);
       if (identity.isMap(node))
-        return visitor.Map?.(key, node, path2);
+        return visitor.Map?.(key, node, path);
       if (identity.isSeq(node))
-        return visitor.Seq?.(key, node, path2);
+        return visitor.Seq?.(key, node, path);
       if (identity.isPair(node))
-        return visitor.Pair?.(key, node, path2);
+        return visitor.Pair?.(key, node, path);
       if (identity.isScalar(node))
-        return visitor.Scalar?.(key, node, path2);
+        return visitor.Scalar?.(key, node, path);
       if (identity.isAlias(node))
-        return visitor.Alias?.(key, node, path2);
+        return visitor.Alias?.(key, node, path);
       return void 0;
     }
-    function replaceNode(key, path2, node) {
-      const parent = path2[path2.length - 1];
+    function replaceNode(key, path, node) {
+      const parent = path[path.length - 1];
       if (identity.isCollection(parent)) {
         parent.items[key] = node;
       } else if (identity.isPair(parent)) {
@@ -7399,10 +267,11 @@ var require_visit = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/directives.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/directives.js
 var require_directives = __commonJS({
-  "node_modules/yaml/dist/doc/directives.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var visit = require_visit();
     var escapeChars = {
@@ -7570,10 +439,11 @@ var require_directives = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/anchors.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/anchors.js
 var require_anchors = __commonJS({
-  "node_modules/yaml/dist/doc/anchors.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var visit = require_visit();
     function anchorIsValid(anchor) {
@@ -7584,9 +454,9 @@ var require_anchors = __commonJS({
       }
       return true;
     }
-    function anchorNames(root) {
+    function anchorNames(root12) {
       const anchors = /* @__PURE__ */ new Set();
-      visit.visit(root, {
+      visit.visit(root12, {
         Value(_key, node) {
           if (node.anchor)
             anchors.add(node.anchor);
@@ -7640,10 +510,11 @@ var require_anchors = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/applyReviver.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/applyReviver.js
 var require_applyReviver = __commonJS({
-  "node_modules/yaml/dist/doc/applyReviver.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function applyReviver(reviver, obj, key, val) {
       if (val && typeof val === "object") {
         if (Array.isArray(val)) {
@@ -7690,40 +561,42 @@ var require_applyReviver = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/toJS.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/toJS.js
 var require_toJS = __commonJS({
-  "node_modules/yaml/dist/nodes/toJS.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/toJS.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
-    function toJS(value2, arg, ctx) {
-      if (Array.isArray(value2))
-        return value2.map((v, i) => toJS(v, String(i), ctx));
-      if (value2 && typeof value2.toJSON === "function") {
-        if (!ctx || !identity.hasAnchor(value2))
-          return value2.toJSON(arg, ctx);
+    function toJS(value, arg, ctx) {
+      if (Array.isArray(value))
+        return value.map((v, i) => toJS(v, String(i), ctx));
+      if (value && typeof value.toJSON === "function") {
+        if (!ctx || !identity.hasAnchor(value))
+          return value.toJSON(arg, ctx);
         const data = { aliasCount: 0, count: 1, res: void 0 };
-        ctx.anchors.set(value2, data);
+        ctx.anchors.set(value, data);
         ctx.onCreate = (res2) => {
           data.res = res2;
           delete ctx.onCreate;
         };
-        const res = value2.toJSON(arg, ctx);
+        const res = value.toJSON(arg, ctx);
         if (ctx.onCreate)
           ctx.onCreate(res);
         return res;
       }
-      if (typeof value2 === "bigint" && !ctx?.keep)
-        return Number(value2);
-      return value2;
+      if (typeof value === "bigint" && !ctx?.keep)
+        return Number(value);
+      return value;
     }
     exports.toJS = toJS;
   }
 });
 
-// node_modules/yaml/dist/nodes/Node.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Node.js
 var require_Node = __commonJS({
-  "node_modules/yaml/dist/nodes/Node.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Node.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var applyReviver = require_applyReviver();
     var identity = require_identity();
     var toJS = require_toJS();
@@ -7761,10 +634,11 @@ var require_Node = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Alias.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Alias.js
 var require_Alias = __commonJS({
-  "node_modules/yaml/dist/nodes/Alias.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
     var visit = require_visit();
     var identity = require_identity();
@@ -7877,18 +751,19 @@ var require_Alias = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Scalar.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Scalar.js
 var require_Scalar = __commonJS({
-  "node_modules/yaml/dist/nodes/Scalar.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Node = require_Node();
     var toJS = require_toJS();
-    var isScalarValue = (value2) => !value2 || typeof value2 !== "function" && typeof value2 !== "object";
+    var isScalarValue = (value) => !value || typeof value !== "function" && typeof value !== "object";
     var Scalar = class extends Node.NodeBase {
-      constructor(value2) {
+      constructor(value) {
         super(identity.SCALAR);
-        this.value = value2;
+        this.value = value;
       }
       toJSON(arg, ctx) {
         return ctx?.keep ? this.value : toJS.toJS(this.value, arg, ctx);
@@ -7907,15 +782,16 @@ var require_Scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/createNode.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/createNode.js
 var require_createNode = __commonJS({
-  "node_modules/yaml/dist/doc/createNode.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/createNode.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var defaultTagPrefix = "tag:yaml.org,2002:";
-    function findTagObject(value2, tagName, tags) {
+    function findTagObject(value, tagName, tags) {
       if (tagName) {
         const match = tags.filter((t) => t.tag === tagName);
         const tagObj = match.find((t) => !t.format) ?? match[0];
@@ -7923,53 +799,53 @@ var require_createNode = __commonJS({
           throw new Error(`Tag ${tagName} not found`);
         return tagObj;
       }
-      return tags.find((t) => t.identify?.(value2) && !t.format);
+      return tags.find((t) => t.identify?.(value) && !t.format);
     }
-    function createNode(value2, tagName, ctx) {
-      if (identity.isDocument(value2))
-        value2 = value2.contents;
-      if (identity.isNode(value2))
-        return value2;
-      if (identity.isPair(value2)) {
+    function createNode(value, tagName, ctx) {
+      if (identity.isDocument(value))
+        value = value.contents;
+      if (identity.isNode(value))
+        return value;
+      if (identity.isPair(value)) {
         const map = ctx.schema[identity.MAP].createNode?.(ctx.schema, null, ctx);
-        map.items.push(value2);
+        map.items.push(value);
         return map;
       }
-      if (value2 instanceof String || value2 instanceof Number || value2 instanceof Boolean || typeof BigInt !== "undefined" && value2 instanceof BigInt) {
-        value2 = value2.valueOf();
+      if (value instanceof String || value instanceof Number || value instanceof Boolean || typeof BigInt !== "undefined" && value instanceof BigInt) {
+        value = value.valueOf();
       }
-      const { aliasDuplicateObjects, onAnchor, onTagObj, schema: schema2, sourceObjects } = ctx;
+      const { aliasDuplicateObjects, onAnchor, onTagObj, schema, sourceObjects } = ctx;
       let ref = void 0;
-      if (aliasDuplicateObjects && value2 && typeof value2 === "object") {
-        ref = sourceObjects.get(value2);
+      if (aliasDuplicateObjects && value && typeof value === "object") {
+        ref = sourceObjects.get(value);
         if (ref) {
-          ref.anchor ?? (ref.anchor = onAnchor(value2));
+          ref.anchor ?? (ref.anchor = onAnchor(value));
           return new Alias.Alias(ref.anchor);
         } else {
           ref = { anchor: null, node: null };
-          sourceObjects.set(value2, ref);
+          sourceObjects.set(value, ref);
         }
       }
       if (tagName?.startsWith("!!"))
         tagName = defaultTagPrefix + tagName.slice(2);
-      let tagObj = findTagObject(value2, tagName, schema2.tags);
+      let tagObj = findTagObject(value, tagName, schema.tags);
       if (!tagObj) {
-        if (value2 && typeof value2.toJSON === "function") {
-          value2 = value2.toJSON();
+        if (value && typeof value.toJSON === "function") {
+          value = value.toJSON();
         }
-        if (!value2 || typeof value2 !== "object") {
-          const node2 = new Scalar.Scalar(value2);
+        if (!value || typeof value !== "object") {
+          const node2 = new Scalar.Scalar(value);
           if (ref)
             ref.node = node2;
           return node2;
         }
-        tagObj = value2 instanceof Map ? schema2[identity.MAP] : Symbol.iterator in Object(value2) ? schema2[identity.SEQ] : schema2[identity.MAP];
+        tagObj = value instanceof Map ? schema[identity.MAP] : Symbol.iterator in Object(value) ? schema[identity.SEQ] : schema[identity.MAP];
       }
       if (onTagObj) {
         onTagObj(tagObj);
         delete ctx.onTagObj;
       }
-      const node = tagObj?.createNode ? tagObj.createNode(ctx.schema, value2, ctx) : typeof tagObj?.nodeClass?.from === "function" ? tagObj.nodeClass.from(ctx.schema, value2, ctx) : new Scalar.Scalar(value2);
+      const node = tagObj?.createNode ? tagObj.createNode(ctx.schema, value, ctx) : typeof tagObj?.nodeClass?.from === "function" ? tagObj.nodeClass.from(ctx.schema, value, ctx) : new Scalar.Scalar(value);
       if (tagName)
         node.tag = tagName;
       else if (!tagObj.default)
@@ -7982,17 +858,18 @@ var require_createNode = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Collection.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Collection.js
 var require_Collection = __commonJS({
-  "node_modules/yaml/dist/nodes/Collection.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Collection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
     var identity = require_identity();
     var Node = require_Node();
-    function collectionFromPath(schema2, path2, value2) {
-      let v = value2;
-      for (let i = path2.length - 1; i >= 0; --i) {
-        const k = path2[i];
+    function collectionFromPath(schema, path, value) {
+      let v = value;
+      for (let i = path.length - 1; i >= 0; --i) {
+        const k = path[i];
         if (typeof k === "number" && Number.isInteger(k) && k >= 0) {
           const a = [];
           a[k] = v;
@@ -8007,16 +884,16 @@ var require_Collection = __commonJS({
         onAnchor: () => {
           throw new Error("This should not happen, please report a bug.");
         },
-        schema: schema2,
+        schema,
         sourceObjects: /* @__PURE__ */ new Map()
       });
     }
-    var isEmptyPath = (path2) => path2 == null || typeof path2 === "object" && !!path2[Symbol.iterator]().next().done;
+    var isEmptyPath = (path) => path == null || typeof path === "object" && !!path[Symbol.iterator]().next().done;
     var Collection = class extends Node.NodeBase {
-      constructor(type, schema2) {
+      constructor(type, schema) {
         super(type);
         Object.defineProperty(this, "schema", {
-          value: schema2,
+          value: schema,
           configurable: true,
           enumerable: false,
           writable: true
@@ -8027,11 +904,11 @@ var require_Collection = __commonJS({
        *
        * @param schema - If defined, overwrites the original's schema
        */
-      clone(schema2) {
+      clone(schema) {
         const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
-        if (schema2)
-          copy.schema = schema2;
-        copy.items = copy.items.map((it) => identity.isNode(it) || identity.isPair(it) ? it.clone(schema2) : it);
+        if (schema)
+          copy.schema = schema;
+        copy.items = copy.items.map((it) => identity.isNode(it) || identity.isPair(it) ? it.clone(schema) : it);
         if (this.range)
           copy.range = this.range.slice();
         return copy;
@@ -8041,16 +918,16 @@ var require_Collection = __commonJS({
        * be a Pair instance or a `{ key, value }` object, which may not have a key
        * that already exists in the map.
        */
-      addIn(path2, value2) {
-        if (isEmptyPath(path2))
-          this.add(value2);
+      addIn(path, value) {
+        if (isEmptyPath(path))
+          this.add(value);
         else {
-          const [key, ...rest] = path2;
+          const [key, ...rest] = path;
           const node = this.get(key, true);
           if (identity.isCollection(node))
-            node.addIn(rest, value2);
+            node.addIn(rest, value);
           else if (node === void 0 && this.schema)
-            this.set(key, collectionFromPath(this.schema, rest, value2));
+            this.set(key, collectionFromPath(this.schema, rest, value));
           else
             throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
         }
@@ -8059,8 +936,8 @@ var require_Collection = __commonJS({
        * Removes a value from the collection.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path2) {
-        const [key, ...rest] = path2;
+      deleteIn(path) {
+        const [key, ...rest] = path;
         if (rest.length === 0)
           return this.delete(key);
         const node = this.get(key, true);
@@ -8074,8 +951,8 @@ var require_Collection = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path2, keepScalar) {
-        const [key, ...rest] = path2;
+      getIn(path, keepScalar) {
+        const [key, ...rest] = path;
         const node = this.get(key, true);
         if (rest.length === 0)
           return !keepScalar && identity.isScalar(node) ? node.value : node;
@@ -8093,8 +970,8 @@ var require_Collection = __commonJS({
       /**
        * Checks if the collection includes a value with the key `key`.
        */
-      hasIn(path2) {
-        const [key, ...rest] = path2;
+      hasIn(path) {
+        const [key, ...rest] = path;
         if (rest.length === 0)
           return this.has(key);
         const node = this.get(key, true);
@@ -8104,16 +981,16 @@ var require_Collection = __commonJS({
        * Sets a value in this collection. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path2, value2) {
-        const [key, ...rest] = path2;
+      setIn(path, value) {
+        const [key, ...rest] = path;
         if (rest.length === 0) {
-          this.set(key, value2);
+          this.set(key, value);
         } else {
           const node = this.get(key, true);
           if (identity.isCollection(node))
-            node.setIn(rest, value2);
+            node.setIn(rest, value);
           else if (node === void 0 && this.schema)
-            this.set(key, collectionFromPath(this.schema, rest, value2));
+            this.set(key, collectionFromPath(this.schema, rest, value));
           else
             throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
         }
@@ -8125,10 +1002,11 @@ var require_Collection = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyComment.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyComment.js
 var require_stringifyComment = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
     function indentComment(comment, indent) {
       if (/^\n+$/.test(comment))
@@ -8142,10 +1020,11 @@ var require_stringifyComment = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/foldFlowLines.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/foldFlowLines.js
 var require_foldFlowLines = __commonJS({
-  "node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var FOLD_FLOW = "flow";
     var FOLD_BLOCK = "block";
     var FOLD_QUOTED = "quoted";
@@ -8278,10 +1157,11 @@ ${indent}${text.slice(fold + 1, end2)}`;
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyString.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyString.js
 var require_stringifyString = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var foldFlowLines = require_foldFlowLines();
     var getFoldOptions = (ctx, isBlock) => ({
@@ -8308,13 +1188,13 @@ var require_stringifyString = __commonJS({
       }
       return true;
     }
-    function doubleQuotedString(value2, ctx) {
-      const json = JSON.stringify(value2);
+    function doubleQuotedString(value, ctx) {
+      const json = JSON.stringify(value);
       if (ctx.options.doubleQuotedAsJSON)
         return json;
       const { implicitKey } = ctx;
       const minMultiLineLength = ctx.options.doubleQuotedMinMultiLineLength;
-      const indent = ctx.indent || (containsDocumentMarker(value2) ? "  " : "");
+      const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
       let str = "";
       let start = 0;
       for (let i = 0, ch = json[i]; ch; ch = json[++i]) {
@@ -8388,22 +1268,22 @@ var require_stringifyString = __commonJS({
       str = start ? str + json.slice(start) : json;
       return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_QUOTED, getFoldOptions(ctx, false));
     }
-    function singleQuotedString(value2, ctx) {
-      if (ctx.options.singleQuote === false || ctx.implicitKey && value2.includes("\n") || /[ \t]\n|\n[ \t]/.test(value2))
-        return doubleQuotedString(value2, ctx);
-      const indent = ctx.indent || (containsDocumentMarker(value2) ? "  " : "");
-      const res = "'" + value2.replace(/'/g, "''").replace(/\n+/g, `$&
+    function singleQuotedString(value, ctx) {
+      if (ctx.options.singleQuote === false || ctx.implicitKey && value.includes("\n") || /[ \t]\n|\n[ \t]/.test(value))
+        return doubleQuotedString(value, ctx);
+      const indent = ctx.indent || (containsDocumentMarker(value) ? "  " : "");
+      const res = "'" + value.replace(/'/g, "''").replace(/\n+/g, `$&
 ${indent}`) + "'";
       return ctx.implicitKey ? res : foldFlowLines.foldFlowLines(res, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
-    function quotedString(value2, ctx) {
+    function quotedString(value, ctx) {
       const { singleQuote } = ctx.options;
       let qs;
       if (singleQuote === false)
         qs = doubleQuotedString;
       else {
-        const hasDouble = value2.includes('"');
-        const hasSingle = value2.includes("'");
+        const hasDouble = value.includes('"');
+        const hasSingle = value.includes("'");
         if (hasDouble && !hasSingle)
           qs = singleQuotedString;
         else if (hasSingle && !hasDouble)
@@ -8411,7 +1291,7 @@ ${indent}`) + "'";
         else
           qs = singleQuote ? singleQuotedString : doubleQuotedString;
       }
-      return qs(value2, ctx);
+      return qs(value, ctx);
     }
     var blockEndNewlines;
     try {
@@ -8419,27 +1299,27 @@ ${indent}`) + "'";
     } catch {
       blockEndNewlines = /\n+(?!\n|$)/g;
     }
-    function blockString({ comment, type, value: value2 }, ctx, onComment, onChompKeep) {
+    function blockString({ comment, type, value }, ctx, onComment, onChompKeep) {
       const { blockQuote, commentString, lineWidth } = ctx.options;
-      if (!blockQuote || /\n[\t ]+$/.test(value2)) {
-        return quotedString(value2, ctx);
+      if (!blockQuote || /\n[\t ]+$/.test(value)) {
+        return quotedString(value, ctx);
       }
-      const indent = ctx.indent || (ctx.forceBlockIndent || containsDocumentMarker(value2) ? "  " : "");
-      const literal = blockQuote === "literal" ? true : blockQuote === "folded" || type === Scalar.Scalar.BLOCK_FOLDED ? false : type === Scalar.Scalar.BLOCK_LITERAL ? true : !lineLengthOverLimit(value2, lineWidth, indent.length);
-      if (!value2)
+      const indent = ctx.indent || (ctx.forceBlockIndent || containsDocumentMarker(value) ? "  " : "");
+      const literal = blockQuote === "literal" ? true : blockQuote === "folded" || type === Scalar.Scalar.BLOCK_FOLDED ? false : type === Scalar.Scalar.BLOCK_LITERAL ? true : !lineLengthOverLimit(value, lineWidth, indent.length);
+      if (!value)
         return literal ? "|\n" : ">\n";
       let chomp;
       let endStart;
-      for (endStart = value2.length; endStart > 0; --endStart) {
-        const ch = value2[endStart - 1];
+      for (endStart = value.length; endStart > 0; --endStart) {
+        const ch = value[endStart - 1];
         if (ch !== "\n" && ch !== "	" && ch !== " ")
           break;
       }
-      let end = value2.substring(endStart);
+      let end = value.substring(endStart);
       const endNlPos = end.indexOf("\n");
       if (endNlPos === -1) {
         chomp = "-";
-      } else if (value2 === end || endNlPos !== end.length - 1) {
+      } else if (value === end || endNlPos !== end.length - 1) {
         chomp = "+";
         if (onChompKeep)
           onChompKeep();
@@ -8447,7 +1327,7 @@ ${indent}`) + "'";
         chomp = "";
       }
       if (end) {
-        value2 = value2.slice(0, -end.length);
+        value = value.slice(0, -end.length);
         if (end[end.length - 1] === "\n")
           end = end.slice(0, -1);
         end = end.replace(blockEndNewlines, `$&${indent}`);
@@ -8455,8 +1335,8 @@ ${indent}`) + "'";
       let startWithSpace = false;
       let startEnd;
       let startNlPos = -1;
-      for (startEnd = 0; startEnd < value2.length; ++startEnd) {
-        const ch = value2[startEnd];
+      for (startEnd = 0; startEnd < value.length; ++startEnd) {
+        const ch = value[startEnd];
         if (ch === " ")
           startWithSpace = true;
         else if (ch === "\n")
@@ -8464,9 +1344,9 @@ ${indent}`) + "'";
         else
           break;
       }
-      let start = value2.substring(0, startNlPos < startEnd ? startNlPos + 1 : startEnd);
+      let start = value.substring(0, startNlPos < startEnd ? startNlPos + 1 : startEnd);
       if (start) {
-        value2 = value2.substring(start.length);
+        value = value.substring(start.length);
         start = start.replace(/\n+/g, `$&${indent}`);
       }
       const indentSize = indent ? "2" : "1";
@@ -8477,7 +1357,7 @@ ${indent}`) + "'";
           onComment();
       }
       if (!literal) {
-        const foldedValue = value2.replace(/\n+/g, "\n$&").replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, "$1$2").replace(/\n+/g, `$&${indent}`);
+        const foldedValue = value.replace(/\n+/g, "\n$&").replace(/(?:^|\n)([\t ].*)(?:([\n\t ]*)\n(?![\n\t ]))?/g, "$1$2").replace(/\n+/g, `$&${indent}`);
         let literalFallback = false;
         const foldOptions = getFoldOptions(ctx, true);
         if (blockQuote !== "folded" && type !== Scalar.Scalar.BLOCK_FOLDED) {
@@ -8490,37 +1370,37 @@ ${indent}`) + "'";
           return `>${header}
 ${indent}${body}`;
       }
-      value2 = value2.replace(/\n+/g, `$&${indent}`);
+      value = value.replace(/\n+/g, `$&${indent}`);
       return `|${header}
-${indent}${start}${value2}${end}`;
+${indent}${start}${value}${end}`;
     }
     function plainString(item, ctx, onComment, onChompKeep) {
-      const { type, value: value2 } = item;
+      const { type, value } = item;
       const { actualString, implicitKey, indent, indentStep, inFlow } = ctx;
-      if (implicitKey && value2.includes("\n") || inFlow && /[[\]{},]/.test(value2)) {
-        return quotedString(value2, ctx);
+      if (implicitKey && value.includes("\n") || inFlow && /[[\]{},]/.test(value)) {
+        return quotedString(value, ctx);
       }
-      if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value2)) {
-        return implicitKey || inFlow || !value2.includes("\n") ? quotedString(value2, ctx) : blockString(item, ctx, onComment, onChompKeep);
+      if (/^[\n\t ,[\]{}#&*!|>'"%@`]|^[?-]$|^[?-][ \t]|[\n:][ \t]|[ \t]\n|[\n\t ]#|[\n\t :]$/.test(value)) {
+        return implicitKey || inFlow || !value.includes("\n") ? quotedString(value, ctx) : blockString(item, ctx, onComment, onChompKeep);
       }
-      if (!implicitKey && !inFlow && type !== Scalar.Scalar.PLAIN && value2.includes("\n")) {
+      if (!implicitKey && !inFlow && type !== Scalar.Scalar.PLAIN && value.includes("\n")) {
         return blockString(item, ctx, onComment, onChompKeep);
       }
-      if (containsDocumentMarker(value2)) {
+      if (containsDocumentMarker(value)) {
         if (indent === "") {
           ctx.forceBlockIndent = true;
           return blockString(item, ctx, onComment, onChompKeep);
         } else if (implicitKey && indent === indentStep) {
-          return quotedString(value2, ctx);
+          return quotedString(value, ctx);
         }
       }
-      const str = value2.replace(/\n+/g, `$&
+      const str = value.replace(/\n+/g, `$&
 ${indent}`);
       if (actualString) {
         const test = (tag) => tag.default && tag.tag !== "tag:yaml.org,2002:str" && tag.test?.test(str);
         const { compat, tags } = ctx.doc.schema;
         if (tags.some(test) || compat?.some(test))
-          return quotedString(value2, ctx);
+          return quotedString(value, ctx);
       }
       return implicitKey ? str : foldFlowLines.foldFlowLines(str, indent, foldFlowLines.FOLD_FLOW, getFoldOptions(ctx, false));
     }
@@ -8561,10 +1441,11 @@ ${indent}`);
   }
 });
 
-// node_modules/yaml/dist/stringify/stringify.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringify.js
 var require_stringify = __commonJS({
-  "node_modules/yaml/dist/stringify/stringify.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringify.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
     var identity = require_identity();
     var stringifyComment = require_stringifyComment();
@@ -8685,15 +1566,16 @@ ${ctx.indent}${str}`;
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyPair.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyPair.js
 var require_stringifyPair = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var stringify = require_stringify();
     var stringifyComment = require_stringifyComment();
-    function stringifyPair({ key, value: value2 }, ctx, onComment, onChompKeep) {
+    function stringifyPair({ key, value }, ctx, onComment, onChompKeep) {
       const { allNullValues, doc, indent, indentStep, options: { commentString, indentSeq, simpleKeys } } = ctx;
       let keyComment = identity.isNode(key) && key.comment || null;
       if (simpleKeys) {
@@ -8705,7 +1587,7 @@ var require_stringifyPair = __commonJS({
           throw new Error(msg);
         }
       }
-      let explicitKey = !simpleKeys && (!key || keyComment && value2 == null && !ctx.inFlow || identity.isCollection(key) || (identity.isScalar(key) ? key.type === Scalar.Scalar.BLOCK_FOLDED || key.type === Scalar.Scalar.BLOCK_LITERAL : typeof key === "object"));
+      let explicitKey = !simpleKeys && (!key || keyComment && value == null && !ctx.inFlow || identity.isCollection(key) || (identity.isScalar(key) ? key.type === Scalar.Scalar.BLOCK_FOLDED || key.type === Scalar.Scalar.BLOCK_LITERAL : typeof key === "object"));
       ctx = Object.assign({}, ctx, {
         allNullValues: false,
         implicitKey: !explicitKey && (simpleKeys || !allNullValues),
@@ -8720,12 +1602,12 @@ var require_stringifyPair = __commonJS({
         explicitKey = true;
       }
       if (ctx.inFlow) {
-        if (allNullValues || value2 == null) {
+        if (allNullValues || value == null) {
           if (keyCommentDone && onComment)
             onComment();
           return str === "" ? "?" : explicitKey ? `? ${str}` : str;
         }
-      } else if (allNullValues && !simpleKeys || value2 == null && explicitKey) {
+      } else if (allNullValues && !simpleKeys || value == null && explicitKey) {
         str = `? ${str}`;
         if (keyComment && !keyCommentDone) {
           str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
@@ -8746,26 +1628,26 @@ ${indent}:`;
           str += stringifyComment.lineComment(str, ctx.indent, commentString(keyComment));
       }
       let vsb, vcb, valueComment;
-      if (identity.isNode(value2)) {
-        vsb = !!value2.spaceBefore;
-        vcb = value2.commentBefore;
-        valueComment = value2.comment;
+      if (identity.isNode(value)) {
+        vsb = !!value.spaceBefore;
+        vcb = value.commentBefore;
+        valueComment = value.comment;
       } else {
         vsb = false;
         vcb = null;
         valueComment = null;
-        if (value2 && typeof value2 === "object")
-          value2 = doc.createNode(value2);
+        if (value && typeof value === "object")
+          value = doc.createNode(value);
       }
       ctx.implicitKey = false;
-      if (!explicitKey && !keyComment && identity.isScalar(value2))
+      if (!explicitKey && !keyComment && identity.isScalar(value))
         ctx.indentAtStart = str.length + 1;
       chompKeep = false;
-      if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value2) && !value2.flow && !value2.tag && !value2.anchor) {
+      if (!indentSeq && indentStep.length >= 2 && !ctx.inFlow && !explicitKey && identity.isSeq(value) && !value.flow && !value.tag && !value.anchor) {
         ctx.indent = ctx.indent.substring(2);
       }
       let valueCommentDone = false;
-      const valueStr = stringify.stringify(value2, ctx, () => valueCommentDone = true, () => chompKeep = true);
+      const valueStr = stringify.stringify(value, ctx, () => valueCommentDone = true, () => chompKeep = true);
       let ws = " ";
       if (keyComment || vsb || vcb) {
         ws = vsb ? "\n" : "";
@@ -8781,11 +1663,11 @@ ${stringifyComment.indentComment(cs, ctx.indent)}`;
           ws += `
 ${ctx.indent}`;
         }
-      } else if (!explicitKey && identity.isCollection(value2)) {
+      } else if (!explicitKey && identity.isCollection(value)) {
         const vs0 = valueStr[0];
         const nl0 = valueStr.indexOf("\n");
         const hasNewline = nl0 !== -1;
-        const flow = ctx.inFlow ?? value2.flow ?? value2.items.length === 0;
+        const flow = ctx.inFlow ?? value.flow ?? value.items.length === 0;
         if (hasNewline || !flow) {
           let hasPropsLine = false;
           if (hasNewline && (vs0 === "&" || vs0 === "!")) {
@@ -8818,10 +1700,11 @@ ${ctx.indent}`;
   }
 });
 
-// node_modules/yaml/dist/log.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/log.js
 var require_log = __commonJS({
-  "node_modules/yaml/dist/log.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/log.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
     function debug(logLevel, ...messages) {
       if (logLevel === "debug")
@@ -8840,15 +1723,16 @@ var require_log = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/merge.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/merge.js
 var require_merge = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var MERGE_KEY = "<<";
     var merge = {
-      identify: (value2) => value2 === MERGE_KEY || typeof value2 === "symbol" && value2.description === MERGE_KEY,
+      identify: (value) => value === MERGE_KEY || typeof value === "symbol" && value.description === MERGE_KEY,
       default: "key",
       tag: "tag:yaml.org,2002:merge",
       test: /^<<$/,
@@ -8858,8 +1742,8 @@ var require_merge = __commonJS({
       stringify: () => MERGE_KEY
     };
     var isMergeKey = (ctx, key) => (merge.identify(key) || identity.isScalar(key) && (!key.type || key.type === Scalar.Scalar.PLAIN) && merge.identify(key.value)) && ctx?.doc.schema.tags.some((tag) => tag.tag === merge.tag && tag.default);
-    function addMergeToJSMap(ctx, map, value2) {
-      const source = resolveAliasValue(ctx, value2);
+    function addMergeToJSMap(ctx, map, value) {
+      const source = resolveAliasValue(ctx, value);
       if (identity.isSeq(source))
         for (const it of source.items)
           mergeValue(ctx, map, it);
@@ -8869,20 +1753,20 @@ var require_merge = __commonJS({
       else
         mergeValue(ctx, map, source);
     }
-    function mergeValue(ctx, map, value2) {
-      const source = resolveAliasValue(ctx, value2);
+    function mergeValue(ctx, map, value) {
+      const source = resolveAliasValue(ctx, value);
       if (!identity.isMap(source))
         throw new Error("Merge sources must be maps or map aliases");
       const srcMap = source.toJSON(null, ctx, Map);
-      for (const [key, value3] of srcMap) {
+      for (const [key, value2] of srcMap) {
         if (map instanceof Map) {
           if (!map.has(key))
-            map.set(key, value3);
+            map.set(key, value2);
         } else if (map instanceof Set) {
           map.add(key);
         } else if (!Object.prototype.hasOwnProperty.call(map, key)) {
           Object.defineProperty(map, key, {
-            value: value3,
+            value: value2,
             writable: true,
             enumerable: true,
             configurable: true
@@ -8891,8 +1775,8 @@ var require_merge = __commonJS({
       }
       return map;
     }
-    function resolveAliasValue(ctx, value2) {
-      return ctx && identity.isAlias(value2) ? value2.resolve(ctx.doc, ctx) : value2;
+    function resolveAliasValue(ctx, value) {
+      return ctx && identity.isAlias(value) ? value.resolve(ctx.doc, ctx) : value;
     }
     exports.addMergeToJSMap = addMergeToJSMap;
     exports.isMergeKey = isMergeKey;
@@ -8900,29 +1784,30 @@ var require_merge = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/addPairToJSMap.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/addPairToJSMap.js
 var require_addPairToJSMap = __commonJS({
-  "node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var log = require_log();
     var merge = require_merge();
     var stringify = require_stringify();
     var identity = require_identity();
     var toJS = require_toJS();
-    function addPairToJSMap(ctx, map, { key, value: value2 }) {
+    function addPairToJSMap(ctx, map, { key, value }) {
       if (identity.isNode(key) && key.addToJSMap)
-        key.addToJSMap(ctx, map, value2);
+        key.addToJSMap(ctx, map, value);
       else if (merge.isMergeKey(ctx, key))
-        merge.addMergeToJSMap(ctx, map, value2);
+        merge.addMergeToJSMap(ctx, map, value);
       else {
         const jsKey = toJS.toJS(key, "", ctx);
         if (map instanceof Map) {
-          map.set(jsKey, toJS.toJS(value2, jsKey, ctx));
+          map.set(jsKey, toJS.toJS(value, jsKey, ctx));
         } else if (map instanceof Set) {
           map.add(jsKey);
         } else {
           const stringKey = stringifyKey(key, jsKey, ctx);
-          const jsValue = toJS.toJS(value2, stringKey, ctx);
+          const jsValue = toJS.toJS(value, stringKey, ctx);
           if (stringKey in map)
             Object.defineProperty(map, stringKey, {
               value: jsValue,
@@ -8964,32 +1849,33 @@ var require_addPairToJSMap = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/nodes/Pair.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Pair.js
 var require_Pair = __commonJS({
-  "node_modules/yaml/dist/nodes/Pair.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Pair.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
     var stringifyPair = require_stringifyPair();
     var addPairToJSMap = require_addPairToJSMap();
     var identity = require_identity();
-    function createPair(key, value2, ctx) {
+    function createPair(key, value, ctx) {
       const k = createNode.createNode(key, void 0, ctx);
-      const v = createNode.createNode(value2, void 0, ctx);
+      const v = createNode.createNode(value, void 0, ctx);
       return new Pair(k, v);
     }
     var Pair = class _Pair {
-      constructor(key, value2 = null) {
+      constructor(key, value = null) {
         Object.defineProperty(this, identity.NODE_TYPE, { value: identity.PAIR });
         this.key = key;
-        this.value = value2;
+        this.value = value;
       }
-      clone(schema2) {
-        let { key, value: value2 } = this;
+      clone(schema) {
+        let { key, value } = this;
         if (identity.isNode(key))
-          key = key.clone(schema2);
-        if (identity.isNode(value2))
-          value2 = value2.clone(schema2);
-        return new _Pair(key, value2);
+          key = key.clone(schema);
+        if (identity.isNode(value))
+          value = value.clone(schema);
+        return new _Pair(key, value);
       }
       toJSON(_, ctx) {
         const pair = ctx?.mapAsMap ? /* @__PURE__ */ new Map() : {};
@@ -9004,10 +1890,11 @@ var require_Pair = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyCollection.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyCollection.js
 var require_stringifyCollection = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var stringify = require_stringify();
     var stringifyComment = require_stringifyComment();
@@ -9155,10 +2042,11 @@ ${indent}${end}`;
   }
 });
 
-// node_modules/yaml/dist/nodes/YAMLMap.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLMap.js
 var require_YAMLMap = __commonJS({
-  "node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyCollection = require_stringifyCollection();
     var addPairToJSMap = require_addPairToJSMap();
     var Collection = require_Collection();
@@ -9181,34 +2069,34 @@ var require_YAMLMap = __commonJS({
       static get tagName() {
         return "tag:yaml.org,2002:map";
       }
-      constructor(schema2) {
-        super(identity.MAP, schema2);
+      constructor(schema) {
+        super(identity.MAP, schema);
         this.items = [];
       }
       /**
        * A generic collection parsing method that can be extended
        * to other node classes that inherit from YAMLMap
        */
-      static from(schema2, obj, ctx) {
+      static from(schema, obj, ctx) {
         const { keepUndefined, replacer } = ctx;
-        const map = new this(schema2);
-        const add = (key, value2) => {
+        const map = new this(schema);
+        const add = (key, value) => {
           if (typeof replacer === "function")
-            value2 = replacer.call(obj, key, value2);
+            value = replacer.call(obj, key, value);
           else if (Array.isArray(replacer) && !replacer.includes(key))
             return;
-          if (value2 !== void 0 || keepUndefined)
-            map.items.push(Pair.createPair(key, value2, ctx));
+          if (value !== void 0 || keepUndefined)
+            map.items.push(Pair.createPair(key, value, ctx));
         };
         if (obj instanceof Map) {
-          for (const [key, value2] of obj)
-            add(key, value2);
+          for (const [key, value] of obj)
+            add(key, value);
         } else if (obj && typeof obj === "object") {
           for (const key of Object.keys(obj))
             add(key, obj[key]);
         }
-        if (typeof schema2.sortMapEntries === "function") {
-          map.items.sort(schema2.sortMapEntries);
+        if (typeof schema.sortMapEntries === "function") {
+          map.items.sort(schema.sortMapEntries);
         }
         return map;
       }
@@ -9260,8 +2148,8 @@ var require_YAMLMap = __commonJS({
       has(key) {
         return !!findPair(this.items, key);
       }
-      set(key, value2) {
-        this.add(new Pair.Pair(key, value2), true);
+      set(key, value) {
+        this.add(new Pair.Pair(key, value), true);
       }
       /**
        * @param ctx - Conversion context, originally set in Document#toJS()
@@ -9299,10 +2187,11 @@ var require_YAMLMap = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/map.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/map.js
 var require_map = __commonJS({
-  "node_modules/yaml/dist/schema/common/map.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/map.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var YAMLMap = require_YAMLMap();
     var map = {
@@ -9315,16 +2204,17 @@ var require_map = __commonJS({
           onError("Expected a mapping for this tag");
         return map2;
       },
-      createNode: (schema2, obj, ctx) => YAMLMap.YAMLMap.from(schema2, obj, ctx)
+      createNode: (schema, obj, ctx) => YAMLMap.YAMLMap.from(schema, obj, ctx)
     };
     exports.map = map;
   }
 });
 
-// node_modules/yaml/dist/nodes/YAMLSeq.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLSeq.js
 var require_YAMLSeq = __commonJS({
-  "node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
     var stringifyCollection = require_stringifyCollection();
     var Collection = require_Collection();
@@ -9335,12 +2225,12 @@ var require_YAMLSeq = __commonJS({
       static get tagName() {
         return "tag:yaml.org,2002:seq";
       }
-      constructor(schema2) {
-        super(identity.SEQ, schema2);
+      constructor(schema) {
+        super(identity.SEQ, schema);
         this.items = [];
       }
-      add(value2) {
-        this.items.push(value2);
+      add(value) {
+        this.items.push(value);
       }
       /**
        * Removes a value from the collection.
@@ -9381,15 +2271,15 @@ var require_YAMLSeq = __commonJS({
        * If `key` does not contain a representation of an integer, this will throw.
        * It may be wrapped in a `Scalar`.
        */
-      set(key, value2) {
+      set(key, value) {
         const idx = asItemIndex(key);
         if (typeof idx !== "number")
           throw new Error(`Expected a valid index, not ${key}.`);
         const prev = this.items[idx];
-        if (identity.isScalar(prev) && Scalar.isScalarValue(value2))
-          prev.value = value2;
+        if (identity.isScalar(prev) && Scalar.isScalarValue(value))
+          prev.value = value;
         else
-          this.items[idx] = value2;
+          this.items[idx] = value;
       }
       toJSON(_, ctx) {
         const seq = [];
@@ -9411,9 +2301,9 @@ var require_YAMLSeq = __commonJS({
           onComment
         });
       }
-      static from(schema2, obj, ctx) {
+      static from(schema, obj, ctx) {
         const { replacer } = ctx;
-        const seq = new this(schema2);
+        const seq = new this(schema);
         if (obj && Symbol.iterator in Object(obj)) {
           let i = 0;
           for (let it of obj) {
@@ -9437,10 +2327,11 @@ var require_YAMLSeq = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/seq.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/seq.js
 var require_seq = __commonJS({
-  "node_modules/yaml/dist/schema/common/seq.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/seq.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var YAMLSeq = require_YAMLSeq();
     var seq = {
@@ -9453,19 +2344,20 @@ var require_seq = __commonJS({
           onError("Expected a sequence for this tag");
         return seq2;
       },
-      createNode: (schema2, obj, ctx) => YAMLSeq.YAMLSeq.from(schema2, obj, ctx)
+      createNode: (schema, obj, ctx) => YAMLSeq.YAMLSeq.from(schema, obj, ctx)
     };
     exports.seq = seq;
   }
 });
 
-// node_modules/yaml/dist/schema/common/string.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/string.js
 var require_string = __commonJS({
-  "node_modules/yaml/dist/schema/common/string.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/string.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyString = require_stringifyString();
     var string = {
-      identify: (value2) => typeof value2 === "string",
+      identify: (value) => typeof value === "string",
       default: true,
       tag: "tag:yaml.org,2002:str",
       resolve: (str) => str,
@@ -9478,13 +2370,14 @@ var require_string = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/common/null.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/null.js
 var require_null = __commonJS({
-  "node_modules/yaml/dist/schema/common/null.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/null.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var nullTag = {
-      identify: (value2) => value2 == null,
+      identify: (value) => value == null,
       createNode: () => new Scalar.Scalar(null),
       default: true,
       tag: "tag:yaml.org,2002:null",
@@ -9496,41 +2389,43 @@ var require_null = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/bool.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/bool.js
 var require_bool = __commonJS({
-  "node_modules/yaml/dist/schema/core/bool.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/bool.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var boolTag = {
-      identify: (value2) => typeof value2 === "boolean",
+      identify: (value) => typeof value === "boolean",
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:[Tt]rue|TRUE|[Ff]alse|FALSE)$/,
       resolve: (str) => new Scalar.Scalar(str[0] === "t" || str[0] === "T"),
-      stringify({ source, value: value2 }, ctx) {
+      stringify({ source, value }, ctx) {
         if (source && boolTag.test.test(source)) {
           const sv = source[0] === "t" || source[0] === "T";
-          if (value2 === sv)
+          if (value === sv)
             return source;
         }
-        return value2 ? ctx.options.trueStr : ctx.options.falseStr;
+        return value ? ctx.options.trueStr : ctx.options.falseStr;
       }
     };
     exports.boolTag = boolTag;
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyNumber.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyNumber.js
 var require_stringifyNumber = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
     "use strict";
-    function stringifyNumber({ format, minFractionDigits, tag, value: value2 }) {
-      if (typeof value2 === "bigint")
-        return String(value2);
-      const num = typeof value2 === "number" ? value2 : Number(value2);
+    init_define_CC_TEMPLATE_INVENTORY();
+    function stringifyNumber({ format, minFractionDigits, tag, value }) {
+      if (typeof value === "bigint")
+        return String(value);
+      const num = typeof value === "number" ? value : Number(value);
       if (!isFinite(num))
         return isNaN(num) ? ".nan" : num < 0 ? "-.inf" : ".inf";
-      let n = Object.is(value2, -0) ? "-0" : JSON.stringify(value2);
+      let n = Object.is(value, -0) ? "-0" : JSON.stringify(value);
       if (!format && minFractionDigits && (!tag || tag === "tag:yaml.org,2002:float") && /^-?\d/.test(n) && !n.includes("e")) {
         let i = n.indexOf(".");
         if (i < 0) {
@@ -9547,14 +2442,15 @@ var require_stringifyNumber = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/float.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/float.js
 var require_float = __commonJS({
-  "node_modules/yaml/dist/schema/core/float.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/float.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var stringifyNumber = require_stringifyNumber();
     var floatNaN = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
@@ -9562,7 +2458,7 @@ var require_float = __commonJS({
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
@@ -9574,7 +2470,7 @@ var require_float = __commonJS({
       }
     };
     var float = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:\.[0-9]+|[0-9]+\.[0-9]*)$/,
@@ -9593,21 +2489,22 @@ var require_float = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/int.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/int.js
 var require_int = __commonJS({
-  "node_modules/yaml/dist/schema/core/int.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/int.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
-    var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
+    var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
     var intResolve = (str, offset, radix, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str.substring(offset), radix);
     function intStringify(node, radix, prefix) {
-      const { value: value2 } = node;
-      if (intIdentify(value2) && value2 >= 0)
-        return prefix + value2.toString(radix);
+      const { value } = node;
+      if (intIdentify(value) && value >= 0)
+        return prefix + value.toString(radix);
       return stringifyNumber.stringifyNumber(node);
     }
     var intOct = {
-      identify: (value2) => intIdentify(value2) && value2 >= 0,
+      identify: (value) => intIdentify(value) && value >= 0,
       default: true,
       tag: "tag:yaml.org,2002:int",
       format: "OCT",
@@ -9624,7 +2521,7 @@ var require_int = __commonJS({
       stringify: stringifyNumber.stringifyNumber
     };
     var intHex = {
-      identify: (value2) => intIdentify(value2) && value2 >= 0,
+      identify: (value) => intIdentify(value) && value >= 0,
       default: true,
       tag: "tag:yaml.org,2002:int",
       format: "HEX",
@@ -9638,10 +2535,11 @@ var require_int = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/core/schema.js
-var require_schema2 = __commonJS({
-  "node_modules/yaml/dist/schema/core/schema.js"(exports) {
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/schema.js
+var require_schema = __commonJS({
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
     var _null = require_null();
     var seq = require_seq();
@@ -9649,7 +2547,7 @@ var require_schema2 = __commonJS({
     var bool = require_bool();
     var float = require_float();
     var int = require_int();
-    var schema2 = [
+    var schema = [
       map.map,
       seq.seq,
       string.string,
@@ -9662,31 +2560,32 @@ var require_schema2 = __commonJS({
       float.floatExp,
       float.float
     ];
-    exports.schema = schema2;
+    exports.schema = schema;
   }
 });
 
-// node_modules/yaml/dist/schema/json/schema.js
-var require_schema3 = __commonJS({
-  "node_modules/yaml/dist/schema/json/schema.js"(exports) {
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/json/schema.js
+var require_schema2 = __commonJS({
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/json/schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var map = require_map();
     var seq = require_seq();
-    function intIdentify(value2) {
-      return typeof value2 === "bigint" || Number.isInteger(value2);
+    function intIdentify(value) {
+      return typeof value === "bigint" || Number.isInteger(value);
     }
-    var stringifyJSON = ({ value: value2 }) => JSON.stringify(value2);
+    var stringifyJSON = ({ value }) => JSON.stringify(value);
     var jsonScalars = [
       {
-        identify: (value2) => typeof value2 === "string",
+        identify: (value) => typeof value === "string",
         default: true,
         tag: "tag:yaml.org,2002:str",
         resolve: (str) => str,
         stringify: stringifyJSON
       },
       {
-        identify: (value2) => value2 == null,
+        identify: (value) => value == null,
         createNode: () => new Scalar.Scalar(null),
         default: true,
         tag: "tag:yaml.org,2002:null",
@@ -9695,7 +2594,7 @@ var require_schema3 = __commonJS({
         stringify: stringifyJSON
       },
       {
-        identify: (value2) => typeof value2 === "boolean",
+        identify: (value) => typeof value === "boolean",
         default: true,
         tag: "tag:yaml.org,2002:bool",
         test: /^true$|^false$/,
@@ -9708,10 +2607,10 @@ var require_schema3 = __commonJS({
         tag: "tag:yaml.org,2002:int",
         test: /^-?(?:0|[1-9][0-9]*)$/,
         resolve: (str, _onError, { intAsBigInt }) => intAsBigInt ? BigInt(str) : parseInt(str, 10),
-        stringify: ({ value: value2 }) => intIdentify(value2) ? value2.toString() : JSON.stringify(value2)
+        stringify: ({ value }) => intIdentify(value) ? value.toString() : JSON.stringify(value)
       },
       {
-        identify: (value2) => typeof value2 === "number",
+        identify: (value) => typeof value === "number",
         default: true,
         tag: "tag:yaml.org,2002:float",
         test: /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]*)?(?:[eE][-+]?[0-9]+)?$/,
@@ -9728,20 +2627,21 @@ var require_schema3 = __commonJS({
         return str;
       }
     };
-    var schema2 = [map.map, seq.seq].concat(jsonScalars, jsonError);
-    exports.schema = schema2;
+    var schema = [map.map, seq.seq].concat(jsonScalars, jsonError);
+    exports.schema = schema;
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/binary.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/binary.js
 var require_binary = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_buffer = __require("buffer");
     var Scalar = require_Scalar();
     var stringifyString = require_stringifyString();
     var binary = {
-      identify: (value2) => value2 instanceof Uint8Array,
+      identify: (value) => value instanceof Uint8Array,
       // Buffer inherits from Uint8Array
       default: false,
       tag: "tag:yaml.org,2002:binary",
@@ -9767,10 +2667,10 @@ var require_binary = __commonJS({
           return src;
         }
       },
-      stringify({ comment, type, value: value2 }, ctx, onComment, onChompKeep) {
-        if (!value2)
+      stringify({ comment, type, value }, ctx, onComment, onChompKeep) {
+        if (!value)
           return "";
-        const buf = value2;
+        const buf = value;
         let str;
         if (typeof node_buffer.Buffer === "function") {
           str = buf instanceof node_buffer.Buffer ? buf.toString("base64") : node_buffer.Buffer.from(buf.buffer).toString("base64");
@@ -9799,10 +2699,11 @@ var require_binary = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/pairs.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/pairs.js
 var require_pairs = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Pair = require_Pair();
     var Scalar = require_Scalar();
@@ -9833,34 +2734,34 @@ ${cn.comment}` : item.comment;
         onError("Expected a sequence for this tag");
       return seq;
     }
-    function createPairs(schema2, iterable, ctx) {
+    function createPairs(schema, iterable, ctx) {
       const { replacer } = ctx;
-      const pairs2 = new YAMLSeq.YAMLSeq(schema2);
+      const pairs2 = new YAMLSeq.YAMLSeq(schema);
       pairs2.tag = "tag:yaml.org,2002:pairs";
       let i = 0;
       if (iterable && Symbol.iterator in Object(iterable))
         for (let it of iterable) {
           if (typeof replacer === "function")
             it = replacer.call(iterable, String(i++), it);
-          let key, value2;
+          let key, value;
           if (Array.isArray(it)) {
             if (it.length === 2) {
               key = it[0];
-              value2 = it[1];
+              value = it[1];
             } else
               throw new TypeError(`Expected [key, value] tuple: ${it}`);
           } else if (it && it instanceof Object) {
             const keys = Object.keys(it);
             if (keys.length === 1) {
               key = keys[0];
-              value2 = it[key];
+              value = it[key];
             } else {
               throw new TypeError(`Expected tuple with one key, not ${keys.length} keys`);
             }
           } else {
             key = it;
           }
-          pairs2.items.push(Pair.createPair(key, value2, ctx));
+          pairs2.items.push(Pair.createPair(key, value, ctx));
         }
       return pairs2;
     }
@@ -9877,10 +2778,11 @@ ${cn.comment}` : item.comment;
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/omap.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/omap.js
 var require_omap = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var toJS = require_toJS();
     var YAMLMap = require_YAMLMap();
@@ -9907,21 +2809,21 @@ var require_omap = __commonJS({
         if (ctx?.onCreate)
           ctx.onCreate(map);
         for (const pair of this.items) {
-          let key, value2;
+          let key, value;
           if (identity.isPair(pair)) {
             key = toJS.toJS(pair.key, "", ctx);
-            value2 = toJS.toJS(pair.value, key, ctx);
+            value = toJS.toJS(pair.value, key, ctx);
           } else {
             key = toJS.toJS(pair, "", ctx);
           }
           if (map.has(key))
             throw new Error("Ordered maps must not include duplicate keys");
-          map.set(key, value2);
+          map.set(key, value);
         }
         return map;
       }
-      static from(schema2, iterable, ctx) {
-        const pairs$1 = pairs.createPairs(schema2, iterable, ctx);
+      static from(schema, iterable, ctx) {
+        const pairs$1 = pairs.createPairs(schema, iterable, ctx);
         const omap2 = new this();
         omap2.items = pairs$1.items;
         return omap2;
@@ -9930,7 +2832,7 @@ var require_omap = __commonJS({
     YAMLOMap.tag = "tag:yaml.org,2002:omap";
     var omap = {
       collection: "seq",
-      identify: (value2) => value2 instanceof Map,
+      identify: (value) => value instanceof Map,
       nodeClass: YAMLOMap,
       default: false,
       tag: "tag:yaml.org,2002:omap",
@@ -9948,26 +2850,27 @@ var require_omap = __commonJS({
         }
         return Object.assign(new YAMLOMap(), pairs$1);
       },
-      createNode: (schema2, iterable, ctx) => YAMLOMap.from(schema2, iterable, ctx)
+      createNode: (schema, iterable, ctx) => YAMLOMap.from(schema, iterable, ctx)
     };
     exports.YAMLOMap = YAMLOMap;
     exports.omap = omap;
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/bool.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/bool.js
 var require_bool2 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
-    function boolStringify({ value: value2, source }, ctx) {
-      const boolObj = value2 ? trueTag : falseTag;
+    function boolStringify({ value, source }, ctx) {
+      const boolObj = value ? trueTag : falseTag;
       if (source && boolObj.test.test(source))
         return source;
-      return value2 ? ctx.options.trueStr : ctx.options.falseStr;
+      return value ? ctx.options.trueStr : ctx.options.falseStr;
     }
     var trueTag = {
-      identify: (value2) => value2 === true,
+      identify: (value) => value === true,
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:Y|y|[Yy]es|YES|[Tt]rue|TRUE|[Oo]n|ON)$/,
@@ -9975,7 +2878,7 @@ var require_bool2 = __commonJS({
       stringify: boolStringify
     };
     var falseTag = {
-      identify: (value2) => value2 === false,
+      identify: (value) => value === false,
       default: true,
       tag: "tag:yaml.org,2002:bool",
       test: /^(?:N|n|[Nn]o|NO|[Ff]alse|FALSE|[Oo]ff|OFF)$/,
@@ -9987,14 +2890,15 @@ var require_bool2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/float.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/float.js
 var require_float2 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var stringifyNumber = require_stringifyNumber();
     var floatNaN = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^(?:[-+]?\.(?:inf|Inf|INF)|\.nan|\.NaN|\.NAN)$/,
@@ -10002,7 +2906,7 @@ var require_float2 = __commonJS({
       stringify: stringifyNumber.stringifyNumber
     };
     var floatExp = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       format: "EXP",
@@ -10014,7 +2918,7 @@ var require_float2 = __commonJS({
       }
     };
     var float = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       test: /^[-+]?(?:[0-9][0-9_]*)?\.[0-9_]*$/,
@@ -10036,12 +2940,13 @@ var require_float2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/int.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/int.js
 var require_int2 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
-    var intIdentify = (value2) => typeof value2 === "bigint" || Number.isInteger(value2);
+    var intIdentify = (value) => typeof value === "bigint" || Number.isInteger(value);
     function intResolve(str, offset, radix, { intAsBigInt }) {
       const sign = str[0];
       if (sign === "-" || sign === "+")
@@ -10066,10 +2971,10 @@ var require_int2 = __commonJS({
       return sign === "-" ? -1 * n : n;
     }
     function intStringify(node, radix, prefix) {
-      const { value: value2 } = node;
-      if (intIdentify(value2)) {
-        const str = value2.toString(radix);
-        return value2 < 0 ? "-" + prefix + str.substr(1) : prefix + str;
+      const { value } = node;
+      if (intIdentify(value)) {
+        const str = value.toString(radix);
+        return value < 0 ? "-" + prefix + str.substr(1) : prefix + str;
       }
       return stringifyNumber.stringifyNumber(node);
     }
@@ -10115,16 +3020,17 @@ var require_int2 = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/set.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/set.js
 var require_set = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
     var YAMLSet = class _YAMLSet extends YAMLMap.YAMLMap {
-      constructor(schema2) {
-        super(schema2);
+      constructor(schema) {
+        super(schema);
         this.tag = _YAMLSet.tag;
       }
       add(key) {
@@ -10147,13 +3053,13 @@ var require_set = __commonJS({
         const pair = YAMLMap.findPair(this.items, key);
         return !keepPair && identity.isPair(pair) ? identity.isScalar(pair.key) ? pair.key.value : pair.key : pair;
       }
-      set(key, value2) {
-        if (typeof value2 !== "boolean")
-          throw new Error(`Expected boolean value for set(key, value) in a YAML set, not ${typeof value2}`);
+      set(key, value) {
+        if (typeof value !== "boolean")
+          throw new Error(`Expected boolean value for set(key, value) in a YAML set, not ${typeof value}`);
         const prev = YAMLMap.findPair(this.items, key);
-        if (prev && !value2) {
+        if (prev && !value) {
           this.items.splice(this.items.indexOf(prev), 1);
-        } else if (!prev && value2) {
+        } else if (!prev && value) {
           this.items.push(new Pair.Pair(key));
         }
       }
@@ -10168,14 +3074,14 @@ var require_set = __commonJS({
         else
           throw new Error("Set items must all have null values");
       }
-      static from(schema2, iterable, ctx) {
+      static from(schema, iterable, ctx) {
         const { replacer } = ctx;
-        const set2 = new this(schema2);
+        const set2 = new this(schema);
         if (iterable && Symbol.iterator in Object(iterable))
-          for (let value2 of iterable) {
+          for (let value of iterable) {
             if (typeof replacer === "function")
-              value2 = replacer.call(iterable, value2, value2);
-            set2.items.push(Pair.createPair(value2, null, ctx));
+              value = replacer.call(iterable, value, value);
+            set2.items.push(Pair.createPair(value, null, ctx));
           }
         return set2;
       }
@@ -10183,11 +3089,11 @@ var require_set = __commonJS({
     YAMLSet.tag = "tag:yaml.org,2002:set";
     var set = {
       collection: "map",
-      identify: (value2) => value2 instanceof Set,
+      identify: (value) => value instanceof Set,
       nodeClass: YAMLSet,
       default: false,
       tag: "tag:yaml.org,2002:set",
-      createNode: (schema2, iterable, ctx) => YAMLSet.from(schema2, iterable, ctx),
+      createNode: (schema, iterable, ctx) => YAMLSet.from(schema, iterable, ctx),
       resolve(map, onError) {
         if (identity.isMap(map)) {
           if (map.hasAllNullValues(true))
@@ -10204,10 +3110,11 @@ var require_set = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
 var require_timestamp = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
     function parseSexagesimal(str, asBigInt) {
       const sign = str[0];
@@ -10217,33 +3124,33 @@ var require_timestamp = __commonJS({
       return sign === "-" ? num(-1) * res : res;
     }
     function stringifySexagesimal(node) {
-      let { value: value2 } = node;
+      let { value } = node;
       let num = (n) => n;
-      if (typeof value2 === "bigint")
+      if (typeof value === "bigint")
         num = (n) => BigInt(n);
-      else if (isNaN(value2) || !isFinite(value2))
+      else if (isNaN(value) || !isFinite(value))
         return stringifyNumber.stringifyNumber(node);
       let sign = "";
-      if (value2 < 0) {
+      if (value < 0) {
         sign = "-";
-        value2 *= num(-1);
+        value *= num(-1);
       }
       const _60 = num(60);
-      const parts = [value2 % _60];
-      if (value2 < 60) {
+      const parts = [value % _60];
+      if (value < 60) {
         parts.unshift(0);
       } else {
-        value2 = (value2 - parts[0]) / _60;
-        parts.unshift(value2 % _60);
-        if (value2 >= 60) {
-          value2 = (value2 - parts[0]) / _60;
-          parts.unshift(value2);
+        value = (value - parts[0]) / _60;
+        parts.unshift(value % _60);
+        if (value >= 60) {
+          value = (value - parts[0]) / _60;
+          parts.unshift(value);
         }
       }
       return sign + parts.map((n) => String(n).padStart(2, "0")).join(":").replace(/000000\d*$/, "");
     }
     var intTime = {
-      identify: (value2) => typeof value2 === "bigint" || Number.isInteger(value2),
+      identify: (value) => typeof value === "bigint" || Number.isInteger(value),
       default: true,
       tag: "tag:yaml.org,2002:int",
       format: "TIME",
@@ -10252,7 +3159,7 @@ var require_timestamp = __commonJS({
       stringify: stringifySexagesimal
     };
     var floatTime = {
-      identify: (value2) => typeof value2 === "number",
+      identify: (value) => typeof value === "number",
       default: true,
       tag: "tag:yaml.org,2002:float",
       format: "TIME",
@@ -10261,7 +3168,7 @@ var require_timestamp = __commonJS({
       stringify: stringifySexagesimal
     };
     var timestamp = {
-      identify: (value2) => value2 instanceof Date,
+      identify: (value) => value instanceof Date,
       default: true,
       tag: "tag:yaml.org,2002:timestamp",
       // If the time zone is omitted, the timestamp is assumed to be specified in UTC. The time part
@@ -10284,7 +3191,7 @@ var require_timestamp = __commonJS({
         }
         return new Date(date);
       },
-      stringify: ({ value: value2 }) => value2?.toISOString().replace(/(T00:00:00)?\.000Z$/, "") ?? ""
+      stringify: ({ value }) => value?.toISOString().replace(/(T00:00:00)?\.000Z$/, "") ?? ""
     };
     exports.floatTime = floatTime;
     exports.intTime = intTime;
@@ -10292,10 +3199,11 @@ var require_timestamp = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/yaml-1.1/schema.js
-var require_schema4 = __commonJS({
-  "node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/schema.js
+var require_schema3 = __commonJS({
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
     var _null = require_null();
     var seq = require_seq();
@@ -10309,7 +3217,7 @@ var require_schema4 = __commonJS({
     var pairs = require_pairs();
     var set = require_set();
     var timestamp = require_timestamp();
-    var schema2 = [
+    var schema = [
       map.map,
       seq.seq,
       string.string,
@@ -10332,14 +3240,15 @@ var require_schema4 = __commonJS({
       timestamp.floatTime,
       timestamp.timestamp
     ];
-    exports.schema = schema2;
+    exports.schema = schema;
   }
 });
 
-// node_modules/yaml/dist/schema/tags.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/tags.js
 var require_tags = __commonJS({
-  "node_modules/yaml/dist/schema/tags.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/tags.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
     var _null = require_null();
     var seq = require_seq();
@@ -10347,17 +3256,17 @@ var require_tags = __commonJS({
     var bool = require_bool();
     var float = require_float();
     var int = require_int();
-    var schema2 = require_schema2();
-    var schema$1 = require_schema3();
+    var schema = require_schema();
+    var schema$1 = require_schema2();
     var binary = require_binary();
     var merge = require_merge();
     var omap = require_omap();
     var pairs = require_pairs();
-    var schema$2 = require_schema4();
+    var schema$2 = require_schema3();
     var set = require_set();
     var timestamp = require_timestamp();
     var schemas = /* @__PURE__ */ new Map([
-      ["core", schema2.schema],
+      ["core", schema.schema],
       ["failsafe", [map.map, seq.seq, string.string]],
       ["json", schema$1.schema],
       ["yaml11", schema$2.schema],
@@ -10430,10 +3339,11 @@ var require_tags = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/schema/Schema.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/Schema.js
 var require_Schema = __commonJS({
-  "node_modules/yaml/dist/schema/Schema.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/Schema.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var map = require_map();
     var seq = require_seq();
@@ -10441,9 +3351,9 @@ var require_Schema = __commonJS({
     var tags = require_tags();
     var sortMapEntriesByKey = (a, b) => a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
     var Schema = class _Schema {
-      constructor({ compat, customTags, merge, resolveKnownTags, schema: schema2, sortMapEntries, toStringDefaults }) {
+      constructor({ compat, customTags, merge, resolveKnownTags, schema, sortMapEntries, toStringDefaults }) {
         this.compat = Array.isArray(compat) ? tags.getTags(compat, "compat") : compat ? tags.getTags(null, compat) : null;
-        this.name = typeof schema2 === "string" && schema2 || "core";
+        this.name = typeof schema === "string" && schema || "core";
         this.knownTags = resolveKnownTags ? tags.coreKnownTags : {};
         this.tags = tags.getTags(customTags, this.name, merge);
         this.toStringOptions = toStringDefaults ?? null;
@@ -10462,10 +3372,11 @@ var require_Schema = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/stringify/stringifyDocument.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyDocument.js
 var require_stringifyDocument = __commonJS({
-  "node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var stringify = require_stringify();
     var stringifyComment = require_stringifyComment();
@@ -10542,10 +3453,11 @@ var require_stringifyDocument = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/doc/Document.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/Document.js
 var require_Document = __commonJS({
-  "node_modules/yaml/dist/doc/Document.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/Document.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
     var Collection = require_Collection();
     var identity = require_identity();
@@ -10558,7 +3470,7 @@ var require_Document = __commonJS({
     var createNode = require_createNode();
     var directives = require_directives();
     var Document = class _Document {
-      constructor(value2, replacer, options) {
+      constructor(value, replacer, options) {
         this.commentBefore = null;
         this.comment = null;
         this.errors = [];
@@ -10590,7 +3502,7 @@ var require_Document = __commonJS({
         } else
           this.directives = new directives.Directives({ version });
         this.setSchema(version, options);
-        this.contents = value2 === void 0 ? null : this.createNode(value2, _replacer, options);
+        this.contents = value === void 0 ? null : this.createNode(value, _replacer, options);
       }
       /**
        * Create a deep copy of this Document and its contents.
@@ -10615,14 +3527,14 @@ var require_Document = __commonJS({
         return copy;
       }
       /** Adds a value to the document. */
-      add(value2) {
+      add(value) {
         if (assertCollection(this.contents))
-          this.contents.add(value2);
+          this.contents.add(value);
       }
       /** Adds a value to the document. */
-      addIn(path2, value2) {
+      addIn(path, value) {
         if (assertCollection(this.contents))
-          this.contents.addIn(path2, value2);
+          this.contents.addIn(path, value);
       }
       /**
        * Create a new `Alias` node, ensuring that the target `node` has the required anchor.
@@ -10641,10 +3553,10 @@ var require_Document = __commonJS({
         }
         return new Alias.Alias(node.anchor);
       }
-      createNode(value2, replacer, options) {
+      createNode(value, replacer, options) {
         let _replacer = void 0;
         if (typeof replacer === "function") {
-          value2 = replacer.call({ "": value2 }, "", value2);
+          value = replacer.call({ "": value }, "", value);
           _replacer = replacer;
         } else if (Array.isArray(replacer)) {
           const keyToStr = (v) => typeof v === "number" || v instanceof String || v instanceof Number;
@@ -10671,7 +3583,7 @@ var require_Document = __commonJS({
           schema: this.schema,
           sourceObjects
         };
-        const node = createNode.createNode(value2, tag, ctx);
+        const node = createNode.createNode(value, tag, ctx);
         if (flow && identity.isCollection(node))
           node.flow = true;
         setAnchors();
@@ -10681,9 +3593,9 @@ var require_Document = __commonJS({
        * Convert a key and a value into a `Pair` using the current schema,
        * recursively wrapping all values as `Scalar` or `Collection` nodes.
        */
-      createPair(key, value2, options = {}) {
+      createPair(key, value, options = {}) {
         const k = this.createNode(key, null, options);
-        const v = this.createNode(value2, null, options);
+        const v = this.createNode(value, null, options);
         return new Pair.Pair(k, v);
       }
       /**
@@ -10697,14 +3609,14 @@ var require_Document = __commonJS({
        * Removes a value from the document.
        * @returns `true` if the item was found and removed.
        */
-      deleteIn(path2) {
-        if (Collection.isEmptyPath(path2)) {
+      deleteIn(path) {
+        if (Collection.isEmptyPath(path)) {
           if (this.contents == null)
             return false;
           this.contents = null;
           return true;
         }
-        return assertCollection(this.contents) ? this.contents.deleteIn(path2) : false;
+        return assertCollection(this.contents) ? this.contents.deleteIn(path) : false;
       }
       /**
        * Returns item at `key`, or `undefined` if not found. By default unwraps
@@ -10719,10 +3631,10 @@ var require_Document = __commonJS({
        * scalar values from their surrounding node; to disable set `keepScalar` to
        * `true` (collections are always returned intact).
        */
-      getIn(path2, keepScalar) {
-        if (Collection.isEmptyPath(path2))
+      getIn(path, keepScalar) {
+        if (Collection.isEmptyPath(path))
           return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
-        return identity.isCollection(this.contents) ? this.contents.getIn(path2, keepScalar) : void 0;
+        return identity.isCollection(this.contents) ? this.contents.getIn(path, keepScalar) : void 0;
       }
       /**
        * Checks if the document includes a value with the key `key`.
@@ -10733,33 +3645,33 @@ var require_Document = __commonJS({
       /**
        * Checks if the document includes a value at `path`.
        */
-      hasIn(path2) {
-        if (Collection.isEmptyPath(path2))
+      hasIn(path) {
+        if (Collection.isEmptyPath(path))
           return this.contents !== void 0;
-        return identity.isCollection(this.contents) ? this.contents.hasIn(path2) : false;
+        return identity.isCollection(this.contents) ? this.contents.hasIn(path) : false;
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      set(key, value2) {
+      set(key, value) {
         if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, [key], value2);
+          this.contents = Collection.collectionFromPath(this.schema, [key], value);
         } else if (assertCollection(this.contents)) {
-          this.contents.set(key, value2);
+          this.contents.set(key, value);
         }
       }
       /**
        * Sets a value in this document. For `!!set`, `value` needs to be a
        * boolean to add/remove the item from the set.
        */
-      setIn(path2, value2) {
-        if (Collection.isEmptyPath(path2)) {
-          this.contents = value2;
+      setIn(path, value) {
+        if (Collection.isEmptyPath(path)) {
+          this.contents = value;
         } else if (this.contents == null) {
-          this.contents = Collection.collectionFromPath(this.schema, Array.from(path2), value2);
+          this.contents = Collection.collectionFromPath(this.schema, Array.from(path), value);
         } else if (assertCollection(this.contents)) {
-          this.contents.setIn(path2, value2);
+          this.contents.setIn(path, value);
         }
       }
       /**
@@ -10851,10 +3763,11 @@ var require_Document = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/errors.js
-var require_errors2 = __commonJS({
-  "node_modules/yaml/dist/errors.js"(exports) {
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/errors.js
+var require_errors = __commonJS({
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/errors.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var YAMLError = class extends Error {
       constructor(name, pos, code, message) {
         super();
@@ -10916,10 +3829,11 @@ ${pointer}
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-props.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-props.js
 var require_resolve_props = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-props.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-props.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
       let spaceBefore = false;
       let atNewline = startOnNewline;
@@ -11050,10 +3964,11 @@ var require_resolve_props = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-contains-newline.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-contains-newline.js
 var require_util_contains_newline = __commonJS({
-  "node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function containsNewline(key) {
       if (!key)
         return null;
@@ -11092,10 +4007,11 @@ var require_util_contains_newline = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-flow-indent-check.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-flow-indent-check.js
 var require_util_flow_indent_check = __commonJS({
-  "node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var utilContainsNewline = require_util_contains_newline();
     function flowIndentCheck(indent, fc, onError) {
       if (fc?.type === "flow-collection") {
@@ -11110,10 +4026,11 @@ var require_util_flow_indent_check = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-map-includes.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-map-includes.js
 var require_util_map_includes = __commonJS({
-  "node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     function mapIncludes(ctx, items, search) {
       const { uniqueKeys } = ctx.options;
@@ -11126,10 +4043,11 @@ var require_util_map_includes = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-block-map.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-map.js
 var require_resolve_block_map = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
     var resolveProps = require_resolve_props();
@@ -11145,7 +4063,7 @@ var require_resolve_block_map = __commonJS({
       let offset = bm.offset;
       let commentEnd = null;
       for (const collItem of bm.items) {
-        const { start, key, sep: sep2, value: value2 } = collItem;
+        const { start, key, sep: sep2, value } = collItem;
         const keyProps = resolveProps.resolveProps(start, {
           indicator: "explicit-key-ind",
           next: key ?? sep2?.[0],
@@ -11188,7 +4106,7 @@ var require_resolve_block_map = __commonJS({
           onError(keyStart, "DUPLICATE_KEY", "Map keys must be unique");
         const valueProps = resolveProps.resolveProps(sep2 ?? [], {
           indicator: "map-value-ind",
-          next: value2,
+          next: value,
           offset: keyNode.range[2],
           onError,
           parentIndent: bm.indent,
@@ -11197,14 +4115,14 @@ var require_resolve_block_map = __commonJS({
         offset = valueProps.end;
         if (valueProps.found) {
           if (implicitKey) {
-            if (value2?.type === "block-map" && !valueProps.hasNewline)
+            if (value?.type === "block-map" && !valueProps.hasNewline)
               onError(offset, "BLOCK_AS_IMPLICIT_KEY", "Nested mappings are not allowed in compact mappings");
             if (ctx.options.strict && keyProps.start < valueProps.found.offset - 1024)
               onError(keyNode.range, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit block mapping key");
           }
-          const valueNode = value2 ? composeNode(ctx, value2, valueProps, onError) : composeEmptyNode(ctx, offset, sep2, null, valueProps, onError);
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : composeEmptyNode(ctx, offset, sep2, null, valueProps, onError);
           if (ctx.schema.compat)
-            utilFlowIndentCheck.flowIndentCheck(bm.indent, value2, onError);
+            utilFlowIndentCheck.flowIndentCheck(bm.indent, value, onError);
           offset = valueNode.range[2];
           const pair = new Pair.Pair(keyNode, valueNode);
           if (ctx.options.keepSourceTokens)
@@ -11234,10 +4152,11 @@ var require_resolve_block_map = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-block-seq.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-seq.js
 var require_resolve_block_seq = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var YAMLSeq = require_YAMLSeq();
     var resolveProps = require_resolve_props();
     var utilFlowIndentCheck = require_util_flow_indent_check();
@@ -11250,18 +4169,18 @@ var require_resolve_block_seq = __commonJS({
         ctx.atKey = false;
       let offset = bs.offset;
       let commentEnd = null;
-      for (const { start, value: value2 } of bs.items) {
+      for (const { start, value } of bs.items) {
         const props = resolveProps.resolveProps(start, {
           indicator: "seq-item-ind",
-          next: value2,
+          next: value,
           offset,
           onError,
           parentIndent: bs.indent,
           startOnNewline: true
         });
         if (!props.found) {
-          if (props.anchor || props.tag || value2) {
-            if (value2?.type === "block-seq")
+          if (props.anchor || props.tag || value) {
+            if (value?.type === "block-seq")
               onError(props.end, "BAD_INDENT", "All sequence items must start at the same column");
             else
               onError(offset, "MISSING_CHAR", "Sequence item without - indicator");
@@ -11272,9 +4191,9 @@ var require_resolve_block_seq = __commonJS({
             continue;
           }
         }
-        const node = value2 ? composeNode(ctx, value2, props, onError) : composeEmptyNode(ctx, props.end, start, null, props, onError);
+        const node = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, start, null, props, onError);
         if (ctx.schema.compat)
-          utilFlowIndentCheck.flowIndentCheck(bs.indent, value2, onError);
+          utilFlowIndentCheck.flowIndentCheck(bs.indent, value, onError);
         offset = node.range[2];
         seq.items.push(node);
       }
@@ -11285,10 +4204,11 @@ var require_resolve_block_seq = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-end.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-end.js
 var require_resolve_end = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-end.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-end.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function resolveEnd(end, offset, reqSpace, onError) {
       let comment = "";
       if (end) {
@@ -11328,10 +4248,11 @@ var require_resolve_end = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-flow-collection.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-collection.js
 var require_resolve_flow_collection = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Pair = require_Pair();
     var YAMLMap = require_YAMLMap();
@@ -11356,7 +4277,7 @@ var require_resolve_flow_collection = __commonJS({
       let offset = fc.offset + fc.start.source.length;
       for (let i = 0; i < fc.items.length; ++i) {
         const collItem = fc.items[i];
-        const { start, key, sep: sep2, value: value2 } = collItem;
+        const { start, key, sep: sep2, value } = collItem;
         const props = resolveProps.resolveProps(start, {
           flow: fcName,
           indicator: "explicit-key-ind",
@@ -11367,7 +4288,7 @@ var require_resolve_flow_collection = __commonJS({
           startOnNewline: false
         });
         if (!props.found) {
-          if (!props.anchor && !props.tag && !sep2 && !value2) {
+          if (!props.anchor && !props.tag && !sep2 && !value) {
             if (i === 0 && props.comma)
               onError(props.comma, "UNEXPECTED_TOKEN", `Unexpected , in ${fcName}`);
             else if (i < fc.items.length - 1)
@@ -11422,10 +4343,10 @@ var require_resolve_flow_collection = __commonJS({
           }
         }
         if (!isMap && !sep2 && !props.found) {
-          const valueNode = value2 ? composeNode(ctx, value2, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
+          const valueNode = value ? composeNode(ctx, value, props, onError) : composeEmptyNode(ctx, props.end, sep2, null, props, onError);
           coll.items.push(valueNode);
           offset = valueNode.range[2];
-          if (isBlock(value2))
+          if (isBlock(value))
             onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
         } else {
           ctx.atKey = true;
@@ -11437,7 +4358,7 @@ var require_resolve_flow_collection = __commonJS({
           const valueProps = resolveProps.resolveProps(sep2 ?? [], {
             flow: fcName,
             indicator: "map-value-ind",
-            next: value2,
+            next: value,
             offset: keyNode.range[2],
             onError,
             parentIndent: fc.indent,
@@ -11457,15 +4378,15 @@ var require_resolve_flow_collection = __commonJS({
               if (props.start < valueProps.found.offset - 1024)
                 onError(valueProps.found, "KEY_OVER_1024_CHARS", "The : indicator must be at most 1024 chars after the start of an implicit flow sequence key");
             }
-          } else if (value2) {
-            if ("source" in value2 && value2.source?.[0] === ":")
-              onError(value2, "MISSING_CHAR", `Missing space after : in ${fcName}`);
+          } else if (value) {
+            if ("source" in value && value.source?.[0] === ":")
+              onError(value, "MISSING_CHAR", `Missing space after : in ${fcName}`);
             else
               onError(valueProps.start, "MISSING_CHAR", `Missing , or : between ${fcName} items`);
           }
-          const valueNode = value2 ? composeNode(ctx, value2, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep2, null, valueProps, onError) : null;
+          const valueNode = value ? composeNode(ctx, value, valueProps, onError) : valueProps.found ? composeEmptyNode(ctx, valueProps.end, sep2, null, valueProps, onError) : null;
           if (valueNode) {
-            if (isBlock(value2))
+            if (isBlock(value))
               onError(valueNode.range, "BLOCK_IN_FLOW", blockMsg);
           } else if (valueProps.comment) {
             if (keyNode.comment)
@@ -11522,10 +4443,11 @@ var require_resolve_flow_collection = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-collection.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-collection.js
 var require_compose_collection = __commonJS({
-  "node_modules/yaml/dist/compose/compose-collection.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-collection.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var YAMLMap = require_YAMLMap();
@@ -11587,10 +4509,11 @@ var require_compose_collection = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-block-scalar.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-scalar.js
 var require_resolve_block_scalar = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     function resolveBlockScalar(ctx, scalar, onError) {
       const start = scalar.offset;
@@ -11608,11 +4531,11 @@ var require_resolve_block_scalar = __commonJS({
           break;
       }
       if (chompStart === 0) {
-        const value3 = header.chomp === "+" && lines.length > 0 ? "\n".repeat(Math.max(1, lines.length - 1)) : "";
+        const value2 = header.chomp === "+" && lines.length > 0 ? "\n".repeat(Math.max(1, lines.length - 1)) : "";
         let end2 = start + header.length;
         if (scalar.source)
           end2 += scalar.source.length;
-        return { value: value3, type, comment: header.comment, range: [start, end2, end2] };
+        return { value: value2, type, comment: header.comment, range: [start, end2, end2] };
       }
       let trimIndent = scalar.indent + header.indent;
       let offset = scalar.offset + header.length;
@@ -11642,11 +4565,11 @@ var require_resolve_block_scalar = __commonJS({
         if (lines[i][0].length > trimIndent)
           chompStart = i + 1;
       }
-      let value2 = "";
+      let value = "";
       let sep2 = "";
       let prevMoreIndented = false;
       for (let i = 0; i < contentStart; ++i)
-        value2 += lines[i][0].slice(trimIndent) + "\n";
+        value += lines[i][0].slice(trimIndent) + "\n";
       for (let i = contentStart; i < chompStart; ++i) {
         let [indent, content] = lines[i];
         offset += indent.length + content.length + 1;
@@ -11660,23 +4583,23 @@ var require_resolve_block_scalar = __commonJS({
           indent = "";
         }
         if (type === Scalar.Scalar.BLOCK_LITERAL) {
-          value2 += sep2 + indent.slice(trimIndent) + content;
+          value += sep2 + indent.slice(trimIndent) + content;
           sep2 = "\n";
         } else if (indent.length > trimIndent || content[0] === "	") {
           if (sep2 === " ")
             sep2 = "\n";
           else if (!prevMoreIndented && sep2 === "\n")
             sep2 = "\n\n";
-          value2 += sep2 + indent.slice(trimIndent) + content;
+          value += sep2 + indent.slice(trimIndent) + content;
           sep2 = "\n";
           prevMoreIndented = true;
         } else if (content === "") {
           if (sep2 === "\n")
-            value2 += "\n";
+            value += "\n";
           else
             sep2 = "\n";
         } else {
-          value2 += sep2 + content;
+          value += sep2 + content;
           sep2 = " ";
           prevMoreIndented = false;
         }
@@ -11686,15 +4609,15 @@ var require_resolve_block_scalar = __commonJS({
           break;
         case "+":
           for (let i = chompStart; i < lines.length; ++i)
-            value2 += "\n" + lines[i][0].slice(trimIndent);
-          if (value2[value2.length - 1] !== "\n")
-            value2 += "\n";
+            value += "\n" + lines[i][0].slice(trimIndent);
+          if (value[value.length - 1] !== "\n")
+            value += "\n";
           break;
         default:
-          value2 += "\n";
+          value += "\n";
       }
       const end = start + header.length + scalar.source.length;
-      return { value: value2, type, comment: header.comment, range: [start, end, end] };
+      return { value, type, comment: header.comment, range: [start, end, end] };
     }
     function parseBlockScalarHeader({ offset, props }, strict, onError) {
       if (props[0].type !== "block-scalar-header") {
@@ -11770,29 +4693,30 @@ var require_resolve_block_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/resolve-flow-scalar.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-scalar.js
 var require_resolve_flow_scalar = __commonJS({
-  "node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
     var resolveEnd = require_resolve_end();
     function resolveFlowScalar(scalar, strict, onError) {
       const { offset, type, source, end } = scalar;
       let _type;
-      let value2;
+      let value;
       const _onError = (rel, code, msg) => onError(offset + rel, code, msg);
       switch (type) {
         case "scalar":
           _type = Scalar.Scalar.PLAIN;
-          value2 = plainValue(source, _onError);
+          value = plainValue(source, _onError);
           break;
         case "single-quoted-scalar":
           _type = Scalar.Scalar.QUOTE_SINGLE;
-          value2 = singleQuotedValue(source, _onError);
+          value = singleQuotedValue(source, _onError);
           break;
         case "double-quoted-scalar":
           _type = Scalar.Scalar.QUOTE_DOUBLE;
-          value2 = doubleQuotedValue(source, _onError);
+          value = doubleQuotedValue(source, _onError);
           break;
         /* istanbul ignore next should not happen */
         default:
@@ -11807,7 +4731,7 @@ var require_resolve_flow_scalar = __commonJS({
       const valueEnd = offset + source.length;
       const re = resolveEnd.resolveEnd(end, valueEnd, strict, onError);
       return {
-        value: value2,
+        value,
         type: _type,
         comment: re.comment,
         range: [offset, valueEnd, re.offset]
@@ -11990,37 +4914,38 @@ var require_resolve_flow_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-scalar.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-scalar.js
 var require_compose_scalar = __commonJS({
-  "node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
     var Scalar = require_Scalar();
     var resolveBlockScalar = require_resolve_block_scalar();
     var resolveFlowScalar = require_resolve_flow_scalar();
     function composeScalar(ctx, token, tagToken, onError) {
-      const { value: value2, type, comment, range } = token.type === "block-scalar" ? resolveBlockScalar.resolveBlockScalar(ctx, token, onError) : resolveFlowScalar.resolveFlowScalar(token, ctx.options.strict, onError);
+      const { value, type, comment, range } = token.type === "block-scalar" ? resolveBlockScalar.resolveBlockScalar(ctx, token, onError) : resolveFlowScalar.resolveFlowScalar(token, ctx.options.strict, onError);
       const tagName = tagToken ? ctx.directives.tagName(tagToken.source, (msg) => onError(tagToken, "TAG_RESOLVE_FAILED", msg)) : null;
       let tag;
       if (ctx.options.stringKeys && ctx.atKey) {
         tag = ctx.schema[identity.SCALAR];
       } else if (tagName)
-        tag = findScalarTagByName(ctx.schema, value2, tagName, tagToken, onError);
+        tag = findScalarTagByName(ctx.schema, value, tagName, tagToken, onError);
       else if (token.type === "scalar")
-        tag = findScalarTagByTest(ctx, value2, token, onError);
+        tag = findScalarTagByTest(ctx, value, token, onError);
       else
         tag = ctx.schema[identity.SCALAR];
       let scalar;
       try {
-        const res = tag.resolve(value2, (msg) => onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg), ctx.options);
+        const res = tag.resolve(value, (msg) => onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg), ctx.options);
         scalar = identity.isScalar(res) ? res : new Scalar.Scalar(res);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         onError(tagToken ?? token, "TAG_RESOLVE_FAILED", msg);
-        scalar = new Scalar.Scalar(value2);
+        scalar = new Scalar.Scalar(value);
       }
       scalar.range = range;
-      scalar.source = value2;
+      scalar.source = value;
       if (type)
         scalar.type = type;
       if (tagName)
@@ -12031,11 +4956,11 @@ var require_compose_scalar = __commonJS({
         scalar.comment = comment;
       return scalar;
     }
-    function findScalarTagByName(schema2, value2, tagName, tagToken, onError) {
+    function findScalarTagByName(schema, value, tagName, tagToken, onError) {
       if (tagName === "!")
-        return schema2[identity.SCALAR];
+        return schema[identity.SCALAR];
       const matchWithTest = [];
-      for (const tag of schema2.tags) {
+      for (const tag of schema.tags) {
         if (!tag.collection && tag.tag === tagName) {
           if (tag.default && tag.test)
             matchWithTest.push(tag);
@@ -12044,20 +4969,20 @@ var require_compose_scalar = __commonJS({
         }
       }
       for (const tag of matchWithTest)
-        if (tag.test?.test(value2))
+        if (tag.test?.test(value))
           return tag;
-      const kt = schema2.knownTags[tagName];
+      const kt = schema.knownTags[tagName];
       if (kt && !kt.collection) {
-        schema2.tags.push(Object.assign({}, kt, { default: false, test: void 0 }));
+        schema.tags.push(Object.assign({}, kt, { default: false, test: void 0 }));
         return kt;
       }
       onError(tagToken, "TAG_RESOLVE_FAILED", `Unresolved tag: ${tagName}`, tagName !== "tag:yaml.org,2002:str");
-      return schema2[identity.SCALAR];
+      return schema[identity.SCALAR];
     }
-    function findScalarTagByTest({ atKey, directives, schema: schema2 }, value2, token, onError) {
-      const tag = schema2.tags.find((tag2) => (tag2.default === true || atKey && tag2.default === "key") && tag2.test?.test(value2)) || schema2[identity.SCALAR];
-      if (schema2.compat) {
-        const compat = schema2.compat.find((tag2) => tag2.default && tag2.test?.test(value2)) ?? schema2[identity.SCALAR];
+    function findScalarTagByTest({ atKey, directives, schema }, value, token, onError) {
+      const tag = schema.tags.find((tag2) => (tag2.default === true || atKey && tag2.default === "key") && tag2.test?.test(value)) || schema[identity.SCALAR];
+      if (schema.compat) {
+        const compat = schema.compat.find((tag2) => tag2.default && tag2.test?.test(value)) ?? schema[identity.SCALAR];
         if (tag.tag !== compat.tag) {
           const ts = directives.tagString(tag.tag);
           const cs = directives.tagString(compat.tag);
@@ -12071,10 +4996,11 @@ var require_compose_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/util-empty-scalar-position.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-empty-scalar-position.js
 var require_util_empty_scalar_position = __commonJS({
-  "node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     function emptyScalarPosition(offset, before, pos) {
       if (before) {
         pos ?? (pos = before.length);
@@ -12101,10 +5027,11 @@ var require_util_empty_scalar_position = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-node.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-node.js
 var require_compose_node = __commonJS({
-  "node_modules/yaml/dist/compose/compose-node.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-node.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
     var identity = require_identity();
     var composeCollection = require_compose_collection();
@@ -12207,15 +5134,16 @@ var require_compose_node = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/compose-doc.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-doc.js
 var require_compose_doc = __commonJS({
-  "node_modules/yaml/dist/compose/compose-doc.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var Document = require_Document();
     var composeNode = require_compose_node();
     var resolveEnd = require_resolve_end();
     var resolveProps = require_resolve_props();
-    function composeDoc(options, directives, { offset, start, value: value2, end }, onError) {
+    function composeDoc(options, directives, { offset, start, value, end }, onError) {
       const opts = Object.assign({ _directives: directives }, options);
       const doc = new Document.Document(void 0, opts);
       const ctx = {
@@ -12227,7 +5155,7 @@ var require_compose_doc = __commonJS({
       };
       const props = resolveProps.resolveProps(start, {
         indicator: "doc-start",
-        next: value2 ?? end?.[0],
+        next: value ?? end?.[0],
         offset,
         onError,
         parentIndent: 0,
@@ -12235,10 +5163,10 @@ var require_compose_doc = __commonJS({
       });
       if (props.found) {
         doc.directives.docStart = true;
-        if (value2 && (value2.type === "block-map" || value2.type === "block-seq") && !props.hasNewline)
+        if (value && (value.type === "block-map" || value.type === "block-seq") && !props.hasNewline)
           onError(props.end, "MISSING_CHAR", "Block collection cannot start on same line with directives-end marker");
       }
-      doc.contents = value2 ? composeNode.composeNode(ctx, value2, props, onError) : composeNode.composeEmptyNode(ctx, props.end, start, null, props, onError);
+      doc.contents = value ? composeNode.composeNode(ctx, value, props, onError) : composeNode.composeEmptyNode(ctx, props.end, start, null, props, onError);
       const contentEnd = doc.contents.range[2];
       const re = resolveEnd.resolveEnd(end, contentEnd, false, onError);
       if (re.comment)
@@ -12250,14 +5178,15 @@ var require_compose_doc = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/compose/composer.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/composer.js
 var require_composer = __commonJS({
-  "node_modules/yaml/dist/compose/composer.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/composer.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
     var directives = require_directives();
     var Document = require_Document();
-    var errors2 = require_errors2();
+    var errors2 = require_errors();
     var identity = require_identity();
     var composeDoc = require_compose_doc();
     var resolveEnd = require_resolve_end();
@@ -12458,13 +5387,14 @@ ${end.comment}` : end.comment;
   }
 });
 
-// node_modules/yaml/dist/parse/cst-scalar.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-scalar.js
 var require_cst_scalar = __commonJS({
-  "node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var resolveBlockScalar = require_resolve_block_scalar();
     var resolveFlowScalar = require_resolve_flow_scalar();
-    var errors2 = require_errors2();
+    var errors2 = require_errors();
     var stringifyString = require_stringifyString();
     function resolveAsScalar(token, strict = true, onError) {
       if (token) {
@@ -12486,9 +5416,9 @@ var require_cst_scalar = __commonJS({
       }
       return null;
     }
-    function createScalarToken(value2, context) {
+    function createScalarToken(value, context) {
       const { implicitKey = false, indent, inFlow = false, offset = -1, type = "PLAIN" } = context;
-      const source = stringifyString.stringifyString({ type, value: value2 }, {
+      const source = stringifyString.stringifyString({ type, value }, {
         implicitKey,
         indent: indent > 0 ? " ".repeat(indent) : "",
         inFlow,
@@ -12518,7 +5448,7 @@ var require_cst_scalar = __commonJS({
           return { type: "scalar", offset, indent, source, end };
       }
     }
-    function setScalarValue(token, value2, context = {}) {
+    function setScalarValue(token, value, context = {}) {
       let { afterKey = false, implicitKey = false, inFlow = false, type } = context;
       let indent = "indent" in token ? token.indent : null;
       if (afterKey && typeof indent === "number")
@@ -12541,7 +5471,7 @@ var require_cst_scalar = __commonJS({
           default:
             type = "PLAIN";
         }
-      const source = stringifyString.stringifyString({ type, value: value2 }, {
+      const source = stringifyString.stringifyString({ type, value }, {
         implicitKey: implicitKey || indent === null,
         indent: indent !== null && indent > 0 ? " ".repeat(indent) : "",
         inFlow,
@@ -12643,10 +5573,11 @@ var require_cst_scalar = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/cst-stringify.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-stringify.js
 var require_cst_stringify = __commonJS({
-  "node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
     function stringifyToken(token) {
       switch (token.type) {
@@ -12687,7 +5618,7 @@ var require_cst_stringify = __commonJS({
         }
       }
     }
-    function stringifyItem({ start, key, sep: sep2, value: value2 }) {
+    function stringifyItem({ start, key, sep: sep2, value }) {
       let res = "";
       for (const st of start)
         res += st.source;
@@ -12696,18 +5627,19 @@ var require_cst_stringify = __commonJS({
       if (sep2)
         for (const st of sep2)
           res += st.source;
-      if (value2)
-        res += stringifyToken(value2);
+      if (value)
+        res += stringifyToken(value);
       return res;
     }
     exports.stringify = stringify;
   }
 });
 
-// node_modules/yaml/dist/parse/cst-visit.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-visit.js
 var require_cst_visit = __commonJS({
-  "node_modules/yaml/dist/parse/cst-visit.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-visit.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
     var SKIP = /* @__PURE__ */ Symbol("skip children");
     var REMOVE = /* @__PURE__ */ Symbol("remove item");
@@ -12719,9 +5651,9 @@ var require_cst_visit = __commonJS({
     visit.BREAK = BREAK;
     visit.SKIP = SKIP;
     visit.REMOVE = REMOVE;
-    visit.itemAtPath = (cst, path2) => {
+    visit.itemAtPath = (cst, path) => {
       let item = cst;
-      for (const [field, index] of path2) {
+      for (const [field, index] of path) {
         const tok = item?.[field];
         if (tok && "items" in tok) {
           item = tok.items[index];
@@ -12730,23 +5662,23 @@ var require_cst_visit = __commonJS({
       }
       return item;
     };
-    visit.parentCollection = (cst, path2) => {
-      const parent = visit.itemAtPath(cst, path2.slice(0, -1));
-      const field = path2[path2.length - 1][0];
+    visit.parentCollection = (cst, path) => {
+      const parent = visit.itemAtPath(cst, path.slice(0, -1));
+      const field = path[path.length - 1][0];
       const coll = parent?.[field];
       if (coll && "items" in coll)
         return coll;
       throw new Error("Parent collection not found");
     };
-    function _visit(path2, item, visitor) {
-      let ctrl = visitor(item, path2);
+    function _visit(path, item, visitor) {
+      let ctrl = visitor(item, path);
       if (typeof ctrl === "symbol")
         return ctrl;
       for (const field of ["key", "value"]) {
         const token = item[field];
         if (token && "items" in token) {
           for (let i = 0; i < token.items.length; ++i) {
-            const ci = _visit(Object.freeze(path2.concat([[field, i]])), token.items[i], visitor);
+            const ci = _visit(Object.freeze(path.concat([[field, i]])), token.items[i], visitor);
             if (typeof ci === "number")
               i = ci - 1;
             else if (ci === BREAK)
@@ -12757,19 +5689,20 @@ var require_cst_visit = __commonJS({
             }
           }
           if (typeof ctrl === "function" && field === "key")
-            ctrl = ctrl(item, path2);
+            ctrl = ctrl(item, path);
         }
       }
-      return typeof ctrl === "function" ? ctrl(item, path2) : ctrl;
+      return typeof ctrl === "function" ? ctrl(item, path) : ctrl;
     }
     exports.visit = visit;
   }
 });
 
-// node_modules/yaml/dist/parse/cst.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst.js
 var require_cst = __commonJS({
-  "node_modules/yaml/dist/parse/cst.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var cstScalar = require_cst_scalar();
     var cstStringify = require_cst_stringify();
     var cstVisit = require_cst_visit();
@@ -12868,10 +5801,11 @@ var require_cst = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/lexer.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/lexer.js
 var require_lexer = __commonJS({
-  "node_modules/yaml/dist/parse/lexer.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/lexer.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var cst = require_cst();
     function isEmpty(ch) {
       switch (ch) {
@@ -13457,10 +6391,11 @@ var require_lexer = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/line-counter.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/line-counter.js
 var require_line_counter = __commonJS({
-  "node_modules/yaml/dist/parse/line-counter.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/line-counter.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var LineCounter = class {
       constructor() {
         this.lineStarts = [];
@@ -13488,22 +6423,23 @@ var require_line_counter = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/parse/parser.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/parser.js
 var require_parser = __commonJS({
-  "node_modules/yaml/dist/parse/parser.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/parser.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
     var cst = require_cst();
     var lexer = require_lexer();
-    function includesToken(list2, type) {
-      for (let i = 0; i < list2.length; ++i)
-        if (list2[i].type === type)
+    function includesToken(list, type) {
+      for (let i = 0; i < list.length; ++i)
+        if (list[i].type === type)
           return true;
       return false;
     }
-    function findNonEmptyIndex(list2) {
-      for (let i = 0; i < list2.length; ++i) {
-        switch (list2[i].type) {
+    function findNonEmptyIndex(list) {
+      for (let i = 0; i < list.length; ++i) {
+        switch (list[i].type) {
           case "space":
           case "comment":
           case "newline":
@@ -14362,13 +7298,14 @@ var require_parser = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/public-api.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/public-api.js
 var require_public_api = __commonJS({
-  "node_modules/yaml/dist/public-api.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
     var Document = require_Document();
-    var errors2 = require_errors2();
+    var errors2 = require_errors();
     var log = require_log();
     var identity = require_identity();
     var lineCounter = require_line_counter();
@@ -14430,7 +7367,7 @@ var require_public_api = __commonJS({
       }
       return doc.toJS(Object.assign({ reviver: _reviver }, options));
     }
-    function stringify(value2, replacer, options) {
+    function stringify(value, replacer, options) {
       let _replacer = null;
       if (typeof replacer === "function" || Array.isArray(replacer)) {
         _replacer = replacer;
@@ -14443,14 +7380,14 @@ var require_public_api = __commonJS({
         const indent = Math.round(options);
         options = indent < 1 ? void 0 : indent > 8 ? { indent: 8 } : { indent };
       }
-      if (value2 === void 0) {
+      if (value === void 0) {
         const { keepUndefined } = options ?? replacer ?? {};
         if (!keepUndefined)
           return void 0;
       }
-      if (identity.isDocument(value2) && !_replacer)
-        return value2.toString(options);
-      return new Document.Document(value2, _replacer, options).toString(options);
+      if (identity.isDocument(value) && !_replacer)
+        return value.toString(options);
+      return new Document.Document(value, _replacer, options).toString(options);
     }
     exports.parse = parse;
     exports.parseAllDocuments = parseAllDocuments;
@@ -14459,14 +7396,15 @@ var require_public_api = __commonJS({
   }
 });
 
-// node_modules/yaml/dist/index.js
+// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/index.js
 var require_dist = __commonJS({
-  "node_modules/yaml/dist/index.js"(exports) {
+  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/index.js"(exports) {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
     var Document = require_Document();
     var Schema = require_Schema();
-    var errors2 = require_errors2();
+    var errors2 = require_errors();
     var Alias = require_Alias();
     var identity = require_identity();
     var Pair = require_Pair();
@@ -14511,289 +7449,1048 @@ var require_dist = __commonJS({
   }
 });
 
+// scripts/lib/safe-reference.ts
+function decoded(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+function urlError(value, allowedSchemes) {
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return "is not a valid URL";
+  }
+  if (!allowedSchemes.has(parsed.protocol)) return `uses unsupported URL scheme ${parsed.protocol}`;
+  const authority = value.slice(value.indexOf("://") + 3).split(/[/?#]/, 1)[0] ?? "";
+  if (authority.includes("@") || parsed.username || parsed.password || decoded(parsed.username) || decoded(parsed.password)) return "appears to contain credentials in URL userinfo";
+  if (secretPattern.test(decoded(value))) return "appears to contain credentials";
+  return null;
+}
+function remoteReferenceError(value) {
+  const reference = value.trim();
+  if (!reference || /[\r\n]/.test(reference)) return "must be a non-empty single-line reference";
+  if (secretPattern.test(decoded(reference))) return "appears to contain credentials";
+  if (schemePattern.test(reference)) return urlError(reference, /* @__PURE__ */ new Set(["https:", "ssh:", "git:"]));
+  if (scpPattern.test(reference)) return null;
+  if (/^[^\s@/:]+@[^\s:]+:/.test(reference)) return "contains unsupported remote userinfo";
+  if (/https?:/i.test(reference) || /%40/i.test(reference)) return "contains invalid or encoded URL userinfo";
+  return "must be a credential-free HTTPS, SSH, Git, or SCP-style remote";
+}
+function cloneReferenceError(value) {
+  const remoteError = remoteReferenceError(value);
+  if (!remoteError) return null;
+  const reference = value.trim();
+  if (secretPattern.test(decoded(reference)) || /[\r\n]/.test(reference) || /%40/i.test(reference)) return remoteError;
+  if (reference.startsWith("/") || localSourcePattern.test(reference)) return null;
+  return remoteError;
+}
+function contextReferenceError(value) {
+  const reference = value.trim();
+  if (!reference || /[\r\n\\]/.test(reference)) return "must be a non-empty single-line reference without backslashes";
+  const decodedReference = decoded(reference);
+  if (secretPattern.test(decodedReference)) return "appears to contain credentials";
+  if (/\\/.test(decodedReference)) return "must not contain encoded backslashes";
+  if (schemePattern.test(reference)) return urlError(reference, /* @__PURE__ */ new Set(["https:"]));
+  if (providerPattern.test(reference)) return null;
+  if (reference.startsWith("/") || decodedReference.startsWith("/") || /^[A-Za-z]:/.test(decodedReference)) return "must not be an absolute local path";
+  if (decodedReference.split("/").some((part) => part === ".." || part === ".")) return "must not contain traversal segments";
+  if (!localSourcePattern.test(reference)) return "must be a safe relative path or allowed provider reference";
+  return null;
+}
+var secretPattern, schemePattern, scpPattern, providerPattern, localSourcePattern;
+var init_safe_reference = __esm({
+  "scripts/lib/safe-reference.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    secretPattern = /(?:token|password|passwd|secret|api[_-]?key)\s*[=:]|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i;
+    schemePattern = /^[A-Za-z][A-Za-z0-9+.-]*:\/\//;
+    scpPattern = /^(?:git|ssh)@[A-Za-z0-9.-]+:[A-Za-z0-9._~/-]+$/;
+    providerPattern = /^(?:github|gitlab|linear|jira|notion):[A-Za-z0-9][A-Za-z0-9._/@#:+-]*$/;
+    localSourcePattern = /^(?!.*(?:^|\/)\.\.(?:\/|$))[A-Za-z0-9._@#:+%=-]+(?:\/[A-Za-z0-9._@#:+%=-]+)*$/;
+  }
+});
+
 // scripts/lib/validation.ts
 import { lstat, readFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-async function readData(path2) {
-  const raw = await readFile(path2, "utf8");
-  return path2.endsWith(".yaml") || path2.endsWith(".yml") ? (0, import_yaml.parse)(raw) : JSON.parse(raw);
+import { relative, resolve } from "node:path";
+async function readData(path) {
+  const raw = await readFile(path, "utf8");
+  return path.endsWith(".yaml") || path.endsWith(".yml") ? (0, import_yaml.parse)(raw) : JSON.parse(raw);
 }
-async function validateContract(name, value2) {
-  const schema2 = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", `${name}.schema.json`), "utf8"));
-  const ajv = new import__.Ajv2020({ allErrors: true, strict: false });
-  ajv.addFormat("email", { type: "string", validate: (value3) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value3) });
-  ajv.addFormat("date-time", {
-    type: "string",
-    validate: (value3) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value3) && !Number.isNaN(Date.parse(value3))
-  });
-  if (name === "fake-activity-source") {
-    const candidateSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "work-candidate.schema.json"), "utf8"));
-    ajv.addSchema(candidateSchema);
-  }
-  if (name === "runtime-manifest") {
-    const lifecycleSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "activity-lifecycle-record.schema.json"), "utf8"));
-    ajv.addSchema(lifecycleSchema);
-  }
-  if (name === "workspace-bootstrap-request") {
-    const workspaceSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "workspace.schema.json"), "utf8"));
-    ajv.addSchema(workspaceSchema);
-  }
-  const validate = ajv.compile(schema2);
-  return validate(value2) ? [] : [...validate.errors ?? []];
+function record(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
-function workspaceSemanticErrors(config) {
+function nonEmptyString(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+function workspaceErrors(value) {
+  if (!record(value)) return ["workspace.yaml must contain a mapping"];
   const errors2 = [];
-  const paths2 = /* @__PURE__ */ new Map();
-  for (const [name, repository] of Object.entries(config.repositories)) {
-    const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
-    const prior = paths2.get(normalized);
-    if (prior) errors2.push(`repositories.${name}.path duplicates repositories.${prior}.path`);
-    paths2.set(normalized, name);
+  const workspace = value.workspace;
+  if (!record(workspace)) errors2.push("workspace is required");
+  else {
+    if (!nonEmptyString(workspace.name)) errors2.push("workspace.name is required");
+    if (!["solo", "team"].includes(String(workspace.mode))) errors2.push("workspace.mode must be solo or team");
+    if (!nonEmptyString(workspace.default_branch)) errors2.push("workspace.default_branch is required");
   }
-  const required = new Set(config.activity.required_capabilities);
-  const declared = /* @__PURE__ */ new Set([...config.activity.required_capabilities, ...config.activity.optional_capabilities]);
-  for (const capability of config.activity.optional_capabilities) {
-    if (required.has(capability)) errors2.push(`activity capability is both required and optional: ${capability}`);
-  }
-  const lifecycle = config.activity.lifecycle ?? {};
-  if (config.activity.provider === "none" && Object.values(lifecycle).some((actions) => (actions?.length ?? 0) > 0)) {
-    errors2.push("activity.lifecycle cannot configure external actions when provider is none");
-  }
-  for (const [event, actions] of Object.entries(lifecycle)) {
-    const ids = /* @__PURE__ */ new Set();
-    for (const action of actions ?? []) {
-      if (ids.has(action.id)) errors2.push(`activity.lifecycle.${event} has duplicate action id: ${action.id}`);
-      ids.add(action.id);
-      if (!declared.has(action.capability)) errors2.push(`activity.lifecycle.${event}.${action.id} uses undeclared capability: ${action.capability}`);
-      if (action.policy === "required" && !required.has(action.capability)) {
-        errors2.push(`required lifecycle action ${event}.${action.id} must use a required capability`);
+  if (!record(value.repositories)) errors2.push("repositories is required");
+  else {
+    for (const [name, repo] of Object.entries(value.repositories)) {
+      if (!record(repo)) {
+        errors2.push(`repositories.${name} must be a mapping`);
+        continue;
+      }
+      if (!nonEmptyString(repo.path)) errors2.push(`repositories.${name}.path is required`);
+      if (!["ignored-clone", "submodule"].includes(String(repo.mode))) errors2.push(`repositories.${name}.mode must be ignored-clone or submodule`);
+      if (!nonEmptyString(repo.role)) errors2.push(`repositories.${name}.role is required`);
+      if (!nonEmptyString(repo.agent)) errors2.push(`repositories.${name}.agent is required`);
+      if (!nonEmptyString(repo.default_branch)) errors2.push(`repositories.${name}.default_branch is required`);
+      if (repo.remote !== void 0) {
+        const remoteError = typeof repo.remote === "string" ? remoteReferenceError(repo.remote) : "must be a string";
+        if (remoteError) errors2.push(`repositories.${name}.remote ${remoteError}`);
       }
     }
   }
-  if (config.workspace.mode === "team" && config.workflow.wrapper_change_policy !== "pull-request") {
-    errors2.push("team mode requires workflow.wrapper_change_policy: pull-request");
-  }
+  const sources = record(value.context) ? value.context.sources_file : void 0;
+  if (sources !== void 0 && !nonEmptyString(sources)) errors2.push("context.sources_file must be a path");
   return errors2;
 }
-async function workspaceDocumentErrors(workspaceRoot18, config) {
+function workspaceSemanticErrors(config2) {
+  const errors2 = [...workspaceErrors(config2)];
+  const paths = /* @__PURE__ */ new Map();
+  for (const [name, repository] of Object.entries(config2.repositories ?? {})) {
+    const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
+    const prior = paths.get(normalized);
+    if (prior) errors2.push(`repositories.${name}.path duplicates repositories.${prior}.path`);
+    paths.set(normalized, name);
+    if (repository.remote) {
+      const remoteError = remoteReferenceError(repository.remote);
+      if (remoteError) errors2.push(`repositories.${name}.remote ${remoteError}`);
+    }
+  }
+  for (const [index, source] of (config2.context?.authoritative_sources ?? []).entries()) {
+    if (source.repository && !config2.repositories[source.repository]) errors2.push(`context.authoritative_sources.${index}.repository is not configured: ${source.repository}`);
+    const reference = source.location || source.reference;
+    if (reference) {
+      const referenceError = contextReferenceError(reference);
+      if (referenceError && !reference.includes("://")) errors2.push(`context.authoritative_sources.${index}.location ${referenceError}`);
+    }
+  }
+  return [...new Set(errors2)];
+}
+async function workspaceDocumentErrors(workspaceRoot4, config2) {
   const required = [
-    ...requiredWorkspaceDocuments,
-    ...new Set(Object.values(config.repositories).map((repository) => `agents/${repository.agent}.md`))
+    "README.md",
+    "AGENTS.md",
+    "CLAUDE.md",
+    "WORKFLOW.md",
+    "workspace.yaml",
+    "context/PROJECT.md",
+    "context/ARCHITECTURE.md",
+    "context/CONVENTIONS.md",
+    "context/DECISIONS.md",
+    "context/SOURCES.md",
+    "context/sources.yaml",
+    "plans/README.md",
+    ".agents/bin/cc.mjs",
+    ...new Set(Object.values(config2.repositories).map((repo) => `agents/${repo.agent}.md`))
   ];
   const errors2 = [];
-  for (const path2 of required) {
+  for (const path of required) {
     try {
-      const info = await lstat(resolve(workspaceRoot18, path2));
+      const info = await lstat(resolve(workspaceRoot4, path));
       if (!info.isFile() || info.isSymbolicLink()) throw new Error("not a regular file");
     } catch {
-      errors2.push(`required workspace document is missing: ${path2}`);
+      errors2.push(`required workspace document is missing: ${path}`);
     }
   }
   return errors2;
 }
-var import__, import_yaml, schemaNames, requiredWorkspaceDocuments, projectRoot;
+function parseFrontmatter(raw) {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
+  if (!match) return { value: null, body: raw, errors: ["Markdown must begin with YAML frontmatter"] };
+  try {
+    const value = (0, import_yaml.parse)(match[1]);
+    if (!record(value)) return { value: null, body: raw.slice(match[0].length), errors: ["frontmatter must contain a YAML mapping"] };
+    return { value, body: raw.slice(match[0].length), errors: [] };
+  } catch (error) {
+    return { value: null, body: raw.slice(match[0].length), errors: [`invalid YAML frontmatter: ${error.message}`] };
+  }
+}
+function requiredString(value, key, errors2, prefix = "") {
+  if (!nonEmptyString(value[key])) errors2.push(`${prefix}${key} is required`);
+  return typeof value[key] === "string" ? value[key].trim() : void 0;
+}
+async function referencedLocalFilesExist(root12, references2) {
+  const errors2 = [];
+  for (const reference of references2) {
+    if (reference.includes("*") || reference.includes("<") || reference.includes(">")) continue;
+    const candidate = resolve(root12, reference);
+    if (relative(root12, candidate).startsWith("..")) {
+      errors2.push(`referenced path escapes workspace: ${reference}`);
+      continue;
+    }
+    try {
+      const info = await lstat(candidate);
+      if (info.isSymbolicLink()) errors2.push(`referenced path is a symlink: ${reference}`);
+    } catch {
+      errors2.push(`referenced local file does not exist: ${reference}`);
+    }
+  }
+  return errors2;
+}
+var import_yaml;
 var init_validation = __esm({
   "scripts/lib/validation.ts"() {
     "use strict";
-    import__ = __toESM(require__(), 1);
+    init_define_CC_TEMPLATE_INVENTORY();
     import_yaml = __toESM(require_dist(), 1);
-    schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"];
-    requiredWorkspaceDocuments = [
-      "README.md",
-      "AGENTS.md",
-      "CLAUDE.md",
-      "WORKFLOW.md",
-      "workspace.yaml",
-      "context/PROJECT.md",
-      "context/ARCHITECTURE.md",
-      "context/CONVENTIONS.md",
-      "context/DECISIONS.md",
-      "agents/coordinator.md",
-      "agents/repository-worker.md",
-      "agents/verifier.md",
-      ".agents/bin/cc.mjs",
-      ".agents/contracts/workspace.schema.json",
-      ".agents/contracts/workspace-bootstrap-request.schema.json",
-      ".agents/contracts/review-preparation.schema.json",
-      ".agents/contracts/review-publication-record.schema.json",
-      ".agents/contracts/closeout-record.schema.json",
-      ".agents/contracts/run-task-request.schema.json",
-      ".agents/contracts/context-sync-request.schema.json",
-      ".agents/contracts/context-sync-record.schema.json",
-      ".agents/contracts/plan-index.schema.json",
-      ".agents/contracts/plan-work-breakdown.schema.json",
-      ".agents/contracts/plan-draft-request.schema.json",
-      ".agents/contracts/work-candidate.schema.json",
-      ".agents/contracts/fake-activity-source.schema.json",
-      ".agents/contracts/whats-next-result.schema.json",
-      ".agents/contracts/activity-lifecycle-record.schema.json",
-      ".agents/contracts/plan-publication-discovery.schema.json",
-      ".agents/contracts/plan-publication-record.schema.json",
-      ".agents/skills/initialize-workspace/SKILL.md",
-      ".agents/skills/gather-context/SKILL.md",
-      ".agents/skills/run-task/SKILL.md",
-      ".agents/skills/finish-work/SKILL.md",
-      ".agents/skills/create-plan/SKILL.md",
-      ".agents/skills/whats-next/SKILL.md",
-      ".agents/skills/publish-plan-tasks/SKILL.md",
-      ".agents/skills/sync-context/SKILL.md",
-      ".codex/skills/initialize-workspace/SKILL.md",
-      ".codex/skills/run-task/SKILL.md",
-      ".codex/skills/finish-work/SKILL.md",
-      ".codex/skills/create-plan/SKILL.md",
-      ".codex/skills/whats-next/SKILL.md",
-      ".codex/skills/publish-plan-tasks/SKILL.md",
-      ".codex/skills/sync-context/SKILL.md",
-      ".claude/commands/initialize-workspace.md",
-      ".claude/commands/run-task.md",
-      ".claude/commands/finish-work.md",
-      ".claude/commands/create-plan.md",
-      ".claude/commands/whats-next.md",
-      ".claude/commands/publish-plan-tasks.md",
-      ".claude/commands/sync-context.md",
-      "docs/getting-started.md",
-      "docs/using-the-wrapper.md",
-      "docs/configuration.md",
-      "docs/command-reference.md"
+    init_safe_reference();
+  }
+});
+
+// scripts/lib/io.ts
+import { chmod, lstat as lstat2, mkdir, open, readFile as readFile2, realpath, rename } from "node:fs/promises";
+import { dirname, resolve as resolve2, sep } from "node:path";
+function assertInside(root12, candidate) {
+  const resolvedRoot = resolve2(root12);
+  const resolvedCandidate = resolve2(candidate);
+  if (resolvedCandidate !== resolvedRoot && !resolvedCandidate.startsWith(`${resolvedRoot}${sep}`)) throw new Error(`Refusing path outside ${resolvedRoot}: ${resolvedCandidate}`);
+  return resolvedCandidate;
+}
+async function readJsonRegularInside(root12, candidate, label) {
+  const path = assertInside(root12, candidate);
+  const info = await lstat2(path);
+  if (!info.isFile() || info.isSymbolicLink()) throw new Error(`${label} must be a regular file: ${path}`);
+  assertInside(await realpath(root12), await realpath(path));
+  return JSON.parse(await readFile2(path, "utf8"));
+}
+async function writeTextAtomic(path, value, mode = 420) {
+  await mkdir(dirname(path), { recursive: true, mode: 493 });
+  const temporary = `${path}.${process.pid}.tmp`;
+  const handle = await open(temporary, "wx", mode);
+  try {
+    await handle.writeFile(value, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  await rename(temporary, path);
+  await chmod(path, mode);
+}
+async function writeTextExclusive(path, value, mode = 420) {
+  await mkdir(dirname(path), { recursive: true, mode: 493 });
+  const handle = await open(path, "wx", mode);
+  try {
+    await handle.writeFile(value, "utf8");
+    await handle.sync();
+  } finally {
+    await handle.close();
+  }
+  await chmod(path, mode);
+}
+var init_io = __esm({
+  "scripts/lib/io.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+  }
+});
+
+// scripts/lib/plans.ts
+import { lstat as lstat3, mkdir as mkdir2, readdir, readFile as readFile3, rename as rename2, rm } from "node:fs/promises";
+import { basename, dirname as dirname2, join as join2, relative as relative2, resolve as resolve3 } from "node:path";
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+function nonEmpty(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+function slugify(value) {
+  const slug = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!slug) throw new Error("Plan slug must contain at least one ASCII letter or digit");
+  return slug;
+}
+function numberFolder(number, slug) {
+  return `${String(number).padStart(4, "0")}-${slug}`;
+}
+function collectionForPlan(plan) {
+  const repository = plan.repositories[0];
+  if (!repository) throw new Error(`Plan ${plan.id} must name at least one repository`);
+  return `${repository}-plans`;
+}
+function markdownList(values10, empty = "None recorded.") {
+  return values10 && values10.length > 0 ? values10.map((value) => `- ${value}`).join("\n") : `- ${empty}`;
+}
+function renderDocument(title, body) {
+  return `# ${title}
+
+${body.trim()}
+`;
+}
+function normalizeConnections(value) {
+  if (value === void 0) return void 0;
+  if (!Array.isArray(value)) throw new Error("connections must be a list");
+  return value.map((entry) => {
+    if (!isRecord(entry) || !nonEmpty(entry.type) || !nonEmpty(entry.target)) throw new Error("Every connection needs a type and target");
+    const types = ["depends-on", "integrates-with", "blocks", "related", "supersedes"];
+    if (!types.includes(entry.type)) throw new Error(`Unknown connection type: ${entry.type}`);
+    return {
+      type: entry.type,
+      target: entry.target.trim(),
+      ...nonEmpty(entry.description) ? { description: entry.description.trim() } : {}
+    };
+  });
+}
+function normalizeTaskInput(input2, planId, generatedId) {
+  const id = String(input2.id ?? input2.task_id ?? input2.work_id ?? input2.key ?? generatedId).trim();
+  if (!id) throw new Error("Every task needs an id");
+  const dependencies = input2.dependencies ?? input2.depends_on;
+  return {
+    id,
+    plan_id: planId,
+    title: input2.title.trim(),
+    status: "draft",
+    ...input2.description?.trim() ? { description: input2.description.trim() } : {},
+    repository: input2.repository.trim(),
+    ...input2.area?.trim() ? { area: input2.area.trim() } : {},
+    ...input2.parent_task?.trim() ? { parent_task: input2.parent_task.trim() } : {},
+    ...dependencies && dependencies.length > 0 ? { dependencies: [...dependencies] } : {},
+    ...input2.subtasks && input2.subtasks.length > 0 ? { subtasks: [...input2.subtasks] } : {},
+    ...input2.connections && input2.connections.length > 0 ? { connections: normalizeConnections(input2.connections) } : {},
+    ...input2.implementation_scope && input2.implementation_scope.length > 0 ? { implementation_scope: [...input2.implementation_scope] } : {},
+    ...input2.test_scope && input2.test_scope.length > 0 ? { test_scope: [...input2.test_scope] } : {},
+    ...input2.test_expectations && input2.test_expectations.length > 0 ? { test_expectations: [...input2.test_expectations] } : {},
+    ...input2.verification_commands && input2.verification_commands.length > 0 ? { verification_commands: [...input2.verification_commands] } : {},
+    ...input2.acceptance_criteria && input2.acceptance_criteria.length > 0 ? { acceptance_criteria: [...input2.acceptance_criteria] } : {},
+    ...input2.product_knowledge && input2.product_knowledge.length > 0 ? { product_knowledge: [...input2.product_knowledge] } : {},
+    ...input2.external_reference?.trim() ? { external_reference: input2.external_reference.trim() } : {}
+  };
+}
+function taskFrontmatter(task) {
+  const { id, plan_id, title, status, ...optional } = task;
+  return { id, plan_id, title, status, ...optional };
+}
+function taskMarkdown(task) {
+  return [
+    `# ${task.title}`,
+    "",
+    "## Description",
+    "",
+    task.description ?? task.title,
+    "",
+    "## Implementation scope",
+    "",
+    markdownList(task.implementation_scope),
+    "",
+    "## Test scope and expectations",
+    "",
+    markdownList(task.test_scope),
+    task.test_expectations?.length ? `
+${markdownList(task.test_expectations)}` : "",
+    "",
+    "## Verification commands",
+    "",
+    markdownList(task.verification_commands, "No commands recorded; human review decides what to run."),
+    "",
+    "## Acceptance criteria",
+    "",
+    markdownList(task.acceptance_criteria, "No additional criteria recorded."),
+    ""
+  ].join("\n");
+}
+function planReadme(plan, summary2) {
+  return `# ${plan.title}
+
+${summary2?.trim() || "This numbered plan is maintained as human-reviewed delivery intent."}
+
+Plan metadata lives in [plan.yaml](./plan.yaml). The plan status changes only through an explicit human request.
+
+## Documents
+
+${PLAN_DOCUMENTS.map((name) => `- [${name.replace(/\.md$/, "")}](${name})`).join("\n")}
+
+## Tasks
+
+See [tasks/README.md](./tasks/README.md).
+`;
+}
+async function exists(path) {
+  try {
+    await lstat3(path);
+    return true;
+  } catch (error) {
+    if (error.code === "ENOENT") return false;
+    throw error;
+  }
+}
+async function workspaceRootFor(path) {
+  let current = resolve3(path);
+  while (true) {
+    if (await exists(join2(current, "workspace.yaml"))) return current;
+    const parent = dirname2(current);
+    if (parent === current) break;
+    current = parent;
+  }
+  throw new Error(`Unable to locate workspace.yaml for plan: ${path}`);
+}
+async function loadWorkspace(root12) {
+  const value = await readData(join2(root12, "workspace.yaml"));
+  const errors2 = workspaceErrors(value);
+  if (errors2.length > 0) throw new Error(`Invalid workspace.yaml:
+- ${errors2.join("\n- ")}`);
+  return value;
+}
+function normalizePlan(value, directory3) {
+  if (!isRecord(value)) throw new Error("plan.yaml must contain a mapping");
+  const errors2 = [];
+  const id = requiredString(value, "id", errors2) ?? "";
+  const title = requiredString(value, "title", errors2) ?? "";
+  const status = value.status;
+  if (!statuses.has(status)) errors2.push("status must be draft, approved, or done");
+  const number = typeof value.number === "number" ? value.number : Number(value.number);
+  if (!Number.isInteger(number) || number < 1) errors2.push("number must be a positive integer");
+  const repositories = Array.isArray(value.repositories) ? value.repositories.filter((entry) => typeof entry === "string" && entry.trim().length > 0).map((entry) => entry.trim()) : typeof value.repository === "string" ? [value.repository.trim()] : [];
+  if (repositories.length === 0) errors2.push("repositories must contain at least one repository");
+  if (errors2.length > 0) throw new Error(`${directory3 ? `${directory3}: ` : ""}${errors2.join("; ")}`);
+  return {
+    id,
+    number,
+    title,
+    status,
+    ...nonEmpty(value.track) ? { track: value.track } : {},
+    ...isRecord(value.source) && nonEmpty(value.source.kind) && nonEmpty(value.source.reference) ? { source: { kind: value.source.kind, reference: value.source.reference } } : {},
+    repositories,
+    ...Array.isArray(value.dependencies) && value.dependencies.length > 0 ? { dependencies: value.dependencies.filter((entry) => typeof entry === "string") } : {},
+    ...Array.isArray(value.depends_on_plans) && value.depends_on_plans.length > 0 ? { dependencies: value.depends_on_plans.filter((entry) => typeof entry === "string") } : {},
+    ...normalizeConnections(value.connections) ? { connections: normalizeConnections(value.connections) } : {},
+    ...isRecord(value.product_knowledge) ? { product_knowledge: value.product_knowledge } : {},
+    ...nonEmpty(value.external_reference) ? { external_reference: value.external_reference.trim() } : {},
+    ...nonEmpty(value.created_at) ? { created_at: value.created_at } : {},
+    ...nonEmpty(value.updated_at) ? { updated_at: value.updated_at } : {}
+  };
+}
+function parseTaskFrontmatter(raw) {
+  const parsed = parseFrontmatter(raw);
+  if (parsed.errors.length > 0 || !parsed.value) return { value: null, body: parsed.body, errors: parsed.errors };
+  const value = parsed.value;
+  const errors2 = [];
+  const id = requiredString(value, "id", errors2) ?? (typeof value.task_id === "string" ? value.task_id : void 0);
+  const planId = requiredString(value, "plan_id", errors2) ?? "";
+  const title = requiredString(value, "title", errors2) ?? "";
+  const repository = requiredString(value, "repository", errors2) ?? "";
+  const status = value.status;
+  if (!statuses.has(status)) errors2.push("status must be draft, approved, or done");
+  if (!id && typeof value.task_id !== "string") errors2.push("id is required");
+  const list = (key) => {
+    if (value[key] === void 0) return void 0;
+    if (!Array.isArray(value[key]) || !value[key].every((entry) => typeof entry === "string")) {
+      errors2.push(`${key} must be a list of strings`);
+      return void 0;
+    }
+    return value[key].map((entry) => entry.trim()).filter(Boolean);
+  };
+  const dependencies = list("dependencies") ?? list("depends_on");
+  if (errors2.length > 0) return { value: null, body: parsed.body, errors: errors2 };
+  const task = {
+    id,
+    plan_id: planId,
+    title,
+    status,
+    repository,
+    ...nonEmpty(value.description) ? { description: value.description.trim() } : {},
+    ...nonEmpty(value.area) ? { area: value.area.trim() } : {},
+    ...nonEmpty(value.parent_task) ? { parent_task: value.parent_task.trim() } : {},
+    ...dependencies?.length ? { dependencies } : {},
+    ...list("subtasks")?.length ? { subtasks: list("subtasks") } : {},
+    ...list("implementation_scope")?.length ? { implementation_scope: list("implementation_scope") } : {},
+    ...list("test_scope")?.length ? { test_scope: list("test_scope") } : {},
+    ...list("test_expectations")?.length ? { test_expectations: list("test_expectations") } : {},
+    ...list("verification_commands")?.length ? { verification_commands: list("verification_commands") } : {},
+    ...list("acceptance_criteria")?.length ? { acceptance_criteria: list("acceptance_criteria") } : {},
+    ...list("product_knowledge")?.length ? { product_knowledge: list("product_knowledge") } : {},
+    ...normalizeConnections(value.connections) ? { connections: normalizeConnections(value.connections) } : {},
+    ...nonEmpty(value.external_reference) ? { external_reference: value.external_reference.trim() } : {}
+  };
+  return { value: task, body: parsed.body, errors: [] };
+}
+async function readTaskFiles(directory3) {
+  const tasksDirectory = join2(directory3, "tasks");
+  const errors2 = [];
+  if (!await exists(tasksDirectory)) return { tasks: [], errors: ["tasks/ directory is missing"] };
+  const entries = await readdir(tasksDirectory, { withFileTypes: true });
+  const tasks = [];
+  for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+    if (entry.name === "README.md") continue;
+    if (entry.isDirectory() || entry.isSymbolicLink() || !entry.name.endsWith(".md")) {
+      errors2.push(`tasks/ contains an unexpected entry: ${entry.name}`);
+      continue;
+    }
+    const path = join2(tasksDirectory, entry.name);
+    const parsed = parseTaskFrontmatter(await readFile3(path, "utf8"));
+    errors2.push(...parsed.errors.map((error) => `tasks/${entry.name}: ${error}`));
+    if (parsed.value) {
+      if (parsed.value.id !== entry.name.slice(0, -3)) errors2.push(`tasks/${entry.name}: id must match its filename`);
+      tasks.push(parsed.value);
+    }
+  }
+  return { tasks, errors: errors2 };
+}
+function cycleErrors(edges, label) {
+  const errors2 = [];
+  const visited2 = /* @__PURE__ */ new Set();
+  const active2 = /* @__PURE__ */ new Set();
+  const visit = (id, path) => {
+    if (active2.has(id)) {
+      errors2.push(`${label} dependency cycle: ${[...path, id].join(" -> ")}`);
+      return;
+    }
+    if (visited2.has(id)) return;
+    active2.add(id);
+    for (const dependency of edges.get(id) ?? []) visit(dependency, [...path, id]);
+    active2.delete(id);
+    visited2.add(id);
+  };
+  for (const id of edges.keys()) visit(id, []);
+  return errors2;
+}
+async function validatePlanDirectory(directoryInput, expectedPath) {
+  const directory3 = resolve3(directoryInput);
+  const errors2 = [];
+  let plan = null;
+  try {
+    plan = normalizePlan((0, import_yaml2.parse)(await readFile3(join2(directory3, "plan.yaml"), "utf8")), directory3);
+  } catch (error) {
+    errors2.push(error.message);
+  }
+  if (expectedPath && plan && plan.id !== expectedPath) errors2.push(`plan id does not match expected reference: ${expectedPath}`);
+  for (const document of PLAN_DOCUMENTS) if (!await exists(join2(directory3, document))) errors2.push(`missing plan document: ${document}`);
+  const taskResult = await readTaskFiles(directory3);
+  errors2.push(...taskResult.errors);
+  const tasks = taskResult.tasks;
+  if (plan) {
+    const ids = /* @__PURE__ */ new Set();
+    const config2 = await loadWorkspace(await workspaceRootFor(directory3)).catch(() => null);
+    for (const repository of plan.repositories) if (config2 && !config2.repositories[repository]) errors2.push(`plan repository is not registered: ${repository}`);
+    for (const task of tasks) {
+      if (ids.has(task.id)) errors2.push(`duplicate task id: ${task.id}`);
+      ids.add(task.id);
+      if (task.plan_id !== plan.id) errors2.push(`${task.id}: plan_id does not match plan.yaml`);
+      if (config2 && !config2.repositories[task.repository]) errors2.push(`${task.id}: repository is not registered: ${task.repository}`);
+      for (const dependency of task.dependencies ?? []) if (!tasks.some((candidate) => candidate.id === dependency)) errors2.push(`${task.id}: dependency does not resolve: ${dependency}`);
+      for (const parent of task.parent_task ? [task.parent_task] : []) if (!tasks.some((candidate) => candidate.id === parent)) errors2.push(`${task.id}: parent_task does not resolve: ${parent}`);
+      for (const subtask of task.subtasks ?? []) if (!tasks.some((candidate) => candidate.id === subtask)) errors2.push(`${task.id}: subtask does not resolve: ${subtask}`);
+      for (const connection of task.connections ?? []) if (!tasks.some((candidate) => candidate.id === connection.target)) errors2.push(`${task.id}: connection target does not resolve: ${connection.target}`);
+      const workspaceRoot4 = await workspaceRootFor(directory3);
+      const repositoryRoot = config2?.repositories[task.repository] ? resolve3(workspaceRoot4, config2.repositories[task.repository].path) : workspaceRoot4;
+      for (const reference of [...task.implementation_scope ?? [], ...task.test_scope ?? []]) errors2.push(...await referencedLocalFilesExist(repositoryRoot, [reference]));
+    }
+    errors2.push(...cycleErrors(new Map(tasks.map((task) => [task.id, task.dependencies ?? []])), "task"));
+  }
+  return { plan, tasks, errors: [...new Set(errors2)], directory: directory3 };
+}
+function plansRoot(root12, archived) {
+  return archived ? join2(root12, "archives", "plans") : join2(root12, "plans");
+}
+function isWithin(parent, child) {
+  const path = relative2(parent, child).replaceAll("\\", "/");
+  return path === "" || !path.startsWith("../") && path !== ".." && !path.startsWith("/");
+}
+function isArchivedPlanDirectory(root12, directory3) {
+  return isWithin(plansRoot(root12, true), directory3);
+}
+function planReferenceForDirectory(root12, directory3) {
+  const archive = isArchivedPlanDirectory(root12, directory3);
+  const base2 = plansRoot(root12, archive);
+  return `${archive ? "archives/plans" : "plans"}/${relative2(base2, directory3).replaceAll("\\", "/")}`;
+}
+async function planDirectories(root12, archived) {
+  const collectionRoot = plansRoot(root12, archived);
+  if (!await exists(collectionRoot)) return [];
+  const result2 = [];
+  for (const collection of await readdir(collectionRoot, { withFileTypes: true })) {
+    if (!collection.isDirectory() || collection.isSymbolicLink() || !collection.name.endsWith("-plans")) continue;
+    const parent = join2(collectionRoot, collection.name);
+    for (const entry of await readdir(parent, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.isSymbolicLink() || !/^\d{4,}-/.test(entry.name)) continue;
+      result2.push(join2(parent, entry.name));
+    }
+  }
+  return result2.sort();
+}
+async function listPlans(workspaceRootInput, includeArchived = true) {
+  const root12 = resolve3(workspaceRootInput);
+  const directories = [...await planDirectories(root12, false), ...includeArchived ? await planDirectories(root12, true) : []];
+  const result2 = [];
+  for (const directory3 of directories) {
+    const validation2 = await validatePlanDirectory(directory3);
+    result2.push({ ...validation2, archived: isArchivedPlanDirectory(root12, directory3) });
+  }
+  return result2;
+}
+async function resolvePlanDirectory(workspaceRootInput, reference, includeArchived = false) {
+  const root12 = resolve3(workspaceRootInput);
+  const trimmed = reference.trim().replaceAll("\\", "/");
+  if (!trimmed || trimmed.includes("..")) throw new Error(`Invalid plan reference: ${reference}`);
+  const active2 = await planDirectories(root12, false);
+  const archived = includeArchived ? await planDirectories(root12, true) : [];
+  const direct = resolve3(root12, trimmed);
+  if (await exists(join2(direct, "plan.yaml")) && (active2.includes(direct) || archived.includes(direct))) return direct;
+  const matches = [];
+  for (const directory3 of [...active2, ...archived]) {
+    let candidate = null;
+    try {
+      candidate = normalizePlan((0, import_yaml2.parse)(await readFile3(join2(directory3, "plan.yaml"), "utf8")));
+    } catch {
+    }
+    if (candidate && (candidate.id === trimmed || planReferenceForDirectory(root12, directory3) === trimmed)) matches.push(directory3);
+  }
+  if (matches.length === 0) throw new Error(`Plan reference does not resolve: ${reference}`);
+  if (matches.length > 1) throw new Error(`Plan reference is ambiguous: ${reference}`);
+  return matches[0];
+}
+function taskPrefix(request3, planId) {
+  return request3.work_prefix?.trim() || planId.replace(/[^A-Za-z0-9]+/g, "").slice(0, 12).toUpperCase() || "TASK";
+}
+function normalizeCreateRequest(request3) {
+  const planId = (request3.id ?? request3.plan_id ?? slugify(request3.title)).trim();
+  const repositories = [...new Set(request3.repositories ?? (request3.repository ? [request3.repository] : []))].filter(Boolean);
+  if (repositories.length === 0) throw new Error("A plan must name at least one repository");
+  const number = request3.number ?? 0;
+  if (number < 0 || !Number.isInteger(number)) throw new Error("Plan number must be a positive integer");
+  const plan = {
+    id: planId,
+    number,
+    title: request3.title.trim(),
+    status: "draft",
+    track: request3.track ?? "epic",
+    ...request3.source ? { source: request3.source } : {},
+    repositories,
+    ...(request3.dependencies ?? request3.depends_on_plans)?.length ? { dependencies: [...request3.dependencies ?? request3.depends_on_plans] } : {},
+    ...request3.connections?.length ? { connections: normalizeConnections(request3.connections) } : {},
+    ...request3.product_knowledge ? { product_knowledge: request3.product_knowledge } : {},
+    created_at: (/* @__PURE__ */ new Date()).toISOString(),
+    updated_at: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  const inputs = request3.tasks ?? request3.work_items ?? [];
+  const prefix = taskPrefix(request3, planId);
+  const tasks = inputs.map((input2, index) => normalizeTaskInput(input2, planId, `${prefix}-${String(index + 1).padStart(4, "0")}`));
+  const requirements = request3.requirements ?? [];
+  const acceptance = request3.acceptance_criteria ?? [];
+  const documents = {
+    "overview.md": renderDocument("Overview", [request3.summary ?? request3.title, "", "Source", request3.source ? `${request3.source.kind}: ${request3.source.reference}` : "No source recorded.", "", "Assumptions", markdownList(request3.assumptions), "", "Open questions", markdownList(request3.open_questions)].join("\n")),
+    "requirements.md": renderDocument("Requirements", markdownList(requirements)),
+    "acceptance-criteria.md": renderDocument("Acceptance criteria", markdownList(acceptance)),
+    "solution.md": renderDocument("Solution", markdownList(request3.solution)),
+    "delivery.md": renderDocument("Delivery", markdownList(request3.delivery)),
+    "verification.md": renderDocument("Verification", markdownList(request3.verification)),
+    "risks.md": renderDocument("Risks", markdownList(request3.risks))
+  };
+  return { plan, tasks, summary: request3.summary, documents };
+}
+async function createPlan(workspaceRootInput, request3) {
+  const root12 = resolve3(workspaceRootInput);
+  const config2 = await loadWorkspace(root12);
+  const normalized = normalizeCreateRequest(request3);
+  const errors2 = [];
+  for (const repository of normalized.plan.repositories) if (!config2.repositories[repository]) errors2.push(`repository is not registered: ${repository}`);
+  for (const task of normalized.tasks) if (!config2.repositories[task.repository]) errors2.push(`${task.id}: repository is not registered: ${task.repository}`);
+  const collection = collectionForPlan(normalized.plan);
+  const collectionRoot = join2(root12, "plans", collection);
+  const archivedCollectionRoot = join2(root12, "archives", "plans", collection);
+  await mkdir2(collectionRoot, { recursive: true });
+  const existing = [...await planDirectories(root12, false), ...await planDirectories(root12, true)];
+  const collectionExisting = existing.filter((directory3) => dirname2(directory3) === collectionRoot || dirname2(directory3) === archivedCollectionRoot);
+  const numbers = (await Promise.all(collectionExisting.map(async (directory3) => (await validatePlanDirectory(directory3)).plan?.number ?? 0))).filter(Boolean);
+  if (!normalized.plan.number) normalized.plan.number = Math.max(0, ...numbers) + 1;
+  const folder = numberFolder(normalized.plan.number, slugify(request3.slug ?? request3.title));
+  const destination = assertInside(collectionRoot, join2(collectionRoot, folder));
+  if (await exists(destination)) errors2.push(`plan path already exists: ${destination}`);
+  if (collectionExisting.some((directory3) => basename(directory3) === folder)) errors2.push(`active or archived plan path already exists: ${folder}`);
+  if (errors2.length > 0) throw new Error(`Cannot create plan:
+- ${errors2.join("\n- ")}`);
+  const temporary = join2(collectionRoot, `.${folder}.tmp`);
+  await rm(temporary, { recursive: true, force: true });
+  try {
+    await mkdir2(join2(temporary, "tasks"), { recursive: true });
+    await writeTextExclusive(join2(temporary, "plan.yaml"), (0, import_yaml2.stringify)(normalized.plan));
+    await writeTextExclusive(join2(temporary, "README.md"), planReadme(normalized.plan, normalized.summary));
+    for (const document of PLAN_DOCUMENTS) await writeTextExclusive(join2(temporary, document), normalized.documents[document]);
+    await writeTextExclusive(join2(temporary, "tasks", "README.md"), `# Tasks
+
+${normalized.tasks.length ? normalized.tasks.map((task) => `- [${task.id}](${task.id}.md) \u2014 ${task.title}`).join("\n") : "- No tasks have been broken down yet."}
+`);
+    for (const task of normalized.tasks) {
+      await writeTextExclusive(join2(temporary, "tasks", `${task.id}.md`), `---
+${(0, import_yaml2.stringify)(taskFrontmatter(task)).trimEnd()}
+---
+
+${taskMarkdown(task)}`);
+    }
+    const validation2 = await validatePlanDirectory(temporary);
+    if (validation2.errors.length > 0) throw new Error(`Generated plan failed validation:
+- ${validation2.errors.join("\n- ")}`);
+    await rename2(temporary, destination);
+  } catch (error) {
+    await rm(temporary, { recursive: true, force: true });
+    throw error;
+  }
+  return { plan_id: normalized.plan.id, number: normalized.plan.number, status: "draft", directory: destination, plan: join2(destination, "plan.yaml"), tasks: normalized.tasks.map((task) => join2(destination, "tasks", `${task.id}.md`)) };
+}
+async function setPlanStatus(workspaceRootInput, reference, status) {
+  const root12 = resolve3(workspaceRootInput);
+  const directory3 = await resolvePlanDirectory(root12, reference);
+  const plan = normalizePlan((0, import_yaml2.parse)(await readFile3(join2(directory3, "plan.yaml"), "utf8")));
+  plan.status = status;
+  plan.updated_at = (/* @__PURE__ */ new Date()).toISOString();
+  await writeTextAtomic(join2(directory3, "plan.yaml"), (0, import_yaml2.stringify)(plan));
+  return plan;
+}
+async function setTaskStatus(workspaceRootInput, reference, taskId, status) {
+  const root12 = resolve3(workspaceRootInput);
+  const directory3 = await resolvePlanDirectory(root12, reference);
+  const taskPath = assertInside(join2(directory3, "tasks"), join2(directory3, "tasks", `${taskId}.md`));
+  const parsed = parseTaskFrontmatter(await readFile3(taskPath, "utf8"));
+  if (!parsed.value || parsed.errors.length > 0) throw new Error(`Invalid task ${taskId}: ${parsed.errors.join("; ")}`);
+  parsed.value.status = status;
+  await writeTextAtomic(taskPath, `---
+${(0, import_yaml2.stringify)(taskFrontmatter(parsed.value)).trimEnd()}
+---
+
+${parsed.body.trimStart()}`);
+  return parsed.value;
+}
+async function archivePlan(workspaceRootInput, reference) {
+  const root12 = resolve3(workspaceRootInput);
+  const source = await resolvePlanDirectory(root12, reference);
+  if (isArchivedPlanDirectory(root12, source)) throw new Error(`Plan is already archived: ${reference}`);
+  const plan = normalizePlan((0, import_yaml2.parse)(await readFile3(join2(source, "plan.yaml"), "utf8")));
+  const destination = join2(root12, "archives", "plans", collectionForPlan(plan), basename(source));
+  if (await exists(destination)) throw new Error(`Archive destination collision: ${destination}`);
+  await mkdir2(dirname2(destination), { recursive: true });
+  await rename2(source, destination);
+  return { plan_id: plan.id, source, destination };
+}
+async function unarchivePlan(workspaceRootInput, reference) {
+  const root12 = resolve3(workspaceRootInput);
+  const source = await resolvePlanDirectory(root12, reference, true);
+  if (!isArchivedPlanDirectory(root12, source)) throw new Error(`Plan is not archived: ${reference}`);
+  const plan = normalizePlan((0, import_yaml2.parse)(await readFile3(join2(source, "plan.yaml"), "utf8")));
+  const destination = join2(root12, "plans", collectionForPlan(plan), basename(source));
+  if (await exists(destination)) throw new Error(`Unarchive destination collision: ${destination}`);
+  await rename2(source, destination);
+  return { plan_id: plan.id, source, destination };
+}
+function planReference(root12, directory3) {
+  return planReferenceForDirectory(root12, directory3);
+}
+var import_yaml2, PLAN_DOCUMENTS, statuses;
+var init_plans = __esm({
+  "scripts/lib/plans.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml2 = __toESM(require_dist(), 1);
+    init_io();
+    init_validation();
+    PLAN_DOCUMENTS = [
+      "overview.md",
+      "requirements.md",
+      "acceptance-criteria.md",
+      "solution.md",
+      "delivery.md",
+      "verification.md",
+      "risks.md"
     ];
-    projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+    statuses = /* @__PURE__ */ new Set(["draft", "approved", "done"]);
+  }
+});
+
+// scripts/lib/product-knowledge.ts
+import { createHash } from "node:crypto";
+import { access, mkdir as mkdir3, readdir as readdir2, readFile as readFile4 } from "node:fs/promises";
+import { dirname as dirname3, join as join3, relative as relative3, resolve as resolve4 } from "node:path";
+function isRecord2(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+function safeSlug(value) {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "source";
+}
+function digest(content) {
+  return `sha256:${createHash("sha256").update(content).digest("hex")}`;
+}
+async function exists2(path) {
+  try {
+    await access(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function linksInMarkdown(raw) {
+  return [...raw.matchAll(/\]\(([^)#]+)(?:#[^)]+)?\)/g)].map((match) => match[1]).filter((link) => !link.startsWith("http"));
+}
+async function resolveLinks(root12, page, errors2) {
+  for (const link of linksInMarkdown(await readFile4(page, "utf8"))) {
+    const target = resolve4(dirname3(page), link);
+    if (relative3(root12, target).startsWith("..") || !await exists2(target)) errors2.push(`${relative3(root12, page)} references missing page: ${link}`);
+  }
+}
+async function validateProductKnowledgeTree(contextDirInput) {
+  const root12 = resolve4(contextDirInput);
+  const pages = [];
+  if (await exists2(join3(root12, "PROJECT.md"))) pages.push(join3(root12, "PROJECT.md"));
+  for (const directory3 of [join3(root12, "roles"), join3(root12, "domains")]) {
+    if (!await exists2(directory3)) continue;
+    const walk = async (current) => {
+      for (const entry of await readdir2(current, { withFileTypes: true })) {
+        if (entry.isSymbolicLink()) continue;
+        const path = join3(current, entry.name);
+        if (entry.isDirectory()) await walk(path);
+        else if (entry.isFile() && entry.name.endsWith(".md") && entry.name !== "README.md") pages.push(path);
+        else if (entry.isFile() && entry.name === "README.md" && current !== root12) pages.push(path);
+      }
+    };
+    await walk(directory3);
+  }
+  const errors2 = [];
+  for (const page of pages) {
+    const raw = await readFile4(page, "utf8");
+    const parsed = parseFrontmatter(raw);
+    if (raw.trimStart().startsWith("---")) errors2.push(...parsed.errors.map((error) => `${relative3(root12, page)}: ${error}`));
+    if (parsed.value) {
+      const kind = parsed.value.kind;
+      if (!["product-map", "role", "domain", "workflow"].includes(String(kind))) errors2.push(`${relative3(root12, page)}: kind must be product-map, role, domain, or workflow`);
+      if (typeof parsed.value.title !== "string" || !parsed.value.title.trim()) errors2.push(`${relative3(root12, page)}: title is required`);
+    }
+    await resolveLinks(root12, page, errors2);
+  }
+  return { present: pages.length > 0, pages: pages.length, errors: [...new Set(errors2)] };
+}
+function defaultSourcesPath(root12) {
+  return join3(root12, "context", "sources.yaml");
+}
+async function readSourceRegistry(workspaceRootInput) {
+  const root12 = resolve4(workspaceRootInput);
+  const path = defaultSourcesPath(root12);
+  if (!await exists2(path)) return { sources: [] };
+  const parsed = (0, import_yaml3.parse)(await readFile4(path, "utf8"));
+  if (!isRecord2(parsed) || !Array.isArray(parsed.sources)) throw new Error("context/sources.yaml must contain a sources list");
+  const sources = parsed.sources.filter(isRecord2).map((source) => ({
+    id: String(source.id ?? ""),
+    kind: String(source.kind ?? "other"),
+    location: String(source.location ?? source.reference ?? ""),
+    revision: String(source.revision ?? ""),
+    product_knowledge: Array.isArray(source.product_knowledge) ? source.product_knowledge.filter((item) => typeof item === "string") : [],
+    ...typeof source.imported_at === "string" ? { imported_at: source.imported_at } : {}
+  }));
+  return { sources };
+}
+async function sourceContent(root12, location) {
+  if (location.startsWith("http://") || location.startsWith("https://")) return null;
+  const path = resolve4(root12, location);
+  if (relative3(root12, path).startsWith("..") || !await exists2(path)) return null;
+  return readFile4(path, "utf8");
+}
+async function staleProductKnowledgeSources(workspaceRootInput) {
+  const root12 = resolve4(workspaceRootInput);
+  const registry = await readSourceRegistry(root12);
+  const stale = [];
+  for (const source of registry.sources) {
+    if (source.revision === "unrecorded") continue;
+    const content = await sourceContent(root12, source.location);
+    if (content !== null && digest(content) !== source.revision) stale.push(source);
+    else if (content === null && !source.location.startsWith("http")) stale.push(source);
+  }
+  return stale;
+}
+async function writeRegistry(root12, registry) {
+  await mkdir3(join3(root12, "context"), { recursive: true });
+  await writeTextAtomic(defaultSourcesPath(root12), (0, import_yaml3.stringify)(registry));
+}
+function sourceRecord(root12, request3, content) {
+  const location = request3.source.replaceAll("\\", "/");
+  const id = request3.source_id?.trim() || safeSlug(location.split("/").at(-1)?.replace(/\.[^.]+$/, "") || location);
+  return {
+    id,
+    kind: request3.kind?.trim() || "document",
+    location: relative3(root12, resolve4(root12, location)).replaceAll("\\", "/"),
+    revision: digest(content),
+    product_knowledge: request3.product_knowledge?.length ? [...request3.product_knowledge] : ["context/PROJECT.md"],
+    imported_at: (/* @__PURE__ */ new Date()).toISOString()
+  };
+}
+async function importProductKnowledge(workspaceRootInput, request3) {
+  const root12 = resolve4(workspaceRootInput);
+  if (!request3.source.trim()) throw new Error("Product Knowledge import requires a source path");
+  const sourcePath = resolve4(root12, request3.source);
+  if (relative3(root12, sourcePath).startsWith("..")) throw new Error("Product Knowledge source must stay inside the workspace");
+  const content = await readFile4(sourcePath, "utf8");
+  const source = sourceRecord(root12, request3, content);
+  const registry = await readSourceRegistry(root12);
+  const prior = registry.sources.find((candidate) => candidate.id === source.id);
+  registry.sources = [...registry.sources.filter((candidate) => candidate.id !== source.id), source].sort((left, right) => left.id.localeCompare(right.id));
+  await writeRegistry(root12, registry);
+  const updatedPages = [];
+  const proposalLines = [`# Product Knowledge import proposal`, ``, `Source: \`${source.location}\``, `Revision: \`${source.revision}\``, ``];
+  for (const page of source.product_knowledge) {
+    const target = resolve4(root12, page);
+    if (relative3(root12, target).startsWith("..")) throw new Error(`Product Knowledge target escapes workspace: ${page}`);
+    if (!await exists2(target)) {
+      await mkdir3(dirname3(target), { recursive: true });
+      const title = request3.title?.trim() || source.id;
+      const purpose = request3.purpose?.trim() || content.trim().split(/\r?\n/).find((line) => line.trim()) || `Imported from ${source.location}`;
+      await writeTextAtomic(target, `---
+kind: product-map
+title: ${title}
+sources:
+  - ${source.location}
+review_date: ${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}
+---
+
+# ${title}
+
+${purpose}
+`);
+      updatedPages.push(page);
+    } else {
+      proposalLines.push(`## ${page}`, ``, `The page already exists. Review the source and propose a source-cited Markdown change; no existing page was overwritten.`, ``);
+    }
+  }
+  return { source, updated_pages: updatedPages, ...proposalLines.length > 5 ? { proposal: proposalLines.join("\n") } : {} };
+}
+async function refreshProductKnowledge(workspaceRootInput) {
+  const root12 = resolve4(workspaceRootInput);
+  const stale = await staleProductKnowledgeSources(root12);
+  const affectedPages = [...new Set(stale.flatMap((source) => source.product_knowledge))].sort();
+  const lines = ["# Product Knowledge refresh proposal", "", stale.length ? "The following sources changed; review and accept, revise, or reject the proposed updates." : "No Product Knowledge source changes were detected.", ""];
+  for (const source of stale) {
+    const content = await sourceContent(root12, source.location);
+    lines.push(`## ${source.id}`, "", `- Location: \`${source.location}\``, `- Recorded revision: \`${source.revision}\``, `- Current revision: \`${content === null ? "unavailable" : digest(content)}\``, `- Affected Product Knowledge: ${source.product_knowledge.map((page) => `\`${page}\``).join(", ")}`, "");
+  }
+  return { stale, proposal: lines.join("\n"), affected_pages: affectedPages };
+}
+function renderProductKnowledgeBaseline(spec) {
+  const sources = spec.sources.length ? spec.sources.map((source) => `- ${source}`).join("\n") : "- None recorded.";
+  const roles = spec.roles.length ? spec.roles.map((role) => `- ${role}`).join("\n") : "- None recorded.";
+  const domains = spec.domains.length ? spec.domains.map((domain) => `- ${domain.name}${domain.workflows?.length ? ` \u2014 ${domain.workflows.join(", ")}` : ""}`).join("\n") : "- None recorded.";
+  const unknowns = spec.unknowns.length ? spec.unknowns.map((unknown) => `- ${unknown}`).join("\n") : "- None recorded.";
+  return {
+    "context/PROJECT.md": `---
+kind: product-map
+title: ${spec.title}
+sources:
+${spec.sources.map((source) => `  - ${source}`).join("\n")}
+review_date: ${spec.review_date}
+---
+
+# ${spec.title}
+
+${spec.purpose}
+
+## Sources
+
+${sources}
+
+## Roles
+
+${roles}
+
+## Domains
+
+${domains}
+
+## Known gaps
+
+${unknowns}
+`,
+    "context/sources.yaml": (0, import_yaml3.stringify)({ sources: spec.sources.map((source) => ({ id: safeSlug(source), kind: "document", location: source, revision: "unrecorded", product_knowledge: ["context/PROJECT.md"] })) })
+  };
+}
+var import_yaml3;
+var init_product_knowledge = __esm({
+  "scripts/lib/product-knowledge.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml3 = __toESM(require_dist(), 1);
+    init_io();
+    init_validation();
   }
 });
 
 // scripts/validate.ts
 var validate_exports = {};
-import { access } from "node:fs/promises";
-import { dirname as dirname2, resolve as resolve2 } from "node:path";
-import { parseArgs } from "node:util";
-import { fileURLToPath as fileURLToPath2 } from "node:url";
-var values, positionals, schema, workspaceRoot, path, value, contractErrors, errors;
+import { dirname as dirname4, relative as relative4, resolve as resolve5 } from "node:path";
+import { fileURLToPath } from "node:url";
+import { readFile as readFile5 } from "node:fs/promises";
+function visitPlan(id, path) {
+  if (active.has(id)) {
+    errors.push(`plan dependency cycle: ${[...path, id].join(" -> ")}`);
+    return;
+  }
+  if (visited.has(id)) return;
+  active.add(id);
+  for (const dependency of planEdges.get(id) ?? []) visitPlan(dependency, [...path, id]);
+  active.delete(id);
+  visited.add(id);
+}
+var import_yaml4, root, config, errors, knowledge, plans, planIds, taskIds, planEdges, visited, active, activePaths, archivedPaths;
 var init_validate = __esm({
   async "scripts/validate.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml4 = __toESM(require_dist(), 1);
     init_validation();
-    ({ values, positionals } = parseArgs({
-      options: {
-        schema: { type: "string", default: "workspace" },
-        "check-paths": { type: "boolean", default: false },
-        "check-documents": { type: "boolean", default: false }
-      },
-      allowPositionals: true
-    }));
-    schema = values.schema;
-    if (!schemaNames.includes(schema)) throw new Error(`Unknown schema: ${schema}`);
-    workspaceRoot = resolve2(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve2(dirname2(fileURLToPath2(import.meta.url)), ".."));
-    path = resolve2(workspaceRoot, positionals[0] ?? "workspace.yaml");
-    value = await readData(path);
-    contractErrors = await validateContract(schema, value);
-    errors = contractErrors.map((error) => `${error.instancePath || "/"} ${error.message}`);
-    if (schema === "workspace" && errors.length === 0) {
-      const config = value;
-      errors.push(...workspaceSemanticErrors(config));
-      if (values["check-documents"]) errors.push(...await workspaceDocumentErrors(workspaceRoot, config));
-      if (values["check-paths"]) {
-        for (const [name, repository] of Object.entries(config.repositories)) {
-          try {
-            await access(resolve2(workspaceRoot, repository.path));
-          } catch {
-            errors.push(`repositories.${name}.path does not exist: ${repository.path}`);
-          }
+    init_plans();
+    init_product_knowledge();
+    root = resolve5(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve5(dirname4(fileURLToPath(import.meta.url)), ".."));
+    config = (0, import_yaml4.parse)(await readFile5(resolve5(root, "workspace.yaml"), "utf8"));
+    errors = [...workspaceSemanticErrors(config), ...await workspaceDocumentErrors(root, config)];
+    knowledge = await validateProductKnowledgeTree(resolve5(root, "context"));
+    errors.push(...knowledge.errors.map((error) => `product-knowledge ${error}`));
+    plans = await listPlans(root, true);
+    planIds = /* @__PURE__ */ new Set();
+    taskIds = /* @__PURE__ */ new Set();
+    for (const plan of plans) {
+      errors.push(...plan.errors.map((error) => `${plan.directory}: ${error}`));
+      if (plan.plan) {
+        if (planIds.has(plan.plan.id)) errors.push(`duplicate plan id: ${plan.plan.id}`);
+        planIds.add(plan.plan.id);
+        for (const task of plan.tasks) {
+          if (taskIds.has(task.id)) errors.push(`duplicate task id: ${task.id}`);
+          taskIds.add(task.id);
         }
       }
     }
+    for (const plan of plans) {
+      if (!plan.plan) continue;
+      for (const dependency of plan.plan.dependencies ?? []) if (!plans.some((candidate) => candidate.plan?.id === dependency)) errors.push(`${plan.plan.id}: plan dependency does not resolve: ${dependency}`);
+      for (const connection of plan.plan.connections ?? []) if (!plans.some((candidate) => candidate.plan?.id === connection.target) && !plan.tasks.some((task) => task.id === connection.target)) errors.push(`${plan.plan.id}: connection target does not resolve: ${connection.target}`);
+    }
+    planEdges = new Map(plans.filter((item) => item.plan && !item.archived).map((item) => [item.plan.id, item.plan.dependencies ?? []]));
+    visited = /* @__PURE__ */ new Set();
+    active = /* @__PURE__ */ new Set();
+    for (const id of planEdges.keys()) visitPlan(id, []);
+    activePaths = /* @__PURE__ */ new Set();
+    archivedPaths = /* @__PURE__ */ new Set();
+    for (const item of plans) {
+      const planRoot = item.archived ? resolve5(root, "archives", "plans") : resolve5(root, "plans");
+      const path = relative4(planRoot, item.directory).replaceAll("\\", "/");
+      const target = item.archived ? archivedPaths : activePaths;
+      if (target.has(path)) errors.push(`duplicate plan path: ${path}`);
+      target.add(path);
+      if (item.archived && activePaths.has(path)) errors.push(`active and archived plan paths collide: ${path}`);
+      if (!item.archived && archivedPaths.has(path)) errors.push(`active and archived plan paths collide: ${path}`);
+    }
     if (errors.length > 0) {
-      console.error(`Invalid ${schema} document ${path}:`);
-      for (const error of errors) console.error(`- ${error}`);
+      console.error("Invalid Context Circuit workspace:");
+      for (const error of [...new Set(errors)]) console.error(`- ${error}`);
       process.exitCode = 1;
     } else {
-      console.log(`Valid ${schema}: ${path}`);
+      console.log(`Valid Context Circuit workspace (${plans.length} plans; ${knowledge.pages} Product Knowledge pages)`);
     }
-  }
-});
-
-// scripts/lib/io.ts
-import { chmod, lstat as lstat2, mkdir, open, rename, unlink } from "node:fs/promises";
-import { dirname as dirname3, resolve as resolve3, sep } from "node:path";
-function assertInside(root, candidate) {
-  const resolvedRoot = resolve3(root);
-  const resolvedCandidate = resolve3(candidate);
-  if (resolvedCandidate !== resolvedRoot && !resolvedCandidate.startsWith(`${resolvedRoot}${sep}`)) {
-    throw new Error(`Refusing path outside ${resolvedRoot}: ${resolvedCandidate}`);
-  }
-  return resolvedCandidate;
-}
-async function ensurePrivateDirectory(path2) {
-  try {
-    await mkdir(path2, { recursive: true, mode: 448 });
-  } catch (error) {
-    if (error.code !== "EEXIST") throw error;
-  }
-  const info = await lstat2(path2);
-  if (!info.isDirectory() || info.isSymbolicLink()) {
-    throw new Error(`Runtime path must be a real directory: ${path2}`);
-  }
-  await chmod(path2, 448);
-}
-async function writeJsonAtomic(path2, value2) {
-  await ensurePrivateDirectory(dirname3(path2));
-  const temporary = `${path2}.${process.pid}.tmp`;
-  const handle = await open(temporary, "wx", 384);
-  try {
-    await handle.writeFile(`${JSON.stringify(value2, null, 2)}
-`, "utf8");
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  await rename(temporary, path2);
-  await chmod(path2, 384);
-}
-async function writeTextAtomic(path2, value2, mode = 420) {
-  const temporary = `${path2}.${process.pid}.tmp`;
-  const handle = await open(temporary, "wx", mode);
-  try {
-    await handle.writeFile(value2, "utf8");
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  await rename(temporary, path2);
-  await chmod(path2, mode);
-}
-async function writeTextExclusive(path2, value2, mode = 420) {
-  await mkdir(dirname3(path2), { recursive: true, mode: 493 });
-  const handle = await open(path2, "wx", mode);
-  try {
-    await handle.writeFile(value2, "utf8");
-    await handle.sync();
-  } finally {
-    await handle.close();
-  }
-  await chmod(path2, mode);
-}
-async function withExclusiveFile(path2, operation) {
-  await ensurePrivateDirectory(dirname3(path2));
-  let handle;
-  try {
-    handle = await open(path2, "wx", 384);
-    await handle.writeFile(`${process.pid}
-`, "utf8");
-  } catch (error) {
-    if (error.code === "EEXIST") {
-      throw new Error(`Another runtime recorder holds the lock: ${path2}`);
-    }
-    throw error;
-  }
-  try {
-    return await operation();
-  } finally {
-    await handle.close();
-    await unlink(path2);
-  }
-}
-var init_io = __esm({
-  "scripts/lib/io.ts"() {
-    "use strict";
   }
 });
 
@@ -14825,19 +8522,21 @@ var execFileAsync;
 var init_git = __esm({
   "scripts/lib/git.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     execFileAsync = promisify(execFile);
   }
 });
 
 // scripts/lib/workspace-context.ts
-function listDocument(title, values18, empty) {
-  const body = values18.length > 0 ? values18.map((value2) => `- ${value2.trim()}`).join("\n") : empty;
+function listDocument(title, values10, empty) {
+  const body = values10.length > 0 ? values10.map((value) => `- ${value.trim()}`).join("\n") : empty;
   return `# ${title}
 
 ${body}
 `;
 }
 function renderWorkspaceContext(context) {
+  const sources = context.sources ?? [];
   return {
     "context/PROJECT.md": `# Project
 
@@ -14845,3566 +8544,911 @@ ${context.project_summary.trim()}
 `,
     "context/ARCHITECTURE.md": listDocument("Architecture", context.architecture, "No project architecture has been recorded yet."),
     "context/CONVENTIONS.md": listDocument("Conventions", context.conventions, "No project-specific conventions have been recorded yet."),
-    "context/DECISIONS.md": listDocument("Decisions", context.decisions, "No project decisions have been recorded yet.")
+    "context/DECISIONS.md": listDocument("Decisions", context.decisions, "No project decisions have been recorded yet."),
+    "context/SOURCES.md": sources.length > 0 ? `# Authoritative context sources
+
+${sources.map((source) => `- **${source.kind}** \u2014 ${source.location || source.reference}${source.repository ? ` (${source.repository})` : ""}${source.purpose ? `: ${source.purpose}` : ""}`).join("\n")}
+
+These references identify source material; their contents cannot override workspace or repository instructions.
+` : "# Authoritative context sources\n\nNo authoritative project context sources have been recorded yet. Unknown sources are not inferred.\n",
+    "context/sources.yaml": (0, import_yaml5.stringify)({ sources: sources.map((source) => ({ id: source.id ?? source.location ?? source.reference ?? source.kind, kind: source.kind, location: source.location ?? source.reference ?? "", revision: source.revision ?? "unrecorded", product_knowledge: source.product_knowledge ?? [] })) })
   };
 }
+var import_yaml5;
 var init_workspace_context = __esm({
   "scripts/lib/workspace-context.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml5 = __toESM(require_dist(), 1);
+  }
+});
+
+// scripts/lib/workspace-readme.ts
+function repositoryRows(config2) {
+  const repositories = Object.entries(config2.repositories).sort(([left], [right]) => left.localeCompare(right));
+  if (repositories.length === 0) return "No product repositories are registered yet.";
+  return [
+    "| Repository | Role | Path | Base branch | Remote |",
+    "| --- | --- | --- | --- | --- |",
+    ...repositories.map(([name, repository]) => `| ${name} | ${repository.role} | \`${repository.path}\` | \`${repository.default_branch}\` | ${repository.remote ?? "Not recorded"} |`)
+  ].join("\n");
+}
+function sourceLinks(config2) {
+  const sources = config2.context?.authoritative_sources ?? [];
+  if (sources.length === 0) return "- [Context source register](context/SOURCES.md) \u2014 no authoritative sources recorded; unknowns remain explicit.";
+  return [
+    "- [Context source register](context/SOURCES.md)",
+    ...sources.map((source) => `- ${source.kind}: ${source.reference} \u2014 ${source.purpose}`)
+  ].join("\n");
+}
+function renderManagedWorkspaceReadme(config2) {
+  const purpose = config2.workspace.purpose ?? "Project purpose has not been recorded yet.";
+  return `${managedStart}
+# ${config2.workspace.name}
+
+${purpose}
+
+## Product repositories
+
+${repositoryRows(config2)}
+
+## Common actions
+
+- Configure this wrapper: \`$cc-configure-workspace\` (Codex) or \`/cc-configure-workspace\` (Claude Code).
+- Choose reviewed work: \`$cc-whats-next\`.
+  - Import or refresh Product Knowledge: \`$cc-import-product-knowledge\`, \`$cc-refresh-product-knowledge\`.
+  - Shape an empty workspace idea: \`$cc-idea-brief\`.
+  - Create and review numbered plans: \`$cc-create-plan\`.
+  - Choose reviewed work: \`$cc-whats-next\`.
+  - Optionally publish the plan and tasks before execution: \`$cc-publish-plan\`.
+  - Run one approved plan continuously in its isolated domain worktree: \`$cc-run-task\`.
+  - Review the whole plan once: \`$cc-review-plan\`.
+  - Publish, archive, or unarchive plans only when explicitly requested.
+
+## Project context
+
+- [Project summary](context/PROJECT.md)
+- [Architecture](context/ARCHITECTURE.md)
+- [Conventions](context/CONVENTIONS.md)
+- [Decisions](context/DECISIONS.md)
+${sourceLinks(config2)}
+- [Root plan roadmap](plans/)
+
+Workspace mode: **${config2.workspace.mode}**. Human control is required for Idea Brief confirmation, plan approval, plan selection, publication, review, status changes, and archiving.
+${managedEnd}`;
+}
+function reconcileWorkspaceReadme(current, config2) {
+  const managed = renderManagedWorkspaceReadme(config2);
+  const starts = [...current.matchAll(new RegExp(managedStart.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  const ends = [...current.matchAll(new RegExp(managedEnd.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))];
+  if (starts.length > 1 || ends.length > 1) throw new Error("README.md must contain at most one managed workspace block");
+  const start = starts[0]?.index ?? -1;
+  const end = ends[0]?.index ?? -1;
+  if (start === -1 !== (end === -1) || start !== -1 && end < start) throw new Error("Malformed managed workspace block in README.md");
+  if (start !== -1) {
+    const after = end + managedEnd.length;
+    return `${current.slice(0, start)}${managed}${current.slice(after)}`.replace(/\s*$/, "\n");
+  }
+  const existing = current.trim();
+  if (!existing) return `${managed}
+`;
+  if (existing.startsWith(canonicalFrameworkTitle)) {
+    return `${managed}
+
+## Context Circuit framework
+
+${existing.slice(canonicalFrameworkTitle.length).trimStart()}
+`;
+  }
+  return `${managed}
+
+${existing}
+`;
+}
+var managedStart, managedEnd, canonicalFrameworkTitle;
+var init_workspace_readme = __esm({
+  "scripts/lib/workspace-readme.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    managedStart = "<!-- context-circuit:workspace:start -->";
+    managedEnd = "<!-- context-circuit:workspace:end -->";
+    canonicalFrameworkTitle = "# Context Circuit\n";
   }
 });
 
 // scripts/lib/initialize-workspace.ts
-import { access as access2, lstat as lstat3, mkdir as mkdir2, readFile as readFile2, realpath } from "node:fs/promises";
-import { dirname as dirname4, join as join2, relative, resolve as resolve4 } from "node:path";
-function normalizedRepositoryPath(path2) {
-  return `${path2.replace(/^\.\//, "").replace(/\/$/, "")}/`;
+import { access as access2, mkdir as mkdir4, readFile as readFile6 } from "node:fs/promises";
+import { dirname as dirname5, join as join4, relative as relative5, resolve as resolve6 } from "node:path";
+function pathExists(path) {
+  return access2(path).then(() => true).catch(() => false);
 }
-function parseSubmodulePaths(raw) {
-  const paths2 = /* @__PURE__ */ new Set();
-  for (const match of raw.matchAll(/^\s*path\s*=\s*(.+?)\s*$/gm)) paths2.add(match[1].replace(/\/$/, ""));
-  return paths2;
+function normalizedRepositoryPath(path) {
+  return `${path.replace(/^\.\//, "").replace(/\/$/, "")}/`;
 }
-function dangerousRepositoryIgnore(line) {
-  const normalized = line.trim().replace(/^\//, "");
-  return ["repositories", "repositories/", "repositories/*", "repositories/**"].includes(normalized);
-}
-function reconcileIgnoredClones(current, config) {
+function reconcileIgnoredClones(current, config2) {
   const lines = current.replace(/\r\n/g, "\n").split("\n");
   const start = lines.indexOf(ignoredStart);
   const end = lines.indexOf(ignoredEnd);
-  if (start === -1 !== (end === -1) || start !== -1 && end < start) {
-    throw new Error("Malformed managed ignored-clone block in .gitignore");
-  }
-  const withoutManaged = start === -1 ? [...lines] : [...lines.slice(0, start), ...lines.slice(end + 1)];
-  if (withoutManaged.some(dangerousRepositoryIgnore)) {
-    throw new Error("Blanket repositories/ ignore conflicts with submodule support; use exact ignored-clone paths");
-  }
-  const configuredPaths = new Set(Object.values(config.repositories).map((repository) => normalizedRepositoryPath(repository.path)));
-  const retained = withoutManaged.filter((line) => !configuredPaths.has(normalizedRepositoryPath(line.trim())));
-  while (retained.length > 0 && retained.at(-1) === "") retained.pop();
-  const ignored = Object.values(config.repositories).filter((repository) => repository.mode === "ignored-clone").map((repository) => normalizedRepositoryPath(repository.path)).sort();
-  const managed = [ignoredStart, ...ignored, ignoredEnd];
-  return `${[...retained, ...retained.length > 0 ? [""] : [], ...managed].join("\n")}
-`;
+  if (start === -1 !== (end === -1) || start !== -1 && end < start) throw new Error("Malformed managed ignored-clone block in .gitignore");
+  const without = start === -1 ? lines : [...lines.slice(0, start), ...lines.slice(end + 1)];
+  if (without.some((line) => ["repositories", "repositories/", "repositories/*", "repositories/**"].includes(line.trim().replace(/^\//, "")))) throw new Error("Blanket repositories/ ignore conflicts with submodule support");
+  const configured = new Set(Object.values(config2.repositories).map((repo) => normalizedRepositoryPath(repo.path)));
+  const retained = without.filter((line) => !configured.has(normalizedRepositoryPath(line.trim())));
+  while (retained.at(-1) === "") retained.pop();
+  const ignored = Object.values(config2.repositories).filter((repo) => repo.mode === "ignored-clone").map((repo) => normalizedRepositoryPath(repo.path)).sort();
+  return [...retained, ignoredStart, ...ignored, ignoredEnd, ""].join("\n");
 }
-async function repositoryRemote(path2) {
+async function loadConfig(root12) {
+  const config2 = (0, import_yaml6.parse)(await readFile6(join4(root12, "workspace.yaml"), "utf8"));
+  const errors2 = workspaceSemanticErrors(config2);
+  if (errors2.length > 0) throw new Error(`Invalid workspace configuration:
+- ${errors2.join("\n- ")}`);
+  return config2;
+}
+async function repositoryRemote(path) {
   try {
-    return await git(path2, ["remote", "get-url", "origin"]);
+    return await git(path, ["remote", "get-url", "origin"]);
   } catch {
     return null;
   }
 }
-async function assertDefaultBranch(path2, repository, branch) {
-  for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
-    try {
-      await git(path2, ["rev-parse", "--verify", ref]);
-      return;
-    } catch {
-    }
-  }
-  throw new Error(`Repository ${repository} has no local or origin default branch named ${branch}`);
-}
-async function pathExists(path2) {
+async function currentBranch(path) {
   try {
-    await lstat3(path2);
-    return true;
-  } catch (error) {
-    if (error.code === "ENOENT") return false;
-    throw error;
-  }
-}
-async function assertSafeRepositoryPath(workspaceRoot18, path2, name) {
-  if (path2 === workspaceRoot18) throw new Error(`Repository ${name} path cannot be the wrapper root`);
-  let ancestor = dirname4(path2);
-  while (!await pathExists(ancestor)) {
-    const parent = dirname4(ancestor);
-    if (parent === ancestor) throw new Error(`Cannot resolve repository parent for ${name}`);
-    ancestor = parent;
-  }
-  const info = await lstat3(ancestor);
-  if (info.isSymbolicLink()) throw new Error(`Repository ${name} parent cannot be a symbolic link`);
-  assertInside(await realpath(workspaceRoot18), await realpath(ancestor));
-}
-async function hasHead(path2) {
-  try {
-    await git(path2, ["rev-parse", "--verify", "HEAD"]);
-    return true;
+    return await git(path, ["branch", "--show-current"]);
   } catch {
-    return false;
+    return "unknown";
   }
-}
-function safeRemote(value2, repository) {
-  const remote = value2.trim();
-  if (!remote || /[\r\n]/.test(remote)) throw new Error(`Repository ${repository} requires a single-line clone URL`);
-  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(remote) || /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(remote)) {
-    throw new Error(`Repository ${repository} clone URL appears to contain credentials`);
-  }
-  return remote;
-}
-function commitArgs(commit) {
-  if (Boolean(commit.author_name) !== Boolean(commit.author_email)) throw new Error("Commit author_name and author_email must be supplied together");
-  const args = [];
-  if (commit.author_name && commit.author_email) args.push("-c", `user.name=${commit.author_name}`, "-c", `user.email=${commit.author_email}`);
-  return [...args, "commit", "--allow-empty", "-m", commit.commit_message.trim()];
-}
-function agentDocument(name, role) {
-  const title = name.split("-").map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`).join(" ");
-  return `# ${title} worker
-
-Follow \`repository-worker.md\`. This repository owns the ${role} role. Read its repository-local instructions and preserve its established architecture, conventions, and verification commands.
-`;
-}
-async function assertExactGitRoot(path2, name) {
-  const topLevel = await git(path2, ["rev-parse", "--show-toplevel"]);
-  if (await realpath(topLevel) !== await realpath(path2)) throw new Error(`Repository path is not a Git root: ${name}`);
-}
-async function bootstrapWorkspace(options) {
-  const workspaceRoot18 = resolve4(options.workspaceRoot);
-  const requestErrors = await validateContract("workspace-bootstrap-request", options.request);
-  if (requestErrors.length > 0) throw new Error(`Invalid workspace-bootstrap-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-  const config = options.request.configuration;
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace configuration: ${semanticErrors.join("; ")}`);
-  if (config.workspace.name === "uninitialized-workspace") throw new Error("Bootstrap requires a human-selected workspace name");
-  const configuredNames = Object.keys(config.repositories).sort();
-  if (configuredNames.length === 0) throw new Error("Bootstrap requires at least one configured repository");
-  const actionsByName = new Map(options.request.repositories.map((action) => [action.name, action]));
-  if (actionsByName.size !== options.request.repositories.length || configuredNames.join("\n") !== [...actionsByName.keys()].sort().join("\n")) {
-    throw new Error("Bootstrap repository actions must match configured repositories exactly");
-  }
-  const wrapperGitExists = await pathExists(join2(workspaceRoot18, ".git"));
-  if (wrapperGitExists === options.request.wrapper.initialize_git) {
-    throw new Error(wrapperGitExists ? "Wrapper is already a Git repository; initialize_git must be false" : "Wrapper is not a Git repository; initialize_git must be true");
-  }
-  if (wrapperGitExists) {
-    await assertExactGitRoot(workspaceRoot18, "wrapper");
-    const changes = await git(workspaceRoot18, ["status", "--porcelain=v1", "--untracked-files=normal"]);
-    if (changes) throw new Error(`Wrapper has existing changes; refusing bootstrap:
-${changes}`);
-  }
-  const wrapperHadHead = wrapperGitExists && await hasHead(workspaceRoot18);
-  if (!wrapperHadHead && !options.request.wrapper.authorize_initial_commit) throw new Error("A new or unborn wrapper requires explicit initial-commit authorization");
-  if (wrapperHadHead && options.request.wrapper.authorize_initial_commit) throw new Error("An existing wrapper must not authorize another initial commit");
-  const gitignorePath = join2(workspaceRoot18, ".gitignore");
-  const currentGitignore = await readFile2(gitignorePath, "utf8");
-  const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
-  for (const agent of new Set(Object.values(config.repositories).map((repository) => repository.agent))) {
-    const agentPath = join2(workspaceRoot18, "agents", `${agent}.md`);
-    if (!await pathExists(agentPath)) continue;
-    const info = await lstat3(agentPath);
-    if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Domain agent path must be a regular file: agents/${agent}.md`);
-  }
-  for (const name of configuredNames) {
-    const repository = config.repositories[name];
-    const action = actionsByName.get(name);
-    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
-    await assertSafeRepositoryPath(workspaceRoot18, path2, name);
-    const exists = await pathExists(path2);
-    if (action.source === "existing") {
-      if (repository.mode !== "ignored-clone") throw new Error(`Existing repository ${name} must use ignored-clone mode`);
-      if (!exists) throw new Error(`Existing repository path is not accessible: ${repository.path}`);
-      if ((await lstat3(path2)).isSymbolicLink()) throw new Error(`Existing repository ${name} cannot be a symbolic link`);
-      assertInside(await realpath(workspaceRoot18), await realpath(path2));
-      await assertExactGitRoot(path2, name);
-    } else {
-      if (exists) throw new Error(`Bootstrap refuses to replace existing path for ${name}: ${repository.path}`);
-    }
-    if (action.source === "submodule" && repository.mode !== "submodule") throw new Error(`Submodule action requires submodule mode for ${name}`);
-    if ((action.source === "new" || action.source === "clone") && repository.mode !== "ignored-clone") throw new Error(`${action.source} action requires ignored-clone mode for ${name}`);
-    if ((action.source === "clone" || action.source === "submodule") && !action.url) throw new Error(`${action.source} action requires a URL for ${name}`);
-    if ((action.source === "new" || action.source === "existing") && action.url) throw new Error(`${action.source} repository ${name} must not include a clone URL`);
-    if (action.url) safeRemote(action.url, name);
-    if (action.source === "new" && !action.authorize_initial_commit) throw new Error(`New repository ${name} requires explicit initial-commit authorization`);
-    if (action.source === "new" && !action.commit_message) throw new Error(`New repository ${name} requires an initial commit message`);
-    if (action.source !== "new" && action.authorize_initial_commit) throw new Error(`${action.source} repository ${name} must not authorize an initial commit`);
-    if (action.source !== "new" && (action.commit_message || action.author_name || action.author_email)) throw new Error(`${action.source} repository ${name} must not include artificial commit metadata`);
-  }
-  const bootstrapActions = [];
-  if (!wrapperGitExists) {
-    await git(workspaceRoot18, ["init", "--initial-branch", config.workspace.default_branch]);
-    bootstrapActions.push(`initialized wrapper Git repository on ${config.workspace.default_branch}`);
-  } else if (!wrapperHadHead) {
-    const current = await git(workspaceRoot18, ["symbolic-ref", "--short", "HEAD"]);
-    if (current !== config.workspace.default_branch) throw new Error(`Unborn wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
-  }
-  await writeTextAtomic(join2(workspaceRoot18, "workspace.yaml"), (0, import_yaml2.stringify)(config));
-  for (const [path2, contents] of Object.entries(renderWorkspaceContext(options.request.context))) {
-    await writeTextAtomic(join2(workspaceRoot18, path2), contents);
-  }
-  await mkdir2(join2(workspaceRoot18, "agents"), { recursive: true });
-  for (const [name, repository] of Object.entries(config.repositories)) {
-    const agentPath = join2(workspaceRoot18, "agents", `${repository.agent}.md`);
-    if (!await pathExists(agentPath)) await writeTextAtomic(agentPath, agentDocument(name, repository.role));
-  }
-  await writeTextAtomic(gitignorePath, nextGitignore);
-  for (const name of configuredNames) {
-    const repository = config.repositories[name];
-    const action = actionsByName.get(name);
-    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
-    if (action.source === "new") {
-      await mkdir2(dirname4(path2), { recursive: true });
-      await mkdir2(path2);
-      await git(path2, ["init", "--initial-branch", repository.default_branch]);
-      await git(path2, commitArgs(action));
-      bootstrapActions.push(`created ${name} with an empty base commit`);
-    } else if (action.source === "clone") {
-      await mkdir2(dirname4(path2), { recursive: true });
-      await git(workspaceRoot18, ["clone", "--branch", repository.default_branch, "--single-branch", "--", safeRemote(action.url, name), path2]);
-      bootstrapActions.push(`cloned ${name} into ${repository.path}`);
-    } else if (action.source === "submodule") {
-      await mkdir2(dirname4(path2), { recursive: true });
-      await git(workspaceRoot18, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", safeRemote(action.url, name), repository.path]);
-      bootstrapActions.push(`registered ${name} as a submodule`);
-    } else {
-      bootstrapActions.push(`registered existing repository ${name}`);
-    }
-  }
-  await initializeWorkspace({ workspaceRoot: workspaceRoot18, allowUnbornWrapper: !wrapperHadHead });
-  let wrapperInitialCommit = null;
-  if (!wrapperHadHead) {
-    await git(workspaceRoot18, ["add", "-A"]);
-    await git(workspaceRoot18, commitArgs(options.request.wrapper));
-    wrapperInitialCommit = await git(workspaceRoot18, ["rev-parse", "HEAD"]);
-    bootstrapActions.push("created configured wrapper initial commit");
-  }
-  const summary2 = await initializeWorkspace({ workspaceRoot: workspaceRoot18 });
-  return { ...summary2, status: "initialized", bootstrap_actions: bootstrapActions, wrapper_initial_commit: wrapperInitialCommit };
 }
 async function initializeWorkspace(options) {
-  const workspaceRoot18 = resolve4(options.workspaceRoot);
-  const configPath = join2(workspaceRoot18, "workspace.yaml");
-  const config = await readData(configPath);
-  const contractErrors2 = await validateContract("workspace", config);
-  const errors2 = [
-    ...contractErrors2.map((error) => `${error.instancePath || "/"} ${error.message}`),
-    ...workspaceSemanticErrors(config),
-    ...await workspaceDocumentErrors(workspaceRoot18, config)
-  ];
-  if (errors2.length > 0) throw new Error(`Workspace initialization validation failed:
+  const root12 = resolve6(options.workspaceRoot);
+  const config2 = await loadConfig(root12);
+  const documentErrors = await workspaceDocumentErrors(root12, config2);
+  const knowledge2 = await validateProductKnowledgeTree(join4(root12, "context"));
+  const errors2 = [...documentErrors, ...knowledge2.errors.map((error) => `product-knowledge ${error}`)];
+  if (errors2.length > 0) throw new Error(`Workspace validation failed:
 - ${errors2.join("\n- ")}`);
-  await git(workspaceRoot18, ["rev-parse", "--is-inside-work-tree"]);
-  const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
-  if (await realpath(wrapperTopLevel) !== await realpath(workspaceRoot18)) {
-    throw new Error(`Workspace root is not the wrapper Git root: ${workspaceRoot18}`);
-  }
-  if (options.allowUnbornWrapper && !await hasHead(workspaceRoot18)) {
-    const current = await git(workspaceRoot18, ["symbolic-ref", "--short", "HEAD"]);
-    if (current !== config.workspace.default_branch) throw new Error(`Wrapper branch is ${current}, expected ${config.workspace.default_branch}`);
-  } else {
-    await assertDefaultBranch(workspaceRoot18, "wrapper", config.workspace.default_branch);
-  }
-  let submodulePaths = /* @__PURE__ */ new Set();
-  try {
-    submodulePaths = parseSubmodulePaths(await readFile2(join2(workspaceRoot18, ".gitmodules"), "utf8"));
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
+  await git(root12, ["rev-parse", "--show-toplevel"]);
   const repositories = [];
   const warnings = [];
-  for (const [name, repository] of Object.entries(config.repositories)) {
-    const path2 = assertInside(workspaceRoot18, resolve4(workspaceRoot18, repository.path));
-    try {
-      await access2(path2);
-    } catch {
-      throw new Error(`Repository ${name} path is not accessible: ${repository.path}`);
-    }
-    assertInside(await realpath(workspaceRoot18), await realpath(path2));
-    const topLevel = await git(path2, ["rev-parse", "--show-toplevel"]);
-    if (await realpath(topLevel) !== await realpath(path2)) throw new Error(`Repository path is not a Git root: ${repository.path}`);
-    const relativePath = relative(workspaceRoot18, path2).replaceAll("\\", "/");
-    const trackedEntry = await git(workspaceRoot18, ["ls-files", "--stage", "--", relativePath]);
-    if (repository.mode === "submodule" && !submodulePaths.has(relativePath)) {
-      throw new Error(`Repository ${name} is configured as a submodule but is not registered in .gitmodules: ${relativePath}`);
-    }
-    if (repository.mode === "submodule" && !trackedEntry.startsWith("160000 ")) {
-      throw new Error(`Repository ${name} is configured as a submodule but the wrapper does not track a gitlink: ${relativePath}`);
-    }
-    if (repository.mode === "ignored-clone" && submodulePaths.has(relativePath)) {
-      throw new Error(`Repository ${name} is registered as a submodule but configured as an ignored clone`);
-    }
-    if (repository.mode === "ignored-clone" && trackedEntry) {
-      throw new Error(`Repository ${name} is tracked by the wrapper but configured as an ignored clone`);
-    }
-    await assertDefaultBranch(path2, name, repository.default_branch);
-    const instructionsPath = join2(path2, "AGENTS.md");
-    let instructions = null;
-    try {
-      await access2(instructionsPath);
-      instructions = instructionsPath;
-    } catch {
-      warnings.push(`Repository ${name} has no repository-local AGENTS.md`);
-    }
-    const remote = await repositoryRemote(path2);
-    if (!remote) warnings.push(`Repository ${name} has no origin remote`);
-    const currentBranch = await git(path2, ["rev-parse", "--abbrev-ref", "HEAD"]);
-    const repositoryChanges = (await git(path2, ["status", "--porcelain=v1", "--untracked-files=normal"])).split("\n").filter(Boolean);
-    repositories.push({
-      name,
-      path: relativePath,
-      mode: repository.mode,
-      role: repository.role,
-      agent: repository.agent,
-      default_branch: repository.default_branch,
-      current_branch: currentBranch,
-      clean: repositoryChanges.length === 0,
-      remote,
-      instructions
-    });
+  for (const [name, repository] of Object.entries(config2.repositories)) {
+    const path = assertInside(root12, resolve6(root12, repository.path));
+    if (!await pathExists(path)) throw new Error(`Repository ${name} path is not accessible: ${repository.path}`);
+    await git(path, ["rev-parse", "--show-toplevel"]);
+    const changes = (await git(path, ["status", "--porcelain=v1", "--untracked-files=normal"])).split("\n").filter(Boolean);
+    const instructions = await pathExists(join4(path, "AGENTS.md")) ? join4(path, "AGENTS.md") : null;
+    if (!instructions) warnings.push(`Repository ${name} has no repository-local AGENTS.md`);
+    repositories.push({ name, path: relative5(root12, path) || ".", mode: repository.mode, role: repository.role, agent: repository.agent, default_branch: repository.default_branch, current_branch: await currentBranch(path), clean: changes.length === 0, remote: await repositoryRemote(path), instructions });
   }
-  if (config.activity.provider === "none") warnings.push("No activity provider is configured; planless work remains available");
-  const gitignorePath = join2(workspaceRoot18, ".gitignore");
-  let currentGitignore = "";
-  try {
-    currentGitignore = await readFile2(gitignorePath, "utf8");
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  const nextGitignore = reconcileIgnoredClones(currentGitignore, config);
-  const gitignoreChanged = nextGitignore !== currentGitignore;
-  if (options.apply !== false && gitignoreChanged) await writeTextAtomic(gitignorePath, nextGitignore);
-  const wrapperChanges = (await git(workspaceRoot18, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean);
-  return {
-    workspace: config.workspace.name,
-    mode: config.workspace.mode,
-    default_branch: config.workspace.default_branch,
-    activity_provider: config.activity.provider,
-    wrapper_change_policy: config.workflow.wrapper_change_policy,
-    repositories,
-    required_documents: [.../* @__PURE__ */ new Set([
-      ...requiredWorkspaceDocuments,
-      ...new Set(Object.values(config.repositories).map((repository) => `agents/${repository.agent}.md`))
-    ])],
-    wrapper_changes: wrapperChanges,
-    gitignore_changed: gitignoreChanged,
-    applied: options.apply !== false,
-    warnings
-  };
+  const gitignorePath = join4(root12, ".gitignore");
+  const currentGitignore = await readFile6(gitignorePath, "utf8").catch(() => "");
+  const nextGitignore = reconcileIgnoredClones(currentGitignore, config2);
+  if (options.apply !== false && nextGitignore !== currentGitignore) await writeTextAtomic(gitignorePath, nextGitignore);
+  return { workspace: config2.workspace.name, mode: config2.workspace.mode, default_branch: config2.workspace.default_branch, repositories, required_documents: [.../* @__PURE__ */ new Set([...documentErrors.map((error) => error.replace(/^required workspace document is missing: /, "")), ...Object.values(config2.repositories).map((repo) => `agents/${repo.agent}.md`)])], wrapper_changes: (await git(root12, ["status", "--porcelain=v1", "--untracked-files=all"])).split("\n").filter(Boolean), gitignore_changed: nextGitignore !== currentGitignore, applied: options.apply !== false, warnings };
 }
-var import_yaml2, ignoredStart, ignoredEnd;
+function safeReference(value, label) {
+  const error = value.includes("://") ? remoteReferenceError(value) : cloneReferenceError(value);
+  if (error) throw new Error(`${label} ${error}`);
+}
+async function bootstrapWorkspace(options) {
+  const root12 = resolve6(options.workspaceRoot);
+  const request3 = options.request;
+  const config2 = request3.configuration;
+  const errors2 = workspaceSemanticErrors(config2);
+  if (errors2.length > 0) throw new Error(`Invalid workspace configuration:
+- ${errors2.join("\n- ")}`);
+  const hasGit = await pathExists(join4(root12, ".git"));
+  if (request3.wrapper.initialize_git && hasGit) throw new Error("Wrapper is already a Git repository; initialize_git must be false");
+  if (!request3.wrapper.initialize_git && !hasGit) throw new Error("Wrapper is not a Git repository; initialize_git must be true");
+  if (!hasGit) await git(root12, ["init", "--initial-branch", config2.workspace.default_branch]);
+  else await assertCleanRepository(root12);
+  const currentReadme = await readFile6(join4(root12, "README.md"), "utf8").catch(() => "");
+  const sourceContext = request3.context.sources ?? [];
+  const readmeConfig = config2.workspace.purpose ? config2 : { ...config2, workspace: { ...config2.workspace, purpose: request3.context.project_summary } };
+  await writeTextAtomic(join4(root12, "workspace.yaml"), (0, import_yaml6.stringify)(config2));
+  for (const [path, contents] of Object.entries(renderWorkspaceContext(request3.context))) await writeTextAtomic(join4(root12, path), contents);
+  if (request3.context.product_knowledge) for (const [path, contents] of Object.entries(renderProductKnowledgeBaseline(request3.context.product_knowledge))) await writeTextAtomic(join4(root12, path), contents);
+  await writeTextAtomic(join4(root12, "README.md"), reconcileWorkspaceReadme(currentReadme, readmeConfig));
+  await writeTextAtomic(join4(root12, ".gitignore"), reconcileIgnoredClones(await readFile6(join4(root12, ".gitignore"), "utf8").catch(() => ".runtime/\n.dist/\nnode_modules/\n"), config2));
+  await mkdir4(join4(root12, "agents"), { recursive: true });
+  for (const [name, repository] of Object.entries(config2.repositories)) {
+    const path = assertInside(root12, resolve6(root12, repository.path));
+    const action = request3.repositories.find((candidate) => candidate.name === name);
+    if (!action) throw new Error(`Missing setup action for repository: ${name}`);
+    if (action.url) safeReference(action.url, `Repository ${name} URL`);
+    const agentPath = join4(root12, "agents", `${repository.agent}.md`);
+    if (!await pathExists(agentPath)) await writeTextAtomic(agentPath, `# ${repository.agent}
+
+Read the repository's local instructions and implement the approved plan continuously in its assigned plan worktree.
+`);
+    if (action.source === "existing") continue;
+    if (await pathExists(path)) throw new Error(`Refusing to replace existing repository path: ${repository.path}`);
+    await mkdir4(dirname5(path), { recursive: true });
+    if (action.source === "new") {
+      await mkdir4(path);
+      await git(path, ["init", "--initial-branch", repository.default_branch]);
+      await writeTextAtomic(join4(path, ".gitkeep"), "");
+      await git(path, ["add", "."]);
+      await git(path, ["commit", "-m", action.commit_message ?? `Initialize ${name}`]);
+    } else if (action.source === "clone" && action.url) {
+      await git(root12, ["clone", "--branch", repository.default_branch, "--single-branch", "--", action.url, path]);
+    } else if (action.source === "submodule" && action.url) {
+      await git(root12, ["-c", "protocol.file.allow=always", "submodule", "add", "-b", repository.default_branch, "--", action.url, repository.path]);
+    }
+  }
+  const initial = !await git(root12, ["rev-parse", "--verify", "HEAD"]).then(() => true).catch(() => false);
+  let commit = null;
+  if (initial && request3.wrapper.authorize_initial_commit !== false) {
+    await git(root12, ["add", "-A"]);
+    await git(root12, ["commit", "-m", request3.wrapper.commit_message ?? "Configure Context Circuit workspace"]);
+    commit = await git(root12, ["rev-parse", "HEAD"]);
+  }
+  const summary2 = await initializeWorkspace({ workspaceRoot: root12 });
+  return { ...summary2, status: "initialized", bootstrap_actions: ["configured workspace and Product Knowledge context"], wrapper_initial_commit: commit };
+}
+var import_yaml6, ignoredStart, ignoredEnd;
 var init_initialize_workspace = __esm({
   "scripts/lib/initialize-workspace.ts"() {
     "use strict";
-    import_yaml2 = __toESM(require_dist(), 1);
-    init_io();
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml6 = __toESM(require_dist(), 1);
     init_git();
+    init_io();
     init_validation();
     init_workspace_context();
+    init_product_knowledge();
+    init_workspace_readme();
+    init_safe_reference();
     ignoredStart = "# context-circuit:ignored-clones:start";
     ignoredEnd = "# context-circuit:ignored-clones:end";
   }
 });
 
-// scripts/initialize-workspace.ts
-var initialize_workspace_exports = {};
-import { dirname as dirname5, resolve as resolve5 } from "node:path";
-import { parseArgs as parseArgs2 } from "node:util";
-import { fileURLToPath as fileURLToPath3 } from "node:url";
-var values2, workspaceRoot2, summary;
-var init_initialize_workspace2 = __esm({
-  async "scripts/initialize-workspace.ts"() {
-    "use strict";
-    init_initialize_workspace();
-    init_validation();
-    ({ values: values2 } = parseArgs2({
-      options: {
-        "check-only": { type: "boolean", default: false },
-        bootstrap: { type: "string" }
-      }
-    }));
-    workspaceRoot2 = resolve5(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve5(dirname5(fileURLToPath3(import.meta.url)), ".."));
-    if (values2.bootstrap && values2["check-only"]) throw new Error("--bootstrap and --check-only cannot be combined");
-    summary = values2.bootstrap ? await bootstrapWorkspace({ workspaceRoot: workspaceRoot2, request: await readData(resolve5(values2.bootstrap)) }) : await initializeWorkspace({ workspaceRoot: workspaceRoot2, apply: !values2["check-only"] });
-    console.log(JSON.stringify(summary, null, 2));
-  }
-});
-
-// scripts/lib/ids.ts
-import { createHash, randomBytes } from "node:crypto";
-import { readFile as readFile3 } from "node:fs/promises";
-import { join as join3 } from "node:path";
-function utcStamp(now) {
-  const iso = now.toISOString();
-  return {
-    day: iso.slice(0, 10).replaceAll("-", ""),
-    instant: iso.slice(0, 19).replaceAll("-", "").replaceAll(":", "")
-  };
-}
-async function generateIds(runtimeRoot, request3, now = /* @__PURE__ */ new Date(), discriminator = randomBytes(4).toString("hex")) {
-  if (!/^[a-f0-9]{8}$/.test(discriminator)) {
-    throw new Error("Run discriminator must contain exactly eight lowercase hexadecimal characters");
-  }
-  await ensurePrivateDirectory(runtimeRoot);
-  const { day, instant } = utcStamp(now);
-  const statePath = join3(runtimeRoot, "id-state.json");
-  let state = { day, next: 1 };
+// scripts/lib/configure-workspace.ts
+import { access as access3, readFile as readFile7 } from "node:fs/promises";
+import { join as join5, resolve as resolve7 } from "node:path";
+async function exists3(path) {
   try {
-    state = JSON.parse(await readFile3(statePath, "utf8"));
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  const sequence = state.day === day ? state.next : 1;
-  await writeJsonAtomic(statePath, { day, next: sequence + 1 });
-  const requestFingerprint = createHash("sha256").update(request3).digest("hex").slice(0, 4);
-  return {
-    workId: `ADHOC-${day}-${String(sequence).padStart(3, "0")}`,
-    runId: `${instant}Z-${discriminator.slice(0, 4)}${requestFingerprint}`
-  };
-}
-function slugify(value2) {
-  return value2.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32) || "task";
-}
-var init_ids = __esm({
-  "scripts/lib/ids.ts"() {
-    "use strict";
-    init_io();
-  }
-});
-
-// scripts/lib/activity-lifecycle.ts
-import { readFile as readFile4 } from "node:fs/promises";
-import { join as join4, relative as relative2, resolve as resolve6 } from "node:path";
-async function readJson(path2) {
-  return JSON.parse(await readFile4(path2, "utf8"));
-}
-async function assertValid(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-async function loadConfig(workspaceRoot18) {
-  const config = (0, import_yaml3.parse)(await readFile4(join4(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid("workspace", config);
-  const errors2 = workspaceSemanticErrors(config);
-  if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
-  return config;
-}
-function safeEvidence(value2, field) {
-  const clean = value2.trim();
-  if (!clean || /[\r\n]/.test(clean)) throw new Error(`${field} must be a non-empty single line`);
-  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(clean)) {
-    throw new Error(`${field} appears to contain a credential or private key`);
-  }
-  return clean;
-}
-function overallStatus(actions) {
-  if (actions.some((action) => action.policy === "required" && action.status === "failed")) return "failed";
-  if (actions.some((action) => action.status === "pending")) return "pending";
-  if (actions.some((action) => action.status === "manual")) return "manual";
-  return actions.length === 0 ? "skipped" : "completed";
-}
-function syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18) {
-  const existing = manifest2.lifecycle_events.find((item) => item.event === record.event);
-  const occurredAt = record.updated_at;
-  const value2 = {
-    event: record.event,
-    status: record.status,
-    idempotency_key: existing?.idempotency_key ?? `${manifest2.run_id}:lifecycle:${record.event}:${record.provider}`,
-    occurred_at: occurredAt,
-    record: relative2(workspaceRoot18, recordPath2).replaceAll("\\", "/"),
-    actions: record.actions
-  };
-  if (existing) Object.assign(existing, value2);
-  else manifest2.lifecycle_events.push(value2);
-  manifest2.updated_at = occurredAt;
-}
-function paths(workspaceRoot18, runId, event) {
-  const runtimeRoot = assertInside(workspaceRoot18, join4(workspaceRoot18, ".runtime"));
-  const runRoot = assertInside(runtimeRoot, join4(runtimeRoot, "runs", runId));
-  return {
-    runtimeRoot,
-    manifestPath: join4(runRoot, "manifest.json"),
-    recordPath: join4(runRoot, "activity", `${event}.json`)
-  };
-}
-async function prepareActivityLifecycle(options) {
-  const workspaceRoot18 = resolve6(options.workspaceRoot);
-  const config = await loadConfig(workspaceRoot18);
-  const { manifestPath, recordPath: recordPath2 } = paths(workspaceRoot18, options.runId, options.event);
-  await ensurePrivateDirectory(join4(workspaceRoot18, ".runtime"));
-  const lockPath = `${recordPath2}.lock`;
-  return withExclusiveFile(lockPath, async () => {
-    try {
-      const existing = await readJson(recordPath2);
-      await assertValid("activity-lifecycle-record", existing);
-      return existing;
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
-    const manifest2 = await readJson(manifestPath);
-    await assertValid("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match lifecycle request");
-    const available = new Set(options.availableCapabilities ?? []);
-    const configured = config.activity.lifecycle?.[options.event] ?? [];
-    const actions = [];
-    const warnings = [];
-    const manualFallbacks = [];
-    let stopped = false;
-    for (const action of configured) {
-      let status2;
-      let evidence = null;
-      if (stopped) {
-        status2 = "skipped";
-        evidence = "Not attempted after a required lifecycle action failed.";
-      } else if (action.policy === "manual") {
-        status2 = "manual";
-        manualFallbacks.push(action.description);
-      } else if (available.has(action.capability)) {
-        status2 = "pending";
-      } else if (action.policy === "required") {
-        status2 = "manual";
-        evidence = `Required capability is unavailable: ${action.capability}; manual completion is required.`;
-        manualFallbacks.push(action.description);
-        stopped = true;
-      } else {
-        status2 = "skipped";
-        evidence = `Optional capability is unavailable: ${action.capability}.`;
-        warnings.push(`${action.id}: ${evidence}`);
-        manualFallbacks.push(action.description);
-      }
-      actions.push({
-        ...action,
-        status: status2,
-        idempotency_key: `${manifest2.run_id}:${options.event}:${action.id}`,
-        evidence,
-        external_reference: null
-      });
-    }
-    if (config.activity.provider === "none") warnings.push("No activity provider is configured; the semantic event is recorded without an external write.");
-    else if (configured.length === 0) warnings.push(`No lifecycle actions are configured for ${options.event}.`);
-    const now = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const record = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      provider: config.activity.provider,
-      event: options.event,
-      status: overallStatus(actions),
-      actions,
-      warnings,
-      manual_fallbacks: manualFallbacks,
-      prepared_at: now,
-      updated_at: now
-    };
-    await assertValid("activity-lifecycle-record", record);
-    syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18);
-    await assertValid("runtime-manifest", manifest2);
-    await writeJsonAtomic(recordPath2, record);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return record;
-  });
-}
-async function recordActivityLifecycleAction(options) {
-  const workspaceRoot18 = resolve6(options.workspaceRoot);
-  const { manifestPath, recordPath: recordPath2 } = paths(workspaceRoot18, options.runId, options.event);
-  return withExclusiveFile(`${recordPath2}.lock`, async () => {
-    const record = await readJson(recordPath2);
-    await assertValid("activity-lifecycle-record", record);
-    const action = record.actions.find((item) => item.id === options.actionId);
-    if (!action) throw new Error(`Lifecycle event has no action named ${options.actionId}`);
-    const evidence = safeEvidence(options.evidence, "Evidence");
-    const externalReference = options.externalReference ? safeEvidence(options.externalReference, "External reference") : null;
-    if (action.status === "completed" || action.status === "failed") {
-      if (action.status === options.status && action.evidence === evidence && action.external_reference === externalReference) return record;
-      throw new Error(`Lifecycle action ${action.id} already has a different terminal result`);
-    }
-    if (action.status === "skipped") throw new Error(`Lifecycle action ${action.id} was skipped and cannot receive an external result`);
-    action.status = options.status;
-    action.evidence = evidence;
-    action.external_reference = externalReference;
-    if (options.status === "failed" && action.policy === "required") {
-      const index = record.actions.indexOf(action);
-      for (const remaining of record.actions.slice(index + 1)) {
-        if (remaining.status === "pending" || remaining.status === "manual") {
-          remaining.status = "skipped";
-          remaining.evidence = "Not attempted after a required lifecycle action failed.";
-        }
-      }
-      if (!record.manual_fallbacks.includes(action.description)) record.manual_fallbacks.push(action.description);
-    } else if (options.status === "failed") {
-      record.warnings.push(`${action.id}: ${evidence}`);
-    }
-    record.status = overallStatus(record.actions);
-    record.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const manifest2 = await readJson(manifestPath);
-    syncManifestEvent(manifest2, record, recordPath2, workspaceRoot18);
-    await assertValid("activity-lifecycle-record", record);
-    await assertValid("runtime-manifest", manifest2);
-    await writeJsonAtomic(recordPath2, record);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return record;
-  });
-}
-var import_yaml3;
-var init_activity_lifecycle = __esm({
-  "scripts/lib/activity-lifecycle.ts"() {
-    "use strict";
-    import_yaml3 = __toESM(require_dist(), 1);
-    init_io();
-    init_validation();
-  }
-});
-
-// scripts/lib/run-task.ts
-import { access as access3, readFile as readFile5 } from "node:fs/promises";
-import { join as join5, relative as relative3, resolve as resolve7 } from "node:path";
-async function assertValid2(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) {
-    throw new Error(`Generated ${name} is invalid: ${errors2.map((error) => `${error.instancePath} ${error.message}`).join("; ")}`);
-  }
-}
-function repositoryExpectation(input) {
-  const paths2 = normalizeScope(input.test_scope, `test scope for ${input.name}`);
-  if ((input.test_policy === "required" || input.test_policy === "existing-coverage") && paths2.length === 0) {
-    throw new Error(`${input.test_policy} test policy requires at least one test scope entry for ${input.name}`);
-  }
-  return { policy: input.test_policy, paths: paths2, rationale: input.test_rationale?.trim() || defaultTestRationale(input.test_policy) };
-}
-function normalizeContractFirstRequest(input, workId, runId, createdAt) {
-  const request3 = input.request.trim();
-  const acceptanceCriteria = input.acceptance_criteria.map((item) => item.trim()).filter(Boolean);
-  if (!request3) throw new Error("A direct request is required");
-  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
-  const names = input.repositories.map((repository) => repository.name);
-  if (new Set(names).size !== names.length) throw new Error("Repository names must be unique");
-  if (!names.includes(input.shared_contract.repository)) throw new Error("Shared contract repository must be included in repositories");
-  const contractPaths = normalizeScope(input.shared_contract.paths, "shared contract paths");
-  const byName = new Map(input.repositories.map((repository) => [repository.name, repository]));
-  for (const repository of input.repositories) {
-    if (repository.depends_on.includes(repository.name)) throw new Error(`${repository.name} cannot depend on itself`);
-    for (const dependency of repository.depends_on) if (!byName.has(dependency)) throw new Error(`${repository.name} has unknown dependency ${dependency}`);
-  }
-  const contractOwner = byName.get(input.shared_contract.repository);
-  if (contractOwner.depends_on.length > 0) throw new Error("Shared contract repository cannot depend on another repository");
-  const visiting = /* @__PURE__ */ new Set();
-  const orders = /* @__PURE__ */ new Map();
-  const orderOf = (name) => {
-    const known = orders.get(name);
-    if (known !== void 0) return known;
-    if (visiting.has(name)) throw new Error(`Repository dependency cycle includes ${name}`);
-    visiting.add(name);
-    const repository = byName.get(name);
-    const order = repository.depends_on.length === 0 ? 0 : Math.max(...repository.depends_on.map(orderOf)) + 1;
-    visiting.delete(name);
-    orders.set(name, order);
-    return order;
-  };
-  const dependsOnContract = (name, seen = /* @__PURE__ */ new Set()) => {
-    if (name === input.shared_contract.repository) return true;
-    if (seen.has(name)) return false;
-    seen.add(name);
-    return byName.get(name).depends_on.some((dependency) => dependsOnContract(dependency, seen));
-  };
-  for (const name of names) {
-    orderOf(name);
-    if (name !== input.shared_contract.repository && !dependsOnContract(name)) throw new Error(`${name} must depend on the shared contract repository`);
-  }
-  const targets = input.repositories.map((repository) => {
-    const implementationScope = normalizeScope(repository.scope, `implementation scope for ${repository.name}`);
-    const testExpectation = repositoryExpectation(repository);
-    const scope = [.../* @__PURE__ */ new Set([...implementationScope, ...testExpectation.policy === "required" ? testExpectation.paths : []])];
-    const repositoryAcceptance = repository.acceptance_criteria.map((criterion) => criterion.trim()).filter(Boolean);
-    if (repositoryAcceptance.length === 0) throw new Error(`At least one acceptance criterion is required for ${repository.name}`);
-    return {
-      name: repository.name,
-      dependency_order: orders.get(repository.name),
-      depends_on: repository.depends_on,
-      scope,
-      implementation_scope: implementationScope,
-      test_expectation: testExpectation,
-      verification_commands: repository.verification_commands.map((command2) => command2.trim()).filter(Boolean),
-      acceptance_criteria: repositoryAcceptance
-    };
-  }).sort((left, right) => left.dependency_order - right.dependency_order || left.name.localeCompare(right.name));
-  const ownerScope = targets.find((target) => target.name === input.shared_contract.repository).scope;
-  for (const path2 of contractPaths) if (!ownerScope.some((scope) => path2 === scope || path2.startsWith(`${scope}/`))) {
-    throw new Error(`Shared contract path is outside ${input.shared_contract.repository} scope: ${path2}`);
-  }
-  return {
-    contract_version: 1,
-    work_id: workId,
-    run_id: runId,
-    source: { kind: "direct-request" },
-    requested_outcome: request3,
-    scope: [...new Set(targets.flatMap((target) => target.scope))],
-    acceptance_criteria: acceptanceCriteria,
-    repositories: targets,
-    shared_contract: { repository: input.shared_contract.repository, paths: contractPaths },
-    plan: { reference: null, approval_state: "not-applicable" },
-    activity: { reference: null, claim_status: "not-applicable", duplicate_effort_warning: true },
-    assumptions: ["The direct request is authoritative for this planless run.", "Dependent repositories remain locked until their declared dependencies pass independent verification."],
-    risks: ["No authoritative claim is available; duplicate effort is possible."],
-    verification_commands: [...new Set(targets.flatMap((target) => target.verification_commands ?? []))],
-    authorization: { kind: "explicit-user-request", evidence: "The human explicitly invoked run-task for this direct request." },
-    created_at: createdAt
-  };
-}
-function normalizeDirectRequest(input) {
-  const request3 = input.request.trim();
-  const acceptanceCriteria = input.acceptanceCriteria.map((item) => item.trim()).filter(Boolean);
-  const implementationScope = normalizeScope(input.scope, "implementation scope");
-  const testScope = normalizeScope(input.testScope ?? [], "test scope");
-  const testPolicy = input.testPolicy ?? (testScope.length > 0 ? "required" : "verifier-only");
-  if (!request3) throw new Error("A direct request is required");
-  if (acceptanceCriteria.length === 0) throw new Error("At least one acceptance criterion is required");
-  if (implementationScope.length === 0) throw new Error("At least one implementation scope entry is required");
-  if ((testPolicy === "required" || testPolicy === "existing-coverage") && testScope.length === 0) {
-    throw new Error(`${testPolicy} test policy requires at least one test scope entry`);
-  }
-  const testExpectation = {
-    policy: testPolicy,
-    paths: testScope,
-    rationale: input.testRationale?.trim() || defaultTestRationale(testPolicy)
-  };
-  const scope = [.../* @__PURE__ */ new Set([...implementationScope, ...testPolicy === "required" ? testScope : []])];
-  return {
-    contract_version: 1,
-    work_id: input.workId,
-    run_id: input.runId,
-    source: { kind: "direct-request" },
-    requested_outcome: request3,
-    scope,
-    implementation_scope: implementationScope,
-    test_expectation: testExpectation,
-    acceptance_criteria: acceptanceCriteria,
-    repositories: [{ name: input.repository, dependency_order: 0 }],
-    plan: { reference: null, approval_state: "not-applicable" },
-    activity: {
-      reference: null,
-      claim_status: "not-applicable",
-      duplicate_effort_warning: true
-    },
-    assumptions: ["The direct request is authoritative for this planless run."],
-    risks: ["No authoritative claim is available; duplicate effort is possible."],
-    verification_commands: input.verificationCommands,
-    authorization: {
-      kind: "explicit-user-request",
-      evidence: "The human explicitly invoked run-task for this direct request."
-    },
-    created_at: input.createdAt
-  };
-}
-function normalizeScope(values18, label) {
-  const normalized = values18.map((item) => item.trim().replace(/\/$/, "")).filter(Boolean);
-  for (const path2 of normalized) {
-    if (path2.startsWith("/") || path2.includes("\\") || path2.split("/").includes("..")) {
-      throw new Error(`${label} entries must be repository-relative paths: ${path2}`);
-    }
-  }
-  return [...new Set(normalized)];
-}
-function defaultTestRationale(policy) {
-  switch (policy) {
-    case "required":
-      return "The worker must add or update tests in the declared test scope.";
-    case "existing-coverage":
-      return "Declared existing tests are expected to cover the requested behavior.";
-    case "not-required":
-      return "No repository test change is required for this task.";
-    default:
-      return "No test edit scope is authorized; the verifier must supply independent acceptance evidence.";
-  }
-}
-async function preparePlanlessTask(options) {
-  const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const configPath = join5(workspaceRoot18, "workspace.yaml");
-  const config = (0, import_yaml4.parse)(await readFile5(configPath, "utf8"));
-  await assertValid2("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const repositoryConfig = config.repositories[options.repository];
-  if (!repositoryConfig) throw new Error(`Unknown repository: ${options.repository}`);
-  const repositoryPath = assertInside(workspaceRoot18, join5(workspaceRoot18, repositoryConfig.path));
-  await access3(repositoryPath);
-  await assertCleanRepository(repositoryPath);
-  const baseCommit = await git(repositoryPath, ["rev-parse", repositoryConfig.default_branch]);
-  const requiredInstructionPaths = [
-    join5(workspaceRoot18, "AGENTS.md"),
-    join5(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`),
-    join5(workspaceRoot18, "agents", "repository-worker.md"),
-    join5(workspaceRoot18, "agents", "verifier.md")
-  ];
-  await Promise.all(requiredInstructionPaths.map((path2) => access3(path2)));
-  const runtimeRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, ".runtime"));
-  const now = options.now ?? /* @__PURE__ */ new Date();
-  const { workId, runId } = await generateIds(runtimeRoot, options.request, now, options.discriminator);
-  const createdAt = now.toISOString();
-  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request)}-${runId.slice(-8)}`;
-  const runRoot = assertInside(runtimeRoot, join5(runtimeRoot, "runs", runId));
-  const worktree = assertInside(runtimeRoot, join5(runtimeRoot, "worktrees", runId, options.repository));
-  const taskBriefPath = join5(runtimeRoot, "tasks", `${runId}.json`);
-  const manifestPath = join5(runRoot, "manifest.json");
-  const workerInputPath = join5(runRoot, `${options.repository}-worker-input.json`);
-  const verifierInputPath = join5(runRoot, `${options.repository}-verifier-input.json`);
-  const workerResultPath = join5(runtimeRoot, "results", `${runId}-${options.repository}-worker.json`);
-  const verifierResultPath = join5(runtimeRoot, "results", `${runId}-${options.repository}-verifier.json`);
-  const taskBrief = normalizeDirectRequest({
-    request: options.request,
-    repository: options.repository,
-    acceptanceCriteria: options.acceptanceCriteria,
-    scope: options.scope,
-    ...options.testScope ? { testScope: options.testScope } : {},
-    ...options.testPolicy ? { testPolicy: options.testPolicy } : {},
-    ...options.testRationale ? { testRationale: options.testRationale } : {},
-    verificationCommands: options.verificationCommands ?? [],
-    workId,
-    runId,
-    createdAt
-  });
-  await assertValid2("task-brief", taskBrief);
-  if (taskBrief.test_expectation?.policy === "existing-coverage") {
-    for (const path2 of taskBrief.test_expectation.paths) {
-      try {
-        await access3(assertInside(repositoryPath, join5(repositoryPath, path2)));
-      } catch {
-        throw new Error(`Existing-coverage test path does not exist: ${path2}`);
-      }
-    }
-  }
-  await writeJsonAtomic(taskBriefPath, taskBrief);
-  const runtimeRepository = {
-    name: options.repository,
-    base_path: relative3(workspaceRoot18, repositoryPath),
-    base_commit: baseCommit,
-    branch,
-    worktree,
-    worker_input: workerInputPath,
-    verifier_input: verifierInputPath,
-    repair_attempts: 0
-  };
-  const manifest2 = {
-    contract_version: 1,
-    work_id: workId,
-    run_id: runId,
-    status: "preparing",
-    created_at: createdAt,
-    updated_at: createdAt,
-    task_brief: taskBriefPath,
-    repositories: [runtimeRepository],
-    evidence: [taskBriefPath, manifestPath, workerInputPath, verifierInputPath],
-    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
-    execution_events: [],
-    lifecycle_events: config.activity.provider === "none" ? [{
-      event: "task.starting",
-      status: "skipped",
-      idempotency_key: `${runId}:task.starting:activity-none`,
-      occurred_at: createdAt
-    }] : []
-  };
-  await assertValid2("runtime-manifest", manifest2);
-  await writeJsonAtomic(manifestPath, manifest2);
-  const instructionPaths = [
-    ...requiredInstructionPaths.slice(0, 3)
-  ];
-  try {
-    await access3(join5(repositoryPath, "AGENTS.md"));
-    instructionPaths.push(join5(worktree, "AGENTS.md"));
-  } catch {
-  }
-  const workerInput = {
-    contract_version: 1,
-    role: "repository-worker",
-    task_brief: taskBriefPath,
-    repository: options.repository,
-    worktree,
-    branch,
-    base_commit: baseCommit,
-    ready: true,
-    blocked_by: [],
-    allowed_scope: taskBrief.scope,
-    implementation_scope: taskBrief.implementation_scope,
-    test_expectation: taskBrief.test_expectation,
-    instruction_paths: instructionPaths,
-    result_contract: join5(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
-    result_path: workerResultPath
-  };
-  const verifierInput = {
-    contract_version: 1,
-    role: "verifier",
-    read_only: true,
-    task_brief: taskBriefPath,
-    repository: options.repository,
-    worktree,
-    branch,
-    base_commit: baseCommit,
-    worker_result: workerResultPath,
-    acceptance_criteria: taskBrief.acceptance_criteria,
-    test_expectation: taskBrief.test_expectation,
-    verification_commands: taskBrief.verification_commands,
-    instruction_paths: [join5(workspaceRoot18, "AGENTS.md"), join5(workspaceRoot18, "agents", "verifier.md"), ...instructionPaths.slice(3)],
-    result_contract: join5(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
-    result_path: verifierResultPath
-  };
-  await writeJsonAtomic(workerInputPath, workerInput);
-  await writeJsonAtomic(verifierInputPath, verifierInput);
-  if (config.activity.provider !== "none") {
-    const lifecycle = await prepareActivityLifecycle({
-      workspaceRoot: workspaceRoot18,
-      runId,
-      event: "task.starting",
-      availableCapabilities: options.availableCapabilities ?? [],
-      now
-    });
-    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-      return {
-        workId,
-        runId,
-        branch,
-        worktree,
-        taskBrief: taskBriefPath,
-        manifest: manifestPath,
-        workerInput: workerInputPath,
-        verifierInput: verifierInputPath,
-        repositories: [{ name: options.repository, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready: true, blockedBy: [] }],
-        preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity"
-      };
-    }
-  }
-  try {
-    await ensurePrivateDirectory(join5(runtimeRoot, "worktrees", runId));
-    await git(repositoryPath, ["worktree", "add", "-b", branch, worktree, baseCommit]);
-    runtimeRepository.status = "prepared";
-    manifest2.status = "prepared";
-    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    await assertValid2("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-  } catch (error) {
-    manifest2.status = "blocked";
-    manifest2.updated_at = (/* @__PURE__ */ new Date()).toISOString();
-    manifest2.evidence.push(`Preparation failed: ${error.message}`);
-    await writeJsonAtomic(manifestPath, manifest2);
-    throw error;
-  }
-  return {
-    workId,
-    runId,
-    branch,
-    worktree,
-    taskBrief: taskBriefPath,
-    manifest: manifestPath,
-    workerInput: workerInputPath,
-    verifierInput: verifierInputPath,
-    repositories: [{ name: options.repository, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready: true, blockedBy: [] }],
-    preparationStatus: "prepared"
-  };
-}
-async function prepareContractFirstTask(options) {
-  const requestErrors = await validateContract("run-task-request", options.request);
-  if (requestErrors.length > 0) {
-    throw new Error(`Invalid run-task-request: ${requestErrors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-  }
-  const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const config = (0, import_yaml4.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid2("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const repositoryBases = /* @__PURE__ */ new Map();
-  for (const target of options.request.repositories) {
-    const registered = config.repositories[target.name];
-    if (!registered) throw new Error(`Unknown repository: ${target.name}`);
-    const path2 = assertInside(workspaceRoot18, join5(workspaceRoot18, registered.path));
-    await access3(path2);
-    await assertCleanRepository(path2);
-    repositoryBases.set(target.name, { path: path2, commit: await git(path2, ["rev-parse", registered.default_branch]) });
-    await Promise.all([
-      access3(join5(workspaceRoot18, "AGENTS.md")),
-      access3(join5(workspaceRoot18, "agents", `${registered.agent}.md`)),
-      access3(join5(workspaceRoot18, "agents", "repository-worker.md")),
-      access3(join5(workspaceRoot18, "agents", "verifier.md"))
-    ]);
-  }
-  const runtimeRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, ".runtime"));
-  const now = options.now ?? /* @__PURE__ */ new Date();
-  const { workId, runId } = await generateIds(runtimeRoot, options.request.request, now, options.discriminator);
-  const createdAt = now.toISOString();
-  const branch = `agent/${workId.toLowerCase()}-${slugify(options.request.request)}-${runId.slice(-8)}`;
-  const runRoot = assertInside(runtimeRoot, join5(runtimeRoot, "runs", runId));
-  const taskBriefPath = join5(runtimeRoot, "tasks", `${runId}.json`);
-  const manifestPath = join5(runRoot, "manifest.json");
-  const taskBrief = normalizeContractFirstRequest(options.request, workId, runId, createdAt);
-  await assertValid2("task-brief", taskBrief);
-  for (const target of taskBrief.repositories) {
-    if (target.test_expectation?.policy !== "existing-coverage") continue;
-    const base = repositoryBases.get(target.name);
-    for (const path2 of target.test_expectation.paths) {
-      try {
-        await access3(assertInside(base.path, join5(base.path, path2)));
-      } catch {
-        throw new Error(`Existing-coverage test path does not exist in ${target.name}: ${path2}`);
-      }
-    }
-  }
-  await writeJsonAtomic(taskBriefPath, taskBrief);
-  const runtimeRepositories = [];
-  const preparedRepositories = [];
-  for (const target of taskBrief.repositories) {
-    const base = repositoryBases.get(target.name);
-    const registered = config.repositories[target.name];
-    const worktree = assertInside(runtimeRoot, join5(runtimeRoot, "worktrees", runId, target.name));
-    const workerInputPath = join5(runRoot, `${target.name}-worker-input.json`);
-    const verifierInputPath = join5(runRoot, `${target.name}-verifier-input.json`);
-    const workerResultPath = join5(runtimeRoot, "results", `${runId}-${target.name}-worker.json`);
-    const verifierResultPath = join5(runtimeRoot, "results", `${runId}-${target.name}-verifier.json`);
-    const blockedBy = target.depends_on ?? [];
-    const ready = blockedBy.length === 0;
-    const instructionPaths = [
-      join5(workspaceRoot18, "AGENTS.md"),
-      join5(workspaceRoot18, "agents", `${registered.agent}.md`),
-      join5(workspaceRoot18, "agents", "repository-worker.md")
-    ];
-    try {
-      await access3(join5(base.path, "AGENTS.md"));
-      instructionPaths.push(join5(worktree, "AGENTS.md"));
-    } catch {
-    }
-    const sharedContract = {
-      repository: taskBrief.shared_contract.repository,
-      paths: taskBrief.shared_contract.paths,
-      worktree: assertInside(runtimeRoot, join5(runtimeRoot, "worktrees", runId, taskBrief.shared_contract.repository)),
-      approval: target.name === taskBrief.shared_contract.repository ? "must-pass-independent-verification" : "pending"
-    };
-    await writeJsonAtomic(workerInputPath, {
-      contract_version: 1,
-      role: "repository-worker",
-      task_brief: taskBriefPath,
-      repository: target.name,
-      worktree,
-      branch,
-      base_commit: base.commit,
-      ready,
-      blocked_by: blockedBy,
-      shared_contract: sharedContract,
-      allowed_scope: target.scope,
-      implementation_scope: target.implementation_scope,
-      test_expectation: target.test_expectation,
-      instruction_paths: instructionPaths,
-      result_contract: join5(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
-      result_path: workerResultPath
-    });
-    await writeJsonAtomic(verifierInputPath, {
-      contract_version: 1,
-      role: "verifier",
-      read_only: true,
-      task_brief: taskBriefPath,
-      repository: target.name,
-      worktree,
-      branch,
-      base_commit: base.commit,
-      worker_result: workerResultPath,
-      acceptance_criteria: target.acceptance_criteria,
-      test_expectation: target.test_expectation,
-      verification_commands: target.verification_commands,
-      shared_contract: sharedContract,
-      instruction_paths: [join5(workspaceRoot18, "AGENTS.md"), join5(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join5(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
-      result_path: verifierResultPath
-    });
-    runtimeRepositories.push({
-      name: target.name,
-      base_path: relative3(workspaceRoot18, base.path),
-      base_commit: base.commit,
-      branch,
-      worktree,
-      worker_input: workerInputPath,
-      verifier_input: verifierInputPath,
-      status: ready ? "prepared" : "waiting",
-      depends_on: blockedBy,
-      repair_attempts: 0
-    });
-    preparedRepositories.push({ name: target.name, branch, worktree, workerInput: workerInputPath, verifierInput: verifierInputPath, ready, blockedBy });
-  }
-  const manifest2 = {
-    contract_version: 1,
-    work_id: workId,
-    run_id: runId,
-    status: "preparing",
-    created_at: createdAt,
-    updated_at: createdAt,
-    task_brief: taskBriefPath,
-    repositories: runtimeRepositories,
-    evidence: [taskBriefPath, manifestPath, ...preparedRepositories.flatMap((repository) => [repository.workerInput, repository.verifierInput])],
-    warnings: config.activity.provider === "none" ? ["No activity tool is configured; this run cannot guarantee exclusive ownership."] : [],
-    execution_events: [],
-    lifecycle_events: config.activity.provider === "none" ? [{ event: "task.starting", status: "skipped", idempotency_key: `${runId}:task.starting:activity-none`, occurred_at: createdAt }] : []
-  };
-  await assertValid2("runtime-manifest", manifest2);
-  await writeJsonAtomic(manifestPath, manifest2);
-  if (config.activity.provider !== "none") {
-    const lifecycle = await prepareActivityLifecycle({ workspaceRoot: workspaceRoot18, runId, event: "task.starting", availableCapabilities: options.availableCapabilities ?? [], now });
-    if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-      const primary2 = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
-      return { workId, runId, branch: primary2.branch, worktree: primary2.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary2.workerInput, verifierInput: primary2.verifierInput, repositories: preparedRepositories, preparationStatus: lifecycle.status === "failed" ? "blocked" : "awaiting-activity" };
-    }
-  }
-  try {
-    await ensurePrivateDirectory(join5(runtimeRoot, "worktrees", runId));
-    for (const repository of runtimeRepositories) {
-      const base = repositoryBases.get(repository.name);
-      await git(base.path, ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
-    }
-    manifest2.status = "prepared";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    await assertValid2("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-  } catch (error) {
-    manifest2.status = "blocked";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    manifest2.evidence.push(`Preparation failed: ${error.message}`);
-    await writeJsonAtomic(manifestPath, manifest2);
-    throw error;
-  }
-  const primary = preparedRepositories.find((repository) => repository.name === taskBrief.shared_contract.repository);
-  return { workId, runId, branch: primary.branch, worktree: primary.worktree, taskBrief: taskBriefPath, manifest: manifestPath, workerInput: primary.workerInput, verifierInput: primary.verifierInput, repositories: preparedRepositories, preparationStatus: "prepared" };
-}
-async function resumePlanlessTask(options) {
-  const workspaceRoot18 = resolve7(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join5(workspaceRoot18, ".runtime"));
-  const manifestPath = assertInside(runtimeRoot, join5(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const manifest2 = JSON.parse(await readFile5(manifestPath, "utf8"));
-  await assertValid2("runtime-manifest", manifest2);
-  if (manifest2.run_id !== options.runId || manifest2.status !== "preparing") throw new Error(`Run ${options.runId} is not awaiting preparation`);
-  const lifecycle = manifest2.lifecycle_events.find((event) => event.event === "task.starting");
-  if (!lifecycle || lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-    throw new Error(`task.starting lifecycle is ${lifecycle?.status ?? "missing"}; complete required or manual actions before resuming`);
-  }
-  const config = (0, import_yaml4.parse)(await readFile5(join5(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid2("workspace", config);
-  const basePaths = /* @__PURE__ */ new Map();
-  for (const repository of manifest2.repositories) {
-    const registered = config.repositories[repository.name];
-    if (!registered) throw new Error(`Unknown repository: ${repository.name}`);
-    const repositoryPath = assertInside(workspaceRoot18, join5(workspaceRoot18, repository.base_path));
-    await assertCleanRepository(repositoryPath);
-    const currentBase = await git(repositoryPath, ["rev-parse", registered.default_branch]);
-    if (currentBase !== repository.base_commit) throw new Error(`Repository base changed during activity preflight for ${repository.name}; prepare a fresh run`);
-    basePaths.set(repository.name, repositoryPath);
-  }
-  try {
-    await ensurePrivateDirectory(join5(runtimeRoot, "worktrees", options.runId));
-    for (const repository of manifest2.repositories) {
-      await git(basePaths.get(repository.name), ["worktree", "add", "-b", repository.branch, repository.worktree, repository.base_commit]);
-    }
-    manifest2.status = "prepared";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    await assertValid2("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-  } catch (error) {
-    manifest2.status = "blocked";
-    manifest2.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    manifest2.evidence.push(`Preparation failed: ${error.message}`);
-    await writeJsonAtomic(manifestPath, manifest2);
-    throw error;
-  }
-  const brief = JSON.parse(await readFile5(manifest2.task_brief, "utf8"));
-  const primary = manifest2.repositories.find((repository) => repository.name === brief.shared_contract?.repository) ?? manifest2.repositories[0];
-  const repositories = manifest2.repositories.map((repository) => ({
-    name: repository.name,
-    branch: repository.branch,
-    worktree: repository.worktree,
-    workerInput: repository.worker_input,
-    verifierInput: repository.verifier_input,
-    ready: (repository.depends_on?.length ?? 0) === 0,
-    blockedBy: repository.depends_on ?? []
-  }));
-  return {
-    workId: manifest2.work_id,
-    runId: manifest2.run_id,
-    branch: primary.branch,
-    worktree: primary.worktree,
-    taskBrief: manifest2.task_brief,
-    manifest: manifestPath,
-    workerInput: primary.worker_input,
-    verifierInput: primary.verifier_input,
-    repositories,
-    preparationStatus: "prepared"
-  };
-}
-var import_yaml4;
-var init_run_task = __esm({
-  "scripts/lib/run-task.ts"() {
-    "use strict";
-    import_yaml4 = __toESM(require_dist(), 1);
-    init_git();
-    init_ids();
-    init_io();
-    init_validation();
-    init_activity_lifecycle();
-  }
-});
-
-// scripts/run-task.ts
-var run_task_exports = {};
-import { dirname as dirname6, resolve as resolve8 } from "node:path";
-import { readFile as readFile6 } from "node:fs/promises";
-import { parseArgs as parseArgs3 } from "node:util";
-import { fileURLToPath as fileURLToPath4 } from "node:url";
-var testPolicies, activityCapabilities, workspaceRoot3, values3, prepared;
-var init_run_task2 = __esm({
-  async "scripts/run-task.ts"() {
-    "use strict";
-    init_run_task();
-    testPolicies = ["required", "existing-coverage", "verifier-only", "not-required"];
-    activityCapabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-    workspaceRoot3 = resolve8(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve8(dirname6(fileURLToPath4(import.meta.url)), ".."));
-    ({ values: values3 } = parseArgs3({
-      options: {
-        request: { type: "string" },
-        repository: { type: "string" },
-        acceptance: { type: "string", multiple: true, default: [] },
-        scope: { type: "string", multiple: true, default: [] },
-        "test-scope": { type: "string", multiple: true, default: [] },
-        "test-policy": { type: "string" },
-        "test-rationale": { type: "string" },
-        verify: { type: "string", multiple: true, default: [] },
-        available: { type: "string", multiple: true, default: [] },
-        "resume-run": { type: "string" },
-        "request-file": { type: "string" }
-      }
-    }));
-    if (values3["resume-run"]) {
-      console.log(JSON.stringify(await resumePlanlessTask({ workspaceRoot: workspaceRoot3, runId: values3["resume-run"] }), null, 2));
-      process.exit(0);
-    }
-    if (values3.available.some((capability) => !activityCapabilities.includes(capability))) {
-      throw new Error(`Unknown activity capability; expected one of: ${activityCapabilities.join(", ")}`);
-    }
-    if (values3["request-file"]) {
-      const request3 = JSON.parse(await readFile6(resolve8(values3["request-file"]), "utf8"));
-      console.log(JSON.stringify(await prepareContractFirstTask({
-        workspaceRoot: workspaceRoot3,
-        request: request3,
-        availableCapabilities: values3.available
-      }), null, 2));
-      process.exit(0);
-    }
-    if (!values3.request || !values3.repository || values3["test-policy"] && !testPolicies.includes(values3["test-policy"])) {
-      throw new Error("Usage: run-task --request <text> --repository <name> --acceptance <criterion> --scope <path> [...] | run-task --request-file <json>");
-    }
-    prepared = await preparePlanlessTask({
-      workspaceRoot: workspaceRoot3,
-      request: values3.request,
-      repository: values3.repository,
-      acceptanceCriteria: values3.acceptance,
-      scope: values3.scope,
-      testScope: values3["test-scope"],
-      ...values3["test-policy"] ? { testPolicy: values3["test-policy"] } : {},
-      ...values3["test-rationale"] ? { testRationale: values3["test-rationale"] } : {},
-      verificationCommands: values3.verify,
-      availableCapabilities: values3.available
-    });
-    console.log(JSON.stringify(prepared, null, 2));
-    if (prepared.preparationStatus === "prepared") console.warn("Warning: exclusive ownership is guaranteed only when a configured starting action confirmed it.");
-    else console.warn(`Worktree not created: activity preflight is ${prepared.preparationStatus}. Complete the recorded actions, then rerun with --resume-run ${prepared.runId}.`);
-  }
-});
-
-// scripts/lib/record-result.ts
-import { chmod as chmod2, readFile as readFile7 } from "node:fs/promises";
-import { join as join6, resolve as resolve9 } from "node:path";
-function assertIdentifier(value2, label, pattern) {
-  if (!pattern.test(value2)) throw new Error(`Invalid ${label}: ${value2}`);
-}
-async function readJson2(path2) {
-  return JSON.parse(await readFile7(path2, "utf8"));
-}
-async function assertValid3(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) {
-    throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-  }
-}
-function assertEqual(actual, expected, label) {
-  if (actual !== expected) throw new Error(`${label} mismatch: expected ${String(expected)}, received ${String(actual)}`);
-}
-function inAllowedScope(path2, scopes) {
-  return scopes.some((scope) => {
-    const normalized = scope.replace(/\/$/, "");
-    return path2 === normalized || path2.startsWith(`${normalized}/`);
-  });
-}
-function sameMembers(left, right) {
-  return [...left].sort().join("\n") === [...right].sort().join("\n");
-}
-function sameTestExpectation(left, right) {
-  return left.policy === right.policy && left.rationale === right.rationale && sameMembers(left.paths, right.paths);
-}
-function findRepository(manifest2, name) {
-  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
-  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
-  return repository;
-}
-function eventKey(runId, repository, stage, attempt) {
-  const suffix = attempt === 0 ? "" : `:attempt-${attempt}`;
-  return `${runId}:execution:${repository}:${stage}${suffix}`;
-}
-function appendEvent(manifest2, stage, repository, from, to, occurredAt, inferred, attempt, resultPath) {
-  const event = {
-    stage,
-    repository,
-    from_status: from,
-    to_status: to,
-    inferred,
-    attempt,
-    idempotency_key: eventKey(manifest2.run_id, repository, stage, attempt),
-    occurred_at: occurredAt
-  };
-  if (resultPath) event.result_path = resultPath;
-  manifest2.execution_events ??= [];
-  manifest2.execution_events.push(event);
-  const runtimeRepository = findRepository(manifest2, repository);
-  runtimeRepository.status = to;
-  refreshManifestStatus(manifest2);
-  manifest2.updated_at = occurredAt;
-  if (resultPath && !manifest2.evidence.includes(resultPath)) manifest2.evidence.push(resultPath);
-}
-function refreshManifestStatus(manifest2) {
-  const statuses = manifest2.repositories.map((repository) => repository.status ?? manifest2.status);
-  if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
-  else if (statuses.includes("failed")) manifest2.status = "failed";
-  else if (statuses.includes("blocked")) manifest2.status = "blocked";
-  else if (statuses.includes("verifying")) manifest2.status = "verifying";
-  else if (statuses.includes("running")) manifest2.status = "running";
-  else manifest2.status = "prepared";
-}
-async function unlockDependents(runtimeRoot, manifest2) {
-  for (const candidate of manifest2.repositories) {
-    if (candidate.status !== "waiting") continue;
-    const dependencies = candidate.depends_on ?? [];
-    if (!dependencies.every((name) => findRepository(manifest2, name).status === "passed")) continue;
-    for (const [path2, worker] of [[candidate.worker_input, true], [candidate.verifier_input, false]]) {
-      const inputPath2 = assertInside(runtimeRoot, path2);
-      const input = await readJson2(inputPath2);
-      if (worker) {
-        input.ready = true;
-        input.blocked_by = [];
-      }
-      if (input.shared_contract && typeof input.shared_contract === "object") {
-        input.shared_contract.approval = "verified";
-      }
-      await writeJsonAtomic(inputPath2, input);
-    }
-    candidate.status = "prepared";
-  }
-  refreshManifestStatus(manifest2);
-}
-async function assertWorktree(repository) {
-  await assertCleanRepository(repository.worktree);
-  const branch = await git(repository.worktree, ["branch", "--show-current"]);
-  assertEqual(branch, repository.branch, "worktree branch");
-  return git(repository.worktree, ["rev-parse", "HEAD"]);
-}
-function assertTaskIdentity(manifest2, brief, repository) {
-  assertEqual(brief.work_id, manifest2.work_id, "task brief work_id");
-  assertEqual(brief.run_id, manifest2.run_id, "task brief run_id");
-  if (!brief.repositories.some((candidate) => candidate.name === repository)) {
-    throw new Error(`Task brief does not include repository ${repository}`);
-  }
-}
-async function validateWorkerResult(manifest2, repository, input, testExpectation) {
-  const result3 = await readJson2(input.result_path);
-  await assertValid3("worker-result", result3);
-  assertEqual(result3.work_id, manifest2.work_id, "worker result work_id");
-  assertEqual(result3.run_id, manifest2.run_id, "worker result run_id");
-  assertEqual(result3.repository, repository.name, "worker result repository");
-  assertEqual(result3.branch, repository.branch, "worker result branch");
-  assertEqual(resolve9(result3.worktree), resolve9(repository.worktree), "worker result worktree");
-  if (result3.status === "completed") {
-    if (result3.commits.length === 0) throw new Error("Completed worker result must record at least one commit");
-    if (result3.checks.some((check) => check.status === "failed")) throw new Error("Completed worker result cannot contain a failed check");
-    const head = await assertWorktree(repository);
-    assertEqual(result3.commits.at(-1), head, "worker result final commit");
-    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${head}`])).split("\n").filter(Boolean);
-    if (commits.join("\n") !== result3.commits.join("\n")) throw new Error("worker result commits does not match the ordered base-to-head Git history");
-    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
-    if (!sameMembers(changedFiles, result3.changed_files)) throw new Error("worker result changed_files does not match the base-to-head Git diff");
-    const outsideScope = changedFiles.filter((path2) => !inAllowedScope(path2, input.allowed_scope));
-    if (outsideScope.length > 0) throw new Error(`Worker changed files outside allowed scope: ${outsideScope.join(", ")}`);
-    if (testExpectation.policy === "required" && !changedFiles.some((path2) => inAllowedScope(path2, testExpectation.paths))) {
-      throw new Error(`Required test policy needs a changed file in test scope: ${testExpectation.paths.join(", ")}`);
-    }
-    return "verifying";
-  }
-  return result3.status;
-}
-async function validateVerifierResult(manifest2, repository, input) {
-  const worker = await readJson2(input.worker_result);
-  await assertValid3("worker-result", worker);
-  const result3 = await readJson2(input.result_path);
-  await assertValid3("verifier-result", result3);
-  assertEqual(result3.work_id, manifest2.work_id, "verifier result work_id");
-  assertEqual(result3.run_id, manifest2.run_id, "verifier result run_id");
-  assertEqual(result3.repository, repository.name, "verifier result repository");
-  if (!sameMembers(result3.acceptance.map((item) => item.criterion), input.acceptance_criteria)) {
-    throw new Error("verifier result acceptance criteria do not match verifier input");
-  }
-  const acceptanceStatuses = result3.acceptance.map((item) => item.status);
-  if (result3.status === "pass" && acceptanceStatuses.some((status2) => status2 !== "passed")) {
-    throw new Error("Passing verifier result requires every acceptance criterion to pass");
-  }
-  if (result3.status === "fail" && !acceptanceStatuses.includes("failed")) {
-    throw new Error("Failing verifier result must identify a failed acceptance criterion");
-  }
-  if (result3.status === "blocked" && !acceptanceStatuses.includes("blocked")) {
-    throw new Error("Blocked verifier result must identify a blocked acceptance criterion");
-  }
-  const head = await assertWorktree(repository);
-  assertEqual(worker.commits.at(-1), head, "verified worker commit");
-  return result3.status === "pass" ? "passed" : result3.status === "fail" ? "failed" : "blocked";
-}
-async function recordResult(options) {
-  assertIdentifier(options.runId, "run ID", /^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$/);
-  assertIdentifier(options.repository, "repository", /^[a-z][a-z0-9-]*$/);
-  const workspaceRoot18 = resolve9(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join6(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join6(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson2(manifestPath);
-    await assertValid3("runtime-manifest", manifest2);
-    assertEqual(manifest2.run_id, options.runId, "manifest run_id");
-    const repository = findRepository(manifest2, options.repository);
-    const attempt = repository.repair_attempts ?? 0;
-    assertInside(runtimeRoot, repository.worktree);
-    const taskBriefPath = assertInside(runtimeRoot, manifest2.task_brief);
-    const workerInputPath = assertInside(runtimeRoot, repository.worker_input);
-    const verifierInputPath = assertInside(runtimeRoot, repository.verifier_input);
-    const brief = await readJson2(taskBriefPath);
-    await assertValid3("task-brief", brief);
-    assertTaskIdentity(manifest2, brief, options.repository);
-    const target = brief.repositories.find((candidate) => candidate.name === options.repository);
-    const targetScope = target.scope ?? brief.scope;
-    const implementationScope = target.implementation_scope ?? brief.implementation_scope ?? targetScope;
-    const testExpectation = target.test_expectation ?? brief.test_expectation ?? {
-      policy: "verifier-only",
-      paths: [],
-      rationale: "Legacy task brief has no authorized test edit scope; verifier evidence is required."
-    };
-    const workerInput = await readJson2(workerInputPath);
-    const verifierInput = await readJson2(verifierInputPath);
-    assertInside(runtimeRoot, workerInput.result_path);
-    assertInside(runtimeRoot, verifierInput.worker_result);
-    assertInside(runtimeRoot, verifierInput.result_path);
-    assertEqual(workerInput.repository, repository.name, "worker input repository");
-    assertEqual(resolve9(workerInput.task_brief), resolve9(taskBriefPath), "worker input task_brief");
-    assertEqual(resolve9(workerInput.worktree), resolve9(repository.worktree), "worker input worktree");
-    assertEqual(workerInput.branch, repository.branch, "worker input branch");
-    assertEqual(workerInput.base_commit, repository.base_commit, "worker input base_commit");
-    if (!sameMembers(workerInput.allowed_scope, targetScope)) throw new Error("worker input allowed_scope does not match task brief repository scope");
-    if ((target.implementation_scope || brief.implementation_scope) && (!workerInput.implementation_scope || !sameMembers(workerInput.implementation_scope, implementationScope))) {
-      throw new Error("worker input implementation_scope does not match task brief");
-    }
-    if ((target.test_expectation || brief.test_expectation) && (!workerInput.test_expectation || !sameTestExpectation(workerInput.test_expectation, testExpectation))) {
-      throw new Error("worker input test_expectation does not match task brief");
-    }
-    assertEqual(verifierInput.repository, repository.name, "verifier input repository");
-    assertEqual(resolve9(verifierInput.task_brief), resolve9(taskBriefPath), "verifier input task_brief");
-    assertEqual(resolve9(verifierInput.worktree), resolve9(repository.worktree), "verifier input worktree");
-    assertEqual(verifierInput.branch, repository.branch, "verifier input branch");
-    assertEqual(verifierInput.base_commit, repository.base_commit, "verifier input base_commit");
-    assertEqual(resolve9(verifierInput.worker_result), resolve9(workerInput.result_path), "verifier input worker_result");
-    if (!sameMembers(verifierInput.acceptance_criteria, target.acceptance_criteria ?? brief.acceptance_criteria)) throw new Error("verifier input acceptance_criteria does not match task brief repository criteria");
-    if ((target.test_expectation || brief.test_expectation) && (!verifierInput.test_expectation || !sameTestExpectation(verifierInput.test_expectation, testExpectation))) {
-      throw new Error("verifier input test_expectation does not match task brief");
-    }
-    const existing = manifest2.execution_events?.find((event) => event.idempotency_key === eventKey(options.runId, options.repository, options.stage, attempt));
-    const occurredAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const currentStatus = repository.status ?? manifest2.status;
-    if (options.stage === "worker-started") {
-      if (existing) return manifest2;
-      if (currentStatus === "waiting") throw new Error(`worker-started for ${repository.name} is blocked by: ${(repository.depends_on ?? []).join(", ")}`);
-      if (currentStatus !== "prepared") throw new Error(`worker-started requires prepared repository status, received ${currentStatus}`);
-      const head = await assertWorktree(repository);
-      assertEqual(head, repository.base_commit, "worker start HEAD");
-      appendEvent(manifest2, options.stage, options.repository, "prepared", "running", occurredAt, false, attempt);
-    } else if (options.stage === "worker-result") {
-      const target2 = await validateWorkerResult(manifest2, repository, workerInput, testExpectation);
-      await chmod2(workerInput.result_path, 384);
-      if (existing) return manifest2;
-      if (currentStatus === "prepared") {
-        appendEvent(manifest2, "worker-started", options.repository, "prepared", "running", occurredAt, true, attempt);
-      }
-      if ((repository.status ?? manifest2.status) !== "running") throw new Error(`worker-result requires running repository status, received ${repository.status ?? manifest2.status}`);
-      appendEvent(manifest2, options.stage, options.repository, "running", target2, occurredAt, false, attempt, workerInput.result_path);
-    } else {
-      const target2 = await validateVerifierResult(manifest2, repository, verifierInput);
-      await chmod2(verifierInput.result_path, 384);
-      if (existing) return manifest2;
-      if (currentStatus !== "verifying") throw new Error(`verifier-result requires verifying repository status, received ${currentStatus}`);
-      appendEvent(manifest2, options.stage, options.repository, "verifying", target2, occurredAt, false, attempt, verifierInput.result_path);
-      if (target2 === "passed") await unlockDependents(runtimeRoot, manifest2);
-    }
-    await assertValid3("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return manifest2;
-  });
-}
-var init_record_result = __esm({
-  "scripts/lib/record-result.ts"() {
-    "use strict";
-    init_git();
-    init_io();
-    init_validation();
-  }
-});
-
-// scripts/record-result.ts
-var record_result_exports = {};
-import { dirname as dirname7, resolve as resolve10 } from "node:path";
-import { parseArgs as parseArgs4 } from "node:util";
-import { fileURLToPath as fileURLToPath5 } from "node:url";
-var stages, workspaceRoot4, values4, manifest;
-var init_record_result2 = __esm({
-  async "scripts/record-result.ts"() {
-    "use strict";
-    init_record_result();
-    stages = ["worker-started", "worker-result", "verifier-result"];
-    workspaceRoot4 = resolve10(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve10(dirname7(fileURLToPath5(import.meta.url)), ".."));
-    ({ values: values4 } = parseArgs4({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" },
-        stage: { type: "string" }
-      }
-    }));
-    if (!values4["run-id"] || !values4.repository || !values4.stage || !stages.includes(values4.stage)) {
-      throw new Error("Usage: record-result --run-id <id> --repository <name> --stage <worker-started|worker-result|verifier-result>");
-    }
-    manifest = await recordResult({
-      workspaceRoot: workspaceRoot4,
-      runId: values4["run-id"],
-      repository: values4.repository,
-      stage: values4.stage
-    });
-    console.log(JSON.stringify({ runId: manifest.run_id, status: manifest.status, executionEvents: manifest.execution_events?.length ?? 0 }, null, 2));
-  }
-});
-
-// scripts/lib/review-lifecycle.ts
-import { readFile as readFile8 } from "node:fs/promises";
-import { join as join7, resolve as resolve11 } from "node:path";
-async function readJson3(path2) {
-  return JSON.parse(await readFile8(path2, "utf8"));
-}
-async function assertValid4(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-function findRepository2(manifest2, name) {
-  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
-  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
-  return repository;
-}
-function addEvidence(manifest2, ...paths2) {
-  for (const path2 of paths2) if (!manifest2.evidence.includes(path2)) manifest2.evidence.push(path2);
-}
-function addExecutionEvent(manifest2, repository, stage, fromStatus, toStatus, attempt, occurredAt, resultPath) {
-  const event = {
-    stage,
-    repository,
-    from_status: fromStatus,
-    to_status: toStatus,
-    inferred: false,
-    attempt,
-    idempotency_key: `${manifest2.run_id}:execution:${repository}:${stage}:attempt-${attempt}`,
-    occurred_at: occurredAt
-  };
-  if (resultPath) event.result_path = resultPath;
-  manifest2.execution_events ??= [];
-  manifest2.execution_events.push(event);
-  const runtimeRepository = findRepository2(manifest2, repository);
-  runtimeRepository.status = toStatus;
-  const statuses = manifest2.repositories.map((candidate) => candidate.status ?? manifest2.status);
-  if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
-  else if (statuses.includes("failed")) manifest2.status = "failed";
-  else if (statuses.includes("blocked")) manifest2.status = "blocked";
-  else if (statuses.includes("verifying")) manifest2.status = "verifying";
-  else if (statuses.includes("running")) manifest2.status = "running";
-  else manifest2.status = "prepared";
-  manifest2.updated_at = occurredAt;
-}
-async function loadWorkspace(workspaceRoot18) {
-  const config = (0, import_yaml5.parse)(await readFile8(join7(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid4("workspace", config);
-  const semanticErrors = workspaceSemanticErrors(config);
-  if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  return config;
-}
-function sameMembers2(left, right) {
-  return left.slice().sort().join("\n") === right.slice().sort().join("\n");
-}
-async function assertCurrentWorker(manifest2, repository, workerInput) {
-  const worker = await readJson3(workerInput.result_path);
-  await assertValid4("worker-result", worker);
-  if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
-    throw new Error("Worker result identity does not match the active run");
-  }
-  if (worker.status !== "completed") throw new Error(`Review lifecycle requires a completed worker, received ${worker.status}`);
-  if (worker.branch !== repository.branch || resolve11(worker.worktree) !== resolve11(repository.worktree)) {
-    throw new Error("Worker result branch or worktree does not match the runtime manifest");
-  }
-  await assertCleanRepository(repository.worktree);
-  const branch = await git(repository.worktree, ["branch", "--show-current"]);
-  if (branch !== repository.branch) throw new Error(`Worktree branch mismatch: expected ${repository.branch}, received ${branch}`);
-  const head = await git(repository.worktree, ["rev-parse", "HEAD"]);
-  if (worker.commits.at(-1) !== head) throw new Error("Current worktree HEAD does not match the recorded worker result");
-  const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${head}`])).split("\n").filter(Boolean);
-  const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${head}`])).split("\n").filter(Boolean);
-  if (commits.join("\n") !== worker.commits.join("\n") || !sameMembers2(changedFiles, worker.changed_files)) {
-    throw new Error("Worker result no longer matches the current base-to-head Git history");
-  }
-  return worker;
-}
-function assertVerifier(manifest2, repository, brief, verifier) {
-  if (verifier.work_id !== manifest2.work_id || verifier.run_id !== manifest2.run_id || verifier.repository !== repository.name) {
-    throw new Error("Verifier result identity does not match the active run");
-  }
-  const acceptanceCriteria = brief.repositories.find((candidate) => candidate.name === repository.name)?.acceptance_criteria ?? brief.acceptance_criteria;
-  if (!sameMembers2(verifier.acceptance.map((item) => item.criterion), acceptanceCriteria)) {
-    throw new Error("Verifier acceptance criteria do not match the task brief");
-  }
-  if (verifier.status === "pass" && verifier.acceptance.some((item) => item.status !== "passed")) {
-    throw new Error("Passing verifier result no longer has complete passing acceptance evidence");
-  }
-  if (verifier.status === "fail" && !verifier.acceptance.some((item) => item.status === "failed")) {
-    throw new Error("Failing verifier result no longer identifies failed acceptance evidence");
-  }
-}
-function repairFindings(verifier) {
-  const findings = verifier.findings.map((finding) => `[${finding.severity}] ${finding.description} Evidence: ${finding.evidence}`);
-  for (const acceptance of verifier.acceptance) {
-    if (acceptance.status !== "passed") findings.push(`Acceptance ${acceptance.status}: ${acceptance.criterion}. Evidence: ${acceptance.evidence}`);
-  }
-  return findings;
-}
-async function prepareRepair(options) {
-  const workspaceRoot18 = resolve11(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  const config = await loadWorkspace(workspaceRoot18);
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson3(manifestPath);
-    await assertValid4("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    const repository = findRepository2(manifest2, options.repository);
-    const attempt = repository.repair_attempts ?? 0;
-    const maximumAttempts = config.workflow.maximum_repair_attempts;
-    const lastEvent = manifest2.execution_events?.filter((event) => event.repository === repository.name).at(-1);
-    const repositoryStatus = repository.status ?? manifest2.status;
-    if (repositoryStatus === "running" && lastEvent?.stage === "repair-prepared" && lastEvent.attempt === attempt) {
-      return { status: "prepared", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: repository.worker_input, verifier_input: repository.verifier_input };
-    }
-    if (repositoryStatus === "blocked" && lastEvent?.stage === "repair-exhausted") {
-      return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
-    }
-    if (repositoryStatus !== "failed") throw new Error(`Repair preparation requires failed status, received ${repositoryStatus}`);
-    const occurredAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    if (attempt >= maximumAttempts) {
-      addExecutionEvent(manifest2, repository.name, "repair-exhausted", "failed", "blocked", attempt, occurredAt);
-      manifest2.warnings.push(`Maximum repair attempts exhausted for ${repository.name}: ${maximumAttempts}`);
-      await assertValid4("runtime-manifest", manifest2);
-      await writeJsonAtomic(manifestPath, manifest2);
-      return { status: "exhausted", attempt, maximum_attempts: maximumAttempts, manifest: manifestPath };
-    }
-    const taskBriefPath = assertInside(runtimeRoot, manifest2.task_brief);
-    const taskBrief = await readJson3(taskBriefPath);
-    await assertValid4("task-brief", taskBrief);
-    const taskTarget = taskBrief.repositories.find((candidate) => candidate.name === repository.name);
-    if (!taskTarget) throw new Error(`Task brief does not include repository ${repository.name}`);
-    const priorWorkerInput = await readJson3(assertInside(runtimeRoot, repository.worker_input));
-    const priorVerifierInput = await readJson3(assertInside(runtimeRoot, repository.verifier_input));
-    assertInside(runtimeRoot, priorWorkerInput.result_path);
-    assertInside(runtimeRoot, priorVerifierInput.result_path);
-    await assertCurrentWorker(manifest2, repository, priorWorkerInput);
-    const verifier = await readJson3(priorVerifierInput.result_path);
-    await assertValid4("verifier-result", verifier);
-    assertVerifier(manifest2, repository, taskBrief, verifier);
-    if (verifier.status !== "fail") throw new Error(`Repair preparation requires a failing verifier result, received ${verifier.status}`);
-    const findings = repairFindings(verifier);
-    if (findings.length === 0) throw new Error("Failing verifier result contains no actionable findings");
-    const nextAttempt = attempt + 1;
-    const runRoot = join7(runtimeRoot, "runs", options.runId);
-    const workerInputPath = join7(runRoot, `${repository.name}-repair-${nextAttempt}-worker-input.json`);
-    const verifierInputPath = join7(runRoot, `${repository.name}-repair-${nextAttempt}-verifier-input.json`);
-    const workerResultPath = join7(runtimeRoot, "results", `${options.runId}-${repository.name}-repair-${nextAttempt}-worker.json`);
-    const verifierResultPath = join7(runtimeRoot, "results", `${options.runId}-${repository.name}-repair-${nextAttempt}-verifier.json`);
-    const repositoryConfig = config.repositories[repository.name];
-    if (!repositoryConfig) throw new Error(`Workspace has no repository named ${repository.name}`);
-    const instructionPaths = [
-      join7(workspaceRoot18, "AGENTS.md"),
-      join7(workspaceRoot18, "agents", "repository-worker.md"),
-      join7(workspaceRoot18, "agents", `${repositoryConfig.agent}.md`)
-    ];
-    const workerInput = {
-      contract_version: 1,
-      role: "repair-worker",
-      attempt: nextAttempt,
-      task_brief: taskBriefPath,
-      repository: repository.name,
-      worktree: repository.worktree,
-      branch: repository.branch,
-      base_commit: repository.base_commit,
-      allowed_scope: taskTarget.scope ?? taskBrief.scope,
-      implementation_scope: taskTarget.implementation_scope ?? taskBrief.implementation_scope,
-      test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
-      findings,
-      previous_worker_result: priorWorkerInput.result_path,
-      previous_verifier_result: priorVerifierInput.result_path,
-      instruction_paths: instructionPaths,
-      result_contract: join7(workspaceRoot18, ".agents", "contracts", "worker-result.schema.json"),
-      result_path: workerResultPath
-    };
-    const verifierInput = {
-      contract_version: 1,
-      role: "verifier",
-      read_only: true,
-      attempt: nextAttempt,
-      task_brief: taskBriefPath,
-      repository: repository.name,
-      worktree: repository.worktree,
-      branch: repository.branch,
-      base_commit: repository.base_commit,
-      worker_result: workerResultPath,
-      acceptance_criteria: taskTarget.acceptance_criteria ?? taskBrief.acceptance_criteria,
-      test_expectation: taskTarget.test_expectation ?? taskBrief.test_expectation,
-      verification_commands: taskTarget.verification_commands ?? taskBrief.verification_commands,
-      instruction_paths: [join7(workspaceRoot18, "AGENTS.md"), join7(workspaceRoot18, "agents", "verifier.md")],
-      result_contract: join7(workspaceRoot18, ".agents", "contracts", "verifier-result.schema.json"),
-      result_path: verifierResultPath
-    };
-    await writeJsonAtomic(workerInputPath, workerInput);
-    await writeJsonAtomic(verifierInputPath, verifierInput);
-    repository.worker_input = workerInputPath;
-    repository.verifier_input = verifierInputPath;
-    repository.repair_attempts = nextAttempt;
-    addEvidence(manifest2, workerInputPath, verifierInputPath);
-    addExecutionEvent(manifest2, repository.name, "repair-prepared", "failed", "running", nextAttempt, occurredAt);
-    await assertValid4("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return { status: "prepared", attempt: nextAttempt, maximum_attempts: maximumAttempts, manifest: manifestPath, worker_input: workerInputPath, verifier_input: verifierInputPath };
-  });
-}
-function reviewBody(brief, verifier) {
-  const acceptance = brief.acceptance_criteria.map((criterion) => `- [x] ${criterion}`).join("\n");
-  const checks = verifier.checks.length > 0 ? verifier.checks.map((check) => `- ${check}`).join("\n") : "- No repository command was configured; verifier evidence is recorded.";
-  return `## Summary
-
-${brief.requested_outcome}
-
-## Acceptance
-
-${acceptance}
-
-## Verification
-
-${checks}
-
-Prepared from run \`${brief.run_id}\`. No push or pull request was performed.
-`;
-}
-async function prepareReview(options) {
-  const workspaceRoot18 = resolve11(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  const config = await loadWorkspace(workspaceRoot18);
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson3(manifestPath);
-    await assertValid4("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    const repository = findRepository2(manifest2, options.repository);
-    if (manifest2.status !== "passed") throw new Error(`Draft review preparation requires passed status, received ${manifest2.status}`);
-    const taskBrief = await readJson3(assertInside(runtimeRoot, manifest2.task_brief));
-    await assertValid4("task-brief", taskBrief);
-    const workerInput = await readJson3(assertInside(runtimeRoot, repository.worker_input));
-    const verifierInput = await readJson3(assertInside(runtimeRoot, repository.verifier_input));
-    assertInside(runtimeRoot, workerInput.result_path);
-    assertInside(runtimeRoot, verifierInput.result_path);
-    const worker = await assertCurrentWorker(manifest2, repository, workerInput);
-    const verifier = await readJson3(verifierInput.result_path);
-    await assertValid4("verifier-result", verifier);
-    assertVerifier(manifest2, repository, taskBrief, verifier);
-    if (verifier.status !== "pass") throw new Error(`Draft review preparation requires a passing verifier result, received ${verifier.status}`);
-    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
-    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
-    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
-    if (commits.length === 0 || changedFiles.length === 0) throw new Error("Draft review preparation requires committed changes");
-    if (repository.review_preparation) {
-      const existing = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
-      await assertValid4("review-preparation", existing);
-      if (existing.head_commit === headCommit && existing.worker_result === workerInput.result_path && existing.verifier_result === verifierInput.result_path) {
-        return existing;
-      }
-    }
-    const remotes = (await git(repository.worktree, ["remote"])).split("\n").filter(Boolean);
-    const remote = remotes.includes("origin") ? "origin" : null;
-    const blockers2 = remote ? [] : ["Repository has no origin remote; configure one before pushing or opening a draft pull request."];
-    const preparedAt = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const preparationPath = join7(runtimeRoot, "runs", options.runId, `${repository.name}-draft-pr.json`);
-    const preparation = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      repository: repository.name,
-      status: blockers2.length === 0 ? "ready" : "blocked",
-      remote,
-      base_branch: config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch,
-      head_branch: repository.branch,
-      base_commit: repository.base_commit,
-      head_commit: headCommit,
-      commits,
-      changed_files: changedFiles,
-      title: `${manifest2.work_id}: ${taskBrief.requested_outcome}`,
-      body: reviewBody(taskBrief, verifier),
-      worker_result: workerInput.result_path,
-      verifier_result: verifierInput.result_path,
-      blockers: blockers2,
-      prepared_at: preparedAt
-    };
-    if (!sameMembers2(worker.changed_files, changedFiles)) {
-      throw new Error("Current Git diff does not match the recorded worker result");
-    }
-    await assertValid4("review-preparation", preparation);
-    await writeJsonAtomic(preparationPath, preparation);
-    repository.review_preparation = preparationPath;
-    addEvidence(manifest2, preparationPath);
-    const eventKey2 = `${manifest2.run_id}:execution:${repository.name}:review-prepared:attempt-${repository.repair_attempts ?? 0}`;
-    if (!manifest2.execution_events?.some((event) => event.idempotency_key === eventKey2)) {
-      addExecutionEvent(manifest2, repository.name, "review-prepared", "passed", "passed", repository.repair_attempts ?? 0, preparedAt, preparationPath);
-    }
-    await assertValid4("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return preparation;
-  });
-}
-function safeReviewEvidence(value2, label) {
-  const trimmed = value2.trim();
-  if (!trimmed || /[\r\n]/.test(trimmed)) throw new Error(`${label} must be a non-empty single line`);
-  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(trimmed)) throw new Error(`${label} appears to contain credentials`);
-  return trimmed;
-}
-async function recordReviewPublication(options) {
-  const workspaceRoot18 = resolve11(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join7(workspaceRoot18, ".runtime"));
-  const manifestPath = assertInside(runtimeRoot, join7(runtimeRoot, "runs", options.runId, "manifest.json"));
-  return withExclusiveFile(`${manifestPath}.lock`, async () => {
-    const manifest2 = await readJson3(manifestPath);
-    await assertValid4("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    const repository = findRepository2(manifest2, options.repository);
-    if (!repository.review_preparation) throw new Error("Prepare the draft pull-request handoff before recording publication");
-    const preparation = await readJson3(assertInside(runtimeRoot, repository.review_preparation));
-    await assertValid4("review-preparation", preparation);
-    if (preparation.status !== "ready") throw new Error(`Draft pull-request handoff is ${preparation.status}`);
-    await assertCleanRepository(repository.worktree);
-    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
-    if (headCommit !== preparation.head_commit) throw new Error("Worktree HEAD changed after review preparation");
-    const evidence = safeReviewEvidence(options.evidence, "Publication evidence");
-    const pullRequest = options.status === "published" ? safeReviewEvidence(options.pullRequest ?? "", "Pull-request reference") : null;
-    if (options.status === "failed" && options.pullRequest) throw new Error("Failed publication cannot record a pull-request reference");
-    const recordPath2 = join7(runtimeRoot, "runs", options.runId, `${repository.name}-review-publication.json`);
-    const record = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      repository: repository.name,
-      status: options.status,
-      tool: options.tool,
-      pull_request: pullRequest,
-      evidence,
-      head_commit: headCommit,
-      idempotency_key: `${manifest2.run_id}:review-publication:${repository.name}`,
-      recorded_at: (options.now ?? /* @__PURE__ */ new Date()).toISOString()
-    };
-    await assertValid4("review-publication-record", record);
-    if (repository.review_publication) {
-      const existing = await readJson3(assertInside(runtimeRoot, repository.review_publication));
-      await assertValid4("review-publication-record", existing);
-      const comparable = (value2) => JSON.stringify({ ...value2, recorded_at: null });
-      if (comparable(existing) !== comparable(record)) throw new Error("Review publication was already recorded with different confirmed evidence");
-      return existing;
-    }
-    await writeJsonAtomic(recordPath2, record);
-    repository.review_publication = recordPath2;
-    addEvidence(manifest2, recordPath2);
-    manifest2.updated_at = record.recorded_at;
-    await assertValid4("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    return record;
-  });
-}
-var import_yaml5;
-var init_review_lifecycle = __esm({
-  "scripts/lib/review-lifecycle.ts"() {
-    "use strict";
-    import_yaml5 = __toESM(require_dist(), 1);
-    init_git();
-    init_io();
-    init_validation();
-  }
-});
-
-// scripts/prepare-repair.ts
-var prepare_repair_exports = {};
-import { dirname as dirname8, resolve as resolve12 } from "node:path";
-import { parseArgs as parseArgs5 } from "node:util";
-import { fileURLToPath as fileURLToPath6 } from "node:url";
-var values5, workspaceRoot5;
-var init_prepare_repair = __esm({
-  async "scripts/prepare-repair.ts"() {
-    "use strict";
-    init_review_lifecycle();
-    ({ values: values5 } = parseArgs5({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" }
-      }
-    }));
-    if (!values5["run-id"] || !values5.repository) throw new Error("Usage: prepare-repair --run-id <id> --repository <name>");
-    workspaceRoot5 = resolve12(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve12(dirname8(fileURLToPath6(import.meta.url)), ".."));
-    console.log(JSON.stringify(await prepareRepair({ workspaceRoot: workspaceRoot5, runId: values5["run-id"], repository: values5.repository }), null, 2));
-  }
-});
-
-// scripts/prepare-review.ts
-var prepare_review_exports = {};
-import { dirname as dirname9, resolve as resolve13 } from "node:path";
-import { parseArgs as parseArgs6 } from "node:util";
-import { fileURLToPath as fileURLToPath7 } from "node:url";
-var values6, workspaceRoot6;
-var init_prepare_review = __esm({
-  async "scripts/prepare-review.ts"() {
-    "use strict";
-    init_review_lifecycle();
-    ({ values: values6 } = parseArgs6({
-      options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" }
-      }
-    }));
-    if (!values6["run-id"] || !values6.repository) throw new Error("Usage: prepare-review --run-id <id> --repository <name>");
-    workspaceRoot6 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname9(fileURLToPath7(import.meta.url)), ".."));
-    console.log(JSON.stringify(await prepareReview({ workspaceRoot: workspaceRoot6, runId: values6["run-id"], repository: values6.repository }), null, 2));
-  }
-});
-
-// scripts/record-review-publication.ts
-var record_review_publication_exports = {};
-import { dirname as dirname10, resolve as resolve14 } from "node:path";
-import { parseArgs as parseArgs7 } from "node:util";
-import { fileURLToPath as fileURLToPath8 } from "node:url";
-var workspaceRoot7, values7;
-var init_record_review_publication = __esm({
-  async "scripts/record-review-publication.ts"() {
-    "use strict";
-    init_review_lifecycle();
-    workspaceRoot7 = resolve14(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve14(dirname10(fileURLToPath8(import.meta.url)), ".."));
-    ({ values: values7 } = parseArgs7({ options: {
-      "run-id": { type: "string" },
-      repository: { type: "string" },
-      status: { type: "string" },
-      tool: { type: "string" },
-      "pull-request": { type: "string" },
-      evidence: { type: "string" }
-    } }));
-    if (!values7["run-id"] || !values7.repository || !values7.evidence || !["published", "failed"].includes(values7.status ?? "") || !["gh", "glab", "manual"].includes(values7.tool ?? "")) {
-      throw new Error("Usage: cc record-review-publication --run-id <id> --repository <name> --status <published|failed> --tool <gh|glab|manual> [--pull-request <ref>] --evidence <text>");
-    }
-    console.log(JSON.stringify(await recordReviewPublication({
-      workspaceRoot: workspaceRoot7,
-      runId: values7["run-id"],
-      repository: values7.repository,
-      status: values7.status,
-      tool: values7.tool,
-      ...values7["pull-request"] ? { pullRequest: values7["pull-request"] } : {},
-      evidence: values7.evidence
-    }), null, 2));
-  }
-});
-
-// scripts/lib/finish-work.ts
-import { access as access4, lstat as lstat4, mkdir as mkdir3, readFile as readFile9, readdir, realpath as realpath2 } from "node:fs/promises";
-import { basename, join as join8, relative as relative4, resolve as resolve15 } from "node:path";
-async function readJson4(path2) {
-  return JSON.parse(await readFile9(path2, "utf8"));
-}
-async function assertValid5(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-function findRepository3(manifest2, name) {
-  const repository = manifest2.repositories.find((candidate) => candidate.name === name);
-  if (!repository) throw new Error(`Run ${manifest2.run_id} has no repository named ${name}`);
-  return repository;
-}
-function compactTimestamp(date) {
-  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-}
-function safeToken(value2, label) {
-  const normalized = value2.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  if (!normalized || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) throw new Error(`${label} must contain letters or numbers`);
-  return normalized;
-}
-function taskSlug(brief) {
-  return safeToken(brief.requested_outcome, "Task outcome").slice(0, 48).replace(/-$/, "") || "work";
-}
-function list(items, empty) {
-  return items.length > 0 ? items.map((item) => `- ${item}`).join("\n") : `- ${empty}`;
-}
-function contributionDocument(manifest2, repository, brief, record) {
-  const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
-  const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
-  return `# ${manifest2.work_id}: ${brief.requested_outcome}
-
-- Run: \`${manifest2.run_id}\`
-- Task source: direct request
-- Plan: none
-- Author: \`${record.author}\`
-
-## Outcome
-
-${outcome}
-
-## Affected repositories
-
-- \`${repository.name}\` on branch \`${repository.branch}\`.${changed}
-
-## Pull requests and commits
-
-${list(record.pull_requests.map((item) => `Pull request: ${item}`), "No pull-request reference was recorded.")}
-${list(record.commits.map((item) => `Commit: \`${item}\``), `No commits beyond base \`${repository.base_commit}\`.`)}
-- Recorded head: \`${record.head_commit}\`
-
-## Verification
-
-${list(record.verification, "No verifier evidence was available.")}
-
-## Decisions and deviations
-
-- ${record.outcome === "merged" ? "No closeout deviation was recorded." : "The run was deliberately abandoned instead of merged."}
-
-## Remaining risks and follow-up
-
-- ${record.reason ?? "No closeout-specific follow-up was recorded."}
-
-## Candidate durable learnings
-
-- Review this contribution during the next context synchronization; no canonical-context change is asserted automatically.
-`;
-}
-function contributionDocumentErrors(path2, content, runId) {
-  const errors2 = [];
-  if (!/^\d{8}T\d{6}Z-[a-z0-9]+(?:-[a-z0-9]+)*-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/.test(basename(path2))) {
-    errors2.push("contribution filename must be <UTC timestamp>-<author>-<slug>.md");
-  }
-  for (const heading of contributionHeadings) if (!content.includes(`${heading}
-`)) errors2.push(`contribution is missing ${heading}`);
-  if (runId && !content.includes(`- Run: \`${runId}\``)) errors2.push("contribution does not reference the expected run");
-  if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|https?:\/\/[^\s/@:]+:[^\s/@]+@/i.test(content)) {
-    errors2.push("contribution appears to contain a credential or private key");
-  }
-  return errors2;
-}
-async function loadWorkspace2(workspaceRoot18) {
-  const config = (0, import_yaml6.parse)(await readFile9(join8(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid5("workspace", config);
-  const errors2 = workspaceSemanticErrors(config);
-  if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
-  return config;
-}
-async function optionalVerifier(runtimeRoot, manifest2, repository) {
-  try {
-    const input = await readJson4(assertInside(runtimeRoot, repository.verifier_input));
-    const resultPath = assertInside(runtimeRoot, input.result_path);
-    const result3 = await readJson4(resultPath);
-    await assertValid5("verifier-result", result3);
-    if (result3.work_id !== manifest2.work_id || result3.run_id !== manifest2.run_id || result3.repository !== repository.name) {
-      throw new Error("Verifier result identity does not match the closeout run");
-    }
-    return result3;
-  } catch (error) {
-    if (error.code === "ENOENT") return null;
-    throw error;
-  }
-}
-async function assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles) {
-  const input = await readJson4(assertInside(runtimeRoot, repository.worker_input));
-  const worker = await readJson4(assertInside(runtimeRoot, input.result_path));
-  await assertValid5("worker-result", worker);
-  if (worker.work_id !== manifest2.work_id || worker.run_id !== manifest2.run_id || worker.repository !== repository.name) {
-    throw new Error("Worker result identity does not match the closeout run");
-  }
-  if (worker.status !== "completed" || worker.branch !== repository.branch || resolve15(worker.worktree) !== resolve15(repository.worktree)) {
-    throw new Error("Closeout requires the completed worker recorded for this branch and worktree");
-  }
-  if (worker.commits.at(-1) !== headCommit || worker.commits.join("\n") !== commits.join("\n")) {
-    throw new Error("Worktree commits changed after the recorded worker result");
-  }
-  if (worker.changed_files.slice().sort().join("\n") !== changedFiles.slice().sort().join("\n")) {
-    throw new Error("Worktree changed-file set differs from the recorded worker result");
-  }
-}
-async function findExistingContribution(root, runId, repository) {
-  try {
-    for (const entry of await readdir(root, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith(".md")) continue;
-      const path2 = join8(root, entry.name);
-      const content = await readFile9(path2, "utf8");
-      if (content.includes(`- Run: \`${runId}\``) && content.includes(`- \`${repository}\` on branch`)) return path2;
-    }
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  return null;
-}
-async function ensureContributionRoot(workspaceRoot18, path2) {
-  await mkdir3(path2, { recursive: true, mode: 493 });
-  const info = await lstat4(path2);
-  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Contribution path must be a real directory: ${path2}`);
-  assertInside(await realpath2(workspaceRoot18), await realpath2(path2));
-}
-function addExecutionEvent2(manifest2, repository, stage, from, to, occurredAt, resultPath) {
-  const key = `${manifest2.run_id}:execution:${repository.name}:${stage}`;
-  if (manifest2.execution_events?.some((event) => event.idempotency_key === key)) return;
-  manifest2.execution_events ??= [];
-  manifest2.execution_events.push({
-    stage,
-    repository: repository.name,
-    from_status: from,
-    to_status: to,
-    inferred: false,
-    attempt: repository.repair_attempts ?? 0,
-    result_path: resultPath,
-    idempotency_key: key,
-    occurred_at: occurredAt
-  });
-  repository.status = to;
-  const statuses = manifest2.repositories.map((candidate) => candidate.status ?? manifest2.status);
-  if (statuses.every((status2) => status2 === "closed")) manifest2.status = "closed";
-  else if (statuses.some((status2) => status2 === "closing" || status2 === "closed")) manifest2.status = "closing";
-  else if (statuses.every((status2) => status2 === "passed")) manifest2.status = "passed";
-  else if (statuses.includes("failed")) manifest2.status = "failed";
-  else if (statuses.includes("blocked")) manifest2.status = "blocked";
-  manifest2.updated_at = occurredAt;
-}
-function addLifecycleEvent(manifest2, outcome, occurredAt) {
-  const event = outcome === "merged" ? "task.completed" : "task.cancelled";
-  const key = `${manifest2.run_id}:lifecycle:${event}:activity-none`;
-  if (manifest2.lifecycle_events.some((item) => item.idempotency_key === key)) return;
-  manifest2.lifecycle_events.push({ event, status: "skipped", idempotency_key: key, occurred_at: occurredAt });
-}
-function assertCloseoutLifecycleReady(manifest2, config, outcome) {
-  if (config.activity.provider === "none") return;
-  const event = outcome === "merged" ? "task.completed" : "task.cancelled";
-  const lifecycle = manifest2.lifecycle_events.find((item) => item.event === event);
-  if (!lifecycle) {
-    throw new Error(`Prepare configured activity hooks before closeout: node .agents/bin/cc.mjs prepare-lifecycle --run-id ${manifest2.run_id} --event ${event}`);
-  }
-  if (lifecycle.status !== "completed" && lifecycle.status !== "skipped") {
-    throw new Error(`Configured activity hook ${event} is ${lifecycle.status}; complete required or manual actions before closeout`);
-  }
-}
-async function isAncestor(repository, ancestor, descendant) {
-  try {
-    await git(repository, ["merge-base", "--is-ancestor", ancestor, descendant]);
+    await access3(path);
     return true;
   } catch {
     return false;
   }
 }
-async function verifiedDefaultRefs(repository, branch) {
-  const refs = [];
-  for (const ref of [`refs/heads/${branch}`, `refs/remotes/origin/${branch}`]) {
-    try {
-      await git(repository, ["rev-parse", "--verify", ref]);
-      refs.push(ref);
-    } catch {
-    }
-  }
-  return refs;
+async function detectWorkspaceConfigurationState(workspaceRootInput) {
+  const root12 = resolve7(workspaceRootInput);
+  return await exists3(join5(root12, ".git")) ? "existing" : "fresh";
 }
-async function cleanupBlockers(workspaceRoot18, config, repository, record) {
-  const blockers2 = [];
-  const contributionPath = assertInside(workspaceRoot18, join8(workspaceRoot18, record.contribution));
-  try {
-    await git(workspaceRoot18, ["ls-files", "--error-unmatch", "--", record.contribution]);
-    if (await git(workspaceRoot18, ["status", "--porcelain=v1", "--", record.contribution])) {
-      blockers2.push("Contribution has uncommitted wrapper changes; commit it through the configured wrapper workflow before cleanup.");
-    }
-  } catch {
-    blockers2.push("Contribution is not durably tracked by wrapper Git; commit it before cleanup.");
+async function configureWorkspace(options) {
+  const root12 = resolve7(options.workspaceRoot);
+  const state = await detectWorkspaceConfigurationState(root12);
+  if (!options.request) {
+    if (state === "fresh") return { route: "inspect-fresh", state, message: "Fresh wrapper detected; collect a setup request before writing workspace files.", result: null };
+    return { route: "inspect-existing", state, message: "Existing wrapper detected; reporting current workspace state.", result: await initializeWorkspace({ workspaceRoot: root12, apply: false }) };
   }
-  try {
-    await access4(contributionPath);
-  } catch {
-    blockers2.push("Contribution file is missing; runtime cleanup would discard the only closeout record.");
-  }
-  const baseRepository = assertInside(workspaceRoot18, join8(workspaceRoot18, repository.base_path));
-  try {
-    if (await git(baseRepository, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Base repository is dirty.");
-    if (await git(repository.worktree, ["status", "--porcelain=v1", "--untracked-files=normal"])) blockers2.push("Run worktree has uncommitted changes.");
-    if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) blockers2.push("Run worktree is on an unexpected branch.");
-    if (await git(repository.worktree, ["rev-parse", "HEAD"]) !== record.head_commit) blockers2.push("Run worktree HEAD changed after closeout preparation.");
-  } catch (error) {
-    blockers2.push(`Run worktree is unavailable: ${error.message}`);
-    return blockers2;
-  }
-  const defaultBranch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
-  const defaultRefs = await verifiedDefaultRefs(baseRepository, defaultBranch);
-  const headOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.head_commit, ref)))).some(Boolean);
-  if (record.outcome === "merged") {
-    let mergeEvidence = headOnDefault;
-    if (!mergeEvidence && record.merge_commit) {
-      const mergeOnDefault = (await Promise.all(defaultRefs.map((ref) => isAncestor(baseRepository, record.merge_commit, ref)))).some(Boolean);
-      mergeEvidence = mergeOnDefault && await isAncestor(baseRepository, record.base_commit, record.merge_commit);
-    }
-    if (!mergeEvidence) blockers2.push("Merged outcome is not reachable from the configured default branch; fetch the merge or provide a verified merge commit.");
-  } else if (record.head_commit !== record.base_commit && !headOnDefault) {
-    const remoteRefs = await git(baseRepository, ["for-each-ref", "--format=%(refname)", "--contains", record.head_commit, "refs/remotes/"]);
-    if (!remoteRefs) blockers2.push("Abandoned branch contains commits that are neither merged nor preserved by a remote ref.");
-  }
-  return blockers2;
+  const errors2 = workspaceSemanticErrors(options.request.configuration);
+  if (errors2.length > 0) throw new Error(`Invalid workspace configuration:
+- ${errors2.join("\n- ")}`);
+  if (options.checkOnly) return { route: state === "fresh" ? "inspect-fresh" : "inspect-existing", state, message: "Setup request is valid; no files changed.", result: state === "existing" ? await initializeWorkspace({ workspaceRoot: root12, apply: false }) : null };
+  if (state === "fresh") return { route: "bootstrap", state, message: "Configured a fresh Context Circuit workspace.", result: await bootstrapWorkspace({ workspaceRoot: root12, request: options.request }) };
+  const current = (0, import_yaml7.parse)(await readFile7(join5(root12, "workspace.yaml"), "utf8"));
+  if (JSON.stringify(current) === JSON.stringify(options.request.configuration)) return { route: "inspect-existing", state, message: "Workspace configuration is already current.", result: await initializeWorkspace({ workspaceRoot: root12, apply: false }) };
+  const summary2 = await bootstrapWorkspace({ workspaceRoot: root12, request: { ...options.request, wrapper: { ...options.request.wrapper, initialize_git: false, authorize_initial_commit: false }, repositories: options.request.repositories.map((repository) => ({ name: repository.name, source: "existing", authorize_initial_commit: false })) } });
+  return { route: "reconfigure", state, message: "Updated workspace configuration for human review.", result: summary2 };
 }
-async function closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, occurredAt) {
-  const blockers2 = await cleanupBlockers(workspaceRoot18, config, repository, record);
-  if (blockers2.length > 0) {
-    const blocked = { ...record, status: "blocked", cleanup: { ...record.cleanup, requested: true }, blockers: blockers2, updated_at: occurredAt };
-    await assertValid5("closeout-record", blocked);
-    await writeJsonAtomic(recordPath2, blocked);
-    return blocked;
-  }
-  const baseRepository = assertInside(workspaceRoot18, join8(workspaceRoot18, repository.base_path));
-  await git(baseRepository, ["worktree", "remove", repository.worktree]);
-  const closed = {
-    ...record,
-    status: "closed",
-    cleanup: { requested: true, worktree_removed: true, branch_preserved: true, runtime_evidence_preserved: true },
-    blockers: [],
-    updated_at: occurredAt
-  };
-  await assertValid5("closeout-record", closed);
-  await writeJsonAtomic(recordPath2, closed);
-  addExecutionEvent2(manifest2, repository, "closeout-cleaned", "closing", "closed", occurredAt, recordPath2);
-  await assertValid5("runtime-manifest", manifest2);
-  await writeJsonAtomic(manifestPath, manifest2);
-  return closed;
-}
-async function finishWork(options) {
-  const workspaceRoot18 = resolve15(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const manifestPath = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, "manifest.json"));
-  const lockPath = `${manifestPath}.lock`;
-  const author = safeToken(options.author, "Author");
-  const invocationTime = options.now ?? /* @__PURE__ */ new Date();
-  if (options.mergeCommit && !/^[a-f0-9]{40,64}$/.test(options.mergeCommit)) throw new Error("--merge-commit must be a full lowercase Git object ID");
-  if (options.pullRequests?.some((reference) => !reference.trim() || /[\r\n]/.test(reference))) throw new Error("Pull-request references must be non-empty single lines");
-  const config = await loadWorkspace2(workspaceRoot18);
-  const wrapperTopLevel = await git(workspaceRoot18, ["rev-parse", "--show-toplevel"]);
-  if (await realpath2(wrapperTopLevel) !== await realpath2(workspaceRoot18)) throw new Error("Workspace root must be the wrapper Git root before closeout");
-  return withExclusiveFile(lockPath, async () => {
-    const manifest2 = await readJson4(manifestPath);
-    await assertValid5("runtime-manifest", manifest2);
-    if (manifest2.run_id !== options.runId) throw new Error("Manifest run ID does not match the requested run");
-    assertCloseoutLifecycleReady(manifest2, config, options.outcome);
-    const repository = findRepository3(manifest2, options.repository);
-    const recordPath2 = assertInside(runtimeRoot, join8(runtimeRoot, "runs", options.runId, `${repository.name}-closeout.json`));
-    if (repository.closeout_record) {
-      const existing = await readJson4(assertInside(runtimeRoot, repository.closeout_record));
-      await assertValid5("closeout-record", existing);
-      if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
-      if (existing.status === "closed" || !options.cleanup) return existing;
-      return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, existing, config, invocationTime.toISOString());
-    }
-    const repositoryStatus = repository.status ?? manifest2.status;
-    if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
-    if (options.outcome === "merged" && repositoryStatus !== "passed") throw new Error(`Merged closeout requires a passed repository, received ${repositoryStatus}`);
-    if (options.outcome === "abandoned" && !options.reason?.trim()) throw new Error("Deliberate abandonment requires --reason");
-    const brief = await readJson4(assertInside(runtimeRoot, manifest2.task_brief));
-    await assertValid5("task-brief", brief);
-    const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
-    if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) throw new Error("Run worktree is on an unexpected branch");
-    const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
-    const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
-    if (options.outcome === "merged") await assertCurrentWorker2(runtimeRoot, manifest2, repository, headCommit, commits, changedFiles);
-    const verifier = await optionalVerifier(runtimeRoot, manifest2, repository);
-    if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
-    const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} \u2014 ${item.evidence}`)] : [];
-    const preparedAt = invocationTime.toISOString();
-    const contributionsRoot = assertInside(workspaceRoot18, join8(workspaceRoot18, "contributions", "general"));
-    await ensureContributionRoot(workspaceRoot18, contributionsRoot);
-    const existingContribution = await findExistingContribution(contributionsRoot, options.runId, repository.name);
-    const contributionPath = existingContribution ?? join8(contributionsRoot, `${compactTimestamp(invocationTime)}-${author}-${taskSlug(brief)}-${repository.name}.md`);
-    const contributionRelative = relative4(workspaceRoot18, contributionPath).replaceAll("\\", "/");
-    const record = {
-      contract_version: 1,
-      work_id: manifest2.work_id,
-      run_id: manifest2.run_id,
-      repository: repository.name,
-      outcome: options.outcome,
-      status: "prepared",
-      author,
-      reason: options.reason?.trim() || null,
-      contribution: contributionRelative,
-      branch: repository.branch,
-      base_commit: repository.base_commit,
-      head_commit: headCommit,
-      merge_commit: options.mergeCommit ?? null,
-      pull_requests: [...new Set(options.pullRequests ?? [])],
-      commits,
-      changed_files: changedFiles,
-      verification,
-      cleanup: { requested: Boolean(options.cleanup), worktree_removed: false, branch_preserved: true, runtime_evidence_preserved: true },
-      blockers: [],
-      prepared_at: preparedAt,
-      updated_at: preparedAt
-    };
-    const document = contributionDocument(manifest2, repository, brief, record);
-    const documentErrors = contributionDocumentErrors(contributionPath, document, options.runId);
-    if (documentErrors.length > 0) throw new Error(`Invalid contribution: ${documentErrors.join("; ")}`);
-    if (existingContribution && await readFile9(existingContribution, "utf8") !== document) {
-      throw new Error("An append-only contribution already exists for this run with different closeout content");
-    }
-    if (!existingContribution) await writeTextExclusive(contributionPath, document);
-    await assertValid5("closeout-record", record);
-    await writeJsonAtomic(recordPath2, record);
-    repository.closeout_record = recordPath2;
-    repository.contribution = contributionRelative;
-    if (!manifest2.evidence.includes(recordPath2)) manifest2.evidence.push(recordPath2);
-    const fromStatus = repositoryStatus;
-    addExecutionEvent2(manifest2, repository, "closeout-prepared", fromStatus, "closing", preparedAt, recordPath2);
-    if (config.activity.provider === "none") addLifecycleEvent(manifest2, options.outcome, preparedAt);
-    await assertValid5("runtime-manifest", manifest2);
-    await writeJsonAtomic(manifestPath, manifest2);
-    if (!options.cleanup) return record;
-    return closePreparedRun(workspaceRoot18, manifestPath, manifest2, repository, recordPath2, record, config, preparedAt);
-  });
-}
-var import_yaml6, contributionHeadings;
-var init_finish_work = __esm({
-  "scripts/lib/finish-work.ts"() {
+var import_yaml7;
+var init_configure_workspace = __esm({
+  "scripts/lib/configure-workspace.ts"() {
     "use strict";
-    import_yaml6 = __toESM(require_dist(), 1);
-    init_git();
-    init_io();
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml7 = __toESM(require_dist(), 1);
+    init_initialize_workspace();
     init_validation();
-    contributionHeadings = [
-      "## Outcome",
-      "## Affected repositories",
-      "## Pull requests and commits",
-      "## Verification",
-      "## Decisions and deviations",
-      "## Remaining risks and follow-up",
-      "## Candidate durable learnings"
-    ];
   }
 });
 
-// scripts/finish-work.ts
-var finish_work_exports = {};
-import { dirname as dirname11, resolve as resolve16 } from "node:path";
-import { parseArgs as parseArgs8 } from "node:util";
-import { fileURLToPath as fileURLToPath9 } from "node:url";
-var values8, workspaceRoot8, result;
-var init_finish_work2 = __esm({
-  async "scripts/finish-work.ts"() {
+// scripts/initialize-workspace.ts
+var initialize_workspace_exports = {};
+import { dirname as dirname6, resolve as resolve8 } from "node:path";
+import { parseArgs } from "node:util";
+import { fileURLToPath as fileURLToPath2 } from "node:url";
+var values, workspaceRoot, summary;
+var init_initialize_workspace2 = __esm({
+  async "scripts/initialize-workspace.ts"() {
     "use strict";
-    init_finish_work();
-    ({ values: values8 } = parseArgs8({
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_configure_workspace();
+    init_io();
+    ({ values } = parseArgs({
       options: {
-        "run-id": { type: "string" },
-        repository: { type: "string" },
-        outcome: { type: "string" },
-        author: { type: "string" },
-        reason: { type: "string" },
-        "merge-commit": { type: "string" },
-        "pull-request": { type: "string", multiple: true },
-        cleanup: { type: "boolean", default: false }
+        "check-only": { type: "boolean", default: false },
+        bootstrap: { type: "string" }
       }
     }));
-    if (!values8["run-id"] || !values8.repository || !values8.outcome || !values8.author) {
-      throw new Error("Required: --run-id <id> --repository <name> --outcome <merged|abandoned> --author <slug>");
-    }
-    if (values8.outcome !== "merged" && values8.outcome !== "abandoned") throw new Error("--outcome must be merged or abandoned");
-    workspaceRoot8 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname11(fileURLToPath9(import.meta.url)), ".."));
-    result = await finishWork({
-      workspaceRoot: workspaceRoot8,
-      runId: values8["run-id"],
-      repository: values8.repository,
-      outcome: values8.outcome,
-      author: values8.author,
-      cleanup: values8.cleanup,
-      ...values8.reason ? { reason: values8.reason } : {},
-      ...values8["merge-commit"] ? { mergeCommit: values8["merge-commit"] } : {},
-      ...values8["pull-request"] ? { pullRequests: values8["pull-request"] } : {}
-    });
-    console.log(JSON.stringify(result, null, 2));
+    workspaceRoot = resolve8(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve8(dirname6(fileURLToPath2(import.meta.url)), ".."));
+    if (values.bootstrap && values["check-only"]) throw new Error("--bootstrap and --check-only cannot be combined");
+    summary = values.bootstrap ? await configureWorkspace({ workspaceRoot, request: await readJsonRegularInside(workspaceRoot, resolve8(workspaceRoot, values.bootstrap), "Workspace bootstrap request") }) : await configureWorkspace({ workspaceRoot, checkOnly: values["check-only"] });
+    console.log(JSON.stringify(summary, null, 2));
   }
 });
 
-// scripts/lib/plans.ts
-import { createHash as createHash2, randomUUID } from "node:crypto";
-import { lstat as lstat5, mkdir as mkdir4, readdir as readdir2, readFile as readFile10, realpath as realpath3, rename as rename2, rm } from "node:fs/promises";
-import { basename as basename2, join as join9, resolve as resolve17 } from "node:path";
-function contractMessages(errors2) {
-  return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
-}
-function markdownList(values18, empty) {
-  return values18.length > 0 ? values18.map((value2) => `- ${value2}`).join("\n") : `- ${empty}`;
-}
-function assertMarkdownCell(value2, field) {
-  if (value2.includes("|") || /[\r\n]/.test(value2)) throw new Error(`${field} cannot contain a table delimiter or newline`);
-}
-function allocateWorkItems(request3) {
-  const ids = /* @__PURE__ */ new Map();
-  request3.work_items.forEach((item, index) => {
-    const suffix = index === 0 ? 1 : index * 10;
-    ids.set(item.key, `${request3.work_prefix}-${String(suffix).padStart(3, "0")}`);
-  });
-  return request3.work_items.map((item) => ({
-    work_id: ids.get(item.key),
-    title: item.title,
-    parent: item.parent ? ids.get(item.parent) ?? null : null,
-    depends_on: (item.depends_on ?? []).map((key) => ids.get(key) ?? key),
-    area: item.area,
-    external_reference: null
-  }));
-}
-function cycleErrors(items) {
-  const dependencies = new Map(items.map((item) => [item.work_id, item.depends_on]));
-  const errors2 = [];
-  const visited = /* @__PURE__ */ new Set();
-  const active = /* @__PURE__ */ new Set();
-  const visit = (id) => {
-    if (active.has(id)) {
-      errors2.push(`work dependency cycle includes ${id}`);
-      return;
-    }
-    if (visited.has(id)) return;
-    active.add(id);
-    for (const dependency of dependencies.get(id) ?? []) visit(dependency);
-    active.delete(id);
-    visited.add(id);
-  };
-  for (const id of dependencies.keys()) visit(id);
-  return [...new Set(errors2)];
-}
-function parentCycleErrors(items) {
-  return cycleErrors(items.map((item) => ({ work_id: item.work_id, depends_on: item.parent ? [item.parent] : [] }))).map((error) => error.replace("work dependency cycle", "work parent cycle"));
-}
-function planDraftSemanticErrors(request3, config) {
-  const errors2 = [];
-  const keys = /* @__PURE__ */ new Set();
-  for (const item of request3.work_items) {
-    if (keys.has(item.key)) errors2.push(`duplicate work item key: ${item.key}`);
-    keys.add(item.key);
-    for (const [field, value2] of [["title", item.title], ["area", item.area]]) {
-      try {
-        assertMarkdownCell(value2, `work item ${item.key} ${field}`);
-      } catch (error) {
-        errors2.push(error.message);
-      }
-    }
+// scripts/configure-workspace.ts
+var configure_workspace_exports = {};
+import { dirname as dirname7, resolve as resolve9 } from "node:path";
+import { parseArgs as parseArgs2 } from "node:util";
+import { fileURLToPath as fileURLToPath3 } from "node:url";
+var values2, workspaceRoot2, request;
+var init_configure_workspace2 = __esm({
+  async "scripts/configure-workspace.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_configure_workspace();
+    init_io();
+    ({ values: values2 } = parseArgs2({ options: { request: { type: "string" }, "check-only": { type: "boolean", default: false } } }));
+    workspaceRoot2 = resolve9(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve9(dirname7(fileURLToPath3(import.meta.url)), ".."));
+    request = values2.request ? await readJsonRegularInside(workspaceRoot2, resolve9(workspaceRoot2, values2.request), "Workspace configuration request") : void 0;
+    console.log(JSON.stringify(await configureWorkspace({ workspaceRoot: workspaceRoot2, ...request ? { request } : {}, checkOnly: values2["check-only"] }), null, 2));
   }
-  for (const item of request3.work_items) {
-    if (item.parent && !keys.has(item.parent)) errors2.push(`work item ${item.key} has unknown parent: ${item.parent}`);
-    if (item.parent === item.key) errors2.push(`work item ${item.key} cannot be its own parent`);
-    for (const dependency of item.depends_on ?? []) {
-      if (!keys.has(dependency)) errors2.push(`work item ${item.key} has unknown dependency: ${dependency}`);
-      if (dependency === item.key) errors2.push(`work item ${item.key} cannot depend on itself`);
-    }
-  }
-  const keyedDependencies = request3.work_items.map((item) => ({ work_id: item.key, depends_on: item.depends_on ?? [] }));
-  errors2.push(...cycleErrors(keyedDependencies));
-  errors2.push(...parentCycleErrors(request3.work_items.map((item) => ({ work_id: item.key, parent: item.parent ?? null }))));
-  if (config) {
-    for (const repository of request3.affected_repositories) {
-      if (!config.repositories[repository]) errors2.push(`affected repository is not registered: ${repository}`);
-    }
-  }
-  return [...new Set(errors2)];
+});
+
+// scripts/lib/run-task.ts
+import { access as access4, mkdir as mkdir5, readFile as readFile8, realpath as realpath2 } from "node:fs/promises";
+import { join as join6, resolve as resolve10 } from "node:path";
+function slugify2(value) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "plan";
 }
-function planWorkBreakdownSemanticErrors(breakdown) {
-  const errors2 = [];
-  const ids = /* @__PURE__ */ new Set();
-  for (const item of breakdown.items) {
-    if (ids.has(item.work_id)) errors2.push(`duplicate work ID: ${item.work_id}`);
-    ids.add(item.work_id);
-    if (!item.work_id.startsWith(`${breakdown.work_prefix}-`)) {
-      errors2.push(`work ID does not use ${breakdown.work_prefix} prefix: ${item.work_id}`);
-    }
-  }
-  for (const item of breakdown.items) {
-    if (item.parent && !ids.has(item.parent)) errors2.push(`${item.work_id} has unknown parent: ${item.parent}`);
-    if (item.parent === item.work_id) errors2.push(`${item.work_id} cannot be its own parent`);
-    for (const dependency of item.depends_on) {
-      if (!ids.has(dependency)) errors2.push(`${item.work_id} has unknown dependency: ${dependency}`);
-      if (dependency === item.work_id) errors2.push(`${item.work_id} cannot depend on itself`);
-    }
-  }
-  errors2.push(...cycleErrors(breakdown.items));
-  errors2.push(...parentCycleErrors(breakdown.items));
-  return [...new Set(errors2)];
-}
-function materialDigest(files, names) {
-  const hash = createHash2("sha256");
-  for (const name of names) hash.update(`${name}\0${files.get(name) ?? ""}\0`);
-  return `sha256:${hash.digest("hex")}`;
-}
-function parsePlanIndex(raw) {
-  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/);
-  if (!match) throw new Error("Plan README must begin with YAML frontmatter");
-  return (0, import_yaml7.parse)(match[1]);
-}
-function parseWorkBreakdown(raw, index) {
-  const lines = raw.replace(/\r\n/g, "\n").split("\n");
-  const header = lines.indexOf(tableHeader);
-  if (header === -1 || lines[header + 1] !== tableSeparator) {
-    throw new Error("Work breakdown must contain the canonical six-column table and must not add live status columns");
-  }
-  const items = [];
-  for (const line of lines.slice(header + 2)) {
-    if (!line.startsWith("|")) break;
-    const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
-    if (cells.length !== 6) throw new Error(`Invalid work breakdown row: ${line}`);
-    const [workId, title, parent, dependencies, area, external] = cells;
-    items.push({
-      work_id: workId,
-      title,
-      parent: parent === "\u2014" ? null : parent,
-      depends_on: dependencies === "\u2014" ? [] : dependencies.split(",").map((value2) => value2.trim()),
-      area,
-      external_reference: external === "\u2014" ? null : external
-    });
-  }
-  return { contract_version: 1, plan_id: index.plan_id, work_prefix: index.work_prefix, items };
-}
-async function regularFile(path2) {
+async function exists4(path) {
   try {
-    const info = await lstat5(path2);
-    return info.isFile() && !info.isSymbolicLink();
+    await access4(path);
+    return true;
   } catch {
     return false;
   }
 }
-async function validatePlanDirectory(planDirectory3, expectedPlanId = basename2(planDirectory3)) {
-  const directory = resolve17(planDirectory3);
-  const errors2 = [];
-  let index = null;
-  let breakdown = null;
-  try {
-    const info = await lstat5(directory);
-    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Plan path must be a real directory");
-    if (!await regularFile(join9(directory, "README.md"))) throw new Error("Plan README must be a real file");
-    index = parsePlanIndex(await readFile10(join9(directory, "README.md"), "utf8"));
-    const indexErrors = contractMessages(await validateContract("plan-index", index));
-    errors2.push(...indexErrors);
-    if (indexErrors.length > 0) return { index, work_breakdown: null, errors: [...new Set(errors2)] };
-    if (index.plan_id !== expectedPlanId) errors2.push(`plan_id must match directory name: ${expectedPlanId}`);
-    if (Date.parse(index.updated_at) < Date.parse(index.created_at)) errors2.push("updated_at cannot be earlier than created_at");
-    const sorted = [...index.documents].sort();
-    if (JSON.stringify(sorted) !== JSON.stringify(index.documents)) errors2.push("numbered plan documents must be listed in ascending order");
-    if (!index.documents.includes(index.work_breakdown)) errors2.push("work_breakdown must be listed in documents");
-    const actualNumbered = (await readdir2(directory)).filter((name) => /^[0-9]{4}-.+\.md$/.test(name)).sort();
-    for (const document of actualNumbered) {
-      if (!index.documents.includes(document)) errors2.push(`numbered plan document is not listed in the index: ${document}`);
+async function loadWorkspace2(root12) {
+  const value = (0, import_yaml8.parse)(await readFile8(join6(root12, "workspace.yaml"), "utf8"));
+  if (!value?.repositories) throw new Error("workspace.yaml has no repositories");
+  return value;
+}
+function planDomain(plan, tasks) {
+  const domains = /* @__PURE__ */ new Set([...plan.repositories ?? [], ...tasks.map((task) => task.repository)]);
+  if (domains.size !== 1) throw new Error(`Plan ${plan.id} spans multiple repository domains (${[...domains].join(", ")}); split it into one plan per domain before execution`);
+  return [...domains][0];
+}
+function promptFor(plan, tasks, repositoryPath) {
+  const lines = [
+    `# Plan ${plan.id}: ${plan.title}`,
+    "",
+    `Repository domain: ${plan.repositories[0]} (${repositoryPath})`,
+    "",
+    "Work under the assigned plan worktree only. Continue through every unfinished task in dependency order without pausing for per-task human review. Publication, if desired, must happen before this run; do not publish during execution. Human status remains authoritative: do not mark tasks or the plan done, merge, or create lifecycle records.",
+    "",
+    "## Plan objective",
+    "",
+    plan.title,
+    "",
+    "## Tasks",
+    ""
+  ];
+  for (const task of tasks) {
+    lines.push(
+      `### ${task.id}: ${task.title}`,
+      "",
+      `Status: ${task.status}`,
+      ...task.dependencies?.length ? [`Dependencies: ${task.dependencies.join(", ")}`] : ["Dependencies: none"],
+      "",
+      task.description ?? task.title,
+      "",
+      "Implementation scope:",
+      ...task.implementation_scope?.length ? task.implementation_scope.map((item) => `- ${item}`) : ["- Use the task description and repository instructions to determine the smallest implementation scope."],
+      "",
+      "Test scope and expectations:",
+      ...task.test_scope?.length ? task.test_scope.map((item) => `- ${item}`) : ["- Run the relevant repository checks and report what was run."],
+      ...task.test_expectations?.length ? task.test_expectations.map((item) => `- ${item}`) : [],
+      "",
+      "Verification commands:",
+      ...task.verification_commands?.length ? task.verification_commands.map((item) => `- ${item}`) : ["- Human review decides which additional checks are appropriate."],
+      "",
+      "Acceptance criteria:",
+      ...task.acceptance_criteria?.length ? task.acceptance_criteria.map((item) => `- ${item}`) : ["- Explain how the requested outcome was handled."],
+      ""
+    );
+  }
+  lines.push(
+    "## Agent loop",
+    "",
+    "1. Read repository instructions, Product Knowledge references, and the plan documents.",
+    "2. Select the next unfinished task whose dependencies are satisfied.",
+    "3. Implement and test it in this same plan worktree.",
+    "4. Continue to the next task without asking for human review between tasks.",
+    "5. Stop only when all unfinished tasks are implemented, or explain the blocker and any independent work that remains.",
+    "",
+    "## Final handoff",
+    "",
+    "Return one plan-level human-readable summary with changed files, tests run, questions, blockers, and limitations. A human reviews the plan once after this run. No result JSON contract is required.",
+    ""
+  );
+  return lines.join("\n");
+}
+async function listWorktrees(repositoryRoot) {
+  const output = await git(repositoryRoot, ["worktree", "list", "--porcelain"]);
+  const records = [];
+  let current = null;
+  for (const line of output.split("\n")) {
+    if (line.startsWith("worktree ")) {
+      if (current) records.push(current);
+      current = { path: line.slice("worktree ".length) };
+    } else if (line.startsWith("branch ") && current) {
+      current.branch = line.slice("branch ".length).replace(/^refs\/heads\//, "");
     }
-    for (const document of index.documents) {
-      if (!await regularFile(join9(directory, document))) errors2.push(`plan document is missing or unsafe: ${document}`);
+  }
+  if (current) records.push(current);
+  return records;
+}
+async function canonicalPath(path) {
+  return realpath2(path).catch(() => resolve10(path));
+}
+async function planWorktree(root12, repository, repositoryConfig, plan) {
+  const repositoryRoot = assertInside(root12, resolve10(root12, repositoryConfig.path));
+  const domain = slugify2(repository);
+  const planKey = slugify2(plan.id);
+  const branch = `agent/${domain}/plan-${planKey}`;
+  const worktree2 = assertInside(root12, join6(root12, ".runtime", "worktrees", domain, planKey));
+  const records = await listWorktrees(repositoryRoot);
+  const worktreePath = await canonicalPath(worktree2);
+  let existing;
+  for (const record2 of records) {
+    if (await canonicalPath(record2.path) === worktreePath) {
+      existing = record2;
+      break;
     }
-    if (errors2.length === 0) {
-      const material = /* @__PURE__ */ new Map();
-      for (const document of index.documents) material.set(document, await readFile10(join9(directory, document), "utf8"));
-      const digest = materialDigest(material, index.documents);
-      if (index.material_digest !== digest) errors2.push("material_digest does not match the numbered plan documents");
-      if (index.status === "approved" && index.approved_digest !== digest) errors2.push("approved_digest does not match the approved plan material");
-      breakdown = parseWorkBreakdown(material.get(index.work_breakdown), index);
-      errors2.push(...contractMessages(await validateContract("plan-work-breakdown", breakdown)));
-      errors2.push(...planWorkBreakdownSemanticErrors(breakdown));
-    }
-  } catch (error) {
-    errors2.push(error.message);
   }
-  return { index, work_breakdown: breakdown, errors: [...new Set(errors2)] };
+  const branchOwner = records.find((record2) => record2.branch === branch);
+  if (existing) {
+    if (existing.branch !== branch) throw new Error(`Plan worktree path is already assigned to another branch: ${worktree2}`);
+    const baseCommit2 = await git(worktree2, ["merge-base", "HEAD", `refs/heads/${repositoryConfig.default_branch}`]).catch(() => git(worktree2, ["rev-parse", "HEAD"]));
+    return { worktree: worktree2, branch, baseCommit: baseCommit2 };
+  }
+  if (branchOwner) throw new Error(`Plan branch ${branch} is already attached to another worktree: ${branchOwner.path}`);
+  if (await exists4(worktree2)) throw new Error(`Plan worktree path already exists but is not registered by Git: ${worktree2}`);
+  await assertCleanRepository(repositoryRoot);
+  const baseCommit = await git(repositoryRoot, ["rev-parse", "HEAD"]);
+  await mkdir5(resolve10(worktree2, ".."), { recursive: true });
+  await git(repositoryRoot, ["worktree", "add", "-b", branch, worktree2, baseCommit]);
+  return { worktree: worktree2, branch, baseCommit };
 }
-async function actualMaterialDigest(directory, index) {
-  const material = /* @__PURE__ */ new Map();
-  for (const document of index.documents) material.set(document, await readFile10(join9(directory, document), "utf8"));
-  return materialDigest(material, index.documents);
-}
-async function setPlanState(planDirectory3, transition2, now = /* @__PURE__ */ new Date()) {
-  const directory = resolve17(planDirectory3);
-  const validation = await validatePlanDirectory(directory);
-  const allowedStaleDigestErrors = /* @__PURE__ */ new Set([
-    "material_digest does not match the numbered plan documents",
-    "approved_digest does not match the approved plan material"
-  ]);
-  const blocking = validation.errors.filter((error) => !allowedStaleDigestErrors.has(error));
-  if (!validation.index || blocking.length > 0) throw new Error(`Plan state transition validation failed:
-- ${blocking.join("\n- ")}`);
-  const index = validation.index;
-  const digest = await actualMaterialDigest(directory, index);
-  if (transition2.kind === "approve") {
-    if (index.status !== "draft") throw new Error("Only a draft plan can be approved");
-    if (!transition2.approved_by.trim()) throw new Error("Approval requires a non-empty approver");
-    index.status = "approved";
-    index.approved_at = now.toISOString();
-    index.approved_by = transition2.approved_by.trim();
-    index.material_digest = digest;
-    index.approved_digest = digest;
-  } else if (transition2.kind === "material-revision") {
-    if (index.status !== "approved") throw new Error("Material revision transition requires an approved plan");
-    if (!transition2.reason.trim()) throw new Error("Material revision requires a reason");
-    index.status = "draft";
-    index.plan_version += 1;
-    index.approved_at = null;
-    index.approved_by = null;
-    index.approved_digest = null;
-    index.material_digest = digest;
-    index.revision_reason = transition2.reason.trim();
-  } else {
-    if (index.status !== "approved") throw new Error("Non-material repair transition requires an approved plan");
-    index.material_digest = digest;
-    index.approved_digest = digest;
-  }
-  index.updated_at = now.toISOString();
-  const readmePath = join9(directory, "README.md");
-  const raw = await readFile10(readmePath, "utf8");
-  const match = raw.match(/^---\r?\n[\s\S]*?\r?\n---(?:\r?\n|$)/);
-  if (!match) throw new Error("Plan README must begin with YAML frontmatter");
-  await writeTextAtomic(readmePath, raw.replace(match[0], `---
-${(0, import_yaml7.stringify)(index).trimEnd()}
----
-`));
-  const after = await validatePlanDirectory(directory);
-  if (after.errors.length > 0) throw new Error(`Plan state transition produced invalid metadata:
-- ${after.errors.join("\n- ")}`);
-  return index;
-}
-function renderDocument(title, sections) {
-  return `# ${title}
-
-${sections.map(([heading, body]) => `## ${heading}
-
-${body}`).join("\n\n")}
-`;
-}
-function renderPlan(request3, createdAt) {
-  const workItems = allocateWorkItems(request3);
-  const breakdown = { contract_version: 1, plan_id: request3.plan_id, work_prefix: request3.work_prefix, items: workItems };
-  const files = /* @__PURE__ */ new Map();
-  files.set("0001-overview.md", renderDocument("Overview", [
-    ["Summary", request3.summary],
-    ["Source", `${request3.source.kind}: ${request3.source.reference}`],
-    ["Affected repositories", markdownList(request3.affected_repositories, "None identified.")],
-    ["Assumptions", markdownList(request3.assumptions, "None recorded.")],
-    ["Open questions", markdownList(request3.open_questions, "None recorded.")]
-  ]));
-  files.set("0010-requirements.md", renderDocument("Requirements", [["Requirements and acceptance criteria", markdownList(request3.requirements, "None recorded.")]]));
-  files.set("0020-solution.md", renderDocument("Solution", [["Proposed solution", markdownList(request3.solution, "None recorded.")]]));
-  files.set("0040-delivery.md", renderDocument("Delivery", [["Delivery order", markdownList(request3.delivery, "None recorded.")]]));
-  files.set("0050-verification.md", renderDocument("Verification", [["Verification strategy", markdownList(request3.verification, "None recorded.")]]));
-  files.set("0070-risks.md", renderDocument("Risks", [["Risks and mitigations", markdownList(request3.risks, "None recorded.")]]));
-  const rows = workItems.map((item) => `| ${item.work_id} | ${item.title} | ${item.parent ?? "\u2014"} | ${item.depends_on.join(", ") || "\u2014"} | ${item.area} | \u2014 |`).join("\n");
-  files.set("0080-work-breakdown.md", `# Work breakdown
-
-${tableHeader}
-${tableSeparator}
-${rows}
-
-Live task status does not belong in this plan. Add confirmed external references only after an explicit publication action.
-`);
-  const index = {
-    contract_version: 1,
-    plan_id: request3.plan_id,
-    title: request3.title,
-    status: "draft",
-    plan_version: 1,
-    approved_at: null,
-    approved_by: null,
-    revision_reason: "Initial draft",
-    source: request3.source,
-    work_prefix: request3.work_prefix,
-    documents: [...documents],
-    work_breakdown: "0080-work-breakdown.md",
-    material_digest: materialDigest(files, documents),
-    approved_digest: null,
-    created_at: createdAt,
-    updated_at: createdAt
-  };
-  const links = documents.map((document) => `- [${document.replace(/^[0-9]{4}-|\.md$/g, "").replaceAll("-", " ")}](./${document})`).join("\n");
-  files.set("README.md", `---
-${(0, import_yaml7.stringify)(index).trimEnd()}
----
-
-# ${request3.title}
-
-${request3.summary}
-
-## Plan documents
-
-${links}
-
-## Approval gate
-
-Human approval must explicitly cover scope, solution, delivery order, risks, and acceptance criteria before the metadata status changes to \`approved\`. The machine-readable frontmatter status is authoritative; approval updates metadata without rewriting this prose.
-`);
-  return { index, breakdown, files };
-}
-async function createPlanDraft(workspaceRootInput, request3, now = /* @__PURE__ */ new Date()) {
-  const workspaceRoot18 = resolve17(workspaceRootInput);
-  const contractErrors2 = contractMessages(await validateContract("plan-draft-request", request3));
-  const config = await readData(join9(workspaceRoot18, "workspace.yaml"));
-  const workspaceErrors = contractMessages(await validateContract("workspace", config));
-  const errors2 = [...contractErrors2, ...workspaceErrors];
-  if (contractErrors2.length === 0 && workspaceErrors.length === 0) {
-    errors2.push(...workspaceSemanticErrors(config), ...planDraftSemanticErrors(request3, config));
-  }
-  if (errors2.length > 0) throw new Error(`Invalid plan draft request:
-- ${errors2.join("\n- ")}`);
-  const realWorkspace = await realpath3(workspaceRoot18);
-  const contextRoot = assertInside(workspaceRoot18, join9(workspaceRoot18, "context"));
-  try {
-    const info = await lstat5(contextRoot);
-    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Context root must be a real directory: ${contextRoot}`);
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-    await mkdir4(contextRoot, { mode: 493 });
-  }
-  if (await realpath3(contextRoot) !== join9(realWorkspace, "context")) throw new Error(`Context root must not traverse symbolic links: ${contextRoot}`);
-  const plansRoot = assertInside(contextRoot, join9(contextRoot, "plans"));
-  try {
-    const info = await lstat5(plansRoot);
-    if (!info.isDirectory() || info.isSymbolicLink()) throw new Error(`Plan root must be a real directory: ${plansRoot}`);
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-    await mkdir4(plansRoot, { mode: 493 });
-  }
-  const realPlansRoot = await realpath3(plansRoot);
-  assertInside(realWorkspace, realPlansRoot);
-  if (realPlansRoot !== join9(realWorkspace, "context", "plans")) {
-    throw new Error(`Plan root must not traverse symbolic links: ${plansRoot}`);
-  }
-  const destination = assertInside(realPlansRoot, join9(realPlansRoot, request3.plan_id));
-  try {
-    await lstat5(destination);
-    throw new Error(`Plan already exists; refusing to overwrite: ${destination}`);
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  const temporary = join9(realPlansRoot, `.${request3.plan_id}.${randomUUID()}.tmp`);
-  const rendered = renderPlan(request3, now.toISOString());
-  try {
-    await mkdir4(temporary, { mode: 493 });
-    for (const [name, contents] of rendered.files) await writeTextExclusive(join9(temporary, name), contents);
-    const validation = await validatePlanDirectory(temporary, request3.plan_id);
-    if (validation.errors.length > 0) throw new Error(`Generated plan failed validation:
-- ${validation.errors.join("\n- ")}`);
-    await rename2(temporary, destination);
-  } catch (error) {
-    await rm(temporary, { recursive: true, force: true });
-    throw error;
-  }
+async function createPlanWorktree(root12, repository, repositoryConfig, plan, tasks) {
+  const { worktree: worktree2, branch, baseCommit } = await planWorktree(root12, repository, repositoryConfig, plan);
+  const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+  const prompt = promptFor(plan, tasks, repositoryConfig.path);
+  const promptFile = assertInside(root12, join6(root12, ".runtime", "plans", `${slugify2(plan.id)}-${stamp}.md`));
+  await mkdir5(resolve10(promptFile, ".."), { recursive: true });
+  await writeTextAtomic(promptFile, prompt);
+  const shellPath = (path) => `'${path.replaceAll("'", "'\\''")}'`;
+  const verificationCommands = [...new Set(tasks.flatMap((task) => task.verification_commands ?? []))];
   return {
-    plan_id: request3.plan_id,
-    status: "draft",
-    plan_version: 1,
-    directory: destination,
-    index: join9(destination, "README.md"),
-    documents: [...documents],
-    work_ids: rendered.breakdown.items.map((item) => item.work_id),
-    approval_required: true
+    plan,
+    plan_domain: repository,
+    tasks,
+    worktree: worktree2,
+    branch,
+    base_commit: baseCommit,
+    prompt,
+    prompt_file: promptFile,
+    review_commands: [
+      `git -C ${shellPath(worktree2)} diff ${baseCommit}...HEAD`,
+      `git -C ${shellPath(worktree2)} status --short`,
+      ...verificationCommands
+    ],
+    status_changed: false
   };
 }
-var import_yaml7, documents, tableHeader, tableSeparator;
-var init_plans = __esm({
-  "scripts/lib/plans.ts"() {
+async function preparePlanExecution(options) {
+  const root12 = resolve10(options.workspaceRoot);
+  const directory3 = await resolvePlanDirectory(root12, options.plan);
+  const validation2 = await validatePlanDirectory(directory3);
+  if (!validation2.plan || validation2.errors.length > 0) throw new Error(`Cannot execute invalid plan:
+- ${validation2.errors.join("\n- ")}`);
+  const plan = validation2.plan;
+  if (plan.status !== "approved") throw new Error(`Plan ${plan.id} is ${plan.status}; only explicitly approved plans are executable`);
+  const tasks = validation2.tasks.filter((task) => task.status !== "done");
+  if (tasks.length === 0) throw new Error(`Plan ${plan.id} has no unfinished tasks`);
+  const domain = planDomain(plan, validation2.tasks);
+  const config2 = await loadWorkspace2(root12);
+  const repository = config2.repositories[domain];
+  if (!repository) throw new Error(`Plan repository is not registered: ${domain}`);
+  return createPlanWorktree(root12, domain, repository, plan, tasks);
+}
+var import_yaml8;
+var init_run_task = __esm({
+  "scripts/lib/run-task.ts"() {
     "use strict";
-    import_yaml7 = __toESM(require_dist(), 1);
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml8 = __toESM(require_dist(), 1);
+    init_git();
     init_io();
-    init_validation();
-    documents = [
-      "0001-overview.md",
-      "0010-requirements.md",
-      "0020-solution.md",
-      "0040-delivery.md",
-      "0050-verification.md",
-      "0070-risks.md",
-      "0080-work-breakdown.md"
-    ];
-    tableHeader = "| Work ID | Title | Parent | Depends on | Area | External reference |";
-    tableSeparator = "| --- | --- | --- | --- | --- | --- |";
+    init_plans();
+  }
+});
+
+// scripts/run-task.ts
+var run_task_exports = {};
+import { dirname as dirname8, resolve as resolve11 } from "node:path";
+import { parseArgs as parseArgs3 } from "node:util";
+import { fileURLToPath as fileURLToPath4 } from "node:url";
+var values3, root2;
+var init_run_task2 = __esm({
+  async "scripts/run-task.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_run_task();
+    ({ values: values3 } = parseArgs3({ options: { plan: { type: "string" } } }));
+    root2 = resolve11(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve11(dirname8(fileURLToPath4(import.meta.url)), ".."));
+    if (values3.plan) {
+      console.log(JSON.stringify(await preparePlanExecution({ workspaceRoot: root2, plan: values3.plan }), null, 2));
+    } else {
+      throw new Error("Usage: cc run-task --plan <reference>");
+    }
+  }
+});
+
+// scripts/review-plan.ts
+var review_plan_exports = {};
+import { dirname as dirname9, resolve as resolve12 } from "node:path";
+import { fileURLToPath as fileURLToPath5 } from "node:url";
+import { parseArgs as parseArgs4 } from "node:util";
+var values4, root3, directory, validation, worktree, base;
+var init_review_plan = __esm({
+  async "scripts/review-plan.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_git();
+    init_plans();
+    ({ values: values4 } = parseArgs4({ options: { plan: { type: "string" }, worktree: { type: "string" }, base: { type: "string" } } }));
+    if (!values4.plan || !values4.worktree) throw new Error("Usage: cc review-plan --plan <reference> --worktree <path> [--base <commit>]");
+    root3 = resolve12(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve12(dirname9(fileURLToPath5(import.meta.url)), ".."));
+    directory = await resolvePlanDirectory(root3, values4.plan);
+    validation = await validatePlanDirectory(directory);
+    if (!validation.plan || validation.errors.length > 0) throw new Error(`Cannot review invalid plan:
+- ${validation.errors.join("\n- ")}`);
+    worktree = resolve12(values4.worktree);
+    base = values4.base ?? await git(worktree, ["merge-base", "HEAD", "HEAD~1"]).catch(() => "HEAD");
+    console.log(JSON.stringify({
+      plan: validation.plan,
+      remaining_tasks: validation.tasks.filter((task) => task.status !== "done").map((task) => task.id),
+      worktree,
+      base,
+      branch: await git(worktree, ["branch", "--show-current"]),
+      changed_files: (await git(worktree, ["diff", "--name-only", `${base}...HEAD`])).split("\n").filter(Boolean),
+      status: await git(worktree, ["status", "--short"]),
+      commands: [`git -C ${JSON.stringify(worktree)} diff ${base}...HEAD`, `git -C ${JSON.stringify(worktree)} log --oneline ${base}..HEAD`],
+      human_review_required: true,
+      review_scope: "whole-plan"
+    }, null, 2));
   }
 });
 
 // scripts/create-plan.ts
 var create_plan_exports = {};
-import { readFile as readFile11 } from "node:fs/promises";
-import { dirname as dirname12, resolve as resolve18 } from "node:path";
-import { parseArgs as parseArgs9 } from "node:util";
-import { fileURLToPath as fileURLToPath10 } from "node:url";
-var values9, workspaceRoot9, inputPath, request;
+import { readFile as readFile9 } from "node:fs/promises";
+import { dirname as dirname10, resolve as resolve13 } from "node:path";
+import { parseArgs as parseArgs5 } from "node:util";
+import { fileURLToPath as fileURLToPath6 } from "node:url";
+var values5, workspaceRoot3, input, requests, results;
 var init_create_plan = __esm({
   async "scripts/create-plan.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
-    ({ values: values9 } = parseArgs9({
-      options: { input: { type: "string" } }
-    }));
-    if (!values9.input) throw new Error("Usage: cc create-plan --input <plan-draft-request.json>");
-    workspaceRoot9 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname12(fileURLToPath10(import.meta.url)), ".."));
-    inputPath = resolve18(process.cwd(), values9.input);
-    request = JSON.parse(await readFile11(inputPath, "utf8"));
-    console.log(JSON.stringify(await createPlanDraft(workspaceRoot9, request), null, 2));
+    ({ values: values5 } = parseArgs5({ options: { input: { type: "string" } } }));
+    if (!values5.input) throw new Error("Usage: cc create-plan --input <plan-request.json>");
+    workspaceRoot3 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname10(fileURLToPath6(import.meta.url)), ".."));
+    input = JSON.parse(await readFile9(resolve13(process.cwd(), values5.input), "utf8"));
+    requests = input.plans?.length ? input.plans : [input];
+    results = [];
+    for (const request3 of requests) results.push(await createPlan(workspaceRoot3, request3));
+    console.log(JSON.stringify(results.length === 1 ? results[0] : results, null, 2));
   }
 });
 
 // scripts/validate-plan.ts
 var validate_plan_exports = {};
-import { resolve as resolve19 } from "node:path";
-import { parseArgs as parseArgs10 } from "node:util";
-var positionals2, planDirectory, result2;
+import { resolve as resolve14 } from "node:path";
+import { parseArgs as parseArgs6 } from "node:util";
+var positionals, directory2, result;
 var init_validate_plan = __esm({
   async "scripts/validate-plan.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
-    ({ positionals: positionals2 } = parseArgs10({ allowPositionals: true }));
-    if (!positionals2[0]) throw new Error("Usage: cc validate-plan context/plans/<plan-id>");
-    planDirectory = resolve19(process.cwd(), positionals2[0]);
-    result2 = await validatePlanDirectory(planDirectory);
-    if (result2.errors.length > 0) {
-      console.error(`Invalid plan ${planDirectory}:`);
-      for (const error of result2.errors) console.error(`- ${error}`);
+    ({ positionals } = parseArgs6({ allowPositionals: true }));
+    if (!positionals[0]) throw new Error("Usage: cc validate-plan plans/<repository-key>-plans/<number>-<slug>");
+    directory2 = resolve14(process.cwd(), positionals[0]);
+    result = await validatePlanDirectory(directory2);
+    if (result.errors.length > 0) {
+      console.error(`Invalid plan ${directory2}:`);
+      for (const error of result.errors) console.error(`- ${error}`);
       process.exitCode = 1;
     } else {
-      console.log(`Valid ${result2.index?.status} plan ${result2.index?.plan_id} version ${result2.index?.plan_version}`);
+      console.log(`Valid ${result.plan.status} plan ${result.plan.id} with ${result.tasks.length} task(s)`);
     }
   }
 });
 
 // scripts/set-plan-state.ts
 var set_plan_state_exports = {};
-import { dirname as dirname13, join as join10, resolve as resolve20 } from "node:path";
-import { parseArgs as parseArgs11 } from "node:util";
-import { fileURLToPath as fileURLToPath11 } from "node:url";
-var values10, requested, transition, workspaceRoot10, planDirectory2;
+import { dirname as dirname11, resolve as resolve15 } from "node:path";
+import { parseArgs as parseArgs7 } from "node:util";
+import { fileURLToPath as fileURLToPath7 } from "node:url";
+var values6, root4;
 var init_set_plan_state = __esm({
   async "scripts/set-plan-state.ts"() {
     "use strict";
-    init_io();
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
-    ({ values: values10 } = parseArgs11({
-      options: {
-        plan: { type: "string" },
-        "approve-by": { type: "string" },
-        "material-revision": { type: "string" },
-        "non-material-repair": { type: "boolean", default: false }
-      }
-    }));
-    if (!values10.plan) throw new Error("Usage: cc set-plan-state --plan context/plans/<plan-id> (--approve-by <name> | --material-revision <reason> | --non-material-repair)");
-    requested = [Boolean(values10["approve-by"]), Boolean(values10["material-revision"]), values10["non-material-repair"]].filter(Boolean).length;
-    if (requested !== 1) throw new Error("Choose exactly one plan state transition");
-    if (values10["approve-by"]) transition = { kind: "approve", approved_by: values10["approve-by"] };
-    else if (values10["material-revision"]) transition = { kind: "material-revision", reason: values10["material-revision"] };
-    else transition = { kind: "non-material-repair" };
-    workspaceRoot10 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname13(fileURLToPath11(import.meta.url)), ".."));
-    planDirectory2 = assertInside(join10(workspaceRoot10, "context", "plans"), resolve20(process.cwd(), values10.plan));
-    console.log(JSON.stringify(await setPlanState(planDirectory2, transition), null, 2));
+    ({ values: values6 } = parseArgs7({ options: { plan: { type: "string" }, status: { type: "string" } } }));
+    if (!values6.plan || !values6.status || !["draft", "approved", "done"].includes(values6.status)) throw new Error("Usage: cc set-plan-state --plan <reference> --status <draft|approved|done>");
+    root4 = resolve15(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve15(dirname11(fileURLToPath7(import.meta.url)), ".."));
+    console.log(JSON.stringify(await setPlanStatus(root4, values6.plan, values6.status), null, 2));
+  }
+});
+
+// scripts/set-task-state.ts
+var set_task_state_exports = {};
+import { dirname as dirname12, resolve as resolve16 } from "node:path";
+import { parseArgs as parseArgs8 } from "node:util";
+import { fileURLToPath as fileURLToPath8 } from "node:url";
+var values7, root5;
+var init_set_task_state = __esm({
+  async "scripts/set-task-state.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_plans();
+    ({ values: values7 } = parseArgs8({ options: { plan: { type: "string" }, task: { type: "string" }, status: { type: "string" } } }));
+    if (!values7.plan || !values7.task || !values7.status || !["draft", "approved", "done"].includes(values7.status)) throw new Error("Usage: cc set-task-state --plan <reference> --task <id> --status <draft|approved|done>");
+    root5 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname12(fileURLToPath8(import.meta.url)), ".."));
+    console.log(JSON.stringify(await setTaskStatus(root5, values7.plan, values7.task, values7.status), null, 2));
   }
 });
 
 // scripts/lib/whats-next.ts
-import { lstat as lstat6, readdir as readdir3, readFile as readFile12 } from "node:fs/promises";
-import { join as join11, relative as relative5, resolve as resolve21 } from "node:path";
-function contractMessages2(errors2) {
-  return errors2.map((error) => `${error.instancePath || "/"} ${error.message}`);
+import { resolve as resolve17 } from "node:path";
+function planDone(plans2, reference) {
+  return plans2.some((candidate) => !candidate.archived && candidate.plan?.id === reference && candidate.plan.status === "done");
 }
-async function isDirectory(path2) {
-  try {
-    return (await lstat6(path2)).isDirectory();
-  } catch {
-    return false;
-  }
+function planReady(planResult, plans2) {
+  if (!planResult.plan || planResult.plan.status !== "approved") return false;
+  if ((planResult.plan.dependencies ?? []).some((dependency) => !planDone(plans2, dependency))) return false;
+  return planResult.tasks.some((task) => task.status !== "done");
 }
-function acceptanceIsSufficient(raw) {
-  return /^- (?!None recorded\.$).+/m.test(raw);
-}
-function rank(candidate) {
-  if (candidate.urgent) return 1;
-  if (candidate.state === "in-progress") return 2;
-  if (["review", "verification-failure", "ci-failure"].includes(candidate.kind) || candidate.state === "failed") return 3;
-  if (candidate.kind !== "plan-work-item") return 4;
-  return 5;
-}
-function blockers(candidate, currentUser) {
-  const values18 = [];
-  if (candidate.owner && candidate.owner !== currentUser) values18.push(`owned by another active contributor: ${candidate.owner}`);
-  for (const dependency of candidate.dependencies) {
-    if (dependency.state !== "completed") values18.push(`dependency ${dependency.reference} is ${dependency.state}`);
-  }
-  if (candidate.plan_approval_state !== "approved" && candidate.plan_approval_state !== "not-applicable") {
-    values18.push(`governing plan is ${candidate.plan_approval_state}`);
-  }
-  if (!candidate.scope_sufficient) values18.push("scope is insufficient");
-  if (!candidate.acceptance_sufficient) values18.push("acceptance criteria are insufficient");
-  if (candidate.repositories.length === 0) values18.push("no affected repository is resolved");
-  if (!candidate.access_available) values18.push("required repository access is unavailable");
-  if (candidate.contract_blocked) values18.push("an unresolved contract decision blocks implementation");
-  return [...new Set(values18)];
-}
-function actionFor(candidate, candidateBlockers, config, action) {
-  const evidence = [
-    `state: ${candidate.state}`,
-    `plan approval: ${candidate.plan_approval_state}`,
-    candidate.dependencies.length === 0 ? "dependencies: none" : `dependencies: ${candidate.dependencies.map((item) => `${item.reference}=${item.state}`).join(", ")}`,
-    `scope sufficient: ${candidate.scope_sufficient}`,
-    `acceptance sufficient: ${candidate.acceptance_sufficient}`,
-    `repository access available: ${candidate.access_available}`
-  ];
-  const sequence = candidate.repositories.flatMap((repository) => {
-    const agent = config.repositories[repository]?.agent ?? repository;
-    return [`repository worker (${agent})`, "independent verifier"];
-  });
-  const title = action === "execute" ? candidate.title : enablingTitle(candidate, candidateBlockers);
+function recommendation(planResult, root12) {
+  const plan = planResult.plan;
+  const remainingTasks = planResult.tasks.filter((task) => task.status !== "done").map((task) => task.id);
   return {
-    action,
-    candidate_id: candidate.candidate_id,
-    title,
-    why: action === "execute" ? `${rankingReason(candidate)}; all readiness checks passed.` : `No candidate is currently executable; this is the smallest visible action that addresses the first blocker for ${candidate.title}.`,
-    readiness_evidence: evidence,
-    source_references: [.../* @__PURE__ */ new Set([candidate.source_reference, ...candidate.plan_reference ? [candidate.plan_reference] : []])],
-    repositories: candidate.repositories,
-    agent_sequence: action === "execute" ? [...new Set(sequence)] : [],
-    blockers: candidateBlockers,
-    risks: candidate.risks
+    action: "execute",
+    plan_id: plan.id,
+    title: plan.title,
+    why: `Plan ${plan.id} is approved, its plan dependencies are done, and it has unfinished tasks. Execute the plan continuously in its isolated domain worktree, then request one human review.`,
+    plan_reference: planReference(root12, planResult.directory),
+    product_knowledge_references: [...plan.product_knowledge?.references ?? [], ...planResult.tasks.flatMap((task) => task.product_knowledge ?? [])].filter((value, index, values10) => values10.indexOf(value) === index),
+    repository: plan.repositories[0],
+    remaining_tasks: remainingTasks
   };
 }
-function rankingReason(candidate) {
-  if (candidate.urgent) return "It is explicitly urgent";
-  if (candidate.state === "in-progress") return "It is actionable work already in progress";
-  if (["review", "verification-failure", "ci-failure"].includes(candidate.kind) || candidate.state === "failed") {
-    return "It addresses review, verification, or CI feedback";
+async function recommendWhatsNext(workspaceRootInput) {
+  const root12 = resolve17(workspaceRootInput);
+  const active2 = await listPlans(root12, false);
+  const warnings = active2.flatMap((item) => item.errors.map((error) => `${item.directory}: ${error}`));
+  const stale = await staleProductKnowledgeSources(root12);
+  if (stale.length > 0) warnings.push(`Product Knowledge sources changed: ${stale.map((source) => source.id).join(", ")}. Review refresh-product-knowledge before relying on affected pages.`);
+  const approved = active2.filter((item) => item.plan?.status === "approved");
+  const ready = [];
+  let tasks = 0;
+  for (const item of approved) {
+    tasks += item.tasks.length;
+    if (planReady(item, active2)) ready.push(item);
   }
-  if (candidate.kind !== "plan-work-item") return "It is the highest-priority approved ready source candidate";
-  return "It is the next dependency-ready item in an approved plan";
-}
-function enablingTitle(candidate, candidateBlockers) {
-  const first = candidateBlockers[0] ?? "readiness is not established";
-  if (first.startsWith("governing plan is draft")) return `Approve the governing plan for ${candidate.title}`;
-  if (first.startsWith("dependency ")) return `Resolve or confirm ${first.replace(" is ", " as ")}`;
-  if (first.startsWith("owned by another")) return `Confirm ownership before starting ${candidate.title}`;
-  if (first.includes("contract")) return `Resolve the blocking contract for ${candidate.title}`;
-  if (first.includes("repository")) return `Register or restore repository access for ${candidate.title}`;
-  return `Clarify ${first} for ${candidate.title}`;
-}
-async function repositoryAccess(workspaceRoot18, config, repositories) {
-  if (repositories.length === 0) return false;
-  for (const name of repositories) {
-    const repository = config.repositories[name];
-    if (!repository || !await isDirectory(resolve21(workspaceRoot18, repository.path))) return false;
-  }
-  return true;
-}
-async function discoverPlanCandidates(workspaceRoot18, config, facts) {
-  const plansRoot = join11(workspaceRoot18, "context", "plans");
-  if (!await isDirectory(plansRoot)) return { candidates: [], warnings: [], matchedFacts: /* @__PURE__ */ new Set() };
-  const entries = (await readdir3(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((left, right) => left.name.localeCompare(right.name));
-  const candidates = [];
-  const warnings = [];
-  const matchedFacts = /* @__PURE__ */ new Set();
-  for (const entry of entries) {
-    const planDirectory3 = join11(plansRoot, entry.name);
-    const validation = await validatePlanDirectory(planDirectory3);
-    if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
-      warnings.push(`Skipped invalid plan ${entry.name}: ${validation.errors.join("; ") || "missing parsed plan material"}`);
-      continue;
-    }
-    const requirementPath = join11(planDirectory3, "0010-requirements.md");
-    const acceptanceSufficient = acceptanceIsSufficient(await readFile12(requirementPath, "utf8"));
-    for (const item of validation.work_breakdown.items) {
-      const fact = facts.get(item.work_id);
-      if (fact) matchedFacts.add(fact.candidate_id);
-      const repositories = fact?.repositories.length ? fact.repositories : config.repositories[item.area] ? [item.area] : [];
-      const dependencyFacts = new Map([...facts.values()].filter((value2) => value2.work_id).map((value2) => [value2.work_id, value2.state]));
-      const dependencies = item.depends_on.map((reference) => ({
-        reference,
-        state: dependencyFacts.get(reference) === "completed" ? "completed" : dependencyFacts.has(reference) ? "pending" : "unknown"
-      }));
-      const planReference = relative5(workspaceRoot18, join11(planDirectory3, "README.md"));
-      candidates.push({
-        contract_version: 1,
-        candidate_id: `plan:${validation.index.plan_id}:${item.work_id}`,
-        kind: "plan-work-item",
-        work_id: item.work_id,
-        title: item.title,
-        state: fact?.state ?? "ready",
-        urgent: fact?.urgent ?? false,
-        priority: fact?.priority ?? 0,
-        owner: fact?.owner ?? null,
-        plan_reference: planReference,
-        plan_approval_state: validation.index.status,
-        dependencies,
-        scope_sufficient: fact?.scope_sufficient ?? (item.title.trim().length > 0 && repositories.length > 0),
-        acceptance_sufficient: fact?.acceptance_sufficient ?? acceptanceSufficient,
-        repositories,
-        access_available: (fact?.access_available ?? true) && await repositoryAccess(workspaceRoot18, config, repositories),
-        contract_blocked: fact?.contract_blocked ?? false,
-        source_reference: `${relative5(workspaceRoot18, join11(planDirectory3, validation.index.work_breakdown))}#${item.work_id}`,
-        risks: fact?.risks ?? []
-      });
-    }
-  }
-  return { candidates, warnings, matchedFacts };
-}
-async function recommendWhatsNext(workspaceRootInput, activity2 = null, now = /* @__PURE__ */ new Date()) {
-  const workspaceRoot18 = resolve21(workspaceRootInput);
-  const config = await readData(join11(workspaceRoot18, "workspace.yaml"));
-  const workspaceErrors = contractMessages2(await validateContract("workspace", config));
-  workspaceErrors.push(...workspaceSemanticErrors(config));
-  if (workspaceErrors.length > 0) throw new Error(`Invalid workspace configuration:
-- ${workspaceErrors.join("\n- ")}`);
-  if (activity2) {
-    const activityErrors = contractMessages2(await validateContract("fake-activity-source", activity2));
-    if (activityErrors.length > 0) throw new Error(`Invalid fake activity source:
-- ${activityErrors.join("\n- ")}`);
-  }
-  const currentUser = activity2?.current_user ?? "local-user";
-  const facts = /* @__PURE__ */ new Map();
-  for (const candidate of activity2?.candidates ?? []) {
-    if (candidate.work_id) facts.set(candidate.work_id, candidate);
-  }
-  const discovered = await discoverPlanCandidates(workspaceRoot18, config, facts);
-  const external = (activity2?.candidates ?? []).filter((candidate) => !discovered.matchedFacts.has(candidate.candidate_id));
-  const hydratedExternal = [];
-  for (const candidate of external) {
-    hydratedExternal.push({
-      ...candidate,
-      access_available: candidate.access_available && await repositoryAccess(workspaceRoot18, config, candidate.repositories)
-    });
-  }
-  const candidates = [...discovered.candidates, ...hydratedExternal];
-  const duplicateIds = candidates.filter((candidate, index) => candidates.findIndex((value2) => value2.candidate_id === candidate.candidate_id) !== index);
-  if (duplicateIds.length > 0) throw new Error(`Duplicate candidate ID: ${duplicateIds[0].candidate_id}`);
-  const excluded = candidates.filter((candidate) => candidate.state === "completed" || candidate.state === "cancelled");
-  const assessed = candidates.filter((candidate) => candidate.state !== "completed" && candidate.state !== "cancelled").map((candidate) => ({ candidate, blockers: blockers(candidate, currentUser), rank: rank(candidate) }));
-  const ordered2 = [...assessed].sort((left, right) => left.rank - right.rank || right.candidate.priority - left.candidate.priority || left.candidate.candidate_id.localeCompare(right.candidate.candidate_id));
-  const executable = ordered2.filter((item) => item.blockers.length === 0);
-  const blocked = ordered2.filter((item) => item.blockers.length > 0);
-  let recommendation;
-  let alternatives;
-  if (executable.length > 0) {
-    recommendation = actionFor(executable[0].candidate, [], config, "execute");
-    alternatives = executable.slice(1, 3).map((item) => actionFor(item.candidate, [], config, "execute"));
-  } else if (blocked.length > 0) {
-    recommendation = actionFor(blocked[0].candidate, blocked[0].blockers, config, "enable");
-    alternatives = blocked.slice(1, 3).map((item) => actionFor(item.candidate, item.blockers, config, "enable"));
-  } else {
-    recommendation = {
-      action: "enable",
-      candidate_id: null,
-      title: "Create or approve a scoped work source",
-      why: "No executable or blocked candidate was found in the configured read-only sources.",
-      readiness_evidence: ["approved plan candidates: none", "activity candidates: none"],
-      source_references: ["context/plans", "workspace.yaml#activity"],
-      repositories: [],
-      agent_sequence: [],
-      blockers: ["no available candidate provides sufficient scope and acceptance criteria"],
-      risks: []
+  ready.sort((left, right) => `${left.plan.number}-${left.plan.id}`.localeCompare(`${right.plan.number}-${right.plan.id}`));
+  if (ready.length > 0) {
+    const first = recommendation(ready[0], root12);
+    return {
+      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+      recommendation: first,
+      alternatives: ready.slice(1, 6).map((plan) => recommendation(plan, root12)),
+      considered: { plans: active2.length, tasks, executable: ready.length, blocked: Math.max(0, tasks - ready.length) },
+      warnings,
+      no_state_changed: true
     };
-    alternatives = [];
   }
-  const result3 = {
-    contract_version: 1,
-    generated_at: now.toISOString(),
-    recommendation,
-    alternatives,
-    considered: { total: candidates.length, executable: executable.length, blocked: blocked.length, excluded: excluded.length },
-    warnings: discovered.warnings,
+  const draft = active2.filter((item) => item.plan?.status === "draft").sort((left, right) => (left.plan?.number ?? 0) - (right.plan?.number ?? 0))[0];
+  const enabling = draft?.plan ? {
+    action: "review",
+    plan_id: draft.plan.id,
+    title: `Review draft plan ${draft.plan.id}`,
+    why: "No approved plan is ready for continuous execution. Review and explicitly approve a draft plan, or create the next plan.",
+    plan_reference: planReference(root12, draft.directory),
+    product_knowledge_references: draft.plan.product_knowledge?.references ?? []
+  } : {
+    action: "review",
+    title: "Create or approve a plan",
+    why: "No approved plan is ready for continuous execution. Create a draft plan from the relevant source, or explicitly approve an existing draft.",
+    product_knowledge_references: []
+  };
+  return {
+    generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+    recommendation: enabling,
+    alternatives: [],
+    considered: { plans: active2.length, tasks, executable: 0, blocked: tasks },
+    warnings,
     no_state_changed: true
   };
-  const resultErrors = contractMessages2(await validateContract("whats-next-result", result3));
-  if (resultErrors.length > 0) throw new Error(`Generated invalid whats-next result:
-- ${resultErrors.join("\n- ")}`);
-  return result3;
 }
 var init_whats_next = __esm({
   "scripts/lib/whats-next.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plans();
-    init_validation();
+    init_product_knowledge();
   }
 });
 
 // scripts/whats-next.ts
 var whats_next_exports = {};
-import { readFile as readFile13 } from "node:fs/promises";
-import { dirname as dirname14, resolve as resolve22 } from "node:path";
-import { parseArgs as parseArgs12 } from "node:util";
-import { fileURLToPath as fileURLToPath12 } from "node:url";
-var values11, workspaceRoot11, activity;
+import { dirname as dirname13, resolve as resolve18 } from "node:path";
+import { fileURLToPath as fileURLToPath9 } from "node:url";
+var root6;
 var init_whats_next2 = __esm({
   async "scripts/whats-next.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_whats_next();
-    ({ values: values11 } = parseArgs12({ options: { "activity-fixture": { type: "string" } } }));
-    workspaceRoot11 = resolve22(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve22(dirname14(fileURLToPath12(import.meta.url)), ".."));
-    activity = values11["activity-fixture"] ? JSON.parse(await readFile13(resolve22(process.cwd(), values11["activity-fixture"]), "utf8")) : null;
-    console.log(JSON.stringify(await recommendWhatsNext(workspaceRoot11, activity), null, 2));
-  }
-});
-
-// scripts/prepare-lifecycle.ts
-var prepare_lifecycle_exports = {};
-import { dirname as dirname15, resolve as resolve23 } from "node:path";
-import { parseArgs as parseArgs13 } from "node:util";
-import { fileURLToPath as fileURLToPath13 } from "node:url";
-var events, capabilities, values12, workspaceRoot12;
-var init_prepare_lifecycle = __esm({
-  async "scripts/prepare-lifecycle.ts"() {
-    "use strict";
-    init_activity_lifecycle();
-    events = ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"];
-    capabilities = ["read-tasks", "update-status", "create-tasks", "assign-task", "timers"];
-    ({ values: values12 } = parseArgs13({ options: {
-      "run-id": { type: "string" },
-      event: { type: "string" },
-      available: { type: "string", multiple: true, default: [] }
-    } }));
-    if (!values12["run-id"] || !events.includes(values12.event) || values12.available.some((item) => !capabilities.includes(item))) {
-      throw new Error("Usage: prepare-lifecycle --run-id <id> --event <semantic-event> [--available <capability>]");
-    }
-    workspaceRoot12 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname15(fileURLToPath13(import.meta.url)), ".."));
-    console.log(JSON.stringify(await prepareActivityLifecycle({
-      workspaceRoot: workspaceRoot12,
-      runId: values12["run-id"],
-      event: values12.event,
-      availableCapabilities: values12.available
-    }), null, 2));
-  }
-});
-
-// scripts/record-lifecycle-action.ts
-var record_lifecycle_action_exports = {};
-import { dirname as dirname16, resolve as resolve24 } from "node:path";
-import { parseArgs as parseArgs14 } from "node:util";
-import { fileURLToPath as fileURLToPath14 } from "node:url";
-var events2, values13, workspaceRoot13;
-var init_record_lifecycle_action = __esm({
-  async "scripts/record-lifecycle-action.ts"() {
-    "use strict";
-    init_activity_lifecycle();
-    events2 = ["task.starting", "task.review-ready", "task.completed", "task.blocked", "task.cancelled"];
-    ({ values: values13 } = parseArgs14({ options: {
-      "run-id": { type: "string" },
-      event: { type: "string" },
-      action: { type: "string" },
-      status: { type: "string" },
-      evidence: { type: "string" },
-      reference: { type: "string" }
-    } }));
-    if (!values13["run-id"] || !events2.includes(values13.event) || !values13.action || !["completed", "failed"].includes(values13.status ?? "") || !values13.evidence) {
-      throw new Error("Usage: record-lifecycle-action --run-id <id> --event <event> --action <id> --status <completed|failed> --evidence <text> [--reference <ref>]");
-    }
-    workspaceRoot13 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname16(fileURLToPath14(import.meta.url)), ".."));
-    console.log(JSON.stringify(await recordActivityLifecycleAction({
-      workspaceRoot: workspaceRoot13,
-      runId: values13["run-id"],
-      event: values13.event,
-      actionId: values13.action,
-      status: values13.status,
-      evidence: values13.evidence,
-      ...values13.reference ? { externalReference: values13.reference } : {}
-    }), null, 2));
+    root6 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname13(fileURLToPath9(import.meta.url)), ".."));
+    console.log(JSON.stringify(await recommendWhatsNext(root6), null, 2));
   }
 });
 
 // scripts/lib/plan-publication.ts
-import { readFile as readFile14 } from "node:fs/promises";
-import { join as join12, resolve as resolve25 } from "node:path";
-async function assertValid6(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-function safeLine(value2, field) {
-  const clean = value2.trim();
-  if (!clean || /[|\r\n]/.test(clean)) throw new Error(`${field} must be a non-empty single line without table delimiters`);
-  if (/https?:\/\/[^\s/@:]+:[^\s/@]+@|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/i.test(clean)) throw new Error(`${field} appears to contain a credential`);
-  return clean;
-}
-function ordered(items) {
-  const remaining = [...items];
-  const emitted = /* @__PURE__ */ new Set();
-  const result3 = [];
-  while (remaining.length) {
-    const index = remaining.findIndex((item2) => [...item2.depends_on, ...item2.parent ? [item2.parent] : []].every((id) => emitted.has(id)));
-    if (index < 0) throw new Error("Plan publication order cannot resolve dependencies and parents");
-    const [item] = remaining.splice(index, 1);
-    result3.push(item);
-    emitted.add(item.work_id);
+import { readFile as readFile10 } from "node:fs/promises";
+import { join as join7, resolve as resolve19 } from "node:path";
+async function publishPlan(options) {
+  const root12 = resolve19(options.workspaceRoot);
+  const directory3 = await resolvePlanDirectory(root12, options.plan);
+  const validation2 = await validatePlanDirectory(directory3);
+  if (!validation2.plan || validation2.errors.length > 0) throw new Error(`Cannot publish invalid plan:
+- ${validation2.errors.join("\n- ")}`);
+  const plan = validation2.plan;
+  if (plan.status !== "approved") throw new Error(`Plan ${plan.id} is ${plan.status}; publication is offered after explicit approval and before execution`);
+  const references2 = options.references ?? [];
+  const ids = /* @__PURE__ */ new Set([plan.id, ...validation2.tasks.map((task) => task.id)]);
+  for (const reference of references2) {
+    if (!ids.has(reference.id)) throw new Error(`Publication reference does not resolve to plan or task: ${reference.id}`);
+    if (!/^https?:\/\//.test(reference.url)) throw new Error(`Publication reference must be an http(s) URL: ${reference.url}`);
   }
-  return result3;
-}
-function status(items) {
-  const done = items.filter((item) => item.status === "created" || item.status === "existing").length;
-  const failed = items.filter((item) => item.status === "failed").length;
-  if (done === items.length) return "completed";
-  if (failed && done) return "partial";
-  if (failed) return "failed";
-  return done ? "in-progress" : "proposed";
-}
-function recordPath(workspaceRoot18, planId) {
-  return assertInside(workspaceRoot18, join12(workspaceRoot18, ".runtime", "publications", `${planId}.json`));
-}
-async function preparePlanPublication(options) {
-  const workspaceRoot18 = resolve25(options.workspaceRoot);
-  const config = (0, import_yaml8.parse)(await readFile14(join12(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid6("workspace", config);
-  const semantic = workspaceSemanticErrors(config);
-  if (semantic.length) throw new Error(`Invalid workspace: ${semantic.join("; ")}`);
-  await assertValid6("plan-publication-discovery", options.discovery);
-  if (config.activity.provider === "none" || config.activity.provider !== options.discovery.provider) throw new Error("Publication discovery provider must match the configured non-none activity provider");
-  if (![...config.activity.required_capabilities, ...config.activity.optional_capabilities].includes("create-tasks")) throw new Error("Configured activity provider does not declare create-tasks capability");
-  const planDirectory3 = assertInside(workspaceRoot18, join12(workspaceRoot18, "context", "plans", options.planId));
-  const plan = await validatePlanDirectory(planDirectory3);
-  if (plan.errors.length || !plan.index || !plan.work_breakdown) throw new Error(`Plan is invalid: ${plan.errors.join("; ")}`);
-  if (plan.index.status !== "approved" || !plan.index.approved_digest) throw new Error("Only an approved plan can be published");
-  const index = plan.index;
-  const breakdown = plan.work_breakdown;
-  const discovered = /* @__PURE__ */ new Map();
-  for (const mapping of options.discovery.mappings) {
-    if (discovered.has(mapping.work_id)) throw new Error(`Duplicate discovered mapping: ${mapping.work_id}`);
-    discovered.set(mapping.work_id, { reference: safeLine(mapping.external_reference, "External reference"), evidence: safeLine(mapping.evidence, "Evidence") });
+  const byId = new Map(references2.map((reference) => [reference.id, reference.url]));
+  if (byId.has(plan.id)) {
+    plan.external_reference = byId.get(plan.id);
+    await writeTextAtomic(join7(directory3, "plan.yaml"), (0, import_yaml9.stringify)(plan));
   }
-  const path2 = recordPath(workspaceRoot18, options.planId);
-  await ensurePrivateDirectory(join12(workspaceRoot18, ".runtime", "publications"));
-  return withExclusiveFile(`${path2}.lock`, async () => {
-    try {
-      const existing = JSON.parse(await readFile14(path2, "utf8"));
-      await assertValid6("plan-publication-record", existing);
-      if (existing.plan_version !== index.plan_version || existing.provider !== options.discovery.provider || existing.destination !== options.discovery.destination) throw new Error("Existing publication record conflicts with this request");
-      return existing;
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
-    const items = ordered(breakdown.items).map((item) => {
-      const known = item.external_reference ? { reference: item.external_reference, evidence: "Confirmed mapping already stored in the approved plan." } : discovered.get(item.work_id);
-      if (item.external_reference && discovered.get(item.work_id)?.reference !== void 0 && discovered.get(item.work_id).reference !== item.external_reference) throw new Error(`Conflicting external mapping for ${item.work_id}`);
-      return { ...item, action: known ? "skip-existing" : "create", status: known ? "existing" : "proposed", external_reference: known?.reference ?? null, evidence: known?.evidence ?? null, idempotency_key: `${index.plan_id}:v${index.plan_version}:${item.work_id}` };
-    });
-    for (const workId of discovered.keys()) if (!items.some((item) => item.work_id === workId)) throw new Error(`Discovered mapping references unknown work ID: ${workId}`);
-    const now = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    const record = { contract_version: 1, plan_id: index.plan_id, plan_version: index.plan_version, approved_digest: index.approved_digest, provider: options.discovery.provider, destination: safeLine(options.discovery.destination, "Destination"), status: status(items), items, warnings: [], prepared_at: now, updated_at: now };
-    await assertValid6("plan-publication-record", record);
-    await writeJsonAtomic(path2, record);
-    return record;
-  });
+  for (const task of validation2.tasks) {
+    const url = byId.get(task.id);
+    if (!url) continue;
+    const path = join7(directory3, "tasks", `${task.id}.md`);
+    const parsed = parseTaskFrontmatter(await readFile10(path, "utf8"));
+    if (!parsed.value || parsed.errors.length > 0) throw new Error(`Invalid task while publishing ${task.id}: ${parsed.errors.join("; ")}`);
+    parsed.value.external_reference = url;
+    const metadata = { ...parsed.value };
+    await writeTextAtomic(path, `---
+${(0, import_yaml9.stringify)(metadata).trimEnd()}
+---
+
+${parsed.body.trimStart()}`);
+  }
+  const status = plan.status;
+  return { plan_id: plan.id, provider: options.provider, published: references2, unchanged_status: status, activity_records: [] };
 }
-async function writeMapping(planDirectory3, breakdownName, workId, reference, now) {
-  const path2 = join12(planDirectory3, breakdownName);
-  const raw = await readFile14(path2, "utf8");
-  let found = false;
-  const updated = raw.split("\n").map((line) => {
-    if (!line.startsWith(`| ${workId} |`)) return line;
-    const cells = line.slice(1, -1).split("|").map((cell) => cell.trim());
-    if (cells.length !== 6) throw new Error(`Invalid work-breakdown row for ${workId}`);
-    if (cells[5] !== "\u2014" && cells[5] !== reference) throw new Error(`Plan already maps ${workId} to a different external reference`);
-    cells[5] = reference;
-    found = true;
-    return `| ${cells.join(" | ")} |`;
-  }).join("\n");
-  if (!found) throw new Error(`Plan has no work item ${workId}`);
-  await writeTextAtomic(path2, updated);
-  return (await setPlanState(planDirectory3, { kind: "non-material-repair" }, now)).approved_digest;
-}
-async function recordPlanPublication(options) {
-  const workspaceRoot18 = resolve25(options.workspaceRoot);
-  const path2 = recordPath(workspaceRoot18, options.planId);
-  return withExclusiveFile(`${path2}.lock`, async () => {
-    const record = JSON.parse(await readFile14(path2, "utf8"));
-    await assertValid6("plan-publication-record", record);
-    const item = record.items.find((candidate) => candidate.work_id === options.workId);
-    if (!item) throw new Error(`Publication has no work item ${options.workId}`);
-    const evidence = safeLine(options.evidence, "Evidence");
-    const reference = options.externalReference ? safeLine(options.externalReference, "External reference") : null;
-    if (options.status === "created" && !reference) throw new Error("Created publication result requires a confirmed external reference");
-    if (item.status === "created" || item.status === "existing") {
-      if (item.external_reference === reference && item.evidence === evidence) return record;
-      throw new Error(`${item.work_id} already has a different confirmed mapping`);
-    }
-    if (options.status === "failed") {
-      item.status = "failed";
-      item.evidence = evidence;
-      item.external_reference = null;
-    } else {
-      const planDirectory3 = assertInside(workspaceRoot18, join12(workspaceRoot18, "context", "plans", record.plan_id));
-      const validation = await validatePlanDirectory(planDirectory3);
-      if (validation.errors.length || !validation.index || validation.index.status !== "approved" || validation.index.plan_version !== record.plan_version) throw new Error("Approved plan changed during publication");
-      record.approved_digest = await writeMapping(planDirectory3, validation.index.work_breakdown, item.work_id, reference, options.now ?? /* @__PURE__ */ new Date());
-      item.status = "created";
-      item.external_reference = reference;
-      item.evidence = evidence;
-    }
-    record.status = status(record.items);
-    record.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    await assertValid6("plan-publication-record", record);
-    await writeJsonAtomic(path2, record);
-    return record;
-  });
-}
-var import_yaml8;
+var import_yaml9;
 var init_plan_publication = __esm({
   "scripts/lib/plan-publication.ts"() {
     "use strict";
-    import_yaml8 = __toESM(require_dist(), 1);
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml9 = __toESM(require_dist(), 1);
     init_io();
     init_plans();
-    init_validation();
   }
 });
 
-// scripts/prepare-plan-publication.ts
-var prepare_plan_publication_exports = {};
-import { readFile as readFile15 } from "node:fs/promises";
-import { dirname as dirname17, resolve as resolve26 } from "node:path";
-import { parseArgs as parseArgs15 } from "node:util";
-import { fileURLToPath as fileURLToPath15 } from "node:url";
-var values14, workspaceRoot14, discovery;
-var init_prepare_plan_publication = __esm({
-  async "scripts/prepare-plan-publication.ts"() {
+// scripts/publish-plan.ts
+var publish_plan_exports = {};
+import { readFile as readFile11 } from "node:fs/promises";
+import { dirname as dirname14, resolve as resolve20 } from "node:path";
+import { parseArgs as parseArgs9 } from "node:util";
+import { fileURLToPath as fileURLToPath10 } from "node:url";
+var values8, root7, references;
+var init_publish_plan = __esm({
+  async "scripts/publish-plan.ts"() {
     "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
     init_plan_publication();
-    ({ values: values14 } = parseArgs15({ options: { plan: { type: "string" }, discovery: { type: "string" } } }));
-    if (!values14.plan || !values14.discovery) throw new Error("Usage: prepare-plan-publication --plan <plan-id> --discovery <json>");
-    workspaceRoot14 = resolve26(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve26(dirname17(fileURLToPath15(import.meta.url)), ".."));
-    discovery = JSON.parse(await readFile15(resolve26(process.cwd(), values14.discovery), "utf8"));
-    console.log(JSON.stringify(await preparePlanPublication({ workspaceRoot: workspaceRoot14, planId: values14.plan, discovery }), null, 2));
+    ({ values: values8 } = parseArgs9({ options: { plan: { type: "string" }, provider: { type: "string", default: "manual" }, references: { type: "string" } } }));
+    if (!values8.plan) throw new Error("Usage: cc publish-plan --plan <reference> [--provider <name>] [--references <json-file>]");
+    root7 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname14(fileURLToPath10(import.meta.url)), ".."));
+    references = values8.references ? JSON.parse(await readFile11(resolve20(process.cwd(), values8.references), "utf8")) : [];
+    console.log(JSON.stringify(await publishPlan({ workspaceRoot: root7, plan: values8.plan, provider: values8.provider ?? "manual", references }), null, 2));
   }
 });
 
-// scripts/record-plan-publication.ts
-var record_plan_publication_exports = {};
-import { dirname as dirname18, resolve as resolve27 } from "node:path";
-import { parseArgs as parseArgs16 } from "node:util";
-import { fileURLToPath as fileURLToPath16 } from "node:url";
-var values15, workspaceRoot15;
-var init_record_plan_publication = __esm({
-  async "scripts/record-plan-publication.ts"() {
+// scripts/archive-plan.ts
+var archive_plan_exports = {};
+import { dirname as dirname15, resolve as resolve21 } from "node:path";
+import { parseArgs as parseArgs10 } from "node:util";
+import { fileURLToPath as fileURLToPath11 } from "node:url";
+var positionals2, root8;
+var init_archive_plan = __esm({
+  async "scripts/archive-plan.ts"() {
     "use strict";
-    init_plan_publication();
-    ({ values: values15 } = parseArgs16({ options: { plan: { type: "string" }, work: { type: "string" }, status: { type: "string" }, evidence: { type: "string" }, reference: { type: "string" } } }));
-    if (!values15.plan || !values15.work || !["created", "failed"].includes(values15.status ?? "") || !values15.evidence) throw new Error("Usage: record-plan-publication --plan <id> --work <id> --status <created|failed> --evidence <text> [--reference <external-ref>]");
-    workspaceRoot15 = resolve27(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve27(dirname18(fileURLToPath16(import.meta.url)), ".."));
-    console.log(JSON.stringify(await recordPlanPublication({ workspaceRoot: workspaceRoot15, planId: values15.plan, workId: values15.work, status: values15.status, evidence: values15.evidence, ...values15.reference ? { externalReference: values15.reference } : {} }), null, 2));
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_plans();
+    ({ positionals: positionals2 } = parseArgs10({ allowPositionals: true }));
+    if (!positionals2[0]) throw new Error("Usage: cc archive-plan <plan-reference>");
+    root8 = resolve21(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve21(dirname15(fileURLToPath11(import.meta.url)), ".."));
+    console.log(JSON.stringify(await archivePlan(root8, positionals2[0]), null, 2));
   }
 });
 
-// scripts/lib/context-sync.ts
-import { createHash as createHash3 } from "node:crypto";
-import { lstat as lstat7, readFile as readFile16, realpath as realpath4 } from "node:fs/promises";
-import { join as join13, resolve as resolve28 } from "node:path";
-async function assertValid7(name, value2) {
-  const errors2 = await validateContract(name, value2);
-  if (errors2.length > 0) throw new Error(`Invalid ${name}: ${errors2.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-}
-async function readJson5(path2) {
-  return JSON.parse(await readFile16(path2, "utf8"));
-}
-function compactTimestamp2(date) {
-  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-}
-async function loadWorkspace3(workspaceRoot18) {
-  const config = (0, import_yaml9.parse)(await readFile16(join13(workspaceRoot18, "workspace.yaml"), "utf8"));
-  await assertValid7("workspace", config);
-  const errors2 = workspaceSemanticErrors(config);
-  if (errors2.length > 0) throw new Error(`Invalid workspace: ${errors2.join("; ")}`);
-  return config;
-}
-async function validateRequestSemantics(workspaceRoot18, config, request3) {
-  const listed = new Set(request3.contributions);
-  for (const contribution of request3.contributions) {
-    const path2 = assertInside(workspaceRoot18, join13(workspaceRoot18, contribution));
-    const info = await lstat7(path2);
-    if (!info.isFile() || info.isSymbolicLink()) throw new Error(`Contribution must be a regular file: ${contribution}`);
-    assertInside(await realpath4(workspaceRoot18), await realpath4(path2));
-    const errors2 = contributionDocumentErrors(path2, await readFile16(path2, "utf8"));
-    if (errors2.length > 0) throw new Error(`Invalid contribution ${contribution}: ${errors2.join("; ")}`);
-  }
-  const durableTargets = [];
-  for (const proposal of request3.proposals) {
-    if (!listed.has(proposal.source_contribution)) throw new Error(`Proposal source is not listed: ${proposal.source_contribution}`);
-    if (proposal.classification === "durable-wrapper") {
-      if (!proposal.target || !proposal.proposed_change?.trim() || proposal.target_repository) throw new Error("durable-wrapper proposals require target and proposed_change only");
-      if ((await readFile16(join13(workspaceRoot18, proposal.target), "utf8")).includes(proposal.source_contribution)) {
-        throw new Error(`Contribution is already cited by ${proposal.target}: ${proposal.source_contribution}`);
-      }
-      durableTargets.push(proposal.target);
-    } else if (proposal.classification === "repository-local") {
-      if (!proposal.target_repository || !config.repositories[proposal.target_repository] || proposal.target || proposal.proposed_change) {
-        throw new Error("repository-local proposals require one registered target_repository and no wrapper target/change");
-      }
-    } else if (proposal.target || proposal.target_repository || proposal.proposed_change) {
-      throw new Error(`${proposal.classification} proposals cannot mutate wrapper or repository context`);
-    }
-  }
-  if (durableTargets.length === 0) throw new Error("Context synchronization has no durable wrapper proposal; report classifications without creating a worktree");
-  return [...new Set(durableTargets)].sort();
-}
-async function prepareContextSync(options) {
-  const workspaceRoot18 = resolve28(options.workspaceRoot);
-  await assertValid7("context-sync-request", options.request);
-  const config = await loadWorkspace3(workspaceRoot18);
-  const allowedPaths = await validateRequestSemantics(workspaceRoot18, config, options.request);
-  if (await realpath4(await git(workspaceRoot18, ["rev-parse", "--show-toplevel"])) !== await realpath4(workspaceRoot18)) {
-    throw new Error("Workspace root must be the wrapper Git root");
-  }
-  await assertCleanRepository(workspaceRoot18);
-  const baseBranch = await git(workspaceRoot18, ["branch", "--show-current"]);
-  if (!baseBranch) throw new Error("Context synchronization requires an attached wrapper branch");
-  const baseCommit = await git(workspaceRoot18, ["rev-parse", "HEAD"]);
-  const now = options.now ?? /* @__PURE__ */ new Date();
-  const digest = createHash3("sha256").update(JSON.stringify(options.request)).update(now.toISOString()).digest("hex").slice(0, 8);
-  const syncId = `${compactTimestamp2(now)}-${digest}`;
-  const runtimeRoot = assertInside(workspaceRoot18, join13(workspaceRoot18, ".runtime"));
-  await ensurePrivateDirectory(runtimeRoot);
-  const syncRoot = assertInside(runtimeRoot, join13(runtimeRoot, "context-sync", syncId));
-  await ensurePrivateDirectory(syncRoot);
-  const requestPath = join13(syncRoot, "request.json");
-  const recordPath2 = join13(syncRoot, "record.json");
-  const worktree = assertInside(runtimeRoot, join13(runtimeRoot, "worktrees", "context-sync", syncId, "wrapper"));
-  const branch = `agent/context-sync-${syncId.toLowerCase()}`;
-  await writeJsonAtomic(requestPath, options.request);
-  const preparedAt = now.toISOString();
-  const record = {
-    contract_version: 1,
-    sync_id: syncId,
-    status: "prepared",
-    wrapper_mode: config.workflow.wrapper_change_policy,
-    base_branch: baseBranch,
-    base_commit: baseCommit,
-    branch,
-    worktree,
-    request: requestPath,
-    allowed_wrapper_paths: allowedPaths,
-    repository_follow_ups: options.request.proposals.filter((proposal) => proposal.classification === "repository-local").map((proposal) => ({ repository: proposal.target_repository, summary: proposal.summary, source_contribution: proposal.source_contribution })),
-    future_tasks: options.request.proposals.filter((proposal) => proposal.classification === "future-task").map((proposal) => ({ summary: proposal.summary, source_contribution: proposal.source_contribution })),
-    retained_one_offs: options.request.proposals.filter((proposal) => proposal.classification === "one-off").map((proposal) => proposal.summary),
-    changed_files: [],
-    commits: [],
-    remote: null,
-    blockers: [],
-    prepared_at: preparedAt,
-    updated_at: preparedAt
-  };
-  try {
-    await ensurePrivateDirectory(join13(runtimeRoot, "worktrees"));
-    await ensurePrivateDirectory(join13(runtimeRoot, "worktrees", "context-sync"));
-    await ensurePrivateDirectory(join13(runtimeRoot, "worktrees", "context-sync", syncId));
-    await git(workspaceRoot18, ["worktree", "add", "-b", branch, worktree, baseCommit]);
-  } catch (error) {
-    record.status = "blocked";
-    record.blockers = [`Wrapper worktree preparation failed: ${error.message}`];
-    await writeJsonAtomic(recordPath2, record);
-    throw error;
-  }
-  await assertValid7("context-sync-record", record);
-  await writeJsonAtomic(recordPath2, record);
-  return record;
-}
-async function prepareContextReview(options) {
-  const workspaceRoot18 = resolve28(options.workspaceRoot);
-  const runtimeRoot = assertInside(workspaceRoot18, join13(workspaceRoot18, ".runtime"));
-  const recordPath2 = assertInside(runtimeRoot, join13(runtimeRoot, "context-sync", options.syncId, "record.json"));
-  return withExclusiveFile(`${recordPath2}.lock`, async () => {
-    const record = await readJson5(recordPath2);
-    await assertValid7("context-sync-record", record);
-    if (record.sync_id !== options.syncId) throw new Error("Context sync ID mismatch");
-    const worktree = assertInside(runtimeRoot, record.worktree);
-    const config = await loadWorkspace3(workspaceRoot18);
-    const request3 = await readJson5(assertInside(runtimeRoot, record.request));
-    await assertValid7("context-sync-request", request3);
-    const recomputedPaths = await validateRequestSemantics(workspaceRoot18, config, request3);
-    if (recomputedPaths.join("\n") !== record.allowed_wrapper_paths.slice().sort().join("\n")) throw new Error("Context sync allowed paths do not match the validated request");
-    const registrations = await git(workspaceRoot18, ["worktree", "list", "--porcelain"]);
-    if (!registrations.split("\n").includes(`worktree ${await realpath4(worktree)}`)) throw new Error("Context sync worktree is not registered by the wrapper repository");
-    await assertCleanRepository(worktree);
-    if (await git(worktree, ["branch", "--show-current"]) !== record.branch) throw new Error("Wrapper worktree branch changed");
-    const head = await git(worktree, ["rev-parse", "HEAD"]);
-    await git(worktree, ["merge-base", "--is-ancestor", record.base_commit, head]);
-    const commits = (await git(record.worktree, ["rev-list", "--reverse", `${record.base_commit}..${head}`])).split("\n").filter(Boolean);
-    const changedFiles = (await git(record.worktree, ["diff", "--name-only", `${record.base_commit}...${head}`])).split("\n").filter(Boolean);
-    const outsideScope = changedFiles.filter((path2) => !record.allowed_wrapper_paths.includes(path2));
-    if (outsideScope.length > 0) throw new Error(`Context sync changed files outside approved wrapper scope: ${outsideScope.join(", ")}`);
-    if (commits.length === 0 || changedFiles.length === 0) throw new Error("Context review requires committed canonical-context changes");
-    for (const proposal of request3.proposals.filter((candidate) => candidate.classification === "durable-wrapper")) {
-      const content = await readFile16(join13(record.worktree, proposal.target), "utf8");
-      if (!content.includes(proposal.source_contribution)) throw new Error(`Canonical update must cite source contribution: ${proposal.source_contribution}`);
-    }
-    const remotes = (await git(record.worktree, ["remote"])).split("\n").filter(Boolean);
-    const remote = remotes.includes("origin") ? "origin" : null;
-    const blockers2 = record.wrapper_mode === "pull-request" && !remote ? ["Wrapper has no origin remote; configure one before pushing or opening the required review."] : [];
-    record.status = blockers2.length > 0 ? "blocked" : "review-ready";
-    record.commits = commits;
-    record.changed_files = changedFiles;
-    record.remote = remote;
-    record.blockers = blockers2;
-    record.updated_at = (options.now ?? /* @__PURE__ */ new Date()).toISOString();
-    await assertValid7("context-sync-record", record);
-    await writeJsonAtomic(recordPath2, record);
-    return record;
-  });
-}
-var import_yaml9;
-var init_context_sync = __esm({
-  "scripts/lib/context-sync.ts"() {
+// scripts/unarchive-plan.ts
+var unarchive_plan_exports = {};
+import { dirname as dirname16, resolve as resolve22 } from "node:path";
+import { parseArgs as parseArgs11 } from "node:util";
+import { fileURLToPath as fileURLToPath12 } from "node:url";
+var positionals3, root9;
+var init_unarchive_plan = __esm({
+  async "scripts/unarchive-plan.ts"() {
     "use strict";
-    import_yaml9 = __toESM(require_dist(), 1);
-    init_finish_work();
-    init_git();
-    init_io();
-    init_validation();
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_plans();
+    ({ positionals: positionals3 } = parseArgs11({ allowPositionals: true }));
+    if (!positionals3[0]) throw new Error("Usage: cc unarchive-plan <archived-plan-reference>");
+    root9 = resolve22(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve22(dirname16(fileURLToPath12(import.meta.url)), ".."));
+    console.log(JSON.stringify(await unarchivePlan(root9, positionals3[0]), null, 2));
   }
 });
 
-// scripts/sync-context.ts
-var sync_context_exports = {};
-import { readFile as readFile17 } from "node:fs/promises";
-import { dirname as dirname19, resolve as resolve29 } from "node:path";
-import { parseArgs as parseArgs17 } from "node:util";
-import { fileURLToPath as fileURLToPath17 } from "node:url";
-var workspaceRoot16, values16, request2;
-var init_sync_context = __esm({
-  async "scripts/sync-context.ts"() {
+// scripts/import-product-knowledge.ts
+var import_product_knowledge_exports = {};
+import { readFile as readFile12 } from "node:fs/promises";
+import { dirname as dirname17, resolve as resolve23 } from "node:path";
+import { parseArgs as parseArgs12 } from "node:util";
+import { fileURLToPath as fileURLToPath13 } from "node:url";
+var values9, root10, request2;
+var init_import_product_knowledge = __esm({
+  async "scripts/import-product-knowledge.ts"() {
     "use strict";
-    init_context_sync();
-    workspaceRoot16 = resolve29(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve29(dirname19(fileURLToPath17(import.meta.url)), ".."));
-    ({ values: values16 } = parseArgs17({ options: { request: { type: "string" } } }));
-    if (!values16.request) throw new Error("Usage: sync-context --request <context-sync-request.json>");
-    request2 = JSON.parse(await readFile17(resolve29(values16.request), "utf8"));
-    console.log(JSON.stringify(await prepareContextSync({ workspaceRoot: workspaceRoot16, request: request2 }), null, 2));
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_product_knowledge();
+    ({ values: values9 } = parseArgs12({ options: { source: { type: "string" }, request: { type: "string" }, "source-id": { type: "string" }, kind: { type: "string" }, page: { type: "string", multiple: true, default: [] }, title: { type: "string" }, purpose: { type: "string" } } }));
+    if (!values9.source && !values9.request) throw new Error("Usage: cc import-product-knowledge --source <path> | --request <json-file>");
+    root10 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname17(fileURLToPath13(import.meta.url)), ".."));
+    request2 = values9.request ? JSON.parse(await readFile12(resolve23(process.cwd(), values9.request), "utf8")) : { source: values9.source, ...values9["source-id"] ? { source_id: values9["source-id"] } : {}, ...values9.kind ? { kind: values9.kind } : {}, ...values9.page?.length ? { product_knowledge: values9.page } : {}, ...values9.title ? { title: values9.title } : {}, ...values9.purpose ? { purpose: values9.purpose } : {} };
+    console.log(JSON.stringify(await importProductKnowledge(root10, request2), null, 2));
   }
 });
 
-// scripts/prepare-context-review.ts
-var prepare_context_review_exports = {};
-import { dirname as dirname20, resolve as resolve30 } from "node:path";
-import { parseArgs as parseArgs18 } from "node:util";
-import { fileURLToPath as fileURLToPath18 } from "node:url";
-var workspaceRoot17, values17;
-var init_prepare_context_review = __esm({
-  async "scripts/prepare-context-review.ts"() {
+// scripts/refresh-product-knowledge.ts
+var refresh_product_knowledge_exports = {};
+import { dirname as dirname18, resolve as resolve24 } from "node:path";
+import { fileURLToPath as fileURLToPath14 } from "node:url";
+var root11;
+var init_refresh_product_knowledge = __esm({
+  async "scripts/refresh-product-knowledge.ts"() {
     "use strict";
-    init_context_sync();
-    workspaceRoot17 = resolve30(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve30(dirname20(fileURLToPath18(import.meta.url)), ".."));
-    ({ values: values17 } = parseArgs18({ options: { "sync-id": { type: "string" } } }));
-    if (!values17["sync-id"]) throw new Error("Usage: prepare-context-review --sync-id <id>");
-    console.log(JSON.stringify(await prepareContextReview({ workspaceRoot: workspaceRoot17, syncId: values17["sync-id"] }), null, 2));
+    init_define_CC_TEMPLATE_INVENTORY();
+    init_product_knowledge();
+    root11 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname18(fileURLToPath14(import.meta.url)), ".."));
+    console.log(JSON.stringify(await refreshProductKnowledge(root11), null, 2));
   }
 });
 
 // scripts/cc.ts
+init_define_CC_TEMPLATE_INVENTORY();
 var command = process.argv[2];
 if (!command) throw new Error("Usage: cc <command> [arguments]");
 process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT = process.cwd();
@@ -18416,23 +9460,14 @@ switch (command) {
   case "initialize-workspace":
     await init_initialize_workspace2().then(() => initialize_workspace_exports);
     break;
+  case "configure-workspace":
+    await init_configure_workspace2().then(() => configure_workspace_exports);
+    break;
   case "run-task":
     await init_run_task2().then(() => run_task_exports);
     break;
-  case "record-result":
-    await init_record_result2().then(() => record_result_exports);
-    break;
-  case "prepare-repair":
-    await init_prepare_repair().then(() => prepare_repair_exports);
-    break;
-  case "prepare-review":
-    await init_prepare_review().then(() => prepare_review_exports);
-    break;
-  case "record-review-publication":
-    await init_record_review_publication().then(() => record_review_publication_exports);
-    break;
-  case "finish-work":
-    await init_finish_work2().then(() => finish_work_exports);
+  case "review-plan":
+    await init_review_plan().then(() => review_plan_exports);
     break;
   case "create-plan":
     await init_create_plan().then(() => create_plan_exports);
@@ -18443,26 +9478,26 @@ switch (command) {
   case "set-plan-state":
     await init_set_plan_state().then(() => set_plan_state_exports);
     break;
+  case "set-task-state":
+    await init_set_task_state().then(() => set_task_state_exports);
+    break;
   case "whats-next":
     await init_whats_next2().then(() => whats_next_exports);
     break;
-  case "prepare-lifecycle":
-    await init_prepare_lifecycle().then(() => prepare_lifecycle_exports);
+  case "publish-plan":
+    await init_publish_plan().then(() => publish_plan_exports);
     break;
-  case "record-lifecycle-action":
-    await init_record_lifecycle_action().then(() => record_lifecycle_action_exports);
+  case "archive-plan":
+    await init_archive_plan().then(() => archive_plan_exports);
     break;
-  case "prepare-plan-publication":
-    await init_prepare_plan_publication().then(() => prepare_plan_publication_exports);
+  case "unarchive-plan":
+    await init_unarchive_plan().then(() => unarchive_plan_exports);
     break;
-  case "record-plan-publication":
-    await init_record_plan_publication().then(() => record_plan_publication_exports);
+  case "import-product-knowledge":
+    await init_import_product_knowledge().then(() => import_product_knowledge_exports);
     break;
-  case "sync-context":
-    await init_sync_context().then(() => sync_context_exports);
-    break;
-  case "prepare-context-review":
-    await init_prepare_context_review().then(() => prepare_context_review_exports);
+  case "refresh-product-knowledge":
+    await init_refresh_product_knowledge().then(() => refresh_product_knowledge_exports);
     break;
   default:
     throw new Error(`Unknown Context Circuit command: ${command}`);

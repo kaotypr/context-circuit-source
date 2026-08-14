@@ -1,151 +1,148 @@
-import { lstat, readFile } from "node:fs/promises";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { Ajv2020, type ErrorObject } from "ajv/dist/2020.js";
-import { parse as parseYaml } from "yaml";
-import type { WorkspaceConfig } from "./types.js";
-
-export const schemaNames = ["workspace", "workspace-bootstrap-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record"] as const;
-export type SchemaName = (typeof schemaNames)[number];
-
-export const requiredWorkspaceDocuments = [
-  "README.md",
-  "AGENTS.md",
-  "CLAUDE.md",
-  "WORKFLOW.md",
-  "workspace.yaml",
-  "context/PROJECT.md",
-  "context/ARCHITECTURE.md",
-  "context/CONVENTIONS.md",
-  "context/DECISIONS.md",
-  "agents/coordinator.md",
-  "agents/repository-worker.md",
-  "agents/verifier.md",
-  ".agents/bin/cc.mjs",
-  ".agents/contracts/workspace.schema.json",
-  ".agents/contracts/workspace-bootstrap-request.schema.json",
-  ".agents/contracts/review-preparation.schema.json",
-  ".agents/contracts/review-publication-record.schema.json",
-  ".agents/contracts/closeout-record.schema.json",
-  ".agents/contracts/run-task-request.schema.json",
-  ".agents/contracts/context-sync-request.schema.json",
-  ".agents/contracts/context-sync-record.schema.json",
-  ".agents/contracts/plan-index.schema.json",
-  ".agents/contracts/plan-work-breakdown.schema.json",
-  ".agents/contracts/plan-draft-request.schema.json",
-  ".agents/contracts/work-candidate.schema.json",
-  ".agents/contracts/fake-activity-source.schema.json",
-  ".agents/contracts/whats-next-result.schema.json",
-  ".agents/contracts/activity-lifecycle-record.schema.json",
-  ".agents/contracts/plan-publication-discovery.schema.json",
-  ".agents/contracts/plan-publication-record.schema.json",
-  ".agents/skills/initialize-workspace/SKILL.md",
-  ".agents/skills/gather-context/SKILL.md",
-  ".agents/skills/run-task/SKILL.md",
-  ".agents/skills/finish-work/SKILL.md",
-  ".agents/skills/create-plan/SKILL.md",
-  ".agents/skills/whats-next/SKILL.md",
-  ".agents/skills/publish-plan-tasks/SKILL.md",
-  ".agents/skills/sync-context/SKILL.md",
-  ".codex/skills/initialize-workspace/SKILL.md",
-  ".codex/skills/run-task/SKILL.md",
-  ".codex/skills/finish-work/SKILL.md",
-  ".codex/skills/create-plan/SKILL.md",
-  ".codex/skills/whats-next/SKILL.md",
-  ".codex/skills/publish-plan-tasks/SKILL.md",
-  ".codex/skills/sync-context/SKILL.md",
-  ".claude/commands/initialize-workspace.md",
-  ".claude/commands/run-task.md",
-  ".claude/commands/finish-work.md",
-  ".claude/commands/create-plan.md",
-  ".claude/commands/whats-next.md",
-  ".claude/commands/publish-plan-tasks.md",
-  ".claude/commands/sync-context.md",
-  "docs/getting-started.md",
-  "docs/using-the-wrapper.md",
-  "docs/configuration.md",
-  "docs/command-reference.md",
-] as const;
-
-const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
+import { lstat, readFile } from "node:fs/promises"
+import { join, relative, resolve } from "node:path"
+import { parse as parseYaml } from "yaml"
+import type { RepositoryConfig, WorkspaceConfig } from "./types.js"
+import { contextReferenceError, remoteReferenceError } from "./safe-reference.js"
 
 export async function readData(path: string): Promise<unknown> {
-  const raw = await readFile(path, "utf8");
-  return path.endsWith(".yaml") || path.endsWith(".yml") ? parseYaml(raw) : JSON.parse(raw);
+  const raw = await readFile(path, "utf8")
+  return path.endsWith(".yaml") || path.endsWith(".yml") ? parseYaml(raw) : JSON.parse(raw)
 }
 
-export async function validateContract(name: SchemaName, value: unknown): Promise<ErrorObject[]> {
-  const schema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", `${name}.schema.json`), "utf8"));
-  const ajv = new Ajv2020({ allErrors: true, strict: false });
-  ajv.addFormat("email", { type: "string", validate: (value: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(value) });
-  ajv.addFormat("date-time", {
-    type: "string",
-    validate: (value: string) => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value) && !Number.isNaN(Date.parse(value)),
-  });
-  if (name === "fake-activity-source") {
-    const candidateSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "work-candidate.schema.json"), "utf8"));
-    ajv.addSchema(candidateSchema);
-  }
-  if (name === "runtime-manifest") {
-    const lifecycleSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "activity-lifecycle-record.schema.json"), "utf8"));
-    ajv.addSchema(lifecycleSchema);
-  }
-  if (name === "workspace-bootstrap-request") {
-    const workspaceSchema = JSON.parse(await readFile(join(projectRoot, ".agents", "contracts", "workspace.schema.json"), "utf8"));
-    ajv.addSchema(workspaceSchema);
-  }
-  const validate = ajv.compile(schema);
-  return validate(value) ? [] : [...(validate.errors ?? [])];
+function record(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
 
-export function workspaceSemanticErrors(config: WorkspaceConfig): string[] {
-  const errors: string[] = [];
-  const paths = new Map<string, string>();
-  for (const [name, repository] of Object.entries(config.repositories)) {
-    const normalized = repository.path.replace(/^\.\//, "").replace(/\/$/, "");
-    const prior = paths.get(normalized);
-    if (prior) errors.push(`repositories.${name}.path duplicates repositories.${prior}.path`);
-    paths.set(normalized, name);
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0
+}
+
+function stringList(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string" && item.trim().length > 0)
+}
+
+export function workspaceErrors(value: unknown): string[] {
+  if (!record(value)) return ["workspace.yaml must contain a mapping"]
+  const errors: string[] = []
+  const workspace = value.workspace
+  if (!record(workspace)) errors.push("workspace is required")
+  else {
+    if (!nonEmptyString(workspace.name)) errors.push("workspace.name is required")
+    if (!['solo', 'team'].includes(String(workspace.mode))) errors.push("workspace.mode must be solo or team")
+    if (!nonEmptyString(workspace.default_branch)) errors.push("workspace.default_branch is required")
   }
-  const required = new Set(config.activity.required_capabilities);
-  const declared = new Set([...config.activity.required_capabilities, ...config.activity.optional_capabilities]);
-  for (const capability of config.activity.optional_capabilities) {
-    if (required.has(capability)) errors.push(`activity capability is both required and optional: ${capability}`);
-  }
-  const lifecycle = config.activity.lifecycle ?? {};
-  if (config.activity.provider === "none" && Object.values(lifecycle).some((actions) => (actions?.length ?? 0) > 0)) {
-    errors.push("activity.lifecycle cannot configure external actions when provider is none");
-  }
-  for (const [event, actions] of Object.entries(lifecycle)) {
-    const ids = new Set<string>();
-    for (const action of actions ?? []) {
-      if (ids.has(action.id)) errors.push(`activity.lifecycle.${event} has duplicate action id: ${action.id}`);
-      ids.add(action.id);
-      if (!declared.has(action.capability)) errors.push(`activity.lifecycle.${event}.${action.id} uses undeclared capability: ${action.capability}`);
-      if (action.policy === "required" && !required.has(action.capability)) {
-        errors.push(`required lifecycle action ${event}.${action.id} must use a required capability`);
+  if (!record(value.repositories)) errors.push("repositories is required")
+  else {
+    for (const [name, repo] of Object.entries(value.repositories)) {
+      if (!record(repo)) {
+        errors.push(`repositories.${name} must be a mapping`)
+        continue
+      }
+      if (!nonEmptyString(repo.path)) errors.push(`repositories.${name}.path is required`)
+      if (!['ignored-clone', 'submodule'].includes(String(repo.mode))) errors.push(`repositories.${name}.mode must be ignored-clone or submodule`)
+      if (!nonEmptyString(repo.role)) errors.push(`repositories.${name}.role is required`)
+      if (!nonEmptyString(repo.agent)) errors.push(`repositories.${name}.agent is required`)
+      if (!nonEmptyString(repo.default_branch)) errors.push(`repositories.${name}.default_branch is required`)
+      if (repo.remote !== undefined) {
+        const remoteError = typeof repo.remote === 'string' ? remoteReferenceError(repo.remote) : 'must be a string'
+        if (remoteError) errors.push(`repositories.${name}.remote ${remoteError}`)
       }
     }
   }
-  if (config.workspace.mode === "team" && config.workflow.wrapper_change_policy !== "pull-request") {
-    errors.push("team mode requires workflow.wrapper_change_policy: pull-request");
+  const sources = record(value.context) ? value.context.sources_file : undefined
+  if (sources !== undefined && !nonEmptyString(sources)) errors.push("context.sources_file must be a path")
+  return errors
+}
+
+export function workspaceSemanticErrors(config: WorkspaceConfig): string[] {
+  const errors = [...workspaceErrors(config)]
+  const paths = new Map<string, string>()
+  for (const [name, repository] of Object.entries(config.repositories ?? {})) {
+    const normalized = repository.path.replace(/^\.\//, '').replace(/\/$/, '')
+    const prior = paths.get(normalized)
+    if (prior) errors.push(`repositories.${name}.path duplicates repositories.${prior}.path`)
+    paths.set(normalized, name)
+    if (repository.remote) {
+      const remoteError = remoteReferenceError(repository.remote)
+      if (remoteError) errors.push(`repositories.${name}.remote ${remoteError}`)
+    }
   }
-  return errors;
+  for (const [index, source] of (config.context?.authoritative_sources ?? []).entries()) {
+    if (source.repository && !config.repositories[source.repository]) errors.push(`context.authoritative_sources.${index}.repository is not configured: ${source.repository}`)
+    const reference = source.location || source.reference
+    if (reference) {
+      const referenceError = contextReferenceError(reference)
+      if (referenceError && !reference.includes('://')) errors.push(`context.authoritative_sources.${index}.location ${referenceError}`)
+    }
+  }
+  return [...new Set(errors)]
 }
 
 export async function workspaceDocumentErrors(workspaceRoot: string, config: WorkspaceConfig): Promise<string[]> {
   const required = [
-    ...requiredWorkspaceDocuments,
-    ...new Set(Object.values(config.repositories).map((repository) => `agents/${repository.agent}.md`)),
-  ];
-  const errors: string[] = [];
+    'README.md', 'AGENTS.md', 'CLAUDE.md', 'WORKFLOW.md', 'workspace.yaml',
+    'context/PROJECT.md', 'context/ARCHITECTURE.md', 'context/CONVENTIONS.md',
+    'context/DECISIONS.md', 'context/SOURCES.md', 'context/sources.yaml', 'plans/README.md',
+    '.agents/bin/cc.mjs',
+    ...new Set(Object.values(config.repositories).map((repo) => `agents/${repo.agent}.md`)),
+  ]
+  const errors: string[] = []
   for (const path of required) {
     try {
-      const info = await lstat(resolve(workspaceRoot, path));
-      if (!info.isFile() || info.isSymbolicLink()) throw new Error("not a regular file");
+      const info = await lstat(resolve(workspaceRoot, path))
+      if (!info.isFile() || info.isSymbolicLink()) throw new Error('not a regular file')
     } catch {
-      errors.push(`required workspace document is missing: ${path}`);
+      errors.push(`required workspace document is missing: ${path}`)
     }
   }
-  return errors;
+  return errors
+}
+
+export function parseFrontmatter(raw: string): { value: Record<string, unknown> | null; body: string; errors: string[] } {
+  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)
+  if (!match) return { value: null, body: raw, errors: ['Markdown must begin with YAML frontmatter'] }
+  try {
+    const value = parseYaml(match[1]!)
+    if (!record(value)) return { value: null, body: raw.slice(match[0].length), errors: ['frontmatter must contain a YAML mapping'] }
+    return { value, body: raw.slice(match[0].length), errors: [] }
+  } catch (error) {
+    return { value: null, body: raw.slice(match[0].length), errors: [`invalid YAML frontmatter: ${(error as Error).message}`] }
+  }
+}
+
+export function requiredString(value: Record<string, unknown>, key: string, errors: string[], prefix = ''): string | undefined {
+  if (!nonEmptyString(value[key])) errors.push(`${prefix}${key} is required`)
+  return typeof value[key] === 'string' ? value[key].trim() : undefined
+}
+
+export function optionalStringList(value: Record<string, unknown>, key: string, errors: string[], prefix = ''): string[] {
+  if (value[key] === undefined) return []
+  if (!stringList(value[key])) {
+    errors.push(`${prefix}${key} must be a list of non-empty strings`)
+    return []
+  }
+  return value[key].map((item) => item.trim())
+}
+
+export async function referencedLocalFilesExist(root: string, references: string[]): Promise<string[]> {
+  const errors: string[] = []
+  for (const reference of references) {
+    if (reference.includes('*') || reference.includes('<') || reference.includes('>')) continue
+    const candidate = resolve(root, reference)
+    if (relative(root, candidate).startsWith('..')) {
+      errors.push(`referenced path escapes workspace: ${reference}`)
+      continue
+    }
+    try {
+      const info = await lstat(candidate)
+      if (info.isSymbolicLink()) errors.push(`referenced path is a symlink: ${reference}`)
+    } catch {
+      errors.push(`referenced local file does not exist: ${reference}`)
+    }
+  }
+  return errors
+}
+
+export function repositoryForPath(config: WorkspaceConfig, name: string): RepositoryConfig | undefined {
+  return config.repositories?.[name]
 }

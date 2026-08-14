@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Run Task"
+  short_description: "Run an approved plan continuously"
+  default_prompt: "Use $cc-run-task to run this approved plan continuously in its plan-scoped domain worktree."

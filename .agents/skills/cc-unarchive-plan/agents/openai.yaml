@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Unarchive Plan"
+  short_description: "Restore one archived plan"
+  default_prompt: "Use $cc-unarchive-plan to restore the exact archived plan I name with collision checks."
