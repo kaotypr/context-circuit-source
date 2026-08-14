@@ -1,5 +1,8 @@
 export type PlanStatus = "draft" | "approved" | "done"
 export type TaskStatus = PlanStatus
+export type SessionKind = "root" | "subagent"
+export type SessionStatus = "created" | "orienting" | "planning" | "awaiting-approval" | "executing" | "verifying" | "awaiting-review" | "blocked" | "handoff" | "completed" | "failed" | "cancelled"
+export type PlanLeaseStatus = "active" | "released" | "stale" | "takeover"
 
 export type PlanSourceKind = "idea" | "prd" | "document" | "issue" | "pull-request"
 export type PlanTrack = "epic" | "bau"
@@ -227,10 +230,46 @@ export interface PreparedPlanExecution {
   worktree: string
   branch: string
   base_commit: string
+  session_id: string
+  lease_status: PlanLeaseStatus
   prompt: string
   prompt_file: string
   review_commands: string[]
   status_changed: false
+}
+
+export interface SessionRecord {
+  schema_version: number
+  session_id: string
+  parent_session_id: string | null
+  root_session_id: string
+  kind: SessionKind
+  role: string
+  objective: string
+  plan?: string
+  task?: string
+  scope: string | Record<string, unknown>
+  non_goals?: string[]
+  write_access: boolean
+  worktree?: string
+  status: SessionStatus
+  created_at: string
+  updated_at: string
+  next_action?: string
+  blockers: string[]
+}
+
+export interface PlanLease {
+  schema_version: number
+  plan: string
+  session_id: string
+  root_session_id: string
+  worktree: string
+  status: PlanLeaseStatus
+  acquired_at: string
+  heartbeat_at: string
+  released_at: string | null
+  stale_after_seconds: number
 }
 
 export interface PublicationReference {

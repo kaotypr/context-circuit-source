@@ -21,4 +21,6 @@ to know their names or invoke them directly.
 
 The old command implementation, generated bundle, and command adapters are
 legacy migration material. They may be removed after the filesystem-based
-workspace workflow passes its acceptance scenarios.
+workspace workflow passes its acceptance scenarios and the
+docs/legacy-cleanup-gate.md evidence checklist is accepted by a human. This
+document does not authorize removal.

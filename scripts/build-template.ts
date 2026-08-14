@@ -16,7 +16,7 @@ if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(v
 const binary = join(root, ".agents", "bin", "cc.mjs");
 await mkdir(dirname(binary), { recursive: true });
 const copiedRoots = ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "plans", "contributions", ".agents", ".codex", ".claude"];
-const copiedDocs = ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md", "product-knowledge.md", "planning.md", "run-task.md", "whats-next.md"];
+const copiedDocs = ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md", "product-knowledge.md", "planning.md", "run-task.md", "whats-next.md", "agent-workspace-workflow.md", "runtime-contract.md", "legacy-cleanup-gate.md"];
 const isLocalMetadata = (name: string): boolean => name === ".DS_Store" || name === "__MACOSX" || name.startsWith("._");
 async function sourceInventory(path: string, prefix: string): Promise<string[]> {
   const entries = await readdir(path, { withFileTypes: true });

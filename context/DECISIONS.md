@@ -19,3 +19,11 @@ in Git history for reference but is no longer the target behavior.
   actions separately.
 - The canonical workflow is defined by the Agent Workspace Workflow document
   and its normative summary in WORKFLOW.md.
+
+## 2026-08-14 — Legacy compatibility boundary
+
+- The Node/JavaScript command layer remains during the replacement migration.
+- Its removal requires passing the filesystem acceptance suite and a separate
+  human-reviewed cleanup plan.
+- The cleanup gate is documented in docs/legacy-cleanup-gate.md; passing tests
+  alone do not authorize deletion.

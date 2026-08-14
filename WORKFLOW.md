@@ -7,6 +7,8 @@ one safe development loop, and leaves a durable handoff.
 The full agreed contract is documented in
 docs/agent-workspace-workflow.md. This file is the normative entry summary
 that every root and child session must read.
+Runtime record shapes and lease ownership are defined in
+docs/runtime-contract.md.
 
 ## Session entry
 

@@ -50,9 +50,9 @@ var init_define_CC_TEMPLATE_INVENTORY = __esm({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/identity.js
+// node_modules/yaml/dist/nodes/identity.js
 var require_identity = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/identity.js"(exports) {
+  "node_modules/yaml/dist/nodes/identity.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var ALIAS = /* @__PURE__ */ Symbol.for("yaml.alias");
@@ -108,9 +108,9 @@ var require_identity = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/visit.js
+// node_modules/yaml/dist/visit.js
 var require_visit = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/visit.js"(exports) {
+  "node_modules/yaml/dist/visit.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -267,9 +267,9 @@ var require_visit = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/directives.js
+// node_modules/yaml/dist/doc/directives.js
 var require_directives = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/directives.js"(exports) {
+  "node_modules/yaml/dist/doc/directives.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -439,9 +439,9 @@ var require_directives = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/anchors.js
+// node_modules/yaml/dist/doc/anchors.js
 var require_anchors = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/anchors.js"(exports) {
+  "node_modules/yaml/dist/doc/anchors.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -510,9 +510,9 @@ var require_anchors = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/applyReviver.js
+// node_modules/yaml/dist/doc/applyReviver.js
 var require_applyReviver = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/applyReviver.js"(exports) {
+  "node_modules/yaml/dist/doc/applyReviver.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function applyReviver(reviver, obj, key, val) {
@@ -561,9 +561,9 @@ var require_applyReviver = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/toJS.js
+// node_modules/yaml/dist/nodes/toJS.js
 var require_toJS = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/toJS.js"(exports) {
+  "node_modules/yaml/dist/nodes/toJS.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -592,9 +592,9 @@ var require_toJS = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Node.js
+// node_modules/yaml/dist/nodes/Node.js
 var require_Node = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Node.js"(exports) {
+  "node_modules/yaml/dist/nodes/Node.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var applyReviver = require_applyReviver();
@@ -634,9 +634,9 @@ var require_Node = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Alias.js
+// node_modules/yaml/dist/nodes/Alias.js
 var require_Alias = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Alias.js"(exports) {
+  "node_modules/yaml/dist/nodes/Alias.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
@@ -751,9 +751,9 @@ var require_Alias = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Scalar.js
+// node_modules/yaml/dist/nodes/Scalar.js
 var require_Scalar = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Scalar.js"(exports) {
+  "node_modules/yaml/dist/nodes/Scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -782,9 +782,9 @@ var require_Scalar = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/createNode.js
+// node_modules/yaml/dist/doc/createNode.js
 var require_createNode = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/createNode.js"(exports) {
+  "node_modules/yaml/dist/doc/createNode.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
@@ -858,9 +858,9 @@ var require_createNode = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Collection.js
+// node_modules/yaml/dist/nodes/Collection.js
 var require_Collection = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Collection.js"(exports) {
+  "node_modules/yaml/dist/nodes/Collection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
@@ -1002,9 +1002,9 @@ var require_Collection = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyComment.js
+// node_modules/yaml/dist/stringify/stringifyComment.js
 var require_stringifyComment = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyComment.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
@@ -1020,9 +1020,9 @@ var require_stringifyComment = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/foldFlowLines.js
+// node_modules/yaml/dist/stringify/foldFlowLines.js
 var require_foldFlowLines = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
+  "node_modules/yaml/dist/stringify/foldFlowLines.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var FOLD_FLOW = "flow";
@@ -1157,9 +1157,9 @@ ${indent}${text.slice(fold + 1, end2)}`;
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyString.js
+// node_modules/yaml/dist/stringify/stringifyString.js
 var require_stringifyString = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyString.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -1441,9 +1441,9 @@ ${indent}`);
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringify.js
+// node_modules/yaml/dist/stringify/stringify.js
 var require_stringify = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringify.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringify.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var anchors = require_anchors();
@@ -1566,9 +1566,9 @@ ${ctx.indent}${str}`;
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyPair.js
+// node_modules/yaml/dist/stringify/stringifyPair.js
 var require_stringifyPair = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyPair.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -1700,9 +1700,9 @@ ${ctx.indent}`;
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/log.js
+// node_modules/yaml/dist/log.js
 var require_log = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/log.js"(exports) {
+  "node_modules/yaml/dist/log.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
@@ -1723,9 +1723,9 @@ var require_log = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/merge.js
+// node_modules/yaml/dist/schema/yaml-1.1/merge.js
 var require_merge = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/merge.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -1784,9 +1784,9 @@ var require_merge = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/addPairToJSMap.js
+// node_modules/yaml/dist/nodes/addPairToJSMap.js
 var require_addPairToJSMap = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
+  "node_modules/yaml/dist/nodes/addPairToJSMap.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var log = require_log();
@@ -1849,9 +1849,9 @@ var require_addPairToJSMap = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Pair.js
+// node_modules/yaml/dist/nodes/Pair.js
 var require_Pair = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/Pair.js"(exports) {
+  "node_modules/yaml/dist/nodes/Pair.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
@@ -1890,9 +1890,9 @@ var require_Pair = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyCollection.js
+// node_modules/yaml/dist/stringify/stringifyCollection.js
 var require_stringifyCollection = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyCollection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -2042,9 +2042,9 @@ ${indent}${end}`;
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLMap.js
+// node_modules/yaml/dist/nodes/YAMLMap.js
 var require_YAMLMap = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
+  "node_modules/yaml/dist/nodes/YAMLMap.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyCollection = require_stringifyCollection();
@@ -2187,9 +2187,9 @@ var require_YAMLMap = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/map.js
+// node_modules/yaml/dist/schema/common/map.js
 var require_map = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/map.js"(exports) {
+  "node_modules/yaml/dist/schema/common/map.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -2210,9 +2210,9 @@ var require_map = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLSeq.js
+// node_modules/yaml/dist/nodes/YAMLSeq.js
 var require_YAMLSeq = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
+  "node_modules/yaml/dist/nodes/YAMLSeq.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var createNode = require_createNode();
@@ -2327,9 +2327,9 @@ var require_YAMLSeq = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/seq.js
+// node_modules/yaml/dist/schema/common/seq.js
 var require_seq = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/seq.js"(exports) {
+  "node_modules/yaml/dist/schema/common/seq.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -2350,9 +2350,9 @@ var require_seq = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/string.js
+// node_modules/yaml/dist/schema/common/string.js
 var require_string = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/string.js"(exports) {
+  "node_modules/yaml/dist/schema/common/string.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyString = require_stringifyString();
@@ -2370,9 +2370,9 @@ var require_string = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/null.js
+// node_modules/yaml/dist/schema/common/null.js
 var require_null = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/common/null.js"(exports) {
+  "node_modules/yaml/dist/schema/common/null.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -2389,9 +2389,9 @@ var require_null = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/bool.js
+// node_modules/yaml/dist/schema/core/bool.js
 var require_bool = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/bool.js"(exports) {
+  "node_modules/yaml/dist/schema/core/bool.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -2414,9 +2414,9 @@ var require_bool = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyNumber.js
+// node_modules/yaml/dist/stringify/stringifyNumber.js
 var require_stringifyNumber = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyNumber.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function stringifyNumber({ format, minFractionDigits, tag, value }) {
@@ -2442,9 +2442,9 @@ var require_stringifyNumber = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/float.js
+// node_modules/yaml/dist/schema/core/float.js
 var require_float = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/float.js"(exports) {
+  "node_modules/yaml/dist/schema/core/float.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -2489,9 +2489,9 @@ var require_float = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/int.js
+// node_modules/yaml/dist/schema/core/int.js
 var require_int = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/int.js"(exports) {
+  "node_modules/yaml/dist/schema/core/int.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
@@ -2535,9 +2535,9 @@ var require_int = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/schema.js
+// node_modules/yaml/dist/schema/core/schema.js
 var require_schema = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/core/schema.js"(exports) {
+  "node_modules/yaml/dist/schema/core/schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
@@ -2564,9 +2564,9 @@ var require_schema = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/json/schema.js
+// node_modules/yaml/dist/schema/json/schema.js
 var require_schema2 = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/json/schema.js"(exports) {
+  "node_modules/yaml/dist/schema/json/schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -2632,9 +2632,9 @@ var require_schema2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/binary.js
+// node_modules/yaml/dist/schema/yaml-1.1/binary.js
 var require_binary = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/binary.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_buffer = __require("buffer");
@@ -2699,9 +2699,9 @@ var require_binary = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/pairs.js
+// node_modules/yaml/dist/schema/yaml-1.1/pairs.js
 var require_pairs = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/pairs.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -2778,9 +2778,9 @@ ${cn.comment}` : item.comment;
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/omap.js
+// node_modules/yaml/dist/schema/yaml-1.1/omap.js
 var require_omap = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/omap.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -2857,9 +2857,9 @@ var require_omap = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/bool.js
+// node_modules/yaml/dist/schema/yaml-1.1/bool.js
 var require_bool2 = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/bool.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -2890,9 +2890,9 @@ var require_bool2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/float.js
+// node_modules/yaml/dist/schema/yaml-1.1/float.js
 var require_float2 = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/float.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -2940,9 +2940,9 @@ var require_float2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/int.js
+// node_modules/yaml/dist/schema/yaml-1.1/int.js
 var require_int2 = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/int.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
@@ -3020,9 +3020,9 @@ var require_int2 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/set.js
+// node_modules/yaml/dist/schema/yaml-1.1/set.js
 var require_set = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/set.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -3110,9 +3110,9 @@ var require_set = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
+// node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
 var require_timestamp = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/timestamp.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringifyNumber = require_stringifyNumber();
@@ -3199,9 +3199,9 @@ var require_timestamp = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/schema.js
+// node_modules/yaml/dist/schema/yaml-1.1/schema.js
 var require_schema3 = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
+  "node_modules/yaml/dist/schema/yaml-1.1/schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
@@ -3244,9 +3244,9 @@ var require_schema3 = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/tags.js
+// node_modules/yaml/dist/schema/tags.js
 var require_tags = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/tags.js"(exports) {
+  "node_modules/yaml/dist/schema/tags.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var map = require_map();
@@ -3339,9 +3339,9 @@ var require_tags = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/Schema.js
+// node_modules/yaml/dist/schema/Schema.js
 var require_Schema = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/schema/Schema.js"(exports) {
+  "node_modules/yaml/dist/schema/Schema.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -3372,9 +3372,9 @@ var require_Schema = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyDocument.js
+// node_modules/yaml/dist/stringify/stringifyDocument.js
 var require_stringifyDocument = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
+  "node_modules/yaml/dist/stringify/stringifyDocument.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -3453,9 +3453,9 @@ var require_stringifyDocument = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/Document.js
+// node_modules/yaml/dist/doc/Document.js
 var require_Document = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/doc/Document.js"(exports) {
+  "node_modules/yaml/dist/doc/Document.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
@@ -3763,9 +3763,9 @@ var require_Document = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/errors.js
+// node_modules/yaml/dist/errors.js
 var require_errors = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/errors.js"(exports) {
+  "node_modules/yaml/dist/errors.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var YAMLError = class extends Error {
@@ -3829,9 +3829,9 @@ ${pointer}
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-props.js
+// node_modules/yaml/dist/compose/resolve-props.js
 var require_resolve_props = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-props.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-props.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function resolveProps(tokens, { flow, indicator, next, offset, onError, parentIndent, startOnNewline }) {
@@ -3964,9 +3964,9 @@ var require_resolve_props = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-contains-newline.js
+// node_modules/yaml/dist/compose/util-contains-newline.js
 var require_util_contains_newline = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
+  "node_modules/yaml/dist/compose/util-contains-newline.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function containsNewline(key) {
@@ -4007,9 +4007,9 @@ var require_util_contains_newline = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-flow-indent-check.js
+// node_modules/yaml/dist/compose/util-flow-indent-check.js
 var require_util_flow_indent_check = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
+  "node_modules/yaml/dist/compose/util-flow-indent-check.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var utilContainsNewline = require_util_contains_newline();
@@ -4026,9 +4026,9 @@ var require_util_flow_indent_check = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-map-includes.js
+// node_modules/yaml/dist/compose/util-map-includes.js
 var require_util_map_includes = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
+  "node_modules/yaml/dist/compose/util-map-includes.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -4043,9 +4043,9 @@ var require_util_map_includes = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-map.js
+// node_modules/yaml/dist/compose/resolve-block-map.js
 var require_resolve_block_map = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-block-map.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Pair = require_Pair();
@@ -4152,9 +4152,9 @@ var require_resolve_block_map = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-seq.js
+// node_modules/yaml/dist/compose/resolve-block-seq.js
 var require_resolve_block_seq = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-block-seq.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var YAMLSeq = require_YAMLSeq();
@@ -4204,9 +4204,9 @@ var require_resolve_block_seq = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-end.js
+// node_modules/yaml/dist/compose/resolve-end.js
 var require_resolve_end = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-end.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-end.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function resolveEnd(end, offset, reqSpace, onError) {
@@ -4248,9 +4248,9 @@ var require_resolve_end = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-collection.js
+// node_modules/yaml/dist/compose/resolve-flow-collection.js
 var require_resolve_flow_collection = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-flow-collection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -4443,9 +4443,9 @@ var require_resolve_flow_collection = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-collection.js
+// node_modules/yaml/dist/compose/compose-collection.js
 var require_compose_collection = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-collection.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-collection.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -4509,9 +4509,9 @@ var require_compose_collection = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-scalar.js
+// node_modules/yaml/dist/compose/resolve-block-scalar.js
 var require_resolve_block_scalar = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-block-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -4693,9 +4693,9 @@ var require_resolve_block_scalar = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-scalar.js
+// node_modules/yaml/dist/compose/resolve-flow-scalar.js
 var require_resolve_flow_scalar = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
+  "node_modules/yaml/dist/compose/resolve-flow-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Scalar = require_Scalar();
@@ -4914,9 +4914,9 @@ var require_resolve_flow_scalar = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-scalar.js
+// node_modules/yaml/dist/compose/compose-scalar.js
 var require_compose_scalar = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var identity = require_identity();
@@ -4996,9 +4996,9 @@ var require_compose_scalar = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-empty-scalar-position.js
+// node_modules/yaml/dist/compose/util-empty-scalar-position.js
 var require_util_empty_scalar_position = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
+  "node_modules/yaml/dist/compose/util-empty-scalar-position.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     function emptyScalarPosition(offset, before, pos) {
@@ -5027,9 +5027,9 @@ var require_util_empty_scalar_position = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-node.js
+// node_modules/yaml/dist/compose/compose-node.js
 var require_compose_node = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-node.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-node.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Alias = require_Alias();
@@ -5134,9 +5134,9 @@ var require_compose_node = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-doc.js
+// node_modules/yaml/dist/compose/compose-doc.js
 var require_compose_doc = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/compose-doc.js"(exports) {
+  "node_modules/yaml/dist/compose/compose-doc.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var Document = require_Document();
@@ -5178,9 +5178,9 @@ var require_compose_doc = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/composer.js
+// node_modules/yaml/dist/compose/composer.js
 var require_composer = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/compose/composer.js"(exports) {
+  "node_modules/yaml/dist/compose/composer.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
@@ -5387,9 +5387,9 @@ ${end.comment}` : end.comment;
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-scalar.js
+// node_modules/yaml/dist/parse/cst-scalar.js
 var require_cst_scalar = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
+  "node_modules/yaml/dist/parse/cst-scalar.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var resolveBlockScalar = require_resolve_block_scalar();
@@ -5573,9 +5573,9 @@ var require_cst_scalar = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-stringify.js
+// node_modules/yaml/dist/parse/cst-stringify.js
 var require_cst_stringify = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
+  "node_modules/yaml/dist/parse/cst-stringify.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
@@ -5635,9 +5635,9 @@ var require_cst_stringify = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-visit.js
+// node_modules/yaml/dist/parse/cst-visit.js
 var require_cst_visit = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst-visit.js"(exports) {
+  "node_modules/yaml/dist/parse/cst-visit.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var BREAK = /* @__PURE__ */ Symbol("break visit");
@@ -5698,9 +5698,9 @@ var require_cst_visit = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst.js
+// node_modules/yaml/dist/parse/cst.js
 var require_cst = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/cst.js"(exports) {
+  "node_modules/yaml/dist/parse/cst.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var cstScalar = require_cst_scalar();
@@ -5801,9 +5801,9 @@ var require_cst = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/lexer.js
+// node_modules/yaml/dist/parse/lexer.js
 var require_lexer = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/lexer.js"(exports) {
+  "node_modules/yaml/dist/parse/lexer.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var cst = require_cst();
@@ -6391,9 +6391,9 @@ var require_lexer = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/line-counter.js
+// node_modules/yaml/dist/parse/line-counter.js
 var require_line_counter = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/line-counter.js"(exports) {
+  "node_modules/yaml/dist/parse/line-counter.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var LineCounter = class {
@@ -6423,9 +6423,9 @@ var require_line_counter = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/parser.js
+// node_modules/yaml/dist/parse/parser.js
 var require_parser = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/parse/parser.js"(exports) {
+  "node_modules/yaml/dist/parse/parser.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var node_process = __require("process");
@@ -7298,9 +7298,9 @@ var require_parser = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/public-api.js
+// node_modules/yaml/dist/public-api.js
 var require_public_api = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/public-api.js"(exports) {
+  "node_modules/yaml/dist/public-api.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
@@ -7396,9 +7396,9 @@ var require_public_api = __commonJS({
   }
 });
 
-// node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/index.js
+// node_modules/yaml/dist/index.js
 var require_dist = __commonJS({
-  "node_modules/.pnpm/yaml@2.9.0/node_modules/yaml/dist/index.js"(exports) {
+  "node_modules/yaml/dist/index.js"(exports) {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     var composer = require_composer();
@@ -8890,9 +8890,106 @@ var init_configure_workspace2 = __esm({
   }
 });
 
-// scripts/lib/run-task.ts
-import { access as access4, mkdir as mkdir5, readFile as readFile8, realpath as realpath2 } from "node:fs/promises";
+// scripts/lib/runtime.ts
+import { mkdir as mkdir5, readFile as readFile8, rm as rm2, stat } from "node:fs/promises";
 import { join as join6, resolve as resolve10 } from "node:path";
+function assertIdentifier(value, label) {
+  if (!identifierPattern.test(value)) throw new Error(label + " is not a safe runtime identifier: " + value);
+  return value;
+}
+function runtimePath(root12, ...parts) {
+  return resolve10(root12, ".runtime", ...parts);
+}
+function planRuntimeDirectory(root12, planId) {
+  return runtimePath(root12, "plans", assertIdentifier(planId, "plan_id"));
+}
+function planWorktreePath(root12, repository, planId) {
+  return runtimePath(root12, "worktrees", assertIdentifier(repository, "repository"), assertIdentifier(planId, "plan_id"));
+}
+async function acquirePlanLease(options) {
+  const planDirectory = planRuntimeDirectory(options.workspaceRoot, options.plan);
+  const lockDirectory = join6(planDirectory, "lease.lock");
+  const ownerPath = join6(lockDirectory, "owner.yaml");
+  const leasePath = join6(planDirectory, "lease.yaml");
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const lease = {
+    schema_version: 1,
+    plan: options.plan,
+    session_id: assertIdentifier(options.sessionId, "session_id"),
+    root_session_id: assertIdentifier(options.rootSessionId ?? options.sessionId, "root_session_id"),
+    worktree: options.worktree,
+    status: "active",
+    acquired_at: now,
+    heartbeat_at: now,
+    released_at: null,
+    stale_after_seconds: leaseStaleAfterSeconds
+  };
+  await mkdir5(planDirectory, { recursive: true });
+  try {
+    await mkdir5(lockDirectory);
+  } catch (error) {
+    if (error.code !== "EEXIST") throw error;
+    const existing = await readLease(leasePath);
+    if (!existing) throw new Error("Plan lease exists but is incomplete; refusing to infer ownership: " + options.plan);
+    if (existing.session_id !== lease.session_id) {
+      if (leaseIsStale(existing)) {
+        throw new Error("Plan lease is stale and requires explicit human takeover for " + options.plan + ": owned by " + existing.session_id);
+      }
+      throw new Error("Plan lease contention for " + options.plan + ": owned by " + existing.session_id);
+    }
+    if (existing.status !== "active") {
+      throw new Error("Plan lease is not active for session " + existing.session_id + ": " + existing.status);
+    }
+    if (existing.worktree !== options.worktree) {
+      throw new Error("Plan lease worktree mismatch for " + options.plan + ": owned path is " + existing.worktree);
+    }
+    const refreshed = { ...existing, heartbeat_at: now };
+    await writeTextAtomic(leasePath, (0, import_yaml8.stringify)(refreshed));
+    return refreshed;
+  }
+  try {
+    await writeTextAtomic(ownerPath, (0, import_yaml8.stringify)({
+      schema_version: 1,
+      session_id: lease.session_id,
+      root_session_id: lease.root_session_id,
+      plan: lease.plan,
+      acquired_at: lease.acquired_at
+    }));
+    await writeTextAtomic(leasePath, (0, import_yaml8.stringify)(lease));
+    return lease;
+  } catch (error) {
+    await rm2(lockDirectory, { recursive: true, force: true });
+    throw error;
+  }
+}
+async function readLease(path) {
+  try {
+    return (0, import_yaml8.parse)(await readFile8(path, "utf8"));
+  } catch {
+    return null;
+  }
+}
+function leaseIsStale(lease, now = /* @__PURE__ */ new Date()) {
+  if (lease.status !== "active") return false;
+  const heartbeat = Date.parse(lease.heartbeat_at);
+  if (!Number.isFinite(heartbeat)) return true;
+  return now.getTime() - heartbeat > lease.stale_after_seconds * 1e3;
+}
+var import_yaml8, identifierPattern, leaseStaleAfterSeconds;
+var init_runtime = __esm({
+  "scripts/lib/runtime.ts"() {
+    "use strict";
+    init_define_CC_TEMPLATE_INVENTORY();
+    import_yaml8 = __toESM(require_dist(), 1);
+    init_io();
+    identifierPattern = /^[a-z0-9][a-z0-9._-]{0,63}$/;
+    leaseStaleAfterSeconds = 1800;
+  }
+});
+
+// scripts/lib/run-task.ts
+import { access as access4, mkdir as mkdir6, readFile as readFile9, realpath as realpath2 } from "node:fs/promises";
+import { join as join7, resolve as resolve11 } from "node:path";
 function slugify2(value) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "plan";
 }
@@ -8905,7 +9002,7 @@ async function exists4(path) {
   }
 }
 async function loadWorkspace2(root12) {
-  const value = (0, import_yaml8.parse)(await readFile8(join6(root12, "workspace.yaml"), "utf8"));
+  const value = (0, import_yaml9.parse)(await readFile9(join7(root12, "workspace.yaml"), "utf8"));
   if (!value?.repositories) throw new Error("workspace.yaml has no repositories");
   return value;
 }
@@ -8985,14 +9082,14 @@ async function listWorktrees(repositoryRoot) {
   return records;
 }
 async function canonicalPath(path) {
-  return realpath2(path).catch(() => resolve10(path));
+  return realpath2(path).catch(() => resolve11(path));
 }
 async function planWorktree(root12, repository, repositoryConfig, plan) {
-  const repositoryRoot = assertInside(root12, resolve10(root12, repositoryConfig.path));
+  const repositoryRoot = assertInside(root12, resolve11(root12, repositoryConfig.path));
   const domain = slugify2(repository);
   const planKey = slugify2(plan.id);
   const branch = `agent/${domain}/plan-${planKey}`;
-  const worktree2 = assertInside(root12, join6(root12, ".runtime", "worktrees", domain, planKey));
+  const worktree2 = assertInside(root12, join7(root12, ".runtime", "worktrees", domain, planKey));
   const records = await listWorktrees(repositoryRoot);
   const worktreePath = await canonicalPath(worktree2);
   let existing;
@@ -9012,16 +9109,16 @@ async function planWorktree(root12, repository, repositoryConfig, plan) {
   if (await exists4(worktree2)) throw new Error(`Plan worktree path already exists but is not registered by Git: ${worktree2}`);
   await assertCleanRepository(repositoryRoot);
   const baseCommit = await git(repositoryRoot, ["rev-parse", "HEAD"]);
-  await mkdir5(resolve10(worktree2, ".."), { recursive: true });
+  await mkdir6(resolve11(worktree2, ".."), { recursive: true });
   await git(repositoryRoot, ["worktree", "add", "-b", branch, worktree2, baseCommit]);
   return { worktree: worktree2, branch, baseCommit };
 }
-async function createPlanWorktree(root12, repository, repositoryConfig, plan, tasks) {
+async function createPlanWorktree(root12, repository, repositoryConfig, plan, tasks, sessionId, lease) {
   const { worktree: worktree2, branch, baseCommit } = await planWorktree(root12, repository, repositoryConfig, plan);
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
   const prompt = promptFor(plan, tasks, repositoryConfig.path);
-  const promptFile = assertInside(root12, join6(root12, ".runtime", "plans", `${slugify2(plan.id)}-${stamp}.md`));
-  await mkdir5(resolve10(promptFile, ".."), { recursive: true });
+  const promptFile = assertInside(root12, join7(root12, ".runtime", "plans", `${slugify2(plan.id)}-${stamp}.md`));
+  await mkdir6(resolve11(promptFile, ".."), { recursive: true });
   await writeTextAtomic(promptFile, prompt);
   const shellPath = (path) => `'${path.replaceAll("'", "'\\''")}'`;
   const verificationCommands = [...new Set(tasks.flatMap((task) => task.verification_commands ?? []))];
@@ -9032,6 +9129,8 @@ async function createPlanWorktree(root12, repository, repositoryConfig, plan, ta
     worktree: worktree2,
     branch,
     base_commit: baseCommit,
+    session_id: sessionId,
+    lease_status: lease.status,
     prompt,
     prompt_file: promptFile,
     review_commands: [
@@ -9043,7 +9142,7 @@ async function createPlanWorktree(root12, repository, repositoryConfig, plan, ta
   };
 }
 async function preparePlanExecution(options) {
-  const root12 = resolve10(options.workspaceRoot);
+  const root12 = resolve11(options.workspaceRoot);
   const directory3 = await resolvePlanDirectory(root12, options.plan);
   const validation2 = await validatePlanDirectory(directory3);
   if (!validation2.plan || validation2.errors.length > 0) throw new Error(`Cannot execute invalid plan:
@@ -9056,23 +9155,33 @@ async function preparePlanExecution(options) {
   const config2 = await loadWorkspace2(root12);
   const repository = config2.repositories[domain];
   if (!repository) throw new Error(`Plan repository is not registered: ${domain}`);
-  return createPlanWorktree(root12, domain, repository, plan, tasks);
+  const sessionId = slugify2(options.sessionId ?? "legacy-run-task-" + plan.id);
+  const worktree2 = planWorktreePath(root12, domain, slugify2(plan.id));
+  const lease = await acquirePlanLease({
+    workspaceRoot: root12,
+    plan: slugify2(plan.id),
+    sessionId,
+    rootSessionId: options.rootSessionId ? slugify2(options.rootSessionId) : sessionId,
+    worktree: worktree2
+  });
+  return createPlanWorktree(root12, domain, repository, plan, tasks, sessionId, lease);
 }
-var import_yaml8;
+var import_yaml9;
 var init_run_task = __esm({
   "scripts/lib/run-task.ts"() {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
-    import_yaml8 = __toESM(require_dist(), 1);
+    import_yaml9 = __toESM(require_dist(), 1);
     init_git();
     init_io();
     init_plans();
+    init_runtime();
   }
 });
 
 // scripts/run-task.ts
 var run_task_exports = {};
-import { dirname as dirname8, resolve as resolve11 } from "node:path";
+import { dirname as dirname8, resolve as resolve12 } from "node:path";
 import { parseArgs as parseArgs3 } from "node:util";
 import { fileURLToPath as fileURLToPath4 } from "node:url";
 var values3, root2;
@@ -9081,10 +9190,10 @@ var init_run_task2 = __esm({
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     init_run_task();
-    ({ values: values3 } = parseArgs3({ options: { plan: { type: "string" } } }));
-    root2 = resolve11(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve11(dirname8(fileURLToPath4(import.meta.url)), ".."));
+    ({ values: values3 } = parseArgs3({ options: { plan: { type: "string" }, session: { type: "string" }, "root-session": { type: "string" } } }));
+    root2 = resolve12(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve12(dirname8(fileURLToPath4(import.meta.url)), ".."));
     if (values3.plan) {
-      console.log(JSON.stringify(await preparePlanExecution({ workspaceRoot: root2, plan: values3.plan }), null, 2));
+      console.log(JSON.stringify(await preparePlanExecution({ workspaceRoot: root2, plan: values3.plan, sessionId: values3.session, rootSessionId: values3["root-session"] }), null, 2));
     } else {
       throw new Error("Usage: cc run-task --plan <reference>");
     }
@@ -9093,7 +9202,7 @@ var init_run_task2 = __esm({
 
 // scripts/review-plan.ts
 var review_plan_exports = {};
-import { dirname as dirname9, resolve as resolve12 } from "node:path";
+import { dirname as dirname9, resolve as resolve13 } from "node:path";
 import { fileURLToPath as fileURLToPath5 } from "node:url";
 import { parseArgs as parseArgs4 } from "node:util";
 var values4, root3, directory, validation, worktree, base;
@@ -9105,12 +9214,12 @@ var init_review_plan = __esm({
     init_plans();
     ({ values: values4 } = parseArgs4({ options: { plan: { type: "string" }, worktree: { type: "string" }, base: { type: "string" } } }));
     if (!values4.plan || !values4.worktree) throw new Error("Usage: cc review-plan --plan <reference> --worktree <path> [--base <commit>]");
-    root3 = resolve12(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve12(dirname9(fileURLToPath5(import.meta.url)), ".."));
+    root3 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname9(fileURLToPath5(import.meta.url)), ".."));
     directory = await resolvePlanDirectory(root3, values4.plan);
     validation = await validatePlanDirectory(directory);
     if (!validation.plan || validation.errors.length > 0) throw new Error(`Cannot review invalid plan:
 - ${validation.errors.join("\n- ")}`);
-    worktree = resolve12(values4.worktree);
+    worktree = resolve13(values4.worktree);
     base = values4.base ?? await git(worktree, ["merge-base", "HEAD", "HEAD~1"]).catch(() => "HEAD");
     console.log(JSON.stringify({
       plan: validation.plan,
@@ -9129,8 +9238,8 @@ var init_review_plan = __esm({
 
 // scripts/create-plan.ts
 var create_plan_exports = {};
-import { readFile as readFile9 } from "node:fs/promises";
-import { dirname as dirname10, resolve as resolve13 } from "node:path";
+import { readFile as readFile10 } from "node:fs/promises";
+import { dirname as dirname10, resolve as resolve14 } from "node:path";
 import { parseArgs as parseArgs5 } from "node:util";
 import { fileURLToPath as fileURLToPath6 } from "node:url";
 var values5, workspaceRoot3, input, requests, results;
@@ -9141,8 +9250,8 @@ var init_create_plan = __esm({
     init_plans();
     ({ values: values5 } = parseArgs5({ options: { input: { type: "string" } } }));
     if (!values5.input) throw new Error("Usage: cc create-plan --input <plan-request.json>");
-    workspaceRoot3 = resolve13(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve13(dirname10(fileURLToPath6(import.meta.url)), ".."));
-    input = JSON.parse(await readFile9(resolve13(process.cwd(), values5.input), "utf8"));
+    workspaceRoot3 = resolve14(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve14(dirname10(fileURLToPath6(import.meta.url)), ".."));
+    input = JSON.parse(await readFile10(resolve14(process.cwd(), values5.input), "utf8"));
     requests = input.plans?.length ? input.plans : [input];
     results = [];
     for (const request3 of requests) results.push(await createPlan(workspaceRoot3, request3));
@@ -9152,7 +9261,7 @@ var init_create_plan = __esm({
 
 // scripts/validate-plan.ts
 var validate_plan_exports = {};
-import { resolve as resolve14 } from "node:path";
+import { resolve as resolve15 } from "node:path";
 import { parseArgs as parseArgs6 } from "node:util";
 var positionals, directory2, result;
 var init_validate_plan = __esm({
@@ -9162,7 +9271,7 @@ var init_validate_plan = __esm({
     init_plans();
     ({ positionals } = parseArgs6({ allowPositionals: true }));
     if (!positionals[0]) throw new Error("Usage: cc validate-plan plans/<repository-key>-plans/<number>-<slug>");
-    directory2 = resolve14(process.cwd(), positionals[0]);
+    directory2 = resolve15(process.cwd(), positionals[0]);
     result = await validatePlanDirectory(directory2);
     if (result.errors.length > 0) {
       console.error(`Invalid plan ${directory2}:`);
@@ -9176,7 +9285,7 @@ var init_validate_plan = __esm({
 
 // scripts/set-plan-state.ts
 var set_plan_state_exports = {};
-import { dirname as dirname11, resolve as resolve15 } from "node:path";
+import { dirname as dirname11, resolve as resolve16 } from "node:path";
 import { parseArgs as parseArgs7 } from "node:util";
 import { fileURLToPath as fileURLToPath7 } from "node:url";
 var values6, root4;
@@ -9187,14 +9296,14 @@ var init_set_plan_state = __esm({
     init_plans();
     ({ values: values6 } = parseArgs7({ options: { plan: { type: "string" }, status: { type: "string" } } }));
     if (!values6.plan || !values6.status || !["draft", "approved", "done"].includes(values6.status)) throw new Error("Usage: cc set-plan-state --plan <reference> --status <draft|approved|done>");
-    root4 = resolve15(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve15(dirname11(fileURLToPath7(import.meta.url)), ".."));
+    root4 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname11(fileURLToPath7(import.meta.url)), ".."));
     console.log(JSON.stringify(await setPlanStatus(root4, values6.plan, values6.status), null, 2));
   }
 });
 
 // scripts/set-task-state.ts
 var set_task_state_exports = {};
-import { dirname as dirname12, resolve as resolve16 } from "node:path";
+import { dirname as dirname12, resolve as resolve17 } from "node:path";
 import { parseArgs as parseArgs8 } from "node:util";
 import { fileURLToPath as fileURLToPath8 } from "node:url";
 var values7, root5;
@@ -9205,13 +9314,13 @@ var init_set_task_state = __esm({
     init_plans();
     ({ values: values7 } = parseArgs8({ options: { plan: { type: "string" }, task: { type: "string" }, status: { type: "string" } } }));
     if (!values7.plan || !values7.task || !values7.status || !["draft", "approved", "done"].includes(values7.status)) throw new Error("Usage: cc set-task-state --plan <reference> --task <id> --status <draft|approved|done>");
-    root5 = resolve16(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve16(dirname12(fileURLToPath8(import.meta.url)), ".."));
+    root5 = resolve17(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve17(dirname12(fileURLToPath8(import.meta.url)), ".."));
     console.log(JSON.stringify(await setTaskStatus(root5, values7.plan, values7.task, values7.status), null, 2));
   }
 });
 
 // scripts/lib/whats-next.ts
-import { resolve as resolve17 } from "node:path";
+import { resolve as resolve18 } from "node:path";
 function planDone(plans2, reference) {
   return plans2.some((candidate) => !candidate.archived && candidate.plan?.id === reference && candidate.plan.status === "done");
 }
@@ -9235,7 +9344,7 @@ function recommendation(planResult, root12) {
   };
 }
 async function recommendWhatsNext(workspaceRootInput) {
-  const root12 = resolve17(workspaceRootInput);
+  const root12 = resolve18(workspaceRootInput);
   const active2 = await listPlans(root12, false);
   const warnings = active2.flatMap((item) => item.errors.map((error) => `${item.directory}: ${error}`));
   const stale = await staleProductKnowledgeSources(root12);
@@ -9293,7 +9402,7 @@ var init_whats_next = __esm({
 
 // scripts/whats-next.ts
 var whats_next_exports = {};
-import { dirname as dirname13, resolve as resolve18 } from "node:path";
+import { dirname as dirname13, resolve as resolve19 } from "node:path";
 import { fileURLToPath as fileURLToPath9 } from "node:url";
 var root6;
 var init_whats_next2 = __esm({
@@ -9301,16 +9410,16 @@ var init_whats_next2 = __esm({
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     init_whats_next();
-    root6 = resolve18(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve18(dirname13(fileURLToPath9(import.meta.url)), ".."));
+    root6 = resolve19(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve19(dirname13(fileURLToPath9(import.meta.url)), ".."));
     console.log(JSON.stringify(await recommendWhatsNext(root6), null, 2));
   }
 });
 
 // scripts/lib/plan-publication.ts
-import { readFile as readFile10 } from "node:fs/promises";
-import { join as join7, resolve as resolve19 } from "node:path";
+import { readFile as readFile11 } from "node:fs/promises";
+import { join as join8, resolve as resolve20 } from "node:path";
 async function publishPlan(options) {
-  const root12 = resolve19(options.workspaceRoot);
+  const root12 = resolve20(options.workspaceRoot);
   const directory3 = await resolvePlanDirectory(root12, options.plan);
   const validation2 = await validatePlanDirectory(directory3);
   if (!validation2.plan || validation2.errors.length > 0) throw new Error(`Cannot publish invalid plan:
@@ -9326,18 +9435,18 @@ async function publishPlan(options) {
   const byId = new Map(references2.map((reference) => [reference.id, reference.url]));
   if (byId.has(plan.id)) {
     plan.external_reference = byId.get(plan.id);
-    await writeTextAtomic(join7(directory3, "plan.yaml"), (0, import_yaml9.stringify)(plan));
+    await writeTextAtomic(join8(directory3, "plan.yaml"), (0, import_yaml10.stringify)(plan));
   }
   for (const task of validation2.tasks) {
     const url = byId.get(task.id);
     if (!url) continue;
-    const path = join7(directory3, "tasks", `${task.id}.md`);
-    const parsed = parseTaskFrontmatter(await readFile10(path, "utf8"));
+    const path = join8(directory3, "tasks", `${task.id}.md`);
+    const parsed = parseTaskFrontmatter(await readFile11(path, "utf8"));
     if (!parsed.value || parsed.errors.length > 0) throw new Error(`Invalid task while publishing ${task.id}: ${parsed.errors.join("; ")}`);
     parsed.value.external_reference = url;
     const metadata = { ...parsed.value };
     await writeTextAtomic(path, `---
-${(0, import_yaml9.stringify)(metadata).trimEnd()}
+${(0, import_yaml10.stringify)(metadata).trimEnd()}
 ---
 
 ${parsed.body.trimStart()}`);
@@ -9345,12 +9454,12 @@ ${parsed.body.trimStart()}`);
   const status = plan.status;
   return { plan_id: plan.id, provider: options.provider, published: references2, unchanged_status: status, activity_records: [] };
 }
-var import_yaml9;
+var import_yaml10;
 var init_plan_publication = __esm({
   "scripts/lib/plan-publication.ts"() {
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
-    import_yaml9 = __toESM(require_dist(), 1);
+    import_yaml10 = __toESM(require_dist(), 1);
     init_io();
     init_plans();
   }
@@ -9358,8 +9467,8 @@ var init_plan_publication = __esm({
 
 // scripts/publish-plan.ts
 var publish_plan_exports = {};
-import { readFile as readFile11 } from "node:fs/promises";
-import { dirname as dirname14, resolve as resolve20 } from "node:path";
+import { readFile as readFile12 } from "node:fs/promises";
+import { dirname as dirname14, resolve as resolve21 } from "node:path";
 import { parseArgs as parseArgs9 } from "node:util";
 import { fileURLToPath as fileURLToPath10 } from "node:url";
 var values8, root7, references;
@@ -9370,15 +9479,15 @@ var init_publish_plan = __esm({
     init_plan_publication();
     ({ values: values8 } = parseArgs9({ options: { plan: { type: "string" }, provider: { type: "string", default: "manual" }, references: { type: "string" } } }));
     if (!values8.plan) throw new Error("Usage: cc publish-plan --plan <reference> [--provider <name>] [--references <json-file>]");
-    root7 = resolve20(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve20(dirname14(fileURLToPath10(import.meta.url)), ".."));
-    references = values8.references ? JSON.parse(await readFile11(resolve20(process.cwd(), values8.references), "utf8")) : [];
+    root7 = resolve21(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve21(dirname14(fileURLToPath10(import.meta.url)), ".."));
+    references = values8.references ? JSON.parse(await readFile12(resolve21(process.cwd(), values8.references), "utf8")) : [];
     console.log(JSON.stringify(await publishPlan({ workspaceRoot: root7, plan: values8.plan, provider: values8.provider ?? "manual", references }), null, 2));
   }
 });
 
 // scripts/archive-plan.ts
 var archive_plan_exports = {};
-import { dirname as dirname15, resolve as resolve21 } from "node:path";
+import { dirname as dirname15, resolve as resolve22 } from "node:path";
 import { parseArgs as parseArgs10 } from "node:util";
 import { fileURLToPath as fileURLToPath11 } from "node:url";
 var positionals2, root8;
@@ -9389,14 +9498,14 @@ var init_archive_plan = __esm({
     init_plans();
     ({ positionals: positionals2 } = parseArgs10({ allowPositionals: true }));
     if (!positionals2[0]) throw new Error("Usage: cc archive-plan <plan-reference>");
-    root8 = resolve21(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve21(dirname15(fileURLToPath11(import.meta.url)), ".."));
+    root8 = resolve22(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve22(dirname15(fileURLToPath11(import.meta.url)), ".."));
     console.log(JSON.stringify(await archivePlan(root8, positionals2[0]), null, 2));
   }
 });
 
 // scripts/unarchive-plan.ts
 var unarchive_plan_exports = {};
-import { dirname as dirname16, resolve as resolve22 } from "node:path";
+import { dirname as dirname16, resolve as resolve23 } from "node:path";
 import { parseArgs as parseArgs11 } from "node:util";
 import { fileURLToPath as fileURLToPath12 } from "node:url";
 var positionals3, root9;
@@ -9407,15 +9516,15 @@ var init_unarchive_plan = __esm({
     init_plans();
     ({ positionals: positionals3 } = parseArgs11({ allowPositionals: true }));
     if (!positionals3[0]) throw new Error("Usage: cc unarchive-plan <archived-plan-reference>");
-    root9 = resolve22(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve22(dirname16(fileURLToPath12(import.meta.url)), ".."));
+    root9 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname16(fileURLToPath12(import.meta.url)), ".."));
     console.log(JSON.stringify(await unarchivePlan(root9, positionals3[0]), null, 2));
   }
 });
 
 // scripts/import-product-knowledge.ts
 var import_product_knowledge_exports = {};
-import { readFile as readFile12 } from "node:fs/promises";
-import { dirname as dirname17, resolve as resolve23 } from "node:path";
+import { readFile as readFile13 } from "node:fs/promises";
+import { dirname as dirname17, resolve as resolve24 } from "node:path";
 import { parseArgs as parseArgs12 } from "node:util";
 import { fileURLToPath as fileURLToPath13 } from "node:url";
 var values9, root10, request2;
@@ -9426,15 +9535,15 @@ var init_import_product_knowledge = __esm({
     init_product_knowledge();
     ({ values: values9 } = parseArgs12({ options: { source: { type: "string" }, request: { type: "string" }, "source-id": { type: "string" }, kind: { type: "string" }, page: { type: "string", multiple: true, default: [] }, title: { type: "string" }, purpose: { type: "string" } } }));
     if (!values9.source && !values9.request) throw new Error("Usage: cc import-product-knowledge --source <path> | --request <json-file>");
-    root10 = resolve23(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve23(dirname17(fileURLToPath13(import.meta.url)), ".."));
-    request2 = values9.request ? JSON.parse(await readFile12(resolve23(process.cwd(), values9.request), "utf8")) : { source: values9.source, ...values9["source-id"] ? { source_id: values9["source-id"] } : {}, ...values9.kind ? { kind: values9.kind } : {}, ...values9.page?.length ? { product_knowledge: values9.page } : {}, ...values9.title ? { title: values9.title } : {}, ...values9.purpose ? { purpose: values9.purpose } : {} };
+    root10 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname17(fileURLToPath13(import.meta.url)), ".."));
+    request2 = values9.request ? JSON.parse(await readFile13(resolve24(process.cwd(), values9.request), "utf8")) : { source: values9.source, ...values9["source-id"] ? { source_id: values9["source-id"] } : {}, ...values9.kind ? { kind: values9.kind } : {}, ...values9.page?.length ? { product_knowledge: values9.page } : {}, ...values9.title ? { title: values9.title } : {}, ...values9.purpose ? { purpose: values9.purpose } : {} };
     console.log(JSON.stringify(await importProductKnowledge(root10, request2), null, 2));
   }
 });
 
 // scripts/refresh-product-knowledge.ts
 var refresh_product_knowledge_exports = {};
-import { dirname as dirname18, resolve as resolve24 } from "node:path";
+import { dirname as dirname18, resolve as resolve25 } from "node:path";
 import { fileURLToPath as fileURLToPath14 } from "node:url";
 var root11;
 var init_refresh_product_knowledge = __esm({
@@ -9442,7 +9551,7 @@ var init_refresh_product_knowledge = __esm({
     "use strict";
     init_define_CC_TEMPLATE_INVENTORY();
     init_product_knowledge();
-    root11 = resolve24(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve24(dirname18(fileURLToPath14(import.meta.url)), ".."));
+    root11 = resolve25(process.env.CONTEXT_CIRCUIT_WORKSPACE_ROOT ?? resolve25(dirname18(fileURLToPath14(import.meta.url)), ".."));
     console.log(JSON.stringify(await refreshProductKnowledge(root11), null, 2));
   }
 });

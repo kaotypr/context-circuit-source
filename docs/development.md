@@ -18,4 +18,6 @@ runtime. Any deterministic helper must remain minimal and preserve the
 filesystem as the source of runtime truth.
 
 Implementation work should be verified against the acceptance scenarios in the
-Agent Workspace Workflow document.
+Agent Workspace Workflow document. The old command layer remains until the
+evidence checklist in docs/legacy-cleanup-gate.md passes and a separate
+cleanup plan is explicitly requested.

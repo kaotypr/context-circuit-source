@@ -8,6 +8,8 @@ The target architecture is instruction- and filesystem-driven:
 - Plans are human-reviewed YAML and Markdown under plans/.
 - Runtime session records, leases, prompts, handoffs, and worktrees live under
   private .runtime/.
+- Runtime record fields and lease ownership are defined in
+  docs/runtime-contract.md.
 - Registered repositories own code and repository-local conventions.
 - Each writable plan execution has an exclusive Git worktree.
 

@@ -1,6 +1,10 @@
 # Agent Workspace Workflow
 
-Status: agreed workflow contract; implementation pending
+Status: agreed workflow contract; implementation in progress
+
+The filesystem record details for this contract live in
+runtime-contract.md. This document defines behavior; the runtime contract
+defines record shape and ownership mechanics.
 
 ## Purpose
 
@@ -152,11 +156,16 @@ The target layout is:
   sessions/
     <session-id>/
       session.yaml
+      delegation.yaml
       handoff.md
   plans/
     <plan-id>/
+      lease.lock/
+        owner.yaml
       lease.yaml
       prompt.md
+      handoffs/
+        <session-id>-<sequence>.md
   worktrees/
     <repository-key>/<plan-id>/
 ```
@@ -177,7 +186,7 @@ task: APP-0042
 scope: read-only
 write_access: false
 worktree: .runtime/worktrees/app/0010-checkout
-status: active
+status: executing
 created_at: 2026-08-14T12:00:00Z
 updated_at: 2026-08-14T12:20:00Z
 next_action: Report verification findings to sess-001
@@ -186,7 +195,11 @@ blockers: []
 
 A plan lease should identify the owning session, plan, worktree, acquisition time, heartbeat, and release or stale status. Lease acquisition must be atomic enough to prevent two writing sessions from silently claiming the same plan.
 
-Runtime writes must be session-scoped and recoverable. A session must not rewrite another session's handoff, lease, prompt, or worktree metadata.
+Runtime writes must be session-scoped and recoverable. A session must not
+rewrite another session's handoff, lease, prompt, or worktree metadata.
+
+See runtime-contract.md for the versioned record fields, safe identifier rules,
+atomic lease convention, and handoff format.
 
 ## Workspace entry workflow
 

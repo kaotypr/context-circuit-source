@@ -16,6 +16,11 @@ A root session executes an approved plan by:
 A plan has at most one active writing owner. Read-only research and verification
 sessions may inspect its worktree, but two writing sessions must never share it.
 
+The runtime contract uses an exclusive plan lease and records the owning
+session, root session, worktree, heartbeat, and release state. A same-plan
+contender becomes blocked; it must not modify the plan, task, lease, or worker
+worktree. Different plans may proceed concurrently.
+
 The session must stop and ask for a human decision when the scope, acceptance
 criteria, repository boundary, or safety assumptions materially change. It must
 not change plan or task status merely because implementation or tests appear
@@ -23,4 +28,11 @@ complete.
 
 The previous run-task command is transitional implementation material. The
 filesystem session protocol and the workspace-entry workflow are the target
-behavior.
+behavior. During migration, the command accepts an explicit session identity
+for internal adapters and acquires the same lease used by the session
+workflow. When no identity is supplied, it uses a clearly labeled
+legacy-run-task compatibility identity; this path is retained only until the
+replacement acceptance suite passes.
+
+See docs/runtime-contract.md for record fields, atomic acquisition, recovery,
+and handoff rules.

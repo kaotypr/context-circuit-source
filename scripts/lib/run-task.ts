@@ -4,7 +4,8 @@ import { parse as parseYaml } from "yaml"
 import { assertCleanRepository, git } from "./git.js"
 import { assertInside, writeTextAtomic } from "./io.js"
 import { resolvePlanDirectory, validatePlanDirectory } from "./plans.js"
-import type { PlanTask, PlanYaml, PreparedPlanExecution, RepositoryConfig, WorkspaceConfig } from "./types.js"
+import { acquirePlanLease, planWorktreePath } from "./runtime.js"
+import type { PlanLease, PlanTask, PlanYaml, PreparedPlanExecution, RepositoryConfig, WorkspaceConfig } from "./types.js"
 
 function slugify(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 48) || "plan"
@@ -144,7 +145,7 @@ async function planWorktree(root: string, repository: string, repositoryConfig: 
   return { worktree, branch, baseCommit }
 }
 
-async function createPlanWorktree(root: string, repository: string, repositoryConfig: RepositoryConfig, plan: PlanYaml, tasks: PlanTask[]): Promise<PreparedPlanExecution> {
+async function createPlanWorktree(root: string, repository: string, repositoryConfig: RepositoryConfig, plan: PlanYaml, tasks: PlanTask[], sessionId: string, lease: PlanLease): Promise<PreparedPlanExecution> {
   const { worktree, branch, baseCommit } = await planWorktree(root, repository, repositoryConfig, plan)
   const stamp = new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14)
   const prompt = promptFor(plan, tasks, repositoryConfig.path)
@@ -160,6 +161,8 @@ async function createPlanWorktree(root: string, repository: string, repositoryCo
     worktree,
     branch,
     base_commit: baseCommit,
+    session_id: sessionId,
+    lease_status: lease.status,
     prompt,
     prompt_file: promptFile,
     review_commands: [
@@ -171,7 +174,7 @@ async function createPlanWorktree(root: string, repository: string, repositoryCo
   }
 }
 
-export async function preparePlanExecution(options: { workspaceRoot: string; plan: string }): Promise<PreparedPlanExecution> {
+export async function preparePlanExecution(options: { workspaceRoot: string; plan: string; sessionId?: string; rootSessionId?: string }): Promise<PreparedPlanExecution> {
   const root = resolve(options.workspaceRoot)
   const directory = await resolvePlanDirectory(root, options.plan)
   const validation = await validatePlanDirectory(directory)
@@ -184,5 +187,14 @@ export async function preparePlanExecution(options: { workspaceRoot: string; pla
   const config = await loadWorkspace(root)
   const repository = config.repositories[domain]
   if (!repository) throw new Error(`Plan repository is not registered: ${domain}`)
-  return createPlanWorktree(root, domain, repository, plan, tasks)
+  const sessionId = slugify(options.sessionId ?? ("legacy-run-task-" + plan.id))
+  const worktree = planWorktreePath(root, domain, slugify(plan.id))
+  const lease = await acquirePlanLease({
+    workspaceRoot: root,
+    plan: slugify(plan.id),
+    sessionId,
+    rootSessionId: options.rootSessionId ? slugify(options.rootSessionId) : sessionId,
+    worktree,
+  })
+  return createPlanWorktree(root, domain, repository, plan, tasks, sessionId, lease)
 }

@@ -3,6 +3,7 @@
 Enter through the workspace session workflow. Read AGENTS.md, WORKFLOW.md,
 workspace.yaml, context/INDEX.md, the relevant Product Knowledge, runtime
 session state, selected plans, and repository-local instructions.
+Use docs/runtime-contract.md for record fields, leases, handoffs, and recovery.
 
 Own the human request and coordinate root and child sessions. Before
 consequential action, state the current route: orient, gather, plan,
@@ -22,3 +23,7 @@ Allow multiple plans and child sessions to run concurrently when ownership and
 worktree boundaries are clear. Preserve dirty repositories, runtime state,
 questions, blockers, and handoffs. Return a root-session summary with evidence,
 actions, tests, blockers, decisions needed, and the next safe action.
+
+The coordinator owns session lifecycle records and plan leases. A worker may
+write only its own handoff and assigned worktree; a verifier never writes
+runtime state. Never use a global current-session or current-plan pointer.
