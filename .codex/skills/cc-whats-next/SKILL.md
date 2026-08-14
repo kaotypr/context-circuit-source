@@ -1,11 +1,6 @@
 ---
 name: cc-whats-next
-description: Codex adapter for recommending one executable or enabling workspace action through the canonical read-only selection workflow.
+description: Recommend one executable task without changing state.
 ---
 
-# Codex adapter
-
-Read and follow `../../../.agents/skills/cc-whats-next/SKILL.md`. Use Codex source
-inspection to explain the validated result, but use the shared deterministic
-command for discovery, readiness checks, and ranking. Do not duplicate policy
-or change state in this adapter.
+Read and follow `../../../.agents/skills/cc-whats-next/SKILL.md`. Use the bundled read-only recommendation command.

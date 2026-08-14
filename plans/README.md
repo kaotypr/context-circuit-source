@@ -1,9 +1,7 @@
-# Plan roadmap
+# Plans roadmap
 
-This is the authored root planning surface. Numbered plans are organized as
-peer increments under exact `<repository-key>-plans` collections. Each plan is
-approved and executed independently; collection and roadmap indexes describe
-order and dependencies but are not parent plans.
+Numbered peer plans live under `plans/<repository-key>-plans/`. Each plan is a human-reviewed set of YAML metadata, Markdown explanation, and task files.
 
-Use `cc-create-plan` to generate drafts and `cc-execute-plan` only after the
-selected numbered plan is explicitly approved.
+Active plans use `<number>-<slug>`. Manual archival moves the exact directory to `archives/plans/<repository-key>-plans/<number>-<slug>/`; archived plans are ignored by `whats-next`.
+
+Create a draft with `cc create-plan`, approve it explicitly with `cc set-plan-state`, and execute one selected task with `cc run-task`.

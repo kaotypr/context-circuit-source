@@ -1,464 +1,186 @@
-import { createHash } from "node:crypto";
-import { access, mkdir, readdir, readFile, rm } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
-import { parse as parseYaml, stringify as stringifyYaml } from "yaml";
-import { writeTextAtomic } from "./io.js";
-import { validateContract } from "./validation.js";
-import type { SchemaName } from "./validation.js";
-import type { ProductKnowledgeBaselineSpec, ProductKnowledgeImpact, TaskContextPackage, WorkspaceConfig } from "./types.js";
+import { createHash } from "node:crypto"
+import { access, mkdir, readdir, readFile } from "node:fs/promises"
+import { dirname, join, relative, resolve } from "node:path"
+import { parse as parseYaml, stringify as stringifyYaml } from "yaml"
+import { writeTextAtomic } from "./io.js"
+import { parseFrontmatter } from "./validation.js"
+import type { ProductKnowledgeBaselineSpec, ProductKnowledgeImportRequest, ProductKnowledgeImportResult, ProductKnowledgeRefreshResult, ProductKnowledgeValidationResult, SourceRecord, SourceRegistry, WorkspaceConfig } from "./types.js"
 
-export type ProductKnowledgeKind = "role" | "workflow" | "domain" | "product-map";
-
-export interface ProductKnowledgeValidationResult {
-  present: boolean;
-  pages: number;
-  errors: string[];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
 
-const schemaByKind: Record<ProductKnowledgeKind, SchemaName> = {
-  role: "product-knowledge-role",
-  workflow: "product-knowledge-workflow",
-  domain: "product-knowledge-domain",
-  "product-map": "product-knowledge-project",
-};
-
-// Sections each page kind must own. Authority never overlaps: workflow pages own
-// exact behavior, role pages own the cross-domain story, and domain summaries own
-// business-area routing.
-const requiredSections: Record<ProductKnowledgeKind, string[]> = {
-  role: ["Role definition", "Primary outcomes", "Product surfaces", "End-to-end role story", "Related workflows", "Role-specific behavior", "Limitations"],
-  workflow: ["Outcome", "Actors", "Entry points", "Current flow", "Variations", "Business rules"],
-  domain: ["Summary", "Workflows"],
-  "product-map": ["Roles", "Domains"],
-};
-
-// Sections that would usurp another page's authority. Only workflow pages may own
-// exact current flow and business rules.
-const forbiddenSections: Record<ProductKnowledgeKind, string[]> = {
-  role: ["Current flow", "Business rules"],
-  workflow: [],
-  domain: ["Current flow", "Business rules"],
-  "product-map": ["Current flow", "Business rules"],
-};
-
-// Frontmatter reference fields that must resolve to a real page inside the tree.
-const referenceFields: Record<ProductKnowledgeKind, string[]> = {
-  role: ["relevant_domains", "related_workflows"],
-  workflow: [],
-  domain: ["workflows"],
-  "product-map": ["roles", "domains"],
-};
-
-interface ParsedPage {
-  frontmatter: Record<string, unknown> | null;
-  body: string;
+function safeSlug(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "source"
 }
 
-function parsePage(raw: string): ParsedPage {
-  const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n([\s\S]*))?$/);
-  if (!match) return { frontmatter: null, body: raw };
-  let frontmatter: Record<string, unknown> | null = null;
+function digest(content: string): string {
+  return `sha256:${createHash("sha256").update(content).digest("hex")}`
+}
+
+async function exists(path: string): Promise<boolean> {
   try {
-    const parsed = parseYaml(match[1]!);
-    frontmatter = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
+    await access(path)
+    return true
   } catch {
-    frontmatter = null;
-  }
-  return { frontmatter, body: match[2] ?? "" };
-}
-
-function sectionTitles(body: string): Set<string> {
-  const titles = new Set<string>();
-  for (const line of body.replace(/\r\n/g, "\n").split("\n")) {
-    const heading = line.match(/^##\s+(.+?)\s*$/);
-    if (heading) titles.add(heading[1]!);
-  }
-  return titles;
-}
-
-function relativeLinkTargets(body: string): string[] {
-  const targets: string[] = [];
-  for (const match of body.matchAll(/\]\(([^)]+)\)/g)) {
-    const target = match[1]!.trim().split("#")[0]!.split(/\s+/)[0]!;
-    if (!target) continue;
-    if (/^[a-z][a-z0-9+.-]*:/i.test(target) || target.startsWith("//") || target.startsWith("/")) continue;
-    targets.push(target);
-  }
-  return targets;
-}
-
-async function isFile(path: string): Promise<boolean> {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
+    return false
   }
 }
 
-async function directoryExists(path: string): Promise<boolean> {
-  try {
-    const entries = await readdir(path, { withFileTypes: true });
-    return Array.isArray(entries);
-  } catch {
-    return false;
+function markdownFiles(directory: string): Promise<string[]> {
+  return readdir(directory, { withFileTypes: true }).then((entries) => entries.filter((entry) => entry.isFile() && entry.name.endsWith(".md")).map((entry) => join(directory, entry.name)).sort())
+}
+
+function linksInMarkdown(raw: string): string[] {
+  return [...raw.matchAll(/\]\(([^)#]+)(?:#[^)]+)?\)/g)].map((match) => match[1]!).filter((link) => !link.startsWith("http"))
+}
+
+async function resolveLinks(root: string, page: string, errors: string[]): Promise<void> {
+  for (const link of linksInMarkdown(await readFile(page, "utf8"))) {
+    const target = resolve(dirname(page), link)
+    if (relative(root, target).startsWith("..") || !await exists(target)) errors.push(`${relative(root, page)} references missing page: ${link}`)
   }
 }
 
-async function resolveReference(root: string, pagePath: string, reference: string, label: string, errors: string[]): Promise<void> {
-  const target = resolve(dirname(pagePath), reference);
-  const within = relative(root, target);
-  if (within.startsWith("..")) {
-    errors.push(`${relative(root, pagePath)}: ${label} escapes the Product Knowledge tree: ${reference}`);
-    return;
-  }
-  if (!(await isFile(target))) errors.push(`${relative(root, pagePath)}: ${label} does not resolve: ${reference}`);
-}
-
-async function validatePage(root: string, pagePath: string, kind: ProductKnowledgeKind, errors: string[]): Promise<void> {
-  const rel = relative(root, pagePath);
-  const { frontmatter, body } = parsePage(await readFile(pagePath, "utf8"));
-  if (!frontmatter) {
-    errors.push(`${rel}: missing YAML frontmatter for ${kind} page`);
-    return;
-  }
-  if (frontmatter.kind !== kind) {
-    errors.push(`${rel}: frontmatter kind must be '${kind}' but is '${String(frontmatter.kind)}'`);
-    return;
-  }
-  for (const error of await validateContract(schemaByKind[kind], frontmatter)) {
-    errors.push(`${rel}: metadata ${error.instancePath || "/"} ${error.message}`);
-  }
-  const titles = sectionTitles(body);
-  for (const section of requiredSections[kind]) {
-    if (!titles.has(section)) errors.push(`${rel}: missing required section '## ${section}'`);
-  }
-  for (const section of forbiddenSections[kind]) {
-    if (titles.has(section)) errors.push(`${rel}: section '## ${section}' belongs to workflow pages, not ${kind} pages`);
-  }
-  for (const field of referenceFields[kind]) {
-    const references = frontmatter[field];
-    if (!Array.isArray(references)) continue;
-    for (const reference of references) {
-      if (typeof reference === "string") await resolveReference(root, pagePath, reference, `metadata ${field}`, errors);
-    }
-  }
-  for (const link of relativeLinkTargets(body)) {
-    await resolveReference(root, pagePath, link, "relative link", errors);
-  }
-}
-
-async function markdownFiles(directory: string): Promise<string[]> {
-  const entries = await readdir(directory, { withFileTypes: true });
-  return entries.filter((entry) => entry.isFile() && entry.name.endsWith(".md")).map((entry) => join(directory, entry.name));
-}
-
-/**
- * Validate an optional Product Knowledge tree rooted at a context directory.
- *
- * The tree is discovered from `roles/` and `domains/`. When neither exists the
- * result is `present: false` with no errors, so an existing wrapper that has not
- * adopted Product Knowledge stays valid. Every page that does exist is validated
- * against its metadata contract, required and forbidden sections, and resolvable
- * references, so adoption can grow one page at a time.
- */
-export async function validateProductKnowledgeTree(contextDir: string): Promise<ProductKnowledgeValidationResult> {
-  const root = resolve(contextDir);
-  const rolesDir = join(root, "roles");
-  const domainsDir = join(root, "domains");
-  const hasRoles = await directoryExists(rolesDir);
-  const hasDomains = await directoryExists(domainsDir);
-  if (!hasRoles && !hasDomains) return { present: false, pages: 0, errors: [] };
-
-  const errors: string[] = [];
-  let pages = 0;
-
-  const projectPath = join(root, "PROJECT.md");
-  if (await isFile(projectPath)) {
-    const { frontmatter } = parsePage(await readFile(projectPath, "utf8"));
-    if (frontmatter && frontmatter.kind === "product-map") {
-      pages += 1;
-      await validatePage(root, projectPath, "product-map", errors);
-    }
-  }
-
-  if (hasRoles) {
-    for (const file of await markdownFiles(rolesDir)) {
-      if (file.endsWith("README.md")) {
-        for (const link of relativeLinkTargets(await readFile(file, "utf8"))) await resolveReference(root, file, link, "relative link", errors);
-        continue;
-      }
-      pages += 1;
-      await validatePage(root, file, "role", errors);
-    }
-  }
-
-  if (hasDomains) {
-    const domainEntries = (await readdir(domainsDir, { withFileTypes: true })).filter((entry) => entry.isDirectory());
-    for (const entry of domainEntries) {
-      const domainDir = join(domainsDir, entry.name);
-      const readmePath = join(domainDir, "README.md");
-      if (!(await isFile(readmePath))) {
-        errors.push(`domains/${entry.name}: missing README.md domain summary`);
-      } else {
-        pages += 1;
-        await validatePage(root, readmePath, "domain", errors);
-      }
-      const workflowsDir = join(domainDir, "workflows");
-      if (await directoryExists(workflowsDir)) {
-        for (const file of await markdownFiles(workflowsDir)) {
-          pages += 1;
-          await validatePage(root, file, "workflow", errors);
-        }
+export async function validateProductKnowledgeTree(contextDirInput: string): Promise<ProductKnowledgeValidationResult> {
+  const root = resolve(contextDirInput)
+  const pages: string[] = []
+  if (await exists(join(root, "PROJECT.md"))) pages.push(join(root, "PROJECT.md"))
+  for (const directory of [join(root, "roles"), join(root, "domains")]) {
+    if (!await exists(directory)) continue
+    const walk = async (current: string): Promise<void> => {
+      for (const entry of await readdir(current, { withFileTypes: true })) {
+        if (entry.isSymbolicLink()) continue
+        const path = join(current, entry.name)
+        if (entry.isDirectory()) await walk(path)
+        else if (entry.isFile() && entry.name.endsWith(".md") && entry.name !== "README.md") pages.push(path)
+        else if (entry.isFile() && entry.name === "README.md" && current !== root) pages.push(path)
       }
     }
+    await walk(directory)
   }
-
-  return { present: true, pages, errors: [...new Set(errors)] };
-}
-
-export interface ProductKnowledgeSyncUpdate {
-  target: string;
-  content: string;
-  source_contribution?: string;
-}
-
-export interface ProductKnowledgeSyncInput {
-  workspaceRoot: string;
-  confirming_role: string;
-  confirmed_effective: boolean;
-  updates: ProductKnowledgeSyncUpdate[];
-  synced_at: string;
-}
-
-export interface ProductKnowledgeSyncRecord {
-  contract_version: 1;
-  synced_at: string;
-  confirming_role: string;
-  updated_pages: string[];
-  source_contributions: string[];
-}
-
-function currentBehaviorPageKind(contextRelative: string): "role" | "domain" | "workflow" | null {
-  const normalized = contextRelative.replace(/\\/g, "/");
-  if (/^roles\/(?!README\.md$)[^/]+\.md$/.test(normalized)) return "role";
-  if (/^domains\/[^/]+\/README\.md$/.test(normalized)) return "domain";
-  if (/^domains\/[^/]+\/workflows\/[^/]+\.md$/.test(normalized)) return "workflow";
-  return null;
-}
-
-/**
- * Synchronize canonical Product Knowledge only after a dedicated, workspace
- * configured confirming role declares the behavior effective. This is the single
- * gate that writes current-behavior pages: without an explicit effectiveness
- * confirmation from the configured role, nothing is written and the behavior
- * remains proposed. Only referenced role, domain, and workflow pages may change,
- * and the resulting tree must validate or every write is rolled back.
- */
-export async function synchronizeProductKnowledge(input: ProductKnowledgeSyncInput): Promise<ProductKnowledgeSyncRecord> {
-  const root = resolve(input.workspaceRoot);
-  const config = parseYaml(await readFile(join(root, "workspace.yaml"), "utf8")) as WorkspaceConfig;
-  const confirmingRole = config.product_knowledge?.confirming_role;
-  if (!confirmingRole) throw new Error("Workspace has no configured Product Knowledge confirming role; synchronization is not permitted");
-  if (!input.confirmed_effective) throw new Error("Product Knowledge synchronization requires an explicit effectiveness confirmation; the behavior remains proposed");
-  if (input.confirming_role !== confirmingRole) throw new Error(`Confirming role '${input.confirming_role}' is not the configured Product Knowledge confirming role '${confirmingRole}'`);
-  if (input.updates.length === 0) throw new Error("Synchronization requires at least one referenced current-behavior page");
-
-  const contextDir = join(root, "context");
-  const targets = new Map<string, { absolute: string; previous: string | null }>();
-  for (const update of input.updates) {
-    const contextRelative = update.target.replace(/^context\//, "");
-    if (!currentBehaviorPageKind(contextRelative)) throw new Error(`Synchronization target is not a current-behavior page: ${update.target}`);
-    const absolute = resolve(contextDir, contextRelative);
-    if (relative(contextDir, absolute).startsWith("..")) throw new Error(`Synchronization target escapes context: ${update.target}`);
-    if (targets.has(absolute)) throw new Error(`Duplicate synchronization target: ${update.target}`);
-    let previous: string | null = null;
-    try {
-      previous = await readFile(absolute, "utf8");
-    } catch {
-      previous = null;
+  const errors: string[] = []
+  for (const page of pages) {
+    const raw = await readFile(page, "utf8")
+    const parsed = parseFrontmatter(raw)
+    if (raw.trimStart().startsWith("---")) errors.push(...parsed.errors.map((error) => `${relative(root, page)}: ${error}`))
+    if (parsed.value) {
+      const kind = parsed.value.kind
+      if (!['product-map', 'role', 'domain', 'workflow'].includes(String(kind))) errors.push(`${relative(root, page)}: kind must be product-map, role, domain, or workflow`)
+      if (typeof parsed.value.title !== 'string' || !parsed.value.title.trim()) errors.push(`${relative(root, page)}: title is required`)
     }
-    targets.set(absolute, { absolute, previous });
+    await resolveLinks(root, page, errors)
   }
-
-  const applied: string[] = [];
-  try {
-    for (const update of input.updates) {
-      const contextRelative = update.target.replace(/^context\//, "");
-      const absolute = resolve(contextDir, contextRelative);
-      await mkdir(dirname(absolute), { recursive: true });
-      await writeTextAtomic(absolute, update.content);
-      applied.push(absolute);
-    }
-    const validation = await validateProductKnowledgeTree(contextDir);
-    if (validation.errors.length > 0) throw new Error(`Synchronized Product Knowledge is invalid: ${validation.errors.join("; ")}`);
-  } catch (error) {
-    for (const absolute of applied) {
-      const snapshot = targets.get(absolute)!;
-      if (snapshot.previous === null) await rm(absolute, { force: true });
-      else await writeTextAtomic(absolute, snapshot.previous);
-    }
-    throw error;
-  }
-
-  const record: ProductKnowledgeSyncRecord = {
-    contract_version: 1,
-    synced_at: input.synced_at,
-    confirming_role: input.confirming_role,
-    updated_pages: input.updates.map((update) => update.target),
-    source_contributions: [...new Set(input.updates.map((update) => update.source_contribution).filter((value): value is string => Boolean(value)))],
-  };
-  const errors = await validateContract("product-knowledge-sync-record", record);
-  if (errors.length > 0) throw new Error(`Invalid Product Knowledge sync record: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
-  return record;
+  return { present: pages.length > 0, pages: pages.length, errors: [...new Set(errors)] }
 }
 
-/**
- * Resolve a compact, immutable Product Knowledge package for a task. Only the
- * referenced pages that actually exist are included (the bounded business
- * baseline, not the whole tree), and their content is pinned by a digest so a
- * worker and an independent verifier share the exact same baseline. Missing
- * references are proposed pages and are intentionally excluded from the snapshot.
- */
-export async function buildTaskContextPackage(input: {
-  workspaceRoot: string;
-  references: string[];
-  impact: ProductKnowledgeImpact;
-  proposed_change?: string | null;
-  revision?: string;
-}): Promise<TaskContextPackage> {
-  const root = resolve(input.workspaceRoot);
-  const contents = new Map<string, string>();
-  for (const reference of input.references) {
-    const target = resolve(root, reference);
-    if (relative(root, target).startsWith("..")) throw new Error(`Product Knowledge reference escapes the workspace: ${reference}`);
-    try {
-      contents.set(reference, await readFile(target, "utf8"));
-    } catch {
-      // A referenced page that does not exist yet is proposed, not part of the
-      // current baseline snapshot.
-    }
+function defaultSourcesPath(root: string): string {
+  return join(root, "context", "sources.yaml")
+}
+
+export async function readSourceRegistry(workspaceRootInput: string): Promise<SourceRegistry> {
+  const root = resolve(workspaceRootInput)
+  const path = defaultSourcesPath(root)
+  if (!await exists(path)) return { sources: [] }
+  const parsed = parseYaml(await readFile(path, "utf8"))
+  if (!isRecord(parsed) || !Array.isArray(parsed.sources)) throw new Error("context/sources.yaml must contain a sources list")
+  const sources = parsed.sources.filter(isRecord).map((source) => ({
+    id: String(source.id ?? ""),
+    kind: String(source.kind ?? "other"),
+    location: String(source.location ?? source.reference ?? ""),
+    revision: String(source.revision ?? ""),
+    product_knowledge: Array.isArray(source.product_knowledge) ? source.product_knowledge.filter((item): item is string => typeof item === "string") : [],
+    ...(typeof source.imported_at === "string" ? { imported_at: source.imported_at } : {}),
+  }))
+  return { sources }
+}
+
+async function sourceContent(root: string, location: string): Promise<string | null> {
+  if (location.startsWith("http://") || location.startsWith("https://")) return null
+  const path = resolve(root, location)
+  if (relative(root, path).startsWith("..") || !await exists(path)) return null
+  return readFile(path, "utf8")
+}
+
+export async function staleProductKnowledgeSources(workspaceRootInput: string): Promise<SourceRecord[]> {
+  const root = resolve(workspaceRootInput)
+  const registry = await readSourceRegistry(root)
+  const stale: SourceRecord[] = []
+  for (const source of registry.sources) {
+    if (source.revision === "unrecorded") continue
+    const content = await sourceContent(root, source.location)
+    if (content !== null && digest(content) !== source.revision) stale.push(source)
+    else if (content === null && !source.location.startsWith("http")) stale.push(source)
   }
-  const contextPaths = [...contents.keys()].sort();
-  const hash = createHash("sha256");
-  for (const path of contextPaths) hash.update(`${path}\0${contents.get(path)}\0`);
-  const contentDigest = `sha256:${hash.digest("hex")}`;
+  return stale
+}
+
+async function writeRegistry(root: string, registry: SourceRegistry): Promise<void> {
+  await mkdir(join(root, "context"), { recursive: true })
+  await writeTextAtomic(defaultSourcesPath(root), stringifyYaml(registry))
+}
+
+function sourceRecord(root: string, request: ProductKnowledgeImportRequest, content: string): SourceRecord {
+  const location = request.source.replaceAll("\\", "/")
+  const id = request.source_id?.trim() || safeSlug(location.split('/').at(-1)?.replace(/\.[^.]+$/, '') || location)
   return {
-    contract_version: 1,
-    revision: input.revision?.trim() || contentDigest,
-    content_digest: contentDigest,
-    context_paths: contextPaths,
-    impact: input.impact,
-    proposed_change: input.proposed_change ?? null,
-  };
+    id,
+    kind: request.kind?.trim() || "document",
+    location: relative(root, resolve(root, location)).replaceAll("\\", "/"),
+    revision: digest(content),
+    product_knowledge: request.product_knowledge?.length ? [...request.product_knowledge] : ["context/PROJECT.md"],
+    imported_at: new Date().toISOString(),
+  }
 }
 
-function slugify(name: string): string {
-  const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-  if (!slug) throw new Error(`Cannot derive a Product Knowledge slug from '${name}'`);
-  return slug;
+export async function importProductKnowledge(workspaceRootInput: string, request: ProductKnowledgeImportRequest): Promise<ProductKnowledgeImportResult> {
+  const root = resolve(workspaceRootInput)
+  if (!request.source.trim()) throw new Error("Product Knowledge import requires a source path")
+  const sourcePath = resolve(root, request.source)
+  if (relative(root, sourcePath).startsWith("..")) throw new Error("Product Knowledge source must stay inside the workspace")
+  const content = await readFile(sourcePath, "utf8")
+  const source = sourceRecord(root, request, content)
+  const registry = await readSourceRegistry(root)
+  const prior = registry.sources.find((candidate) => candidate.id === source.id)
+  registry.sources = [...registry.sources.filter((candidate) => candidate.id !== source.id), source].sort((left, right) => left.id.localeCompare(right.id))
+  await writeRegistry(root, registry)
+  const updatedPages: string[] = []
+  const proposalLines = [`# Product Knowledge import proposal`, ``, `Source: \`${source.location}\``, `Revision: \`${source.revision}\``, ``]
+  for (const page of source.product_knowledge) {
+    const target = resolve(root, page)
+    if (relative(root, target).startsWith("..")) throw new Error(`Product Knowledge target escapes workspace: ${page}`)
+    if (!await exists(target)) {
+      await mkdir(dirname(target), { recursive: true })
+      const title = request.title?.trim() || source.id
+      const purpose = request.purpose?.trim() || content.trim().split(/\r?\n/).find((line) => line.trim()) || `Imported from ${source.location}`
+      await writeTextAtomic(target, `---\nkind: product-map\ntitle: ${title}\nsources:\n  - ${source.location}\nreview_date: ${new Date().toISOString().slice(0, 10)}\n---\n\n# ${title}\n\n${purpose}\n`)
+      updatedPages.push(page)
+    } else {
+      proposalLines.push(`## ${page}`, ``, `The page already exists. Review the source and propose a source-cited Markdown change; no existing page was overwritten.`, ``)
+    }
+  }
+  return { source, updated_pages: updatedPages, ...(proposalLines.length > 5 ? { proposal: proposalLines.join("\n") } : {}) }
 }
 
-function frontmatterBlock(data: Record<string, unknown>): string {
-  return `---\n${stringifyYaml(data).trimEnd()}\n---\n`;
+export async function refreshProductKnowledge(workspaceRootInput: string): Promise<ProductKnowledgeRefreshResult> {
+  const root = resolve(workspaceRootInput)
+  const stale = await staleProductKnowledgeSources(root)
+  const affectedPages = [...new Set(stale.flatMap((source) => source.product_knowledge))].sort()
+  const lines = ['# Product Knowledge refresh proposal', '', stale.length ? 'The following sources changed; review and accept, revise, or reject the proposed updates.' : 'No Product Knowledge source changes were detected.', '']
+  for (const source of stale) {
+    const content = await sourceContent(root, source.location)
+    lines.push(`## ${source.id}`, '', `- Location: \`${source.location}\``, `- Recorded revision: \`${source.revision}\``, `- Current revision: \`${content === null ? 'unavailable' : digest(content)}\``, `- Affected Product Knowledge: ${source.product_knowledge.map((page) => `\`${page}\``).join(', ')}`, '')
+  }
+  return { stale, proposal: lines.join('\n'), affected_pages: affectedPages }
 }
 
-const placeholder = "Not documented yet.";
-
-/**
- * Render a minimal, reviewable Product Knowledge baseline as workspace-relative
- * files under `context/`. The baseline records what a human already knows (product
- * purpose, major roles, major domains, and their known workflows) and keeps every
- * unknown explicit rather than inventing detail. The output is a valid tree under
- * the PKNOW-001 contracts, so coverage can grow one page at a time.
- */
 export function renderProductKnowledgeBaseline(spec: ProductKnowledgeBaselineSpec): Record<string, string> {
-  const roleSlugs = new Map<string, string>();
-  for (const role of spec.roles) {
-    const slug = slugify(role);
-    if ([...roleSlugs.values()].includes(slug)) throw new Error(`Duplicate role slug in baseline: ${slug}`);
-    roleSlugs.set(role, slug);
+  const sources = spec.sources.length ? spec.sources.map((source) => `- ${source}`).join("\n") : "- None recorded."
+  const roles = spec.roles.length ? spec.roles.map((role) => `- ${role}`).join("\n") : "- None recorded."
+  const domains = spec.domains.length ? spec.domains.map((domain) => `- ${domain.name}${domain.workflows?.length ? ` — ${domain.workflows.join(', ')}` : ''}`).join("\n") : "- None recorded."
+  const unknowns = spec.unknowns.length ? spec.unknowns.map((unknown) => `- ${unknown}`).join("\n") : "- None recorded."
+  return {
+    "context/PROJECT.md": `---\nkind: product-map\ntitle: ${spec.title}\nsources:\n${spec.sources.map((source) => `  - ${source}`).join("\n")}\nreview_date: ${spec.review_date}\n---\n\n# ${spec.title}\n\n${spec.purpose}\n\n## Sources\n\n${sources}\n\n## Roles\n\n${roles}\n\n## Domains\n\n${domains}\n\n## Known gaps\n\n${unknowns}\n`,
+    "context/sources.yaml": stringifyYaml({ sources: spec.sources.map((source) => ({ id: safeSlug(source), kind: "document", location: source, revision: "unrecorded", product_knowledge: ["context/PROJECT.md"] })) }),
   }
-  const domainSlugs = new Map<string, string>();
-  for (const domain of spec.domains) {
-    const slug = slugify(domain.name);
-    if ([...domainSlugs.values()].includes(slug)) throw new Error(`Duplicate domain slug in baseline: ${slug}`);
-    domainSlugs.set(domain.name, slug);
-  }
-  const gaps = spec.unknowns.length > 0 ? spec.unknowns : ["No unknowns recorded yet."];
-  const owners = ["Unassigned — record the owner."];
-  const files: Record<string, string> = {};
-
-  const roleList = spec.roles.length > 0
-    ? spec.roles.map((role) => `- [${role}](roles/${roleSlugs.get(role)}.md)`).join("\n")
-    : "- None documented yet.";
-  const domainList = spec.domains.length > 0
-    ? spec.domains.map((domain) => `- [${domain.name}](domains/${domainSlugs.get(domain.name)}/README.md)`).join("\n")
-    : "- None documented yet.";
-  files["context/PROJECT.md"] = `${frontmatterBlock({
-    kind: "product-map",
-    title: spec.title,
-    roles: spec.roles.map((role) => `roles/${roleSlugs.get(role)}.md`),
-    domains: spec.domains.map((domain) => `domains/${domainSlugs.get(domain.name)}/README.md`),
-    sources: spec.sources,
-    review_date: spec.review_date,
-    known_gaps: gaps,
-  })}\n# ${spec.title}\n\n${spec.purpose}\n\n## Roles\n\n${roleList}\n\n## Domains\n\n${domainList}\n`;
-
-  files["context/GLOSSARY.md"] = "# Glossary\n\nDefine business terms here as they are confirmed.\n";
-  const roleIndexList = spec.roles.length > 0
-    ? spec.roles.map((role) => `- [${role}](${roleSlugs.get(role)}.md)`).join("\n")
-    : "- None documented yet.";
-  files["context/roles/README.md"] = `# Roles\n\n${roleIndexList}\n`;
-
-  const relevantDomains = spec.domains.map((domain) => `../domains/${domainSlugs.get(domain.name)}/README.md`);
-  const relatedWorkflows = spec.domains
-    .filter((domain) => (domain.workflows ?? []).length > 0)
-    .map((domain) => `../domains/${domainSlugs.get(domain.name)}/workflows/${slugify(domain.workflows![0]!)}.md`);
-  const relatedList = relatedWorkflows.length > 0
-    ? relatedWorkflows.map((reference) => `- [Workflow](${reference})`).join("\n")
-    : "None documented yet.";
-  for (const role of spec.roles) {
-    files[`context/roles/${roleSlugs.get(role)}.md`] = `${frontmatterBlock({
-      kind: "role",
-      title: role,
-      owners,
-      sources: spec.sources,
-      review_date: spec.review_date,
-      relevant_domains: relevantDomains,
-      related_workflows: relatedWorkflows,
-      known_gaps: gaps,
-    })}\n# ${role}\n\n## Role definition\n\n${placeholder}\n\n## Primary outcomes\n\n${placeholder}\n\n## Product surfaces\n\n${placeholder}\n\n## End-to-end role story\n\n${placeholder}\n\n## Related workflows\n\n${relatedList}\n\n## Role-specific behavior\n\n${placeholder}\n\n## Limitations\n\n${placeholder}\n`;
-  }
-
-  for (const domain of spec.domains) {
-    const domainSlug = domainSlugs.get(domain.name)!;
-    const workflows = domain.workflows ?? [];
-    const workflowSlugs = workflows.map((workflow) => slugify(workflow));
-    const workflowList = workflows.length > 0
-      ? workflows.map((workflow, index) => `- [${workflow}](workflows/${workflowSlugs[index]}.md)`).join("\n")
-      : "None documented yet.";
-    files[`context/domains/${domainSlug}/README.md`] = `${frontmatterBlock({
-      kind: "domain",
-      title: domain.name,
-      owners,
-      sources: spec.sources,
-      review_date: spec.review_date,
-      workflows: workflowSlugs.map((slug) => `workflows/${slug}.md`),
-      known_gaps: gaps,
-    })}\n# ${domain.name}\n\n## Summary\n\n${placeholder}\n\n## Workflows\n\n${workflowList}\n`;
-    workflows.forEach((workflow, index) => {
-      files[`context/domains/${domainSlug}/workflows/${workflowSlugs[index]}.md`] = `${frontmatterBlock({
-        kind: "workflow",
-        title: workflow,
-        owners,
-        sources: spec.sources,
-        review_date: spec.review_date,
-        implementation_ownership: "Unassigned — record the implementing repository or team.",
-        known_gaps: gaps,
-      })}\n# ${workflow}\n\n## Outcome\n\n${placeholder}\n\n## Actors\n\n${placeholder}\n\n## Entry points\n\n${placeholder}\n\n## Current flow\n\n${placeholder}\n\n## Variations\n\n${placeholder}\n\n## Business rules\n\n${placeholder}\n`;
-    });
-  }
-
-  return files;
 }

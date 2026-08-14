@@ -1,8 +1,6 @@
 ---
 name: cc-configure-workspace
-description: Codex adapter for configuring fresh or existing Context Circuit wrappers through the canonical configuration workflow.
+description: Configure a Context Circuit wrapper through the canonical setup flow.
 ---
 
-# Codex adapter
-
-Read and follow `../../../.agents/skills/cc-configure-workspace/SKILL.md`. Use Codex inspection and reviewable edits only to resolve approved configuration choices. Do not duplicate bootstrap, README reconciliation, credential, or validation rules in this adapter.
+Read and follow `../../../.agents/skills/cc-configure-workspace/SKILL.md`. Use the bundled command for setup and keep all meaningful actions human-authorized.

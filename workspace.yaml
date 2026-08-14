@@ -15,17 +15,14 @@ repositories:
     agent: repository-worker
     default_branch: main
 
-activity:
-  provider: none
-  access: auto
-  required_capabilities: []
-  optional_capabilities: []
+context:
+  sources_file: context/sources.yaml
 
 workflow:
   human_gates:
     - plan-approval
     - task-selection
-    - scope-expansion
-    - merge
-  maximum_repair_attempts: 2
+    - status-change
+    - publication
+    - archive
   wrapper_change_policy: pull-request

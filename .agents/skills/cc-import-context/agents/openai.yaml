@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Import Context"
-  short_description: "Import cited repository evidence into durable context"
-  default_prompt: "Use $cc-import-context to discover bounded evidence from a named registered repository and prepare reviewable durable context proposals."

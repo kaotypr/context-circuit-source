@@ -1,8 +1,6 @@
 ---
 name: cc-gather-context
-description: Codex adapter for resolving minimum authoritative task context without mutating repositories or external systems.
+description: Gather task-scoped authoritative context read-only.
 ---
 
-# Codex adapter
-
-Read and follow `../../../.agents/skills/cc-gather-context/SKILL.md`. Use available read-only Codex sources and return cited facts, assumptions, contradictions, and unknowns. Do not duplicate source precedence or mutation boundaries in this adapter.
+Read and follow `../../../.agents/skills/cc-gather-context/SKILL.md`. Do not mutate repositories or workflow state while gathering context.

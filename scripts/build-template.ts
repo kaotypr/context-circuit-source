@@ -16,7 +16,7 @@ if (typeof version !== "string" || !/^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/.test(v
 const binary = join(root, ".agents", "bin", "cc.mjs");
 await mkdir(dirname(binary), { recursive: true });
 const copiedRoots = ["README.md", "AGENTS.md", "CLAUDE.md", "WORKFLOW.md", "workspace.yaml", ".gitignore", "agents", "context", "plans", "contributions", ".agents", ".codex", ".claude"];
-const copiedDocs = ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md", "context-sync.md", "product-knowledge.md", "planning.md", "execute-plan.md", "run-task.md", "review-lifecycle.md", "finish-work.md", "whats-next.md"];
+const copiedDocs = ["getting-started.md", "using-the-wrapper.md", "configuration.md", "command-reference.md", "product-knowledge.md", "planning.md", "run-task.md", "whats-next.md"];
 const isLocalMetadata = (name: string): boolean => name === ".DS_Store" || name === "__MACOSX" || name.startsWith("._");
 async function sourceInventory(path: string, prefix: string): Promise<string[]> {
   const entries = await readdir(path, { withFileTypes: true });
@@ -82,8 +82,7 @@ neutralWorkspace.set("repositories", {});
 await writeFile(join(destination, "workspace.yaml"), String(neutralWorkspace), "utf8");
 for (const path of [
   "PLAN.md", "package.json", "package-lock.json", "tsconfig.json", "node_modules", "fixtures", "scripts", "test", ".dist",
-  "docs/phase-0-proof.md", "docs/phase-0-host-results.md", "docs/create-plan-host-results.md", "docs/finish-work-host-results.md",
-  "docs/initialization-host-results.md", "docs/repair-host-results.md", "docs/whats-next-host-results.md", "docs/cross-repository-host-results.md",
+  "context/plans",
 ]) await rm(join(destination, path), { recursive: true, force: true });
 await removeLocalMetadata(destination);
 const bundleSha256 = createHash("sha256").update(await readFile(join(destination, ".agents", "bin", "cc.mjs"))).digest("hex");

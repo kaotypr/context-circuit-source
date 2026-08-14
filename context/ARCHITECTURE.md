@@ -1,40 +1,5 @@
 # Architecture
 
-The wrapper owns workflow policy and cross-repository context. Registered
-repositories own code and local conventions. Activity tools own live status,
-approved plans own delivery intent, `.runtime/` holds private ignored evidence,
-and append-only contributions hold durable outcomes.
+Canonical behavior lives under `scripts/lib/` and is bundled into `.agents/bin/cc.mjs`. Plans are YAML plus Markdown under `plans/`. Product Knowledge is source-cited Markdown under `context/`, with lightweight provenance in `context/sources.yaml`.
 
-Canonical contracts, agents, commands, and skills live under `.agents/`.
-`.codex/` and `.claude/` are thin launch adapters. The distributable includes a
-bundled Node 22 command at `.agents/bin/cc.mjs`; users install no npm packages.
-
-The release template is a valid neutral pre-initialization state with no product
-repository assumptions. The host interviews the human and writes a bootstrap
-request; the deterministic command performs only the explicitly authorized Git
-and configuration actions, including writing project context from approved
-facts. The build replaces maintainer context with neutral templates and packages
-the wrapper as a clean compressed archive. The fully configured wrapper becomes
-its first commit, while new product repositories receive empty base commits
-required for worktree isolation.
-
-Version-tagged or manually dispatched source automation validates that archive,
-then synchronizes the single version-matched tarball to the dedicated release
-repository using explicitly configured cross-repository credentials. The release
-repository remains responsible for its interactive npm CLI and npm publication.
-
-Every run normalizes its source into a task brief with stable identity, scope,
-acceptance evidence, test policy, repository ordering, authorization, and claim
-limitations. Each repository receives its own branch, writable worktree, scoped
-worker input, read-only verifier input, and result artifacts. A deterministic
-recorder validates identity, Git history, scope, tests, and acceptance before
-advancing per-repository and aggregate state.
-
-For multi-repository work, the shared-contract owner runs first. Dependent
-inputs remain locked until every dependency passes independent verification;
-then both worker and verifier inputs receive verified contract state. Passing
-work produces review handoffs only. Humans push, review, and merge normally.
-
-Lifecycle actions are semantic and capability-based. The active host performs
-authorized MCP, CLI, or manual actions and records only confirmed results with
-stable idempotency keys. No credentials or provider configuration live here.
+Registered repositories own code and local conventions. `run-task` uses Git worktrees for isolation and writes a human-readable prompt under ignored `.runtime/`; it does not create runtime lifecycle manifests or result contracts. Publication providers are optional output adapters and do not own workflow state.
