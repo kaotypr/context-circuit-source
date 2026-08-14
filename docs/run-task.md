@@ -26,6 +26,11 @@ criteria, repository boundary, or safety assumptions materially change. It must
 not change plan or task status merely because implementation or tests appear
 complete.
 
+Before requesting completion, the coordinator records task evidence, a passing
+independent verification handoff, and the required human status-change gate in
+the plan runtime directory. Missing evidence or a failed verifier blocks the
+completion record; the canonical plan/task status remains unchanged.
+
 There is no run-task command. The coordinator and repository-worker
 instructions define the execution behavior, while the filesystem lease,
 worktree, prompt, and handoff records make the state resumable and inspectable.

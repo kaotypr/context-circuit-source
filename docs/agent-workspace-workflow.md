@@ -121,6 +121,10 @@ A subagent session:
 - may be read-only or write-enabled;
 - must not approve plans, change canonical statuses, or modify another session's state.
 
+A verifier is read-only for implementation, plan, lease, worktree, and activity
+state. It may write only its own session-scoped handoff so its pass/fail result
+is durable and resumable.
+
 Typical roles include `researcher`, `planner`, `implementer`, `verifier`, `reviewer`, and `integrator`.
 
 ## Work, plans, tasks, and worktrees
@@ -165,6 +169,7 @@ The target layout is:
         owner.yaml
       lease.yaml
       prompt.md
+      completion.yaml
       handoffs/
         <session-id>-<sequence>.md
   worktrees/
@@ -233,6 +238,9 @@ It then routes the request:
 | Completed implementation | Verify, hand off, and request human review |
 
 The root agent explains the selected route before taking consequential action.
+On a fresh route it creates its own root session record first. On a resume route
+it preserves the existing record and reads the latest handoff; it never
+reconstructs ownership from conversation history or a global pointer.
 
 ### Child entry
 
@@ -298,6 +306,15 @@ Human approval is required for:
 
 Subagents never satisfy a human gate on behalf of the root session or human.
 
+### Completion evidence
+
+Before requesting a plan or task status change, the coordinator records durable
+evidence for every task, a passing independent verification handoff, and the
+required human gate in the plan runtime directory. It may record that the plan
+is ready for human status change, but it does not change canonical plan/task
+status itself. Missing evidence, a failed verifier, or an unresolved blocker
+keeps the plan blocked.
+
 ## Handoffs and answers
 
 Every subagent handoff must include:
@@ -349,6 +366,12 @@ The workflow is correct only when it supports these scenarios:
 7. Verification fails; the agent repairs within scope or reports a blocker rather than changing the plan silently.
 8. A PRD or Product Knowledge source changes during execution; the agent warns and requests a human-reviewed refresh.
 9. A session response clearly separates evidence, assumptions, decisions, blockers, and next actions.
+
+The command-independent acceptance suite must replay these cases from isolated
+temporary filesystem and Git fixtures. It must inspect ownership artifacts
+directly, prove that a losing lease contender and a verifier cannot mutate
+another owner's state, and prove that completion remains blocked until the
+human status-change gate is present.
 
 ## Implementation boundary
 
