@@ -3,6 +3,7 @@ import { basename, join, relative, resolve } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { git } from "./git.js";
 import { assertInside, ensurePrivateDirectory, readJsonRegularInside, withExclusiveFile, writeJsonAtomic, writeTextExclusive } from "./io.js";
+import { resolveRootPlanDirectory, setPlanState } from "./plans.js";
 import type { CloseoutRecord, ExecutionEvent, MergeConfirmationRecord, RuntimeManifest, RuntimeRepository, TaskBrief, WorkspaceConfig } from "./types.js";
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 
@@ -16,6 +17,8 @@ interface VerifierResult {
   work_id: string;
   run_id: string;
   repository: string;
+  branch?: string;
+  worktree?: string;
   status: "pass" | "fail" | "blocked";
   summary: string;
   checks: string[];
@@ -57,6 +60,7 @@ export interface FinishWorkOptions {
   mergeCommit?: string;
   pullRequests?: string[];
   cleanup?: boolean;
+  refresh?: boolean;
   now?: Date;
 }
 
@@ -70,7 +74,7 @@ const contributionHeadings = [
   "## Candidate durable learnings",
 ] as const;
 
-async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "merge-confirmation-record" | "closeout-record", value: unknown): Promise<void> {
+async function assertValid(name: "workspace" | "runtime-manifest" | "task-brief" | "worker-result" | "verifier-result" | "plan-verifier-result" | "merge-confirmation-record" | "closeout-record", value: unknown): Promise<void> {
   const errors = await validateContract(name, value);
   if (errors.length > 0) throw new Error(`Invalid ${name}: ${errors.map((error) => `${error.instancePath || "/"} ${error.message}`).join("; ")}`);
 }
@@ -123,7 +127,7 @@ function contributionDocument(
 ): string {
   const outcome = record.outcome === "merged" ? "Merged after human review." : `Deliberately abandoned by the human.${record.reason ? ` ${record.reason}` : ""}`;
   const changed = record.changed_files.length > 0 ? ` Changed files: ${record.changed_files.join(", ")}.` : " No product files changed.";
-  const planReference = brief.plan.reference ?? "none";
+  const planReference = manifest.plan_reference ?? brief.plan?.reference ?? "none";
   const productKnowledge = record.product_knowledge ?? { impact: "not-reported" as const, synchronization: "not-required" as const };
   const productKnowledgeBody = `- Impact: ${productKnowledge.impact}\n- Synchronization: ${productKnowledge.synchronization}${productKnowledge.notes ? `\n- ${productKnowledge.notes}` : ""}`;
   return `# ${manifest.work_id}: ${brief.requested_outcome}\n\n` +
@@ -189,6 +193,30 @@ async function optionalWorker(runtimeRoot: string, manifest: RuntimeManifest, re
     if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
     throw error;
   }
+}
+
+async function assertPlanCloseoutEvidence(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository): Promise<{ verification: string[] }> {
+  if (!manifest.plan_verifier_input || manifest.plan_verifier_status !== "passed" || !manifest.plan_verifier_result) throw new Error("Plan closeout requires a passing holistic verifier");
+  const finalInput = await readJsonRegularInside<ResultInput>(runtimeRoot, manifest.plan_verifier_input, "Plan verifier input");
+  const finalResult = await readJsonRegularInside<Record<string, unknown>>(runtimeRoot, finalInput.result_path, "Plan verifier result");
+  await assertValid("plan-verifier-result", finalResult);
+  if (finalResult.status !== "pass" || finalResult.run_id !== manifest.run_id || finalResult.plan_reference !== manifest.plan_reference || finalResult.plan_version !== manifest.plan_version || finalResult.approved_digest !== manifest.approved_digest) throw new Error("Plan verifier evidence is stale or does not identify the active approved plan");
+  const tasks = (manifest.task_graph ?? []).filter((task) => task.repository === repository.name);
+  if (!tasks.every((task) => task.outcome === "passed" && task.worker_result && task.verifier_result)) throw new Error(`Plan closeout requires every ${repository.name} task to pass with evidence`);
+  const head = await git(repository.worktree, ["rev-parse", "HEAD"]);
+  const verification: string[] = [String(finalResult.summary), ...((finalResult.checks as string[] | undefined) ?? [])];
+  for (const task of tasks) {
+    const workerInput = await readJsonRegularInside<ResultInput>(runtimeRoot, task.worker_input, "Plan worker input");
+    const verifierInput = await readJsonRegularInside<ResultInput>(runtimeRoot, task.verifier_input, "Plan verifier input");
+    const worker = await readJsonRegularInside<WorkerResult>(runtimeRoot, workerInput.result_path, "Plan worker result");
+    const verifier = await readJsonRegularInside<VerifierResult>(runtimeRoot, verifierInput.result_path, "Plan task verifier result");
+    await assertValid("worker-result", worker);
+    await assertValid("verifier-result", verifier);
+    if (worker.status !== "completed" || verifier.status !== "pass" || worker.repository !== repository.name || verifier.repository !== repository.name || worker.branch !== repository.branch || verifier.branch !== repository.branch || resolve(worker.worktree) !== resolve(repository.worktree) || resolve(verifier.worktree ?? "") !== resolve(repository.worktree)) throw new Error(`Plan task evidence is invalid for ${task.task_id ?? task.work_id}`);
+    verification.push(`Task ${task.task_id ?? task.work_id}: ${verifier.summary}`, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} — ${item.evidence}`));
+  }
+  if (head !== await git(repository.worktree, ["rev-parse", "HEAD"])) throw new Error("Plan worktree changed during closeout evidence validation");
+  return { verification };
 }
 
 async function assertCurrentWorker(runtimeRoot: string, manifest: RuntimeManifest, repository: RuntimeRepository, headCommit: string, commits: string[], changedFiles: string[]): Promise<void> {
@@ -363,7 +391,24 @@ async function cleanupBlockers(workspaceRoot: string, config: WorkspaceConfig, r
   return blockers;
 }
 
-async function closePreparedRun(workspaceRoot: string, manifestPath: string, manifest: RuntimeManifest, repository: RuntimeRepository, recordPath: string, record: CloseoutRecord, config: WorkspaceConfig, occurredAt: string): Promise<CloseoutRecord> {
+async function refreshTarget(workspaceRoot: string, config: WorkspaceConfig, repository: RuntimeRepository): Promise<NonNullable<CloseoutRecord["refresh"]>> {
+  const baseRepository = assertInside(workspaceRoot, join(workspaceRoot, repository.base_path));
+  if (await git(baseRepository, ["status", "--porcelain=v1", "--untracked-files=normal"])) throw new Error("Cannot refresh a dirty base repository");
+  const branch = config.repositories[repository.name]?.default_branch ?? config.workspace.default_branch;
+  if (await git(baseRepository, ["branch", "--show-current"]) !== branch) await git(baseRepository, ["switch", branch]);
+  const before = await git(baseRepository, ["rev-parse", "HEAD"]);
+  const remotes = (await git(baseRepository, ["remote"])).split("\n").filter(Boolean);
+  let targetRef = `refs/heads/${branch}`;
+  if (remotes.includes("origin")) {
+    await git(baseRepository, ["fetch", "origin", branch]);
+    targetRef = `refs/remotes/origin/${branch}`;
+  }
+  await git(baseRepository, ["merge", "--ff-only", targetRef]);
+  const refreshed = await git(baseRepository, ["rev-parse", "HEAD"]);
+  return { target_ref: targetRef, before_commit: before, refreshed_commit: refreshed, refreshed_at: new Date().toISOString() };
+}
+
+async function closePreparedRun(workspaceRoot: string, manifestPath: string, manifest: RuntimeManifest, repository: RuntimeRepository, recordPath: string, record: CloseoutRecord, config: WorkspaceConfig, occurredAt: string, refresh: boolean): Promise<CloseoutRecord> {
   const detected = await cleanupBlockers(workspaceRoot, config, repository, record);
   if (detected.length > 0) {
     const checklist = detected.map((blocker, index) => `${index + 1}. ${blocker}`);
@@ -373,11 +418,14 @@ async function closePreparedRun(workspaceRoot: string, manifestPath: string, man
     await writeJsonAtomic(recordPath, blocked);
     return blocked;
   }
+  let refreshed = record.refresh;
+  if (refresh && record.outcome === "merged") refreshed = await refreshTarget(workspaceRoot, config, repository);
   const baseRepository = assertInside(workspaceRoot, join(workspaceRoot, repository.base_path));
   await git(baseRepository, ["worktree", "remove", repository.worktree]);
   const closed: CloseoutRecord = {
     ...record,
     status: "closed",
+    ...(refreshed ? { refresh: refreshed } : {}),
     cleanup: { requested: true, worktree_removed: true, branch_preserved: true, runtime_evidence_preserved: true },
     blockers: [],
     updated_at: occurredAt,
@@ -388,6 +436,13 @@ async function closePreparedRun(workspaceRoot: string, manifestPath: string, man
   await assertValid("runtime-manifest", manifest);
   await writeJsonAtomic(manifestPath, manifest);
   return closed;
+}
+
+async function completePlanAfterCloseout(workspaceRoot: string, manifest: RuntimeManifest, evidence: string, closeout: CloseoutRecord, now: Date): Promise<void> {
+  if (manifest.source_kind !== "plan" || !manifest.plan_reference || !manifest.repositories.every((repository) => repository.status === "closed")) return;
+  if (closeout.outcome === "merged" && !closeout.refresh) return;
+  const planDirectory = await resolveRootPlanDirectory(workspaceRoot, manifest.plan_reference);
+  await setPlanState(planDirectory, { kind: "lifecycle", status: "completed", reason: "All affected repositories completed human merge closeout and target refresh.", actor: "engine", evidence }, now);
 }
 
 export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRecord> {
@@ -415,9 +470,22 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       const existing = await readJsonRegularInside<CloseoutRecord>(runtimeRoot, repository.closeout_record, "Closeout record");
       await assertValid("closeout-record", existing);
       if (existing.outcome !== options.outcome || existing.author !== author) throw new Error("Closeout was already prepared with different human intent");
+      if (existing.status === "closed") {
+        if (options.refresh && existing.outcome === "merged" && !existing.refresh) {
+          const refreshed = await refreshTarget(workspaceRoot, config, repository);
+          const updated: CloseoutRecord = { ...existing, refresh: refreshed, updated_at: invocationTime.toISOString() };
+          await assertValid("closeout-record", updated);
+          await writeJsonAtomic(recordPath, updated);
+          await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, updated, invocationTime);
+          return updated;
+        }
+        return existing;
+      }
       if (existing.outcome === "merged") await assertVerifiedMergeConfirmation(workspaceRoot, runtimeRoot, config, manifest, repository, options.mergeCommit);
-      if (existing.status === "closed" || !options.cleanup) return existing;
-      return closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, existing, config, invocationTime.toISOString());
+      if (!options.cleanup) return existing;
+      const closed = await closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, existing, config, invocationTime.toISOString(), Boolean(options.refresh));
+      await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, closed, invocationTime);
+      return closed;
     }
     const repositoryStatus = repository.status ?? manifest.status;
     if (!["passed", "failed", "blocked", "cancelled"].includes(repositoryStatus)) throw new Error(`Closeout preparation requires a terminal repository outcome, received ${repositoryStatus}`);
@@ -428,17 +496,18 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
       : null;
 
     const brief = await readJsonRegularInside<TaskBrief>(runtimeRoot, manifest.task_brief, "Task brief");
-    await assertValid("task-brief", brief);
+    if (!manifest.task_graph) await assertValid("task-brief", brief);
     const headCommit = await git(repository.worktree, ["rev-parse", "HEAD"]);
     if (await git(repository.worktree, ["branch", "--show-current"]) !== repository.branch) throw new Error("Run worktree is on an unexpected branch");
     const commits = (await git(repository.worktree, ["rev-list", "--reverse", `${repository.base_commit}..${headCommit}`])).split("\n").filter(Boolean);
     const changedFiles = (await git(repository.worktree, ["diff", "--name-only", `${repository.base_commit}...${headCommit}`])).split("\n").filter(Boolean);
-    if (options.outcome === "merged") await assertCurrentWorker(runtimeRoot, manifest, repository, headCommit, commits, changedFiles);
-    const verifier = await optionalVerifier(runtimeRoot, manifest, repository);
-    if (options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
-    const worker = await optionalWorker(runtimeRoot, manifest, repository);
+    const planEvidence = manifest.task_graph ? await assertPlanCloseoutEvidence(runtimeRoot, manifest, repository) : null;
+    if (!manifest.task_graph && options.outcome === "merged") await assertCurrentWorker(runtimeRoot, manifest, repository, headCommit, commits, changedFiles);
+    const verifier = manifest.task_graph ? null : await optionalVerifier(runtimeRoot, manifest, repository);
+    if (!manifest.task_graph && options.outcome === "merged" && verifier?.status !== "pass") throw new Error("Merged closeout requires the recorded passing verifier result");
+    const worker = manifest.task_graph ? null : await optionalWorker(runtimeRoot, manifest, repository);
     const productKnowledge = resolveProductKnowledgeCloseout([worker?.product_knowledge_impact, verifier?.product_knowledge_impact]);
-    const verification = verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} — ${item.evidence}`)] : [];
+    const verification = planEvidence?.verification ?? (verifier ? [verifier.summary, ...verifier.checks, ...verifier.acceptance.map((item) => `${item.criterion}: ${item.status} — ${item.evidence}`)] : []);
     const preparedAt = invocationTime.toISOString();
     const contributionsRoot = assertInside(workspaceRoot, join(workspaceRoot, "contributions", "general"));
     await ensureContributionRoot(workspaceRoot, contributionsRoot);
@@ -487,6 +556,8 @@ export async function finishWork(options: FinishWorkOptions): Promise<CloseoutRe
     await assertValid("runtime-manifest", manifest);
     await writeJsonAtomic(manifestPath, manifest);
     if (!options.cleanup) return record;
-    return closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, record, config, preparedAt);
+    const closed = await closePreparedRun(workspaceRoot, manifestPath, manifest, repository, recordPath, record, config, preparedAt, Boolean(options.refresh));
+    await completePlanAfterCloseout(workspaceRoot, manifest, recordPath, closed, invocationTime);
+    return closed;
   });
 }

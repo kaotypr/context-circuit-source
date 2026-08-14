@@ -6,24 +6,24 @@ only after a human selects a concrete request or approves a plan.
 
 ## Choose the next action
 
-Use `$cc-run-task` directly when the request already has clear repository scope,
-acceptance criteria, and verification expectations. Use `$cc-create-plan` when the
-work is broad, ordered, or needs review before implementation. Plans and
-activity integrations are optional.
+Use `$cc-create-plan` for broad or ordered work. After a numbered plan is
+explicitly approved, use `$cc-execute-plan` as the core implementation workflow.
+Use `$cc-run-task` only for a rare, manually selected single-task escape hatch.
 
 `$cc-whats-next` can recommend one source-backed action from approved plans and
 configured read-only work sources. It does not claim or start work.
 
 ## Run scoped work
 
-`$cc-run-task` checks that every base repository is clean, normalizes the request,
+`$cc-execute-plan` checks that every affected base repository is clean, derives
+the approved task graph, and
 and prepares one branch and isolated Git worktree per repository. A fresh worker
 receives only its authorized scope and acceptance criteria. A separate verifier
 reviews the committed result without modifying it.
 
-For work spanning repositories, Context Circuit orders dependencies and keeps a
-dependent worker locked until the repository owning the shared contract passes
-independent verification.
+For work spanning repositories, `execute-plan` orders dependencies and keeps a
+dependent worker locked until its declared prerequisites pass independently.
+`run-task` never advances plan-level lifecycle, review, or closeout.
 
 Failed verification may produce a bounded repair attempt. The repair remains in
 the same isolated worktree and cannot expand the authorized scope silently.

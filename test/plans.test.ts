@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { access, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import test from "node:test";
-import { createPlanDraft, parsePlanIndex, setPlanState, validatePlanDirectory } from "../scripts/lib/plans.js";
-import type { PlanDraftRequest } from "../scripts/lib/types.js";
+import { parse as parseYaml } from "yaml";
+import { archivePlan, createPlanDraft, generatePlanBatch, migrateCurrentPlans, parsePlanIndex, setPlanState, validatePlanDirectory } from "../scripts/lib/plans.js";
+import type { PlanDraftRequest, PlanGenerationRequest } from "../scripts/lib/types.js";
 import { createTestWorkspace } from "./helpers.js";
 
 const request: PlanDraftRequest = {
@@ -206,4 +207,227 @@ test("an impact of none must not include a proposed change", async (t) => {
     product_knowledge: { impact: "none", references: [], proposed_change: "Should not be here." },
   };
   await assert.rejects(createPlanDraft(workspace.root, invalid), /must not include a proposed_change/);
+});
+
+const generationRequest: PlanGenerationRequest = {
+  contract_version: 2,
+  source: { kind: "prd", reference: "docs/runtime.md" },
+  plans: [
+    {
+      plan_id: "registry-foundation", title: "Registry foundation", repository: "frontend", work_prefix: "REG",
+      summary: "Create the registry foundation.", assumptions: [], open_questions: [], requirements: ["The registry is exact."],
+      solution: ["Use repository-scoped collections."], delivery: ["Generate the foundation first."], verification: ["Validate the generated inventory."], risks: [],
+      work_items: [{ key: "registry", title: "Create registry", area: "planning", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["The registry is created."] }],
+    },
+    {
+      plan_id: "registry-ui", title: "Registry UI", repository: "frontend", work_prefix: "REGUI", plan_number: 2, depends_on_plans: ["registry-foundation"],
+      summary: "Expose the registry.", assumptions: [], open_questions: [], requirements: ["The registry is visible."], solution: ["Render the registry."], delivery: ["Build on the foundation."], verification: ["Verify the registry."], risks: [],
+      work_items: [{ key: "ui", title: "Render registry", area: "planning", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: [], acceptance_criteria: ["The registry is visible."] }],
+    },
+  ],
+};
+
+test("root generation creates ordered peer plans in one exact repository collection", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, generationRequest, new Date("2026-08-14T08:30:00Z"));
+  assert.equal(generated.atomic, true);
+  assert.deepEqual(generated.plans.map((plan) => plan.plan_number), [1, 2]);
+  assert.equal(generated.plans.every((plan) => plan.repository_collection === "frontend-plans"), true);
+  assert.equal(generated.plans[0]?.directory.endsWith("plans/frontend-plans/001-registry-foundation"), true);
+  assert.equal(generated.plans[1]?.directory.endsWith("plans/frontend-plans/002-registry-ui"), true);
+  for (const plan of generated.plans) {
+    const validation = await validatePlanDirectory(plan.directory);
+    assert.deepEqual(validation.errors, []);
+    assert.equal(validation.index?.contract_version, 2);
+    assert.equal(validation.work_breakdown?.items.length, 1);
+  }
+  assert.match(await readFile(join(workspace.root, "plans", "README.md"), "utf8"), /frontend-plans/);
+  assert.match(await readFile(join(generated.plans[0]!.directory, "tasks", "REG-001.md"), "utf8"), /task_id: REG-001/);
+});
+
+test("root generation writes the fixed document inventory and complete task documents", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const detailed = structuredClone(generationRequest);
+  detailed.plans = [{
+    ...structuredClone(detailed.plans[0]!),
+    plan_id: "detailed-task-graph",
+    work_prefix: "GRAPH",
+    work_items: [
+      {
+        key: "root",
+        title: "Define the root contract",
+        description: "Define the stable contract before implementation begins.",
+        area: "planning",
+        repository: "frontend",
+        scope: ["src/contract.ts"],
+        test_scope: [],
+        test_policy: "verifier-only",
+        verification_commands: ["npm test"],
+        acceptance_criteria: ["The root contract is explicit."],
+      },
+      {
+        key: "child",
+        title: "Implement the dependent behavior",
+        area: "implementation",
+        repository: "frontend",
+        scope: ["src/App.tsx"],
+        test_scope: ["src/App.test.tsx"],
+        test_policy: "required",
+        verification_commands: ["npm test"],
+        acceptance_criteria: ["The dependent behavior is covered."],
+        parent: "root",
+        depends_on: ["root"],
+        connections: [{ type: "integrates-with", target: "root", description: "Uses the root contract." }],
+      },
+    ],
+  }];
+  const generated = await generatePlanBatch(workspace.root, detailed);
+  const plan = generated.plans[0]!;
+  assert.deepEqual(await Promise.all([
+    "README.md",
+    "overview.md",
+    "requirements.md",
+    "acceptance-criteria.md",
+    "solution.md",
+    "delivery.md",
+    "verification.md",
+    "risks.md",
+    "tasks/README.md",
+  ].map((file) => access(join(plan.directory, file)).then(() => file))), [
+    "README.md",
+    "overview.md",
+    "requirements.md",
+    "acceptance-criteria.md",
+    "solution.md",
+    "delivery.md",
+    "verification.md",
+    "risks.md",
+    "tasks/README.md",
+  ]);
+  const validation = await validatePlanDirectory(plan.directory);
+  assert.deepEqual(validation.errors, []);
+  assert.deepEqual(validation.work_breakdown?.items.map((item) => item.work_id), ["GRAPH-001", "GRAPH-010"]);
+  assert.deepEqual(validation.work_breakdown?.items[0]?.subtasks, ["GRAPH-010"]);
+  const task = await readFile(join(plan.directory, "tasks", "GRAPH-010.md"), "utf8");
+  const frontmatter = parseYaml(task.match(/^---\n([\s\S]*?)\n---/)?.[1] ?? "") as Record<string, unknown>;
+  assert.deepEqual(frontmatter, {
+    task_id: "GRAPH-010",
+    plan_id: "detailed-task-graph",
+    repository: "frontend",
+    parent_task: "GRAPH-001",
+    depends_on: ["GRAPH-001"],
+    connections: [{ type: "integrates-with", target: "GRAPH-001", description: "Uses the root contract." }],
+  });
+  for (const section of ["Description", "Scope", "Test expectation", "Verification commands", "Acceptance criteria"]) {
+    assert.match(task, new RegExp(`^## ${section}$`, "m"));
+  }
+  assert.doesNotMatch(task, /^## Status$/m);
+});
+
+test("task-file edits, missing sections, and live status invalidate root-plan validation", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, generationRequest);
+  const plan = generated.plans[0]!;
+  const taskPath = join(plan.directory, "tasks", "REG-001.md");
+  const original = await readFile(taskPath, "utf8");
+  await writeFile(taskPath, original.replace("## Acceptance criteria", "## Status\n\n- in-progress\n\n## Acceptance criteria"), "utf8");
+  const errors = (await validatePlanDirectory(plan.directory)).errors.join("\n");
+  assert.match(errors, /live Status section|approved root plan material|material_digest/);
+  assert.match(errors, /authored Markdown must not contain a live Status section/);
+});
+
+test("root-plan validation rejects a task graph whose stable file is missing", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, generationRequest);
+  const plan = generated.plans[0]!;
+  await rm(join(plan.directory, "tasks", "REG-001.md"));
+  const errors = (await validatePlanDirectory(plan.directory)).errors.join("\n");
+  assert.match(errors, /task file is missing: tasks\/REG-001\.md/);
+  assert.match(errors, /material_digest does not match/);
+});
+
+test("root-plan material revision preserves stable task IDs after approval is revoked", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const generated = await generatePlanBatch(workspace.root, generationRequest);
+  const plan = generated.plans[0]!;
+  await setPlanState(plan.directory, { kind: "approve", approved_by: "owner" });
+  const before = (await validatePlanDirectory(plan.directory)).work_breakdown?.items.map((item) => item.work_id);
+  const taskPath = join(plan.directory, "tasks", "REG-001.md");
+  await writeFile(taskPath, (await readFile(taskPath, "utf8")).replace("## Description\n\nCreate registry", "## Description\n\nCreate the revised registry"), "utf8");
+  assert.match((await validatePlanDirectory(plan.directory)).errors.join("\n"), /material_digest|approved_digest/);
+  const revised = await setPlanState(plan.directory, { kind: "material-revision", reason: "Refined the task description" });
+  assert.equal(revised.status, "draft");
+  assert.equal(revised.plan_version, 2);
+  assert.deepEqual((await validatePlanDirectory(plan.directory)).work_breakdown?.items.map((item) => item.work_id), before);
+  assert.deepEqual((await validatePlanDirectory(plan.directory)).errors, []);
+});
+
+test("root generation rejects unresolved task and plan relationships before writing output", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const unknownTask = structuredClone(generationRequest);
+  unknownTask.plans = [structuredClone(unknownTask.plans[0]!)];
+  unknownTask.plans[0]!.work_items[0]!.connections = [{ type: "related", target: "missing-task" }];
+  await assert.rejects(generatePlanBatch(workspace.root, unknownTask), /unknown plan or task/);
+  await assert.rejects(access(join(workspace.root, "plans")));
+
+  const parentCycle = structuredClone(generationRequest);
+  parentCycle.plans = [structuredClone(parentCycle.plans[0]!)];
+  parentCycle.plans[0]!.work_items = [
+    structuredClone(generationRequest.plans[0]!.work_items[0]!),
+    { ...structuredClone(generationRequest.plans[0]!.work_items[0]!), key: "ui", title: "Render the registry" },
+  ];
+  parentCycle.plans[0]!.work_items[0]!.parent = "ui";
+  parentCycle.plans[0]!.work_items[1]!.parent = "registry";
+  await assert.rejects(generatePlanBatch(workspace.root, parentCycle), /parent cycle/);
+  await assert.rejects(access(join(workspace.root, "plans")));
+
+  const unknownPlan = structuredClone(generationRequest);
+  unknownPlan.plans = [structuredClone(unknownPlan.plans[0]!)];
+  unknownPlan.plans[0]!.depends_on_plans = ["missing-plan"];
+  await assert.rejects(generatePlanBatch(workspace.root, unknownPlan), /references unknown plan/);
+  await assert.rejects(access(join(workspace.root, "plans")));
+});
+
+test("root generation refuses a conceptual collection and leaves no partial plan output", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const invalid = structuredClone(generationRequest);
+  invalid.plans[0]!.repository_collection = "foundation-plans";
+  await assert.rejects(generatePlanBatch(workspace.root, invalid), /exact registered collection/);
+  await assert.rejects(access(join(workspace.root, "plans")));
+});
+
+test("BAU plans use an independent collection sequence and explicit archive moves", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const request = structuredClone(generationRequest);
+  request.plans = [structuredClone(request.plans[0]!)];
+  request.plans[0]!.plan_id = "maintenance-refresh";
+  request.plans[0]!.track = "bau";
+  const generated = await generatePlanBatch(workspace.root, request);
+  const plan = generated.plans[0]!;
+  await setPlanState(plan.directory, { kind: "approve", approved_by: "owner" });
+  const archived = await archivePlan(workspace.root, plan.plan_reference, "owner", "Explicitly archived for test coverage.");
+  assert.equal(archived.destination.endsWith("archived/plans/frontend-plans/__BAU__/maintenance-refresh"), true);
+  assert.equal((await validatePlanDirectory(archived.destination)).index?.status, "archived");
+  await assert.rejects(access(plan.directory));
+});
+
+test("current context plans migrate once to the root collection while preserving work IDs", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const legacy = await createPlanDraft(workspace.root, request, new Date("2026-08-14T10:00:00Z"));
+  await setPlanState(legacy.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-14T10:00:01Z"));
+  const migrated = await migrateCurrentPlans(workspace.root, new Date("2026-08-14T10:01:00Z"));
+  assert.equal(migrated.migrated.length, 1);
+  assert.equal(migrated.migrated[0]!.repository_collection, "frontend-plans");
+  assert.deepEqual(migrated.migrated[0]!.work_ids, ["BILLING-001", "BILLING-010"]);
+  assert.equal((await validatePlanDirectory(migrated.migrated[0]!.directory)).index?.status, "approved");
+  await assert.rejects(access(join(workspace.root, "context", "plans", "billing-v2")));
 });

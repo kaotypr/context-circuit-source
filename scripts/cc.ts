@@ -8,6 +8,7 @@ switch (command) {
   case "initialize-workspace": await import("./initialize-workspace.js"); break;
   case "configure-workspace": await import("./configure-workspace.js"); break;
   case "run-task": await import("./run-task.js"); break;
+  case "execute-plan": await import("./execute-plan.js"); break;
   case "record-result": await import("./record-result.js"); break;
   case "prepare-repair": await import("./prepare-repair.js"); break;
   case "prepare-review": await import("./prepare-review.js"); break;

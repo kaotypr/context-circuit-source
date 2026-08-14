@@ -3,10 +3,13 @@ import { mkdir, readFile, symlink, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { git } from "../scripts/lib/git.js";
+import { prepareExecutePlan } from "../scripts/lib/execute-plan.js";
 import { recordResult } from "../scripts/lib/record-result.js";
 import { confirmMerge, prepareRepair, prepareReview, recordReviewPublication } from "../scripts/lib/review-lifecycle.js";
 import { preparePlanlessTask, type PreparedTask } from "../scripts/lib/run-task.js";
+import { generatePlanBatch, setPlanState } from "../scripts/lib/plans.js";
 import { validateContract } from "../scripts/lib/validation.js";
+import type { PlanGenerationRequest } from "../scripts/lib/types.js";
 import { createTestWorkspace, taskOptions } from "./helpers.js";
 
 async function writeJson(path: string, value: unknown): Promise<void> {
@@ -108,6 +111,46 @@ test("prepares a fresh bounded repair and blocks after the configured limit", as
   const manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
   assert.equal(manifest.status, "blocked");
   assert.deepEqual(manifest.execution_events.slice(-4).map((event: { stage: string }) => event.stage), ["repair-prepared", "worker-result", "verifier-result", "repair-exhausted"]);
+});
+
+test("gates cumulative review on the holistic verifier and hands off the approved plan evidence", async (t) => {
+  const workspace = await createTestWorkspace();
+  t.after(workspace.cleanup);
+  const request: PlanGenerationRequest = {
+    contract_version: 2, source: { kind: "prd", reference: "docs/review.md" }, plans: [{
+      plan_id: "review-gate", title: "Review gate", repository: "frontend", work_prefix: "RVW", summary: "Prepare one cumulative review.", assumptions: [], open_questions: [], requirements: ["Holistic verification gates review."], solution: ["Use the approved plan brief and runtime manifest."], delivery: ["Verify the task and then the cumulative head."], verification: ["Review exposes task and plan evidence."], risks: [],
+      work_items: [{ key: "change", title: "Reviewable change", area: "runtime", repository: "frontend", scope: ["src/App.tsx"], test_scope: [], test_policy: "verifier-only", verification_commands: ["npm test"], acceptance_criteria: ["The cumulative change is reviewable."] }],
+    }],
+  };
+  const generated = await generatePlanBatch(workspace.root, request, new Date("2026-08-14T14:00:00Z"));
+  const approved = await setPlanState(generated.plans[0]!.directory, { kind: "approve", approved_by: "owner" }, new Date("2026-08-14T14:01:00Z"));
+  const prepared = await prepareExecutePlan({ workspaceRoot: workspace.root, request: { contract_version: 1, source: { kind: "plan", reference: approved.plan_reference!, plan_version: approved.plan_version, approved_digest: approved.approved_digest! } }, now: new Date("2026-08-14T14:02:00Z"), discriminator: "7788eeff" });
+  const worktree = prepared.repositories[0]!.worktree;
+  await assert.rejects(prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend" }), /passed status/);
+  let manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const task = manifest.task_graph[0];
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", taskId: task.task_id, stage: "worker-started" });
+  await writeFile(join(worktree, "src/App.tsx"), `${await readFile(join(worktree, "src/App.tsx"), "utf8")}\n// review gate\n`, "utf8");
+  await git(worktree, ["add", "src/App.tsx"]);
+  await git(worktree, ["-c", "user.name=Worker", "-c", "user.email=worker@example.invalid", "commit", "-m", "test: review gate"]);
+  const workerInput = JSON.parse(await readFile(task.worker_input, "utf8"));
+  const head = await git(worktree, ["rev-parse", "HEAD"]);
+  await writeJson(workerInput.result_path, { contract_version: 2, plan_reference: workerInput.plan_reference, plan_id: workerInput.plan_id, plan_version: workerInput.plan_version, approved_digest: workerInput.approved_digest, task_id: task.task_id, repository: "frontend", plan_revision: workerInput.plan_revision, attempt: 0, run_id: prepared.runId, status: "completed", summary: "review change", branch: workerInput.branch, worktree: workerInput.worktree, start_commit: workerInput.start_commit, commits: [head], changed_files: ["src/App.tsx"], checks: [], risks: [] });
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", taskId: task.task_id, stage: "worker-result" });
+  const verifierInput = JSON.parse(await readFile(task.verifier_input, "utf8"));
+  await writeJson(verifierInput.result_path, { contract_version: 2, plan_reference: verifierInput.plan_reference, plan_id: verifierInput.plan_id, plan_version: verifierInput.plan_version, approved_digest: verifierInput.approved_digest, task_id: task.task_id, repository: "frontend", plan_revision: verifierInput.plan_revision, attempt: 0, run_id: prepared.runId, status: "pass", summary: "task passed", branch: verifierInput.branch, worktree: verifierInput.worktree, start_commit: verifierInput.start_commit, acceptance: [{ criterion: verifierInput.acceptance_criteria[0], status: "passed", evidence: "independent verifier" }], checks: ["npm test"], findings: [], verified_at: "2026-08-14T14:04:00Z" });
+  await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", taskId: task.task_id, stage: "verifier-result" });
+  await assert.rejects(prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend" }), /passed status/);
+  manifest = JSON.parse(await readFile(prepared.manifest, "utf8"));
+  const finalInput = JSON.parse(await readFile(manifest.plan_verifier_input, "utf8"));
+  await writeJson(finalInput.result_path, { contract_version: 1, plan_reference: finalInput.plan_reference, plan_id: finalInput.plan_id, plan_version: finalInput.plan_version, approved_digest: finalInput.approved_digest, run_id: prepared.runId, plan_revision: finalInput.plan_revision, task_id: finalInput.task_id, repository: "plan", attempt: 0, status: "pass", summary: "holistic pass", tasks: [{ task_id: task.task_id, repository: "frontend", status: "passed", head_commit: head, evidence: "task verifier" }], acceptance: finalInput.acceptance_criteria.map((criterion: string) => ({ criterion, status: "passed", evidence: "holistic verifier" })), checks: ["npm test"], findings: [], verified_at: "2026-08-14T14:05:00Z" });
+  manifest = await recordResult({ workspaceRoot: workspace.root, runId: prepared.runId, stage: "plan-verifier-result" });
+  assert.equal(manifest.status, "passed");
+  const review = await prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend", now: new Date("2026-08-14T14:06:00Z") });
+  assert.match(review.body, /Approved plan/);
+  assert.match(review.body, /RVW-001/);
+  assert.equal(review.verifier_result, manifest.plan_verifier_result);
+  assert.deepEqual(await prepareReview({ workspaceRoot: workspace.root, runId: prepared.runId, repository: "frontend" }), review);
 });
 
 test("prepares an idempotent draft-PR handoff without pushing or exposing remote credentials", async (t) => {

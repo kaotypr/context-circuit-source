@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-circuit.dev/schemas/plan-connection.schema.json",
+  "title": "Typed plan or task connection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "target"],
+  "properties": {
+    "type": {
+      "enum": ["depends-on", "integrates-with", "blocks", "related", "supersedes"]
+    },
+    "target": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

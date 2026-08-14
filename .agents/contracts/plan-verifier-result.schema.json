@@ -1,27 +1,39 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://context-circuit.dev/schemas/verifier-result.schema.json",
-  "title": "Independent verifier result",
+  "$id": "https://context-circuit.dev/schemas/plan-verifier-result.schema.json",
+  "title": "Cumulative plan verifier result",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "repository", "status", "summary", "acceptance", "checks", "findings", "verified_at"],
+  "required": ["contract_version", "plan_reference", "plan_id", "plan_version", "run_id", "approved_digest", "plan_revision", "task_id", "repository", "attempt", "status", "summary", "tasks", "acceptance", "checks", "findings", "verified_at"],
   "properties": {
-    "contract_version": { "enum": [1, 2] },
-    "work_id": { "type": "string", "minLength": 1 },
-    "run_id": { "type": "string", "minLength": 1 },
+    "contract_version": { "const": 1 },
     "plan_reference": { "type": "string", "minLength": 1 },
     "plan_id": { "type": "string", "minLength": 1 },
     "plan_version": { "type": "integer", "minimum": 1 },
-    "task_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3,}$" },
-    "plan_revision": { "type": "integer", "minimum": 1 },
+    "run_id": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z-[a-f0-9]{8}$" },
     "approved_digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
+    "plan_revision": { "type": "integer", "minimum": 1 },
+    "task_id": { "type": "string", "pattern": "^PLAN-[A-Za-z0-9][A-Za-z0-9_-]*$" },
+    "repository": { "const": "plan" },
     "attempt": { "type": "integer", "minimum": 0 },
-    "repository": { "type": "string", "minLength": 1 },
-    "branch": { "type": "string", "minLength": 1 },
-    "worktree": { "type": "string", "minLength": 1 },
-    "start_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
     "status": { "enum": ["pass", "fail", "blocked"] },
     "summary": { "type": "string", "minLength": 1 },
+    "tasks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "repository", "status", "head_commit", "evidence"],
+        "properties": {
+          "task_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3,}$" },
+          "repository": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+          "status": { "const": "passed" },
+          "head_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+          "evidence": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
     "acceptance": {
       "type": "array",
       "minItems": 1,
@@ -50,11 +62,6 @@
         }
       }
     },
-    "verified_at": { "type": "string", "format": "date-time" },
-    "product_knowledge_impact": { "enum": ["absent", "matches-declared", "broader-than-declared", "contradicts-current"] }
-  },
-  "allOf": [
-    { "if": { "properties": { "contract_version": { "const": 1 } }, "required": ["contract_version"] }, "then": { "required": ["work_id", "run_id"] } },
-    { "if": { "properties": { "contract_version": { "const": 2 } }, "required": ["contract_version"] }, "then": { "required": ["run_id", "plan_reference", "plan_id", "plan_version", "task_id", "plan_revision", "approved_digest", "attempt", "repository", "branch", "worktree", "start_commit"] } }
-  ]
+    "verified_at": { "type": "string", "format": "date-time" }
+  }
 }

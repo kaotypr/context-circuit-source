@@ -3,7 +3,7 @@ import { join, relative, resolve, sep } from "node:path";
 import type { ErrorObject } from "ajv";
 import { contributionDocumentErrors } from "./finish-work.js";
 import { git } from "./git.js";
-import { validatePlanDirectory } from "./plans.js";
+import { resolveRootPlanDirectory, validatePlanDirectory } from "./plans.js";
 import type {
   CandidateState,
   CloseoutRecord,
@@ -237,6 +237,22 @@ async function discoverRuntimeObservations(workspaceRoot: string): Promise<{ obs
     try {
       const manifest = await validatedJson<RuntimeManifest>("runtime-manifest", manifestPath);
       if (manifest.source_kind !== "plan" || !manifest.plan_work_items) continue;
+      if (manifest.task_graph && manifest.plan_reference && manifest.plan_id) {
+        const planDirectory = await resolveRootPlanDirectory(workspaceRoot, manifest.plan_reference);
+        const plan = await validatePlanDirectory(planDirectory);
+        if (!plan.index || !plan.work_breakdown || plan.errors.length > 0 || plan.index.plan_id !== manifest.plan_id) throw new Error("root plan runtime does not match a valid numbered plan");
+        const planReference = relative(workspaceRoot, planDirectory).replaceAll("\\", "/");
+        for (const item of manifest.plan_work_items) {
+          const currentItem = plan.work_breakdown.items.find((candidate) => candidate.work_id === item.work_id);
+          if (!currentItem || currentItem.repository !== item.repository) throw new Error(`root plan runtime task does not match current approved plan: ${item.work_id}`);
+          const state = runtimeState(manifest, item.work_id);
+          const source_reference = reference(workspaceRoot, manifestPath);
+          const values = observations.get(item.work_id) ?? [];
+          values.push({ state, source_reference, precedence: 20, plan_reference: planReference, run_id: manifest.run_id });
+          observations.set(item.work_id, values);
+        }
+        continue;
+      }
       if (!inside(workspaceRoot, manifest.task_brief)) throw new Error("task brief escapes the workspace");
       if (!inside(await realpath(workspaceRoot), await realpath(manifest.task_brief))) throw new Error("task brief resolves outside the workspace");
       const brief = await validatedJson<TaskBrief>("task-brief", manifest.task_brief);
@@ -317,7 +333,7 @@ async function discoverDurableContributions(workspaceRoot: string, runs: Map<str
         continue;
       }
       const content = await readFile(path, "utf8");
-      const work = content.match(/^# ([A-Z][A-Z0-9]{1,15}-\d{3,}):/m)?.[1];
+      const work = content.match(/^# ([A-Z][A-Z0-9]{1,15}-(?:\d{3,}|[a-z0-9][a-z0-9-]*)):/m)?.[1];
       const run = content.match(/^- Run: `([^`]+)`$/m)?.[1];
       const merged = content.includes("Merged after human review.");
       const abandoned = content.includes("Deliberately abandoned by the human.");
@@ -353,27 +369,41 @@ async function discoverPlanCandidates(
   activityFacts: Map<string, WorkCandidate[]>,
   localObservations: Map<string, StateObservation[]>,
 ): Promise<{ candidates: WorkCandidate[]; warnings: string[]; matchedFacts: Set<string> }> {
-  const plansRoot = join(workspaceRoot, "context", "plans");
+  const rootPlans = join(workspaceRoot, "plans");
+  const legacyPlans = join(workspaceRoot, "context", "plans");
+  const rootMode = await isDirectory(rootPlans) && (await readdir(rootPlans, { withFileTypes: true })).some((entry) => entry.isDirectory() && !entry.isSymbolicLink() && entry.name !== "archived");
+  const plansRoot = rootMode ? rootPlans : legacyPlans;
   if (!await isDirectory(plansRoot)) return { candidates: [], warnings: [], matchedFacts: new Set() };
-  const entries = (await readdir(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+  const planDirectories: string[] = [];
+  if (rootMode) {
+    const collections = (await readdir(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).sort((a, b) => a.name.localeCompare(b.name));
+    for (const collection of collections) {
+      if (collection.name === "archived") continue;
+      for (const track of [join(plansRoot, collection.name), join(plansRoot, collection.name, "__BAU__")]) {
+        if (!await isDirectory(track)) continue;
+        for (const plan of (await readdir(track, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink())) planDirectories.push(join(track, plan.name));
+      }
+    }
+  } else {
+    planDirectories.push(...(await readdir(plansRoot, { withFileTypes: true })).filter((entry) => entry.isDirectory() && !entry.isSymbolicLink()).map((entry) => join(plansRoot, entry.name)));
+  }
+  planDirectories.sort();
   const candidates: WorkCandidate[] = [];
   const warnings: string[] = [];
   const matchedFacts = new Set<string>();
   const validations = new Map<string, Awaited<ReturnType<typeof validatePlanDirectory>>>();
   const workIdCounts = new Map<string, number>();
-  for (const entry of entries) {
-    const planDirectory = join(plansRoot, entry.name);
+  for (const planDirectory of planDirectories) {
     const validation = await validatePlanDirectory(planDirectory);
     if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
-      warnings.push(`Skipped invalid plan ${entry.name}: ${validation.errors.join("; ") || "missing parsed plan material"}`);
+      warnings.push(`Skipped invalid plan ${relative(plansRoot, planDirectory)}: ${validation.errors.join("; ") || "missing parsed plan material"}`);
       continue;
     }
-    validations.set(entry.name, validation);
+    validations.set(planDirectory, validation);
     for (const item of validation.work_breakdown.items) workIdCounts.set(item.work_id, (workIdCounts.get(item.work_id) ?? 0) + 1);
   }
-  for (const entry of entries) {
-    const planDirectory = join(plansRoot, entry.name);
-    const validation = validations.get(entry.name);
+  for (const planDirectory of planDirectories) {
+    const validation = validations.get(planDirectory);
     if (!validation?.index || !validation.work_breakdown) continue;
     const planDirectoryReference = relative(workspaceRoot, planDirectory).replaceAll("\\", "/");
     const projectedByWork = new Map<string, ProjectedState>();
@@ -390,7 +420,7 @@ async function discoverPlanCandidates(
         warnings.push(`Ignored ambiguous durable contribution for ${item.work_id}: multiple plans use that work ID`);
       }
     }
-    const requirementPath = join(planDirectory, "0010-requirements.md");
+    const requirementPath = join(planDirectory, rootMode ? "requirements.md" : "0010-requirements.md");
     const acceptanceSufficient = acceptanceIsSufficient(await readFile(requirementPath, "utf8"));
     for (const item of validation.work_breakdown.items) {
       const facts = activityFacts.get(item.work_id) ?? [];
@@ -403,9 +433,9 @@ async function discoverPlanCandidates(
         reference: dependency,
         state: projectedByWork.get(dependency)?.state === "completed" ? "completed" as const : projectedByWork.has(dependency) ? "pending" as const : "unknown" as const,
       }));
-      const planReference = relative(workspaceRoot, join(planDirectory, "README.md"));
+      const planReference = relative(workspaceRoot, rootMode ? planDirectory : join(planDirectory, "README.md")).replaceAll("\\", "/");
       const state = projection?.state ?? "ready";
-      const contradiction = Boolean(projection?.contradiction) || (Boolean(projection) && validation.index.status !== "approved") || activityRepositoryMismatch;
+      const contradiction = Boolean(projection?.contradiction) || (Boolean(projection) && validation.index.status !== "approved" && !rootMode) || activityRepositoryMismatch;
       const stateSources = projection?.observations.map(({ state: observed, source_reference }) => ({ state: observed, source_reference })) ?? [{ state: "ready" as const, source_reference: `${relative(workspaceRoot, join(planDirectory, validation.index.work_breakdown))}#${item.work_id}` }];
       candidates.push({
         contract_version: 1,

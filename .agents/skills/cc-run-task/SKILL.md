@@ -1,9 +1,12 @@
 ---
 name: cc-run-task
-description: Prepare and coordinate explicitly selected direct or approved-plan work across one or more isolated Git worktrees, with scoped worker and verifier inputs.
+description: Manually run one exact task as a rare direct-request or approved-plan escape hatch; this is not the core plan workflow.
 ---
 
-# Run task
+# Manual run-task escape hatch
+
+Use this command only when a human explicitly asks to experiment with or run one
+exact task alone. The core approved-plan workflow is `$cc-execute-plan`.
 
 1. Use the canonical `$cc-gather-context` skill to read `AGENTS.md`, `WORKFLOW.md`,
    `workspace.yaml`, the direct request or authoritative approved plan, and relevant repository instructions.
@@ -22,3 +25,7 @@ description: Prepare and coordinate explicitly selected direct or approved-plan 
 
 Only the coordinator may perform explicitly configured lifecycle actions and authorized draft-PR publication. Workers and verifiers never mutate activity state. Never merge, deploy, or clean runtime evidence automatically. Review preparation records only the remote name, never a credential-bearing URL.
 After the human merges, use the handoff's exact `confirm-merge` command. It must prove the reviewed head is reachable through the reported merge commit from the configured default target before presenting its exact `finish-work` guidance. The agent never executes the merge command.
+
+Manual `run-task` evidence never advances numbered-plan lifecycle, holistic review,
+publication, merge confirmation, or closeout state. Return to `$cc-execute-plan`
+for the plan-level workflow.

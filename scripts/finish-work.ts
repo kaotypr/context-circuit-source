@@ -13,6 +13,7 @@ const { values } = parseArgs({
     "merge-commit": { type: "string" },
     "pull-request": { type: "string", multiple: true },
     cleanup: { type: "boolean", default: false },
+    refresh: { type: "boolean", default: false },
   },
 });
 
@@ -29,6 +30,7 @@ const result = await finishWork({
   outcome: values.outcome,
   author: values.author,
   cleanup: values.cleanup,
+  refresh: values.refresh,
   ...(values.reason ? { reason: values.reason } : {}),
   ...(values["merge-commit"] ? { mergeCommit: values["merge-commit"] } : {}),
   ...(values["pull-request"] ? { pullRequests: values["pull-request"] } : {}),

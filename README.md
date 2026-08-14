@@ -26,12 +26,12 @@ TypeScript, a database, a background service, or a provider SDK.
 
 1. `$cc-configure-workspace` configures fresh or existing wrappers and safely uses
    an internal bootstrap phase only for first-time Git and base commits.
-2. `$cc-create-plan` optionally records reviewed delivery intent.
+2. `$cc-create-plan` generates peer numbered plans and records reviewed delivery intent.
 3. `$cc-whats-next` recommends one source-backed action without changing state.
-4. `$cc-run-task` prepares isolated worktrees for scoped workers and independent
-   verifiers.
-5. `$cc-finish-work` records durable outcomes after merge or abandonment.
-6. `$cc-sync-context` curates reusable learning through a reviewable wrapper change.
+4. `$cc-execute-plan` prepares and runs one exact approved numbered plan through cumulative review.
+5. `$cc-finish-work` records durable outcomes after human merge or abandonment and may refresh the target explicitly.
+6. `$cc-run-task` remains available only as a rare manual single-task escape hatch.
+7. `$cc-sync-context` curates reusable learning through a reviewable wrapper change.
 
 Canonical behavior lives under `.agents/`. `.codex/` and `.claude/` contain thin
 host adapters only. `$cc-initialize-workspace` remains a state-detecting compatibility

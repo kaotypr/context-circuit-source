@@ -129,6 +129,25 @@ export interface ActivityLifecycleRecord {
 
 export type PlanSourceKind = "idea" | "prd" | "document" | "issue" | "pull-request";
 
+export type PlanTrack = "epic" | "bau";
+export type PlanLifecycleStatus = "draft" | "approved" | "in-progress" | "blocked" | "review-ready" | "merge-pending" | "completed" | "archived";
+
+export interface PlanConnection {
+  type: "depends-on" | "integrates-with" | "blocks" | "related" | "supersedes";
+  target: string;
+  description?: string;
+}
+
+export interface PlanTaskContract {
+  task_id: string;
+  plan_id: string;
+  repository: string;
+  parent_task: string | null;
+  depends_on: string[];
+  subtasks?: string[];
+  connections: PlanConnection[];
+}
+
 export type ProductKnowledgeImpact =
   | "none"
   | "documentation-correction"
@@ -153,10 +172,10 @@ export interface TaskContextPackage {
 }
 
 export interface PlanIndex {
-  contract_version: 1;
+  contract_version: 1 | 2;
   plan_id: string;
   title: string;
-  status: "draft" | "approved";
+  status: PlanLifecycleStatus;
   plan_version: number;
   approved_at: string | null;
   approved_by: string | null;
@@ -170,6 +189,20 @@ export interface PlanIndex {
   created_at: string;
   updated_at: string;
   product_knowledge?: ProductKnowledgePlanDeclaration;
+  repository_collection?: string;
+  track?: PlanTrack;
+  plan_number?: number;
+  plan_reference?: string;
+  source_reference?: string;
+  status_updated_at?: string;
+  status_reason?: string;
+  status_actor?: string;
+  status_evidence?: string | null;
+  archived_at?: string | null;
+  affected_repositories?: string[];
+  depends_on_plans?: string[];
+  connections?: PlanConnection[];
+  task_index?: string;
 }
 
 export interface PlanWorkItem {
@@ -186,6 +219,9 @@ export interface PlanWorkItem {
   verification_commands: string[];
   acceptance_criteria: string[];
   external_reference: string | null;
+  description?: string;
+  subtasks?: string[];
+  connections?: PlanConnection[];
 }
 
 export interface PlanWorkBreakdown {
@@ -208,7 +244,7 @@ export type CandidateKind =
 
 export type CandidateState = "ready" | "in-progress" | "review" | "closeout" | "failed" | "completed" | "cancelled";
 export type DependencyState = "completed" | "pending" | "unknown";
-export type CandidatePlanState = "approved" | "draft" | "not-applicable" | "unknown";
+export type CandidatePlanState = PlanLifecycleStatus | "not-applicable" | "unknown";
 
 export interface WorkCandidate {
   contract_version: 1;
@@ -264,6 +300,7 @@ export interface WhatsNextResult {
 
 export interface PlanDraftWorkItem {
   key: string;
+  work_id?: string;
   title: string;
   area: string;
   repository: string;
@@ -275,6 +312,9 @@ export interface PlanDraftWorkItem {
   acceptance_criteria: string[];
   parent?: string;
   depends_on?: string[];
+  description?: string;
+  subtasks?: string[];
+  connections?: PlanConnection[];
 }
 
 export interface PlanDraftRequest {
@@ -294,6 +334,58 @@ export interface PlanDraftRequest {
   risks: string[];
   work_items: PlanDraftWorkItem[];
   product_knowledge?: ProductKnowledgePlanDeclaration;
+}
+
+export interface PlanGenerationDefinition extends Omit<PlanDraftRequest, "contract_version" | "plan_id" | "title" | "source" | "work_prefix" | "affected_repositories"> {
+  plan_id: string;
+  title: string;
+  repository: string;
+  repository_collection?: string;
+  track?: PlanTrack;
+  plan_number?: number;
+  slug?: string;
+  source?: { kind: PlanSourceKind; reference: string };
+  work_prefix: string;
+  affected_repositories?: string[];
+  depends_on_plans?: string[];
+  connections?: PlanConnection[];
+}
+
+export interface PlanGenerationRequest {
+  contract_version: 2;
+  source: { kind: PlanSourceKind; reference: string };
+  plans: PlanGenerationDefinition[];
+}
+
+export interface PlanExecutionRequest {
+  contract_version: 1;
+  source: {
+    kind: "plan";
+    reference: string;
+    plan_version: number;
+    approved_digest: string;
+  };
+}
+
+export interface PlanRuntimeRevision {
+  contract_version: 1;
+  kind: "approved-plan-runtime-revision";
+  plan_reference: string;
+  plan_id: string;
+  run_id: string;
+  prior_plan_version: number;
+  prior_approved_digest: string;
+  plan_version: number;
+  approved_digest: string;
+  plan_revision: number;
+  reason: string;
+  changed_task_ids: string[];
+  added_task_ids: string[];
+  removed_task_ids: string[];
+  invalidated_task_ids: string[];
+  preserved_task_ids: string[];
+  prior_manifest: string;
+  created_at: string;
 }
 
 export interface PlanPublicationDiscovery {
@@ -423,6 +515,10 @@ export interface RuntimeRepository {
   worktree: string;
   worker_input: string;
   verifier_input: string;
+  task_inputs?: string[];
+  verifier_inputs?: string[];
+  active_task_id?: string;
+  lock_path?: string;
   status?: "waiting" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked" | "cancelled" | "closing" | "closed";
   depends_on?: string[];
   repair_attempts?: number;
@@ -446,7 +542,7 @@ export interface ReviewCommand {
 }
 
 export interface ExecutionEvent {
-  stage: "worker-started" | "worker-result" | "verifier-result" | "repair-prepared" | "repair-exhausted" | "review-prepared" | "closeout-prepared" | "closeout-cleaned";
+  stage: "worker-started" | "worker-result" | "verifier-result" | "plan-verifier-result" | "repair-prepared" | "repair-exhausted" | "review-prepared" | "closeout-prepared" | "closeout-cleaned";
   repository: string;
   from_status: "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked" | "cancelled" | "closing";
   to_status: "running" | "verifying" | "passed" | "failed" | "blocked" | "closing" | "closed";
@@ -551,6 +647,12 @@ export interface CloseoutRecord {
   blockers: string[];
   prepared_at: string;
   updated_at: string;
+  refresh?: {
+    target_ref: string;
+    before_commit: string;
+    refreshed_commit: string;
+    refreshed_at: string;
+  };
   product_knowledge?: {
     impact: "absent" | "matches-declared" | "broader-than-declared" | "contradicts-current" | "not-reported";
     synchronization: "not-required" | "pending-review";
@@ -559,7 +661,7 @@ export interface CloseoutRecord {
 }
 
 export interface RuntimeManifest {
-  contract_version: 1;
+  contract_version: 1 | 2 | 3;
   work_id: string;
   run_id: string;
   source_kind: "direct-request" | "plan" | "issue" | "pull-request" | "activity-task";
@@ -573,7 +675,55 @@ export interface RuntimeManifest {
     repository: string;
     depends_on: string[];
     outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
+    task_input?: string;
+    verifier_input?: string;
+    plan_reference?: string;
+    task_id?: string;
+    plan_revision?: number;
+    evidence_plan_version?: number;
+    evidence_plan_revision?: number;
+    evidence_approved_digest?: string;
+    attempt?: number;
+    start_commit?: string | null;
+    ready?: boolean;
+    blocked_by?: string[];
+    status?: "waiting" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked";
+    worker_result?: string;
+    verifier_result?: string;
   }>;
+  plan_reference?: string;
+  plan_id?: string;
+  plan_version?: number;
+  plan_revision?: number;
+  approved_digest?: string;
+  plan_revisions?: string[];
+  task_graph?: Array<{
+    work_id: string;
+    repository: string;
+    depends_on: string[];
+    outcome: "pending" | "passed" | "failed" | "blocked" | "cancelled";
+    worker_input: string;
+    verifier_input: string;
+    plan_id?: string;
+    plan_reference?: string;
+    plan_version?: number;
+    approved_digest?: string;
+    task_id?: string;
+    plan_revision?: number;
+    evidence_plan_version?: number;
+    evidence_plan_revision?: number;
+    evidence_approved_digest?: string;
+    attempt?: number;
+    start_commit?: string | null;
+    ready?: boolean;
+    blocked_by?: string[];
+    status?: "waiting" | "prepared" | "running" | "verifying" | "passed" | "failed" | "blocked";
+    worker_result?: string;
+    verifier_result?: string;
+  }>;
+  plan_verifier_input?: string;
+  plan_verifier_result?: string;
+  plan_verifier_status?: "pending" | "running" | "passed" | "failed" | "blocked";
   evidence: string[];
   warnings: string[];
   execution_events?: ExecutionEvent[];

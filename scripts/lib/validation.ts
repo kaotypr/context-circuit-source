@@ -6,7 +6,7 @@ import { parse as parseYaml } from "yaml";
 import type { WorkspaceConfig } from "./types.js";
 import { contextReferenceError, remoteReferenceError } from "./safe-reference.js";
 
-export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "runtime-manifest", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-draft-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record", "onboarding-pack"] as const;
+export const schemaNames = ["workspace", "workspace-bootstrap-request", "workspace-configure-request", "task-brief", "worker-result", "verifier-result", "plan-verifier-result", "runtime-manifest", "plan-runtime-revision", "run-task-request", "review-preparation", "review-publication-record", "merge-confirmation-record", "closeout-record", "context-sync-request", "context-sync-record", "plan-index", "plan-work-breakdown", "plan-task", "plan-connection", "plan-draft-request", "plan-generation-request", "work-candidate", "fake-activity-source", "whats-next-result", "activity-lifecycle-record", "plan-publication-discovery", "plan-publication-record", "product-knowledge-project", "product-knowledge-role", "product-knowledge-workflow", "product-knowledge-domain", "product-knowledge-candidate", "task-context-package", "product-knowledge-sync-record", "onboarding-pack"] as const;
 export type SchemaName = (typeof schemaNames)[number];
 
 export const requiredWorkspaceDocuments = [
@@ -20,6 +20,7 @@ export const requiredWorkspaceDocuments = [
   "context/CONVENTIONS.md",
   "context/DECISIONS.md",
   "context/SOURCES.md",
+  "plans/README.md",
   "agents/coordinator.md",
   "agents/repository-worker.md",
   "agents/verifier.md",
@@ -32,11 +33,16 @@ export const requiredWorkspaceDocuments = [
   ".agents/contracts/merge-confirmation-record.schema.json",
   ".agents/contracts/closeout-record.schema.json",
   ".agents/contracts/run-task-request.schema.json",
+  ".agents/contracts/plan-verifier-result.schema.json",
+  ".agents/contracts/plan-runtime-revision.schema.json",
   ".agents/contracts/context-sync-request.schema.json",
   ".agents/contracts/context-sync-record.schema.json",
   ".agents/contracts/plan-index.schema.json",
   ".agents/contracts/plan-work-breakdown.schema.json",
   ".agents/contracts/plan-draft-request.schema.json",
+  ".agents/contracts/plan-generation-request.schema.json",
+  ".agents/contracts/plan-task.schema.json",
+  ".agents/contracts/plan-connection.schema.json",
   ".agents/contracts/work-candidate.schema.json",
   ".agents/contracts/fake-activity-source.schema.json",
   ".agents/contracts/whats-next-result.schema.json",
@@ -55,6 +61,7 @@ export const requiredWorkspaceDocuments = [
   ".agents/skills/cc-configure-workspace/SKILL.md",
   ".agents/skills/cc-gather-context/SKILL.md",
   ".agents/skills/cc-run-task/SKILL.md",
+  ".agents/skills/cc-execute-plan/SKILL.md",
   ".agents/skills/cc-finish-work/SKILL.md",
   ".agents/skills/cc-create-plan/SKILL.md",
   ".agents/skills/cc-whats-next/SKILL.md",
@@ -64,6 +71,7 @@ export const requiredWorkspaceDocuments = [
   ".codex/skills/cc-configure-workspace/SKILL.md",
   ".codex/skills/cc-gather-context/SKILL.md",
   ".codex/skills/cc-run-task/SKILL.md",
+  ".codex/skills/cc-execute-plan/SKILL.md",
   ".codex/skills/cc-finish-work/SKILL.md",
   ".codex/skills/cc-create-plan/SKILL.md",
   ".codex/skills/cc-whats-next/SKILL.md",
@@ -73,6 +81,7 @@ export const requiredWorkspaceDocuments = [
   ".claude/commands/cc-configure-workspace.md",
   ".claude/commands/cc-gather-context.md",
   ".claude/commands/cc-run-task.md",
+  ".claude/commands/cc-execute-plan.md",
   ".claude/commands/cc-finish-work.md",
   ".claude/commands/cc-create-plan.md",
   ".claude/commands/cc-whats-next.md",
@@ -82,6 +91,12 @@ export const requiredWorkspaceDocuments = [
   "docs/using-the-wrapper.md",
   "docs/configuration.md",
   "docs/command-reference.md",
+  "docs/planning.md",
+  "docs/execute-plan.md",
+  "docs/run-task.md",
+  "docs/review-lifecycle.md",
+  "docs/finish-work.md",
+  "docs/whats-next.md",
 ] as const;
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");

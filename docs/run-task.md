@@ -1,8 +1,11 @@
-# Run a task
+# Run one manual task
 
-`run-task` turns an explicit direct request or selected approved-plan work into
-scoped, isolated work. It prepares artifacts and Git worktrees; it does
+`run-task` is a rare human-selected escape hatch for one exact direct request or
+one exact task from one approved plan. It prepares scoped isolated work; it does
 not launch agents, push branches, open pull requests, merge, or deploy.
+It is not the core approved-plan workflow and never advances plan lifecycle,
+holistic review, publication, merge, or closeout state. Use `execute-plan` for
+the complete numbered plan.
 
 ## Prepare one repository
 
@@ -20,7 +23,7 @@ Use `--request-file docs/examples/contract-first-run.json` for contract-first
 multi-repository work. Only inputs marked `ready: true` may start. A dependent
 input remains locked until all dependencies pass independent verification.
 
-## Prepare approved-plan work
+## Prepare one approved-plan task only
 
 Pass a request file whose `source.kind` is `plan`. Its `source.reference` must
 resolve beneath `context/plans/` and include the current `plan_version` and

@@ -9,7 +9,7 @@ import type { PlanRunTaskRequest, RunTaskRequest, RuntimeManifest, RuntimeReposi
 import { validateContract, workspaceSemanticErrors } from "./validation.js";
 import { prepareActivityLifecycle } from "./activity-lifecycle.js";
 import type { ActivityCapability, ProductKnowledgePlanDeclaration } from "./types.js";
-import { validatePlanDirectory } from "./plans.js";
+import { resolveRootPlanDirectory, validatePlanDirectory } from "./plans.js";
 import { buildTaskContextPackage } from "./product-knowledge.js";
 
 async function resolveContextRevision(workspaceRoot: string): Promise<string | undefined> {
@@ -660,7 +660,9 @@ export async function preparePlanTask(options: PreparePlanTaskOptions): Promise<
   await assertValid("workspace", config);
   const semanticErrors = workspaceSemanticErrors(config);
   if (semanticErrors.length > 0) throw new Error(`Invalid workspace: ${semanticErrors.join("; ")}`);
-  const planDirectory = assertInside(join(workspaceRoot, "context", "plans"), resolve(workspaceRoot, options.request.source.reference));
+  const planDirectory = options.request.source.reference.startsWith("context/plans/")
+    ? assertInside(join(workspaceRoot, "context", "plans"), resolve(workspaceRoot, options.request.source.reference))
+    : await resolveRootPlanDirectory(workspaceRoot, options.request.source.reference);
   const validation = await validatePlanDirectory(planDirectory);
   if (!validation.index || !validation.work_breakdown || validation.errors.length > 0) {
     throw new Error(`Plan validation failed: ${validation.errors.join("; ") || "plan metadata is unavailable"}`);

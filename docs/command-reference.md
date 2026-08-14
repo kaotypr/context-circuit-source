@@ -28,7 +28,8 @@ arguments. The principal skill-to-command mappings are:
 | Import repository context | `$cc-import-context` | `/cc-import-context` | `import-context` |
 | Plan | `$cc-create-plan` | `/cc-create-plan` | `create-plan` |
 | Recommend work | `$cc-whats-next` | `/cc-whats-next` | `whats-next` |
-| Run scoped work | `$cc-run-task` | `/cc-run-task` | `run-task` |
+| Execute approved plan | `$cc-execute-plan` | `/cc-execute-plan` | `execute-plan` |
+| Run one manual task | `$cc-run-task` | `/cc-run-task` | `run-task` |
 | Finish a run | `$cc-finish-work` | `/cc-finish-work` | `finish-work` |
 | Curate context | `$cc-sync-context` | `/cc-sync-context` | `sync-context` |
 | Onboarding pack | host skill | host skill | `onboarding-pack` |

@@ -37,6 +37,17 @@
     "blockers": { "$ref": "#/$defs/strings" },
     "prepared_at": { "type": "string", "format": "date-time" },
     "updated_at": { "type": "string", "format": "date-time" },
+    "refresh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_ref", "before_commit", "refreshed_commit", "refreshed_at"],
+      "properties": {
+        "target_ref": { "type": "string", "minLength": 1 },
+        "before_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+        "refreshed_commit": { "type": "string", "pattern": "^[a-f0-9]{40,64}$" },
+        "refreshed_at": { "type": "string", "format": "date-time" }
+      }
+    },
     "product_knowledge": {
       "type": "object",
       "additionalProperties": false,
