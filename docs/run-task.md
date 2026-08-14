@@ -26,7 +26,7 @@ input remains locked until all dependencies pass independent verification.
 ## Prepare one approved-plan task only
 
 Pass a request file whose `source.kind` is `plan`. Its `source.reference` must
-resolve beneath `context/plans/` and include the current `plan_version` and
+resolve to a numbered plan beneath `plans/` and include the current `plan_version` and
 `approved_digest`. Select exactly one stable, dependency-free `work_id`:
 
 ```json
@@ -34,7 +34,7 @@ resolve beneath `context/plans/` and include the current `plan_version` and
   "contract_version": 1,
   "source": {
     "kind": "plan",
-    "reference": "context/plans/reset-flow",
+    "reference": "plans/context-circuit-plans/005-reset-flow",
     "plan_version": 1,
     "approved_digest": "sha256:<64 lowercase hexadecimal characters>"
   },
