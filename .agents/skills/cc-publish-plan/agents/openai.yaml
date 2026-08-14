@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Publish Plan"
-  short_description: "Publish a plan on request"
-  default_prompt: "Use $cc-publish-plan to optionally publish this approved plan and its tasks before execution, without changing status."

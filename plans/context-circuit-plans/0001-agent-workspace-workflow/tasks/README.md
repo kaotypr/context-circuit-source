@@ -6,4 +6,4 @@
 - [AWF-0004](AWF-0004.md) — Implement child-session delegation and handoff protocol
 - [AWF-0005](AWF-0005.md) — Integrate lease and exclusive worktree ownership with plan execution
 - [AWF-0006](AWF-0006.md) — Build the filesystem acceptance-test suite
-- [AWF-0007](AWF-0007.md) — Document the migration gate and prepare deferred cleanup handoff
+- [AWF-0007](AWF-0007.md) — Remove the legacy command layer and finalize the pure workflow

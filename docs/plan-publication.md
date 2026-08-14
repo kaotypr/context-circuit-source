@@ -22,5 +22,6 @@ Publication does not:
 - monitor external status;
 - synchronize completion back into the workspace.
 
-The previous publication command is transitional implementation material. The
-workspace-entry workflow is the intended user-facing interface.
+Publication is outside the filesystem execution protocol. If a host or
+provider integration is later added, it must remain an explicitly authorized
+adapter and must not redefine session, plan, or completion state.

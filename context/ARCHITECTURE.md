@@ -3,7 +3,8 @@
 The target architecture is instruction- and filesystem-driven:
 
 - AGENTS.md and WORKFLOW.md define normative agent behavior.
-- Host skills and commands are thin adapters for entering the same workflow.
+- Host integrations enter through the same workspace instructions and do not
+  define a second command workflow.
 - Product Knowledge is concise, source-cited Markdown under context/.
 - Plans are human-reviewed YAML and Markdown under plans/.
 - Runtime session records, leases, prompts, handoffs, and worktrees live under
@@ -13,6 +14,6 @@ The target architecture is instruction- and filesystem-driven:
 - Registered repositories own code and repository-local conventions.
 - Each writable plan execution has an exclusive Git worktree.
 
-The workspace does not require a central database or activity provider. Any
-runtime helper must remain minimal and must not become a second source of
-product or workflow truth.
+The workspace does not require a central database, activity provider, or
+command runtime. Filesystem records are the inspectable runtime source of
+truth.

@@ -11,4 +11,4 @@
 - Verifiers are independent and read-only; they can evaluate a worker handoff and worktree without mutating plan or runtime state.
 - Human gates remain explicit for approval, delegation where required, conflict resolution, and completion.
 - The workflow must recover from interruption, stale leases, missing handoffs, contradictory context, and failed verification without inventing state.
-- The old Node/JavaScript command layer remains intact and usable during migration and is removed only after a separately reviewed cleanup plan follows a passing replacement acceptance suite.
+- The replacement workflow is usable through agent instructions and filesystem conventions without requiring Node, JavaScript, cc.mjs, npm, or another command as the primary or hidden entry point.

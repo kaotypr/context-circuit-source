@@ -1,7 +1,7 @@
 # Plan execution in the agent workspace
 
-Plan execution is one stage of the workspace session workflow, not the primary
-user interface.
+Plan execution is one stage of the workspace session workflow, not a command
+the user invokes.
 
 A root session executes an approved plan by:
 
@@ -26,13 +26,9 @@ criteria, repository boundary, or safety assumptions materially change. It must
 not change plan or task status merely because implementation or tests appear
 complete.
 
-The previous run-task command is transitional implementation material. The
-filesystem session protocol and the workspace-entry workflow are the target
-behavior. During migration, the command accepts an explicit session identity
-for internal adapters and acquires the same lease used by the session
-workflow. When no identity is supplied, it uses a clearly labeled
-legacy-run-task compatibility identity; this path is retained only until the
-replacement acceptance suite passes.
+There is no run-task command. The coordinator and repository-worker
+instructions define the execution behavior, while the filesystem lease,
+worktree, prompt, and handoff records make the state resumable and inspectable.
 
 See docs/runtime-contract.md for record fields, atomic acquisition, recovery,
 and handoff rules.

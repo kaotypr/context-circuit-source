@@ -1,6 +1,6 @@
 # Agent Workspace Workflow
 
-Status: agreed workflow contract; implementation in progress
+Status: agreed workflow contract; pure filesystem implementation
 
 The filesystem record details for this contract live in
 runtime-contract.md. This document defines behavior; the runtime contract
@@ -14,9 +14,10 @@ The human-facing interface is an agent session such as:
 
 > Start or resume work in this workspace.
 
-The user should not need to understand or invoke the bundled CLI directly. Host adapters may use the CLI as an implementation mechanism, but the workspace workflow is the user- and agent-facing contract.
+The user does not invoke a bundled CLI. Hosts provide an agent session that
+reads these instructions and uses the filesystem records directly.
 
-This document describes the target behavior. It does not by itself change the current command implementation.
+This document is the normative behavior contract for the workspace.
 
 ## Scope and non-goals
 
@@ -351,6 +352,10 @@ The workflow is correct only when it supports these scenarios:
 
 ## Implementation boundary
 
-The primary host workflow should expose one workspace-entry capability for starting or resuming a root or child session. Existing deterministic commands may remain internal implementation tools and verification utilities.
+The primary host workflow exposes one workspace-entry capability for starting or
+resuming a root or child session. It must not depend on a command runtime,
+generated bundle, package manager, or global pointer.
 
-Host adapters under `.agents/`, `.codex/`, and `.claude/` should remain thin and invoke the same canonical workflow behavior. Product repositories remain isolated from wrapper runtime state, and repository workers modify only their assigned worktree.
+The sole workspace skill is a thin entry instruction around this contract.
+Product repositories remain isolated from wrapper runtime state, and repository
+workers modify only their assigned worktree.

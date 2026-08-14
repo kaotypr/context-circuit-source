@@ -11,4 +11,4 @@
 - Plan completion is refused until task evidence, verification evidence, and required human gates are present; a failed verifier cannot be represented as done.
 - The acceptance suite exercises root entry, child delegation, concurrent plans, lease contention, worktree isolation, interruption/recovery, scope safety, contradiction handling, verification failure, and completion gating.
 - The replacement workflow is usable through agent instructions and filesystem conventions without requiring the user to invoke node, cc.mjs, or another command as the primary entry point.
-- The existing Node/JavaScript command layer still passes its current validation/tests after the replacement is introduced; no cleanup deletion is part of this plan.
+- No Node/JavaScript command layer, generated bundle, command-specific host adapter, or package-manager entry point remains in the replacement workspace.

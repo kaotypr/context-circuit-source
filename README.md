@@ -4,7 +4,7 @@ Context Circuit is an AI-agent workspace for understanding a project,
 coordinating root and subagent sessions, executing approved work, and
 continuing development across sessions.
 
-The user-facing interaction is an agent session:
+The only user-facing interaction is an agent session:
 
 > Start or resume work in this workspace.
 
@@ -48,6 +48,5 @@ Read the agreed workflow contract in
 docs/agent-workspace-workflow.md, then use context/INDEX.md to find the
 smallest relevant project context.
 
-The current command layer and its documentation are transitional legacy
-material. It may remain during migration, but it is not the intended user
-interface and should not be used as the source of the new workflow design.
+There is no user-facing command layer. Hosts enter through the same agent
+instructions and use the filesystem records as the coordination surface.

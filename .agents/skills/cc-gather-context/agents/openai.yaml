@@ -1,5 +1,0 @@
-interface:
-  display_name: "CC Gather Context"
-  short_description: "Resolve authoritative task context safely"
-  default_prompt: "Gather the minimum authoritative context for this Context Circuit request and report sources, facts, assumptions, contradictions, and open questions without making changes."
-

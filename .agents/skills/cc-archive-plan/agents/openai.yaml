@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Archive Plan"
-  short_description: "Archive one exact plan"
-  default_prompt: "Use $cc-archive-plan to archive the exact plan I name, preserving its status."

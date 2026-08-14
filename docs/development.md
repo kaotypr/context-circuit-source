@@ -1,7 +1,6 @@
 # Development of Context Circuit
 
-Context Circuit is being refactored from a command-oriented wrapper into an
-instruction- and filesystem-driven AI-agent workspace.
+Context Circuit is an instruction- and filesystem-driven AI-agent workspace.
 
 The canonical design sources are:
 
@@ -11,13 +10,10 @@ The canonical design sources are:
 - context/INDEX.md for context navigation;
 - agents/ for root, implementation, and verification role instructions.
 
-Host adapters under .agents/, .codex/, and .claude/ should remain thin. The
-current Node and JavaScript command layer is transitional migration material.
-The target design does not require a central database or a large command
-runtime. Any deterministic helper must remain minimal and preserve the
-filesystem as the source of runtime truth.
+The workspace has no Node or JavaScript command layer. The target design does
+not require a central database, package manager, or command runtime. Preserve
+the filesystem as the source of runtime truth.
 
-Implementation work should be verified against the acceptance scenarios in the
-Agent Workspace Workflow document. The old command layer remains until the
-evidence checklist in docs/legacy-cleanup-gate.md passes and a separate
-cleanup plan is explicitly requested.
+Implementation work is verified against the acceptance scenarios in the Agent
+Workspace Workflow document with `sh test/acceptance.sh`. The verifier must
+inspect runtime files and instructions directly.
