@@ -50,7 +50,11 @@ unpushed work.
 New task briefs distinguish implementation scope from test expectations. Required
 test paths become worker edit scope and must appear in the recorded Git diff.
 Without authorized test scope, the default policy is verifier-only and requires
-independent acceptance evidence.
+independent acceptance evidence. If additional repository files become
+necessary, the worker pauses for explicit human task-level scope-expansion
+approval. The approval is append-only runtime evidence, does not change the
+approved plan contract, and permits only task-relevant changes in that same
+repository. The verifier reviews the complete resulting diff.
 
 Ignored clones are recommended. Each ignored clone must have an exact
 `.gitignore` entry so tracked submodules can coexist under `repositories/`.

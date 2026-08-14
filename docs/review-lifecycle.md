@@ -18,6 +18,11 @@ verifier inputs with unique evidence paths. Give the repair-worker input to a
 fresh session. Its result describes the complete base-to-head commit history and
 changed-file set, not only the newest commit.
 
+If a worker discovers that additional repository files are needed before a
+repair or continuation can complete, pause and obtain task-level
+scope-expansion approval. The approval is runtime evidence for the same task;
+it does not silently revise the approved plan or authorize unrelated changes.
+
 Record the repair worker and the new independent verifier with the existing
 recorder:
 

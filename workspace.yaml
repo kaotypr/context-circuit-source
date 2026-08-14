@@ -25,6 +25,7 @@ workflow:
   human_gates:
     - plan-approval
     - task-selection
+    - scope-expansion
     - merge
   maximum_repair_attempts: 2
   wrapper_change_policy: pull-request

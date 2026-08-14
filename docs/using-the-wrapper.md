@@ -19,11 +19,27 @@ configured read-only work sources. It does not claim or start work.
 the approved task graph, and
 and prepares one branch and isolated Git worktree per repository. A fresh worker
 receives only its authorized scope and acceptance criteria. A separate verifier
-reviews the committed result without modifying it.
+reviews the committed result without modifying it. If the worker discovers that
+additional repository files are needed, it pauses for human task-level
+scope-expansion approval; the approval is recorded in runtime evidence and does
+not rewrite the approved plan.
 
 For work spanning repositories, `execute-plan` orders dependencies and keeps a
 dependent worker locked until its declared prerequisites pass independently.
 `run-task` never advances plan-level lifecycle, review, or closeout.
+
+To approve additional task files after the worker pauses:
+
+```bash
+node .agents/bin/cc.mjs approve-scope-expansion \
+  --run-id <run-id> --repository <name> [--task-id <task-id>] \
+  --approved-by <human-identifier> \
+  --reason "Additional repository files are reasonably necessary for the existing acceptance criteria."
+```
+
+The approval does not name paths. It applies only to the selected task and
+repository. New requirements, shared-contract changes, or changes in another
+repository still require a plan revision.
 
 Failed verification may produce a bounded repair attempt. The repair remains in
 the same isolated worktree and cannot expand the authorized scope silently.
