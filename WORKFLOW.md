@@ -41,6 +41,14 @@ Sessions are not plans. A plan is approved intended work; a task is a unit of
 that work; a session is an execution context; a worktree is the writable
 isolation boundary.
 
+Plan status is the canonical lifecycle authority. Plans use `draft`, `approved`,
+and `done`; included task status is a synchronized projection using `draft`,
+`ready`, and `done`. Approval synchronizes all included tasks to `ready`, and
+completion synchronizes them to `done`. Ordinary whole-plan execution does not
+require a separate task approval or task-selection ceremony. A resumed session
+repairs stale task projections idempotently without rerunning implementation or
+verification checks.
+
 ## Shared context and runtime state
 
 Product Knowledge, decisions, and plans are durable shared context. Runtime

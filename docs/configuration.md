@@ -13,4 +13,10 @@ configuration and do not belong in the first-run questions.
 
 Keep repository paths credential-free and specific. Use `ignored-clone` for a separate local clone or `submodule` for a tracked submodule. Context Circuit refuses dirty bases and never rewrites unrelated work.
 
-The wrapper does not configure activity lifecycle actions, repair limits, external status synchronization, or workflow state machines. Providers are optional publication adapters only.
+The wrapper does not configure activity lifecycle actions, repair limits, or
+workflow state machines. An explicitly configured provider may maintain a
+separate `external_status` projection, but it cannot replace canonical task
+status or become a dependency of plan execution. Core synchronization preserves
+that provider-owned annotation and continues when the provider is unavailable.
+Credentials and external activity records remain outside ordinary workspace
+state; the wrapper stores neither.
