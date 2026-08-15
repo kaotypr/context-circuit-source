@@ -13,3 +13,7 @@ safe action.
 Product repositories own their code and repository-local conventions. Context
 Circuit owns the workspace protocol, durable Product Knowledge, plans, and
 private runtime coordination state.
+
+The workspace can begin with no repository. Initialization captures project
+identity and repository roles when they exist, while source intake and
+conversation-first Idea Brief or PRD work can begin from an idea alone.

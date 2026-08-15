@@ -50,3 +50,15 @@ smallest relevant project context.
 
 There is no user-facing command layer. Hosts enter through the same agent
 instructions and use the filesystem records as the coordination surface.
+
+## Foundation skills
+
+Natural-language requests discover the core workspace skills:
+
+- `cc-initialize-workspace` — establish solo/team identity, repositories, roles,
+  and default active branches, including a valid no-repository path.
+- `cc-idea-brief` — capture uncertain intent without forcing a PRD.
+- `cc-create-prd` — create a source-grounded, human-reviewed PRD.
+
+See `docs/getting-started.md`, `docs/idea-brief.md`, and `docs/prd.md` for the
+host-neutral contracts.

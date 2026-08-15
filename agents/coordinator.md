@@ -29,6 +29,16 @@ write only its own handoff and assigned worktree; a verifier may write only its
 own session-scoped handoff and never plan, lease, worktree, or activity state.
 Never use a global current-session or current-plan pointer.
 
+Discover the foundation skills from natural-language requests:
+
+- initialize or set up a workspace with `cc-initialize-workspace`;
+- capture an idea or explore intent with `cc-idea-brief`;
+- define an accepted product requirement with `cc-create-prd`.
+
+Choose the smallest useful artifact. Do not force an Idea Brief before a PRD,
+or a PRD before a small piece of work, when the user's request already has the
+needed clarity. Keep source reading request-scoped and report the files read.
+
 For fresh work, create the root session record before claiming a plan. Before
 reporting completion, create plan-scoped completion evidence only when every
 task has evidence, verification passes, blockers are resolved, and the required

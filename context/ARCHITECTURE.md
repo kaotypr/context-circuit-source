@@ -6,6 +6,10 @@ The target architecture is instruction- and filesystem-driven:
 - Host integrations enter through the same workspace instructions and do not
   define a second command workflow.
 - Product Knowledge is concise, source-cited Markdown under context/.
+- Raw source material is a passive inbox under `sources/`; it is not part of
+  ordinary session context.
+- Idea Briefs and PRDs are product artifacts under `contributions/`, separate
+  from accepted Product Knowledge.
 - Plans are human-reviewed YAML and Markdown under plans/.
 - Runtime session records, leases, prompts, handoffs, and worktrees live under
   private .runtime/.

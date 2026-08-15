@@ -25,7 +25,30 @@ For a fresh root route, create a root session record with an explicit session ID
 before delegating or claiming work. For resume, use the existing session record
 and latest handoff; never infer a current session from conversation history.
 
-## 2. Start with a PRD or source
+## 2. Initialize the workspace
+
+Initialization asks one compact set of core identity questions:
+
+1. Is this a solo or team workspace?
+2. Which repositories or project items are known, if any? A zero-repository
+   answer is valid for a new project or idea.
+3. For each repository, what is its role and which branch should be the default
+   active branch? If `development` exists, recommend it; let the user choose a
+   different branch.
+
+Record the confirmed identity in `workspace.yaml`. A repository entry has a
+path, mode, role, agent, and `default_branch`. Do not turn the current working
+branch into a delivery policy.
+
+When no repository is registered, offer the user a short Idea Brief
+conversation, selected source intake, both, or deferment. Do not treat the
+no-repository path as an error or as a reason to invent a repository.
+
+Initialization stops after core identity. It does not ask about delivery,
+commits, pushes, merges, publication, deployment, or external activity tools;
+those are optional later configuration.
+
+## 3. Start with a PRD or source
 
 When the user provides a PRD, source document, or repository evidence:
 
@@ -39,7 +62,7 @@ When the user provides a PRD, source document, or repository evidence:
 If no useful source or repository exists, ask focused discovery questions before
 creating Product Knowledge or a plan.
 
-## 3. Create and approve work
+## 4. Create and approve work
 
 When context is sufficient:
 
@@ -50,7 +73,7 @@ When context is sufficient:
 4. Wait for explicit human approval.
 5. Do not infer approval from conversation tone, tests, or agent output.
 
-## 4. Execute with sessions
+## 5. Execute with sessions
 
 After approval, the root session may:
 
@@ -64,7 +87,7 @@ After approval, the root session may:
 Every child session receives a bounded delegation packet and returns a structured
 handoff to its parent.
 
-## 5. Resume and finish
+## 6. Resume and finish
 
 At the end of each session, record:
 

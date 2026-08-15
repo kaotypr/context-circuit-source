@@ -30,3 +30,8 @@ When an agent receives a PRD or other source, it should:
 Product Knowledge should be scoped to the relevant domain. Agents should load
 the smallest useful set rather than copying the entire project into every
 session packet.
+
+Raw sources remain in the passive `sources/` inbox. A source-based request
+names and reads only the selected files, states why they were read, and records
+provenance in `context/sources.yaml` or the product artifact. Normal session
+entry does not ingest the source inbox.

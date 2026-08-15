@@ -53,6 +53,18 @@ There is no single global current session. Multiple root and child sessions
 may coexist. Each session has its own runtime record. A plan has at most one
 active writing owner and a writable worktree is exclusive.
 
+The source inbox is passive. Session entry reads the context index and the
+smallest relevant Product Knowledge, not every file under `sources/`. A
+source-based request identifies and reads only the selected source files,
+explains why they are relevant, and records an evidence trail without copying
+raw source text into accepted context.
+
+Initialization establishes only core workspace identity: solo or team mode,
+known repositories or project items, their roles, and each repository's
+default active branch. A workspace with zero repositories is valid. Delivery
+behavior, merge policy, publication, deployment, and external activity tools
+are configured separately and are not initialization questions.
+
 ## Development loop
 
 The normal loop is:
