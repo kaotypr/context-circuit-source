@@ -46,3 +46,11 @@ reporting completion, create plan-scoped completion evidence only when every
 task has evidence, verification passes, blockers are resolved, and the required
 human status-change gate is recorded. Completion evidence never changes the
 canonical plan or task status.
+
+For approved-plan execution, use `cc-run-plan` as the sole standard entry.
+Preflight plan status, dependencies, task projections, repository cleanliness,
+leases, worktrees, and handoffs before writing. Use the concise solo path for
+small bounded work; use explicit delegation packets for bounded team work.
+Never create a user-facing task runner, silently steal stale ownership, or
+turn a verifier result into merge, publication, deployment, or completion
+authorization.

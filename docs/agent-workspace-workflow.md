@@ -419,3 +419,32 @@ generated bundle, package manager, or global pointer.
 The sole workspace skill is a thin entry instruction around this contract.
 Product repositories remain isolated from wrapper runtime state, and repository
 workers modify only their assigned worktree.
+
+## Plan execution capability
+
+`cc-run-plan` is the sole standard execution entry for an approved plan. It is
+an agent-session capability backed by the filesystem contract, not a command
+runtime. There is no user-facing `cc-run-task` workflow.
+
+Before execution, the root coordinator reads the canonical plan and task
+contracts, verifies dependencies, repairs stale task projections, checks the
+repository and worktree, and claims the plan lease. An unapproved, unknown,
+contradictory, or ownership-conflicted plan is blocked.
+
+The coordinator chooses a concise solo path for small bounded work or creates
+explicit delegation packets for bounded child sessions. Every writing owner
+has an exclusive worktree. A verifier is independent and read-only, and may
+write only its own session handoff. Task ordering follows declared
+dependencies; task selection is internal coordination rather than a second
+human approval gate.
+
+Interruption and recovery preserve the session record, lease, worktree, dirty
+state, questions, blockers, and latest handoff. A stale or missing record
+requires a visible recovery decision. A takeover, when explicitly authorized,
+names the replaced session, reason, and preserved evidence.
+
+Completion requires durable evidence for every task, an independent passing
+verification handoff, and the human `status-change` gate. The coordinator may
+prepare completion evidence, but tests, Git state, or a verifier never change
+canonical plan or task status and never authorize merge, publication, or
+deployment.

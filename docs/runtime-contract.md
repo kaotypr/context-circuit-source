@@ -320,3 +320,29 @@ Independent plans may execute concurrently because each has a separate plan
 lease and worktree. Same-plan contenders do not race; the loser is blocked or
 read-only. Overlapping file changes across different plans remain an
 integration risk and must be reported before merge or publication.
+
+## Plan execution records
+
+The plan runner may keep an optional plan prompt or task evidence files under
+the owning plan runtime directory. These records are append-oriented evidence;
+they do not replace `plan.yaml`, the task contracts, the session record, or the
+lease. A prompt identifies the plan, root session, repository, worktree,
+dependencies, route (`solo` or `delegated`), and stop conditions.
+
+Task evidence should identify the task, owning session, assigned paths, changed
+files, checks run, result, limitations, and handoff path. A task is not
+complete because its worker reports success; the coordinator still requires
+the plan's acceptance and independent verification evidence.
+
+The coordinator must validate repository scope by comparing the current Git
+root and branch with the lease and delegation packet before writing. For
+multi-repository plans, each repository has an explicit role, path boundary,
+branch expectation, and exclusive worktree. A worker cannot write the base
+checkout, another repository, another plan's worktree, or runtime records it
+does not own.
+
+Same-plan contention is resolved by exclusive creation of `lease.lock/`. The
+losing session becomes blocked or read-only and must not mutate the plan,
+tasks, lease, worktree, or another session. Stale recovery requires explicit
+human authorization and a new session that records the replaced owner and
+reason; a heartbeat timeout alone is not permission to steal ownership.

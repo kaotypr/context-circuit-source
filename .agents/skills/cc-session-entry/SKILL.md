@@ -43,6 +43,20 @@ report a blocker.
 For fresh work, gather source evidence and draft Product Knowledge or a plan
 as appropriate. Do not silently approve plans or change canonical statuses.
 
+## Plan-aware routing
+
+When the request names a plan, inspect its canonical `plan.yaml`, task
+projections, declared dependencies, active lease, assigned worktree, and latest
+handoff. An approved dependency-ready plan with no live writing owner routes to
+`cc-run-plan`; a draft plan routes to review or human approval; a plan with a
+live owner routes to resume or coordination; and a contradictory, stale, or
+ambiguous record routes to a visible recovery decision.
+
+On approval or resume, reconcile included task status in bulk from the plan
+status. The reconciliation is idempotent metadata repair and never reruns
+implementation or verification. Keep the plan status and task projection
+separate from session execution status.
+
 ## Child entry and handoff
 
 Before working, verify that the child packet matches the session record and
