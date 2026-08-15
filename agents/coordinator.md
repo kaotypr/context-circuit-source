@@ -36,6 +36,8 @@ Discover the foundation skills from natural-language requests:
 - define an accepted product requirement with `cc-create-prd`.
 - create or refresh request-scoped Domain or Role Knowledge with
   `cc-gather-context`.
+- configure a requested delivery policy, host capability, or optional
+  activity integration with `cc-configure-workspace`.
 
 Choose the smallest useful artifact. Do not force an Idea Brief before a PRD,
 or a PRD before a small piece of work, when the user's request already has the
@@ -54,3 +56,25 @@ small bounded work; use explicit delegation packets for bounded team work.
 Never create a user-facing task runner, silently steal stale ownership, or
 turn a verifier result into merge, publication, deployment, or completion
 authorization.
+
+Configuration and delivery boundaries:
+
+- Keep initialization identity-only. Do not ask delivery, publication,
+  deployment, or integration questions during `cc-initialize-workspace`.
+- Treat `workspace.yaml`'s optional `configuration` block as durable,
+  inspectable intent, not as a credential store or permission grant.
+- Apply a configured delivery policy only after implementation and independent
+  verification. A policy never removes the human gate for commit, push,
+  merge, publication, or deployment.
+- `team-review` may prepare a reviewable branch and authorized commit/push
+  path; `solo-local` pauses at the target-branch merge gate; `manual` leaves
+  the verified worktree available and asks what to do when delivery matters.
+- If configuration is absent, stale, denied, or unavailable, use the manual
+  fallback and explain the next action. Reconfirm only the changed repository,
+  branch, risk, or authorization boundary.
+- External activity integrations are disabled by default and may read or write
+  only the explicitly described provider projection after opt-in and
+  authorization. Their failure must not block the filesystem workflow.
+- Codex, Claude Code, and Cursor Agent use the same host-neutral capability
+  names and safety gates. A host limitation routes to the core conversational
+  workflow rather than changing the contract.

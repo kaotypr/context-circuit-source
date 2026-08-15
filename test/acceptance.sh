@@ -543,6 +543,11 @@ require_file agents/coordinator.md
 require_file agents/repository-worker.md
 require_file agents/reviewer.md
 require_file .agents/skills/cc-session-entry/SKILL.md
+require_file .agents/skills/cc-configure-workspace/SKILL.md
+require_file .agents/skills/cc-configure-workspace/agents/openai.yaml
+require_file docs/delivery-policies.md
+require_file docs/integrations.md
+require_file docs/host-capabilities.md
 
 contains AGENTS.md 'Preserve .runtime/'
 contains WORKFLOW.md 'There is no single global current session.'
@@ -554,6 +559,16 @@ contains .agents/skills/cc-session-entry/SKILL.md 'If the packet or session reco
 contains agents/coordinator.md 'Never use a global current-session or current-plan pointer.'
 contains agents/repository-worker.md 'Work only in the assigned isolated worktree.'
 contains agents/reviewer.md 'Remain read-only with respect'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'Wait for explicit user confirmation'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'plan/task status'
+contains docs/delivery-policies.md 'team-review'
+contains docs/delivery-policies.md 'solo-local'
+contains docs/delivery-policies.md 'manual'
+contains docs/integrations.md 'enabled: false'
+contains docs/integrations.md 'unavailable'
+contains docs/host-capabilities.md 'Codex'
+contains docs/host-capabilities.md 'Claude Code'
+contains docs/host-capabilities.md 'Cursor Agent'
 
 # The pure workflow has no migration shim or command-specific runtime.
 absent package.json
@@ -1286,6 +1301,201 @@ if grep -F 'unrelated' "$role_selection_log" >/dev/null 2>&1; then
 fi
 
 printf 'PASS: Domain and Role Knowledge acceptance scenarios (templates, selective generation, provenance, links, contradictions, acceptance)\n'
+
+# Plan 0004: optional configuration is capability-led, durable, and separate
+# from initialization. Delivery policies retain authorization and human gates;
+# integrations are opt-in and the core workflow remains complete offline.
+contains .agents/skills/cc-initialize-workspace/SKILL.md 'does not ask about delivery behavior'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'capability-led conversational workflow'
+contains docs/configuration.md 'canonical, portable configuration location'
+contains docs/configuration.md 'delivery.policy'
+contains docs/configuration.md 'delivery.authorization'
+contains docs/delivery-policies.md 'post-verification choice'
+contains docs/delivery-policies.md 'human merge gate'
+contains docs/delivery-policies.md 'manual fallback'
+contains docs/integrations.md 'opt-in adapter'
+contains docs/integrations.md 'core filesystem workflow'
+contains docs/host-capabilities.md 'same capability names'
+contains agents/coordinator.md 'configuration` block as durable'
+
+configuration_fixture="$fixture/configuration"
+mkdir -p "$configuration_fixture"
+
+write_configuration_fixture() {
+  configuration_policy=$1
+  configuration_authorization=$2
+  configuration_branch=$3
+  configuration_enabled=$4
+  configuration_integration_authorization=$5
+  atomic_write "$configuration_fixture/workspace.yaml" \
+    'workspace:' '  name: configured-fixture' '  mode: team' \
+    '  default_branch: development' 'repositories:' '  context-circuit:' \
+    '    path: ../context-circuit' '    mode: ignored-clone' \
+    '    role: Context Circuit' '    agent: repository-worker' \
+    '    default_branch: development' 'configuration:' \
+    '  delivery:' '    scope: context-circuit' \
+    "    policy: $configuration_policy" \
+    '    repositories:' '      - context-circuit' \
+    '    target_branches:' "      context-circuit: $configuration_branch" \
+    "    authorization: $configuration_authorization" \
+    '    fallback: manual' '  integrations:' \
+    '    - id: activity-record' "      enabled: $configuration_enabled" \
+    '      provider: fixture-provider' '      reads:' \
+    '        - plan summaries' '      writes:' \
+    '        - approved handoff metadata' \
+    "      authorization: $configuration_integration_authorization" \
+    '      fallback: core-filesystem' '  hosts:' \
+    '    codex:' '      capability: cc-configure-workspace' \
+    '      mode: native-or-core'
+}
+
+configuration_policy_value() {
+  sed -n '/^  delivery:/,/^  integrations:/p' "$1" \
+    | sed -n 's/^    policy: //p' | head -n 1
+}
+
+configuration_branch_value() {
+  sed -n '/^    target_branches:/,/^    authorization:/p' "$1" \
+    | sed -n 's/^      context-circuit: //p' | head -n 1
+}
+
+configuration_authorization_value() {
+  sed -n '/^  delivery:/,/^  integrations:/p' "$1" \
+    | sed -n 's/^    authorization: //p' | head -n 1
+}
+
+configuration_integration_value() {
+  configuration_field=$2
+  sed -n '/^  integrations:/,$p' "$1" \
+    | sed -n "s/^      $configuration_field: //p" | head -n 1
+}
+
+prepare_delivery_fixture() {
+  delivery_config=$1
+  delivery_verification=$2
+  delivery_output=$3
+  delivery_policy=$(configuration_policy_value "$delivery_config")
+  delivery_authorization=$(configuration_authorization_value "$delivery_config")
+  delivery_branch=$(configuration_branch_value "$delivery_config")
+  test "$delivery_verification" = passed || {
+    printf 'BLOCKED: independent verification is required\n' >&2
+    return 1
+  }
+  case "$delivery_policy" in
+    team-review)
+      test "$delivery_authorization" = approved || {
+        printf 'BLOCKED: commit/push authorization is required\n' >&2
+        return 1
+      }
+      atomic_write "$delivery_output" \
+        'delivery: team-review' 'reviewable_branch: codex/configured-fixture' \
+        'human_gate: commit-push' "target_branch: $delivery_branch"
+      ;;
+    solo-local)
+      atomic_write "$delivery_output" \
+        'delivery: solo-local' "target_branch: $delivery_branch" \
+        'human_gate: merge' 'merge: paused'
+      ;;
+    manual)
+      atomic_write "$delivery_output" \
+        'delivery: manual' 'worktree: preserved' \
+        'human_gate: delivery-choice'
+      ;;
+    *)
+      printf 'BLOCKED: unknown delivery policy\n' >&2
+      return 1
+      ;;
+  esac
+}
+
+integration_result_fixture() {
+  integration_config=$1
+  integration_network=$2
+  integration_enabled=$(configuration_integration_value "$integration_config" enabled)
+  integration_authorization=$(configuration_integration_value "$integration_config" authorization)
+  if test "$integration_enabled" != true; then
+    printf 'disabled\n'
+  elif test "$integration_authorization" != approved; then
+    printf 'denied\n'
+  elif test "$integration_network" != online; then
+    printf 'unavailable\n'
+  else
+    printf 'published\n'
+  fi
+}
+
+configuration_review_reason_fixture() {
+  test "$1" = "$2" && test "$3" = "$4" && return 1
+  printf 'focused-confirmation\n'
+}
+
+core_filesystem_fixture() {
+  core_config=$1
+  core_network=$2
+  test -f "$core_config" || return 1
+  test "$core_network" = offline || return 1
+  printf 'core-filesystem\n'
+}
+
+host_capability_fixture() {
+  case "$1" in
+    codex|claude-code|cursor-agent) printf 'cc-configure-workspace\n' ;;
+    *) return 1 ;;
+  esac
+}
+
+write_configuration_fixture team-review pending development false not-requested
+test "$(configuration_policy_value "$configuration_fixture/workspace.yaml")" = team-review
+test "$(configuration_branch_value "$configuration_fixture/workspace.yaml")" = development
+test "$(configuration_authorization_value "$configuration_fixture/workspace.yaml")" = pending
+assert_failure_reason "$configuration_fixture/team-review-denied.log" \
+  'commit/push authorization is required' prepare_delivery_fixture \
+  "$configuration_fixture/workspace.yaml" passed "$configuration_fixture/denied.handoff"
+test ! -e "$configuration_fixture/denied.handoff"
+
+write_configuration_fixture team-review approved development false not-requested
+expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
+  passed "$configuration_fixture/team-review.handoff"
+contains "$configuration_fixture/team-review.handoff" 'reviewable_branch:'
+contains "$configuration_fixture/team-review.handoff" 'human_gate: commit-push'
+
+write_configuration_fixture solo-local pending development false not-requested
+base_delivery_snapshot="$configuration_fixture/base-delivery.snapshot"
+atomic_write "$configuration_fixture/base-branch" 'base branch remains unchanged'
+sha256sum "$configuration_fixture/base-branch" > "$base_delivery_snapshot"
+expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
+  passed "$configuration_fixture/solo-local.handoff"
+contains "$configuration_fixture/solo-local.handoff" 'target_branch: development'
+contains "$configuration_fixture/solo-local.handoff" 'human_gate: merge'
+contains "$configuration_fixture/solo-local.handoff" 'merge: paused'
+test "$(sha256sum "$configuration_fixture/base-branch")" = "$(cat "$base_delivery_snapshot")"
+
+write_configuration_fixture manual denied development false not-requested
+expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
+  passed "$configuration_fixture/manual.handoff"
+contains "$configuration_fixture/manual.handoff" 'worktree: preserved'
+contains "$configuration_fixture/manual.handoff" 'human_gate: delivery-choice'
+expect_success configuration_review_reason_fixture development main pending pending
+expect_success configuration_review_reason_fixture development development pending approved
+expect_failure configuration_review_reason_fixture development development pending pending
+
+test "$(integration_result_fixture "$configuration_fixture/workspace.yaml" offline)" = disabled
+write_configuration_fixture manual pending development true approved
+test "$(integration_result_fixture "$configuration_fixture/workspace.yaml" offline)" = unavailable
+test "$(integration_result_fixture "$configuration_fixture/workspace.yaml" online)" = published
+write_configuration_fixture manual pending development true denied
+test "$(integration_result_fixture "$configuration_fixture/workspace.yaml" online)" = denied
+
+test "$(host_capability_fixture codex)" = cc-configure-workspace
+test "$(host_capability_fixture claude-code)" = cc-configure-workspace
+test "$(host_capability_fixture cursor-agent)" = cc-configure-workspace
+expect_success core_filesystem_fixture "$configuration_fixture/workspace.yaml" offline
+if grep -E '(^|[[:space:]])(token|password|secret|api_key):' \
+  "$configuration_fixture/workspace.yaml" >/dev/null 2>&1; then
+  fail 'configuration fixture persisted a credential-like field'
+fi
+
+printf 'PASS: optional configuration, delivery policy, authorization, integration, host, and offline-core acceptance scenarios\n'
 
 printf 'PASS: workspace foundation and context acceptance scenarios (initialization, passive sources, provenance, artifacts)\n'
 
