@@ -17,7 +17,6 @@ context:
 workflow:
   human_gates:
     - plan-approval
-    - task-selection
     - status-change
     - publication
     - archive

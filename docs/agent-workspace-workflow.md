@@ -148,7 +148,19 @@ The default ownership rules are:
 - different plans may run concurrently for the same repository when their worktrees are separate;
 - overlapping changes between plans are a risk to report, not a reason to reset or overwrite work.
 
-The existing plan statuses remain exactly `draft`, `approved`, and `done`. Session status and runtime execution state are separate and must not be inferred into plan or task status.
+Plan status remains exactly `draft`, `approved`, and `done`, and `plan.yaml` is
+the canonical lifecycle record. Task status is a synchronized projection with
+the values `draft`, `ready`, and `done`:
+
+```text
+plan draft     → tasks draft
+plan approved  → tasks ready
+plan done      → tasks done
+```
+
+Session status and runtime execution state remain separate from plan and task
+status. A task projection is not a second approval gate, execution lease, or
+verification result.
 
 ## Runtime state
 
@@ -269,6 +281,22 @@ Orient
 
 An agent may iterate between implementation and verification without asking for per-task review when the work remains within the approved plan. It must pause when the plan scope, acceptance criteria, repository boundary, or safety assumptions materially change.
 
+### Plan-driven task lifecycle
+
+The coordinator synchronizes all included task records in one idempotent
+operation when a plan is approved or completed. A resumed session performs the
+same reconciliation before reporting its next action, repairing stale or
+partially synchronized task status without rerunning implementation or
+verification checks. The coordinator rewrites only the task `status` field and
+preserves other metadata, including an optional provider-owned
+`external_status` projection.
+
+An approved plan may execute when task metadata is stale; stale projection is
+an observation to repair, not an execution blocker. The coordinator must stop
+on an unknown plan status rather than inventing a task status. Plan completion
+still requires plan-level implementation evidence, independent verification,
+and the human status-change gate.
+
 ## Session lifecycle
 
 Session lifecycle is runtime state and is distinct from plan and task status.
@@ -303,6 +331,9 @@ Human approval is required for:
 - deployment or other consequential external actions;
 - marking tasks or plans done;
 - taking over a live or stale session when ownership is ambiguous.
+
+Approval displays the included task list for visibility, but ordinary
+whole-plan execution does not require separate task selection or task approval.
 
 Subagents never satisfy a human gate on behalf of the root session or human.
 
@@ -372,6 +403,12 @@ temporary filesystem and Git fixtures. It must inspect ownership artifacts
 directly, prove that a losing lease contender and a verifier cannot mutate
 another owner's state, and prove that completion remains blocked until the
 human status-change gate is present.
+
+The acceptance suite also verifies the plan-driven task projection: draft plans
+leave draft tasks unchanged, approval and completion synchronize all tasks in
+bulk, repeated synchronization is idempotent, resume repairs stale metadata
+without rerunning checks, and optional `external_status` data is preserved
+without requiring a provider.
 
 ## Implementation boundary
 

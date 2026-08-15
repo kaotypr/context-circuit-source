@@ -412,6 +412,32 @@ completion_ready() {
   return 0
 }
 
+lifecycle_expected_task_status() {
+  case "$1" in
+    draft) printf 'draft\n' ;;
+    approved) printf 'ready\n' ;;
+    done) printf 'done\n' ;;
+    *) return 1 ;;
+  esac
+}
+
+lifecycle_sync_tasks() {
+  lifecycle_plan_file=$1
+  lifecycle_task_dir=$2
+  lifecycle_plan_status=$(sed -n 's/^status: //p' "$lifecycle_plan_file" | head -n 1)
+  lifecycle_expected_status=$(lifecycle_expected_task_status "$lifecycle_plan_status") || return 1
+  for lifecycle_task_file in "$lifecycle_task_dir"/*.md; do
+    test -f "$lifecycle_task_file" || continue
+    lifecycle_current_status=$(sed -n 's/^status: //p' "$lifecycle_task_file" | head -n 1)
+    if test "$lifecycle_current_status" != "$lifecycle_expected_status"; then
+      lifecycle_temporary="${lifecycle_task_file}.tmp.$$"
+      sed "s/^status: .*/status: $lifecycle_expected_status/" \
+        "$lifecycle_task_file" > "$lifecycle_temporary"
+      mv "$lifecycle_temporary" "$lifecycle_task_file"
+    fi
+  done
+}
+
 require_file AGENTS.md
 require_file WORKFLOW.md
 require_file CLAUDE.md
@@ -702,6 +728,68 @@ contains docs/agent-workspace-workflow.md 'Human approval is required'
 contains docs/agent-workspace-workflow.md 'source changes during execution'
 contains docs/runtime-contract.md 'The canonical plan/task status remains unchanged'
 contains agents/reviewer.md 'Do not repair, change'
+
+# Plan 0006: plan status is canonical and task status is a bulk, idempotent
+# projection. Resume repair must preserve provider-owned annotations and must
+# not rerun implementation or verification checks.
+contains WORKFLOW.md 'Plan status is the canonical lifecycle authority'
+contains docs/agent-workspace-workflow.md 'does not require separate task selection'
+contains docs/planning.md 'reconciles every included task'
+contains docs/runtime-contract.md 'Plan/task lifecycle projection'
+contains docs/run-task.md 'Task status is not a second approval or execution gate'
+contains docs/configuration.md 'external_status'
+contains context/CONVENTIONS.md 'synchronized projection'
+if grep -F '    - task-selection' workspace.yaml >/dev/null 2>&1; then
+  fail 'ordinary plan execution still lists task-selection as a human gate'
+fi
+
+lifecycle_fixture="$fixture/plan-lifecycle"
+lifecycle_plan="$lifecycle_fixture/plan.yaml"
+lifecycle_tasks="$lifecycle_fixture/tasks"
+mkdir -p "$lifecycle_tasks"
+atomic_write "$lifecycle_plan" 'id: lifecycle-fixture' 'status: draft'
+for lifecycle_id in CCL-0001 CCL-0002 CCL-0003; do
+  atomic_write "$lifecycle_tasks/$lifecycle_id.md" \
+    "id: $lifecycle_id" 'status: draft' 'title: Fixture task'
+done
+lifecycle_draft_snapshot="$fixture/lifecycle-draft.snapshot"
+sha256sum "$lifecycle_tasks"/*.md > "$lifecycle_draft_snapshot"
+expect_success lifecycle_sync_tasks "$lifecycle_plan" "$lifecycle_tasks"
+test "$(sha256sum "$lifecycle_tasks"/*.md)" = "$(cat "$lifecycle_draft_snapshot")"
+
+atomic_write "$lifecycle_plan" 'id: lifecycle-fixture' 'status: approved'
+expect_success lifecycle_sync_tasks "$lifecycle_plan" "$lifecycle_tasks"
+for lifecycle_id in CCL-0001 CCL-0002 CCL-0003; do
+  contains "$lifecycle_tasks/$lifecycle_id.md" 'status: ready'
+done
+lifecycle_approved_snapshot="$fixture/lifecycle-approved.snapshot"
+sha256sum "$lifecycle_tasks"/*.md > "$lifecycle_approved_snapshot"
+expect_success lifecycle_sync_tasks "$lifecycle_plan" "$lifecycle_tasks"
+test "$(sha256sum "$lifecycle_tasks"/*.md)" = "$(cat "$lifecycle_approved_snapshot")"
+
+atomic_write "$lifecycle_tasks/CCL-0001.md" \
+  'id: CCL-0001' 'status: draft' 'title: Fixture task' \
+  'external_status:' '  provider: optional-fixture' '  value: in_progress'
+atomic_write "$lifecycle_tasks/CCL-0002.md" \
+  'id: CCL-0002' 'status: ready' 'title: Fixture task'
+atomic_write "$lifecycle_tasks/CCL-0003.md" \
+  'id: CCL-0003' 'status: ready' 'title: Fixture task'
+atomic_write "$lifecycle_fixture/verification-runs" '0'
+expect_success lifecycle_sync_tasks "$lifecycle_plan" "$lifecycle_tasks"
+for lifecycle_id in CCL-0001 CCL-0002 CCL-0003; do
+  contains "$lifecycle_tasks/$lifecycle_id.md" 'status: ready'
+done
+contains "$lifecycle_tasks/CCL-0001.md" 'external_status:'
+contains "$lifecycle_tasks/CCL-0001.md" 'value: in_progress'
+test "$(cat "$lifecycle_fixture/verification-runs")" = 0
+
+atomic_write "$lifecycle_plan" 'id: lifecycle-fixture' 'status: done'
+expect_success lifecycle_sync_tasks "$lifecycle_plan" "$lifecycle_tasks"
+for lifecycle_id in CCL-0001 CCL-0002 CCL-0003; do
+  contains "$lifecycle_tasks/$lifecycle_id.md" 'status: done'
+done
+contains "$lifecycle_tasks/CCL-0001.md" 'external_status:'
+test "$(cat "$lifecycle_fixture/verification-runs")" = 0
 
 # Plan 0002: workspace initialization is identity-only and supports a valid
 # zero-repository state plus repository roles and default active branches.

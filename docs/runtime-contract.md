@@ -202,6 +202,37 @@ base checkout, another plan worktree, wrapper context, and external activity
 state are outside the worker's write scope. A verifier may inspect a worktree
 but has write_worktree: false.
 
+## Plan/task lifecycle projection
+
+`plan.yaml` is the canonical lifecycle record. Plan status uses exactly
+`draft`, `approved`, and `done`. Included task records use a synchronized
+projection with exactly `draft`, `ready`, and `done`:
+
+| Plan status | Expected task status |
+| --- | --- |
+| `draft` | `draft` |
+| `approved` | `ready` |
+| `done` | `done` |
+
+The coordinator reconciles every included task in one bulk operation when a
+plan is approved or completed and when a session enters or resumes. The
+operation is idempotent: it rewrites only a stale task `status` field, keeps
+other task metadata intact, and does not rerun implementation or verification
+checks. A stale projection is an observation to repair and must not block
+approved-plan execution. An unknown plan status is a blocker rather than a
+reason to invent a projection.
+
+Task status is not a second human approval, execution lease, or verification
+result. Approval may display the included task list, but ordinary whole-plan
+execution does not require a separate task-selection ceremony.
+
+Provider-specific activity state is optional and separate from canonical task
+status. An explicitly configured adapter may maintain an opaque
+`external_status` projection; core synchronization preserves it and never
+uses it to decide lifecycle state. The core workflow remains usable without a
+provider and does not store credentials or external activity records in
+ordinary workspace state.
+
 ## Completion gate
 
 The coordinator may prepare `.runtime/plans/<plan-id>/completion.yaml` only

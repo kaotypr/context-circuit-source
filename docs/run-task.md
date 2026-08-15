@@ -5,13 +5,19 @@ the user invokes.
 
 A root session executes an approved plan by:
 
-1. Confirming the plan is approved and has unfinished work.
+1. Confirming the plan is approved and has unfinished work, then reconciling
+   its included task projections from the canonical plan status.
 2. Acquiring the plan lease.
 3. Creating or reusing the plan's exclusive repository worktree.
 4. Writing a session-scoped delegation packet or plan prompt.
 5. Delegating bounded implementation and verification work.
 6. Continuing through dependency-ready tasks within approved scope.
 7. Recording tests, findings, blockers, and the next handoff.
+
+Task status is not a second approval or execution gate. Whole-plan execution
+does not require separate task selection. On approval, completion, or session
+resume, reconciliation updates stale task status in bulk and idempotently;
+this metadata repair does not rerun implementation or verification checks.
 
 A plan has at most one active writing owner. Read-only research and verification
 sessions may inspect its worktree, but two writing sessions must never share it.

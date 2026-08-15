@@ -10,13 +10,18 @@
   `contributions/prds/`; drafts remain visibly unaccepted until a human gate.
 - Use ordinary Markdown and YAML for context, plans, session records, and
   handoffs.
-- Keep plan and task statuses exactly draft, approved, or done.
+- Keep plan status exactly `draft`, `approved`, or `done`; task status is the synchronized projection `draft`, `ready`, or `done`.
+- Treat plan approval and completion as the only canonical lifecycle gates for
+  ordinary whole-plan execution. Do not add a second task approval gate.
 - Keep runtime session state separate from plan and task status.
 - Give every child session an explicit parent, objective, scope, permissions,
   and handoff format.
 - Give every writing session an exclusive worktree.
 - Never infer completion from Git, tests, worktrees, external systems, or agent
   output.
+- Keep provider-specific activity state separate under `external_status` when an
+  explicitly configured adapter needs it; never store credentials or external
+  activity records in ordinary workspace state.
 - Preserve dirty or uncertain work; never reset, stash, clean, merge, or deploy
   implicitly.
 - Keep .runtime/ private and preserve it until a human chooses cleanup.
