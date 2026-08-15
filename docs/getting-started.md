@@ -75,14 +75,16 @@ When context is sufficient:
 
 ## 5. Execute with sessions
 
-After approval, the root session may:
+After approval, `cc-run-plan` directs the root to:
 
-- claim a plan execution;
-- create or reuse its exclusive worktree;
-- delegate research, implementation, or verification subagents;
-- continue through dependency-ready tasks;
-- iterate between implementation and verification within approved scope;
-- pause when scope or assumptions materially change.
+- claim a plan execution and create or reuse its exclusive worktree;
+- spawn a writer child through the host child-session primitive;
+- spawn a later independent verifier child (`write_worktree: false`);
+- record completion.yaml and ask for the human status-change gate.
+
+Sequential tasks share one writer child. Independent plans get separate
+children and worktrees. If the host cannot spawn a child, report the missing
+host primitive to the human.
 
 Every child session receives a bounded delegation packet and returns a structured
 handoff to its parent.

@@ -64,6 +64,7 @@ contradictions, assumptions, ownership conflicts, and missing acceptance
 evidence remain visible for human review.
 
 Execution uses `cc-run-plan` as the sole standard plan-execution entry. There
-is no user-facing `cc-run-task` workflow. A root session may execute a small
-plan directly or delegate bounded tasks, but every writer gets an exclusive
-worktree and every verifier remains independent and read-only.
+is no user-facing `cc-run-task` workflow. The root directs a writer child and
+an independent verifier child; every writer gets an exclusive worktree and
+every verifier remains independent and read-only. Sequential tasks share one
+writer child rather than skipping children.

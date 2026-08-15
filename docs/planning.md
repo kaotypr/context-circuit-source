@@ -31,3 +31,8 @@ awaiting review, but it must never silently change the canonical plan status.
 For large projects, prefer several coherent plans by domain or repository
 boundary rather than one unbounded plan. Multiple approved plans may execute
 concurrently when their worktrees and ownership are distinct.
+
+Approved execution enters through `cc-run-plan`. The root directs a writer
+child and an independent verifier child. Sequential tasks share one writer
+child and one worktree; independent plans use separate children and
+worktrees. Overlapping paths are reported before merge or publication.

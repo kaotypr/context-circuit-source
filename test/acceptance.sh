@@ -478,14 +478,12 @@ dependencies_ready() {
   return 0
 }
 
-choose_execution_route() {
-  route_task_dir=$1
-  route_task_count=$(find "$route_task_dir" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')
-  if test "$route_task_count" -le 1; then
-    printf 'solo\n'
-  else
-    printf 'delegated\n'
-  fi
+expected_plan_execution_records() {
+  printf 'writer-child verifier-child\n'
+}
+
+execution_topology_for_mode() {
+  printf 'writer-child verifier-child\n'
 }
 
 run_plan_guard() {
@@ -923,14 +921,53 @@ sha256sum "$plan3_fixture/tasks"/*.md > "$plan3_tasks_snapshot"
 expect_success lifecycle_sync_tasks "$plan3_file" "$plan3_fixture/tasks"
 test "$(sha256sum "$plan3_fixture/tasks"/*.md)" = "$(cat "$plan3_tasks_snapshot")"
 
-solo_tasks="$plan3_fixture/solo-tasks"
-delegated_tasks="$plan3_fixture/delegated-tasks"
-mkdir -p "$solo_tasks" "$delegated_tasks"
-atomic_write "$solo_tasks/CCP-0001.md" 'id: CCP-0001' 'status: ready'
-atomic_write "$delegated_tasks/CCP-0001.md" 'id: CCP-0001' 'status: ready'
-atomic_write "$delegated_tasks/CCP-0002.md" 'id: CCP-0002' 'status: ready'
-test "$(choose_execution_route "$solo_tasks")" = solo
-test "$(choose_execution_route "$delegated_tasks")" = delegated
+# Directed execution records replace task-count solo routing. Sequential
+# tasks share one writer child packet; independent verification uses a
+# distinct verifier child packet with write_worktree: false.
+writer_packet="$plan3_fixture/writer-delegation.yaml"
+verifier_packet="$plan3_fixture/verifier-delegation.yaml"
+atomic_write "$writer_packet" \
+  'schema_version: 1' 'session_id: writer-plan3' \
+  'parent_session_id: root-plan3' 'root_session_id: root-plan3' \
+  'role: implementer' 'objective: Implement sequential plan tasks' 'scope:' \
+  '  plan: plans/context-circuit-plans/0003-plan-execution-orchestration' \
+  '  task: CCP-0001..CCP-0002' '  paths:' '    - docs/' 'non_goals:' \
+  '  - Do not change plan scope' 'context_refs:' '  - AGENTS.md' \
+  '  - WORKFLOW.md' '  - docs/runtime-contract.md' 'repository: context-circuit' \
+  'worktree: .runtime/worktrees/context-circuit/plan-execution-orchestration' \
+  'permissions:' '  write_worktree: true' '  write_runtime_session: true' \
+  '  write_plan: false' '  write_activity: false' 'acceptance_criteria:' \
+  '  - Sequential tasks share one writer child' 'stop_conditions:' \
+  '  - A required change falls outside docs/' 'handoff_schema: session-handoff-v1'
+atomic_write "$verifier_packet" \
+  'schema_version: 1' 'session_id: verifier-plan3' \
+  'parent_session_id: root-plan3' 'root_session_id: root-plan3' \
+  'role: verifier' 'objective: Independently verify the writer child work' 'scope:' \
+  '  plan: plans/context-circuit-plans/0003-plan-execution-orchestration' \
+  '  task: CCP-0001..CCP-0002' '  paths:' '    - docs/' 'non_goals:' \
+  '  - Do not change plan scope' 'context_refs:' '  - AGENTS.md' \
+  '  - WORKFLOW.md' '  - docs/runtime-contract.md' 'repository: context-circuit' \
+  'worktree: .runtime/worktrees/context-circuit/plan-execution-orchestration' \
+  'permissions:' '  write_worktree: false' '  write_runtime_session: true' \
+  '  write_plan: false' '  write_activity: false' 'acceptance_criteria:' \
+  '  - Independent verification uses a distinct verifier child' \
+  'stop_conditions:' \
+  '  - A required change falls outside docs/' 'handoff_schema: session-handoff-v1'
+expect_success packet_complete "$writer_packet"
+expect_success packet_complete "$verifier_packet"
+contains "$writer_packet" 'role: implementer'
+contains "$writer_packet" 'write_worktree: true'
+contains "$verifier_packet" 'role: verifier'
+contains "$verifier_packet" 'write_worktree: false'
+test "$(sed -n 's/^session_id: //p' "$writer_packet" | head -n 1)" = writer-plan3
+test "$(sed -n 's/^session_id: //p' "$verifier_packet" | head -n 1)" = verifier-plan3
+test "$(sed -n 's/^session_id: //p' "$writer_packet" | head -n 1)" != \
+  "$(sed -n 's/^session_id: //p' "$verifier_packet" | head -n 1)"
+test "$(sed -n 's/^parent_session_id: //p' "$writer_packet" | head -n 1)" = root-plan3
+test "$(sed -n 's/^parent_session_id: //p' "$verifier_packet" | head -n 1)" = root-plan3
+test "$(expected_plan_execution_records)" = 'writer-child verifier-child'
+test "$(execution_topology_for_mode solo)" = 'writer-child verifier-child'
+test "$(execution_topology_for_mode team)" = 'writer-child verifier-child'
 
 plan3_lock="$plan3_fixture/lease.lock"
 expect_success run_plan_guard "$plan3_file" "$plan3_lock"
@@ -996,6 +1033,70 @@ expect_success completion_ready_for_plan "$completion_plan3" \
   "$plan3_fixture/evidence" "$completion_verifier3" "$completion_gate3"
 
 printf 'PASS: Plan 003 acceptance scenarios (planning, review, execution gating, routing, ownership, recovery, verification, completion)\n'
+
+# Plan 0010: root sessions orchestrate writer and verifier children. Skills
+# direct those packets instead of skipping children for small work.
+contains .agents/skills/cc-run-plan/SKILL.md 'writer child'
+contains .agents/skills/cc-run-plan/SKILL.md 'verifier child'
+contains .agents/skills/cc-run-plan/SKILL.md 'Sequence is not a reason to skip children'
+contains .agents/skills/cc-run-plan/SKILL.md 'mode: solo'
+contains .agents/skills/cc-run-plan/SKILL.md 'mode: team'
+contains .agents/skills/cc-run-plan/SKILL.md 'missing host primitive'
+contains .agents/skills/cc-run-plan/SKILL.md 'reported to the human'
+contains agents/coordinator.md 'writer child'
+contains agents/coordinator.md 'verifier child'
+contains agents/coordinator.md 'missing host primitive'
+contains docs/agent-workspace-workflow.md 'writer child'
+contains docs/agent-workspace-workflow.md 'verifier child'
+contains docs/agent-workspace-workflow.md 'missing host primitive'
+contains docs/host-capabilities.md 'Task / subagent tool'
+contains docs/host-capabilities.md 'native child-agent or equivalent'
+contains docs/host-capabilities.md 'missing host primitive'
+contains context/PRODUCT-DIRECTION.md 'child writers and verifiers'
+contains docs/runtime-contract.md 'preferred route (`delegated`)'
+
+atomic_write "$plan3_fixture/solo-workspace.yaml" \
+  'workspace:' '  name: fixture' '  mode: solo'
+atomic_write "$plan3_fixture/team-workspace.yaml" \
+  'workspace:' '  name: fixture' '  mode: team'
+contains "$plan3_fixture/solo-workspace.yaml" 'mode: solo'
+contains "$plan3_fixture/team-workspace.yaml" 'mode: team'
+test "$(execution_topology_for_mode "$(sed -n 's/^  mode: //p' "$plan3_fixture/solo-workspace.yaml")")" = \
+  'writer-child verifier-child'
+test "$(execution_topology_for_mode "$(sed -n 's/^  mode: //p' "$plan3_fixture/team-workspace.yaml")")" = \
+  'writer-child verifier-child'
+
+missing_primitive_log="$plan3_fixture/missing-primitive.log"
+atomic_write "$missing_primitive_log" \
+  'BLOCKED: missing host primitive reported to the human' \
+  'next_action: Ask how to proceed; do not skip children'
+contains "$missing_primitive_log" 'missing host primitive reported to the human'
+contains "$missing_primitive_log" 'do not skip children'
+
+for orch_file in \
+  .agents/skills/cc-run-plan/SKILL.md \
+  agents/coordinator.md \
+  docs/agent-workspace-workflow.md; do
+  if grep -E 'root must not write|root cannot write the worktree|forbidden to write the worktree' \
+    "$orch_file" >/dev/null 2>&1; then
+    fail "instruction adds a root worktree write ban in $orch_file"
+  fi
+done
+if grep -F 'solo users may work directly without child agents' \
+  context/PRODUCT-DIRECTION.md >/dev/null 2>&1; then
+  fail 'PRODUCT-DIRECTION still presents working without child agents as the solo-user path'
+fi
+if grep -F 'only the amount of delegation changes' \
+  context/PRODUCT-DIRECTION.md >/dev/null 2>&1; then
+  fail 'PRODUCT-DIRECTION still says only the amount of delegation changes'
+fi
+if grep -E 'selects solo or delegated execution' \
+  context/ARCHITECTURE.md context/CONVENTIONS.md context/INDEX.md \
+  context/PROJECT.md >/dev/null 2>&1; then
+  fail 'Product Knowledge still says cc-run-plan selects solo or delegated execution'
+fi
+
+printf 'PASS: Plan 0010 directed writer and verifier child orchestration\n'
 
 # Plan 0006: plan status is canonical and task status is a bulk, idempotent
 # projection. Resume repair must preserve provider-owned annotations and must

@@ -51,11 +51,15 @@ canonical plan or task status.
 
 For approved-plan execution, use `cc-run-plan` as the sole standard entry.
 Preflight plan status, dependencies, task projections, repository cleanliness,
-leases, worktrees, and handoffs before writing. Use the concise solo path for
-small bounded work; use explicit delegation packets for bounded team work.
-Never create a user-facing task runner, silently steal stale ownership, or
-turn a verifier result into merge, publication, deployment, or completion
-authorization.
+leases, worktrees, and handoffs before writing. Direct a writer child for
+implementation and a later independent verifier child for verification.
+Sequential tasks share one writer child and one worktree; independent plans
+get separate children and worktrees. The same writer-child and verifier-child
+topology applies when `workspace.yaml` is `mode: solo` and when it is
+`mode: team`. Do not skip children for small work. If the host cannot spawn a
+child, report the missing host primitive to the human. Never create a
+user-facing task runner, silently steal stale ownership, or turn a verifier
+result into merge, publication, deployment, or completion authorization.
 
 Configuration and delivery boundaries:
 
@@ -77,4 +81,7 @@ Configuration and delivery boundaries:
   authorization. Their failure must not block the filesystem workflow.
 - Codex, Claude Code, and Cursor Agent use the same host-neutral capability
   names and safety gates. A host limitation routes to the core conversational
-  workflow rather than changing the contract.
+  workflow rather than changing the contract. Spawn writer and verifier
+  children through the host child-session primitive. Cursor's Task/subagent
+  tool is a valid primitive. A missing host primitive is reported to the
+  human; it is not a reason to skip children.

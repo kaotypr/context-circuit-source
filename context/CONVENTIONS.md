@@ -17,6 +17,9 @@
 - Give every child session an explicit parent, objective, scope, permissions,
   and handoff format.
 - Give every writing session an exclusive worktree.
+- Use `cc-run-plan` to direct a writer child and an independent verifier
+  child. `workspace.yaml` mode is identity, not an execution-topology
+  selector. `solo-local` and `team-review` remain delivery policies.
 - Never infer completion from Git, tests, worktrees, external systems, or agent
   output.
 - Keep provider-specific activity state separate under `external_status` when an

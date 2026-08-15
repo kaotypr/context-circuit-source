@@ -17,6 +17,11 @@ The target architecture is instruction- and filesystem-driven:
   docs/runtime-contract.md.
 - Registered repositories own code and repository-local conventions.
 - Each writable plan execution has an exclusive Git worktree.
+- `cc-run-plan` is the sole standard execution entry for approved plans. It
+  directs a writer child and an independent verifier child in every workspace
+  mode. `workspace.yaml` mode does not select an execution topology. Solo
+  versus team remains identity; `solo-local` and `team-review` remain
+  delivery policies.
 
 The workspace does not require a central database, activity provider, or
 command runtime. Filesystem records are the inspectable runtime source of
