@@ -911,11 +911,10 @@ contains agents/coordinator.md 'For approved-plan execution'
 contains agents/coordinator.md 'sole standard entry.'
 contains agents/repository-worker.md 'assigned repository'
 contains agents/reviewer.md 'independently reproduce'
-contains docs/agent-workspace-workflow.md 'There is no user-facing `cc-run-task` workflow.'
 contains docs/runtime-contract.md 'Same-plan contention is resolved'
-if grep -R -E 'Use .*cc-run-task|invoke .*cc-run-task|run .*cc-run-task' \
-  .agents docs agents >/dev/null 2>&1; then
-  fail 'a user-facing workflow directs users to cc-run-task'
+absent_skill=$(printf '%s-%s' 'cc-run' 'task')
+if git grep -F "$absent_skill" -- . >/dev/null 2>&1; then
+  fail 'a skill that does not exist is still named in the repository'
 fi
 
 plan3_fixture="$fixture/plan-execution"

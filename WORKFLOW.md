@@ -60,10 +60,10 @@ Plan status is the canonical lifecycle authority. Plans use `draft`, `approved`,
 and `done`; included task status is a synchronized projection using `draft`,
 `ready`, and `done`. Approval synchronizes all included tasks to `ready`, and
 completion synchronizes them to `done`. Ordinary whole-plan execution does not
-require a separate task approval or task-selection ceremony. There is no user-facing `cc-run-task` workflow. There is no run-task command. A resumed
-session repairs stale task projections idempotently without rerunning
-implementation or verification checks. Completion evidence does not change
-canonical plan or task status.
+require a separate task approval or task-selection ceremony. Approved work
+enters through `cc-run-plan`. A resumed session repairs stale task projections
+idempotently without rerunning implementation or verification checks.
+Completion evidence does not change canonical plan or task status.
 
 ## Shared context and runtime state
 

@@ -442,8 +442,7 @@ workers modify only their assigned worktree.
 
 `cc-run-plan` is the sole standard execution entry for an approved plan. It is
 an agent-session capability backed by the filesystem contract, not a command
-runtime. There is no user-facing `cc-run-task` workflow. There is no run-task
-command. Task status is not a second approval or execution gate. A plan has at
+runtime. Task status is not a second approval or execution gate. A plan has at
 most one active writing owner and an exclusive worktree. Completion evidence
 does not change canonical plan or task status.
 
