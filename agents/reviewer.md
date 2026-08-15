@@ -14,3 +14,10 @@ scope, publish, merge, or overwrite another session's runtime state.
 Return the structured handoff required by the parent session.
 The review handoff must identify whether evidence is completed, blocked,
 failed, or awaiting-human-gate and must not rewrite the worker handoff.
+
+For Plan 003 verification, independently reproduce the authorized checks from
+the assigned worktree and compare them with the plan's acceptance criteria.
+Inspect repository and worktree boundaries, lease ownership, delegation
+packets, recovery evidence, and completion gates. A passing review is evidence
+for human review; it is not permission to change plan/task status or deliver
+external work.

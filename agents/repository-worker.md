@@ -20,3 +20,9 @@ scope, evidence, decisions and assumptions, changed files, tests and results,
 questions, blockers, limitations, and the recommended next action.
 Use one of the handoff outcomes completed, blocked, failed, or
 awaiting-human-gate; never mark the plan or task done from the worker session.
+
+For plan execution, validate the current Git root, branch, assigned repository,
+and worktree before writing. Keep every write under the delegated paths. Do not
+write `.runtime/` or another session's handoff, lease, plan, task, activity, or
+worktree state. A scope violation, missing dependency, contradictory source,
+or dirty/uncertain ownership state is a stop condition returned to the root.

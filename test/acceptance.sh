@@ -438,6 +438,96 @@ lifecycle_sync_tasks() {
   done
 }
 
+plan_contract_complete() {
+  plan_file=$1
+  for required in \
+    'id:' 'number:' 'title:' 'status:' 'source:' 'repositories:' \
+    'product_knowledge:' 'implementation_scope:' 'non_goals:' \
+    'dependencies:' 'acceptance_criteria:' 'test_scope:' \
+    'verification_commands:'; do
+    grep -F "$required" "$plan_file" >/dev/null 2>&1 || return 1
+  done
+  return 0
+}
+
+plan_ready_for_execution() {
+  execution_plan=$1
+  grep -F 'status: approved' "$execution_plan" >/dev/null 2>&1 || return 1
+  if grep -F 'status: draft' "$execution_plan" >/dev/null 2>&1; then
+    return 1
+  fi
+  return 0
+}
+
+review_outcome_valid() {
+  case "$1" in
+    ready-for-approval|needs-revision|blocked|approved-for-execution) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+dependencies_ready() {
+  dependency_file=''
+  for dependency_file in "$@"; do
+    dependency_status=$(sed -n 's/^status: //p' "$dependency_file" | head -n 1)
+    case "$dependency_status" in
+      approved|done) ;;
+      *) return 1 ;;
+    esac
+  done
+  return 0
+}
+
+choose_execution_route() {
+  route_task_dir=$1
+  route_task_count=$(find "$route_task_dir" -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')
+  if test "$route_task_count" -le 1; then
+    printf 'solo\n'
+  else
+    printf 'delegated\n'
+  fi
+}
+
+run_plan_guard() {
+  guard_plan=$1
+  guard_lock=$2
+  plan_ready_for_execution "$guard_plan" || {
+    printf 'BLOCKED: only an approved plan can execute\n' >&2
+    return 1
+  }
+  if test -e "$guard_lock"; then
+    printf 'BLOCKED: plan already has a writing owner\n' >&2
+    return 1
+  fi
+  return 0
+}
+
+recovery_guard() {
+  recovery_session=$1
+  grep -F 'status: blocked' "$recovery_session" >/dev/null 2>&1 || return 1
+  grep -F 'replaces_session_id:' "$recovery_session" >/dev/null 2>&1 || return 1
+  grep -F 'takeover_reason: human-authorized recovery' "$recovery_session" \
+    >/dev/null 2>&1 || return 1
+  return 0
+}
+
+completion_ready_for_plan() {
+  completion_plan_file=$1
+  completion_evidence_dir=$2
+  completion_verifier_file=$3
+  completion_gate_file=$4
+  plan_ready_for_execution "$completion_plan_file" || return 1
+  for completion_evidence_file in "$completion_evidence_dir"/*.yaml; do
+    test -f "$completion_evidence_file" || return 1
+    grep -F 'evidence_status: completed' "$completion_evidence_file" \
+      >/dev/null 2>&1 || return 1
+  done
+  grep -F 'status: completed' "$completion_verifier_file" >/dev/null 2>&1 || return 1
+  grep -F 'verification: passed' "$completion_verifier_file" >/dev/null 2>&1 || return 1
+  grep -F 'status: approved' "$completion_gate_file" >/dev/null 2>&1 || return 1
+  return 0
+}
+
 require_file AGENTS.md
 require_file WORKFLOW.md
 require_file CLAUDE.md
@@ -728,6 +818,169 @@ contains docs/agent-workspace-workflow.md 'Human approval is required'
 contains docs/agent-workspace-workflow.md 'source changes during execution'
 contains docs/runtime-contract.md 'The canonical plan/task status remains unchanged'
 contains agents/reviewer.md 'Do not repair, change'
+
+# Plan 0003: context-grounded planning, review, execution routing, ownership,
+# recovery, and acceptance behavior.
+require_file plans/README.md
+require_file docs/plan-review.md
+require_file .agents/skills/cc-create-plan/SKILL.md
+require_file .agents/skills/cc-create-plan/agents/openai.yaml
+require_file .agents/skills/cc-review-plan/SKILL.md
+require_file .agents/skills/cc-review-plan/agents/openai.yaml
+require_file .agents/skills/cc-whats-next/SKILL.md
+require_file .agents/skills/cc-whats-next/agents/openai.yaml
+require_file .agents/skills/cc-run-plan/SKILL.md
+require_file .agents/skills/cc-run-plan/agents/openai.yaml
+
+for plan_field in 'plan.yaml' '`draft`' '`approved`' '`done`' \
+  'repositories:' 'product_knowledge:' 'non_goals:' \
+  'acceptance_criteria:' 'verification_commands:'; do
+  contains plans/README.md "$plan_field"
+done
+contains docs/planning.md 'human-reviewed intended work'
+contains docs/plan-review.md 'ready-for-approval'
+contains docs/plan-review.md 'approved-for-execution'
+contains .agents/skills/cc-create-plan/SKILL.md 'status: draft'
+contains .agents/skills/cc-review-plan/SKILL.md 'cc-run-plan'
+contains .agents/skills/cc-whats-next/SKILL.md 'approved dependency-ready plan'
+contains .agents/skills/cc-run-plan/SKILL.md 'sole standard plan-execution capability'
+contains .agents/skills/cc-run-plan/SKILL.md 'exclusive repository worktree'
+contains .agents/skills/cc-run-plan/SKILL.md 'session-handoff-v1'
+contains agents/coordinator.md 'For approved-plan execution'
+contains agents/coordinator.md 'sole standard entry.'
+contains agents/repository-worker.md 'assigned repository'
+contains agents/reviewer.md 'independently reproduce'
+contains docs/agent-workspace-workflow.md 'There is no user-facing `cc-run-task` workflow.'
+contains docs/runtime-contract.md 'Same-plan contention is resolved'
+if grep -R -E 'Use .*cc-run-task|invoke .*cc-run-task|run .*cc-run-task' \
+  .agents docs agents >/dev/null 2>&1; then
+  fail 'a user-facing workflow directs users to cc-run-task'
+fi
+
+plan3_fixture="$fixture/plan-execution"
+mkdir -p "$plan3_fixture/tasks" "$plan3_fixture/dependencies" \
+  "$plan3_fixture/evidence"
+plan3_file="$plan3_fixture/plan.yaml"
+atomic_write "$plan3_file" \
+  'id: plan-fixture' 'number: 3' 'title: Execute a bounded fixture plan' \
+  'status: draft' 'source:' '  kind: accepted-prd' \
+  '  reference: contributions/prds/fixture.md' 'repositories:' \
+  '  - context-circuit' 'product_knowledge:' '  references:' \
+  '    - context/PROJECT.md' 'implementation_scope:' \
+  '  - docs and agents' 'non_goals:' '  - delivery actions' \
+  'dependencies:' '  - foundation' 'acceptance_criteria:' \
+  '  - The fixture can execute safely' 'test_scope:' '  - filesystem fixtures' \
+  'verification_commands:' '  - git diff --check'
+expect_success plan_contract_complete "$plan3_file"
+expect_failure plan_ready_for_execution "$plan3_file"
+atomic_write "$plan3_fixture/tasks/CCP-0001.md" \
+  'id: CCP-0001' 'status: draft' 'title: First fixture task'
+atomic_write "$plan3_fixture/tasks/CCP-0002.md" \
+  'id: CCP-0002' 'status: draft' 'title: Second fixture task'
+atomic_write "$plan3_fixture/dependencies/foundation.yaml" \
+  'id: foundation' 'status: done'
+atomic_write "$plan3_fixture/dependencies/knowledge.yaml" \
+  'id: knowledge' 'status: approved'
+expect_success dependencies_ready \
+  "$plan3_fixture/dependencies/foundation.yaml" \
+  "$plan3_fixture/dependencies/knowledge.yaml"
+atomic_write "$plan3_fixture/dependencies/knowledge.yaml" \
+  'id: knowledge' 'status: draft'
+expect_failure dependencies_ready "$plan3_fixture/dependencies/knowledge.yaml"
+atomic_write "$plan3_fixture/dependencies/knowledge.yaml" \
+  'id: knowledge' 'status: approved'
+atomic_write "$plan3_file" \
+  'id: plan-fixture' 'number: 3' 'title: Execute a bounded fixture plan' \
+  'status: approved' 'source:' '  kind: accepted-prd' \
+  '  reference: contributions/prds/fixture.md' 'repositories:' \
+  '  - context-circuit' 'product_knowledge:' '  references:' \
+  '    - context/PROJECT.md' 'implementation_scope:' \
+  '  - docs and agents' 'non_goals:' '  - delivery actions' \
+  'dependencies:' '  - foundation' 'acceptance_criteria:' \
+  '  - The fixture can execute safely' 'test_scope:' '  - filesystem fixtures' \
+  'verification_commands:' '  - git diff --check'
+expect_success plan_ready_for_execution "$plan3_file"
+expect_success lifecycle_sync_tasks "$plan3_file" "$plan3_fixture/tasks"
+contains "$plan3_fixture/tasks/CCP-0001.md" 'status: ready'
+contains "$plan3_fixture/tasks/CCP-0002.md" 'status: ready'
+plan3_tasks_snapshot="$plan3_fixture/tasks.snapshot"
+sha256sum "$plan3_fixture/tasks"/*.md > "$plan3_tasks_snapshot"
+expect_success lifecycle_sync_tasks "$plan3_file" "$plan3_fixture/tasks"
+test "$(sha256sum "$plan3_fixture/tasks"/*.md)" = "$(cat "$plan3_tasks_snapshot")"
+
+solo_tasks="$plan3_fixture/solo-tasks"
+delegated_tasks="$plan3_fixture/delegated-tasks"
+mkdir -p "$solo_tasks" "$delegated_tasks"
+atomic_write "$solo_tasks/CCP-0001.md" 'id: CCP-0001' 'status: ready'
+atomic_write "$delegated_tasks/CCP-0001.md" 'id: CCP-0001' 'status: ready'
+atomic_write "$delegated_tasks/CCP-0002.md" 'id: CCP-0002' 'status: ready'
+test "$(choose_execution_route "$solo_tasks")" = solo
+test "$(choose_execution_route "$delegated_tasks")" = delegated
+
+plan3_lock="$plan3_fixture/lease.lock"
+expect_success run_plan_guard "$plan3_file" "$plan3_lock"
+mkdir -p "$plan3_lock"
+assert_failure_reason "$plan3_fixture/approved-owner.log" \
+  'plan already has a writing owner' run_plan_guard "$plan3_file" "$plan3_lock"
+rm -rf "$plan3_lock"
+atomic_write "$plan3_file" \
+  'id: plan-fixture' 'number: 3' 'title: Execute a bounded fixture plan' \
+  'status: draft' 'source:' '  kind: accepted-prd' 'repositories:' \
+  '  - context-circuit' 'product_knowledge:' '  references:' \
+  '    - context/PROJECT.md' 'implementation_scope:' '  - docs and agents' \
+  'non_goals:' '  - delivery actions' 'dependencies:' '  - foundation' \
+  'acceptance_criteria:' '  - The fixture can execute safely' \
+  'test_scope:' '  - filesystem fixtures' 'verification_commands:' \
+  '  - git diff --check'
+assert_failure_reason "$plan3_fixture/draft-plan.log" \
+  'only an approved plan can execute' run_plan_guard "$plan3_file" "$plan3_lock"
+
+packet_file="$plan3_fixture/delegation.yaml"
+atomic_write "$packet_file" \
+  'schema_version: 1' 'session_id: child-plan3' \
+  'parent_session_id: root-plan3' 'root_session_id: root-plan3' \
+  'role: implementer' 'objective: Implement one bounded Plan 003 task' 'scope:' \
+  '  plan: plans/context-circuit-plans/0003-plan-execution-orchestration' \
+  '  task: CCP-0001' '  paths:' '    - docs/' 'non_goals:' \
+  '  - Do not change plan scope' 'context_refs:' '  - AGENTS.md' \
+  '  - WORKFLOW.md' '  - docs/runtime-contract.md' 'repository: context-circuit' \
+  'worktree: .runtime/worktrees/context-circuit/plan-execution-orchestration' \
+  'permissions:' '  write_worktree: true' '  write_runtime_session: true' \
+  '  write_plan: false' '  write_activity: false' 'acceptance_criteria:' \
+  '  - The bounded task is implemented and verified' 'stop_conditions:' \
+  '  - A required change falls outside docs/' 'handoff_schema: session-handoff-v1'
+expect_success packet_complete "$packet_file"
+contains "$packet_file" 'write_plan: false'
+contains "$packet_file" 'handoff_schema: session-handoff-v1'
+
+recovery_session="$plan3_fixture/recovery-session.yaml"
+atomic_write "$recovery_session" 'session_id: takeover-plan3' \
+  'status: blocked' 'replaces_session_id: interrupted-plan3' \
+  'takeover_reason: human-authorized recovery'
+expect_success recovery_guard "$recovery_session"
+
+completion_plan3="$plan3_fixture/completion-plan.yaml"
+completion_verifier3="$plan3_fixture/completion-verifier.md"
+completion_gate3="$plan3_fixture/completion-gate.yaml"
+atomic_write "$completion_plan3" 'id: plan-fixture' 'status: approved'
+for plan3_task_id in CCP-0001 CCP-0002 CCP-0003; do
+  atomic_write "$plan3_fixture/evidence/$plan3_task_id.yaml" \
+    "task: $plan3_task_id" 'evidence_status: completed'
+done
+atomic_write "$completion_verifier3" '# Verification handoff' \
+  'status: failed' 'verification: failed'
+atomic_write "$completion_gate3" 'status: pending' 'gate: status-change'
+expect_failure completion_ready_for_plan "$completion_plan3" \
+  "$plan3_fixture/evidence" "$completion_verifier3" "$completion_gate3"
+atomic_write "$completion_verifier3" '# Verification handoff' \
+  'status: completed' 'verification: passed'
+expect_failure completion_ready_for_plan "$completion_plan3" \
+  "$plan3_fixture/evidence" "$completion_verifier3" "$completion_gate3"
+atomic_write "$completion_gate3" 'status: approved' 'gate: status-change'
+expect_success completion_ready_for_plan "$completion_plan3" \
+  "$plan3_fixture/evidence" "$completion_verifier3" "$completion_gate3"
+
+printf 'PASS: Plan 003 acceptance scenarios (planning, review, execution gating, routing, ownership, recovery, verification, completion)\n'
 
 # Plan 0006: plan status is canonical and task status is a bulk, idempotent
 # projection. Resume repair must preserve provider-owned annotations and must
