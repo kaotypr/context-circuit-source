@@ -26,3 +26,7 @@ contradictory refresh remains visible for human review.
 
 Add one link per generated role page, with a short perspective description.
 Keep this index navigational and keep exact behavior in the linked domains.
+
+- [Workspace User](workspace-user.md) — human project participant using the
+  Agent Workspace lifecycle across intent, context, plans, execution, and
+  review.
