@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Gather Context"
+  short_description: "Create or refresh scoped Domain and Role Knowledge"
+  default_prompt: "Use $cc-gather-context to create or refresh request-scoped Domain or Role Knowledge from selected evidence."

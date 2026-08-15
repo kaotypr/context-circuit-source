@@ -52,3 +52,19 @@ not replace the documents it indexes and must not duplicate their facts.
 - Runtime state describes current execution and does not redefine product truth.
 - Add new context only when it is source-backed, scoped, and useful to future
   sessions.
+
+## Detailed context selection
+
+Domain Knowledge is canonical for a bounded project area. Start with
+`context/domains/README.md`, then read only the requested domain page and its
+linked workflow pages. Role Knowledge is a cross-domain perspective. Start
+with `context/roles/README.md`, then read only the requested role page and the
+domain/workflow pages in its `domains` and workflow links.
+
+`cc-gather-context` creates or refreshes these documents from explicitly
+selected sources and repository evidence. It records provenance, freshness,
+assumptions, unknowns, contradictions, and proposed or accepted state. It
+must not scan all detailed context or the passive source inbox during ordinary
+session entry. Business/project role pages are distinct from agent execution
+roles under `agents/` and are not access-control policies. Later planning
+selects the smallest relevant domain and role set rather than the entire tree.

@@ -899,6 +899,141 @@ contains .agents/skills/cc-idea-brief/agents/openai.yaml 'cc-idea-brief'
 contains .agents/skills/cc-create-prd/agents/openai.yaml 'cc-create-prd'
 contains .agents/skills/cc-initialize-workspace/agents/openai.yaml 'cc-initialize-workspace'
 
+# Plan 0005: Domain Knowledge is canonical for bounded areas and Role Knowledge
+# provides a linked cross-domain perspective with request-scoped generation.
+require_file docs/templates/domain-context.md
+require_file docs/templates/role-context.md
+require_file context/domains/README.md
+require_file context/roles/README.md
+require_file .agents/skills/cc-gather-context/SKILL.md
+require_file .agents/skills/cc-gather-context/agents/openai.yaml
+
+for metadata_field in 'kind: domain' 'status: proposed' 'sources:' 'freshness:' \
+  'assumptions:' 'unknowns:' 'contradictions:' 'acceptance:'; do
+  contains docs/templates/domain-context.md "$metadata_field"
+done
+for metadata_field in 'kind: role' 'status: proposed' 'domains:' 'sources:' \
+  'freshness:' 'assumptions:' 'unknowns:' 'contradictions:' 'acceptance:'; do
+  contains docs/templates/role-context.md "$metadata_field"
+done
+if grep -E '^[[:space:]]*(relevant_domains|contributes_to|acts_on|consumes|approves):' \
+  docs/templates/role-context.md >/dev/null 2>&1; then
+  fail 'role template contains a relationship matrix instead of a simple domains list'
+fi
+contains docs/product-knowledge.md 'Domain Knowledge is canonical'
+contains docs/product-knowledge.md 'Role Knowledge is a cross-domain view'
+contains docs/product-knowledge.md 'Business/project roles are not agent execution roles.'
+contains .agents/skills/cc-gather-context/SKILL.md 'Read only those selected files'
+contains .agents/skills/cc-gather-context/SKILL.md 'Never silently overwrite accepted context'
+contains .agents/skills/cc-gather-context/SKILL.md 'domains:'
+contains context/INDEX.md 'smallest relevant'
+contains context/INDEX.md 'domain and role'
+contains context/domains/README.md 'Do not recursively read every domain'
+contains context/roles/README.md 'workflow pages linked'
+contains context/sources.yaml 'approved-product-direction-domain-role-context'
+contains context/sources.yaml 'docs/templates/role-context.md'
+contains .agents/skills/cc-gather-context/agents/openai.yaml 'cc-gather-context'
+
+domain_role_fixture="$fixture/domain-role-context"
+mkdir -p "$domain_role_fixture/sources" \
+  "$domain_role_fixture/context/domains/payments" \
+  "$domain_role_fixture/context/domains/unrelated" \
+  "$domain_role_fixture/context/roles"
+atomic_write "$domain_role_fixture/sources/selected.md" \
+  'selected payment evidence' 'raw-only-secret-must-not-be-copied'
+atomic_write "$domain_role_fixture/sources/unselected.md" \
+  'unselected evidence must not be read'
+domain_read_log="$domain_role_fixture/domain-read.log"
+select_domain_sources() {
+  selected_source=$1
+  test "$selected_source" = "$domain_role_fixture/sources/selected.md"
+  cat "$selected_source" >/dev/null
+  printf '%s\n' "${selected_source#"$domain_role_fixture/"}" >> "$domain_read_log"
+}
+expect_success select_domain_sources "$domain_role_fixture/sources/selected.md"
+contains "$domain_read_log" 'sources/selected.md'
+if grep -F 'sources/unselected.md' "$domain_read_log" >/dev/null 2>&1; then
+  fail 'domain generation read an unselected raw source'
+fi
+
+domain_page="$domain_role_fixture/context/domains/payments/README.md"
+atomic_write "$domain_page" \
+  'kind: domain' 'status: proposed' 'title: Payments' \
+  'sources:' '  - sources/selected.md' \
+  'source_revisions:' '  - sha256:fixture-selected' \
+  'freshness: current' 'assumptions:' '  - The payment owner is not confirmed.' \
+  'unknowns:' '  - Refund timing is not described.' 'contradictions: []' \
+  'acceptance:' '  state: pending' \
+  '# Payments' '## Summary' 'Selected payment evidence is summarized here.'
+contains "$domain_page" 'kind: domain'
+contains "$domain_page" 'status: proposed'
+contains "$domain_page" 'sources/selected.md'
+contains "$domain_page" 'assumptions:'
+contains "$domain_page" 'unknowns:'
+contains "$domain_page" 'acceptance:'
+if grep -F 'raw-only-secret-must-not-be-copied' "$domain_page" >/dev/null 2>&1; then
+  fail 'domain generation copied raw source text into Product Knowledge'
+fi
+test ! -e "$domain_role_fixture/context/payments.md"
+
+accepted_snapshot="$domain_role_fixture/accepted-domain.snapshot"
+atomic_write "$domain_page" \
+  'kind: domain' 'status: accepted' 'title: Payments' \
+  'sources:' '  - sources/selected.md' 'freshness: current' \
+  'acceptance:' '  state: accepted' '  accepted_at: 2026-08-15' \
+  '# Payments' '## Accepted behavior' 'The accepted payment behavior.'
+sha256sum "$domain_page" > "$accepted_snapshot"
+refresh_with_contradiction() {
+  test "$(sed -n 's/^status: //p' "$domain_page" | head -n 1)" = accepted
+  atomic_write "$domain_page.proposed" \
+    'kind: domain' 'status: needs-review' 'refreshes: context/domains/payments/README.md' \
+    'contradictions:' '  - New evidence conflicts with accepted payment behavior.' \
+    'acceptance:' '  state: needs-review' \
+    '# Payments refresh proposal'
+}
+expect_success refresh_with_contradiction
+test "$(sha256sum "$domain_page")" = "$(cat "$accepted_snapshot")"
+contains "$domain_page.proposed" 'status: needs-review'
+contains "$domain_page.proposed" 'contradictions:'
+
+role_page="$domain_role_fixture/context/roles/planner.md"
+atomic_write "$role_page" \
+  'kind: role' 'status: proposed' 'title: Product planner' \
+  'domains:' '  - ../domains/payments/README.md' \
+  '  - ../domains/identity/README.md' \
+  'sources:' '  - sources/selected.md' 'freshness: current' \
+  'assumptions: []' 'unknowns: []' 'contradictions: []' \
+  'acceptance:' '  state: pending' \
+  '# Product planner' '## Cross-domain perspective' \
+  'Links the payment and identity domains without restating their facts.'
+contains "$role_page" 'domains:'
+contains "$role_page" '../domains/payments/README.md'
+contains "$role_page" '../domains/identity/README.md'
+if grep -E '^[[:space:]]*(relevant_domains|contributes_to|acts_on|consumes|approves):' \
+  "$role_page" >/dev/null 2>&1; then
+  fail 'generated role contains a relationship matrix field'
+fi
+if grep -F 'The accepted payment behavior.' "$role_page" >/dev/null 2>&1; then
+  fail 'generated role duplicated canonical domain facts'
+fi
+test ! -e "$domain_role_fixture/context/roles/agent-worker.md"
+
+role_selection_log="$domain_role_fixture/role-selection.log"
+select_role_context() {
+  cat "$role_page" >/dev/null
+  cat "$domain_page" >/dev/null
+  printf '%s\n' 'context/roles/planner.md' 'context/domains/payments/README.md' \
+    >> "$role_selection_log"
+}
+expect_success select_role_context
+contains "$role_selection_log" 'context/roles/planner.md'
+contains "$role_selection_log" 'context/domains/payments/README.md'
+if grep -F 'unrelated' "$role_selection_log" >/dev/null 2>&1; then
+  fail 'role context selection read an unrelated domain'
+fi
+
+printf 'PASS: Domain and Role Knowledge acceptance scenarios (templates, selective generation, provenance, links, contradictions, acceptance)\n'
+
 printf 'PASS: workspace foundation and context acceptance scenarios (initialization, passive sources, provenance, artifacts)\n'
 
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'
