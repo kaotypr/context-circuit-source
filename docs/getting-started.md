@@ -36,9 +36,9 @@ JavaScript command layer. Verify behavior with `sh test/acceptance.sh`.
 
 ## 1. Enter and orient
 
-Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md, relevant
-Product Knowledge, active runtime sessions, plans, repository instructions,
-and observed Git state.
+Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md,
+context/WORKSPACE.md, context/PROJECT.md, relevant Product Knowledge, active
+runtime sessions, plans, repository instructions, and observed Git state.
 
 Identify whether this is:
 
@@ -73,9 +73,11 @@ Initialization asks one compact set of core identity questions:
    active branch? If `development` exists, recommend it; let the user choose a
    different branch.
 
-Record the confirmed identity in `workspace.yaml`. A repository entry has a
-path, mode, role, agent, and `default_branch`. Do not turn the current working
-branch into a delivery policy.
+Record the confirmed identity in `workspace.yaml` and summarize it in
+`context/WORKSPACE.md`. Do not write workspace identity into
+`context/PROJECT.md`. A repository entry has a path, mode, role, agent, and
+`default_branch`. Do not turn the current working branch into a delivery
+policy.
 
 When no repository is registered, offer the user a short Idea Brief
 conversation, selected source intake, both, or deferment. Do not treat the

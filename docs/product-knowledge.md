@@ -6,7 +6,12 @@ conventions, decisions, and known gaps.
 
 A typical tree contains:
 
-- `PROJECT.md`;
+- `WORKSPACE.md` — this workspace: identity after initialization and the
+  registered-repository map as workspace structure, not the product being
+  built;
+- `PROJECT.md` — the project being built: purpose, boundaries, and what
+  registered repositories contain, or a record that the project is not yet
+  defined;
 - `ARCHITECTURE.md`;
 - `CONVENTIONS.md`;
 - `DECISIONS.md`;
@@ -14,6 +19,11 @@ A typical tree contains:
 - `domains/<domain>/README.md` for canonical bounded-area knowledge;
 - `domains/<domain>/workflows/` for exact workflow behavior;
 - `SOURCES.md` and `sources.yaml`.
+
+`WORKSPACE.md` and `PROJECT.md` are separate identities. Workspace
+behavior and the repository map belong in `WORKSPACE.md`. Whole-project
+purpose belongs in `PROJECT.md`. There is no every-session product-direction
+page.
 
 Product Knowledge is not an instruction layer and does not override
 `AGENTS.md`, `WORKFLOW.md`, repository-local instructions, approved plans, or

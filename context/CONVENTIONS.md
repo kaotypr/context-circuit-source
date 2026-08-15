@@ -3,6 +3,8 @@
 - Keep normative behavior in AGENTS.md and WORKFLOW.md.
 - Keep host adapters thin and expose one workspace-entry workflow.
 - Keep Product Knowledge concise, scoped, and source-cited.
+- Keep workspace identity in WORKSPACE.md and project identity in PROJECT.md.
+  Do not add a third every-session identity page.
 - Keep raw source files in `sources/`; never copy them into accepted context.
 - Read only selected source files for a source-based request and record the
   source path, reason, and revision or freshness when known.

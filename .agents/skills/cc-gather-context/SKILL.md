@@ -36,10 +36,11 @@ For a source-based request:
 4. Separate observed evidence, current implementation, accepted decisions,
    assumptions, unknowns, and contradictions.
 
-The approved product-direction source may establish the model boundaries, but
-it does not authorize reading unrelated raw sources. Keep raw source text in
-`sources/`; summarize evidence in the generated document and provenance
-record.
+Accepted project identity in `PROJECT.md`, or a human-reviewed Idea Brief or
+PRD, may establish model boundaries. It does not authorize reading unrelated
+raw sources. Do not refresh project identity from a separate direction
+summary. Keep raw source text in `sources/`; summarize evidence in the
+generated document and provenance record.
 
 ## Generate Domain Knowledge
 

@@ -10,10 +10,11 @@ workspace, or when a root session delegates a bounded child session. The
 workspace filesystem is the coordination surface; do not make a user invoke a
 CLI command as the entry point.
 
-Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md, and the relevant
-Product Knowledge before taking consequential action. Read
-docs/agent-workspace-workflow.md for behavior and docs/runtime-contract.md for
-runtime record fields and ownership rules.
+Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md,
+context/WORKSPACE.md, context/PROJECT.md, and the relevant Product Knowledge
+before taking consequential action. Read docs/agent-workspace-workflow.md for
+behavior and docs/runtime-contract.md for runtime record fields and ownership
+rules.
 
 ## Identify the session
 

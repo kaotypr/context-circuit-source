@@ -26,6 +26,7 @@ repositories:
   - example-repository
 product_knowledge:
   references:
+    - context/WORKSPACE.md
     - context/PROJECT.md
 implementation_scope:
   - The files or behavior this plan may change

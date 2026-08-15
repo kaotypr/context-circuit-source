@@ -8,9 +8,10 @@ not replace the documents it indexes and must not duplicate their facts.
 - AGENTS.md — wrapper safety and agent behavior.
 - WORKFLOW.md — session entry, delegation, gates, and development loop.
 - workspace.yaml — workspace configuration and registered repositories.
-- context/PRODUCT-DIRECTION.md — uninitialized starter; not accepted product
-  direction.
-- context/PROJECT.md — uninitialized project home.
+- context/WORKSPACE.md — this Context Circuit workspace; identity is
+  summarized here after initialization.
+- context/PROJECT.md — the project being built, or uninitialized project
+  identity.
 - context/CONVENTIONS.md — repository and documentation conventions.
 - context/DECISIONS.md — no accepted product decisions yet.
 - context/SOURCES.md and context/sources.yaml — source provenance.
@@ -47,10 +48,11 @@ ceremonies for every session.
 - context/roles/ — user or operator roles, when present.
 - context/domains/ — domain summaries, when present.
 - context/domains/<domain>/workflows/ — domain workflow behavior, when present.
-- context/PROJECT.md through context/DECISIONS.md — big-picture Project
-  Knowledge; generated Domain and Role Knowledge belongs under `context/domains/`
-  and `context/roles/` and is owned by the dedicated context plan. Starter
-  pages in this clone remain uninitialized.
+- context/WORKSPACE.md — workspace identity; do not treat it as the project.
+- context/PROJECT.md through context/DECISIONS.md — big-picture project
+  identity and decisions; generated Domain and Role Knowledge belongs under
+  `context/domains/` and `context/roles/` and is owned by the dedicated
+  context plan. Starter project pages in this clone remain uninitialized.
 - plans/<repository-key>-plans/ — intended work for a selected repository.
 - sources/ — raw inputs and authored Idea Brief or PRD artifacts at
   user/team-selected paths; do not assume a subdirectory layout.

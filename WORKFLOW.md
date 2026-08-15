@@ -15,7 +15,7 @@ docs/runtime-contract.md.
 The agent must:
 
 1. Read AGENTS.md, WORKFLOW.md, and workspace.yaml.
-2. Read context/INDEX.md and only the relevant Product Knowledge.
+2. Read context/INDEX.md, context/WORKSPACE.md, context/PROJECT.md, and only the relevant Product Knowledge.
 3. Identify whether it is a root session or a child session.
 4. Read its runtime session record and parent handoff when applicable.
 5. Inspect relevant plans, repository instructions, branch, worktree, and Git
@@ -87,9 +87,11 @@ raw source text into accepted context.
 
 Initialization establishes only core workspace identity: solo or team mode,
 known repositories or project items, their roles, and each repository's
-default active branch. A workspace with zero repositories is valid. Delivery
-behavior, merge policy, publication, deployment, and external activity tools
-are configured separately and are not initialization questions.
+default active branch. Record confirmed identity in `workspace.yaml` and
+`context/WORKSPACE.md`, not `context/PROJECT.md`. A workspace with zero
+repositories is valid. Delivery behavior, merge policy, publication,
+deployment, and external activity tools are configured separately and are not
+initialization questions.
 
 ## Development loop
 
