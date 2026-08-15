@@ -1,0 +1,154 @@
+name: Synchronize Context Circuit release
+
+on:
+  push:
+    tags:
+      - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version (for example v0.3.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: context-circuit-release-main
+  cancel-in-progress: false
+
+jobs:
+  synchronize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Context Circuit source
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Resolve version and source revision
+        id: meta
+        run: |
+          set -eu
+          if [ "${GITHUB_REF_TYPE}" = tag ]; then
+            version="$GITHUB_REF_NAME"
+          else
+            version="${{ inputs.version }}"
+          fi
+          if [ -z "$version" ]; then
+            echo "Version is required from a v* tag or workflow_dispatch input." >&2
+            exit 1
+          fi
+          source_sha=$(git rev-parse HEAD)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "version=$version"
+          echo "source_revision=$source_sha"
+          echo "destination=kaotypr/context-circuit-release main"
+          echo "remaining_gate=publication"
+
+      - name: Validate source
+        run: |
+          set -eu
+          git diff --check
+          sh test/acceptance.sh
+
+      - name: Stage release artifact
+        id: stage
+        run: |
+          set -eu
+          staging_dir="${RUNNER_TEMP}/cc-release-stage"
+          output_dir="${RUNNER_TEMP}/cc-release-out"
+          mkdir -p "$staging_dir" "$output_dir"
+          sh scripts/release-artifact.sh "$staging_dir" "$output_dir" "${{ steps.meta.outputs.version }}"
+          artifact_dir="$output_dir/context-circuit-${{ steps.meta.outputs.version }}"
+          echo "artifact_dir=$artifact_dir" >> "$GITHUB_OUTPUT"
+          echo "output_dir=$output_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Inventory and smoke-check artifact
+        run: |
+          set -eu
+          artifact_dir="${{ steps.stage.outputs.artifact_dir }}"
+          test -d "$artifact_dir"
+          test -f "$artifact_dir/AGENTS.md"
+          test -f "$artifact_dir/WORKFLOW.md"
+          test -f "$artifact_dir/workspace.yaml"
+          test -f "$artifact_dir/context/INDEX.md"
+          test -f "$artifact_dir/.agents/skills/cc-session-entry/SKILL.md"
+          test ! -e "$artifact_dir/test"
+          test ! -e "$artifact_dir/.github"
+          test ! -e "$artifact_dir/scripts"
+          test ! -e "$artifact_dir/docs/release.md"
+          test ! -e "$artifact_dir/package.json"
+          echo "artifact_inventory:"
+          (CDPATH= cd -- "$artifact_dir" && find . -type f -print | sort)
+
+      - name: Retain staged artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-circuit-${{ steps.meta.outputs.version }}
+          path: ${{ steps.stage.outputs.artifact_dir }}
+          if-no-files-found: error
+
+      - name: Check out release destination
+        id: destination
+        if: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN != '' }}
+        continue-on-error: true
+        uses: actions/checkout@v6
+        with:
+          repository: kaotypr/context-circuit-release
+          ref: main
+          path: context-circuit-release
+          token: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN }}
+          persist-credentials: false
+
+      - name: Synchronize destination or report manual fallback
+        env:
+          RELEASE_TOKEN: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN }}
+          VERSION: ${{ steps.meta.outputs.version }}
+          SOURCE_SHA: ${{ steps.meta.outputs.source_sha }}
+          ARTIFACT_DIR: ${{ steps.stage.outputs.artifact_dir }}
+        run: |
+          set -eu
+          echo "version=$VERSION"
+          echo "source_revision=$SOURCE_SHA"
+          echo "destination=kaotypr/context-circuit-release main"
+          echo "remaining_gate=publication"
+          if [ -z "$RELEASE_TOKEN" ]; then
+            echo "CONTEXT_CIRCUIT_RELEASE_TOKEN is absent."
+            echo "Publication remains a human gate."
+            echo "Manual fallback: download the retained workflow artifact and copy it to kaotypr/context-circuit-release main."
+            exit 0
+          fi
+          if [ ! -d context-circuit-release/.git ]; then
+            echo "Release destination checkout failed or was denied."
+            echo "Publication remains a human gate."
+            echo "Manual fallback: the staged artifact was retained on this workflow run."
+            exit 0
+          fi
+          find context-circuit-release -mindepth 1 -maxdepth 1 ! -name '.git' -exec rm -rf {} +
+          cp -R "$ARTIFACT_DIR"/. context-circuit-release/
+          git -C context-circuit-release add -A
+          if [ -z "$(git -C context-circuit-release status --porcelain)" ]; then
+            echo "Release repository is already synchronized."
+            exit 0
+          fi
+          git -C context-circuit-release config user.name "github-actions[bot]"
+          git -C context-circuit-release config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C context-circuit-release commit -m "Release Context Circuit $VERSION"
+          set +e
+          authorization=$(printf 'x-access-token:%s' "$RELEASE_TOKEN" | base64 | tr -d '\n')
+          git -C context-circuit-release \
+            -c "http.https://github.com/.extraheader=AUTHORIZATION: basic $authorization" \
+            push origin HEAD:main
+          push_status=$?
+          set -e
+          if [ "$push_status" -ne 0 ]; then
+            echo "Push to kaotypr/context-circuit-release was denied or failed."
+            echo "Publication remains a human gate."
+            echo "Manual fallback: the staged artifact was retained on this workflow run."
+            exit 0
+          fi
+          echo "Synchronized kaotypr/context-circuit-release main."
+          echo "Human publication gate was used via CONTEXT_CIRCUIT_RELEASE_TOKEN."
