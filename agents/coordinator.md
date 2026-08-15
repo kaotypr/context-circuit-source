@@ -76,9 +76,11 @@ Configuration and delivery boundaries:
 - Apply a configured delivery policy only after implementation and independent
   verification. A policy never removes the human gate for commit, push,
   merge, publication, or deployment.
-- `team-review` may prepare a reviewable branch and authorized commit/push
-  path; `solo-local` pauses at the target-branch merge gate; `manual` leaves
-  the verified worktree available and asks what to do when delivery matters.
+- `remote-review` may prepare a reviewable remote path toward the target
+  branch after authorized commit/push; `local-target` pauses at the
+  target-branch merge gate; `manual` leaves the verified worktree available
+  and asks what to do when delivery matters. When reading configuration,
+  treat `team-review` as `remote-review` and `solo-local` as `local-target`.
 - If configuration is absent, stale, denied, or unavailable, use the manual
   fallback and explain the next action. Reconfirm only the changed repository,
   branch, risk, or authorization boundary.

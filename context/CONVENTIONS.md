@@ -23,7 +23,8 @@
 - Give every writing session an exclusive worktree.
 - Use `cc-run-plan` to direct a writer child and an independent verifier
   child. `workspace.yaml` mode is identity, not an execution-topology
-  selector. `solo-local` and `team-review` remain delivery policies.
+  selector. Delivery policy IDs are `remote-review`, `local-target`, and
+  `manual`.
 - Use `cc-approve-plan` for the human plan-approval gate, `cc-finish-plan`
   for the human status-change gate, and `cc-cleanup-runtime` to delete
   `.runtime/` after inspecting dirty or unpushed work. These are

@@ -48,7 +48,11 @@ configuration:
 The fields mean:
 
 - `delivery.scope` is `workspace` or a specific repository scope.
-- `delivery.policy` is `team-review`, `solo-local`, or `manual`.
+- `delivery.policy` is `remote-review`, `local-target`, or `manual`.
+  When reading an existing file, `team-review` is an alias for
+  `remote-review` and `solo-local` is an alias for `local-target`. Those
+  old IDs remain valid reads and are not treated as missing configuration.
+  New writes use the new IDs.
 - `delivery.repositories` and `target_branches` identify affected targets;
   targets must match registered repositories and their configured default
   active branches unless the user explicitly confirms a later branch.
@@ -79,4 +83,5 @@ ordinary workspace state; the wrapper stores none of them.
 Configuration does not change canonical plan/task status, runtime ownership,
 or verification results. It only tells the coordinator what delivery or
 optional adapter behavior may be proposed after the normal evidence and human
-gates are satisfied.
+gates are satisfied. Current authorization is still required before commit,
+push, or merge. Confirming configuration does not grant those actions.

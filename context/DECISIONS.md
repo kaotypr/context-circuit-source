@@ -12,6 +12,20 @@ Workspace identity and project identity are separate Product Knowledge pages.
 This is a template file-schema decision, not a product-direction dump for a
 specific project.
 
+## 2026-08-16 — Delivery policy IDs are path names
+
+Live `delivery.policy` values are `remote-review`, `local-target`, and
+`manual`. These names describe the path to prepare, not workspace identity
+and not an authorized git action.
+
+When reading `workspace.yaml`, `team-review` is an alias for
+`remote-review` and `solo-local` is an alias for `local-target`. An old ID
+is not missing configuration and does not fall back to `manual`. New writes
+use the new IDs.
+
+`workspace.yaml` `mode` remains identity and stays independent of delivery
+policy. Configuration does not grant commit, push, PR, or merge.
+
 No project-specific product decisions have been accepted yet.
 
 Record accepted and superseded project decisions here after human review.
