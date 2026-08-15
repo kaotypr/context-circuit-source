@@ -1,1 +1,10 @@
-sources: []
+sources:
+  - id: approved-product-direction
+    location: sources/context-circuit-product-direction.md
+    read_for: Maintain the accepted Product Direction and workspace foundation
+    revision: 2026-08-15
+    used_by:
+      - context/PRODUCT-DIRECTION.md
+
+# Add additional request-scoped evidence only after a source-based activity
+# reads it. Record the selected path, reason, revision, and resulting artifact.

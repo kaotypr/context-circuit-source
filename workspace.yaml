@@ -6,14 +6,10 @@ workspace:
   mode: team
   default_branch: development
 
-repositories:
-  context-circuit:
-    path: .
-    mode: submodule
-    role: Context Circuit framework source; Product Knowledge and workflow
-      capability is developed through plan-scoped repository worktrees.
-    agent: repository-worker
-    default_branch: development
+# An empty registry is a valid first-run state. Initialization may replace this
+# with one or more repository/project entries after the user confirms their
+# paths, roles, and default active branches.
+repositories: {}
 
 context:
   sources_file: context/sources.yaml

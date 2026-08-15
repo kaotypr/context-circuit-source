@@ -35,3 +35,12 @@ decisions, assumptions, proposals, blockers, and next actions in answers.
   capability, not by arbitrary repository code.
 - Verifiers are read-only and independent from implementation workers.
 - Preserve .runtime/ until a human explicitly chooses cleanup.
+
+Source boundary:
+
+- `sources/` is a passive, user-controlled inbox. Normal session entry and
+  unrelated work must not scan, ingest, summarize, or copy its contents.
+- A source-based request may read only the source files needed for that
+  request. State which files were read and why, then record provenance in
+  `context/sources.yaml` or the requested product artifact.
+- Raw sources remain in `sources/`; accepted summaries belong in `context/`.

@@ -703,4 +703,114 @@ contains docs/agent-workspace-workflow.md 'source changes during execution'
 contains docs/runtime-contract.md 'The canonical plan/task status remains unchanged'
 contains agents/reviewer.md 'Do not repair, change'
 
+# Plan 0002: workspace initialization is identity-only and supports a valid
+# zero-repository state plus repository roles and default active branches.
+require_file context/PRODUCT-DIRECTION.md
+require_file sources/README.md
+require_file .agents/skills/cc-initialize-workspace/SKILL.md
+require_file .agents/skills/cc-initialize-workspace/agents/openai.yaml
+require_file .agents/skills/cc-idea-brief/SKILL.md
+require_file .agents/skills/cc-create-prd/SKILL.md
+require_file docs/idea-brief.md
+require_file docs/prd.md
+
+contains .agents/skills/cc-initialize-workspace/SKILL.md 'Zero repositories is valid.'
+contains .agents/skills/cc-initialize-workspace/SKILL.md 'Recommend `development` only when that branch exists'
+contains .agents/skills/cc-initialize-workspace/SKILL.md 'does not ask about delivery behavior'
+contains docs/getting-started.md 'no-repository path as an error'
+contains workspace.yaml 'repositories: {}'
+if grep -E '^[[:space:]]*[0-9]+\..*(delivery|commit|push|merge|publication|deployment|external)' \
+  .agents/skills/cc-initialize-workspace/SKILL.md >/dev/null 2>&1; then
+  fail 'initialization turned optional delivery behavior into a core question'
+fi
+
+foundation_fixture="$fixture/workspace-foundation"
+mkdir -p "$foundation_fixture/zero/sources" \
+  "$foundation_fixture/existing/sources" "$foundation_fixture/existing/repositories"
+atomic_write "$foundation_fixture/zero/workspace.yaml" \
+  'workspace:' '  name: new-idea' '  mode: solo' 'repositories: {}'
+contains "$foundation_fixture/zero/workspace.yaml" 'repositories: {}'
+atomic_write "$foundation_fixture/existing/workspace.yaml" \
+  'workspace:' '  name: existing-project' '  mode: team' \
+  'repositories:' '  api:' '    path: ../api' '    mode: ignored-clone' \
+  '    role: Public API' '    agent: repository-worker' \
+  '    default_branch: development' \
+  '  docs:' '    path: ../docs' '    mode: ignored-clone' \
+  '    role: Product documentation' '    agent: repository-worker' \
+  '    default_branch: main'
+for registry_field in 'path:' 'mode:' 'role:' 'agent:' 'default_branch:'; do
+  contains "$foundation_fixture/existing/workspace.yaml" "$registry_field"
+done
+
+recommend_default_active_branch() {
+  branch_list=$1
+  case " $branch_list " in
+    *' development '*) printf 'development\n' ;;
+    *) printf '%s\n' "${branch_list%% *}" ;;
+  esac
+}
+test "$(recommend_default_active_branch 'main development feature')" = development
+test "$(recommend_default_active_branch 'main feature')" = main
+
+# Source intake is request-scoped. An unrelated entry reads context only, while
+# a selected source request leaves an evidence trail and does not copy raw text.
+source_fixture="$foundation_fixture/source-boundary"
+mkdir -p "$source_fixture/sources" "$source_fixture/context"
+atomic_write "$source_fixture/context/INDEX.md" '# Context index'
+atomic_write "$source_fixture/sources/selected.md" \
+  'selected source evidence' 'do not copy this raw sentence'
+atomic_write "$source_fixture/sources/unselected.md" \
+  'unselected source evidence' 'must not be read for this request'
+source_read_log="$source_fixture/read.log"
+normal_session_entry() {
+  cat "$source_fixture/context/INDEX.md" >/dev/null
+  test ! -e "$source_read_log"
+}
+read_selected_source() {
+  selected_path=$1
+  cat "$selected_path" >/dev/null
+  printf '%s\n' "${selected_path#"$source_fixture/"}" >> "$source_read_log"
+}
+expect_success normal_session_entry
+expect_success read_selected_source "$source_fixture/sources/selected.md"
+contains "$source_read_log" 'sources/selected.md'
+if grep -F 'sources/unselected.md' "$source_read_log" >/dev/null 2>&1; then
+  fail 'source-based fixture read an unselected source'
+fi
+atomic_write "$source_fixture/context/sources.yaml" \
+  'sources:' '  - id: selected' \
+  '    location: sources/selected.md' \
+  '    read_for: Create the requested Idea Brief' \
+  '    used_by: contributions/idea-briefs/example.md'
+contains "$source_fixture/context/sources.yaml" 'read_for: Create the requested Idea Brief'
+test ! -e "$source_fixture/context/RAW-SOURCE.md"
+
+# The navigation index and artifact fixtures keep raw sources, accepted context,
+# product artifacts, plans, and private runtime state in distinct homes.
+for layer_link in '`sources/`' '`context/`' '`contributions/`' '`plans/`' '`.runtime/`'; do
+  contains context/INDEX.md "$layer_link"
+done
+idea_fixture="$foundation_fixture/contributions/idea-briefs/example.md"
+prd_fixture="$foundation_fixture/contributions/prds/example.md"
+mkdir -p "$(dirname "$idea_fixture")" "$(dirname "$prd_fixture")"
+atomic_write "$idea_fixture" \
+  'kind: idea-brief' 'status: draft' '# Example idea' \
+  '## Intent' '## Assumptions' '## Open questions' '## Provenance' \
+  'selected source paths: sources/selected.md'
+atomic_write "$prd_fixture" \
+  'kind: prd' 'status: draft' '# Example PRD' \
+  '## Requirements' '## Non-goals' '## Acceptance criteria' '## Provenance' \
+  'selected source paths: sources/selected.md'
+contains "$idea_fixture" 'status: draft'
+contains "$prd_fixture" 'status: draft'
+contains .agents/skills/cc-idea-brief/SKILL.md 'Human gate:'
+contains .agents/skills/cc-idea-brief/SKILL.md 'may stop after the Idea Brief'
+contains .agents/skills/cc-create-prd/SKILL.md 'human acceptance'
+contains .agents/skills/cc-create-prd/SKILL.md 'silently approve a plan'
+contains .agents/skills/cc-idea-brief/agents/openai.yaml 'cc-idea-brief'
+contains .agents/skills/cc-create-prd/agents/openai.yaml 'cc-create-prd'
+contains .agents/skills/cc-initialize-workspace/agents/openai.yaml 'cc-initialize-workspace'
+
+printf 'PASS: workspace foundation and context acceptance scenarios (initialization, passive sources, provenance, artifacts)\n'
+
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'
