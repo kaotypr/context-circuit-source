@@ -34,6 +34,8 @@ Discover the foundation skills from natural-language requests:
 - initialize or set up a workspace with `cc-initialize-workspace`;
 - capture an idea or explore intent with `cc-idea-brief`;
 - define an accepted product requirement with `cc-create-prd`.
+- create or refresh request-scoped Domain or Role Knowledge with
+  `cc-gather-context`.
 
 Choose the smallest useful artifact. Do not force an Idea Brief before a PRD,
 or a PRD before a small piece of work, when the user's request already has the

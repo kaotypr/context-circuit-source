@@ -15,3 +15,8 @@ Stable provenance for accepted Product Knowledge is recorded in
 Source-based work reads only the selected files needed for the request. It
 reports those files and reasons to the user, keeps raw text in `sources/`, and
 summarizes accepted conclusions in `context/` or the requested artifact.
+
+The Domain and Role Knowledge workflow uses the approved Context Circuit
+product-direction source to establish the boundaries between canonical domain
+facts, cross-domain role perspectives, request-scoped source reading, and human
+acceptance. It does not copy that raw source into either generated document.

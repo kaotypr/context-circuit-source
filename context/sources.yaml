@@ -6,5 +6,15 @@ sources:
     used_by:
       - context/PRODUCT-DIRECTION.md
 
+  - id: approved-product-direction-domain-role-context
+    location: sources/context-circuit-product-direction.md
+    read_for: Define Domain and Role Knowledge boundaries, selective generation, and acceptance behavior
+    revision: sha256:dd1db2f0fb5f2e4c5fcc41af303760f7a6a8f5b7440a0c6755de8a3437223b58
+    used_by:
+      - docs/product-knowledge.md
+      - docs/templates/domain-context.md
+      - docs/templates/role-context.md
+      - .agents/skills/cc-gather-context/SKILL.md
+
 # Add additional request-scoped evidence only after a source-based activity
 # reads it. Record the selected path, reason, revision, and resulting artifact.
