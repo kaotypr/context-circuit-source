@@ -17,9 +17,16 @@ A plan should have:
 
 Plans begin as `draft` and require explicit human approval. `plan.yaml` is the
 canonical lifecycle record: approval changes the included task projections from
-`draft` to `ready`, and completion changes them to `done`. Task status is not a
-second approval gate and does not provide an execution lease or verification
-result.
+`draft` to `ready`, and completion changes them to `done`. Task status is not a second approval or execution gate. It does not provide an execution lease or
+verification result. There is no user-facing `cc-run-task` workflow. There is
+no run-task command.
+
+A plan has at most one active writing owner. The runtime contract uses an
+exclusive plan lease and an exclusive worktree. Two writing sessions must never
+share that worktree. Completion evidence, tests, Git state, or a verifier
+handoff do not change canonical plan or task status. Missing evidence or a
+failed verifier blocks the completion record; the canonical status remains
+unchanged.
 
 On approval, completion, and session entry or resume, the coordinator
 reconciles every included task to the projection expected by the plan. The

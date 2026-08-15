@@ -50,6 +50,7 @@ The workspace contains several distinct kinds of information:
 | `WORKFLOW.md` | Workflow states, gates, and coordination rules | Normative workflow instruction |
 | `workspace.yaml` | Repositories, branches, mode, and configuration | Machine-readable configuration |
 | `context/` | Product, domain, architecture, conventions, and decisions | Durable project knowledge |
+| `sources/` | Raw inputs and authored Idea Brief/PRD artifacts | User/team-owned; passive except request-scoped reads |
 | `plans/` | Proposed and approved intended work | Human-reviewed work definition |
 | `.runtime/` | Active sessions, subagents, leases, prompts, handoffs, and worktrees | Current execution state only |
 | Product repository | Code and repository-local behavior | Repository authority for code |
@@ -262,6 +263,15 @@ On a fresh route it creates its own root session record first. On a resume route
 it preserves the existing record and reads the latest handoff; it never
 reconstructs ownership from conversation history or a global pointer.
 
+Choosing the next action is part of this root entry, not a separate command.
+Inspect approved plans with unfinished work, declared dependencies, active
+leases and session ownership, source freshness, repository cleanliness,
+worktrees, blockers, and pending human gates. Recommend or claim only work
+that is dependency-ready, explicitly scoped, and not already owned by another
+writing session. When no work is executable, explain whether the session needs
+context, a draft plan, human approval, a review, or a decision about a
+blocker.
+
 ### Child entry
 
 A child session first reads its own session record, parent handoff, delegated scope, required workspace instructions, relevant Product Knowledge, and the exact plan or task it was given.
@@ -432,7 +442,10 @@ workers modify only their assigned worktree.
 
 `cc-run-plan` is the sole standard execution entry for an approved plan. It is
 an agent-session capability backed by the filesystem contract, not a command
-runtime. There is no user-facing `cc-run-task` workflow.
+runtime. There is no user-facing `cc-run-task` workflow. There is no run-task
+command. Task status is not a second approval or execution gate. A plan has at
+most one active writing owner and an exclusive worktree. Completion evidence
+does not change canonical plan or task status.
 
 Before execution, the root coordinator reads the canonical plan and task
 contracts, verifies dependencies, repairs stale task projections, checks the

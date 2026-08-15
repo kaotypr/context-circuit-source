@@ -21,7 +21,7 @@ title: Deliver one bounded outcome
 status: draft
 source:
   kind: accepted-prd
-  reference: contributions/prds/example.md
+  reference: sources/example-prd.md
 repositories:
   - example-repository
 product_knowledge:
