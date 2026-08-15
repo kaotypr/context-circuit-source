@@ -32,5 +32,4 @@ read-only and never writes `plan.yaml`.
 If the outcome is `ready-for-approval`, name `cc-approve-plan` as the next
 action. If the plan is already approved and dependency-ready, the
 `approved-for-execution` outcome observes that fact and may recommend
-`cc-run-plan`. Do not create a separate task-execution ceremony or direct the
-user to `cc-run-task`.
+`cc-run-plan`. Do not create a separate task-execution ceremony.

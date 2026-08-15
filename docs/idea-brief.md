@@ -6,9 +6,9 @@ that requirements or decisions are settled.
 
 ## Artifact home
 
-Store drafts and accepted briefs at:
-
-`contributions/idea-briefs/<slug>.md`
+Store drafts and accepted briefs at a user/team-selected path under `sources/`.
+Context Circuit does not prescribe subdirectories or filenames. Record the
+exact chosen path in the artifact's Provenance section.
 
 The artifact remains `status: draft` until the user accepts it. Acceptance is a
 human gate; it is not inferred from a complete-looking document or a passing

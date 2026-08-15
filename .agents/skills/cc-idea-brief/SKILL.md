@@ -21,10 +21,12 @@ source text in `sources/`; summarize relevant evidence instead of copying it.
 
 ## Output
 
-Draft `contributions/idea-briefs/<slug>.md` using the contract in
-`docs/idea-brief.md`. Include the user's intent, desired outcome, audience or
-users, constraints, assumptions, open questions, relevant Product Knowledge,
-and source provenance. Mark it `status: draft` until accepted.
+Draft the Idea Brief at a user/team-selected path under `sources/` using the
+contract in `docs/idea-brief.md`. Do not impose a subdirectory or filename
+convention. Record the exact chosen path in the brief's `Provenance` section.
+Include the user's intent, desired outcome, audience or users, constraints,
+assumptions, open questions, relevant Product Knowledge, and source
+provenance. Mark it `status: draft` until accepted.
 
 ## Gate and uncertainty
 

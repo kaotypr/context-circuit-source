@@ -7,8 +7,7 @@ description: Execute an approved plan through directed writer and verifier child
 
 Use this skill when the user explicitly asks to execute an approved plan or
 when root-session routing identifies an approved, dependency-ready plan.
-`cc-run-plan` is the sole standard plan-execution capability. There is no
-user-facing `cc-run-task` workflow.
+`cc-run-plan` is the sole standard plan-execution capability.
 
 ## Preflight
 

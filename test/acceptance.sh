@@ -1000,11 +1000,59 @@ absent .github/workflows/sync-context-circuit-release.yml
 absent docs/command-reference.md
 absent docs/legacy-cleanup-gate.md
 
+contains .gitignore '.runtime/'
+if grep -E '^\.dist/|^node_modules/|ignored-clones' .gitignore >/dev/null 2>&1; then
+  fail 'obsolete ignore residue remains in .gitignore'
+fi
+contains context/sources.yaml 'sources: []'
+contains context/PRODUCT-DIRECTION.md 'uninitialized starter'
+contains context/PROJECT.md 'uninitialized project home'
+contains context/INDEX.md 'uninitialized'
+contains sources/README.md 'user/team-organized boundary'
+contains .agents/skills/cc-idea-brief/SKILL.md 'user/team-selected path under `sources/`'
+contains .agents/skills/cc-create-prd/SKILL.md 'user/team-selected path under `sources/`'
+contains docs/idea-brief.md 'user/team-selected path under `sources/`'
+contains docs/prd.md 'user/team-selected path under `sources/`'
+contains docs/getting-started.md 'not a command console for users'
+contains docs/delivery-policies.md 'Publication is an optional human-authorized action'
+contains docs/integrations.md 'does not approve or complete a plan'
+contains README.md 'sh test/acceptance.sh'
+
+removed_run_task="docs/run-task"
+removed_run_task="${removed_run_task}.md"
+removed_development="docs/development"
+removed_development="${removed_development}.md"
+removed_publication="docs/plan-publication"
+removed_publication="${removed_publication}.md"
+removed_wrapper="docs/using-the-wrapper"
+removed_wrapper="${removed_wrapper}.md"
+removed_whats_next="docs/whats-next"
+removed_whats_next="${removed_whats_next}.md"
+old_artifact_root="contributions"
+old_artifact_root="${old_artifact_root}/"
+for removed in \
+  "$removed_run_task" \
+  "$removed_development" \
+  "$removed_publication" \
+  "$removed_wrapper" \
+  "$removed_whats_next"; do
+  test ! -e "$removed" || fail "removed documentation still exists: $removed"
+done
+test ! -e contributions || fail 'old authored-artifact directory still exists'
+if git grep -n -F "$removed_run_task" -- . >/dev/null 2>&1 \
+  || git grep -n -F "$removed_development" -- . >/dev/null 2>&1 \
+  || git grep -n -F "$removed_publication" -- . >/dev/null 2>&1 \
+  || git grep -n -F "$removed_wrapper" -- . >/dev/null 2>&1 \
+  || git grep -n -F "$removed_whats_next" -- . >/dev/null 2>&1 \
+  || git grep -n -F "$old_artifact_root" -- . >/dev/null 2>&1; then
+  fail 'tracked files still refer to a removed template-surface path'
+fi
+
 for file in README.md AGENTS.md CLAUDE.md WORKFLOW.md \
   agents/coordinator.md agents/repository-worker.md agents/reviewer.md \
   context/ARCHITECTURE.md context/CONVENTIONS.md context/DECISIONS.md \
-  docs/agent-workspace-workflow.md docs/runtime-contract.md docs/development.md \
-  docs/getting-started.md docs/planning.md docs/run-task.md; do
+  docs/agent-workspace-workflow.md docs/runtime-contract.md \
+  docs/getting-started.md docs/planning.md docs/delivery-policies.md; do
   if grep -E 'cc\.mjs|npm run|node --import|legacy-run-task|compatibility adapter' "$file" >/dev/null 2>&1; then
     fail "legacy command-layer reference remains in normative file: $file"
   fi
@@ -1280,11 +1328,10 @@ contains agents/coordinator.md 'For approved-plan execution'
 contains agents/coordinator.md 'sole standard entry.'
 contains agents/repository-worker.md 'assigned repository'
 contains agents/reviewer.md 'independently reproduce'
-contains docs/agent-workspace-workflow.md 'There is no user-facing `cc-run-task` workflow.'
 contains docs/runtime-contract.md 'Same-plan contention is resolved'
-if grep -R -E 'Use .*cc-run-task|invoke .*cc-run-task|run .*cc-run-task' \
-  .agents docs agents >/dev/null 2>&1; then
-  fail 'a user-facing workflow directs users to cc-run-task'
+absent_skill=$(printf '%s-%s' 'cc-run' 'task')
+if git grep -F "$absent_skill" -- . >/dev/null 2>&1; then
+  fail 'a skill that does not exist is still named in the repository'
 fi
 
 plan3_fixture="$fixture/plan-execution"
@@ -1294,7 +1341,7 @@ plan3_file="$plan3_fixture/plan.yaml"
 atomic_write "$plan3_file" \
   'id: plan-fixture' 'number: 3' 'title: Execute a bounded fixture plan' \
   'status: draft' 'source:' '  kind: accepted-prd' \
-  '  reference: contributions/prds/fixture.md' 'repositories:' \
+  '  reference: sources/fixture-prd.md' 'repositories:' \
   '  - context-circuit' 'product_knowledge:' '  references:' \
   '    - context/PROJECT.md' 'implementation_scope:' \
   '  - docs and agents' 'non_goals:' '  - delivery actions' \
@@ -1322,7 +1369,7 @@ atomic_write "$plan3_fixture/dependencies/knowledge.yaml" \
 atomic_write "$plan3_file" \
   'id: plan-fixture' 'number: 3' 'title: Execute a bounded fixture plan' \
   'status: approved' 'source:' '  kind: accepted-prd' \
-  '  reference: contributions/prds/fixture.md' 'repositories:' \
+  '  reference: sources/fixture-prd.md' 'repositories:' \
   '  - context-circuit' 'product_knowledge:' '  references:' \
   '    - context/PROJECT.md' 'implementation_scope:' \
   '  - docs and agents' 'non_goals:' '  - delivery actions' \
@@ -1469,7 +1516,7 @@ contains docs/agent-workspace-workflow.md 'missing host primitive'
 contains docs/host-capabilities.md 'Task / subagent tool'
 contains docs/host-capabilities.md 'native child-agent or equivalent'
 contains docs/host-capabilities.md 'missing host primitive'
-contains context/PRODUCT-DIRECTION.md 'child writers and verifiers'
+contains context/ARCHITECTURE.md 'child writers and verifiers'
 contains docs/runtime-contract.md 'preferred route (`delegated`)'
 
 atomic_write "$plan3_fixture/solo-workspace.yaml" \
@@ -1522,7 +1569,7 @@ contains WORKFLOW.md 'Plan status is the canonical lifecycle authority'
 contains docs/agent-workspace-workflow.md 'does not require separate task selection'
 contains docs/planning.md 'reconciles every included task'
 contains docs/runtime-contract.md 'Plan/task lifecycle projection'
-contains docs/run-task.md 'Task status is not a second approval or execution gate'
+contains docs/planning.md 'Task status is not a second approval or execution gate'
 contains docs/configuration.md 'external_status'
 contains context/CONVENTIONS.md 'synchronized projection'
 if grep -F '    - task-selection' workspace.yaml >/dev/null 2>&1; then
@@ -1655,17 +1702,17 @@ atomic_write "$source_fixture/context/sources.yaml" \
   'sources:' '  - id: selected' \
   '    location: sources/selected.md' \
   '    read_for: Create the requested Idea Brief' \
-  '    used_by: contributions/idea-briefs/example.md'
+  '    used_by: sources/example-idea-brief.md'
 contains "$source_fixture/context/sources.yaml" 'read_for: Create the requested Idea Brief'
 test ! -e "$source_fixture/context/RAW-SOURCE.md"
 
 # The navigation index and artifact fixtures keep raw sources, accepted context,
 # product artifacts, plans, and private runtime state in distinct homes.
-for layer_link in '`sources/`' '`context/`' '`contributions/`' '`plans/`' '`.runtime/`'; do
+for layer_link in '`sources/`' '`context/`' '`plans/`' '`.runtime/`'; do
   contains context/INDEX.md "$layer_link"
 done
-idea_fixture="$foundation_fixture/contributions/idea-briefs/example.md"
-prd_fixture="$foundation_fixture/contributions/prds/example.md"
+idea_fixture="$foundation_fixture/sources/example-idea-brief.md"
+prd_fixture="$foundation_fixture/sources/example-prd.md"
 mkdir -p "$(dirname "$idea_fixture")" "$(dirname "$prd_fixture")"
 atomic_write "$idea_fixture" \
   'kind: idea-brief' 'status: draft' '# Example idea' \
@@ -1716,8 +1763,14 @@ contains context/INDEX.md 'smallest relevant'
 contains context/INDEX.md 'domain and role'
 contains context/domains/README.md 'Do not recursively read every domain'
 contains context/roles/README.md 'workflow pages linked'
-contains context/sources.yaml 'approved-product-direction-domain-role-context'
-contains context/sources.yaml 'docs/templates/role-context.md'
+contains context/sources.yaml 'sources: []'
+if grep -F 'approved-product-direction-domain-role-context' context/sources.yaml \
+  >/dev/null 2>&1; then
+  fail 'starter provenance still records a product-direction domain-role source'
+fi
+if grep -F 'docs/templates/role-context.md' context/sources.yaml >/dev/null 2>&1; then
+  fail 'starter provenance still records a template path as a source entry'
+fi
 contains .agents/skills/cc-gather-context/agents/openai.yaml 'cc-gather-context'
 
 domain_role_fixture="$fixture/domain-role-context"
@@ -2060,7 +2113,6 @@ contains .agents/skills/cc-cleanup-runtime/SKILL.md '--force'
 contains .agents/skills/cc-review-plan/SKILL.md 'never changes plan status'
 contains .agents/skills/cc-review-plan/SKILL.md 'never writes `plan.yaml`'
 contains .agents/skills/cc-review-plan/SKILL.md 'cc-approve-plan'
-contains .agents/skills/cc-review-plan/SKILL.md 'cc-run-task'
 contains .agents/skills/cc-run-plan/SKILL.md 'mark the plan done'
 contains .agents/skills/cc-run-plan/SKILL.md 'cc-finish-plan'
 contains .agents/skills/cc-create-plan/SKILL.md 'cc-approve-plan'
@@ -2083,16 +2135,16 @@ contains docs/runtime-contract.md 'cc-cleanup-runtime'
 contains WORKFLOW.md 'cc-approve-plan'
 contains WORKFLOW.md 'cc-finish-plan'
 contains AGENTS.md 'cc-cleanup-runtime'
-contains docs/using-the-wrapper.md 'cc-cleanup-runtime'
+contains docs/getting-started.md 'cc-cleanup-runtime'
 contains docs/getting-started.md 'cc-approve-plan'
 contains docs/getting-started.md 'cc-finish-plan'
 contains docs/getting-started.md 'cc-cleanup-runtime'
 contains context/INDEX.md 'cc-approve-plan'
 contains context/ARCHITECTURE.md 'cc-approve-plan'
 contains context/CONVENTIONS.md 'cc-finish-plan'
-contains context/PRODUCT-DIRECTION.md 'cc-cleanup-runtime'
-contains context/PROJECT.md 'cc-approve-plan'
-contains context/DECISIONS.md '2026-08-16 — Named plan-approval, finish, and runtime-cleanup skills'
+contains context/INDEX.md 'cc-cleanup-runtime'
+contains context/ARCHITECTURE.md 'cc-cleanup-runtime'
+contains context/CONVENTIONS.md 'cc-approve-plan'
 
 gates_fixture="$fixture/plan-gates"
 mkdir -p "$gates_fixture/tasks" "$gates_fixture/evidence"

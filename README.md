@@ -19,6 +19,7 @@ need to operate an internal command-line interface.
 - WORKFLOW.md — session entry, delegation, human gates, and development loop.
 - workspace.yaml — repositories, branches, and workspace configuration.
 - context/ — durable, source-cited Product Knowledge and decisions.
+- sources/ — user/team-owned raw inputs and authored Idea Brief/PRD artifacts.
 - plans/ — human-reviewed intended work and task dependencies.
 - .runtime/ — private sessions, leases, prompts, handoffs, and worktrees.
 - Registered repositories — product code and repository-local conventions.
@@ -48,8 +49,11 @@ Read the agreed workflow contract in
 docs/agent-workspace-workflow.md, then use context/INDEX.md to find the
 smallest relevant project context.
 
-There is no user-facing command layer. Hosts enter through the same agent
-instructions and use the filesystem records as the coordination surface.
+The workspace is instruction- and filesystem-driven. There is no user-facing
+command layer and no Node or JavaScript command runtime. Hosts enter through
+the same agent instructions and use the filesystem records as the coordination
+surface. Verify implementation work with `sh test/acceptance.sh`. The verifier
+must inspect runtime files and instructions directly.
 
 ## Foundation skills
 

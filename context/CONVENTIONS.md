@@ -6,8 +6,10 @@
 - Keep raw source files in `sources/`; never copy them into accepted context.
 - Read only selected source files for a source-based request and record the
   source path, reason, and revision or freshness when known.
-- Store Idea Briefs in `contributions/idea-briefs/` and PRDs in
-  `contributions/prds/`; drafts remain visibly unaccepted until a human gate.
+- Store Idea Briefs and PRDs at a user/team-selected path under `sources/`;
+  do not impose a subdirectory or filename convention. Record the exact
+  chosen path in provenance. Drafts remain visibly unaccepted until a human
+  gate.
 - Use ordinary Markdown and YAML for context, plans, session records, and
   handoffs.
 - Keep plan status exactly `draft`, `approved`, or `done`; task status is the synchronized projection `draft`, `ready`, or `done`.

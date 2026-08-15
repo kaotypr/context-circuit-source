@@ -30,6 +30,16 @@ current session from conversation history or a global pointer.
 The user should be able to say “start or resume work in this workspace” without
 knowing the internal command implementation.
 
+Choosing the next action is part of this root entry, not a separate command.
+Inspect approved plans with unfinished work, declared dependencies, active
+leases and session ownership, source freshness, repository cleanliness,
+worktrees, blockers, and pending human gates. Recommend or claim only work
+that is dependency-ready, explicitly scoped, and not already owned by another
+writing session. When no work is executable, explain whether the session needs
+context, a draft plan, human approval, a review, or a decision about a
+blocker. The recommendation is evidence-backed and read-only until the root
+session or human explicitly performs the next consequential action.
+
 ## Session hierarchy
 
 A root session owns the human request and coordinates child sessions. A child
@@ -52,8 +62,10 @@ and `done`; included task status is a synchronized projection using `draft`,
 confirmed approval synchronizes all included tasks to `ready`. `cc-finish-plan`
 is the named status-change skill: confirmed completion synchronizes them to
 `done`. Ordinary whole-plan execution does not require a separate task approval
-or task-selection ceremony. A resumed session repairs stale task projections
-idempotently without rerunning implementation or verification checks.
+or task-selection ceremony. Approved work enters through `cc-run-plan`. A
+resumed session repairs stale task projections idempotently without rerunning
+implementation or verification checks. Completion evidence does not change
+canonical plan or task status.
 
 ## Shared context and runtime state
 

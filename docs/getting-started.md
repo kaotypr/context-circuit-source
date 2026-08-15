@@ -1,9 +1,38 @@
 # Getting started as an AI agent
 
-Context Circuit is entered through a host agent session. The user should be
-able to say:
+Context Circuit is a workspace for AI agents, not a command console for users.
+The user should be able to say:
 
 > Start or resume work in this workspace.
+
+Durable shared context lives in ordinary Markdown and YAML: Product Knowledge,
+decisions, source provenance, plans, and task definitions. Private runtime
+state lives under `.runtime/`: session records, delegation handoffs, plan
+leases, prompts, and isolated worktrees. Runtime state is resumable but is not
+authoritative over context, plans, human decisions, or repository
+instructions. Preserve it until a human chooses cleanup through
+`cc-cleanup-runtime`. That skill inspects every runtime worktree for
+uncommitted and unpushed work, stops with a confirmation list when risk
+exists, and deletes `.runtime/` only after the human chooses cleanup.
+Cleanup is workspace-wide for `.runtime/` and does not delete Git branches or
+modify the base checkout.
+
+A writing session modifies only its assigned exclusive worktree. Different
+plans may use different worktrees concurrently. Research and verification
+sessions are read-only unless their delegation explicitly grants write access.
+
+Agents may inspect, draft, test, delegate, create isolated worktrees, and
+implement approved scope. Humans control Product Knowledge acceptance, plan
+approval through `cc-approve-plan`, material scope changes, merge, publication,
+deployment, completion through `cc-finish-plan`, runtime cleanup through
+`cc-cleanup-runtime`, and ambiguous session takeover.
+
+Host integrations should expose the same workspace entry and delegation
+behavior. Host-specific commands are adapters and must not become a second
+workflow or source of truth.
+
+The workspace is instruction- and filesystem-driven. It has no Node or
+JavaScript command layer. Verify behavior with `sh test/acceptance.sh`.
 
 ## 1. Enter and orient
 
@@ -24,6 +53,14 @@ Explain the selected route before consequential action.
 For a fresh root route, create a root session record with an explicit session ID
 before delegating or claiming work. For resume, use the existing session record
 and latest handoff; never infer a current session from conversation history.
+
+Choosing the next action is part of this root entry, not a separate command.
+Inspect approved plans, declared dependencies, active leases and session
+ownership, source freshness, repository cleanliness, worktrees, blockers, and
+pending human gates. Recommend or claim only work that is dependency-ready,
+explicitly scoped, and not already owned by another writing session. When no
+work is executable, explain whether the session needs context, a draft plan,
+human approval, a review, or a decision about a blocker.
 
 ## 2. Initialize the workspace
 
