@@ -26,7 +26,10 @@ and active runtime ownership. Check that:
 
 Return the structured outcome from `docs/plan-review.md`. Distinguish routine
 checks from human decisions. A review may recommend approval, revision, or a
-blocker, but never changes plan status or claims completion.
+blocker, but never changes plan status or claims completion. This skill remains
+read-only and never writes `plan.yaml`.
 
-If the plan is approved and dependency-ready, recommend `cc-run-plan`. Do not
-create a separate task-execution ceremony.
+If the outcome is `ready-for-approval`, name `cc-approve-plan` as the next
+action. If the plan is already approved and dependency-ready, the
+`approved-for-execution` outcome observes that fact and may recommend
+`cc-run-plan`. Do not create a separate task-execution ceremony.

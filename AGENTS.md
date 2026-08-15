@@ -34,7 +34,8 @@ decisions, assumptions, proposals, blockers, and next actions in answers.
   written by the session coordinator or an explicitly authorized runtime
   capability, not by arbitrary repository code.
 - Verifiers are read-only and independent from implementation workers.
-- Preserve .runtime/ until a human explicitly chooses cleanup.
+- Preserve .runtime/ until a human explicitly chooses cleanup via
+  `cc-cleanup-runtime`.
 
 Source boundary:
 

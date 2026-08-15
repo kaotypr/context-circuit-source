@@ -44,7 +44,7 @@ Root session
   -> claim lease and create exclusive worktree
   -> writer child (host subagent, write_worktree true)
   -> verifier child (different host subagent, write_worktree false)
-  -> root records completion.yaml and asks for the human status-change gate
+  -> root records completion.yaml and asks for cc-finish-plan
 ```
 
 For more than one approved dependency-ready plan:
@@ -108,12 +108,14 @@ not merge, publish, deploy, or mark the plan done from this skill.
 Before requesting completion, record evidence for every task, a passing
 independent verifier handoff, remaining limitations, and the `status-change`
 human gate in `.runtime/plans/<plan-id>/completion.yaml`. That evidence record
-does not change `plan.yaml`; the human controls final plan and task status.
+does not change `plan.yaml`. When completion evidence is ready, ask for
+`cc-finish-plan` rather than an unnamed status-change request. The human
+controls final plan and task status through that named skill. This skill
+must not mark the plan done.
 
 ## Output
 
 Report the session and plan, delegated route, worktree and ownership evidence,
 tasks executed, files changed, tests and verification, decisions, assumptions,
-blockers, and next safe action. If completion is ready, ask for the human
-status-change gate rather than implying that tests or Git state completed the
-plan.
+blockers, and next safe action. If completion is ready, ask for `cc-finish-plan`
+rather than implying that tests or Git state completed the plan.

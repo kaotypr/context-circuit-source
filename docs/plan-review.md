@@ -25,15 +25,15 @@ separate approval of every task when the whole approved plan is ready to run.
 Use one of these outcomes:
 
 - `ready-for-approval`: the plan is coherent but still requires human plan
-  approval;
+  approval; the next action is `cc-approve-plan`;
 - `needs-revision`: scope, evidence, dependencies, or acceptance is incomplete;
 - `blocked`: a contradiction or ownership decision prevents safe progress;
-- `approved-for-execution`: the human has explicitly approved the plan and the
-  coordinator may enter `cc-run-plan`.
+- `approved-for-execution`: the observation that the plan is already approved
+  and may enter `cc-run-plan`.
 
-The review never changes `plan.yaml` status by itself. It records evidence and
-recommendations; the human controls approval, material scope changes, and
-completion.
+The review never writes `plan.yaml`. It records evidence and recommendations;
+`cc-approve-plan` is the named plan-approval skill. The human controls
+approval, material scope changes, and completion.
 
 ## Evidence format
 
@@ -46,7 +46,7 @@ Evidence: <context, repository, and plan files inspected>
 Routine checks: <checks that need no human decision>
 Decisions: <questions that change scope, intent, ownership, or delivery>
 Contradictions: <source or artifact conflicts, or none>
-Next action: <revise, approve, or run the approved plan>
+Next action: <revise, cc-approve-plan, or cc-run-plan>
 ```
 
 If a source or accepted Product Knowledge page changes during execution, stop

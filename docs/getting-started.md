@@ -10,7 +10,12 @@ decisions, source provenance, plans, and task definitions. Private runtime
 state lives under `.runtime/`: session records, delegation handoffs, plan
 leases, prompts, and isolated worktrees. Runtime state is resumable but is not
 authoritative over context, plans, human decisions, or repository
-instructions. Preserve it until a human chooses cleanup.
+instructions. Preserve it until a human chooses cleanup through
+`cc-cleanup-runtime`. That skill inspects every runtime worktree for
+uncommitted and unpushed work, stops with a confirmation list when risk
+exists, and deletes `.runtime/` only after the human chooses cleanup.
+Cleanup is workspace-wide for `.runtime/` and does not delete Git branches or
+modify the base checkout.
 
 A writing session modifies only its assigned exclusive worktree. Different
 plans may use different worktrees concurrently. Research and verification
@@ -18,8 +23,9 @@ sessions are read-only unless their delegation explicitly grants write access.
 
 Agents may inspect, draft, test, delegate, create isolated worktrees, and
 implement approved scope. Humans control Product Knowledge acceptance, plan
-approval, material scope changes, merge, publication, deployment, completion,
-and ambiguous session takeover.
+approval through `cc-approve-plan`, material scope changes, merge, publication,
+deployment, completion through `cc-finish-plan`, runtime cleanup through
+`cc-cleanup-runtime`, and ambiguous session takeover.
 
 Host integrations should expose the same workspace entry and delegation
 behavior. Host-specific commands are adapters and must not become a second
@@ -101,8 +107,10 @@ When context is sufficient:
 2. Include dependencies, acceptance criteria, implementation scope, test scope,
    and verification commands.
 3. Present plans as drafts.
-4. Wait for explicit human approval.
-5. Do not infer approval from conversation tone, tests, or agent output.
+4. Optionally review with `cc-review-plan`. Review stays read-only.
+5. Wait for explicit human approval through `cc-approve-plan`.
+6. Do not infer approval from conversation tone, tests, or agent output.
+   Approval does not start execution.
 
 ## 5. Execute with sessions
 
@@ -111,7 +119,7 @@ After approval, `cc-run-plan` directs the root to:
 - claim a plan execution and create or reuse its exclusive worktree;
 - spawn a writer child through the host child-session primitive;
 - spawn a later independent verifier child (`write_worktree: false`);
-- record completion.yaml and ask for the human status-change gate.
+- record completion.yaml and ask for `cc-finish-plan`.
 
 Sequential tasks share one writer child. Independent plans get separate
 children and worktrees. If the host cannot spawn a child, report the missing
@@ -120,7 +128,7 @@ host primitive to the human.
 Every child session receives a bounded delegation packet and returns a structured
 handoff to its parent.
 
-## 6. Resume and finish
+## 6. Resume, finish, and optional cleanup
 
 At the end of each session, record:
 
@@ -133,5 +141,8 @@ At the end of each session, record:
 
 The next session reads this handoff instead of relying on conversation history.
 Human review and explicit status changes remain required before work is
-considered complete. A completion evidence record may request the human
-status-change gate, but it must not change plan or task status itself.
+considered complete. A completion evidence record may request `cc-finish-plan`,
+but it must not change plan or task status itself. After a plan is `done`, or
+when the user asks to clear local execution state, `cc-cleanup-runtime` may
+delete `.runtime/` only after inspecting dirty or unpushed work and receiving
+explicit confirmation.

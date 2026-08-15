@@ -69,7 +69,7 @@ Write rules:
 4. Treat a missing or partially written required record as blocked, not as
    permission to reconstruct facts.
 5. Preserve old handoffs and released lease evidence until a human chooses
-   runtime cleanup.
+   runtime cleanup via `cc-cleanup-runtime`.
 
 ## Session record
 
@@ -239,8 +239,11 @@ The coordinator may prepare `.runtime/plans/<plan-id>/completion.yaml` only
 after every task has a durable evidence record, the independent verifier has a
 completed passing handoff, and no blocking or failed evidence remains. The
 runtime completion record may use `status: blocked` or
-`status: ready-for-human-status-change` and must identify the verifier and
-human gate evidence.
+`status: ready-for-human-status-change` before the human status-change gate,
+and `status: completed` after `cc-finish-plan` records that the gate was
+satisfied. It must identify the verifier and human gate evidence.
+`ready-for-human-status-change` remains the pre-finish evidence state.
+`cc-finish-plan` is the named status-change skill.
 
 Its minimum evidence fields are:
 
@@ -254,7 +257,15 @@ human_gate: status-change
 canonical_status_changed: false
 ~~~
 
-The completion record is evidence, not canonical intent. The canonical plan/task status remains unchanged until the human status-change gate is explicitly satisfied. A failed verifier, missing task evidence, or missing human gate keeps completion blocked.
+The completion record is evidence, not canonical intent. The canonical plan/task status remains unchanged until the human status-change gate is explicitly satisfied through `cc-finish-plan`. After confirmed finish, `completion.yaml` records:
+
+~~~yaml
+status: completed
+human_gate: status-change
+canonical_status_changed: true
+~~~
+
+A failed verifier, missing task evidence, or missing human gate keeps completion blocked. Finish releases `lease.lock/` when this coordinator owns that lease and does not delete `.runtime/`.
 
 ## Handoffs
 
@@ -347,3 +358,29 @@ losing session becomes blocked or read-only and must not mutate the plan,
 tasks, lease, worktree, or another session. Stale recovery requires explicit
 human authorization and a new session that records the replaced owner and
 reason; a heartbeat timeout alone is not permission to steal ownership.
+
+## Worktree removal and runtime cleanup
+
+`cc-cleanup-runtime` is the named skill for deleting workspace `.runtime/`.
+Cleanup is workspace-wide: confirmation must say that every session, lease,
+handoff, and worktree under `.runtime/` will be removed.
+
+Before deletion, inspect every registered runtime worktree for uncommitted
+changes, including untracked files, and for commits not present on the
+worktree's upstream, or local-only commits when no upstream exists. Classify
+each worktree as `clean`, `uncommitted`, `unpushed`, or both. Live
+non-terminal sessions are listed because deleting `.runtime/` removes resume
+records; they do not invent permission to discard Git work.
+
+If dirty or unpushed work exists, stop with a confirmation list. Uncommitted
+work is destructive if cleanup proceeds. Unpushed commits are not deleted by
+`git worktree remove` because the branch remains in the parent repository;
+still confirm because the checkout is going away. `--force` is allowed only
+after the human confirmed discarding the listed dirty work.
+
+Confirmed cleanup removes each registered Git worktree with `git worktree
+remove`, then deletes remaining `.runtime/` records. It must not modify the
+base checkout, delete Git branches, reset or stash product repositories, or
+change plan or task status. Path traversal, symlinks, and identifiers outside
+this contract remain rejected. Missing or already-empty `.runtime/` is a
+successful no-op.
