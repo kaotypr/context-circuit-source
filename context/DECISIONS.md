@@ -39,3 +39,12 @@ independent plans use separate children and worktrees. `workspace.yaml`
 child-session primitive is reported to the human rather than used to skip
 children. This is directed behavior, not a prohibition on root worktree
 writes. Plan 0003's canonical `done` status is unchanged.
+
+## 2026-08-16 — Named plan-approval, finish, and runtime-cleanup skills
+
+The core discoverable set now includes `cc-approve-plan`, `cc-finish-plan`,
+and `cc-cleanup-runtime`. Approval and finish require current-session human
+confirmation. Approval does not start execution. Finish does not delete
+runtime. Cleanup inspects uncommitted and unpushed worktrees and deletes
+`.runtime/` only after explicit human choice. Review remains read-only. These
+skills are discoverability aids, not mandatory ceremonies.

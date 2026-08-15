@@ -15,11 +15,18 @@ A plan should have:
 - risks, assumptions, and open questions;
 - tasks with explicit dependencies and bounded scopes.
 
-Plans begin as `draft` and require explicit human approval. `plan.yaml` is the
-canonical lifecycle record: approval changes the included task projections from
-`draft` to `ready`, and completion changes them to `done`. Task status is not a
-second approval gate and does not provide an execution lease or verification
-result.
+Plans begin as `draft` and require explicit human approval through
+`cc-approve-plan`. `plan.yaml` is the canonical lifecycle record: approval
+changes the included task projections from `draft` to `ready`, and completion
+through `cc-finish-plan` changes them to `done`. Task status is not a second
+approval gate and does not provide an execution lease or verification result.
+
+`cc-approve-plan` is the named plan-approval skill. After explicit confirmation
+in the current session it changes `plan.yaml` from `draft` to `approved` and
+reconciles included tasks to `ready`. Approval does not claim a lease, create a
+worktree, or start `cc-run-plan`. A prior `cc-review-plan` run is not required.
+Already-approved plans are reported as approved and may enter `cc-run-plan`
+without a second status rewrite.
 
 On approval, completion, and session entry or resume, the coordinator
 reconciles every included task to the projection expected by the plan. The

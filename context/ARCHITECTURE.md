@@ -22,6 +22,10 @@ The target architecture is instruction- and filesystem-driven:
   mode. `workspace.yaml` mode does not select an execution topology. Solo
   versus team remains identity; `solo-local` and `team-review` remain
   delivery policies.
+- `cc-approve-plan`, `cc-finish-plan`, and `cc-cleanup-runtime` are the named
+  plan-approval, status-change, and runtime-cleanup skills. They require
+  current-session human confirmation and are discoverable, not mandatory
+  ceremonies.
 
 The workspace does not require a central database, activity provider, or
 command runtime. Filesystem records are the inspectable runtime source of

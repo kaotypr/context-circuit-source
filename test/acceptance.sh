@@ -20,7 +20,7 @@ absent() {
 contains() {
   file=$1
   text=$2
-  grep -F "$text" "$file" >/dev/null 2>&1 || fail "expected '$text' in $file"
+  grep -F -- "$text" "$file" >/dev/null 2>&1 || fail "expected '$text' in $file"
 }
 
 expect_success() {
@@ -524,6 +524,423 @@ completion_ready_for_plan() {
   grep -F 'verification: passed' "$completion_verifier_file" >/dev/null 2>&1 || return 1
   grep -F 'status: approved' "$completion_gate_file" >/dev/null 2>&1 || return 1
   return 0
+}
+
+write_gate_plan() {
+  plan_file=$1
+  plan_id=$2
+  plan_status=$3
+  mkdir -p "$(dirname "$plan_file")"
+  atomic_write "$plan_file" \
+    "id: $plan_id" \
+    'number: 9' \
+    'title: Gate fixture plan' \
+    "status: $plan_status" \
+    'source:' \
+    '  kind: direct-request' \
+    '  reference: fixture' \
+    'repositories:' \
+    '  - context-circuit' \
+    'product_knowledge:' \
+    '  references:' \
+    '    - context/PROJECT.md' \
+    'implementation_scope:' \
+    '  - docs and agents' \
+    'non_goals:' \
+    '  - delivery actions' \
+    'dependencies:' \
+    '  - foundation' \
+    'acceptance_criteria:' \
+    '  - The fixture can execute safely' \
+    'test_scope:' \
+    '  - filesystem fixtures' \
+    'verification_commands:' \
+    '  - git diff --check'
+}
+
+write_gate_tasks() {
+  task_dir=$1
+  task_status=$2
+  mkdir -p "$task_dir"
+  atomic_write "$task_dir/FPC-0001.md" \
+    'id: FPC-0001' "status: $task_status" 'title: First fixture task'
+  atomic_write "$task_dir/FPC-0002.md" \
+    'id: FPC-0002' "status: $task_status" 'title: Second fixture task'
+}
+
+plan_field() {
+  sed -n "s/^$2: //p" "$1" | head -n 1
+}
+
+approve_plan() {
+  plan_file=$1
+  task_dir=$2
+  confirmation=$3
+  expected_id=${4:-}
+  if test ! -f "$plan_file"; then
+    printf 'BLOCKED: unknown or contradictory plan identifier\n' >&2
+    return 1
+  fi
+  if ! plan_contract_complete "$plan_file"; then
+    printf 'BLOCKED: plan artifact is incomplete\n' >&2
+    return 1
+  fi
+  task_found=0
+  if test -d "$task_dir"; then
+    for task_file in "$task_dir"/*.md; do
+      test -f "$task_file" || continue
+      task_found=1
+    done
+  fi
+  if test "$task_found" -eq 0; then
+    printf 'BLOCKED: plan artifact is incomplete\n' >&2
+    return 1
+  fi
+  actual_id=$(plan_field "$plan_file" id)
+  if test -n "$expected_id" && test "$actual_id" != "$expected_id"; then
+    printf 'BLOCKED: unknown or contradictory plan identifier\n' >&2
+    return 1
+  fi
+  plan_status=$(plan_field "$plan_file" status)
+  case "$plan_status" in
+    done)
+      printf 'BLOCKED: plan is already done\n' >&2
+      return 1
+      ;;
+    approved)
+      printf 'OBSERVED: plan is already approved; recommend cc-run-plan\n'
+      return 0
+      ;;
+    draft) ;;
+    *)
+      printf 'BLOCKED: unknown or contradictory plan identifier\n' >&2
+      return 1
+      ;;
+  esac
+  if test "$confirmation" != confirm; then
+    printf 'DECLINED: plan remains draft; execution unstarted\n'
+    return 0
+  fi
+  temporary="${plan_file}.tmp.$$"
+  sed 's/^status: draft$/status: approved/' "$plan_file" > "$temporary"
+  mv "$temporary" "$plan_file"
+  lifecycle_sync_tasks "$plan_file" "$task_dir"
+  printf 'APPROVED: plan status approved; tasks ready; execution unstarted\n'
+}
+
+write_plan_permission() {
+  write_plan=$1
+  action=$2
+  if test "$write_plan" != true; then
+    printf 'BLOCKED: write_plan false; cannot %s a plan\n' "$action" >&2
+    return 1
+  fi
+}
+
+child_cannot_approve_finish_or_clean() {
+  role=$1
+  action=$2
+  case "$role" in
+    implementer|verifier)
+      if test "$action" = cleanup; then
+        printf 'BLOCKED: cleanup is not permitted to children\n' >&2
+        return 1
+      fi
+      printf 'BLOCKED: a child worker or verifier cannot %s\n' "$action" >&2
+      return 1
+      ;;
+  esac
+  return 0
+}
+
+finish_plan() {
+  plan_file=$1
+  task_dir=$2
+  completion_file=$3
+  evidence_dir=$4
+  verifier_handoff=$5
+  lease_lock=$6
+  current_session=$7
+  confirmation=$8
+  if test ! -f "$plan_file"; then
+    printf 'BLOCKED: unknown or contradictory plan identifier\n' >&2
+    return 1
+  fi
+  plan_status=$(plan_field "$plan_file" status)
+  case "$plan_status" in
+    draft)
+      printf 'BLOCKED: draft plans cannot be finished\n' >&2
+      return 1
+      ;;
+    done)
+      printf 'BLOCKED: plan is already done\n' >&2
+      return 1
+      ;;
+    approved) ;;
+    *)
+      printf 'BLOCKED: unknown or contradictory plan identifier\n' >&2
+      return 1
+      ;;
+  esac
+  if test ! -f "$completion_file"; then
+    printf 'BLOCKED: missing completion evidence\n' >&2
+    return 1
+  fi
+  if test "$(plan_field "$completion_file" status)" != ready-for-human-status-change; then
+    printf 'BLOCKED: completion evidence is not ready for human status-change\n' >&2
+    return 1
+  fi
+  evidence_found=0
+  if test -d "$evidence_dir"; then
+    for evidence_file in "$evidence_dir"/*.yaml; do
+      test -f "$evidence_file" || continue
+      evidence_found=1
+      grep -F 'evidence_status: completed' "$evidence_file" >/dev/null 2>&1 || {
+        printf 'BLOCKED: missing task evidence, independent passing verification, or a remaining blocker\n' >&2
+        return 1
+      }
+    done
+  fi
+  if test "$evidence_found" -eq 0; then
+    printf 'BLOCKED: missing task evidence, independent passing verification, or a remaining blocker\n' >&2
+    return 1
+  fi
+  if test ! -f "$verifier_handoff"; then
+    printf 'BLOCKED: missing task evidence, independent passing verification, or a remaining blocker\n' >&2
+    return 1
+  fi
+  grep -F 'status: completed' "$verifier_handoff" >/dev/null 2>&1 || {
+    printf 'BLOCKED: missing task evidence, independent passing verification, or a remaining blocker\n' >&2
+    return 1
+  }
+  grep -F 'verification: passed' "$verifier_handoff" >/dev/null 2>&1 || {
+    printf 'BLOCKED: missing task evidence, independent passing verification, or a remaining blocker\n' >&2
+    return 1
+  }
+  if grep -F 'status: blocked' "$verifier_handoff" >/dev/null 2>&1; then
+    printf 'BLOCKED: missing task evidence, independent passing verification, or a remaining blocker\n' >&2
+    return 1
+  fi
+  if test -d "$lease_lock" && test -f "$lease_lock/owner.yaml"; then
+    lease_owner=$(plan_field "$lease_lock/owner.yaml" session_id)
+    if test -n "$lease_owner" && test "$lease_owner" != "$current_session"; then
+      printf 'BLOCKED: live writing session owned by someone else\n' >&2
+      return 1
+    fi
+  fi
+  if test "$confirmation" != confirm; then
+    printf 'DECLINED: plan remains approved; completion evidence stays ready-for-human-status-change\n'
+    return 0
+  fi
+  temporary="${plan_file}.tmp.$$"
+  sed 's/^status: approved$/status: done/' "$plan_file" > "$temporary"
+  mv "$temporary" "$plan_file"
+  lifecycle_sync_tasks "$plan_file" "$task_dir"
+  finish_plan_ref=$(plan_field "$completion_file" plan)
+  finish_verifier=$(plan_field "$completion_file" verifier_session_id)
+  finish_handoff=$(plan_field "$completion_file" verification_handoff)
+  atomic_write "$completion_file" \
+    'schema_version: 1' \
+    "plan: $finish_plan_ref" \
+    'status: completed' \
+    "verifier_session_id: $finish_verifier" \
+    "verification_handoff: $finish_handoff" \
+    'human_gate: status-change' \
+    'canonical_status_changed: true'
+  if test -d "$lease_lock"; then
+    plan_dir=$(dirname "$lease_lock")
+    if test -f "$plan_dir/lease.yaml"; then
+      temporary="$plan_dir/lease.yaml.tmp.$$"
+      sed 's/^status: active$/status: released/' "$plan_dir/lease.yaml" > "$temporary"
+      mv "$temporary" "$plan_dir/lease.yaml"
+    fi
+    rm -rf "$lease_lock"
+  fi
+  printf 'FINISHED: plan status done; tasks done; lease released; runtime preserved\n'
+}
+
+runtime_path_safe() {
+  candidate=$1
+  runtime_root=$2
+  case "$candidate" in
+    *..*) return 1 ;;
+  esac
+  case "$candidate/" in
+    "$runtime_root/"*) ;;
+    *) return 1 ;;
+  esac
+  if test -L "$candidate"; then
+    return 1
+  fi
+  repo_key=$(basename "$(dirname "$candidate")")
+  plan_id=$(basename "$candidate")
+  safe_id "$repo_key" || return 1
+  safe_id "$plan_id" || return 1
+}
+
+classify_worktree() {
+  worktree=$1
+  uncommitted=0
+  unpushed=0
+  if test ! -d "$worktree"; then
+    printf 'missing\n'
+    return 1
+  fi
+  if test -n "$(git -C "$worktree" status --porcelain 2>/dev/null)"; then
+    uncommitted=1
+  fi
+  if git -C "$worktree" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
+    if test "$(git -C "$worktree" rev-list --count '@{upstream}..HEAD')" -gt 0; then
+      unpushed=1
+    fi
+  else
+    unpushed=1
+  fi
+  if test "$uncommitted" -eq 1 && test "$unpushed" -eq 1; then
+    printf 'both\n'
+  elif test "$uncommitted" -eq 1; then
+    printf 'uncommitted\n'
+  elif test "$unpushed" -eq 1; then
+    printf 'unpushed\n'
+  else
+    printf 'clean\n'
+  fi
+}
+
+inspect_runtime_worktrees() {
+  runtime_root=$1
+  inspect_log=$2
+  atomic_write "$inspect_log" 'CLEANUP: workspace-wide for .runtime/'
+  if test -d "$runtime_root/worktrees"; then
+    for repo_dir in "$runtime_root/worktrees"/*; do
+      test -d "$repo_dir" || continue
+      for worktree in "$repo_dir"/*; do
+        test -d "$worktree" || continue
+        if ! runtime_path_safe "$worktree" "$runtime_root"; then
+          printf 'BLOCKED: path traversal, symlink, or identifier outside the runtime contract\n' >&2
+          return 1
+        fi
+        class=$(classify_worktree "$worktree")
+        printf 'worktree %s: %s\n' "$worktree" "$class" >> "$inspect_log"
+        case "$class" in
+          uncommitted)
+            printf 'RISK: uncommitted\n' >> "$inspect_log"
+            ;;
+          unpushed)
+            printf 'RISK: unpushed\n' >> "$inspect_log"
+            ;;
+          both)
+            printf 'RISK: uncommitted\n' >> "$inspect_log"
+            printf 'RISK: unpushed\n' >> "$inspect_log"
+            ;;
+        esac
+      done
+    done
+  fi
+  if test -d "$runtime_root/sessions"; then
+    for session_file in "$runtime_root/sessions"/*/session.yaml; do
+      test -f "$session_file" || continue
+      session_status=$(plan_field "$session_file" status)
+      case "$session_status" in
+        completed|failed|cancelled) ;;
+        *)
+          printf 'live session %s status %s\n' "$session_file" "$session_status" \
+            >> "$inspect_log"
+          ;;
+      esac
+    done
+  fi
+}
+
+git_common_dir() {
+  worktree=$1
+  common=$(git -C "$worktree" rev-parse --git-common-dir)
+  case "$common" in
+    /*) printf '%s\n' "$common" ;;
+    *) printf '%s\n' "$worktree/$common" ;;
+  esac
+}
+
+cleanup_runtime() {
+  runtime_root=$1
+  confirmation=$2
+  inspect_log=$3
+  if test ! -e "$runtime_root"; then
+    printf 'NO-OP: runtime is missing or empty\n'
+    return 0
+  fi
+  if test -d "$runtime_root"; then
+    leftover=$(find "$runtime_root" -mindepth 1 -print | sed -n '1p')
+    if test -z "$leftover"; then
+      printf 'NO-OP: runtime is missing or empty\n'
+      return 0
+    fi
+  fi
+  inspect_runtime_worktrees "$runtime_root" "$inspect_log" || return 1
+  has_uncommitted=0
+  has_unpushed=0
+  if grep -F 'RISK: uncommitted' "$inspect_log" >/dev/null 2>&1; then
+    has_uncommitted=1
+  fi
+  if grep -F 'RISK: unpushed' "$inspect_log" >/dev/null 2>&1; then
+    has_unpushed=1
+  fi
+  force_remove=0
+  if test "$has_uncommitted" -eq 1; then
+    if test "$confirmation" != confirm-discard-dirty; then
+      printf 'BLOCKED: uncommitted or unpushed work requires confirmation\n' >&2
+      return 1
+    fi
+    force_remove=1
+  elif test "$has_unpushed" -eq 1; then
+    case "$confirmation" in
+      confirm|confirm-discard-dirty) ;;
+      *)
+        printf 'BLOCKED: uncommitted or unpushed work requires confirmation\n' >&2
+        return 1
+        ;;
+    esac
+  else
+    case "$confirmation" in
+      confirm|confirm-discard-dirty) ;;
+      *)
+        printf 'BLOCKED: cleanup requires human confirmation\n' >&2
+        return 1
+        ;;
+    esac
+  fi
+  if test -d "$runtime_root/worktrees"; then
+    for repo_dir in "$runtime_root/worktrees"/*; do
+      test -d "$repo_dir" || continue
+      for worktree in "$repo_dir"/*; do
+        test -d "$worktree" || continue
+        test -e "$worktree/.git" || continue
+        common=$(git_common_dir "$worktree")
+        if test "$force_remove" -eq 1; then
+          git --git-dir="$common" worktree remove --force "$worktree"
+        else
+          git --git-dir="$common" worktree remove "$worktree"
+        fi
+      done
+    done
+  fi
+  rm -rf "$runtime_root"
+  printf 'CLEANED: runtime deleted; branches preserved\n'
+}
+
+init_cleanup_git() {
+  source_repo=$1
+  bare_repo=$2
+  mkdir -p "$(dirname "$source_repo")"
+  git init -q "$source_repo"
+  git -C "$source_repo" config user.name 'Acceptance Fixture'
+  git -C "$source_repo" config user.email 'acceptance@example.invalid'
+  atomic_write "$source_repo/README.md" 'cleanup base'
+  git -C "$source_repo" add README.md
+  git -C "$source_repo" commit -qm 'cleanup base'
+  git init --bare -q "$bare_repo"
+  git -C "$source_repo" remote add origin "$bare_repo"
+  git -C "$source_repo" push -q -u origin HEAD
 }
 
 require_file AGENTS.md
@@ -1599,5 +2016,341 @@ fi
 printf 'PASS: optional configuration, delivery policy, authorization, integration, host, and offline-core acceptance scenarios\n'
 
 printf 'PASS: workspace foundation and context acceptance scenarios (initialization, passive sources, provenance, artifacts)\n'
+
+# Plan 0009: named approve, finish, and cleanup skills with confirmation,
+# refusal, task reconciliation, and runtime-preservation fixtures.
+require_file .agents/skills/cc-approve-plan/SKILL.md
+require_file .agents/skills/cc-approve-plan/agents/openai.yaml
+require_file .agents/skills/cc-finish-plan/SKILL.md
+require_file .agents/skills/cc-finish-plan/agents/openai.yaml
+require_file .agents/skills/cc-cleanup-runtime/SKILL.md
+require_file .agents/skills/cc-cleanup-runtime/agents/openai.yaml
+test "$(head -n 1 .agents/skills/cc-approve-plan/SKILL.md)" = '---'
+test "$(head -n 1 .agents/skills/cc-finish-plan/SKILL.md)" = '---'
+test "$(head -n 1 .agents/skills/cc-cleanup-runtime/SKILL.md)" = '---'
+contains .agents/skills/cc-approve-plan/SKILL.md 'name: cc-approve-plan'
+contains .agents/skills/cc-approve-plan/SKILL.md 'description:'
+contains .agents/skills/cc-finish-plan/SKILL.md 'name: cc-finish-plan'
+contains .agents/skills/cc-finish-plan/SKILL.md 'description:'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'name: cc-cleanup-runtime'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'description:'
+contains .agents/skills/cc-approve-plan/agents/openai.yaml 'display_name:'
+contains .agents/skills/cc-approve-plan/agents/openai.yaml '$cc-approve-plan'
+contains .agents/skills/cc-finish-plan/agents/openai.yaml 'display_name:'
+contains .agents/skills/cc-finish-plan/agents/openai.yaml '$cc-finish-plan'
+contains .agents/skills/cc-cleanup-runtime/agents/openai.yaml 'display_name:'
+contains .agents/skills/cc-cleanup-runtime/agents/openai.yaml '$cc-cleanup-runtime'
+
+contains .agents/skills/cc-approve-plan/SKILL.md 'explicit human confirmation'
+contains .agents/skills/cc-approve-plan/SKILL.md 'Leave execution unstarted'
+contains .agents/skills/cc-approve-plan/SKILL.md 'recommend `cc-run-plan`'
+contains .agents/skills/cc-approve-plan/SKILL.md 'A prior `cc-review-plan` run is not required'
+contains .agents/skills/cc-finish-plan/SKILL.md 'explicit human confirmation'
+contains .agents/skills/cc-finish-plan/SKILL.md 'ready-for-human-status-change'
+contains .agents/skills/cc-finish-plan/SKILL.md 'canonical_status_changed: true'
+contains .agents/skills/cc-finish-plan/SKILL.md 'status: completed'
+contains .agents/skills/cc-finish-plan/SKILL.md 'Leave `.runtime/`'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'uncommitted changes'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'unpushed'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'git worktree remove'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'workspace-wide'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md 'successful no-op'
+contains .agents/skills/cc-cleanup-runtime/SKILL.md '--force'
+
+contains .agents/skills/cc-review-plan/SKILL.md 'never changes plan status'
+contains .agents/skills/cc-review-plan/SKILL.md 'never writes `plan.yaml`'
+contains .agents/skills/cc-review-plan/SKILL.md 'cc-approve-plan'
+contains .agents/skills/cc-review-plan/SKILL.md 'cc-run-task'
+contains .agents/skills/cc-run-plan/SKILL.md 'mark the plan done'
+contains .agents/skills/cc-run-plan/SKILL.md 'cc-finish-plan'
+contains .agents/skills/cc-create-plan/SKILL.md 'cc-approve-plan'
+contains .agents/skills/cc-whats-next/SKILL.md 'cc-approve-plan'
+contains .agents/skills/cc-whats-next/SKILL.md 'cc-finish-plan'
+contains .agents/skills/cc-whats-next/SKILL.md 'cc-cleanup-runtime'
+contains .agents/skills/cc-whats-next/SKILL.md 'not mandatory ceremonies'
+contains .agents/skills/cc-session-entry/SKILL.md 'cc-approve-plan'
+contains .agents/skills/cc-session-entry/SKILL.md 'cc-finish-plan'
+contains .agents/skills/cc-session-entry/SKILL.md 'cc-cleanup-runtime'
+contains agents/coordinator.md 'cc-approve-plan'
+contains agents/coordinator.md 'cc-finish-plan'
+contains agents/coordinator.md 'cc-cleanup-runtime'
+contains docs/planning.md 'cc-approve-plan'
+contains docs/plan-review.md 'never writes `plan.yaml`'
+contains docs/plan-review.md 'cc-approve-plan'
+contains docs/runtime-contract.md 'is the named status-change skill'
+contains docs/runtime-contract.md 'status: completed'
+contains docs/runtime-contract.md 'cc-cleanup-runtime'
+contains WORKFLOW.md 'cc-approve-plan'
+contains WORKFLOW.md 'cc-finish-plan'
+contains AGENTS.md 'cc-cleanup-runtime'
+contains docs/using-the-wrapper.md 'cc-cleanup-runtime'
+contains docs/getting-started.md 'cc-approve-plan'
+contains docs/getting-started.md 'cc-finish-plan'
+contains docs/getting-started.md 'cc-cleanup-runtime'
+contains context/INDEX.md 'cc-approve-plan'
+contains context/ARCHITECTURE.md 'cc-approve-plan'
+contains context/CONVENTIONS.md 'cc-finish-plan'
+contains context/PRODUCT-DIRECTION.md 'cc-cleanup-runtime'
+contains context/PROJECT.md 'cc-approve-plan'
+contains context/DECISIONS.md '2026-08-16 — Named plan-approval, finish, and runtime-cleanup skills'
+
+gates_fixture="$fixture/plan-gates"
+mkdir -p "$gates_fixture/tasks" "$gates_fixture/evidence"
+gates_plan="$gates_fixture/plan.yaml"
+write_gate_plan "$gates_plan" gate-fixture draft
+write_gate_tasks "$gates_fixture/tasks" draft
+expect_success approve_plan "$gates_plan" "$gates_fixture/tasks" decline gate-fixture
+contains "$gates_plan" 'status: draft'
+contains "$gates_fixture/tasks/FPC-0001.md" 'status: draft'
+test ! -e "$gates_fixture/lease.lock"
+
+expect_success approve_plan "$gates_plan" "$gates_fixture/tasks" confirm gate-fixture
+contains "$gates_plan" 'status: approved'
+contains "$gates_fixture/tasks/FPC-0001.md" 'status: ready'
+contains "$gates_fixture/tasks/FPC-0002.md" 'status: ready'
+test ! -e "$gates_fixture/lease.lock"
+test ! -e "$gates_fixture/worktree"
+approved_snapshot="$gates_fixture/approved.snapshot"
+sha256sum "$gates_plan" "$gates_fixture/tasks"/*.md > "$approved_snapshot"
+expect_success approve_plan "$gates_plan" "$gates_fixture/tasks" confirm gate-fixture > "$gates_fixture/already-approved.log"
+contains "$gates_fixture/already-approved.log" 'already approved'
+contains "$gates_fixture/already-approved.log" 'cc-run-plan'
+test "$(sha256sum "$gates_plan" "$gates_fixture/tasks"/*.md)" = "$(cat "$approved_snapshot")"
+
+assert_failure_reason "$gates_fixture/unknown.log" \
+  'unknown or contradictory plan identifier' \
+  approve_plan "$gates_fixture/missing.yaml" "$gates_fixture/tasks" confirm missing
+assert_failure_reason "$gates_fixture/contradictory.log" \
+  'unknown or contradictory plan identifier' \
+  approve_plan "$gates_plan" "$gates_fixture/tasks" confirm other-id
+atomic_write "$gates_fixture/incomplete.yaml" 'id: incomplete' 'status: draft'
+assert_failure_reason "$gates_fixture/incomplete.log" \
+  'plan artifact is incomplete' \
+  approve_plan "$gates_fixture/incomplete.yaml" "$gates_fixture/no-tasks" confirm incomplete
+write_gate_plan "$gates_fixture/done.yaml" done-fixture done
+write_gate_tasks "$gates_fixture/done-tasks" done
+assert_failure_reason "$gates_fixture/done.log" \
+  'plan is already done' \
+  approve_plan "$gates_fixture/done.yaml" "$gates_fixture/done-tasks" confirm done-fixture
+
+write_gate_plan "$gates_plan" gate-fixture approved
+write_gate_tasks "$gates_fixture/tasks" ready
+finish_completion="$gates_fixture/completion.yaml"
+finish_verifier="$gates_fixture/verifier.md"
+finish_runtime="$gates_fixture/.runtime"
+mkdir -p "$finish_runtime/plans/gate-fixture" \
+  "$finish_runtime/sessions/root-finish" \
+  "$gates_fixture/evidence"
+atomic_write "$finish_completion" \
+  'schema_version: 1' \
+  'plan: plans/context-circuit-plans/gate-fixture' \
+  'status: ready-for-human-status-change' \
+  'verifier_session_id: verifier-finish' \
+  'verification_handoff: .runtime/sessions/verifier-finish/handoff.md' \
+  'human_gate: status-change' \
+  'canonical_status_changed: false'
+atomic_write "$gates_fixture/evidence/FPC-0001.yaml" \
+  'task: FPC-0001' 'evidence_status: completed'
+atomic_write "$gates_fixture/evidence/FPC-0002.yaml" \
+  'task: FPC-0002' 'evidence_status: completed'
+atomic_write "$finish_verifier" \
+  '# Verification handoff' 'status: completed' 'verification: passed'
+runtime="$finish_runtime"
+write_session root-finish null root-finish root coordinator 'Finish the fixture plan' FPC-0001..FPC-0002 workspace false . executing
+expect_success acquire_lease \
+  "$finish_runtime/plans/gate-fixture/lease.lock" \
+  root-finish root-finish \
+  plans/context-circuit-plans/gate-fixture \
+  .runtime/worktrees/context-circuit/gate-fixture \
+  gate-fixture
+
+write_gate_plan "$gates_fixture/draft-finish.yaml" draft-finish draft
+write_gate_tasks "$gates_fixture/draft-finish-tasks" draft
+assert_failure_reason "$gates_fixture/finish-draft.log" \
+  'draft plans cannot be finished' \
+  finish_plan "$gates_fixture/draft-finish.yaml" \
+  "$gates_fixture/draft-finish-tasks" "$finish_completion" \
+  "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish confirm
+write_gate_plan "$gates_fixture/already-done.yaml" already-done done
+write_gate_tasks "$gates_fixture/already-done-tasks" done
+assert_failure_reason "$gates_fixture/finish-done.log" \
+  'plan is already done' \
+  finish_plan "$gates_fixture/already-done.yaml" \
+  "$gates_fixture/already-done-tasks" "$finish_completion" \
+  "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish confirm
+assert_failure_reason "$gates_fixture/finish-missing.log" \
+  'missing completion evidence' \
+  finish_plan "$gates_plan" "$gates_fixture/tasks" \
+  "$gates_fixture/missing-completion.yaml" \
+  "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish confirm
+atomic_write "$gates_fixture/blocked-completion.yaml" \
+  'schema_version: 1' \
+  'plan: plans/context-circuit-plans/gate-fixture' \
+  'status: blocked' \
+  'human_gate: status-change' \
+  'canonical_status_changed: false'
+assert_failure_reason "$gates_fixture/finish-blocked.log" \
+  'completion evidence is not ready for human status-change' \
+  finish_plan "$gates_plan" "$gates_fixture/tasks" \
+  "$gates_fixture/blocked-completion.yaml" \
+  "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish confirm
+atomic_write "$gates_fixture/failed-verifier.md" \
+  '# Verification handoff' 'status: failed' 'verification: failed'
+assert_failure_reason "$gates_fixture/finish-failed-verifier.log" \
+  'missing task evidence, independent passing verification, or a remaining blocker' \
+  finish_plan "$gates_plan" "$gates_fixture/tasks" "$finish_completion" \
+  "$gates_fixture/evidence" "$gates_fixture/failed-verifier.md" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish confirm
+assert_failure_reason "$gates_fixture/finish-foreign-lease.log" \
+  'live writing session owned by someone else' \
+  finish_plan "$gates_plan" "$gates_fixture/tasks" "$finish_completion" \
+  "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" other-session confirm
+
+expect_success finish_plan "$gates_plan" "$gates_fixture/tasks" \
+  "$finish_completion" "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish decline
+contains "$gates_plan" 'status: approved'
+contains "$finish_completion" 'status: ready-for-human-status-change'
+contains "$finish_completion" 'canonical_status_changed: false'
+test -d "$finish_runtime/plans/gate-fixture/lease.lock"
+
+expect_success finish_plan "$gates_plan" "$gates_fixture/tasks" \
+  "$finish_completion" "$gates_fixture/evidence" "$finish_verifier" \
+  "$finish_runtime/plans/gate-fixture/lease.lock" root-finish confirm
+contains "$gates_plan" 'status: done'
+contains "$gates_fixture/tasks/FPC-0001.md" 'status: done'
+contains "$gates_fixture/tasks/FPC-0002.md" 'status: done'
+contains "$finish_completion" 'status: completed'
+contains "$finish_completion" 'human_gate: status-change'
+contains "$finish_completion" 'canonical_status_changed: true'
+test ! -d "$finish_runtime/plans/gate-fixture/lease.lock"
+test -f "$finish_runtime/plans/gate-fixture/lease.yaml"
+contains "$finish_runtime/plans/gate-fixture/lease.yaml" 'status: released'
+test -d "$finish_runtime/sessions/root-finish"
+done_snapshot="$gates_fixture/done.snapshot"
+sha256sum "$gates_plan" "$gates_fixture/tasks"/*.md > "$done_snapshot"
+expect_success lifecycle_sync_tasks "$gates_plan" "$gates_fixture/tasks"
+test "$(sha256sum "$gates_plan" "$gates_fixture/tasks"/*.md)" = "$(cat "$done_snapshot")"
+
+contains "$fixture/.runtime/sessions/child-001/delegation.yaml" 'write_plan: false'
+assert_failure_reason "$gates_fixture/child-approve.log" \
+  'write_plan false' write_plan_permission false approve
+assert_failure_reason "$gates_fixture/child-finish.log" \
+  'a child worker or verifier cannot finish' \
+  child_cannot_approve_finish_or_clean implementer finish
+assert_failure_reason "$gates_fixture/verifier-finish.log" \
+  'a child worker or verifier cannot finish' \
+  child_cannot_approve_finish_or_clean verifier finish
+assert_failure_reason "$gates_fixture/child-cleanup.log" \
+  'cleanup is not permitted to children' \
+  child_cannot_approve_finish_or_clean implementer cleanup
+
+cleanup_src="$fixture/cleanup-src"
+cleanup_bare="$fixture/cleanup-src.git"
+init_cleanup_git "$cleanup_src" "$cleanup_bare"
+
+cleanup_dirty_rt="$fixture/cleanup-dirty/.runtime"
+mkdir -p "$cleanup_dirty_rt/worktrees/context-circuit" \
+  "$cleanup_dirty_rt/sessions/live-001"
+git -C "$cleanup_src" worktree add -q -b plan-dirty \
+  "$cleanup_dirty_rt/worktrees/context-circuit/plan-dirty"
+git -C "$cleanup_dirty_rt/worktrees/context-circuit/plan-dirty" push -q -u origin plan-dirty
+atomic_write "$cleanup_dirty_rt/worktrees/context-circuit/plan-dirty/dirty.txt" \
+  'uncommitted work'
+atomic_write "$cleanup_dirty_rt/sessions/live-001/session.yaml" \
+  'session_id: live-001' 'status: executing'
+test "$(classify_worktree "$cleanup_dirty_rt/worktrees/context-circuit/plan-dirty")" = uncommitted
+assert_failure_reason "$fixture/cleanup-dirty-blocked.log" \
+  'uncommitted or unpushed work requires confirmation' \
+  cleanup_runtime "$cleanup_dirty_rt" confirm "$fixture/cleanup-dirty.inspect"
+contains "$fixture/cleanup-dirty.inspect" 'workspace-wide'
+contains "$fixture/cleanup-dirty.inspect" 'RISK: uncommitted'
+contains "$fixture/cleanup-dirty.inspect" 'live session'
+test -d "$cleanup_dirty_rt/worktrees/context-circuit/plan-dirty"
+base_dirty_readme="$cleanup_src/README.md"
+sha256sum "$base_dirty_readme" > "$fixture/cleanup-dirty-base.snapshot"
+expect_success cleanup_runtime "$cleanup_dirty_rt" confirm-discard-dirty \
+  "$fixture/cleanup-dirty-confirmed.inspect"
+test ! -e "$cleanup_dirty_rt"
+git -C "$cleanup_src" show-ref --verify --quiet refs/heads/plan-dirty || \
+  fail 'cleanup deleted the plan-dirty branch'
+test ! -e "$cleanup_src/dirty.txt"
+test "$(sha256sum "$base_dirty_readme")" = "$(cat "$fixture/cleanup-dirty-base.snapshot")"
+
+cleanup_unpushed_rt="$fixture/cleanup-unpushed/.runtime"
+mkdir -p "$cleanup_unpushed_rt/worktrees/context-circuit"
+git -C "$cleanup_src" worktree add -q -b plan-unpushed \
+  "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed"
+git -C "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed" push -q -u origin plan-unpushed
+atomic_write "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed/ahead.txt" \
+  'local commit'
+git -C "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed" add ahead.txt
+git -C "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed" commit -qm 'unpushed commit'
+test "$(classify_worktree "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed")" = unpushed
+assert_failure_reason "$fixture/cleanup-unpushed-blocked.log" \
+  'uncommitted or unpushed work requires confirmation' \
+  cleanup_runtime "$cleanup_unpushed_rt" decline "$fixture/cleanup-unpushed.inspect"
+contains "$fixture/cleanup-unpushed.inspect" 'RISK: unpushed'
+unpushed_sha=$(git -C "$cleanup_unpushed_rt/worktrees/context-circuit/plan-unpushed" rev-parse HEAD)
+expect_success cleanup_runtime "$cleanup_unpushed_rt" confirm \
+  "$fixture/cleanup-unpushed-confirmed.inspect"
+test ! -e "$cleanup_unpushed_rt"
+git -C "$cleanup_src" show-ref --verify --quiet refs/heads/plan-unpushed || \
+  fail 'cleanup deleted the plan-unpushed branch'
+test "$(git -C "$cleanup_src" rev-parse plan-unpushed)" = "$unpushed_sha"
+
+cleanup_local_rt="$fixture/cleanup-local/.runtime"
+mkdir -p "$cleanup_local_rt/worktrees/context-circuit"
+git -C "$cleanup_src" worktree add -q -b plan-local \
+  "$cleanup_local_rt/worktrees/context-circuit/plan-local"
+atomic_write "$cleanup_local_rt/worktrees/context-circuit/plan-local/local.txt" \
+  'local-only commit'
+git -C "$cleanup_local_rt/worktrees/context-circuit/plan-local" add local.txt
+git -C "$cleanup_local_rt/worktrees/context-circuit/plan-local" commit -qm 'local-only commit'
+test "$(classify_worktree "$cleanup_local_rt/worktrees/context-circuit/plan-local")" = unpushed
+assert_failure_reason "$fixture/cleanup-local-blocked.log" \
+  'uncommitted or unpushed work requires confirmation' \
+  cleanup_runtime "$cleanup_local_rt" decline "$fixture/cleanup-local.inspect"
+local_sha=$(git -C "$cleanup_local_rt/worktrees/context-circuit/plan-local" rev-parse HEAD)
+expect_success cleanup_runtime "$cleanup_local_rt" confirm \
+  "$fixture/cleanup-local-confirmed.inspect"
+test ! -e "$cleanup_local_rt"
+git -C "$cleanup_src" show-ref --verify --quiet refs/heads/plan-local || \
+  fail 'cleanup deleted the plan-local branch'
+test "$(git -C "$cleanup_src" rev-parse plan-local)" = "$local_sha"
+
+cleanup_clean_rt="$fixture/cleanup-clean/.runtime"
+mkdir -p "$cleanup_clean_rt/worktrees/context-circuit" \
+  "$cleanup_clean_rt/sessions/done-001"
+git -C "$cleanup_src" worktree add -q -b plan-clean \
+  "$cleanup_clean_rt/worktrees/context-circuit/plan-clean"
+git -C "$cleanup_clean_rt/worktrees/context-circuit/plan-clean" push -q -u origin plan-clean
+atomic_write "$cleanup_clean_rt/sessions/done-001/session.yaml" \
+  'session_id: done-001' 'status: completed'
+test "$(classify_worktree "$cleanup_clean_rt/worktrees/context-circuit/plan-clean")" = clean
+assert_failure_reason "$fixture/cleanup-clean-unconfirmed.log" \
+  'cleanup requires human confirmation' \
+  cleanup_runtime "$cleanup_clean_rt" decline "$fixture/cleanup-clean.inspect"
+contains "$fixture/cleanup-clean.inspect" 'workspace-wide'
+expect_success cleanup_runtime "$cleanup_clean_rt" confirm \
+  "$fixture/cleanup-clean-confirmed.inspect"
+test ! -e "$cleanup_clean_rt"
+git -C "$cleanup_src" show-ref --verify --quiet refs/heads/plan-clean || \
+  fail 'cleanup deleted the plan-clean branch'
+test ! -e "$cleanup_src/ahead.txt"
+
+empty_rt="$fixture/cleanup-empty/.runtime"
+mkdir -p "$empty_rt"
+expect_success cleanup_runtime "$empty_rt" confirm "$fixture/cleanup-empty.inspect"
+test -d "$empty_rt"
+missing_rt="$fixture/cleanup-missing/.runtime"
+expect_success cleanup_runtime "$missing_rt" confirm "$fixture/cleanup-missing.inspect"
+
+printf 'PASS: Plan 0009 approve-plan, finish-plan, and cleanup-runtime gates\n'
 
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

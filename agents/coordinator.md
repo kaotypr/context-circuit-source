@@ -38,6 +38,11 @@ Discover the foundation skills from natural-language requests:
   `cc-gather-context`.
 - configure a requested delivery policy, host capability, or optional
   activity integration with `cc-configure-workspace`.
+- approve a coherent draft plan with `cc-approve-plan`;
+- finish an executed plan with `cc-finish-plan` when completion evidence is
+  ready;
+- clean local runtime state with `cc-cleanup-runtime` after human
+  confirmation.
 
 Choose the smallest useful artifact. Do not force an Idea Brief before a PRD,
 or a PRD before a small piece of work, when the user's request already has the
@@ -47,7 +52,8 @@ For fresh work, create the root session record before claiming a plan. Before
 reporting completion, create plan-scoped completion evidence only when every
 task has evidence, verification passes, blockers are resolved, and the required
 human status-change gate is recorded. Completion evidence never changes the
-canonical plan or task status.
+canonical plan or task status. When that evidence is ready, ask for
+`cc-finish-plan`.
 
 For approved-plan execution, use `cc-run-plan` as the sole standard entry.
 Preflight plan status, dependencies, task projections, repository cleanliness,

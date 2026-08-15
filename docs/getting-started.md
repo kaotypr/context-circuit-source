@@ -70,8 +70,10 @@ When context is sufficient:
 2. Include dependencies, acceptance criteria, implementation scope, test scope,
    and verification commands.
 3. Present plans as drafts.
-4. Wait for explicit human approval.
-5. Do not infer approval from conversation tone, tests, or agent output.
+4. Optionally review with `cc-review-plan`. Review stays read-only.
+5. Wait for explicit human approval through `cc-approve-plan`.
+6. Do not infer approval from conversation tone, tests, or agent output.
+   Approval does not start execution.
 
 ## 5. Execute with sessions
 
@@ -80,7 +82,7 @@ After approval, `cc-run-plan` directs the root to:
 - claim a plan execution and create or reuse its exclusive worktree;
 - spawn a writer child through the host child-session primitive;
 - spawn a later independent verifier child (`write_worktree: false`);
-- record completion.yaml and ask for the human status-change gate.
+- record completion.yaml and ask for `cc-finish-plan`.
 
 Sequential tasks share one writer child. Independent plans get separate
 children and worktrees. If the host cannot spawn a child, report the missing
@@ -89,7 +91,7 @@ host primitive to the human.
 Every child session receives a bounded delegation packet and returns a structured
 handoff to its parent.
 
-## 6. Resume and finish
+## 6. Resume, finish, and optional cleanup
 
 At the end of each session, record:
 
@@ -102,5 +104,8 @@ At the end of each session, record:
 
 The next session reads this handoff instead of relying on conversation history.
 Human review and explicit status changes remain required before work is
-considered complete. A completion evidence record may request the human
-status-change gate, but it must not change plan or task status itself.
+considered complete. A completion evidence record may request `cc-finish-plan`,
+but it must not change plan or task status itself. After a plan is `done`, or
+when the user asks to clear local execution state, `cc-cleanup-runtime` may
+delete `.runtime/` only after inspecting dirty or unpushed work and receiving
+explicit confirmation.

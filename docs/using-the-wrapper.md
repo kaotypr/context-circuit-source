@@ -21,7 +21,11 @@ The .runtime directory keeps local execution state:
 
 Runtime state is resumable but is not authoritative over context, plans,
 human decisions, or repository instructions. Preserve it until a human chooses
-cleanup.
+cleanup through `cc-cleanup-runtime`. That skill inspects every runtime
+worktree for uncommitted and unpushed work, stops with a confirmation list when
+risk exists, and deletes `.runtime/` only after the human chooses cleanup.
+Cleanup is workspace-wide for `.runtime/` and does not delete Git branches or
+modify the base checkout.
 
 ## Repository boundaries
 
@@ -34,8 +38,9 @@ their delegation explicitly grants write access.
 
 Agents may inspect, draft, test, delegate, create isolated worktrees, and
 implement approved scope. Humans control Product Knowledge acceptance, plan
-approval, material scope changes, merge, publication, deployment, completion,
-and ambiguous session takeover.
+approval through `cc-approve-plan`, material scope changes, merge, publication,
+deployment, completion through `cc-finish-plan`, runtime cleanup through
+`cc-cleanup-runtime`, and ambiguous session takeover.
 
 ## Host adapters
 

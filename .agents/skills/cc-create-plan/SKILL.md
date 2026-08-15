@@ -44,6 +44,7 @@ Unresolved contradictions and material scope decisions stay visible.
 
 ## Next action
 
-Offer `cc-review-plan` to identify decisions and missing evidence, or ask for
-explicit approval when the plan is ready. Do not start execution from this
-skill; approved work enters through `cc-run-plan`.
+Offer `cc-review-plan` to identify decisions and missing evidence, or
+`cc-approve-plan` when the plan is ready. Only `cc-approve-plan` writes
+`draft` → `approved` after explicit human confirmation. Do not start
+execution from this skill; approved work enters through `cc-run-plan`.

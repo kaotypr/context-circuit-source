@@ -24,7 +24,17 @@ not replace the documents it indexes and must not duplicate their facts.
   drafts awaiting human acceptance.
 - `plans/` — human-reviewed intended work and task definitions.
 - `.runtime/` — private sessions, leases, worktrees, and handoffs; runtime
-  state is not Product Knowledge.
+  state is not Product Knowledge. Preserve it until a human chooses cleanup
+  via `cc-cleanup-runtime`.
+
+## Core discoverable skills
+
+The core discoverable set includes `cc-initialize-workspace`, `cc-idea-brief`,
+`cc-create-prd`, `cc-gather-context`, `cc-configure-workspace`,
+`cc-create-plan`, `cc-review-plan`, `cc-approve-plan`, `cc-run-plan`,
+`cc-finish-plan`, `cc-whats-next`, `cc-session-entry`, and
+`cc-cleanup-runtime`. These names are discoverability aids, not mandatory
+ceremonies for every session.
 
 ## Read by scope
 

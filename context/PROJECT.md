@@ -8,7 +8,9 @@ The workspace is human-controlled at consequential gates, but the user does
 not need to operate an internal CLI. Agents enter the workspace through a
 session workflow that reads authoritative context, routes the work, delegates
 bounded scopes, executes approved plans, verifies results, and records the next
-safe action.
+safe action. The core discoverable set includes `cc-approve-plan`,
+`cc-finish-plan`, and `cc-cleanup-runtime` for the named approval, completion,
+and runtime-cleanup gates.
 
 Approved-plan execution through `cc-run-plan` directs a writer child and a
 verifier child. Solo or team workspace identity does not change that topology.

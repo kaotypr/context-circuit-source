@@ -20,6 +20,10 @@
 - Use `cc-run-plan` to direct a writer child and an independent verifier
   child. `workspace.yaml` mode is identity, not an execution-topology
   selector. `solo-local` and `team-review` remain delivery policies.
+- Use `cc-approve-plan` for the human plan-approval gate, `cc-finish-plan`
+  for the human status-change gate, and `cc-cleanup-runtime` to delete
+  `.runtime/` after inspecting dirty or unpushed work. These are
+  discoverable skills, not mandatory ceremonies for every session.
 - Never infer completion from Git, tests, worktrees, external systems, or agent
   output.
 - Keep provider-specific activity state separate under `external_status` when an
@@ -27,5 +31,6 @@
   activity records in ordinary workspace state.
 - Preserve dirty or uncertain work; never reset, stash, clean, merge, or deploy
   implicitly.
-- Keep .runtime/ private and preserve it until a human chooses cleanup.
+- Keep .runtime/ private and preserve it until a human chooses cleanup via
+  `cc-cleanup-runtime`.
 - Never store credentials or external activity records.

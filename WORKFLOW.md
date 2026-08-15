@@ -48,11 +48,12 @@ isolation boundary.
 
 Plan status is the canonical lifecycle authority. Plans use `draft`, `approved`,
 and `done`; included task status is a synchronized projection using `draft`,
-`ready`, and `done`. Approval synchronizes all included tasks to `ready`, and
-completion synchronizes them to `done`. Ordinary whole-plan execution does not
-require a separate task approval or task-selection ceremony. A resumed session
-repairs stale task projections idempotently without rerunning implementation or
-verification checks.
+`ready`, and `done`. `cc-approve-plan` is the named plan-approval skill:
+confirmed approval synchronizes all included tasks to `ready`. `cc-finish-plan`
+is the named status-change skill: confirmed completion synchronizes them to
+`done`. Ordinary whole-plan execution does not require a separate task approval
+or task-selection ceremony. A resumed session repairs stale task projections
+idempotently without rerunning implementation or verification checks.
 
 ## Shared context and runtime state
 
@@ -83,13 +84,15 @@ are configured separately and are not initialization questions.
 The normal loop is:
 
 orient → gather evidence → draft or revise context → draft or revise plan →
-human approval → claim plan execution → implement → verify → review or repair
-within scope → handoff → resume, continue, or close.
+human approval (`cc-approve-plan`) → claim plan execution (`cc-run-plan`) →
+implement → verify → review or repair within scope → handoff →
+completion (`cc-finish-plan`) → optional cleanup (`cc-cleanup-runtime`).
 
 Agents may draft, inspect, test, create isolated worktrees, and implement
-approved scope. Humans control Product Knowledge acceptance, plan approval,
-material scope changes, publication, merge, deployment, completion, and
-ambiguous session takeover.
+approved scope. Humans control Product Knowledge acceptance, plan approval
+through `cc-approve-plan`, material scope changes, publication, merge,
+deployment, completion through `cc-finish-plan`, runtime cleanup through
+`cc-cleanup-runtime`, and ambiguous session takeover.
 
 ## Evidence and answers
 
@@ -103,4 +106,5 @@ child session reported completion.
 
 Preserve dirty or uncertain work. Never reset, stash, clean, merge, deploy,
 publish external work, store credentials, or overwrite another session's
-runtime state without explicit authorization.
+runtime state without explicit authorization. Preserve `.runtime/` until a
+human chooses cleanup through `cc-cleanup-runtime`.

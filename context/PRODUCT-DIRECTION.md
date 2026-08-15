@@ -10,7 +10,13 @@ decides intent, scope, publication, merge, deployment, and ownership boundaries.
 The core journey is:
 
 `start or resume → understand intent → capture the right artifact → ground it
-in Project Knowledge → plan → execute and verify → review or deliver → handoff`
+in Project Knowledge → plan → approve (`cc-approve-plan`) → execute and verify
+(`cc-run-plan`) → finish (`cc-finish-plan`) → optional cleanup
+(`cc-cleanup-runtime`) → handoff`
+
+The core discoverable set includes `cc-approve-plan`, `cc-finish-plan`, and
+`cc-cleanup-runtime` alongside the existing planning and execution skills.
+These names are discoverability aids, not mandatory ceremonies.
 
 A new project with no repository is valid. Raw files in `sources/` are passive
 and may be read only for a requested source-based activity. Product Knowledge,

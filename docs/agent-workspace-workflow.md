@@ -172,7 +172,7 @@ verification result.
 
 ## Runtime state
 
-Runtime state is private, local, resumable workspace state. It is preserved until a human chooses cleanup and is not treated as Product Knowledge.
+Runtime state is private, local, resumable workspace state. It is preserved until a human chooses cleanup via `cc-cleanup-runtime` and is not treated as Product Knowledge.
 
 The target layout is:
 
@@ -277,14 +277,15 @@ Orient
   → Gather evidence
   → Draft or revise context
   → Draft or revise plan
-  → Human approval
-  → Claim plan execution
+  → Human approval (`cc-approve-plan`)
+  → Claim plan execution (`cc-run-plan`)
   → Implement in isolated worktree
   → Verify
   → Repair within approved scope when appropriate
   → Human review
   → Record handoff
-  → Resume, continue, or close
+  → Completion (`cc-finish-plan`)
+  → Optional cleanup (`cc-cleanup-runtime`)
 ```
 
 An agent may iterate between implementation and verification without asking for per-task review when the work remains within the approved plan. It must pause when the plan scope, acceptance criteria, repository boundary, or safety assumptions materially change.
@@ -333,11 +334,12 @@ Agents may read, inspect, draft, test, create isolated worktrees, implement appr
 Human approval is required for:
 
 - accepting Product Knowledge changes as canonical;
-- approving a plan;
+- approving a plan through `cc-approve-plan`;
 - materially changing plan scope or acceptance criteria;
 - publishing or merging external work;
 - deployment or other consequential external actions;
-- marking tasks or plans done;
+- marking tasks or plans done through `cc-finish-plan`;
+- deleting `.runtime/` through `cc-cleanup-runtime`;
 - taking over a live or stale session when ownership is ambiguous.
 
 Approval displays the included task list for visibility, but ordinary
@@ -350,9 +352,11 @@ Subagents never satisfy a human gate on behalf of the root session or human.
 Before requesting a plan or task status change, the coordinator records durable
 evidence for every task, a passing independent verification handoff, and the
 required human gate in the plan runtime directory. It may record that the plan
-is ready for human status change, but it does not change canonical plan/task
-status itself. Missing evidence, a failed verifier, or an unresolved blocker
-keeps the plan blocked.
+is ready for human status change (`ready-for-human-status-change`), but it does
+not change canonical plan/task status itself. When that evidence is ready, ask
+for `cc-finish-plan`. Missing evidence, a failed verifier, or an unresolved
+blocker keeps the plan blocked. Finish does not delete `.runtime/` or start
+`cc-run-plan`.
 
 ## Handoffs and answers
 
@@ -455,7 +459,7 @@ requires a visible recovery decision. A takeover, when explicitly authorized,
 names the replaced session, reason, and preserved evidence.
 
 Completion requires durable evidence for every task, an independent passing
-verification handoff, and the human `status-change` gate. The coordinator may
-prepare completion evidence, but tests, Git state, or a verifier never change
-canonical plan or task status and never authorize merge, publication, or
-deployment.
+verification handoff, and the human `status-change` gate through
+`cc-finish-plan`. The coordinator may prepare completion evidence, but tests,
+Git state, or a verifier never change canonical plan or task status and never
+authorize merge, publication, or deployment.
