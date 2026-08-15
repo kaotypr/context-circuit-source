@@ -10,6 +10,10 @@ session workflow that reads authoritative context, routes the work, delegates
 bounded scopes, executes approved plans, verifies results, and records the next
 safe action.
 
+Approved-plan execution through `cc-run-plan` directs a writer child and a
+verifier child. Solo or team workspace identity does not change that topology.
+`solo-local` and `team-review` remain delivery policies.
+
 Product repositories own their code and repository-local conventions. Context
 Circuit owns the workspace protocol, durable Product Knowledge, plans, and
 private runtime coordination state.

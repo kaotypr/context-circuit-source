@@ -28,3 +28,14 @@ in Git history for reference but is no longer the target behavior.
   adapters, and package-manager entry points are not part of the workflow.
 - Runtime state remains under `.runtime/` and is preserved until a human
   explicitly chooses runtime cleanup.
+
+## 2026-08-16 — Root sessions orchestrate writer and verifier children
+
+Plan 0003's concise solo fast-path is superseded as live guidance. The root
+session claims the lease and exclusive worktree, then directs a writer child
+and an independent verifier child. Sequential tasks share one writer child;
+independent plans use separate children and worktrees. `workspace.yaml`
+`mode: solo` or `mode: team` does not select this topology. A missing host
+child-session primitive is reported to the human rather than used to skip
+children. This is directed behavior, not a prohibition on root worktree
+writes. Plan 0003's canonical `done` status is unchanged.

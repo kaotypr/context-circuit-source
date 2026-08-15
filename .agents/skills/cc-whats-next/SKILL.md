@@ -25,5 +25,6 @@ Recommend one route:
 
 The recommendation is read-only until the root session or human explicitly
 performs a consequential action. Report evidence, assumptions, blockers, and
-the next safe action separately. Keep simple solo work concise while preserving
-the same ownership and verification guarantees.
+the next safe action separately. For an approved dependency-ready plan,
+recommend `cc-run-plan` so the root creates a writer child and a verifier
+child rather than skipping children for small work.

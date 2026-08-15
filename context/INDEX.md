@@ -50,6 +50,7 @@ not replace the documents it indexes and must not duplicate their facts.
 - When documents conflict, report the contradiction before taking a
   consequential action.
 - Runtime state describes current execution and does not redefine product truth.
+- `workspace.yaml` mode is identity, not an execution topology.
 - Add new context only when it is source-backed, scoped, and useful to future
   sessions.
 

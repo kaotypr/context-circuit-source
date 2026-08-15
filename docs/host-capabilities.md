@@ -25,3 +25,22 @@ Host support never changes:
   ambiguous ownership; or
 - the prohibition on credentials and external activity records in workspace
   files.
+
+## Child-session primitives
+
+The filesystem packet is the coordination record. The host supplies the child
+execution context. Name primitives behaviorally so a later host rename does
+not require a new command layer.
+
+| Host | Child-session primitive |
+| --- | --- |
+| Cursor Agent | Task / subagent tool |
+| Claude Code | subagent / Task tool |
+| Codex | native child-agent or equivalent |
+
+Cursor's Task/subagent tool is a valid child-session primitive. Do not treat
+a Cursor session as having no child primitive.
+
+If the host cannot spawn a child, report the missing host primitive to the
+human and ask how to proceed. A missing primitive is not a reason to skip
+children.

@@ -16,5 +16,11 @@ A new project with no repository is valid. Raw files in `sources/` are passive
 and may be read only for a requested source-based activity. Product Knowledge,
 Idea Briefs, PRDs, plans, and private runtime state remain separate layers.
 
+`cc-run-plan` directs child writers and verifiers in every workspace mode.
+The same behavior applies to solo and team workspaces. `workspace.yaml` mode
+is initialization identity; it does not select an execution topology.
+Delivery policies `solo-local` and `team-review` remain post-verification
+choices.
+
 Source: `sources/context-circuit-product-direction.md` in the owning workspace;
 this file is a concise summary, not a copy of that source.

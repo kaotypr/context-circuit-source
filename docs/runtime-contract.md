@@ -327,7 +327,8 @@ The plan runner may keep an optional plan prompt or task evidence files under
 the owning plan runtime directory. These records are append-oriented evidence;
 they do not replace `plan.yaml`, the task contracts, the session record, or the
 lease. A prompt identifies the plan, root session, repository, worktree,
-dependencies, route (`solo` or `delegated`), and stop conditions.
+dependencies, preferred route (`delegated`), optional `writer-count: 1` when
+sequential tasks share one worktree, and stop conditions.
 
 Task evidence should identify the task, owning session, assigned paths, changed
 files, checks run, result, limitations, and handoff path. A task is not

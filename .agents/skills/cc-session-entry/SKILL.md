@@ -52,6 +52,13 @@ handoff. An approved dependency-ready plan with no live writing owner routes to
 live owner routes to resume or coordination; and a contradictory, stale, or
 ambiguous record routes to a visible recovery decision.
 
+Approved-plan execution through `cc-run-plan` directs a writer child and a
+later independent verifier child. Do not treat small or sequential work as a
+root-implements shortcut. Sequential tasks share one writer child and one
+worktree. Spawn children through the host child-session primitive; Cursor's
+Task/subagent tool is a valid primitive. If the host cannot spawn a child,
+report the missing host primitive to the human and ask how to proceed.
+
 On approval or resume, reconcile included task status in bulk from the plan
 status. The reconciliation is idempotent metadata repair and never reruns
 implementation or verification. Keep the plan status and task projection

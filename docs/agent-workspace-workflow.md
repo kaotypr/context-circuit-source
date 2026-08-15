@@ -111,6 +111,14 @@ The root session:
 
 A root session may coordinate multiple plans, but each plan still has an independent execution owner and worktree.
 
+For approved-plan execution, the root claims the lease and exclusive worktree,
+then directs a writer child (`write_worktree: true`) and a later independent
+verifier child (`write_worktree: false`). Sequential tasks share one writer
+child. Independent plans get separate children and worktrees; overlapping
+paths are reported before merge or publication. The same writer-child and
+verifier-child topology applies when `workspace.yaml` is `mode: solo` and
+when it is `mode: team`.
+
 ### Subagent session
 
 A subagent session:
@@ -431,12 +439,15 @@ contracts, verifies dependencies, repairs stale task projections, checks the
 repository and worktree, and claims the plan lease. An unapproved, unknown,
 contradictory, or ownership-conflicted plan is blocked.
 
-The coordinator chooses a concise solo path for small bounded work or creates
-explicit delegation packets for bounded child sessions. Every writing owner
-has an exclusive worktree. A verifier is independent and read-only, and may
-write only its own session handoff. Task ordering follows declared
-dependencies; task selection is internal coordination rather than a second
-human approval gate.
+After preflight, the expected execution records are a writer child packet and
+a later independent verifier child packet. Sequential tasks share one writer
+child; they are not a reason to skip children. Every writing owner has an
+exclusive worktree. A verifier is independent and read-only, and may write
+only its own session handoff. Task ordering follows declared dependencies;
+task selection is internal coordination rather than a second human approval
+gate. Spawn children through the host child-session primitive. If the host
+cannot spawn a child, report the missing host primitive to the human. Do not
+quietly skip children.
 
 Interruption and recovery preserve the session record, lease, worktree, dirty
 state, questions, blockers, and latest handoff. A stale or missing record

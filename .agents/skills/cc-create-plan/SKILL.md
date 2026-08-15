@@ -33,7 +33,8 @@ Create one coherent plan under `plans/<repository-key>-plans/` with:
   open questions, and human gates.
 
 Use `plans/README.md` and the existing plan documents as the contract. Keep
-the plan useful for both concise solo execution and bounded team delegation.
+the plan useful for a writer child: bounded tasks, explicit paths, acceptance,
+and verification. Do not present root implementation as the small-work path.
 
 ## Gate
 

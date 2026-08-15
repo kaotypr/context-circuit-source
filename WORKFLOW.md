@@ -37,6 +37,11 @@ session has a parent, root session, role, objective, scope, permissions,
 expected output, and stop conditions. A child must not broaden its assignment
 or satisfy a human approval gate.
 
+For approved-plan execution, the root claims the lease and exclusive worktree,
+then directs a writer child and a later independent verifier child. Sequential
+tasks share one writer child. Workspace `mode: solo` or `mode: team` does not
+change that topology.
+
 Sessions are not plans. A plan is approved intended work; a task is a unit of
 that work; a session is an execution context; a worktree is the writable
 isolation boundary.
