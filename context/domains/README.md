@@ -25,7 +25,3 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 
 Add one link per generated domain page, with a short routing description. Keep
 this index navigational; do not duplicate domain facts here.
-
-- [Agent Workspace](agent-workspace/README.md) — conversational workspace
-  lifecycle from session entry and durable context through planning, execution,
-  verification, and handoff.
