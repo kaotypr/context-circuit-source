@@ -29,4 +29,4 @@ checks from human decisions. A review may recommend approval, revision, or a
 blocker, but never changes plan status or claims completion.
 
 If the plan is approved and dependency-ready, recommend `cc-run-plan`. Do not
-create a separate task-execution ceremony or direct the user to `cc-run-task`.
+create a separate task-execution ceremony.

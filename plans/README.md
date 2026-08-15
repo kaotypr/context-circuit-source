@@ -21,7 +21,7 @@ title: Deliver one bounded outcome
 status: draft
 source:
   kind: accepted-prd
-  reference: contributions/prds/example.md
+  reference: sources/example-prd.md
 repositories:
   - example-repository
 product_knowledge:
@@ -63,8 +63,8 @@ Source paths and repository evidence are recorded as provenance. Unresolved
 contradictions, assumptions, ownership conflicts, and missing acceptance
 evidence remain visible for human review.
 
-Execution uses `cc-run-plan` as the sole standard plan-execution entry. There
-is no user-facing `cc-run-task` workflow. The root directs a writer child and
-an independent verifier child; every writer gets an exclusive worktree and
-every verifier remains independent and read-only. Sequential tasks share one
-writer child rather than skipping children.
+Execution uses `cc-run-plan` as the sole standard plan-execution entry. The
+root directs a writer child and an independent verifier child; every writer
+gets an exclusive worktree and every verifier remains independent and
+read-only. Sequential tasks share one writer child rather than skipping
+children.

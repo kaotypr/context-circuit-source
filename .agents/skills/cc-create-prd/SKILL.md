@@ -23,8 +23,10 @@ accepted context.
 
 ## Output
 
-Draft `contributions/prds/<slug>.md` using the contract in `docs/prd.md`. Include
-the problem and outcome, users, requirements, non-goals, scenarios and
+Draft the PRD at a user/team-selected path under `sources/` using the
+contract in `docs/prd.md`. Do not impose a subdirectory or filename
+convention. Record the exact chosen path in the PRD's `Provenance` section.
+Include the problem and outcome, users, requirements, non-goals, scenarios and
 acceptance criteria, constraints, dependencies, assumptions, open questions,
 Product Knowledge references, and provenance. Mark it `status: draft` until
 the user accepts it.

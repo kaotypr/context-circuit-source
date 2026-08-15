@@ -6,9 +6,9 @@ request or from an accepted Idea Brief.
 
 ## Artifact home
 
-Store drafts and accepted PRDs at:
-
-`contributions/prds/<slug>.md`
+Store drafts and accepted PRDs at a user/team-selected path under `sources/`.
+Context Circuit does not prescribe subdirectories or filenames. Record the
+exact chosen path in the artifact's Provenance section.
 
 The artifact remains `status: draft` until the user accepts it. Acceptance does
 not approve an implementation plan, merge, publication, or deployment.

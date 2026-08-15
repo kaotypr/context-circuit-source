@@ -42,3 +42,17 @@ not guess between review, local integration, publication, or deployment.
   external activity records are never stored there.
 - Human gates remain required for commit/push, merge, publication, deployment,
   completion, and any ambiguous ownership takeover.
+
+## Publication
+
+Publication is an optional human-authorized action after a plan is approved and
+before external execution or collaboration. The human explicitly authorizes it.
+The agent must not publish, merge, deploy, create external issues, or
+synchronize external status implicitly.
+
+Publication does not approve a plan, change plan or task status, start a
+session, monitor external status, or synchronize completion back into the
+workspace. It stores no implicit external status. Publication is outside the
+filesystem execution protocol. If a host or provider integration is later
+used, it remains an explicitly authorized adapter and must not redefine
+session, plan, or completion state.

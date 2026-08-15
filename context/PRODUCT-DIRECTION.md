@@ -1,26 +1,11 @@
 # Product Direction
 
-Status: accepted Product Knowledge summary.
+Status: uninitialized starter.
 
-Context Circuit is a reusable AI-agent workspace template for solo developers
-and teams working across one or more repositories. Its primary interface is a
-conversational agent session that carries routine organization while the user
-decides intent, scope, publication, merge, deployment, and ownership boundaries.
+This workspace has no accepted product direction yet. Do not treat this file
+as product truth. Record direction here only after a requested
+conversation-based or source-based activity and explicit human acceptance.
 
-The core journey is:
-
-`start or resume → understand intent → capture the right artifact → ground it
-in Project Knowledge → plan → execute and verify → review or deliver → handoff`
-
-A new project with no repository is valid. Raw files in `sources/` are passive
-and may be read only for a requested source-based activity. Product Knowledge,
-Idea Briefs, PRDs, plans, and private runtime state remain separate layers.
-
-`cc-run-plan` directs child writers and verifiers in every workspace mode.
-The same behavior applies to solo and team workspaces. `workspace.yaml` mode
-is initialization identity; it does not select an execution topology.
-Delivery policies `solo-local` and `team-review` remain post-verification
-choices.
-
-Source: `sources/context-circuit-product-direction.md` in the owning workspace;
-this file is a concise summary, not a copy of that source.
+There is no external product-direction source path in this starter clone.
+When a source is later selected, record that exact path in provenance rather
+than assuming a template location.

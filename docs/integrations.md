@@ -24,6 +24,11 @@ The adapter may keep a provider-owned `external_status` annotation separate
 from canonical task status when an explicitly configured host supports it. The
 annotation is opaque to core lifecycle decisions and may be omitted entirely.
 
+Publication through an integration remains optional and human-authorized. It
+does not approve or complete a plan, start a session, or store implicit
+external status as canonical workspace state. A host or provider adapter must
+not redefine session, plan, or completion state.
+
 ## Default and failure behavior
 
 Integrations are `enabled: false` unless the user explicitly opts in. A
