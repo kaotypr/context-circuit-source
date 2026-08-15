@@ -948,6 +948,7 @@ require_file WORKFLOW.md
 require_file CLAUDE.md
 require_file workspace.yaml
 require_file context/INDEX.md
+require_file context/WORKSPACE.md
 require_file context/PROJECT.md
 require_file context/ARCHITECTURE.md
 require_file context/CONVENTIONS.md
@@ -1005,8 +1006,10 @@ if grep -E '^\.dist/|^node_modules/|ignored-clones' .gitignore >/dev/null 2>&1; 
   fail 'obsolete ignore residue remains in .gitignore'
 fi
 contains context/sources.yaml 'sources: []'
-contains context/PRODUCT-DIRECTION.md 'uninitialized starter'
-contains context/PROJECT.md 'uninitialized project home'
+absent context/PRODUCT-DIRECTION.md
+contains context/WORKSPACE.md 'Context Circuit workspace'
+contains context/WORKSPACE.md 'Project identity lives in `PROJECT.md`.'
+contains context/PROJECT.md 'not yet defined'
 contains context/INDEX.md 'uninitialized'
 contains sources/README.md 'user/team-organized boundary'
 contains .agents/skills/cc-idea-brief/SKILL.md 'user/team-selected path under `sources/`'
@@ -1547,12 +1550,12 @@ for orch_file in \
   fi
 done
 if grep -F 'solo users may work directly without child agents' \
-  context/PRODUCT-DIRECTION.md >/dev/null 2>&1; then
-  fail 'PRODUCT-DIRECTION still presents working without child agents as the solo-user path'
+  context/WORKSPACE.md context/DECISIONS.md >/dev/null 2>&1; then
+  fail 'WORKSPACE or DECISIONS still presents working without child agents as the solo-user path'
 fi
 if grep -F 'only the amount of delegation changes' \
-  context/PRODUCT-DIRECTION.md >/dev/null 2>&1; then
-  fail 'PRODUCT-DIRECTION still says only the amount of delegation changes'
+  context/WORKSPACE.md context/DECISIONS.md >/dev/null 2>&1; then
+  fail 'WORKSPACE or DECISIONS still says only the amount of delegation changes'
 fi
 if grep -E 'selects solo or delegated execution' \
   context/ARCHITECTURE.md context/CONVENTIONS.md context/INDEX.md \
@@ -1626,7 +1629,7 @@ test "$(cat "$lifecycle_fixture/verification-runs")" = 0
 
 # Plan 0002: workspace initialization is identity-only and supports a valid
 # zero-repository state plus repository roles and default active branches.
-require_file context/PRODUCT-DIRECTION.md
+require_file context/WORKSPACE.md
 require_file sources/README.md
 require_file .agents/skills/cc-initialize-workspace/SKILL.md
 require_file .agents/skills/cc-initialize-workspace/agents/openai.yaml
@@ -1638,6 +1641,27 @@ require_file docs/prd.md
 contains .agents/skills/cc-initialize-workspace/SKILL.md 'Zero repositories is valid.'
 contains .agents/skills/cc-initialize-workspace/SKILL.md 'Recommend `development` only when that branch exists'
 contains .agents/skills/cc-initialize-workspace/SKILL.md 'does not ask about delivery behavior'
+contains .agents/skills/cc-initialize-workspace/SKILL.md 'context/WORKSPACE.md'
+contains .agents/skills/cc-initialize-workspace/SKILL.md 'Do not write workspace identity'
+contains docs/product-knowledge.md 'WORKSPACE.md'
+contains context/INDEX.md 'context/WORKSPACE.md'
+if grep -F 'PRODUCT-DIRECTION.md' \
+  context/INDEX.md \
+  docs/product-knowledge.md \
+  docs/getting-started.md \
+  docs/planning.md \
+  AGENTS.md \
+  WORKFLOW.md \
+  .agents/skills/cc-session-entry/SKILL.md \
+  .agents/skills/cc-initialize-workspace/SKILL.md \
+  .agents/skills/cc-gather-context/SKILL.md \
+  >/dev/null 2>&1; then
+  fail 'a current required document still tells agents to read PRODUCT-DIRECTION.md'
+fi
+if grep -E 'session routing|CLI absence|working without child agents' \
+  context/PROJECT.md >/dev/null 2>&1; then
+  fail 'PROJECT.md describes workspace protocol as the project'
+fi
 contains docs/getting-started.md 'no-repository path as an error'
 contains workspace.yaml 'repositories: {}'
 if grep -E '^[[:space:]]*[0-9]+\..*(delivery|commit|push|merge|publication|deployment|external)' \

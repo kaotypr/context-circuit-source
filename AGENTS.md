@@ -10,7 +10,7 @@ Before coordinating work, read:
 1. AGENTS.md.
 2. WORKFLOW.md.
 3. workspace.yaml.
-4. context/INDEX.md and the relevant Product Knowledge.
+4. context/INDEX.md, context/WORKSPACE.md, context/PROJECT.md, and the relevant Product Knowledge.
 5. The current session record and parent handoff when this is a child session.
 6. Repository-local instructions and the selected plan or task.
 

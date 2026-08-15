@@ -10,7 +10,8 @@ Context Circuit workspace.
 
 ## Read
 
-- `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, and `context/INDEX.md`;
+- `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, `context/INDEX.md`,
+  `context/WORKSPACE.md`, and `context/PROJECT.md`;
 - only the relevant Product Knowledge; and
 - repository metadata needed to confirm paths and available branches.
 
@@ -27,9 +28,11 @@ Ask one compact set of core identity questions:
    branch? Recommend `development` only when that branch exists; let the user
    choose another branch.
 
-Record the confirmed result in `workspace.yaml`. Repository entries contain a
-path, mode, role, agent, and `default_branch`. Keep repository paths specific
-and credential-free.
+Record the confirmed result in `workspace.yaml` and summarize accepted
+workspace identity in `context/WORKSPACE.md`. Do not write workspace identity
+into `context/PROJECT.md`. Repository entries contain a path, mode, role,
+agent, and `default_branch`. Keep repository paths specific and
+credential-free.
 
 For a no-repository workspace, offer an Idea Brief conversation, selected
 source intake, both, or deferment. This is a first-class project state.
@@ -44,8 +47,9 @@ optional later configuration.
 
 Output a compact proposed identity and the next optional path. Ask the user to
 confirm the proposed workspace identity before treating it as accepted
-Product Knowledge or writing it as the workspace baseline. Preserve uncertainty
-and unanswered choices explicitly.
+Product Knowledge or writing it as the workspace baseline in
+`workspace.yaml` and `context/WORKSPACE.md`. Preserve uncertainty and
+unanswered choices explicitly.
 
 ## Next action
 

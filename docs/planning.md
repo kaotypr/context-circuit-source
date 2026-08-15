@@ -1,7 +1,9 @@
 # Planning
 
 Plans define human-reviewed intended work. They are not the workspace session
-itself and they do not replace runtime execution state.
+itself and they do not replace runtime execution state. Every-session Product
+Knowledge includes `context/WORKSPACE.md` for workspace identity and
+`context/PROJECT.md` for the project being built.
 
 A plan should have:
 

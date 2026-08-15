@@ -1,11 +1,13 @@
 # Project
 
-Status: uninitialized project home.
+Status: uninitialized.
 
-This workspace does not yet have an accepted project identity. Use this file
-for the project's purpose and boundaries after initialization or a
-human-accepted context update.
+The project this workspace is building is not yet defined. After the user
+accepts repositories or an idea, this file describes that project as a whole:
+its purpose, boundaries, and what registered repositories contain.
 
-A workspace with no repository is valid. Initialization records project
-identity and repository roles when they exist. Source intake and
-conversation-first Idea Brief or PRD work can begin from an idea alone.
+Zero registered repositories is not a reason to put project facts elsewhere.
+Until a project is accepted, record that it is not yet defined here.
+
+Workspace identity is not this file. It lives in `workspace.yaml` and
+`context/WORKSPACE.md`.

@@ -6,6 +6,8 @@ The target architecture is instruction- and filesystem-driven:
 - Host integrations enter through the same workspace instructions and do not
   define a second command workflow.
 - Product Knowledge is concise, source-cited Markdown under context/.
+- Workspace identity is summarized in context/WORKSPACE.md. Project identity
+  lives in context/PROJECT.md.
 - Raw source material is a passive inbox under `sources/`; it is not part of
   ordinary session context.
 - Idea Briefs and PRDs are product artifacts at a user/team-selected path
