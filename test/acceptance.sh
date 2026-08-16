@@ -990,14 +990,12 @@ contains docs/host-capabilities.md 'Cursor Agent'
 absent package.json
 absent package-lock.json
 absent tsconfig.json
-absent scripts
 absent test/agent-workspace.test.ts
 absent test/simplified.test.ts
 absent test/helpers.ts
 absent .agents/bin
 absent .codex/skills
 absent .claude/commands
-absent .github/workflows/sync-context-circuit-release.yml
 absent docs/command-reference.md
 absent docs/legacy-cleanup-gate.md
 
@@ -2503,5 +2501,90 @@ missing_rt="$fixture/cleanup-missing/.runtime"
 expect_success cleanup_runtime "$missing_rt" confirm "$fixture/cleanup-missing.inspect"
 
 printf 'PASS: Plan 0009 approve-plan, finish-plan, and cleanup-runtime gates\n'
+
+# Plan 0008: maintainer-only release packaging. Source may contain scripts/ and
+# the release workflow; the published artifact must not.
+require_file scripts/release-artifact.sh
+require_file scripts/release-manifest.txt
+require_file .github/workflows/sync-context-circuit-release.yml
+require_file docs/release.md
+expect_success sh -n scripts/release-artifact.sh
+if grep -E 'setup-node|npm |node --import|actions/setup-node' \
+  .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then
+  fail 'release workflow reintroduces a package-manager dependency'
+fi
+contains docs/release.md 'kaotypr/context-circuit-release'
+contains docs/release.md 'publication'
+contains docs/release.md 'CONTEXT_CIRCUIT_RELEASE_TOKEN'
+contains .github/workflows/sync-context-circuit-release.yml 'workflow_dispatch'
+contains .github/workflows/sync-context-circuit-release.yml 'test/acceptance.sh'
+contains .github/workflows/sync-context-circuit-release.yml 'scripts/release-artifact.sh'
+
+release_stage="$fixture/release-stage"
+release_out="$fixture/release-out"
+mkdir -p "$release_stage" "$release_out"
+expect_success sh scripts/release-artifact.sh "$release_stage" "$release_out" v0.0.0-test
+release_art="$release_out/context-circuit-v0.0.0-test"
+require_file "$release_art/AGENTS.md"
+require_file "$release_art/WORKFLOW.md"
+require_file "$release_art/CLAUDE.md"
+require_file "$release_art/workspace.yaml"
+require_file "$release_art/README.md"
+require_file "$release_art/context/INDEX.md"
+require_file "$release_art/context/PRODUCT-DIRECTION.md"
+require_file "$release_art/.agents/skills/cc-session-entry/SKILL.md"
+require_file "$release_art/docs/plan-review.md"
+require_file "$release_art/plans/README.md"
+require_file "$release_art/sources/README.md"
+test ! -e "$release_art/test" || fail 'artifact contains test/'
+test ! -e "$release_art/.github" || fail 'artifact contains .github/'
+test ! -e "$release_art/scripts" || fail 'artifact contains scripts/'
+test ! -e "$release_art/docs/release.md" || fail 'artifact contains docs/release.md'
+test ! -e "$release_art/package.json" || fail 'artifact contains package.json'
+contains context/PRODUCT-DIRECTION.md 'uninitialized starter'
+contains docs/delivery-policies.md 'team-review'
+contains docs/delivery-policies.md 'solo-local'
+contains docs/delivery-policies.md 'manual'
+
+release_probe="$ROOT/.release-dirty-probe"
+printf 'untracked dirty state must not be packaged\n' > "$release_probe"
+trap 'rm -rf "$fixture"; rm -f "$ROOT/.release-dirty-probe"' EXIT HUP INT TERM
+release_dirty_stage="$fixture/release-dirty-stage"
+release_dirty_out="$fixture/release-dirty-out"
+mkdir -p "$release_dirty_stage" "$release_dirty_out"
+expect_success sh scripts/release-artifact.sh "$release_dirty_stage" "$release_dirty_out" v0.0.0-dirty
+test ! -e "$release_dirty_out/context-circuit-v0.0.0-dirty/.release-dirty-probe" || \
+  fail 'dirty working-tree file entered the release artifact'
+rm -f "$release_probe"
+
+release_miss="$fixture/release-missing"
+mkdir -p "$release_miss/scripts"
+cp scripts/release-artifact.sh scripts/release-manifest.txt "$release_miss/scripts/"
+atomic_write "$release_miss/README.md" 'incomplete source'
+git init -q "$release_miss"
+git -C "$release_miss" config user.name 'Acceptance Fixture'
+git -C "$release_miss" config user.email 'acceptance@example.invalid'
+git -C "$release_miss" add README.md scripts
+git -C "$release_miss" commit -qm 'incomplete release source'
+assert_failure_reason "$fixture/release-missing.log" \
+  'missing required file' \
+  sh -c "cd \"$release_miss\" && sh scripts/release-artifact.sh \"$fixture/release-miss-stage\" \"$fixture/release-miss-out\" v0.0.0-miss"
+
+release_pm="$fixture/release-packagemanager"
+mkdir -p "$release_pm"
+git -C "$ROOT" archive --format=tar HEAD | tar -xf - -C "$release_pm"
+mkdir -p "$release_pm/scripts"
+cp scripts/release-artifact.sh scripts/release-manifest.txt "$release_pm/scripts/"
+atomic_write "$release_pm/package.json" '{}'
+git init -q "$release_pm"
+git -C "$release_pm" config user.name 'Acceptance Fixture'
+git -C "$release_pm" config user.email 'acceptance@example.invalid'
+git -C "$release_pm" add .
+git -C "$release_pm" commit -qm 'polluted release source'
+assert_failure_reason "$fixture/release-packagemanager.log" \
+  'forbidden package-manager file in artifact' \
+  sh -c "cd \"$release_pm\" && sh scripts/release-artifact.sh \"$fixture/release-pm-stage\" \"$fixture/release-pm-out\" v0.0.0-pm"
+
+printf 'PASS: Plan 0008 maintainer-only release packaging\n'
 
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'
