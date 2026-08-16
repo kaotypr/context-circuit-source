@@ -20,7 +20,9 @@ unrelated optional questions.
 
 Recognize requests for:
 
-- a delivery policy: `team-review`, `solo-local`, or `manual`;
+- a delivery policy: `remote-review`, `local-target`, or `manual`. When
+  reading an existing file, treat `team-review` as `remote-review` and
+  `solo-local` as `local-target`;
 - an external activity record integration; or
 - a host capability mapping for Codex, Claude Code, or Cursor Agent.
 
@@ -31,7 +33,12 @@ the user wants. Do not configure a capability merely because it is available.
 
 For delivery, determine only the selected policy, affected repository or
 workspace scope, target branch when it is not already the registered default,
-and the current authorization state needed by that policy.
+and the current authorization state needed by that policy. Ask with path
+language: prepare a reviewable remote path toward the target branch
+(`remote-review`), prepare local integration into the target branch
+(`local-target`), or decide the delivery path later (`manual`). Do not
+present workspace `mode` values as delivery policy IDs. Confirming this
+configuration does not grant commit, push, PR, or merge.
 
 For an integration, determine only the provider/capability, data it may read,
 data it may write, whether the user wants it enabled, and whether the
@@ -75,10 +82,10 @@ plan/task status, leases, sessions, worktrees, or verification evidence.
 
 Apply delivery only after implementation and independent verification:
 
-- `team-review` prepares a reviewable commit/push path only after the relevant
-  authorization and leaves a review handoff;
-- `solo-local` identifies the configured target branch and pauses at the human
-  merge gate; and
+- `remote-review` prepares a reviewable remote path toward the target branch
+  only after the relevant authorization and leaves a review handoff;
+- `local-target` identifies the configured target branch and pauses at the
+  human merge gate; and
 - `manual` leaves the verified implementation in the plan worktree and asks
   the user's delivery choice only when needed.
 

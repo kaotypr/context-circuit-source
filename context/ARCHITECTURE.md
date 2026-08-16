@@ -24,8 +24,8 @@ The target architecture is instruction- and filesystem-driven:
   directs child writers and verifiers in every workspace mode. The same
   writer-child and independent verifier-child topology applies regardless of
   workspace mode. `workspace.yaml` mode does not select an execution topology.
-  Solo versus team remains identity; `solo-local` and `team-review` remain
-  delivery policies.
+  Solo versus team remains identity; delivery policy IDs are
+  `remote-review`, `local-target`, and `manual`.
 - `cc-approve-plan`, `cc-finish-plan`, and `cc-cleanup-runtime` are the named
   plan-approval, status-change, and runtime-cleanup skills. They require
   current-session human confirmation and are discoverable, not mandatory

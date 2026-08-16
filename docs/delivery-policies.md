@@ -4,30 +4,37 @@ Delivery is a post-verification choice. A configured policy helps the
 coordinator prepare the next action; it never turns successful tests or a
 verifier handoff into permission to merge, push, publish, or deploy.
 
-## `team-review`
+The live policy IDs are `remote-review`, `local-target`, and `manual`. They
+name the path to prepare, not workspace identity and not an authorized git
+action. When reading `workspace.yaml`, `team-review` remains a readable alias
+for `remote-review` and `solo-local` remains a readable alias for
+`local-target`. An old ID is not missing configuration and does not fall back
+to `manual`. New writes use the new IDs.
 
-Use this policy when the result should remain reviewable on an implementation
-branch. After implementation and independent verification, the coordinator
-may prepare the commit and push path for the configured repository and branch.
-The relevant authorization must be current and explicit before any commit or
-push. The handoff names the branch, evidence, proposed review destination, and
-the remaining human review gate. If authorization is missing, expired, or the
-target changed, stop and use the manual fallback.
+## `remote-review`
 
-## `solo-local`
+Use this policy to prepare a reviewable remote path toward the configured
+target branch. After implementation and independent verification, the
+coordinator may prepare that remote path for the configured repository and
+branch. The relevant authorization must be current and explicit before any
+commit or push. The handoff names the branch, evidence, proposed review
+destination, and the remaining human review gate. If authorization is
+missing, expired, or the target changed, stop and use the manual fallback.
 
-Use this policy when a verified result is intended for local integration. The
-coordinator identifies the target from the registered repository's configured
-default active branch (or a later branch explicitly confirmed by the user).
-It preserves the plan worktree until the human merge gate is satisfied. It
-must not silently merge, fast-forward, delete the worktree, or infer consent
-from passing verification. A dirty base, branch mismatch, or changed risk
-pauses delivery and requests focused confirmation.
+## `local-target`
+
+Use this policy to prepare local integration into the configured target
+branch. The coordinator identifies the target from the registered
+repository's configured default active branch (or a later branch explicitly
+confirmed by the user). It preserves the plan worktree until the human merge gate
+is satisfied. It must not silently merge, fast-forward, delete the
+worktree, or infer consent from passing verification. A dirty base, branch
+mismatch, or changed risk pauses delivery and requests focused confirmation.
 
 ## `manual`
 
-Use this policy when the user wants to decide delivery later or when no safe
-delivery capability is configured. The verified implementation remains in its
+Use this policy to decide the delivery path later, or when no safe delivery
+capability is configured. The verified implementation remains in its
 isolated plan worktree, with its evidence and handoff preserved. The
 coordinator asks what to do only when a delivery decision is needed; it does
 not guess between review, local integration, publication, or deployment.

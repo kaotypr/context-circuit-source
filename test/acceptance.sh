@@ -977,8 +977,8 @@ contains agents/repository-worker.md 'Work only in the assigned isolated worktre
 contains agents/reviewer.md 'Remain read-only with respect'
 contains .agents/skills/cc-configure-workspace/SKILL.md 'Wait for explicit user confirmation'
 contains .agents/skills/cc-configure-workspace/SKILL.md 'plan/task status'
-contains docs/delivery-policies.md 'team-review'
-contains docs/delivery-policies.md 'solo-local'
+contains docs/delivery-policies.md 'remote-review'
+contains docs/delivery-policies.md 'local-target'
 contains docs/delivery-policies.md 'manual'
 contains docs/integrations.md 'enabled: false'
 contains docs/integrations.md 'unavailable'
@@ -1912,6 +1912,39 @@ contains docs/integrations.md 'opt-in adapter'
 contains docs/integrations.md 'core filesystem workflow'
 contains docs/host-capabilities.md 'same capability names'
 contains agents/coordinator.md 'configuration` block as durable'
+contains docs/delivery-policies.md 'remote-review'
+contains docs/delivery-policies.md 'local-target'
+contains docs/configuration.md 'remote-review'
+contains docs/configuration.md 'local-target'
+contains docs/configuration.md 'team-review'
+contains docs/configuration.md 'solo-local'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'remote-review'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'local-target'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'team-review'
+contains .agents/skills/cc-configure-workspace/SKILL.md 'solo-local'
+contains agents/coordinator.md 'remote-review'
+contains agents/coordinator.md 'local-target'
+contains context/CONVENTIONS.md 'remote-review'
+contains context/CONVENTIONS.md 'local-target'
+contains context/ARCHITECTURE.md 'remote-review'
+contains context/ARCHITECTURE.md 'local-target'
+contains context/DECISIONS.md 'remote-review'
+contains context/DECISIONS.md 'team-review'
+contains context/DECISIONS.md 'solo-local'
+
+for delivery_wording_file in \
+  docs/delivery-policies.md \
+  docs/configuration.md \
+  .agents/skills/cc-configure-workspace/SKILL.md; do
+  if grep -E 'delivery\.policy` is `team`|delivery\.policy` is `solo`|policy: `team`|policy: `solo`|## `team`|## `solo`|delivery policy: `team`|delivery policy: `solo`' \
+    "$delivery_wording_file" >/dev/null 2>&1; then
+    fail "identity-as-delivery wording in $delivery_wording_file"
+  fi
+  if grep -Ei 'configuration authorizes (commit|push|PR|merge)|confirming configuration authorizes|(^|[^t] )authorizes (commit|push|PR|merge)|commit-and-PR|local-merge' \
+    "$delivery_wording_file" >/dev/null 2>&1; then
+    fail "action-as-authorization wording in $delivery_wording_file"
+  fi
+done
 
 configuration_fixture="$fixture/configuration"
 mkdir -p "$configuration_fixture"
@@ -1977,18 +2010,22 @@ prepare_delivery_fixture() {
     return 1
   }
   case "$delivery_policy" in
-    team-review)
+    team-review) delivery_policy=remote-review ;;
+    solo-local) delivery_policy=local-target ;;
+  esac
+  case "$delivery_policy" in
+    remote-review)
       test "$delivery_authorization" = approved || {
         printf 'BLOCKED: commit/push authorization is required\n' >&2
         return 1
       }
       atomic_write "$delivery_output" \
-        'delivery: team-review' 'reviewable_branch: codex/configured-fixture' \
+        'delivery: remote-review' 'reviewable_branch: codex/configured-fixture' \
         'human_gate: commit-push' "target_branch: $delivery_branch"
       ;;
-    solo-local)
+    local-target)
       atomic_write "$delivery_output" \
-        'delivery: solo-local' "target_branch: $delivery_branch" \
+        'delivery: local-target' "target_branch: $delivery_branch" \
         'human_gate: merge' 'merge: paused'
       ;;
     manual)
@@ -2039,31 +2076,69 @@ host_capability_fixture() {
   esac
 }
 
-write_configuration_fixture team-review pending development false not-requested
-test "$(configuration_policy_value "$configuration_fixture/workspace.yaml")" = team-review
+write_configuration_fixture remote-review pending development false not-requested
+test "$(configuration_policy_value "$configuration_fixture/workspace.yaml")" = remote-review
 test "$(configuration_branch_value "$configuration_fixture/workspace.yaml")" = development
 test "$(configuration_authorization_value "$configuration_fixture/workspace.yaml")" = pending
-assert_failure_reason "$configuration_fixture/team-review-denied.log" \
+assert_failure_reason "$configuration_fixture/remote-review-denied.log" \
   'commit/push authorization is required' prepare_delivery_fixture \
   "$configuration_fixture/workspace.yaml" passed "$configuration_fixture/denied.handoff"
 test ! -e "$configuration_fixture/denied.handoff"
 
-write_configuration_fixture team-review approved development false not-requested
+write_configuration_fixture remote-review approved development false not-requested
 expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
-  passed "$configuration_fixture/team-review.handoff"
-contains "$configuration_fixture/team-review.handoff" 'reviewable_branch:'
-contains "$configuration_fixture/team-review.handoff" 'human_gate: commit-push'
+  passed "$configuration_fixture/remote-review.handoff"
+contains "$configuration_fixture/remote-review.handoff" 'delivery: remote-review'
+contains "$configuration_fixture/remote-review.handoff" 'reviewable_branch:'
+contains "$configuration_fixture/remote-review.handoff" 'human_gate: commit-push'
 
-write_configuration_fixture solo-local pending development false not-requested
+write_configuration_fixture local-target pending development false not-requested
 base_delivery_snapshot="$configuration_fixture/base-delivery.snapshot"
 atomic_write "$configuration_fixture/base-branch" 'base branch remains unchanged'
 sha256sum "$configuration_fixture/base-branch" > "$base_delivery_snapshot"
 expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
-  passed "$configuration_fixture/solo-local.handoff"
-contains "$configuration_fixture/solo-local.handoff" 'target_branch: development'
-contains "$configuration_fixture/solo-local.handoff" 'human_gate: merge'
-contains "$configuration_fixture/solo-local.handoff" 'merge: paused'
+  passed "$configuration_fixture/local-target.handoff"
+contains "$configuration_fixture/local-target.handoff" 'delivery: local-target'
+contains "$configuration_fixture/local-target.handoff" 'target_branch: development'
+contains "$configuration_fixture/local-target.handoff" 'human_gate: merge'
+contains "$configuration_fixture/local-target.handoff" 'merge: paused'
 test "$(sha256sum "$configuration_fixture/base-branch")" = "$(cat "$base_delivery_snapshot")"
+
+write_configuration_fixture team-review approved development false not-requested
+expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
+  passed "$configuration_fixture/team-review-alias.handoff"
+contains "$configuration_fixture/team-review-alias.handoff" 'delivery: remote-review'
+contains "$configuration_fixture/team-review-alias.handoff" 'reviewable_branch:'
+contains "$configuration_fixture/team-review-alias.handoff" 'human_gate: commit-push'
+if grep -F 'delivery: manual' "$configuration_fixture/team-review-alias.handoff" \
+  >/dev/null 2>&1; then
+  fail 'team-review alias fell through to manual'
+fi
+
+write_configuration_fixture solo-local pending development false not-requested
+expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
+  passed "$configuration_fixture/solo-local-alias.handoff"
+contains "$configuration_fixture/solo-local-alias.handoff" 'delivery: local-target'
+contains "$configuration_fixture/solo-local-alias.handoff" 'target_branch: development'
+contains "$configuration_fixture/solo-local-alias.handoff" 'human_gate: merge'
+if grep -F 'delivery: manual' "$configuration_fixture/solo-local-alias.handoff" \
+  >/dev/null 2>&1; then
+  fail 'solo-local alias fell through to manual'
+fi
+
+write_configuration_fixture team approved development false not-requested
+assert_failure_reason "$configuration_fixture/identity-team.log" \
+  'unknown delivery policy' prepare_delivery_fixture \
+  "$configuration_fixture/workspace.yaml" passed \
+  "$configuration_fixture/identity-team.handoff"
+test ! -e "$configuration_fixture/identity-team.handoff"
+
+write_configuration_fixture solo approved development false not-requested
+assert_failure_reason "$configuration_fixture/identity-solo.log" \
+  'unknown delivery policy' prepare_delivery_fixture \
+  "$configuration_fixture/workspace.yaml" passed \
+  "$configuration_fixture/identity-solo.handoff"
+test ! -e "$configuration_fixture/identity-solo.handoff"
 
 write_configuration_fixture manual denied development false not-requested
 expect_success prepare_delivery_fixture "$configuration_fixture/workspace.yaml" \
