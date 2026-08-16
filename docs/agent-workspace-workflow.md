@@ -438,7 +438,9 @@ The primary host workflow exposes one workspace-entry capability for starting or
 resuming a root or child session. It must not depend on a command runtime,
 generated bundle, package manager, or global pointer.
 
-The sole workspace skill is a thin entry instruction around this contract.
+The user-facing interaction remains one session entry. Named skills are
+host-neutral capability contracts around this filesystem workflow. There is
+still no user-facing `cc-run-task` workflow.
 Product repositories remain isolated from wrapper runtime state, and repository
 workers modify only their assigned worktree.
 

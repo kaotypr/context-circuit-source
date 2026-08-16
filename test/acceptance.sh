@@ -1331,8 +1331,13 @@ contains agents/repository-worker.md 'assigned repository'
 contains agents/reviewer.md 'independently reproduce'
 contains docs/runtime-contract.md 'Same-plan contention is resolved'
 absent_skill=$(printf '%s-%s' 'cc-run' 'task')
-if git grep -F "$absent_skill" -- . >/dev/null 2>&1; then
-  fail 'a skill that does not exist is still named in the repository'
+required_no_run_task=$(printf 'no user-facing `%s` workflow' "$absent_skill")
+absent_skill_hits=$(git grep -F "$absent_skill" -- . || true)
+if test -n "$absent_skill_hits"; then
+  absent_skill_other=$(printf '%s\n' "$absent_skill_hits" | grep -v -F "$required_no_run_task" || true)
+  if test -n "$absent_skill_other"; then
+    fail 'a skill that does not exist is still named in the repository'
+  fi
 fi
 
 plan3_fixture="$fixture/plan-execution"
@@ -2591,5 +2596,51 @@ assert_failure_reason "$fixture/release-packagemanager.log" \
   sh -c "cd \"$release_pm\" && sh scripts/release-artifact.sh \"$fixture/release-pm-stage\" \"$fixture/release-pm-out\" v0.0.0-pm"
 
 printf 'PASS: Plan 0008 maintainer-only release packaging\n'
+
+# Plan 0012: retained docs surface accuracy. Reuse the Plan 0007 leftover-path
+# absences above; do not weaken them.
+contains docs/getting-started.md 'Idea Brief for uncertain intent'
+for skill in \
+  cc-session-entry \
+  cc-initialize-workspace \
+  cc-idea-brief \
+  cc-create-prd \
+  cc-gather-context \
+  cc-create-plan \
+  cc-review-plan \
+  cc-run-plan \
+  cc-whats-next \
+  cc-configure-workspace; do
+  contains README.md "$skill"
+done
+if grep -F 'The sole workspace skill is a thin entry instruction' \
+  docs/agent-workspace-workflow.md >/dev/null 2>&1; then
+  fail 'agent-workspace-workflow.md still says the sole workspace skill is a thin entry instruction'
+fi
+contains docs/host-capabilities.md 'shared skill catalog'
+contains docs/agent-workspace-workflow.md "$required_no_run_task"
+use_run_task=$(printf 'Use[[:space:]].*%s' "$absent_skill")
+for file in README.md AGENTS.md CLAUDE.md WORKFLOW.md \
+  agents/coordinator.md agents/repository-worker.md agents/reviewer.md \
+  context/ARCHITECTURE.md context/CONVENTIONS.md context/DECISIONS.md \
+  docs/agent-workspace-workflow.md docs/runtime-contract.md \
+  docs/getting-started.md docs/planning.md docs/delivery-policies.md \
+  docs/host-capabilities.md; do
+  if grep -E "$use_run_task" "$file" >/dev/null 2>&1; then
+    fail "required document directs users to Use $absent_skill: $file"
+  fi
+done
+for removed in \
+  "$removed_run_task" \
+  "$removed_development" \
+  "$removed_publication" \
+  "$removed_wrapper" \
+  "$removed_whats_next"; do
+  test ! -e "$removed" || fail "removed documentation still exists: $removed"
+done
+docs_now_count=$(find docs -type f | wc -l | tr -d ' ')
+test "$docs_now_count" -eq 15 || fail "docs/ file count grew versus worktree base: $docs_now_count"
+
+printf 'PASS: Plan 0012 retained docs surface accuracy\n'
 
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

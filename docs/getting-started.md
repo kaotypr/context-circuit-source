@@ -62,7 +62,7 @@ explicitly scoped, and not already owned by another writing session. When no
 work is executable, explain whether the session needs context, a draft plan,
 human approval, a review, or a decision about a blocker.
 
-## 2. Initialize the workspace
+## 2. Initialize workspace identity when needed
 
 Initialization asks one compact set of core identity questions:
 
@@ -87,21 +87,36 @@ Initialization stops after core identity. It does not ask about delivery,
 commits, pushes, merges, publication, deployment, or external activity tools;
 those are optional later configuration.
 
-## 3. Start with a PRD or source
+## 3. Capture the right artifact
 
-When the user provides a PRD, source document, or repository evidence:
+Choose the smallest useful next artifact. Do not force every request through
+an Idea Brief and then a PRD.
 
-1. Read the source.
-2. Separate stated requirements, current behavior, assumptions, unknowns, and
+- Capture an Idea Brief for uncertain intent.
+- Capture a PRD for durable requirements.
+- Use a selected source or repository evidence when that is already enough.
+
+When the user provides a PRD, source document, or repository evidence, read
+that evidence and keep it as the input for Product Knowledge. Do not invent a
+missing Idea Brief or PRD.
+
+When intent is still uncertain, draft an Idea Brief. An Idea Brief is enough
+to continue; do not require a PRD after it.
+
+If no useful source, repository, or brief exists, ask focused discovery
+questions before creating Product Knowledge or a plan.
+
+## 4. Ground or refresh Product Knowledge
+
+When the chosen artifact or evidence is enough:
+
+1. Separate stated requirements, current behavior, assumptions, unknowns, and
    evidence.
-3. Draft concise Product Knowledge with source references.
-4. Present the draft for human confirmation.
-5. Do not silently replace accepted context.
+2. Draft concise Product Knowledge with source references.
+3. Present the draft for human confirmation.
+4. Do not silently replace accepted context.
 
-If no useful source or repository exists, ask focused discovery questions before
-creating Product Knowledge or a plan.
-
-## 4. Create and approve work
+## 5. Draft and approve a plan
 
 When context is sufficient:
 
@@ -114,7 +129,7 @@ When context is sufficient:
 6. Do not infer approval from conversation tone, tests, or agent output.
    Approval does not start execution.
 
-## 5. Execute with sessions
+## 6. Execute through `cc-run-plan`
 
 After approval, `cc-run-plan` directs the root to:
 
@@ -130,7 +145,7 @@ host primitive to the human.
 Every child session receives a bounded delegation packet and returns a structured
 handoff to its parent.
 
-## 6. Resume, finish, and optional cleanup
+## 7. Resume from the handoff
 
 At the end of each session, record:
 
@@ -148,3 +163,18 @@ but it must not change plan or task status itself. After a plan is `done`, or
 when the user asks to clear local execution state, `cc-cleanup-runtime` may
 delete `.runtime/` only after inspecting dirty or unpushed work and receiving
 explicit confirmation.
+
+## Which document
+
+Use this map only to find a retained contract. It is not a second workflow.
+
+| Need | Read |
+| --- | --- |
+| Session behavior | `docs/agent-workspace-workflow.md` |
+| Runtime records | `docs/runtime-contract.md` |
+| Idea Brief / PRD | `docs/idea-brief.md`, `docs/prd.md` |
+| Product Knowledge | `docs/product-knowledge.md` |
+| Plan artifact | `plans/README.md` |
+| Plan lifecycle | `docs/planning.md` |
+| Plan review | `docs/plan-review.md` |
+| Optional config | `docs/configuration.md` |

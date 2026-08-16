@@ -57,12 +57,33 @@ must inspect runtime files and instructions directly.
 
 ## Foundation skills
 
-Natural-language requests discover the core workspace skills:
+Natural-language requests discover the shipped host-neutral skills. These
+names are capability contracts around the same filesystem workflow, not
+commands the user types. The user-facing interaction remains starting or
+resuming work in this workspace.
 
+- `cc-session-entry` — enter or resume a root or child session; see
+  `docs/agent-workspace-workflow.md` and `docs/runtime-contract.md`.
 - `cc-initialize-workspace` — establish solo/team identity, repositories, roles,
-  and default active branches, including a valid no-repository path.
-- `cc-idea-brief` — capture uncertain intent without forcing a PRD.
-- `cc-create-prd` — create a source-grounded, human-reviewed PRD.
-
-See `docs/getting-started.md`, `docs/idea-brief.md`, and `docs/prd.md` for the
-host-neutral contracts.
+  and default active branches, including a valid no-repository path; see
+  `docs/getting-started.md`.
+- `cc-idea-brief` — capture uncertain intent without forcing a PRD; see
+  `docs/idea-brief.md`.
+- `cc-create-prd` — create a source-grounded, human-reviewed PRD; see
+  `docs/prd.md`.
+- `cc-gather-context` — ground or refresh Domain and Role Knowledge; see
+  `docs/product-knowledge.md`.
+- `cc-create-plan` — draft a human-reviewed plan; see `plans/README.md` and
+  `docs/planning.md`.
+- `cc-review-plan` — read-only readiness review; see `docs/plan-review.md`.
+- `cc-run-plan` — execute an approved plan through sessions and exclusive
+  worktrees; see `docs/planning.md`.
+- `cc-whats-next` — recommend the smallest safe next action from durable
+  state; see `docs/agent-workspace-workflow.md`.
+- `cc-configure-workspace` — optional later delivery, host, and integration
+  configuration; see `docs/configuration.md`.
+- `cc-approve-plan` — human plan-approval gate; see `docs/planning.md`.
+- `cc-finish-plan` — human completion status-change gate; see
+  `docs/planning.md` and `docs/getting-started.md`.
+- `cc-cleanup-runtime` — human-gated `.runtime/` cleanup; see
+  `docs/getting-started.md`.
