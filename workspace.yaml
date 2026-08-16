@@ -4,24 +4,34 @@ template_version: 0.3.0
 workspace:
   name: uninitialized-workspace
   mode: team
-  default_branch: main
+  default_branch: development
 
-repositories:
-  context-circuit:
-    path: .
-    mode: submodule
-    role: Context Circuit framework source; Product Knowledge and workflow capability
-      is developed in-place by maintainer commits, not run-task worktree fan-out.
-    agent: repository-worker
-    default_branch: main
+# An empty registry is a valid first-run state. Initialization may replace this
+# with one or more repository/project entries after the user confirms their
+# paths, roles, and default active branches.
+repositories: {}
 
 context:
   sources_file: context/sources.yaml
 
+# Optional post-initialization configuration is written only after the user
+# invokes cc-configure-workspace (or makes an equivalent explicit request).
+# It is portable, inspectable, and must never contain credentials or provider
+# activity records. See docs/configuration.md for the schema.
+# configuration:
+#   delivery:
+#     scope: workspace
+#     policy: manual
+#     repositories: []
+#     target_branches: {}
+#     authorization: pending
+#     fallback: manual
+#   integrations: []
+#   hosts: {}
+
 workflow:
   human_gates:
     - plan-approval
-    - task-selection
     - status-change
     - publication
     - archive

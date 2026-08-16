@@ -1,12 +1,35 @@
 ---
 name: cc-review-plan
-description: Perform one optional human-requested read-only review of an entire executed plan and its plan-scoped worktree.
+description: Review a plan for evidence, scope, dependencies, risks, contradictions, and human decisions before execution.
 ---
 
-# Review plan
+# Review a plan
 
-Use this skill only after `cc-run-task` has let the agent work through the approved plan continuously. Review the whole plan once; do not create a per-task review loop.
+Use this skill when the user asks whether a plan is ready, what needs review,
+or what decisions remain before execution.
 
-Run `node .agents/bin/cc.mjs review-plan --plan <reference> --worktree <path> [--base <commit>]` to inspect the plan, remaining task statuses, branch, changed files, worktree status, and review commands. Compare the implementation against the plan documents and all task acceptance criteria together.
+## Inspect
 
-Review is read-only and human-requested. Do not repair, change plan or task statuses, publish, merge, or create lifecycle records. After review, the human may explicitly mark tasks and the plan `done`, request follow-up implementation in the same plan worktree, or archive the plan.
+Read the selected plan, its tasks, referenced Product Knowledge, source
+provenance, repository-local instructions, relevant implementation evidence,
+and active runtime ownership. Check that:
+
+- `plan.yaml` is the canonical lifecycle record and has a known status;
+- scope, non-goals, repository boundaries, dependencies, task paths, and stop
+  conditions are explicit;
+- acceptance criteria map to test and verification evidence;
+- leases, worktrees, sessions, and handoffs do not show an ownership conflict;
+- contradictions, stale context, missing evidence, and delivery actions remain
+  visible.
+
+## Report
+
+Return the structured outcome from `docs/plan-review.md`. Distinguish routine
+checks from human decisions. A review may recommend approval, revision, or a
+blocker, but never changes plan status or claims completion. This skill remains
+read-only and never writes `plan.yaml`.
+
+If the outcome is `ready-for-approval`, name `cc-approve-plan` as the next
+action. If the plan is already approved and dependency-ready, the
+`approved-for-execution` outcome observes that fact and may recommend
+`cc-run-plan`. Do not create a separate task-execution ceremony.

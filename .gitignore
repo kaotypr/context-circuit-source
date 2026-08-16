@@ -1,7 +1,2 @@
 .DS_Store
 .runtime/
-.dist/
-node_modules/
-
-# context-circuit:ignored-clones:start
-# context-circuit:ignored-clones:end

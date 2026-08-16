@@ -1,4 +1,4 @@
 interface:
   display_name: "CC Idea Brief"
-  short_description: "Turn early ideas into a source-ready brief"
-  default_prompt: "Use $cc-idea-brief to discuss this early idea and create a concise Idea Brief."
+  short_description: "Turn an idea into a concise human-reviewed brief"
+  default_prompt: "Use $cc-idea-brief to capture the user's intent in the smallest useful Idea Brief."

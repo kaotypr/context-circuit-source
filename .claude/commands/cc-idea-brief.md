@@ -1,1 +1,0 @@
-Read and follow `.agents/skills/cc-idea-brief/SKILL.md`. Discuss the early idea, create a human-reviewed `context/IDEA-BRIEF.md`, and wait for confirmation before Product Knowledge import or plan creation.

@@ -1,5 +1,13 @@
 # Project
 
-Context Circuit is a human-controlled context, planning, and agent-work tool. It keeps concise Product Knowledge, structured numbered plans, task dependencies, read-only next-work recommendations, and isolated repository worktrees.
+Status: uninitialized.
 
-The wrapper is not a workflow state machine, activity database, or external status authority.
+The project this workspace is building is not yet defined. After the user
+accepts repositories or an idea, this file describes that project as a whole:
+its purpose, boundaries, and what registered repositories contain.
+
+Zero registered repositories is not a reason to put project facts elsewhere.
+Until a project is accepted, record that it is not yet defined here.
+
+Workspace identity is not this file. It lives in `workspace.yaml` and
+`context/WORKSPACE.md`.

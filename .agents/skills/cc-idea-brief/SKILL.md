@@ -1,35 +1,42 @@
 ---
 name: cc-idea-brief
-description: Facilitate an early product or project idea when a workspace has no useful plans, source documents, or repositories, then create a concise source-ready Idea Brief for later Product Knowledge import.
+description: Capture an uncertain idea or intent in the smallest useful human-reviewable brief.
 ---
 
-# Idea Brief
+# Capture an Idea Brief
 
-Use this skill when the user has an early idea and the wrapper has little or no usable context yet: no plans, no source documents, no registered product repository, or an explicitly unshaped request.
+Use this skill when the user is exploring an idea, clarifying intent, or asks
+for a lightweight brief. An Idea Brief is sufficient on its own; do not force a
+PRD or plan when the user does not need one.
 
-Discuss the idea before producing a plan. Ask only the focused questions needed to understand:
+## Read
 
-- the problem or opportunity
-- who is affected
-- the desired outcome or experience
-- the first useful scope and non-goals
-- constraints, assumptions, and success signals
-- important unknowns and next sources to inspect
+Start from the user's conversation and the smallest relevant Product Knowledge.
+If the request names or requires source material, identify the specific files,
+state why each will be read, and read only those files under `sources/`. Do not
+scan or ingest the source inbox by default.
 
-Separate what the user said from assumptions and open questions. Do not invent current product behavior, repositories, implementation details, or evidence. Treat the conversation itself as an input, but cite any external facts with their source and location.
+Record the files and reasons in the brief's `Provenance` section. Keep raw
+source text in `sources/`; summarize relevant evidence instead of copying it.
 
-After the discussion has enough shape, create or update `context/IDEA-BRIEF.md` with concise Markdown sections for:
+## Output
 
-- Summary
-- Problem and users
-- Desired outcome
-- Initial scope
-- Non-goals
-- Constraints and assumptions
-- Success signals
-- Open questions
-- Sources and evidence
+Draft the Idea Brief at a user/team-selected path under `sources/` using the
+contract in `docs/idea-brief.md`. Do not impose a subdirectory or filename
+convention. Record the exact chosen path in the brief's `Provenance` section.
+Include the user's intent, desired outcome, audience or users, constraints,
+assumptions, open questions, relevant Product Knowledge, and source
+provenance. Mark it `status: draft` until accepted.
 
-Keep the brief about intent, not delivered functionality. Do not create a numbered plan, register a repository, approve work, or import Product Knowledge silently. Present the Idea Brief for human confirmation.
+## Gate and uncertainty
 
-After the human accepts the brief, continue with `$cc-import-product-knowledge` using `context/IDEA-BRIEF.md` as the source. Preserve source citations in the resulting Product Knowledge and record the brief in `context/sources.yaml`. Only then use `$cc-create-plan` when a repository/domain and implementation scope are sufficiently clear.
+Human gate: ask the user to accept, revise, or leave the brief as a draft.
+Separate observed facts, the user's stated intent, assumptions, and unresolved
+questions. Ask the user to accept, revise, or leave the brief as a draft before
+calling it accepted. Never silently turn an assumption into a decision.
+
+## Next action
+
+After acceptance, offer the optional next action that fits the request: refresh
+context, create a PRD, create a plan, or begin a small implementation. The user
+may stop after the Idea Brief.

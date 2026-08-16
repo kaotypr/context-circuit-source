@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Approve Plan"
+  short_description: "Approve a draft plan after human confirmation"
+  default_prompt: "Use $cc-approve-plan to preflight this draft plan and, after explicit human confirmation, mark it approved without starting execution."

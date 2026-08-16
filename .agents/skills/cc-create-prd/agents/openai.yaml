@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Create PRD"
+  short_description: "Draft a human-reviewed product requirements document"
+  default_prompt: "Use $cc-create-prd to create a source-grounded PRD with explicit assumptions, open questions, and acceptance criteria."

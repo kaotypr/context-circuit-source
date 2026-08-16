@@ -1,0 +1,4 @@
+interface:
+  display_name: "CC Session Entry"
+  short_description: "Enter or resume agent sessions"
+  default_prompt: "Use $cc-session-entry to enter or resume this Context Circuit workspace from its durable instructions and runtime state."

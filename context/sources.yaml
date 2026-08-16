@@ -1,1 +1,2 @@
+# Entries are added only after request-scoped source reads.
 sources: []

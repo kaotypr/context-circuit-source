@@ -1,4 +1,4 @@
 interface:
   display_name: "CC Initialize Workspace"
-  short_description: "Bootstrap or validate a Context Circuit wrapper"
-  default_prompt: "Use $cc-initialize-workspace to interview me about this project, present the exact bootstrap actions, and initialize or validate the wrapper safely."
+  short_description: "Set up workspace identity and repository context"
+  default_prompt: "Use $cc-initialize-workspace to initialize this Context Circuit workspace, including a valid no-repository path."
