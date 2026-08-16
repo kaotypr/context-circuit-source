@@ -91,9 +91,21 @@ jobs:
           path: ${{ steps.stage.outputs.artifact_dir }}
           if-no-files-found: error
 
+      - name: Detect release destination token
+        id: token
+        env:
+          RELEASE_TOKEN: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN }}
+        run: |
+          if [ -n "$RELEASE_TOKEN" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "CONTEXT_CIRCUIT_RELEASE_TOKEN is absent; destination checkout will be skipped."
+          fi
+
       - name: Check out release destination
         id: destination
-        if: ${{ secrets.CONTEXT_CIRCUIT_RELEASE_TOKEN != '' }}
+        if: steps.token.outputs.present == 'true'
         continue-on-error: true
         uses: actions/checkout@v6
         with:

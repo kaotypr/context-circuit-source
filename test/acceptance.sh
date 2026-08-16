@@ -2519,6 +2519,10 @@ contains docs/release.md 'CONTEXT_CIRCUIT_RELEASE_TOKEN'
 contains .github/workflows/sync-context-circuit-release.yml 'workflow_dispatch'
 contains .github/workflows/sync-context-circuit-release.yml 'test/acceptance.sh'
 contains .github/workflows/sync-context-circuit-release.yml 'scripts/release-artifact.sh'
+if grep -E 'if:.*secrets\.' \
+  .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then
+  fail 'release workflow uses secrets in an if condition'
+fi
 
 release_stage="$fixture/release-stage"
 release_out="$fixture/release-out"
@@ -2531,7 +2535,8 @@ require_file "$release_art/CLAUDE.md"
 require_file "$release_art/workspace.yaml"
 require_file "$release_art/README.md"
 require_file "$release_art/context/INDEX.md"
-require_file "$release_art/context/PRODUCT-DIRECTION.md"
+require_file "$release_art/context/WORKSPACE.md"
+test ! -e "$release_art/context/PRODUCT-DIRECTION.md" || fail 'artifact contains PRODUCT-DIRECTION.md'
 require_file "$release_art/.agents/skills/cc-session-entry/SKILL.md"
 require_file "$release_art/docs/plan-review.md"
 require_file "$release_art/plans/README.md"
@@ -2541,9 +2546,9 @@ test ! -e "$release_art/.github" || fail 'artifact contains .github/'
 test ! -e "$release_art/scripts" || fail 'artifact contains scripts/'
 test ! -e "$release_art/docs/release.md" || fail 'artifact contains docs/release.md'
 test ! -e "$release_art/package.json" || fail 'artifact contains package.json'
-contains context/PRODUCT-DIRECTION.md 'uninitialized starter'
-contains docs/delivery-policies.md 'team-review'
-contains docs/delivery-policies.md 'solo-local'
+contains context/WORKSPACE.md 'Context Circuit workspace'
+contains docs/delivery-policies.md 'remote-review'
+contains docs/delivery-policies.md 'local-target'
 contains docs/delivery-policies.md 'manual'
 
 release_probe="$ROOT/.release-dirty-probe"
