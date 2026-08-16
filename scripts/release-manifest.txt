@@ -17,7 +17,7 @@ required context/CONVENTIONS.md
 required context/DECISIONS.md
 required context/SOURCES.md
 required context/sources.yaml
-required context/PRODUCT-DIRECTION.md
+required context/WORKSPACE.md
 required context/domains/README.md
 required context/roles/README.md
 required docs/agent-workspace-workflow.md
