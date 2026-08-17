@@ -52,7 +52,7 @@ The workspace contains several distinct kinds of information:
 | `context/` | Product, domain, architecture, conventions, and decisions | Durable project knowledge |
 | `sources/` | Raw inputs and authored Idea Brief/PRD artifacts | User/team-owned; passive except request-scoped reads |
 | `plans/` | Proposed and approved intended work | Human-reviewed work definition |
-| `.runtime/` | Active sessions, subagents, leases, prompts, handoffs, and worktrees | Current execution state only |
+| `.runtime/` | Active sessions, subagents, leases, prompts, handoffs, stack runs, and worktrees | Current execution state only |
 | Product repository | Code and repository-local behavior | Repository authority for code |
 
 Runtime state describes what is happening now. It cannot override an approved plan, change a human gate, or redefine the product.
@@ -119,6 +119,11 @@ child. Independent plans get separate children and worktrees; overlapping
 paths are reported before merge or publication. The same writer-child and
 verifier-child topology applies when `workspace.yaml` is `mode: solo` and
 when it is `mode: team`.
+
+For a connected set of already-approved plans, the same root session owns a
+stack run. Ready members still get that writer-child and verifier-child
+topology. Dependent worktrees start from parent frozen SHAs. Multi-parent
+leaves join those SHAs in-run. The stack is not a scheduler.
 
 ### Subagent session
 
@@ -193,11 +198,21 @@ The target layout is:
       completion.yaml
       handoffs/
         <session-id>-<sequence>.md
+  stacks/
+    <stack-id>/
+      graph.yaml
+      progress.yaml
+      lease.lock/
+        owner.yaml
+      lease.yaml
   worktrees/
     <repository-key>/<plan-id>/
 ```
 
-There is no single global `current-session.yaml`. Multiple sessions must be discoverable without overwriting one another.
+There is no single global `current-session.yaml` and no global current-stack
+pointer. Multiple sessions and stack runs must be discoverable without
+overwriting one another. A stack run is runtime state, not a plan type. There
+is no `plans/<repository-key>-stacks/` layout and no durable `stack.yaml`.
 
 A session record should include, at minimum:
 
@@ -252,7 +267,9 @@ It then routes the request:
 | No clear objective | Orient and ask focused questions |
 | New PRD or source | Gather evidence and draft Product Knowledge |
 | Useful context but no plan | Draft a plan and request approval |
-| Approved plan without an owner | Claim the plan and execute |
+| Approved plan without an owner | Claim the plan and execute through `cc-run-plan` |
+| Connected approved unimplemented plans | Execute through `cc-run-stack` |
+| Interrupted `.runtime/stacks/<stack-id>/` run | Resume `cc-run-stack` from `progress.yaml` |
 | Existing owner or child session | Resume or coordinate with that session |
 | Verification failure | Continue within approved scope or report a blocker |
 | Scope change | Pause and request human decision or reapproval |
@@ -297,6 +314,11 @@ Orient
   → Completion (`cc-finish-plan`)
   → Optional cleanup (`cc-cleanup-runtime`)
 ```
+
+A one-plan request still claims execution through `cc-run-plan`. Connected
+already-approved plans, or an interrupted `.runtime/stacks/<stack-id>/` run,
+enter `cc-run-stack` instead of treating the set as one `cc-run-plan`.
+`cc-run-stack` is not a scheduler.
 
 An agent may iterate between implementation and verification without asking for per-task review when the work remains within the approved plan. It must pause when the plan scope, acceptance criteria, repository boundary, or safety assumptions materially change.
 
@@ -446,11 +468,20 @@ workers modify only their assigned worktree.
 
 ## Plan execution capability
 
-`cc-run-plan` is the sole standard execution entry for an approved plan. It is
-an agent-session capability backed by the filesystem contract, not a command
-runtime. Task status is not a second approval or execution gate. A plan has at
-most one active writing owner and an exclusive worktree. Completion evidence
-does not change canonical plan or task status.
+`cc-run-plan` is the sole standard single-plan execution entry for an approved
+plan. It is an agent-session capability backed by the filesystem contract, not
+a command runtime. Task status is not a second approval or execution gate. A
+plan has at most one active writing owner and an exclusive worktree.
+Standalone `cc-run-plan` creates that worktree from the repository default or
+active branch. Completion evidence does not change canonical plan or task
+status.
+
+`cc-run-stack` is the stack-execution skill for a connected set of
+already-approved plans. It freezes `graph.yaml`, updates `progress.yaml`,
+bases dependent worktrees on parent frozen SHAs, and joins multi-parent
+leaves in-run. Implemented is runtime evidence; `plan.yaml` stays `approved`.
+Do not present `cc-run-stack` as a second way to run one plan. There is no
+scheduler.
 
 Before execution, the root coordinator reads the canonical plan and task
 contracts, verifies dependencies, repairs stale task projections, checks the

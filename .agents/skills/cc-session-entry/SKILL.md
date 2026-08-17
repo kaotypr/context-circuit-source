@@ -49,12 +49,16 @@ as appropriate. Do not silently approve plans or change canonical statuses.
 When the request names a plan, inspect its canonical `plan.yaml`, task
 projections, declared dependencies, active lease, assigned worktree, and latest
 handoff. An approved dependency-ready plan with no live writing owner routes to
-`cc-run-plan`; a coherent draft routes to `cc-approve-plan` when the user is
+`cc-run-plan`; a connected set of approved unimplemented plans, or an
+interrupted `.runtime/stacks/<stack-id>/` run, routes to `cc-run-stack`; a
+coherent draft routes to `cc-approve-plan` when the user is
 asking to approve, or otherwise to review; an approved plan with ready
 completion evidence routes to `cc-finish-plan`; a human cleanup request routes
 to `cc-cleanup-runtime`; a plan with a live owner routes to resume or
 coordination; and a contradictory, stale, or ambiguous record routes to a
-visible recovery decision.
+visible recovery decision. Refuse to treat a stack run as one `cc-run-plan`.
+Invoking `cc-run-stack` starts or resumes execution; there is no stack-approval
+gate.
 
 Approved-plan execution through `cc-run-plan` directs a writer child and a
 later independent verifier child. Do not treat small or sequential work as a

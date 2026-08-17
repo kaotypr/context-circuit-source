@@ -3,9 +3,10 @@
 Status: implementation contract for the Agent Workspace Workflow
 
 This document defines the filesystem records used to coordinate root sessions,
-child sessions, plans, leases, handoffs, and worktrees. It is execution state,
-not Product Knowledge. It must never override AGENTS.md, WORKFLOW.md,
-workspace.yaml, an approved plan, or a human decision.
+child sessions, plans, leases, handoffs, worktrees, and stack runs. It is
+execution state, not Product Knowledge. It must never override AGENTS.md,
+WORKFLOW.md, workspace.yaml, an approved plan, or a human decision. Runtime
+state must not override `plan.yaml`.
 
 ## Layout
 
@@ -27,6 +28,13 @@ The runtime root is .runtime/ in the workspace that owns the plan:
       completion.yaml
       handoffs/
         <session-id>-<sequence>.md
+  stacks/
+    <stack-id>/
+      graph.yaml
+      progress.yaml
+      lease.lock/
+        owner.yaml
+      lease.yaml
   worktrees/
     <repository-key>/<plan-id>/
 ~~~
@@ -37,8 +45,11 @@ handoffs/ directory is an append-only evidence view; it does not replace the
 session-owned handoff.
 
 There is deliberately no .runtime/current-session.yaml,
-.runtime/current-plan.yaml, or other global pointer. Every lookup is scoped by
-an explicit session, root session, plan, task, or repository key.
+.runtime/current-plan.yaml, .runtime/current-stack.yaml, or other global
+pointer. Every lookup is scoped by an explicit session, root session, plan,
+task, stack, or repository key. A stack run is runtime execution state, not a
+plan and not a session. There is no `plans/<repository-key>-stacks/` layout
+and no durable `stack.yaml`.
 
 On fresh root entry, the coordinator creates its own session record before
 delegating work or claiming a plan. The root record uses `kind: root`,
@@ -57,7 +68,8 @@ Identifiers used in runtime paths must match:
 
 Agents must reject path traversal, absolute paths, symlinks, and identifiers
 that do not match this rule. Runtime writes are limited to the session's own
-session directory, the plan lease it owns, and the assigned worktree.
+session directory, the plan lease it owns, the stack records it owns, and the
+assigned worktree.
 
 Write rules:
 
@@ -267,6 +279,114 @@ canonical_status_changed: true
 
 A failed verifier, missing task evidence, or missing human gate keeps completion blocked. Finish releases `lease.lock/` when this coordinator owns that lease and does not delete `.runtime/`.
 
+## Stack run records
+
+A connected set of already-approved plans may execute as one stack run under
+`.runtime/stacks/<stack-id>/`. Invoking `cc-run-stack` starts or resumes that
+run. There is no stack-approval gate and no scheduler, daemon, or queue.
+
+`graph.yaml` is frozen once for the run: members, directed edges, and leaves.
+The DAG must be acyclic and IDs must resolve. Multi-parent nodes are joins.
+Do not rebuild a different tree on resume.
+
+`progress.yaml` is the resume cursor. Member states are `pending`,
+`waiting-parents`, `ready`, `running`, `joining`, `implemented`, `failed`, or
+`blocked`. Record `frozen_sha`, `worktree`, `base`, and `join_parents` as
+members move.
+
+The stack lease lives under that directory as `lease.lock/owner.yaml` and
+`lease.yaml`. Per-plan leases remain `.runtime/plans/<plan-id>/lease.lock/`
+and are claimed by the same root session that holds the stack lease. A live
+foreign stack or plan lease blocks the run.
+
+```yaml
+# graph.yaml
+schema_version: 1
+stack_id: from-0001
+repository: example-repository
+members:
+  - id: plan-a
+    path: plans/example-repository-plans/0001-plan-a
+  - id: plan-b
+    path: plans/example-repository-plans/0002-plan-b
+  - id: plan-c
+    path: plans/example-repository-plans/0003-plan-c
+edges:
+  - from: plan-a
+    to: plan-b
+  - from: plan-a
+    to: plan-c
+leaves:
+  - plan-b
+  - plan-c
+```
+
+```yaml
+# progress.yaml
+schema_version: 1
+stack_id: from-0001
+status: running
+owner_session_id: sess-a
+replaced_session_id: null
+members:
+  plan-a:
+    state: implemented
+    frozen_sha: abc123
+    worktree: .runtime/worktrees/example-repository/plan-a
+    base:
+      kind: default-branch
+      commit: def456
+    join_parents: []
+  plan-c:
+    state: waiting-parents
+    frozen_sha: null
+    worktree: .runtime/worktrees/example-repository/plan-c
+    base:
+      kind: join
+    join_parents:
+      - plan-x
+      - plan-y
+```
+
+Member runtime records do not change `plan.yaml`. Canonical plan status stays
+`draft`, `approved`, and `done`. There is no implemented plan status.
+
+## Implemented versus done
+
+Implemented is runtime evidence, not a canonical status:
+
+- the writer finished;
+- the independent verifier passed;
+- the worktree HEAD is committed and clean;
+- `.runtime/plans/<plan-id>/completion.yaml` is
+  `ready-for-human-status-change`;
+- `plan.yaml` remains `approved`.
+
+After verifier pass, freeze the parent SHA on `progress.yaml`. Dependents wait
+on implemented parents, not `done`. `cc-run-stack` must not write `plan.yaml`
+`done` and must not run `cc-finish-plan`. `cc-finish-plan` remains the per-plan
+human gate after the stack stops.
+
+Require a local commit on the exclusive member branch before freeze. That
+commit is stack-internal. It is not merge to the default branch and not a
+delivery authorization.
+
+## Stack worktrees
+
+Each member keeps `.runtime/worktrees/<repository-key>/<plan-id>/`. Writable
+worktrees stay exclusive. Overlapping paths across members are a reported
+integration risk, not a shared worktree. The new worktree is a Git checkout
+of that commit-ish, not a copy of the parent directory.
+
+Worktree rules:
+
+1. No parent: `git worktree add` from the repository default or active branch,
+   matching standalone `cc-run-plan`.
+2. One parent: add a new branch at the parent's frozen SHA.
+3. Several parents: sort parent IDs, add from the first frozen SHA, merge the
+   remaining SHAs in that order, then the writer runs. Routine joins do not
+   pause for a human and do not wait for `default_branch`.
+
 ## Handoffs
 
 The session owner writes .runtime/sessions/<session-id>/handoff.md with:
@@ -363,7 +483,8 @@ reason; a heartbeat timeout alone is not permission to steal ownership.
 
 `cc-cleanup-runtime` is the named skill for deleting workspace `.runtime/`.
 Cleanup is workspace-wide: confirmation must say that every session, lease,
-handoff, and worktree under `.runtime/` will be removed.
+handoff, stack run, and worktree under `.runtime/` will be removed. After
+cleanup there is no stack to resume; a new run writes a new graph.
 
 Before deletion, inspect every registered runtime worktree for uncommitted
 changes, including untracked files, and for commits not present on the

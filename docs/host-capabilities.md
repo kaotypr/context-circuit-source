@@ -8,7 +8,7 @@ human-gate semantics.
 Hosts discover the same shared skill catalog: `cc-session-entry`,
 `cc-initialize-workspace`, `cc-idea-brief`, `cc-create-prd`,
 `cc-gather-context`, `cc-create-plan`, `cc-review-plan`, `cc-run-plan`,
-`cc-whats-next`, `cc-configure-workspace`, `cc-approve-plan`,
+`cc-run-stack`, `cc-whats-next`, `cc-configure-workspace`, `cc-approve-plan`,
 `cc-finish-plan`, and `cc-cleanup-runtime`. The table below is a
 safe-fallback example for optional configuration, not a per-host command
 matrix. Hosts may improve discovery or credential storage. They must not

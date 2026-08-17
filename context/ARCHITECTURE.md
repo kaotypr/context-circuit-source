@@ -20,12 +20,19 @@ The target architecture is instruction- and filesystem-driven:
   docs/runtime-contract.md.
 - Registered repositories own code and repository-local conventions.
 - Each writable plan execution has an exclusive Git worktree.
-- `cc-run-plan` is the sole standard execution entry for approved plans. It
-  directs child writers and verifiers in every workspace mode. The same
-  writer-child and independent verifier-child topology applies regardless of
-  workspace mode. `workspace.yaml` mode does not select an execution topology.
+- `cc-run-plan` is the sole standard single-plan execution entry for approved
+  plans. It directs child writers and verifiers in every workspace mode. The
+  same writer-child and independent verifier-child topology applies regardless
+  of workspace mode. Standalone `cc-run-plan` uses the repository default or
+  active branch. `workspace.yaml` mode does not select an execution topology.
   Solo versus team remains identity; delivery policy IDs are
   `remote-review`, `local-target`, and `manual`.
+- `cc-run-stack` executes a connected set of already-approved plans in one
+  root session. It freezes a runtime `graph.yaml`, tracks resume in
+  `progress.yaml` under `.runtime/stacks/<stack-id>/`, bases dependents on
+  parent frozen SHAs, and joins multi-parent leaves in-run. Implemented is
+  runtime evidence; canonical plan status stays `draft`, `approved`, and
+  `done`. There is no scheduler and no durable stack plan artifact.
 - `cc-approve-plan`, `cc-finish-plan`, and `cc-cleanup-runtime` are the named
   plan-approval, status-change, and runtime-cleanup skills. They require
   current-session human confirmation and are discoverable, not mandatory

@@ -39,6 +39,7 @@ Discover the foundation skills from natural-language requests:
 - configure a requested delivery policy, host capability, or optional
   activity integration with `cc-configure-workspace`.
 - approve a coherent draft plan with `cc-approve-plan`;
+- execute a connected set of already-approved plans with `cc-run-stack`;
 - finish an executed plan with `cc-finish-plan` when completion evidence is
   ready;
 - clean local runtime state with `cc-cleanup-runtime` after human
@@ -55,7 +56,7 @@ human status-change gate is recorded. Completion evidence never changes the
 canonical plan or task status. When that evidence is ready, ask for
 `cc-finish-plan`.
 
-For approved-plan execution, use `cc-run-plan` as the sole standard entry.
+For approved-plan execution, use `cc-run-plan` as the sole standard single-plan entry.
 Preflight plan status, dependencies, task projections, repository cleanliness,
 leases, worktrees, and handoffs before writing. Direct a writer child for
 implementation and a later independent verifier child for verification.
@@ -66,6 +67,22 @@ topology applies when `workspace.yaml` is `mode: solo` and when it is
 child, report the missing host primitive to the human. Never create a
 user-facing task runner, silently steal stale ownership, or turn a verifier
 result into merge, publication, deployment, or completion authorization.
+
+For a connected set of already-approved plans, use `cc-run-stack`. Invoking
+the skill starts or resumes execution; there is no stack-approval gate and no
+finish from the stack loop. Freeze `graph.yaml` once. Update `progress.yaml`
+as the resume cursor. Follow the same writer-child and verifier-child
+topology per ready member. Change the worktree base: no parent uses the
+repository default or active branch; one parent uses the parent frozen SHA;
+several parents sort parent IDs, add from the first frozen SHA, and merge the
+remaining SHAs in-run without waiting for `default_branch`. Require a local
+commit before freeze. Implemented is runtime evidence; `plan.yaml` stays
+`approved`. Dependents wait on implemented parents, not `done`. The same
+session resumes from `progress.yaml`. A new session reads `graph.yaml` and
+`progress.yaml` and must not rebuild a different tree. A live stack lease
+blocks silent takeover. Do not push, merge, publish, deploy, run
+`cc-finish-plan`, or write `plan.yaml` done. When every member is implemented,
+hand the human the leaf worktrees.
 
 Configuration and delivery boundaries:
 

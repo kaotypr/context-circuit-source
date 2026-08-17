@@ -77,7 +77,11 @@ resuming work in this workspace.
   `docs/planning.md`.
 - `cc-review-plan` — read-only readiness review; see `docs/plan-review.md`.
 - `cc-run-plan` — execute an approved plan through sessions and exclusive
-  worktrees; see `docs/planning.md`.
+  worktrees from the repository default or active branch; see
+  `docs/planning.md`.
+- `cc-run-stack` — execute a connected set of already-approved plans from
+  parent frozen SHAs with a runtime `graph.yaml` and `progress.yaml`; see
+  `docs/planning.md` and `docs/runtime-contract.md`.
 - `cc-whats-next` — recommend the smallest safe next action from durable
   state; see `docs/agent-workspace-workflow.md`.
 - `cc-configure-workspace` — optional later delivery, host, and integration
