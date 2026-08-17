@@ -7,7 +7,8 @@ description: Execute an approved plan through directed writer and verifier child
 
 Use this skill when the user explicitly asks to execute an approved plan or
 when root-session routing identifies an approved, dependency-ready plan.
-`cc-run-plan` is the sole standard plan-execution capability.
+`cc-run-plan` is the sole standard single-plan execution capability. It is not
+a stack runner. Connected approved plans enter `cc-run-stack`.
 
 ## Preflight
 
@@ -30,7 +31,8 @@ change canonical status to make execution possible.
 
 The root coordinator creates or resumes an explicit session record, atomically
 claims `.runtime/plans/<plan-id>/lease.lock/`, records the owner and lease,
-then creates or reuses the exclusive repository worktree and branch. The
+then creates or reuses the exclusive repository worktree from the repository
+default or active branch. The
 lease, session, and worktree must name the same plan, session, repository, and
 path.
 

@@ -22,9 +22,14 @@
   and handoff format.
 - Give every writing session an exclusive worktree.
 - Use `cc-run-plan` to direct a writer child and an independent verifier
-  child. `workspace.yaml` mode is identity, not an execution-topology
-  selector. Delivery policy IDs are `remote-review`, `local-target`, and
-  `manual`.
+  child. `cc-run-plan` is the sole standard single-plan execution skill and
+  uses the repository default or active branch. Use `cc-run-stack` for a
+  connected set of already-approved plans: freeze `graph.yaml`, resume from
+  `progress.yaml`, base dependents on parent frozen SHAs, and join
+  multi-parent leaves in-run. Do not add a scheduler or a durable stack
+  artifact under `plans/`. `workspace.yaml` mode is identity, not an
+  execution-topology selector. Delivery policy IDs are `remote-review`,
+  `local-target`, and `manual`.
 - Use `cc-approve-plan` for the human plan-approval gate, `cc-finish-plan`
   for the human status-change gate, and `cc-cleanup-runtime` to delete
   `.runtime/` after inspecting dirty or unpushed work. These are

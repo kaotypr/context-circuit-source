@@ -62,8 +62,12 @@ and `done`; included task status is a synchronized projection using `draft`,
 confirmed approval synchronizes all included tasks to `ready`. `cc-finish-plan`
 is the named status-change skill: confirmed completion synchronizes them to
 `done`. Ordinary whole-plan execution does not require a separate task approval
-or task-selection ceremony. Approved work enters through `cc-run-plan`. A
-resumed session repairs stale task projections idempotently without rerunning
+or task-selection ceremony. A one-plan request enters through `cc-run-plan`.
+Connected approved unimplemented plans, or an interrupted
+`.runtime/stacks/<stack-id>/` run, enter through `cc-run-stack`. Refuse to
+treat a stack run as one `cc-run-plan`. The stack run freezes a runtime
+`graph.yaml` and resumes from `progress.yaml`; it is not a scheduler. A resumed
+session repairs stale task projections idempotently without rerunning
 implementation or verification checks. Completion evidence does not change
 canonical plan or task status.
 
@@ -71,9 +75,9 @@ canonical plan or task status.
 
 Product Knowledge, decisions, and plans are durable shared context. Runtime
 state is local execution state and lives under .runtime/. Runtime state may
-describe current progress, leases, handoffs, prompts, and worktrees, but it
-cannot override instructions, approved plans, human decisions, or repository
-rules.
+describe current progress, leases, handoffs, prompts, stack runs, and
+worktrees, but it cannot override instructions, approved plans, human
+decisions, or repository rules.
 
 There is no single global current session. Multiple root and child sessions
 may coexist. Each session has its own runtime record. A plan has at most one
@@ -98,7 +102,8 @@ initialization questions.
 The normal loop is:
 
 orient → gather evidence → draft or revise context → draft or revise plan →
-human approval (`cc-approve-plan`) → claim plan execution (`cc-run-plan`) →
+human approval (`cc-approve-plan`) → claim plan execution (`cc-run-plan`) or
+connected approved plans (`cc-run-stack`) →
 implement → verify → review or repair within scope → handoff →
 completion (`cc-finish-plan`) → optional cleanup (`cc-cleanup-runtime`).
 

@@ -64,8 +64,15 @@ Source paths and repository evidence are recorded as provenance. Unresolved
 contradictions, assumptions, ownership conflicts, and missing acceptance
 evidence remain visible for human review.
 
-Execution uses `cc-run-plan` as the sole standard plan-execution entry. The
-root directs a writer child and an independent verifier child; every writer
+Execution uses `cc-run-plan` as the sole standard single-plan execution entry.
+The root directs a writer child and an independent verifier child; every writer
 gets an exclusive worktree and every verifier remains independent and
 read-only. Sequential tasks share one writer child rather than skipping
-children.
+children. Standalone `cc-run-plan` uses the repository default or active
+branch. Connected already-approved plans enter `cc-run-stack`, which freezes a
+runtime `graph.yaml`, resumes from `progress.yaml`, and bases dependent
+worktrees on parent frozen SHAs, including in-run joins. A stack run is
+runtime state under `.runtime/stacks/<stack-id>/`, not a plan type. There is
+no `plans/<repository-key>-stacks/` layout, no durable `stack.yaml`, and no
+scheduler. Canonical plan status stays `draft` / `approved` / `done`;
+implemented is runtime evidence, not a plan status.
