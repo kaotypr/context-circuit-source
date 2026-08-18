@@ -2667,6 +2667,13 @@ require_file scripts/release-artifact.sh
 require_file scripts/release-manifest.txt
 require_file .github/workflows/sync-context-circuit-release.yml
 require_file docs/release.md
+contains workspace.yaml 'template_version: 0.4.0'
+contains docs/release.md 'v0.4.0'
+contains .github/workflows/sync-context-circuit-release.yml 'v0.4.0'
+if grep -F '0.3.0' workspace.yaml docs/release.md \
+  .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then
+  fail 'release files still contain the stale 0.3.0 identifier'
+fi
 expect_success sh -n scripts/release-artifact.sh
 if grep -E 'setup-node|npm |node --import|actions/setup-node' \
   .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then

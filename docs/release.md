@@ -22,7 +22,7 @@ denied, keep the staged artifact and deliver it manually.
 
 ## Version and tag contract
 
-- Tag trigger: push a `v*` tag (for example `v0.3.0`).
+- Tag trigger: push a `v*` tag (for example `v0.4.0`).
 - Manual trigger: GitHub `workflow_dispatch` with a `version` input.
 - Local invocation: pass the same version string as the helper's third
   argument.
@@ -59,7 +59,7 @@ From a clean source checkout at the intended revision:
 ```
 git diff --check
 sh test/acceptance.sh
-sh scripts/release-artifact.sh /tmp/cc-release-stage /tmp/cc-release-out v0.3.0
+sh scripts/release-artifact.sh /tmp/cc-release-stage /tmp/cc-release-out v0.4.0
 ```
 
 The helper stages tracked files only (`git archive` of `HEAD`). Dirty or
@@ -68,7 +68,7 @@ It then removes the exclusion list, fails if a required file is missing or a
 forbidden path remains, and prints version, source revision, inventory, and
 destination.
 
-Copy `/tmp/cc-release-out/context-circuit-v0.3.0/` onto
+Copy `/tmp/cc-release-out/context-circuit-v0.4.0/` onto
 `kaotypr/context-circuit-release` `main` only after the human publication
 gate.
 
