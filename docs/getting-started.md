@@ -133,7 +133,8 @@ When context is sufficient:
 
 After approval, `cc-run-plan` directs the root to:
 
-- claim a plan execution and create or reuse its exclusive worktree;
+- claim a plan execution and create or reuse its exclusive worktree from the
+  repository default or active branch;
 - spawn a writer child through the host child-session primitive;
 - spawn a later independent verifier child (`write_worktree: false`);
 - record completion.yaml and ask for `cc-finish-plan`.
@@ -144,6 +145,12 @@ host primitive to the human.
 
 Every child session receives a bounded delegation packet and returns a structured
 handoff to its parent.
+
+A one-plan request still enters `cc-run-plan`. Connected approved unimplemented
+plans, or an interrupted `.runtime/stacks/<stack-id>/` run, enter
+`cc-run-stack`. Refuse to treat a stack run as one `cc-run-plan`. Invoking
+`cc-run-stack` starts or resumes execution; there is no stack-approval gate
+and no scheduler. `cc-run-stack` is not a second way to run one plan.
 
 ## 7. Resume from the handoff
 

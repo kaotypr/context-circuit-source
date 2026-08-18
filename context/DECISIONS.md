@@ -26,6 +26,17 @@ use the new IDs.
 `workspace.yaml` `mode` remains identity and stays independent of delivery
 policy. Configuration does not grant commit, push, PR, or merge.
 
+## 2026-08-17 — Additive stack execution is runtime, not a plan type
+
+`cc-run-plan` remains the sole standard single-plan execution skill and still
+creates worktrees from the repository default or active branch.
+`cc-run-stack` executes a connected set of already-approved plans in one root
+session. The plan tree lives in `.runtime/stacks/<stack-id>/graph.yaml` and
+the resume cursor in `progress.yaml`. There is no scheduler, no durable
+`stack.yaml` under `plans/`, and no `plans/<repository-key>-stacks/` layout.
+Implemented is runtime evidence; canonical plan status stays `draft`,
+`approved`, and `done`. `cc-finish-plan` remains the per-plan human gate.
+
 No project-specific product decisions have been accepted yet.
 
 Record accepted and superseded project decisions here after human review.

@@ -29,11 +29,15 @@ Use one of these outcomes:
 - `needs-revision`: scope, evidence, dependencies, or acceptance is incomplete;
 - `blocked`: a contradiction or ownership decision prevents safe progress;
 - `approved-for-execution`: the observation that the plan is already approved
-  and may enter `cc-run-plan`.
+  and may enter `cc-run-plan`, or that a connected approved set may enter
+  `cc-run-stack`.
 
 The review never writes `plan.yaml`. It records evidence and recommendations;
 `cc-approve-plan` is the named plan-approval skill. The human controls
-approval, material scope changes, and completion.
+approval, material scope changes, and completion. Connected approved plans
+may later enter `cc-run-stack`, which freezes a runtime `graph.yaml` and
+resumes from `progress.yaml`. That is not a scheduler and not a second
+approval of a stack artifact.
 
 ## Evidence format
 
@@ -46,7 +50,7 @@ Evidence: <context, repository, and plan files inspected>
 Routine checks: <checks that need no human decision>
 Decisions: <questions that change scope, intent, ownership, or delivery>
 Contradictions: <source or artifact conflicts, or none>
-Next action: <revise, cc-approve-plan, or cc-run-plan>
+Next action: <revise, cc-approve-plan, cc-run-plan, or cc-run-stack>
 ```
 
 If a source or accepted Product Knowledge page changes during execution, stop

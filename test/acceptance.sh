@@ -500,6 +500,160 @@ run_plan_guard() {
   return 0
 }
 
+stack_parents_of() {
+  case "$1" in
+    plan-0001) ;;
+    plan-0002|plan-0005|plan-0006) printf 'plan-0001\n' ;;
+    plan-0003) printf 'plan-0002\n' ;;
+    plan-0004) printf 'plan-0003\n' ;;
+    plan-0007|plan-0008) printf 'plan-0004\n' ;;
+    plan-0009) printf 'plan-0007\n' ;;
+    plan-0010) printf 'plan-0005\nplan-0006\n' ;;
+  esac
+}
+
+stack_member_state() {
+  progress_file=$1
+  member_id=$2
+  awk -v id="$member_id" '
+    $0 ~ "^  " id ":" { found=1; next }
+    found && $1 == "state:" { print $2; exit }
+    found && $0 ~ /^  [^ ]/ { exit }
+  ' "$progress_file"
+}
+
+stack_graph_complete() {
+  graph_file=$1
+  for required in \
+    'schema_version: 1' 'stack_id:' 'repository:' 'members:' 'edges:' 'leaves:'; do
+    grep -F "$required" "$graph_file" >/dev/null 2>&1 || return 1
+  done
+  return 0
+}
+
+stack_progress_complete() {
+  progress_file=$1
+  for required in \
+    'schema_version: 1' 'stack_id:' 'status:' 'owner_session_id:' \
+    'members:' 'state:' 'frozen_sha:' 'worktree:' 'base:' 'join_parents:'; do
+    grep -F "$required" "$progress_file" >/dev/null 2>&1 || return 1
+  done
+  return 0
+}
+
+stack_ready_frontier() {
+  progress_file=$1
+  for member in plan-0001 plan-0002 plan-0003 plan-0004 plan-0005 \
+    plan-0006 plan-0007 plan-0008 plan-0009 plan-0010; do
+    state=$(stack_member_state "$progress_file" "$member")
+    case "$state" in
+      implemented|running|joining|failed|blocked) continue ;;
+    esac
+    ready=1
+    for parent in $(stack_parents_of "$member"); do
+      pstate=$(stack_member_state "$progress_file" "$parent")
+      if test "$pstate" != implemented; then
+        ready=0
+        break
+      fi
+    done
+    if test "$ready" -eq 1; then
+      printf '%s\n' "$member"
+    fi
+  done
+}
+
+stack_start_member() {
+  progress_file=$1
+  member_id=$2
+  for parent in $(stack_parents_of "$member_id"); do
+    pstate=$(stack_member_state "$progress_file" "$parent")
+    if test "$pstate" != implemented; then
+      printf 'BLOCKED: dependents start only after parents are implemented\n' >&2
+      return 1
+    fi
+  done
+  return 0
+}
+
+stack_member_preflight() {
+  for plan_file in "$@"; do
+    member_status=$(sed -n 's/^status: //p' "$plan_file" | head -n 1)
+    if test "$member_status" != approved; then
+      printf 'BLOCKED: draft member plans are refused\n' >&2
+      return 1
+    fi
+  done
+  return 0
+}
+
+stack_worktree_base() {
+  shift
+  if test "$#" -eq 0; then
+    printf 'kind: default-or-active-branch\n'
+    return 0
+  fi
+  if test "$#" -eq 1; then
+    spec=$1
+    printf 'kind: parent-frozen-sha\nparent: %s\nfrozen_sha: %s\n' \
+      "${spec%%:*}" "${spec#*:}"
+    return 0
+  fi
+  sorted=$(printf '%s\n' "$@" | LC_ALL=C sort)
+  first=$(printf '%s\n' "$sorted" | sed -n '1p')
+  printf 'kind: join\nfrom: %s\nfrozen_sha: %s\n' \
+    "${first%%:*}" "${first#*:}"
+  printf '%s\n' "$sorted" | sed '1d' | while IFS= read -r spec; do
+    test -n "$spec" || continue
+    printf 'merge: %s %s\n' "${spec%%:*}" "${spec#*:}"
+  done
+}
+
+stack_freeze_graph() {
+  dest=$1
+  if test -f "$dest"; then
+    printf 'BLOCKED: graph.yaml is frozen; resume from progress.yaml\n' >&2
+    return 1
+  fi
+  return 0
+}
+
+stack_resume_from_progress() {
+  graph_file=$1
+  progress_file=$2
+  frozen_graph=$3
+  if test ! -f "$graph_file" || test ! -f "$progress_file"; then
+    printf 'BLOCKED: resume requires graph.yaml and progress.yaml\n' >&2
+    return 1
+  fi
+  if ! cmp -s "$graph_file" "$frozen_graph"; then
+    printf 'BLOCKED: resume must not rebuild graph.yaml\n' >&2
+    return 1
+  fi
+  stack_graph_complete "$graph_file" || return 1
+  stack_progress_complete "$progress_file" || return 1
+  return 0
+}
+
+stack_forbid_plan_done() {
+  plan_file=$1
+  if grep -E '^status:[[:space:]]*done$' "$plan_file" >/dev/null 2>&1; then
+    printf 'BLOCKED: cc-run-stack must not write plan.yaml status done\n' >&2
+    return 1
+  fi
+  grep -F 'status: approved' "$plan_file" >/dev/null 2>&1 || return 1
+  return 0
+}
+
+stack_spawn_member_children() {
+  host_primitive=$1
+  if test "$host_primitive" != available; then
+    printf 'BLOCKED: missing host primitive reported to the human\n' >&2
+    return 1
+  fi
+  printf 'writer-child verifier-child\n'
+}
+
 recovery_guard() {
   recovery_session=$1
   grep -F 'status: blocked' "$recovery_session" >/dev/null 2>&1 || return 1
@@ -1322,11 +1476,11 @@ contains docs/plan-review.md 'approved-for-execution'
 contains .agents/skills/cc-create-plan/SKILL.md 'status: draft'
 contains .agents/skills/cc-review-plan/SKILL.md 'cc-run-plan'
 contains .agents/skills/cc-whats-next/SKILL.md 'approved dependency-ready plan'
-contains .agents/skills/cc-run-plan/SKILL.md 'sole standard plan-execution capability'
+contains .agents/skills/cc-run-plan/SKILL.md 'sole standard single-plan execution capability'
 contains .agents/skills/cc-run-plan/SKILL.md 'exclusive repository worktree'
 contains .agents/skills/cc-run-plan/SKILL.md 'session-handoff-v1'
 contains agents/coordinator.md 'For approved-plan execution'
-contains agents/coordinator.md 'sole standard entry.'
+contains agents/coordinator.md 'sole standard single-plan entry.'
 contains agents/repository-worker.md 'assigned repository'
 contains agents/reviewer.md 'independently reproduce'
 contains docs/runtime-contract.md 'Same-plan contention is resolved'
@@ -2513,6 +2667,13 @@ require_file scripts/release-artifact.sh
 require_file scripts/release-manifest.txt
 require_file .github/workflows/sync-context-circuit-release.yml
 require_file docs/release.md
+contains workspace.yaml 'template_version: 0.4.0'
+contains docs/release.md 'v0.4.0'
+contains .github/workflows/sync-context-circuit-release.yml 'v0.4.0'
+if grep -F '0.3.0' workspace.yaml docs/release.md \
+  .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then
+  fail 'release files still contain the stale 0.3.0 identifier'
+fi
 expect_success sh -n scripts/release-artifact.sh
 if grep -E 'setup-node|npm |node --import|actions/setup-node' \
   .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then
@@ -2609,6 +2770,7 @@ for skill in \
   cc-create-plan \
   cc-review-plan \
   cc-run-plan \
+  cc-run-stack \
   cc-whats-next \
   cc-configure-workspace; do
   contains README.md "$skill"
@@ -2642,5 +2804,327 @@ docs_now_count=$(find docs -type f | wc -l | tr -d ' ')
 test "$docs_now_count" -eq 15 || fail "docs/ file count grew versus worktree base: $docs_now_count"
 
 printf 'PASS: Plan 0012 retained docs surface accuracy\n'
+
+# Plan 0014: cc-run-stack runtime graph, parent-worktree bases, in-run joins,
+# progress resume, unchanged standalone cc-run-plan, and no finish from stack.
+require_file .agents/skills/cc-run-stack/SKILL.md
+require_file .agents/skills/cc-run-stack/agents/openai.yaml
+test "$(head -n 1 .agents/skills/cc-run-stack/SKILL.md)" = '---'
+contains .agents/skills/cc-run-stack/SKILL.md 'name: cc-run-stack'
+contains .agents/skills/cc-run-stack/SKILL.md 'description:'
+contains .agents/skills/cc-run-stack/SKILL.md 'parent-worktree bases'
+contains .agents/skills/cc-run-stack/SKILL.md 'in-run joins'
+contains .agents/skills/cc-run-stack/SKILL.md 'implemented-versus-done'
+contains .agents/skills/cc-run-stack/SKILL.md 'graph.yaml'
+contains .agents/skills/cc-run-stack/SKILL.md 'progress.yaml'
+contains .agents/skills/cc-run-stack/SKILL.md 'resume'
+contains .agents/skills/cc-run-stack/SKILL.md 'no-finish-plan'
+contains .agents/skills/cc-run-stack/agents/openai.yaml '$cc-run-stack'
+contains .agents/skills/cc-run-plan/SKILL.md 'default or active branch'
+contains .agents/skills/cc-run-plan/SKILL.md 'cc-finish-plan'
+contains .agents/skills/cc-run-plan/SKILL.md 'sole standard single-plan execution capability'
+contains .agents/skills/cc-session-entry/SKILL.md 'cc-run-stack'
+contains .agents/skills/cc-whats-next/SKILL.md 'cc-run-stack'
+contains .agents/skills/cc-session-entry/SKILL.md 'Refuse to treat a stack run as one `cc-run-plan`'
+contains README.md 'cc-run-stack'
+contains context/INDEX.md 'cc-run-stack'
+contains docs/host-capabilities.md 'cc-run-stack'
+contains docs/runtime-contract.md 'graph.yaml'
+contains docs/runtime-contract.md 'progress.yaml'
+contains docs/runtime-contract.md '.runtime/stacks/'
+contains .agents/skills/cc-run-stack/SKILL.md 'missing host primitive'
+contains .agents/skills/cc-run-stack/SKILL.md 'must not write `plan.yaml` status `done`'
+absent .agents/skills/cc-approve-stack/SKILL.md
+absent .agents/skills/cc-approve-stack/agents/openai.yaml
+if find plans -name stack.yaml -print | grep . >/dev/null 2>&1; then
+  fail 'durable stack.yaml exists under plans/'
+fi
+if grep -E 'Use `cc-approve-stack`|`cc-approve-stack` is the' \
+  README.md context/INDEX.md docs/host-capabilities.md \
+  .agents/skills/cc-run-stack/SKILL.md \
+  .agents/skills/cc-session-entry/SKILL.md \
+  .agents/skills/cc-whats-next/SKILL.md >/dev/null 2>&1; then
+  fail 'cc-approve-stack is named as a real skill'
+fi
+
+stack_fixture="$fixture/run-stack"
+mkdir -p "$stack_fixture/plans" "$stack_fixture/runtime/stacks/from-0001" \
+  "$stack_fixture/runtime/plans/plan-0001"
+stack_graph="$stack_fixture/runtime/stacks/from-0001/graph.yaml"
+stack_progress="$stack_fixture/runtime/stacks/from-0001/progress.yaml"
+atomic_write "$stack_graph" \
+  'schema_version: 1' \
+  'stack_id: from-0001' \
+  'repository: example-repository' \
+  'members:' \
+  '  - id: plan-0001' \
+  '    path: plans/example-repository-plans/0001-plan-a' \
+  '  - id: plan-0002' \
+  '    path: plans/example-repository-plans/0002-plan-b' \
+  '  - id: plan-0003' \
+  '    path: plans/example-repository-plans/0003-plan-c' \
+  '  - id: plan-0004' \
+  '    path: plans/example-repository-plans/0004-plan-d' \
+  '  - id: plan-0005' \
+  '    path: plans/example-repository-plans/0005-plan-e' \
+  '  - id: plan-0006' \
+  '    path: plans/example-repository-plans/0006-plan-f' \
+  '  - id: plan-0007' \
+  '    path: plans/example-repository-plans/0007-plan-g' \
+  '  - id: plan-0008' \
+  '    path: plans/example-repository-plans/0008-plan-h' \
+  '  - id: plan-0009' \
+  '    path: plans/example-repository-plans/0009-plan-i' \
+  '  - id: plan-0010' \
+  '    path: plans/example-repository-plans/0010-plan-j' \
+  'edges:' \
+  '  - from: plan-0001' \
+  '    to: plan-0002' \
+  '  - from: plan-0002' \
+  '    to: plan-0003' \
+  '  - from: plan-0003' \
+  '    to: plan-0004' \
+  '  - from: plan-0004' \
+  '    to: plan-0007' \
+  '  - from: plan-0004' \
+  '    to: plan-0008' \
+  '  - from: plan-0007' \
+  '    to: plan-0009' \
+  '  - from: plan-0001' \
+  '    to: plan-0005' \
+  '  - from: plan-0001' \
+  '    to: plan-0006' \
+  '  - from: plan-0005' \
+  '    to: plan-0010' \
+  '  - from: plan-0006' \
+  '    to: plan-0010' \
+  'leaves:' \
+  '  - plan-0008' \
+  '  - plan-0009' \
+  '  - plan-0010'
+expect_success stack_graph_complete "$stack_graph"
+contains "$stack_graph" 'leaves:'
+contains "$stack_graph" 'plan-0008'
+contains "$stack_graph" 'plan-0009'
+contains "$stack_graph" 'plan-0010'
+cp "$stack_graph" "$stack_fixture/graph.frozen"
+assert_failure_reason "$stack_fixture/graph-rebuild.log" \
+  'graph.yaml is frozen; resume from progress.yaml' \
+  stack_freeze_graph "$stack_graph"
+
+write_stack_member_plan() {
+  member_plan=$1
+  member_id=$2
+  member_status=$3
+  atomic_write "$member_plan" \
+    "id: $member_id" \
+    'number: 1' \
+    'title: Stack member fixture' \
+    "status: $member_status" \
+    'source:' \
+    '  kind: direct-request' \
+    '  reference: fixture' \
+    'repositories:' \
+    '  - example-repository' \
+    'product_knowledge:' \
+    '  references:' \
+    '    - context/PROJECT.md' \
+    'implementation_scope:' \
+    '  - docs' \
+    'non_goals:' \
+    '  - delivery' \
+    'dependencies:' \
+    '  - foundation' \
+    'acceptance_criteria:' \
+    '  - member executes' \
+    'test_scope:' \
+    '  - fixtures' \
+    'verification_commands:' \
+    '  - git diff --check'
+}
+
+write_stack_member_plan "$stack_fixture/plans/plan-0001.yaml" plan-0001 approved
+write_stack_member_plan "$stack_fixture/plans/plan-0002.yaml" plan-0002 draft
+assert_failure_reason "$stack_fixture/draft-member.log" \
+  'draft member plans are refused' \
+  stack_member_preflight \
+  "$stack_fixture/plans/plan-0001.yaml" \
+  "$stack_fixture/plans/plan-0002.yaml"
+write_stack_member_plan "$stack_fixture/plans/plan-0002.yaml" plan-0002 approved
+expect_success stack_member_preflight \
+  "$stack_fixture/plans/plan-0001.yaml" \
+  "$stack_fixture/plans/plan-0002.yaml"
+
+write_stack_progress() {
+  progress_out=$1
+  state_0001=$2
+  sha_0001=$3
+  atomic_write "$progress_out" \
+    'schema_version: 1' \
+    'stack_id: from-0001' \
+    'status: running' \
+    'owner_session_id: sess-stack' \
+    'replaced_session_id: null' \
+    'members:' \
+    '  plan-0001:' \
+    "    state: $state_0001" \
+    "    frozen_sha: $sha_0001" \
+    '    worktree: .runtime/worktrees/example-repository/plan-0001' \
+    '    base:' \
+    '      kind: default-branch' \
+    '      commit: def456' \
+    '    join_parents: []' \
+    '  plan-0002:' \
+    '    state: waiting-parents' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0002' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0003:' \
+    '    state: waiting-parents' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0003' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0004:' \
+    '    state: pending' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0004' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0005:' \
+    '    state: waiting-parents' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0005' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0006:' \
+    '    state: waiting-parents' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0006' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0007:' \
+    '    state: pending' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0007' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0008:' \
+    '    state: pending' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0008' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0009:' \
+    '    state: pending' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0009' \
+    '    base:' \
+    '      kind: parent-frozen-sha' \
+    '    join_parents: []' \
+    '  plan-0010:' \
+    '    state: waiting-parents' \
+    '    frozen_sha: null' \
+    '    worktree: .runtime/worktrees/example-repository/plan-0010' \
+    '    base:' \
+    '      kind: join' \
+    '    join_parents:' \
+    '      - plan-0005' \
+    '      - plan-0006'
+}
+
+write_stack_progress "$stack_progress" pending null
+expect_success stack_progress_complete "$stack_progress"
+test "$(stack_ready_frontier "$stack_progress")" = 'plan-0001'
+expect_success stack_start_member "$stack_progress" plan-0001
+assert_failure_reason "$stack_fixture/early-0002.log" \
+  'dependents start only after parents are implemented' \
+  stack_start_member "$stack_progress" plan-0002
+assert_failure_reason "$stack_fixture/early-0005.log" \
+  'dependents start only after parents are implemented' \
+  stack_start_member "$stack_progress" plan-0005
+
+write_stack_progress "$stack_progress" implemented abc123
+atomic_write "$stack_fixture/runtime/plans/plan-0001/completion.yaml" \
+  'schema_version: 1' \
+  'plan: plans/example-repository-plans/0001-plan-a' \
+  'status: ready-for-human-status-change' \
+  'human_gate: status-change' \
+  'canonical_status_changed: false'
+expect_success stack_forbid_plan_done "$stack_fixture/plans/plan-0001.yaml"
+contains "$stack_fixture/plans/plan-0001.yaml" 'status: approved'
+contains "$stack_fixture/runtime/plans/plan-0001/completion.yaml" \
+  'ready-for-human-status-change'
+frontier=$(stack_ready_frontier "$stack_progress")
+printf '%s\n' "$frontier" > "$stack_fixture/frontier.txt"
+contains "$stack_fixture/frontier.txt" 'plan-0002'
+contains "$stack_fixture/frontier.txt" 'plan-0005'
+contains "$stack_fixture/frontier.txt" 'plan-0006'
+if printf '%s\n' "$frontier" | grep -E 'plan-0003|plan-0004|plan-0007|plan-0008|plan-0009|plan-0010' \
+  >/dev/null 2>&1; then
+  fail 'ready frontier unlocked a dependent before its parents were implemented'
+fi
+test "$(printf '%s\n' "$frontier" | wc -l | tr -d ' ')" -eq 3 || \
+  fail "ready frontier after 0001 implemented was not 0002, 0005, 0006: $frontier"
+expect_success stack_start_member "$stack_progress" plan-0002
+expect_success stack_start_member "$stack_progress" plan-0005
+expect_success stack_start_member "$stack_progress" plan-0006
+assert_failure_reason "$stack_fixture/early-0003.log" \
+  'dependents start only after parents are implemented' \
+  stack_start_member "$stack_progress" plan-0003
+assert_failure_reason "$stack_fixture/early-0010.log" \
+  'dependents start only after parents are implemented' \
+  stack_start_member "$stack_progress" plan-0010
+
+parent_base=$(stack_worktree_base plan-0002 plan-0001:abc123)
+printf '%s\n' "$parent_base" > "$stack_fixture/parent-base.txt"
+contains "$stack_fixture/parent-base.txt" 'kind: parent-frozen-sha'
+contains "$stack_fixture/parent-base.txt" 'frozen_sha: abc123'
+contains "$stack_fixture/parent-base.txt" 'parent: plan-0001'
+if grep -F 'default_branch' "$stack_fixture/parent-base.txt" >/dev/null 2>&1; then
+  fail 'single-parent member waited for default_branch'
+fi
+
+join_base=$(stack_worktree_base plan-0010 plan-0006:sha6 plan-0005:sha5)
+printf '%s\n' "$join_base" > "$stack_fixture/join-base.txt"
+contains "$stack_fixture/join-base.txt" 'kind: join'
+contains "$stack_fixture/join-base.txt" 'from: plan-0005'
+contains "$stack_fixture/join-base.txt" 'frozen_sha: sha5'
+contains "$stack_fixture/join-base.txt" 'merge: plan-0006 sha6'
+if grep -F 'default_branch' "$stack_fixture/join-base.txt" >/dev/null 2>&1; then
+  fail 'two-parent leaf waited for default_branch instead of joining parent SHAs'
+fi
+no_parent_base=$(stack_worktree_base plan-0001)
+printf '%s\n' "$no_parent_base" > "$stack_fixture/no-parent-base.txt"
+contains "$stack_fixture/no-parent-base.txt" 'kind: default-or-active-branch'
+
+expect_success stack_resume_from_progress \
+  "$stack_graph" "$stack_progress" "$stack_fixture/graph.frozen"
+cmp -s "$stack_graph" "$stack_fixture/graph.frozen" || \
+  fail 'resume rebuilt graph.yaml'
+atomic_write "$stack_fixture/rebuilt-graph.yaml" 'schema_version: 1' 'stack_id: other'
+assert_failure_reason "$stack_fixture/resume-rebuild.log" \
+  'resume must not rebuild graph.yaml' \
+  stack_resume_from_progress \
+  "$stack_fixture/rebuilt-graph.yaml" "$stack_progress" "$stack_fixture/graph.frozen"
+
+expect_success stack_spawn_member_children available
+assert_failure_reason "$stack_fixture/missing-primitive.log" \
+  'missing host primitive reported to the human' \
+  stack_spawn_member_children missing
+if grep -E 'skip children|skipping children' "$stack_fixture/missing-primitive.log" \
+  >/dev/null 2>&1; then
+  fail 'missing child-session primitive was skipped rather than reported'
+fi
+
+printf 'PASS: Plan 0014 run-stack graph, frontier, joins, resume, and unchanged run-plan\n'
 
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

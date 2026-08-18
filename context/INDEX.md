@@ -29,7 +29,7 @@ product truth.
 - `context/` — accepted, concise Product Knowledge and provenance summaries;
   it must not become a copy of raw sources.
 - `plans/` — human-reviewed intended work and task definitions.
-- `.runtime/` — private sessions, leases, worktrees, and handoffs; runtime
+- `.runtime/` — private sessions, leases, worktrees, stack runs, and handoffs; runtime
   state is not Product Knowledge. Preserve it until a human chooses cleanup
   via `cc-cleanup-runtime`.
 
@@ -38,9 +38,11 @@ product truth.
 The core discoverable set includes `cc-initialize-workspace`, `cc-idea-brief`,
 `cc-create-prd`, `cc-gather-context`, `cc-configure-workspace`,
 `cc-create-plan`, `cc-review-plan`, `cc-approve-plan`, `cc-run-plan`,
-`cc-finish-plan`, `cc-whats-next`, `cc-session-entry`, and
+`cc-run-stack`, `cc-finish-plan`, `cc-whats-next`, `cc-session-entry`, and
 `cc-cleanup-runtime`. These names are discoverability aids, not mandatory
-ceremonies for every session.
+ceremonies for every session. `cc-run-plan` is single-plan execution.
+`cc-run-stack` executes connected already-approved plans. Do not present
+`cc-run-stack` as a second way to run one plan.
 
 ## Read by scope
 

@@ -19,6 +19,8 @@ aids, not mandatory ceremonies for every session:
 - gather context or draft a plan;
 - review a draft, or approve a coherent draft through `cc-approve-plan`;
 - execute an approved dependency-ready plan through `cc-run-plan`;
+- execute connected approved unimplemented plans, or resume an interrupted
+  `.runtime/stacks/<stack-id>/` run, through `cc-run-stack`;
 - resume a session from its latest handoff;
 - verify or repair within approved scope;
 - finish a plan through `cc-finish-plan` when completion evidence is ready;
@@ -32,4 +34,7 @@ The recommendation is read-only until the root session or human explicitly
 performs a consequential action. Report evidence, assumptions, blockers, and
 the next safe action separately. For an approved dependency-ready plan,
 recommend `cc-run-plan` so the root creates a writer child and a verifier
-child rather than skipping children for small work.
+child rather than skipping children for small work. For connected approved
+unimplemented plans, or a resumable stack run, recommend `cc-run-stack`.
+Refuse to treat a stack run as one `cc-run-plan`. A one-plan request still
+enters `cc-run-plan`.
