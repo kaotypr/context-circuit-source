@@ -1,0 +1,108 @@
+schema_version: 1
+id: context-circuit.okf-concept
+version: 1
+authority: declared-knowledge-bundle
+representation:
+  format: markdown-with-yaml-front-matter
+  reserved_filenames:
+    - index.md
+    - log.md
+  concept_id: bundle-relative-path-without-md
+required:
+  - type
+  - title
+  - description
+  - status
+properties:
+  type:
+    kind: string
+    min_length: 1
+    writer: emit
+    legacy_reader_alias: kind
+  title:
+    kind: string
+    min_length: 1
+  description:
+    kind: string
+    min_length: 1
+    guidance: one sentence suitable for an index or retrieval preview
+  status:
+    kind: string
+    enum:
+      - draft
+      - stable
+      - deprecated
+  tags:
+    kind: list
+    items:
+      kind: string
+  sources:
+    kind: list
+    items:
+      kind: mapping
+      required:
+        - resource
+      properties:
+        id:
+          kind: string
+        resource:
+          kind: string
+        title:
+          kind: string
+  generated:
+    kind: mapping
+    required:
+      - by
+      - at
+    properties:
+      by:
+        kind: string
+      at:
+        kind: timestamp
+  verified:
+    kind: list-or-mapping
+    normalized_kind: list
+    item:
+      kind: mapping
+      required:
+        - by
+        - at
+      properties:
+        by:
+          kind: string
+        at:
+          kind: timestamp
+  stale_after:
+    kind: date
+  schema_version:
+    kind: integer
+  authority:
+    kind: string
+  acceptance:
+    kind: mapping
+  references:
+    kind: list
+additional_properties:
+  mode: preserve
+compatibility:
+  writers:
+    emit:
+      - type
+    omit:
+      - kind
+  readers:
+    - when: type-present
+      use: type
+    - when: type-absent-and-kind-present
+      normalize:
+        kind: type
+      diagnostic: legacy-kind
+    - when: type-and-kind-present-with-different-values
+      result: fail
+      diagnostic: conflicting-kind-type
+  verified:
+    mapping: normalize-to-one-item-list
+    list: preserve-list
+    absent: unverified
+deferred:
+  - Attested Computation

@@ -1,0 +1,40 @@
+schema_version: 1
+id: context-circuit.runtime-record
+version: 1
+authority: runtime
+representation:
+  format: yaml
+  location: .runtime
+  okf: false
+required:
+  - schema_version
+properties:
+  schema_version:
+    kind: integer
+  session_id:
+    kind: string
+  parent_session_id:
+    kind: string-or-null
+  root_session_id:
+    kind: string
+  kind:
+    kind: string
+    guidance: runtime record discriminator; never an OKF type alias
+  status:
+    kind: string
+  task:
+    kind: string
+  plan:
+    kind: string
+  worktree:
+    kind: string
+  next_action:
+    kind: string
+  blockers:
+    kind: list
+constraints:
+  - runtime-state-does-not-override-plan-yaml
+  - runtime-status-is-not-okf-lifecycle
+  - human-gates-remain-explicit
+additional_properties:
+  mode: preserve

@@ -1,0 +1,28 @@
+schema_version: 1
+id: context-circuit.okf-index
+version: 1
+authority: declared-knowledge-bundle
+representation:
+  format: markdown
+  filename: index.md
+  reserved: true
+front_matter:
+  bundle_root:
+    allowed: true
+    required_key:
+      okf_version: "0.2"
+  nested:
+    allowed: false
+body:
+  kind: markdown
+  required:
+    - section-heading
+  entry:
+    kind: markdown-link
+    description: optional-short-description
+constraints:
+  - index-does-not-duplicate-concept-bodies
+  - links-are-relative-or-bundle-relative
+  - missing-optional-index-is-advisory
+additional_properties:
+  mode: preserve

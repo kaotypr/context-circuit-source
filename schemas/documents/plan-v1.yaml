@@ -1,0 +1,64 @@
+schema_version: 1
+id: context-circuit.plan
+version: 1
+authority: canonical-plan
+representation:
+  format: yaml
+  filename: plan.yaml
+required:
+  - id
+  - number
+  - title
+  - status
+  - source
+  - repositories
+  - product_knowledge
+  - implementation_scope
+  - non_goals
+  - dependencies
+  - acceptance_criteria
+  - test_scope
+  - verification_commands
+properties:
+  id:
+    kind: string
+  number:
+    kind: integer
+  title:
+    kind: string
+  status:
+    kind: string
+    enum:
+      - draft
+      - approved
+      - done
+  source:
+    kind: mapping
+  repositories:
+    kind: list
+  product_knowledge:
+    kind: mapping
+  implementation_scope:
+    kind: list
+  non_goals:
+    kind: list
+  dependencies:
+    kind: list
+  acceptance_criteria:
+    kind: list
+  test_scope:
+    kind: list
+  verification_commands:
+    kind: list
+lifecycle:
+  approval_gate: cc-approve-plan
+  completion_gate: cc-finish-plan
+  task_status_projection:
+    draft: draft
+    approved: ready
+    done: done
+constraints:
+  - plan-status-is-not-an-okf-status
+  - schema-validation-does-not-approve-or-complete
+additional_properties:
+  mode: preserve

@@ -1,0 +1,68 @@
+schema_version: 1
+id: context-circuit.task
+version: 1
+authority: canonical-task-contract
+representation:
+  format: markdown-with-yaml-front-matter
+  location: plan-task-directory
+  okf: false
+required:
+  - id
+  - plan_id
+  - title
+  - status
+  - description
+  - repository
+  - area
+  - implementation_scope
+  - test_scope
+  - verification_commands
+  - acceptance_criteria
+  - expected_evidence
+  - dependencies
+  - stop_conditions
+properties:
+  id:
+    kind: string
+  plan_id:
+    kind: string
+  title:
+    kind: string
+  status:
+    kind: string
+    enum:
+      - draft
+      - ready
+      - done
+  description:
+    kind: string
+  repository:
+    kind: string
+  area:
+    kind: string
+  implementation_scope:
+    kind: list
+  test_scope:
+    kind: list
+  verification_commands:
+    kind: list
+  acceptance_criteria:
+    kind: list
+  expected_evidence:
+    kind: list
+  dependencies:
+    kind: list
+  stop_conditions:
+    kind: list
+lifecycle:
+  status_projection:
+    plan_draft: draft
+    plan_approved: ready
+    plan_done: done
+  second_approval_gate: false
+  separate_execution_lease: false
+compatibility:
+  kind: runtime-or-domain-field-only
+  type: not-an-okf-alias
+additional_properties:
+  mode: preserve

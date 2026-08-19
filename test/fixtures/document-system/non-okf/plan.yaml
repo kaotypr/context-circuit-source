@@ -1,0 +1,23 @@
+schema_version: 1
+id: fixture-plan
+title: Non-OKF plan fixture
+status: approved
+source:
+  kind: direct-request
+  reference: fixture
+repositories:
+  - context-circuit
+product_knowledge:
+  references:
+    - context/PROJECT.md
+implementation_scope:
+  - fixture
+non_goals:
+  - publication
+dependencies: []
+acceptance_criteria:
+  - plan remains outside OKF
+test_scope:
+  - fixture
+verification_commands:
+  - git diff --check

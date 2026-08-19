@@ -1,0 +1,24 @@
+schema_version: 1
+id: context-circuit.okf-log
+version: 1
+authority: declared-knowledge-bundle
+representation:
+  format: markdown
+  filename: log.md
+  reserved: true
+front_matter:
+  allowed: false
+body:
+  kind: markdown
+  date_heading:
+    pattern: YYYY-MM-DD
+    order: newest-first
+  entry:
+    kind: prose
+    link_targets: optional
+constraints:
+  - date-headings-are-iso-8601
+  - log-is-not-a-concept
+  - malformed-log-blocks-readiness
+additional_properties:
+  mode: preserve

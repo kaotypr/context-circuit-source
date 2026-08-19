@@ -2801,7 +2801,7 @@ for removed in \
   test ! -e "$removed" || fail "removed documentation still exists: $removed"
 done
 docs_now_count=$(find docs -type f | wc -l | tr -d ' ')
-test "$docs_now_count" -eq 15 || fail "docs/ file count grew versus worktree base: $docs_now_count"
+test "$docs_now_count" -eq 17 || fail "unexpected docs/ file count: $docs_now_count"
 
 printf 'PASS: Plan 0012 retained docs surface accuracy\n'
 
@@ -3127,4 +3127,162 @@ fi
 
 printf 'PASS: Plan 0014 run-stack graph, frontier, joins, resume, and unchanged run-plan\n'
 
+document_fixture_root=test/fixtures/document-system
+require_file docs/document-system.md
+require_file docs/okf-profile.md
+require_file schemas/documents/README.md
+for document_schema in \
+  schemas/documents/okf-concept-v1.yaml \
+  schemas/documents/okf-index-v1.yaml \
+  schemas/documents/okf-log-v1.yaml \
+  schemas/documents/front-matter-extraction-v1.yaml \
+  schemas/documents/plan-v1.yaml \
+  schemas/documents/task-v1.yaml \
+  schemas/documents/runtime-record-v1.yaml \
+  schemas/documents/validation-result-v1.yaml; do
+  require_file "$document_schema"
+done
+require_file "$document_fixture_root/expected-results.yaml"
+require_file "$document_fixture_root/valid-okf-concept.md"
+require_file "$document_fixture_root/missing-type.md"
+require_file "$document_fixture_root/profile-missing-status.md"
+require_file "$document_fixture_root/reserved/index.md"
+require_file "$document_fixture_root/reserved/log.md"
+require_file "$document_fixture_root/legacy-kind.md"
+require_file "$document_fixture_root/matching-kind-type.md"
+require_file "$document_fixture_root/conflicting-kind-type.md"
+require_file "$document_fixture_root/verified-mapping.md"
+require_file "$document_fixture_root/verified-list.md"
+require_file "$document_fixture_root/unknown-extension.md"
+require_file "$document_fixture_root/later-horizontal-rule.md"
+require_file "$document_fixture_root/invalid-yaml.md"
+require_file "$document_fixture_root/invalid-task-status.md"
+require_file "$document_fixture_root/advisory-only.md"
+require_file "$document_fixture_root/non-okf/plan.yaml"
+require_file "$document_fixture_root/non-okf/runtime.yaml"
+require_file "$document_fixture_root/non-okf/AGENTS.md"
+require_file "$document_fixture_root/non-okf/arbitrary-source.md"
+require_file "$document_fixture_root/non-okf/task.md"
+
+contains docs/document-system.md 'Artifact-family matrix'
+contains docs/document-system.md 'base_okf'
+contains docs/document-system.md 'context_circuit_profile'
+contains docs/document-system.md 'artifact_schema'
+contains docs/document-system.md 'advisories'
+contains docs/document-system.md 'first later line that is exactly `---`'
+contains docs/okf-profile.md \
+  'Base OKF conformance and this stricter profile'
+contains docs/okf-profile.md 'New writers emit only `type`'
+contains docs/okf-profile.md 'Attested Computation is explicitly deferred'
+contains docs/host-capabilities.md 'deterministic-yaml-schema-validation'
+contains docs/host-capabilities.md 'repository_runtime_required: false'
+contains docs/host-capabilities.md 'command_runtime_required: false'
+contains schemas/documents/README.md 'additional_properties: preserve'
+contains schemas/documents/validation-result-v1.yaml 'advisories-never-change-status'
+
+front_matter_close_line() {
+  awk '
+    NR == 1 && $0 != "---" { exit 2 }
+    NR > 1 && $0 == "---" { print NR; found = 1; exit }
+    END {
+      if (!found) {
+        exit 1
+      }
+    }
+  ' "$1"
+}
+
+later_horizontal_rule_line() {
+  awk -v closing_line="$1" '
+    NR > closing_line && $0 == "---" { print NR; exit }
+  ' "$2"
+}
+
+closing_line=$(front_matter_close_line \
+  "$document_fixture_root/later-horizontal-rule.md")
+test "$closing_line" -eq 6 || \
+  fail "front matter did not close at the first standalone delimiter"
+body_rule_line=$(later_horizontal_rule_line "$closing_line" \
+  "$document_fixture_root/later-horizontal-rule.md")
+test "$body_rule_line" -eq 12 || \
+  fail "later horizontal rule was treated as a front-matter delimiter"
+contains "$document_fixture_root/expected-results.yaml" \
+  'front_matter_closes_at: first-standalone-delimiter'
+contains "$document_fixture_root/expected-results.yaml" \
+  'later_rule: body-content'
+
+contains "$document_fixture_root/legacy-kind.md" 'kind: Design Note'
+if grep -E '^type:' "$document_fixture_root/legacy-kind.md" >/dev/null 2>&1; then
+  fail 'legacy kind fixture unexpectedly emits type'
+fi
+contains "$document_fixture_root/matching-kind-type.md" 'type: Design Note'
+contains "$document_fixture_root/matching-kind-type.md" 'kind: Design Note'
+contains "$document_fixture_root/conflicting-kind-type.md" 'type: Design Note'
+contains "$document_fixture_root/conflicting-kind-type.md" \
+  'kind: Product Requirements'
+contains "$document_fixture_root/expected-results.yaml" \
+  'failure: conflicting-kind-type'
+
+contains "$document_fixture_root/verified-mapping.md" \
+  'by: human:kaotypr'
+contains "$document_fixture_root/verified-list.md" \
+  '  - by: process:document-check'
+contains "$document_fixture_root/expected-results.yaml" \
+  'normalization: one-item-list'
+contains "$document_fixture_root/expected-results.yaml" \
+  'normalization: preserve-list'
+contains "$document_fixture_root/unknown-extension.md" \
+  'x-future-extension:'
+contains "$document_fixture_root/unknown-extension.md" 'preserve-me'
+contains "$document_fixture_root/expected-results.yaml" \
+  'preserve_unknown_extensions: true'
+
+contains "$document_fixture_root/reserved/index.md" 'okf_version: "0.2"'
+contains "$document_fixture_root/reserved/index.md" \
+  '[Example concept](../valid-okf-concept.md)'
+if grep -E '^type:' "$document_fixture_root/reserved/index.md" \
+  >/dev/null 2>&1; then
+  fail 'reserved index fixture was treated as a concept'
+fi
+contains "$document_fixture_root/reserved/log.md" '## 2026-08-18'
+contains "$document_fixture_root/reserved/log.md" '## 2026-08-17'
+
+contains "$document_fixture_root/invalid-yaml.md" 'status: [unclosed'
+contains "$document_fixture_root/invalid-task-status.md" 'status: executing'
+contains "$document_fixture_root/expected-results.yaml" \
+  'yaml_parse: fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'artifact_schema: fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'valid-non-okf-task:'
+
+if grep -E '^type:' "$document_fixture_root/non-okf/plan.yaml" \
+  >/dev/null 2>&1; then
+  fail 'plan fixture was treated as an OKF concept'
+fi
+if grep -E '^type:' "$document_fixture_root/non-okf/runtime.yaml" \
+  >/dev/null 2>&1; then
+  fail 'runtime fixture was treated as an OKF concept'
+fi
+contains "$document_fixture_root/non-okf/runtime.yaml" \
+  'kind: task-evidence'
+contains "$document_fixture_root/non-okf/AGENTS.md" \
+  'normative instruction fixture'
+contains "$document_fixture_root/non-okf/arbitrary-source.md" \
+  'passive and request-scoped'
+contains docs/document-system.md 'Raw or arbitrary source files'
+contains docs/document-system.md 'plan.yaml'
+contains docs/document-system.md '.runtime/'
+
+contains "$document_fixture_root/advisory-only.md" \
+  '[knowledge that is not written yet](missing-concept.md)'
+contains "$document_fixture_root/expected-results.yaml" \
+  'advisory-only:'
+contains "$document_fixture_root/expected-results.yaml" '- broken-link'
+contains "$document_fixture_root/expected-results.yaml" \
+  '- missing-optional-index'
+contains docs/okf-profile.md \
+  'Broken links, missing optional indexes, freshness'
+
+printf 'PASS: Plan 0016 document matrix, OKF profile, schemas, compatibility, and validation fixtures\n'
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

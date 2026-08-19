@@ -38,6 +38,37 @@ When an agent receives a PRD or other source, it should:
 5. Record provenance and source revision.
 6. Refresh only through a human-reviewed proposal when the source changes.
 
+## Document-system contract
+
+The document-system foundation uses OKF v0.2 as an interoperability envelope
+only for explicitly declared knowledge bundles. Product, Workspace, Domain,
+Role, Architecture, Convention, Decision, Idea Brief, PRD, and similar
+knowledge concepts may use the Context Circuit OKF profile. The profile is
+stricter than base OKF and is reported separately.
+
+The following remain outside OKF and retain their existing authority:
+
+- `plan.yaml` and task contracts;
+- `workspace.yaml` and provenance registries;
+- `.runtime/` session, delegation, lease, prompt, evidence, handoff,
+  completion, and stack records;
+- `AGENTS.md`, `WORKFLOW.md`, skills, and other normative instructions;
+- arbitrary raw files in the passive, request-scoped `sources/` inbox.
+
+New knowledge writers emit `type`. Compatibility readers may normalize a
+legacy `kind` only when `type` is absent; conflicting values fail the hard
+check. Readers normalize a bare `verified` mapping to a one-item list and
+preserve unknown extension fields. `verified` remains advisory and does not
+satisfy a human acceptance, plan approval, status-change, publication, merge,
+deployment, or cleanup gate.
+
+Markdown front matter is validated during generation: the first standalone
+`---` after line 1 closes the initial YAML block, later horizontal rules remain
+body content, and the host-provided deterministic YAML/schema capability runs
+before output is ready. No repository command runtime is added or silently
+required. See `docs/document-system.md`, `docs/okf-profile.md`, and
+`docs/host-capabilities.md`.
+
 ## Domain Knowledge
 
 Domain Knowledge is canonical for one bounded project area. It may describe

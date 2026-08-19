@@ -1,0 +1,142 @@
+schema_version: 1
+id: context-circuit.validation-result
+version: 1
+authority: generation-boundary
+representation:
+  format: yaml
+  purpose: independent-hard-and-advisory-validation-evidence
+required:
+  - schema_version
+  - artifact
+  - status
+  - checks
+  - advisories
+properties:
+  artifact:
+    kind: string
+  schema:
+    kind: string
+  declared_okf_bundle:
+    kind: boolean
+  status:
+    kind: string
+    enum:
+      - ready
+      - blocked
+  checks:
+    kind: mapping
+    required:
+      - front_matter_extraction
+      - yaml_parse
+      - base_okf
+      - context_circuit_profile
+      - artifact_schema
+    properties:
+      front_matter_extraction:
+        kind: mapping
+        required:
+          - applicable
+          - status
+        properties:
+          applicable:
+            kind: boolean
+          status:
+            kind: string
+            enum:
+              - pass
+              - fail
+              - not-applicable
+      yaml_parse:
+        kind: mapping
+        required:
+          - applicable
+          - status
+        properties:
+          applicable:
+            kind: boolean
+          status:
+            kind: string
+            enum:
+              - pass
+              - fail
+              - not-applicable
+      base_okf:
+        kind: mapping
+        required:
+          - applicable
+          - status
+        properties:
+          applicable:
+            kind: boolean
+          status:
+            kind: string
+            enum:
+              - pass
+              - fail
+              - not-applicable
+      context_circuit_profile:
+        kind: mapping
+        required:
+          - applicable
+          - status
+        properties:
+          applicable:
+            kind: boolean
+          status:
+            kind: string
+            enum:
+              - pass
+              - fail
+              - not-applicable
+      artifact_schema:
+        kind: mapping
+        required:
+          - applicable
+          - status
+        properties:
+          applicable:
+            kind: boolean
+          status:
+            kind: string
+            enum:
+              - pass
+              - fail
+              - not-applicable
+  advisories:
+    kind: list
+    item:
+      kind: mapping
+      required:
+        - code
+        - severity
+      properties:
+        code:
+          kind: string
+        severity:
+          kind: string
+          enum:
+            - advisory
+        message:
+          kind: string
+        blocking:
+          kind: boolean
+          enum:
+            - false
+ready_rule:
+  - all-applicable-check-statuses-are-pass
+  - not-applicable-is-explicit
+  - advisories-never-change-status
+hard_categories:
+  - front_matter_extraction
+  - yaml_parse
+  - base_okf
+  - context_circuit_profile
+  - artifact_schema
+advisory_codes:
+  - broken-link
+  - missing-optional-index
+  - stale-concept
+  - missing-recommended-metadata
+  - copy-quality
+additional_properties:
+  mode: preserve

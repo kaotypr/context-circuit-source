@@ -1,0 +1,7 @@
+schema_version: 1
+kind: task-evidence
+status: blocked
+task: FIXTURE-0001
+next_action: request-human-review
+blockers:
+  - code: fixture-only

@@ -1,0 +1,56 @@
+schema_version: 1
+id: context-circuit.front-matter-extraction
+version: 1
+authority: generation-boundary
+representation:
+  input: markdown
+  output: structured-validation-record
+required:
+  - opening_delimiter
+  - closing_delimiter
+  - yaml_block
+  - body_start_line
+properties:
+  opening_delimiter:
+    kind: mapping
+    required:
+      - line
+      - value
+    properties:
+      line:
+        kind: integer
+        enum:
+          - 1
+      value:
+        kind: string
+        enum:
+          - "---"
+  closing_delimiter:
+    kind: mapping
+    required:
+      - line
+      - value
+    properties:
+      line:
+        kind: integer
+        minimum: 2
+      value:
+        kind: string
+        enum:
+          - "---"
+  yaml_block:
+    kind: string
+  body_start_line:
+    kind: integer
+    minimum: 3
+  later_horizontal_rules:
+    kind: list
+    items:
+      kind: integer
+constraints:
+  - line-1-must-be-standalone-opening-delimiter
+  - first-later-standalone-delimiter-closes-front-matter
+  - later-standalone-delimiters-belong-to-body
+  - missing-opening-or-closing-delimiter-fails
+additional_properties:
+  mode: preserve

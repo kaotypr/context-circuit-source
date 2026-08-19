@@ -1,0 +1,90 @@
+schema_version: 1
+result_schema: schemas/documents/validation-result-v1.yaml
+cases:
+  valid-okf-concept:
+    status: ready
+    checks:
+      front_matter_extraction: pass
+      yaml_parse: pass
+      base_okf: pass
+      context_circuit_profile: pass
+      artifact_schema: pass
+    advisories: []
+  missing-type:
+    status: blocked
+    checks:
+      front_matter_extraction: pass
+      yaml_parse: pass
+      base_okf: fail
+      context_circuit_profile: fail
+      artifact_schema: fail
+  profile-missing-status:
+    status: blocked
+    checks:
+      front_matter_extraction: pass
+      yaml_parse: pass
+      base_okf: pass
+      context_circuit_profile: fail
+      artifact_schema: fail
+  legacy-kind:
+    status: ready
+    compatibility: normalize-kind-to-type
+  matching-kind-type:
+    status: ready
+    compatibility: retain-type
+  conflicting-kind-type:
+    status: blocked
+    failure: conflicting-kind-type
+  verified-mapping:
+    status: ready
+    normalization: one-item-list
+  verified-list:
+    status: ready
+    normalization: preserve-list
+  unknown-extension:
+    status: ready
+    preserve_unknown_extensions: true
+  later-horizontal-rule:
+    status: ready
+    front_matter_closes_at: first-standalone-delimiter
+    later_rule: body-content
+  invalid-yaml:
+    status: blocked
+    checks:
+      front_matter_extraction: pass
+      yaml_parse: fail
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      artifact_schema: not-applicable
+  invalid-artifact-schema:
+    status: blocked
+    checks:
+      front_matter_extraction: pass
+      yaml_parse: pass
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      artifact_schema: fail
+  valid-non-okf-task:
+    status: ready
+    base_okf: not-applicable
+    context_circuit_profile: not-applicable
+    artifact_schema: pass
+  invalid-task-status:
+    status: blocked
+    base_okf: not-applicable
+    context_circuit_profile: not-applicable
+    artifact_schema: fail
+  advisory-only:
+    status: ready
+    checks:
+      base_okf: pass
+      context_circuit_profile: pass
+      artifact_schema: pass
+    advisories:
+      - broken-link
+      - missing-optional-index
+  non-okf-artifacts:
+    status: ready
+    base_okf: not-applicable
+    context_circuit_profile: not-applicable
+    authority: local-non-okf-schema
