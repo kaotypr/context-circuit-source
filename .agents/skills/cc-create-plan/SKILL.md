@@ -36,6 +36,50 @@ Use `plans/README.md` and the existing plan documents as the contract. Keep
 the plan useful for a writer child: bounded tasks, explicit paths, acceptance,
 and verification. Do not present root implementation as the small-work path.
 
+## Default bundle and complexity
+
+Generate the smallest compatible bundle:
+
+```text
+<plan>/
+  plan.yaml
+  overview.md
+  tasks/<task-id>.md
+```
+
+Keep lifecycle, repository scope, dependencies, acceptance criteria, and
+verification commands only in `plan.yaml`. Use `overview.md` for concise
+intent, evidence, decisions, trade-offs, and next action; reference fields
+such as `plan.yaml#acceptance_criteria` and task IDs instead of copying them.
+
+Add a specialist companion only when its explicit signal is recorded in the
+overview:
+
+- `requirements.md`: multiple stakeholder outcomes or unclear requirement
+  boundaries;
+- `solution.md`: multiple components, repositories, interfaces, or material
+  design alternatives;
+- `risks.md`: irreversible, security, data, operational, or unresolved
+  dependency risk;
+- `delivery.md`: multiple targets or explicit branch, publication, deployment,
+  or merge boundaries;
+- `acceptance.md`: several acceptance scenarios need a review map;
+- `verification.md`: multiple independent checks, environments, or recovery
+  paths need explanation.
+
+Companions add rationale and references, not a second authority. Omit them for
+simple plans. When reading an existing plan, discover and retain historical
+companions instead of requiring or rewriting them.
+
+## Task readiness
+
+Write each task as Markdown with YAML front matter using the
+`context-circuit.task` schema. Before presenting the plan as ready, ask the
+active host for the approved deterministic YAML/schema capability to check
+opening and closing delimiters, YAML parsing, required fields, enum values,
+nested shapes, and the task schema. Repair failures and rerun the complete
+check. Validation success does not approve or complete the plan.
+
 ## Gate
 
 The result remains a draft until the user explicitly approves it. A complete

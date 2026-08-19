@@ -103,3 +103,39 @@ cases:
     base_okf: not-applicable
     context_circuit_profile: not-applicable
     authority: local-non-okf-schema
+  compact-plan-bundle:
+    status: ready
+    canonical: plan.yaml
+    companions: []
+    task_validation: pass
+  complex-plan-bundle:
+    status: ready
+    canonical: plan.yaml
+    companions:
+      - requirements.md
+      - solution.md
+      - risks.md
+      - delivery.md
+      - acceptance.md
+      - verification.md
+    task_validation: pass
+  historical-full-bundle:
+    status: ready
+    canonical: plan.yaml
+    compatibility: historical-companions-readable
+    task_validation: pass
+  invalid-task-delimiters:
+    status: blocked
+    task_validation: front_matter_extraction-fail
+  invalid-task-yaml:
+    status: blocked
+    task_validation: yaml_parse-fail
+  invalid-task-required-fields:
+    status: blocked
+    task_validation: required-field-fail
+  invalid-task-enum:
+    status: blocked
+    task_validation: enum-fail
+  invalid-task-nesting:
+    status: blocked
+    task_validation: nesting-fail

@@ -1,0 +1,24 @@
+id: historical-plan
+number: 14
+title: Historical full bundle
+status: done
+source:
+  kind: accepted-prd
+  reference: sources/historical-prd.md
+repositories:
+  - context-circuit
+product_knowledge:
+  references:
+    - context/PROJECT.md
+implementation_scope:
+  - docs/
+non_goals:
+  - delivery actions
+dependencies:
+  - document-contract-foundation
+acceptance_criteria:
+  - The historical bundle remains readable.
+test_scope:
+  - historical compatibility fixture
+verification_commands:
+  - git diff --check

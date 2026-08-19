@@ -23,6 +23,12 @@ Git state. Confirm:
   remaining blocker;
 - remaining Git risk is reported and is not cleaned away by this skill.
 
+Read the canonical `plan.yaml` before any companion. Compact bundles and
+historical full bundles are both valid inputs; optional specialist narratives
+never replace canonical lifecycle, acceptance, or verification fields. Task
+front-matter validation belongs at generation/readiness time and does not turn
+schema success into completion evidence.
+
 Report what will change and what will not:
 
 - canonical `plan.yaml` status will become `done`;

@@ -29,6 +29,14 @@ Confirm:
 - no live foreign stack lease or plan lease blocks the run;
 - the requested work remains within each member's approved scope.
 
+Each member is read through its canonical `plan.yaml` first. A member may use
+the compact `plan.yaml`/`overview.md`/`tasks/` bundle or a historical bundle
+with specialist companions; companion presence never changes the frozen
+dependency graph or lifecycle authority. New task Markdown must have passed
+the approved host-provided deterministic front-matter and task-schema checks
+before readiness. Validation is a document-readiness check only and cannot
+approve, execute, verify, or complete a member plan.
+
 A draft member, unknown plan, cycle, or ownership conflict is blocked. Do not
 create `plans/<repository-key>-stacks/`, a durable `stack.yaml`, or a hidden
 replacement plan. Do not change canonical status to make execution possible.

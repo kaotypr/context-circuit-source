@@ -1,0 +1,28 @@
+id: complex-plan
+number: 19
+title: Complex fixture plan
+status: approved
+source:
+  kind: accepted-prd
+  reference: sources/fixture-prd.md
+repositories:
+  - context-circuit
+product_knowledge:
+  references:
+    - context/PROJECT.md
+    - context/ARCHITECTURE.md
+implementation_scope:
+  - docs/
+  - test/
+non_goals:
+  - autonomous delivery
+dependencies:
+  - document-contract-foundation
+acceptance_criteria:
+  - AC-1: Canonical plan fields remain authoritative.
+  - AC-2: Independent verification evidence is recorded.
+test_scope:
+  - compact and complex plan fixtures
+verification_commands:
+  - git diff --check
+  - sh test/acceptance.sh

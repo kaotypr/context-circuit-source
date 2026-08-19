@@ -23,6 +23,17 @@ leases, worktrees, and the latest handoffs. Confirm:
 - no other writing session owns the plan or target worktree;
 - the requested work remains within scope and its assumptions are safe.
 
+Read `plan.yaml` first for lifecycle, scope, dependencies, acceptance, and
+verification authority. Discover `overview.md`, `tasks/`, and any specialist
+companions that are present; do not require the optional compact companions and
+do not treat a historical full bundle as malformed. Task status remains the
+plan's synchronized projection, not an execution gate.
+
+New or repaired task Markdown must already have passed the approved
+host-provided deterministic front-matter, YAML, required-field, enum, nesting,
+and `context-circuit.task` schema checks. A schema result does not approve,
+execute, verify, or complete the plan.
+
 An unapproved, unknown, contradictory, or ownership-conflicted plan is
 blocked. Do not create a hidden replacement plan, silently steal a lease, or
 change canonical status to make execution possible.
