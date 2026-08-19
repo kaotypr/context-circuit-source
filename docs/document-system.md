@@ -38,7 +38,7 @@ They must not be collapsed into one generic “document valid” result.
 | Task contract | Writer, verifier, and human reviewer | Task contract under the canonical plan; task status is a projection of plan status | Exactly `draft`, `ready`, or `done`; not a second approval or lease | Markdown with initial YAML front matter, validated by the task schema | Not OKF |
 | Workspace configuration and provenance registries | Hosts and workspace coordinators | `workspace.yaml` or the named provenance registry | Configuration and registry semantics defined by their owning contracts | Structured YAML | Not OKF |
 | Session, delegation, lease, prompt, evidence, handoff, completion, stack graph, and stack progress records | Agent-only runtime readers | `.runtime/` ownership and lease contracts | Runtime states such as `executing`, `blocked`, and `implemented`; they never redefine product or plan truth | Structured YAML, with optional handoff Markdown summary | Not OKF |
-| `AGENTS.md`, `WORKFLOW.md`, skills, and other normative instructions | Agents and hosts | The normative instruction owner | Instruction revisions are not knowledge lifecycle | Markdown | Not OKF |
+| `AGENTS.md`, `WORKFLOW.md`, skills, and other normative instructions | Agents and hosts | The normative instruction owner | Instruction revisions are not knowledge lifecycle | Markdown; existing skill front matter uses `instruction-skill-v1` | Not OKF |
 | Raw or arbitrary source files | The user or team as source owner | The passive `sources/` inbox and the source's own authority | Source-specific; reading is request-scoped | Original source format | Not OKF |
 | `index.md` and `log.md` inside a declared bundle | Human and agent discovery | The declared bundle | Reserved OKF behavior, not concept lifecycle | Markdown with the OKF reserved structures | OKF reserved files, not concepts |
 | `README.md` and uppercase `INDEX.md` | Existing humans, routes, or compatibility readers | The local contract that explicitly names them | No implicit OKF lifecycle | Existing Markdown contract | Compatibility inputs only; never silently treated as reserved OKF files |
@@ -71,6 +71,11 @@ Outside a declared bundle, ordinary Markdown is governed by its local
 artifact family. This keeps the routing `context/INDEX.md`, plans, runtime
 records, normative instructions, and arbitrary sources outside OKF even when
 they contain headings or links that resemble a knowledge document.
+
+Existing `.agents/skills/*/SKILL.md` files are front-matter-bearing normative
+instructions. They use `schemas/documents/instruction-skill-v1.yaml` for
+`name` and `description` metadata and remain outside OKF; the schema does not
+add an OKF `type`, profile `status`, or knowledge-bundle requirement.
 
 ## Shared vocabulary and compatibility
 
@@ -183,9 +188,10 @@ tolerates them.
 
 The inspectable, versioned data contracts are catalogued in
 `schemas/documents/README.md`. They cover the OKF concept and reserved files,
-front-matter extraction, plan and task artifacts, runtime records, and
-validation results. The catalog defines compatibility and preservation
-semantics but does not itself authorize a migration or provide a parser.
+front-matter extraction, plan and task artifacts, existing skill/instruction
+front matter, runtime records, and validation results. The catalog defines
+compatibility and preservation semantics but does not itself authorize a
+migration or provide a parser.
 
 ## References
 

@@ -44,6 +44,13 @@ cases:
   unknown-extension:
     status: ready
     preserve_unknown_extensions: true
+  nested-unknown-extension:
+    status: ready
+    preserve_unknown_extensions: true
+    preserved_paths:
+      - sources[].x-source-extension
+      - generated.x-generated-extension
+      - verified[].x-verified-extension
   later-horizontal-rule:
     status: ready
     front_matter_closes_at: first-standalone-delimiter
@@ -53,6 +60,14 @@ cases:
     checks:
       front_matter_extraction: pass
       yaml_parse: fail
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      artifact_schema: not-applicable
+  unterminated-front-matter:
+    status: blocked
+    checks:
+      front_matter_extraction: fail
+      yaml_parse: not-applicable
       base_okf: not-applicable
       context_circuit_profile: not-applicable
       artifact_schema: not-applicable

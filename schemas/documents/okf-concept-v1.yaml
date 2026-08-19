@@ -49,6 +49,23 @@ properties:
           kind: string
         title:
           kind: string
+        author:
+          kind: string
+        usage_count:
+          kind: integer
+        last_modified:
+          kind: date
+        usage_window:
+          kind: mapping
+          properties:
+            from:
+              kind: date
+            to:
+              kind: date
+          additional_properties:
+            mode: preserve
+      additional_properties:
+        mode: preserve
   generated:
     kind: mapping
     required:
@@ -59,6 +76,8 @@ properties:
         kind: string
       at:
         kind: timestamp
+    additional_properties:
+      mode: preserve
   verified:
     kind: list-or-mapping
     normalized_kind: list
@@ -72,6 +91,8 @@ properties:
           kind: string
         at:
           kind: timestamp
+      additional_properties:
+        mode: preserve
   stale_after:
     kind: date
   schema_version:
@@ -80,6 +101,8 @@ properties:
     kind: string
   acceptance:
     kind: mapping
+    additional_properties:
+      mode: preserve
   references:
     kind: list
 additional_properties:

@@ -32,6 +32,7 @@ YAML parser and schema-validation capability described in
 | `front-matter-extraction-v1.yaml` | Initial front-matter extraction for any applicable Markdown artifact | Pre-schema hard check |
 | `plan-v1.yaml` | Canonical `plan.yaml` | Non-OKF plan authority |
 | `task-v1.yaml` | Task Markdown with YAML front matter | Non-OKF task authority |
+| `instruction-skill-v1.yaml` | Existing `.agents/skills/*/SKILL.md` and other declared instruction front matter | Non-OKF normative-instruction authority |
 | `runtime-record-v1.yaml` | Agent-only runtime YAML records | Non-OKF runtime authority |
 | `validation-result-v1.yaml` | Generation-time validation result | Non-OKF diagnostic evidence |
 
@@ -43,9 +44,12 @@ YAML parser and schema-validation capability described in
    for Markdown with front matter.
 3. Apply base OKF and `okf-concept-v1.yaml` only after an explicit bundle
    declaration.
-4. Keep plan, task, runtime, instruction, and source artifacts on their
+4. Select `instruction-skill-v1.yaml` for existing skill metadata such as
+   `name` and `description`; it validates the front matter without promoting
+   skills or instructions to OKF concepts.
+5. Keep plan, task, runtime, instruction, and source artifacts on their
    non-OKF schemas and authorities.
-5. Use `validation-result-v1.yaml` to report each applicable hard category and
+6. Use `validation-result-v1.yaml` to report each applicable hard category and
    advisory diagnostics independently.
 
 Schema data is additive and inspectable. Historical artifacts remain readable

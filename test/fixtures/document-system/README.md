@@ -11,8 +11,9 @@ The fixture set covers:
 - reserved `index.md` and `log.md`;
 - legacy `kind`, type-only, matching `kind`/`type`, and conflicting values;
 - `verified` mapping/list normalization;
-- unknown extension preservation;
+- top-level and nested unknown extension preservation;
 - initial front matter with a later Markdown horizontal rule;
+- an unterminated front-matter extraction failure;
 - YAML and artifact-schema failures;
 - advisory-only broken-link and missing-index findings;
 - non-OKF plan, runtime, instruction, and arbitrary-source boundaries.

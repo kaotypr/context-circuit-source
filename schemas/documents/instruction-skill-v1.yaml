@@ -1,0 +1,44 @@
+schema_version: 1
+id: context-circuit.instruction-skill
+version: 1
+authority: normative-instructions
+representation:
+  format: markdown-with-yaml-front-matter
+  locations:
+    - .agents/skills/*/SKILL.md
+    - agents/*/*.md
+  okf: false
+required:
+  - name
+  - description
+properties:
+  name:
+    kind: string
+    min_length: 1
+  description:
+    kind: string
+    min_length: 1
+  display_name:
+    kind: string
+  model:
+    kind: string
+  argument_hint:
+    kind: string
+  metadata:
+    kind: mapping
+    additional_properties:
+      mode: preserve
+front_matter:
+  opening_delimiter: line-1-standalone
+  closing_delimiter: first-later-standalone-delimiter
+  later_horizontal_rules: body-content
+lifecycle:
+  authority: instruction-contract
+  human_gate: repository-instruction-review
+  status_field: absent-by-default
+constraints:
+  - do-not-apply-okf-type-or-status-requirements
+  - do-not-change-skill-discovery-or-human-gate-semantics
+  - preserve-unknown-front-matter-fields
+additional_properties:
+  mode: preserve

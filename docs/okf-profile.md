@@ -46,6 +46,12 @@ arbitrary raw sources. Those artifacts remain linkable from a concept but keep
 their own authority and schemas. In particular, the presence of Markdown in a
 directory never promotes that directory to an OKF bundle.
 
+Existing skill metadata such as `.agents/skills/*/SKILL.md` `name` and
+`description` is validated by the non-OKF
+`schemas/documents/instruction-skill-v1.yaml` contract. That schema preserves
+the instruction authority and does not impose OKF `type` or profile lifecycle
+requirements.
+
 Each profiled concept requires:
 
 ```yaml

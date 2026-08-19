@@ -3138,6 +3138,7 @@ for document_schema in \
   schemas/documents/front-matter-extraction-v1.yaml \
   schemas/documents/plan-v1.yaml \
   schemas/documents/task-v1.yaml \
+  schemas/documents/instruction-skill-v1.yaml \
   schemas/documents/runtime-record-v1.yaml \
   schemas/documents/validation-result-v1.yaml; do
   require_file "$document_schema"
@@ -3154,8 +3155,10 @@ require_file "$document_fixture_root/conflicting-kind-type.md"
 require_file "$document_fixture_root/verified-mapping.md"
 require_file "$document_fixture_root/verified-list.md"
 require_file "$document_fixture_root/unknown-extension.md"
+require_file "$document_fixture_root/nested-unknown-extension.md"
 require_file "$document_fixture_root/later-horizontal-rule.md"
 require_file "$document_fixture_root/invalid-yaml.md"
+require_file "$document_fixture_root/unterminated-front-matter.md"
 require_file "$document_fixture_root/invalid-task-status.md"
 require_file "$document_fixture_root/advisory-only.md"
 require_file "$document_fixture_root/non-okf/plan.yaml"
@@ -3178,6 +3181,13 @@ contains docs/host-capabilities.md 'deterministic-yaml-schema-validation'
 contains docs/host-capabilities.md 'repository_runtime_required: false'
 contains docs/host-capabilities.md 'command_runtime_required: false'
 contains schemas/documents/README.md 'additional_properties: preserve'
+contains schemas/documents/README.md 'instruction-skill-v1.yaml'
+contains schemas/documents/instruction-skill-v1.yaml \
+  '.agents/skills/*/SKILL.md'
+contains schemas/documents/instruction-skill-v1.yaml 'name'
+contains schemas/documents/instruction-skill-v1.yaml 'description'
+contains .agents/skills/cc-session-entry/SKILL.md 'name: cc-session-entry'
+contains .agents/skills/cc-session-entry/SKILL.md 'description:'
 contains schemas/documents/validation-result-v1.yaml 'advisories-never-change-status'
 
 front_matter_close_line() {
@@ -3198,6 +3208,13 @@ later_horizontal_rule_line() {
   ' "$2"
 }
 
+front_matter_extract_fixture() {
+  front_matter_close_line "$1" >/dev/null 2>&1 || {
+    printf 'front matter extraction failed: missing opening or closing delimiter\n' >&2
+    return 1
+  }
+}
+
 closing_line=$(front_matter_close_line \
   "$document_fixture_root/later-horizontal-rule.md")
 test "$closing_line" -eq 6 || \
@@ -3210,6 +3227,14 @@ contains "$document_fixture_root/expected-results.yaml" \
   'front_matter_closes_at: first-standalone-delimiter'
 contains "$document_fixture_root/expected-results.yaml" \
   'later_rule: body-content'
+assert_failure_reason "$fixture/unterminated-front-matter.log" \
+  'front matter extraction failed' \
+  front_matter_extract_fixture \
+  "$document_fixture_root/unterminated-front-matter.md"
+contains "$document_fixture_root/expected-results.yaml" \
+  'front_matter_extraction: fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'front_matter_extraction: pass'
 
 contains "$document_fixture_root/legacy-kind.md" 'kind: Design Note'
 if grep -E '^type:' "$document_fixture_root/legacy-kind.md" >/dev/null 2>&1; then
@@ -3236,6 +3261,18 @@ contains "$document_fixture_root/unknown-extension.md" \
 contains "$document_fixture_root/unknown-extension.md" 'preserve-me'
 contains "$document_fixture_root/expected-results.yaml" \
   'preserve_unknown_extensions: true'
+contains "$document_fixture_root/nested-unknown-extension.md" \
+  'x-source-extension:'
+contains "$document_fixture_root/nested-unknown-extension.md" \
+  'x-generated-extension:'
+contains "$document_fixture_root/nested-unknown-extension.md" \
+  'x-verified-extension:'
+contains "$document_fixture_root/expected-results.yaml" \
+  'sources[].x-source-extension'
+contains "$document_fixture_root/expected-results.yaml" \
+  'generated.x-generated-extension'
+contains "$document_fixture_root/expected-results.yaml" \
+  'verified[].x-verified-extension'
 
 contains "$document_fixture_root/reserved/index.md" 'okf_version: "0.2"'
 contains "$document_fixture_root/reserved/index.md" \
@@ -3252,7 +3289,19 @@ contains "$document_fixture_root/invalid-task-status.md" 'status: executing'
 contains "$document_fixture_root/expected-results.yaml" \
   'yaml_parse: fail'
 contains "$document_fixture_root/expected-results.yaml" \
+  'yaml_parse: pass'
+contains "$document_fixture_root/expected-results.yaml" \
+  'base_okf: pass'
+contains "$document_fixture_root/expected-results.yaml" \
+  'base_okf: fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'context_circuit_profile: pass'
+contains "$document_fixture_root/expected-results.yaml" \
+  'context_circuit_profile: fail'
+contains "$document_fixture_root/expected-results.yaml" \
   'artifact_schema: fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'artifact_schema: pass'
 contains "$document_fixture_root/expected-results.yaml" \
   'valid-non-okf-task:'
 
