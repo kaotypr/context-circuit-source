@@ -10,7 +10,7 @@ Context Circuit workspace.
 
 ## Read
 
-- `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, `context/INDEX.md`,
+- `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, `context/index.md`,
   `context/WORKSPACE.md`, and `context/PROJECT.md`;
 - only the relevant Product Knowledge; and
 - repository metadata needed to confirm paths and available branches.

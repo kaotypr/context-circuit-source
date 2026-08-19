@@ -36,7 +36,7 @@ JavaScript command layer. Verify behavior with `sh test/acceptance.sh`.
 
 ## 1. Enter and orient
 
-Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md,
+Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/index.md,
 context/WORKSPACE.md, context/PROJECT.md, relevant Product Knowledge, active
 runtime sessions, plans, repository instructions, and observed Git state.
 

@@ -1101,7 +1101,7 @@ require_file AGENTS.md
 require_file WORKFLOW.md
 require_file CLAUDE.md
 require_file workspace.yaml
-require_file context/INDEX.md
+require_file context/index.md
 require_file context/WORKSPACE.md
 require_file context/PROJECT.md
 require_file context/ARCHITECTURE.md
@@ -1162,7 +1162,7 @@ absent context/PRODUCT-DIRECTION.md
 contains context/WORKSPACE.md 'Context Circuit workspace'
 contains context/WORKSPACE.md 'Project identity lives in `PROJECT.md`.'
 contains context/PROJECT.md 'not yet defined'
-contains context/INDEX.md 'uninitialized'
+contains context/index.md 'uninitialized'
 contains sources/README.md 'user/team-organized boundary'
 contains .agents/skills/cc-idea-brief/SKILL.md 'user/team-selected path under `sources/`'
 contains .agents/skills/cc-create-prd/SKILL.md 'user/team-selected path under `sources/`'
@@ -1715,7 +1715,7 @@ if grep -F 'only the amount of delegation changes' \
   fail 'WORKSPACE or DECISIONS still says only the amount of delegation changes'
 fi
 if grep -E 'selects solo or delegated execution' \
-  context/ARCHITECTURE.md context/CONVENTIONS.md context/INDEX.md \
+  context/ARCHITECTURE.md context/CONVENTIONS.md context/index.md \
   context/PROJECT.md >/dev/null 2>&1; then
   fail 'Product Knowledge still says cc-run-plan selects solo or delegated execution'
 fi
@@ -1801,9 +1801,9 @@ contains .agents/skills/cc-initialize-workspace/SKILL.md 'does not ask about del
 contains .agents/skills/cc-initialize-workspace/SKILL.md 'context/WORKSPACE.md'
 contains .agents/skills/cc-initialize-workspace/SKILL.md 'Do not write workspace identity'
 contains docs/product-knowledge.md 'WORKSPACE.md'
-contains context/INDEX.md 'context/WORKSPACE.md'
+contains context/index.md 'context/WORKSPACE.md'
 if grep -F 'PRODUCT-DIRECTION.md' \
-  context/INDEX.md \
+  context/index.md \
   docs/product-knowledge.md \
   docs/getting-started.md \
   docs/planning.md \
@@ -1858,14 +1858,14 @@ test "$(recommend_default_active_branch 'main feature')" = main
 # a selected source request leaves an evidence trail and does not copy raw text.
 source_fixture="$foundation_fixture/source-boundary"
 mkdir -p "$source_fixture/sources" "$source_fixture/context"
-atomic_write "$source_fixture/context/INDEX.md" '# Context index'
+atomic_write "$source_fixture/context/index.md" '# Context index'
 atomic_write "$source_fixture/sources/selected.md" \
   'selected source evidence' 'do not copy this raw sentence'
 atomic_write "$source_fixture/sources/unselected.md" \
   'unselected source evidence' 'must not be read for this request'
 source_read_log="$source_fixture/read.log"
 normal_session_entry() {
-  cat "$source_fixture/context/INDEX.md" >/dev/null
+  cat "$source_fixture/context/index.md" >/dev/null
   test ! -e "$source_read_log"
 }
 read_selected_source() {
@@ -1890,17 +1890,21 @@ test ! -e "$source_fixture/context/RAW-SOURCE.md"
 # The navigation index and artifact fixtures keep raw sources, accepted context,
 # product artifacts, plans, and private runtime state in distinct homes.
 for layer_link in '`sources/`' '`context/`' '`plans/`' '`.runtime/`'; do
-  contains context/INDEX.md "$layer_link"
+  contains context/index.md "$layer_link"
 done
 idea_fixture="$foundation_fixture/sources/example-idea-brief.md"
 prd_fixture="$foundation_fixture/sources/example-prd.md"
 mkdir -p "$(dirname "$idea_fixture")" "$(dirname "$prd_fixture")"
 atomic_write "$idea_fixture" \
-  'kind: idea-brief' 'status: draft' '# Example idea' \
+  'type: Idea Brief' 'title: Example idea' \
+  'description: A concise example idea for retrieval.' 'status: draft' \
+  'acceptance:' '  state: pending' \
   '## Intent' '## Assumptions' '## Open questions' '## Provenance' \
   'selected source paths: sources/selected.md'
 atomic_write "$prd_fixture" \
-  'kind: prd' 'status: draft' '# Example PRD' \
+  'type: Product Requirements' 'title: Example PRD' \
+  'description: A concise example product definition for retrieval.' \
+  'status: draft' 'acceptance:' '  state: pending' \
   '## Requirements' '## Non-goals' '## Acceptance criteria' '## Provenance' \
   'selected source paths: sources/selected.md'
 contains "$idea_fixture" 'status: draft'
@@ -1917,18 +1921,28 @@ contains .agents/skills/cc-initialize-workspace/agents/openai.yaml 'cc-initializ
 # provides a linked cross-domain perspective with request-scoped generation.
 require_file docs/templates/domain-context.md
 require_file docs/templates/role-context.md
-require_file context/domains/README.md
-require_file context/roles/README.md
+require_file context/domains/index.md
+require_file context/roles/index.md
 require_file .agents/skills/cc-gather-context/SKILL.md
 require_file .agents/skills/cc-gather-context/agents/openai.yaml
 
-for metadata_field in 'kind: domain' 'status: proposed' 'sources:' 'freshness:' \
-  'assumptions:' 'unknowns:' 'contradictions:' 'acceptance:'; do
+for metadata_field in 'type: Domain' 'title:' 'description:' 'status: draft' \
+  'sources:' 'freshness:' 'assumptions:' 'unknowns:' 'contradictions:' \
+  'acceptance:'; do
   contains docs/templates/domain-context.md "$metadata_field"
 done
-for metadata_field in 'kind: role' 'status: proposed' 'domains:' 'sources:' \
-  'freshness:' 'assumptions:' 'unknowns:' 'contradictions:' 'acceptance:'; do
+for metadata_field in 'type: Role' 'title:' 'description:' 'status: draft' \
+  'domains:' 'sources:' 'freshness:' 'assumptions:' 'unknowns:' \
+  'contradictions:' 'acceptance:'; do
   contains docs/templates/role-context.md "$metadata_field"
+done
+for metadata_field in 'type: Workflow' 'title:' 'description:' 'status: draft' \
+  'domain:' 'acceptance:'; do
+  contains docs/templates/workflow-context.md "$metadata_field"
+done
+for metadata_field in 'type: Product Knowledge' 'title:' 'description:' \
+  'status: draft' 'acceptance:'; do
+  contains docs/templates/product-context.md "$metadata_field"
 done
 if grep -E '^[[:space:]]*(relevant_domains|contributes_to|acts_on|consumes|approves):' \
   docs/templates/role-context.md >/dev/null 2>&1; then
@@ -1940,10 +1954,10 @@ contains docs/product-knowledge.md 'Business/project roles are not agent executi
 contains .agents/skills/cc-gather-context/SKILL.md 'Read only those selected files'
 contains .agents/skills/cc-gather-context/SKILL.md 'Never silently overwrite accepted context'
 contains .agents/skills/cc-gather-context/SKILL.md 'domains:'
-contains context/INDEX.md 'smallest relevant'
-contains context/INDEX.md 'domain and role'
-contains context/domains/README.md 'Do not recursively read every domain'
-contains context/roles/README.md 'workflow pages linked'
+contains context/index.md 'smallest relevant'
+contains context/index.md 'domain and role'
+contains context/domains/index.md 'Do not recursively read every domain'
+contains context/roles/index.md 'workflow pages linked'
 contains context/sources.yaml 'sources: []'
 if grep -F 'approved-product-direction-domain-role-context' context/sources.yaml \
   >/dev/null 2>&1; then
@@ -1978,15 +1992,16 @@ fi
 
 domain_page="$domain_role_fixture/context/domains/payments/README.md"
 atomic_write "$domain_page" \
-  'kind: domain' 'status: proposed' 'title: Payments' \
+  'type: Domain' 'status: draft' 'title: Payments' \
+  'description: Payment context for retrieval.' \
   'sources:' '  - sources/selected.md' \
   'source_revisions:' '  - sha256:fixture-selected' \
   'freshness: current' 'assumptions:' '  - The payment owner is not confirmed.' \
   'unknowns:' '  - Refund timing is not described.' 'contradictions: []' \
   'acceptance:' '  state: pending' \
   '# Payments' '## Summary' 'Selected payment evidence is summarized here.'
-contains "$domain_page" 'kind: domain'
-contains "$domain_page" 'status: proposed'
+contains "$domain_page" 'type: Domain'
+contains "$domain_page" 'status: draft'
 contains "$domain_page" 'sources/selected.md'
 contains "$domain_page" 'assumptions:'
 contains "$domain_page" 'unknowns:'
@@ -2018,7 +2033,8 @@ contains "$domain_page.proposed" 'contradictions:'
 
 role_page="$domain_role_fixture/context/roles/planner.md"
 atomic_write "$role_page" \
-  'kind: role' 'status: proposed' 'title: Product planner' \
+  'type: Role' 'status: draft' 'title: Product planner' \
+  'description: A product planner perspective for retrieval.' \
   'domains:' '  - ../domains/payments/README.md' \
   '  - ../domains/identity/README.md' \
   'sources:' '  - sources/selected.md' 'freshness: current' \
@@ -2395,10 +2411,10 @@ contains docs/getting-started.md 'cc-cleanup-runtime'
 contains docs/getting-started.md 'cc-approve-plan'
 contains docs/getting-started.md 'cc-finish-plan'
 contains docs/getting-started.md 'cc-cleanup-runtime'
-contains context/INDEX.md 'cc-approve-plan'
+contains context/index.md 'cc-approve-plan'
 contains context/ARCHITECTURE.md 'cc-approve-plan'
 contains context/CONVENTIONS.md 'cc-finish-plan'
-contains context/INDEX.md 'cc-cleanup-runtime'
+contains context/index.md 'cc-cleanup-runtime'
 contains context/ARCHITECTURE.md 'cc-cleanup-runtime'
 contains context/CONVENTIONS.md 'cc-approve-plan'
 
@@ -2700,7 +2716,7 @@ require_file "$release_art/WORKFLOW.md"
 require_file "$release_art/CLAUDE.md"
 require_file "$release_art/workspace.yaml"
 require_file "$release_art/README.md"
-require_file "$release_art/context/INDEX.md"
+require_file "$release_art/context/index.md"
 require_file "$release_art/context/WORKSPACE.md"
 test ! -e "$release_art/context/PRODUCT-DIRECTION.md" || fail 'artifact contains PRODUCT-DIRECTION.md'
 require_file "$release_art/.agents/skills/cc-session-entry/SKILL.md"
@@ -2801,7 +2817,7 @@ for removed in \
   test ! -e "$removed" || fail "removed documentation still exists: $removed"
 done
 docs_now_count=$(find docs -type f | wc -l | tr -d ' ')
-test "$docs_now_count" -eq 17 || fail "unexpected docs/ file count: $docs_now_count"
+test "$docs_now_count" -eq 19 || fail "unexpected docs/ file count: $docs_now_count"
 
 printf 'PASS: Plan 0012 retained docs surface accuracy\n'
 
@@ -2827,7 +2843,7 @@ contains .agents/skills/cc-session-entry/SKILL.md 'cc-run-stack'
 contains .agents/skills/cc-whats-next/SKILL.md 'cc-run-stack'
 contains .agents/skills/cc-session-entry/SKILL.md 'Refuse to treat a stack run as one `cc-run-plan`'
 contains README.md 'cc-run-stack'
-contains context/INDEX.md 'cc-run-stack'
+contains context/index.md 'cc-run-stack'
 contains docs/host-capabilities.md 'cc-run-stack'
 contains docs/runtime-contract.md 'graph.yaml'
 contains docs/runtime-contract.md 'progress.yaml'
@@ -2840,7 +2856,7 @@ if find plans -name stack.yaml -print | grep . >/dev/null 2>&1; then
   fail 'durable stack.yaml exists under plans/'
 fi
 if grep -E 'Use `cc-approve-stack`|`cc-approve-stack` is the' \
-  README.md context/INDEX.md docs/host-capabilities.md \
+  README.md context/index.md docs/host-capabilities.md \
   .agents/skills/cc-run-stack/SKILL.md \
   .agents/skills/cc-session-entry/SKILL.md \
   .agents/skills/cc-whats-next/SKILL.md >/dev/null 2>&1; then
@@ -3334,4 +3350,150 @@ contains docs/okf-profile.md \
   'Broken links, missing optional indexes, freshness'
 
 printf 'PASS: Plan 0016 document matrix, OKF profile, schemas, compatibility, and validation fixtures\n'
+
+# Plan 0017: knowledge writers use the profile envelope, bundle roots are
+# explicit, live indexes are lowercase, and compatibility/source boundaries
+# remain visible without adding a repository parser or command runtime.
+knowledge_fixture_root=test/fixtures/document-system/knowledge
+require_file "$knowledge_fixture_root/README.md"
+require_file "$knowledge_fixture_root/expected-results.yaml"
+for knowledge_family in \
+  families/idea-brief.md \
+  families/prd.md \
+  families/product.md \
+  families/domain.md \
+  families/workflow.md \
+  families/role.md; do
+  require_file "$knowledge_fixture_root/$knowledge_family"
+done
+for knowledge_fixture in \
+  bundles/declared/index.md \
+  bundles/declared/concept.md \
+  bundles/undeclared/README.md \
+  compatibility/legacy-kind.md \
+  compatibility/matching-kind-type.md \
+  compatibility/conflicting-kind-type.md \
+  compatibility/verified-mapping.md \
+  compatibility/verified-list.md \
+  compatibility/unknown-extension.md \
+  compatibility/nested-unknown-extension.md \
+  generation/invalid-yaml.md \
+  generation/missing-description.md \
+  generation/unterminated-front-matter.md \
+  source-boundary/selected.md \
+  source-boundary/unselected.md; do
+  require_file "$knowledge_fixture_root/$knowledge_fixture"
+done
+
+for knowledge_family in \
+  families/idea-brief.md \
+  families/prd.md \
+  families/product.md \
+  families/domain.md \
+  families/workflow.md \
+  families/role.md; do
+  family_path="$knowledge_fixture_root/$knowledge_family"
+  contains "$family_path" 'type:'
+  contains "$family_path" 'title:'
+  contains "$family_path" 'description:'
+  contains "$family_path" 'status: draft'
+  contains "$family_path" 'acceptance:'
+  if grep -E '^kind:' "$family_path" >/dev/null 2>&1; then
+    fail "new knowledge family emitted legacy kind: $family_path"
+  fi
+done
+
+contains docs/idea-brief.md 'type: Idea Brief'
+contains docs/prd.md 'type: Product Requirements'
+contains docs/product-knowledge.md 'type: Product Knowledge'
+contains docs/templates/product-context.md 'type: Product Knowledge'
+contains docs/templates/domain-context.md 'type: Domain'
+contains docs/templates/workflow-context.md 'type: Workflow'
+contains docs/templates/role-context.md 'type: Role'
+for knowledge_template in \
+  docs/templates/product-context.md \
+  docs/templates/domain-context.md \
+  docs/templates/workflow-context.md \
+  docs/templates/role-context.md; do
+  if grep -F '<!--' "$knowledge_template" >/dev/null 2>&1; then
+    fail "knowledge template contains generation comments: $knowledge_template"
+  fi
+done
+contains .agents/skills/cc-idea-brief/SKILL.md \
+  'deterministic-yaml-schema-validation'
+contains .agents/skills/cc-create-prd/SKILL.md \
+  'deterministic-yaml-schema-validation'
+contains .agents/skills/cc-gather-context/SKILL.md \
+  'deterministic-yaml-schema-validation'
+contains .agents/skills/cc-gather-context/SKILL.md \
+  'context/domains/index.md'
+contains .agents/skills/cc-gather-context/SKILL.md \
+  'context/roles/index.md'
+
+test ! -e context/INDEX.md || fail 'uppercase context index remains live'
+test ! -e context/domains/README.md || fail \
+  'domain index README remains live'
+test ! -e context/roles/README.md || fail \
+  'role index README remains live'
+require_file context/index.md
+require_file context/domains/index.md
+require_file context/roles/index.md
+contains context/index.md 'Explicit knowledge bundles'
+contains context/domains/index.md 'reserved routing index'
+contains context/roles/index.md 'reserved routing index'
+contains scripts/release-manifest.txt 'required context/index.md'
+contains scripts/release-manifest.txt 'required context/domains/index.md'
+contains scripts/release-manifest.txt 'required context/roles/index.md'
+
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'bundles/declared'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'bundles/undeclared'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'base_okf: not-applicable'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'failure: conflicting-kind-type'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'normalization: one-item-list'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'normalization: preserve-list'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'front_matter_extraction: fail'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'yaml_parse: fail'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'artifact_schema: fail'
+contains "$knowledge_fixture_root/expected-results.yaml" \
+  'unselected_read: false'
+contains "$knowledge_fixture_root/compatibility/unknown-extension.md" \
+  'x-future-extension:'
+contains "$knowledge_fixture_root/compatibility/nested-unknown-extension.md" \
+  'x-source-extension:'
+contains "$knowledge_fixture_root/compatibility/nested-unknown-extension.md" \
+  'x-generated-extension:'
+contains "$knowledge_fixture_root/compatibility/nested-unknown-extension.md" \
+  'x-verified-extension:'
+
+knowledge_source_read_log="$fixture/knowledge-source-read.log"
+read_selected_knowledge_source() {
+  selected_knowledge_source=$1
+  test "$selected_knowledge_source" = \
+    "$knowledge_fixture_root/source-boundary/selected.md"
+  cat "$selected_knowledge_source" >/dev/null
+  printf '%s\n' "${selected_knowledge_source#"$knowledge_fixture_root/"}" \
+    >> "$knowledge_source_read_log"
+}
+expect_success read_selected_knowledge_source \
+  "$knowledge_fixture_root/source-boundary/selected.md"
+contains "$knowledge_source_read_log" 'source-boundary/selected.md'
+if grep -F 'source-boundary/unselected.md' "$knowledge_source_read_log" \
+  >/dev/null 2>&1; then
+  fail 'knowledge generation read an unselected source'
+fi
+if grep -R -F 'unselected source evidence' \
+  "$knowledge_fixture_root/families" >/dev/null 2>&1; then
+  fail 'knowledge output copied unselected source text'
+fi
+
+printf 'PASS: Plan 0017 knowledge envelopes, bundle declarations, index migration, compatibility, and source boundaries\n'
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

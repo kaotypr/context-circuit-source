@@ -15,7 +15,7 @@ docs/runtime-contract.md.
 The agent must:
 
 1. Read AGENTS.md, WORKFLOW.md, and workspace.yaml.
-2. Read context/INDEX.md, context/WORKSPACE.md, context/PROJECT.md, and only the relevant Product Knowledge.
+2. Read context/index.md, context/WORKSPACE.md, context/PROJECT.md, and only the relevant Product Knowledge.
 3. Identify whether it is a root session or a child session.
 4. Read its runtime session record and parent handoff when applicable.
 5. Inspect relevant plans, repository instructions, branch, worktree, and Git

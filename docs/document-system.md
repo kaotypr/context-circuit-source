@@ -41,7 +41,7 @@ They must not be collapsed into one generic “document valid” result.
 | `AGENTS.md`, `WORKFLOW.md`, skills, and other normative instructions | Agents and hosts | The normative instruction owner | Instruction revisions are not knowledge lifecycle | Markdown; existing skill front matter uses `instruction-skill-v1` | Not OKF |
 | Raw or arbitrary source files | The user or team as source owner | The passive `sources/` inbox and the source's own authority | Source-specific; reading is request-scoped | Original source format | Not OKF |
 | `index.md` and `log.md` inside a declared bundle | Human and agent discovery | The declared bundle | Reserved OKF behavior, not concept lifecycle | Markdown with the OKF reserved structures | OKF reserved files, not concepts |
-| `README.md` and uppercase `INDEX.md` | Existing humans, routes, or compatibility readers | The local contract that explicitly names them | No implicit OKF lifecycle | Existing Markdown contract | Compatibility inputs only; never silently treated as reserved OKF files |
+| `README.md` and uppercase `INDEX.md` | Existing humans, routes, or compatibility readers | The local contract that explicitly names them | No implicit OKF lifecycle | Existing Markdown contract | Historical compatibility inputs; live routing uses lowercase `index.md` |
 
 The matrix does not move an artifact between authorities. In particular,
 `verified` is trust metadata and remains advisory; it cannot approve a Product
@@ -56,6 +56,34 @@ profile entry, a route-specific contract, or another accepted workspace
 record. Discovery must not use “directory contains a Markdown file” as a
 bundle test.
 
+### Live bundle and route declarations
+
+The current repository declares these OKF bundle roots:
+
+- `context/domains/` — the root `index.md` is reserved; domain
+  `README.md` files and workflow Markdown are concepts.
+- `context/roles/` — the root `index.md` is reserved; role Markdown files are
+  concepts.
+
+The top-level `context/` directory is not an implicit OKF bundle. Its
+`index.md` is a reserved lowercase routing file under the workspace contract,
+while `WORKSPACE.md`, `PROJECT.md`, `sources.yaml`, and other metadata retain
+their local non-OKF authorities. This explicit exclusion avoids requiring
+unrelated workspace metadata to satisfy concept rules.
+
+The `sources/` inbox is passive and never becomes a bundle by filename or
+directory contents. A user-selected source directory can opt in only when the
+request or an accepted contract names that exact root. A source-based
+generator must record the selected files and reasons without reading
+unselected sources.
+
+The live migration is atomic: `context/index.md`,
+`context/domains/index.md`, and `context/roles/index.md` are the only current
+routing index authorities. `INDEX.md` and index-like `README.md` paths remain
+readable as historical compatibility inputs, but are not retained as competing
+live indexes. All instructions, skills, release manifests, and tests use the
+lowercase paths.
+
 Within a declared bundle:
 
 1. `index.md` and `log.md` use their OKF reserved structures at every level.
@@ -68,7 +96,7 @@ Within a declared bundle:
    another level has no front matter.
 
 Outside a declared bundle, ordinary Markdown is governed by its local
-artifact family. This keeps the routing `context/INDEX.md`, plans, runtime
+artifact family. This keeps the routing `context/index.md`, plans, runtime
 records, normative instructions, and arbitrary sources outside OKF even when
 they contain headings or links that resemble a knowledge document.
 

@@ -1,7 +1,8 @@
 ---
-kind: role
-status: proposed
+type: Role
 title: "<Business or project role>"
+description: "<One sentence describing this role's perspective.>"
+status: draft
 slug: "<role-slug>"
 role_type: business
 owners: []
@@ -17,6 +18,7 @@ unknowns: []
 contradictions: []
 acceptance:
   state: pending
+  gate: product-knowledge-acceptance
   accepted_at:
   accepted_by:
 ---
@@ -65,10 +67,4 @@ relevant, and its revision or freshness signal. Raw source text stays in
 ## Acceptance notes
 
 Record proposed material, accepted decisions, unknowns, and contradictions. A
-generated role remains `status: proposed` until a human accepts it.
-
-<!--
-Keep this page relational and small. Omit unsupported sections, but preserve
-the uncertainty and acceptance metadata. Domain facts remain authoritative in
-the linked domain documents.
--->
+generated role remains `status: draft` until a human accepts it.

@@ -10,7 +10,7 @@ required CLAUDE.md
 required workspace.yaml
 required README.md
 required .gitignore
-required context/INDEX.md
+required context/index.md
 required context/PROJECT.md
 required context/ARCHITECTURE.md
 required context/CONVENTIONS.md
@@ -18,8 +18,8 @@ required context/DECISIONS.md
 required context/SOURCES.md
 required context/sources.yaml
 required context/WORKSPACE.md
-required context/domains/README.md
-required context/roles/README.md
+required context/domains/index.md
+required context/roles/index.md
 required docs/agent-workspace-workflow.md
 required docs/configuration.md
 required docs/delivery-policies.md

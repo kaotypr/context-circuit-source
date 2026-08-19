@@ -14,13 +14,40 @@ The artifact remains `status: draft` until the user accepts it. Acceptance is a
 human gate; it is not inferred from a complete-looking document or a passing
 test.
 
+## Generated envelope
+
+New writers emit the Context Circuit profile envelope below. `status` is the
+OKF lifecycle value; `acceptance` is a separate human gate and is not inferred
+from schema validation.
+
+```markdown
+---
+type: Idea Brief
+title: Example
+description: A concise statement of the idea suitable for retrieval.
+status: draft
+acceptance:
+  state: pending
+  gate: idea-brief-acceptance
+---
+```
+
+The artifact is an OKF concept only when its user-selected location is inside
+an explicitly declared bundle. A path under `sources/` does not declare the
+whole source inbox as a bundle. Without that declaration, validate the
+artifact schema and keep the OKF checks `not-applicable`.
+
 ## Suggested structure
 
 ```markdown
 ---
-kind: idea-brief
-status: draft
+type: Idea Brief
 title: Example
+description: A concise statement of the idea suitable for retrieval.
+status: draft
+acceptance:
+  state: pending
+  gate: idea-brief-acceptance
 ---
 
 # Example
@@ -61,6 +88,26 @@ Raw source text stays in `sources/`.
 
 Observed evidence, user intent, assumptions, proposals, and open questions
 should remain visibly distinct.
+
+New output omits `kind`, unsupported sections, and generation instructions.
+Compatibility readers may normalize a legacy `kind` only when `type` is absent;
+conflicting `kind` and `type` values fail validation. Unknown top-level and
+nested extension fields are preserved during a refresh.
+
+## Generation readiness
+
+Before presenting an Idea Brief as ready, the host's
+`deterministic-yaml-schema-validation` capability must:
+
+1. extract the initial front matter at line 1 through the first later standalone
+   `---`;
+2. parse that block as one deterministic YAML document;
+3. validate the Idea Brief artifact schema and, only for an explicitly declared
+   bundle, the base OKF and Context Circuit profile; and
+4. rerun every applicable check after repairing a hard failure.
+
+Advisory link, freshness, and copy findings remain separate from hard results.
+If the host cannot provide the capability, the artifact remains not-ready.
 
 ## Next action
 

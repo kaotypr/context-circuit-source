@@ -99,11 +99,24 @@ that root:
 - standard Markdown links express relationships and may be broken without
   failing base OKF.
 
-The repository's uppercase `context/INDEX.md` is a routing/instruction
-artifact unless a separate explicit compatibility contract declares it as
-part of a bundle. It is not the lowercase OKF reserved index by spelling
+An uppercase `context/INDEX.md` is a historical routing/instruction
+compatibility input unless a separate explicit compatibility contract declares
+it as part of a bundle. It is not the lowercase OKF reserved index by spelling
 similarity. An index-like `README.md` is likewise an explicit migration input,
 not an automatic reserved file.
+
+The live repository declarations are `context/domains/` and `context/roles/`.
+Their root `index.md` files are the only reserved bundle indexes. The
+top-level `context/` directory is a routing and workspace-metadata layer, not
+an implicit OKF bundle; its lowercase `context/index.md` is governed by the
+workspace routing contract. The complete `sources/` inbox is never a bundle by
+default. A user-selected source directory must be explicitly named before OKF
+rules apply.
+
+The migration from uppercase `INDEX.md` and index-like `README.md` is atomic.
+Those names remain compatibility inputs for historical readers only; no live
+instruction, skill, or release manifest may retain them as a competing index
+authority.
 
 ## Compatibility and normalization
 

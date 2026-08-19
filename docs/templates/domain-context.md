@@ -1,7 +1,8 @@
 ---
-kind: domain
-status: proposed
+type: Domain
 title: "<Domain title>"
+description: "<One sentence suitable for an index or retrieval preview.>"
+status: draft
 slug: "<domain-slug>"
 owners: []
 sources: []
@@ -14,6 +15,7 @@ unknowns: []
 contradictions: []
 acceptance:
   state: pending
+  gate: product-knowledge-acceptance
   accepted_at:
   accepted_by:
 workflows: []
@@ -73,11 +75,5 @@ relevant, and its revision or freshness signal. Raw source text stays in
 ## Acceptance notes
 
 Record what remains proposed, what a human accepted, and any contradiction that
-requires review. A generated document remains `status: proposed` until the
-human acceptance gate is satisfied.
-
-<!--
-Omit sections and metadata categories that the selected evidence does not
-support. Preserve `assumptions`, `unknowns`, `contradictions`, `freshness`, and
-`acceptance` even when their lists are empty so uncertainty remains visible.
--->
+requires review. A generated document remains `status: draft` until the human
+acceptance gate is satisfied.

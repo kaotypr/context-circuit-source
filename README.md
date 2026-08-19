@@ -46,7 +46,7 @@ completion from tests, Git state, child output, or external systems.
 ## Documentation
 
 Read the agreed workflow contract in
-docs/agent-workspace-workflow.md, then use context/INDEX.md to find the
+docs/agent-workspace-workflow.md, then use context/index.md to find the
 smallest relevant project context.
 
 The workspace is instruction- and filesystem-driven. There is no user-facing

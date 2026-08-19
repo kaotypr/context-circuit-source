@@ -4,6 +4,11 @@ Product Knowledge is concise, source-cited project context under `context/`.
 It describes durable intent, users, domains, workflows, architecture,
 conventions, decisions, and known gaps.
 
+Use `docs/templates/product-context.md` for a generated Product Knowledge
+document, `docs/templates/domain-context.md` for a bounded domain,
+`docs/templates/workflow-context.md` for an exact workflow, and
+`docs/templates/role-context.md` for a cross-domain role perspective.
+
 A typical tree contains:
 
 - `WORKSPACE.md` — this workspace: identity after initialization and the
@@ -28,6 +33,40 @@ page.
 Product Knowledge is not an instruction layer and does not override
 `AGENTS.md`, `WORKFLOW.md`, repository-local instructions, approved plans, or
 human decisions.
+
+## Generated concept envelope
+
+New Product Knowledge writers emit the same profile envelope for Product,
+Domain, Workflow, and Role concepts:
+
+```yaml
+type: Product Knowledge
+title: Product context
+description: One sentence suitable for an index or retrieval preview.
+status: draft
+acceptance:
+  state: pending
+  gate: product-knowledge-acceptance
+```
+
+The concrete `type` is `Product Knowledge`, `Domain`, `Workflow`, or `Role`
+according to the artifact family. `status` is the explicit OKF lifecycle value:
+`draft` means proposed or awaiting acceptance, `stable` means accepted and
+current, and `deprecated` means superseded or historical. The Context Circuit
+`acceptance` extension and human gate remain authoritative; `stable` and
+`verified` never imply human acceptance.
+
+Writers emit `type`, never a new `kind`, and omit unsupported sections and
+generation comments. Readers may normalize a legacy `kind` only when `type` is
+absent, reject conflicting values, normalize a bare `verified` mapping to a
+one-item list, and preserve unknown top-level and nested extensions.
+
+Before output is presented as ready, the host-provided
+`deterministic-yaml-schema-validation` capability extracts and parses the
+initial front matter, validates the artifact schema, applies OKF/profile checks
+only for an explicitly declared bundle, and reruns all applicable checks after
+repair. An unavailable capability leaves output not-ready; no repository
+runtime or package manager is added.
 
 When an agent receives a PRD or other source, it should:
 
@@ -78,11 +117,16 @@ supports those categories. Use `docs/templates/domain-context.md`, store the
 result under `context/domains/<domain>/`, and keep exact workflow steps in the
 linked workflow pages.
 
-Generated domain documents record `status`, selected `sources`, source
+Generated domain documents record the OKF `status`, selected `sources`, source
 revisions, `freshness`, `assumptions`, `unknowns`, `contradictions`, and an
-`acceptance` state. They remain proposed until a human accepts them. A refresh
-of accepted knowledge preserves accepted decisions and makes conflicting
-evidence visible for review.
+`acceptance` state. New documents use `status: draft` until a human accepts
+them. A refresh of accepted knowledge preserves accepted decisions and makes
+conflicting evidence visible for review.
+
+Generated Workflow documents use `type: Workflow`, an explicit title,
+description, and OKF `status`, and live below the owning domain's
+`workflows/` directory when the selected evidence establishes a distinct
+workflow.
 
 ## Role Knowledge
 
@@ -106,6 +150,14 @@ the result and `context/sources.yaml`. It updates the canonical existing
 document instead of creating duplicates. A role request loads the role page
 and only its relevant domain references; an unrelated session does not scan
 the complete context tree or source inbox.
+
+The current declared OKF bundle roots are `context/domains/` and
+`context/roles/`. Their root `index.md` files are reserved navigational
+indexes; domain `README.md` files and role `.md` files are concepts. The
+top-level `context/` directory remains a routing and workspace-metadata layer,
+not an implicit OKF bundle. A user-selected source directory is a bundle only
+when the request or accepted contract explicitly declares it. The entire
+`sources/` inbox is never a bundle by default.
 
 Raw sources remain in the passive `sources/` inbox. A source-based request
 names and reads only the selected files, states why they will be read, and

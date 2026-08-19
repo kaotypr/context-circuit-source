@@ -1,0 +1,63 @@
+schema_version: 1
+result_schema: schemas/documents/validation-result-v1.yaml
+declared_bundle_roots:
+  - bundles/declared
+undeclared_bundle_roots:
+  - bundles/undeclared
+  - source-boundary
+families:
+  - idea-brief
+  - prd
+  - product
+  - domain
+  - workflow
+  - role
+cases:
+  declared-concept:
+    status: ready
+    base_okf: pass
+    context_circuit_profile: pass
+    artifact_schema: pass
+  undeclared-markdown:
+    status: ready
+    base_okf: not-applicable
+    context_circuit_profile: not-applicable
+    artifact_schema: not-applicable
+  legacy-kind:
+    status: ready
+    compatibility: normalize-kind-to-type
+  matching-kind-type:
+    status: ready
+    compatibility: retain-type
+  conflicting-kind-type:
+    status: blocked
+    failure: conflicting-kind-type
+  verified-mapping:
+    status: ready
+    normalization: one-item-list
+  verified-list:
+    status: ready
+    normalization: preserve-list
+  unknown-extension:
+    status: ready
+    preserve_unknown_extensions: true
+  nested-unknown-extension:
+    status: ready
+    preserved_paths:
+      - sources[].x-source-extension
+      - generated.x-generated-extension
+      - verified[].x-verified-extension
+  invalid-yaml:
+    status: blocked
+    yaml_parse: fail
+  missing-description:
+    status: blocked
+    artifact_schema: fail
+  unterminated-front-matter:
+    status: blocked
+    front_matter_extraction: fail
+  source-read-boundary:
+    status: ready
+    selected_read: source-boundary/selected.md
+    unselected_read: false
+    raw_copy: false

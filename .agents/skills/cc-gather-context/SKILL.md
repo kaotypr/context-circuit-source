@@ -22,7 +22,7 @@ technical access-control policies.
 ## Read and select evidence
 
 Start with the user's request, `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`,
-`context/INDEX.md`, `docs/product-knowledge.md`, and the relevant template.
+`context/index.md`, `docs/product-knowledge.md`, and the relevant template.
 Read the smallest existing context set needed for the requested domain or
 role. Do not scan all of `context/domains/`, `context/roles/`, or `sources/`.
 
@@ -42,13 +42,24 @@ raw sources. Do not refresh project identity from a separate direction
 summary. Keep raw source text in `sources/`; summarize evidence in the
 generated document and provenance record.
 
+## Generate Product Knowledge
+
+When a request explicitly asks for a Product Knowledge refresh, use
+`docs/templates/product-context.md` and update the canonical project artifact
+selected by the workspace contract. If that artifact is `context/PROJECT.md`,
+it remains part of the top-level routing and metadata layer rather than an
+implicit OKF bundle. Emit `type: Product Knowledge`, a title, a description,
+and `status: draft` with a separate pending acceptance gate. Preserve the
+workspace's project-identity boundary and do not rewrite an uninitialized page
+without the user's project decision.
+
 ## Generate Domain Knowledge
 
-Use `docs/templates/domain-context.md` and write the canonical page to
-`context/domains/<domain>/README.md`. Create a workflow page below
+Use `docs/templates/domain-context.md` and write the canonical domain concept
+to `context/domains/<domain>/README.md`. Create a workflow concept below
 `context/domains/<domain>/workflows/` only when the evidence establishes a
-distinct workflow. Update `context/domains/README.md` with a routing link, not
-duplicated facts.
+distinct workflow, using `docs/templates/workflow-context.md`. Update
+`context/domains/index.md` with a routing link, not duplicated facts.
 
 Include only supported categories. The page may describe summary, scope,
 behavior, workflows, interfaces, data, constraints, edge cases,
@@ -58,26 +69,26 @@ with guesses or create empty category files.
 ## Generate Role Knowledge
 
 Use `docs/templates/role-context.md` and write the canonical page to
-`context/roles/<role>.md`. Add a simple metadata list such as:
+`context/roles/<role>.md`. Update `context/roles/index.md` with a short
+routing link. Add a simple metadata list such as:
 
 ```yaml
 domains:
   - ../domains/product/README.md
   - ../domains/planning/README.md
 ```
-
 The role body explains the role's definition, outcomes, product surfaces,
 cross-domain story, handoffs, role-specific behavior, and limitations. Link to
 the exact domain or workflow page that owns behavior instead of copying it.
 Do not invent `contributes_to`, `acts_on`, `consumes`, `approves`, or any other
-relationship matrix. Update `context/roles/README.md` with a short routing
-link.
+relationship matrix.
 
 ## Metadata, provenance, and acceptance
 
-Every generated page records, when known:
+Every generated Product, Domain, Workflow, or Role page records, when known:
 
-- `kind` and `status` (`proposed`, `accepted`, or `needs-review`);
+- `type`, `title`, `description`, and OKF `status` (`draft`, `stable`, or
+  `deprecated`);
 - the selected `sources` and `source_revisions`;
 - `generated_at`, `review_date`, and `freshness`;
 - `assumptions`, `unknowns`, and `contradictions`; and
@@ -87,11 +98,34 @@ Record the source path, reason, revision or freshness signal, and resulting
 document in `context/sources.yaml`. Do not copy raw source text into a domain
 or role page.
 
-Generated material is `status: proposed` with a pending acceptance state until
-the user accepts it. If evidence is incomplete, keep the unknown visible. If
+Generated material is `status: draft` with a pending acceptance state until the
+user accepts it. If evidence is incomplete, keep the unknown visible. If
 sources or an existing accepted page contradict one another, preserve the
 accepted decision, create a visible proposed refresh or contradiction note,
 and stop for human review. Never silently overwrite accepted context.
+
+New output omits `kind`, unsupported sections, and generation comments.
+Compatibility readers may normalize a legacy `kind` only when `type` is absent;
+conflicting `kind` and `type` values fail validation. Unknown top-level and
+nested extension fields survive refreshes. A bare `verified` mapping is
+normalized to a one-item list and remains advisory.
+
+## Bundle declaration and generation validation
+
+`context/domains/` and `context/roles/` are the current explicit OKF bundle
+roots. Their lowercase root `index.md` files are reserved indexes. The
+top-level `context/` directory is a routing and metadata layer, not an
+implicit bundle, and the entire `sources/` inbox is never a bundle by default.
+A user-selected source directory is a bundle only when the request or accepted
+contract declares it.
+
+Before presenting any front-matter-bearing page as ready, use the host-provided
+`deterministic-yaml-schema-validation` capability to extract and parse the
+initial block, validate the selected artifact schema, apply OKF/profile checks
+only for a declared bundle, and rerun every applicable hard check after repair.
+Keep extraction, YAML, base OKF, profile, artifact schema, and advisory results
+independent. An unavailable capability leaves the page not-ready; no Node,
+Python, Ruby, package manager, or repository runtime may be added.
 
 ## Refresh and context selection
 

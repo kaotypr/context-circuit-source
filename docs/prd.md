@@ -13,13 +13,40 @@ exact chosen path in the artifact's Provenance section.
 The artifact remains `status: draft` until the user accepts it. Acceptance does
 not approve an implementation plan, merge, publication, or deployment.
 
+## Generated envelope
+
+New writers emit the Context Circuit profile envelope below. `status` is the
+OKF lifecycle value; `acceptance` is a separate human gate and does not approve
+an implementation plan, publication, or deployment.
+
+```markdown
+---
+type: Product Requirements
+title: Example
+description: A concise statement of the product definition suitable for retrieval.
+status: draft
+acceptance:
+  state: pending
+  gate: prd-acceptance
+---
+```
+
+The artifact is an OKF concept only when its user-selected location is inside
+an explicitly declared bundle. A path under `sources/` does not declare the
+whole source inbox as a bundle. Without that declaration, validate the
+artifact schema and keep the OKF checks `not-applicable`.
+
 ## Suggested structure
 
 ```markdown
 ---
-kind: prd
-status: draft
+type: Product Requirements
 title: Example
+description: A concise statement of the product definition suitable for retrieval.
+status: draft
+acceptance:
+  state: pending
+  gate: prd-acceptance
 ---
 
 # Example
@@ -64,6 +91,26 @@ Raw source text stays in `sources/`.
 
 Requirements, evidence, assumptions, proposals, and unresolved questions must
 not be conflated.
+
+New output omits `kind`, unsupported sections, and generation instructions.
+Compatibility readers may normalize a legacy `kind` only when `type` is absent;
+conflicting `kind` and `type` values fail validation. Unknown top-level and
+nested extension fields are preserved during a refresh.
+
+## Generation readiness
+
+Before presenting a PRD as ready, the host's
+`deterministic-yaml-schema-validation` capability must:
+
+1. extract the initial front matter at line 1 through the first later standalone
+   `---`;
+2. parse that block as one deterministic YAML document;
+3. validate the PRD artifact schema and, only for an explicitly declared
+   bundle, the base OKF and Context Circuit profile; and
+4. rerun every applicable check after repairing a hard failure.
+
+Advisory link, freshness, and copy findings remain separate from hard results.
+If the host cannot provide the capability, the artifact remains not-ready.
 
 ## Next action
 

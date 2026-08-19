@@ -24,9 +24,32 @@ source text in `sources/`; summarize relevant evidence instead of copying it.
 Draft the Idea Brief at a user/team-selected path under `sources/` using the
 contract in `docs/idea-brief.md`. Do not impose a subdirectory or filename
 convention. Record the exact chosen path in the brief's `Provenance` section.
-Include the user's intent, desired outcome, audience or users, constraints,
-assumptions, open questions, relevant Product Knowledge, and source
-provenance. Mark it `status: draft` until accepted.
+Emit `type: Idea Brief`, a non-empty `title`, a one-sentence `description`, and
+the OKF lifecycle `status: draft`. Include a separate pending `acceptance`
+extension with the human acceptance gate. Include the user's intent, desired
+outcome, audience or users, constraints, assumptions, open questions, relevant
+Product Knowledge, and source provenance. Do not emit a new `kind` field,
+unsupported sections, or generation comments.
+
+The selected path is an OKF concept only if the request or an accepted
+workspace contract explicitly declares its containing bundle. Never treat all
+of `sources/` as a bundle. When no bundle is declared, validate the artifact
+schema while reporting the OKF checks as `not-applicable`.
+
+## Generation validation
+
+Before presenting the brief as ready, use the host-provided
+`deterministic-yaml-schema-validation` capability to:
+
+1. require `---` on line 1 and close at the first later standalone `---`;
+2. parse only that initial block as one deterministic YAML document;
+3. validate the Idea Brief artifact schema and, only for a declared bundle,
+   base OKF and the Context Circuit profile; and
+4. repair hard failures and rerun the complete sequence from the beginning.
+
+Keep front-matter extraction, YAML, base OKF, profile, artifact schema, and
+advisories as independent result categories. Advisory findings never make
+output blocked. If the capability is unavailable, leave the brief not-ready.
 
 ## Gate and uncertainty
 

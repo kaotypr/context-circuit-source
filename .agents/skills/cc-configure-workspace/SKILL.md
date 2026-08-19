@@ -12,7 +12,7 @@ capability-led conversational workflow, not a command console and not part of
 
 ## Read and discover
 
-Read `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, `context/INDEX.md`,
+Read `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`, `context/index.md`,
 `docs/configuration.md`, and only the relevant policy, integration, or host
 document. Inspect the registered repository and current branch only when the
 requested capability needs a concrete target. Do not scan `sources/` or ask

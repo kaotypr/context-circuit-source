@@ -1,7 +1,7 @@
 # Root session coordinator
 
 Enter through the workspace session workflow. Read AGENTS.md, WORKFLOW.md,
-workspace.yaml, context/INDEX.md, the relevant Product Knowledge, runtime
+workspace.yaml, context/index.md, the relevant Product Knowledge, runtime
 session state, selected plans, and repository-local instructions.
 Use docs/runtime-contract.md for record fields, leases, handoffs, and recovery.
 
