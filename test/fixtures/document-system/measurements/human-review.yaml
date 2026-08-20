@@ -2,6 +2,18 @@ schema_version: 1
 measurement: human-review-comprehension
 unit: reviewer-observation
 prompt: Identify purpose, status, authority, uncertainty, and next decision.
+collection:
+  method: One bounded reviewer compares the named before and after fixture inputs using the same five-field prompt.
+  reviewer_role: maintainer-reviewer
+  sample_size: 5
+  input_references:
+    - test/fixtures/document-system/knowledge/families/idea-brief.md
+    - test/fixtures/document-system/plans/minimal/overview.md
+    - test/fixtures/document-system/runtime/structured-plus-summary/handoff.yaml
+    - test/fixtures/document-system/integration/source-contradiction.yaml
+    - test/fixtures/document-system/integration/host-boundary.yaml
+  bounded: true
+  token_counts: directional-only
 prototypes:
   idea-brief:
     fixture: knowledge/families/idea-brief.md
@@ -43,6 +55,47 @@ prototypes:
     uncertainty: clear
     next_decision: clear
     comprehension: pass
+observations:
+  idea-brief:
+    input_reference: knowledge/families/idea-brief.md
+    before:
+      note: Purpose and uncertainty were visible, but acceptance ownership required cross-reading.
+      fields_identified: 3
+    after:
+      note: The profile envelope and acceptance metadata expose purpose, status, authority, uncertainty, and next decision together.
+      fields_identified: 5
+  compact-plan:
+    input_reference: plans/minimal
+    before:
+      note: Repeated companion pages obscured the canonical plan authority.
+      fields_identified: 3
+    after:
+      note: plan.yaml and the bounded overview identify authority and next decision without dropping rationale.
+      fields_identified: 5
+  structured-resume:
+    input_reference: runtime/structured-plus-summary
+    before:
+      note: Markdown summary could appear authoritative when structured state was present.
+      fields_identified: 4
+    after:
+      note: handoff.yaml is explicit authority and the Markdown summary is explanatory-only.
+      fields_identified: 5
+  contradiction:
+    input_reference: integration/source-contradiction.yaml
+    before:
+      note: A contradiction could be mistaken for a non-blocking document diagnostic.
+      fields_identified: 3
+    after:
+      note: The blocking workflow diagnostic, uncertainty, and human decision are explicit.
+      fields_identified: 5
+  host-boundary:
+    input_reference: integration/host-boundary.yaml
+    before:
+      note: Parser availability and repository runtime assumptions were easy to conflate.
+      fields_identified: 3
+    after:
+      note: The host capability, unavailable action, and no-runtime boundary are explicit.
+      fields_identified: 5
 review_rules:
   all_fields_required: true
   missing_field_is_failure: true

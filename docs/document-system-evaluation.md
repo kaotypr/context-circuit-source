@@ -28,6 +28,9 @@ portable host capability.
 - `test/fixtures/document-system/measurements/human-review.yaml` records
   whether a reviewer can identify purpose, status, authority, uncertainty, and
   the next decision from each prototype.
+- `test/fixtures/document-system/package-boundary.yaml` records the approved
+  distinction between the complete maintainer source package and the separate
+  publishable artifact boundary.
 
 ## Measurement rules
 
@@ -83,6 +86,17 @@ No quantitative improvement threshold has been accepted yet. The human
 `metric-threshold-decision` gate must choose a target after baseline review.
 Until then, the measurements are evidence only and do not authorize migration,
 status change, publication, or release.
+
+## Package-layer evidence
+
+The approved decision
+`.runtime/plans/document-system-conformance-rollout/package-boundary-decision.yaml`
+defines the maintainer source package as including schemas, templates, skills,
+agents, fixtures, and attribution. The publishable template remains governed by
+the existing release manifest and excludes `test/`, `docs/release.md`,
+`.github/`, and `scripts/`. Acceptance checks measure source-package
+completeness separately from publishable-boundary exclusions; neither check
+publishes or changes the release boundary.
 
 ## Reproduction
 

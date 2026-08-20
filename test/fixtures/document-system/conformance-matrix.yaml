@@ -67,6 +67,9 @@ cases:
         - compatibility/matching-kind-type.md
         - compatibility/conflicting-kind-type.md
       source: docs/document-system.md
+    declared_bundle: true
+    declared_bundle_root: test/fixtures/document-system
+    declared_bundle_contract: docs/document-system.md
     expected:
       legacy_kind:
         status: ready
@@ -96,6 +99,9 @@ cases:
         - verified-mapping.md
         - verified-list.md
       source: docs/okf-profile.md
+    declared_bundle: true
+    declared_bundle_root: test/fixtures/document-system
+    declared_bundle_contract: docs/okf-profile.md
     expected:
       status: ready
       base_okf: pass
@@ -111,6 +117,9 @@ cases:
         - unknown-extension.md
         - nested-unknown-extension.md
       source: schemas/documents/okf-concept-v1.yaml
+    declared_bundle: true
+    declared_bundle_root: test/fixtures/document-system
+    declared_bundle_contract: docs/document-system.md
     expected:
       status: ready
       base_okf: pass
@@ -206,8 +215,9 @@ cases:
       base_okf: not-applicable
       context_circuit_profile: not-applicable
       non_okf_artifact_schema: not-applicable
-      advisories:
+      blocking_workflow_diagnostics:
         - source-contradiction
+      advisories: []
       reconstruct: false
       workflow_gate: human-decision
   isolated-skill-discovery:

@@ -181,5 +181,6 @@ integration_matrix:
     - host-boundary
   invariants:
     advisory_never_blocks_base_okf: true
+    blocking_workflow_diagnostics_are_not_advisories: true
     historical_artifacts_rewritten: false
     human_gates_satisfied: false

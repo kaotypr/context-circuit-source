@@ -4087,6 +4087,7 @@ require_file "$conformance_fixture_root/integration/fixture-attribution.yaml"
 require_file "$conformance_fixture_root/integration/source-contradiction.yaml"
 require_file "$conformance_fixture_root/integration/isolated-skill-discovery.yaml"
 require_file "$conformance_fixture_root/integration/host-boundary.yaml"
+require_file "$conformance_fixture_root/package-boundary.yaml"
 for measurement_fixture in \
   measurements/README.md \
   measurements/route-reads.yaml \
@@ -4113,6 +4114,29 @@ contains "$conformance_fixture_root/conformance-matrix.yaml" \
   'rewrite_active_history: false'
 contains "$conformance_fixture_root/conformance-matrix.yaml" \
   'unavailable_action: report-human-and-leave-not-ready'
+for bundle_case in kind-type-migration verified-normalization \
+  unknown-field-preservation; do
+  contains "$conformance_fixture_root/conformance-matrix.yaml" \
+    "$bundle_case:"
+done
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'declared_bundle_root: test/fixtures/document-system'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'declared_bundle_contract: docs/document-system.md'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'declared_bundle_contract: docs/okf-profile.md'
+for attributed_fixture in \
+  compatibility/legacy-kind.md \
+  compatibility/matching-kind-type.md \
+  compatibility/conflicting-kind-type.md \
+  verified-mapping.md \
+  verified-list.md \
+  unknown-extension.md \
+  nested-unknown-extension.md \
+  integration/host-boundary.yaml; do
+  contains "$conformance_fixture_root/integration/fixture-attribution.yaml" \
+    "$attributed_fixture"
+done
 contains "$conformance_fixture_root/expected-results.yaml" \
   'advisory_never_blocks_base_okf: true'
 contains "$conformance_fixture_root/integration/fixture-attribution.yaml" \
@@ -4121,6 +4145,14 @@ contains "$conformance_fixture_root/integration/fixture-attribution.yaml" \
   'merge_advisories_into_hard_results: false'
 contains "$conformance_fixture_root/integration/source-contradiction.yaml" \
   'reconstruct: false'
+contains "$conformance_fixture_root/integration/source-contradiction.yaml" \
+  'blocking_workflow_diagnostics:'
+contains "$conformance_fixture_root/integration/source-contradiction.yaml" \
+  'advisory_diagnostics: []'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'blocking_workflow_diagnostics:'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'advisories: []'
 contains "$conformance_fixture_root/integration/isolated-skill-discovery.yaml" \
   'second_command_workflow: false'
 contains "$conformance_fixture_root/integration/host-boundary.yaml" \
@@ -4135,6 +4167,12 @@ for measurement_constraint in \
   contains "$conformance_fixture_root/measurements/route-reads.yaml" \
     "$measurement_constraint"
 done
+contains "$conformance_fixture_root/measurements/route-reads.yaml" \
+  'collection:'
+contains "$conformance_fixture_root/measurements/route-reads.yaml" \
+  'input_references:'
+contains "$conformance_fixture_root/measurements/route-reads.yaml" \
+  'reproducible: true'
 contains "$conformance_fixture_root/measurements/repeated-material.yaml" \
   'unsafe_compression_rewarded: false'
 contains "$conformance_fixture_root/measurements/repeated-material.yaml" \
@@ -4145,6 +4183,12 @@ contains "$conformance_fixture_root/measurements/resume-correctness.yaml" \
   'malformed_state_blocks_resume: true'
 contains "$conformance_fixture_root/measurements/human-review.yaml" \
   'all_fields_required: true'
+contains "$conformance_fixture_root/measurements/human-review.yaml" \
+  'observations:'
+contains "$conformance_fixture_root/measurements/human-review.yaml" \
+  'fields_identified: 5'
+contains "$conformance_fixture_root/measurements/human-review.yaml" \
+  'token_counts: directional-only'
 contains docs/document-system-evaluation.md \
   'metric-threshold-decision'
 contains docs/document-system-evaluation.md \
@@ -4156,11 +4200,34 @@ contains LICENSES/OKF-v0.2-NOTICE.md 'Apache License 2.0'
 contains LICENSES/OKF-v0.2-NOTICE.md \
   'fe3268a70e8ca5110a43a8f1dfdf6d1a458cf79f'
 contains LICENSES/Apache-2.0-OKF.txt 'Apache License'
+contains "$conformance_fixture_root/package-boundary.yaml" \
+  'decision_status: approved'
+contains "$conformance_fixture_root/package-boundary.yaml" \
+  'source_package_checked_separately: true'
+contains "$conformance_fixture_root/package-boundary.yaml" \
+  'published_boundary_checked_separately: true'
+for source_package_path in \
+  schemas \
+  docs/templates \
+  .agents/skills \
+  agents \
+  test/fixtures/document-system \
+  LICENSES; do
+  test -e "$source_package_path" || fail \
+    "maintainer source package path is missing: $source_package_path"
+done
 contains docs/release.md 'schemas/documents/'
 contains docs/release.md '.agents/skills/'
 contains docs/release.md 'LICENSES/'
 contains docs/release.md 'test/fixtures/'
+contains docs/release.md 'maintainer source package'
+contains docs/release.md 'published template artifact remains a separate layer'
+contains docs/release.md 'dsr-0003-package-boundary-20260820t042053z'
 contains docs/release.md 'publication'
+test ! -e "$release_art/test" || fail \
+  'published artifact unexpectedly contains maintainer fixtures'
+test ! -e "$release_art/docs/release.md" || fail \
+  'published artifact unexpectedly contains maintainer release docs'
 contains docs/getting-started.md 'compatibility-window-decision'
 contains docs/getting-started.md 'metric-threshold-decision'
 contains README.md 'conformance-matrix.yaml'

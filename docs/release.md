@@ -90,24 +90,27 @@ The workflow does not use Node or a package manager.
 
 ## Document-system package checklist
 
-Before proposing publication, the maintainer must verify the staged artifact
-contains the document-system contracts that are part of the user-facing
-workspace:
+The approved package-boundary decision
+`dsr-0003-package-boundary-20260820t042053z` distinguishes two layers. The
+maintainer source package is the complete evidence package and includes:
 
 - `schemas/documents/` — the versioned OKF, profile, plan/task,
   instruction-skill, runtime, extraction, and validation-result schemas;
 - `docs/templates/` — the current Product Knowledge templates;
 - `.agents/skills/` and `agents/` — the shared host-neutral skills and local
   safety/ownership roles;
+- `test/fixtures/document-system/` — attributed conformance and measurement
+  fixtures;
 - `context/index.md`, `context/domains/index.md`, and `context/roles/index.md`
   — the lowercase live routing indexes;
 - `LICENSES/` — applicable third-party notices and license text.
 
-The conformance matrix and measurement fixtures under `test/fixtures/` are
-maintainer evidence and remain source-only because `test/` is excluded from the
-published template. Their presence is checked before staging; excluding them
-from the user artifact does not permit omitting the shipped schemas, templates,
-skills, or attribution.
+The published template artifact remains a separate layer governed by the
+existing release manifest. Its boundary excludes `test/`, `docs/release.md`,
+`.github/`, and `scripts/`; it therefore does not contain the source-package
+fixtures. Source-package completeness and published-boundary exclusion are
+separate checks. This decision does not authorize publication or change the
+release boundary.
 
 ## OKF attribution
 

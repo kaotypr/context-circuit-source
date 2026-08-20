@@ -2,8 +2,32 @@ schema_version: 1
 measurement: route-context-reads
 unit: required-files-and-lines
 source: bounded-fixture-baseline
+collection:
+  method: Count only the listed required files and their referenced line ranges for each route.
+  command_reference: git ls-files plus wc -l on the listed inputs
+  baseline_input: joined-parent fixture and route contracts
+  prototype_input: current Plan 0020 route manifests and document contracts
+  sample_boundary: seven named routes; no unlisted source scanning
+  reproducible: true
 routes:
   entry:
+    input_references:
+      - path: AGENTS.md
+        lines: 1-53
+      - path: WORKFLOW.md
+        lines: 13-41
+      - path: context/index.md
+        lines: 1-49
+      - path: context/WORKSPACE.md
+        lines: 1-20
+      - path: context/PROJECT.md
+        lines: 1-40
+      - path: context/CONVENTIONS.md
+        lines: 1-45
+      - path: context/DECISIONS.md
+        lines: 1-45
+      - path: docs/runtime-contract.md
+        lines: 11-59
     baseline:
       files: 8
       lines: 245
@@ -15,6 +39,17 @@ routes:
     evidence_context_preserved: true
     no_more_context: true
   planning:
+    input_references:
+      - path: docs/planning.md
+        lines: 1-79
+      - path: plans/README.md
+        lines: 1-79
+      - path: docs/plan-review.md
+        lines: 1-59
+      - path: .agents/skills/cc-create-plan/SKILL.md
+        lines: 1-80
+      - path: .agents/skills/cc-review-plan/SKILL.md
+        lines: 1-70
     baseline:
       files: 7
       lines: 214
@@ -27,6 +62,19 @@ routes:
     rationale_context_preserved: true
     no_more_context: true
   gathering:
+    input_references:
+      - path: docs/product-knowledge.md
+        lines: 1-83
+      - path: docs/templates/domain-context.md
+        lines: 1-90
+      - path: docs/templates/role-context.md
+        lines: 1-80
+      - path: .agents/skills/cc-gather-context/SKILL.md
+        lines: 1-90
+      - path: context/index.md
+        lines: 1-49
+      - path: context/sources.yaml
+        lines: 1-80
     baseline:
       files: 7
       lines: 205
@@ -39,6 +87,19 @@ routes:
     source_selection_preserved: true
     no_more_context: true
   execution:
+    input_references:
+      - path: docs/agent-workspace-workflow.md
+        lines: 100-145
+      - path: docs/runtime-contract.md
+        lines: 175-215
+      - path: .agents/skills/cc-run-plan/SKILL.md
+        lines: 1-90
+      - path: agents/coordinator.md
+        lines: 1-100
+      - path: agents/repository-worker.md
+        lines: 1-90
+      - path: plans/README.md
+        lines: 45-79
     baseline:
       files: 9
       lines: 278
@@ -51,6 +112,17 @@ routes:
     rationale_context_preserved: true
     no_more_context: true
   verification:
+    input_references:
+      - path: agents/reviewer.md
+        lines: 1-100
+      - path: docs/runtime-contract.md
+        lines: 248-280
+      - path: .agents/skills/cc-run-plan/SKILL.md
+        lines: 70-120
+      - path: test/fixtures/document-system/runtime/evidence/records.yaml
+        lines: 1-20
+      - path: test/fixtures/document-system/runtime/completion/records.yaml
+        lines: 1-20
     baseline:
       files: 8
       lines: 226
@@ -63,6 +135,17 @@ routes:
     independent_verifier_context_preserved: true
     no_more_context: true
   resume:
+    input_references:
+      - path: docs/runtime-contract.md
+        lines: 390-436
+      - path: test/fixtures/document-system/runtime/structured-only/handoff.yaml
+        lines: 1-40
+      - path: test/fixtures/document-system/runtime/structured-plus-summary/handoff.yaml
+        lines: 1-40
+      - path: test/fixtures/document-system/runtime/legacy-fallback/handoff.md
+        lines: 1-30
+      - path: test/fixtures/document-system/integration/source-contradiction.yaml
+        lines: 1-30
     baseline:
       files: 6
       lines: 164
@@ -75,6 +158,17 @@ routes:
     legacy_compatibility_preserved: true
     no_more_context: true
   review:
+    input_references:
+      - path: docs/plan-review.md
+        lines: 1-59
+      - path: docs/document-system.md
+        lines: 215-290
+      - path: test/fixtures/document-system/measurements/human-review.yaml
+        lines: 1-120
+      - path: test/fixtures/document-system/conformance-matrix.yaml
+        lines: 1-280
+      - path: README.md
+        lines: 90-120
     baseline:
       files: 7
       lines: 212

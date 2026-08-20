@@ -17,7 +17,8 @@ result:
   base_okf: not-applicable
   context_circuit_profile: not-applicable
   non_okf_artifact_schema: not-applicable
-  advisory_diagnostics:
+  blocking_workflow_diagnostics:
     - source-contradiction
+  advisory_diagnostics: []
   reconstruct: false
   next_action: surface-human-decision

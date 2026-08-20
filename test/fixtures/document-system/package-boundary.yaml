@@ -1,0 +1,29 @@
+schema_version: 1
+decision_id: dsr-0003-package-boundary-20260820t042053z
+decision_source: .runtime/plans/document-system-conformance-rollout/package-boundary-decision.yaml
+decision_status: approved
+package_layers:
+  maintainer_source_package:
+    purpose: Complete source evidence before publication.
+    includes:
+      - schemas
+      - templates
+      - skills
+      - agents
+      - fixtures
+      - attribution
+    fixture_root: test/fixtures/document-system
+  published_template_artifact:
+    purpose: Cloneable user-facing template governed by the existing release manifest.
+    governed_by: scripts/release-manifest.txt
+    excludes:
+      - test/
+      - docs/release.md
+      - .github/
+      - scripts/
+    publication_gate: publication
+checks:
+  source_package_checked_separately: true
+  published_boundary_checked_separately: true
+  release_boundary_changed: false
+  published: false

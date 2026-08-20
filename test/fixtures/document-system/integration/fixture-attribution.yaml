@@ -16,7 +16,9 @@ attributions:
       - compatibility/conflicting-kind-type.md
       - verified-mapping.md
       - verified-list.md
+      - unknown-extension.md
       - nested-unknown-extension.md
+      - integration/host-boundary.yaml
   - plan: 0017-knowledge-document-system
     cases:
       - bundle-discovery
