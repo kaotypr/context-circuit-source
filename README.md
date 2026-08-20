@@ -91,3 +91,17 @@ resuming work in this workspace.
   `docs/planning.md` and `docs/getting-started.md`.
 - `cc-cleanup-runtime` — human-gated `.runtime/` cleanup; see
   `docs/getting-started.md`.
+
+## Document-system rollout evidence
+
+The document contracts and their independent OKF/profile/non-OKF/advisory
+results are described in `docs/document-system.md`. The attributed end-to-end
+fixture matrix lives at
+`test/fixtures/document-system/conformance-matrix.yaml`; measurement
+methodology and human-review observations live in
+`docs/document-system-evaluation.md`.
+
+Maintainers should read `docs/getting-started.md` for migration order and
+compatibility removal criteria, then `docs/release.md` for the package-content
+and Apache-2.0 attribution checklist. Conformance, metric, status-change,
+publication, and release evidence does not itself satisfy any human gate.

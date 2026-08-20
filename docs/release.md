@@ -88,6 +88,38 @@ acceptance suite also forbids those files in the source tree.
 
 The workflow does not use Node or a package manager.
 
+## Document-system package checklist
+
+Before proposing publication, the maintainer must verify the staged artifact
+contains the document-system contracts that are part of the user-facing
+workspace:
+
+- `schemas/documents/` — the versioned OKF, profile, plan/task,
+  instruction-skill, runtime, extraction, and validation-result schemas;
+- `docs/templates/` — the current Product Knowledge templates;
+- `.agents/skills/` and `agents/` — the shared host-neutral skills and local
+  safety/ownership roles;
+- `context/index.md`, `context/domains/index.md`, and `context/roles/index.md`
+  — the lowercase live routing indexes;
+- `LICENSES/` — applicable third-party notices and license text.
+
+The conformance matrix and measurement fixtures under `test/fixtures/` are
+maintainer evidence and remain source-only because `test/` is excluded from the
+published template. Their presence is checked before staging; excluding them
+from the user artifact does not permit omitting the shipped schemas, templates,
+skills, or attribution.
+
+## OKF attribution
+
+The Context Circuit profile is derived from the pinned Open Knowledge Format
+v0.2 evidence. Its upstream repository, revision, selected files, checksums,
+and reasons are recorded in the accepted source provenance at
+`sources/okf-v0.2/source.yaml`. The applicable Apache-2.0 terms and attribution
+notice are retained in `LICENSES/OKF-v0.2-NOTICE.md` and
+`LICENSES/Apache-2.0-OKF.txt`. Derived Context Circuit rules remain identified
+as derived documentation; the attribution does not grant a new product or
+publication gate.
+
 ## Remaining human gates
 
 - **publication** — push or sync to `kaotypr/context-circuit-release` `main`,

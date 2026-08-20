@@ -1,0 +1,54 @@
+schema_version: 1
+purpose: Preserve independent parent-plan attribution in the integrated report.
+attributions:
+  - plan: 0016-document-contract-foundation
+    cases:
+      - reserved-files
+      - kind-type-migration
+      - verified-normalization
+      - unknown-field-preservation
+      - host-boundary
+    evidence:
+      - reserved/index.md
+      - reserved/log.md
+      - compatibility/legacy-kind.md
+      - compatibility/matching-kind-type.md
+      - compatibility/conflicting-kind-type.md
+      - verified-mapping.md
+      - verified-list.md
+      - nested-unknown-extension.md
+  - plan: 0017-knowledge-document-system
+    cases:
+      - bundle-discovery
+      - undeclared-markdown
+      - generation-repair
+    evidence:
+      - knowledge/bundles/declared/concept.md
+      - knowledge/bundles/undeclared/README.md
+      - knowledge/generation/invalid-yaml.md
+      - knowledge/generation/missing-description.md
+      - knowledge/generation/unterminated-front-matter.md
+  - plan: 0018-plan-task-document-system
+    cases:
+      - task-readiness-revalidation
+    evidence:
+      - plans/invalid-task-required-fields.md
+      - plans/invalid-task-enum.md
+      - plans/invalid-task-nesting.md
+      - plans/prototype-comparison.md
+  - plan: 0019-agent-context-runtime-documents
+    cases:
+      - structured-handoff-resume
+      - legacy-handoff-resume
+      - source-contradiction
+      - isolated-skill-discovery
+    evidence:
+      - runtime/structured-only/handoff.yaml
+      - runtime/structured-plus-summary/handoff.yaml
+      - runtime/legacy-fallback/handoff.md
+      - integration/source-contradiction.yaml
+      - integration/isolated-skill-discovery.yaml
+join_rules:
+  preserve_parent_authority: true
+  relabel_parent_results: false
+  merge_advisories_into_hard_results: false

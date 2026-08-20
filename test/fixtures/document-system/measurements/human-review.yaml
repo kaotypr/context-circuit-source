@@ -1,0 +1,52 @@
+schema_version: 1
+measurement: human-review-comprehension
+unit: reviewer-observation
+prompt: Identify purpose, status, authority, uncertainty, and next decision.
+prototypes:
+  idea-brief:
+    fixture: knowledge/families/idea-brief.md
+    purpose: clear
+    status: clear
+    authority: clear
+    uncertainty: clear
+    next_decision: clear
+    comprehension: pass
+  compact-plan:
+    fixture: plans/minimal
+    purpose: clear
+    status: clear
+    authority: clear
+    uncertainty: clear
+    next_decision: clear
+    comprehension: pass
+  structured-resume:
+    fixture: runtime/structured-plus-summary
+    purpose: clear
+    status: clear
+    authority: clear
+    uncertainty: clear
+    next_decision: clear
+    comprehension: pass
+  contradiction:
+    fixture: integration/source-contradiction.yaml
+    purpose: clear
+    status: clear
+    authority: clear
+    uncertainty: clear
+    next_decision: clear
+    comprehension: pass
+  host-boundary:
+    fixture: integration/host-boundary.yaml
+    purpose: clear
+    status: clear
+    authority: clear
+    uncertainty: clear
+    next_decision: clear
+    comprehension: pass
+review_rules:
+  all_fields_required: true
+  missing_field_is_failure: true
+  comprehension_is_observation_not_gate: true
+  human_gate_satisfied: false
+  metric_threshold_decision: unsatisfied
+  token_count_is_sole_gate: false

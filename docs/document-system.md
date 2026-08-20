@@ -221,6 +221,73 @@ front matter, runtime records, and validation results. The catalog defines
 compatibility and preservation semantics but does not itself authorize a
 migration or provide a parser.
 
+## Integrated conformance and diagnostics
+
+The end-to-end evidence is recorded in
+`test/fixtures/document-system/conformance-matrix.yaml`. Every case keeps its
+parent plan attribution and reports these independent categories:
+
+1. `base_okf` — OKF v0.2 hard conformance for an explicitly declared bundle;
+2. `context_circuit_profile` — the stricter knowledge-profile hard result;
+3. `non_okf_artifact_schema` — the owning schema for plans, tasks, runtime, and
+   normative instruction artifacts;
+4. `advisory_diagnostics` — non-blocking links, optional-index, freshness,
+   metadata, copy, and retrieval observations.
+
+`workflow_gate` is recorded separately from all validation categories. It
+captures a plan-approval, Product Knowledge acceptance, verification,
+status-change, publication, or source-contradiction decision without pretending
+that schema validation satisfies that human authority. A source contradiction
+stops continuation and is surfaced; it is not silently merged or repaired.
+
+The integrated fixtures retain independent evidence for bundle discovery,
+reserved files, `kind`/`type` migration, `verified` normalization, unknown
+fields, generation repair, task readiness and complete revalidation,
+structured/legacy handoff resume, source contradiction, isolated skill
+discovery, and the portable host boundary. Parent contracts remain the
+authority for their own results.
+
+## Compatibility window and removal criteria
+
+New writers emit canonical formats immediately:
+
+- OKF concepts use `type`, not a newly written `kind`;
+- generated `verified` metadata uses the list form;
+- live bundle routing uses lowercase `index.md`;
+- structured runtime handoff uses `handoff.yaml` when present;
+- task and runtime records retain their owning non-OKF schemas.
+
+Compatibility readers continue to accept legacy `kind`, mapping-shaped
+`verified`, historical uppercase or index-like README inputs, and Markdown-only
+handoffs for the supported-workspace window. Readers must preserve unknown
+fields and must never translate runtime `kind` into an OKF `type`.
+
+Removal is a human decision, not a test result. A maintainer may propose
+removing one fallback only after all supported workspaces have migrated, a
+search finds no remaining live reader or writer dependency, a snapshot of
+historical artifacts remains readable through an explicit compatibility route,
+and the independent verifier confirms that no human-gate or resume behavior is
+lost. The `compatibility-window-decision` gate remains unsatisfied in this
+rollout. Historical approved artifacts are not rewritten merely to remove a
+fallback.
+
+## Maintainer guidance
+
+When changing a generator or reader:
+
+1. update the live template and current knowledge contract first;
+2. add or update an attributed fixture and expected independent result
+   categories;
+3. run the complete generation validation sequence after repair;
+4. measure route reads, repeated authority material, schema deviations, resume
+   correctness, and reviewer comprehension;
+5. inspect release contents and attribution before proposing publication.
+
+Do not optimize for tokens or line counts by deleting safety context, evidence,
+uncertainty, rationale, required reads, or human decisions. A smaller artifact
+that loses one of those is a failed measurement. No metric threshold, status
+change, publication, or release is authorized by this documentation.
+
 ## References
 
 - `sources/okf-v0.2/SPEC.md`, sections 3–5, 8–9, and 11–12 — base bundle,

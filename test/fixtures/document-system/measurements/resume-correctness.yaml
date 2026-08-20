@@ -1,0 +1,44 @@
+schema_version: 1
+measurement: resume-correctness
+unit: resumable-fixture-cases
+cases:
+  structured-only:
+    fixture: runtime/structured-only/handoff.yaml
+    expected_source: handoff.yaml
+    expected_result: completed
+    correctness: pass
+    history_rewritten: false
+  structured-plus-summary:
+    fixture: runtime/structured-plus-summary
+    expected_source: handoff.yaml
+    summary_role: explanatory-only
+    expected_result: completed
+    correctness: pass
+    history_rewritten: false
+  legacy-markdown-only:
+    fixture: runtime/legacy-fallback/handoff.md
+    expected_source: handoff.md
+    expected_result: completed
+    correctness: compatibility-pass
+    history_rewritten: false
+  malformed-structured:
+    fixture: runtime-malformed-handoff
+    expected_source: none
+    expected_result: blocked
+    fallback_to_markdown: false
+    correctness: pass
+    human_decision_required: true
+  source-contradiction:
+    fixture: integration/source-contradiction.yaml
+    expected_source: none
+    expected_result: blocked
+    reconstruct: false
+    correctness: pass
+    human_decision_required: true
+summary:
+  structured_preferred: true
+  legacy_supported_during_window: true
+  malformed_state_blocks_resume: true
+  contradictory_state_blocks_resume: true
+  resume_correctness_gate: pass
+  compatibility_window_decision: unsatisfied

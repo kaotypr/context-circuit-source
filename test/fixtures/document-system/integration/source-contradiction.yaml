@@ -1,0 +1,23 @@
+schema_version: 1
+scenario: source-contradiction
+owner: agent-workspace-context
+selected_sources:
+  - id: workflow-current
+    path: WORKFLOW.md
+    claim: A contradiction must remain visible before consequential work.
+  - id: workflow-conflicting
+    path: test/fixtures/document-system/integration/source-contradiction.yaml
+    claim: Contradictory evidence is safe to silently merge.
+contradiction:
+  detected: true
+  category: source-evidence
+  explanation: Selected evidence makes incompatible workflow claims.
+result:
+  status: blocked
+  base_okf: not-applicable
+  context_circuit_profile: not-applicable
+  non_okf_artifact_schema: not-applicable
+  advisory_diagnostics:
+    - source-contradiction
+  reconstruct: false
+  next_action: surface-human-decision

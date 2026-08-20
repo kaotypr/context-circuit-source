@@ -1,0 +1,246 @@
+schema_version: 1
+matrix: context-circuit-document-system-conformance
+result_contract: schemas/documents/validation-result-v1.yaml
+execution:
+  mode: structural-fixture-evidence
+  provider: approved-host-capability
+  repository_runtime_required: false
+  package_manager_required: false
+  command_runtime_required: false
+categories:
+  base_okf: independent-hard-result
+  context_circuit_profile: independent-hard-result
+  non_okf_artifact_schema: independent-hard-result
+  advisory_diagnostics: never-blocks-base-okf
+  workflow_gate: separate-authority-observation
+cases:
+  bundle-discovery:
+    purpose: Apply OKF checks only after an explicit bundle declaration.
+    attribution:
+      plan: 0017-knowledge-document-system
+      fixture: knowledge/bundles/declared/concept.md
+      source: docs/document-system.md
+    declared_bundle: true
+    expected:
+      status: ready
+      base_okf: pass
+      context_circuit_profile: pass
+      non_okf_artifact_schema: not-applicable
+      advisories: []
+      workflow_gate: none
+  undeclared-markdown:
+    purpose: Keep ordinary Markdown outside OKF when no bundle is declared.
+    attribution:
+      plan: 0017-knowledge-document-system
+      fixture: knowledge/bundles/undeclared/README.md
+      source: docs/okf-profile.md
+    declared_bundle: false
+    expected:
+      status: ready
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: not-applicable
+      advisories: []
+      workflow_gate: none
+  reserved-files:
+    purpose: Keep lowercase index and log files in the reserved-file contract.
+    attribution:
+      plan: 0016-document-contract-foundation
+      fixture:
+        - reserved/index.md
+        - reserved/log.md
+      source: docs/document-system.md
+    declared_bundle: true
+    expected:
+      status: ready
+      base_okf: pass
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: not-applicable
+      advisories: []
+      workflow_gate: none
+  kind-type-migration:
+    purpose: Normalize legacy kind without guessing when kind and type conflict.
+    attribution:
+      plan: 0016-document-contract-foundation
+      fixture:
+        - compatibility/legacy-kind.md
+        - compatibility/matching-kind-type.md
+        - compatibility/conflicting-kind-type.md
+      source: docs/document-system.md
+    expected:
+      legacy_kind:
+        status: ready
+        base_okf: pass
+        context_circuit_profile: pass
+        non_okf_artifact_schema: pass
+        advisories:
+          - legacy-kind
+      matching_kind_type:
+        status: ready
+        base_okf: pass
+        context_circuit_profile: pass
+        non_okf_artifact_schema: pass
+        advisories: []
+      conflicting_kind_type:
+        status: blocked
+        base_okf: pass
+        context_circuit_profile: fail
+        non_okf_artifact_schema: fail
+        advisories: []
+      workflow_gate: none
+  verified-normalization:
+    purpose: Normalize a mapping to one list item and preserve an existing list.
+    attribution:
+      plan: 0016-document-contract-foundation
+      fixture:
+        - verified-mapping.md
+        - verified-list.md
+      source: docs/okf-profile.md
+    expected:
+      status: ready
+      base_okf: pass
+      context_circuit_profile: pass
+      non_okf_artifact_schema: pass
+      advisories: []
+      workflow_gate: none
+  unknown-field-preservation:
+    purpose: Preserve unknown top-level and nested fields through a round trip.
+    attribution:
+      plan: 0016-document-contract-foundation
+      fixture:
+        - unknown-extension.md
+        - nested-unknown-extension.md
+      source: schemas/documents/okf-concept-v1.yaml
+    expected:
+      status: ready
+      base_okf: pass
+      context_circuit_profile: pass
+      non_okf_artifact_schema: pass
+      advisories: []
+      preservation:
+        - x-future-extension
+        - sources[].x-source-extension
+        - generated.x-generated-extension
+        - verified[].x-verified-extension
+      workflow_gate: none
+  generation-repair:
+    purpose: Repair generated metadata and rerun every hard check from extraction.
+    attribution:
+      plan: 0017-knowledge-document-system
+      fixture:
+        - knowledge/generation/invalid-yaml.md
+        - knowledge/generation/missing-description.md
+        - knowledge/generation/unterminated-front-matter.md
+      source: docs/document-system.md
+    expected:
+      initial_status: blocked
+      repaired_status: ready
+      validation_sequence:
+        - front_matter_extraction
+        - yaml_parse
+        - required_fields
+        - enum_values
+        - nested_shapes
+        - artifact_schema
+      partial_pass_reused: false
+      workflow_gate: human-review
+  task-readiness-revalidation:
+    purpose: Repair task metadata, rerun complete validation, then project readiness.
+    attribution:
+      plan: 0018-plan-task-document-system
+      fixture:
+        - plans/invalid-task-required-fields.md
+        - plans/invalid-task-enum.md
+        - plans/invalid-task-nesting.md
+        - plans/prototype-comparison.md
+      source: docs/plan-review.md
+    non_okf: true
+    expected:
+      initial_status: blocked
+      repaired_status: ready
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: fail-then-pass
+      projection_on_block: unchanged
+      workflow_gate: plan-approval
+  structured-handoff-resume:
+    purpose: Prefer complete structured runtime state and keep a Markdown summary explanatory.
+    attribution:
+      plan: 0019-agent-context-runtime-documents
+      fixture:
+        - runtime/structured-only/handoff.yaml
+        - runtime/structured-plus-summary/handoff.yaml
+      source: docs/runtime-contract.md
+    non_okf: true
+    expected:
+      status: completed
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: pass
+      resume_source: handoff.yaml
+      summary_authority: explanatory-only
+      workflow_gate: none
+  legacy-handoff-resume:
+    purpose: Read historical Markdown-only handoffs without rewriting active history.
+    attribution:
+      plan: 0019-agent-context-runtime-documents
+      fixture: runtime/legacy-fallback/handoff.md
+      source: docs/runtime-contract.md
+    non_okf: true
+    expected:
+      status: completed
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: compatibility-pass
+      resume_source: handoff.md
+      rewrite_active_history: false
+      workflow_gate: none
+  source-contradiction:
+    purpose: Stop and surface contradictory selected evidence before generation or planning.
+    attribution:
+      plan: 0019-agent-context-runtime-documents
+      fixture: integration/source-contradiction.yaml
+      source: docs/agent-workspace-workflow.md
+    expected:
+      status: blocked
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: not-applicable
+      advisories:
+        - source-contradiction
+      reconstruct: false
+      workflow_gate: human-decision
+  isolated-skill-discovery:
+    purpose: Discover a skill with local safety context and no second command workflow.
+    attribution:
+      plan: 0019-agent-context-runtime-documents
+      fixture: integration/isolated-skill-discovery.yaml
+      source: docs/host-capabilities.md
+    non_okf: true
+    expected:
+      status: ready
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: pass
+      required_local_context:
+        - AGENTS.md
+        - WORKFLOW.md
+        - context/index.md
+      workflow_gate: none
+  host-boundary:
+    purpose: Keep deterministic validation host-provided and report capability gaps safely.
+    attribution:
+      plan: 0016-document-contract-foundation
+      fixture: integration/host-boundary.yaml
+      source: docs/host-capabilities.md
+    non_okf: true
+    expected:
+      status: ready
+      base_okf: not-applicable
+      context_circuit_profile: not-applicable
+      non_okf_artifact_schema: pass
+      repository_runtime_required: false
+      package_manager_required: false
+      command_runtime_required: false
+      unavailable_action: report-human-and-leave-not-ready
+      workflow_gate: none

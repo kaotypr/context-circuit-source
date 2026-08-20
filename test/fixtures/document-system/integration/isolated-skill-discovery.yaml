@@ -1,0 +1,24 @@
+schema_version: 1
+scenario: isolated-skill-discovery
+owner: host-neutral-skill-catalog
+skill:
+  path: .agents/skills/cc-session-entry/SKILL.md
+  name: cc-session-entry
+  schema: schemas/documents/instruction-skill-v1.yaml
+  okf: false
+local_safety_context:
+  required:
+    - AGENTS.md
+    - WORKFLOW.md
+    - context/index.md
+  purpose: Explain authority and the route before using the skill.
+discovery:
+  shared_catalog: true
+  second_command_workflow: false
+  host_adapter_replaces_contract: false
+result:
+  status: ready
+  base_okf: not-applicable
+  context_circuit_profile: not-applicable
+  non_okf_artifact_schema: pass
+  advisory_diagnostics: []

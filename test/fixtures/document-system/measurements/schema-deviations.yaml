@@ -1,0 +1,49 @@
+schema_version: 1
+measurement: schema-deviations
+unit: fixture-cases
+categories:
+  base_okf:
+    hard: true
+    before_cases: 3
+    prototype_cases: 3
+    examples:
+      - missing-type
+      - invalid-yaml
+      - unterminated-front-matter
+    advisories_mixed_in: false
+  context_circuit_profile:
+    hard: true
+    before_cases: 1
+    prototype_cases: 1
+    examples:
+      - profile-missing-status
+      - conflicting-kind-type
+    advisories_mixed_in: false
+  non_okf_artifact_schema:
+    hard: true
+    before_cases: 5
+    prototype_cases: 5
+    examples:
+      - invalid-task-required-fields
+      - invalid-task-enum
+      - invalid-task-nesting
+      - runtime-missing-contract
+      - isolated-skill-discovery
+    advisories_mixed_in: false
+  advisory_diagnostics:
+    hard: false
+    before_cases: 2
+    prototype_cases: 2
+    examples:
+      - broken-link
+      - missing-optional-index
+    blocks_base_okf: false
+    blocks_profile: false
+    blocks_non_okf_schema: false
+    advisories_mixed_in: false
+result_rules:
+  ready_requires_all_applicable_hard_categories_pass: true
+  not_applicable_is_explicit: true
+  advisory_never_changes_hard_result: true
+  source_contradiction_is_workflow_gate: true
+  status_change_gate_satisfied: false

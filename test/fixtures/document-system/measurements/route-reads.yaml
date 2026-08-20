@@ -1,0 +1,95 @@
+schema_version: 1
+measurement: route-context-reads
+unit: required-files-and-lines
+source: bounded-fixture-baseline
+routes:
+  entry:
+    baseline:
+      files: 8
+      lines: 245
+    prototype:
+      files: 8
+      lines: 245
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    no_more_context: true
+  planning:
+    baseline:
+      files: 7
+      lines: 214
+    prototype:
+      files: 5
+      lines: 171
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    rationale_context_preserved: true
+    no_more_context: true
+  gathering:
+    baseline:
+      files: 7
+      lines: 205
+    prototype:
+      files: 6
+      lines: 189
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    source_selection_preserved: true
+    no_more_context: true
+  execution:
+    baseline:
+      files: 9
+      lines: 278
+    prototype:
+      files: 9
+      lines: 278
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    rationale_context_preserved: true
+    no_more_context: true
+  verification:
+    baseline:
+      files: 8
+      lines: 226
+    prototype:
+      files: 8
+      lines: 226
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    independent_verifier_context_preserved: true
+    no_more_context: true
+  resume:
+    baseline:
+      files: 6
+      lines: 164
+    prototype:
+      files: 5
+      lines: 151
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    legacy_compatibility_preserved: true
+    no_more_context: true
+  review:
+    baseline:
+      files: 7
+      lines: 212
+    prototype:
+      files: 6
+      lines: 198
+    required_reads_preserved: true
+    safety_context_preserved: true
+    evidence_context_preserved: true
+    rationale_context_preserved: true
+    no_more_context: true
+measurement_constraints:
+  selected_routes_no_more_context: true
+  missing_safety_invalidates_improvement: true
+  missing_evidence_invalidates_improvement: true
+  missing_rationale_invalidates_improvement: true
+  token_count_directional_only: true
+  metric_threshold_decision: unsatisfied

@@ -21,7 +21,12 @@ The fixture set covers:
 - invalid task delimiters, YAML, required fields, enum values, and nesting;
 - structural-only host-boundary evidence, repair/revalidation, and
   before/after duplication counts.
+- an attributed end-to-end matrix joining bundle discovery, reserved files,
+  compatibility, generation repair, task readiness, structured and legacy
+  resume, source contradiction, isolated skill discovery, and host boundaries.
 
 Expected outcomes are recorded in `expected-results.yaml`. They are evidence
 fixtures, not a replacement for the approved host-provided deterministic YAML
-and schema capability.
+and schema capability. The integrated report is
+`conformance-matrix.yaml`; its hard OKF, profile, non-OKF schema, advisory, and
+workflow-gate categories remain independent.

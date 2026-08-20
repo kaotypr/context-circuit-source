@@ -156,3 +156,30 @@ cases:
       - nested_shapes
       - artifact_schema
     projection_on_block: unchanged
+integration_matrix:
+  file: conformance-matrix.yaml
+  categories:
+    - base_okf
+    - context_circuit_profile
+    - non_okf_artifact_schema
+    - advisory_diagnostics
+    - workflow_gate
+  attribution_file: integration/fixture-attribution.yaml
+  cases:
+    - bundle-discovery
+    - undeclared-markdown
+    - reserved-files
+    - kind-type-migration
+    - verified-normalization
+    - unknown-field-preservation
+    - generation-repair
+    - task-readiness-revalidation
+    - structured-handoff-resume
+    - legacy-handoff-resume
+    - source-contradiction
+    - isolated-skill-discovery
+    - host-boundary
+  invariants:
+    advisory_never_blocks_base_okf: true
+    historical_artifacts_rewritten: false
+    human_gates_satisfied: false

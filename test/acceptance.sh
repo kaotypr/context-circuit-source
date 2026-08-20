@@ -2919,7 +2919,7 @@ for removed in \
   test ! -e "$removed" || fail "removed documentation still exists: $removed"
 done
 docs_now_count=$(find docs -type f | wc -l | tr -d ' ')
-test "$docs_now_count" -eq 19 || fail "unexpected docs/ file count: $docs_now_count"
+test "$docs_now_count" -eq 20 || fail "unexpected docs/ file count: $docs_now_count"
 
 printf 'PASS: Plan 0012 retained docs surface accuracy\n'
 
@@ -4077,6 +4077,97 @@ if grep -E '^status:[[:space:]]*done$' \
   fail 'completion fixture changed canonical status'
 fi
 
+# Plan 0020: attributed end-to-end conformance, measurements, rollout guidance,
+# package contents, and Apache-2.0 attribution. These are structural checks;
+# the approved host capability performs deterministic YAML/schema validation.
+conformance_fixture_root=test/fixtures/document-system
+require_file "$conformance_fixture_root/conformance-matrix.yaml"
+require_file "$conformance_fixture_root/integration/README.md"
+require_file "$conformance_fixture_root/integration/fixture-attribution.yaml"
+require_file "$conformance_fixture_root/integration/source-contradiction.yaml"
+require_file "$conformance_fixture_root/integration/isolated-skill-discovery.yaml"
+require_file "$conformance_fixture_root/integration/host-boundary.yaml"
+for measurement_fixture in \
+  measurements/README.md \
+  measurements/route-reads.yaml \
+  measurements/repeated-material.yaml \
+  measurements/schema-deviations.yaml \
+  measurements/resume-correctness.yaml \
+  measurements/human-review.yaml; do
+  require_file "$conformance_fixture_root/$measurement_fixture"
+done
+
+for matrix_category in \
+  base_okf \
+  context_circuit_profile \
+  non_okf_artifact_schema \
+  advisory_diagnostics \
+  workflow_gate; do
+  contains "$conformance_fixture_root/conformance-matrix.yaml" "$matrix_category:"
+done
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'advisories:'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'partial_pass_reused: false'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'rewrite_active_history: false'
+contains "$conformance_fixture_root/conformance-matrix.yaml" \
+  'unavailable_action: report-human-and-leave-not-ready'
+contains "$conformance_fixture_root/expected-results.yaml" \
+  'advisory_never_blocks_base_okf: true'
+contains "$conformance_fixture_root/integration/fixture-attribution.yaml" \
+  'preserve_parent_authority: true'
+contains "$conformance_fixture_root/integration/fixture-attribution.yaml" \
+  'merge_advisories_into_hard_results: false'
+contains "$conformance_fixture_root/integration/source-contradiction.yaml" \
+  'reconstruct: false'
+contains "$conformance_fixture_root/integration/isolated-skill-discovery.yaml" \
+  'second_command_workflow: false'
+contains "$conformance_fixture_root/integration/host-boundary.yaml" \
+  'fallback_parser: forbidden'
+
+for measurement_constraint in \
+  'selected_routes_no_more_context: true' \
+  'missing_safety_invalidates_improvement: true' \
+  'missing_evidence_invalidates_improvement: true' \
+  'missing_rationale_invalidates_improvement: true' \
+  'token_count_directional_only: true'; do
+  contains "$conformance_fixture_root/measurements/route-reads.yaml" \
+    "$measurement_constraint"
+done
+contains "$conformance_fixture_root/measurements/repeated-material.yaml" \
+  'unsafe_compression_rewarded: false'
+contains "$conformance_fixture_root/measurements/repeated-material.yaml" \
+  'rationale_retained: true'
+contains "$conformance_fixture_root/measurements/schema-deviations.yaml" \
+  'advisory_never_changes_hard_result: true'
+contains "$conformance_fixture_root/measurements/resume-correctness.yaml" \
+  'malformed_state_blocks_resume: true'
+contains "$conformance_fixture_root/measurements/human-review.yaml" \
+  'all_fields_required: true'
+contains docs/document-system-evaluation.md \
+  'metric-threshold-decision'
+contains docs/document-system-evaluation.md \
+  'A smaller artifact that loses one of those is a failed measurement.'
+
+require_file LICENSES/OKF-v0.2-NOTICE.md
+require_file LICENSES/Apache-2.0-OKF.txt
+contains LICENSES/OKF-v0.2-NOTICE.md 'Apache License 2.0'
+contains LICENSES/OKF-v0.2-NOTICE.md \
+  'fe3268a70e8ca5110a43a8f1dfdf6d1a458cf79f'
+contains LICENSES/Apache-2.0-OKF.txt 'Apache License'
+contains docs/release.md 'schemas/documents/'
+contains docs/release.md '.agents/skills/'
+contains docs/release.md 'LICENSES/'
+contains docs/release.md 'test/fixtures/'
+contains docs/release.md 'publication'
+contains docs/getting-started.md 'compatibility-window-decision'
+contains docs/getting-started.md 'metric-threshold-decision'
+contains README.md 'conformance-matrix.yaml'
+
+printf 'PASS: Plan 0020 conformance matrix, attributed integration fixtures, and independent result categories\n'
+printf 'PASS: Plan 0020 route, duplication, schema, resume, and human-review measurements\n'
+printf 'PASS: Plan 0020 rollout guidance, package checklist, and Apache-2.0 attribution\n'
 printf 'PASS: Plan 0019 route manifests, structured and legacy handoffs, runtime safety, evidence, and completion gates\n'
 printf 'PASS: Plan 0017 knowledge envelopes, bundle declarations, index migration, compatibility, and source boundaries\n'
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

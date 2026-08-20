@@ -1,0 +1,32 @@
+schema_version: 1
+scenario: host-boundary
+owner: portable-validation-capability
+capability: deterministic-yaml-schema-validation
+provider: active-agent-host
+repository_runtime_required: false
+package_manager_required: false
+command_runtime_required: false
+input:
+  - Markdown path
+  - extracted initial front-matter block
+  - selected versioned schema
+  - declared-bundle flag
+output:
+  independent_categories:
+    - front_matter_extraction
+    - yaml_parse
+    - base_okf
+    - context_circuit_profile
+    - artifact_schema
+    - advisories
+unavailable_behavior:
+  report_to_human: true
+  artifact_ready: false
+  fallback_parser: forbidden
+  hidden_repository_runtime: forbidden
+result:
+  status: ready
+  base_okf: not-applicable
+  context_circuit_profile: not-applicable
+  non_okf_artifact_schema: pass
+  advisory_diagnostics: []

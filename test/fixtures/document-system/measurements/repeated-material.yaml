@@ -1,0 +1,49 @@
+schema_version: 1
+measurement: repeated-authority-material
+unit: canonical-claim-copies
+source: bounded-fixture-baseline
+claims:
+  plan_lifecycle:
+    canonical_owner: plan.yaml
+    before_copies: 2
+    after_copies: 0
+    reduction: 2
+    rationale_retained: true
+  plan_acceptance:
+    canonical_owner: plan.yaml
+    before_copies: 3
+    after_copies: 0
+    reduction: 3
+    evidence_retained: true
+  plan_verification:
+    canonical_owner: plan.yaml
+    before_copies: 3
+    after_copies: 0
+    reduction: 3
+    verifier_authority_retained: true
+  route_manifest:
+    canonical_owner: docs/agent-workspace-workflow.md
+    before_copies: 7
+    after_copies: 1
+    reduction: 6
+    safety_context_retained: true
+  human_gate_semantics:
+    canonical_owner: docs/runtime-contract.md
+    before_copies: 5
+    after_copies: 2
+    reduction: 3
+    gate_authority_retained: true
+summary:
+  targeted_reduction_observed: true
+  canonical_authority_preserved: true
+  bounded_tasks_retained: true
+  source_and_uncertainty_retained: true
+  rationale_retained: true
+  unsafe_compression_rewarded: false
+  omitted_safety_invalidates_result: true
+  omitted_evidence_invalidates_result: true
+  omitted_rationale_invalidates_result: true
+  token_counts:
+    mode: directional
+    release_threshold: none
+  metric_threshold_decision: unsatisfied

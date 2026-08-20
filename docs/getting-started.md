@@ -171,6 +171,35 @@ when the user asks to clear local execution state, `cc-cleanup-runtime` may
 delete `.runtime/` only after inspecting dirty or unpushed work and receiving
 explicit confirmation.
 
+## 8. Roll out document-system compatibility safely
+
+When adopting the document-system contracts, use this order:
+
+1. declare the participating OKF bundle roots and reserved files;
+2. deploy readers that accept canonical `type` plus legacy `kind` and preserve
+   unknown fields;
+3. switch live writers and templates to canonical `type`, list-shaped
+   `verified`, and lowercase `index.md`;
+4. validate newly generated and changed knowledge, plan/task, skill, and
+   runtime artifacts at their owning schema boundary;
+5. migrate live templates and current accepted knowledge;
+6. keep historical approved artifacts and Markdown-only handoffs readable
+   through explicit compatibility routes;
+7. collect route, duplication, schema, resume, and human-review evidence;
+8. propose fallback removal only after the supported-workspace migration
+   evidence is complete.
+
+The compatibility window covers legacy `kind`, mapping-shaped `verified`,
+historical index names, and Markdown-only handoffs. A removal proposal requires
+no supported workspace dependency, a historical safe-reading route, a complete
+regression run, and a separate human `compatibility-window-decision`. No
+fallback is removed by passing tests alone.
+
+The `metric-threshold-decision`, `status-change`, `publication`, and release
+gates remain separate and unsatisfied until a human explicitly decides them.
+Conformance evidence, a local commit, or a staged artifact is not permission
+to merge, publish, tag, release, or mark a plan done.
+
 ## Which document
 
 Use this map only to find a retained contract. It is not a second workflow.
