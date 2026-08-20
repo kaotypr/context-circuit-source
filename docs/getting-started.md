@@ -129,6 +129,12 @@ When context is sufficient:
 6. Do not infer approval from conversation tone, tests, or agent output.
    Approval does not start execution.
 
+Plan archive eligibility is distinct from this lifecycle. `cc-archive-plan`
+requires a separate explicit human archive gate to append `archive.yaml`
+evidence without moving the bundle or changing status. Ordinary routing omits
+an archived plan; direct historical reads remain available. Restore is a fresh
+archive decision and never re-approves a plan.
+
 ## 6. Execute through `cc-run-plan`
 
 After approval, `cc-run-plan` directs the root to:

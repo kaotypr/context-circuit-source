@@ -48,7 +48,10 @@ as appropriate. Do not silently approve plans or change canonical statuses.
 
 When the request names a plan, inspect its canonical `plan.yaml`, task
 projections, declared dependencies, active lease, assigned worktree, and latest
-handoff. An approved dependency-ready plan with no live writing owner routes to
+handoff. Also inspect the optional `archive.yaml`: absence is active-compatible;
+a latest `archived` event excludes the plan from ordinary routing while leaving
+its original path readable for history. A malformed archive record is blocked,
+not inferred. An approved dependency-ready active plan with no live writing owner routes to
 `cc-run-plan`; a connected set of approved unimplemented plans, or an
 interrupted `.runtime/stacks/<stack-id>/` run, routes to `cc-run-stack`; a
 coherent draft routes to `cc-approve-plan` when the user is
@@ -59,6 +62,11 @@ coordination; and a contradictory, stale, or ambiguous record routes to a
 visible recovery decision. Refuse to treat a stack run as one `cc-run-plan`.
 Invoking `cc-run-stack` starts or resumes execution; there is no stack-approval
 gate.
+
+Do not recommend, approve, execute, finish, or include an archived plan in a
+stack. When a human asks to change its eligibility, route to
+`cc-archive-plan`; archive and restore each require a separate explicit human
+confirmation and do not change canonical lifecycle status.
 
 Approved-plan execution through `cc-run-plan` directs a writer child and a
 later independent verifier child. Do not treat small or sequential work as a

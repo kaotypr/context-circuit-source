@@ -8,6 +8,26 @@ execution state, not Product Knowledge. It must never override AGENTS.md,
 WORKFLOW.md, workspace.yaml, an approved plan, or a human decision. Runtime
 state must not override `plan.yaml`.
 
+## Plan archive sidecar
+
+Archive eligibility is durable plan-bundle state, not runtime state. A plan
+bundle may contain an optional `archive.yaml` sidecar. If it is absent, the
+plan retains the historical active behavior. If it exists, it is valid only
+when `schema_version: 1`, its `plan` value matches the canonical plan ID, and
+its non-empty `events` list is append-only. Each event has `action`
+(`archived` or `restored`), `at`, `actor`, `reason`, `observed_status`
+(`draft`, `approved`, or `done`), and `replacements` (possibly empty). The
+latest event is the current eligibility; all earlier archive and restore
+events remain restoration history.
+
+`archive.yaml` never replaces or edits `plan.yaml`, task status, lease,
+session, stack, worktree, completion, or handoff records. A malformed,
+identity-mismatched, empty, or unknown-event sidecar is a visible blocker.
+Archived bundles remain at their original paths for direct historical reads
+and dependency inspection. Normal selection routes must reject an archived
+bundle. An archived done dependency remains resolved as done; an archived
+draft or approved dependency remains unresolved and blocks active dependents.
+
 ## Layout
 
 The runtime root is .runtime/ in the workspace that owns the plan:

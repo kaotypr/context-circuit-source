@@ -10,7 +10,9 @@ should happen next.
 
 Inspect only the relevant runtime records, approved plans, dependencies,
 Product Knowledge warnings, repository state, worktrees, and pending human
-gates. Do not infer a current session from conversation history or a global
+gates. Inspect optional `archive.yaml` sidecars and omit a plan whose latest
+event is `archived`; keep its original path available only for explicit
+historical inspection. A malformed archive record is a blocker. Do not infer a current session from conversation history or a global
 pointer.
 
 Recommend one smallest safe action at a time. These names are discoverability
@@ -29,6 +31,8 @@ aids, not mandatory ceremonies for every session:
   unpushed work when present;
 - request a human decision for a contradiction, ownership conflict, scope
   change, publication, merge, or deployment.
+- archive or restore one named plan through `cc-archive-plan` only after its
+  archive preflight and explicit human `archive` confirmation.
 
 The recommendation is read-only until the root session or human explicitly
 performs a consequential action. Report evidence, assumptions, blockers, and

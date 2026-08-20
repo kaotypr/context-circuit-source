@@ -39,6 +39,8 @@ Discover the foundation skills from natural-language requests:
 - configure a requested delivery policy, host capability, or optional
   activity integration with `cc-configure-workspace`.
 - approve a coherent draft plan with `cc-approve-plan`;
+- archive or restore one named plan through `cc-archive-plan` after a separate
+  explicit human archive confirmation; never treat archive as a status change;
 - execute a connected set of already-approved plans with `cc-run-stack`;
 - finish an executed plan with `cc-finish-plan` when completion evidence is
   ready;

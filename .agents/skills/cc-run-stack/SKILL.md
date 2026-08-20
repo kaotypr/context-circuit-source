@@ -25,14 +25,20 @@ and any existing `.runtime/stacks/<stack-id>/graph.yaml` and `progress.yaml`.
 Confirm:
 
 - every member plan status is exactly `approved`;
+- every member has no `archive.yaml` or a latest `restored` event;
 - the interpreted DAG is acyclic and IDs resolve;
 - no live foreign stack lease or plan lease blocks the run;
 - the requested work remains within each member's approved scope.
 
-A draft member, unknown plan, cycle, or ownership conflict is blocked. Do not
+A draft or archived member, unknown plan, cycle, or ownership conflict is blocked. Do not
 create `plans/<repository-key>-stacks/`, a durable `stack.yaml`, or a hidden
 replacement plan. Do not change canonical status to make execution possible.
 Runtime must not override `plan.yaml`.
+
+An archived member cannot be included by implicit discovery or by an explicit
+stack request. Report its historical path and require a separate
+`cc-archive-plan` restore gate; do not change the frozen graph to hide an
+unresolved archived dependency.
 
 ## Claim, freeze, and loop
 
