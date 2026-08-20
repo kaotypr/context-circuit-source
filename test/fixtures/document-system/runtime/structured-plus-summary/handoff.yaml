@@ -1,0 +1,36 @@
+schema_version: 1
+handoff_schema: session-handoff-v1
+session_id: sess-structured-summary
+parent_session_id: sess-root-runtime
+root_session_id: sess-root-runtime
+status: awaiting-human-gate
+plan: plans/context-circuit-plans/0019-agent-context-runtime-documents
+task: ACR-0003
+worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents
+result:
+  outcome: verification-evidence-ready
+  changed_files: []
+  tests:
+    - command: sh test/acceptance.sh
+      result: passed
+blockers: []
+decisions:
+  - "Markdown is a human summary and cannot override this record."
+evidence:
+  - kind: verification
+    path: .runtime/sessions/sess-verifier-runtime/handoff.yaml
+    result: passed
+next_action:
+  route: review
+  description: Request the human status-change decision.
+canonical_refs:
+  plan: plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml
+  tasks:
+    - plans/context-circuit-plans/0019-agent-context-runtime-documents/tasks/ACR-0003.md
+  acceptance:
+    - plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml#acceptance_criteria
+  ownership:
+    session: .runtime/sessions/sess-structured-summary/session.yaml
+    delegation: .runtime/sessions/sess-structured-summary/delegation.yaml
+    lease: .runtime/plans/agent-context-runtime-documents/lease.yaml
+    worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents

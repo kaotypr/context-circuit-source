@@ -8,6 +8,14 @@ description: Draft a context-grounded, human-reviewed plan from accepted intent 
 Use this skill when the user asks to turn an accepted Idea Brief, PRD, direct
 request, or selected evidence into intended implementation work.
 
+## Route reads
+
+Use the `planning` manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. This skill owns only
+the local planning guard: the artifact remains `draft` until
+`cc-approve-plan`, and selected source evidence must remain request-scoped.
+Missing required planning records are blockers, not prompts to invent scope.
+
 ## Read and ground
 
 Read the smallest relevant set of Product Knowledge, the accepted product

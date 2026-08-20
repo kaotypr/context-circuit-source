@@ -1,0 +1,15 @@
+schema_version: 1
+task_evidence:
+  task: ACR-0003
+  path: .runtime/plans/agent-context-runtime-documents/task-evidence/ACR-0003.yaml
+  evidence_status: completed
+  checks:
+    - git diff --check
+    - sh test/acceptance.sh
+verifier_evidence:
+  session_id: sess-verifier-runtime
+  path: .runtime/sessions/sess-verifier-runtime/handoff.yaml
+  result: passed
+canonical_refs:
+  plan: plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml
+  task: plans/context-circuit-plans/0019-agent-context-runtime-documents/tasks/ACR-0003.md

@@ -10,6 +10,14 @@ Use this skill when the user asks to clear local execution state or to delete
 is workspace-wide for `.runtime/`; confirmation must say that. It does not
 change plan or task status.
 
+## Route reads
+
+Use the `resume` manifest for runtime records and the `entry` manifest for
+workspace identity in
+`docs/agent-workspace-workflow.md#route-read-manifests`. Cleanup keeps its
+local inspection and human-confirmation guard: a missing runtime record or
+uncertain ownership is not permission to delete state.
+
 ## Inspect
 
 Inspect every runtime worktree under `.runtime/worktrees/` for:

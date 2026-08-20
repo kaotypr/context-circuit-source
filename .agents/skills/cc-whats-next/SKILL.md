@@ -8,6 +8,14 @@ description: Recommend the smallest safe next action from plans, sessions, depen
 Use this skill during root-session entry, resume, or when the user asks what
 should happen next.
 
+## Route reads
+
+Use the `entry` manifest for a fresh recommendation and the `resume` manifest
+for an existing session or stack in
+`docs/agent-workspace-workflow.md#route-read-manifests`. This skill is
+read-only: missing contracts, ownership conflicts, and pending human gates are
+reported as evidence-backed blockers rather than repaired by routing.
+
 Inspect only the relevant runtime records, approved plans, dependencies,
 Product Knowledge warnings, repository state, worktrees, and pending human
 gates. Do not infer a current session from conversation history or a global

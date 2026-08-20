@@ -10,6 +10,16 @@ workspace, or when a root session delegates a bounded child session. The
 workspace filesystem is the coordination surface; do not make a user invoke a
 CLI command as the entry point.
 
+## Route reads
+
+Session entry uses the `entry` manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. A child or resumed
+session also uses the `resume` manifest when loading runtime state. Required
+reads are prerequisites; if the session record, delegation packet, or another
+required contract is missing, report a missing-contract blocker instead of
+reconstructing it. The route manifest owns the shared checklist; this skill
+retains the local identity, ownership, and routing guards below.
+
 Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/index.md,
 context/WORKSPACE.md, context/PROJECT.md, and the relevant Product Knowledge
 before taking consequential action. Read docs/agent-workspace-workflow.md for
@@ -39,7 +49,9 @@ report a blocker.
 4. For an approved plan without a live owner, claim execution only within its
    lease and exclusive worktree. Different plans may proceed concurrently.
 5. Resume from the durable session record and latest handoff, not from assumed
-   conversation state.
+   conversation state. Prefer `handoff.yaml`; use historical Markdown-only
+   `handoff.md` only when the YAML handoff is absent. A malformed structured
+   handoff blocks resume and does not fall back to Markdown.
 
 For fresh work, gather source evidence and draft Product Knowledge or a plan
 as appropriate. Do not silently approve plans or change canonical statuses.
@@ -93,6 +105,10 @@ At handoff, report:
 - objective, delegated scope, and evidence inspected;
 - decisions, assumptions, changed files, and tests/verification;
 - questions, blockers, limitations, and next action.
+
+Write the structured `handoff.yaml` first. An optional `handoff.md` is only a
+human explanation; it cannot override the structured result or canonical plan
+status. Preserve historical Markdown-only handoffs without rewriting them.
 
 If interrupted, preserve the worktree and runtime records. A new session may
 resume or take over only with explicit ownership evidence; never overwrite a

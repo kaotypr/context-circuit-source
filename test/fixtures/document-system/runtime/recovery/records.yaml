@@ -1,0 +1,13 @@
+schema_version: 1
+interrupted_session:
+  session_id: sess-interrupted-runtime
+  status: blocked
+  worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents
+  next_action: Inspect heartbeat and request recovery.
+takeover:
+  session_id: sess-takeover-runtime
+  replaces_session_id: sess-interrupted-runtime
+  status: executing
+  takeover_reason: human-authorized recovery
+  preserved_handoff: ../legacy-fallback/handoff.md
+  preserved_worktree: true

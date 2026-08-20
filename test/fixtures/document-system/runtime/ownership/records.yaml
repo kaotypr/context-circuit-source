@@ -1,0 +1,27 @@
+schema_version: 1
+session:
+  session_id: sess-owner-runtime
+  parent_session_id: sess-root-runtime
+  root_session_id: sess-root-runtime
+  role: implementer
+  status: executing
+  worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents
+delegation:
+  session_id: sess-owner-runtime
+  parent_session_id: sess-root-runtime
+  role: implementer
+  permissions:
+    write_worktree: true
+    write_runtime_session: true
+    write_plan: false
+    write_activity: false
+lease:
+  lease_authority: lease.lock
+  plan: plans/context-circuit-plans/0019-agent-context-runtime-documents
+  session_id: sess-owner-runtime
+  status: active
+  worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents
+worktree:
+  path: .runtime/worktrees/context-circuit/agent-context-runtime-documents
+  exclusive: true
+  branch: cc-stack-0016-0020-agent-context-runtime-documents

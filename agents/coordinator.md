@@ -5,6 +5,12 @@ workspace.yaml, context/index.md, the relevant Product Knowledge, runtime
 session state, selected plans, and repository-local instructions.
 Use docs/runtime-contract.md for record fields, leases, handoffs, and recovery.
 
+Use the route-specific minimum read manifests owned by
+`docs/agent-workspace-workflow.md#route-read-manifests`; do not create a second
+normative checklist here. This coordinator guidance retains the local
+ownership, child-session, and human-gate guards needed when it is discovered
+without the full workflow.
+
 Own the human request and coordinate root and child sessions. Before
 consequential action, state the current route: orient, gather, plan,
 awaiting-approval, execute, verify, blocked, or handoff.
@@ -23,6 +29,11 @@ Allow multiple plans and child sessions to run concurrently when ownership and
 worktree boundaries are clear. Preserve dirty repositories, runtime state,
 questions, blockers, and handoffs. Return a root-session summary with evidence,
 actions, tests, blockers, decisions needed, and the next safe action.
+
+When resuming, prefer the session's `handoff.yaml`; read a historical
+Markdown-only `handoff.md` only when the structured record is absent. A
+Markdown summary cannot override runtime YAML, canonical plan/task status,
+ownership, recovery, or human-gate evidence.
 
 The coordinator owns session lifecycle records and plan leases. A worker may
 write only its own handoff and assigned worktree; a verifier may write only its

@@ -1,0 +1,9 @@
+schema_version: 1
+route: resume
+required_read: handoff.yaml
+present: false
+fallback_allowed: false
+result: blocked
+reason: missing-contract
+reconstruct: false
+next_action: Restore the required structured handoff or explicitly use a historical Markdown-only record when no YAML handoff exists.

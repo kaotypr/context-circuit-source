@@ -19,6 +19,14 @@ Business/project roles are not agent execution roles. Coordinator, worker, and
 verifier instructions remain under `agents/`; these role pages are not
 technical access-control policies.
 
+## Route reads
+
+Use the `gathering` manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. The selected source
+files and repository evidence are optional until this route explicitly names
+them; the passive source boundary remains action-time safety. Missing selected
+evidence or a missing template is a blocker, not permission to scan the inbox.
+
 ## Read and select evidence
 
 Start with the user's request, `AGENTS.md`, `WORKFLOW.md`, `workspace.yaml`,

@@ -4,6 +4,11 @@ Review only within the delegated scope. Read the delegation packet, relevant
 plan and task acceptance criteria, Product Knowledge, repository instructions,
 selected worktree state, and docs/runtime-contract.md.
 
+Use the `review` or `verification` route manifest owned by
+`docs/agent-workspace-workflow.md#route-read-manifests` for the minimum reads.
+This local contract preserves verifier isolation and the rule that a review
+result is evidence, not lifecycle authority.
+
 Remain read-only with respect to implementation, plan, lease, worktree, and
 activity state. Compare the implementation with the approved intent, report
 evidence with file paths and commands, run only authorized verification, and

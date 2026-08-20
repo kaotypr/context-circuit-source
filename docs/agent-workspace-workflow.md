@@ -188,6 +188,7 @@ The target layout is:
     <session-id>/
       session.yaml
       delegation.yaml
+      handoff.yaml
       handoff.md
   plans/
     <plan-id>/
@@ -241,7 +242,9 @@ Runtime writes must be session-scoped and recoverable. A session must not
 rewrite another session's handoff, lease, prompt, or worktree metadata.
 
 See runtime-contract.md for the versioned record fields, safe identifier rules,
-atomic lease convention, and handoff format.
+atomic lease convention, and structured handoff format. Readers prefer
+`handoff.yaml` and fall back to a historical Markdown-only `handoff.md`; when
+both exist, Markdown is explanatory only and cannot override structured state.
 
 ## Workspace entry workflow
 
@@ -288,6 +291,152 @@ that is dependency-ready, explicitly scoped, and not already owned by another
 writing session. When no work is executable, explain whether the session needs
 context, a draft plan, human approval, a review, or a decision about a
 blocker.
+
+### Route read manifests
+
+The following manifests are the minimum read contract for each route. A
+required read is an authority or ownership prerequisite; an optional read is
+loaded only when the request, selected artifact, or runtime state needs it.
+`sources/` is never an entry prerequisite and may be read only when the route
+explicitly selects a source-based activity. A missing required read is a
+missing-contract blocker: report it and stop rather than reconstructing the
+record or silently widening the route.
+
+This section owns the detailed route manifests. `AGENTS.md` owns wrapper
+instruction precedence and the passive-source boundary; this document owns
+route selection, lifecycle, human gates, and child behavior; and
+`docs/runtime-contract.md` owns runtime record shape, ownership, recovery, and
+structured handoffs. Other route documents and skills link to these owners and
+retain only the local action-time guard needed when discovered independently.
+
+```yaml
+route_read_manifests:
+  entry:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - context/CONVENTIONS.md
+      - context/DECISIONS.md
+      - context/SOURCES.md
+      - context/sources.yaml
+    optional_reads:
+      - context/domains/index.md
+      - context/roles/index.md
+      - relevant Product Knowledge page and linked workflow
+      - relevant active session and handoff records
+      - relevant plan and task records
+  planning:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - context/CONVENTIONS.md
+      - context/DECISIONS.md
+      - context/SOURCES.md
+      - context/sources.yaml
+      - plans/README.md
+      - docs/planning.md
+      - selected plan.yaml and task contracts
+      - declared dependency plan records
+    optional_reads:
+      - docs/plan-review.md
+      - selected Idea Brief, PRD, or source evidence
+      - repository-local instructions and implementation evidence
+  gathering:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - context/CONVENTIONS.md
+      - context/DECISIONS.md
+      - context/SOURCES.md
+      - context/sources.yaml
+      - docs/product-knowledge.md
+      - selected knowledge template
+      - selected bundle index
+    optional_reads:
+      - explicitly selected raw source files
+      - selected repository documents
+      - linked domain, workflow, or role pages
+      - context/sources.yaml provenance entries
+  execution:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - relevant Product Knowledge
+      - canonical plan.yaml and task contracts
+      - declared dependency records
+      - docs/runtime-contract.md
+      - current session.yaml
+      - delegation.yaml when the execution session is a child
+      - owned plan lease and worktree ownership
+      - assigned worktree Git root and branch
+    optional_reads:
+      - docs/planning.md
+      - selected execution skill
+      - latest structured handoff or legacy handoff.md
+      - stack graph.yaml and progress.yaml
+      - repository-local AGENTS.md and WORKFLOW.md
+  verification:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - context/index.md
+      - approved canonical plan.yaml and task contracts
+      - docs/runtime-contract.md
+      - independent verifier delegation.yaml
+      - writer handoff and task evidence
+      - assigned worktree Git root, branch, and status
+    optional_reads:
+      - relevant Product Knowledge and source provenance
+      - stack graph.yaml and progress.yaml
+      - repository-local implementation guidance
+  resume:
+    required_reads:
+      - explicit session.yaml
+      - delegation.yaml when resuming a child
+      - handoff.yaml when present
+      - legacy handoff.md when handoff.yaml is absent
+      - canonical plan.yaml and task contracts
+      - owned lease and worktree records
+      - docs/runtime-contract.md
+    optional_reads:
+      - parent handoff
+      - stack graph.yaml and progress.yaml
+      - repository-local instructions and current Git evidence
+  review:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - context/index.md
+      - selected plan.yaml and task contracts
+      - referenced Product Knowledge and provenance
+      - docs/plan-review.md
+      - active sessions, leases, worktrees, and handoffs
+      - repository-local instructions and observed Git state
+    optional_reads:
+      - selected raw source files
+      - prior review outcome
+      - completion or verifier evidence
+```
+
+Route manifests do not change authority. A plan remains authoritative for
+intended scope, a lease remains the ownership primitive, a verifier remains
+read-only for implementation state, and the human remains the authority at
+approval, status-change, publication, merge, deployment, takeover, and cleanup
+gates.
 
 ### Child entry
 
@@ -402,6 +551,11 @@ Every subagent handoff must include:
 - tests or verification performed and results;
 - open questions and blockers;
 - recommended next action.
+
+Store these execution deltas in the structured `handoff.yaml` contract defined
+by `docs/runtime-contract.md`. An optional `handoff.md` explains the result for
+humans; it cannot override YAML or canonical status. Historical Markdown-only
+handoffs remain readable as a fallback and are not rewritten.
 
 Every root-session response should identify:
 

@@ -1,0 +1,21 @@
+schema_version: 1
+stack_id: stack-runtime-fixture
+graph:
+  path: .runtime/stacks/stack-runtime-fixture/graph.yaml
+  frozen: true
+  parent: knowledge-document-system
+  member: agent-context-runtime-documents
+progress:
+  path: .runtime/stacks/stack-runtime-fixture/progress.yaml
+  state: implemented
+  frozen_sha: 96d0313ecc00114aec2ac9e3dbc6cade54a95b67
+  join_parents:
+    - document-contract-foundation
+    - knowledge-document-system
+resume:
+  rebuild_graph: false
+  reuse_worktree: true
+canonical_plan:
+  status: approved
+  implemented_is_runtime_evidence: true
+  finish_skill: cc-finish-plan

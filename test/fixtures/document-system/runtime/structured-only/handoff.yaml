@@ -1,0 +1,37 @@
+schema_version: 1
+handoff_schema: session-handoff-v1
+session_id: sess-structured-only
+parent_session_id: sess-root-runtime
+root_session_id: sess-root-runtime
+status: completed
+plan: plans/context-circuit-plans/0019-agent-context-runtime-documents
+task: ACR-0002
+worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents
+result:
+  outcome: structured-handoff-written
+  changed_files:
+    - docs/runtime-contract.md
+  tests:
+    - command: sh test/acceptance.sh
+      result: passed
+blockers: []
+decisions:
+  - "The structured handoff is the resumable authority."
+evidence:
+  - kind: task-evidence
+    path: .runtime/plans/agent-context-runtime-documents/task-evidence/ACR-0002.yaml
+    result: completed
+next_action:
+  route: review
+  description: Run the independent verifier.
+canonical_refs:
+  plan: plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml
+  tasks:
+    - plans/context-circuit-plans/0019-agent-context-runtime-documents/tasks/ACR-0002.md
+  acceptance:
+    - plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml#acceptance_criteria
+  ownership:
+    session: .runtime/sessions/sess-structured-only/session.yaml
+    delegation: .runtime/sessions/sess-structured-only/delegation.yaml
+    lease: .runtime/plans/agent-context-runtime-documents/lease.yaml
+    worktree: .runtime/worktrees/context-circuit/agent-context-runtime-documents

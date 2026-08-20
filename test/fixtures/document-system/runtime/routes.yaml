@@ -1,0 +1,99 @@
+schema_version: 1
+manifest_owner: docs/agent-workspace-workflow.md#route-read-manifests
+routes:
+  entry:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+    optional_reads:
+      - relevant Product Knowledge
+      - active session and handoff records
+  planning:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - context/CONVENTIONS.md
+      - context/DECISIONS.md
+      - context/SOURCES.md
+      - context/sources.yaml
+      - plans/README.md
+      - docs/planning.md
+      - selected plan.yaml and task contracts
+    optional_reads:
+      - selected Idea Brief or PRD
+      - selected source evidence
+  gathering:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - context/CONVENTIONS.md
+      - context/DECISIONS.md
+      - context/SOURCES.md
+      - context/sources.yaml
+      - docs/product-knowledge.md
+      - selected knowledge template
+      - selected bundle index
+    optional_reads:
+      - explicitly selected raw source files
+      - selected repository documents
+  execution:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - context/index.md
+      - canonical plan.yaml and task contracts
+      - docs/runtime-contract.md
+      - session.yaml
+      - delegation.yaml when the execution session is a child
+      - owned lease and assigned worktree
+    optional_reads:
+      - latest handoff.yaml or legacy handoff.md
+      - stack graph.yaml and progress.yaml
+  verification:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - context/index.md
+      - approved plan.yaml and task contracts
+      - docs/runtime-contract.md
+      - verifier delegation.yaml
+      - writer handoff and task evidence
+      - assigned worktree Git state
+    optional_reads:
+      - relevant Product Knowledge
+      - stack graph.yaml and progress.yaml
+  resume:
+    required_reads:
+      - session.yaml
+      - delegation.yaml when child
+      - handoff.yaml when present
+      - handoff.md when handoff.yaml is absent
+      - canonical plan.yaml and task contracts
+      - owned lease and worktree
+      - docs/runtime-contract.md
+    optional_reads:
+      - parent handoff
+      - stack graph.yaml and progress.yaml
+  review:
+    required_reads:
+      - AGENTS.md
+      - WORKFLOW.md
+      - context/index.md
+      - selected plan.yaml and task contracts
+      - referenced Product Knowledge
+      - docs/plan-review.md
+      - active ownership and repository state
+    optional_reads:
+      - selected source files
+      - prior review and completion evidence

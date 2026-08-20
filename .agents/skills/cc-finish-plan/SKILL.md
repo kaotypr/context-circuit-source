@@ -10,11 +10,20 @@ Use this skill when the user asks to mark a named executed plan done.
 `status-change` gate. `cc-run-plan` remains the sole execution entry. Finish
 is not a second implementation workflow.
 
+## Route reads
+
+Use the `resume` manifest for the runtime evidence and the `review` manifest
+for the plan and verifier evidence in
+`docs/agent-workspace-workflow.md#route-read-manifests`. The local guard below
+still requires `completion.yaml`, task evidence, independent verification, and
+current-session human confirmation before changing canonical status.
+
 ## Preflight
 
 Read the named plan's canonical `plan.yaml`, `.runtime/plans/<plan-id>/completion.yaml`,
-the independent verifier handoff, task evidence, the plan lease, and worktree
-Git state. Confirm:
+the independent verifier handoff (prefer `handoff.yaml`; use historical
+Markdown-only `handoff.md` only when YAML is absent), task evidence, the plan
+lease, and worktree Git state. Confirm:
 
 - the plan identifier is known and not contradictory;
 - plan status is exactly `approved`;

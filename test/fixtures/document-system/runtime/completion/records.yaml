@@ -1,0 +1,11 @@
+schema_version: 1
+plan: plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml
+status: ready-for-human-status-change
+verifier_session_id: sess-verifier-runtime
+verification_handoff: .runtime/sessions/sess-verifier-runtime/handoff.yaml
+task_evidence:
+  - .runtime/plans/agent-context-runtime-documents/task-evidence/ACR-0001.yaml
+  - .runtime/plans/agent-context-runtime-documents/task-evidence/ACR-0002.yaml
+  - .runtime/plans/agent-context-runtime-documents/task-evidence/ACR-0003.yaml
+human_gate: status-change
+canonical_status_changed: false

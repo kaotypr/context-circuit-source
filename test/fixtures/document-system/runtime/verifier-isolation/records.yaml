@@ -1,0 +1,15 @@
+schema_version: 1
+verifier:
+  session_id: sess-verifier-runtime
+  role: verifier
+  permissions:
+    write_worktree: false
+    write_runtime_session: true
+    write_plan: false
+    write_activity: false
+  writable_path: .runtime/sessions/sess-verifier-runtime/handoff.yaml
+forbidden_paths:
+  - .runtime/plans/agent-context-runtime-documents/lease.yaml
+  - .runtime/worktrees/context-circuit/agent-context-runtime-documents
+  - plans/context-circuit-plans/0019-agent-context-runtime-documents/plan.yaml
+  - activity.log

@@ -84,6 +84,13 @@ ceremonies for every session. `cc-run-plan` is single-plan execution.
 - Add new context only when it is source-backed, scoped, and useful to future
   sessions.
 
+## Route read manifests
+
+Use the route-specific required and optional read manifests owned by
+`docs/agent-workspace-workflow.md#route-read-manifests` for entry, planning,
+gathering, execution, verification, resume, and review. This lowercase index is
+navigation only; it does not duplicate those normative contracts.
+
 ## Detailed context selection
 
 Domain Knowledge is canonical for a bounded project area. Start with

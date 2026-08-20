@@ -9,6 +9,14 @@ Use this skill when the user asks to approve a named draft plan. `cc-approve-pla
 is the named plan-approval skill. It satisfies the human `plan-approval` gate.
 It does not execute the plan.
 
+## Route reads
+
+Use the `planning` manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. The plan-approval
+confirmation is the local action-time guard: missing plan contracts or
+unresolved contradictions remain blockers, and this skill never starts
+execution.
+
 ## Preflight
 
 Read the named plan's canonical `plan.yaml`, included tasks, declared

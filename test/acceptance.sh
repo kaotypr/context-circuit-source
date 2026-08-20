@@ -1082,6 +1082,73 @@ cleanup_runtime() {
   printf 'CLEANED: runtime deleted; branches preserved\n'
 }
 
+route_manifest_complete() {
+  route_manifest=$1
+  for route_name in entry planning gathering execution verification resume review; do
+    grep -F "  $route_name:" "$route_manifest" >/dev/null 2>&1 || return 1
+    route_block=$(awk -v route="$route_name" '
+      $0 == "  " route ":" { found=1; next }
+      found && $0 ~ /^  [a-z-]+:/ { exit }
+      found { print }
+    ' "$route_manifest")
+    printf '%s\n' "$route_block" | grep -F 'required_reads:' >/dev/null 2>&1 || return 1
+    printf '%s\n' "$route_block" | grep -F 'optional_reads:' >/dev/null 2>&1 || return 1
+  done
+  return 0
+}
+
+route_contract_guard() {
+  route_manifest=$1
+  required_contract=$2
+  test -f "$route_manifest" || {
+    printf 'BLOCKED: missing route manifest contract\n' >&2
+    return 1
+  }
+  test -f "$required_contract" || {
+    printf 'BLOCKED: required route read is missing\n' >&2
+    return 1
+  }
+  return 0
+}
+
+handoff_yaml_complete() {
+  handoff_file=$1
+  for handoff_field in \
+    'schema_version: 1' 'handoff_schema: session-handoff-v1' \
+    'session_id:' 'parent_session_id:' 'root_session_id:' 'status:' \
+    'plan:' 'task:' 'worktree:' 'result:' 'blockers:' 'decisions:' \
+    'evidence:' 'next_action:' 'canonical_refs:'; do
+    grep -F "$handoff_field" "$handoff_file" >/dev/null 2>&1 || return 1
+  done
+  handoff_status=$(sed -n 's/^status: //p' "$handoff_file" | head -n 1)
+  handoff_status_valid "$handoff_status"
+}
+
+handoff_source() {
+  handoff_dir=$1
+  structured_handoff="$handoff_dir/handoff.yaml"
+  legacy_handoff="$handoff_dir/handoff.md"
+  if test -f "$structured_handoff"; then
+    handoff_yaml_complete "$structured_handoff" || {
+      printf 'BLOCKED: malformed structured handoff; Markdown fallback is not allowed\n' >&2
+      return 1
+    }
+    printf 'handoff.yaml\n'
+    return 0
+  fi
+  if test -f "$legacy_handoff"; then
+    grep -E '^- status: (completed|blocked|failed|awaiting-human-gate)$' \
+      "$legacy_handoff" >/dev/null 2>&1 || {
+      printf 'BLOCKED: legacy handoff has no valid status\n' >&2
+      return 1
+    }
+    printf 'handoff.md\n'
+    return 0
+  fi
+  printf 'BLOCKED: no resumable handoff exists\n' >&2
+  return 1
+}
+
 init_cleanup_git() {
   source_repo=$1
   bare_repo=$2
@@ -3495,5 +3562,163 @@ if grep -R -F 'unselected source evidence' \
   fail 'knowledge output copied unselected source text'
 fi
 
+# Plan 0019: route manifests, structured handoff resume, legacy compatibility,
+# and runtime ownership, recovery, verification, stack, evidence, and gates.
+runtime_fixture_root=test/fixtures/document-system/runtime
+require_file "$runtime_fixture_root/README.md"
+require_file "$runtime_fixture_root/expected-results.yaml"
+require_file "$runtime_fixture_root/routes.yaml"
+require_file "$runtime_fixture_root/missing-contract.yaml"
+require_file "$runtime_fixture_root/structured-only/handoff.yaml"
+require_file "$runtime_fixture_root/structured-plus-summary/handoff.yaml"
+require_file "$runtime_fixture_root/structured-plus-summary/handoff.md"
+require_file "$runtime_fixture_root/legacy-fallback/handoff.md"
+require_file "$runtime_fixture_root/ownership/records.yaml"
+require_file "$runtime_fixture_root/recovery/records.yaml"
+require_file "$runtime_fixture_root/verifier-isolation/records.yaml"
+require_file "$runtime_fixture_root/stack/records.yaml"
+require_file "$runtime_fixture_root/evidence/records.yaml"
+require_file "$runtime_fixture_root/completion/records.yaml"
+
+contains docs/agent-workspace-workflow.md 'route_read_manifests:'
+contains docs/agent-workspace-workflow.md 'missing-contract blocker'
+contains docs/agent-workspace-workflow.md 'handoff.yaml when present'
+contains docs/agent-workspace-workflow.md 'handoff.md when handoff.yaml is absent'
+for route_name in entry planning gathering execution verification resume review; do
+  contains docs/agent-workspace-workflow.md "  $route_name:"
+done
+contains docs/agent-workspace-workflow.md 'required_reads:'
+contains docs/agent-workspace-workflow.md 'optional_reads:'
+contains WORKFLOW.md 'route-read-manifests'
+contains context/index.md 'Route read manifests'
+contains context/index.md 'lowercase routing file'
+contains docs/planning.md 'planning` read manifest'
+contains .agents/skills/cc-session-entry/SKILL.md 'entry` manifest'
+contains .agents/skills/cc-create-plan/SKILL.md 'planning` manifest'
+contains .agents/skills/cc-gather-context/SKILL.md 'gathering` manifest'
+contains .agents/skills/cc-run-plan/SKILL.md 'execution` manifest'
+contains .agents/skills/cc-run-stack/SKILL.md 'resume` manifest'
+contains .agents/skills/cc-review-plan/SKILL.md 'review` manifest'
+contains agents/coordinator.md 'route-specific minimum read manifests'
+contains agents/repository-worker.md 'execution` manifest'
+contains agents/reviewer.md 'verification` route manifest'
+
+expect_success route_manifest_complete "$runtime_fixture_root/routes.yaml"
+for route_name in entry planning gathering execution verification resume review; do
+  contains "$runtime_fixture_root/routes.yaml" "  $route_name:"
+done
+contains "$runtime_fixture_root/routes.yaml" 'required_reads:'
+contains "$runtime_fixture_root/routes.yaml" 'optional_reads:'
+contains "$runtime_fixture_root/routes.yaml" 'context/index.md'
+contains "$runtime_fixture_root/routes.yaml" 'handoff.yaml when present'
+contains "$runtime_fixture_root/routes.yaml" \
+  'handoff.md when handoff.yaml is absent'
+
+missing_contract_dir="$fixture/runtime-missing-contract"
+mkdir -p "$missing_contract_dir"
+assert_failure_reason "$fixture/runtime-missing-contract.log" \
+  'required route read is missing' route_contract_guard \
+  "$runtime_fixture_root/routes.yaml" "$missing_contract_dir/handoff.yaml"
+contains "$runtime_fixture_root/missing-contract.yaml" 'result: blocked'
+contains "$runtime_fixture_root/missing-contract.yaml" 'reconstruct: false'
+
+expect_success handoff_yaml_complete \
+  "$runtime_fixture_root/structured-only/handoff.yaml"
+test ! -e "$runtime_fixture_root/structured-only/handoff.md"
+test "$(handoff_source "$runtime_fixture_root/structured-only")" = handoff.yaml
+
+expect_success handoff_yaml_complete \
+  "$runtime_fixture_root/structured-plus-summary/handoff.yaml"
+test "$(handoff_source "$runtime_fixture_root/structured-plus-summary")" = \
+  handoff.yaml
+contains "$runtime_fixture_root/structured-plus-summary/handoff.md" \
+  'summary_role: explanatory-only'
+
+structured_conflict_dir="$fixture/runtime-structured-conflict"
+mkdir -p "$structured_conflict_dir"
+cp "$runtime_fixture_root/structured-plus-summary/handoff.yaml" \
+  "$structured_conflict_dir/handoff.yaml"
+atomic_write "$structured_conflict_dir/handoff.md" \
+  '# Conflicting human summary' '- status: failed' \
+  '- summary_role: explanatory-only'
+test "$(handoff_source "$structured_conflict_dir")" = handoff.yaml
+contains "$structured_conflict_dir/handoff.md" 'status: failed'
+contains "$structured_conflict_dir/handoff.yaml" 'status: awaiting-human-gate'
+
+legacy_handoff_snapshot="$fixture/legacy-handoff.snapshot"
+sha256sum "$runtime_fixture_root/legacy-fallback/handoff.md" \
+  > "$legacy_handoff_snapshot"
+test "$(handoff_source "$runtime_fixture_root/legacy-fallback")" = handoff.md
+test "$(sha256sum "$runtime_fixture_root/legacy-fallback/handoff.md")" = \
+  "$(cat "$legacy_handoff_snapshot")"
+
+malformed_handoff_dir="$fixture/runtime-malformed-handoff"
+mkdir -p "$malformed_handoff_dir"
+cp "$runtime_fixture_root/legacy-fallback/handoff.md" \
+  "$malformed_handoff_dir/handoff.md"
+atomic_write "$malformed_handoff_dir/handoff.yaml" \
+  'schema_version: 1' 'handoff_schema: session-handoff-v1'
+assert_failure_reason "$fixture/runtime-malformed-handoff.log" \
+  'Markdown fallback is not allowed' handoff_source "$malformed_handoff_dir"
+
+contains docs/runtime-contract.md 'handoff.yaml'
+contains docs/runtime-contract.md 'handoff_schema: session-handoff-v1'
+contains docs/runtime-contract.md 'result:'
+contains docs/runtime-contract.md 'canonical_refs:'
+contains docs/runtime-contract.md 'Markdown-only `handoff.md`'
+contains docs/runtime-contract.md 'Historical runtime is not'
+contains docs/runtime-contract.md 'outside OKF'
+contains docs/runtime-contract.md 'malformed or incomplete'
+contains docs/runtime-contract.md 'stack `graph.yaml` or `progress.yaml`'
+contains "$runtime_fixture_root/README.md" 'not OKF concepts'
+if grep -R -E '^type:' "$runtime_fixture_root" >/dev/null 2>&1; then
+  fail 'runtime fixtures were treated as OKF concepts'
+fi
+
+contains "$runtime_fixture_root/ownership/records.yaml" \
+  'lease_authority: lease.lock'
+contains "$runtime_fixture_root/ownership/records.yaml" 'exclusive: true'
+contains "$runtime_fixture_root/ownership/records.yaml" 'write_plan: false'
+contains "$runtime_fixture_root/recovery/records.yaml" \
+  'takeover_reason: human-authorized recovery'
+contains "$runtime_fixture_root/recovery/records.yaml" \
+  'preserved_handoff: ../legacy-fallback/handoff.md'
+contains "$runtime_fixture_root/verifier-isolation/records.yaml" \
+  'write_worktree: false'
+contains "$runtime_fixture_root/verifier-isolation/records.yaml" \
+  'write_runtime_session: true'
+contains "$runtime_fixture_root/verifier-isolation/records.yaml" \
+  'write_plan: false'
+contains "$runtime_fixture_root/verifier-isolation/records.yaml" \
+  'write_activity: false'
+if grep -F 'write_worktree: true' \
+  "$runtime_fixture_root/verifier-isolation/records.yaml" >/dev/null 2>&1; then
+  fail 'verifier fixture grants worktree write access'
+fi
+
+contains "$runtime_fixture_root/stack/records.yaml" 'frozen: true'
+contains "$runtime_fixture_root/stack/records.yaml" 'progress.yaml'
+contains "$runtime_fixture_root/stack/records.yaml" 'rebuild_graph: false'
+contains "$runtime_fixture_root/stack/records.yaml" \
+  'implemented_is_runtime_evidence: true'
+contains "$runtime_fixture_root/stack/records.yaml" \
+  'canonical_plan:'
+contains "$runtime_fixture_root/stack/records.yaml" 'status: approved'
+contains "$runtime_fixture_root/evidence/records.yaml" \
+  'evidence_status: completed'
+contains "$runtime_fixture_root/evidence/records.yaml" \
+  'result: passed'
+contains "$runtime_fixture_root/completion/records.yaml" \
+  'status: ready-for-human-status-change'
+contains "$runtime_fixture_root/completion/records.yaml" \
+  'human_gate: status-change'
+contains "$runtime_fixture_root/completion/records.yaml" \
+  'canonical_status_changed: false'
+if grep -E '^status:[[:space:]]*done$' \
+  "$runtime_fixture_root/completion/records.yaml" >/dev/null 2>&1; then
+  fail 'completion fixture changed canonical status'
+fi
+
+printf 'PASS: Plan 0019 route manifests, structured and legacy handoffs, runtime safety, evidence, and completion gates\n'
 printf 'PASS: Plan 0017 knowledge envelopes, bundle declarations, index migration, compatibility, and source boundaries\n'
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

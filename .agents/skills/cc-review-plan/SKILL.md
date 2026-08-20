@@ -8,6 +8,13 @@ description: Review a plan for evidence, scope, dependencies, risks, contradicti
 Use this skill when the user asks whether a plan is ready, what needs review,
 or what decisions remain before execution.
 
+## Route reads
+
+Use the `review` manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. This skill remains
+read-only: a missing contract, ownership ambiguity, or contradiction is
+reported as a review blocker and never repaired by changing `plan.yaml`.
+
 ## Inspect
 
 Read the selected plan, its tasks, referenced Product Knowledge, source

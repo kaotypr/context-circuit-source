@@ -9,6 +9,15 @@ Use this skill when the user asks to execute a connected set of already-approved
 plans, when session-entry or `cc-whats-next` identifies approved unimplemented
 connected plans, or when `.runtime/stacks/<stack-id>/` can be resumed.
 
+## Route reads
+
+Use the `execution` manifest for a new member and the `resume` manifest when
+continuing a stack in
+`docs/agent-workspace-workflow.md#route-read-manifests`. This skill retains the
+stack-specific guard that `graph.yaml` and `progress.yaml` are runtime
+authority for the run, while canonical plan status, leases, verifier isolation,
+and human gates remain governed by the shared owners.
+
 Invoking the skill starts or resumes execution. There is no stack-approval
 gate. Refuse draft member plans, an invalid DAG, or a live foreign stack or
 plan lease.
@@ -22,6 +31,8 @@ request still enters `cc-run-plan`. Do not treat a stack run as one
 Read the named member `plan.yaml` files, declared prose dependencies, Product
 Knowledge, repository-local instructions, active sessions, leases, worktrees,
 and any existing `.runtime/stacks/<stack-id>/graph.yaml` and `progress.yaml`.
+For member resume, prefer `handoff.yaml` and use historical Markdown-only
+`handoff.md` only when no structured handoff exists.
 Confirm:
 
 - every member plan status is exactly `approved`;

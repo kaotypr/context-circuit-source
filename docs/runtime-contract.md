@@ -18,6 +18,7 @@ The runtime root is .runtime/ in the workspace that owns the plan:
     <session-id>/
       session.yaml
       delegation.yaml
+      handoff.yaml
       handoff.md
   plans/
     <plan-id>/
@@ -40,9 +41,15 @@ The runtime root is .runtime/ in the workspace that owns the plan:
 ~~~
 
 delegation.yaml is required for a child session and absent for a root session.
-handoff.md is the latest handoff owned by that session. The plan-level
-handoffs/ directory is an append-only evidence view; it does not replace the
-session-owned handoff.
+`handoff.yaml` is the preferred structured handoff owned by that session.
+`handoff.md` is optional explanatory Markdown for a structured handoff and is
+also retained as a read-only legacy fallback for historical sessions that have
+no YAML handoff. The plan-level `handoffs/` directory is an append-only
+evidence view; it does not replace the session-owned handoff.
+
+Runtime YAML, including `handoff.yaml`, is execution state outside OKF. It does
+not become Product Knowledge, a plan/task lifecycle record, or a second
+authority for a lease, stack, or human gate.
 
 There is deliberately no .runtime/current-session.yaml,
 .runtime/current-plan.yaml, .runtime/current-stack.yaml, or other global
@@ -76,7 +83,7 @@ Write rules:
 1. Create parent directories before writing.
 2. Write a temporary file in the same directory, flush it when the host
    supports flushing, and atomically rename it into place.
-3. Never overwrite another session's handoff.md, delegation.yaml,
+3. Never overwrite another session's handoff.yaml, handoff.md, delegation.yaml,
    lease.lock/owner.yaml, or worktree ownership record.
 4. Treat a missing or partially written required record as blocked, not as
    permission to reconstruct facts.
@@ -264,7 +271,7 @@ schema_version: 1
 plan: plans/context-circuit-plans/0001-example
 status: ready-for-human-status-change
 verifier_session_id: sess-002
-verification_handoff: .runtime/sessions/sess-002/handoff.md
+verification_handoff: .runtime/sessions/sess-002/handoff.yaml
 human_gate: status-change
 canonical_status_changed: false
 ~~~
@@ -387,9 +394,83 @@ Worktree rules:
    remaining SHAs in that order, then the writer runs. Routine joins do not
    pause for a human and do not wait for `default_branch`.
 
+## Structured handoffs
+
+The session owner writes `.runtime/sessions/<session-id>/handoff.yaml` as the
+canonical resumable handoff. It records execution-specific deltas and
+references canonical records instead of copying plan requirements or unchanged
+session metadata:
+
+```yaml
+schema_version: 1
+handoff_schema: session-handoff-v1
+session_id: sess-002
+parent_session_id: sess-001
+root_session_id: sess-001
+status: completed
+plan: plans/app-plans/0010-checkout
+task: APP-0042
+worktree: .runtime/worktrees/app/example
+result:
+  outcome: implemented-and-verified
+  changed_files:
+    - src/checkout.ts
+  tests:
+    - command: sh test/acceptance.sh
+      result: passed
+blockers: []
+decisions:
+  - "Kept runtime YAML outside OKF and canonical plan status."
+evidence:
+  - kind: task-evidence
+    path: .runtime/plans/0010-checkout/task-evidence/APP-0042.yaml
+    result: completed
+  - kind: verification
+    path: .runtime/sessions/sess-003/handoff.yaml
+    result: passed
+next_action:
+  route: review
+  description: Request independent review and human status-change decision.
+canonical_refs:
+  plan: plans/app-plans/0010-checkout/plan.yaml
+  tasks:
+    - plans/app-plans/0010-checkout/tasks/APP-0042.md
+  acceptance:
+    - plans/app-plans/0010-checkout/plan.yaml#acceptance_criteria
+  ownership:
+    session: .runtime/sessions/sess-002/session.yaml
+    delegation: .runtime/sessions/sess-002/delegation.yaml
+    lease: .runtime/plans/0010-checkout/lease.yaml
+    worktree: .runtime/worktrees/app/example
+```
+
+The required resumable fields are `schema_version`, `handoff_schema`,
+`session_id`, `parent_session_id`, `root_session_id`, `status`, `plan`, `task`,
+`worktree`, `result`, `blockers`, `decisions`, `evidence`, `next_action`, and
+`canonical_refs`. `status` is one of `completed`, `blocked`, `failed`, or
+`awaiting-human-gate`. `result`, `blockers`, `decisions`, `evidence`, and
+`next_action` must describe the current execution delta; canonical references
+must identify the authoritative plan, task, acceptance, evidence, and
+ownership records.
+
+On resume, readers prefer and validate `handoff.yaml`. If it is absent, they
+may read a historical Markdown-only `handoff.md` using the legacy handoff
+format below. If `handoff.yaml` is present but malformed or incomplete, the
+route is blocked; readers must not fall back to Markdown and must not
+reconstruct missing structured fields. When both files exist, YAML is
+authoritative and Markdown is explanatory only. Historical runtime is not
+rewritten in place.
+
+Structured handoffs remain runtime records: they cannot override
+`plan.yaml`, task projections, leases, stack `graph.yaml` or `progress.yaml`,
+completion evidence, verifier isolation, or any human gate. A handoff can
+recommend `cc-finish-plan`, but cannot satisfy its status-change gate.
+
 ## Handoffs
 
-The session owner writes .runtime/sessions/<session-id>/handoff.md with:
+The optional Markdown view is explanatory only. A new session may write
+`.runtime/sessions/<session-id>/handoff.md` as a concise human summary beside
+the structured handoff, but it is not a competing canonical record:
 
 ~~~markdown
 # Session handoff
@@ -431,17 +512,19 @@ The session owner writes .runtime/sessions/<session-id>/handoff.md with:
 ...
 ~~~
 
-The status must be one of completed, blocked, failed, or awaiting-human-gate.
-A handoff never changes canonical plan/task status. Parents copy or reference
-handoff evidence; they do not rewrite the child's record.
+The legacy Markdown status must be one of completed, blocked, failed, or
+awaiting-human-gate. A handoff never changes canonical plan/task status.
+Parents copy or reference structured handoff evidence; they do not rewrite the
+child's record.
 
 ## Recovery and concurrency
 
 On interruption:
 
 1. Preserve the worktree, lease, session record, and latest handoff.
-2. Read the heartbeat and inspect the worktree before deciding whether work
-   can resume.
+2. Read `handoff.yaml` first, or the historical Markdown-only `handoff.md`
+   when no structured handoff exists. Then read the heartbeat and inspect the
+   worktree before deciding whether work can resume.
 3. Resume with the same session when possible.
 4. If ownership is ambiguous, stop and request human takeover.
 5. If takeover is authorized, create a new session and handoff that names the

@@ -23,6 +23,12 @@ The agent must:
 6. Explain whether it is orienting, gathering context, planning, awaiting
    approval, executing, verifying, blocked, or handing off.
 
+The detailed minimum required and optional reads for each route are owned by
+`docs/agent-workspace-workflow.md#route-read-manifests`. Use that manifest
+instead of expanding every route into a duplicate checklist. A missing
+required read is a visible missing-contract blocker; it is never permission to
+reconstruct runtime state.
+
 On fresh root entry, create the root session record before claiming work. On
 resume, use the explicit session record and latest handoff; never infer a
 current session from conversation history or a global pointer.

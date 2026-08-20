@@ -10,11 +10,22 @@ when root-session routing identifies an approved, dependency-ready plan.
 `cc-run-plan` is the sole standard single-plan execution capability. It is not
 a stack runner. Connected approved plans enter `cc-run-stack`.
 
+## Route reads
+
+Use the `execution` manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. At action time this
+skill additionally requires an approved plan, a matching active lease, and an
+exclusive worktree before a writer child can write. Missing or mismatched
+ownership is a blocker; it is never repaired by changing plan status or
+silently taking over a session.
+
 ## Preflight
 
 Read the canonical `plan.yaml`, all task contracts, relevant Product Knowledge,
 repository-local instructions, current repository state, active sessions,
-leases, worktrees, and the latest handoffs. Confirm:
+leases, worktrees, and the latest handoffs. Prefer `handoff.yaml`; read a
+historical Markdown-only `handoff.md` only when structured state is absent.
+Confirm:
 
 - the plan status is exactly `approved`;
 - every declared dependency is approved or done as required by the plan;
@@ -89,7 +100,8 @@ worktree, and activity state; it may write only its own handoff.
 ## Execute and recover
 
 Run dependency-ready tasks in order through the writer child. Preserve task
-evidence, questions, blockers, dirty work, and handoffs in durable records. A
+evidence, questions, blockers, dirty work, and structured handoffs in durable
+records. A
 worker stops and returns to the root when it reaches an unassigned path, a
 scope change, a contradictory source, an ownership conflict, or missing
 required evidence.

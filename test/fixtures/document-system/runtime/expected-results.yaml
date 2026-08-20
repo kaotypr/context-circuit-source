@@ -1,0 +1,54 @@
+schema_version: 1
+runtime_authority: docs/runtime-contract.md
+cases:
+  route-manifests:
+    status: ready
+    routes:
+      - entry
+      - planning
+      - gathering
+      - execution
+      - verification
+      - resume
+      - review
+  missing-contract:
+    status: blocked
+    reason: required-read-missing
+    reconstruct: false
+  structured-only:
+    status: completed
+    handoff_source: handoff.yaml
+    markdown_required: false
+  structured-plus-summary:
+    status: completed
+    handoff_source: handoff.yaml
+    markdown_role: explanatory-only
+  legacy-fallback:
+    status: completed
+    handoff_source: handoff.md
+    rewrite_active_history: false
+  ownership:
+    status: ready
+    lease_authority: lease.lock
+    worktree_exclusive: true
+  recovery:
+    status: blocked
+    takeover: human-authorized-only
+  verifier-isolation:
+    status: ready
+    write_worktree: false
+    write_plan: false
+    write_activity: false
+  stack:
+    status: ready
+    graph_frozen: true
+    progress_resume: true
+    canonical_plan_status: approved
+  evidence:
+    status: ready
+    task_evidence_required: true
+    verifier_evidence_required: true
+  completion:
+    status: blocked
+    human_gate: status-change
+    canonical_status_changed: false

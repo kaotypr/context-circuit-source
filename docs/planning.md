@@ -5,6 +5,12 @@ itself and they do not replace runtime execution state. Every-session Product
 Knowledge includes `context/WORKSPACE.md` for workspace identity and
 `context/PROJECT.md` for the project being built.
 
+Planning uses the `planning` read manifest in
+`docs/agent-workspace-workflow.md#route-read-manifests`. That manifest owns the
+minimum required and optional reads for this route. This document owns the plan
+artifact and lifecycle details below; it does not redefine session, runtime
+ownership, verifier isolation, or human-gate rules.
+
 A plan should have:
 
 - one repository domain where code changes are expected;
