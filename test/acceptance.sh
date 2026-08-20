@@ -2683,6 +2683,12 @@ require_file scripts/release-artifact.sh
 require_file scripts/release-manifest.txt
 require_file .github/workflows/sync-context-circuit-release.yml
 require_file docs/release.md
+contains .github/workflows/sync-context-circuit-release.yml \
+  'context/index.md'
+if grep -F 'context/INDEX.md' \
+  .github/workflows/sync-context-circuit-release.yml >/dev/null 2>&1; then
+  fail 'release workflow still checks the removed uppercase context index'
+fi
 contains workspace.yaml 'template_version: 0.4.0'
 contains docs/release.md 'v0.4.0'
 contains .github/workflows/sync-context-circuit-release.yml 'v0.4.0'

@@ -74,7 +74,7 @@ jobs:
           test -f "$artifact_dir/AGENTS.md"
           test -f "$artifact_dir/WORKFLOW.md"
           test -f "$artifact_dir/workspace.yaml"
-          test -f "$artifact_dir/context/INDEX.md"
+          test -f "$artifact_dir/context/index.md"
           test -f "$artifact_dir/.agents/skills/cc-session-entry/SKILL.md"
           test ! -e "$artifact_dir/test"
           test ! -e "$artifact_dir/.github"
