@@ -3234,6 +3234,8 @@ task_list_fields_valid() {
 }
 
 task_validate() {
+  # This is structural fixture evidence only. The approved host capability,
+  # not this shell guard, performs deterministic YAML/schema validation.
   task_file=$1
   task_close_line=$(front_matter_close_line "$task_file") || {
     printf 'BLOCKED: task front matter delimiters invalid\n' >&2
@@ -3271,6 +3273,42 @@ task_validate() {
     return 1
   }
   return 0
+}
+
+task_validation_sequence() {
+  printf '%s\n' \
+    front_matter_extraction \
+    yaml_parse \
+    required_fields \
+    enum_values \
+    nested_shapes \
+    artifact_schema
+}
+
+approve_plan_with_task_validation() {
+  readiness_plan_file=$1
+  readiness_task_dir=$2
+  readiness_confirmation=$3
+  readiness_expected_id=${4:-}
+  readiness_task_found=0
+  if test -d "$readiness_task_dir"; then
+    for readiness_task_file in "$readiness_task_dir"/*.md; do
+      test -f "$readiness_task_file" || continue
+      readiness_task_found=1
+      if ! task_validate "$readiness_task_file"; then
+        printf 'BLOCKED: task validation failed; readiness projection unchanged\n' \
+          >&2
+        return 1
+      fi
+    done
+  fi
+  if test "$readiness_task_found" -eq 0; then
+    printf 'BLOCKED: task validation failed; readiness projection unchanged\n' \
+      >&2
+    return 1
+  fi
+  approve_plan "$readiness_plan_file" "$readiness_task_dir" \
+    "$readiness_confirmation" "$readiness_expected_id"
 }
 
 compact_plan_bundle_valid() {
@@ -3434,6 +3472,8 @@ for plan_bundle_file in \
   "$plan_bundle_root/historical/plan.yaml" \
   "$plan_bundle_root/historical/overview.md" \
   "$plan_bundle_root/historical/tasks/HIST-0001.md" \
+  "$plan_bundle_root/prototype-comparison.md" \
+  "$plan_bundle_root/duplication-inventory.yaml" \
   "$plan_bundle_root/invalid-task-delimiters.md" \
   "$plan_bundle_root/invalid-task-yaml.md" \
   "$plan_bundle_root/invalid-task-required-fields.md" \
@@ -3444,6 +3484,22 @@ done
 
 expect_success compact_plan_bundle_valid "$plan_bundle_root/minimal"
 expect_success complex_plan_bundle_valid "$plan_bundle_root/complex"
+contains "$document_fixture_root/expected-results.yaml" \
+  'mode: structural-contract-only'
+contains "$document_fixture_root/expected-results.yaml" \
+  'provider: approved-host-capability'
+contains "$document_fixture_root/expected-results.yaml" \
+  'repository_runtime_required: false'
+contains "$plan_bundle_root/prototype-comparison.md" \
+  'Before: full companion prototype'
+contains "$plan_bundle_root/prototype-comparison.md" \
+  'After: compact prototype'
+contains "$plan_bundle_root/prototype-comparison.md" \
+  'Rationale surfaces'
+contains "$plan_bundle_root/duplication-inventory.yaml" \
+  'evidence_mode: bounded-fixture-counts'
+contains "$plan_bundle_root/duplication-inventory.yaml" \
+  'unsafe_compression_rewarded: false'
 historical_bundle_snapshot="$fixture/historical-bundle.snapshot"
 sha256sum "$plan_bundle_root/historical/plan.yaml" \
   "$plan_bundle_root/historical"/*.md \
@@ -3475,13 +3531,15 @@ assert_failure_reason "$fixture/invalid-task-nesting.log" \
 for plan_result in \
   compact-plan-bundle complex-plan-bundle historical-full-bundle \
   invalid-task-delimiters invalid-task-yaml invalid-task-required-fields \
-  invalid-task-enum invalid-task-nesting; do
+  invalid-task-enum invalid-task-nesting task-readiness-repair; do
   contains "$document_fixture_root/expected-results.yaml" "$plan_result:"
 done
 contains "$document_fixture_root/expected-results.yaml" \
   'compatibility: historical-companions-readable'
 contains "$document_fixture_root/expected-results.yaml" \
   'task_validation: front_matter_extraction-fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'projection_on_block: unchanged'
 
 plan_bundle_projection="$fixture/plan-bundle-projection"
 cp -R "$plan_bundle_root/minimal" "$plan_bundle_projection"
@@ -3492,6 +3550,34 @@ contains "$plan_bundle_projection/plan.yaml" 'status: approved'
 contains "$plan_bundle_projection/tasks/COMP-0001.md" 'status: ready'
 expect_success run_plan_guard "$plan_bundle_projection/plan.yaml" \
   "$plan_bundle_projection/lease.lock"
+
+readiness_fixture="$fixture/plan-readiness"
+cp -R "$plan_bundle_root/minimal" "$readiness_fixture"
+cp "$plan_bundle_root/invalid-task-required-fields.md" \
+  "$readiness_fixture/tasks/COMP-0001.md"
+assert_failure_reason "$fixture/readiness-block.log" \
+  'task validation failed; readiness projection unchanged' \
+  approve_plan_with_task_validation "$readiness_fixture/plan.yaml" \
+  "$readiness_fixture/tasks" confirm compact-plan
+contains "$fixture/readiness-block.log" \
+  'readiness projection unchanged'
+contains "$readiness_fixture/plan.yaml" 'status: draft'
+contains "$readiness_fixture/tasks/COMP-0001.md" 'BAD-REQUIRED'
+
+cp "$plan_bundle_root/minimal/tasks/COMP-0001.md" \
+  "$readiness_fixture/tasks/COMP-0001.md"
+task_validation_sequence > "$readiness_fixture/revalidation-sequence"
+for readiness_check in \
+  front_matter_extraction yaml_parse required_fields enum_values \
+  nested_shapes artifact_schema; do
+  contains "$readiness_fixture/revalidation-sequence" "$readiness_check"
+done
+expect_success task_validate "$readiness_fixture/tasks/COMP-0001.md"
+expect_success approve_plan_with_task_validation \
+  "$readiness_fixture/plan.yaml" "$readiness_fixture/tasks" \
+  confirm compact-plan
+contains "$readiness_fixture/plan.yaml" 'status: approved'
+contains "$readiness_fixture/tasks/COMP-0001.md" 'status: ready'
 
 lifecycle_external_status_snapshot="$fixture/external-status.snapshot"
 awk '

@@ -63,6 +63,12 @@ and `verification.md`, as well as other existing plan companions. Historical
 approved or done plans are read as authored and are not rewritten merely to
 match the compact default.
 
+The prototype comparison under
+`test/fixtures/document-system/plans/prototype-comparison.md` measures reduced
+canonical-field duplication while retaining rationale. Its companion
+`duplication-inventory.yaml` records before/after counts and explicitly checks
+that the compact form does not reward unsafe rationale compression.
+
 The minimum metadata contract is:
 
 ```yaml

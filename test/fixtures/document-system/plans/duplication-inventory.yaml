@@ -1,0 +1,25 @@
+schema_version: 1
+measurement: plan-bundle-prototype
+evidence_mode: bounded-fixture-counts
+before:
+  bundle: full-companion-prototype
+  files: 9
+  canonical_field_copies:
+    lifecycle: 2
+    acceptance: 3
+    verification: 3
+  rationale_surfaces: 7
+after:
+  bundle: compact-default-prototype
+  files: 3
+  canonical_field_copies:
+    lifecycle: 0
+    acceptance: 0
+    verification: 0
+  rationale_surfaces: 1
+safety:
+  rationale_retained: true
+  canonical_authority: plan.yaml
+  bounded_tasks_retained: true
+  specialist_companions: complexity-triggered
+  unsafe_compression_rewarded: false

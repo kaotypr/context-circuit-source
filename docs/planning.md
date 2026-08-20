@@ -52,6 +52,21 @@ and the task schema. Repair reruns the complete sequence. This validation
 boundary does not approve a plan, start execution, produce verification
 evidence, or complete a plan.
 
+## Prototype comparison and duplication evidence
+
+The bounded prototype evidence in
+`test/fixtures/document-system/plans/prototype-comparison.md` compares a
+modeled full companion bundle with the compact default. Its inventory counts
+9 before files versus 3 after files, with 2/3/3 copied lifecycle, acceptance,
+and verification surfaces before and zero copies after. The companion
+`duplication-inventory.yaml` records the same counts as fixture evidence.
+
+These counts measure duplicated authority surfaces, not the amount of rationale
+that may be removed. The after prototype retains one human-readable overview,
+bounded tasks, and a safety record requiring rationale retention and
+complexity-triggered specialist companions. A plan is not considered better
+merely because it has fewer files.
+
 Plans begin as `draft` and require explicit human approval through
 `cc-approve-plan`. `plan.yaml` is the canonical lifecycle record: approval
 changes the included task projections from `draft` to `ready`, and completion

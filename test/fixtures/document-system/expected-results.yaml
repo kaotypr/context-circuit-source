@@ -1,5 +1,11 @@
 schema_version: 1
 result_schema: schemas/documents/validation-result-v1.yaml
+validation_execution:
+  mode: structural-contract-only
+  provider: approved-host-capability
+  repository_runtime_required: false
+  package_manager_required: false
+  command_runtime_required: false
 cases:
   valid-okf-concept:
     status: ready
@@ -139,3 +145,14 @@ cases:
   invalid-task-nesting:
     status: blocked
     task_validation: nesting-fail
+  task-readiness-repair:
+    initial_status: blocked
+    repaired_status: ready
+    validation_sequence:
+      - front_matter_extraction
+      - yaml_parse
+      - required_fields
+      - enum_values
+      - nested_shapes
+      - artifact_schema
+    projection_on_block: unchanged

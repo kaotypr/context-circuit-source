@@ -32,6 +32,11 @@ historical bundles may contain optional specialist companions and remain
 readable without migration; those companions do not replace `plan.yaml`
 authority.
 
+This validation is an approval-readiness precondition, not a caller
+responsibility: the approval path invokes it for every new or repaired task
+before projecting any task to `ready`. If one task fails, leave the canonical
+plan status and every task projection unchanged and report the readiness block.
+
 Report what will change and what will not:
 
 - canonical `plan.yaml` status will become `approved`;
