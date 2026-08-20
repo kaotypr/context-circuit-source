@@ -25,6 +25,56 @@ A plan should have:
 - risks, assumptions, and open questions;
 - tasks with explicit dependencies and bounded scopes.
 
+## Bundle generation
+
+New plan generation starts with the smallest compatible bundle:
+
+1. `plan.yaml` records canonical lifecycle, repository scope, dependencies,
+   acceptance criteria, test scope, and verification commands.
+2. `overview.md` records concise intent, evidence, decisions, trade-offs, and
+   the next decision, using references such as
+   `plan.yaml#acceptance_criteria` instead of copied authority.
+3. `tasks/` contains bounded Markdown task contracts with valid YAML front
+   matter and the `context-circuit.task` schema.
+
+The writer records a complexity signal in the overview before adding a
+specialist companion. Use `requirements.md` for multiple stakeholder outcomes
+or unresolved requirement boundaries; `solution.md` for multi-component,
+multi-repository, or material design alternatives; `risks.md` for
+irreversible, security, data, operational, or unresolved dependency risk;
+`delivery.md` for multiple delivery targets or explicit branch/publication/
+deployment boundaries; `acceptance.md` for several acceptance scenarios that
+need a review map; and `verification.md` for multiple independent checks,
+environments, or recovery paths. These files explain rationale and point back
+to canonical plan fields; they do not restate or replace them.
+
+An uncomplicated plan omits specialist companions. A reader must still accept
+historical bundles with the full companion set or other existing companions.
+Historical approved and done plans are not rewritten as part of compact
+generation.
+
+Before a new or repaired task is presented as ready, the active host applies
+the approved deterministic validation capability: opening and closing
+front-matter delimiters, YAML parsing, required fields, enums, nested shapes,
+and the task schema. Repair reruns the complete sequence. This validation
+boundary does not approve a plan, start execution, produce verification
+evidence, or complete a plan.
+
+## Prototype comparison and duplication evidence
+
+The bounded prototype evidence in
+`test/fixtures/document-system/plans/prototype-comparison.md` compares a
+modeled full companion bundle with the compact default. Its inventory counts
+9 before files versus 3 after files, with 2/3/3 copied lifecycle, acceptance,
+and verification surfaces before and zero copies after. The companion
+`duplication-inventory.yaml` records the same counts as fixture evidence.
+
+These counts measure duplicated authority surfaces, not the amount of rationale
+that may be removed. The after prototype retains one human-readable overview,
+bounded tasks, and a safety record requiring rationale retention and
+complexity-triggered specialist companions. A plan is not considered better
+merely because it has fewer files.
+
 Plans begin as `draft` and require explicit human approval through
 `cc-approve-plan`. `plan.yaml` is the canonical lifecycle record: approval
 changes the included task projections from `draft` to `ready`, and completion

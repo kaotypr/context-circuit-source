@@ -17,6 +17,10 @@ The fixture set covers:
 - YAML and artifact-schema failures;
 - advisory-only broken-link and missing-index findings;
 - non-OKF plan, runtime, instruction, and arbitrary-source boundaries.
+- compact, complexity-triggered, and historical full plan bundles;
+- invalid task delimiters, YAML, required fields, enum values, and nesting;
+- structural-only host-boundary evidence, repair/revalidation, and
+  before/after duplication counts.
 
 Expected outcomes are recorded in `expected-results.yaml`. They are evidence
 fixtures, not a replacement for the approved host-provided deterministic YAML

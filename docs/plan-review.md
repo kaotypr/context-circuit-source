@@ -17,6 +17,26 @@ Review the following before execution:
   ownership or worktree risks;
 - delivery boundaries, including what is deliberately outside the plan.
 
+For a newly generated bundle, confirm that `plan.yaml`, one concise
+`overview.md`, and validated `tasks/*.md` are sufficient. Check that every
+specialist companion is justified by an explicit complexity signal in the
+overview and points back to canonical plan fields instead of copying
+acceptance, verification, or lifecycle values. The absence of optional
+companions is not a defect in a simple plan.
+
+For an existing bundle, discover companions rather than requiring the compact
+layout. Historical `requirements.md`, `solution.md`, `risks.md`,
+`delivery.md`, `acceptance.md`, `verification.md`, and other existing
+companions remain readable without a migration or rewrite. Their content is
+review rationale; `plan.yaml` remains authoritative.
+
+Before reporting a newly generated task as ready, apply the host-provided
+deterministic validation contract to its initial front matter: delimiters,
+YAML, required fields, enum values, nested shapes, and the
+`context-circuit.task` schema. A failed check is a readiness defect to repair,
+not a plan-lifecycle result. Passing validation does not approve, execute,
+verify, or complete the plan.
+
 The review should identify the smallest next decision. It should not ask for a
 separate approval of every task when the whole approved plan is ready to run.
 

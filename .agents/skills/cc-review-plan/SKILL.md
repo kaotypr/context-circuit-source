@@ -29,6 +29,23 @@ and active runtime ownership. Check that:
 - contradictions, stale context, missing evidence, and delivery actions remain
   visible.
 
+For a new bundle, expect `plan.yaml`, concise `overview.md`, and validated task
+Markdown. Treat missing specialist companions as valid when no complexity
+signal requires them. If companions exist, confirm that the overview records
+their signals and that they reference, rather than copy, canonical acceptance,
+verification, and lifecycle fields.
+
+For historical bundles, discover the available companions and keep them
+readable. Existing requirements, solution, risk, delivery, acceptance, and
+verification documents are compatible inputs even when the bundle predates the
+compact layout; do not propose a rewrite merely to remove duplication.
+
+Check new task output with the approved host-provided deterministic validation
+capability before calling it ready: front-matter delimiters, YAML, required
+fields, enums, nested shapes, and the `context-circuit.task` schema. A failed
+task check is a readiness defect. A passing check is not approval, execution,
+verification, or completion.
+
 ## Report
 
 Return the structured outcome from `docs/plan-review.md`. Distinguish routine

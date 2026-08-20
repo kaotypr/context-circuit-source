@@ -8,9 +8,66 @@ human gates.
 ## Plan artifact
 
 Each plan lives under `<repository-key>-plans/<number>-<slug>/` and has a
-canonical `plan.yaml` lifecycle record. The companion Markdown files explain
-the objective, requirements, solution, delivery, acceptance criteria,
-verification, risks, and task contracts.
+canonical `plan.yaml` lifecycle record. The default generated bundle is
+deliberately small:
+
+```text
+<plan>/
+  plan.yaml
+  overview.md
+  tasks/
+    <task-id>.md
+```
+
+`plan.yaml` is the sole authority for the plan's lifecycle, repository scope,
+dependencies, acceptance criteria, and verification commands. Its status is
+exactly `draft`, `approved`, or `done`; included task status remains the
+synchronized projection `draft`, `ready`, or `done`. No Markdown companion,
+task front matter, schema result, runtime record, or verifier handoff can
+approve, execute, verify, or complete a plan.
+
+`overview.md` is concise human rationale. It explains intent, evidence,
+decisions, trade-offs, and the next decision while referring to canonical
+fields such as `plan.yaml#acceptance_criteria` and task IDs. It must not copy
+the plan's lifecycle, acceptance, or verification authority.
+
+Every task remains a bounded Markdown contract with YAML front matter. New or
+repaired task output is not ready until the host-provided deterministic
+front-matter, YAML, and `context-circuit.task` schema checks pass. Task status is
+not a second approval gate, execution lease, or verification result.
+
+## Optional specialist companions
+
+The writer adds a specialist companion only when the overview records the
+complexity signal that requires it. A companion adds rationale or detail; it
+references canonical plan fields instead of copying them.
+
+| Companion | Add when the plan has this signal |
+| --- | --- |
+| `requirements.md` | Multiple stakeholder outcomes or unresolved requirement boundaries need focused discussion. |
+| `solution.md` | Multiple components, repositories, interfaces, or material design alternatives require a trade-off record. |
+| `risks.md` | Irreversible, security, data-integrity, operational, or unresolved dependency risk needs explicit treatment. |
+| `delivery.md` | More than one delivery target or an explicit branch, publication, deployment, or merge boundary needs explanation. |
+| `acceptance.md` | Acceptance evidence has several scenarios that need a readable review map beyond the canonical list. |
+| `verification.md` | Verification needs multiple independent checks, environments, or recovery paths beyond the canonical commands. |
+
+The companion's headings should point to the relevant `plan.yaml` field and
+task IDs. A companion never introduces a lifecycle value, replaces
+`acceptance_criteria`, or changes `verification_commands`. An uncomplicated
+plan omits all specialist companions; a complex plan may include only those
+justified by its recorded signals.
+
+Readers must continue to accept older bundles containing any or all of
+`requirements.md`, `solution.md`, `risks.md`, `delivery.md`, `acceptance.md`,
+and `verification.md`, as well as other existing plan companions. Historical
+approved or done plans are read as authored and are not rewritten merely to
+match the compact default.
+
+The prototype comparison under
+`test/fixtures/document-system/plans/prototype-comparison.md` measures reduced
+canonical-field duplication while retaining rationale. Its companion
+`duplication-inventory.yaml` records before/after counts and explicitly checks
+that the compact form does not reward unsafe rationale compression.
 
 The minimum metadata contract is:
 
@@ -54,7 +111,8 @@ Every task has a stable ID, bounded implementation paths, explicit
 dependencies, acceptance criteria, verification commands, and stop conditions.
 Task status is not a second approval gate or an execution lease. The
 coordinator reconciles task projections in one idempotent operation when a plan
-is approved, completed, or resumed.
+is approved, completed, or resumed, preserving metadata such as
+`external_status`.
 
 ## Planning boundaries
 

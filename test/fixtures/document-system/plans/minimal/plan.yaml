@@ -1,0 +1,23 @@
+id: compact-plan
+number: 18
+title: Compact fixture plan
+status: draft
+source:
+  kind: direct-request
+  reference: fixture
+repositories:
+  - context-circuit
+product_knowledge:
+  references:
+    - context/PROJECT.md
+implementation_scope:
+  - docs/
+non_goals:
+  - delivery actions
+dependencies: []
+acceptance_criteria:
+  - AC-1: The compact bundle remains readable.
+test_scope:
+  - plan bundle fixtures
+verification_commands:
+  - git diff --check

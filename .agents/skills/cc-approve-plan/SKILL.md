@@ -30,6 +30,21 @@ A prior `cc-review-plan` run is not required. Still preflight, surface remaining
 risks and open questions in the confirmation, and stop for revision when the
 artifact is incomplete or blocked by a contradiction the human has not resolved.
 
+For a newly generated bundle, confirm that the compact `plan.yaml`,
+`overview.md`, and `tasks/` set is complete. Before any task can project to
+`ready`, the active host must validate each new or repaired task's initial
+front matter with the approved deterministic YAML/schema capability: delimiters,
+YAML, required fields, enums, nested shapes, and the
+`context-circuit.task` schema. Repair and rerun all checks on failure. Existing
+historical bundles may contain optional specialist companions and remain
+readable without migration; those companions do not replace `plan.yaml`
+authority.
+
+This validation is an approval-readiness precondition, not a caller
+responsibility: the approval path invokes it for every new or repaired task
+before projecting any task to `ready`. If one task fails, leave the canonical
+plan status and every task projection unchanged and report the readiness block.
+
 Report what will change and what will not:
 
 - canonical `plan.yaml` status will become `approved`;
@@ -52,6 +67,10 @@ If the human declines, the plan stays `draft` and execution remains unstarted.
    Rewrite only a stale task `status` field. Preserve other task metadata.
 3. Leave execution unstarted: no lease claim, no worktree creation, and no
    `cc-run-plan` side effect.
+
+Schema validation is only a readiness precondition. It never substitutes for
+the human plan-approval gate, execution evidence, independent verification, or
+the status-change gate.
 
 ## Refuse or observe
 

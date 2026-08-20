@@ -3326,6 +3326,160 @@ later_horizontal_rule_line() {
   ' "$2"
 }
 
+task_front_matter_contains() {
+  task_file=$1
+  task_close_line=$2
+  task_field=$3
+  sed -n "2,$((task_close_line - 1))p" "$task_file" \
+    | grep -E "^${task_field}:" >/dev/null 2>&1
+}
+
+task_list_fields_valid() {
+  task_file=$1
+  task_close_line=$2
+  awk -v closing_line="$task_close_line" '
+    NR == 1 || NR >= closing_line { next }
+    /^(implementation_scope|test_scope|verification_commands|acceptance_criteria|expected_evidence|dependencies):/ {
+      if ($0 ~ /:[[:space:]]*\[[[:space:]]*\][[:space:]]*$/) {
+        next
+      }
+      if (getline next_line <= 0 || next_line !~ /^  - /) {
+        invalid = 1
+      }
+    }
+    END { exit invalid }
+  ' "$task_file"
+}
+
+task_validate() {
+  # This is structural fixture evidence only. The approved host capability,
+  # not this shell guard, performs deterministic YAML/schema validation.
+  task_file=$1
+  task_close_line=$(front_matter_close_line "$task_file") || {
+    printf 'BLOCKED: task front matter delimiters invalid\n' >&2
+    return 1
+  }
+  if awk -v closing_line="$task_close_line" '
+    NR > 1 && NR < closing_line &&
+      $0 ~ /^[[:space:]]*status:[[:space:]]*\[[^]]*$/ { invalid = 1 }
+    END { exit !invalid }
+  ' "$task_file"; then
+    printf 'BLOCKED: task YAML is invalid\n' >&2
+    return 1
+  fi
+  for task_required_field in \
+    id plan_id title status description repository area \
+    implementation_scope test_scope verification_commands \
+    acceptance_criteria expected_evidence dependencies stop_conditions; do
+    task_front_matter_contains "$task_file" "$task_close_line" \
+      "$task_required_field" || {
+      printf 'BLOCKED: task required field is missing\n' >&2
+      return 1
+    }
+  done
+  task_status=$(sed -n "2,$((task_close_line - 1))p" "$task_file" \
+    | sed -n 's/^status: //p' | head -n 1)
+  case "$task_status" in
+    draft|ready|done) ;;
+    *)
+      printf 'BLOCKED: task status enum is invalid\n' >&2
+      return 1
+      ;;
+  esac
+  task_list_fields_valid "$task_file" "$task_close_line" || {
+    printf 'BLOCKED: task nested shape is invalid\n' >&2
+    return 1
+  }
+  return 0
+}
+
+task_validation_sequence() {
+  printf '%s\n' \
+    front_matter_extraction \
+    yaml_parse \
+    required_fields \
+    enum_values \
+    nested_shapes \
+    artifact_schema
+}
+
+approve_plan_with_task_validation() {
+  readiness_plan_file=$1
+  readiness_task_dir=$2
+  readiness_confirmation=$3
+  readiness_expected_id=${4:-}
+  readiness_task_found=0
+  if test -d "$readiness_task_dir"; then
+    for readiness_task_file in "$readiness_task_dir"/*.md; do
+      test -f "$readiness_task_file" || continue
+      readiness_task_found=1
+      if ! task_validate "$readiness_task_file"; then
+        printf 'BLOCKED: task validation failed; readiness projection unchanged\n' \
+          >&2
+        return 1
+      fi
+    done
+  fi
+  if test "$readiness_task_found" -eq 0; then
+    printf 'BLOCKED: task validation failed; readiness projection unchanged\n' \
+      >&2
+    return 1
+  fi
+  approve_plan "$readiness_plan_file" "$readiness_task_dir" \
+    "$readiness_confirmation" "$readiness_expected_id"
+}
+
+compact_plan_bundle_valid() {
+  compact_root=$1
+  plan_contract_complete "$compact_root/plan.yaml" || return 1
+  test -f "$compact_root/overview.md" || return 1
+  test ! -e "$compact_root/requirements.md" || return 1
+  test ! -e "$compact_root/solution.md" || return 1
+  test ! -e "$compact_root/risks.md" || return 1
+  test ! -e "$compact_root/delivery.md" || return 1
+  test ! -e "$compact_root/acceptance.md" || return 1
+  test ! -e "$compact_root/verification.md" || return 1
+  contains "$compact_root/overview.md" 'plan.yaml#acceptance_criteria'
+  compact_task=$(printf '%s\n' "$compact_root"/tasks/*.md)
+  test -f "$compact_task" || return 1
+  task_validate "$compact_task"
+}
+
+complex_plan_bundle_valid() {
+  complex_root=$1
+  plan_contract_complete "$complex_root/plan.yaml" || return 1
+  plan_ready_for_execution "$complex_root/plan.yaml" || return 1
+  contains "$complex_root/overview.md" 'Companion rationale'
+  contains "$complex_root/overview.md" 'requirements.md'
+  contains "$complex_root/overview.md" 'solution.md'
+  contains "$complex_root/overview.md" 'risks.md'
+  contains "$complex_root/overview.md" 'delivery.md'
+  contains "$complex_root/overview.md" 'acceptance.md'
+  contains "$complex_root/overview.md" 'verification.md'
+  for complex_companion in \
+    requirements.md solution.md risks.md delivery.md acceptance.md \
+    verification.md; do
+    test -f "$complex_root/$complex_companion" || return 1
+    contains "$complex_root/$complex_companion" 'plan.yaml'
+  done
+  complex_task=$(printf '%s\n' "$complex_root"/tasks/*.md)
+  test -f "$complex_task" || return 1
+  task_validate "$complex_task"
+}
+
+historical_plan_bundle_readable() {
+  historical_root=$1
+  plan_contract_complete "$historical_root/plan.yaml" || return 1
+  for historical_companion in \
+    overview.md requirements.md solution.md risks.md delivery.md \
+    acceptance.md verification.md; do
+    test -f "$historical_root/$historical_companion" || return 1
+  done
+  historical_task=$(printf '%s\n' "$historical_root"/tasks/*.md)
+  test -f "$historical_task" || return 1
+  task_validate "$historical_task"
+}
+
 front_matter_extract_fixture() {
   front_matter_close_line "$1" >/dev/null 2>&1 || {
     printf 'front matter extraction failed: missing opening or closing delimiter\n' >&2
@@ -3422,6 +3576,148 @@ contains "$document_fixture_root/expected-results.yaml" \
   'artifact_schema: pass'
 contains "$document_fixture_root/expected-results.yaml" \
   'valid-non-okf-task:'
+
+# Plan 0018: compact and complexity-triggered bundles, historical companion
+# compatibility, task readiness validation, and unchanged lifecycle gates.
+plan_bundle_root="$document_fixture_root/plans"
+for plan_bundle_file in \
+  "$plan_bundle_root/minimal/plan.yaml" \
+  "$plan_bundle_root/minimal/overview.md" \
+  "$plan_bundle_root/minimal/tasks/COMP-0001.md" \
+  "$plan_bundle_root/complex/plan.yaml" \
+  "$plan_bundle_root/complex/overview.md" \
+  "$plan_bundle_root/complex/tasks/COMPX-0001.md" \
+  "$plan_bundle_root/historical/plan.yaml" \
+  "$plan_bundle_root/historical/overview.md" \
+  "$plan_bundle_root/historical/tasks/HIST-0001.md" \
+  "$plan_bundle_root/prototype-comparison.md" \
+  "$plan_bundle_root/duplication-inventory.yaml" \
+  "$plan_bundle_root/invalid-task-delimiters.md" \
+  "$plan_bundle_root/invalid-task-yaml.md" \
+  "$plan_bundle_root/invalid-task-required-fields.md" \
+  "$plan_bundle_root/invalid-task-enum.md" \
+  "$plan_bundle_root/invalid-task-nesting.md"; do
+  require_file "$plan_bundle_file"
+done
+
+expect_success compact_plan_bundle_valid "$plan_bundle_root/minimal"
+expect_success complex_plan_bundle_valid "$plan_bundle_root/complex"
+contains "$document_fixture_root/expected-results.yaml" \
+  'mode: structural-contract-only'
+contains "$document_fixture_root/expected-results.yaml" \
+  'provider: approved-host-capability'
+contains "$document_fixture_root/expected-results.yaml" \
+  'repository_runtime_required: false'
+contains "$plan_bundle_root/prototype-comparison.md" \
+  'Before: full companion prototype'
+contains "$plan_bundle_root/prototype-comparison.md" \
+  'After: compact prototype'
+contains "$plan_bundle_root/prototype-comparison.md" \
+  'Rationale surfaces'
+contains "$plan_bundle_root/duplication-inventory.yaml" \
+  'evidence_mode: bounded-fixture-counts'
+contains "$plan_bundle_root/duplication-inventory.yaml" \
+  'unsafe_compression_rewarded: false'
+historical_bundle_snapshot="$fixture/historical-bundle.snapshot"
+sha256sum "$plan_bundle_root/historical/plan.yaml" \
+  "$plan_bundle_root/historical"/*.md \
+  "$plan_bundle_root/historical/tasks"/*.md > "$historical_bundle_snapshot"
+expect_success historical_plan_bundle_readable \
+  "$plan_bundle_root/historical"
+test "$(sha256sum "$plan_bundle_root/historical/plan.yaml" \
+  "$plan_bundle_root/historical"/*.md \
+  "$plan_bundle_root/historical/tasks"/*.md)" = \
+  "$(cat "$historical_bundle_snapshot")" || \
+  fail 'historical full plan bundle was rewritten while being read'
+
+assert_failure_reason "$fixture/invalid-task-delimiters.log" \
+  'task front matter delimiters invalid' task_validate \
+  "$plan_bundle_root/invalid-task-delimiters.md"
+assert_failure_reason "$fixture/invalid-task-yaml.log" \
+  'task YAML is invalid' task_validate \
+  "$plan_bundle_root/invalid-task-yaml.md"
+assert_failure_reason "$fixture/invalid-task-required-fields.log" \
+  'task required field is missing' task_validate \
+  "$plan_bundle_root/invalid-task-required-fields.md"
+assert_failure_reason "$fixture/invalid-task-enum.log" \
+  'task status enum is invalid' task_validate \
+  "$plan_bundle_root/invalid-task-enum.md"
+assert_failure_reason "$fixture/invalid-task-nesting.log" \
+  'task nested shape is invalid' task_validate \
+  "$plan_bundle_root/invalid-task-nesting.md"
+
+for plan_result in \
+  compact-plan-bundle complex-plan-bundle historical-full-bundle \
+  invalid-task-delimiters invalid-task-yaml invalid-task-required-fields \
+  invalid-task-enum invalid-task-nesting task-readiness-repair; do
+  contains "$document_fixture_root/expected-results.yaml" "$plan_result:"
+done
+contains "$document_fixture_root/expected-results.yaml" \
+  'compatibility: historical-companions-readable'
+contains "$document_fixture_root/expected-results.yaml" \
+  'task_validation: front_matter_extraction-fail'
+contains "$document_fixture_root/expected-results.yaml" \
+  'projection_on_block: unchanged'
+
+plan_bundle_projection="$fixture/plan-bundle-projection"
+cp -R "$plan_bundle_root/minimal" "$plan_bundle_projection"
+expect_success task_validate "$plan_bundle_projection/tasks/COMP-0001.md"
+expect_success approve_plan "$plan_bundle_projection/plan.yaml" \
+  "$plan_bundle_projection/tasks" confirm compact-plan
+contains "$plan_bundle_projection/plan.yaml" 'status: approved'
+contains "$plan_bundle_projection/tasks/COMP-0001.md" 'status: ready'
+expect_success run_plan_guard "$plan_bundle_projection/plan.yaml" \
+  "$plan_bundle_projection/lease.lock"
+
+readiness_fixture="$fixture/plan-readiness"
+cp -R "$plan_bundle_root/minimal" "$readiness_fixture"
+cp "$plan_bundle_root/invalid-task-required-fields.md" \
+  "$readiness_fixture/tasks/COMP-0001.md"
+assert_failure_reason "$fixture/readiness-block.log" \
+  'task validation failed; readiness projection unchanged' \
+  approve_plan_with_task_validation "$readiness_fixture/plan.yaml" \
+  "$readiness_fixture/tasks" confirm compact-plan
+contains "$fixture/readiness-block.log" \
+  'readiness projection unchanged'
+contains "$readiness_fixture/plan.yaml" 'status: draft'
+contains "$readiness_fixture/tasks/COMP-0001.md" 'BAD-REQUIRED'
+
+cp "$plan_bundle_root/minimal/tasks/COMP-0001.md" \
+  "$readiness_fixture/tasks/COMP-0001.md"
+task_validation_sequence > "$readiness_fixture/revalidation-sequence"
+for readiness_check in \
+  front_matter_extraction yaml_parse required_fields enum_values \
+  nested_shapes artifact_schema; do
+  contains "$readiness_fixture/revalidation-sequence" "$readiness_check"
+done
+expect_success task_validate "$readiness_fixture/tasks/COMP-0001.md"
+expect_success approve_plan_with_task_validation \
+  "$readiness_fixture/plan.yaml" "$readiness_fixture/tasks" \
+  confirm compact-plan
+contains "$readiness_fixture/plan.yaml" 'status: approved'
+contains "$readiness_fixture/tasks/COMP-0001.md" 'status: ready'
+
+lifecycle_external_status_snapshot="$fixture/external-status.snapshot"
+awk '
+  /^external_status:/ { capture = 1 }
+  capture && /^---$/ { exit }
+  capture { print }
+' "$lifecycle_tasks/CCL-0001.md" > "$lifecycle_external_status_snapshot"
+contains "$lifecycle_tasks/CCL-0001.md" 'external_status:'
+contains "$lifecycle_tasks/CCL-0001.md" 'value: in_progress'
+expect_success lifecycle_sync_tasks "$lifecycle_plan" "$lifecycle_tasks"
+contains "$lifecycle_tasks/CCL-0001.md" 'external_status:'
+contains "$lifecycle_tasks/CCL-0001.md" 'value: in_progress'
+awk '
+  /^external_status:/ { capture = 1 }
+  capture && /^---$/ { exit }
+  capture { print }
+' "$lifecycle_tasks/CCL-0001.md" > "$fixture/external-status-after.snapshot"
+test "$(cat "$fixture/external-status-after.snapshot")" = \
+  "$(cat "$lifecycle_external_status_snapshot")" || \
+  fail 'lifecycle projection changed external_status metadata'
+
+printf 'PASS: Plan 0018 compact bundles, task validation, historical reads, and lifecycle regressions\n'
 
 if grep -E '^type:' "$document_fixture_root/non-okf/plan.yaml" \
   >/dev/null 2>&1; then
