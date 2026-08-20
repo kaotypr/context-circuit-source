@@ -1086,15 +1086,50 @@ route_manifest_complete() {
   route_manifest=$1
   for route_name in entry planning gathering execution verification resume review; do
     grep -F "  $route_name:" "$route_manifest" >/dev/null 2>&1 || return 1
-    route_block=$(awk -v route="$route_name" '
-      $0 == "  " route ":" { found=1; next }
-      found && $0 ~ /^  [a-z-]+:/ { exit }
-      found { print }
-    ' "$route_manifest")
-    printf '%s\n' "$route_block" | grep -F 'required_reads:' >/dev/null 2>&1 || return 1
-    printf '%s\n' "$route_block" | grep -F 'optional_reads:' >/dev/null 2>&1 || return 1
+    if test "$route_name" = planning; then
+      for planning_route in create review_approval; do
+        grep -F "    $planning_route:" "$route_manifest" >/dev/null 2>&1 \
+          || return 1
+        planning_block=$(awk -v route="$planning_route" '
+          $0 == "    " route ":" { found=1; next }
+          found && $0 ~ /^    [a-z_-]+:/ { exit }
+          found { print }
+        ' "$route_manifest")
+        printf '%s\n' "$planning_block" \
+          | grep -F 'required_reads:' >/dev/null 2>&1 || return 1
+        printf '%s\n' "$planning_block" \
+          | grep -F 'optional_reads:' >/dev/null 2>&1 || return 1
+      done
+    else
+      route_block=$(awk -v route="$route_name" '
+        $0 == "  " route ":" { found=1; next }
+        found && $0 ~ /^  [a-z-]+:/ { exit }
+        found { print }
+      ' "$route_manifest")
+      printf '%s\n' "$route_block" \
+        | grep -F 'required_reads:' >/dev/null 2>&1 || return 1
+      printf '%s\n' "$route_block" \
+        | grep -F 'optional_reads:' >/dev/null 2>&1 || return 1
+    fi
   done
   return 0
+}
+
+route_manifest_matches_canonical() {
+  canonical_manifest=$1
+  fixture_manifest=$2
+  canonical_routes=$3
+  fixture_routes=$4
+  awk '
+    $0 == "route_read_manifests:" { found=1; print "routes:"; next }
+    found && $0 == "```" { exit }
+    found { print }
+  ' "$canonical_manifest" > "$canonical_routes"
+  awk '
+    $0 == "routes:" { found=1 }
+    found { print }
+  ' "$fixture_manifest" > "$fixture_routes"
+  cmp -s "$canonical_routes" "$fixture_routes"
 }
 
 route_contract_guard() {
@@ -3584,6 +3619,10 @@ contains docs/agent-workspace-workflow.md 'route_read_manifests:'
 contains docs/agent-workspace-workflow.md 'missing-contract blocker'
 contains docs/agent-workspace-workflow.md 'handoff.yaml when present'
 contains docs/agent-workspace-workflow.md 'handoff.md when handoff.yaml is absent'
+contains docs/agent-workspace-workflow.md 'planning.create'
+contains docs/agent-workspace-workflow.md 'planning.review_approval'
+contains docs/agent-workspace-workflow.md \
+  'existing plan.yaml and task contracts when revising'
 for route_name in entry planning gathering execution verification resume review; do
   contains docs/agent-workspace-workflow.md "  $route_name:"
 done
@@ -3592,9 +3631,12 @@ contains docs/agent-workspace-workflow.md 'optional_reads:'
 contains WORKFLOW.md 'route-read-manifests'
 contains context/index.md 'Route read manifests'
 contains context/index.md 'lowercase routing file'
-contains docs/planning.md 'planning` read manifest'
+contains docs/planning.md 'planning.create'
 contains .agents/skills/cc-session-entry/SKILL.md 'entry` manifest'
-contains .agents/skills/cc-create-plan/SKILL.md 'planning` manifest'
+contains .agents/skills/cc-create-plan/SKILL.md 'planning.create'
+contains .agents/skills/cc-create-plan/SKILL.md \
+  'does not require an existing'
+contains .agents/skills/cc-approve-plan/SKILL.md 'planning.review_approval'
 contains .agents/skills/cc-gather-context/SKILL.md 'gathering` manifest'
 contains .agents/skills/cc-run-plan/SKILL.md 'execution` manifest'
 contains .agents/skills/cc-run-stack/SKILL.md 'resume` manifest'
@@ -3604,9 +3646,29 @@ contains agents/repository-worker.md 'execution` manifest'
 contains agents/reviewer.md 'verification` route manifest'
 
 expect_success route_manifest_complete "$runtime_fixture_root/routes.yaml"
+expect_success route_manifest_matches_canonical \
+  docs/agent-workspace-workflow.md "$runtime_fixture_root/routes.yaml" \
+  "$fixture/canonical-routes.yaml" "$fixture/fixture-routes.yaml"
 for route_name in entry planning gathering execution verification resume review; do
   contains "$runtime_fixture_root/routes.yaml" "  $route_name:"
 done
+contains "$runtime_fixture_root/routes.yaml" '    create:'
+contains "$runtime_fixture_root/routes.yaml" '    review_approval:'
+contains "$runtime_fixture_root/routes.yaml" \
+  'existing plan.yaml and task contracts when revising'
+planning_create_block=$(awk '
+  $0 == "    create:" { found=1; next }
+  found && $0 ~ /^    [a-z_-]+:/ { exit }
+  found { print }
+' "$runtime_fixture_root/routes.yaml")
+if printf '%s\n' "$planning_create_block" \
+  | grep -F 'selected plan.yaml and task contracts' >/dev/null 2>&1; then
+  fail 'planning.create requires pre-existing plan/task records'
+fi
+planning_create_fixture="$fixture/planning-create"
+mkdir -p "$planning_create_fixture"
+test ! -e "$planning_create_fixture/plan.yaml"
+test ! -e "$planning_create_fixture/tasks"
 contains "$runtime_fixture_root/routes.yaml" 'required_reads:'
 contains "$runtime_fixture_root/routes.yaml" 'optional_reads:'
 contains "$runtime_fixture_root/routes.yaml" 'context/index.md'

@@ -302,6 +302,11 @@ explicitly selects a source-based activity. A missing required read is a
 missing-contract blocker: report it and stop rather than reconstructing the
 record or silently widening the route.
 
+The `planning.create` subroute is for drafting a new plan and therefore does
+not require an existing `plan.yaml`, task contracts, or dependency records.
+`planning.review_approval` is for an existing plan and requires those
+canonical records before review or `cc-approve-plan`.
+
 This section owns the detailed route manifests. `AGENTS.md` owns wrapper
 instruction precedence and the passive-source boundary; this document owns
 route selection, lifecycle, human gates, and child behavior; and
@@ -330,25 +335,47 @@ route_read_manifests:
       - relevant active session and handoff records
       - relevant plan and task records
   planning:
-    required_reads:
-      - AGENTS.md
-      - WORKFLOW.md
-      - workspace.yaml
-      - context/index.md
-      - context/WORKSPACE.md
-      - context/PROJECT.md
-      - context/CONVENTIONS.md
-      - context/DECISIONS.md
-      - context/SOURCES.md
-      - context/sources.yaml
-      - plans/README.md
-      - docs/planning.md
-      - selected plan.yaml and task contracts
-      - declared dependency plan records
-    optional_reads:
-      - docs/plan-review.md
-      - selected Idea Brief, PRD, or source evidence
-      - repository-local instructions and implementation evidence
+    create:
+      required_reads:
+        - AGENTS.md
+        - WORKFLOW.md
+        - workspace.yaml
+        - context/index.md
+        - context/WORKSPACE.md
+        - context/PROJECT.md
+        - context/CONVENTIONS.md
+        - context/DECISIONS.md
+        - context/SOURCES.md
+        - context/sources.yaml
+        - plans/README.md
+        - docs/planning.md
+      optional_reads:
+        - selected Idea Brief, PRD, or source evidence
+        - relevant Product Knowledge and provenance
+        - existing plan.yaml and task contracts when revising
+        - declared dependency plan records when revising
+        - repository-local instructions and implementation evidence
+    review_approval:
+      required_reads:
+        - AGENTS.md
+        - WORKFLOW.md
+        - workspace.yaml
+        - context/index.md
+        - context/WORKSPACE.md
+        - context/PROJECT.md
+        - context/CONVENTIONS.md
+        - context/DECISIONS.md
+        - context/SOURCES.md
+        - context/sources.yaml
+        - plans/README.md
+        - docs/planning.md
+        - docs/plan-review.md
+        - selected plan.yaml and task contracts
+        - declared dependency plan records
+      optional_reads:
+        - selected Idea Brief, PRD, or source evidence
+        - relevant Product Knowledge and provenance
+        - repository-local instructions and implementation evidence
   gathering:
     required_reads:
       - AGENTS.md

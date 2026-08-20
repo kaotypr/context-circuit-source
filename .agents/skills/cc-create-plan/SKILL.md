@@ -10,11 +10,14 @@ request, or selected evidence into intended implementation work.
 
 ## Route reads
 
-Use the `planning` manifest in
+Use the `planning.create` subroute in
 `docs/agent-workspace-workflow.md#route-read-manifests`. This skill owns only
-the local planning guard: the artifact remains `draft` until
-`cc-approve-plan`, and selected source evidence must remain request-scoped.
-Missing required planning records are blockers, not prompts to invent scope.
+the local planning guard: a new draft does not require an existing
+`plan.yaml`, task contract, or dependency record; the artifact remains `draft`
+until `cc-approve-plan`, and selected source evidence must remain
+request-scoped. Missing required creation records are blockers, not prompts to
+invent scope. Review and approval use the separate
+`planning.review_approval` subroute.
 
 ## Read and ground
 

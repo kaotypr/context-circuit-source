@@ -5,11 +5,13 @@ itself and they do not replace runtime execution state. Every-session Product
 Knowledge includes `context/WORKSPACE.md` for workspace identity and
 `context/PROJECT.md` for the project being built.
 
-Planning uses the `planning` read manifest in
-`docs/agent-workspace-workflow.md#route-read-manifests`. That manifest owns the
-minimum required and optional reads for this route. This document owns the plan
-artifact and lifecycle details below; it does not redefine session, runtime
-ownership, verifier isolation, or human-gate rules.
+Planning uses the `planning.create` subroute for drafting and
+`planning.review_approval` for review or approval in
+`docs/agent-workspace-workflow.md#route-read-manifests`. The create subroute
+does not require pre-existing plan/task records; the review/approval subroute
+does. The manifest owns the minimum required and optional reads; this document
+owns plan artifact and lifecycle details below and does not redefine session,
+runtime ownership, verifier isolation, or human-gate rules.
 
 A plan should have:
 

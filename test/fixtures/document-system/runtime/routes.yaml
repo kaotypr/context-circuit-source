@@ -7,27 +7,60 @@ routes:
       - WORKFLOW.md
       - workspace.yaml
       - context/index.md
-    optional_reads:
-      - relevant Product Knowledge
-      - active session and handoff records
-  planning:
-    required_reads:
-      - AGENTS.md
-      - WORKFLOW.md
-      - workspace.yaml
-      - context/index.md
       - context/WORKSPACE.md
       - context/PROJECT.md
       - context/CONVENTIONS.md
       - context/DECISIONS.md
       - context/SOURCES.md
       - context/sources.yaml
-      - plans/README.md
-      - docs/planning.md
-      - selected plan.yaml and task contracts
     optional_reads:
-      - selected Idea Brief or PRD
-      - selected source evidence
+      - context/domains/index.md
+      - context/roles/index.md
+      - relevant Product Knowledge page and linked workflow
+      - relevant active session and handoff records
+      - relevant plan and task records
+  planning:
+    create:
+      required_reads:
+        - AGENTS.md
+        - WORKFLOW.md
+        - workspace.yaml
+        - context/index.md
+        - context/WORKSPACE.md
+        - context/PROJECT.md
+        - context/CONVENTIONS.md
+        - context/DECISIONS.md
+        - context/SOURCES.md
+        - context/sources.yaml
+        - plans/README.md
+        - docs/planning.md
+      optional_reads:
+        - selected Idea Brief, PRD, or source evidence
+        - relevant Product Knowledge and provenance
+        - existing plan.yaml and task contracts when revising
+        - declared dependency plan records when revising
+        - repository-local instructions and implementation evidence
+    review_approval:
+      required_reads:
+        - AGENTS.md
+        - WORKFLOW.md
+        - workspace.yaml
+        - context/index.md
+        - context/WORKSPACE.md
+        - context/PROJECT.md
+        - context/CONVENTIONS.md
+        - context/DECISIONS.md
+        - context/SOURCES.md
+        - context/sources.yaml
+        - plans/README.md
+        - docs/planning.md
+        - docs/plan-review.md
+        - selected plan.yaml and task contracts
+        - declared dependency plan records
+      optional_reads:
+        - selected Idea Brief, PRD, or source evidence
+        - relevant Product Knowledge and provenance
+        - repository-local instructions and implementation evidence
   gathering:
     required_reads:
       - AGENTS.md
@@ -46,54 +79,66 @@ routes:
     optional_reads:
       - explicitly selected raw source files
       - selected repository documents
+      - linked domain, workflow, or role pages
+      - context/sources.yaml provenance entries
   execution:
     required_reads:
       - AGENTS.md
       - WORKFLOW.md
       - workspace.yaml
       - context/index.md
+      - relevant Product Knowledge
       - canonical plan.yaml and task contracts
+      - declared dependency records
       - docs/runtime-contract.md
-      - session.yaml
+      - current session.yaml
       - delegation.yaml when the execution session is a child
-      - owned lease and assigned worktree
+      - owned plan lease and worktree ownership
+      - assigned worktree Git root and branch
     optional_reads:
-      - latest handoff.yaml or legacy handoff.md
+      - docs/planning.md
+      - selected execution skill
+      - latest structured handoff or legacy handoff.md
       - stack graph.yaml and progress.yaml
+      - repository-local AGENTS.md and WORKFLOW.md
   verification:
     required_reads:
       - AGENTS.md
       - WORKFLOW.md
       - context/index.md
-      - approved plan.yaml and task contracts
+      - approved canonical plan.yaml and task contracts
       - docs/runtime-contract.md
-      - verifier delegation.yaml
+      - independent verifier delegation.yaml
       - writer handoff and task evidence
-      - assigned worktree Git state
+      - assigned worktree Git root, branch, and status
     optional_reads:
-      - relevant Product Knowledge
+      - relevant Product Knowledge and source provenance
       - stack graph.yaml and progress.yaml
+      - repository-local implementation guidance
   resume:
     required_reads:
-      - session.yaml
-      - delegation.yaml when child
+      - explicit session.yaml
+      - delegation.yaml when resuming a child
       - handoff.yaml when present
-      - handoff.md when handoff.yaml is absent
+      - legacy handoff.md when handoff.yaml is absent
       - canonical plan.yaml and task contracts
-      - owned lease and worktree
+      - owned lease and worktree records
       - docs/runtime-contract.md
     optional_reads:
       - parent handoff
       - stack graph.yaml and progress.yaml
+      - repository-local instructions and current Git evidence
   review:
     required_reads:
       - AGENTS.md
       - WORKFLOW.md
       - context/index.md
       - selected plan.yaml and task contracts
-      - referenced Product Knowledge
+      - referenced Product Knowledge and provenance
       - docs/plan-review.md
-      - active ownership and repository state
+      - active sessions, leases, worktrees, and handoffs
+      - repository-local instructions and observed Git state
     optional_reads:
-      - selected source files
-      - prior review and completion evidence
+      - selected raw source files
+      - prior review outcome
+      - completion or verifier evidence

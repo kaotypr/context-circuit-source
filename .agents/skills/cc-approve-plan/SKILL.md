@@ -11,7 +11,7 @@ It does not execute the plan.
 
 ## Route reads
 
-Use the `planning` manifest in
+Use the `planning.review_approval` subroute in
 `docs/agent-workspace-workflow.md#route-read-manifests`. The plan-approval
 confirmation is the local action-time guard: missing plan contracts or
 unresolved contradictions remain blockers, and this skill never starts
