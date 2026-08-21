@@ -41,6 +41,7 @@ required .agents/skills/cc-create-prd/SKILL.md
 required .agents/skills/cc-gather-context/SKILL.md
 required .agents/skills/cc-create-plan/SKILL.md
 required .agents/skills/cc-review-plan/SKILL.md
+required .agents/skills/cc-archive-plan/SKILL.md
 required .agents/skills/cc-run-plan/SKILL.md
 required .agents/skills/cc-whats-next/SKILL.md
 required .agents/skills/cc-configure-workspace/SKILL.md

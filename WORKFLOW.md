@@ -127,3 +127,14 @@ Preserve dirty or uncertain work. Never reset, stash, clean, merge, deploy,
 publish external work, store credentials, or overwrite another session's
 runtime state without explicit authorization. Preserve `.runtime/` until a
 human chooses cleanup through `cc-cleanup-runtime`.
+
+## Archive eligibility
+
+Archive eligibility is separate from plan status. A missing `archive.yaml`
+sidecar means the historical active behavior; a latest `archived` event excludes
+the unchanged bundle from ordinary discovery, approval, execution, stack
+membership, and finishing while preserving explicit historical reads. Only
+`cc-archive-plan`, after its own human `archive` gate, may append archive or
+restore evidence. An archived done dependency remains resolved as done; an
+archived draft or approved dependency stays visible and blocks. Archive never
+changes status, cleans runtime, or cascades to related plans.

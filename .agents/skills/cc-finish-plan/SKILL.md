@@ -17,6 +17,7 @@ the independent verifier handoff, task evidence, the plan lease, and worktree
 Git state. Confirm:
 
 - the plan identifier is known and not contradictory;
+- the optional `archive.yaml` is absent or its latest event is `restored`;
 - plan status is exactly `approved`;
 - `completion.yaml` exists with `status: ready-for-human-status-change`;
 - every task has durable evidence, independent verification passed, and no
@@ -58,6 +59,8 @@ canonical_status_changed: true
 ## Refuse
 
 - Plan is `draft` or already `done`: refuse. Do not invent status.
+- Archived: refuse. The human must separately restore the plan through
+  `cc-archive-plan`; finishing never changes archive eligibility.
 - Unknown or contradictory identifier: refuse.
 - `completion.yaml` is missing or its status is not
   `ready-for-human-status-change`: refuse.

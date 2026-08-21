@@ -40,6 +40,37 @@ handoff do not change canonical plan or task status. Missing evidence or a
 failed verifier blocks the completion record; the canonical status remains
 unchanged.
 
+## Archive eligibility and discovery
+
+`archive.yaml` is an optional, versioned sidecar in a plan bundle. It owns
+only whether ordinary routing may select the plan. It never changes the
+canonical `plan.yaml` status or the task projection. A missing sidecar means
+the plan remains active-compatible. The sidecar keeps an append-only sequence
+of `archived` and `restored` events, each with plan identity, actor, timestamp,
+reason, observed canonical status, and replacement references. The latest
+event determines eligibility. Invalid, empty, or identity-mismatched sidecars
+block selection and require a human recovery decision.
+
+Only `cc-archive-plan`, after an explicit current-session `archive` gate,
+appends archive or restore evidence. It never deletes a bundle, runtime
+evidence, dirty work, or Git history; it never changes a plan or task status,
+cascades to related plans, approves a plan, or acts as cleanup.
+
+Ordinary discovery excludes a plan whose latest sidecar event is `archived`.
+Session entry and `cc-whats-next` omit it from recommendations. `cc-approve-plan`,
+`cc-run-plan`, `cc-run-stack`, and `cc-finish-plan` reject it even if named
+explicitly. Explicit historical reads remain available at the unchanged plan
+path. Before archive or restore, preflight checks plan identity and sidecar
+shape, live lease and writing-session ownership, stack membership, worktree
+ownership, dirty and unpushed work, dependencies, compatibility, and (on
+restore) current branch and worktree state. Any ambiguity blocks the action.
+
+An archived `done` dependency remains an inspectable done dependency. An
+archived unfinished dependency (`draft` or `approved`) is unresolved and
+blocks its active dependents; it never silently satisfies or disappears from a
+dependency graph. Restoring is a fresh eligibility action, not a replacement
+for approval or execution preflight.
+
 On approval, completion, and session entry or resume, the coordinator
 reconciles every included task to the projection expected by the plan. The
 operation is bulk, idempotent, preserves task metadata such as

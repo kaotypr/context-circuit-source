@@ -176,6 +176,15 @@ Session status and runtime execution state remain separate from plan and task
 status. A task projection is not a second approval gate, execution lease, or
 verification result.
 
+Archive eligibility is a separate sidecar concern. An absent `archive.yaml`
+preserves active behavior. A valid latest `archived` event keeps the plan bundle
+at its original path for historical inspection but excludes it from ordinary
+recommendation, approval, execution, stack membership, and completion. Only
+the explicitly human-gated `cc-archive-plan` capability may append archive or
+restore evidence; it does not change lifecycle status, task projection, runtime
+records, or Git state. Archived done dependencies remain resolved as done;
+archived unfinished dependencies remain visible blockers.
+
 ## Runtime state
 
 Runtime state is private, local, resumable workspace state. It is preserved until a human chooses cleanup via `cc-cleanup-runtime` and is not treated as Product Knowledge.

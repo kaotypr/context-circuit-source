@@ -76,6 +76,9 @@ resuming work in this workspace.
 - `cc-create-plan` — draft a human-reviewed plan; see `plans/README.md` and
   `docs/planning.md`.
 - `cc-review-plan` — read-only readiness review; see `docs/plan-review.md`.
+- `cc-archive-plan` — human-gated archive or restore eligibility without
+  changing plan status or deleting evidence; see `plans/README.md` and
+  `docs/planning.md`.
 - `cc-run-plan` — execute an approved plan through sessions and exclusive
   worktrees from the repository default or active branch; see
   `docs/planning.md`.

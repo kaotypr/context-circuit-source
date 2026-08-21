@@ -17,15 +17,20 @@ repository-local instructions, current repository state, active sessions,
 leases, worktrees, and the latest handoffs. Confirm:
 
 - the plan status is exactly `approved`;
+- the optional `archive.yaml` is absent or its latest event is `restored`;
 - every declared dependency is approved or done as required by the plan;
 - task projections are reconciled to `ready` without rerunning checks;
 - the repository base is clean and the target worktree is available;
 - no other writing session owns the plan or target worktree;
 - the requested work remains within scope and its assumptions are safe.
 
-An unapproved, unknown, contradictory, or ownership-conflicted plan is
+An archived, unapproved, unknown, contradictory, or ownership-conflicted plan is
 blocked. Do not create a hidden replacement plan, silently steal a lease, or
 change canonical status to make execution possible.
+
+An archived plan is never executable through this route, even when explicitly
+named. Keep the original bundle path available for historical inspection and
+require a separate `cc-archive-plan` restore gate; do not restore it implicitly.
 
 ## Claim and route
 

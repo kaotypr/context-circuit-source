@@ -3127,4 +3127,258 @@ fi
 
 printf 'PASS: Plan 0014 run-stack graph, frontier, joins, resume, and unchanged run-plan\n'
 
+# Plan 0023: archive eligibility is a sidecar, never a lifecycle status. These
+# fixtures model the host's filesystem route checks without adding a command-line
+# workflow for users.
+archive_record_state() {
+  record=$1
+  expected_plan=$2
+  if test ! -e "$record"; then
+    printf 'active\n'
+    return 0
+  fi
+  if ! grep -Fx 'schema_version: 1' "$record" >/dev/null 2>&1 || \
+    ! grep -Fx "plan: $expected_plan" "$record" >/dev/null 2>&1; then
+    printf 'BLOCKED: malformed or identity-mismatched archive record\n' >&2
+    return 1
+  fi
+  last_action=$(awk '/^  - action: / { action=$3 } END { print action }' "$record")
+  case "$last_action" in
+    archived|restored) ;;
+    *)
+      printf 'BLOCKED: malformed or empty archive record\n' >&2
+      return 1
+      ;;
+  esac
+  event_count=$(grep -c '^  - action: ' "$record" || true)
+  required_count=$(grep -c '^    \(at\|actor\|reason\|observed_status\|replacements\):' "$record" || true)
+  if test "$required_count" -ne $((event_count * 5)); then
+    printf 'BLOCKED: archive event is incomplete\n' >&2
+    return 1
+  fi
+  if grep -Ev '^    observed_status: (draft|approved|done)$' "$record" | \
+    grep -F 'observed_status:' >/dev/null 2>&1; then
+    printf 'BLOCKED: archive event has an invalid observed status\n' >&2
+    return 1
+  fi
+  case "$last_action" in
+    archived) printf 'archived\n' ;;
+    restored) printf 'active\n' ;;
+  esac
+}
+
+archive_route_guard() {
+  record=$1
+  plan_id=$2
+  route=$3
+  state=$(archive_record_state "$record" "$plan_id") || return 1
+  if test "$state" = archived; then
+    printf 'BLOCKED: archived plan is excluded from %s; inspect history or restore explicitly\n' "$route" >&2
+    return 1
+  fi
+  return 0
+}
+
+archive_dependency_guard() {
+  target_plan=$1
+  dependent_active=$2
+  target_status=$(plan_field "$target_plan" status)
+  if test "$dependent_active" = true && test "$target_status" != done; then
+    printf 'BLOCKED: unresolved non-archived dependent requires this unfinished plan\n' >&2
+    return 1
+  fi
+  return 0
+}
+
+archive_preflight() {
+  action=$1
+  record=$2
+  plan_id=$3
+  plan_file=$4
+  lease_path=$5
+  writing_session=$6
+  stack_path=$7
+  worktree_state=$8
+  dependent_active=$9
+  state=$(archive_record_state "$record" "$plan_id") || return 1
+  case "$action:$state" in
+    archive:archived)
+      printf 'BLOCKED: plan is already archived\n' >&2
+      return 1
+      ;;
+    restore:active)
+      printf 'BLOCKED: plan is already active\n' >&2
+      return 1
+      ;;
+    archive:active|restore:archived) ;;
+    *)
+      printf 'BLOCKED: unknown archive action\n' >&2
+      return 1
+      ;;
+  esac
+  if test -e "$lease_path"; then
+    printf 'BLOCKED: live plan lease\n' >&2
+    return 1
+  fi
+  if test "$writing_session" = live; then
+    printf 'BLOCKED: live writing session\n' >&2
+    return 1
+  fi
+  if test -e "$stack_path"; then
+    printf 'BLOCKED: active stack membership\n' >&2
+    return 1
+  fi
+  case "$worktree_state" in
+    clean) ;;
+    dirty|unpushed|ambiguous)
+      printf 'BLOCKED: dirty, unpushed, or ambiguous worktree ownership\n' >&2
+      return 1
+      ;;
+    stale)
+      printf 'BLOCKED: stale branch or worktree compatibility\n' >&2
+      return 1
+      ;;
+    *)
+      printf 'BLOCKED: uncertain worktree compatibility\n' >&2
+      return 1
+      ;;
+  esac
+  archive_dependency_guard "$plan_file" "$dependent_active" || return 1
+  return 0
+}
+
+archive_append_event() {
+  record=$1
+  action=$2
+  actor=$3
+  timestamp=$4
+  reason=$5
+  observed_status=$6
+  replacements=$7
+  temporary="${record}.tmp.$$"
+  {
+    cat "$record"
+    printf '%s\n' "  - action: $action" \
+      "    at: $timestamp" \
+      "    actor: $actor" \
+      "    reason: $reason" \
+      "    observed_status: $observed_status" \
+      "    replacements: $replacements"
+  } > "$temporary"
+  mv "$temporary" "$record"
+}
+
+archive_fixture="$fixture/plan-archive"
+mkdir -p "$archive_fixture"
+archive_plan="$archive_fixture/plan.yaml"
+archive_record="$archive_fixture/archive.yaml"
+write_gate_plan "$archive_plan" plan-archive-fixture approved
+test "$(archive_record_state "$archive_record" plan-archive-fixture)" = active
+expect_success archive_route_guard "$archive_record" plan-archive-fixture cc-run-plan
+
+atomic_write "$archive_record" \
+  'schema_version: 1' \
+  'plan: plan-archive-fixture' \
+  'events:' \
+  '  - action: archived' \
+  '    at: 2026-08-20T18:00:00Z' \
+  '    actor: sess-root' \
+  '    reason: superseded' \
+  '    observed_status: approved' \
+  '    replacements: [plan-replacement]'
+test "$(archive_record_state "$archive_record" plan-archive-fixture)" = archived
+for route in cc-session-entry cc-whats-next cc-approve-plan cc-run-plan cc-run-stack cc-finish-plan; do
+  assert_failure_reason "$archive_fixture/$route.log" "archived plan is excluded" \
+    archive_route_guard "$archive_record" plan-archive-fixture "$route"
+done
+
+# Restore is not a history-only append: it must use the current preflight with
+# the same ownership, dependency, and compatibility safeguards as archive.
+restore_record="$archive_fixture/restore.yaml"
+cp "$archive_record" "$restore_record"
+restore_lease="$archive_fixture/restore-lease.lock"
+restore_stack="$archive_fixture/restore-stack-membership"
+expect_success archive_preflight restore "$restore_record" plan-archive-fixture \
+  "$archive_plan" "$restore_lease" none "$restore_stack" clean false
+assert_failure_reason "$archive_fixture/restore-dependent.log" \
+  'unresolved non-archived dependent' \
+  archive_preflight restore "$restore_record" plan-archive-fixture "$archive_plan" \
+  "$restore_lease" none "$restore_stack" clean true
+for blocker in lease session stack dirty unpushed ambiguous stale; do
+  rm -rf "$restore_lease" "$restore_stack"
+  writing_session=none
+  worktree_state=clean
+  case "$blocker" in
+    lease) mkdir "$restore_lease" ;;
+    session) writing_session=live ;;
+    stack) mkdir "$restore_stack" ;;
+    dirty|unpushed|ambiguous|stale) worktree_state=$blocker ;;
+  esac
+  assert_failure_reason "$archive_fixture/restore-$blocker.log" 'BLOCKED:' \
+    archive_preflight restore "$restore_record" plan-archive-fixture "$archive_plan" \
+    "$restore_lease" "$writing_session" "$restore_stack" "$worktree_state" false
+done
+rm -rf "$restore_lease" "$restore_stack"
+archive_append_event "$restore_record" restored sess-root 2026-08-21T08:00:00Z \
+  current-preflight-passed approved '[]'
+test "$(archive_record_state "$restore_record" plan-archive-fixture)" = active
+
+archive_before_restore=$(wc -l < "$archive_record" | tr -d ' ')
+archive_append_event "$archive_record" restored sess-root 2026-08-21T09:00:00Z \
+  replacement-withdrawn approved '[]'
+test "$(archive_record_state "$archive_record" plan-archive-fixture)" = active
+test "$(grep -c '^  - action: ' "$archive_record")" -eq 2
+test "$(wc -l < "$archive_record" | tr -d ' ')" -gt "$archive_before_restore"
+expect_success archive_route_guard "$archive_record" plan-archive-fixture cc-run-plan
+
+atomic_write "$archive_fixture/malformed.yaml" \
+  'schema_version: 1' 'plan: another-plan' 'events:' '  - action: archived'
+assert_failure_reason "$archive_fixture/malformed.log" \
+  'malformed or identity-mismatched archive record' \
+  archive_record_state "$archive_fixture/malformed.yaml" plan-archive-fixture
+
+archive_lease="$archive_fixture/lease.lock"
+archive_stack="$archive_fixture/stack-membership"
+assert_failure_reason "$archive_fixture/dependent.log" \
+  'unresolved non-archived dependent' \
+  archive_preflight archive "$archive_record" plan-archive-fixture "$archive_plan" \
+  "$archive_lease" none "$archive_stack" clean true
+temporary="$archive_plan.tmp.$$"
+sed 's/^status: approved$/status: done/' "$archive_plan" > "$temporary"
+mv "$temporary" "$archive_plan"
+expect_success archive_preflight archive "$archive_record" plan-archive-fixture "$archive_plan" \
+  "$archive_lease" none "$archive_stack" clean true
+for blocker in lease session stack dirty unpushed ambiguous; do
+  rm -rf "$archive_lease" "$archive_stack"
+  writing_session=none
+  worktree_state=clean
+  case "$blocker" in
+    lease) mkdir "$archive_lease" ;;
+    session) writing_session=live ;;
+    stack) mkdir "$archive_stack" ;;
+    dirty|unpushed|ambiguous) worktree_state=$blocker ;;
+  esac
+  assert_failure_reason "$archive_fixture/$blocker.log" 'BLOCKED:' \
+    archive_preflight archive "$archive_record" plan-archive-fixture "$archive_plan" \
+    "$archive_lease" "$writing_session" "$archive_stack" "$worktree_state" false
+done
+rm -rf "$archive_lease" "$archive_stack"
+
+require_file .agents/skills/cc-archive-plan/SKILL.md
+require_file .agents/skills/cc-archive-plan/agents/openai.yaml
+contains .agents/skills/cc-archive-plan/SKILL.md 'append-only'
+contains .agents/skills/cc-archive-plan/SKILL.md 'human `archive` gate'
+contains .agents/skills/cc-archive-plan/SKILL.md 'dirty or unpushed work'
+contains .agents/skills/cc-archive-plan/SKILL.md 'archived `done`'
+contains .agents/skills/cc-approve-plan/SKILL.md 'Archived: refuse'
+contains .agents/skills/cc-run-plan/SKILL.md 'archive.yaml'
+contains .agents/skills/cc-run-stack/SKILL.md 'archived member'
+contains .agents/skills/cc-finish-plan/SKILL.md 'Archived: refuse'
+contains scripts/release-manifest.txt 'cc-archive-plan/SKILL.md'
+contains plans/README.md 'Archive eligibility'
+contains docs/planning.md 'Archive eligibility and discovery'
+contains docs/runtime-contract.md 'Plan archive sidecar'
+
+printf 'PASS: Plan 0023 archive eligibility, history, dependencies, and route guards\n'
+
 printf 'PASS: pure agent-workspace acceptance scenarios (filesystem, contention, isolation, recovery, verification, gates)\n'

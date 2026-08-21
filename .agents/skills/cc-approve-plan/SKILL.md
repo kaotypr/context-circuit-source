@@ -15,6 +15,7 @@ Read the named plan's canonical `plan.yaml`, included tasks, declared
 dependencies, and any latest `cc-review-plan` outcome. Confirm:
 
 - the plan identifier is known and not contradictory;
+- the optional `archive.yaml` is absent or has a latest `restored` event;
 - required plans-contract metadata, tasks, and acceptance criteria are present;
 - remaining risks, open questions, and unresolved contradictions are visible.
 
@@ -48,6 +49,9 @@ If the human declines, the plan stays `draft` and execution remains unstarted.
 ## Refuse or observe
 
 - Already `done`: refuse. Do not invent or rewrite status.
+- Archived: refuse, including an explicitly named archived plan. Report its
+  original path for historical inspection and require a separate
+  `cc-archive-plan` restore confirmation before ordinary approval can resume.
 - Unknown or contradictory identifier: refuse.
 - Missing required metadata, tasks, or acceptance criteria from the plans
   contract: refuse as incomplete. Stop for revision.
