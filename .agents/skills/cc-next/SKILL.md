@@ -1,5 +1,5 @@
 ---
-name: context-next
+name: cc-next
 description: Present the read-only next-action card derived from current workspace evidence.
 ---
 

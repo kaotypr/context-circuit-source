@@ -1,9 +1,10 @@
 # Context Circuit source-repository safety
 
 This checkout is the Context Circuit product source, not an instantiated
-workspace. `PLAN.md` is the design specification being implemented directly;
-do not turn it into a canonical plan or use the old Context Circuit lifecycle,
-routing model, or cc-* skills as the implementation mechanism.
+workspace. The active source specification is
+`sources/context-circuit-design/DESIGN-SPEC.md`; do not turn it into a
+canonical workspace plan or restore the obsolete Context Circuit lifecycle,
+routing model, or legacy skill behavior.
 
 The shipped product contract is under `wrapper/`; the mutable blank seed is
 under `template/`. Product behavior has one owner per rule: use the owner map

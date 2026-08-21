@@ -6,8 +6,8 @@ filesystem contract. They discover the natural-language skills in
 storage, or optional integration adapters. They do not define a second route or
 lifecycle.
 
-The shipped discovery names are `context-entry`, `context-next`, `context-plan`,
-`context-execute`, `context-verify`, `context-gates`, and `context-upgrade`.
+The shipped discovery names are `cc-entry`, `cc-next`, `cc-plan`, `cc-execute`,
+`cc-verify`, `cc-gates`, and `cc-upgrade`.
 The human never needs to type these names.
 
 | Host | Child primitive | Safe fallback |

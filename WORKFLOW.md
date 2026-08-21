@@ -1,6 +1,7 @@
 # Context Circuit source workflow
 
-Implementation proceeds directly from `PLAN.md` in FINAL-001 through FINAL-009.
+Implementation proceeds directly from
+`sources/context-circuit-design/DESIGN-SPEC.md` in FINAL-001 through FINAL-009.
 This source workflow is not the product lifecycle and does not require plan
 approval, run-plan, run-stack, finish-plan, or cleanup ceremonies.
 

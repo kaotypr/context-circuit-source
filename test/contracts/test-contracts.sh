@@ -23,6 +23,6 @@ contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'status: [draft, ready, don
 
 ids=$(awk '/^  - id: INV-/{print $3}' "$ROOT/wrapper/contracts/invariants.yaml")
 test "$(printf '%s\n' "$ids" | sort | uniq | wc -l)" -eq "$(printf '%s\n' "$ids" | wc -l)" || fail 'duplicate invariant IDs'
-not_contains "$ROOT/.agents/skills/context-entry/SKILL.md" 'cc-session-entry'
-not_contains "$ROOT/.agents/skills/context-execute/SKILL.md" 'cc-run-plan'
+not_contains "$ROOT/.agents/skills/cc-entry/SKILL.md" 'cc-session-entry'
+not_contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'cc-run-plan'
 pass 'contract inventory, schema ownership, and unique invariant IDs'

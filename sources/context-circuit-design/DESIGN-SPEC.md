@@ -1,6 +1,6 @@
-# Sol 5.6 Final Plan — Context Circuit 1.0
+# Context Circuit 1.0 Design Specification
 
-Status: **draft — human review required**
+Status: **implemented source specification**
 
 Revision: **2 — 2026-08-21**, incorporating the final comparative review.
 
@@ -9,10 +9,10 @@ filesystem, document authority, context-loading model, routing, human workflow,
 agent behavior, plan format, execution/recovery rules, compatibility contract,
 tests, and staged implementation.
 
-This file is a requested standalone design and migration plan. It does not
-approve itself, execute work, change canonical plan status, merge, publish, or
-deploy. If accepted, convert it into one or more canonical plan bundles under
-`plans/context-circuit-plans/` before execution.
+This file is maintainer design material for the Context Circuit source
+repository. It does not approve itself, execute work, change workspace plan
+status, merge, publish, or deploy. Workspace plans remain separate artifacts
+under the released workspace's `plans/` directory.
 
 This full design is maintainer review material, not workspace bootstrap
 context. Routine agents must not load it; implementation sessions receive only
@@ -331,7 +331,7 @@ session_kind: root
 phase: orienting
 probe: run-plan-preflight
 eligibility: ready
-capability: cc-run-plan
+capability: cc-execute
 authorization: explicitly-requested
 reason_codes:
   - PLAN_APPROVED
@@ -352,7 +352,7 @@ The route fields mean:
 - `reason_codes`: stable explanations and test assertions;
 - `human_gate`: exact confirmation still required, or `none`.
 
-`cc-session-entry` is the sole evaluator. `cc-whats-next` presents its read-only
+`cc-entry` is the sole evaluator. `cc-next` presents its read-only
 recommendation. Skills do not maintain parallel route rules.
 
 ### 7.3 Precedence
@@ -1177,19 +1177,15 @@ The new Context Circuit is acceptable only when:
 | Real token benchmark is nonportable | Deterministic CI ledger plus host-neutral, credential-free usage evidence. |
 | Integration failure blocks work | Offline filesystem fallback and provider-neutral outcomes. |
 
-## 23. Human decisions before approval
+## 23. Maintainer decisions and implementation state
 
-1. Confirm the preferred source `wrapper/` + `template/` structure, subject to
-   migration/rent verification, and `PLAN.md` as the sole human plan entry.
-2. Confirm the Section 17 ceilings, the ≥70% deterministic L1 reduction, and
-   the ≥50% live-token publication target with an explicit evidence-unavailable
-   waiver.
-3. Confirm separate approve/run/finish/delivery/cleanup actions and additive
-   plan/task schema v2 while preserving v1 reads.
+1. The source `wrapper/` + `template/` structure is implemented and verified by
+   the semantic and release suites.
+2. The Section 17 ceilings and ≥70% deterministic L1 reduction are enforced;
+   live-token evidence remains subject to the explicit host-evidence waiver.
+3. Separate approve/run/finish/delivery/cleanup actions and additive plan/task
+   schema v2 are implemented while preserving v1 reads.
 
-The four implementation review batches in Section 19 are the proposed default
-and may be regrouped without changing product intent.
-
-Recommended next action: resolve these three decisions, run a final read-only
-plan review, then convert the accepted design into canonical draft plan bundles.
-Do not execute this standalone artifact.
+The implementation evidence, measurements, deviations, and remaining risks are
+recorded in `test/baselines/implementation-log.md`. This specification remains
+source-only and is excluded from released workspaces.
