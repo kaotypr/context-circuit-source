@@ -1,0 +1,105 @@
+schema_version: 1
+owner: wrapper/contracts/context-sets.yaml
+unit: bytes
+sets:
+  - id: tier-0
+    required:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - workspace.yaml.identity
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional:
+      bound-session: exact session record
+    prohibited:
+      - broad sources scan
+      - all Product Knowledge
+      - unrelated plans
+      - deep runtime contracts
+    budget_bytes: 8192
+  - id: orientation
+    required:
+      - tier-0
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    prohibited:
+      - runtime mutation
+      - sources scan
+    budget_bytes: 20480
+  - id: plan-review
+    required:
+      - tier-0
+      - selected plan.yaml
+      - selected PLAN.md
+      - selected task headers
+      - declared Product Knowledge references
+      - repository instructions
+      - dependency status
+      - archive sidecar if present
+    prohibited:
+      - status mutation
+      - unrelated plans
+      - broad sources scan
+    budget_bytes: 20480
+  - id: run-plan
+    required:
+      - tier-0
+      - selected plan.yaml fields
+      - selected task headers
+      - declared Product Knowledge references
+      - repository instructions
+      - lease and worktree preflight
+    conditional:
+      lease-conflict:
+        - runtime lease contract
+      resume:
+        - current context receipt
+        - latest handoff
+    prohibited:
+      - broad sources scan
+      - unrelated plans
+      - implicit delivery
+    budget_bytes: 22528
+  - id: writer
+    required:
+      - AGENTS.md
+      - WORKFLOW.md
+      - delegation.yaml
+      - selected plan and task
+      - assigned repository instructions
+      - context receipt delta
+    prohibited:
+      - plan status
+      - other sessions
+      - wrapper context
+      - external activity
+    budget_bytes: 12288
+  - id: verifier
+    required:
+      - delegation.yaml
+      - selected plan acceptance
+      - verification commands
+      - writer handoff
+      - assigned worktree state
+    prohibited:
+      - implementation writes
+      - plan/status/lease changes
+      - repair
+    budget_bytes: 11264
+  - id: resume
+    required:
+      - tier-0
+      - session.yaml
+      - context-receipt.yaml
+      - latest handoff
+      - wrapper manifest
+      - primary evidence changed since receipt
+    prohibited:
+      - blindly replaying all context
+      - broad sources scan
+    budget_bytes: 12288
+overrun: Report `CONTEXT_BUDGET_EXCEEDED` with selected set, actual bytes, reason, and newly requested evidence; never silently broaden.

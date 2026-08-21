@@ -1,0 +1,80 @@
+schema_version: 1
+owner: wrapper/contracts/routes.yaml
+stage_a:
+  input: human request + host binding + Tier 0
+  output: exactly one probe or focused question, blocker, or read-only answer
+stage_b:
+  required_fields:
+    - intent
+    - session_kind
+    - phase
+    - probe
+    - eligibility
+    - capability
+    - authorization
+    - reason_codes
+    - context_set
+    - human_gate
+precedence:
+  - id: ROUTE-PRECEDENCE-01
+    when: conflicting instructions, unsafe paths, corrupt records, or dirty ownership
+    result: blocked/recovery
+  - id: ROUTE-PRECEDENCE-02
+    when: valid child delegation packet
+    result: child-entry
+  - id: ROUTE-PRECEDENCE-03
+    when: explicitly bound non-terminal session
+    result: resume after compatibility and ownership checks
+  - id: ROUTE-PRECEDENCE-04
+    when: explicit human capability request
+    result: preflight named capability without substitution
+  - id: ROUTE-PRECEDENCE-05
+    when: no explicit action
+    result: one read-only next-action recommendation
+  - id: ROUTE-PRECEDENCE-06
+    when: selected evidence is insufficient
+    result: one focused question or orient
+actions:
+  - orient
+  - recommend-next
+  - initialize
+  - draft-idea-brief
+  - draft-prd
+  - inspect-source
+  - propose-context
+  - review-context
+  - draft-plan
+  - review-plan
+  - present-approval-card
+  - clarify-target
+  - approve-plan
+  - block-unapproved
+  - execute-plan
+  - execute-stack
+  - resume-session
+  - present-takeover-card
+  - takeover-lease
+  - block-foreign-owner
+  - block-dirty-base
+  - block-incomplete-delegation
+  - block-missing-child-primitive
+  - block-scope-expansion
+  - verify-plan
+  - repair-plan
+  - present-finish-card
+  - finish-plan
+  - recommend-finish
+  - present-archive-card
+  - archive-plan
+  - present-restore-card
+  - restore-plan
+  - present-configuration-card
+  - configure-delivery
+  - present-delivery-card
+  - offline-fallback
+  - show-handoff
+  - inspect-cleanup
+  - cleanup-runtime
+  - classify-upgrade
+  - migrate-wrapper
+  - block-unresolved-dependency

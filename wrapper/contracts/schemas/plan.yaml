@@ -1,0 +1,10 @@
+schema_version: 2
+owner: plans/<repository>-plans/<plan>/plan.yaml
+required: [schema_version, id, number, title, status, repository, source, product_knowledge, objective, scope, non_goals, dependencies, tasks, acceptance, verification, human_gates, created_at, updated_at]
+enums:
+  status: [draft, approved, done]
+rules:
+  - plan.yaml owns lifecycle status and canonical IDs
+  - approval changes status draft to approved only
+  - finish changes approved to done only after completion evidence and confirmation
+  - schema v1 remains readable and is not silently rewritten

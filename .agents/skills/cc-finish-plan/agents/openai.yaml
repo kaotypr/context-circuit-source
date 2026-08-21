@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Finish Plan"
-  short_description: "Mark an executed plan done after human confirmation"
-  default_prompt: "Use $cc-finish-plan to preflight completion evidence and, after explicit human confirmation, mark this plan done without deleting runtime."

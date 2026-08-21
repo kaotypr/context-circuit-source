@@ -1,0 +1,22 @@
+schema_version: 1
+from: plan-v1
+to: plan-v2
+mode: additive-read-compatible
+preserve:
+  - id
+  - number
+  - title
+  - status
+  - source
+  - repositories
+  - product_knowledge
+  - implementation_scope
+  - non_goals
+  - dependencies
+  - acceptance_criteria
+  - test_scope
+  - verification_commands
+rules:
+  - never infer missing intent
+  - never rewrite status without its current human gate
+  - v1 remains readable as legacy-compatible

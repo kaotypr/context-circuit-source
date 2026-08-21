@@ -1,0 +1,13 @@
+schema_version: 1
+owner: wrapper/contracts/routes.yaml
+purpose: Compact Tier-0 probe catalog; deep contracts are route-selected.
+probes:
+  orientation: context summaries
+  initialization: workspace identity fields
+  plan: selected plan and task headers
+  execution: selected plan, lease, worktree, delegation preflight
+  recovery: session, receipt, handoff, lease, Git ownership
+  gate: selected target plus current card state
+  compatibility: manifest version plus bound receipt version
+prohibited: broad sources scan, unrelated plans, full Product Knowledge, all runtime
+budgets: tier-0=8192 orientation=20480 run-plan=22528 writer=12288 verifier=11264

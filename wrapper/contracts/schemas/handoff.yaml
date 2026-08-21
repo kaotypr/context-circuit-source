@@ -1,0 +1,4 @@
+schema_version: 1
+owner: .runtime/sessions/<session-id>/handoff.md
+required_sections: [Observed state, Selected route and reason, Evidence read, Action performed or proposed, Files/state changed, Verification, Blockers and human decisions, One next safe action]
+statuses: [completed, blocked, failed, awaiting-human-gate]

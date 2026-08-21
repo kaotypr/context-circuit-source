@@ -1,0 +1,12 @@
+schema_version: 1
+scenario: L1/L2 wrapper context comparison
+status: unavailable
+host_usage_api: not exposed to offline repository CI
+publication_waiver:
+  explicit: true
+  reason: Deterministic byte budgets and semantic outcomes are reproducible; live tokenizer evidence is host/model-specific and no credentialed external agent is launched by core CI.
+  retained_gates:
+    - tier-0-byte-ceiling
+    - l1-byte-ceiling
+    - l2-byte-ceiling
+    - routing-parity

@@ -1,0 +1,7 @@
+schema_version: 1
+owner: .runtime/plans/<plan-id>/completion.yaml
+required: [schema_version, wrapper_version, plan, status, task_evidence, verifier, worktree, git, human_gate]
+statuses: [not-ready, ready-for-human-status-change, completed]
+rules:
+  - ready requires all task evidence and independent verifier pass
+  - completion does not itself change plan status

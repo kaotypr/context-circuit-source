@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Review Plan"
-  short_description: "Check plan readiness and human decisions"
-  default_prompt: "Use $cc-review-plan to inspect this plan's scope, evidence, dependencies, ownership, risks, and remaining human decisions."

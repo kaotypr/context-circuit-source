@@ -1,0 +1,11 @@
+schema_version: 2
+owner: plans/<repository>-plans/<plan>/tasks/<task>.md frontmatter projection
+required: [schema_version, id, plan, status, paths, depends_on, acceptance, verification, expected_evidence, stop_conditions]
+enums:
+  status: [draft, ready, done]
+projection:
+  draft: draft
+  approved: ready
+  done: done
+rules:
+  - task status is projected from plan status and is not an approval gate

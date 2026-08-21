@@ -1,0 +1,10 @@
+schema_version: 1
+owner: .runtime/sessions/<session-id>/session.yaml
+required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, kind, role, objective, scope, permissions, worktree, status, created_at, updated_at]
+enums:
+  kind: [root, child]
+  status: [created, orienting, planning, awaiting-approval, executing, verifying, awaiting-review, blocked, handoff, completed, failed, cancelled]
+rules:
+  - child requires parent_session_id and root_session_id
+  - root has parent_session_id null
+  - session status never changes plan status

@@ -1,0 +1,12 @@
+schema_version: 1
+owner: workspace.yaml
+required: [version, template_version, workspace, repositories, context, workflow]
+properties:
+  workspace.mode: {enum: [solo, team]}
+  workspace.default_branch: {type: string}
+  repositories: {type: mapping}
+  workflow.human_gates: {type: sequence}
+forbidden:
+  - credentials
+  - provider_payloads
+  - implicit_external_authorization
