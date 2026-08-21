@@ -9,3 +9,8 @@ projection:
   done: done
 rules:
   - task status is projected from plan status and is not an approval gate
+format:
+  frontmatter:
+    opening: The first line of every task Markdown file is exactly `---`.
+    closing: A second `---` closes the YAML frontmatter before the Markdown body.
+  plan_yaml: plan.yaml is pure YAML and is not wrapped in Markdown frontmatter.
