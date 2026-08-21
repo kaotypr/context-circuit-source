@@ -1,0 +1,21 @@
+version: 1
+template_version: 1.0.0
+workspace:
+  name: uninitialized-workspace
+  mode: solo
+  default_branch: main
+repositories: {}
+context:
+  sources_file: context/sources.yaml
+workflow:
+  human_gates:
+    - identity-acceptance
+    - context-acceptance
+    - plan-approval
+    - execution-trigger
+    - status-change
+    - takeover
+    - delivery
+    - archive
+    - cleanup
+  wrapper_change_policy: preserve-runtime

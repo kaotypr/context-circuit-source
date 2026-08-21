@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Run Stack"
-  short_description: "Execute connected approved plans"
-  default_prompt: "Use $cc-run-stack to execute this connected set of already-approved plans through a frozen runtime graph, parent-worktree bases, in-run joins, exclusive worktrees, writer and verifier children, and progress resume without marking plans done."

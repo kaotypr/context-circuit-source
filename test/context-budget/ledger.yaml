@@ -1,0 +1,8 @@
+schema_version: 1
+owner: test/context-budget/ledger.tsv
+profiles: tier-0, orientation, run-plan, writer, verifier, resume
+measurements: computed by test-budgets.sh from selected paths and recorded in implementation-log.md
+composites:
+  l1-single-plan: run-plan + writer + verifier <= 46080
+  l2-three-tasks-resume: run-plan + writer + verifier + three task deltas + resume <= 58368
+  resume-delta: resume <= 12288

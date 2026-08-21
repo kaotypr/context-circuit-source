@@ -1,0 +1,303 @@
+schema_version: 1
+purpose: Normalized two-stage routing fixtures; each case has one expected probe and action.
+cases:
+  - id: R001
+    request: What is this workspace?
+    probe: orientation
+    action: orient
+    authorization: read-only
+  - id: R002
+    request: Start or resume work in this workspace.
+    probe: session-preflight
+    action: recommend-next
+    authorization: absent
+  - id: R003
+    request: What is this project and what should happen next?
+    probe: orientation
+    action: orient
+    authorization: read-only
+  - id: R004
+    request: Set up this workspace for these repositories.
+    probe: initialization
+    action: initialize
+    authorization: explicitly-requested
+  - id: R005
+    request: Initialize a workspace with no repository.
+    probe: initialization
+    action: initialize
+    authorization: explicitly-requested
+  - id: R006
+    request: Capture this idea as a short brief.
+    probe: idea-brief
+    action: draft-idea-brief
+    authorization: explicitly-requested
+  - id: R007
+    request: Save this uncertain idea.
+    probe: idea-brief
+    action: draft-idea-brief
+    authorization: explicitly-requested
+  - id: R008
+    request: Create a PRD from selected files.
+    probe: prd
+    action: draft-prd
+    authorization: explicitly-requested
+  - id: R009
+    request: Create requirements from the selected evidence.
+    probe: prd
+    action: draft-prd
+    authorization: explicitly-requested
+  - id: R010
+    request: Read sources/brief.md only.
+    probe: selected-source
+    action: inspect-source
+    authorization: explicitly-requested
+  - id: R011
+    request: Use only sources/checkout.md and sources/constraints.md.
+    probe: selected-source
+    action: inspect-source
+    authorization: explicitly-requested
+  - id: R012
+    request: Refresh the checkout domain context using only selected evidence.
+    probe: context-refresh
+    action: propose-context
+    authorization: explicitly-requested
+  - id: R013
+    request: Refresh the operator role context.
+    probe: context-refresh
+    action: propose-context
+    authorization: explicitly-requested
+  - id: R014
+    request: Review the contradiction in accepted context.
+    probe: context-review
+    action: review-context
+    authorization: read-only
+  - id: R015
+    request: Draft a plan for deterministic checkout validation.
+    probe: plan-draft
+    action: draft-plan
+    authorization: explicitly-requested
+  - id: R016
+    request: Create a plan from this accepted PRD.
+    probe: plan-draft
+    action: draft-plan
+    authorization: explicitly-requested
+  - id: R017
+    request: Review plan checkout-validation.
+    probe: plan-review
+    action: review-plan
+    authorization: read-only
+  - id: R018
+    request: Check whether plan checkout-validation is ready.
+    probe: plan-review
+    action: review-plan
+    authorization: read-only
+  - id: R019
+    request: Approve plan checkout-validation.
+    probe: approval
+    action: present-approval-card
+    authorization: confirmed-gate-required
+  - id: R020
+    request: Confirm approval of plan checkout-validation.
+    probe: approval
+    action: approve-plan
+    authorization: confirmed-gate
+  - id: R021
+    request: Approve this plan.
+    probe: approval
+    action: clarify-target
+    authorization: absent
+  - id: R022
+    request: Run draft plan checkout-validation.
+    probe: execution-preflight
+    action: block-unapproved
+    authorization: explicitly-requested
+  - id: R023
+    request: Run approved plan checkout-validation.
+    probe: execution-preflight
+    action: execute-plan
+    authorization: explicitly-requested
+  - id: R024
+    request: Execute checkout-validation now.
+    probe: execution-preflight
+    action: execute-plan
+    authorization: explicitly-requested
+  - id: R025
+    request: Run the connected approved plans A, B, and C.
+    probe: stack-preflight
+    action: execute-stack
+    authorization: explicitly-requested
+  - id: R026
+    request: Continue the connected plan stack.
+    probe: stack-preflight
+    action: execute-stack
+    authorization: explicitly-requested
+  - id: R027
+    request: Resume session sess-0042.
+    probe: resume-preflight
+    action: resume-session
+    authorization: explicitly-requested
+  - id: R028
+    request: Continue my interrupted work.
+    probe: resume-preflight
+    action: resume-session
+    authorization: explicitly-requested
+  - id: R029
+    request: Take over the stale checkout lease.
+    probe: recovery
+    action: present-takeover-card
+    authorization: confirmed-gate-required
+  - id: R030
+    request: Confirm takeover of the stale lease.
+    probe: recovery
+    action: takeover-lease
+    authorization: confirmed-gate
+  - id: R031
+    request: Work on the live plan owned by another session.
+    probe: ownership
+    action: block-foreign-owner
+    authorization: absent
+  - id: R032
+    request: The base checkout is dirty; run the plan.
+    probe: ownership
+    action: block-dirty-base
+    authorization: absent
+  - id: R033
+    request: Verify the completed checkout plan.
+    probe: verification
+    action: verify-plan
+    authorization: explicitly-requested
+  - id: R034
+    request: Repair the failed verification within scope.
+    probe: verification
+    action: repair-plan
+    authorization: explicitly-requested
+  - id: R035
+    request: Finish plan checkout-validation.
+    probe: completion
+    action: present-finish-card
+    authorization: confirmed-gate-required
+  - id: R036
+    request: Confirm finish plan checkout-validation.
+    probe: completion
+    action: finish-plan
+    authorization: confirmed-gate
+  - id: R037
+    request: Archive plan checkout-validation because it is replaced.
+    probe: archive
+    action: present-archive-card
+    authorization: confirmed-gate-required
+  - id: R038
+    request: Confirm archive of checkout-validation.
+    probe: archive
+    action: archive-plan
+    authorization: confirmed-gate
+  - id: R039
+    request: Restore archived plan checkout-validation.
+    probe: archive
+    action: present-restore-card
+    authorization: confirmed-gate-required
+  - id: R040
+    request: Confirm restore of checkout-validation.
+    probe: archive
+    action: restore-plan
+    authorization: confirmed-gate
+  - id: R041
+    request: Configure manual delivery for repository app.
+    probe: configuration
+    action: present-configuration-card
+    authorization: confirmed-gate-required
+  - id: R042
+    request: Confirm manual delivery configuration.
+    probe: configuration
+    action: configure-delivery
+    authorization: confirmed-gate
+  - id: R043
+    request: Prepare the verified work for remote review.
+    probe: delivery
+    action: present-delivery-card
+    authorization: confirmed-gate-required
+  - id: R044
+    request: Commit and push the verified work.
+    probe: delivery
+    action: present-delivery-card
+    authorization: confirmed-gate-required
+  - id: R045
+    request: The provider is unavailable; continue offline.
+    probe: integration
+    action: offline-fallback
+    authorization: read-only
+  - id: R046
+    request: Show the latest handoff and blockers.
+    probe: handoff
+    action: show-handoff
+    authorization: read-only
+  - id: R047
+    request: Clean runtime after showing me dirty work.
+    probe: cleanup
+    action: inspect-cleanup
+    authorization: confirmed-gate-required
+  - id: R048
+    request: Confirm workspace runtime cleanup.
+    probe: cleanup
+    action: cleanup-runtime
+    authorization: confirmed-gate
+  - id: R049
+    request: Upgrade the wrapper in a live workspace.
+    probe: compatibility
+    action: classify-upgrade
+    authorization: read-only
+  - id: R050
+    request: Confirm the required wrapper migration.
+    probe: compatibility
+    action: migrate-wrapper
+    authorization: confirmed-gate
+  - id: R051
+    request: Show what is eligible next.
+    probe: session-preflight
+    action: recommend-next
+    authorization: read-only
+  - id: R052
+    request: What can I safely do next?
+    probe: session-preflight
+    action: recommend-next
+    authorization: read-only
+  - id: R053
+    request: Do not change anything; explain the current state.
+    probe: orientation
+    action: orient
+    authorization: read-only
+  - id: R054
+    request: A child packet is missing scope; start it anyway.
+    probe: child-entry
+    action: block-incomplete-delegation
+    authorization: absent
+  - id: R055
+    request: The host cannot create a verifier child.
+    probe: child-entry
+    action: block-missing-child-primitive
+    authorization: absent
+  - id: R056
+    request: The writer changed an unapproved path.
+    probe: scope-recovery
+    action: block-scope-expansion
+    authorization: absent
+  - id: R057
+    request: Verification passed; what happens next?
+    probe: completion
+    action: recommend-finish
+    authorization: read-only
+  - id: R058
+    request: A dependency is archived; can this plan run?
+    probe: dependency
+    action: block-unresolved-dependency
+    authorization: absent
+  - id: R059
+    request: Is this plan approved-for-execution?
+    probe: plan-review
+    action: review-plan
+    authorization: read-only
+  - id: R060
+    request: Read only the plan status and recommend the next action.
+    probe: plan-review
+    action: review-plan
+    authorization: read-only

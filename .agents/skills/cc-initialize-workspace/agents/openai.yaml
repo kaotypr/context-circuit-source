@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Initialize Workspace"
-  short_description: "Set up workspace identity and repository context"
-  default_prompt: "Use $cc-initialize-workspace to initialize this Context Circuit workspace, including a valid no-repository path."

@@ -1,0 +1,45 @@
+schema_version: 1
+owner: wrapper/contracts/routes.yaml plus invariant catalog
+rows: 40
+positive_and_negative_required: true
+cases:
+  - orient
+  - initialize
+  - idea-brief
+  - prd
+  - selected-source
+  - context-refresh
+  - context-review
+  - plan-draft
+  - plan-review
+  - approval
+  - execution
+  - stack
+  - resume
+  - foreign-owner
+  - dirty-base
+  - child-blocked
+  - host-blocked
+  - scope-blocked
+  - verification-pass
+  - verification-fail
+  - completion
+  - archive
+  - restore
+  - configuration
+  - offline
+  - delivery
+  - cleanup
+  - compatibility
+  - legacy-unknown
+  - dependency-blocked
+  - stale-receipt
+  - budget-overrun
+  - invalid-path
+  - credential-boundary
+  - archive-dependency
+  - takeover
+  - rollback
+  - no-repository
+  - parallel-plan
+  - multi-repository

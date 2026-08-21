@@ -1,0 +1,70 @@
+schema_version: 1
+wrapper_version: 1.0.0
+product: context-circuit
+artifact_kind: blank-workspace
+release_contract: wrapper-owned-files-only
+schema_versions:
+  workspace: [1]
+  session: [1]
+  delegation: [1]
+  context_receipt: [1]
+  lease: [1]
+  handoff: [1]
+  plan: [1, 2]
+  task: [1, 2]
+  archive: [1]
+  completion: [1]
+  stack: [1]
+budgets:
+  tier_0_bytes: 8192
+  orientation_bytes: 20480
+  run_plan_bytes: 22528
+  writer_bytes: 12288
+  verifier_bytes: 11264
+  single_plan_lifecycle_bytes: 46080
+  three_task_resume_bytes: 58368
+  resume_delta_bytes: 12288
+  static_reduction_percent: 70
+  live_token_reduction_percent: 50
+  live_token_evidence: optional-with-waiver
+release_boundary:
+  shipped:
+    - root adapters from wrapper/adapters/
+    - wrapper/manifest.yaml
+    - wrapper/contracts/
+    - wrapper/migrations/
+    - wrapper/runtime/engine.sh
+    - .agents/skills/
+    - agents/
+    - template/
+    - docs/
+  mutable_seed:
+    - template/workspace.yaml
+    - template/context/
+    - template/sources/
+    - template/plans/
+  never_ship:
+    - .git/
+    - .runtime/
+    - test/
+    - scripts/
+    - sources/
+    - plans/
+    - PLAN.md
+    - maintainer-only docs
+upgrade_boundary:
+  wrapper_only:
+    - wrapper/
+    - .agents/skills/
+    - agents/
+    - shipped root adapters
+  preserve:
+    - workspace.yaml
+    - context/
+    - sources/
+    - plans/
+    - .runtime/
+    - registered repositories
+identity:
+  source_workspace: Context Circuit product source
+  instantiated_workspace: uninitialized until human identity confirmation

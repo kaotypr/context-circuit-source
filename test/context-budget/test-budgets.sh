@@ -1,0 +1,43 @@
+#!/bin/sh
+set -eu
+. "$(dirname -- "$0")/../lib/assert.sh"
+
+sum_profile() {
+  cc_budget=$1; cc_paths=$2; cc_sum=0
+  old_ifs=$IFS; IFS=,
+  for cc_path in $cc_paths; do
+    require_file "$ROOT/$cc_path"
+    cc_bytes=$(wc -c < "$ROOT/$cc_path")
+    cc_sum=$((cc_sum + cc_bytes))
+  done
+  IFS=$old_ifs
+  test "$cc_sum" -le "$cc_budget" || fail "budget exceeded: $cc_sum > $cc_budget"
+  printf '%s\n' "$cc_sum"
+}
+
+while IFS='|' read -r profile budget paths; do
+  case "$profile" in ''|'#'*) continue ;; esac
+  measured=$(sum_profile "$budget" "$paths")
+  printf 'BUDGET %s: %s/%s bytes\n' "$profile" "$measured" "$budget"
+done < "$ROOT/test/context-budget/ledger.tsv"
+
+profile_measured() {
+  cc_name=$1
+  cc_budget=$(awk -F'|' -v name="$cc_name" '$1 == name {print $2}' "$ROOT/test/context-budget/ledger.tsv")
+  cc_paths=$(awk -F'|' -v name="$cc_name" '$1 == name {print $3}' "$ROOT/test/context-budget/ledger.tsv")
+  sum_profile "$cc_budget" "$cc_paths"
+}
+root=$(profile_measured run-plan)
+writer=$(profile_measured writer)
+verifier=$(profile_measured verifier)
+l1=$((root + writer + verifier))
+test "$l1" -le 46080 || fail "L1 budget exceeded: $l1"
+resume=$(profile_measured resume)
+task_delta=$(wc -c < "$ROOT/docs/templates/task.md")
+l2=$((l1 + (task_delta * 3) + resume))
+test "$l2" -le 58368 || fail "L2 budget exceeded: $l2"
+printf 'BUDGET l2-three-task-resume: %s/58368 bytes\n' "$l2"
+baseline=154368
+reduction=$(( (baseline - l1) * 100 / baseline ))
+test "$reduction" -ge 70 || fail "static reduction below target: $reduction%"
+pass "context budgets and static reduction ${reduction}% (L1=$l1 bytes)"

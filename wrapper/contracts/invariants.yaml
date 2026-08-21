@@ -1,0 +1,52 @@
+schema_version: 1
+owner: wrapper/contracts/invariants.yaml
+invariants:
+  - id: INV-AUTH-01
+    rule: Eligibility never implies authorization; explicit human confirmation is required for every consequential gate.
+  - id: INV-AUTH-02
+    rule: Review is read-only, approval changes status only, execution requires a separate request, and finish requires a separate status gate.
+  - id: INV-CTX-01
+    rule: Stage A selects one bounded context set; Stage B selects one final action only after that evidence is loaded.
+  - id: INV-CTX-02
+    rule: Context budgets are hard ceilings; an overrun reports a reason and never silently broadens context.
+  - id: INV-CTX-03
+    rule: Receipts locate primary evidence and cannot replace or authorize it; stale receipts block writes.
+  - id: INV-OWN-01
+    rule: A plan has one active writing lease; exclusive-create ownership is atomic and contention remains read-only.
+  - id: INV-OWN-02
+    rule: A writer changes only its delegated paths in its assigned worktree; a verifier cannot write implementation or runtime owned by another session.
+  - id: INV-OWN-03
+    rule: Every child packet includes identity, scope, permissions, acceptance, verification, expected evidence, and stop conditions.
+  - id: INV-LIFE-01
+    rule: plan.yaml owns plan status draft, approved, done; task status is a synchronized projection draft, ready, done.
+  - id: INV-LIFE-02
+    rule: Implemented runtime evidence never marks a plan done; only an explicit finish gate does.
+  - id: INV-REC-01
+    rule: Interruption preserves lease, worktree, dirty state, receipt, and handoff; heartbeat expiry never grants takeover.
+  - id: INV-REC-02
+    rule: Wrapper upgrades replace wrapper-owned files only and preserve workspace data and runtime evidence.
+  - id: INV-SEC-01
+    rule: Workspace-relative paths reject traversal, unsafe symlinks, credentials, and writes outside assigned roots.
+  - id: INV-SEC-02
+    rule: sources/ is passive; only exact request-scoped files may be read and provenance is recorded.
+  - id: INV-OFFLINE-01
+    rule: Provider failure produces disabled, denied, or unavailable and never blocks filesystem evidence.
+  - id: INV-GATE-01
+    rule: Archive and restore are append-only eligibility events and do not change plan status or delete evidence.
+  - id: INV-GATE-02
+    rule: Delivery, publication, deployment, merge, and destructive cleanup are separate explicit gates.
+  - id: INV-GATE-03
+    rule: Completion requires all task evidence and an independent verifier pass before a finish card.
+  - id: INV-GATE-04
+    rule: A foreign live owner or ambiguous lease blocks writing and cannot be silently stolen.
+  - id: INV-GATE-05
+    rule: Scope expansion, contradictory evidence, missing child primitives, and failed verification stop within-scope work.
+  - id: INV-GATE-06
+    rule: Cleanup inspects dirty and unpushed work and cannot discard it without an additional explicit confirmation.
+owners:
+  authority_order: WORKFLOW.md
+  source_boundary: AGENTS.md
+  context_sets: wrapper/contracts/context-sets.yaml
+  routes: wrapper/contracts/routes.yaml
+  lifecycle: wrapper/contracts/schemas/plan.yaml
+  runtime: wrapper/runtime/engine.sh

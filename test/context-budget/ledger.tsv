@@ -1,0 +1,7 @@
+# profile|budget_bytes|comma-separated selected context paths
+tier-0|8192|wrapper/adapters/AGENTS.md,wrapper/adapters/WORKFLOW.md,wrapper/manifest.yaml,wrapper/contracts/tier0.yaml,workspace.yaml,context/INDEX.md,context/WORKSPACE.md,context/PROJECT.md
+orientation|20480|wrapper/adapters/AGENTS.md,wrapper/adapters/WORKFLOW.md,wrapper/manifest.yaml,wrapper/contracts/tier0.yaml,context/INDEX.md,context/WORKSPACE.md,context/PROJECT.md,docs/routing.md
+run-plan|22528|wrapper/adapters/AGENTS.md,wrapper/adapters/WORKFLOW.md,wrapper/manifest.yaml,wrapper/contracts/tier0.yaml,wrapper/contracts/schemas/plan.yaml,wrapper/contracts/schemas/lease.yaml,wrapper/contracts/schemas/delegation.yaml
+writer|12288|wrapper/adapters/AGENTS.md,wrapper/adapters/WORKFLOW.md,wrapper/contracts/schemas/delegation.yaml,wrapper/contracts/schemas/plan.yaml,agents/writer.md
+verifier|11264|wrapper/contracts/schemas/delegation.yaml,wrapper/contracts/schemas/completion.yaml,agents/verifier.md
+resume|12288|wrapper/adapters/AGENTS.md,wrapper/adapters/WORKFLOW.md,wrapper/manifest.yaml,wrapper/contracts/tier0.yaml,wrapper/contracts/schemas/context-receipt.yaml,wrapper/contracts/schemas/session.yaml,wrapper/contracts/schemas/handoff.yaml

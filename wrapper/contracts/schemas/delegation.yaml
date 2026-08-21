@@ -1,0 +1,7 @@
+schema_version: 1
+owner: .runtime/sessions/<child-id>/delegation.yaml
+required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, role, objective, scope, non_goals, context_set, context_receipt, repository, worktree, permissions, acceptance_criteria, verification, expected_evidence, stop_conditions, handoff_schema]
+permissions:
+  writer: {write_worktree: true, write_plan: false, write_activity: false}
+  verifier: {write_worktree: false, write_plan: false, write_activity: false}
+missing_field_result: CHILD_DELEGATION_INCOMPLETE

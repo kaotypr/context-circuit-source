@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Create Plan"
-  short_description: "Draft a context-grounded implementation plan"
-  default_prompt: "Use $cc-create-plan to draft a human-reviewed plan from the relevant Product Knowledge, accepted intent, and repository evidence."

@@ -1,0 +1,8 @@
+schema_version: 1
+owner: .runtime/sessions/<session-id>/context-receipt.yaml
+required: [schema_version, wrapper_version, session_id, route_decision_digest, context_set, references, invariants, created_at]
+reference_fields: [path, revision, bytes]
+rules:
+  - references are locators and digests, not copied source content
+  - digest mismatch reloads primary evidence
+  - invalid or incompatible receipt cannot authorize a write

@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Cleanup Runtime"
-  short_description: "Delete local runtime after confirming dirty or unpushed work"
-  default_prompt: "Use $cc-cleanup-runtime to inspect runtime worktrees for uncommitted or unpushed work and, after explicit human confirmation, remove those worktrees and delete .runtime/."
