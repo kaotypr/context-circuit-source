@@ -20,6 +20,20 @@ contains "$ROOT/wrapper/contracts/routes.yaml" 'owner: wrapper/contracts/routes.
 contains "$ROOT/wrapper/contracts/context-sets.yaml" 'overrun: Report'
 contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'status: [draft, approved, done]'
 contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'status: [draft, ready, done]'
+contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'frontmatter:'
+
+assert_task_frontmatter() {
+  task_file=$1
+  test "$(sed -n '1p' "$task_file")" = '---' || fail "missing task frontmatter opening: $task_file"
+  awk 'NR > 1 && /^---$/ { found=1; exit } END { exit found ? 0 : 1 }' "$task_file" \
+    || fail "missing task frontmatter closing: $task_file"
+}
+
+assert_task_frontmatter "$ROOT/docs/templates/task.md"
+for task_file in "$ROOT"/plans/*-plans/*/tasks/*.md; do
+  [ -f "$task_file" ] || continue
+  assert_task_frontmatter "$task_file"
+done
 
 ids=$(awk '/^  - id: INV-/{print $3}' "$ROOT/wrapper/contracts/invariants.yaml")
 test "$(printf '%s\n' "$ids" | sort | uniq | wc -l)" -eq "$(printf '%s\n' "$ids" | wc -l)" || fail 'duplicate invariant IDs'
