@@ -1,0 +1,109 @@
+schema_version: 2
+id: repository-bootstrap
+number: CC-001
+title: Portable repository metadata and explicit repository bootstrap
+status: draft
+repository: context-circuit-source
+source: sources/context-circuit-design/DESIGN-SPEC.md
+product_knowledge:
+  - context/ARCHITECTURE.md
+  - context/CONVENTIONS.md
+  - context/DECISIONS.md
+objective: >-
+  Let a new team member initialize a maintained Context Circuit workspace,
+  bind repositories located anywhere or under an optional gitignored
+  repositories/ directory, and explicitly request safe repository cloning
+  without storing credentials or weakening worktree isolation.
+scope:
+  - workspace.yaml repository metadata and canonical URLs
+  - root repositories.local.yaml host-local bindings
+  - optional root repositories/ convenience directory
+  - repository binding validation and clone/bootstrap evidence
+  - explicit bootstrap routing and human confirmation
+  - isolated runtime worktrees and dirty-source safeguards
+  - migration, rollback, release assembly, documentation, and semantic tests
+non_goals:
+  - automatic cloning, fetching, pushing, merging, publication, or deployment
+  - credential storage or provider payload persistence
+  - changing the two-stage router or plan lifecycle ownership model
+  - modifying repositories outside an explicitly bound worktree
+dependencies: []
+tasks:
+  - id: RB-001
+    title: Define portable repository and local-binding contracts
+    path: tasks/001-contracts.md
+  - id: RB-002
+    title: Resolve and validate repository bindings
+    path: tasks/002-bindings.md
+  - id: RB-003
+    title: Add explicit clone and bootstrap behavior
+    path: tasks/003-bootstrap.md
+  - id: RB-004
+    title: Integrate runtime, migration, release, and documentation boundaries
+    path: tasks/004-integration.md
+  - id: RB-005
+    title: Verify the self-hosted workflow independently
+    path: tasks/005-verification.md
+acceptance:
+  - id: RB-AC-01
+    outcome: >-
+      A shared workspace.yaml can identify repositories with an optional
+      credential-free canonical URL and default branch without containing a
+      machine-specific path.
+  - id: RB-AC-02
+    outcome: >-
+      A root gitignored repositories.local.yaml can bind each logical
+      repository to an external path, a relative path, or repositories/<id>.
+  - id: RB-AC-03
+    outcome: >-
+      Repository bootstrap presents an exact clone target and requires an
+      explicit human confirmation before network or filesystem creation.
+  - id: RB-AC-04
+    outcome: >-
+      Existing paths, dirty repositories, unsafe paths, missing credentials,
+      and offline providers fail safely without overwrite, stash, reset, or
+      credential persistence.
+  - id: RB-AC-05
+    outcome: >-
+      Execution uses .runtime/worktrees/<repository-key>/<plan-id>/ and leaves
+      the bound source repository untouched.
+  - id: RB-AC-06
+    outcome: >-
+      Upgrade, rollback, release assembly, and recovery preserve local
+      bindings and repository work while excluding them from published
+      artifacts.
+verification:
+  - id: RB-VT-01
+    command: sh test/contracts/test-contracts.sh
+    proves: Contract ownership, schema inventory, and forbidden credential fields.
+  - id: RB-VT-02
+    command: sh test/routing/test-router.sh
+    proves: Bootstrap requests use the two-stage route and explicit gate state.
+  - id: RB-VT-03
+    command: sh test/ownership/test-ownership.sh
+    proves: Dirty-source blocking, exclusive leases, and isolated worktrees.
+  - id: RB-VT-04
+    command: sh test/recovery/test-recovery.sh
+    proves: Resumable binding and runtime evidence behavior after interruption.
+  - id: RB-VT-05
+    command: sh test/upgrades/test-upgrades.sh
+    proves: Wrapper-only upgrade and rollback preservation boundaries.
+  - id: RB-VT-06
+    command: sh test/security/test-boundaries.sh
+    proves: Path, credential, and external-activity safety constraints.
+  - id: RB-VT-07
+    command: sh test/release/test-release.sh
+    proves: Maintainer plans and local repositories do not leak into artifacts.
+  - id: RB-VT-08
+    command: sh test/acceptance.sh
+    proves: Complete semantic acceptance after all work packages.
+human_gates:
+  - plan-approval
+  - repository-bootstrap
+  - execution-trigger
+  - delivery
+  - publication
+  - cleanup
+created_at: 2026-08-21T00:00:00Z
+updated_at: 2026-08-21T00:00:00Z
+

@@ -23,6 +23,7 @@ stores no credentials.
 - `wrapper/` — versioned shipped adapters, contracts, schemas, runtime guards,
   and migrations.
 - `template/` — blank mutable seed for new workspaces.
+- `plans/` — source-only maintainer implementation plans; not released.
 - `.agents/skills/` and `agents/` — thin host and role adapters.
 - `context/` — Product Knowledge for the Context Circuit product itself.
 - `test/` — semantic suites, budgets, upgrade, and release verification.
