@@ -14,7 +14,10 @@ Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md,
 context/WORKSPACE.md, context/PROJECT.md, and the relevant Product Knowledge
 before taking consequential action. Read docs/agent-workspace-workflow.md for
 behavior and docs/runtime-contract.md for runtime record fields and ownership
-rules.
+rules. The planning-only read sequence below may defer planning-irrelevant
+parts of those complete references, but only after normal entry classification
+has selected the planning route; the complete current behavior remains the
+fallback whenever targeted reads are insufficient.
 
 ## Identify the session
 
@@ -45,6 +48,59 @@ For fresh work, gather source evidence and draft Product Knowledge or a plan
 as appropriate. Do not silently approve plans or change canonical statuses.
 
 ## Plan-aware routing
+
+### Planning-only progressive reads
+
+Existing entry classification is unchanged. Apply this read sequence only
+after it selects planning, including direct plan drafting or a request to
+create a plan. It is a request-scoped read order in the existing planning
+surfaces, not a new route manifest, catalog, schema, payload, or generalized
+routing framework. All other routes retain their current reads and behavior.
+
+Start with the initial planning bundle:
+
+- Authority and universal safety: host and system instructions, AGENTS.md,
+  WORKFLOW.md, and the source boundary they establish.
+- Workspace and project identity: workspace.yaml, context/INDEX.md,
+  context/WORKSPACE.md, and context/PROJECT.md.
+- Accepted intent: the direct request or accepted Idea Brief or PRD, plus only
+  evidence explicitly selected for the request. Do not scan the source inbox.
+- Planning contract: cc-create-plan, plans/README.md, docs/planning.md, the
+  current repository-local instructions, branch and status, and the proposed
+  implementation surface.
+- Scoped planning state: the next plan ID, directly named or connected plan
+  metadata, dependency status, archive eligibility, and only the current
+  session or ownership records relevant to drafting safely.
+- Product Knowledge navigation: the context index and project identity above,
+  with linked domain, role, workflow, architecture, convention, and decision
+  pages retrieved only when needed.
+
+The initial bundle must preserve six categories: authority, intent,
+dependencies, relevant Product Knowledge, safety, and scoped ownership. Read
+the exact deeper evidence when a trigger is present:
+
+- Intent is incomplete, disputed, source-based, or changed. Retrieve the
+  accepted Idea Brief or PRD and only the selected source or provenance
+  records.
+- A domain, role, workflow, decision, or implementation assumption is unresolved.
+  Retrieve the exact linked Product Knowledge page and the minimum repository
+  evidence needed to resolve it.
+- The request names, replaces, depends on, archives, resumes, or conflicts with another plan.
+  Retrieve the directly relevant plan.yaml, task, archive.yaml, dependent,
+  handoff, and completion evidence.
+- Safe drafting depends on live ownership, recovery, record shape, or worktree state.
+  Retrieve the exact session, lease, stack, worktree, or handoff record and the
+  relevant runtime-contract section.
+- A safety or lifecycle rule remains ambiguous or contradictory after targeted retrieval.
+  Retrieve the complete agent-workspace workflow and runtime contract.
+
+If any required authority, intent, dependency, Product Knowledge, safety, or
+ownership fact remains missing, ambiguous, contradictory, or malformed after
+targeted retrieval, use the existing complete-context fallback. That fallback
+loads the complete workflow and runtime contracts plus all relevant Product
+Knowledge, plan, task, archive, session, handoff, lease, worktree, repository,
+and explicitly selected-source evidence required by current behavior. Never
+guess to avoid the fallback.
 
 When the request names a plan, inspect its canonical `plan.yaml`, task
 projections, declared dependencies, active lease, assigned worktree, and latest

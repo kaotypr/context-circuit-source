@@ -40,6 +40,56 @@ handoff do not change canonical plan or task status. Missing evidence or a
 failed verifier blocks the completion record; the canonical status remains
 unchanged.
 
+## Planning-only progressive context
+
+Existing entry classification remains unchanged. After the planning route is
+selected, planning may begin with the following request-scoped initial bundle;
+this is a read order in the existing skills, not a generalized routing
+framework, route catalog, manifest, schema, or payload format:
+
+- Authority and universal safety: host and system instructions, AGENTS.md,
+  WORKFLOW.md, and the source boundary they establish.
+- Workspace and project identity: workspace.yaml, context/INDEX.md,
+  context/WORKSPACE.md, and context/PROJECT.md.
+- Accepted intent: the direct request or accepted Idea Brief or PRD, plus only
+  evidence explicitly selected for the request. The source inbox is not scanned.
+- Planning contract: cc-create-plan, plans/README.md, docs/planning.md,
+  repository-local instructions, current branch and status, and the proposed
+  implementation surface.
+- Scoped planning state: the next plan ID, directly named or connected plan
+  metadata, dependency status, archive eligibility, and only the current
+  session or ownership records relevant to drafting safely.
+- Product Knowledge navigation: the context index and project identity, with
+  linked domain, role, workflow, architecture, convention, and decision pages
+  retrieved only when needed.
+
+The bundle must retain these required planning categories:
+
+| Category | Initial information | Deeper retrieval when needed |
+| --- | --- | --- |
+| Authority | Instruction precedence, repository authority, source boundary, human gates | Complete workflow or runtime contract when the rule is unclear |
+| Intent | Accepted outcome, scope, non-goals, decisions, uncertainty, selected evidence | Accepted Idea Brief/PRD and selected source or provenance records |
+| Dependencies | Connected plan identity, lifecycle, dependency status, archive eligibility, blockers | Relevant plan.yaml, task, archive.yaml, dependents, handoff, and completion evidence |
+| Product Knowledge | Index, workspace/project identity, and relevant-page navigation | Exact linked domain, role, workflow, architecture, convention, or decision page plus minimum repository evidence |
+| Safety | Dirty-work preservation, lifecycle separation, contradiction stops, fallback, repository boundaries | Exact workflow/runtime contract sections when targeted reads do not resolve the rule |
+| Ownership | Relevant session, lease, worktree, handoff, branch, and repository ownership metadata | Exact session, lease, stack, worktree, or handoff records and runtime-contract fields |
+
+Retrieve deeper context before drafting for these concrete triggers:
+
+- Intent is incomplete, disputed, source-based, or changed.
+- A domain, role, workflow, decision, or implementation assumption is unresolved.
+- The request names, replaces, depends on, archives, resumes, or conflicts with another plan.
+- Safe drafting depends on live ownership, recovery, record shape, or worktree state.
+- A safety or lifecycle rule remains ambiguous or contradictory after targeted retrieval.
+
+If required information is missing, ambiguous, contradictory, or malformed
+after targeted retrieval, use the existing complete-context fallback. Load the
+complete workflow and runtime contracts plus all relevant Product Knowledge,
+plan, task, archive, session, handoff, lease, worktree, repository, and
+explicitly selected-source evidence required by current behavior. Never guess
+to avoid the fallback. Non-planning routes, archive behavior, compact payloads,
+and the current complete-context behavior remain unchanged.
+
 ## Archive eligibility and discovery
 
 `archive.yaml` is an optional, versioned sidecar in a plan bundle. It owns

@@ -3127,6 +3127,71 @@ fi
 
 printf 'PASS: Plan 0014 run-stack graph, frontier, joins, resume, and unchanged run-plan\n'
 
+# Plan 0027 PCP-0001: the progressive context read is planning-only, keeps
+# the six required information categories visible, and retains the complete
+# current behavior as a conservative fallback.
+planning_entry_skill=.agents/skills/cc-session-entry/SKILL.md
+planning_create_skill=.agents/skills/cc-create-plan/SKILL.md
+planning_docs=docs/planning.md
+for planning_surface in "$planning_entry_skill" "$planning_create_skill" "$planning_docs"; do
+  require_file "$planning_surface"
+  contains "$planning_surface" 'complete-context fallback'
+done
+contains "$planning_entry_skill" 'Existing entry classification is unchanged.'
+contains "$planning_entry_skill" 'All other routes retain their current reads and behavior.'
+contains "$planning_create_skill" 'classification has selected'
+contains "$planning_create_skill" 'planning. It does not change'
+contains "$planning_create_skill" 'any non-planning route.'
+contains "$planning_docs" 'Existing entry classification remains unchanged.'
+contains "$planning_docs" 'not a generalized routing'
+
+for planning_category_row in \
+  '| Authority |' \
+  '| Intent |' \
+  '| Dependencies |' \
+  '| Product Knowledge |' \
+  '| Safety |' \
+  '| Ownership |'; do
+  contains "$planning_docs" "$planning_category_row"
+done
+for planning_initial in \
+  'Authority and universal safety:' \
+  'Workspace and project identity:' \
+  'Accepted intent:' \
+  'Planning contract:' \
+  'Scoped planning state:' \
+  'Product Knowledge navigation:'; do
+  contains "$planning_entry_skill" "$planning_initial"
+  contains "$planning_docs" "$planning_initial"
+done
+
+for planning_trigger in \
+  'Intent is incomplete, disputed, source-based, or changed.' \
+  'A domain, role, workflow, decision, or implementation assumption is unresolved.' \
+  'The request names, replaces, depends on, archives, resumes, or conflicts with another plan.' \
+  'Safe drafting depends on live ownership, recovery, record shape, or worktree state.' \
+  'A safety or lifecycle rule remains ambiguous or contradictory after targeted retrieval.'; do
+  contains "$planning_entry_skill" "$planning_trigger"
+  contains "$planning_docs" "$planning_trigger"
+done
+contains "$planning_entry_skill" 'guess to avoid the fallback.'
+contains "$planning_create_skill" 'Never infer a fact to'
+contains "$planning_docs" 'Never guess'
+printf 'PASS: Plan 0027 PCP-0001 planning-only progressive context route\n'
+
+# Plan 0027 PCP-0002: focused regression assertions preserve existing route,
+# lifecycle, archive, and human-gate behavior without redefining payloads.
+for preserved_planning_route in \
+  cc-run-plan cc-run-stack cc-cleanup-runtime cc-archive-plan \
+  cc-approve-plan cc-finish-plan; do
+  contains "$planning_entry_skill" "$preserved_planning_route"
+done
+contains "$planning_docs" 'Archive eligibility and discovery'
+contains "$planning_docs" 'compact payloads'
+contains "$planning_entry_skill" 'Do not recommend, approve, execute, finish, or include an archived plan in a'
+contains "$planning_create_skill" 'Only `cc-approve-plan` writes'
+printf 'PASS: Plan 0027 PCP-0002 planning-route and fallback regression coverage\n'
+
 # Plan 0023: archive eligibility is a sidecar, never a lifecycle status. These
 # fixtures model the host's filesystem route checks without adding a command-line
 # workflow for users.

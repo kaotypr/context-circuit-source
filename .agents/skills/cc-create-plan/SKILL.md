@@ -8,6 +8,35 @@ description: Draft a context-grounded, human-reviewed plan from accepted intent 
 Use this skill when the user asks to turn an accepted Idea Brief, PRD, direct
 request, or selected evidence into intended implementation work.
 
+## Planning-only progressive reads
+
+This sequence begins only after existing entry classification has selected
+planning. It does not change entry classification or any non-planning route.
+Start with the initial planning bundle: AGENTS.md, WORKFLOW.md, workspace.yaml,
+context/INDEX.md, context/WORKSPACE.md, context/PROJECT.md, the direct request
+or accepted Idea Brief/PRD, only explicitly selected source evidence, this
+planning contract, current repository instructions and Git state, directly
+relevant plan/dependency/archive metadata, and scoped session or ownership
+records. The bundle must retain authority, intent, dependencies, relevant
+Product Knowledge navigation, safety, and ownership.
+
+Retrieve exact deeper evidence before drafting when intent is incomplete,
+disputed, source-based, or changed; when a domain, role, workflow, decision, or
+implementation assumption is unresolved; when the request names, replaces,
+depends on, archives, resumes, or conflicts with another plan; when safe
+drafting depends on live ownership, recovery, record shape, or worktree state;
+or when a safety or lifecycle rule remains ambiguous or contradictory. Use the
+relevant Idea Brief/PRD and selected provenance, linked Product Knowledge and
+minimum repository evidence, directly relevant plan/task/archive/dependent/
+handoff/completion evidence, or exact runtime records as the trigger requires.
+
+If a required fact is missing, ambiguous, contradictory, or malformed after
+targeted retrieval, use the existing complete-context fallback: load the full
+workflow and runtime contracts and all relevant Product Knowledge, plan, task,
+archive, session, handoff, lease, worktree, repository, and explicitly
+selected-source evidence required by current behavior. Never infer a fact to
+stay within the smaller bundle. Do not scan the source inbox as a side effect.
+
 ## Read and ground
 
 Read the smallest relevant set of Product Knowledge, the accepted product
