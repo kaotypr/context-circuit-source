@@ -16,6 +16,6 @@ printf '%s\n' \
   '  a: pending' '  b: pending' > "$runtime/progress.yaml"
 for field in graph.yaml progress.yaml; do require_file "$runtime/$field"; done
 contains "$ROOT/wrapper/contracts/schemas/stack.yaml" 'graph is frozen once created'
-contains "$ROOT/.agents/skills/context-execute/SKILL.md" 'frozen graph/progress records'
-contains "$ROOT/.agents/skills/context-execute/SKILL.md" 'Do not auto-approve, auto-finish'
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'frozen graph/progress records'
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'Do not auto-approve, auto-finish'
 pass 'deterministic stack joins, frozen graph/progress, and no auto-finish'

@@ -1,5 +1,5 @@
 ---
-name: context-entry
+name: cc-entry
 description: Enter or resume a Context Circuit workspace through the single two-stage router.
 ---
 

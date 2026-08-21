@@ -1,5 +1,5 @@
 ---
-name: context-plan
+name: cc-plan
 description: Draft, review, or prepare a human-facing plan bundle without executing it.
 ---
 

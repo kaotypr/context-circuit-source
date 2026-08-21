@@ -28,5 +28,6 @@ stores no credentials.
 - `test/` — semantic suites, budgets, upgrade, and release verification.
 - `scripts/` — maintainer-only release assembly; nothing here is user workflow.
 
-Read `PLAN.md` only as maintainer design material. The released artifact uses
-the shipped wrapper and template, not the source repository's maintainer state.
+Read `sources/context-circuit-design/DESIGN-SPEC.md` only as maintainer design
+material. The released artifact uses the shipped wrapper and template, not the
+source repository's maintainer state.

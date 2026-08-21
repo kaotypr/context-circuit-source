@@ -28,7 +28,7 @@ contains "$runtime/plan.yaml" 'status: done'
 contains "$runtime/tasks/TASK-01.md" 'status: done'
 expect_failure cc_transition_plan_status "$runtime/plan.yaml" "$runtime/tasks" approved confirmed
 
-contains "$ROOT/plans/README.md" 'Approval never starts execution'
+contains "$ROOT/template/plans/README.md" 'Approval never starts execution'
 contains "$ROOT/docs/plan-review.md" 'read-only'
 contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'schema v1 remains readable'
 pass 'separate approval/run/finish lifecycle and task projection'

@@ -1,5 +1,5 @@
 ---
-name: context-execute
+name: cc-execute
 description: Execute an explicitly requested approved plan or connected plan stack through isolated writer and verifier roles.
 ---
 

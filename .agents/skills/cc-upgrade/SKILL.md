@@ -1,5 +1,5 @@
 ---
-name: context-upgrade
+name: cc-upgrade
 description: Classify and safely migrate or roll back a wrapper in a live workspace.
 ---
 

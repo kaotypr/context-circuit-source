@@ -1,5 +1,5 @@
 ---
-name: context-verify
+name: cc-verify
 description: Verify bounded implementation evidence independently and produce a durable handoff.
 ---
 

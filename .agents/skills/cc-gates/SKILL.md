@@ -1,5 +1,5 @@
 ---
-name: context-gates
+name: cc-gates
 description: Handle explicit human confirmation cards for lifecycle, recovery, delivery, archive, and cleanup actions.
 ---
 

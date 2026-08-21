@@ -24,12 +24,7 @@ stage_tree="$staging_dir/tree"
 mkdir -p "$stage_tree"
 
 (CDPATH= cd "$source_root" && tar -cf - \
-  --exclude='./.git' --exclude='./.runtime' --exclude='./test' \
-  --exclude='./scripts' --exclude='./sources' --exclude='./plans' \
-  --exclude='./context' --exclude='./workspace.yaml' --exclude='./PLAN.md' \
-  --exclude='./.github' --exclude='./wrapper/adapters' \
-  --exclude='./.agents/skills/cc-*' --exclude='./CLAUDE.md' \
-  --exclude='./docs/release.md' .) | tar -xf - -C "$stage_tree"
+  .gitignore .agents agents docs wrapper) | tar -xf - -C "$stage_tree"
 
 cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
@@ -57,14 +52,20 @@ done < "$manifest"
 
 for relpath in $exclude_paths; do
   case "$relpath" in
-    '.agents/skills/cc-*') find "$stage_tree/.agents/skills" -mindepth 1 -maxdepth 1 -type d -name 'cc-*' -exec rm -rf {} + 2>/dev/null || : ;;
     *) target="$stage_tree/$relpath"; if [ -e "$target" ] || [ -L "$target" ]; then rm -rf "$target"; fi ;;
   esac
 done
 for relpath in $required_files; do
   [ -e "$stage_tree/$relpath" ] || fail "missing required file: $relpath"
 done
-find "$stage_tree/.agents/skills" -mindepth 1 -maxdepth 1 -type d -name 'cc-*' -print -quit 2>/dev/null | grep . && fail 'legacy cc skill remains' || :
+for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
+  [ -d "$skill_dir" ] || continue
+  skill_name=${skill_dir##*/}
+  case "$skill_name" in
+    cc-entry|cc-next|cc-plan|cc-execute|cc-verify|cc-gates|cc-upgrade) ;;
+    *) fail "unexpected legacy skill remains: $skill_name" ;;
+  esac
+done
 for name in package.json package-lock.json npm-shrinkwrap.json yarn.lock pnpm-lock.yaml bun.lock bun.lockb tsconfig.json; do
   find "$stage_tree" -name "$name" -print -quit | grep . && fail "forbidden package-manager file: $name" || :
 done

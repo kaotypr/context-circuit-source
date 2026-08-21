@@ -36,21 +36,19 @@ release_boundary:
     - wrapper/runtime/engine.sh
     - .agents/skills/
     - agents/
-    - template/
     - docs/
   mutable_seed:
-    - template/workspace.yaml
-    - template/context/
-    - template/sources/
-    - template/plans/
+    - workspace.yaml
+    - context/
+    - sources/
+    - plans/
   never_ship:
     - .git/
     - .runtime/
     - test/
     - scripts/
-    - sources/
-    - plans/
-    - PLAN.md
+    - template/
+    - sources/context-circuit-design/
     - maintainer-only docs
 upgrade_boundary:
   wrapper_only:
