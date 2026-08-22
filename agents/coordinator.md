@@ -16,8 +16,15 @@ follow-on printing.
 
 On `product-source`, if `cc_maintainer_approval_commit_required` then matches,
 present the existing `commit-approved-plan` card from `docs/gates.md` in the
-same session. Do not commit. Instantiated or wrapped workspaces omit that
-card and name `Run approved plan <id>` as the next explicit request.
+same session. Do not commit. Do not name `Run approved plan <id>` as the
+immediate next request. Instantiated or wrapped workspaces omit that card and
+present:
+
+```text
+Approval is complete. Execution has not started.
+Next action: Run approved plan <id>
+```
+
 Unrelated dirty files remain `DIRTY_BASE_BLOCKED`.
 
 It never replaces the writer or verifier, infers approval/completion, steals a
