@@ -64,6 +64,17 @@ If a host cannot create a required writer or verifier child, the route is
 host-blocked and remains read-only. The agent does not skip independent
 verification or silently self-verify.
 
+## Optional question-prompt primitive
+
+Cursor Agent `AskQuestion`, Claude Code `AskUserQuestion`, and Codex CLI
+`request_user_input` (when listed) are optional native UI primitives some
+hosts expose on the current session. `cc-plan` may use one, after the Review
+Card in `docs/plan-review.md`, to present up to three focused human decisions.
+The primitive is presentation only: it selects no route, satisfies no gate,
+and is never a required child. A missing, denied, or failed prompt falls back
+to the card text and is not `host-blocked`. No `host_evidence` field records
+the prompt, the chosen option, or any transcript.
+
 ## Outcome labels
 
 `available` describes an observed capability, not authorization. Use

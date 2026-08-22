@@ -34,14 +34,18 @@ test ! -e "$artifact/template" || fail 'source template directory leaked into ar
 test ! -e "$artifact/repositories.local.yaml" || fail 'local binding leaked into artifact'
 test ! -e "$artifact/repositories" || fail 'repository checkout leaked into artifact'
 test ! -e "$artifact/sources/secret.txt" || fail 'source inbox leaked into artifact'
+shipped_skill_count=0
 for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-entry|cc-next|cc-plan|cc-execute|cc-verify|cc-gates|cc-upgrade) ;;
+    cc-entry|cc-next|cc-plan|cc-execute|cc-verify|cc-gates|cc-upgrade) shipped_skill_count=$((shipped_skill_count + 1)) ;;
     *) fail "unexpected legacy skill leaked into artifact: $skill_name" ;;
   esac
 done
+test "$shipped_skill_count" -eq 7 || fail "shipped skill allowlist count: $shipped_skill_count"
+test ! -e "$artifact/.agents/skills/cc-review-plan" || fail 'cc-review-plan leaked into artifact as a separate skill'
+test ! -e "$ROOT/.agents/skills/cc-review-plan" || fail 'cc-review-plan exists in the source checkout'
 test ! -e "$artifact/Opus-4.8-plan.md" || fail 'unlisted root plan leaked into artifact'
 test ! -e "$artifact/Sol-5.6-plan.md" || fail 'unlisted root plan leaked into artifact'
 not_contains "$artifact/workspace.yaml" 'credential'

@@ -33,7 +33,7 @@ cc_probe() {
     *'refresh'*'context'*|*'domain context'*|*'role context'*) printf '%s\n' context-refresh ;;
     *'sources/'*|*'selected files'*|*'selected evidence'*) printf '%s\n' selected-source ;;
     *'contradiction'*|*'accepted context'*) printf '%s\n' context-review ;;
-    *'review plan'*|*'plan ready'*|*'plan'*'ready'*|*'approved-for-execution'*|*'read only the plan status'*) printf '%s\n' plan-review ;;
+    *'review plan'*|*'plan ready'*|*'plan'*'ready'*|*'approved-for-execution'*|*'read only the plan status'*|*'walk me through'*'plan'*) printf '%s\n' plan-review ;;
     *'commit approved plan'*|*'commit the approved plan'*|*'commit plan approval'*|*'commit'*'approved plan'*) printf '%s\n' maintainer-commit ;;
     *'approve plan'*|*'approve this plan'*|*'confirm approval'*) printf '%s\n' approval ;;
     *'base checkout'*'dirty'*|*'dirty base'*) printf '%s\n' ownership ;;
@@ -80,7 +80,12 @@ cc_action() {
     context-refresh) printf '%s\n' propose-context ;;
     context-review) printf '%s\n' review-context ;;
     plan-draft) printf '%s\n' draft-plan ;;
-    plan-review) printf '%s\n' review-plan ;;
+    plan-review)
+      case "$cc_action_text" in
+        *'this plan'*|*'plan status'*) printf '%s\n' clarify-target ;;
+        *) printf '%s\n' review-plan ;;
+      esac
+      ;;
     approval)
       case "$cc_action_text" in *'approve this plan'*) printf '%s\n' clarify-target ;; *'confirm approval'*) printf '%s\n' approve-plan ;; *'yes'*|*'confirmed'*) printf '%s\n' approve-plan ;; *) printf '%s\n' present-approval-card ;; esac
       ;;
