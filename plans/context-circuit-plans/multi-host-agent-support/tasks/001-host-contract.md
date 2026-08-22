@@ -2,7 +2,7 @@
 schema_version: 2
 id: MHS-001
 plan: multi-host-agent-support
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - wrapper/contracts/invariants.yaml
