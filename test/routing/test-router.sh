@@ -39,6 +39,16 @@ printf '%s\n' "$bootstrap_card" | grep -F 'human_gate: repository-bootstrap' >/d
 bootstrap_confirmed=$(cc_route 'Confirm repository bootstrap for app.')
 printf '%s\n' "$bootstrap_confirmed" | grep -F 'capability: repository-bootstrap' >/dev/null || fail 'confirmed bootstrap request was not authorized'
 
+approval_card=$(cc_route 'Approve plan checkout-validation.')
+printf '%s\n' "$approval_card" | grep -F 'capability: present-approval-card' >/dev/null || fail 'initial approval request did not present a card'
+printf '%s\n' "$approval_card" | grep -F 'authorization: confirmed-gate-required' >/dev/null || fail 'initial approval request was treated as authorized'
+printf '%s\n' "$approval_card" | grep -F 'capability: approve-plan' >/dev/null && fail 'initial approval request mutated into approve-plan'
+approval_confirmed=$(cc_route 'Confirm approval of plan checkout-validation.')
+printf '%s\n' "$approval_confirmed" | grep -F 'capability: approve-plan' >/dev/null || fail 'exact approval confirmation was not authorized'
+printf '%s\n' "$approval_confirmed" | grep -F 'authorization: confirmed-gate' >/dev/null || fail 'exact approval confirmation missed confirmed-gate'
+printf '%s\n' "$approval_confirmed" | grep -F 'capability: execute-plan' >/dev/null && fail 'approval confirmation was routed to execution'
+printf '%s\n' "$approval_confirmed" | grep -F 'capability: commit-approved-plan' >/dev/null && fail 'approval confirmation was folded into commit'
+
 draft=$(cc_route 'Run draft plan checkout-validation.')
 printf '%s\n' "$draft" | grep -F 'eligibility: blocked' >/dev/null || fail 'draft execution was not blocked'
 printf '%s\n' "$draft" | grep -F 'authorization: absent' >/dev/null || fail 'blocked execution retained authorization'

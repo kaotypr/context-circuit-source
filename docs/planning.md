@@ -20,10 +20,10 @@ is read-only.
 
 ## Approval
 
-Show an Approval Card tied to the named plan and current session. On exact
-confirmation only, update `plan.yaml` draft → approved and reconcile included
-task projections draft → ready atomically/idempotently. Do not claim a lease,
-create a worktree, start children, or perform Git work.
+`Approve plan <id>` shows a session-bound card and changes nothing. Card
+wording is in `docs/gates.md`. On exact `Confirm approval of plan <id>` only,
+call `cc_transition_plan_status` once. That transition is status-only. The
+next gate is in `docs/gates.md`.
 
 ## Execution
 
@@ -34,12 +34,10 @@ worktree and receipt, delegates one writer, then one independent verifier.
 Sequential tasks share the writer and worktree. Connected plans freeze a DAG
 and progress cursor; they do not create a hidden plan or scheduler.
 
-For the maintainer product-source checkout, approval itself changes only the
-plan status projection and therefore creates a predictable dirty delta. If the
-dirty delta contains exactly the plan and task status transitions, execution
-reports `MAINTAINER_APPROVAL_COMMIT_REQUIRED` and waits for an explicit
-maintainer commit. It never treats arbitrary dirty source as safe and never
-commits automatically.
+If someone runs before the product-source maintainer commit, execution reports
+`MAINTAINER_APPROVAL_COMMIT_REQUIRED`. That class is not an execution
+exemption. The commit card is in `docs/gates.md`. It never treats arbitrary
+dirty source as safe and never commits automatically.
 
 ## Completion
 

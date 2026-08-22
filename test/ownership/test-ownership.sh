@@ -100,6 +100,14 @@ assert_eq "$(cc_maintainer_approval_commit_required "$maintainer" "$maintainer/p
 expect_failure cc_prepare_worktree "$maintainer" "$runtime/worktrees/maintainer/blocked" main
 printf '%s\n' unrelated > "$maintainer/unrelated.txt"
 expect_failure cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks"
+rm -f "$maintainer/unrelated.txt"
+git -C "$maintainer" checkout -- plans
+cc_transition_plan_status "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks" approved confirmed
+assert_eq "$(cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks")" MAINTAINER_APPROVAL_COMMIT_REQUIRED
+contains "$ROOT/docs/gates.md" 'present this existing commit card in the same session immediately'
+contains "$ROOT/agents/coordinator.md" 'Do not add engine helpers for card text'
+printf '%s\n' unrelated > "$maintainer/unrelated.txt"
+expect_failure cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks"
 
 cat > "$runtime/verifier.yaml" <<'EOF'
 schema_version: 1

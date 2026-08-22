@@ -1,7 +1,8 @@
 # Human gates and cards
 
-`wrapper/runtime/engine.sh` provides card formatting; this document owns the
-human-facing effect language. A card is valid only for its current session,
+`wrapper/runtime/engine.sh` provides the generic `cc_confirmation_card`
+template and the status-transition primitive. This document owns specialized
+human-facing card wording. A card is valid only for its current session,
 action, target, observed state, and listed effects. A changed target or state
 requires a new card.
 
@@ -15,6 +16,27 @@ Approval changes plan status and task projections only. Execution starts only
 from a separate explicit request. A verifier can produce completion evidence but
 cannot finish a plan. Cleanup first reports dirty and unpushed work and needs an
 additional discard confirmation before anything destructive.
+
+## Plan approval card
+
+`Approve plan <id>` is a pre-confirmation request. It presents a current
+session-bound card and mutates nothing: no plan, task, runtime, Git, lease, or
+worktree state. Confirmation does not commit Git and does not start
+`Run approved plan`.
+
+```text
+Action: present-approval-card
+Target: <plan-id>
+Observed state: current session; nothing has changed yet; plan remains draft and included tasks remain draft
+Will change after confirmation: plan.yaml status draft→approved; included task projections draft→ready
+Will not change: Git, leases, worktrees, execution, delivery, publication, or runtime state
+Risks/open decisions: confirmation does not commit Git and does not start Run approved plan
+Confirmation requested: Confirm approval of plan <id>.
+```
+
+The exact confirmation `Confirm approval of plan <id>` is a separate
+`approve-plan` action. It is status-only. It does not fold in the maintainer
+commit or the execution trigger.
 
 ## Repository bootstrap card
 
@@ -31,7 +53,13 @@ persistence is allowed.
 
 When the `product-source` maintainer checkout is dirty only because approval
 changed the selected plan from `draft` to `approved` and its tasks from `draft`
-to `ready`, execution presents a focused commit card:
+to `ready`, present this existing commit card in the same session immediately
+after confirmed approval. Do not wait for `Run approved plan <id>` to discover
+the stop. Instantiated or wrapped workspaces do not receive this card; their
+next action remains `Run approved plan <id>`. The agent never commits this
+state on the confirm-approval turn. Execution still reports
+`MAINTAINER_APPROVAL_COMMIT_REQUIRED` if someone runs before that commit; that
+is not an execution exemption. Any other dirty path remains `DIRTY_BASE_BLOCKED`.
 
 ```text
 Action: commit-approved-plan
