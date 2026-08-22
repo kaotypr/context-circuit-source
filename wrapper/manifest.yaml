@@ -50,6 +50,9 @@ release_boundary:
     - template/
     - sources/context-circuit-design/
     - maintainer-only docs
+    - repositories.local.yaml
+    - repositories/
+    - plans/context-circuit-plans/
 upgrade_boundary:
   wrapper_only:
     - wrapper/
@@ -62,6 +65,7 @@ upgrade_boundary:
     - sources/
     - plans/
     - .runtime/
+    - repositories.local.yaml
     - registered repositories
 identity:
   source_workspace: Context Circuit product source

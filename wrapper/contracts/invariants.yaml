@@ -49,6 +49,20 @@ invariants:
     rule: Scope expansion, contradictory evidence, missing child primitives, and failed verification stop within-scope work.
   - id: INV-GATE-06
     rule: Cleanup inspects dirty and unpushed work and cannot discard it without an additional explicit confirmation.
+  - id: INV-REPO-01
+    rule: Shared repository identity contains only a logical key, optional credential-free canonical URL, and optional default branch; it never contains a machine-specific path.
+  - id: INV-REPO-02
+    rule: Host-local repository bindings belong only in the ignored root repositories.local.yaml file and may select an explicit external, workspace-relative, or repositories/<key> path.
+  - id: INV-REPO-03
+    rule: Binding resolution is explicit and bounded; missing, ambiguous, traversal, unsafe-symlink, missing-Git, or identity-mismatched paths fail without filesystem scanning or substitution.
+  - id: INV-REPO-04
+    rule: Repository bootstrap displays the exact logical repository, canonical URL, selected remote, branch, destination, and existing-path check, then requires a current repository-bootstrap confirmation before clone or destination creation.
+  - id: INV-REPO-05
+    rule: Repository credentials remain owned by the host Git configuration or agent and are never read into, persisted in, or emitted by workspace, binding, runtime, or release records.
+  - id: INV-REPO-06
+    rule: Bound source repositories remain untouched; execution prepares only .runtime/worktrees/<repository-key>/<plan-id>/ and rejects dirty bases.
+  - id: INV-REPO-07
+    rule: Wrapper upgrades and release assembly preserve local bindings and repository work while excluding repositories.local.yaml, repositories/, maintainer plans, and runtime state from artifacts.
 owners:
   authority_order: WORKFLOW.md
   source_boundary: AGENTS.md
@@ -56,3 +70,7 @@ owners:
   routes: wrapper/contracts/routes.yaml
   lifecycle: wrapper/contracts/schemas/plan.yaml
   runtime: wrapper/runtime/engine.sh
+  repository_identity: wrapper/contracts/schemas/workspace.yaml
+  repository_binding: wrapper/runtime/engine.sh
+  repository_bootstrap_gate: wrapper/contracts/routes.yaml
+  repository_release_boundary: wrapper/manifest.yaml

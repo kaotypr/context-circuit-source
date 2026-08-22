@@ -6,5 +6,6 @@ current human migration confirmation; `blocked` state remains read-only.
 Records without a version are `legacy-unknown` and stay readable.
 
 The v1-to-v2 plan migration in `v1-to-v2.yaml` is additive. It preserves plan
-intent, status, context, runtime, dirty work, and repositories. Rollback restores
-only wrapper-owned files.
+intent, status, context, runtime, dirty work, repository identity, local
+bindings, and registered repositories. Rollback restores only wrapper-owned
+files and never overwrites `repositories.local.yaml` or repository contents.

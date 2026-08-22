@@ -3,3 +3,7 @@
 dist/
 repositories/
 repositories.local.yaml
+
+# Repository bindings and checkout contents are host-local and never shipped.
+/repositories/
+/repositories.local.yaml

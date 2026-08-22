@@ -17,4 +17,38 @@ assert_eq "$(cc_upgrade_classify 9.0.0)" blocked
 digest=$(cc_digest "$ROOT/wrapper/manifest.yaml")
 printf '%s\n' "$digest" | grep -E '^(sha256|cksum):' >/dev/null || fail 'receipt digest missing'
 contains "$ROOT/docs/migration.md" 'never rewrites accepted context'
+
+bootstrap_root="$runtime/bootstrap-workspace"
+origin="$runtime/bootstrap-origin"
+mkdir -p "$bootstrap_root"
+cat > "$bootstrap_root/workspace.yaml" <<'EOF'
+version: 1
+template_version: 1.0.0
+workspace:
+  name: bootstrap-fixture
+repositories:
+  app:
+    canonical_url: https://github.com/acme/app.git
+    default_branch: main
+EOF
+git init -q -b main "$origin"
+git -C "$origin" config user.email test@example.invalid
+git -C "$origin" config user.name 'Context Circuit Test'
+printf '%s\n' bootstrap > "$origin/README.md"
+git -C "$origin" add README.md
+git -C "$origin" commit -qm initial
+card=$(cc_bootstrap_repository "$bootstrap_root" app "$origin" main repositories/app declined 2>&1 || true)
+printf '%s\n' "$card" | grep -F 'Canonical URL:' >/dev/null || fail 'bootstrap card omitted canonical URL'
+printf '%s\n' "$card" | grep -F 'Existing-path check: absent' >/dev/null || fail 'bootstrap card omitted target check'
+test ! -e "$bootstrap_root/repositories/app" || fail 'unconfirmed bootstrap created a destination'
+if cc_bootstrap_repository "$bootstrap_root" app "$origin" main repositories/app confirmed >/dev/null 2>&1; then :; else fail 'confirmed local bootstrap failed'; fi
+test -e "$bootstrap_root/repositories/app/.git" || fail 'confirmed bootstrap did not clone'
+contains "$bootstrap_root/.runtime/bootstrap/app.yaml" 'status: cloned'
+mkdir -p "$bootstrap_root/repositories/existing"
+printf '%s\n' preserve > "$bootstrap_root/repositories/existing/marker.txt"
+expect_failure cc_bootstrap_repository "$bootstrap_root" app "$origin" main repositories/existing confirmed
+contains "$bootstrap_root/repositories/existing/marker.txt" preserve
+if CC_OFFLINE=1 cc_bootstrap_repository "$bootstrap_root" offline "$origin" main repositories/offline confirmed >/dev/null 2>&1; then fail 'offline bootstrap unexpectedly cloned'; fi
+contains "$bootstrap_root/.runtime/bootstrap/offline.yaml" 'status: offline'
+if rg -n 'password:|api_key:|access_token:|client_secret:' "$bootstrap_root" >/dev/null 2>&1; then fail 'bootstrap fixture persisted credential-shaped data'; fi
 pass 'interruption preservation, legacy receipt classification, and recovery safety'

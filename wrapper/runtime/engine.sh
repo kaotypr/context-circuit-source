@@ -25,6 +25,7 @@ cc_probe() {
   cc_probe_text=$(cc_lower "$1")
   case "$cc_probe_text" in
     *'what is this workspace'*|*'what is this project'*|*'do not change anything'*|*'explain the current state'*) printf '%s\n' orientation ;;
+    *'bootstrap'*|*'clone repository'*|*'clone '* ) printf '%s\n' repository-bootstrap ;;
     *'initialize'*|*'set up this workspace'*) printf '%s\n' initialization ;;
     *'idea'*|*'uncertain idea'*) printf '%s\n' idea-brief ;;
     *'draft a plan'*|*'create a plan'*|*'plan from this'*) printf '%s\n' plan-draft ;;
@@ -67,6 +68,12 @@ cc_action() {
   case "$cc_action_probe" in
     orientation) printf '%s\n' orient ;;
     initialization) printf '%s\n' initialize ;;
+    repository-bootstrap)
+      case "$cc_action_text" in
+        *'confirm'*|*'confirmed'*) printf '%s\n' repository-bootstrap ;;
+        *) printf '%s\n' present-repository-bootstrap-card ;;
+      esac
+      ;;
     idea-brief) printf '%s\n' draft-idea-brief ;;
     prd) printf '%s\n' draft-prd ;;
     selected-source) printf '%s\n' inspect-source ;;
@@ -183,8 +190,9 @@ cc_route() {
   else
     case "$cc_stage_b" in
       block-*) cc_eligibility=blocked; cc_gate=none; cc_reason=SAFETY_BLOCK ;;
+      present-repository-bootstrap-card) cc_eligibility=eligible-with-gate; cc_gate=repository-bootstrap; cc_reason=HUMAN_CONFIRMATION_REQUIRED ;;
       present-*) cc_eligibility=eligible-with-gate; cc_gate=$cc_stage_b; cc_reason=HUMAN_CONFIRMATION_REQUIRED ;;
-      approve-plan|commit-approved-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper)
+      approve-plan|commit-approved-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper|repository-bootstrap)
         cc_eligibility=ready; cc_gate=none; cc_reason=CONFIRMED_HUMAN_GATE ;;
       *) cc_eligibility=ready; cc_gate=none; cc_reason=ROUTE_SELECTED ;;
     esac
@@ -192,7 +200,7 @@ cc_route() {
       orient|review-*|show-handoff|recommend-*|classify-upgrade|offline-fallback) cc_authorization=read-only ;;
       present-*) cc_authorization=confirmed-gate-required ;;
       block-*) cc_authorization=absent ;;
-      approve-plan|commit-approved-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper) cc_authorization=confirmed-gate ;;
+      approve-plan|commit-approved-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper|repository-bootstrap) cc_authorization=confirmed-gate ;;
       *) cc_authorization=explicitly-requested ;;
     esac
   fi
@@ -495,3 +503,217 @@ cc_provider_fallback() {
     *) printf '%s\n' provider-state-not-canonical ;;
   esac
 }
+
+# Repository bootstrap primitives. These functions deliberately use a small
+# YAML subset matching workspace.yaml and repositories.local.yaml; hosts own
+# richer parsing while this layer enforces the safety boundary.
+
+cc_repository_field() {
+  cc_repository_file=$1
+  cc_repository_key=$2
+  cc_repository_field_name=$3
+  test -f "$cc_repository_file" || return 1
+  cc_safe_id "$cc_repository_key" || return 1
+  awk -v key="$cc_repository_key" -v field="$cc_repository_field_name" '
+    /^repositories:[[:space:]]*$/ { in_repositories=1; next }
+    /^[^[:space:]]/ { in_repositories=0; in_key=0 }
+    in_repositories && $0 ~ "^  " key ":[[:space:]]*$" { in_key=1; next }
+    in_repositories && in_key && $0 ~ /^  [A-Za-z0-9._-]+:[[:space:]]*$/ { in_key=0 }
+    in_key && $0 ~ "^    " field ":[[:space:]]*" {
+      sub("^    " field ":[[:space:]]*", "")
+      print
+      exit
+    }
+  ' "$cc_repository_file"
+}
+
+cc_repository_remote_safe() {
+  case "$1" in
+    ''|-[!-]*|*' '*|*'	'*|*password*|*PASSWORD*|*token*|*TOKEN*|*secret*|*SECRET*|*api_key*|*API_KEY*) return 1 ;;
+    *://*'@'*) return 1 ;;
+  esac
+  return 0
+}
+
+cc_repository_canonical_safe() {
+  test -n "$1" || return 0
+  cc_repository_remote_safe "$1" || return 1
+  case "$1" in
+    https://*|ssh://*|git@*|file://*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+cc_repository_path_safe() {
+  cc_repository_path=$1
+  test -d "$cc_repository_path" || return 1
+  case "$cc_repository_path" in *' '*|*'	'*) return 1 ;; esac
+  cc_repository_real=$(realpath -e -- "$cc_repository_path" 2>/dev/null) || return 1
+  test "$cc_repository_real" = "$cc_repository_path"
+}
+
+cc_resolve_repository_binding() {
+  cc_workspace_root=$1
+  cc_repository_key=$2
+  cc_binding_file=${3:-$cc_workspace_root/repositories.local.yaml}
+  cc_safe_id "$cc_repository_key" || { printf '%s\n' INVALID_REPOSITORY_KEY >&2; return 1; }
+  cc_workspace_root=$(CDPATH= cd -- "$cc_workspace_root" 2>/dev/null && pwd -P) || { printf '%s\n' WORKSPACE_NOT_FOUND >&2; return 1; }
+  test -f "$cc_binding_file" || { printf '%s\n' BINDING_MISSING >&2; return 1; }
+  test ! -L "$cc_binding_file" || { printf '%s\n' UNSAFE_BINDING_SYMLINK >&2; return 1; }
+  cc_repository_binding=$(cc_repository_field "$cc_binding_file" "$cc_repository_key" path)
+  test -n "$cc_repository_binding" || { printf '%s\n' BINDING_PATH_MISSING >&2; return 1; }
+  case "$cc_repository_binding" in
+    /*) cc_repository_candidate=$cc_repository_binding ;;
+    *) cc_safe_relative "$cc_repository_binding" || { printf '%s\n' UNSAFE_BINDING_PATH >&2; return 1; }
+       cc_repository_candidate="$cc_workspace_root/$cc_repository_binding" ;;
+  esac
+  cc_repository_candidate=${cc_repository_candidate%/}
+  cc_repository_path_safe "$cc_repository_candidate" || { printf '%s\n' UNSAFE_OR_MISSING_REPOSITORY_PATH >&2; return 1; }
+  printf '%s\n' "$cc_repository_candidate"
+}
+
+cc_repository_identity_token() {
+  cc_repository_identity=$1
+  case "$cc_repository_identity" in
+    *://*) cc_repository_identity=${cc_repository_identity#*://} ;;
+    *@*:*/*) cc_repository_identity=${cc_repository_identity#*@}; cc_repository_identity=$(printf '%s' "$cc_repository_identity" | sed 's/:/\//') ;;
+  esac
+  cc_repository_identity=${cc_repository_identity%/}
+  cc_repository_identity=${cc_repository_identity%.git}
+  cc_lower "$cc_repository_identity"
+}
+
+cc_repository_identity_matches() {
+  test -n "$1" || return 0
+  test -n "$2" || return 1
+  test "$(cc_repository_identity_token "$1")" = "$(cc_repository_identity_token "$2")"
+}
+
+cc_repository_is_clean() {
+  cc_repository_clean_root=$1
+  test -z "$(git -C "$cc_repository_clean_root" status --porcelain --untracked-files=all 2>/dev/null)"
+}
+
+cc_validate_repository_binding() {
+  cc_workspace_root=$1
+  cc_repository_key=$2
+  cc_binding_file=${3:-$cc_workspace_root/repositories.local.yaml}
+  cc_repository_path=$(cc_resolve_repository_binding "$cc_workspace_root" "$cc_repository_key" "$cc_binding_file") || return 1
+  cc_shared_file="$cc_workspace_root/workspace.yaml"
+  test -f "$cc_shared_file" || { printf '%s\n' SHARED_WORKSPACE_MISSING >&2; return 1; }
+  cc_canonical_url=$(cc_repository_field "$cc_shared_file" "$cc_repository_key" canonical_url)
+  cc_repository_canonical_safe "$cc_canonical_url" || { printf '%s\n' UNSAFE_CANONICAL_URL >&2; return 1; }
+  cc_selected_remote=$(cc_repository_field "$cc_binding_file" "$cc_repository_key" remote)
+  test -z "$cc_selected_remote" || cc_repository_remote_safe "$cc_selected_remote" || { printf '%s\n' UNSAFE_REPOSITORY_REMOTE >&2; return 1; }
+  cc_origin=$(git -C "$cc_repository_path" remote get-url origin 2>/dev/null || true)
+  if test -n "$cc_canonical_url"; then
+    test -n "$cc_origin" || { printf '%s\n' REPOSITORY_REMOTE_MISSING >&2; return 1; }
+    cc_repository_identity_matches "$cc_canonical_url" "$cc_origin" || { printf '%s\n' REPOSITORY_IDENTITY_MISMATCH >&2; return 1; }
+  fi
+  if test -n "$cc_selected_remote"; then
+    test -n "$cc_origin" || { printf '%s\n' REPOSITORY_REMOTE_MISSING >&2; return 1; }
+    cc_repository_identity_matches "$cc_selected_remote" "$cc_origin" || { printf '%s\n' REPOSITORY_REMOTE_MISMATCH >&2; return 1; }
+  fi
+  git -C "$cc_repository_path" rev-parse --show-toplevel >/dev/null 2>&1 || { printf '%s\n' NOT_A_GIT_REPOSITORY >&2; return 1; }
+  cc_repository_is_clean "$cc_repository_path" || { printf '%s\n' DIRTY_SOURCE_BLOCKED >&2; return 1; }
+  printf '%s\n' "$cc_repository_path"
+}
+
+cc_record_repository_binding_evidence() {
+  cc_evidence_file=$1
+  cc_repository_key=$2
+  cc_repository_path=$3
+  cc_repository_status=$4
+  cc_repository_reason=${5:-none}
+  cc_atomic_write "$cc_evidence_file" \
+    'schema_version: 1' "repository: $cc_repository_key" \
+    "path: $cc_repository_path" "status: $cc_repository_status" \
+    "reason: $cc_repository_reason" \
+    'credentials: never-recorded' 'source_preserved: true'
+}
+
+cc_prepare_bound_worktree() {
+  cc_workspace_root=$1
+  cc_repository_key=$2
+  cc_plan_id=$3
+  cc_branch=${4:-}
+  cc_safe_id "$cc_repository_key" && cc_safe_id "$cc_plan_id" || { printf '%s\n' INVALID_WORKTREE_ID >&2; return 1; }
+  cc_repository_path=$(cc_validate_repository_binding "$cc_workspace_root" "$cc_repository_key") || return 1
+  test -n "$cc_branch" || cc_branch=$(cc_repository_field "$cc_workspace_root/workspace.yaml" "$cc_repository_key" default_branch)
+  test -n "$cc_branch" || cc_branch=main
+  cc_safe_id "$cc_branch" || { printf '%s\n' INVALID_DEFAULT_BRANCH >&2; return 1; }
+  cc_worktree_target="$cc_workspace_root/.runtime/worktrees/$cc_repository_key/$cc_plan_id"
+  cc_prepare_worktree "$cc_repository_path" "$cc_worktree_target" "$cc_branch" || return 1
+  printf '%s\n' "$cc_worktree_target"
+}
+
+cc_repository_bootstrap_card() {
+  cc_workspace_root=$1
+  cc_repository_key=$2
+  cc_canonical_url=${3:-$(cc_repository_field "$cc_workspace_root/workspace.yaml" "$cc_repository_key" canonical_url)}
+  cc_selected_remote=$4
+  cc_branch=${5:-$(cc_repository_field "$cc_workspace_root/workspace.yaml" "$cc_repository_key" default_branch)}
+  cc_destination=$6
+  cc_existing_check=${7:-not-checked}
+  printf 'Action: repository-bootstrap\n'
+  printf 'Repository: %s\n' "$cc_repository_key"
+  printf 'Canonical URL: %s\n' "${cc_canonical_url:-none}"
+  printf 'Selected remote: %s\n' "$cc_selected_remote"
+  printf 'Branch: %s\n' "${cc_branch:-main}"
+  printf 'Destination: %s\n' "$cc_destination"
+  printf 'Existing-path check: %s\n' "$cc_existing_check"
+  printf 'Will change: create the exact destination and clone the selected remote after confirmation.\n'
+  printf 'Will not change: existing paths, bound repositories, credentials, or delivery state.\n'
+  printf 'Risks/open decisions: host Git credentials and provider availability remain external.\n'
+  printf 'Confirmation requested: Confirm repository-bootstrap for this exact target in the current session.\n'
+}
+
+cc_bootstrap_repository() {
+  cc_workspace_root=$1
+  cc_repository_key=$2
+  cc_selected_remote=$3
+  cc_branch=${4:-}
+  cc_destination=$5
+  cc_confirmation=${6:-}
+  cc_safe_id "$cc_repository_key" || { printf '%s\n' INVALID_REPOSITORY_KEY >&2; return 1; }
+  test -n "$cc_selected_remote" || { printf '%s\n' REMOTE_REQUIRED >&2; return 1; }
+  cc_repository_remote_safe "$cc_selected_remote" || { printf '%s\n' UNSAFE_REPOSITORY_REMOTE >&2; return 1; }
+  test -n "$cc_branch" || cc_branch=$(cc_repository_field "$cc_workspace_root/workspace.yaml" "$cc_repository_key" default_branch)
+  test -n "$cc_branch" || cc_branch=main
+  cc_safe_id "$cc_branch" || { printf '%s\n' INVALID_DEFAULT_BRANCH >&2; return 1; }
+  case "$cc_destination" in
+    /*) cc_bootstrap_target=$cc_destination ;;
+    *) cc_safe_relative "$cc_destination" || { printf '%s\n' UNSAFE_BOOTSTRAP_DESTINATION >&2; return 1; }
+       cc_bootstrap_target="$cc_workspace_root/$cc_destination" ;;
+  esac
+  cc_bootstrap_target=${cc_bootstrap_target%/}
+  cc_existing_check=absent
+  test ! -e "$cc_bootstrap_target" && test ! -L "$cc_bootstrap_target" || cc_existing_check=exists
+  cc_repository_bootstrap_card "$cc_workspace_root" "$cc_repository_key" "$(cc_repository_field "$cc_workspace_root/workspace.yaml" "$cc_repository_key" canonical_url)" "$cc_selected_remote" "$cc_branch" "$cc_bootstrap_target" "$cc_existing_check"
+  test "$cc_confirmation" = confirmed || { printf '%s\n' BOOTSTRAP_CONFIRMATION_REQUIRED >&2; return 1; }
+  test "$cc_existing_check" = absent || { printf '%s\n' BOOTSTRAP_TARGET_EXISTS >&2; return 1; }
+  if test "${CC_OFFLINE:-0}" = 1; then
+    cc_record_repository_binding_evidence "$cc_workspace_root/.runtime/bootstrap/$cc_repository_key.yaml" "$cc_repository_key" "$cc_bootstrap_target" offline OFFLINE_PROVIDER
+    printf '%s\n' offline-fallback
+    return 1
+  fi
+  cc_bootstrap_parent=$(dirname -- "$cc_bootstrap_target")
+  if test -e "$cc_bootstrap_parent"; then
+    cc_repository_path_safe "$cc_bootstrap_parent" || { printf '%s\n' UNSAFE_BOOTSTRAP_PARENT >&2; return 1; }
+  else
+    mkdir -p -- "$cc_bootstrap_parent" || return 1
+  fi
+  if GIT_TERMINAL_PROMPT=0 git clone --branch "$cc_branch" -- "$cc_selected_remote" "$cc_bootstrap_target"; then
+    cc_record_repository_binding_evidence "$cc_workspace_root/.runtime/bootstrap/$cc_repository_key.yaml" "$cc_repository_key" "$cc_bootstrap_target" cloned clone-succeeded
+    printf '%s\n' "$cc_bootstrap_target"
+  else
+    cc_record_repository_binding_evidence "$cc_workspace_root/.runtime/bootstrap/$cc_repository_key.yaml" "$cc_repository_key" "$cc_bootstrap_target" failed clone-failed
+    printf '%s\n' BOOTSTRAP_FAILED >&2
+    return 1
+  fi
+}
+
+# Stable aliases used by host adapters and semantic fixtures.
+cc_resolve_repository() { cc_resolve_repository_binding "$@"; }
+cc_validate_binding() { cc_validate_repository_binding "$@"; }
+cc_repository_bootstrap() { cc_bootstrap_repository "$@"; }

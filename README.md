@@ -24,6 +24,8 @@ stores no credentials.
   and migrations.
 - `template/` — blank mutable seed for new workspaces.
 - `plans/` — source-only maintainer implementation plans; not released.
+- `repositories.local.yaml` — ignored host-local repository bindings; never released.
+- `repositories/` — optional ignored convenience checkouts; never released.
 - `.agents/skills/` and `agents/` — thin host and role adapters.
 - `context/` — Product Knowledge for the Context Circuit product itself.
 - `test/` — semantic suites, budgets, upgrade, and release verification.

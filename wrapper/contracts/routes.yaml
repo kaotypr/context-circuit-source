@@ -44,6 +44,7 @@ actions:
   - orient
   - recommend-next
   - initialize
+  - repository-bootstrap
   - draft-idea-brief
   - draft-prd
   - inspect-source
@@ -52,6 +53,7 @@ actions:
   - draft-plan
   - review-plan
   - present-approval-card
+  - present-repository-bootstrap-card
   - present-commit-approved-plan-card
   - commit-approved-plan
   - clarify-target
@@ -86,3 +88,5 @@ actions:
   - classify-upgrade
   - migrate-wrapper
   - block-unresolved-dependency
+human_gates:
+  - repository-bootstrap

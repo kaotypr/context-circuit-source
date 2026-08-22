@@ -12,7 +12,7 @@ cc_migration_classify() {
 }
 
 cc_migration_preserves() {
-  for path in workspace.yaml context sources plans .runtime; do printf '%s\n' "$path"; done
+  for path in workspace.yaml context sources plans .runtime repositories.local.yaml repositories; do printf '%s\n' "$path"; done
 }
 
 cc_rollback_scope() {
