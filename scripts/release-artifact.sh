@@ -58,6 +58,10 @@ done
 for relpath in $required_files; do
   [ -e "$stage_tree/$relpath" ] || fail "missing required file: $relpath"
 done
+for forbidden_path in repositories.local.yaml repositories; do
+  [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
+done
+find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
 for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}

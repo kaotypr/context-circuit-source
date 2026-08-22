@@ -6,7 +6,10 @@ workspace:
   mode: solo
   default_branch: development
 
-repositories: {}
+repositories:
+  context-circuit-source:
+    canonical_url: https://github.com/kaotypr/context-circuit.git
+    default_branch: main
 
 context:
   sources_file: context/sources.yaml

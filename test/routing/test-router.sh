@@ -33,6 +33,12 @@ generic_build=$(cc_route 'I want a command-line to-do app. Can you help me build
 printf '%s\n' "$generic_build" | grep -F 'phase: plan-draft' >/dev/null || fail 'generic accepted build did not route to plan drafting'
 printf '%s\n' "$generic_build" | grep -F 'capability: draft-plan' >/dev/null || fail 'generic accepted build was not constrained to draft-plan'
 
+bootstrap_card=$(cc_route 'Bootstrap repository app.')
+printf '%s\n' "$bootstrap_card" | grep -F 'capability: present-repository-bootstrap-card' >/dev/null || fail 'bootstrap request did not present a confirmation card'
+printf '%s\n' "$bootstrap_card" | grep -F 'human_gate: repository-bootstrap' >/dev/null || fail 'bootstrap request missed repository gate'
+bootstrap_confirmed=$(cc_route 'Confirm repository bootstrap for app.')
+printf '%s\n' "$bootstrap_confirmed" | grep -F 'capability: repository-bootstrap' >/dev/null || fail 'confirmed bootstrap request was not authorized'
+
 draft=$(cc_route 'Run draft plan checkout-validation.')
 printf '%s\n' "$draft" | grep -F 'eligibility: blocked' >/dev/null || fail 'draft execution was not blocked'
 printf '%s\n' "$draft" | grep -F 'authorization: absent' >/dev/null || fail 'blocked execution retained authorization'
