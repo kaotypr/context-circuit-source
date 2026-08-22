@@ -13,10 +13,10 @@ paths:
   - test/routing/fixtures.yaml
   - test/routing/test-router.sh
 depends_on: []
-acceptance: [AGF-AC-01, AGF-AC-04, AGF-AC-05]
+acceptance: [AGF-AC-01, AGF-AC-05]
 verification: [AGF-VT-01, AGF-VT-04]
 expected_evidence:
-  - Approval card and final handoff wording that explicitly separate confirmation, approval, and execution.
+  - Approval card wording that explicitly separates confirmation from approval, commit, and execution.
   - Routing fixtures proving the initial request remains gated and the exact confirmation is authorized.
   - No policy duplication outside the canonical route and gate owners.
 stop_conditions:
@@ -37,14 +37,15 @@ needed for the current target and session.
 
 Adjust the canonical card and the thin conversational guidance where needed.
 Preserve the existing `present-approval-card` and `approve-plan` route split,
-the separate execution trigger, and the invariant ownership map. Add or refine
-fixtures for the initial approval request, exact confirmation, and ambiguous
-approval language.
+the separate maintainer commit gate, the separate execution trigger, and the
+invariant ownership map. The first-turn card must not imply that confirmation
+commits Git or starts `Run approved plan`. Add or refine fixtures for the
+initial approval request, exact confirmation, and ambiguous approval language.
 
 ## Non-goals
 
-Do not auto-approve, start execution, acquire a lease, create a worktree, or
-make host adapters authoritative.
+Do not auto-approve, auto-commit, start execution, acquire a lease, create a
+worktree, or make host adapters authoritative.
 
 ## Verification
 
@@ -58,4 +59,4 @@ runtime or plan mutation from the pre-confirmation route.
 ## Stop conditions
 
 Stop on any authorization regression, route divergence, or wording that could
-make approval appear to mean execution.
+make approval appear to mean commit or execution.
