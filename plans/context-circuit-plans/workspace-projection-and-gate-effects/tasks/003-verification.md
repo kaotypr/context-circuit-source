@@ -18,11 +18,11 @@ depends_on: [WPE-002]
 acceptance: [WPE-AC-02, WPE-AC-05, WPE-AC-06]
 verification: [WPE-VT-01, WPE-VT-03, WPE-VT-05, WPE-VT-06, WPE-VT-07]
 expected_evidence:
-  - Upgrade and rollback fixtures for pre-projection workspaces.
-  - Documentation matching canonical projection and effect ownership.
+  - Upgrade and rollback fixtures that insert or restore the identity region without rewriting Product Knowledge or accepted identity.
+  - Documentation matching identity-region and effect ownership, including displayed defaults.
   - Full semantic acceptance and release-boundary results.
 stop_conditions:
-  - Migration rewrites accepted identity without a human gate.
+  - Migration rewrites accepted identity or authored Product Knowledge without a human gate.
   - Release assembly includes maintainer plans, local bindings, or runtime state.
   - Any existing gate, repository, host, or lifecycle suite regresses.
 ---
@@ -31,20 +31,24 @@ stop_conditions:
 
 ## Objective
 
-Prove projection and gate-effect behavior across existing workspaces, release
-assembly, and the full semantic contract.
+Prove identity-region and gate-effect behavior across existing workspaces,
+release assembly, and the full semantic contract.
 
 ## Work
 
-Add migration and rollback handling for legacy mutable summaries, document
-generated versus user-owned content, and extend contract, routing, upgrade,
-release, and acceptance fixtures. Verify repository registration updates every
-shared projection without exposing local bindings.
+Add migration and rollback that insert a missing identity region into legacy
+`WORKSPACE.md`, `PROJECT.md`, and `INDEX.md` without rewriting authored
+Product Knowledge and without changing accepted identity. Document that
+`workspace.yaml` is the identifier, `context/` is Product Knowledge, omitted
+gate fields display as proposed defaults, and effect identifiers are
+descriptive. Extend contract, routing, upgrade, release, and acceptance
+fixtures. Verify repository registration updates shared identity and every
+identity region without exposing local bindings.
 
 ## Non-goals
 
-Do not migrate unrelated mutable context, publish an artifact, or repair
-failures outside this plan's declared paths.
+Do not migrate unrelated mutable context, publish an artifact, activate
+create-empty, or repair failures outside this plan's declared paths.
 
 ## Verification
 
@@ -57,5 +61,6 @@ and an independent handoff mapping each acceptance criterion.
 
 ## Stop conditions
 
-Stop on lossy migration, identity mutation without confirmation, release
-leakage, or a regression requiring scope beyond the declared plan.
+Stop on lossy migration, identity mutation without confirmation, Product
+Knowledge rewrite, release leakage, or a regression requiring scope beyond
+the declared plan.
