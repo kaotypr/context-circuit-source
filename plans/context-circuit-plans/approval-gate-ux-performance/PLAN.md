@@ -1,6 +1,6 @@
 # Fast and explicit plan approval confirmation flow
 
-Status: approved  
+Status: done  
 Repository: context-circuit-source  
 Source: repository-evidence
 

@@ -2,7 +2,7 @@
 schema_version: 2
 id: AGF-003
 plan: approval-gate-ux-performance
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - test/approval/test-approval-flow.sh
