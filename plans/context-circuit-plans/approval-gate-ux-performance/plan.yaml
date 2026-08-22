@@ -2,7 +2,7 @@ schema_version: 2
 id: approval-gate-ux-performance
 number: CC-004
 title: Fast and explicit plan approval confirmation flow
-status: draft
+status: approved
 repository: context-circuit-source
 source: repository-evidence
 product_knowledge:

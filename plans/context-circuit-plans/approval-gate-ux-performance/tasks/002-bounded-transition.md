@@ -2,7 +2,7 @@
 schema_version: 2
 id: AGF-002
 plan: approval-gate-ux-performance
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh
