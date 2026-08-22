@@ -25,6 +25,7 @@ contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'repositories.<key>.ca
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'repositories.local.<key>.path'
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-REPO-04'
 contains "$ROOT/wrapper/manifest.yaml" 'repositories.local.yaml'
+contains "$ROOT/docs/getting-started.md" 'create the ignored root'
 contains "$ROOT/wrapper/contracts/schemas/session.yaml" 'host_evidence:'
 contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'host_id'
 contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'offline_fallback'
