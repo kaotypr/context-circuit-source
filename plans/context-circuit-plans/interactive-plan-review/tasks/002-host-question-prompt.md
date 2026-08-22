@@ -2,7 +2,7 @@
 schema_version: 2
 id: IPR-002
 plan: interactive-plan-review
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - docs/plan-review.md

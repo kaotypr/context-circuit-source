@@ -2,7 +2,7 @@
 schema_version: 2
 id: IPR-003
 plan: interactive-plan-review
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - test/routing/fixtures.yaml

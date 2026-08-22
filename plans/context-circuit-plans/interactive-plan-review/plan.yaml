@@ -2,7 +2,7 @@ schema_version: 2
 id: interactive-plan-review
 number: CC-005
 title: Named-plan review with optional host question prompts
-status: approved
+status: done
 repository: context-circuit-source
 source: repository-evidence
 product_knowledge:
@@ -112,4 +112,4 @@ verification:
     command: sh test/acceptance.sh
     proves: Complete semantic acceptance across contracts, routing, lifecycle, gates, ownership, hosts, and release boundaries.
 created_at: 2026-08-22T16:00:00Z
-updated_at: 2026-08-22T16:35:00Z
+updated_at: 2026-08-22T18:12:12Z
