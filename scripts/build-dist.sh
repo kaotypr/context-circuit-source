@@ -9,7 +9,7 @@ usage() {
 [ "$#" -le 2 ] || usage
 
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-preview}
+version=${1:-v0.5.0}
 output_dir=${2:-$source_root/dist}
 
 mkdir -p "$output_dir"

@@ -39,10 +39,10 @@ test ! -e "$artifact/Opus-4.8-plan.md" || fail 'unlisted root plan leaked into a
 test ! -e "$artifact/Sol-5.6-plan.md" || fail 'unlisted root plan leaked into artifact'
 not_contains "$artifact/workspace.yaml" 'credential'
 
-build_result=$(sh "$ROOT/scripts/build-dist.sh" preview "$build_out")
-build_artifact="$build_out/context-circuit-preview"
+build_result=$(sh "$ROOT/scripts/build-dist.sh" v0.5.0 "$build_out")
+build_artifact="$build_out/context-circuit-v0.5.0"
 require_file "$build_artifact/README.md"
-require_file "$build_out/context-circuit-preview.tar.gz"
+require_file "$build_out/context-circuit-v0.5.0.tar.gz"
 test ! -e "$build_artifact/template" || fail 'source template directory leaked into dist build'
 test ! -e "$build_artifact/sources/context-circuit-design" || fail 'source design material leaked into dist build'
 printf '%s\n' "$build_result" | grep -F "dist_dir: $build_out" >/dev/null || fail 'dist build did not report output directory'

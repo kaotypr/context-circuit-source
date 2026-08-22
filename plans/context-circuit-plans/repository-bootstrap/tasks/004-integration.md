@@ -44,7 +44,7 @@ Use RB-VT-04, RB-VT-05, and RB-VT-07.
 
 ## Expected evidence
 
-Migration fixtures, clean release inventory, rebuilt dist preview, and updated
+Migration fixtures, clean release inventory, rebuilt versioned dist artifact, and updated
 onboarding/runtime documentation.
 
 ## Stop conditions
