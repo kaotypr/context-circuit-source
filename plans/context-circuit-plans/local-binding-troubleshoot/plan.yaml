@@ -2,7 +2,7 @@ schema_version: 2
 id: local-binding-troubleshoot
 number: CC-003
 title: Document missing repositories.local.yaml troubleshooting
-status: approved
+status: done
 repository: context-circuit-source
 source: repository-evidence
 product_knowledge:
