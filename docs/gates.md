@@ -7,7 +7,7 @@ requires a new card.
 
 Every consequential mutation names what will change and what will not. The
 separate actions are identity acceptance, context acceptance, plan approval,
-execution trigger, material scope change, status change, takeover, delivery,
+    execution trigger, repository bootstrap, material scope change, status change, takeover, delivery,
 archive/restore, publication/deployment/merge, and destructive cleanup.
 These are separate explicit gates, not one reusable confirmation.
 
@@ -15,6 +15,17 @@ Approval changes plan status and task projections only. Execution starts only
 from a separate explicit request. A verifier can produce completion evidence but
 cannot finish a plan. Cleanup first reports dirty and unpushed work and needs an
 additional discard confirmation before anything destructive.
+
+## Repository bootstrap card
+
+Repository bootstrap is a separate gate from workspace initialization and plan
+execution. Its card must name the logical repository, credential-free canonical
+URL, selected remote, branch, exact destination, and observed existing-path
+check. Confirmation is exact and session-bound. Without it, no destination,
+parent directory, network request, or Git clone is started. Existing
+destinations, unsafe paths, dirty sources, unavailable credentials, and offline
+providers remain safe failures; no stash, reset, overwrite, or credential
+persistence is allowed.
 
 ## Maintainer approval commit
 

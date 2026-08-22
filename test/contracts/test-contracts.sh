@@ -21,6 +21,11 @@ contains "$ROOT/wrapper/contracts/context-sets.yaml" 'overrun: Report'
 contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'status: [draft, approved, done]'
 contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'status: [draft, ready, done]'
 contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'frontmatter:'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'repositories.<key>.canonical_url'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'repositories.local.<key>.path'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-REPO-04'
+contains "$ROOT/wrapper/manifest.yaml" 'repositories.local.yaml'
+contains "$ROOT/.gitignore" 'repositories/'
 
 assert_task_frontmatter() {
   task_file=$1

@@ -27,6 +27,17 @@ how the records relate.
 There is no global current-session, current-plan, or current-stack pointer.
 Optional host binding enables lookup but never authorizes mutation.
 
+## Repository bindings and worktrees
+
+`workspace.yaml` is portable repository identity. The ignored root
+`repositories.local.yaml` is the only host-local binding source and may point
+to an explicit external path, workspace-relative path, or
+`repositories/<repository-key>`. Resolution records the selected path,
+inspectable Git identity, and clean/blocked result; it never scans for a
+repository or persists credentials. A valid binding is prepared only at
+`.runtime/worktrees/<repository-key>/<plan-id>/`. The bound source checkout is
+not the writer worktree and dirty sources remain preserved and blocked.
+
 ## Sessions and delegation
 
 A root session has no parent. A child has parent and root IDs, role, objective,

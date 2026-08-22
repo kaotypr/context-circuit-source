@@ -12,6 +12,44 @@ includes broad requests such as “help me build this”; the agent must not inf
 identity, create a plan, or write implementation files. Read-only orientation
 remains available.
 
+## Bind a repository
+
+Shared `workspace.yaml` metadata identifies a logical repository without a
+machine-specific path:
+
+```yaml
+repositories:
+  app:
+    canonical_url: https://github.com/acme/app.git
+    default_branch: main
+```
+
+Each host may create the ignored root file `repositories.local.yaml`:
+
+```yaml
+repositories:
+  app:
+    path: /home/alice/projects/app
+    remote: git@github.com:acme/app.git
+```
+
+The binding path may also be workspace-relative, such as `projects/app`, or
+use the optional convenience location `repositories/app`. The path is
+explicit; Context Circuit never scans for repositories or stores credentials.
+A missing, unsafe, identity-mismatched, or dirty source is reported and
+remains untouched.
+
+## Bootstrap a repository
+
+Say “Bootstrap repository app” to request a clone. The agent presents a
+repository-bootstrap card containing the logical repository, canonical URL,
+selected remote, branch, exact destination, and existing-path check. Only a
+current confirmation of that exact card may create the destination or invoke
+Git. Host Git configuration or an SSH agent supplies authentication; secrets
+are never requested, recorded, or copied into workspace state. Provider
+failure produces an offline fallback while filesystem evidence remains
+resumable.
+
 Initialization records only mode, repositories or project items, roles, and
 default branches. Zero repositories is valid. Identity acceptance is a human
 gate. Later, selected evidence may produce an Idea Brief, PRD, accepted Product

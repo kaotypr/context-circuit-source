@@ -22,6 +22,49 @@ test -e "$runtime/worktrees/app/checkout/.git" || fail 'exclusive Git worktree w
 printf '%s\n' dirty > "$repo/dirty.txt"
 expect_failure cc_prepare_worktree "$repo" "$runtime/worktrees/app/dirty" main
 
+binding_root="$runtime/binding-workspace"
+mkdir -p "$binding_root"
+cat > "$binding_root/workspace.yaml" <<'EOF'
+version: 1
+template_version: 1.0.0
+workspace:
+  name: binding-fixture
+repositories:
+  app:
+    canonical_url: https://github.com/acme/app.git
+    default_branch: main
+EOF
+bound_source="$runtime/external-app"
+git init -q -b main "$bound_source"
+git -C "$bound_source" config user.email test@example.invalid
+git -C "$bound_source" config user.name 'Context Circuit Test'
+printf '%s\n' bound > "$bound_source/file.txt"
+git -C "$bound_source" add file.txt
+git -C "$bound_source" commit -qm initial
+git -C "$bound_source" remote add origin https://github.com/acme/app.git
+cat > "$binding_root/repositories.local.yaml" <<EOF
+repositories:
+  app:
+    path: $bound_source
+    remote: git@github.com:acme/app.git
+EOF
+assert_eq "$(cc_validate_repository_binding "$binding_root" app)" "$bound_source"
+mkdir -p "$binding_root/projects"
+mv "$bound_source" "$binding_root/projects/app"
+sed -i 's#path: .*#path: projects/app#' "$binding_root/repositories.local.yaml"
+assert_eq "$(cc_validate_repository_binding "$binding_root" app)" "$binding_root/projects/app"
+mkdir -p "$binding_root/repositories"
+mv "$binding_root/projects/app" "$binding_root/repositories/app"
+sed -i 's#path: .*#path: repositories/app#' "$binding_root/repositories.local.yaml"
+assert_eq "$(cc_validate_repository_binding "$binding_root" app)" "$binding_root/repositories/app"
+printf '%s\n' dirty >> "$binding_root/repositories/app/file.txt"
+expect_failure cc_validate_repository_binding "$binding_root" app
+git -C "$binding_root/repositories/app" checkout -- file.txt
+prepared=$(cc_prepare_bound_worktree "$binding_root" app repository-bootstrap main)
+assert_eq "$prepared" "$binding_root/.runtime/worktrees/app/repository-bootstrap"
+test -e "$prepared/.git" || fail 'bound repository worktree was not prepared'
+test -z "$(git -C "$binding_root/repositories/app" status --porcelain --untracked-files=all)" || fail 'bound source repository was modified'
+
 maintainer="$runtime/maintainer"
 mkdir -p "$maintainer/plans/context-circuit-plans/demo/tasks"
 cat > "$maintainer/workspace.yaml" <<'EOF'
