@@ -17,21 +17,22 @@ product_knowledge:
   - docs/getting-started.md
   - docs/gates.md
   - .agents/skills/cc-plan/SKILL.md
+  - .agents/skills/cc-gates/SKILL.md
   - agents/coordinator.md
 objective: >-
   Let a human name one plan and get a read-only review that understands the
   bundle, surfaces risks and open questions, and then asks at most three
   focused choices. When the current host exposes an optional native question
   prompt, use that UI; otherwise keep the same choices in the Review Card.
-  Review still never changes status or authorizes a gate.
+  Discover review through the existing cc-plan adapter. Review still never
+  changes status or authorizes a gate.
 scope:
   - natural-language trigger for a named plan review, including missing-target
     clarification
-  - thin cc-review-plan skill for host discovery, with cc-plan remaining the
-    draft/prepare adapter
+  - cc-plan as the host discovery adapter for both draft and read-only review
   - Review Card wording for risks, open questions, and 0-3 human decisions
   - optional host question-prompt presentation and conversational fallback
-  - routing fixtures, skill/release allowlists, and semantic coverage
+  - routing fixtures, existing skill/release allowlists, and semantic coverage
   - coordinator and docs guidance that cite owners instead of adding policy
 non_goals:
   - making review mutate plan.yaml, task status, leases, runtime, or Git
@@ -40,12 +41,14 @@ non_goals:
   - requiring a native question prompt or recording question transcripts into
     host_evidence
   - adding Cursor slash commands, .cursor/rules, or other host-local policy
-  - combining review with draft-plan, approve-plan, or run-plan
+  - adding cc-review-plan or any other eighth shipped discovery skill
+  - merging review-plan into the draft-plan, approve-plan, or execute-plan
+    routes
   - expanding the plan-review context set into unrelated plans or sources/
 dependencies: []
 tasks:
   - id: IPR-001
-    title: Make named-plan review a specific request and skill
+    title: Make named-plan review a specific request through cc-plan
     path: tasks/001-review-trigger.md
   - id: IPR-002
     title: Present review decisions through optional host question prompts
@@ -65,8 +68,10 @@ acceptance:
       equivalent focused question and does not inspect an unrelated plan.
   - id: IPR-AC-03
     outcome: >-
-      Hosts can discover a dedicated cc-review-plan skill; humans do not have
-      to type the skill name. cc-plan continues to own draft and prepare only.
+      Hosts discover named-plan review through cc-plan. The skill text names
+      read-only review so pickers can match Review plan <id> without a second
+      skill. Humans do not have to type the skill name. cc-review-plan is not
+      added, and the shipped discovery list stays at the existing seven names.
   - id: IPR-AC-04
     outcome: >-
       The Review Card still reports outcome, risks/assumptions, open
@@ -82,7 +87,8 @@ acceptance:
   - id: IPR-AC-06
     outcome: >-
       Existing semantic, host-adapter, and release suites continue to pass.
-      The new skill is an expected shipped adapter, not a leaked legacy name.
+      The shipped skill allowlist still contains only cc-entry, cc-next,
+      cc-plan, cc-execute, cc-verify, cc-gates, and cc-upgrade.
 human_gates:
   - plan-approval
   - execution-trigger
@@ -98,12 +104,12 @@ verification:
     proves: Plan review remains read-only and the Review Card still names risks and human decisions.
   - id: IPR-VT-03
     command: sh test/hosts/test-host-adapters.sh
-    proves: The new skill is a host discovery adapter and does not become a second router or authorization path.
+    proves: cc-plan remains the plan discovery adapter for draft and review; optional question prompts do not become a second router or authorization path.
   - id: IPR-VT-04
     command: sh test/release/test-release.sh
-    proves: cc-review-plan is an allowed shipped skill and does not fail the unexpected-skill allowlist.
+    proves: The shipped skill allowlist still contains only the seven existing adapters and does not add cc-review-plan.
   - id: IPR-VT-05
     command: sh test/acceptance.sh
     proves: Complete semantic acceptance across contracts, routing, lifecycle, gates, ownership, hosts, and release boundaries.
 created_at: 2026-08-22T16:00:00Z
-updated_at: 2026-08-22T16:00:00Z
+updated_at: 2026-08-22T16:35:00Z
