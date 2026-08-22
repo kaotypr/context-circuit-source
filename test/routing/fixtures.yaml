@@ -101,6 +101,16 @@ cases:
     probe: approval
     action: approve-plan
     authorization: confirmed-gate
+  - id: R020A
+    request: Commit the approved plan state.
+    probe: maintainer-commit
+    action: present-commit-approved-plan-card
+    authorization: confirmed-gate-required
+  - id: R020B
+    request: Confirm commit of the approved plan state.
+    probe: maintainer-commit
+    action: commit-approved-plan
+    authorization: confirmed-gate
   - id: R021
     request: Approve this plan.
     probe: approval

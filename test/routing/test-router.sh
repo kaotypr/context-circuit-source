@@ -16,6 +16,23 @@ $(awk '
 EOF
 test "$fixture_count" -ge 50 || fail "routing fixture count: $fixture_count"
 
+workspace_fixture=$(mktemp -d "${TMPDIR:-/tmp}/cc-uninitialized-route.XXXXXX")
+trap 'rm -rf "$workspace_fixture"' EXIT HUP INT TERM
+cp "$ROOT/template/workspace.yaml" "$workspace_fixture/workspace.yaml"
+uninitialized_build=$(cc_route 'Can you help me build this?' "$workspace_fixture")
+printf '%s\n' "$uninitialized_build" | grep -F 'capability: initialize' >/dev/null || fail 'uninitialized build request was not routed to initialization'
+printf '%s\n' "$uninitialized_build" | grep -F 'human_gate: identity-acceptance' >/dev/null || fail 'uninitialized build request missed identity gate'
+printf '%s\n' "$uninitialized_build" | grep -F 'authorization: confirmed-gate-required' >/dev/null || fail 'uninitialized build request was treated as authorized'
+uninitialized_read=$(cc_route 'What is this workspace?' "$workspace_fixture")
+printf '%s\n' "$uninitialized_read" | grep -F 'capability: orient' >/dev/null || fail 'uninitialized read-only orientation was blocked'
+printf '%s\n' "$uninitialized_read" | grep -F 'authorization: read-only' >/dev/null || fail 'uninitialized read-only orientation was not read-only'
+sed -i 's/status: uninitialized/status: accepted/' "$workspace_fixture/workspace.yaml"
+accepted_build=$(cc_route 'Create a plan from this request.' "$workspace_fixture")
+printf '%s\n' "$accepted_build" | grep -F 'capability: draft-plan' >/dev/null || fail 'accepted workspace did not retain plan route'
+generic_build=$(cc_route 'I want a command-line to-do app. Can you help me build this?' "$workspace_fixture")
+printf '%s\n' "$generic_build" | grep -F 'phase: plan-draft' >/dev/null || fail 'generic accepted build did not route to plan drafting'
+printf '%s\n' "$generic_build" | grep -F 'capability: draft-plan' >/dev/null || fail 'generic accepted build was not constrained to draft-plan'
+
 draft=$(cc_route 'Run draft plan checkout-validation.')
 printf '%s\n' "$draft" | grep -F 'eligibility: blocked' >/dev/null || fail 'draft execution was not blocked'
 printf '%s\n' "$draft" | grep -F 'authorization: absent' >/dev/null || fail 'blocked execution retained authorization'

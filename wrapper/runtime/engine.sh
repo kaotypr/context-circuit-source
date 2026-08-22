@@ -33,6 +33,7 @@ cc_probe() {
     *'sources/'*|*'selected files'*|*'selected evidence'*) printf '%s\n' selected-source ;;
     *'contradiction'*|*'accepted context'*) printf '%s\n' context-review ;;
     *'review plan'*|*'plan ready'*|*'plan'*'ready'*|*'approved-for-execution'*|*'read only the plan status'*) printf '%s\n' plan-review ;;
+    *'commit approved plan'*|*'commit the approved plan'*|*'commit plan approval'*|*'commit'*'approved plan'*) printf '%s\n' maintainer-commit ;;
     *'approve plan'*|*'approve this plan'*|*'confirm approval'*) printf '%s\n' approval ;;
     *'base checkout'*'dirty'*|*'dirty base'*) printf '%s\n' ownership ;;
     *'verification passed'*|*'verification'*'what happens next'*) printf '%s\n' completion ;;
@@ -76,6 +77,9 @@ cc_action() {
     approval)
       case "$cc_action_text" in *'approve this plan'*) printf '%s\n' clarify-target ;; *'confirm approval'*) printf '%s\n' approve-plan ;; *'yes'*|*'confirmed'*) printf '%s\n' approve-plan ;; *) printf '%s\n' present-approval-card ;; esac
       ;;
+    maintainer-commit)
+      case "$cc_action_text" in *'confirm'*|*'confirmed'*) printf '%s\n' commit-approved-plan ;; *) printf '%s\n' present-commit-approved-plan-card ;; esac
+      ;;
     execution-preflight)
       case "$cc_action_text" in *'draft plan'*) printf '%s\n' block-unapproved ;; *) printf '%s\n' execute-plan ;; esac
       ;;
@@ -118,24 +122,80 @@ cc_action() {
   esac
 }
 
+cc_workspace_uninitialized() {
+  cc_workspace_root=$1
+  cc_workspace_file="$cc_workspace_root/workspace.yaml"
+  test -f "$cc_workspace_file" || return 0
+  cc_workspace_kind=$(awk '
+    /^identity:/ { in_identity=1; next }
+    /^[^[:space:]]/ { in_identity=0 }
+    in_identity && /^  kind: / { print $2; exit }
+  ' "$cc_workspace_file")
+  case "$cc_workspace_kind" in
+    product-source) return 1 ;;
+    instantiated-workspace)
+      cc_workspace_status=$(awk '
+        /^identity:/ { in_identity=1; next }
+        /^[^[:space:]]/ { in_identity=0 }
+        in_identity && /^  status: / { print $2; exit }
+      ' "$cc_workspace_file")
+      test "$cc_workspace_status" = accepted || return 0
+      return 1
+      ;;
+    *) return 0 ;;
+  esac
+}
+
+cc_request_read_only() {
+  cc_read_only_text=$(cc_lower "$1")
+  case "$cc_read_only_text" in
+    *'what is this workspace'*|*'what is this project'*|*'explain'*|*'show'*|*'review'*|*'inspect'*|*'read-only'*|*'do not change'*|*'current state'*|*'status'*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 cc_route() {
   cc_request=$1
+  cc_workspace_root=${2:-.}
   cc_stage_a=$(cc_probe "$cc_request")
   cc_stage_b=$(cc_action "$cc_request" "$cc_stage_a")
-  case "$cc_stage_b" in
-    block-*) cc_eligibility=blocked; cc_gate=none; cc_reason=SAFETY_BLOCK ;;
-    present-*) cc_eligibility=eligible-with-gate; cc_gate=$cc_stage_b; cc_reason=HUMAN_CONFIRMATION_REQUIRED ;;
-    approve-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper)
-      cc_eligibility=ready; cc_gate=none; cc_reason=CONFIRMED_HUMAN_GATE ;;
-    *) cc_eligibility=ready; cc_gate=none; cc_reason=ROUTE_SELECTED ;;
-  esac
-  case "$cc_stage_b" in
-    orient|review-*|show-handoff|recommend-*|classify-upgrade|offline-fallback) cc_authorization=read-only ;;
-    present-*) cc_authorization=confirmed-gate-required ;;
-    block-*) cc_authorization=absent ;;
-    approve-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper) cc_authorization=confirmed-gate ;;
-    *) cc_authorization=explicitly-requested ;;
-  esac
+  cc_initialization_guard=0
+  cc_plan_required=0
+  if cc_workspace_uninitialized "$cc_workspace_root" && ! cc_request_read_only "$cc_request"; then
+    cc_stage_a=initialization
+    cc_stage_b=initialize
+    cc_initialization_guard=1
+  elif test "$cc_stage_a" = orientation && test "$cc_stage_b" = orient && ! cc_request_read_only "$cc_request"; then
+    cc_stage_a=plan-draft
+    cc_stage_b=draft-plan
+    cc_plan_required=1
+  fi
+  if test "$cc_initialization_guard" -eq 1; then
+    cc_eligibility=eligible-with-gate
+    cc_gate=identity-acceptance
+    cc_reason=IDENTITY_ACCEPTANCE_REQUIRED
+    cc_authorization=confirmed-gate-required
+  elif test "$cc_plan_required" -eq 1; then
+    cc_eligibility=ready
+    cc_gate=none
+    cc_reason=PLAN_REQUIRED
+    cc_authorization=explicitly-requested
+  else
+    case "$cc_stage_b" in
+      block-*) cc_eligibility=blocked; cc_gate=none; cc_reason=SAFETY_BLOCK ;;
+      present-*) cc_eligibility=eligible-with-gate; cc_gate=$cc_stage_b; cc_reason=HUMAN_CONFIRMATION_REQUIRED ;;
+      approve-plan|commit-approved-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper)
+        cc_eligibility=ready; cc_gate=none; cc_reason=CONFIRMED_HUMAN_GATE ;;
+      *) cc_eligibility=ready; cc_gate=none; cc_reason=ROUTE_SELECTED ;;
+    esac
+    case "$cc_stage_b" in
+      orient|review-*|show-handoff|recommend-*|classify-upgrade|offline-fallback) cc_authorization=read-only ;;
+      present-*) cc_authorization=confirmed-gate-required ;;
+      block-*) cc_authorization=absent ;;
+      approve-plan|commit-approved-plan|finish-plan|archive-plan|restore-plan|configure-delivery|cleanup-runtime|takeover-lease|migrate-wrapper) cc_authorization=confirmed-gate ;;
+      *) cc_authorization=explicitly-requested ;;
+    esac
+  fi
   cat <<EOF
 intent: $cc_stage_b
 session_kind: root
@@ -193,6 +253,69 @@ cc_prepare_worktree() {
   test ! -e "$cc_target" || { printf '%s\n' WORKTREE_ALREADY_EXISTS >&2; return 1; }
   mkdir -p "$(dirname "$cc_target")"
   git -C "$cc_base" worktree add --detach "$cc_target" "$cc_branch" >/dev/null
+}
+
+cc_is_product_source() {
+  cc_workspace_root=$1
+  test -f "$cc_workspace_root/workspace.yaml" || return 1
+  awk '
+    /^identity:/ { in_identity=1; next }
+    /^[^[:space:]]/ { in_identity=0 }
+    in_identity && /^  kind: product-source$/ { found=1 }
+    END { exit found ? 0 : 1 }
+  ' "$cc_workspace_root/workspace.yaml"
+}
+
+cc_maintainer_approval_commit_required() {
+  cc_base=$1
+  cc_plan_file=$2
+  cc_task_dir=$3
+  cc_base=$(CDPATH= cd -- "$cc_base" 2>/dev/null && pwd) || return 1
+  case "$cc_plan_file" in /*) ;; *) cc_plan_file="$cc_base/$cc_plan_file" ;; esac
+  case "$cc_task_dir" in /*) ;; *) cc_task_dir="$cc_base/$cc_task_dir" ;; esac
+  cc_is_product_source "$cc_base" || return 1
+  test -f "$cc_plan_file" && test -d "$cc_task_dir" || return 1
+  test ! -L "$cc_plan_file" && test ! -L "$cc_task_dir" || return 1
+  cc_plan_rel=${cc_plan_file#"$cc_base"/}
+  cc_task_rel=${cc_task_dir#"$cc_base"/}
+  cc_safe_relative "$cc_plan_rel" && cc_safe_relative "$cc_task_rel" || return 1
+  case "$cc_plan_rel:$cc_task_rel" in plans/*:plans/*) ;; *) return 1 ;; esac
+  git -C "$cc_base" diff --cached --quiet -- . || return 1
+  test -z "$(git -C "$cc_base" ls-files --others --exclude-standard)" || return 1
+
+  cc_changed=$(git -C "$cc_base" diff --name-only -- .)
+  cc_task_count=0
+  for cc_task_file in "$cc_task_dir"/*.md; do
+    test -f "$cc_task_file" || continue
+    test ! -L "$cc_task_file" || return 1
+    cc_task_count=$((cc_task_count + 1))
+  done
+  test "$cc_task_count" -gt 0 || return 1
+  cc_changed_count=$(printf '%s\n' "$cc_changed" | awk 'NF { count++ } END { print count + 0 }')
+  test "$cc_changed_count" -eq $((cc_task_count + 1)) || return 1
+
+  cc_plan_before=$(git -C "$cc_base" show "HEAD:$cc_plan_rel" 2>/dev/null | sed -n 's/^status: //p' | head -n 1) || return 1
+  cc_plan_after=$(sed -n 's/^status: //p' "$cc_plan_file" | head -n 1)
+  test "$cc_plan_before" = draft && test "$cc_plan_after" = approved || return 1
+  printf '%s\n' "$cc_changed" | grep -Fx "$cc_plan_rel" >/dev/null 2>&1 || return 1
+  cc_plan_diff=$(git -C "$cc_base" diff --unified=0 -- "$cc_plan_rel" | grep -E '^[+-][^-+]' || :)
+  test "$(printf '%s\n' "$cc_plan_diff" | awk 'NF { count++ } END { print count + 0 }')" -eq 2 || return 1
+  printf '%s\n' "$cc_plan_diff" | grep -Fx -- '-status: draft' >/dev/null 2>&1 || return 1
+  printf '%s\n' "$cc_plan_diff" | grep -Fx -- '+status: approved' >/dev/null 2>&1 || return 1
+
+  for cc_task_file in "$cc_task_dir"/*.md; do
+    test -f "$cc_task_file" || continue
+    cc_task_rel_file=${cc_task_file#"$cc_base"/}
+    cc_task_before=$(git -C "$cc_base" show "HEAD:$cc_task_rel_file" 2>/dev/null | sed -n 's/^status: //p' | head -n 1) || return 1
+    cc_task_after=$(sed -n 's/^status: //p' "$cc_task_file" | head -n 1)
+    test "$cc_task_before" = draft && test "$cc_task_after" = ready || return 1
+    printf '%s\n' "$cc_changed" | grep -Fx "$cc_task_rel_file" >/dev/null 2>&1 || return 1
+    cc_task_diff=$(git -C "$cc_base" diff --unified=0 -- "$cc_task_rel_file" | grep -E '^[+-][^-+]' || :)
+    test "$(printf '%s\n' "$cc_task_diff" | awk 'NF { count++ } END { print count + 0 }')" -eq 2 || return 1
+    printf '%s\n' "$cc_task_diff" | grep -Fx -- '-status: draft' >/dev/null 2>&1 || return 1
+    printf '%s\n' "$cc_task_diff" | grep -Fx -- '+status: ready' >/dev/null 2>&1 || return 1
+  done
+  printf '%s\n' MAINTAINER_APPROVAL_COMMIT_REQUIRED
 }
 
 cc_release_lease() {

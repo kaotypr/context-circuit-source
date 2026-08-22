@@ -19,3 +19,7 @@ workflow:
     - archive
     - cleanup
   wrapper_change_policy: preserve-runtime
+
+identity:
+  kind: instantiated-workspace
+  status: uninitialized

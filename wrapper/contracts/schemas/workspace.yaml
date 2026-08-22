@@ -6,6 +6,8 @@ properties:
   workspace.default_branch: {type: string}
   repositories: {type: mapping}
   workflow.human_gates: {type: sequence}
+  identity.kind: {enum: [product-source, instantiated-workspace]}
+  identity.status: {enum: [uninitialized, accepted]}
 forbidden:
   - credentials
   - provider_payloads
