@@ -59,6 +59,16 @@ explicit; Context Circuit never scans for repositories or stores credentials.
 A missing, unsafe, identity-mismatched, or dirty source is reported and
 remains untouched.
 
+If `repositories.local.yaml` is missing, that is expected on a fresh or newly
+cloned workspace: the file is host-local, gitignored, and never shipped.
+Context Circuit reports the missing binding and does not scan the filesystem,
+invent a path, or create the file on its own. Create the ignored root file
+with an explicit `path` for the logical repository already named in
+`workspace.yaml`. If the checkout does not exist yet, say
+`Bootstrap repository <key>` instead of guessing a destination. Keep
+credentials in host Git configuration; never put secrets or machine-specific
+paths into shared workspace files.
+
 ## Bootstrap a repository
 
 Say “Bootstrap repository app” to request a clone. The agent presents a
