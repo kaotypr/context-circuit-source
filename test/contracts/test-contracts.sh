@@ -34,6 +34,31 @@ contains "$ROOT/wrapper/contracts/routes.yaml" 'host_binding:'
 contains "$ROOT/wrapper/contracts/routes.yaml" 'unavailable_child: block-missing-child-primitive'
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-HOST-01'
 contains "$ROOT/.gitignore" 'repositories/'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'workspace.roles'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'identity_region:'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'missing_or_disagreeing_result: projection-mismatch'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'proposed_default: solo'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'deriving_product_knowledge_from_workspace.yaml'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-PROJ-01'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-PROJ-02'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-GATE-07'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-GATE-09'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'identity_projection: wrapper/contracts/schemas/workspace.yaml'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'gate_effects: wrapper/contracts/routes.yaml'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'workspace.accept_identity'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'workspace.register_repository'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'repository-create-empty'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'git.commit'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'delivery.push'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'authorization: never'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'not_execute_plan_effects: [git.init, git.clone]'
+contains "$ROOT/wrapper/manifest.yaml" 'mismatch_result: projection-mismatch'
+contains "$ROOT/wrapper/manifest.yaml" 'gate_effects:'
+not_contains "$ROOT/.agents/skills/cc-entry/SKILL.md" 'workspace.accept_identity'
+not_contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'projection-mismatch'
+not_contains "$ROOT/.agents/skills/cc-gates/SKILL.md" 'workspace.register_repository'
+not_contains "$ROOT/agents/writer.md" 'workspace.accept_identity'
+not_contains "$ROOT/wrapper/adapters/AGENTS.md" 'Immediate effects: workspace.accept_identity'
 
 assert_task_frontmatter() {
   task_file=$1
@@ -52,4 +77,26 @@ ids=$(awk '/^  - id: INV-/{print $3}' "$ROOT/wrapper/contracts/invariants.yaml")
 test "$(printf '%s\n' "$ids" | sort | uniq | wc -l)" -eq "$(printf '%s\n' "$ids" | wc -l)" || fail 'duplicate invariant IDs'
 not_contains "$ROOT/.agents/skills/cc-entry/SKILL.md" 'cc-session-entry'
 not_contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'cc-run-plan'
-pass 'contract inventory, schema ownership, and unique invariant IDs'
+
+fx="$ROOT/test/contracts/fixtures/identity-projection"
+require_file "$fx/matching/workspace.yaml"
+require_file "$fx/mismatched/context/WORKSPACE.md"
+require_file "$fx/missing-region/context/INDEX.md"
+require_file "$fx/displayed-default/workspace.yaml"
+require_file "$fx/incomplete/workspace.yaml"
+require_file "$fx/undeclared-effect/delegated-effects.txt"
+assert_eq "$(cc_validate_identity_projection "$fx/matching")" identity-projection-ok
+mismatch=$(cc_validate_identity_projection "$fx/mismatched" || true)
+printf '%s\n' "$mismatch" | grep -Fx projection-mismatch >/dev/null || fail 'mismatched region did not yield projection-mismatch'
+missing=$(cc_validate_identity_projection "$fx/missing-region" || true)
+printf '%s\n' "$missing" | grep -Fx projection-mismatch >/dev/null || fail 'missing region did not yield projection-mismatch'
+undeclared=$(cc_validate_delegated_effects "$fx/undeclared-effect/approved-effects.txt" "$fx/undeclared-effect/delegated-effects.txt" || true)
+assert_eq "$undeclared" UNDECLARED_EFFECT
+assert_eq "$(cc_validate_delegated_effects "$fx/undeclared-effect/approved-effects.txt" "$fx/undeclared-effect/valid-delegated-effects.txt")" delegated-effects-ok
+card=$(cc_identity_acceptance_card "$fx/displayed-default")
+printf '%s\n' "$card" | grep -F 'mode: solo' >/dev/null || fail 'displayed-default card omitted mode default'
+printf '%s\n' "$card" | grep -F 'roles: none' >/dev/null || fail 'displayed-default card omitted roles default'
+printf '%s\n' "$card" | grep -F 'default branches: main' >/dev/null || fail 'displayed-default card omitted branch default'
+incomplete=$(cc_register_repository "$fx/incomplete" '' '' '' confirmed 2>&1 || true)
+printf '%s\n' "$incomplete" | grep -F INCOMPLETE_FIELD >/dev/null || fail 'missing logical key was not incomplete'
+pass 'contract inventory, schema ownership, unique invariant IDs, and identity-projection fixtures'

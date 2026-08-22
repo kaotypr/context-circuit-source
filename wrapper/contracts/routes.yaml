@@ -98,5 +98,34 @@ actions:
   - classify-upgrade
   - migrate-wrapper
   - block-unresolved-dependency
+  - block-projection-mismatch
 human_gates:
+  - identity-acceptance
   - repository-bootstrap
+effect_identifiers:
+  owner: wrapper/contracts/routes.yaml
+  authorization: never
+  not_execute_plan_effects: [git.init, git.clone]
+  delegated_effects: subset-of-approved-intent
+  undeclared_effect_result: UNDECLARED_EFFECT
+  identifiers:
+    workspace.accept_identity:
+      immediate: [accepted-identity-fields, identity-regions]
+      later: []
+    workspace.register_repository:
+      immediate: [shared-logical-key, optional-url, optional-branch, identity-regions]
+      later: [repository-bootstrap, repository-create-empty, execute-plan]
+    repository-bootstrap:
+      immediate: [clone-destination]
+      later: [execute-plan]
+    repository-create-empty:
+      reserved: true
+      activated: false
+      immediate: []
+      later: []
+    git.commit:
+      immediate: [isolated-worktree]
+      later: [delivery]
+    delivery.push:
+      immediate: []
+      later: [delivery]

@@ -3,6 +3,14 @@
 Configuration is optional provider-neutral intent. Initialization does not ask
 delivery or integration questions. A human may later confirm one policy:
 
+`workspace.yaml` is the workspace identifier. `context/` is Product Knowledge.
+A bounded identity region in `WORKSPACE.md`, `PROJECT.md`, and `INDEX.md` must
+agree with that identifier; authored Product Knowledge outside the region is
+not a projection input or output. Omitted confirmation fields are shown as
+proposed defaults on the current card; confirmation records those displayed
+values. Effect identifiers are descriptive metadata and never authorize a
+route or gate.
+
 Repository identity and host binding are separate configuration layers. Shared
 `workspace.yaml` may contain only a logical repository key, an optional
 credential-free `canonical_url`, and an optional `default_branch`. A developer
