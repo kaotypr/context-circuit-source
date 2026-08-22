@@ -7,6 +7,16 @@ trap 'rm -rf "$runtime"' EXIT HUP INT TERM
 card=$(cc_confirmation_card approve-plan plans/app-plans/checkout draft 'plan status draft→approved; tasks draft→ready' 'execution, Git, delivery, publication' none)
 printf '%s\n' "$card" | grep -F 'Confirmation requested:' >/dev/null || fail 'confirmation card missing gate'
 printf '%s\n' "$card" | grep -F 'Will not change:' >/dev/null || fail 'confirmation card missing non-effects'
+approval_card=$(cc_approval_card checkout-validation)
+printf '%s\n' "$approval_card" | grep -F 'Action: present-approval-card' >/dev/null || fail 'approval card used the mutation action'
+printf '%s\n' "$approval_card" | grep -F 'nothing has changed yet' >/dev/null || fail 'approval card omitted pre-confirmation state'
+printf '%s\n' "$approval_card" | grep -F 'Confirm approval of plan checkout-validation.' >/dev/null || fail 'approval card omitted exact confirmation'
+printf '%s\n' "$approval_card" | grep -F 'does not start Run approved plan' >/dev/null || fail 'approval card implied execution'
+commit_card=$(cc_commit_approved_plan_card checkout-validation)
+printf '%s\n' "$commit_card" | grep -F 'Action: commit-approved-plan' >/dev/null || fail 'commit card missing action'
+printf '%s\n' "$commit_card" | grep -F 'Confirm commit of the approved plan state.' >/dev/null || fail 'commit card omitted exact confirmation'
+contains "$ROOT/docs/gates.md" 'Confirm approval of plan <id>.'
+contains "$ROOT/docs/gates.md" 'Confirm commit of the approved plan state.'
 
 cat > "$runtime/plan.yaml" <<'EOF'
 schema_version: 2
