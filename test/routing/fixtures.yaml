@@ -311,3 +311,13 @@ cases:
     probe: plan-review
     action: review-plan
     authorization: read-only
+  - id: R061
+    request: Bootstrap repository app.
+    probe: repository-bootstrap
+    action: present-repository-bootstrap-card
+    authorization: confirmed-gate-required
+  - id: R062
+    request: Confirm repository bootstrap for app.
+    probe: repository-bootstrap
+    action: repository-bootstrap
+    authorization: confirmed-gate

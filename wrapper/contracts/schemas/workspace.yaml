@@ -4,11 +4,27 @@ required: [version, template_version, workspace, repositories, context, workflow
 properties:
   workspace.mode: {enum: [solo, team]}
   workspace.default_branch: {type: string}
-  repositories: {type: mapping}
+  repositories: {type: mapping, owner: shared-repository-identity}
+  repositories.<key>.canonical_url: {type: string, optional: true, credential_free: true}
+  repositories.<key>.default_branch: {type: string, optional: true}
+  repositories.local_file: {value: repositories.local.yaml, ignored: true, host_local: true}
+  repositories.local.<key>.path: {type: string, host_local: true}
+  repositories.local.<key>.remote: {type: string, host_local: true, credential_free: true}
   workflow.human_gates: {type: sequence}
   identity.kind: {enum: [product-source, instantiated-workspace]}
   identity.status: {enum: [uninitialized, accepted]}
+ownership:
+  shared_identity: workspace.yaml
+  host_binding: repositories.local.yaml
+  runtime_resolution: wrapper/runtime/engine.sh
+  release_boundary: wrapper/manifest.yaml
+binding_rules:
+  - path is explicit and may be absolute, workspace-relative, or repositories/<key>
+  - relative paths resolve from the workspace root and reject traversal
+  - missing, existing, dirty, unsafe-symlink, or identity-mismatched targets fail safely
+  - the convenience repositories/ directory is optional and is never scanned implicitly
 forbidden:
   - credentials
   - provider_payloads
   - implicit_external_authorization
+  - machine_specific_paths_in_workspace.yaml

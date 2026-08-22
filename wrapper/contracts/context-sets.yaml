@@ -64,6 +64,21 @@ sets:
       - unrelated plans
       - implicit delivery
     budget_bytes: 22528
+  - id: repository-bootstrap
+    required:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - repositories.local.yaml
+      - wrapper/contracts/schemas/workspace.yaml
+      - wrapper/contracts/routes.yaml
+      - wrapper/runtime/engine.sh
+    prohibited:
+      - credentials
+      - provider payloads
+      - broad filesystem scans
+      - unrelated plans
+    budget_bytes: 12288
   - id: writer
     required:
       - AGENTS.md

@@ -4,6 +4,8 @@ workspace:
   name: uninitialized-workspace
   mode: solo
   default_branch: main
+# Shared repository identity belongs here. Host-local paths belong only in the
+# ignored root repositories.local.yaml file.
 repositories: {}
 context:
   sources_file: context/sources.yaml

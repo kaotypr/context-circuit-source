@@ -26,6 +26,8 @@ test ! -e "$artifact/test" || fail 'semantic tests leaked into artifact'
 test ! -e "$artifact/PLAN.md" || fail 'maintainer plan leaked into artifact'
 test ! -e "$artifact/sources/context-circuit-design" || fail 'source design material leaked into artifact'
 test ! -e "$artifact/template" || fail 'source template directory leaked into artifact'
+test ! -e "$artifact/repositories.local.yaml" || fail 'local binding leaked into artifact'
+test ! -e "$artifact/repositories" || fail 'repository checkout leaked into artifact'
 test ! -e "$artifact/sources/secret.txt" || fail 'source inbox leaked into artifact'
 for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue

@@ -48,3 +48,5 @@ exclude wrapper/adapters
 exclude CLAUDE.md
 exclude template
 exclude sources/context-circuit-design
+exclude repositories.local.yaml
+exclude repositories
