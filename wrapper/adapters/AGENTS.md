@@ -9,3 +9,11 @@ handoffs, and receipts never override accepted context, plans, Git state, or a
 human gate. `sources/` is passive and request-scoped; never scan it broadly.
 
 The complete rule ownership map is in `wrapper/contracts/invariants.yaml`.
+
+Codex CLI, Claude Code, and Cursor Agent CLI may discover this shared
+`AGENTS.md` surface. Record host observations through the provider-neutral
+`host_evidence` fields in the session, delegation, and handoff contracts.
+Host capability is evidence only: it does not authorize a gate, lease, route,
+or role change. Native child facilities map to the existing bounded writer and
+independent read-only verifier packets; an unavailable required child remains
+`host-blocked`.

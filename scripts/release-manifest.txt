@@ -5,6 +5,7 @@
 
 required wrapper/manifest.yaml
 required AGENTS.md
+required CLAUDE.md
 required WORKFLOW.md
 required README.md
 required workspace.yaml
@@ -45,7 +46,6 @@ exclude scripts
 exclude docs/release.md
 exclude .runtime
 exclude wrapper/adapters
-exclude CLAUDE.md
 exclude template
 exclude sources/context-circuit-design
 exclude repositories.local.yaml

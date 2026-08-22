@@ -1,4 +1,13 @@
 schema_version: 1
 owner: .runtime/sessions/<session-id>/handoff.md
-required_sections: [Observed state, Selected route and reason, Evidence read, Action performed or proposed, Files/state changed, Verification, Blockers and human decisions, One next safe action]
+required_sections: [Observed state, Selected route and reason, Evidence read, Host evidence, Action performed or proposed, Files/state changed, Verification, Blockers and human decisions, One next safe action]
+host_evidence:
+  fields: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
+  values: provider-neutral capability evidence only; never credentials, tokens,
+    provider payloads, transcripts, or host auth state
+  live_smoke_status: [pass, unavailable, host-blocked]
+  live_smoke_evidence: executable-and-version-only; optional and never a
+    replacement for offline acceptance
+  fallback: provider failure is labeled disabled, denied, or unavailable;
+    filesystem-only operation remains valid
 statuses: [completed, blocked, failed, awaiting-human-gate]

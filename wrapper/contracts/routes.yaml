@@ -3,6 +3,16 @@ owner: wrapper/contracts/routes.yaml
 stage_a:
   input: human request + host binding + Tier 0
   output: exactly one probe or focused question, blocker, or read-only answer
+host_binding:
+  owner: wrapper/contracts/routes.yaml
+  normalized_ids: [codex, claude-code, cursor-agent]
+  evidence_fields: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
+  outcomes: [available, filesystem-only, host-blocked]
+  rule: Apply INV-HOST-01, INV-HOST-02, and INV-HOST-03; host capability cannot
+    select a competing route, grant authorization, bypass a human gate, or
+    replace independent verification.
+  unavailable_child: block-missing-child-primitive
+  provider_failure: offline-fallback
 stage_b:
   required_fields:
     - intent

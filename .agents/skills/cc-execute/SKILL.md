@@ -20,3 +20,10 @@ approval changes, rerun the named execution request.
 
 Do not auto-approve, auto-finish, merge, push, publish, deploy, or discard.
 Runtime shapes and ownership checks belong to the wrapper schemas and engine.
+
+When the host supplies a native child, map it to the existing bounded writer or
+independent verifier delegation packet and include provider-neutral
+`host_evidence`. Host permission flags are observations, not authorization. If
+the verifier child is unavailable, stop with the canonical host-blocked outcome
+instead of changing the role or verification path. Resume uses the same
+receipt, wrapper, Git, lease, and worktree checks on every host.

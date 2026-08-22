@@ -2,7 +2,7 @@
 schema_version: 2
 id: MHS-003
 plan: multi-host-agent-support
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - CLAUDE.md

@@ -321,3 +321,60 @@ cases:
     probe: repository-bootstrap
     action: repository-bootstrap
     authorization: confirmed-gate
+  - id: R063
+    request: Start or resume work in this workspace with Codex CLI.
+    probe: session-preflight
+    action: recommend-next
+    authorization: absent
+    host: codex
+    provider_status: enabled
+    host_outcome: available
+    host_evidence:
+      host_id: codex
+      observed_version: unavailable
+      instruction_surface: AGENTS.md
+      session_role: root
+      root_capability: available
+      child_capability: available
+      verifier_capability: available
+      resume_capability: available
+      permission_mode: host-managed
+      offline_fallback: filesystem-only
+  - id: R064
+    request: The Claude Code provider is unavailable; continue offline.
+    probe: integration
+    action: offline-fallback
+    authorization: read-only
+    host: claude-code
+    provider_status: unavailable
+    host_outcome: filesystem-only
+    host_evidence:
+      host_id: claude-code
+      observed_version: unavailable
+      instruction_surface: CLAUDE.md
+      session_role: root
+      root_capability: available
+      child_capability: unavailable
+      verifier_capability: unavailable
+      resume_capability: available
+      permission_mode: host-managed
+      offline_fallback: filesystem-only
+  - id: R065
+    request: The Cursor Agent host cannot create a verifier child.
+    probe: child-entry
+    action: block-missing-child-primitive
+    authorization: absent
+    host: cursor-agent
+    verifier_capability: unavailable
+    host_outcome: host-blocked
+    host_evidence:
+      host_id: cursor-agent
+      observed_version: unavailable
+      instruction_surface: shared-root
+      session_role: root
+      root_capability: available
+      child_capability: available
+      verifier_capability: unavailable
+      resume_capability: available
+      permission_mode: host-managed
+      offline_fallback: host-blocked

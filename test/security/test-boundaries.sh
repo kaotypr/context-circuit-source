@@ -20,6 +20,18 @@ if rg -n '^[[:space:]]*(password|api_key|access_token|client_secret):' "$ROOT/wr
 fi
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'sources/ is passive'
 contains "$ROOT/wrapper/contracts/context-sets.yaml" 'broad sources scan'
+for fixture in "$ROOT"/test/hosts/fixtures/*.yaml; do
+  require_file "$fixture"
+  not_contains "$fixture" 'password:'
+  not_contains "$fixture" 'api_key:'
+  not_contains "$fixture" 'provider_payload:'
+  not_contains "$fixture" 'transcript:'
+done
+if rg -n 'force_is_authorization: true|host_local: required' "$ROOT/test/hosts" >/dev/null 2>&1; then
+  fail 'host-local permission evidence can authorize Context Circuit work'
+fi
+contains "$ROOT/docs/configuration.md" 'host-local'
+contains "$ROOT/docs/host-capabilities.md" 'host-blocked'
 
 binding_root=$(mktemp -d "${TMPDIR:-/tmp}/cc-binding-security.XXXXXX")
 trap 'rm -rf "$binding_root"' EXIT HUP INT TERM

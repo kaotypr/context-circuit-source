@@ -29,7 +29,7 @@ budgets:
   live_token_evidence: optional-with-waiver
 release_boundary:
   shipped:
-    - root adapters from wrapper/adapters/
+    - root adapters from wrapper/adapters/ (AGENTS.md, CLAUDE.md, WORKFLOW.md, README.md)
     - wrapper/manifest.yaml
     - wrapper/contracts/
     - wrapper/migrations/
@@ -58,7 +58,7 @@ upgrade_boundary:
     - wrapper/
     - .agents/skills/
     - agents/
-    - shipped root adapters
+    - shipped root adapters (including CLAUDE.md)
   preserve:
     - workspace.yaml
     - context/

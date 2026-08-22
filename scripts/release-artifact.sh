@@ -27,6 +27,7 @@ mkdir -p "$stage_tree"
   .gitignore .agents agents docs wrapper) | tar -xf - -C "$stage_tree"
 
 cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
+cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
 cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
 cp "$source_root/template/workspace.yaml" "$stage_tree/workspace.yaml"

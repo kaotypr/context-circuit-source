@@ -37,6 +37,12 @@ invariants:
     rule: sources/ is passive; only exact request-scoped files may be read and provenance is recorded.
   - id: INV-OFFLINE-01
     rule: Provider failure produces disabled, denied, or unavailable and never blocks filesystem evidence.
+  - id: INV-HOST-01
+    rule: Host identity, version, capability, permission mode, and provider status are provider-neutral evidence only; they never authorize a route, role, lease, gate, or verification result.
+  - id: INV-HOST-02
+    rule: A missing required host child produces host-blocked without self-verification or role downgrade, while disabled, denied, or unavailable provider status uses the filesystem-only fallback.
+  - id: INV-HOST-03
+    rule: Host evidence and optional live smoke records contain only bounded host and executable/version outcomes and never credentials, provider payloads, transcripts, or host auth state.
   - id: INV-GATE-01
     rule: Archive and restore are append-only eligibility events and do not change plan status or delete evidence.
   - id: INV-GATE-02

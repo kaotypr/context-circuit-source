@@ -2,7 +2,7 @@ schema_version: 2
 id: multi-host-agent-support
 number: CC-002
 title: Full development support for Codex, Claude Code, and Cursor CLI
-status: draft
+status: approved
 repository: context-circuit-source
 source: repository-evidence
 product_knowledge:

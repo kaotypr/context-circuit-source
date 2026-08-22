@@ -27,3 +27,13 @@ Repository safety still applies:
 
 Repository-local behavior belongs to product repositories registered in an
 instantiated workspace. Maintainer files and release assembly are source-only.
+
+Host adapters
+
+Codex CLI, Claude Code, and Cursor Agent CLI use this shared instruction
+surface. Host identity, observed version, capabilities, role, permission mode,
+provider status, and offline fallback belong in the bounded `host_evidence`
+shape owned by `wrapper/contracts/schemas/`; they never authorize a route or
+gate. Native child features map to the existing coordinator, writer, and
+independent verifier packets. If a required child is unavailable, preserve the
+read-only `host-blocked` outcome and do not self-verify.
