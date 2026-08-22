@@ -116,6 +116,21 @@ cases:
     probe: approval
     action: clarify-target
     authorization: absent
+  - id: R066
+    request: Please approve plan checkout-validation.
+    probe: approval
+    action: present-approval-card
+    authorization: confirmed-gate-required
+  - id: R067
+    request: Confirm approval of plan checkout-validation in this session.
+    probe: approval
+    action: approve-plan
+    authorization: confirmed-gate
+  - id: R068
+    request: I approve plan checkout-validation.
+    probe: approval
+    action: present-approval-card
+    authorization: confirmed-gate-required
   - id: R022
     request: Run draft plan checkout-validation.
     probe: execution-preflight

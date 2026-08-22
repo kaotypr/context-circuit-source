@@ -13,6 +13,7 @@ run_suite test/routing/test-router.sh
 run_suite test/hosts/test-host-adapters.sh
 run_suite test/context-budget/test-budgets.sh
 run_suite test/lifecycle/test-lifecycle.sh
+run_suite test/approval/test-approval-flow.sh
 run_suite test/ownership/test-ownership.sh
 run_suite test/runtime/test-runtime.sh
 run_suite test/gates/test-gates.sh
