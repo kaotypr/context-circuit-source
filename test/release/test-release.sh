@@ -24,7 +24,12 @@ contains "$artifact/AGENTS.md" 'small safety spine'
 contains "$artifact/CLAUDE.md" '@AGENTS.md'
 not_contains "$artifact/CLAUDE.md" '.mcp.json'
 not_contains "$artifact/CLAUDE.md" 'transcript:'
-printf '%s\n' "$result" | grep -F 'source_state: dirty' >/dev/null || fail 'release did not record dirty source state'
+if git -C "$ROOT" status --porcelain --untracked-files=all | grep . >/dev/null 2>&1; then
+  expected_source_state=dirty
+else
+  expected_source_state=clean
+fi
+printf '%s\n' "$result" | grep -F "source_state: $expected_source_state" >/dev/null || fail "release did not record porcelain source state: $expected_source_state"
 test ! -e "$artifact/.runtime" || fail 'runtime leaked into artifact'
 test ! -e "$artifact/test" || fail 'semantic tests leaked into artifact'
 test ! -e "$artifact/.cursor" || fail 'host-local Cursor state leaked into artifact'
