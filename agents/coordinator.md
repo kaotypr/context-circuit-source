@@ -37,3 +37,14 @@ root/child mapping. Codex native subagents, Claude Task/subagents, and Cursor
 Task/subagents are only child mechanisms; they do not become route, lifecycle,
 lease, or authorization owners. A missing required child is a read-only
 `host-blocked` result.
+
+Named-plan review (`Review plan <id>`, `Walk me through plan <id>`) routes to
+`review-plan` through the same `cc-plan` discovery adapter used for drafting;
+an unnamed review request routes to `clarify-target` instead of guessing a
+bundle. After the Review Card in `docs/plan-review.md`, the current host's
+optional native question-prompt primitive (see `docs/host-capabilities.md`)
+may present the same focused decisions; a missing or failed prompt falls back
+to the card text and is never `host-blocked` or a required child. The
+coordinator does not add a second router, gate, or `host_evidence` field for
+this — review stays read-only and a chosen option never substitutes for the
+confirmation owned by `cc-gates`.

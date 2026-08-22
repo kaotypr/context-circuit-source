@@ -11,12 +11,21 @@ files or begin execution. Approval and the execution trigger remain separate.
 
 ## Review
 
+`Review plan <id>`, `Walk me through plan <id>`, and equivalent named-plan
+phrasing route to `review-plan` through the shared `cc-plan` discovery
+adapter. A review request with no usable plan id routes to `clarify-target`
+instead of guessing a bundle, the same way an unnamed approval request does.
+
 Read the selected plan, accepted context, provenance, repository evidence,
 dependencies, archive sidecar, ownership, and delivery boundary. Return a
 Review Card with outcome, summary, exact approval scope, non-effects,
 task/dependency table, acceptance → task → verification mapping, evidence,
 risks, contradictions, and no more than three focused human decisions. Review
-is read-only.
+is read-only; see `docs/plan-review.md` for the exact card and the optional
+host question-prompt procedure that presents those same decisions through the
+current host's native question UI when one is present, falling back to the
+card text otherwise. Approval confirmation itself remains owned by `cc-gates`
+and `docs/gates.md`.
 
 ## Approval
 

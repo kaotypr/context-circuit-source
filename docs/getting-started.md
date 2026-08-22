@@ -89,7 +89,12 @@ clear.
 ## Plan journey
 
 Create a plan bundle with `plan.yaml`, human-facing `PLAN.md`, and task files.
-Review is read-only. Approval changes `draft` → `approved` and tasks to
+Say `Review plan <id>` or `Walk me through plan <id>` for a read-only Review
+Card through the same `cc-plan` skill; a review request with no usable plan id
+asks which plan instead of guessing one. When the card has a few focused
+decisions, the current host may also offer them through its own optional
+question-prompt UI (see `docs/plan-review.md`); a missing prompt just falls
+back to the card text. Approval changes `draft` → `approved` and tasks to
 `ready`; it does not execute. A separate named run request creates the root
 session, exclusive lease/worktree, writer delegation, and independent verifier.
 After evidence is ready, a separate finish confirmation changes `approved` →
