@@ -45,3 +45,22 @@ Source boundary:
   request. State which files were read and why, then record provenance in
   `context/sources.yaml` or the requested product artifact.
 - Raw sources remain in `sources/`; accepted summaries belong in `context/`.
+
+## Cursor Cloud specific instructions
+
+Context Circuit is instruction- and filesystem-driven. There is no Node/Python
+package install, Docker Compose stack, database, or long-running app server.
+
+- **Verify / “lint” / core checks:** `git diff --check` then `sh test/acceptance.sh`
+  (canonical; see `README.md` and `docs/getting-started.md`). No separate ESLint
+  or typecheck toolchain.
+- **Release packaging smoke (optional):** `sh scripts/release-artifact.sh` —
+  maintainer path; not required for day-to-day agent work.
+- **Runtime services:** none to start. Product work is session/plan/worktree
+  state under `.runtime/` plus Markdown/YAML contracts.
+- **Dependencies:** only POSIX `sh` and Git (with worktree support). The
+  automatic update/install script is intentionally a no-op (`true`).
+- **Gotcha:** do not invent a CLI or `npm`/`pnpm` workflow; hosts enter through
+  agent skills and filesystem records. Optional GitHub/`gh` and activity-record
+  integrations must not block the offline core path
+  (`docs/integrations.md`, `docs/configuration.md`).
