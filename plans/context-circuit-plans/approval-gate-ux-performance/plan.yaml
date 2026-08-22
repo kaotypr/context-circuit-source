@@ -17,22 +17,31 @@ product_knowledge:
   - docs/routing.md
 objective: >-
   Make plan approval feel immediate and unambiguous while preserving the
-  session-bound confirmation gate, the separation between approval and
-  execution, and status-only maintainer changes. The confirmed path must use
-  one canonical transition and avoid avoidable formatting and verification
-  churn.
+  session-bound confirmation gate, the separation between approval, maintainer
+  commit, and execution, and status-only approval changes. The confirmed path
+  must use one canonical transition, avoid avoidable formatting and verification
+  churn, and on product-source present the existing commit card immediately
+  instead of waiting for Run approved plan to discover the dirty-base stop.
 scope:
   - approval request routing and confirmation-card wording
   - canonical confirmed approval transition and task-status projection
+  - product-source follow-on presentation of the existing commit-approved-plan
+    card after confirmed approval
   - coordinator guidance for bounded approval handling
-  - regression coverage for two-turn approval, no-op pre-confirmation, and
-    status-only post-confirmation changes
-  - clear final handoff language distinguishing approval from execution
+  - regression coverage for two-turn approval, no-op pre-confirmation,
+    status-only post-confirmation changes, and product-source commit-card
+    sequencing
+  - clear confirm-approval handoff language distinguishing approval, commit,
+    and execution
   - semantic acceptance and independent review of the changed flow
 non_goals:
   - removing or weakening explicit human confirmation
-  - combining plan approval with execution, lease acquisition, or worktree creation
-  - changing the canonical lifecycle, route owner, or ownership model
+  - combining Confirm approval of plan <id> with the maintainer commit,
+    execution, lease acquisition, or worktree creation
+  - auto-committing the approval projection or creating a worktree from a
+    dirty product-source base
+  - changing the canonical lifecycle, route owner, ownership classifier, or
+    INV-OWN-07 dirty-base rule
   - adding provider credentials, external calls, telemetry payloads, or UI state
   - modifying the prior session, its runtime state, or unrelated dirty files
 dependencies: []
@@ -61,17 +70,27 @@ acceptance:
     outcome: >-
       The confirmed path invokes one canonical transition and one bounded
       verification phase; it does not create a worktree, claim a lease, start
-      implementation, or repeat avoidable repair edits.
+      implementation, commit Git, or repeat avoidable repair edits.
   - id: AGF-AC-04
     outcome: >-
-      The final response clearly says that approval is complete but execution
-      has not started, and names Run approved plan <id> as the separate next
-      action.
+      The confirm-approval response clearly says that approval is complete but
+      execution has not started. On instantiated or wrapped workspaces it names
+      Run approved plan <id> as the separate next action. On product-source,
+      when the maintainer commit gate applies, it does not name Run as the
+      immediate next action.
   - id: AGF-AC-05
     outcome: >-
       Existing route, lifecycle, gate, host-adapter, ownership, and release
       acceptance suites continue to pass without adding a competing policy
       authority.
+  - id: AGF-AC-06
+    outcome: >-
+      After successful confirm approval on product-source, if the dirty set is
+      exactly the approval status projection, present the existing
+      commit-approved-plan card in the same session. Do not commit, do not
+      start execution, and do not wait for Run approved plan to surface
+      MAINTAINER_APPROVAL_COMMIT_REQUIRED. Instantiated or wrapped workspaces
+      do not receive this card. Unrelated dirty files remain DIRTY_BASE_BLOCKED.
 verification:
   - id: AGF-VT-01
     command: sh test/routing/test-router.sh
@@ -81,10 +100,13 @@ verification:
     proves: Confirmation is required and plan/task lifecycle projections remain valid and idempotence-safe.
   - id: AGF-VT-03
     command: sh test/approval/test-approval-flow.sh
-    proves: The approval transaction is two-turn, mutation-free before confirmation, status-only after confirmation, and formatting-preserving.
+    proves: The approval transaction is two-turn, mutation-free before confirmation, status-only after confirmation, formatting-preserving, and on product-source followed by the existing commit card rather than execute-plan.
   - id: AGF-VT-04
     command: sh test/acceptance.sh
     proves: Complete semantic acceptance across contracts, routing, lifecycle, gates, ownership, hosts, recovery, security, and release boundaries.
+  - id: AGF-VT-05
+    command: sh test/ownership/test-ownership.sh
+    proves: Exact product-source approval dirt remains MAINTAINER_APPROVAL_COMMIT_REQUIRED and never an execution exemption; unrelated dirt remains blocked.
 human_gates:
   - plan-approval
   - execution-trigger
@@ -92,4 +114,4 @@ human_gates:
   - publication
   - cleanup
 created_at: 2026-08-22T00:00:00Z
-updated_at: 2026-08-22T00:00:00Z
+updated_at: 2026-08-22T15:55:00Z

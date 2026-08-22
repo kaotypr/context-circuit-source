@@ -4,9 +4,18 @@ set -eu
 
 runtime=$(mktemp -d "${TMPDIR:-/tmp}/cc-gates.XXXXXX")
 trap 'rm -rf "$runtime"' EXIT HUP INT TERM
-card=$(cc_confirmation_card approve-plan plans/app-plans/checkout draft 'plan status draft→approved; tasks draft→ready' 'execution, Git, delivery, publication' none)
+card=$(cc_confirmation_card archive-plan plans/app-plans/checkout approved 'archive sidecar append' 'plan status, Git, delivery' none)
 printf '%s\n' "$card" | grep -F 'Confirmation requested:' >/dev/null || fail 'confirmation card missing gate'
 printf '%s\n' "$card" | grep -F 'Will not change:' >/dev/null || fail 'confirmation card missing non-effects'
+printf '%s\n' "$card" | grep -F 'Action: archive-plan' >/dev/null || fail 'generic card used an approval action'
+contains "$ROOT/docs/gates.md" 'Action: present-approval-card'
+contains "$ROOT/docs/gates.md" 'nothing has changed yet'
+contains "$ROOT/docs/gates.md" 'Confirm approval of plan <id>.'
+contains "$ROOT/docs/gates.md" 'does not start Run approved plan'
+contains "$ROOT/docs/gates.md" 'Action: commit-approved-plan'
+contains "$ROOT/docs/gates.md" 'Confirm commit of the approved plan state.'
+not_contains "$ROOT/wrapper/runtime/engine.sh" 'cc_approval_card'
+not_contains "$ROOT/wrapper/runtime/engine.sh" 'cc_commit_approved_plan_card'
 
 cat > "$runtime/plan.yaml" <<'EOF'
 schema_version: 2
