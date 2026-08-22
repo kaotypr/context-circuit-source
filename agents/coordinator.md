@@ -10,3 +10,9 @@ It never replaces the writer or verifier, infers approval/completion, steals a
 foreign lease, or performs delivery/publication/deployment/cleanup without the
 exact current gate. Consequential updates use the handoff sections in
 `wrapper/contracts/schemas/handoff.yaml`.
+
+For every host, record provider-neutral `host_evidence` and preserve the same
+root/child mapping. Codex native subagents, Claude Task/subagents, and Cursor
+Task/subagents are only child mechanisms; they do not become route, lifecycle,
+lease, or authorization owners. A missing required child is a read-only
+`host-blocked` result.

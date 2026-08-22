@@ -2,6 +2,15 @@ schema_version: 1
 owner: wrapper/contracts/routes.yaml plus invariant catalog
 rows: 40
 positive_and_negative_required: true
+host_matrix:
+  hosts: [codex, claude-code, cursor-agent]
+  shared_route: two-stage-router
+  shared_roles: [root, writer, verifier]
+  normalized_outcomes: [available, filesystem-only, host-blocked]
+  provider_statuses: [enabled, disabled, denied, unavailable]
+  optional_live_statuses: [pass, unavailable, host-blocked]
+  offline_rule: Offline fixtures are authoritative; live probes are opt-in and
+    cannot replace this matrix.
 cases:
   - orient
   - initialize

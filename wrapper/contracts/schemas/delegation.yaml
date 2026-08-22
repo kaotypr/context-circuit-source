@@ -1,6 +1,25 @@
 schema_version: 1
 owner: .runtime/sessions/<child-id>/delegation.yaml
 required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, role, objective, scope, non_goals, context_set, context_receipt, repository, worktree, permissions, acceptance_criteria, verification, expected_evidence, stop_conditions, handoff_schema]
+evidence:
+  host_evidence:
+    required: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
+    host_id: [codex, claude-code, cursor-agent]
+    observed_version: string-or-unavailable
+    instruction_surface: [AGENTS.md, CLAUDE.md, shared-root]
+    session_role: [root, writer, verifier]
+    root_capability: [available, unavailable]
+    child_capability: [available, unavailable]
+    verifier_capability: [available, unavailable]
+    resume_capability: [available, unavailable]
+    permission_mode: [read-only, bounded-write, host-managed]
+    provider_status: [enabled, disabled, denied, unavailable]
+    offline_fallback: [filesystem-only, host-blocked]
+    live_smoke_status: [pass, unavailable, host-blocked]
+    forbidden: [credentials, tokens, provider-payloads, transcripts, auth-state]
+  recording: Every new writer or verifier packet records host_evidence for the
+    host that created it and may record a live_smoke_status; it is evidence, not
+    authorization.
 permissions:
   writer: {write_worktree: true, write_plan: false, write_activity: false}
   verifier: {write_worktree: false, write_plan: false, write_activity: false}

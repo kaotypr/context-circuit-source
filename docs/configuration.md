@@ -25,5 +25,10 @@ configuration:
 Configuration never stores credentials or provider payloads and never grants
 commit, push, merge, publication, deployment, or external activity authority.
 Changed repository, branch, risk, or stale authorization requires focused
-reconfirmation. Provider failure falls back to the filesystem workflow with
-`disabled`, `denied`, or `unavailable` evidence.
+reconfirmation. Host entries are optional provider-neutral observations, for
+example `host_id`, `observed_version`, `instruction_surface`, capability
+labels, and `provider_status`; do not copy host-local settings, auth state, MCP
+configuration, or transcripts into workspace files. Provider failure falls
+back to the filesystem workflow with `disabled`, `denied`, or `unavailable`
+evidence. A missing required child is `host-blocked`, never an authorization
+grant.

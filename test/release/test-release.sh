@@ -9,6 +9,7 @@ trap 'rm -rf "$stage" "$out" "$build_out"' EXIT HUP INT TERM
 result=$(sh "$ROOT/scripts/release-artifact.sh" "$stage" "$out" v1.0.0)
 artifact="$out/context-circuit-v1.0.0"
 require_file "$artifact/AGENTS.md"
+require_file "$artifact/CLAUDE.md"
 require_file "$artifact/WORKFLOW.md"
 require_file "$artifact/README.md"
 require_file "$artifact/workspace.yaml"
@@ -20,9 +21,13 @@ require_file "$artifact/sources/README.md"
 require_file "$artifact/plans/README.md"
 contains "$artifact/workspace.yaml" 'name: uninitialized-workspace'
 contains "$artifact/AGENTS.md" 'small safety spine'
+contains "$artifact/CLAUDE.md" '@AGENTS.md'
+not_contains "$artifact/CLAUDE.md" '.mcp.json'
+not_contains "$artifact/CLAUDE.md" 'transcript:'
 printf '%s\n' "$result" | grep -F 'source_state: dirty' >/dev/null || fail 'release did not record dirty source state'
 test ! -e "$artifact/.runtime" || fail 'runtime leaked into artifact'
 test ! -e "$artifact/test" || fail 'semantic tests leaked into artifact'
+test ! -e "$artifact/.cursor" || fail 'host-local Cursor state leaked into artifact'
 test ! -e "$artifact/PLAN.md" || fail 'maintainer plan leaked into artifact'
 test ! -e "$artifact/sources/context-circuit-design" || fail 'source design material leaked into artifact'
 test ! -e "$artifact/template" || fail 'source template directory leaked into artifact'

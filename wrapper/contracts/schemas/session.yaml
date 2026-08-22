@@ -1,6 +1,25 @@
 schema_version: 1
 owner: .runtime/sessions/<session-id>/session.yaml
 required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, kind, role, objective, scope, permissions, worktree, status, created_at, updated_at]
+evidence:
+  host_evidence:
+    required: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
+    host_id: [codex, claude-code, cursor-agent]
+    observed_version: string-or-unavailable
+    instruction_surface: [AGENTS.md, CLAUDE.md, shared-root]
+    session_role: [root, writer, verifier]
+    root_capability: [available, unavailable]
+    child_capability: [available, unavailable]
+    verifier_capability: [available, unavailable]
+    resume_capability: [available, unavailable]
+    permission_mode: [read-only, bounded-write, host-managed]
+    provider_status: [enabled, disabled, denied, unavailable]
+    offline_fallback: [filesystem-only, host-blocked]
+    live_smoke_status: [pass, unavailable, host-blocked]
+    forbidden: [credentials, tokens, provider-payloads, transcripts, auth-state]
+  recording: New sessions record host_evidence and may record a
+    live_smoke_status; legacy sessions may omit both and remain readable without
+    granting authorization.
 enums:
   kind: [root, child]
   status: [created, orienting, planning, awaiting-approval, executing, verifying, awaiting-review, blocked, handoff, completed, failed, cancelled]
@@ -8,3 +27,4 @@ rules:
   - child requires parent_session_id and root_session_id
   - root has parent_session_id null
   - session status never changes plan status
+  - host evidence describes capability only and never authorizes a route or gate

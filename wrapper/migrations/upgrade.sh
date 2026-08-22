@@ -16,5 +16,5 @@ cc_migration_preserves() {
 }
 
 cc_rollback_scope() {
-  for path in wrapper .agents/skills agents AGENTS.md WORKFLOW.md README.md; do printf '%s\n' "$path"; done
+  for path in wrapper .agents/skills agents AGENTS.md CLAUDE.md WORKFLOW.md README.md; do printf '%s\n' "$path"; done
 }
