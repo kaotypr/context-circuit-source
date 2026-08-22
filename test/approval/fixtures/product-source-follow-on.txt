@@ -1,0 +1,8 @@
+Action: commit-approved-plan
+Target: <plan-id>
+Observed state: exact approval projection is the only dirty source change
+Will change: commit the listed plan.yaml and task frontmatter status changes
+Will not change: implementation files, registered repositories, runtime state,
+  external remotes, or delivery state
+Risks/open decisions: this is a maintainer-source commit; inspect the file list
+Confirmation requested: Confirm commit of the approved plan state.
