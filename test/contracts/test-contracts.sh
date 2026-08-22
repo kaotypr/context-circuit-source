@@ -25,6 +25,13 @@ contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'repositories.<key>.ca
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'repositories.local.<key>.path'
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-REPO-04'
 contains "$ROOT/wrapper/manifest.yaml" 'repositories.local.yaml'
+contains "$ROOT/wrapper/contracts/schemas/session.yaml" 'host_evidence:'
+contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'host_id'
+contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'offline_fallback'
+contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'provider-payloads'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'host_binding:'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'unavailable_child: block-missing-child-primitive'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-HOST-01'
 contains "$ROOT/.gitignore" 'repositories/'
 
 assert_task_frontmatter() {

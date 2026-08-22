@@ -17,3 +17,13 @@ destructive cleanup remain explicit human gates.
 
 Use the owner files named by `wrapper/contracts/routes.yaml` and
 `wrapper/contracts/invariants.yaml`; do not create parallel policy.
+
+Host mapping is evidence around this workflow. A Codex native subagent, Claude
+Task/subagent, or Cursor Task/subagent may receive the same bounded writer or
+independent verifier packet. The packet includes host evidence and preserves
+its role permissions. A missing child primitive emits `host-blocked`; it never
+downgrades verification or bypasses a human gate.
+
+Resume is host-neutral: re-read the session receipt, latest handoff, wrapper
+version, Git state, and ownership before re-entering the same route. Provider
+status `disabled`, `denied`, or `unavailable` uses the filesystem-only fallback.

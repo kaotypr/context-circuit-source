@@ -1,0 +1,48 @@
+schema_version: 1
+host_id: codex
+observed_version: unavailable
+instruction_surface: AGENTS.md
+discovery: [AGENTS.md, cc-entry, cc-execute, cc-verify]
+host_evidence:
+  host_id: codex
+  observed_version: unavailable
+  instruction_surface: AGENTS.md
+  session_role: root
+  root_capability: available
+  child_capability: available
+  verifier_capability: available
+  resume_capability: available
+  permission_mode: host-managed
+  provider_status: enabled
+  offline_fallback: filesystem-only
+  live_smoke_status: unavailable
+writer_session:
+  host_evidence:
+    host_id: codex
+    session_role: writer
+    child_mapping: native-subagent-to-writer-packet
+    permission_mode: bounded-write
+    worktree: exclusive
+    write_worktree: true
+    write_plan: false
+    write_activity: false
+verifier_session:
+  host_evidence:
+    host_id: codex
+    session_role: verifier
+    child_mapping: native-subagent-to-verifier-packet
+    permission_mode: read-only
+    worktree: independent
+    write_worktree: false
+resume:
+  mode: resume
+  checks: [receipt, wrapper, git, ownership]
+  route: same-two-stage-router
+offline:
+  provider_status: unavailable
+  offline_fallback: filesystem-only
+blocked:
+  missing_child: verifier
+  outcome: host-blocked
+  self_verification: forbidden
+forbidden_fields: [credentials, tokens, provider-payloads, auth-state]

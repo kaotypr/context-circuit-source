@@ -126,4 +126,15 @@ stop_conditions: [scope]
 handoff_schema: v1
 EOF
 cc_validate_delegation "$runtime/verifier.yaml"
+for host in codex claude-code cursor-agent; do
+  fixture="$ROOT/test/hosts/fixtures/$host.yaml"
+  require_file "$fixture"
+  contains "$fixture" 'child_mapping:'
+  contains "$fixture" 'worktree: exclusive'
+  contains "$fixture" 'write_worktree: true'
+  contains "$fixture" 'worktree: independent'
+  contains "$fixture" 'write_worktree: false'
+  contains "$fixture" 'write_plan: false'
+  contains "$fixture" 'write_activity: false'
+done
 pass 'atomic single-plan lease, exclusive scope, and read-only verifier permissions'

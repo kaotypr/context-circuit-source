@@ -10,6 +10,7 @@ run_suite() {
 
 run_suite test/contracts/test-contracts.sh
 run_suite test/routing/test-router.sh
+run_suite test/hosts/test-host-adapters.sh
 run_suite test/context-budget/test-budgets.sh
 run_suite test/lifecycle/test-lifecycle.sh
 run_suite test/ownership/test-ownership.sh

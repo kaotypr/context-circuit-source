@@ -39,3 +39,4 @@ rollback|R050|R049
 no-repository|R005|R004
 parallel-plan|R024|R031
 multi-repository|R025|R058
+# host evidence fixtures: R063 codex entry, R064 Claude offline fallback, R065 Cursor verifier-child block

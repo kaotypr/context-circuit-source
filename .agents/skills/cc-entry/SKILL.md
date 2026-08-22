@@ -27,3 +27,9 @@ request with no named approved plan routes to `draft-plan`. Drafting a plan is
 the only safe next action; it does not authorize implementation. Approval and
 the separate execution request remain required before any writer or
 implementation files can be created.
+
+For Codex CLI, Claude Code, and Cursor Agent CLI, record the normalized host
+identifier and observed capability in `host_evidence` when entering or
+resuming. The host adapter is not a second router: use the same probe and
+reason codes. If a required writer or verifier child cannot be created, return
+`block-missing-child-primitive` with `host-blocked`; never self-verify.

@@ -40,4 +40,15 @@ printf 'BUDGET l2-three-task-resume: %s/58368 bytes\n' "$l2"
 baseline=154368
 reduction=$(( (baseline - l1) * 100 / baseline ))
 test "$reduction" -ge 70 || fail "static reduction below target: $reduction%"
+host_overlay=$(wc -c < "$ROOT/wrapper/adapters/AGENTS.md")
+host_overlay=$((host_overlay + $(wc -c < "$ROOT/wrapper/adapters/CLAUDE.md")))
+host_overlay=$((host_overlay + $(wc -c < "$ROOT/wrapper/adapters/WORKFLOW.md")))
+test "$host_overlay" -le 8192 || fail "host overlay exceeds tier-0 budget: $host_overlay"
+test "$host_overlay" -le 12288 || fail "host overlay exceeds resume budget: $host_overlay"
+host_fixtures=0
+for host_fixture in "$ROOT"/test/hosts/fixtures/*.yaml; do
+  host_fixtures=$((host_fixtures + $(wc -c < "$host_fixture")))
+done
+test "$host_fixtures" -le 8192 || fail "host fixture evidence exceeds tier-0 budget: $host_fixtures"
+printf 'BUDGET host-overlay: %s/8192 bytes; fixtures: %s/8192 bytes\n' "$host_overlay" "$host_fixtures"
 pass "context budgets and static reduction ${reduction}% (L1=$l1 bytes)"

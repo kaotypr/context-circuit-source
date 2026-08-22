@@ -10,3 +10,8 @@ Stop on missing fields, ownership mismatch, dirty uncertainty, contradictory
 evidence, scope expansion, missing dependency, or changed acceptance. Return a
 handoff with observed state, evidence, changes, tests, blockers, and one next
 action.
+
+The writer packet also records the provider-neutral `host_evidence` shape. A
+native child from Codex, Claude Code, or Cursor Agent does not change the
+writer's exclusive worktree, delegated-path boundary, or prohibition on plan
+and activity writes. Host permission mode is evidence, not a grant.
