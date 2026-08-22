@@ -57,4 +57,33 @@ contains "$preserve/tasks/TASK-01.md" 'Body must keep this status: draft line.'
 test "$(tail -c 1 "$preserve/tasks/TASK-01.md" | od -An -tx1 | tr -d ' \n')" != 0a || fail 'task file gained a trailing newline'
 test "$(grep -c '^status: ready$' "$preserve/tasks/TASK-01.md")" -eq 1 || fail 'status projection replaced more than the first status line'
 
+partial="$runtime/partial"
+mkdir -p "$partial/tasks"
+cat > "$partial/plan.yaml" <<'EOF'
+schema_version: 2
+id: partial-fixture
+status: draft
+tasks: [TASK-01, TASK-02]
+EOF
+cat > "$partial/tasks/TASK-01.md" <<'EOF'
+---
+id: TASK-01
+status: draft
+---
+# Task
+EOF
+cat > "$partial/tasks/TASK-02.md" <<'EOF'
+---
+id: TASK-02
+Status: draft
+---
+# Task
+EOF
+expect_failure cc_transition_plan_status "$partial/plan.yaml" "$partial/tasks" approved confirmed
+contains "$partial/plan.yaml" 'status: draft'
+contains "$partial/tasks/TASK-01.md" 'status: draft'
+contains "$partial/tasks/TASK-02.md" 'Status: draft'
+not_contains "$partial/plan.yaml" 'status: approved'
+not_contains "$partial/tasks/TASK-01.md" 'status: ready'
+
 pass 'separate approval/run/finish lifecycle and task projection'

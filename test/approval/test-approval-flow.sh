@@ -39,6 +39,16 @@ EOF
   git -C "$repo" commit -qm initial
 }
 
+fixture_lines_in() {
+  fixture=$1
+  file=$2
+  require_file "$fixture"
+  while IFS= read -r line || [ -n "$line" ]; do
+    test -n "$line" || continue
+    contains "$file" "$line"
+  done < "$fixture"
+}
+
 runtime=$(mktemp -d "${TMPDIR:-/tmp}/cc-approval.XXXXXX")
 trap 'rm -rf "$runtime"' EXIT HUP INT TERM
 
@@ -98,12 +108,19 @@ init_repo "$product" product-source
 head_before=$(git -C "$product" rev-parse HEAD)
 cc_transition_plan_status "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks" approved confirmed
 assert_eq "$(cc_maintainer_approval_commit_required "$product" "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks")" MAINTAINER_APPROVAL_COMMIT_REQUIRED
-contains "$ROOT/docs/gates.md" 'present this existing commit card in the same session immediately'
-contains "$ROOT/docs/gates.md" 'Action: commit-approved-plan'
-contains "$ROOT/docs/gates.md" 'Confirm commit of the approved plan state.'
+product_card="$ROOT/test/approval/fixtures/product-source-follow-on.txt"
+wrapped_card="$ROOT/test/approval/fixtures/wrapped-follow-on.txt"
+fixture_lines_in "$product_card" "$ROOT/docs/gates.md"
+contains "$product_card" 'Action: commit-approved-plan'
+contains "$product_card" 'Confirm commit of the approved plan state.'
+not_contains "$product_card" 'Next action: Run approved plan'
+contains "$ROOT/agents/coordinator.md" 'Do not name `Run approved plan <id>` as the'
+fixture_lines_in "$wrapped_card" "$ROOT/agents/coordinator.md"
+contains "$wrapped_card" 'Next action: Run approved plan <id>'
+not_contains "$wrapped_card" 'Action: commit-approved-plan'
 contains "$ROOT/agents/coordinator.md" 'cc_transition_plan_status'
 contains "$ROOT/agents/coordinator.md" 'cc_maintainer_approval_commit_required'
-contains "$ROOT/docs/planning.md" 'Approval is complete after that status-only transition'
+contains "$ROOT/docs/planning.md" 'next gate is in'
 printf '%s\n' "$(cc_route 'Confirm approval of plan demo.')" | grep -F 'capability: execute-plan' >/dev/null && fail 'confirm approval routed to execution'
 contains "$product/plans/app-plans/demo/plan.yaml" 'status: approved'
 contains "$product/plans/app-plans/demo/tasks/one.md" 'status: ready'
@@ -129,7 +146,8 @@ init_repo "$wrapped" instantiated-workspace
 wrapped_head=$(git -C "$wrapped" rev-parse HEAD)
 cc_transition_plan_status "$wrapped/plans/app-plans/demo/plan.yaml" "$wrapped/plans/app-plans/demo/tasks" approved confirmed
 expect_failure cc_maintainer_approval_commit_required "$wrapped" "$wrapped/plans/app-plans/demo/plan.yaml" "$wrapped/plans/app-plans/demo/tasks"
-contains "$ROOT/docs/planning.md" 'Run approved plan <id>'
+fixture_lines_in "$wrapped_card" "$ROOT/agents/coordinator.md"
 contains "$ROOT/docs/gates.md" 'Instantiated or wrapped workspaces do not receive this card'
+not_contains "$wrapped_card" 'Action: commit-approved-plan'
 assert_eq "$(git -C "$wrapped" rev-parse HEAD)" "$wrapped_head"
-pass 'two-turn approval is mutation-free, status-only, and sequenced before commit or run'
+pass 'two-turn approval is mutation-free, status-only, and follow-on cards stay outside the engine'

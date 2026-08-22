@@ -344,32 +344,33 @@ cc_projection() {
 
 cc_replace_first_status() {
   cc_status_file=$1
-  cc_status_value=$2
+  cc_status_dest=$2
+  cc_status_value=$3
   case "$cc_status_value" in
     draft|approved|ready|done) ;;
     *) return 1 ;;
   esac
   test -f "$cc_status_file" || return 1
+  test -n "$cc_status_dest" || return 1
   cc_had_nl=$(tail -c 1 "$cc_status_file" | wc -l)
-  cc_status_tmp="$cc_status_file.tmp.$$"
   awk -v status="$cc_status_value" '
     BEGIN { replaced=0 }
     {
       if (!replaced && $0 ~ /^status: /) { print "status: " status; replaced=1 }
       else print
     }
-  ' "$cc_status_file" > "$cc_status_tmp" || { rm -f "$cc_status_tmp"; return 1; }
+    END { exit replaced ? 0 : 1 }
+  ' "$cc_status_file" > "$cc_status_dest" || { rm -f "$cc_status_dest"; return 1; }
   if test "$cc_had_nl" -eq 0; then
-    cc_size=$(wc -c < "$cc_status_tmp" | tr -d ' \t\n')
+    cc_size=$(wc -c < "$cc_status_dest" | tr -d ' \t\n')
     if test "$cc_size" -gt 0; then
-      dd if="$cc_status_tmp" of="$cc_status_tmp.raw" bs=1 count=$((cc_size - 1)) 2>/dev/null || {
-        rm -f "$cc_status_tmp" "$cc_status_tmp.raw"
+      dd if="$cc_status_dest" of="$cc_status_dest.raw" bs=1 count=$((cc_size - 1)) 2>/dev/null || {
+        rm -f "$cc_status_dest" "$cc_status_dest.raw"
         return 1
       }
-      mv "$cc_status_tmp.raw" "$cc_status_tmp"
+      mv "$cc_status_dest.raw" "$cc_status_dest"
     fi
   fi
-  mv "$cc_status_tmp" "$cc_status_file"
 }
 
 cc_transition_plan_status() {
@@ -381,11 +382,36 @@ cc_transition_plan_status() {
     *) printf '%s\n' INVALID_LIFECYCLE_TRANSITION >&2; return 1 ;;
   esac
   cc_expected=$(cc_projection "$cc_target") || return 1
-  cc_replace_first_status "$cc_plan_file" "$cc_target" || return 1
+  cc_temps=""
+  cc_plan_tmp="$cc_plan_file.tmp.$$"
+  if ! cc_replace_first_status "$cc_plan_file" "$cc_plan_tmp" "$cc_target"; then
+    printf '%s\n' STATUS_LINE_MISSING >&2
+    rm -f "$cc_plan_tmp"
+    return 1
+  fi
+  cc_temps="$cc_plan_tmp"
+  cc_task_list="$cc_plan_file.list.$$"
+  : > "$cc_task_list"
   for cc_task in "$cc_task_dir"/*.md; do
     test -f "$cc_task" || continue
-    cc_replace_first_status "$cc_task" "$cc_expected" || return 1
+    cc_task_tmp="$cc_task.tmp.$$"
+    if ! cc_replace_first_status "$cc_task" "$cc_task_tmp" "$cc_expected"; then
+      printf '%s\n' STATUS_LINE_MISSING >&2
+      for cc_tmp in $cc_temps; do
+        rm -f "$cc_tmp" "$cc_tmp.raw"
+      done
+      rm -f "$cc_task_tmp" "$cc_task_list"
+      return 1
+    fi
+    cc_temps="$cc_temps $cc_task_tmp"
+    printf '%s\t%s\n' "$cc_task_tmp" "$cc_task" >> "$cc_task_list"
   done
+  mv "$cc_plan_tmp" "$cc_plan_file"
+  while IFS='	' read -r cc_task_tmp cc_task; do
+    test -n "$cc_task_tmp" || continue
+    mv "$cc_task_tmp" "$cc_task"
+  done < "$cc_task_list"
+  rm -f "$cc_task_list"
 }
 
 cc_archive_event() {
