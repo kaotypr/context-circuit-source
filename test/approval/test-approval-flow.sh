@@ -57,19 +57,24 @@ status: draft
 EOF
 before_plan=$(cc_digest "$runtime/card/plan.yaml")
 before_task=$(cc_digest "$runtime/card/tasks/TASK-01.md")
-card=$(cc_approval_card card-fixture)
-printf '%s\n' "$card" | grep -F 'Action: present-approval-card' >/dev/null || fail 'initial card used approve-plan'
-printf '%s\n' "$card" | grep -F 'nothing has changed yet' >/dev/null || fail 'initial card omitted unchanged-state wording'
-printf '%s\n' "$card" | grep -F 'Confirm approval of plan card-fixture.' >/dev/null || fail 'initial card omitted exact confirmation'
-printf '%s\n' "$card" | grep -F 'does not commit Git' >/dev/null || fail 'initial card omitted commit non-effect'
-printf '%s\n' "$card" | grep -F 'does not start Run approved plan' >/dev/null || fail 'initial card implied execution'
+contains "$ROOT/docs/gates.md" 'Action: present-approval-card'
+contains "$ROOT/docs/gates.md" 'nothing has changed yet'
+contains "$ROOT/docs/gates.md" 'Confirm approval of plan <id>.'
+contains "$ROOT/docs/gates.md" 'does not commit Git and does not start Run approved plan'
+contains "$ROOT/docs/gates.md" 'cc_confirmation_card'
+not_contains "$ROOT/wrapper/runtime/engine.sh" 'cc_approval_card'
+not_contains "$ROOT/wrapper/runtime/engine.sh" 'cc_confirm_approval'
+not_contains "$ROOT/wrapper/runtime/engine.sh" 'cc_commit_approved_plan_card'
+card_route=$(cc_route 'Approve plan card-fixture.')
+printf '%s\n' "$card_route" | grep -F 'capability: present-approval-card' >/dev/null || fail 'initial request was not a card'
+printf '%s\n' "$card_route" | grep -F 'authorization: confirmed-gate-required' >/dev/null || fail 'initial request was treated as authorized'
 assert_eq "$(cc_digest "$runtime/card/plan.yaml")" "$before_plan"
 assert_eq "$(cc_digest "$runtime/card/tasks/TASK-01.md")" "$before_task"
-test ! -d "$runtime/worktrees" || fail 'card helper created a worktree'
+test ! -d "$runtime/worktrees" || fail 'card route created a worktree'
 
-expect_failure cc_confirm_approval "$runtime/card" "$runtime/card/plan.yaml" "$runtime/card/tasks" card-fixture
-expect_failure cc_confirm_approval "$runtime/card" "$runtime/card/plan.yaml" "$runtime/card/tasks" card-fixture stale
-expect_failure cc_confirm_approval "$runtime/card" "$runtime/card/plan.yaml" "$runtime/card/tasks" card-fixture yes
+expect_failure cc_transition_plan_status "$runtime/card/plan.yaml" "$runtime/card/tasks" approved
+expect_failure cc_transition_plan_status "$runtime/card/plan.yaml" "$runtime/card/tasks" approved stale
+expect_failure cc_transition_plan_status "$runtime/card/plan.yaml" "$runtime/card/tasks" approved yes
 assert_eq "$(cc_digest "$runtime/card/plan.yaml")" "$before_plan"
 assert_eq "$(cc_digest "$runtime/card/tasks/TASK-01.md")" "$before_task"
 
@@ -91,45 +96,40 @@ expect_failure cc_transition_plan_status "$runtime/card/plan.yaml" "$runtime/car
 product="$runtime/product-source"
 init_repo "$product" product-source
 head_before=$(git -C "$product" rev-parse HEAD)
-product_out=$(cc_confirm_approval "$product" "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks" demo confirmed)
-printf '%s\n' "$product_out" | grep -F 'Approval is complete. Execution has not started.' >/dev/null || fail 'product-source omitted approval-complete wording'
-printf '%s\n' "$product_out" | grep -F 'Action: commit-approved-plan' >/dev/null || fail 'product-source omitted commit card'
-printf '%s\n' "$product_out" | grep -F 'Confirm commit of the approved plan state.' >/dev/null || fail 'product-source omitted commit confirmation'
-printf '%s\n' "$product_out" | grep -F MAINTAINER_APPROVAL_COMMIT_REQUIRED >/dev/null || fail 'product-source omitted maintainer-commit class'
-printf '%s\n' "$product_out" | grep -F 'Next action: Run approved plan' >/dev/null && fail 'product-source named Run as the immediate next action'
+cc_transition_plan_status "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks" approved confirmed
+assert_eq "$(cc_maintainer_approval_commit_required "$product" "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks")" MAINTAINER_APPROVAL_COMMIT_REQUIRED
+contains "$ROOT/docs/gates.md" 'present this existing commit card in the same session immediately'
+contains "$ROOT/docs/gates.md" 'Action: commit-approved-plan'
+contains "$ROOT/docs/gates.md" 'Confirm commit of the approved plan state.'
+contains "$ROOT/agents/coordinator.md" 'cc_transition_plan_status'
+contains "$ROOT/agents/coordinator.md" 'cc_maintainer_approval_commit_required'
+contains "$ROOT/docs/planning.md" 'Approval is complete after that status-only transition'
+printf '%s\n' "$(cc_route 'Confirm approval of plan demo.')" | grep -F 'capability: execute-plan' >/dev/null && fail 'confirm approval routed to execution'
 contains "$product/plans/app-plans/demo/plan.yaml" 'status: approved'
 contains "$product/plans/app-plans/demo/tasks/one.md" 'status: ready'
 contains "$product/plans/app-plans/demo/tasks/one.md" 'Keep this body status: draft example.'
 assert_eq "$(git -C "$product" rev-parse HEAD)" "$head_before"
-test ! -d "$product/.runtime/worktrees" || fail 'confirm approval created a worktree'
-test ! -d "$product/.runtime/plans" || fail 'confirm approval created a lease'
-assert_eq "$(cc_maintainer_approval_commit_required "$product" "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks")" MAINTAINER_APPROVAL_COMMIT_REQUIRED
+test ! -d "$product/.runtime/worktrees" || fail 'status transition created a worktree'
+test ! -d "$product/.runtime/plans" || fail 'status transition created a lease'
 expect_failure cc_prepare_worktree "$product" "$runtime/worktrees/product-blocked" main
 printf '%s\n' unrelated > "$product/unrelated.txt"
 expect_failure cc_maintainer_approval_commit_required "$product" "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks"
-expect_failure cc_confirm_approval "$product" "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks" demo confirmed
+expect_failure cc_transition_plan_status "$product/plans/app-plans/demo/plan.yaml" "$product/plans/app-plans/demo/tasks" approved confirmed
 
 dirty="$runtime/product-dirty"
 init_repo "$dirty" product-source
 printf '%s\n' extra > "$dirty/extra.txt"
-dirty_out=$(cc_confirm_approval "$dirty" "$dirty/plans/app-plans/demo/plan.yaml" "$dirty/plans/app-plans/demo/tasks" demo confirmed)
-printf '%s\n' "$dirty_out" | grep -F 'Approval is complete. Execution has not started.' >/dev/null || fail 'dirty product-source omitted approval-complete wording'
-printf '%s\n' "$dirty_out" | grep -F DIRTY_BASE_BLOCKED >/dev/null || fail 'unrelated dirty files were not classified as DIRTY_BASE_BLOCKED'
-printf '%s\n' "$dirty_out" | grep -F 'Action: commit-approved-plan' >/dev/null && fail 'unrelated dirt presented a commit card'
-contains "$dirty/plans/app-plans/demo/plan.yaml" 'status: approved'
+cc_transition_plan_status "$dirty/plans/app-plans/demo/plan.yaml" "$dirty/plans/app-plans/demo/tasks" approved confirmed
 expect_failure cc_maintainer_approval_commit_required "$dirty" "$dirty/plans/app-plans/demo/plan.yaml" "$dirty/plans/app-plans/demo/tasks"
+contains "$ROOT/docs/gates.md" 'DIRTY_BASE_BLOCKED'
+contains "$dirty/plans/app-plans/demo/plan.yaml" 'status: approved'
 
 wrapped="$runtime/wrapped"
 init_repo "$wrapped" instantiated-workspace
 wrapped_head=$(git -C "$wrapped" rev-parse HEAD)
-wrapped_out=$(cc_confirm_approval "$wrapped" "$wrapped/plans/app-plans/demo/plan.yaml" "$wrapped/plans/app-plans/demo/tasks" demo confirmed)
-printf '%s\n' "$wrapped_out" | grep -F 'Approval is complete. Execution has not started.' >/dev/null || fail 'wrapped workspace omitted approval-complete wording'
-printf '%s\n' "$wrapped_out" | grep -F 'Next action: Run approved plan demo' >/dev/null || fail 'wrapped workspace omitted Run as next action'
-printf '%s\n' "$wrapped_out" | grep -F 'Action: commit-approved-plan' >/dev/null && fail 'wrapped workspace presented a commit card'
-printf '%s\n' "$wrapped_out" | grep -F 'Confirm commit of the approved plan state.' >/dev/null && fail 'wrapped workspace asked for a maintainer commit'
-printf '%s\n' "$wrapped_out" | grep -F MAINTAINER_APPROVAL_COMMIT_REQUIRED >/dev/null && fail 'wrapped workspace used maintainer-commit class'
-assert_eq "$(git -C "$wrapped" rev-parse HEAD)" "$wrapped_head"
+cc_transition_plan_status "$wrapped/plans/app-plans/demo/plan.yaml" "$wrapped/plans/app-plans/demo/tasks" approved confirmed
 expect_failure cc_maintainer_approval_commit_required "$wrapped" "$wrapped/plans/app-plans/demo/plan.yaml" "$wrapped/plans/app-plans/demo/tasks"
-contains "$ROOT/docs/gates.md" 'present this existing commit card in the same session immediately'
-contains "$ROOT/agents/coordinator.md" 'cc_transition_plan_status'
+contains "$ROOT/docs/planning.md" 'Run approved plan <id>'
+contains "$ROOT/docs/gates.md" 'Instantiated or wrapped workspaces do not receive this card'
+assert_eq "$(git -C "$wrapped" rev-parse HEAD)" "$wrapped_head"
 pass 'two-turn approval is mutation-free, status-only, and sequenced before commit or run'
