@@ -2,7 +2,7 @@ schema_version: 2
 id: repository-bootstrap
 number: CC-001
 title: Portable repository metadata and explicit repository bootstrap
-status: draft
+status: approved
 repository: context-circuit-source
 source: sources/context-circuit-design/DESIGN-SPEC.md
 product_knowledge:

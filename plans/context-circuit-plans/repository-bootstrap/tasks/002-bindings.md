@@ -2,7 +2,7 @@
 schema_version: 2
 id: RB-002
 plan: repository-bootstrap
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh

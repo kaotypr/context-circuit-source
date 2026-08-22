@@ -2,7 +2,7 @@
 schema_version: 2
 id: RB-001
 plan: repository-bootstrap
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - workspace.yaml
