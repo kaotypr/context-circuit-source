@@ -1,7 +1,8 @@
 # Human gates and cards
 
-`wrapper/runtime/engine.sh` provides card formatting; this document owns the
-human-facing effect language. A card is valid only for its current session,
+`wrapper/runtime/engine.sh` provides the generic `cc_confirmation_card`
+template and the status-transition primitive. This document owns specialized
+human-facing card wording. A card is valid only for its current session,
 action, target, observed state, and listed effects. A changed target or state
 requires a new card.
 

@@ -102,11 +102,10 @@ printf '%s\n' unrelated > "$maintainer/unrelated.txt"
 expect_failure cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks"
 rm -f "$maintainer/unrelated.txt"
 git -C "$maintainer" checkout -- plans
-confirm_follow_on=$(cc_confirm_approval "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks" demo confirmed)
-printf '%s\n' "$confirm_follow_on" | grep -F 'Action: commit-approved-plan' >/dev/null || fail 'product-source confirm approval omitted commit card'
-printf '%s\n' "$confirm_follow_on" | grep -F MAINTAINER_APPROVAL_COMMIT_REQUIRED >/dev/null || fail 'product-source confirm approval dropped maintainer-commit class'
-printf '%s\n' "$confirm_follow_on" | grep -F 'Next action: Run approved plan' >/dev/null && fail 'product-source confirm approval named Run as the next action'
+cc_transition_plan_status "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks" approved confirmed
 assert_eq "$(cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks")" MAINTAINER_APPROVAL_COMMIT_REQUIRED
+contains "$ROOT/docs/gates.md" 'present this existing commit card in the same session immediately'
+contains "$ROOT/agents/coordinator.md" 'Do not add engine helpers for card text'
 printf '%s\n' unrelated > "$maintainer/unrelated.txt"
 expect_failure cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks"
 

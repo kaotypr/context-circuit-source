@@ -350,30 +350,23 @@ cc_replace_first_status() {
     *) return 1 ;;
   esac
   test -f "$cc_status_file" || return 1
+  cc_had_nl=$(tail -c 1 "$cc_status_file" | wc -l)
   cc_status_tmp="$cc_status_file.tmp.$$"
   awk -v status="$cc_status_value" '
     BEGIN { replaced=0 }
     {
-      if (!replaced && $0 ~ /^status: /) {
-        print "status: " status
-        replaced=1
-      } else {
-        print
-      }
+      if (!replaced && $0 ~ /^status: /) { print "status: " status; replaced=1 }
+      else print
     }
   ' "$cc_status_file" > "$cc_status_tmp" || { rm -f "$cc_status_tmp"; return 1; }
-  if test -s "$cc_status_file"; then
-    cc_orig_end=$(tail -c 1 "$cc_status_file" | od -An -tx1 | tr -d ' \n')
-    if test "$cc_orig_end" != 0a; then
-      cc_size=$(wc -c < "$cc_status_tmp")
-      cc_size=$(printf '%s' "$cc_size" | tr -d ' \t\n')
-      if test "$cc_size" -gt 0; then
-        dd if="$cc_status_tmp" of="$cc_status_tmp.raw" bs=1 count=$((cc_size - 1)) 2>/dev/null || {
-          rm -f "$cc_status_tmp" "$cc_status_tmp.raw"
-          return 1
-        }
-        mv "$cc_status_tmp.raw" "$cc_status_tmp"
-      fi
+  if test "$cc_had_nl" -eq 0; then
+    cc_size=$(wc -c < "$cc_status_tmp" | tr -d ' \t\n')
+    if test "$cc_size" -gt 0; then
+      dd if="$cc_status_tmp" of="$cc_status_tmp.raw" bs=1 count=$((cc_size - 1)) 2>/dev/null || {
+        rm -f "$cc_status_tmp" "$cc_status_tmp.raw"
+        return 1
+      }
+      mv "$cc_status_tmp.raw" "$cc_status_tmp"
     fi
   fi
   mv "$cc_status_tmp" "$cc_status_file"
@@ -474,54 +467,6 @@ Will not change: $5
 Risks/open decisions: $6
 Confirmation requested: Confirm this named action in the current session.
 EOF
-}
-
-cc_approval_card() {
-  cc_card_plan=$1
-  cat <<EOF
-Action: present-approval-card
-Target: $cc_card_plan
-Observed state: current session; nothing has changed yet; plan remains draft and included tasks remain draft
-Will change after confirmation: plan.yaml status draft→approved; included task projections draft→ready
-Will not change: Git, leases, worktrees, execution, delivery, publication, or runtime state
-Risks/open decisions: confirmation does not commit Git and does not start Run approved plan
-Confirmation requested: Confirm approval of plan $cc_card_plan.
-EOF
-}
-
-cc_commit_approved_plan_card() {
-  cc_card_plan=$1
-  cat <<EOF
-Action: commit-approved-plan
-Target: $cc_card_plan
-Observed state: exact approval projection is the only dirty source change
-Will change: commit the listed plan.yaml and task frontmatter status changes
-Will not change: implementation files, registered repositories, runtime state,
-  external remotes, or delivery state
-Risks/open decisions: this is a maintainer-source commit; inspect the file list
-Confirmation requested: Confirm commit of the approved plan state.
-EOF
-}
-
-cc_confirm_approval() {
-  cc_workspace_root=$1
-  cc_plan_file=$2
-  cc_task_dir=$3
-  cc_plan_id=$4
-  cc_confirmation=${5:-}
-  cc_transition_plan_status "$cc_plan_file" "$cc_task_dir" approved "$cc_confirmation" || return 1
-  printf '%s\n' 'Approval is complete. Execution has not started.'
-  if cc_is_product_source "$cc_workspace_root"; then
-    cc_follow_on=$(cc_maintainer_approval_commit_required "$cc_workspace_root" "$cc_plan_file" "$cc_task_dir") || cc_follow_on=DIRTY_BASE_BLOCKED
-    if test "$cc_follow_on" = MAINTAINER_APPROVAL_COMMIT_REQUIRED; then
-      cc_commit_approved_plan_card "$cc_plan_id"
-      printf '%s\n' "$cc_follow_on"
-    else
-      printf '%s\n' DIRTY_BASE_BLOCKED
-    fi
-  else
-    printf 'Next action: Run approved plan %s\n' "$cc_plan_id"
-  fi
 }
 
 cc_cleanup_disposition() {
