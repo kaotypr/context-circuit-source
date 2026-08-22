@@ -7,69 +7,67 @@ repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh
   - wrapper/contracts/routes.yaml
-  - .agents/skills/cc-review-plan/SKILL.md
+  - test/routing/fixtures.yaml
   - .agents/skills/cc-plan/SKILL.md
+  - .agents/skills/cc-gates/SKILL.md
   - docs/plan-review.md
   - docs/planning.md
   - docs/getting-started.md
   - docs/host-capabilities.md
   - agents/coordinator.md
-  - test/routing/fixtures.yaml
 depends_on: []
-acceptance: [IPR-AC-01, IPR-AC-02, IPR-AC-03]
-verification: [IPR-VT-01, IPR-VT-05]
+acceptance: [IPR-AC-01, IPR-AC-02, IPR-AC-03, IPR-AC-06]
+verification: [IPR-VT-01, IPR-VT-03, IPR-VT-04]
 expected_evidence:
-  - Named-plan review phrasing routes to review-plan and stays read-only.
-  - Unnamed review clarifies the target instead of selecting an unrelated plan.
-  - cc-review-plan exists as a thin discovery adapter; cc-plan no longer owns review procedure.
-  - Human-facing docs name Review plan <id> without requiring a skill name.
+  - Named review phrasing routes to review-plan with authorization read-only.
+  - A review request without a usable plan id routes to clarify-target and does not inspect an unrelated bundle.
+  - cc-plan names read-only review as a discovery mode and does not add cc-review-plan.
+  - Approval confirmation remains a gate owned by cc-gates and docs/gates.md.
 stop_conditions:
-  - Review mutates plan, task, lease, runtime, or Git state.
-  - A skill or role file becomes a second route or lifecycle owner.
-  - Unnamed review inspects a guessed or unrelated plan.
+  - The change adds .agents/skills/cc-review-plan or expands the shipped skill allowlist.
+  - Named review becomes a mutating route or inspects a guessed plan.
+  - cc-plan grows a second approval or execution procedure.
 ---
 
-# Make named-plan review a specific request and skill
+# Make named-plan review a specific request through cc-plan
 
 ## Objective
 
-Give humans one obvious named-plan review request and give hosts a dedicated
-skill to discover that path, without changing the canonical `review-plan`
-action or making review write anything.
+Make named-plan review a specific request that the engine can select, while
+keeping `cc-plan` as the only plan discovery adapter.
 
 ## Work
 
-Keep `review-plan` as the Stage B action. Extend probe matching so named
-review phrasing such as `Review plan <id>`, `Walk me through plan <id>`, and
-questions about that plan’s risks or open decisions select `plan-review`.
-When the request is a review but has no usable plan id, emit `clarify-target`
-the same way unnamed approval already does.
+Tighten Stage A so `Review plan <id>`, `Walk me through plan <id>`, and
+equivalent named-plan phrasing select `plan-review` / `review-plan`. A review
+request with no usable plan id must become `clarify-target` instead of
+inspecting an arbitrary bundle, matching unnamed approval.
 
-Add `.agents/skills/cc-review-plan/SKILL.md` as a thin adapter: named-plan
-review, read-only Review Card, cite `INV-AUTH-02`, do not approve, claim a
-lease, or start children. Narrow `cc-plan` to draft and prepare so the two
-skills do not carry parallel review procedures.
+Update `cc-plan` so hosts can attach it to a review request: the description
+and body must name read-only plan review, load the `plan-review` context set
+when that route is selected, and forbid drafting, approving, claiming a
+lease, or executing from a review. Leave approval confirmation to `cc-gates`
+and `docs/gates.md`. Do not create `cc-review-plan`.
 
-Update coordinator and docs so the human surface is `Review plan <id>`. Do
-not add slash commands or `.cursor` policy files. Add routing fixtures for
-named review, unnamed review, and at least one nearby phrase that must not
-steal the verification probe.
+Cite the existing owners from coordinator and docs rather than copying
+lifecycle policy into the skill.
 
 ## Non-goals
 
-Do not implement the host question-prompt presentation in this task. Do not
-change plan status, approval, execution, or context-set budgets.
+Do not merge `review-plan` into `draft-plan`. Do not add a skill, slash
+command, or host-local policy file for review.
 
 ## Verification
 
-Use IPR-VT-01 and IPR-VT-05.
+Use IPR-VT-01, IPR-VT-03, and IPR-VT-04.
 
 ## Expected evidence
 
-Updated probe/action mapping, new skill file, narrowed `cc-plan`, docs that
-name the human request, and routing fixtures for named versus unnamed review.
+Routing fixtures for named and unnamed review, a `cc-plan` skill that names
+read-only review, absence of `cc-review-plan`, and the unchanged seven-name
+allowlist.
 
 ## Stop conditions
 
-Stop if review becomes a write, if unnamed review guesses a plan, or if the
-new skill defines route or gate policy.
+Stop if review mutates state, guesses a target, or introduces an eighth
+shipped skill.

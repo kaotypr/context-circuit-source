@@ -6,77 +6,69 @@ status: draft
 repository: context-circuit-source
 paths:
   - docs/plan-review.md
-  - docs/planning.md
   - docs/host-capabilities.md
-  - .agents/skills/cc-review-plan/SKILL.md
+  - docs/planning.md
+  - .agents/skills/cc-plan/SKILL.md
   - agents/coordinator.md
-  - wrapper/adapters/README.md
+  - wrapper/contracts/schemas/session.yaml
 depends_on: [IPR-001]
 acceptance: [IPR-AC-04, IPR-AC-05]
-verification: [IPR-VT-02, IPR-VT-03, IPR-VT-05]
+verification: [IPR-VT-02, IPR-VT-03]
 expected_evidence:
-  - Review Card still lists risks, open questions, and 0-3 human decisions.
-  - Docs name optional host question prompts and the conversational fallback.
-  - Guidance forbids treating a selected option as gate confirmation.
-  - No host_evidence field records question transcripts or tool payloads.
+  - Review Card still reports risks, open questions, and at most three focused human decisions.
+  - Procedure text tells the agent to offer those decisions through the host question prompt when that primitive exists.
+  - Missing, denied, or failed prompts fall back to the card and are not host-blocked.
+  - Question answers never write plan.yaml, task status, or host_evidence transcripts.
 stop_conditions:
-  - A question-prompt answer changes plan or task status.
-  - A selected Approve label skips present-approval-card and becomes approve-plan.
-  - Missing question prompt is classified host-blocked.
-  - Question transcripts are stored in workspace or host_evidence records.
+  - A question-prompt answer is treated as approval, execution, or any other gate.
+  - A missing prompt is classified as host-blocked or retried as a required child.
+  - Question transcripts, answers, or tool payloads are recorded in host_evidence.
 ---
 
 # Present review decisions through optional host question prompts
 
 ## Objective
 
-After a named-plan review, offer the same 0–3 focused decisions through the
-host’s optional native question prompt when that primitive is listed for the
-turn, and keep the Review Card as the durable fallback.
+After the Review Card, offer the same 0–3 decisions through the host native
+question UI when that primitive exists, without making the prompt a gate or a
+required child.
 
 ## Work
 
-Keep the Review Card contract. Make `Human decisions` the source of the
-optional prompt: at most three questions, each with concrete options plus the
-host’s built-in Other path when it exists. Present the card first, then the
-prompt, so a host without the primitive still has a complete read-only
-result.
-
-Document the observed optional primitives without making them a second
-router:
+Keep the Review Card contract in `docs/plan-review.md`. Add procedure text so
+that, when the card has one to three focused human decisions, the current
+session may present them through the host primitive:
 
 - Cursor Agent: `AskQuestion`
 - Claude Code: `AskUserQuestion`
-- Codex CLI: `request_user_input` when the host lists it
+- Codex CLI: `request_user_input` when listed
 
-If the primitive is absent, denied, mode-gated, or fails, fall back to the
-card text. That fallback is `filesystem-only` presentation, not
-`host-blocked`. Do not add `question_prompt_capability` to `host_evidence` in
-this plan.
+A missing, denied, or failed prompt falls back to the card text. That is not
+`host-blocked` and must not be retried as if it were a required writer or
+verifier child. Put this instruction in `cc-plan` and the review docs, not in
+a new skill.
 
-If a decision is a next-action label, the only allowed continuation is the
-existing first card for that route in the same session. `Approve this plan`
-still shows the approval card and still requires the exact current
-confirmation. Review answers must not revise the bundle; a later explicit
-revise request remains a separate write.
+A chosen next-action label such as `Revise this plan` or `Approve this plan`
+may continue only into that route’s existing first card in the same session.
+It cannot skip confirmation or write status.
+
+Do not add `question_prompt_capability` to `host_evidence`.
 
 ## Non-goals
 
-Do not require live host UI in offline tests. Do not persist answers as a
-review artifact. Do not fold approval, execution, or plan mutation into the
-prompt.
+Do not require a live host question UI in CI. Do not store answers as durable
+review artifacts.
 
 ## Verification
 
-Use IPR-VT-02, IPR-VT-03, and IPR-VT-05.
+Use IPR-VT-02 and IPR-VT-03.
 
 ## Expected evidence
 
-Updated Review Card and host-capability wording, adapter guidance that names
-the optional primitives and the fallback, and no new transcript-bearing
-fields.
+Updated Review Card / skill / coordinator wording, fallback language, and a
+diff that does not add host_evidence fields or a new skill.
 
 ## Stop conditions
 
-Stop if answers authorize a gate, if a missing prompt blocks the route, or if
-question payloads enter workspace records.
+Stop if the prompt becomes authorization, a required child, or a recorded
+transcript.
