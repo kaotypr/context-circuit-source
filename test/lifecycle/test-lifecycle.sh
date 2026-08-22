@@ -29,6 +29,8 @@ contains "$runtime/tasks/TASK-01.md" 'status: done'
 expect_failure cc_transition_plan_status "$runtime/plan.yaml" "$runtime/tasks" approved confirmed
 contains "$ROOT/template/plans/README.md" 'Approval never starts execution'
 contains "$ROOT/docs/plan-review.md" 'read-only'
+contains "$ROOT/docs/plan-review.md" 'Human decisions'
+contains "$ROOT/docs/plan-review.md" 'Risks/assumptions'
 contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'schema v1 remains readable'
 
 preserve="$runtime/preserve"
@@ -86,4 +88,22 @@ contains "$partial/tasks/TASK-02.md" 'Status: draft'
 not_contains "$partial/plan.yaml" 'status: approved'
 not_contains "$partial/tasks/TASK-01.md" 'status: ready'
 
-pass 'separate approval/run/finish lifecycle and task projection'
+named_review=$(cc_route 'Review plan checkout-validation.')
+printf '%s\n' "$named_review" | grep -F 'capability: review-plan' >/dev/null ||
+  fail 'named-plan review did not route to review-plan'
+printf '%s\n' "$named_review" | grep -F 'authorization: read-only' >/dev/null ||
+  fail 'named-plan review was not read-only'
+printf '%s\n' "$named_review" | grep -F 'context_set: plan-review' >/dev/null ||
+  fail 'named-plan review did not load the plan-review context set'
+
+named_review_variant=$(cc_route 'Walk me through plan checkout-validation.')
+printf '%s\n' "$named_review_variant" | grep -F 'capability: review-plan' >/dev/null ||
+  fail 'equivalent named-plan review phrasing did not route to review-plan'
+
+unnamed_review=$(cc_route 'Is this plan approved-for-execution?')
+printf '%s\n' "$unnamed_review" | grep -F 'capability: clarify-target' >/dev/null ||
+  fail 'unnamed review request was not routed to clarify-target'
+printf '%s\n' "$unnamed_review" | grep -F 'capability: review-plan' >/dev/null &&
+  fail 'unnamed review request incorrectly inspected an unrelated plan' || :
+
+pass 'separate approval/run/finish lifecycle, read-only named-plan review, and task projection'

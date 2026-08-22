@@ -319,13 +319,13 @@ cases:
   - id: R059
     request: Is this plan approved-for-execution?
     probe: plan-review
-    action: review-plan
-    authorization: read-only
+    action: clarify-target
+    authorization: explicitly-requested
   - id: R060
     request: Read only the plan status and recommend the next action.
     probe: plan-review
-    action: review-plan
-    authorization: read-only
+    action: clarify-target
+    authorization: explicitly-requested
   - id: R061
     request: Bootstrap repository app.
     probe: repository-bootstrap
@@ -393,3 +393,28 @@ cases:
       resume_capability: available
       permission_mode: host-managed
       offline_fallback: host-blocked
+  - id: R066
+    request: Walk me through plan checkout-validation.
+    probe: plan-review
+    action: review-plan
+    authorization: read-only
+  - id: R067
+    request: Walk me through this plan.
+    probe: plan-review
+    action: clarify-target
+    authorization: explicitly-requested
+  - id: R068
+    request: Review plan checkout-validation and tell me the risks.
+    probe: plan-review
+    action: review-plan
+    authorization: read-only
+  - id: R069
+    request: Please review plan checkout-validation before I approve it.
+    probe: plan-review
+    action: review-plan
+    authorization: read-only
+  - id: R070
+    request: Walk me through the plan status.
+    probe: plan-review
+    action: clarify-target
+    authorization: explicitly-requested
