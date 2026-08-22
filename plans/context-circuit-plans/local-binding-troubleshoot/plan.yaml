@@ -1,0 +1,74 @@
+schema_version: 2
+id: local-binding-troubleshoot
+number: CC-003
+title: Document missing repositories.local.yaml troubleshooting
+status: draft
+repository: context-circuit-source
+source: repository-evidence
+product_knowledge:
+  - context/INDEX.md
+  - context/WORKSPACE.md
+  - context/PROJECT.md
+  - context/CONVENTIONS.md
+  - docs/getting-started.md
+  - docs/configuration.md
+  - docs/runtime-contract.md
+  - docs/planning.md
+  - wrapper/contracts/invariants.yaml
+  - wrapper/contracts/schemas/workspace.yaml
+  - wrapper/runtime/engine.sh
+objective: >-
+  Add one short troubleshooting paragraph to docs/getting-started.md that
+  tells a human what to do when the ignored host-local file
+  repositories.local.yaml is missing, without changing binding behavior,
+  bootstrap gates, or any other documentation.
+scope:
+  - docs/getting-started.md Bind a repository section
+  - one semantic contains assertion so the troubleshooting guidance stays locked
+non_goals:
+  - changing wrapper/runtime/engine.sh binding resolution or BINDING_MISSING
+  - creating, generating, or checking in repositories.local.yaml
+  - scanning for repositories or inventing a checkout path
+  - storing credentials or putting machine-specific paths in workspace.yaml
+  - modifying plans/context-circuit-plans/repository-bootstrap/ or
+    plans/context-circuit-plans/multi-host-agent-support/
+  - implementing the docs change before plan approval and a separate run request
+dependencies: []
+tasks:
+  - id: LBT-001
+    title: Add the missing-binding troubleshooting paragraph
+    path: tasks/001-getting-started-troubleshooting.md
+acceptance:
+  - id: LBT-AC-01
+    outcome: >-
+      docs/getting-started.md contains a short troubleshooting paragraph that
+      tells a human what to do when repositories.local.yaml is missing.
+  - id: LBT-AC-02
+    outcome: >-
+      The paragraph states that the file is host-local and gitignored, is not
+      created implicitly, and that a missing binding fails without filesystem
+      scanning or touching other paths.
+  - id: LBT-AC-03
+    outcome: >-
+      The paragraph tells the human to create an explicit path binding for a
+      logical key already named in workspace.yaml, or to request Bootstrap
+      repository <key> when the checkout does not exist yet, and it does not
+      request or record credentials.
+verification:
+  - id: LBT-VT-01
+    command: grep -F 'repositories.local.yaml' docs/getting-started.md
+    proves: Getting started still names the host-local binding file.
+  - id: LBT-VT-02
+    command: grep -E 'missing|create the ignored root|Bootstrap repository' docs/getting-started.md
+    proves: The troubleshooting paragraph tells the human what to do when the binding file is absent.
+  - id: LBT-VT-03
+    command: sh test/contracts/test-contracts.sh
+    proves: Task frontmatter remains valid and credential-free contract inventory still passes.
+human_gates:
+  - plan-approval
+  - execution-trigger
+  - delivery
+  - publication
+  - cleanup
+created_at: 2026-08-22T12:20:00Z
+updated_at: 2026-08-22T12:20:00Z
