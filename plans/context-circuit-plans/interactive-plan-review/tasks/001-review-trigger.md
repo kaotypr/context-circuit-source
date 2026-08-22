@@ -2,7 +2,7 @@
 schema_version: 2
 id: IPR-001
 plan: interactive-plan-review
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh

@@ -2,7 +2,7 @@ schema_version: 2
 id: interactive-plan-review
 number: CC-005
 title: Named-plan review with optional host question prompts
-status: draft
+status: approved
 repository: context-circuit-source
 source: repository-evidence
 product_knowledge:
