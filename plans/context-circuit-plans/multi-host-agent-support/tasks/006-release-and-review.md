@@ -2,7 +2,7 @@
 schema_version: 2
 id: MHS-006
 plan: multi-host-agent-support
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - scripts/release-artifact.sh

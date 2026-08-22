@@ -4,6 +4,26 @@ In a released workspace, say “Start or resume work in this workspace.” The
 agent reads the compact entry spine and reports identity, repositories,
 runtime state, the selected probe, and one safe next action.
 
+The same request works from Codex CLI, Claude Code, and Cursor Agent CLI.
+Codex and Cursor read the shared root `AGENTS.md`; Claude Code reads the
+shipped `CLAUDE.md`, which imports that same contract. Host versions and
+capabilities are evidence only. They never replace the router, a human gate,
+the exclusive writer, or the independent verifier.
+
+## Host entry and resume
+
+The same request is used in interactive mode for Codex CLI, Claude Code, and
+Cursor Agent CLI. Print or non-interactive mode is a read-only probe unless the
+same Context Circuit human gate is already present. Resume re-reads the
+session receipt, latest handoff, wrapper version, Git state, lease, and
+worktree before re-entering the route.
+
+Codex native subagents, Claude Task/subagents, and Cursor Task/subagents map to
+the bounded writer or independent read-only verifier packet. If the required
+child is unavailable, the result is host-blocked and the root does not
+self-verify. If a provider is disabled, denied, or unavailable, continue with
+the filesystem-only workflow.
+
 ## New workspace
 
 Until `workspace.yaml` records `identity.status: accepted`, requests that

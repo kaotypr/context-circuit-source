@@ -1,0 +1,90 @@
+#!/bin/sh
+set -eu
+. "$(dirname -- "$0")/../lib/assert.sh"
+
+contains "$ROOT/docs/host-capabilities.md" 'host_id: codex | claude-code | cursor-agent'
+
+fixture_root="$ROOT/test/hosts/fixtures"
+for host in codex claude-code cursor-agent; do
+  fixture="$fixture_root/$host.yaml"
+  require_file "$fixture"
+  contains "$fixture" "host_id: $host"
+  contains "$fixture" 'host_evidence:'
+  contains "$fixture" 'session_role: root'
+  contains "$fixture" 'session_role: writer'
+  contains "$fixture" 'session_role: verifier'
+  contains "$fixture" 'permission_mode: bounded-write'
+  contains "$fixture" 'permission_mode: read-only'
+  contains "$fixture" 'worktree: exclusive'
+  contains "$fixture" 'worktree: independent'
+  contains "$fixture" 'write_worktree: true'
+  contains "$fixture" 'write_worktree: false'
+  contains "$fixture" 'checks: [receipt, wrapper, git, ownership]'
+  contains "$fixture" 'offline_fallback: filesystem-only'
+  contains "$fixture" 'outcome: host-blocked'
+  contains "$fixture" 'live_smoke_status: unavailable'
+done
+
+for path in \
+  AGENTS.md CLAUDE.md wrapper/adapters/AGENTS.md wrapper/adapters/CLAUDE.md \
+  wrapper/adapters/WORKFLOW.md .agents/skills/cc-entry/SKILL.md \
+  .agents/skills/cc-execute/SKILL.md .agents/skills/cc-verify/SKILL.md \
+  agents/coordinator.md agents/writer.md agents/verifier.md; do
+  require_file "$ROOT/$path"
+done
+
+for path in CLAUDE.md wrapper/adapters/AGENTS.md wrapper/adapters/CLAUDE.md; do
+  contains "$ROOT/$path" 'AGENTS.md'
+done
+contains "$ROOT/AGENTS.md" 'Host adapters'
+contains "$ROOT/wrapper/adapters/AGENTS.md" 'wrapper/contracts/invariants.yaml'
+contains "$ROOT/wrapper/adapters/WORKFLOW.md" 'host-blocked'
+contains "$ROOT/.agents/skills/cc-entry/SKILL.md" 'block-missing-child-primitive'
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'host_evidence'
+contains "$ROOT/.agents/skills/cc-verify/SKILL.md" 'independent'
+contains "$ROOT/agents/writer.md" 'exclusive worktree'
+contains "$ROOT/agents/verifier.md" 'write_worktree: false'
+
+for request in \
+  'Start or resume work in this workspace with Codex CLI.' \
+  'Start or resume work in this workspace with Claude Code.' \
+  'Start or resume work in this workspace with Cursor Agent CLI.'; do
+  route=$(cc_route "$request")
+  printf '%s\n' "$route" | grep -F 'capability: recommend-next' >/dev/null ||
+    fail "host entry changed canonical route: $request"
+done
+offline=$(cc_route 'The Claude Code provider is unavailable; continue offline.')
+printf '%s\n' "$offline" | grep -F 'capability: offline-fallback' >/dev/null ||
+  fail 'provider-unavailable fallback changed canonical route'
+blocked=$(cc_route 'The Cursor Agent host cannot create a verifier child.')
+printf '%s\n' "$blocked" | grep -F 'capability: block-missing-child-primitive' >/dev/null ||
+  fail 'missing-child fallback changed canonical route'
+
+if [ -d "$ROOT/test/hosts/fixtures" ]; then
+  for fixture in "$ROOT"/test/hosts/fixtures/*.yaml; do
+    [ -f "$fixture" ] || continue
+    contains "$fixture" 'host_evidence:'
+    not_contains "$fixture" 'password:'
+    not_contains "$fixture" 'api_key:'
+    not_contains "$fixture" 'provider_payload:'
+    not_contains "$fixture" 'transcript:'
+  done
+fi
+
+# Cursor host-local permission files are optional and are not part of the
+# release surface. Existing maintainer-local files remain outside this task.
+not_contains "$ROOT/scripts/release-manifest.txt" '.cursorrules'
+not_contains "$ROOT/scripts/release-manifest.txt" '.cursor/rules'
+git -C "$ROOT" diff --name-only --diff-filter=A -- .cursorrules .cursor/rules |
+  grep . >/dev/null 2>&1 && fail 'task added a Cursor policy file' || :
+
+# This is deliberately a label-only boundary. Offline CI never invokes a
+# provider, even when a caller asks for the optional live smoke label.
+for host in codex claude-code cursor-agent; do
+  if [ "${CC_LIVE_HOST_SMOKE:-0}" = 1 ]; then
+    printf 'LIVE %s: host-blocked (optional probe not invoked by offline suite)\n' "$host"
+  else
+    printf 'LIVE %s: unavailable (optional probe not invoked)\n' "$host"
+  fi
+done
+pass 'Codex, Claude Code, and Cursor adapters share route, role, resume, and offline boundaries'

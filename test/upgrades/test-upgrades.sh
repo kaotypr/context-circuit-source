@@ -15,6 +15,8 @@ contains "$ROOT/wrapper/migrations/v1-to-v2.yaml" 'never rewrite status without 
 contains "$ROOT/docs/migration.md" 'Rollback restores the previous wrapper-owned files'
 contains "$ROOT/wrapper/manifest.yaml" 'preserve:'
 contains "$ROOT/wrapper/manifest.yaml" 'wrapper_only:'
+contains "$ROOT/wrapper/manifest.yaml" 'CLAUDE.md'
+printf '%s\n' "$(cc_rollback_scope)" | grep -Fx 'CLAUDE.md' >/dev/null || fail 'Claude adapter missing from rollback scope'
 printf '%s\n' "$(cc_migration_preserves)" | grep -Fx 'repositories.local.yaml' >/dev/null || fail 'local binding preserve boundary missing'
 printf '%s\n' "$(cc_migration_preserves)" | grep -Fx 'repositories' >/dev/null || fail 'repository preserve boundary missing'
 for fixture in lease.yaml worktree-state.txt handoff.md plan.yaml stack.yaml; do

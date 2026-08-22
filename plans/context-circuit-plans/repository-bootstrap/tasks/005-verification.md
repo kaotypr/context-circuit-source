@@ -2,7 +2,7 @@
 schema_version: 2
 id: RB-005
 plan: repository-bootstrap
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - test/contracts/test-contracts.sh
