@@ -20,10 +20,24 @@ is read-only.
 
 ## Approval
 
-Show an Approval Card tied to the named plan and current session. On exact
-confirmation only, update `plan.yaml` draft → approved and reconcile included
-task projections draft → ready atomically/idempotently. Do not claim a lease,
-create a worktree, start children, or perform Git work.
+`Approve plan <id>` shows a current session-bound Approval Card and changes
+nothing. The card states that nothing has changed yet, names the status-only
+projection that confirmation would apply, and asks for
+`Confirm approval of plan <id>`. It does not imply that confirmation commits
+Git or starts `Run approved plan`.
+
+On that exact confirmation only, call `cc_transition_plan_status` once for the
+plan and all included task projections (`plan.yaml` draft → approved, tasks
+draft → ready). Preserve Markdown bodies and file endings. Do not hand-edit
+each task independently. Do not claim a lease, create a worktree, start
+children, commit Git, or start execution.
+
+Approval is complete after that status-only transition; execution has not
+started. On an instantiated or wrapped workspace, the separate next request is
+`Run approved plan <id>`. On `product-source`, if the dirty set is exactly that
+approval projection, present the existing `commit-approved-plan` card in the
+same session. Do not commit on this turn. Unrelated dirty files remain
+`DIRTY_BASE_BLOCKED`.
 
 ## Execution
 
@@ -35,11 +49,12 @@ Sequential tasks share the writer and worktree. Connected plans freeze a DAG
 and progress cursor; they do not create a hidden plan or scheduler.
 
 For the maintainer product-source checkout, approval itself changes only the
-plan status projection and therefore creates a predictable dirty delta. If the
-dirty delta contains exactly the plan and task status transitions, execution
-reports `MAINTAINER_APPROVAL_COMMIT_REQUIRED` and waits for an explicit
-maintainer commit. It never treats arbitrary dirty source as safe and never
-commits automatically.
+plan status projection and therefore creates a predictable dirty delta. After
+confirmed approval, if that delta is the only dirty change, present the
+existing maintainer commit card immediately. If someone later runs before that
+commit, execution still reports `MAINTAINER_APPROVAL_COMMIT_REQUIRED`. It never
+treats arbitrary dirty source as safe, never treats that class as an execution
+exemption, and never commits automatically.
 
 ## Completion
 
