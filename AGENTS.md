@@ -16,7 +16,10 @@ Repository safety still applies:
 - preserve unrelated and dirty work;
 - do not read or scan `sources/` unless a request names exact files;
 - do not store credentials or provider payloads;
-- do not commit, push, merge, publish, deploy, or delete user data;
+- do not commit, push, merge, publish, deploy, or delete user data implicitly;
+- in this maintainer source checkout, an explicit user request may authorize a
+  source-only commit; registered product repositories still require their
+  separate delivery and publication gates;
 - do not modify runtime state belonging to another session;
 - use `wrapper/runtime/engine.sh` only as the host-neutral implementation
   library and keep the human interface conversational;

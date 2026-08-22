@@ -4,6 +4,11 @@ The plan bundle is human intent; the runtime is execution evidence. The
 canonical plan schema is `wrapper/contracts/schemas/plan.yaml` and the human
 entry is `PLAN.md`.
 
+When an accepted workspace receives a generic build or implementation request
+without a named approved plan, the safe next action is `draft-plan`. The agent
+may create only the bounded draft plan bundle; it must not create implementation
+files or begin execution. Approval and the execution trigger remain separate.
+
 ## Review
 
 Read the selected plan, accepted context, provenance, repository evidence,
@@ -28,6 +33,13 @@ and child capability. On success, the root claims an exclusive lease, creates a
 worktree and receipt, delegates one writer, then one independent verifier.
 Sequential tasks share the writer and worktree. Connected plans freeze a DAG
 and progress cursor; they do not create a hidden plan or scheduler.
+
+For the maintainer product-source checkout, approval itself changes only the
+plan status projection and therefore creates a predictable dirty delta. If the
+dirty delta contains exactly the plan and task status transitions, execution
+reports `MAINTAINER_APPROVAL_COMMIT_REQUIRED` and waits for an explicit
+maintainer commit. It never treats arbitrary dirty source as safe and never
+commits automatically.
 
 ## Completion
 

@@ -6,6 +6,12 @@ runtime state, the selected probe, and one safe next action.
 
 ## New workspace
 
+Until `workspace.yaml` records `identity.status: accepted`, requests that
+would create or change anything are routed back to initialization. This
+includes broad requests such as “help me build this”; the agent must not infer
+identity, create a plan, or write implementation files. Read-only orientation
+remains available.
+
 Initialization records only mode, repositories or project items, roles, and
 default branches. Zero repositories is valid. Identity acceptance is a human
 gate. Later, selected evidence may produce an Idea Brief, PRD, accepted Product

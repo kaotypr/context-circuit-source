@@ -5,6 +5,10 @@ invariants:
     rule: Eligibility never implies authorization; explicit human confirmation is required for every consequential gate.
   - id: INV-AUTH-02
     rule: Review is read-only, approval changes status only, execution requires a separate request, and finish requires a separate status gate.
+  - id: INV-AUTH-03
+    rule: An uninitialized workspace permits read-only orientation only; every write, plan, execution, or external-action request first requires identity acceptance.
+  - id: INV-AUTH-04
+    rule: In an accepted workspace, a generic write-like request without a named approved plan routes to draft-plan; implementation requires approval and a separate execution request.
   - id: INV-CTX-01
     rule: Stage A selects one bounded context set; Stage B selects one final action only after that evidence is loaded.
   - id: INV-CTX-02
@@ -17,6 +21,8 @@ invariants:
     rule: A writer changes only its delegated paths in its assigned worktree; a verifier cannot write implementation or runtime owned by another session.
   - id: INV-OWN-03
     rule: Every child packet includes identity, scope, permissions, acceptance, verification, expected evidence, and stop conditions.
+  - id: INV-OWN-07
+    rule: Normal repositories reject every dirty base; a product-source checkout may classify only the exact approval status projection as requiring an explicit maintainer commit, never as an execution exemption.
   - id: INV-LIFE-01
     rule: plan.yaml owns plan status draft, approved, done; task status is a synchronized projection draft, ready, done.
   - id: INV-LIFE-02

@@ -22,6 +22,42 @@ test -e "$runtime/worktrees/app/checkout/.git" || fail 'exclusive Git worktree w
 printf '%s\n' dirty > "$repo/dirty.txt"
 expect_failure cc_prepare_worktree "$repo" "$runtime/worktrees/app/dirty" main
 
+maintainer="$runtime/maintainer"
+mkdir -p "$maintainer/plans/context-circuit-plans/demo/tasks"
+cat > "$maintainer/workspace.yaml" <<'EOF'
+version: 1
+workspace:
+  name: context-circuit-source
+identity:
+  kind: product-source
+EOF
+cat > "$maintainer/plans/context-circuit-plans/demo/plan.yaml" <<'EOF'
+schema_version: 2
+id: demo
+status: draft
+EOF
+for task_id in one two; do
+  cat > "$maintainer/plans/context-circuit-plans/demo/tasks/$task_id.md" <<'EOF'
+---
+schema_version: 2
+status: draft
+---
+# task
+EOF
+done
+git init -q -b main "$maintainer"
+git -C "$maintainer" config user.email test@example.invalid
+git -C "$maintainer" config user.name 'Context Circuit Test'
+git -C "$maintainer" add workspace.yaml plans
+git -C "$maintainer" commit -qm initial
+sed -i 's/^status: draft$/status: approved/' "$maintainer/plans/context-circuit-plans/demo/plan.yaml"
+sed -i 's/^status: draft$/status: ready/' "$maintainer/plans/context-circuit-plans/demo/tasks/one.md"
+sed -i 's/^status: draft$/status: ready/' "$maintainer/plans/context-circuit-plans/demo/tasks/two.md"
+assert_eq "$(cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks")" MAINTAINER_APPROVAL_COMMIT_REQUIRED
+expect_failure cc_prepare_worktree "$maintainer" "$runtime/worktrees/maintainer/blocked" main
+printf '%s\n' unrelated > "$maintainer/unrelated.txt"
+expect_failure cc_maintainer_approval_commit_required "$maintainer" "$maintainer/plans/context-circuit-plans/demo/plan.yaml" "$maintainer/plans/context-circuit-plans/demo/tasks"
+
 cat > "$runtime/verifier.yaml" <<'EOF'
 schema_version: 1
 wrapper_version: 1.0.0

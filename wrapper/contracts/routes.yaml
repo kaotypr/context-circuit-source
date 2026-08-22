@@ -26,7 +26,7 @@ precedence:
     when: explicitly bound non-terminal session
     result: resume after compatibility and ownership checks
   - id: ROUTE-PRECEDENCE-04
-    when: explicit human capability request
+    when: workspace identity is accepted and there is an explicit human capability request
     result: preflight named capability without substitution
   - id: ROUTE-PRECEDENCE-05
     when: no explicit action
@@ -34,6 +34,12 @@ precedence:
   - id: ROUTE-PRECEDENCE-06
     when: selected evidence is insufficient
     result: one focused question or orient
+  - id: ROUTE-PRECEDENCE-07
+    when: workspace identity is uninitialized and the request is not read-only
+    result: initialization with an identity-acceptance gate
+  - id: ROUTE-PRECEDENCE-08
+    when: workspace identity is accepted, the request is write-like, and no named approved capability is selected
+    result: draft-plan before implementation
 actions:
   - orient
   - recommend-next
@@ -46,6 +52,8 @@ actions:
   - draft-plan
   - review-plan
   - present-approval-card
+  - present-commit-approved-plan-card
+  - commit-approved-plan
   - clarify-target
   - approve-plan
   - block-unapproved

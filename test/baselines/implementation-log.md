@@ -102,6 +102,41 @@ under `sources/context-circuit-design/`, with the active file named
 their new contract-driven behavior is unchanged and the obsolete skill set is
 not restored.
 
+## Maintainer self-hosting approval guard
+
+Status: implemented and tested. Self-hosting initially exposed that approval
+made the maintainer checkout dirty, after which the clean-base worktree guard
+correctly blocked execution. The runtime now classifies only the exact
+`product-source` approval projection as `MAINTAINER_APPROVAL_COMMIT_REQUIRED`,
+routes it through a focused human commit card, and continues to reject staged,
+untracked, unrelated, or normal product-repository changes. The source safety
+instructions now allow a commit only when the maintainer explicitly requests
+it; commits remain separate from approval and are never automatic.
+
+Evidence: ownership fixtures cover the exact projection and unrelated dirty
+file failure; routing coverage includes the maintainer commit card; the full
+semantic acceptance result is recorded after this change.
+
+## Uninitialized workspace write guard
+
+Status: implemented and tested. A fresh released workspace now carries an
+explicit `instantiated-workspace` identity with `status: uninitialized`.
+Router calls inspect that state and force every non-read-only request—including
+generic requests such as “help me build this”—to initialization with the
+`identity-acceptance` gate. Read-only orientation remains available, and an
+accepted workspace retains normal plan routing. Entry-skill guidance and the
+route precedence contract now forbid implementation, plan, task, runtime, or
+repository writes before identity acceptance.
+
+Evidence: routing tests cover uninitialized write, uninitialized read-only,
+and accepted-workspace paths; the complete semantic acceptance suite passes.
+
+The follow-up screenshot review exposed a second bypass after identity
+acceptance: a generic build request could still be interpreted as direct
+implementation. The accepted-workspace router now sends unnamed write-like
+requests to `draft-plan`; `cc-entry` and `cc-plan` explicitly prohibit
+implementation until plan approval and the separate execution trigger.
+
 ## Known deviations and risks
 
 - The repository implements host-neutral filesystem primitives and contracts;
