@@ -54,4 +54,27 @@ printf '%s\n' "$draft" | grep -F 'eligibility: blocked' >/dev/null || fail 'draf
 printf '%s\n' "$draft" | grep -F 'authorization: absent' >/dev/null || fail 'blocked execution retained authorization'
 approved=$(cc_route 'Run approved plan checkout-validation.')
 printf '%s\n' "$approved" | grep -F 'capability: execute-plan' >/dev/null || fail 'approved execution route missing'
+
+mismatch_root=$(mktemp -d "${TMPDIR:-/tmp}/cc-projection-mismatch.XXXXXX")
+trap 'rm -rf "$workspace_fixture" "$mismatch_root"' EXIT HUP INT TERM
+cp -R "$ROOT/test/contracts/fixtures/identity-projection/mismatched/." "$mismatch_root/"
+mismatch_route=$(cc_route 'What is this workspace?' "$mismatch_root")
+printf '%s\n' "$mismatch_route" | grep -F 'reason_codes:' >/dev/null || fail 'projection-mismatch route omitted reason codes'
+printf '%s\n' "$mismatch_route" | grep -F 'projection-mismatch' >/dev/null || fail 'mismatched identity region did not block entry'
+printf '%s\n' "$mismatch_route" | grep -F 'authorization: absent' >/dev/null || fail 'projection-mismatch retained authorization'
+printf '%s\n' "$mismatch_route" | grep -F 'eligibility: blocked' >/dev/null || fail 'projection-mismatch was eligible'
+missing_root=$(mktemp -d "${TMPDIR:-/tmp}/cc-projection-missing.XXXXXX")
+trap 'rm -rf "$workspace_fixture" "$mismatch_root" "$missing_root"' EXIT HUP INT TERM
+cp -R "$ROOT/test/contracts/fixtures/identity-projection/missing-region/." "$missing_root/"
+missing_route=$(cc_route 'Help me build this.' "$missing_root")
+printf '%s\n' "$missing_route" | grep -F 'projection-mismatch' >/dev/null || fail 'missing identity region did not block write-like entry'
+fx_effects="$ROOT/test/contracts/fixtures/identity-projection/undeclared-effect"
+undeclared=$(cc_validate_delegated_effects "$fx_effects/approved-effects.txt" "$fx_effects/delegated-effects.txt" || true)
+assert_eq "$undeclared" UNDECLARED_EFFECT
+matching_root=$(mktemp -d "${TMPDIR:-/tmp}/cc-projection-ok.XXXXXX")
+trap 'rm -rf "$workspace_fixture" "$mismatch_root" "$missing_root" "$matching_root"' EXIT HUP INT TERM
+cp -R "$ROOT/test/contracts/fixtures/identity-projection/matching/." "$matching_root/"
+ok_route=$(cc_route 'What is this workspace?' "$matching_root")
+printf '%s\n' "$ok_route" | grep -F 'capability: orient' >/dev/null || fail 'matching identity region blocked orientation'
+printf '%s\n' "$ok_route" | grep -F 'projection-mismatch' >/dev/null && fail 'matching identity region emitted projection-mismatch'
 pass "two-stage router and $fixture_count normalized fixtures"
