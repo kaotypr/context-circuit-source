@@ -78,6 +78,26 @@ not_contains "$ROOT/scripts/release-manifest.txt" '.cursor/rules'
 git -C "$ROOT" diff --name-only --diff-filter=A -- .cursorrules .cursor/rules |
   grep . >/dev/null 2>&1 && fail 'task added a Cursor policy file' || :
 
+# cc-plan remains the sole discovery adapter for both drafting and reviewing a
+# plan; there is no separate cc-review-plan skill directory.
+contains "$ROOT/.agents/skills/cc-plan/SKILL.md" 'review'
+require_file "$ROOT/.agents/skills/cc-plan/SKILL.md"
+test ! -d "$ROOT/.agents/skills/cc-review-plan" || fail 'a separate cc-review-plan skill directory exists'
+
+# Optional native question prompts are host UI only; they never become a
+# second router or a second gate.
+contains "$ROOT/docs/host-capabilities.md" 'AskUserQuestion'
+contains "$ROOT/docs/host-capabilities.md" 'selects no route, satisfies no gate'
+contains "$ROOT/docs/plan-review.md" 'required writer or verifier child'
+not_contains "$ROOT/wrapper/contracts/schemas/session.yaml" 'question_prompt_capability'
+
+review_named=$(cc_route 'Review plan checkout-validation.')
+printf '%s\n' "$review_named" | grep -F 'capability: review-plan' >/dev/null ||
+  fail 'named-plan review route regressed'
+review_unnamed=$(cc_route 'Read only the plan status and recommend the next action.')
+printf '%s\n' "$review_unnamed" | grep -F 'capability: clarify-target' >/dev/null ||
+  fail 'unnamed review request stopped clarifying the target'
+
 # This is deliberately a label-only boundary. Offline CI never invokes a
 # provider, even when a caller asks for the optional live smoke label.
 for host in codex claude-code cursor-agent; do
