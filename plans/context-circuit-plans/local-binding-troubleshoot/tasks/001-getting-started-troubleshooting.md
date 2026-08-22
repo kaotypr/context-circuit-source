@@ -2,7 +2,7 @@
 schema_version: 2
 id: LBT-001
 plan: local-binding-troubleshoot
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - docs/getting-started.md
