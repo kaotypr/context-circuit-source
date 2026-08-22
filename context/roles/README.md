@@ -24,5 +24,4 @@ contradictory refresh remains visible for human review.
 
 ## Role entries
 
-Add one link per generated role page, with a short perspective description.
-Keep this index navigational and keep exact behavior in the linked domains.
+- [Product-source maintainer](maintainer.md) — ships the wrapper and seed; does not treat this checkout as a customer workspace. Status: proposed.
