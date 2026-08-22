@@ -1,6 +1,6 @@
 # Full development support for Codex, Claude Code, and Cursor CLI
 
-Status: draft  
+Status: done  
 Repository: context-circuit-source  
 Source: repository evidence and current host documentation
 

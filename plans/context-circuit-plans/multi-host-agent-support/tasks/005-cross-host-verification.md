@@ -2,7 +2,7 @@
 schema_version: 2
 id: MHS-005
 plan: multi-host-agent-support
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - test/hosts/test-host-adapters.sh
