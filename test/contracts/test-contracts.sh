@@ -10,7 +10,8 @@ for path in \
   wrapper/contracts/schemas/lease.yaml wrapper/contracts/schemas/handoff.yaml \
   wrapper/contracts/schemas/plan.yaml wrapper/contracts/schemas/task.yaml \
   wrapper/contracts/schemas/archive.yaml wrapper/contracts/schemas/completion.yaml \
-  wrapper/contracts/schemas/stack.yaml wrapper/runtime/engine.sh; do
+  wrapper/contracts/schemas/stack.yaml \
+  wrapper/runtime/engine.sh docs/templates/plan.yaml; do
   require_file "$ROOT/$path"
 done
 
@@ -18,6 +19,8 @@ contains "$ROOT/wrapper/manifest.yaml" 'wrapper_version: 1.0.0'
 contains "$ROOT/wrapper/manifest.yaml" 'artifact_kind: blank-workspace'
 contains "$ROOT/wrapper/contracts/routes.yaml" 'owner: wrapper/contracts/routes.yaml'
 contains "$ROOT/wrapper/contracts/context-sets.yaml" 'overrun: Report'
+contains "$ROOT/wrapper/contracts/context-sets.yaml" 'id: initialization'
+contains "$ROOT/wrapper/contracts/context-sets.yaml" 'id: plan-draft'
 contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'status: [draft, approved, done]'
 contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'status: [draft, ready, done]'
 contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'frontmatter:'
@@ -32,6 +35,8 @@ contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'offline_fallback'
 contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'provider-payloads'
 contains "$ROOT/wrapper/contracts/routes.yaml" 'host_binding:'
 contains "$ROOT/wrapper/contracts/routes.yaml" 'unavailable_child: block-missing-child-primitive'
+contains "$ROOT/wrapper/contracts/routes.yaml" 'context_set_map:'
+contains "$ROOT/wrapper/contracts/schemas/context-receipt.yaml" 'packet_digest'
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-HOST-01'
 contains "$ROOT/.gitignore" 'repositories/'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'workspace.roles'

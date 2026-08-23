@@ -19,6 +19,13 @@ contains "$ROOT/wrapper/manifest.yaml" 'CLAUDE.md'
 printf '%s\n' "$(cc_rollback_scope)" | grep -Fx 'CLAUDE.md' >/dev/null || fail 'Claude adapter missing from rollback scope'
 printf '%s\n' "$(cc_migration_preserves)" | grep -Fx 'repositories.local.yaml' >/dev/null || fail 'local binding preserve boundary missing'
 printf '%s\n' "$(cc_migration_preserves)" | grep -Fx 'repositories' >/dev/null || fail 'repository preserve boundary missing'
+for fixture in $(cc_migration_packet_fixtures); do
+  require_file "$ROOT/$fixture"
+done
+upgrade_receipt=$(mktemp "${TMPDIR:-/tmp}/cc-upgrade-receipt.XXXXXX")
+printf 'wrapper_version: 1.0.0\n' > "$upgrade_receipt"
+assert_eq "$(cc_migration_receipt_status "$upgrade_receipt")" compatible
+contains "$ROOT/wrapper/migrations/README.md" 'compatible receipt is retained'
 for fixture in lease.yaml worktree-state.txt handoff.md plan.yaml stack.yaml; do
   require_file "$ROOT/test/upgrades/legacy-live/$fixture"
 done
@@ -26,7 +33,7 @@ contains "$ROOT/test/upgrades/legacy-live/worktree-state.txt" 'preserve: do-not-
 contains "$ROOT/test/upgrades/legacy-live/plan.yaml" 'status: approved'
 contains "$ROOT/test/upgrades/legacy-live/stack.yaml" 'status: interrupted'
 legacy=$(mktemp -d "${TMPDIR:-/tmp}/cc-identity-upgrade.XXXXXX")
-trap 'rm -rf "$legacy"' EXIT HUP INT TERM
+trap 'rm -rf "$legacy" "$upgrade_receipt"' EXIT HUP INT TERM
 cp -R "$ROOT/test/contracts/fixtures/identity-projection/missing-region/." "$legacy/"
 contains "$legacy/workspace.yaml" 'status: accepted'
 not_contains "$legacy/context/WORKSPACE.md" 'context-circuit:identity-region:start'

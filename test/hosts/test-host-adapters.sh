@@ -38,7 +38,10 @@ for path in CLAUDE.md wrapper/adapters/AGENTS.md wrapper/adapters/CLAUDE.md; do
 done
 contains "$ROOT/AGENTS.md" 'Host adapters'
 contains "$ROOT/wrapper/adapters/AGENTS.md" 'wrapper/contracts/invariants.yaml'
+contains "$ROOT/wrapper/adapters/AGENTS.md" 'shared packet'
+contains "$ROOT/wrapper/adapters/CLAUDE.md" 'shared bounded'
 contains "$ROOT/wrapper/adapters/WORKFLOW.md" 'host-blocked'
+contains "$ROOT/wrapper/adapters/WORKFLOW.md" 'shared packet loader'
 contains "$ROOT/.agents/skills/cc-entry/SKILL.md" 'block-missing-child-primitive'
 contains "$ROOT/.agents/skills/cc-execute/SKILL.md" 'host_evidence'
 contains "$ROOT/.agents/skills/cc-verify/SKILL.md" 'independent'

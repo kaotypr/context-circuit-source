@@ -10,6 +10,11 @@ human gate. `sources/` is passive and request-scoped; never scan it broadly.
 
 The complete rule ownership map is in `wrapper/contracts/invariants.yaml`.
 
+Use the route decision's registered `context_set` with the shared packet
+loader. It enforces the allowlist, bytes, and receipt digests; undeclared or
+over-budget evidence stops. Ordinary routes do not load engine, route, or
+invariant contracts; blocked/recovery packets may select declared evidence.
+
 Codex CLI, Claude Code, and Cursor Agent CLI may discover this shared
 `AGENTS.md` surface. Record host observations through the provider-neutral
 `host_evidence` fields in the session, delegation, and handoff contracts.
