@@ -2,7 +2,7 @@ schema_version: 2
 id: workspace-projection-and-gate-effects
 number: CC-006
 title: Bounded identity projections and explicit gate effects
-status: approved
+status: done
 repository: context-circuit-source
 source: sources/wrapper-action-cost-and-integrity-prd.md
 product_knowledge:
