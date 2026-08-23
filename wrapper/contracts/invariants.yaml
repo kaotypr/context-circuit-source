@@ -1,0 +1,129 @@
+schema_version: 1
+owner: wrapper/contracts/invariants.yaml
+invariants:
+  - id: INV-AUTH-01
+    rule: Eligibility never implies authorization; explicit human confirmation is required for every consequential gate.
+  - id: INV-AUTH-02
+    rule: Review is read-only, approval changes status only, execution requires a separate request, and finish requires a separate status gate.
+  - id: INV-AUTH-03
+    rule: An uninitialized workspace permits read-only orientation only; every write, plan, execution, or external-action request first requires identity acceptance.
+  - id: INV-AUTH-04
+    rule: In an accepted workspace, a generic write-like request without a named approved plan routes to draft-plan; implementation requires approval and a separate execution request.
+  - id: INV-CTX-01
+    rule: Stage A selects one bounded context set; Stage B selects one final action only after that evidence is loaded.
+  - id: INV-CTX-02
+    rule: Context budgets are hard ceilings; an overrun reports a reason and never silently broadens context.
+  - id: INV-CTX-03
+    rule: Receipts locate primary evidence and cannot replace or authorize it; stale receipts block writes.
+  - id: INV-CTX-04
+    rule: Every normalized root action maps to one registered context packet; probe, phase, action, and context-set identifiers remain distinct.
+  - id: INV-CTX-05
+    rule: Packet allowlists are exact and conditional selections are validated before bytes or evidence are exposed; an overrun reports CONTEXT_BUDGET_EXCEEDED and never broadens context.
+  - id: INV-CTX-06
+    rule: Canonical packet fixtures are wrapper-owned examples and never include maintainer plans, customer workspaces, runtime state, tests, credentials, or provider payloads.
+  - id: INV-OWN-01
+    rule: A plan has one active writing lease; exclusive-create ownership is atomic and contention remains read-only.
+  - id: INV-OWN-02
+    rule: A writer changes only its delegated paths in its assigned worktree; a verifier cannot write implementation or runtime owned by another session.
+  - id: INV-OWN-03
+    rule: Every child packet includes identity, scope, permissions, acceptance, verification, expected evidence, and stop conditions.
+  - id: INV-OWN-07
+    rule: Normal repositories reject every dirty base; a product-source checkout may classify only the exact approval status projection as requiring an explicit maintainer commit, never as an execution exemption.
+  - id: INV-LIFE-01
+    rule: plan.yaml owns plan status draft, approved, done; task status is a synchronized projection draft, ready, done.
+  - id: INV-LIFE-02
+    rule: Implemented runtime evidence never marks a plan done; only an explicit finish gate does.
+  - id: INV-REC-01
+    rule: Interruption preserves lease, worktree, dirty state, receipt, and handoff; heartbeat expiry never grants takeover.
+  - id: INV-REC-02
+    rule: Wrapper upgrades replace wrapper-owned files only and preserve workspace data and runtime evidence.
+  - id: INV-REC-03
+    rule: Runtime record constructors separate caller intent and bounded host evidence from engine-derived versions, ancestry, timestamps, revisions, byte counts, digests, ownership, transaction state, and commit markers.
+  - id: INV-REC-04
+    rule: A runtime record is authoritative only after the complete validated record graph reaches committed with a matching engine commit marker; staged, valid, interrupted, or legacy-readable records cannot grant ownership, resume, verification, execution, or completion eligibility.
+  - id: INV-REC-05
+    rule: Legacy-readable records remain explicitly read-compatible and are never silently rewritten, upgraded, or treated as current authority without a new validated transaction.
+  - id: INV-SEC-01
+    rule: Workspace-relative paths reject traversal, unsafe symlinks, credentials, and writes outside assigned roots.
+  - id: INV-SEC-02
+    rule: sources/ is passive; only exact request-scoped files may be read and provenance is recorded.
+  - id: INV-OFFLINE-01
+    rule: Provider failure produces disabled, denied, or unavailable and never blocks filesystem evidence.
+  - id: INV-HOST-01
+    rule: Host identity, version, capability, permission mode, and provider status are provider-neutral evidence only; they never authorize a route, role, lease, gate, or verification result.
+  - id: INV-HOST-02
+    rule: A missing required host child produces host-blocked without self-verification or role downgrade, while disabled, denied, or unavailable provider status uses the filesystem-only fallback.
+  - id: INV-HOST-03
+    rule: Host evidence and optional live smoke records contain only bounded host and executable/version outcomes and never credentials, provider payloads, transcripts, or host auth state.
+  - id: INV-GATE-01
+    rule: Archive and restore are append-only eligibility events and do not change plan status or delete evidence.
+  - id: INV-GATE-02
+    rule: Delivery, publication, deployment, merge, and destructive cleanup are separate explicit gates.
+  - id: INV-GATE-03
+    rule: Completion requires all task evidence and an independent verifier pass before a finish card.
+  - id: INV-GATE-04
+    rule: A foreign live owner or ambiguous lease blocks writing and cannot be silently stolen.
+  - id: INV-GATE-05
+    rule: Scope expansion, contradictory evidence, missing child primitives, and failed verification stop within-scope work.
+  - id: INV-GATE-06
+    rule: Cleanup inspects dirty and unpushed work and cannot discard it without an additional explicit confirmation.
+  - id: INV-REPO-01
+    rule: Shared repository identity contains only a logical key, optional credential-free canonical URL, and optional default branch; it never contains a machine-specific path.
+  - id: INV-REPO-02
+    rule: Host-local repository bindings belong only in the ignored root repositories.local.yaml file and may select an explicit external, workspace-relative, or repositories/<key> path.
+  - id: INV-REPO-03
+    rule: Binding resolution is explicit and bounded; missing, ambiguous, traversal, unsafe-symlink, missing-Git, or identity-mismatched paths fail without filesystem scanning or substitution.
+  - id: INV-REPO-04
+    rule: Repository bootstrap displays the exact logical repository, canonical URL, selected remote, branch, destination, and existing-path check, then requires a current repository-bootstrap confirmation before clone or destination creation.
+  - id: INV-REPO-05
+    rule: Repository credentials remain owned by the host Git configuration or agent and are never read into, persisted in, or emitted by workspace, binding, runtime, or release records.
+  - id: INV-REPO-06
+    rule: Bound source repositories remain untouched; execution prepares only .runtime/worktrees/<repository-key>/<plan-id>/ and rejects dirty bases.
+  - id: INV-REPO-07
+    rule: Wrapper upgrades and release assembly preserve local bindings and repository work while excluding repositories.local.yaml, repositories/, maintainer plans, and runtime state from artifacts.
+  - id: INV-REPO-08
+    rule: Registering a logical repository updates workspace.yaml shared identity and the identity region in WORKSPACE.md, PROJECT.md, and INDEX.md in one atomic operation; machine-specific paths remain only in repositories.local.yaml.
+  - id: INV-PROJ-01
+    rule: workspace.yaml remains the canonical workspace identifier and context/ remains Product Knowledge; the bounded identity region is a projection of identity metadata and never a source, generator, or replacement of Product Knowledge.
+  - id: INV-PROJ-02
+    rule: A missing or disagreeing identity region in WORKSPACE.md, PROJECT.md, or INDEX.md yields the stable projection-mismatch result and does not authorize a route or gate.
+  - id: INV-PROJ-03
+    rule: Authored Product Knowledge outside the identity region is neither a projection input nor a projection output; render, validation, and migration rewrite only the one contract-owned delimited region per file.
+  - id: INV-GATE-07
+    rule: Effect identifiers are descriptive metadata owned by the route and gate contracts; they never grant authorization, select a route, or bypass confirmation.
+  - id: INV-GATE-08
+    rule: Omitted confirmation fields are shown as proposed defaults on the current card; confirmation records those displayed values; fields with no default remain incomplete; no field is invented after confirmation.
+  - id: INV-GATE-09
+    rule: Delegated effects must be a subset of approved intent; git.init and git.clone are not execute-plan effects; undeclared effects fail closed before a child starts and do not authorize a route or gate.
+  - id: INV-EVID-01
+    rule: Evidence layers are schema, store, api, process, browser, and human; comparison is exact-match only with no global strength hierarchy or cross-layer inference.
+  - id: INV-EVID-02
+    rule: Plan schema owns required_layer and produced_layer; tasks keep acceptance and verification ids; runtime records carry observed_layer, outcome, and evidence_ref.
+  - id: INV-EVID-03
+    rule: Verification outcomes are passed, failed, blocked, and waived; only passed satisfies completion; waived is non-passing metadata and not a gate or verifier success.
+  - id: INV-EVID-04
+    rule: Completed historical evidence remains readable without rewrite; unfinished legacy work requires an explicit evidence-layer mapping before new verification; migration must not invent evidence.
+owners:
+  authority_order: WORKFLOW.md
+  source_boundary: AGENTS.md
+  context_sets: wrapper/contracts/context-sets.yaml
+  routes: wrapper/contracts/routes.yaml
+  lifecycle: wrapper/contracts/schemas/plan.yaml
+  runtime: wrapper/runtime/engine.sh
+  repository_identity: wrapper/contracts/schemas/workspace.yaml
+  repository_binding: wrapper/runtime/engine.sh
+  repository_bootstrap_gate: wrapper/contracts/routes.yaml
+  repository_release_boundary: wrapper/manifest.yaml
+  identity_projection: wrapper/contracts/schemas/workspace.yaml
+  identity_region_runtime: wrapper/runtime/engine.sh
+  displayed_defaults: wrapper/contracts/schemas/workspace.yaml
+  gate_effects: wrapper/contracts/routes.yaml
+  identity_acceptance_card: docs/gates.md
+  repository_registration_card: docs/gates.md
+  runtime_record_contracts: wrapper/contracts/schemas/{session,context-receipt,delegation,child-start,handoff,completion}.yaml
+  runtime_record_transaction: wrapper/contracts/invariants.yaml
+  child_start_evidence: wrapper/contracts/schemas/child-start.yaml
+  child_scope_authority: wrapper/contracts/schemas/delegation.yaml
+  record_compatibility: wrapper/contracts/invariants.yaml
+  evidence_layers: wrapper/contracts/schemas/plan.yaml
+  evidence_layer_runtime: wrapper/contracts/schemas/{delegation,handoff,completion}.yaml

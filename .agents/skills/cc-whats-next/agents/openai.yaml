@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC What's Next"
-  short_description: "Find the smallest safe next workspace action"
-  default_prompt: "Use $cc-whats-next to inspect plans, dependencies, sessions, leases, and gates and recommend the next safe action."

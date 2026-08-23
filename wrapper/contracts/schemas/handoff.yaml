@@ -1,0 +1,28 @@
+schema_version: 1
+owner: .runtime/sessions/<session-id>/handoff.md
+required_sections: [Observed state, Selected route and reason, Evidence read, Host evidence, Action performed or proposed, Files/state changed, Verification, Blockers and human decisions, One next safe action]
+record_contract:
+  constructor_inputs:
+    caller_intent: [Observed state, Selected route and reason, Action performed or proposed, Blockers and human decisions, One next safe action]
+    validated_evidence: [Evidence read, Host evidence, Files/state changed, Verification]
+  engine_generated: [schema_version, wrapper_version, handoff_id, session_id, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
+  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
+  compatibility: legacy-readable is read-only and cannot satisfy independent verification, completion, or a human gate
+host_evidence:
+  fields: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
+  values: provider-neutral capability evidence only; never credentials, tokens,
+    provider payloads, transcripts, or host auth state
+  live_smoke_status: [pass, unavailable, host-blocked]
+  live_smoke_evidence: executable-and-version-only; optional and never a
+    replacement for offline acceptance
+  fallback: provider failure is labeled disabled, denied, or unavailable;
+    filesystem-only operation remains valid
+evidence_layers:
+  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
+  runtime_fields: [observed_layer, outcome, evidence_ref]
+  observed_layer: [schema, store, api, process, browser, human]
+  outcomes: [passed, failed, blocked, waived]
+  writer_claim: writer-recorded mappings are claims and cannot satisfy independent verification
+  waived: non-passing; not a handoff success status and not a gate
+  completion_rule: only passed satisfies completion
+statuses: [completed, blocked, failed, awaiting-human-gate]

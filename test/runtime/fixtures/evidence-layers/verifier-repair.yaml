@@ -1,0 +1,23 @@
+schema_version: 1
+wrapper_version: 1.0.0
+session_id: verifier-repair
+parent_session_id: root
+root_session_id: root
+role: verifier
+objective: forbidden repair
+scope: VEL-002
+non_goals: none
+context_set: verifier
+context_receipt: context-receipt.yaml
+repository: app
+worktree: .runtime/worktrees/app/checkout
+permissions:
+  write_worktree: true
+  write_plan: false
+  write_activity: false
+acceptance_criteria: [VEL-AC-05]
+verification: [VEL-VT-02]
+expected_evidence: repair
+stop_conditions: none
+handoff_schema: wrapper/contracts/schemas/handoff.yaml
+repair: true

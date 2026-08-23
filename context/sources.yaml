@@ -1,2 +1,37 @@
 # Entries are added only after request-scoped source reads.
-sources: []
+sources:
+  - id: repository-bootstrap
+    path: plans/context-circuit-plans/repository-bootstrap/plan.yaml
+    reason: selected done-plan evidence for repository-binding
+    freshness: plan.yaml status done; updated_at 2026-08-22T11:04:19Z
+    used_by:
+      - context/domains/repository-binding/README.md
+      - context/roles/maintainer.md
+  - id: local-binding-troubleshoot
+    path: plans/context-circuit-plans/local-binding-troubleshoot/plan.yaml
+    reason: selected done-plan evidence for missing-binding troubleshooting
+    freshness: plan.yaml status done; updated_at 2026-08-22T12:20:00Z
+    used_by:
+      - context/domains/repository-binding/README.md
+      - context/roles/maintainer.md
+  - id: multi-host-agent-support
+    path: plans/context-circuit-plans/multi-host-agent-support/plan.yaml
+    reason: selected done-plan evidence for host-adapters
+    freshness: plan.yaml status done; updated_at 2026-08-22T13:40:00Z
+    used_by:
+      - context/domains/host-adapters/README.md
+      - context/roles/maintainer.md
+  - id: approval-gate-ux-performance
+    path: plans/context-circuit-plans/approval-gate-ux-performance/plan.yaml
+    reason: selected done-plan evidence for plan-approval
+    freshness: working tree status done; HEAD still approved at b7a11f3
+    used_by:
+      - context/domains/plan-approval/README.md
+      - context/roles/maintainer.md
+  - id: interactive-plan-review
+    path: plans/context-circuit-plans/interactive-plan-review/plan.yaml
+    reason: selected done-plan evidence for plan-review
+    freshness: plan.yaml status done; updated_at 2026-08-22T18:12:12Z
+    used_by:
+      - context/domains/plan-review/README.md
+      - context/roles/maintainer.md

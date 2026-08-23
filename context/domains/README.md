@@ -23,5 +23,7 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 
 ## Domain entries
 
-Add one link per generated domain page, with a short routing description. Keep
-this index navigational; do not duplicate domain facts here.
+- [Repository binding and bootstrap](repository-binding/README.md) — shared identity, host-local bindings, explicit bootstrap, isolated worktrees. Status: proposed.
+- [Host adapters](host-adapters/README.md) — Codex, Claude Code, and Cursor Agent CLI as evidence-only hosts. Status: proposed.
+- [Named-plan review](plan-review/README.md) — read-only Review Card and optional host question prompts. Status: proposed.
+- [Plan approval and product-source commit](plan-approval/README.md) — two-turn status-only approval and the maintainer commit card. Status: proposed.

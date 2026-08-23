@@ -1,0 +1,464 @@
+schema_version: 1
+owner: wrapper/contracts/context-sets.yaml
+unit: bytes
+sets:
+  - id: tier-0
+    required:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - workspace.yaml.identity
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional:
+      bound-session: exact session record
+    prohibited:
+      - broad sources scan
+      - all Product Knowledge
+      - unrelated plans
+      - deep runtime contracts
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - workspace.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - .runtime/sessions/<session-id>/session.yaml
+    budget_bytes: 8192
+  - id: orientation
+    required:
+      - tier-0
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    prohibited:
+      - runtime mutation
+      - sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - docs/routing.md
+    budget_bytes: 20480
+  - id: initialization
+    required:
+      - tier-0
+      - wrapper/contracts/schemas/workspace.yaml
+      - template/workspace.yaml
+      - template/context/INDEX.md
+      - template/context/WORKSPACE.md
+      - template/context/PROJECT.md
+      - docs/gates.md
+    prohibited:
+      - tests
+      - sibling workspaces
+      - maintainer plans
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/schemas/workspace.yaml
+      - workspace.yaml
+      - template/workspace.yaml
+      - template/context/INDEX.md
+      - template/context/WORKSPACE.md
+      - template/context/PROJECT.md
+      - docs/gates.md
+    budget_bytes: 20480
+  - id: idea-brief
+    required:
+      - tier-0
+      - docs/templates/idea-brief.md
+      - selected evidence
+    prohibited:
+      - tests
+      - sibling workspaces
+      - maintainer plans
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - docs/templates/idea-brief.md
+    conditional_allowlist:
+      - sources/<selected-path>
+    budget_bytes: 20480
+  - id: prd
+    required:
+      - tier-0
+      - docs/templates/prd.md
+      - selected evidence
+    prohibited:
+      - tests
+      - sibling workspaces
+      - maintainer plans
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - docs/templates/prd.md
+    conditional_allowlist:
+      - sources/<selected-path>
+    budget_bytes: 20480
+  - id: selected-source
+    required:
+      - tier-0
+      - one explicitly selected source file
+    prohibited:
+      - sources directory discovery
+      - sibling workspaces
+      - unrelated plans
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - sources/<selected-path>
+    budget_bytes: 20480
+  - id: context-review
+    required:
+      - tier-0
+      - selected context evidence
+    prohibited:
+      - tests
+      - sibling workspaces
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - context/domains/<domain>/README.md
+      - context/roles/<role>.md
+    budget_bytes: 20480
+  - id: plan-draft
+    required:
+      - tier-0
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/task.yaml
+      - docs/templates/plan.md
+      - docs/templates/plan.yaml
+      - docs/templates/task.md
+      - docs/templates/prd.md
+      - selected Product Knowledge
+    prohibited:
+      - tests
+      - sibling workspaces
+      - maintainer plans
+      - runtime state
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/task.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - docs/templates/plan.md
+      - docs/templates/plan.yaml
+      - docs/templates/task.md
+      - docs/templates/prd.md
+      - template/plans/README.md
+    conditional_allowlist:
+      - context/domains/<domain>/README.md
+      - context/roles/<role>.md
+      - sources/<selected-path>
+    budget_bytes: 22528
+  - id: plan-review
+    required:
+      - tier-0
+      - selected plan.yaml
+      - selected PLAN.md
+      - selected task headers
+      - declared Product Knowledge references
+      - repository instructions
+      - dependency status
+      - archive sidecar if present
+    prohibited:
+      - status mutation
+      - unrelated plans
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/task.yaml
+      - docs/plan-review.md
+      - docs/gates.md
+    conditional_allowlist:
+      - plans/<repository>-plans/<plan>/plan.yaml
+      - plans/<repository>-plans/<plan>/PLAN.md
+      - plans/<repository>-plans/<plan>/tasks/<task>.md
+      - context/domains/<domain>/README.md
+      - context/roles/<role>.md
+    budget_bytes: 20480
+  - id: run-plan
+    required:
+      - tier-0
+      - selected plan.yaml fields
+      - selected task headers
+      - declared Product Knowledge references
+      - repository instructions
+      - lease and worktree preflight
+    conditional:
+      lease-conflict:
+        - runtime lease contract
+      resume:
+        - current context receipt
+        - latest handoff
+    prohibited:
+      - broad sources scan
+      - unrelated plans
+      - implicit delivery
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/task.yaml
+      - wrapper/contracts/schemas/lease.yaml
+      - wrapper/contracts/schemas/delegation.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - plans/<repository>-plans/<plan>/plan.yaml
+      - plans/<repository>-plans/<plan>/tasks/<task>.md
+      - .runtime/plans/<plan>/lease.yaml
+      - .runtime/plans/<plan>/lease.lock/owner.yaml
+      - .runtime/sessions/<session-id>/context-receipt.yaml
+      - .runtime/sessions/<session-id>/handoff.md
+    budget_bytes: 22528
+  - id: repository-bootstrap
+    required:
+      - AGENTS.md
+      - WORKFLOW.md
+      - workspace.yaml
+      - repositories.local.yaml
+      - wrapper/contracts/schemas/workspace.yaml
+      - wrapper/contracts/routes.yaml
+      - wrapper/runtime/engine.sh
+    prohibited:
+      - credentials
+      - provider payloads
+      - broad filesystem scans
+      - unrelated plans
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/schemas/workspace.yaml
+      - wrapper/contracts/routes.yaml
+      - wrapper/runtime/engine.sh
+      - workspace.yaml
+      - repositories.local.yaml
+    budget_bytes: 12288
+  - id: gate
+    required:
+      - tier-0
+      - selected target
+      - current card state
+    prohibited:
+      - status mutation without confirmation
+      - implicit delivery
+      - runtime discovery
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+      - docs/gates.md
+    conditional_allowlist:
+      - plans/<repository>-plans/<plan>/plan.yaml
+      - .runtime/plans/<plan>/completion.yaml
+    budget_bytes: 20480
+  - id: recovery
+    required:
+      - tier-0
+      - selected blocker or recovery record
+      - selected contract evidence when required
+    prohibited:
+      - write authorization from a receipt
+      - sibling workspaces
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/routes.yaml
+      - wrapper/contracts/invariants.yaml
+      - wrapper/contracts/context-sets.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - .runtime/plans/<plan>/lease.yaml
+      - .runtime/plans/<plan>/lease.lock/owner.yaml
+      - .runtime/sessions/<session-id>/context-receipt.yaml
+      - .runtime/sessions/<session-id>/handoff.md
+    budget_bytes: 20480
+  - id: verification
+    required:
+      - tier-0
+      - selected plan acceptance
+      - selected worktree state
+    prohibited:
+      - implementation writes
+      - plan/status/lease changes
+      - repair outside delegated scope
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/task.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - plans/<repository>-plans/<plan>/plan.yaml
+      - plans/<repository>-plans/<plan>/tasks/<task>.md
+      - .runtime/plans/<plan>/completion.yaml
+    budget_bytes: 20480
+  - id: upgrade
+    required:
+      - tier-0
+      - wrapper manifest
+      - migration contract
+      - selected receipt compatibility
+    prohibited:
+      - workspace data replacement
+      - runtime deletion
+      - implicit migration confirmation
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/schemas/context-receipt.yaml
+      - wrapper/migrations/README.md
+      - wrapper/migrations/upgrade.sh
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - .runtime/sessions/<session-id>/context-receipt.yaml
+    budget_bytes: 20480
+  - id: writer
+    required:
+      - AGENTS.md
+      - WORKFLOW.md
+      - delegation.yaml
+      - selected plan and task
+      - assigned repository instructions
+      - context receipt delta
+    prohibited:
+      - plan status
+      - other sessions
+      - wrapper context
+      - external activity
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/schemas/delegation.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - agents/writer.md
+    conditional_allowlist:
+      - .runtime/sessions/<session-id>/delegation.yaml
+      - .runtime/sessions/<session-id>/context-receipt.yaml
+      - plans/<repository>-plans/<plan>/plan.yaml
+      - plans/<repository>-plans/<plan>/tasks/<task>.md
+    budget_bytes: 12288
+  - id: verifier
+    required:
+      - delegation.yaml
+      - selected plan acceptance
+      - verification commands
+      - writer handoff
+      - assigned worktree state
+    prohibited:
+      - implementation writes
+      - plan/status/lease changes
+      - repair
+    allowlist:
+      - wrapper/contracts/schemas/delegation.yaml
+      - wrapper/contracts/schemas/completion.yaml
+      - agents/verifier.md
+    conditional_allowlist:
+      - .runtime/sessions/<session-id>/delegation.yaml
+      - .runtime/sessions/<session-id>/handoff.md
+      - plans/<repository>-plans/<plan>/plan.yaml
+      - plans/<repository>-plans/<plan>/tasks/<task>.md
+    budget_bytes: 11264
+  - id: resume
+    required:
+      - tier-0
+      - session.yaml
+      - context-receipt.yaml
+      - latest handoff
+      - wrapper manifest
+      - primary evidence changed since receipt
+    prohibited:
+      - blindly replaying all context
+      - broad sources scan
+    allowlist:
+      - AGENTS.md
+      - WORKFLOW.md
+      - wrapper/manifest.yaml
+      - wrapper/contracts/tier0.yaml
+      - wrapper/contracts/schemas/context-receipt.yaml
+      - wrapper/contracts/schemas/session.yaml
+      - wrapper/contracts/schemas/handoff.yaml
+      - context/INDEX.md
+      - context/WORKSPACE.md
+      - context/PROJECT.md
+    conditional_allowlist:
+      - .runtime/sessions/<session-id>/session.yaml
+      - .runtime/sessions/<session-id>/context-receipt.yaml
+      - .runtime/sessions/<session-id>/handoff.md
+    budget_bytes: 12288
+overrun: Report `CONTEXT_BUDGET_EXCEEDED` with selected set, actual bytes, reason, and newly requested evidence; never silently broaden.

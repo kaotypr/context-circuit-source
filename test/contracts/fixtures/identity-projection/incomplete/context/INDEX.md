@@ -1,0 +1,13 @@
+# Context index
+
+<!-- context-circuit:identity-region:start -->
+name: incomplete-workspace
+mode: solo
+kind: instantiated-workspace
+status: uninitialized
+default_branch: main
+roles: none
+repositories: none
+<!-- context-circuit:identity-region:end -->
+
+Preserve this authored Product Knowledge in INDEX.md.

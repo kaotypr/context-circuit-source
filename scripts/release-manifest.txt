@@ -1,63 +1,62 @@
-# Release artifact boundary for Context Circuit.
+# Context Circuit release boundary.
 # Format: "required <path>" or "exclude <path>".
-# Comments start with #. Paths are relative to the repository root.
-# This file is maintainer-only and is excluded from the published artifact.
+# The assembler stages wrapper-owned files and copies the template seed into a
+# clean, uninitialized artifact. Maintainer state is never user workspace data.
 
-# Minimum required template files (session entry and workspace use).
+required wrapper/manifest.yaml
 required AGENTS.md
-required WORKFLOW.md
 required CLAUDE.md
-required workspace.yaml
+required WORKFLOW.md
 required README.md
-required .gitignore
+required workspace.yaml
 required context/INDEX.md
+required context/WORKSPACE.md
 required context/PROJECT.md
 required context/ARCHITECTURE.md
 required context/CONVENTIONS.md
 required context/DECISIONS.md
 required context/SOURCES.md
 required context/sources.yaml
-required context/WORKSPACE.md
 required context/domains/README.md
 required context/roles/README.md
-required docs/agent-workspace-workflow.md
-required docs/configuration.md
-required docs/delivery-policies.md
-required docs/getting-started.md
-required docs/host-capabilities.md
-required docs/idea-brief.md
-required docs/integrations.md
-required docs/plan-review.md
-required docs/planning.md
-required docs/prd.md
-required docs/product-knowledge.md
-required docs/runtime-contract.md
-required docs/templates/domain-context.md
-required docs/templates/role-context.md
-required .agents/skills/cc-session-entry/SKILL.md
-required .agents/skills/cc-initialize-workspace/SKILL.md
-required .agents/skills/cc-idea-brief/SKILL.md
-required .agents/skills/cc-create-prd/SKILL.md
-required .agents/skills/cc-gather-context/SKILL.md
-required .agents/skills/cc-create-plan/SKILL.md
-required .agents/skills/cc-review-plan/SKILL.md
-required .agents/skills/cc-archive-plan/SKILL.md
-required .agents/skills/cc-run-plan/SKILL.md
-required .agents/skills/cc-whats-next/SKILL.md
-required .agents/skills/cc-configure-workspace/SKILL.md
-required .agents/skills/cc-approve-plan/SKILL.md
-required .agents/skills/cc-finish-plan/SKILL.md
-required .agents/skills/cc-cleanup-runtime/SKILL.md
-required agents/coordinator.md
-required agents/repository-worker.md
-required agents/reviewer.md
 required plans/README.md
 required sources/README.md
+required wrapper/contracts/invariants.yaml
+required wrapper/contracts/routes.yaml
+required wrapper/contracts/context-sets.yaml
+required wrapper/contracts/schemas/context-receipt.yaml
+required wrapper/contracts/schemas/delegation.yaml
+required wrapper/contracts/schemas/child-start.yaml
+required wrapper/contracts/schemas/plan.yaml
+required wrapper/contracts/schemas/task.yaml
+required wrapper/migrations/README.md
+required wrapper/migrations/upgrade.sh
+required wrapper/runtime/engine.sh
+required docs/gates.md
+required docs/templates/plan.md
+required docs/templates/plan.yaml
+required docs/templates/task.md
+required docs/templates/prd.md
+required .gitignore
+required .agents/skills/cc-entry/SKILL.md
+required .agents/skills/cc-next/SKILL.md
+required .agents/skills/cc-plan/SKILL.md
+required .agents/skills/cc-execute/SKILL.md
+required .agents/skills/cc-verify/SKILL.md
+required .agents/skills/cc-gates/SKILL.md
+required .agents/skills/cc-upgrade/SKILL.md
+required agents/coordinator.md
+required agents/writer.md
+required agents/verifier.md
 
-# Maintainer-only paths removed from the staged tree, then verified absent.
+# These are removed from the staged tree and verified absent.
 exclude test
 exclude .github
 exclude scripts
 exclude docs/release.md
-exclude contributions
 exclude .runtime
+exclude wrapper/adapters
+exclude template
+exclude sources/context-circuit-design
+exclude repositories.local.yaml
+exclude repositories

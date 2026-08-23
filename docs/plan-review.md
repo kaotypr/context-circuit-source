@@ -1,58 +1,50 @@
-# Plan review
+# Review Card
 
-Plan review is a focused readiness check, not an automatic approval step. The
-reviewer gathers evidence from the plan, selected Product Knowledge, source
-provenance, repository instructions, and current implementation state, then
-separates routine evidence from decisions that belong to the human.
+Plan review is a read-only evidence check. Inspect the named plan bundle,
+declared accepted context and provenance, repository instructions/evidence,
+dependencies, archive state, active ownership, and delivery boundary.
 
-## Readiness checklist
-
-Review the following before execution:
-
-- objective, source, repository scope, implementation scope, and non-goals;
-- relevant Product Knowledge and explicitly selected raw sources;
-- task boundaries, dependencies, stop conditions, and expected handoffs;
-- acceptance criteria, test scope, verification commands, and completion gate;
-- assumptions, unresolved questions, contradictions, overlapping paths, and
-  ownership or worktree risks;
-- delivery boundaries, including what is deliberately outside the plan.
-
-The review should identify the smallest next decision. It should not ask for a
-separate approval of every task when the whole approved plan is ready to run.
-
-## Review outcomes
-
-Use one of these outcomes:
-
-- `ready-for-approval`: the plan is coherent but still requires human plan
-  approval; the next action is `cc-approve-plan`;
-- `needs-revision`: scope, evidence, dependencies, or acceptance is incomplete;
-- `blocked`: a contradiction or ownership decision prevents safe progress;
-- `approved-for-execution`: the observation that the plan is already approved
-  and may enter `cc-run-plan`, or that a connected approved set may enter
-  `cc-run-stack`.
-
-The review never writes `plan.yaml`. It records evidence and recommendations;
-`cc-approve-plan` is the named plan-approval skill. The human controls
-approval, material scope changes, and completion. Connected approved plans
-may later enter `cc-run-stack`, which freezes a runtime `graph.yaml` and
-resumes from `progress.yaml`. That is not a scheduler and not a second
-approval of a stack artifact.
-
-## Evidence format
-
-A concise review records:
+Return:
 
 ```text
-Plan: <plan path>
-Outcome: <review outcome>
-Evidence: <context, repository, and plan files inspected>
-Routine checks: <checks that need no human decision>
-Decisions: <questions that change scope, intent, ownership, or delivery>
-Contradictions: <source or artifact conflicts, or none>
-Next action: <revise, cc-approve-plan, cc-run-plan, or cc-run-stack>
+Plan: <id>
+Outcome: ready-for-approval | needs-revision | blocked | approved-for-execution
+Summary: <what changes and why>
+Approval would authorize: <bounded implementation intent>
+Approval would not authorize: execution, Git delivery, publication, deployment
+Evidence inspected: <paths/revisions>
+Tasks: <id, outcome, dependency>
+Acceptance mapping: <criterion → task → verification evidence>
+Risks/assumptions: <material items only>
+Human decisions: <0–3 focused choices>
+Contradictions/blockers: <explicit or none>
+Next action: revise, approve, run, or resolve blocker
 ```
 
-If a source or accepted Product Knowledge page changes during execution, stop
-and surface a context-refresh decision. Do not silently rewrite the plan or
-accepted context.
+A review never changes plan status, task projections, leases, runtime, Git, or
+external state.
+
+## Optional host question prompt
+
+When the Human decisions line has one to three focused choices, the current
+session may also offer those same choices through the current host's optional
+native question-prompt primitive, after showing the card text:
+
+| Host | Optional primitive |
+| --- | --- |
+| Cursor Agent | `AskQuestion` |
+| Claude Code | `AskUserQuestion` |
+| Codex CLI | `request_user_input` when listed |
+
+The prompt is optional evidence of the current host, not a capability the
+product requires. A missing, denied, or failed prompt falls back to the card
+text; it is not `host-blocked` and must never be retried as if it were a
+required writer or verifier child. Do not record the prompt, the chosen
+option, or any transcript in `host_evidence` or any other durable record —
+the choice stays in the conversation.
+
+A next-action label such as `Revise this plan` or `Approve this plan`,
+whether typed or chosen from the prompt, may continue only into that route's
+existing first card in the current session (for example the Approval Card
+owned by `cc-gates` and `docs/gates.md`). Choosing a label is never itself a
+confirmation and never writes `plan.yaml` or task status.

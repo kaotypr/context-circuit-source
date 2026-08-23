@@ -1,0 +1,25 @@
+schema_version: 1
+rule_owners:
+  authority_order: WORKFLOW.md
+  source_boundary: AGENTS.md
+  route_precedence: wrapper/contracts/routes.yaml
+  context_budgets: wrapper/contracts/context-sets.yaml
+  tier_0_probe_catalog: wrapper/contracts/tier0.yaml
+  invariant_definitions: wrapper/contracts/invariants.yaml
+  workspace_identity: workspace.yaml
+  plan_lifecycle: wrapper/contracts/schemas/plan.yaml
+  task_projection: wrapper/contracts/schemas/task.yaml
+  archive_eligibility: wrapper/contracts/schemas/archive.yaml
+  session_record: wrapper/contracts/schemas/session.yaml
+  delegation_packet: wrapper/contracts/schemas/delegation.yaml
+  context_receipt: wrapper/contracts/schemas/context-receipt.yaml
+  handoff: wrapper/contracts/schemas/handoff.yaml
+  lease: wrapper/contracts/schemas/lease.yaml
+  completion: wrapper/contracts/schemas/completion.yaml
+  stack_runtime: wrapper/contracts/schemas/stack.yaml
+  wrapper_upgrade: wrapper/migrations/README.md
+  release_boundary: wrapper/manifest.yaml
+  human_cards: docs/gates.md
+  delivery_intent: docs/configuration.md
+  test_orchestration: test/acceptance.sh
+ownership_rule: Every normative rule, lifecycle status, schema field, and release boundary has exactly one owner.
