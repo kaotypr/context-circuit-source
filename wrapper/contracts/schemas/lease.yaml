@@ -1,0 +1,5 @@
+schema_version: 1
+owner: .runtime/plans/<plan-id>/lease.yaml and lease.lock/owner.yaml
+required: [schema_version, wrapper_version, plan, session_id, root_session_id, repository, worktree, branch, status, acquired_at, heartbeat_at, stale_after_seconds]
+lock: Atomic exclusive-create of lease.lock; first owner wins.
+release: Only matching owner may release; takeover records prior owner and reason after human confirmation.

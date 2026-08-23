@@ -1,0 +1,7 @@
+case: build-versus-interaction
+required_layer: human
+produced_layer: process
+observed_layer: process
+outcome: passed
+evidence_source: independent
+evidence_ref: test/runtime/fixtures/evidence-layers/build-versus-interaction.yaml

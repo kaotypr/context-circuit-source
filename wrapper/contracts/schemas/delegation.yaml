@@ -1,0 +1,45 @@
+schema_version: 1
+owner: .runtime/sessions/<child-id>/delegation.yaml
+required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, role, objective, scope, non_goals, context_set, context_receipt, repository, worktree, permissions, acceptance_criteria, verification, expected_evidence, stop_conditions, handoff_schema]
+record_contract:
+  constructor_inputs:
+    caller_intent: [role, objective, scope, non_goals, permissions, acceptance_criteria, verification, expected_evidence, stop_conditions]
+    validated_evidence: [session_id, parent_session_id, root_session_id, context_set, context_receipt, repository, worktree, handoff_schema, host_evidence]
+  engine_generated: [schema_version, wrapper_version, delegation_id, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
+  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
+  compatibility: legacy-readable is read-only and cannot expand scope, grant ownership, authorize launch, or replace current evidence
+evidence:
+  host_evidence:
+    required: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
+    host_id: [codex, claude-code, cursor-agent]
+    observed_version: string-or-unavailable
+    instruction_surface: [AGENTS.md, CLAUDE.md, shared-root]
+    session_role: [root, writer, verifier]
+    root_capability: [available, unavailable]
+    child_capability: [available, unavailable]
+    verifier_capability: [available, unavailable]
+    resume_capability: [available, unavailable]
+    permission_mode: [read-only, bounded-write, host-managed]
+    provider_status: [enabled, disabled, denied, unavailable]
+    offline_fallback: [filesystem-only, host-blocked]
+    live_smoke_status: [pass, unavailable, host-blocked]
+    forbidden: [credentials, tokens, provider-payloads, transcripts, auth-state]
+  recording: Every new writer or verifier packet records host_evidence for the
+    host that created it and may record a live_smoke_status; it is evidence, not
+    authorization.
+evidence_layers:
+  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
+  runtime_fields: [observed_layer, outcome, evidence_ref]
+  observed_layer: [schema, store, api, process, browser, human]
+  outcomes: [passed, failed, blocked, waived]
+  launch: assigned acceptance_criteria and verification ids only; observed fields are absent until evidence exists
+  comparison: exact-match against plan required_layer; no inferred substitute layer
+  writer_claim: writer-recorded observed_layer is a claim until independent verification
+  waived: non-passing; never counts as verifier success
+permissions:
+  writer: {write_worktree: true, write_plan: false, write_activity: false}
+  verifier: {write_worktree: false, write_plan: false, write_activity: false}
+ownership:
+  child_scope: delegation.yaml is the sole authority for child scope
+  forbidden_scope_sources: [prompt, host_evidence, child-start, handoff]
+missing_field_result: CHILD_DELEGATION_INCOMPLETE

@@ -1,0 +1,33 @@
+schema_version: 2
+id: "{{plan_id}}"
+number: "{{plan_number}}"
+title: "{{title}}"
+status: draft
+repository: "{{repository}}"
+source: "{{selected_source}}"
+product_knowledge:
+  - "{{selected_product_knowledge}}"
+objective: >-
+  {{bounded_outcome}}
+scope:
+  - "{{bounded/path}}"
+non_goals:
+  - "{{explicit_non_goal}}"
+dependencies: []
+tasks:
+  - id: "{{task_id}}"
+    title: "{{task_title}}"
+    path: tasks/001-task.md
+acceptance:
+  - id: "{{acceptance_id}}"
+    outcome: "{{observable_outcome}}"
+verification:
+  - id: "{{verification_id}}"
+    command: "sh test/example/test-example.sh"
+    proves: "{{independent_evidence}}"
+human_gates:
+  - plan-approval
+  - execution-trigger
+  - delivery
+created_at: "{{created_at}}"
+updated_at: "{{updated_at}}"

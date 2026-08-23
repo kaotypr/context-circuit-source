@@ -1,13 +1,10 @@
 # Project
 
-Status: uninitialized.
+Context Circuit is a filesystem-backed operating system for AI-assisted project
+work. It selects bounded evidence, routes one safe action, holds explicit human
+gates, isolates writers, verifies independently, and preserves resumable
+runtime evidence.
 
-The project this workspace is building is not yet defined. After the user
-accepts repositories or an idea, this file describes that project as a whole:
-its purpose, boundaries, and what registered repositories contain.
-
-Zero registered repositories is not a reason to put project facts elsewhere.
-Until a project is accepted, record that it is not yet defined here.
-
-Workspace identity is not this file. It lives in `workspace.yaml` and
-`context/WORKSPACE.md`.
+This source repository owns the wrapper, template seed, contracts, adapters,
+skills, documentation, semantic tests, and release assembly. It does not act as
+an instantiated product repository for a user workspace.

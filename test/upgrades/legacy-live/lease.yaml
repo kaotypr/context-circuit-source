@@ -1,0 +1,5 @@
+schema_version: 0
+plan: legacy-checkout
+session_id: legacy-session
+status: active
+worktree: .runtime/worktrees/app/legacy-checkout

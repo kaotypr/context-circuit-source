@@ -1,193 +1,128 @@
-# Getting started as an AI agent
+# Getting started
 
-Context Circuit is a workspace for AI agents, not a command console for users.
-The user should be able to say:
+In a released workspace, say “Start or resume work in this workspace.” The
+agent reads the compact entry spine and reports identity, repositories,
+runtime state, the selected probe, and one safe next action.
 
-> Start or resume work in this workspace.
+The same request works from Codex CLI, Claude Code, and Cursor Agent CLI.
+Codex and Cursor read the shared root `AGENTS.md`; Claude Code reads the
+shipped `CLAUDE.md`, which imports that same contract. Host versions and
+capabilities are evidence only. They never replace the router, a human gate,
+the exclusive writer, or the independent verifier.
 
-Durable shared context lives in ordinary Markdown and YAML: Product Knowledge,
-decisions, source provenance, plans, and task definitions. Private runtime
-state lives under `.runtime/`: session records, delegation handoffs, plan
-leases, prompts, and isolated worktrees. Runtime state is resumable but is not
-authoritative over context, plans, human decisions, or repository
-instructions. Preserve it until a human chooses cleanup through
-`cc-cleanup-runtime`. That skill inspects every runtime worktree for
-uncommitted and unpushed work, stops with a confirmation list when risk
-exists, and deletes `.runtime/` only after the human chooses cleanup.
-Cleanup is workspace-wide for `.runtime/` and does not delete Git branches or
-modify the base checkout.
+## Host entry and resume
 
-A writing session modifies only its assigned exclusive worktree. Different
-plans may use different worktrees concurrently. Research and verification
-sessions are read-only unless their delegation explicitly grants write access.
+The same request is used in interactive mode for Codex CLI, Claude Code, and
+Cursor Agent CLI. Print or non-interactive mode is a read-only probe unless the
+same Context Circuit human gate is already present. Resume re-reads the
+session receipt, latest handoff, wrapper version, Git state, lease, and
+worktree before re-entering the route.
 
-Agents may inspect, draft, test, delegate, create isolated worktrees, and
-implement approved scope. Humans control Product Knowledge acceptance, plan
-approval through `cc-approve-plan`, material scope changes, merge, publication,
-deployment, completion through `cc-finish-plan`, runtime cleanup through
-`cc-cleanup-runtime`, and ambiguous session takeover.
+Codex native subagents, Claude Task/subagents, and Cursor Task/subagents map to
+the bounded writer or independent read-only verifier packet. If the required
+child is unavailable, the result is host-blocked and the root does not
+self-verify. If a provider is disabled, denied, or unavailable, continue with
+the filesystem-only workflow.
 
-Host integrations should expose the same workspace entry and delegation
-behavior. Host-specific commands are adapters and must not become a second
-workflow or source of truth.
+## New workspace
 
-The workspace is instruction- and filesystem-driven. It has no Node or
-JavaScript command layer. Verify behavior with `sh test/acceptance.sh`.
+Until `workspace.yaml` records `identity.status: accepted`, requests that
+would create or change anything are routed back to initialization. This
+includes broad requests such as “help me build this”; the agent must not infer
+identity, create a plan, or write implementation files. Read-only orientation
+remains available.
 
-## 1. Enter and orient
+`workspace.yaml` is the workspace identifier. `context/` is Product Knowledge.
+The bounded identity region in `WORKSPACE.md`, `PROJECT.md`, and `INDEX.md`
+must agree with that identifier. Entry and write preflight fail with
+`projection-mismatch` when the region is missing or disagrees; that result
+does not authorize a route or gate. Authored Product Knowledge outside the
+region is preserved.
 
-Read AGENTS.md, WORKFLOW.md, workspace.yaml, context/INDEX.md,
-context/WORKSPACE.md, context/PROJECT.md, relevant Product Knowledge, active
-runtime sessions, plans, repository instructions, and observed Git state.
+Initialization records only mode, repositories or project items, roles, and
+default branches. Omitted confirmation fields are shown as proposed defaults
+on the current card; confirmation records those displayed values. Fields with
+no default remain incomplete. Effect identifiers are descriptive metadata and
+never authorize a route or gate. Zero repositories is valid. Identity
+acceptance is a human gate. Later, selected evidence may produce an Idea Brief,
+PRD, accepted Product Knowledge, or direct plan; no artifact is forced when
+the request is already clear.
 
-Identify whether this is:
+## Bind a repository
 
-- a new workspace or project;
-- a new PRD or source;
-- an unfinished root session;
-- a delegated child session;
-- an approved plan ready to execute;
-- a verification, review, or blocked session.
+Shared `workspace.yaml` metadata identifies a logical repository without a
+machine-specific path:
 
-Explain the selected route before consequential action.
-For a fresh root route, create a root session record with an explicit session ID
-before delegating or claiming work. For resume, use the existing session record
-and latest handoff; never infer a current session from conversation history.
+```yaml
+repositories:
+  app:
+    canonical_url: https://github.com/acme/app.git
+    default_branch: main
+```
 
-Choosing the next action is part of this root entry, not a separate command.
-Inspect approved plans, declared dependencies, active leases and session
-ownership, source freshness, repository cleanliness, worktrees, blockers, and
-pending human gates. Recommend or claim only work that is dependency-ready,
-explicitly scoped, and not already owned by another writing session. When no
-work is executable, explain whether the session needs context, a draft plan,
-human approval, a review, or a decision about a blocker.
+Each host may create the ignored root file `repositories.local.yaml`:
 
-## 2. Initialize workspace identity when needed
+```yaml
+repositories:
+  app:
+    path: /home/alice/projects/app
+    remote: git@github.com:acme/app.git
+```
 
-Initialization asks one compact set of core identity questions:
+The binding path may also be workspace-relative, such as `projects/app`, or
+use the optional convenience location `repositories/app`. The path is
+explicit; Context Circuit never scans for repositories or stores credentials.
+A missing, unsafe, identity-mismatched, or dirty source is reported and
+remains untouched.
 
-1. Is this a solo or team workspace?
-2. Which repositories or project items are known, if any? A zero-repository
-   answer is valid for a new project or idea.
-3. For each repository, what is its role and which branch should be the default
-   active branch? If `development` exists, recommend it; let the user choose a
-   different branch.
+If `repositories.local.yaml` is missing, that is expected on a fresh or newly
+cloned workspace: the file is host-local, gitignored, and never shipped.
+Context Circuit reports the missing binding and does not scan the filesystem,
+invent a path, or create the file on its own. Create the ignored root file
+with an explicit `path` for the logical repository already named in
+`workspace.yaml`. If the checkout does not exist yet, say
+`Bootstrap repository <key>` instead of guessing a destination. Keep
+credentials in host Git configuration; never put secrets or machine-specific
+paths into shared workspace files.
 
-Record the confirmed identity in `workspace.yaml` and summarize it in
-`context/WORKSPACE.md`. Do not write workspace identity into
-`context/PROJECT.md`. A repository entry has a path, mode, role, agent, and
-`default_branch`. Do not turn the current working branch into a delivery
-policy.
+## Bootstrap a repository
 
-When no repository is registered, offer the user a short Idea Brief
-conversation, selected source intake, both, or deferment. Do not treat the
-no-repository path as an error or as a reason to invent a repository.
+Say “Bootstrap repository app” to request a clone. The agent presents a
+repository-bootstrap card containing the logical repository, canonical URL,
+selected remote, branch, exact destination, and existing-path check. Only a
+current confirmation of that exact card may create the destination or invoke
+Git. Host Git configuration or an SSH agent supplies authentication; secrets
+are never requested, recorded, or copied into workspace state. Provider
+failure produces an offline fallback while filesystem evidence remains
+resumable.
 
-Initialization stops after core identity. It does not ask about delivery,
-commits, pushes, merges, publication, deployment, or external activity tools;
-those are optional later configuration.
+Registering a logical repository is a shared-identity confirmation. It updates
+`workspace.yaml` and the identity region in all three summaries without
+exposing host-local bindings. Clone and reserved create-empty remain later
+gates.
 
-## 3. Capture the right artifact
+## Plan journey
 
-Choose the smallest useful next artifact. Do not force every request through
-an Idea Brief and then a PRD.
+Create a plan bundle with `plan.yaml`, human-facing `PLAN.md`, and task files.
+Say `Review plan <id>` or `Walk me through plan <id>` for a read-only Review
+Card through the same `cc-plan` skill; a review request with no usable plan id
+asks which plan instead of guessing one. When the card has a few focused
+decisions, the current host may also offer them through its own optional
+question-prompt UI (see `docs/plan-review.md`); a missing prompt just falls
+back to the card text. Approval changes `draft` → `approved` and tasks to
+`ready`; it does not execute. A separate named run request creates the root
+session, exclusive lease/worktree, writer delegation, and independent verifier.
+After evidence is ready, a separate finish confirmation changes `approved` →
+`done`. Runtime and worktrees remain until a later, separately gated cleanup.
 
-- Capture an Idea Brief for uncertain intent.
-- Capture a PRD for durable requirements.
-- Use a selected source or repository evidence when that is already enough.
+## Interrupted work
 
-When the user provides a PRD, source document, or repository evidence, read
-that evidence and keep it as the input for Product Knowledge. Do not invent a
-missing Idea Brief or PRD.
+Resume validates the session, receipt, handoff, wrapper version, primary
+evidence, Git state, and ownership. A foreign live owner or ambiguous lease is
+read-only and needs a human takeover decision. Dirty work is preserved.
 
-When intent is still uncertain, draft an Idea Brief. An Idea Brief is enough
-to continue; do not require a PRD after it.
+## Human surfaces
 
-If no useful source, repository, or brief exists, ask focused discovery
-questions before creating Product Knowledge or a plan.
-
-## 4. Ground or refresh Product Knowledge
-
-When the chosen artifact or evidence is enough:
-
-1. Separate stated requirements, current behavior, assumptions, unknowns, and
-   evidence.
-2. Draft concise Product Knowledge with source references.
-3. Present the draft for human confirmation.
-4. Do not silently replace accepted context.
-
-## 5. Draft and approve a plan
-
-When context is sufficient:
-
-1. Propose one or more plans by coherent domain or repository boundary.
-2. Include dependencies, acceptance criteria, implementation scope, test scope,
-   and verification commands.
-3. Present plans as drafts.
-4. Optionally review with `cc-review-plan`. Review stays read-only.
-5. Wait for explicit human approval through `cc-approve-plan`.
-6. Do not infer approval from conversation tone, tests, or agent output.
-   Approval does not start execution.
-
-Plan archive eligibility is distinct from this lifecycle. `cc-archive-plan`
-requires a separate explicit human archive gate to append `archive.yaml`
-evidence without moving the bundle or changing status. Ordinary routing omits
-an archived plan; direct historical reads remain available. Restore is a fresh
-archive decision and never re-approves a plan.
-
-## 6. Execute through `cc-run-plan`
-
-After approval, `cc-run-plan` directs the root to:
-
-- claim a plan execution and create or reuse its exclusive worktree from the
-  repository default or active branch;
-- spawn a writer child through the host child-session primitive;
-- spawn a later independent verifier child (`write_worktree: false`);
-- record completion.yaml and ask for `cc-finish-plan`.
-
-Sequential tasks share one writer child. Independent plans get separate
-children and worktrees. If the host cannot spawn a child, report the missing
-host primitive to the human.
-
-Every child session receives a bounded delegation packet and returns a structured
-handoff to its parent.
-
-A one-plan request still enters `cc-run-plan`. Connected approved unimplemented
-plans, or an interrupted `.runtime/stacks/<stack-id>/` run, enter
-`cc-run-stack`. Refuse to treat a stack run as one `cc-run-plan`. Invoking
-`cc-run-stack` starts or resumes execution; there is no stack-approval gate
-and no scheduler. `cc-run-stack` is not a second way to run one plan.
-
-## 7. Resume from the handoff
-
-At the end of each session, record:
-
-- session and parent identifiers;
-- objective and current route;
-- evidence and decisions;
-- changed files and tests;
-- blockers and open questions;
-- next safe action.
-
-The next session reads this handoff instead of relying on conversation history.
-Human review and explicit status changes remain required before work is
-considered complete. A completion evidence record may request `cc-finish-plan`,
-but it must not change plan or task status itself. After a plan is `done`, or
-when the user asks to clear local execution state, `cc-cleanup-runtime` may
-delete `.runtime/` only after inspecting dirty or unpushed work and receiving
-explicit confirmation.
-
-## Which document
-
-Use this map only to find a retained contract. It is not a second workflow.
-
-| Need | Read |
-| --- | --- |
-| Session behavior | `docs/agent-workspace-workflow.md` |
-| Runtime records | `docs/runtime-contract.md` |
-| Idea Brief / PRD | `docs/idea-brief.md`, `docs/prd.md` |
-| Product Knowledge | `docs/product-knowledge.md` |
-| Plan artifact | `plans/README.md` |
-| Plan lifecycle | `docs/planning.md` |
-| Plan review | `docs/plan-review.md` |
-| Optional config | `docs/configuration.md` |
+Humans normally need only this README, a plan's `PLAN.md`, the conversational
+next-action card, and the latest surfaced handoff. Machine records remain
+inspectable but are not a manual editing workflow.

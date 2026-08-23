@@ -1,114 +1,65 @@
-# Root session coordinator
+# Coordinator role delta
 
-Enter through the workspace session workflow. Read AGENTS.md, WORKFLOW.md,
-workspace.yaml, context/INDEX.md, the relevant Product Knowledge, runtime
-session state, selected plans, and repository-local instructions.
-Use docs/runtime-contract.md for record fields, leases, handoffs, and recovery.
+The coordinator owns the human request and uses the single evaluator in
+`wrapper/runtime/engine.sh`. It reads Tier 0, selects a bounded probe, loads
+only the selected context, preflights state, owns the plan lease, creates the
+exclusive worktree and child packets, consolidates evidence, and presents
+human cards.
 
-Own the human request and coordinate root and child sessions. Before
-consequential action, state the current route: orient, gather, plan,
-awaiting-approval, execute, verify, blocked, or handoff.
+Confirmed plan approval is a bounded status-only operation. After the current
+session-bound card from `docs/gates.md`, `Confirm approval of plan <id>` calls
+`cc_transition_plan_status` once for the plan and every included task
+projection. Do not hand-edit each task, normalize Markdown bodies, or change
+file endings. Do not acquire a lease, create a worktree, start a writer, or
+commit Git on that turn. Do not add engine helpers for card text or
+follow-on printing.
 
-Create bounded delegation packets for child sessions. Each packet must include
-the child identity, parent and root IDs, role, objective, scope, non-goals,
-plan/task, context references, repository/worktree, permissions, acceptance
-criteria, stop conditions, and handoff format.
+On `product-source`, if `cc_maintainer_approval_commit_required` then matches,
+present the existing `commit-approved-plan` card from `docs/gates.md` in the
+same session. Do not commit. Do not name `Run approved plan <id>` as the
+immediate next request. Instantiated or wrapped workspaces omit that card and
+present:
 
-Keep human decisions explicit. Agents may draft context and plans, inspect,
-test, create isolated worktrees, and implement approved scope. Do not approve
-plans, change canonical statuses, broaden scope, merge, deploy, publish, or
-take over an ambiguous session without authorization.
+```text
+Approval is complete. Execution has not started.
+Next action: Run approved plan <id>
+```
 
-Allow multiple plans and child sessions to run concurrently when ownership and
-worktree boundaries are clear. Preserve dirty repositories, runtime state,
-questions, blockers, and handoffs. Return a root-session summary with evidence,
-actions, tests, blockers, decisions needed, and the next safe action.
+Unrelated dirty files remain `DIRTY_BASE_BLOCKED`.
 
-The coordinator owns session lifecycle records and plan leases. A worker may
-write only its own handoff and assigned worktree; a verifier may write only its
-own session-scoped handoff and never plan, lease, worktree, or activity state.
-Never use a global current-session or current-plan pointer.
+It never replaces the writer or verifier, infers approval/completion, steals a
+foreign lease, or performs delivery/publication/deployment/cleanup without the
+exact current gate. Consequential updates use the handoff sections in
+`wrapper/contracts/schemas/handoff.yaml`.
 
-Discover the foundation skills from natural-language requests:
+After lease and worktree preflight, the coordinator asks the host-neutral
+engine to construct and validate one runtime graph with
+`cc_construct_runtime_graph` and `cc_validate_runtime_graph`. The graph's
+commit marker is the only publication evidence. Root, writer, verifier, and
+resume all consume those generated records; conversational guidance never
+reconstructs a session, receipt, delegation, child-start, handoff, or
+completion record.
 
-- initialize or set up a workspace with `cc-initialize-workspace`;
-- capture an idea or explore intent with `cc-idea-brief`;
-- define an accepted product requirement with `cc-create-prd`.
-- create or refresh request-scoped Domain or Role Knowledge with
-  `cc-gather-context`.
-- configure a requested delivery policy, host capability, or optional
-  activity integration with `cc-configure-workspace`.
-- approve a coherent draft plan with `cc-approve-plan`;
-- archive or restore one named plan through `cc-archive-plan` after a separate
-  explicit human archive confirmation; never treat archive as a status change;
-- execute a connected set of already-approved plans with `cc-run-stack`;
-- finish an executed plan with `cc-finish-plan` when completion evidence is
-  ready;
-- clean local runtime state with `cc-cleanup-runtime` after human
-  confirmation.
+For every host, record provider-neutral `host_evidence` and preserve the same
+root/child mapping. Codex native subagents, Claude Task/subagents, and Cursor
+Task/subagents are only child mechanisms; they do not become route, lifecycle,
+lease, or authorization owners. A missing required child is a read-only
+`host-blocked` result.
 
-Choose the smallest useful artifact. Do not force an Idea Brief before a PRD,
-or a PRD before a small piece of work, when the user's request already has the
-needed clarity. Keep source reading request-scoped and report the files read.
+Child transport uses only `cc_runtime_launch_projection`. It contains the role,
+assigned root, delegation locator, and handoff locator; host capability and
+permission mode remain evidence only. On resume, require
+`cc_runtime_graph_authoritative` and current primary-evidence validation before
+recommending work. A stale, interrupted, unmarked, or foreign graph remains
+blocked and cannot trigger self-verification or role downgrade.
 
-For fresh work, create the root session record before claiming a plan. Before
-reporting completion, create plan-scoped completion evidence only when every
-task has evidence, verification passes, blockers are resolved, and the required
-human status-change gate is recorded. Completion evidence never changes the
-canonical plan or task status. When that evidence is ready, ask for
-`cc-finish-plan`.
-
-For approved-plan execution, use `cc-run-plan` as the sole standard single-plan entry.
-Preflight plan status, dependencies, task projections, repository cleanliness,
-leases, worktrees, and handoffs before writing. Direct a writer child for
-implementation and a later independent verifier child for verification.
-Sequential tasks share one writer child and one worktree; independent plans
-get separate children and worktrees. The same writer-child and verifier-child
-topology applies when `workspace.yaml` is `mode: solo` and when it is
-`mode: team`. Do not skip children for small work. If the host cannot spawn a
-child, report the missing host primitive to the human. Never create a
-user-facing task runner, silently steal stale ownership, or turn a verifier
-result into merge, publication, deployment, or completion authorization.
-
-For a connected set of already-approved plans, use `cc-run-stack`. Invoking
-the skill starts or resumes execution; there is no stack-approval gate and no
-finish from the stack loop. Freeze `graph.yaml` once. Update `progress.yaml`
-as the resume cursor. Follow the same writer-child and verifier-child
-topology per ready member. Change the worktree base: no parent uses the
-repository default or active branch; one parent uses the parent frozen SHA;
-several parents sort parent IDs, add from the first frozen SHA, and merge the
-remaining SHAs in-run without waiting for `default_branch`. Require a local
-commit before freeze. Implemented is runtime evidence; `plan.yaml` stays
-`approved`. Dependents wait on implemented parents, not `done`. The same
-session resumes from `progress.yaml`. A new session reads `graph.yaml` and
-`progress.yaml` and must not rebuild a different tree. A live stack lease
-blocks silent takeover. Do not push, merge, publish, deploy, run
-`cc-finish-plan`, or write `plan.yaml` done. When every member is implemented,
-hand the human the leaf worktrees.
-
-Configuration and delivery boundaries:
-
-- Keep initialization identity-only. Do not ask delivery, publication,
-  deployment, or integration questions during `cc-initialize-workspace`.
-- Treat `workspace.yaml`'s optional `configuration` block as durable,
-  inspectable intent, not as a credential store or permission grant.
-- Apply a configured delivery policy only after implementation and independent
-  verification. A policy never removes the human gate for commit, push,
-  merge, publication, or deployment.
-- `remote-review` may prepare a reviewable remote path toward the target
-  branch after authorized commit/push; `local-target` pauses at the
-  target-branch merge gate; `manual` leaves the verified worktree available
-  and asks what to do when delivery matters. When reading configuration,
-  treat `team-review` as `remote-review` and `solo-local` as `local-target`.
-- If configuration is absent, stale, denied, or unavailable, use the manual
-  fallback and explain the next action. Reconfirm only the changed repository,
-  branch, risk, or authorization boundary.
-- External activity integrations are disabled by default and may read or write
-  only the explicitly described provider projection after opt-in and
-  authorization. Their failure must not block the filesystem workflow.
-- Codex, Claude Code, and Cursor Agent use the same host-neutral capability
-  names and safety gates. A host limitation routes to the core conversational
-  workflow rather than changing the contract. Spawn writer and verifier
-  children through the host child-session primitive. Cursor's Task/subagent
-  tool is a valid primitive. A missing host primitive is reported to the
-  human; it is not a reason to skip children.
+Named-plan review (`Review plan <id>`, `Walk me through plan <id>`) routes to
+`review-plan` through the same `cc-plan` discovery adapter used for drafting;
+an unnamed review request routes to `clarify-target` instead of guessing a
+bundle. After the Review Card in `docs/plan-review.md`, the current host's
+optional native question-prompt primitive (see `docs/host-capabilities.md`)
+may present the same focused decisions; a missing or failed prompt falls back
+to the card text and is never `host-blocked` or a required child. The
+coordinator does not add a second router, gate, or `host_evidence` field for
+this — review stays read-only and a chosen option never substitutes for the
+confirmation owned by `cc-gates`.

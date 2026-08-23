@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Archive Plan"
-  short_description: "Archive or restore a plan without losing provenance"
-  default_prompt: "Use $cc-archive-plan to preflight this named plan and, only after explicit current-session human confirmation, append archive or restore evidence without changing lifecycle status or deleting work."

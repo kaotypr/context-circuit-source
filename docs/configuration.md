@@ -1,87 +1,42 @@
 # Configuration
 
-`workspace.yaml` is the canonical, portable configuration location. Its core
-identity fields remain the workspace name, solo/team mode, default branch,
-registered repositories, and optional source-register location. An empty
-`repositories: {}` registry is valid before initialization. Repository entries
-have an exact key, path, mode, role, agent, and `default_branch`; initialization
-recommends `development` only when it exists and lets the user choose another
-branch.
+Configuration is optional provider-neutral intent. Initialization does not ask
+delivery or integration questions. A human may later confirm one policy:
 
-Initialization records core identity only. Delivery behavior, merge policy,
-publication, deployment, host conveniences, and external activity
-integrations are optional later configuration and do not belong in first-run
-questions. Users request those capabilities through `cc-configure-workspace`
-or an equivalent explicit natural-language request.
+`workspace.yaml` is the workspace identifier. `context/` is Product Knowledge.
+A bounded identity region in `WORKSPACE.md`, `PROJECT.md`, and `INDEX.md` must
+agree with that identifier; authored Product Knowledge outside the region is
+not a projection input or output. Omitted confirmation fields are shown as
+proposed defaults on the current card; confirmation records those displayed
+values. Effect identifiers are descriptive metadata and never authorize a
+route or gate.
 
-## Portable configuration record
-
-The optional `configuration` block is durable intent, not a secret store or an
-authorization bypass:
+Repository identity and host binding are separate configuration layers. Shared
+`workspace.yaml` may contain only a logical repository key, an optional
+credential-free `canonical_url`, and an optional `default_branch`. A developer
+may create the ignored root `repositories.local.yaml` with an explicit `path`
+and inspectable `remote`. The path may be absolute, workspace-relative, or
+`repositories/<key>`; it is never copied into shared identity or a release.
 
 ```yaml
 configuration:
   delivery:
-    scope: workspace
-    policy: manual
-    repositories:
-      - context-circuit
-    target_branches:
-      context-circuit: development
-    authorization: pending
+    policy: manual | remote-review | local-target
+    repositories: [app]
+    target_branches: {app: main}
+    authorization: pending | confirmed | stale
     fallback: manual
-  integrations:
-    - id: activity-record
-      enabled: false
-      provider: none
-      reads:
-        - plan summaries
-      writes: []
-      authorization: not-requested
-      fallback: core-filesystem
-  hosts:
-    codex:
-      capability: cc-configure-workspace
-      mode: native-or-core
+  integrations: []
+  hosts: []
 ```
 
-The fields mean:
-
-- `delivery.scope` is `workspace` or a specific repository scope.
-- `delivery.policy` is `remote-review`, `local-target`, or `manual`.
-  When reading an existing file, `team-review` is an alias for
-  `remote-review` and `solo-local` is an alias for `local-target`. Those
-  old IDs remain valid reads and are not treated as missing configuration.
-  New writes use the new IDs.
-- `delivery.repositories` and `target_branches` identify affected targets;
-  targets must match registered repositories and their configured default
-  active branches unless the user explicitly confirms a later branch.
-- `delivery.authorization` records only a state such as `pending`,
-  `approved`, `denied`, or `expired`; it never contains a token, credential,
-  or person-specific secret.
-- `delivery.fallback` is `manual` and is required whenever the selected
-  capability is absent, denied, stale, or unavailable.
-- Each integration is disabled unless `enabled: true` follows explicit
-  opt-in. `reads`, `writes`, and provider-neutral authorization state describe
-  the boundary without copying provider activity into workspace files. An
-  explicitly configured provider may expose an opaque `external_status`
-  annotation, but it never replaces canonical task status.
-- `hosts` maps a host to the same capability name and fallback mode. It does
-  not redefine intent, ownership, verification, or human gates.
-
-Write the block only after the user confirms the requested capability, scope,
-effects, authorization boundary, and fallback. A changed repository, target
-branch, risk, or authorization state triggers focused confirmation rather than
-silently reusing the old configuration.
-
-Keep repository paths credential-free and specific. Use `ignored-clone` for a
-separate local clone or `submodule` for a tracked submodule. Context Circuit
-refuses dirty bases and never rewrites unrelated work. Credentials, tokens,
-secrets, provider payloads, and external activity records remain outside
-ordinary workspace state; the wrapper stores none of them.
-
-Configuration does not change canonical plan/task status, runtime ownership,
-or verification results. It only tells the coordinator what delivery or
-optional adapter behavior may be proposed after the normal evidence and human
-gates are satisfied. Current authorization is still required before commit,
-push, or merge. Confirming configuration does not grant those actions.
+Configuration never stores credentials or provider payloads and never grants
+commit, push, merge, publication, deployment, or external activity authority.
+Changed repository, branch, risk, or stale authorization requires focused
+reconfirmation. Host entries are optional provider-neutral observations, for
+example `host_id`, `observed_version`, `instruction_surface`, capability
+labels, and `provider_status`; do not copy host-local settings, auth state, MCP
+configuration, or transcripts into workspace files. Provider failure falls
+back to the filesystem workflow with `disabled`, `denied`, or `unavailable`
+evidence. A missing required child is `host-blocked`, never an authorization
+grant.

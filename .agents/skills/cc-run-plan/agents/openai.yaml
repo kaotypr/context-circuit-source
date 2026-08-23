@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Run Plan"
-  short_description: "Execute an approved plan safely"
-  default_prompt: "Use $cc-run-plan to execute this approved plan through its dependency order, exclusive worktree, bounded sessions, verification, and handoff rules."

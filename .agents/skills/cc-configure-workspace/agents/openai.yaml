@@ -1,4 +1,0 @@
-interface:
-  display_name: "CC Configure Workspace"
-  short_description: "Configure optional delivery and integrations safely"
-  default_prompt: "Use $cc-configure-workspace to configure a requested delivery policy, host capability, or optional integration with explicit effects, authorization, and fallback."

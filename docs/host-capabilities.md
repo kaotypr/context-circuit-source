@@ -1,55 +1,110 @@
 # Host capabilities
 
-Codex, Claude Code, and Cursor Agent are host adapters around the same
-Context Circuit contract. They expose the same capability names and preserve
-the same intent, Product Knowledge, plan, runtime ownership, verification, and
-human-gate semantics.
+Codex CLI, Claude Code, and Cursor Agent CLI are host adapters around the same
+filesystem contract. They discover the natural-language skills in
+`.agents/skills/` and may provide child-session primitives or optional
+integration adapters. They do not define a second route, lifecycle, ownership
+authority, or authorization path.
 
-Hosts discover the same shared skill catalog: `cc-session-entry`,
-`cc-initialize-workspace`, `cc-idea-brief`, `cc-create-prd`,
-`cc-gather-context`, `cc-create-plan`, `cc-review-plan`, `cc-run-plan`,
-`cc-run-stack`, `cc-whats-next`, `cc-configure-workspace`, `cc-approve-plan`,
-`cc-finish-plan`, and `cc-cleanup-runtime`. The table below is a
-safe-fallback example for optional configuration, not a per-host command
-matrix. Hosts may improve discovery or credential storage. They must not
-define a second workflow.
+All three hosts pass the final route `context_set` to the same bounded loader.
+The loader is the filesystem enforcement boundary: it rejects undeclared
+paths, unsafe links, stale receipts, and byte overruns. A host that cannot
+intercept a direct read is not described as sandboxed; the live overread check
+fails read-only or returns `host-blocked`.
 
-| Host | Capability discovery | Safe fallback |
+The shipped discovery names are `cc-entry`, `cc-next`, `cc-plan`, `cc-execute`,
+`cc-verify`, `cc-gates`, and `cc-upgrade`.
+The human never needs to type these names.
+
+| Host | Child primitive | Safe fallback |
 | --- | --- | --- |
-| Codex | `cc-configure-workspace` through the agent skill catalog | Core conversational workflow |
-| Claude Code | `cc-configure-workspace` through the agent skill catalog | Core conversational workflow |
-| Cursor Agent | `cc-configure-workspace` through the agent skill catalog | Core conversational workflow |
+| Codex | native child agent or equivalent | filesystem-only workflow |
+| Claude Code | subagent/Task equivalent | filesystem-only workflow |
+| Cursor Agent | Task/subagent equivalent | filesystem-only workflow |
 
-Host mappings may improve discovery or expose native secure credential storage,
-but they must not create a second user-facing command workflow. A host that
-cannot provide a requested integration reports `unavailable` and continues
-with the filesystem-only path.
+## Instruction and mode evidence
 
-Host support never changes:
+| Host | Instruction discovery | Bounded mode evidence |
+| --- | --- | --- |
+| Codex CLI | AGENTS.md, then cc-* skills | interactive entry, native child mapping, receipt-based resume |
+| Claude Code | CLAUDE.md imports AGENTS.md | interactive or print entry, Task mapping, receipt-based resume |
+| Cursor Agent CLI | AGENTS.md and CLAUDE.md | interactive, print, and resume; local permission settings stay subordinate |
 
-- the portable `workspace.yaml` configuration shape;
-- the exclusive plan lease and worktree rules;
-- independent verification;
-- human approval for plan, delivery, publication, deployment, completion, or
-  ambiguous ownership; or
-- the prohibition on credentials and external activity records in workspace
-  files.
+Print mode and force-like host flags do not authorize execution, delivery, or
+cleanup. A mutating probe needs a disposable fixture and the corresponding
+human gate; the default host fixture is read-only.
 
-## Child-session primitives
+## Provider-neutral host evidence
 
-The filesystem packet is the coordination record. The host supplies the child
-execution context. Name primitives behaviorally so a later host rename does
-not require a new command layer.
+New session, writer, verifier, and handoff records may carry the same bounded
+`host_evidence` shape. It records what the host exposed when the record was
+created; it is not a permission grant and does not replace a human gate.
 
-| Host | Child-session primitive |
-| --- | --- |
-| Cursor Agent | Task / subagent tool |
-| Claude Code | subagent / Task tool |
-| Codex | native child-agent or equivalent |
+```yaml
+host_evidence:
+  host_id: codex | claude-code | cursor-agent
+  observed_version: <version string> | unavailable
+  instruction_surface: AGENTS.md | CLAUDE.md | shared-root
+  session_role: root | writer | verifier
+  root_capability: available | unavailable
+  child_capability: available | unavailable
+  verifier_capability: available | unavailable
+  resume_capability: available | unavailable
+  permission_mode: read-only | bounded-write | host-managed
+  provider_status: enabled | disabled | denied | unavailable
+  offline_fallback: filesystem-only | host-blocked
+```
 
-Cursor's Task/subagent tool is a valid child-session primitive. Do not treat
-a Cursor session as having no child primitive.
+The shape intentionally has no credential, token, provider-payload, transcript,
+or host-auth field. A provider marked `disabled`, `denied`, or `unavailable`
+still leaves the filesystem workflow usable. A missing required child is
+`host-blocked`; it never permits self-verification or a role downgrade.
 
-If the host cannot spawn a child, report the missing host primitive to the
-human and ask how to proceed. A missing primitive is not a reason to skip
-children.
+The normalized host identifiers are `codex`, `claude-code`, and `cursor-agent`.
+The root coordinator records `session_role: root`; bounded child packets record
+`writer` or `verifier`. The root owns route, lease, worktree, cards, and
+consolidation. The writer is the only implementation writer, and the verifier
+is independent and read-only.
+
+Host integration is a thin mapping around the engine-generated graph. The root
+validates the graph and commit marker, then transports only
+`cc_runtime_launch_projection`; writer and verifier roles consume the same
+delegation, child-start, receipt, and handoff records. Host-local permission
+flags never alter the packet or grant authorization.
+
+If a host cannot create a required writer or verifier child, the route is
+host-blocked and remains read-only. The agent does not skip independent
+verification or silently self-verify.
+
+If the provider is disabled, denied, or unavailable, retain the filesystem-only
+workflow and its evidence checks. `host-blocked` is reserved for a missing
+required child primitive; it is not a reason to downgrade the role or broaden
+the launch projection.
+
+## Optional question-prompt primitive
+
+Cursor Agent `AskQuestion`, Claude Code `AskUserQuestion`, and Codex CLI
+`request_user_input` (when listed) are optional native UI primitives some
+hosts expose on the current session. `cc-plan` may use one, after the Review
+Card in `docs/plan-review.md`, to present up to three focused human decisions.
+The primitive is presentation only: it selects no route, satisfies no gate,
+and is never a required child. A missing, denied, or failed prompt falls back
+to the card text and is not `host-blocked`. No `host_evidence` field records
+the prompt, the chosen option, or any transcript.
+
+## Outcome labels
+
+`available` describes an observed capability, not authorization. Use
+`filesystem-only` for a provider that is disabled, denied, unavailable, or not
+needed. Use `host-blocked` only when a required child primitive cannot be
+created. Optional live smoke evidence is labeled `pass`, `unavailable`, or
+`host-blocked`; offline tests never invoke a provider.
+
+## Evidence-layer limitations
+
+Missing host capability is recorded provider-neutrally as `unavailable`,
+`host-blocked`, or a human-visible `waived` limitation. Those outcomes never
+become a verifier `passed`. Evidence-layer comparison stays owned by
+`wrapper/contracts/schemas/plan.yaml`. Offline host fixtures do not
+authenticate a provider, store credentials, or run implicit external checks.
+Live smoke remains optional and label-only.

@@ -1,107 +1,71 @@
-# Planning
+# Planning and lifecycle
 
-Plans define human-reviewed intended work. They are not the workspace session
-itself and they do not replace runtime execution state. Every-session Product
-Knowledge includes `context/WORKSPACE.md` for workspace identity and
-`context/PROJECT.md` for the project being built.
+The plan bundle is human intent; the runtime is execution evidence. The
+canonical plan schema is `wrapper/contracts/schemas/plan.yaml` and the human
+entry is `PLAN.md`.
 
-A plan should have:
+When an accepted workspace receives a generic build or implementation request
+without a named approved plan, the safe next action is `draft-plan`. The agent
+may create only the bounded draft plan bundle; it must not create implementation
+files or begin execution. Approval and the execution trigger remain separate.
 
-- one repository domain where code changes are expected;
-- a clear objective and source;
-- implementation scope and non-goals;
-- Product Knowledge references;
-- dependencies and connections;
-- acceptance criteria;
-- test scope and verification commands;
-- risks, assumptions, and open questions;
-- tasks with explicit dependencies and bounded scopes.
+## Review
 
-Plans begin as `draft` and require explicit human approval through
-`cc-approve-plan`. `plan.yaml` is the canonical lifecycle record: approval
-changes the included task projections from `draft` to `ready`, and completion
-through `cc-finish-plan` changes them to `done`. Task status is not a second approval or execution gate. It does not provide an execution lease or
-verification result. A one-plan request enters through `cc-run-plan`. Connected
-already-approved plans enter through `cc-run-stack`. There is no scheduler.
+`Review plan <id>`, `Walk me through plan <id>`, and equivalent named-plan
+phrasing route to `review-plan` through the shared `cc-plan` discovery
+adapter. A review request with no usable plan id routes to `clarify-target`
+instead of guessing a bundle, the same way an unnamed approval request does.
 
-`cc-approve-plan` is the named plan-approval skill. After explicit confirmation
-in the current session it changes `plan.yaml` from `draft` to `approved` and
-reconciles included tasks to `ready`. Approval does not claim a lease, create a
-worktree, or start `cc-run-plan`. A prior `cc-review-plan` run is not required.
-Already-approved plans are reported as approved and may enter `cc-run-plan`
-or `cc-run-stack` without a second status rewrite. Invoking `cc-run-stack`
-starts execution; there is no stack-approval gate. Draft member plans block
-the stack run.
+Read the selected plan, accepted context, provenance, repository evidence,
+dependencies, archive sidecar, ownership, and delivery boundary. Return a
+Review Card with outcome, summary, exact approval scope, non-effects,
+task/dependency table, acceptance → task → verification mapping, evidence,
+risks, contradictions, and no more than three focused human decisions. Review
+is read-only; see `docs/plan-review.md` for the exact card and the optional
+host question-prompt procedure that presents those same decisions through the
+current host's native question UI when one is present, falling back to the
+card text otherwise. Approval confirmation itself remains owned by `cc-gates`
+and `docs/gates.md`.
 
-A plan has at most one active writing owner. The runtime contract uses an
-exclusive plan lease and an exclusive worktree. Two writing sessions must never
-share that worktree. Completion evidence, tests, Git state, or a verifier
-handoff do not change canonical plan or task status. Missing evidence or a
-failed verifier blocks the completion record; the canonical status remains
-unchanged.
+## Approval
 
-## Archive eligibility and discovery
+`Approve plan <id>` shows a session-bound card and changes nothing. Card
+wording is in `docs/gates.md`. On exact `Confirm approval of plan <id>` only,
+call `cc_transition_plan_status` once. That transition is status-only. The
+next gate is in `docs/gates.md`.
 
-`archive.yaml` is an optional, versioned sidecar in a plan bundle. It owns
-only whether ordinary routing may select the plan. It never changes the
-canonical `plan.yaml` status or the task projection. A missing sidecar means
-the plan remains active-compatible. The sidecar keeps an append-only sequence
-of `archived` and `restored` events, each with plan identity, actor, timestamp,
-reason, observed canonical status, and replacement references. The latest
-event determines eligibility. Invalid, empty, or identity-mismatched sidecars
-block selection and require a human recovery decision.
+## Execution
 
-Only `cc-archive-plan`, after an explicit current-session `archive` gate,
-appends archive or restore evidence. It never deletes a bundle, runtime
-evidence, dirty work, or Git history; it never changes a plan or task status,
-cascades to related plans, approves a plan, or acts as cleanup.
+`Run approved plan <id>` is a separate explicit request. Preflight status,
+dependencies, archive eligibility, dirty base, wrapper compatibility, ownership,
+and child capability. On success, the root claims an exclusive lease, creates a
+worktree and receipt, delegates one writer, then one independent verifier.
+Sequential tasks share the writer and worktree. Connected plans freeze a DAG
+and progress cursor; they do not create a hidden plan or scheduler.
 
-Ordinary discovery excludes a plan whose latest sidecar event is `archived`.
-Session entry and `cc-whats-next` omit it from recommendations. `cc-approve-plan`,
-`cc-run-plan`, `cc-run-stack`, and `cc-finish-plan` reject it even if named
-explicitly. Explicit historical reads remain available at the unchanged plan
-path. Before archive or restore, preflight checks plan identity and sidecar
-shape, live lease and writing-session ownership, stack membership, worktree
-ownership, dirty and unpushed work, dependencies, compatibility, and (on
-restore) current branch and worktree state. Any ambiguity blocks the action.
+If someone runs before the product-source maintainer commit, execution reports
+`MAINTAINER_APPROVAL_COMMIT_REQUIRED`. That class is not an execution
+exemption. The commit card is in `docs/gates.md`. It never treats arbitrary
+dirty source as safe and never commits automatically.
 
-An archived `done` dependency remains an inspectable done dependency. An
-archived unfinished dependency (`draft` or `approved`) is unresolved and
-blocks its active dependents; it never silently satisfies or disappears from a
-dependency graph. Restoring is a fresh eligibility action, not a replacement
-for approval or execution preflight.
+## Completion
 
-On approval, completion, and session entry or resume, the coordinator
-reconciles every included task to the projection expected by the plan. The
-operation is bulk, idempotent, preserves task metadata such as
-`external_status`, and does not rerun implementation or verification checks.
-Runtime session state may say that a plan is being executed, blocked, or
-awaiting review, but it must never silently change the canonical plan status.
+When every task has evidence, the verifier passes, and the worktree is clean
+and committed, write runtime `completion.yaml` with
+`ready-for-human-status-change`. Show a Finish Card. On exact confirmation only,
+update approved → done and task projections ready → done, release the owned
+lease, and preserve runtime/worktrees/branches for later delivery or cleanup.
 
-For large projects, prefer several coherent plans by domain or repository
-boundary rather than one unbounded plan. Multiple approved plans may execute
-concurrently when their worktrees and ownership are distinct.
+Only an independent `passed` outcome satisfies completion. Exact-match
+evidence-layer comparison is owned by `wrapper/contracts/schemas/plan.yaml`.
+Writer handoff mappings are claims. `failed`, `blocked`, and `waived` remain
+non-passing and are never a finish authorization.
 
-Approved single-plan execution enters through `cc-run-plan`. The root directs
-a writer child and an independent verifier child. Sequential tasks share one
-writer child and one worktree; independent plans use separate children and
-worktrees. Overlapping paths are reported before merge or publication.
-Standalone `cc-run-plan` creates or reuses the exclusive worktree from the
-repository default or active branch.
+Implemented is runtime evidence; Done is human-confirmed canonical status.
 
-`cc-run-stack` executes a connected set of already-approved plans in one root
-session. It interprets existing prose `dependencies` into a frozen runtime
-`graph.yaml` and tracks resume state in `progress.yaml` under
-`.runtime/stacks/<stack-id>/`. Do not migrate those dependencies into a new
-`plan.yaml` schema. Runtime must not override `plan.yaml`. There is no
-`plans/<repository-key>-stacks/` layout and no durable `stack.yaml`.
+## Archive
 
-Implemented is runtime: the writer finished, the independent verifier passed,
-the worktree HEAD is committed and clean, and `completion.yaml` is
-`ready-for-human-status-change`, while `plan.yaml` remains `approved`.
-Dependents wait on implemented parents, not `done`. Freeze the parent SHA on
-`progress.yaml`. A no-parent member uses the default or active branch. A
-single-parent member is based on the parent frozen SHA. A multi-parent member
-joins those SHAs in-run and does not wait for `default_branch`. When every
-member is implemented, stop and hand the human the leaf worktrees. Do not
-mark plans done from the stack.
+`archive.yaml` is optional and append-only. A latest `archived` event removes a
+plan from ordinary selection without changing status or deleting evidence.
+Active owners, dirty/unpushed work, stack membership, and unresolved unfinished
+dependencies block archive/restore. Restore is separate from approval and run.

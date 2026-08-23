@@ -1,14 +1,9 @@
 # Workspace
 
-This directory is a Context Circuit workspace.
+This is the Context Circuit product source workspace. Its source identity is
+owned by `workspace.yaml`; `template/` is the blank mutable seed copied into a
+new user workspace. The source checkout's `context/` describes the product and
+its maintainer conventions, not an instantiated customer project.
 
-Identity lives in `workspace.yaml` and is summarized here after
-initialization. Until then, this page records the framework-scoped fact that
-the directory is a workspace and is not yet initialized, or may be
-initialized with no repositories.
-
-Registered repositories are a workspace map, not the project description.
-Project identity lives in `PROJECT.md`.
-
-`sources/`, `context/`, `plans/`, `.runtime/`, and registered repositories
-remain separate layers.
+Released root adapters live under `wrapper/adapters/` and are staged at the
+workspace root by the maintainer-only release assembler.
