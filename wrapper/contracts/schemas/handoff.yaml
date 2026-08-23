@@ -17,4 +17,12 @@ host_evidence:
     replacement for offline acceptance
   fallback: provider failure is labeled disabled, denied, or unavailable;
     filesystem-only operation remains valid
+evidence_layers:
+  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
+  runtime_fields: [observed_layer, outcome, evidence_ref]
+  observed_layer: [schema, store, api, process, browser, human]
+  outcomes: [passed, failed, blocked, waived]
+  writer_claim: writer-recorded mappings are claims and cannot satisfy independent verification
+  waived: non-passing; not a handoff success status and not a gate
+  completion_rule: only passed satisfies completion
 statuses: [completed, blocked, failed, awaiting-human-gate]

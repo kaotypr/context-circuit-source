@@ -3,8 +3,36 @@ owner: plans/<repository>-plans/<plan>/plan.yaml
 required: [schema_version, id, number, title, status, repository, source, product_knowledge, objective, scope, non_goals, dependencies, tasks, acceptance, verification, human_gates, created_at, updated_at]
 enums:
   status: [draft, approved, done]
+evidence_layers:
+  owner: wrapper/contracts/schemas/plan.yaml
+  vocabulary: [schema, store, api, process, browser, human]
+  comparison: exact-match-only
+  rule: required_layer must equal observed_layer; no weaker, stronger, or inferred layer passes
+  multiple_layers: emit one verification mapping per produced layer instead of inferring equivalence
+  strength_hierarchy: none
+  forbidden: [cross-layer-inference, browser-embedding, provider-sdk, host-automation-framework]
+  fields:
+    required_layer: owned by each acceptance entry
+    produced_layer: owned by each verification mapping
+  new_work: every new acceptance criterion declares one required_layer; every verification mapping declares one produced_layer
+  unfinished_legacy: explicit required_layer and produced_layer mapping is required before new verification
+  completed_historical: readable without rewrite; migration must not invent required_layer, produced_layer, or observed evidence
+acceptance_entry:
+  required: [id, required_layer, outcome]
+  required_layer: [schema, store, api, process, browser, human]
+verification_mapping:
+  required: [id, acceptance, produced_layer, command, proves]
+  produced_layer: [schema, store, api, process, browser, human]
+outcomes:
+  values: [passed, failed, blocked, waived]
+  completion_rule: only passed satisfies completion; blocked and waived remain non-passing
+  waived: non-passing limitation metadata; not a gate; never counts as verifier success
+  waiver_gate: none
 rules:
   - plan.yaml owns lifecycle status and canonical IDs
   - approval changes status draft to approved only
   - finish changes approved to done only after completion evidence and confirmation
   - schema v1 remains readable and is not silently rewritten
+  - plan schema owns required_layer and produced_layer; tasks do not
+  - new and unfinished work without an explicit evidence-layer mapping cannot start new verification
+  - completed historical evidence remains readable and is never rewritten or invented

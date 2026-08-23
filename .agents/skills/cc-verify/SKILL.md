@@ -20,3 +20,8 @@ The verifier reads the engine-generated graph and calls
 `cc_validate_runtime_graph` plus current receipt validation before checking
 the worktree. It consumes the same delegation and handoff skeleton as the
 writer; it never reconstructs records or uses launch text to expand scope.
+
+Compare required and observed layers only through engine validation owned by
+`wrapper/contracts/schemas/plan.yaml`. Do not restate or extend that policy
+here. Report passed, failed, blocked, and waived as distinct outcomes. Writer
+evidence is a claim. Remain read-only and never repair.

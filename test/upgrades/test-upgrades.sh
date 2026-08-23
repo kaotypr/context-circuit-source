@@ -58,4 +58,28 @@ contains "$legacy/context/WORKSPACE.md" 'Legacy authored Product Knowledge witho
 contains "$ROOT/docs/configuration.md" 'workspace.yaml` is the workspace identifier'
 contains "$ROOT/docs/getting-started.md" 'proposed defaults'
 contains "$ROOT/wrapper/migrations/README.md" 'does not change accepted'
+contains "$ROOT/wrapper/migrations/README.md" 'Completed historical evidence remains readable without rewrite'
+contains "$ROOT/wrapper/migrations/README.md" 'explicit evidence-layer mapping'
+printf '%s\n' "$(cc_migration_evidence_rules)" | grep -F 'invent-evidence: forbidden' >/dev/null || fail 'migration evidence invent rule missing'
+
+fx_legacy="$ROOT/test/upgrades/fixtures/evidence-layers"
+require_file "$fx_legacy/legacy-completed.yaml"
+require_file "$fx_legacy/legacy-unfinished.yaml"
+require_file "$fx_legacy/mapped-unfinished.yaml"
+assert_eq "$(cc_legacy_evidence_classify "$fx_legacy/legacy-completed.yaml")" legacy-completed-readable
+assert_eq "$(cc_require_explicit_evidence_mapping "$fx_legacy/legacy-completed.yaml")" LEGACY_COMPLETED_READABLE
+unfinished=$(cc_require_explicit_evidence_mapping "$fx_legacy/legacy-unfinished.yaml" 2>&1 || true)
+printf '%s\n' "$unfinished" | grep -F EVIDENCE_MAPPING_REQUIRED >/dev/null || fail 'unfinished legacy work skipped explicit mapping'
+assert_eq "$(cc_legacy_evidence_classify "$fx_legacy/legacy-unfinished.yaml")" mapping-required
+assert_eq "$(cc_require_explicit_evidence_mapping "$fx_legacy/mapped-unfinished.yaml")" EVIDENCE_MAPPING_PRESENT
+
+round_trip=$(mktemp -d "${TMPDIR:-/tmp}/cc-legacy-evidence.XXXXXX")
+trap 'rm -rf "$legacy" "$upgrade_receipt" "$round_trip"; rm -f "$legacy_child_start"' EXIT HUP INT TERM
+cc_migrate_legacy_evidence "$fx_legacy/legacy-completed.yaml" "$round_trip/completed.yaml"
+cmp -s "$fx_legacy/legacy-completed.yaml" "$round_trip/completed.yaml" || fail 'completed historical evidence was rewritten'
+assert_eq "$(cc_legacy_evidence_invented "$fx_legacy/legacy-completed.yaml" "$round_trip/completed.yaml")" EVIDENCE_NOT_INVENTED
+cc_migrate_legacy_evidence "$fx_legacy/legacy-unfinished.yaml" "$round_trip/unfinished.yaml"
+assert_eq "$(cc_legacy_evidence_invented "$fx_legacy/legacy-unfinished.yaml" "$round_trip/unfinished.yaml")" EVIDENCE_NOT_INVENTED
+contains "$round_trip/unfinished.yaml" 'required_layer: omitted'
+not_contains "$round_trip/completed.yaml" 'required_layer: process'
 pass 'compatible, migration-needed, blocked, legacy-unknown, and rollback boundaries'
