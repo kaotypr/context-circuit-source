@@ -2,7 +2,7 @@ schema_version: 2
 id: engine-owned-runtime-records
 number: CC-009
 title: Engine-owned runtime records and child packets
-status: draft
+status: approved
 repository: context-circuit-source
 source: sources/wrapper-action-cost-and-integrity-prd.md
 product_knowledge:
