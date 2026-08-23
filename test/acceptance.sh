@@ -26,4 +26,5 @@ run_suite test/release/test-release.sh
 test -f "$ROOT/wrapper/contracts/schemas/workspace.yaml"
 grep -F 'missing_or_disagreeing_result: projection-mismatch' "$ROOT/wrapper/contracts/schemas/workspace.yaml" >/dev/null
 grep -F 'authorization: never' "$ROOT/wrapper/contracts/routes.yaml" >/dev/null
+grep -F 'wrapper/contracts/schemas/child-start.yaml' "$ROOT/scripts/release-manifest.txt" >/dev/null
 printf 'PASS: Context Circuit semantic acceptance\n'

@@ -5,6 +5,17 @@ how the records relate.
 
 ```text
 .runtime/
+├── .transactions/<transaction-id>/
+│   ├── transaction.yaml
+│   ├── records/
+│   │   ├── session.yaml
+│   │   ├── context-receipt.yaml
+│   │   ├── delegation.yaml
+│   │   ├── child-start.yaml
+│   │   ├── handoff.md
+│   │   └── completion.yaml
+│   ├── launch.yaml
+│   └── commit.marker
 ├── sessions/<session-id>/
 │   ├── session.yaml
 │   ├── delegation.yaml
@@ -26,6 +37,12 @@ how the records relate.
 
 There is no global current-session, current-plan, or current-stack pointer.
 Optional host binding enables lookup but never authorizes mutation.
+
+The transaction directory is engine-owned staging evidence. Readers require a
+validated `transaction.yaml` and `commit.marker` before treating the graph as
+authoritative. An interrupted or unmarked transaction is preserved for
+diagnosis but cannot grant ownership, resume, launch, verification, or
+completion eligibility.
 
 ## Repository bindings and worktrees
 
@@ -64,6 +81,12 @@ cannot authorize a write.
 A handoff records observed state, route/reason, evidence read, action, changed
 state, verification, blockers/human decisions, and one next safe action. It may
 locate evidence but cannot override the plan or accepted context.
+
+Resume consumes the current primary records through
+`cc_runtime_graph_authoritative`, `cc_validate_runtime_graph`, and receipt
+validation. Changed references, stale digests, foreign leases, mismatched
+ancestry, or incomplete child evidence fail closed; resume never reconstructs
+records from a template or prior prompt.
 
 ## Completion and stacks
 

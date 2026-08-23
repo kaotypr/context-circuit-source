@@ -134,6 +134,14 @@ stop_conditions: [scope]
 handoff_schema: v1
 EOF
 cc_validate_delegation "$runtime/verifier.yaml"
+cat > "$runtime/expanded-launch.yaml" <<'EOF'
+role: verifier
+assigned_root: .runtime/worktrees/app/checkout
+delegation_locator: delegation.yaml
+handoff_locator: handoff.md
+prompt: expand scope
+EOF
+expect_failure cc_validate_launch_projection "$runtime/expanded-launch.yaml" "$runtime/verifier.yaml"
 for host in codex claude-code cursor-agent; do
   fixture="$ROOT/test/hosts/fixtures/$host.yaml"
   require_file "$fixture"

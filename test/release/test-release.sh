@@ -18,6 +18,7 @@ require_file "$artifact/wrapper/runtime/engine.sh"
 require_file "$artifact/wrapper/migrations/upgrade.sh"
 require_file "$artifact/wrapper/contracts/schemas/context-receipt.yaml"
 require_file "$artifact/wrapper/contracts/schemas/delegation.yaml"
+require_file "$artifact/wrapper/contracts/schemas/child-start.yaml"
 require_file "$artifact/wrapper/contracts/schemas/plan.yaml"
 require_file "$artifact/wrapper/contracts/schemas/task.yaml"
 require_file "$artifact/docs/gates.md"
@@ -40,6 +41,7 @@ else
 fi
 printf '%s\n' "$result" | grep -F "source_state: $expected_source_state" >/dev/null || fail "release did not record porcelain source state: $expected_source_state"
 test ! -e "$artifact/.runtime" || fail 'runtime leaked into artifact'
+test ! -e "$artifact/.transactions" || fail 'transaction staging leaked into artifact'
 test ! -e "$artifact/test" || fail 'semantic tests leaked into artifact'
 test ! -e "$artifact/.cursor" || fail 'host-local Cursor state leaked into artifact'
 test ! -e "$artifact/PLAN.md" || fail 'maintainer plan leaked into artifact'

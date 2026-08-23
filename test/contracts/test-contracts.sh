@@ -7,6 +7,7 @@ for path in \
   wrapper/contracts/context-sets.yaml wrapper/contracts/tier0.yaml \
   wrapper/contracts/schemas/workspace.yaml wrapper/contracts/schemas/session.yaml \
   wrapper/contracts/schemas/delegation.yaml wrapper/contracts/schemas/context-receipt.yaml \
+  wrapper/contracts/schemas/child-start.yaml \
   wrapper/contracts/schemas/lease.yaml wrapper/contracts/schemas/handoff.yaml \
   wrapper/contracts/schemas/plan.yaml wrapper/contracts/schemas/task.yaml \
   wrapper/contracts/schemas/archive.yaml wrapper/contracts/schemas/completion.yaml \
@@ -31,6 +32,9 @@ contains "$ROOT/wrapper/manifest.yaml" 'repositories.local.yaml'
 contains "$ROOT/docs/getting-started.md" 'create the ignored root'
 contains "$ROOT/wrapper/contracts/schemas/session.yaml" 'host_evidence:'
 contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'host_id'
+contains "$ROOT/wrapper/contracts/schemas/child-start.yaml" 'evidence_only: child-start.yaml records validated launch evidence and never authorizes execution'
+contains "$ROOT/wrapper/contracts/schemas/child-start.yaml" 'commit_marker: engine-generated marker is required for authoritative graph publication'
+contains "$ROOT/wrapper/contracts/schemas/child-start.yaml" 'legacy-readable: preserve readable legacy evidence without rewriting or upgrading authority'
 contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'offline_fallback'
 contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'provider-payloads'
 contains "$ROOT/wrapper/contracts/routes.yaml" 'host_binding:'
@@ -38,6 +42,29 @@ contains "$ROOT/wrapper/contracts/routes.yaml" 'unavailable_child: block-missing
 contains "$ROOT/wrapper/contracts/routes.yaml" 'context_set_map:'
 contains "$ROOT/wrapper/contracts/schemas/context-receipt.yaml" 'packet_digest'
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-HOST-01'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-REC-03'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-REC-04'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-REC-05'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'child_scope_authority: wrapper/contracts/schemas/delegation.yaml'
+contains "$ROOT/wrapper/manifest.yaml" 'child_start: [1]'
+
+for record_schema in session context-receipt delegation child-start handoff completion; do
+  contains "$ROOT/wrapper/contracts/schemas/$record_schema.yaml" 'constructor_inputs:'
+  contains "$ROOT/wrapper/contracts/schemas/$record_schema.yaml" 'engine_generated:'
+  contains "$ROOT/wrapper/contracts/schemas/$record_schema.yaml" 'transaction_states: [staged, valid, committed, interrupted, legacy-readable]'
+  contains "$ROOT/wrapper/contracts/schemas/$record_schema.yaml" 'compatibility:'
+done
+contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'engine_generated: [schema_version, wrapper_version, delegation_id'
+contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'engine_generated: [schema_version, wrapper_version, handoff_id'
+contains "$ROOT/wrapper/contracts/schemas/completion.yaml" 'engine_generated: [schema_version, wrapper_version, completion_id'
+contains "$ROOT/wrapper/contracts/schemas/child-start.yaml" 'engine_generated: [schema_version, wrapper_version, child_start_id'
+
+child_start_fixture=$(mktemp "${TMPDIR:-/tmp}/cc-child-start.XXXXXX")
+sed -n '/^required:/,/^record_contract:/p' "$ROOT/wrapper/contracts/schemas/child-start.yaml" >"$child_start_fixture"
+contains "$child_start_fixture" 'ownership_graph_digest'
+contains "$child_start_fixture" 'transaction_state'
+contains "$child_start_fixture" 'commit_marker'
+rm -f "$child_start_fixture"
 contains "$ROOT/.gitignore" 'repositories/'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'workspace.roles'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'canonical_projection: none-or-comma-separated'

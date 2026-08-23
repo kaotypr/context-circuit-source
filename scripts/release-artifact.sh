@@ -62,6 +62,7 @@ done
 for fixture in \
   wrapper/contracts/schemas/context-receipt.yaml \
   wrapper/contracts/schemas/delegation.yaml \
+  wrapper/contracts/schemas/child-start.yaml \
   wrapper/contracts/schemas/plan.yaml \
   wrapper/contracts/schemas/task.yaml \
   docs/gates.md docs/templates/plan.md docs/templates/plan.yaml \

@@ -20,6 +20,8 @@ if rg -n '^[[:space:]]*(password|api_key|access_token|client_secret):' "$ROOT/wr
 fi
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'sources/ is passive'
 contains "$ROOT/wrapper/contracts/context-sets.yaml" 'broad sources scan'
+contains "$ROOT/wrapper/contracts/schemas/child-start.yaml" 'evidence_only: child-start.yaml records validated launch evidence and never authorizes execution'
+contains "$ROOT/wrapper/contracts/schemas/child-start.yaml" 'forbidden: [prompt, credentials, tokens, provider-payloads, transcripts, auth-state, permission-grants]'
 for fixture in "$ROOT"/test/hosts/fixtures/*.yaml; do
   require_file "$fixture"
   not_contains "$fixture" 'password:'

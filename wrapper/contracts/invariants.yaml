@@ -37,6 +37,12 @@ invariants:
     rule: Interruption preserves lease, worktree, dirty state, receipt, and handoff; heartbeat expiry never grants takeover.
   - id: INV-REC-02
     rule: Wrapper upgrades replace wrapper-owned files only and preserve workspace data and runtime evidence.
+  - id: INV-REC-03
+    rule: Runtime record constructors separate caller intent and bounded host evidence from engine-derived versions, ancestry, timestamps, revisions, byte counts, digests, ownership, transaction state, and commit markers.
+  - id: INV-REC-04
+    rule: A runtime record is authoritative only after the complete validated record graph reaches committed with a matching engine commit marker; staged, valid, interrupted, or legacy-readable records cannot grant ownership, resume, verification, execution, or completion eligibility.
+  - id: INV-REC-05
+    rule: Legacy-readable records remain explicitly read-compatible and are never silently rewritten, upgraded, or treated as current authority without a new validated transaction.
   - id: INV-SEC-01
     rule: Workspace-relative paths reject traversal, unsafe symlinks, credentials, and writes outside assigned roots.
   - id: INV-SEC-02
@@ -106,3 +112,8 @@ owners:
   gate_effects: wrapper/contracts/routes.yaml
   identity_acceptance_card: docs/gates.md
   repository_registration_card: docs/gates.md
+  runtime_record_contracts: wrapper/contracts/schemas/{session,context-receipt,delegation,child-start,handoff,completion}.yaml
+  runtime_record_transaction: wrapper/contracts/invariants.yaml
+  child_start_evidence: wrapper/contracts/schemas/child-start.yaml
+  child_scope_authority: wrapper/contracts/schemas/delegation.yaml
+  record_compatibility: wrapper/contracts/invariants.yaml

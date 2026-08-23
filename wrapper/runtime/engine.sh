@@ -831,6 +831,526 @@ cc_validate_delegation() {
   fi
 }
 
+# Runtime record constructors and graph publication.  These functions accept
+# only bounded caller intent and validated evidence; they do not invoke a host,
+# provider, scheduler, or gate.  A transaction without commit.marker is never
+# authoritative, even if every staged file happens to be readable.
+
+cc_runtime_now() {
+  date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || return 1
+}
+
+cc_runtime_request_value() {
+  cc_request_file=$1
+  cc_request_key=$2
+  sed -n "s/^${cc_request_key}: //p" "$cc_request_file" | head -n 1
+}
+
+cc_runtime_require_request() {
+  cc_request_value=$(cc_runtime_request_value "$1" "$2")
+  test -n "$cc_request_value" && test "$cc_request_value" != null || {
+    printf 'RUNTIME_INPUT_MISSING: %s\n' "$2" >&2
+    return 1
+  }
+  printf '%s\n' "$cc_request_value"
+}
+
+cc_runtime_host_evidence() {
+  cc_host_request=$1
+  for cc_host_forbidden in credentials tokens provider_payload provider-payloads transcript transcripts auth_state auth-state; do
+    if grep -E "^${cc_host_forbidden}:" "$cc_host_request" >/dev/null 2>&1; then
+      printf 'HOST_EVIDENCE_FORBIDDEN: %s\n' "$cc_host_forbidden" >&2
+      return 1
+    fi
+  done
+  cc_host_id=$(cc_runtime_require_request "$cc_host_request" host_id) || return 1
+  cc_host_version=$(cc_runtime_require_request "$cc_host_request" observed_version) || return 1
+  cc_host_instruction=$(cc_runtime_require_request "$cc_host_request" instruction_surface) || return 1
+  cc_host_role=$(cc_runtime_require_request "$cc_host_request" session_role) || return 1
+  cc_host_root=$(cc_runtime_require_request "$cc_host_request" root_capability) || return 1
+  cc_host_child=$(cc_runtime_require_request "$cc_host_request" child_capability) || return 1
+  cc_host_verifier=$(cc_runtime_require_request "$cc_host_request" verifier_capability) || return 1
+  cc_host_resume=$(cc_runtime_require_request "$cc_host_request" resume_capability) || return 1
+  cc_host_permission=$(cc_runtime_require_request "$cc_host_request" permission_mode) || return 1
+  cc_host_provider=$(cc_runtime_require_request "$cc_host_request" provider_status) || return 1
+  cc_host_fallback=$(cc_runtime_require_request "$cc_host_request" offline_fallback) || return 1
+  cc_host_smoke=$(cc_runtime_request_value "$cc_host_request" live_smoke_status)
+  test -n "$cc_host_smoke" || cc_host_smoke=unavailable
+  case "$cc_host_id" in codex|claude-code|cursor-agent) ;; *) printf '%s\n' HOST_ID_INVALID >&2; return 1 ;; esac
+  case "$cc_host_instruction" in AGENTS.md|CLAUDE.md|shared-root) ;; *) printf '%s\n' HOST_INSTRUCTION_INVALID >&2; return 1 ;; esac
+  case "$cc_host_role" in root|writer|verifier) ;; *) printf '%s\n' HOST_ROLE_INVALID >&2; return 1 ;; esac
+  for cc_host_capability in "$cc_host_root" "$cc_host_child" "$cc_host_verifier" "$cc_host_resume"; do
+    case "$cc_host_capability" in
+      available|unavailable) ;;
+      *) printf '%s\n' HOST_CAPABILITY_INVALID >&2; return 1 ;;
+    esac
+  done
+  case "$cc_host_permission" in read-only|bounded-write|host-managed) ;; *) printf '%s\n' HOST_PERMISSION_INVALID >&2; return 1 ;; esac
+  case "$cc_host_provider" in enabled|disabled|denied|unavailable) ;; *) printf '%s\n' HOST_PROVIDER_INVALID >&2; return 1 ;; esac
+  case "$cc_host_fallback" in filesystem-only|host-blocked) ;; *) printf '%s\n' HOST_FALLBACK_INVALID >&2; return 1 ;; esac
+  case "$cc_host_smoke" in pass|unavailable|host-blocked) ;; *) printf '%s\n' HOST_SMOKE_INVALID >&2; return 1 ;; esac
+  cat <<EOF
+host_evidence:
+  host_id: $cc_host_id
+  observed_version: $cc_host_version
+  instruction_surface: $cc_host_instruction
+  session_role: $cc_host_role
+  root_capability: $cc_host_root
+  child_capability: $cc_host_child
+  verifier_capability: $cc_host_verifier
+  resume_capability: $cc_host_resume
+  permission_mode: $cc_host_permission
+  provider_status: $cc_host_provider
+  offline_fallback: $cc_host_fallback
+  live_smoke_status: $cc_host_smoke
+EOF
+}
+
+cc_runtime_record_strip_metadata() {
+  awk '!/^(record_revision|record_bytes|record_digest|transaction_id|transaction_state|commit_marker|created_at|updated_at):[[:space:]]*/' "$1"
+}
+
+cc_runtime_record_digest_body() {
+  cc_runtime_record_strip_metadata "$1" | awk '!/^ownership_graph_digest:[[:space:]]*/'
+}
+
+cc_runtime_record_seal() {
+  cc_record_file=$1
+  cc_record_transaction=$2
+  cc_record_state=${3:-staged}
+  cc_record_marker=${4:-null}
+  test -f "$cc_record_file" || return 1
+  case "$cc_record_state" in staged|valid|committed|interrupted|legacy-readable) ;; *) return 1 ;; esac
+  cc_record_body="$cc_record_file.body.$$"
+  cc_record_tmp="$cc_record_file.tmp.$$"
+  cc_runtime_record_strip_metadata "$cc_record_file" > "$cc_record_body" || { rm -f "$cc_record_body"; return 1; }
+  cc_record_digest_body="$cc_record_file.digest-body.$$"
+  cc_runtime_record_digest_body "$cc_record_file" > "$cc_record_digest_body" || { rm -f "$cc_record_body" "$cc_record_digest_body"; return 1; }
+  cc_record_revision=$(cc_digest "$cc_record_digest_body") || { rm -f "$cc_record_body" "$cc_record_digest_body"; return 1; }
+  cc_record_bytes=$(wc -c < "$cc_record_digest_body" | tr -d ' \t\n')
+  cc_record_now=$(cc_runtime_now) || { rm -f "$cc_record_body"; return 1; }
+  {
+    cat "$cc_record_body"
+    printf 'created_at: %s\n' "$cc_record_now"
+    printf 'updated_at: %s\n' "$cc_record_now"
+    printf 'record_revision: %s\n' "$cc_record_revision"
+    printf 'record_bytes: %s\n' "$cc_record_bytes"
+    printf 'record_digest: %s\n' "$cc_record_revision"
+    printf 'transaction_id: %s\n' "$cc_record_transaction"
+    printf 'transaction_state: %s\n' "$cc_record_state"
+    printf 'commit_marker: %s\n' "$cc_record_marker"
+  } > "$cc_record_tmp" || { rm -f "$cc_record_body" "$cc_record_digest_body" "$cc_record_tmp"; return 1; }
+  mv "$cc_record_tmp" "$cc_record_file" || { rm -f "$cc_record_body" "$cc_record_digest_body" "$cc_record_tmp"; return 1; }
+  rm -f "$cc_record_body" "$cc_record_digest_body"
+}
+
+cc_construct_session() {
+  cc_output=$1; cc_request=$2; cc_transaction=$3
+  test -n "$cc_output" && test -f "$cc_request" || return 1
+  cc_session=$(cc_runtime_require_request "$cc_request" session_id) || return 1
+  cc_parent=$(cc_runtime_request_value "$cc_request" parent_session_id); test -n "$cc_parent" || cc_parent=null
+  cc_root=$(cc_runtime_require_request "$cc_request" root_session_id) || return 1
+  cc_kind=$(cc_runtime_require_request "$cc_request" kind) || return 1
+  cc_role=$(cc_runtime_require_request "$cc_request" role) || return 1
+  cc_objective=$(cc_runtime_require_request "$cc_request" objective) || return 1
+  cc_scope=$(cc_runtime_require_request "$cc_request" scope) || return 1
+  cc_worktree=$(cc_runtime_require_request "$cc_request" worktree) || return 1
+  cc_safe_id "$cc_session" && cc_safe_id "$cc_root" || return 1
+  case "$cc_kind" in root|child) ;; *) printf '%s\n' SESSION_KIND_INVALID >&2; return 1 ;; esac
+  case "$cc_role" in root|writer|verifier) ;; *) printf '%s\n' SESSION_ROLE_INVALID >&2; return 1 ;; esac
+  test "$cc_kind" = root && test "$cc_parent" = null || test "$cc_kind" = child && test "$cc_parent" != null || { printf '%s\n' SESSION_ANCESTRY_INVALID >&2; return 1; }
+  cc_host_block=$(cc_runtime_host_evidence "$cc_request") || return 1
+  cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
+  {
+    printf 'schema_version: 1\nwrapper_version: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}"
+    printf 'session_id: %s\nparent_session_id: %s\nroot_session_id: %s\n' "$cc_session" "$cc_parent" "$cc_root"
+    printf 'kind: %s\nrole: %s\nobjective: %s\nscope: %s\n' "$cc_kind" "$cc_role" "$cc_objective" "$cc_scope"
+    printf 'permissions:\n  write_worktree: %s\n  write_plan: false\n  write_activity: false\n' "$(test "$cc_role" = writer && printf true || printf false)"
+    printf 'worktree: %s\nstatus: created\n' "$cc_worktree"
+    printf '%s\n' "$cc_host_block"
+  } > "$cc_output" || return 1
+  cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
+}
+
+cc_construct_context_receipt() {
+  cc_output=$1; cc_request=$2; cc_transaction=$3
+  cc_session=$(cc_runtime_require_request "$cc_request" session_id) || return 1
+  cc_route_digest=$(cc_runtime_require_request "$cc_request" route_decision_digest) || return 1
+  cc_context_set=$(cc_runtime_require_request "$cc_request" context_set) || return 1
+  cc_source=$(cc_runtime_request_value "$cc_request" receipt_source)
+  if test -n "$cc_source"; then
+    test -f "$cc_source" && test ! -L "$cc_source" || { printf '%s\n' RECEIPT_SOURCE_INVALID >&2; return 1; }
+    cc_runtime_record_strip_metadata "$cc_source" > "$cc_output" || return 1
+  else
+    cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
+    {
+      printf 'schema_version: 1\nwrapper_version: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}"
+      printf 'session_id: %s\nroute_decision_digest: %s\ncontext_set: %s\n' "$cc_session" "$cc_route_digest" "$cc_context_set"
+      printf 'packet_id: %s\ndeclared_budget_bytes: 0\nactual_bytes: 0\npacket_digest: sha256:empty\nreferences: []\ninvariants: [INV-CTX-01, INV-CTX-02, INV-CTX-03, INV-CTX-04, INV-CTX-05]\n' "$cc_context_set"
+    } > "$cc_output" || return 1
+  fi
+  cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
+}
+
+cc_construct_delegation() {
+  cc_output=$1; cc_request=$2; cc_transaction=$3
+  cc_session_id=$(cc_runtime_require_request "$cc_request" session_id) || return 1
+  cc_parent_session_id=$(cc_runtime_require_request "$cc_request" parent_session_id) || return 1
+  cc_root_session_id=$(cc_runtime_require_request "$cc_request" root_session_id) || return 1
+  cc_role=$(cc_runtime_require_request "$cc_request" role) || return 1
+  cc_objective=$(cc_runtime_require_request "$cc_request" objective) || return 1
+  cc_scope=$(cc_runtime_require_request "$cc_request" scope) || return 1
+  cc_non_goals=$(cc_runtime_require_request "$cc_request" non_goals) || return 1
+  cc_context_set=$(cc_runtime_require_request "$cc_request" context_set) || return 1
+  cc_repository=$(cc_runtime_require_request "$cc_request" repository) || return 1
+  cc_worktree=$(cc_runtime_require_request "$cc_request" worktree) || return 1
+  cc_acceptance_criteria=$(cc_runtime_require_request "$cc_request" acceptance_criteria) || return 1
+  cc_verification=$(cc_runtime_require_request "$cc_request" verification) || return 1
+  cc_expected_evidence=$(cc_runtime_require_request "$cc_request" expected_evidence) || return 1
+  cc_stop_conditions=$(cc_runtime_require_request "$cc_request" stop_conditions) || return 1
+  cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
+  cc_host_block=$(cc_runtime_host_evidence "$cc_request") || return 1
+  cc_permissions_writer=false; test "$cc_role" = writer && cc_permissions_writer=true
+  {
+    printf 'schema_version: 1\nwrapper_version: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}"
+    printf 'delegation_id: %s-delegation\n' "$cc_transaction"
+    printf 'session_id: %s\nparent_session_id: %s\nroot_session_id: %s\nrole: %s\n' "$cc_session_id" "$cc_parent_session_id" "$cc_root_session_id" "$cc_role"
+    printf 'objective: %s\nscope: %s\nnon_goals: %s\ncontext_set: %s\ncontext_receipt: context-receipt.yaml\n' "$cc_objective" "$cc_scope" "$cc_non_goals" "$cc_context_set"
+    printf 'repository: %s\nworktree: %s\npermissions:\n  write_worktree: %s\n  write_plan: false\n  write_activity: false\n' "$cc_repository" "$cc_worktree" "$cc_permissions_writer"
+    printf 'acceptance_criteria: %s\nverification: %s\nexpected_evidence: %s\nstop_conditions: %s\nhandoff_schema: wrapper/contracts/schemas/handoff.yaml\n' "$cc_acceptance_criteria" "$cc_verification" "$cc_expected_evidence" "$cc_stop_conditions"
+    printf '%s\n' "$cc_host_block"
+  } > "$cc_output" || return 1
+  cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
+}
+
+cc_construct_handoff() {
+  cc_output=$1; cc_request=$2; cc_transaction=$3
+  cc_session=$(cc_runtime_require_request "$cc_request" session_id) || return 1
+  cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
+  cc_now=$(cc_runtime_now) || return 1
+  {
+    printf '%s\n' '---'
+    printf 'schema_version: 1\nwrapper_version: %s\nhandoff_id: %s-handoff\nsession_id: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}" "$cc_transaction" "$cc_session"
+    printf '%s\n' '---' '# Runtime handoff skeleton' '' '## Observed state' '' 'Generated by the host-neutral engine.' '' '## Selected route and reason' '' 'Bounded runtime graph construction.' '' '## Evidence read' '' 'Validated session, receipt, delegation, and ownership inputs.' '' '## Host evidence' '' 'Provider-neutral host evidence remains in the delegation record.' '' '## Action performed or proposed' '' 'No provider or host action is performed by the engine.' '' '## Files/state changed' '' 'Runtime graph transaction only.' '' '## Verification' '' 'Independent verification required.' '' '## Blockers and human decisions' '' 'None recorded by the constructor.' '' '## One next safe action' '' 'Validate the complete graph before publication.'
+    printf '<!-- created_at: %s -->\n' "$cc_now"
+  } > "$cc_output" || return 1
+  cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
+}
+
+cc_construct_completion() {
+  cc_output=$1; cc_request=$2; cc_transaction=$3
+  cc_plan=$(cc_runtime_require_request "$cc_request" plan) || return 1
+  cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
+  {
+    printf 'schema_version: 1\nwrapper_version: %s\ncompletion_id: %s-completion\nplan: %s\nstatus: not-ready\ntask_evidence: pending\nverifier: pending\nworktree: pending\ngit: pending\nhuman_gate: required\n' "${CC_WRAPPER_VERSION:-1.0.0}" "$cc_transaction" "$cc_plan"
+  } > "$cc_output" || return 1
+  cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
+}
+
+cc_construct_child_start() {
+  cc_output=$1; cc_request=$2; cc_transaction=$3; cc_delegation=$4; cc_receipt=$5
+  test -f "$cc_delegation" && test -f "$cc_receipt" || return 1
+  cc_validate_delegation "$cc_delegation" || { printf '%s\n' INVALID_DELEGATION >&2; return 1; }
+  cc_validate_receipt "$cc_receipt" || { printf '%s\n' INVALID_RECEIPT >&2; return 1; }
+  cc_session=$(cc_runtime_require_request "$cc_request" session_id) || return 1
+  cc_parent=$(cc_runtime_require_request "$cc_request" parent_session_id) || return 1
+  cc_root=$(cc_runtime_require_request "$cc_request" root_session_id) || return 1
+  cc_role=$(cc_runtime_require_request "$cc_request" role) || return 1
+  cc_repository=$(cc_runtime_require_request "$cc_request" repository) || return 1
+  cc_worktree=$(cc_runtime_require_request "$cc_request" worktree) || return 1
+  cc_delegation_digest=$(cc_digest "$cc_delegation") || return 1
+  cc_receipt_digest=$(cc_digest "$cc_receipt") || return 1
+  cc_delegation_bytes=$(wc -c < "$cc_delegation" | tr -d ' \t\n')
+  cc_receipt_bytes=$(wc -c < "$cc_receipt" | tr -d ' \t\n')
+  cc_host_digest=$(cc_digest_text "$(grep -A12 '^host_evidence:' "$cc_delegation")")
+  cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
+  {
+    printf 'schema_version: 1\nwrapper_version: %s\nchild_start_id: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}" "$cc_transaction"
+    printf 'session_id: %s\nparent_session_id: %s\nroot_session_id: %s\nrole: %s\nrepository: %s\nworktree: %s\n' "$cc_session" "$cc_parent" "$cc_root" "$cc_role" "$cc_repository" "$cc_worktree"
+    printf 'delegation_locator: delegation.yaml\ndelegation_revision: %s\ndelegation_bytes: %s\ndelegation_digest: %s\n' "$cc_delegation_digest" "$cc_delegation_bytes" "$cc_delegation_digest"
+    printf 'context_receipt_locator: context-receipt.yaml\ncontext_receipt_revision: %s\ncontext_receipt_bytes: %s\ncontext_receipt_digest: %s\n' "$cc_receipt_digest" "$cc_receipt_bytes" "$cc_receipt_digest"
+    printf 'host_evidence_digest: %s\nownership_graph_digest: pending\nlaunch_locator: launch.yaml\nhandoff_locator: handoff.md\n' "$cc_host_digest"
+  } > "$cc_output" || return 1
+  cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
+}
+
+cc_runtime_transaction_begin() {
+  cc_runtime_root=$1; cc_transaction=$2
+  cc_safe_id "$cc_transaction" || return 1
+  cc_stage="$cc_runtime_root/.transactions/$cc_transaction"
+  test ! -e "$cc_stage" || { printf '%s\n' TRANSACTION_EXISTS >&2; return 1; }
+  mkdir -p "$cc_stage/records" || return 1
+  cc_atomic_write "$cc_stage/transaction.yaml" "schema_version: 1" "transaction_id: $cc_transaction" 'transaction_state: staged' 'commit_marker: null'
+}
+
+cc_runtime_graph_files() {
+  printf '%s\n' session.yaml context-receipt.yaml delegation.yaml child-start.yaml handoff.md completion.yaml lease.yaml
+}
+
+cc_runtime_graph_record_path() {
+  printf '%s/records/%s\n' "$1" "$2"
+}
+
+cc_runtime_record_set_field() {
+  cc_set_file=$1
+  cc_set_field=$2
+  cc_set_value=$3
+  cc_set_tmp="$cc_set_file.set.$$"
+  awk -v field="$cc_set_field" -v value="$cc_set_value" '
+    BEGIN { replaced=0 }
+    $0 ~ "^" field ":" { print field ": " value; replaced=1; next }
+    { print }
+    END { exit replaced ? 0 : 1 }
+  ' "$cc_set_file" > "$cc_set_tmp" || { rm -f "$cc_set_tmp"; return 1; }
+  mv "$cc_set_tmp" "$cc_set_file"
+}
+
+cc_runtime_record_validate_metadata() {
+  cc_metadata_file=$1
+  cc_metadata_transaction=$2
+  cc_metadata_state=$3
+  cc_metadata_marker=${4:-}
+  test -f "$cc_metadata_file" || return 1
+  for cc_metadata_field in schema_version wrapper_version record_revision record_bytes record_digest transaction_id transaction_state commit_marker created_at updated_at; do
+    grep -E "^${cc_metadata_field}:" "$cc_metadata_file" >/dev/null 2>&1 || { printf 'RECORD_METADATA_MISSING: %s:%s\n' "$cc_metadata_file" "$cc_metadata_field" >&2; return 1; }
+  done
+  cc_metadata_id_field=
+  case "$(basename "$cc_metadata_file")" in
+    session.yaml) cc_metadata_id_field=session_id ;;
+    context-receipt.yaml) cc_metadata_id_field=session_id ;;
+    delegation.yaml) cc_metadata_id_field=delegation_id ;;
+    child-start.yaml) cc_metadata_id_field=child_start_id ;;
+    handoff.md) cc_metadata_id_field=handoff_id ;;
+    completion.yaml) cc_metadata_id_field=completion_id ;;
+  esac
+  if test -n "$cc_metadata_id_field"; then
+    cc_metadata_id=$(sed -n "s/^${cc_metadata_id_field}: //p" "$cc_metadata_file" | head -n 1)
+    test -n "$cc_metadata_id" && test "$cc_metadata_id" != null && test "$cc_metadata_id" != pending || { printf 'RECORD_ID_MISSING: %s\n' "$cc_metadata_file" >&2; return 1; }
+  fi
+  cc_metadata_bytes=$(sed -n 's/^record_bytes: //p' "$cc_metadata_file" | head -n 1)
+  case "$cc_metadata_bytes" in ''|*[!0-9]*) printf 'RECORD_BYTES_INVALID: %s\n' "$cc_metadata_file" >&2; return 1 ;; esac
+  cc_metadata_record_transaction=$(sed -n 's/^transaction_id: //p' "$cc_metadata_file" | head -n 1)
+  test "$cc_metadata_record_transaction" = "$cc_metadata_transaction" || { printf 'RECORD_TRANSACTION_MISMATCH: %s\n' "$cc_metadata_file" >&2; return 1; }
+  cc_metadata_record_state=$(sed -n 's/^transaction_state: //p' "$cc_metadata_file" | head -n 1)
+  test "$cc_metadata_record_state" = "$cc_metadata_state" || { printf 'RECORD_STATE_MISMATCH: %s\n' "$cc_metadata_file" >&2; return 1; }
+  if test -n "$cc_metadata_marker"; then
+    cc_metadata_record_marker=$(sed -n 's/^commit_marker: //p' "$cc_metadata_file" | head -n 1)
+    test "$cc_metadata_record_marker" = "$cc_metadata_marker" || { printf 'RECORD_MARKER_MISMATCH: %s\n' "$cc_metadata_file" >&2; return 1; }
+  fi
+  cc_metadata_digest_body="$cc_metadata_file.verify-body.$$"
+  cc_runtime_record_digest_body "$cc_metadata_file" > "$cc_metadata_digest_body" || { rm -f "$cc_metadata_digest_body"; return 1; }
+  cc_metadata_current_digest=$(cc_digest "$cc_metadata_digest_body") || { rm -f "$cc_metadata_digest_body"; return 1; }
+  cc_metadata_current_bytes=$(wc -c < "$cc_metadata_digest_body" | tr -d ' \t\n')
+  rm -f "$cc_metadata_digest_body"
+  test "$cc_metadata_current_digest" = "$(sed -n 's/^record_revision: //p' "$cc_metadata_file" | head -n 1)" || { printf 'RECORD_REVISION_STALE: %s\n' "$cc_metadata_file" >&2; return 1; }
+  test "$cc_metadata_current_digest" = "$(sed -n 's/^record_digest: //p' "$cc_metadata_file" | head -n 1)" || { printf 'RECORD_DIGEST_STALE: %s\n' "$cc_metadata_file" >&2; return 1; }
+  test "$cc_metadata_current_bytes" = "$cc_metadata_bytes" || { printf 'RECORD_BYTES_STALE: %s\n' "$cc_metadata_file" >&2; return 1; }
+  grep -Eq '^created_at: [0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+Z$' "$cc_metadata_file" || return 1
+  grep -Eq '^updated_at: [0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+Z$' "$cc_metadata_file" || return 1
+  if test "$(basename "$cc_metadata_file")" = child-start.yaml && test "$cc_metadata_state" = committed; then
+    test "$(sed -n 's/^ownership_graph_digest: //p' "$cc_metadata_file" | head -n 1)" = "$cc_metadata_marker" || { printf '%s\n' CHILD_START_GRAPH_DIGEST_MISMATCH >&2; return 1; }
+  fi
+}
+
+cc_runtime_graph_digest() {
+  cc_graph_dir=$1
+  cc_graph_material_file="$cc_graph_dir.graph-material.$$"
+  : > "$cc_graph_material_file" || return 1
+  for cc_graph_name in $(cc_runtime_graph_files); do
+    cc_graph_file=$(cc_runtime_graph_record_path "$cc_graph_dir" "$cc_graph_name")
+    test -f "$cc_graph_file" || { rm -f "$cc_graph_material_file"; return 1; }
+    cc_graph_body="$cc_graph_file.graph-body.$$"
+    cc_runtime_record_digest_body "$cc_graph_file" > "$cc_graph_body" || { rm -f "$cc_graph_material_file" "$cc_graph_body"; return 1; }
+    cc_graph_current_digest=$(cc_digest "$cc_graph_body") || { rm -f "$cc_graph_material_file" "$cc_graph_body"; return 1; }
+    cc_graph_current_bytes=$(wc -c < "$cc_graph_body" | tr -d ' \t\n')
+    rm -f "$cc_graph_body"
+    printf '%s|%s|%s|%s\n' "$cc_graph_name" "$cc_graph_current_digest" "$(sed -n 's/^record_digest: //p' "$cc_graph_file" | head -n 1)" "$cc_graph_current_bytes" >> "$cc_graph_material_file"
+  done
+  cc_digest "$cc_graph_material_file"
+  cc_graph_result=$?
+  rm -f "$cc_graph_material_file"
+  return "$cc_graph_result"
+}
+
+cc_runtime_validate_host_evidence() {
+  cc_host_file=$1
+  for cc_host_field in host_id observed_version instruction_surface session_role root_capability child_capability verifier_capability resume_capability permission_mode provider_status offline_fallback; do
+    grep -E "^  ${cc_host_field}:" "$cc_host_file" >/dev/null 2>&1 || { printf 'HOST_EVIDENCE_MISSING: %s\n' "$cc_host_field" >&2; return 1; }
+  done
+  if grep -E '^[[:space:]]*(credentials|tokens|provider_payload|provider-payloads|transcript|transcripts|auth_state|auth-state):' "$cc_host_file" >/dev/null 2>&1; then
+    printf '%s\n' HOST_EVIDENCE_FORBIDDEN >&2
+    return 1
+  fi
+  return 0
+}
+
+cc_validate_launch_projection() {
+  cc_projection_file=$1; cc_delegation_file=$2
+  test -f "$cc_projection_file" && test -f "$cc_delegation_file" || return 1
+  cc_validate_delegation "$cc_delegation_file" || return 1
+  cc_projection_keys=$(awk -F: '/^[a-z_]+:/ { print $1 }' "$cc_projection_file")
+  for cc_key in $cc_projection_keys; do
+    case "$cc_key" in role|assigned_root|delegation_locator|handoff_locator) ;; *) printf 'LAUNCH_PROJECTION_EXPANDED: %s\n' "$cc_key" >&2; return 1 ;; esac
+  done
+  test "$(sed -n 's/^role: //p' "$cc_projection_file" | head -n 1)" = "$(sed -n 's/^role: //p' "$cc_delegation_file" | head -n 1)" || { printf '%s\n' LAUNCH_ROLE_MISMATCH >&2; return 1; }
+  test "$(sed -n 's/^assigned_root: //p' "$cc_projection_file" | head -n 1)" = "$(sed -n 's/^worktree: //p' "$cc_delegation_file" | head -n 1)" || { printf '%s\n' LAUNCH_ROOT_MISMATCH >&2; return 1; }
+  test "$(sed -n 's/^delegation_locator: //p' "$cc_projection_file" | head -n 1)" = delegation.yaml || { printf '%s\n' LAUNCH_DELEGATION_LOCATOR_INVALID >&2; return 1; }
+  test "$(sed -n 's/^handoff_locator: //p' "$cc_projection_file" | head -n 1)" = handoff.md || { printf '%s\n' LAUNCH_HANDOFF_LOCATOR_INVALID >&2; return 1; }
+}
+
+cc_runtime_launch_projection() {
+  cc_child_start=$1; cc_delegation=$2; cc_output=$3
+  test -f "$cc_child_start" && test -f "$cc_delegation" || return 1
+  cc_validate_delegation "$cc_delegation" || return 1
+  {
+    printf 'role: %s\n' "$(sed -n 's/^role: //p' "$cc_delegation" | head -n 1)"
+    printf 'assigned_root: %s\n' "$(sed -n 's/^worktree: //p' "$cc_delegation" | head -n 1)"
+    printf 'delegation_locator: delegation.yaml\nhandoff_locator: handoff.md\n'
+  } > "$cc_output" || return 1
+  cc_validate_launch_projection "$cc_output" "$cc_delegation"
+}
+
+cc_validate_runtime_graph() {
+  cc_graph_dir=$1
+  cc_graph_expected_state=${2:-}
+  cc_records="$cc_graph_dir/records"
+  test -d "$cc_records" || { printf '%s\n' RUNTIME_GRAPH_MISSING >&2; return 1; }
+  test -f "$cc_graph_dir/transaction.yaml" || { printf '%s\n' TRANSACTION_RECORD_MISSING >&2; return 1; }
+  for cc_graph_name in session.yaml context-receipt.yaml delegation.yaml child-start.yaml handoff.md completion.yaml lease.yaml; do
+    test -f "$cc_records/$cc_graph_name" || { printf 'RUNTIME_RECORD_MISSING: %s\n' "$cc_graph_name" >&2; return 1; }
+  done
+  cc_validate_delegation "$cc_records/delegation.yaml" || { printf '%s\n' DELEGATION_INVALID >&2; return 1; }
+  cc_validate_receipt "$cc_records/context-receipt.yaml" || { printf '%s\n' RECEIPT_INVALID >&2; return 1; }
+  cc_runtime_validate_host_evidence "$cc_records/delegation.yaml" || return 1
+  cc_graph_transaction=$(sed -n 's/^transaction_id: //p' "$cc_graph_dir/transaction.yaml" | head -n 1)
+  test "$cc_graph_transaction" = "$(basename "$cc_graph_dir")" || { printf '%s\n' TRANSACTION_ID_MISMATCH >&2; return 1; }
+  cc_session=$(sed -n 's/^session_id: //p' "$cc_records/session.yaml" | head -n 1)
+  cc_delegation_session=$(sed -n 's/^session_id: //p' "$cc_records/delegation.yaml" | head -n 1)
+  cc_child_session=$(sed -n 's/^session_id: //p' "$cc_records/child-start.yaml" | head -n 1)
+  test "$cc_session" = "$cc_delegation_session" && test "$cc_session" = "$cc_child_session" || { printf '%s\n' OWNERSHIP_SESSION_MISMATCH >&2; return 1; }
+  cc_root=$(sed -n 's/^root_session_id: //p' "$cc_records/session.yaml" | head -n 1)
+  cc_delegation_parent=$(sed -n 's/^parent_session_id: //p' "$cc_records/delegation.yaml" | head -n 1)
+  cc_session_parent=$(sed -n 's/^parent_session_id: //p' "$cc_records/session.yaml" | head -n 1)
+  test "$cc_root" = "$(sed -n 's/^root_session_id: //p' "$cc_records/delegation.yaml" | head -n 1)" && test "$cc_root" = "$(sed -n 's/^root_session_id: //p' "$cc_records/child-start.yaml" | head -n 1)" || { printf '%s\n' OWNERSHIP_ROOT_MISMATCH >&2; return 1; }
+  test "$cc_session_parent" = "$cc_delegation_parent" && test "$cc_delegation_parent" = "$(sed -n 's/^parent_session_id: //p' "$cc_records/child-start.yaml" | head -n 1)" || { printf '%s\n' OWNERSHIP_PARENT_MISMATCH >&2; return 1; }
+  cc_role=$(sed -n 's/^role: //p' "$cc_records/delegation.yaml" | head -n 1)
+  test "$cc_role" = "$(sed -n 's/^role: //p' "$cc_records/session.yaml" | head -n 1)" && test "$cc_role" = "$(sed -n 's/^role: //p' "$cc_records/child-start.yaml" | head -n 1)" || { printf '%s\n' OWNERSHIP_ROLE_MISMATCH >&2; return 1; }
+  cc_repository=$(sed -n 's/^repository: //p' "$cc_records/delegation.yaml" | head -n 1)
+  test -n "$cc_repository" && test "$cc_repository" = "$(sed -n 's/^repository: //p' "$cc_records/child-start.yaml" | head -n 1)" || { printf '%s\n' OWNERSHIP_REPOSITORY_MISMATCH >&2; return 1; }
+  cc_worktree=$(sed -n 's/^worktree: //p' "$cc_records/delegation.yaml" | head -n 1)
+  cc_session_worktree=$(sed -n 's/^worktree: //p' "$cc_records/session.yaml" | head -n 1)
+  test "$cc_worktree" = "$cc_session_worktree" && test "$cc_worktree" = "$(sed -n 's/^worktree: //p' "$cc_records/child-start.yaml" | head -n 1)" || { printf '%s\n' OWNERSHIP_WORKTREE_MISMATCH >&2; return 1; }
+  cc_receipt_session=$(sed -n 's/^session_id: //p' "$cc_records/context-receipt.yaml" | head -n 1)
+  cc_receipt_packet_id=$(sed -n 's/^packet_id: //p' "$cc_records/context-receipt.yaml" | head -n 1)
+  cc_receipt_context_set=$(sed -n 's/^context_set: //p' "$cc_records/context-receipt.yaml" | head -n 1)
+  cc_delegation_context_set=$(sed -n 's/^context_set: //p' "$cc_records/delegation.yaml" | head -n 1)
+  test "$cc_receipt_session" = "$cc_session" && test "$cc_receipt_packet_id" = "$cc_receipt_context_set" && test "$cc_receipt_context_set" = "$cc_delegation_context_set" || { printf '%s\n' RECEIPT_OWNERSHIP_MISMATCH >&2; return 1; }
+  cc_validate_child_permissions "$cc_records/delegation.yaml" "$cc_role" || return 1
+  cc_validate_launch_projection "$cc_graph_dir/launch.yaml" "$cc_records/delegation.yaml" || return 1
+  for cc_handoff_section in '## Observed state' '## Selected route and reason' '## Evidence read' '## Host evidence' '## Action performed or proposed' '## Files/state changed' '## Verification' '## Blockers and human decisions' '## One next safe action'; do
+    grep -F "$cc_handoff_section" "$cc_records/handoff.md" >/dev/null 2>&1 || { printf 'HANDOFF_SECTION_MISSING: %s\n' "$cc_handoff_section" >&2; return 1; }
+  done
+  cc_lease_session=$(sed -n 's/^session_id: //p' "$cc_records/lease.yaml" | head -n 1)
+  cc_lease_root=$(sed -n 's/^root_session_id: //p' "$cc_records/lease.yaml" | head -n 1)
+  cc_lease_repository=$(sed -n 's/^repository: //p' "$cc_records/lease.yaml" | head -n 1)
+  cc_lease_worktree=$(sed -n 's/^worktree: //p' "$cc_records/lease.yaml" | head -n 1)
+  test "$cc_lease_session" = "$cc_session" && test "$cc_lease_root" = "$cc_root" && test "$cc_lease_repository" = "$cc_repository" && test "$cc_lease_worktree" = "$cc_worktree" || { printf '%s\n' LEASE_OWNER_MISMATCH >&2; return 1; }
+  cc_state=$(sed -n 's/^transaction_state: //p' "$cc_graph_dir/transaction.yaml" | head -n 1)
+  if test -n "$cc_graph_expected_state"; then
+    test "$cc_state" = "$cc_graph_expected_state" || { printf '%s\n' TRANSACTION_STATE_INVALID >&2; return 1; }
+  else
+    test "$cc_state" = staged || test "$cc_state" = valid || test "$cc_state" = committed || { printf '%s\n' TRANSACTION_STATE_INVALID >&2; return 1; }
+  fi
+  printf '%s\n' runtime-graph-valid
+}
+
+cc_validate_child_permissions() {
+  cc_permission_file=$1; cc_permission_role=$2
+  test "$cc_permission_role" = writer || test "$cc_permission_role" = verifier || return 1
+  if test "$cc_permission_role" = writer; then
+    grep -F 'write_worktree: true' "$cc_permission_file" >/dev/null 2>&1 || return 1
+  else
+    grep -F 'write_worktree: false' "$cc_permission_file" >/dev/null 2>&1 || return 1
+  fi
+  grep -F 'write_plan: false' "$cc_permission_file" >/dev/null 2>&1 && grep -F 'write_activity: false' "$cc_permission_file" >/dev/null 2>&1
+}
+
+cc_runtime_graph_validate_and_mark() {
+  cc_graph_dir=$1
+  cc_validate_runtime_graph "$cc_graph_dir" >/dev/null || return 1
+  cc_graph_material=$(cc_runtime_graph_files | while IFS= read -r cc_graph_name; do
+    cc_graph_file=$(cc_runtime_graph_record_path "$cc_graph_dir" "$cc_graph_name")
+    test -f "$cc_graph_file" || continue
+    case "$cc_graph_name" in *.md) cc_runtime_record_seal "$cc_graph_file" "$(sed -n 's/^transaction_id: //p' "$cc_graph_file" | head -n 1)" valid >/dev/null || return 1 ;; *) cc_runtime_record_seal "$cc_graph_file" "$(sed -n 's/^transaction_id: //p' "$cc_graph_file" | head -n 1)" valid >/dev/null || return 1 ;; esac
+    printf '%s\n' "$cc_graph_name"
+  done)
+  cc_atomic_write "$cc_graph_dir/transaction.yaml" 'schema_version: 1' "transaction_id: $(basename "$cc_graph_dir")" 'transaction_state: valid' 'commit_marker: null'
+  printf '%s\n' runtime-graph-valid
+}
+
+cc_runtime_graph_commit() {
+  cc_graph_dir=$1
+  cc_validate_runtime_graph "$cc_graph_dir" valid >/dev/null || return 1
+  cc_state=$(sed -n 's/^transaction_state: //p' "$cc_graph_dir/transaction.yaml" | head -n 1)
+  test "$cc_state" = valid || { printf '%s\n' TRANSACTION_NOT_VALID >&2; return 1; }
+  cc_graph_digest=$(cc_runtime_graph_digest "$cc_graph_dir") || return 1
+  cc_runtime_record_set_field "$cc_graph_dir/records/child-start.yaml" ownership_graph_digest "$cc_graph_digest" || return 1
+  cc_runtime_graph_files | while IFS= read -r cc_graph_name; do
+    cc_graph_file=$(cc_runtime_graph_record_path "$cc_graph_dir" "$cc_graph_name")
+    test -f "$cc_graph_file" || continue
+    cc_runtime_record_seal "$cc_graph_file" "$(sed -n 's/^transaction_id: //p' "$cc_graph_file" | head -n 1)" committed "$cc_graph_digest" || exit 1
+  done || return 1
+  cc_atomic_write "$cc_graph_dir/transaction.yaml" 'schema_version: 1' "transaction_id: $(basename "$cc_graph_dir")" 'transaction_state: committed' "commit_marker: $cc_graph_digest" || return 1
+  cc_atomic_write "$cc_graph_dir/commit.marker" 'schema_version: 1' "transaction_id: $(basename "$cc_graph_dir")" 'transaction_state: committed' "ownership_graph_digest: $cc_graph_digest" "committed_at: $(cc_runtime_now)" || return 1
+  printf '%s\n' runtime-graph-committed
+}
+
+cc_runtime_graph_authoritative() {
+  cc_graph_dir=$1
+  test -f "$cc_graph_dir/commit.marker" && test -f "$cc_graph_dir/transaction.yaml" || return 1
+  cc_transaction_id=$(basename "$cc_graph_dir")
+  cc_transaction_record_id=$(sed -n 's/^transaction_id: //p' "$cc_graph_dir/transaction.yaml" | head -n 1)
+  cc_marker_transaction_id=$(sed -n 's/^transaction_id: //p' "$cc_graph_dir/commit.marker" | head -n 1)
+  cc_transaction_state=$(sed -n 's/^transaction_state: //p' "$cc_graph_dir/transaction.yaml" | head -n 1)
+  cc_marker_state=$(sed -n 's/^transaction_state: //p' "$cc_graph_dir/commit.marker" | head -n 1)
+  cc_transaction_marker=$(sed -n 's/^commit_marker: //p' "$cc_graph_dir/transaction.yaml" | head -n 1)
+  cc_marker_digest=$(sed -n 's/^ownership_graph_digest: //p' "$cc_graph_dir/commit.marker" | head -n 1)
+  test "$cc_transaction_record_id" = "$cc_transaction_id" && test "$cc_marker_transaction_id" = "$cc_transaction_id" || return 1
+  test "$cc_transaction_state" = committed && test "$cc_marker_state" = committed || return 1
+  test -n "$cc_marker_digest" && test "$cc_transaction_marker" = "$cc_marker_digest" || return 1
+  cc_validate_runtime_graph "$cc_graph_dir" committed >/dev/null || return 1
+  for cc_authoritative_name in $(cc_runtime_graph_files); do
+    cc_authoritative_file=$(cc_runtime_graph_record_path "$cc_graph_dir" "$cc_authoritative_name")
+    cc_runtime_record_validate_metadata "$cc_authoritative_file" "$cc_transaction_id" committed "$cc_marker_digest" || return 1
+  done
+  cc_current_graph_digest=$(cc_runtime_graph_digest "$cc_graph_dir") || return 1
+  test "$cc_current_graph_digest" = "$cc_marker_digest" || { printf '%s\n' GRAPH_DIGEST_STALE >&2; return 1; }
+  printf '%s\n' runtime-graph-authoritative
+}
+
+cc_construct_runtime_graph() {
+  cc_runtime_root=$1; cc_request=$2
+  test -d "$cc_runtime_root" && test -f "$cc_request" || return 1
+  cc_transaction=$(cc_runtime_require_request "$cc_request" transaction_id) || return 1
+  cc_runtime_transaction_begin "$cc_runtime_root" "$cc_transaction" || return 1
+  cc_graph_dir="$cc_runtime_root/.transactions/$cc_transaction"
+  cc_records="$cc_graph_dir/records"
+  cc_construct_session "$cc_records/session.yaml" "$cc_request" "$cc_transaction" || return 1
+  cc_construct_context_receipt "$cc_records/context-receipt.yaml" "$cc_request" "$cc_transaction" || return 1
+  cc_construct_delegation "$cc_records/delegation.yaml" "$cc_request" "$cc_transaction" || return 1
+  cc_construct_child_start "$cc_records/child-start.yaml" "$cc_request" "$cc_transaction" "$cc_records/delegation.yaml" "$cc_records/context-receipt.yaml" || return 1
+  cc_construct_handoff "$cc_records/handoff.md" "$cc_request" "$cc_transaction" || return 1
+  cc_construct_completion "$cc_records/completion.yaml" "$cc_request" "$cc_transaction" || return 1
+  cc_lease_source=$(cc_runtime_require_request "$cc_request" lease_source) || return 1
+  test -f "$cc_lease_source" && test ! -L "$cc_lease_source" || { printf '%s\n' LEASE_SOURCE_INVALID >&2; return 1; }
+  cp "$cc_lease_source" "$cc_records/lease.yaml" || return 1
+  cc_runtime_record_seal "$cc_records/lease.yaml" "$cc_transaction" staged || return 1
+  cc_runtime_launch_projection "$cc_records/child-start.yaml" "$cc_records/delegation.yaml" "$cc_graph_dir/launch.yaml" 2>/dev/null || return 1
+  cc_runtime_graph_validate_and_mark "$cc_graph_dir" >/dev/null || return 1
+  cc_runtime_graph_commit "$cc_graph_dir" >/dev/null || return 1
+  printf '%s\n' "$cc_graph_dir"
+}
+
 cc_scope_allows() {
   case "$1/" in "$2/"*) return 0 ;; *) return 1 ;; esac
 }
