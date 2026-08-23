@@ -51,4 +51,28 @@ contains "$bootstrap_root/repositories/existing/marker.txt" preserve
 if CC_OFFLINE=1 cc_bootstrap_repository "$bootstrap_root" offline "$origin" main repositories/offline confirmed >/dev/null 2>&1; then fail 'offline bootstrap unexpectedly cloned'; fi
 contains "$bootstrap_root/.runtime/bootstrap/offline.yaml" 'status: offline'
 if rg -n 'password:|api_key:|access_token:|client_secret:' "$bootstrap_root" >/dev/null 2>&1; then fail 'bootstrap fixture persisted credential-shaped data'; fi
+
+identity_root=$(mktemp -d "${TMPDIR:-/tmp}/cc-identity-recovery.XXXXXX")
+cp -R "$ROOT/test/contracts/fixtures/identity-projection/matching/." "$identity_root/"
+before_ws=$(cat "$identity_root/context/WORKSPACE.md")
+before_proj=$(cat "$identity_root/context/PROJECT.md")
+before_idx=$(cat "$identity_root/context/INDEX.md")
+before_yaml=$(cat "$identity_root/workspace.yaml")
+if CC_IDENTITY_PUBLISH_FAIL_AFTER=1 cc_register_repository "$identity_root" app 'https://github.com/acme/app.git' main confirmed >/dev/null 2>&1; then
+  fail 'interrupted identity publish unexpectedly succeeded'
+fi
+after_ws=$(cat "$identity_root/context/WORKSPACE.md")
+after_proj=$(cat "$identity_root/context/PROJECT.md")
+after_idx=$(cat "$identity_root/context/INDEX.md")
+after_yaml=$(cat "$identity_root/workspace.yaml")
+test "$before_ws" = "$after_ws" || fail 'interrupted publish mutated WORKSPACE.md'
+test "$before_proj" = "$after_proj" || fail 'interrupted publish mutated PROJECT.md'
+test "$before_idx" = "$after_idx" || fail 'interrupted publish mutated INDEX.md'
+test "$before_yaml" = "$after_yaml" || fail 'interrupted publish mutated workspace.yaml'
+test ! -f "$identity_root/.runtime/identity-publish.journal" || fail 'interrupted publish left a journal that could authorize a partial region'
+printf 'status: committing\n' > "$identity_root/.runtime/identity-publish.journal"
+journal_mismatch=$(cc_validate_identity_projection "$identity_root" || true)
+printf '%s\n' "$journal_mismatch" | grep -Fx projection-mismatch >/dev/null || fail 'leftover publish journal did not fail closed'
+rm -f "$identity_root/.runtime/identity-publish.journal"
+trap 'rm -rf "$runtime" "$identity_root"' EXIT HUP INT TERM
 pass 'interruption preservation, legacy receipt classification, and recovery safety'

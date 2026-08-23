@@ -24,7 +24,12 @@ contains "$artifact/AGENTS.md" 'small safety spine'
 contains "$artifact/CLAUDE.md" '@AGENTS.md'
 not_contains "$artifact/CLAUDE.md" '.mcp.json'
 not_contains "$artifact/CLAUDE.md" 'transcript:'
-printf '%s\n' "$result" | grep -F 'source_state: dirty' >/dev/null || fail 'release did not record dirty source state'
+if git -C "$ROOT" status --porcelain --untracked-files=all | grep . >/dev/null 2>&1; then
+  expected_source_state=dirty
+else
+  expected_source_state=clean
+fi
+printf '%s\n' "$result" | grep -F "source_state: $expected_source_state" >/dev/null || fail "release did not record porcelain source state: $expected_source_state"
 test ! -e "$artifact/.runtime" || fail 'runtime leaked into artifact'
 test ! -e "$artifact/test" || fail 'semantic tests leaked into artifact'
 test ! -e "$artifact/.cursor" || fail 'host-local Cursor state leaked into artifact'
@@ -49,6 +54,14 @@ test ! -e "$ROOT/.agents/skills/cc-review-plan" || fail 'cc-review-plan exists i
 test ! -e "$artifact/Opus-4.8-plan.md" || fail 'unlisted root plan leaked into artifact'
 test ! -e "$artifact/Sol-5.6-plan.md" || fail 'unlisted root plan leaked into artifact'
 not_contains "$artifact/workspace.yaml" 'credential'
+contains "$artifact/context/WORKSPACE.md" 'context-circuit:identity-region:start'
+contains "$artifact/context/PROJECT.md" 'context-circuit:identity-region:end'
+contains "$artifact/context/INDEX.md" 'name: uninitialized-workspace'
+contains "$artifact/wrapper/contracts/schemas/workspace.yaml" 'missing_or_disagreeing_result: projection-mismatch'
+contains "$artifact/wrapper/contracts/routes.yaml" 'authorization: never'
+contains "$artifact/wrapper/manifest.yaml" 'identity_projection:'
+not_contains "$artifact/workspace.yaml" 'path: /'
+not_contains "$artifact/context/WORKSPACE.md" 'repositories.local.yaml'
 
 build_result=$(sh "$ROOT/scripts/build-dist.sh" v0.5.0 "$build_out")
 build_artifact="$build_out/context-circuit-v0.5.0"

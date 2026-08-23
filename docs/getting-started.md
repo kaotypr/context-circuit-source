@@ -32,6 +32,22 @@ includes broad requests such as “help me build this”; the agent must not inf
 identity, create a plan, or write implementation files. Read-only orientation
 remains available.
 
+`workspace.yaml` is the workspace identifier. `context/` is Product Knowledge.
+The bounded identity region in `WORKSPACE.md`, `PROJECT.md`, and `INDEX.md`
+must agree with that identifier. Entry and write preflight fail with
+`projection-mismatch` when the region is missing or disagrees; that result
+does not authorize a route or gate. Authored Product Knowledge outside the
+region is preserved.
+
+Initialization records only mode, repositories or project items, roles, and
+default branches. Omitted confirmation fields are shown as proposed defaults
+on the current card; confirmation records those displayed values. Fields with
+no default remain incomplete. Effect identifiers are descriptive metadata and
+never authorize a route or gate. Zero repositories is valid. Identity
+acceptance is a human gate. Later, selected evidence may produce an Idea Brief,
+PRD, accepted Product Knowledge, or direct plan; no artifact is forced when
+the request is already clear.
+
 ## Bind a repository
 
 Shared `workspace.yaml` metadata identifies a logical repository without a
@@ -80,11 +96,10 @@ are never requested, recorded, or copied into workspace state. Provider
 failure produces an offline fallback while filesystem evidence remains
 resumable.
 
-Initialization records only mode, repositories or project items, roles, and
-default branches. Zero repositories is valid. Identity acceptance is a human
-gate. Later, selected evidence may produce an Idea Brief, PRD, accepted Product
-Knowledge, or direct plan; no artifact is forced when the request is already
-clear.
+Registering a logical repository is a shared-identity confirmation. It updates
+`workspace.yaml` and the identity region in all three summaries without
+exposing host-local bindings. Clone and reserved create-empty remain later
+gates.
 
 ## Plan journey
 

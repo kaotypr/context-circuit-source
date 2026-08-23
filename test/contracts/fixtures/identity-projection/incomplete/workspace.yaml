@@ -1,0 +1,15 @@
+version: 1
+template_version: 1.0.0
+workspace:
+  name: incomplete-workspace
+  mode: solo
+  default_branch: main
+repositories: {}
+context:
+  sources_file: context/sources.yaml
+workflow:
+  human_gates:
+    - identity-acceptance
+identity:
+  kind: instantiated-workspace
+  status: uninitialized
