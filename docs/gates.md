@@ -84,7 +84,7 @@ Action: present-approval-card
 Target: <plan-id>
 Observed state: current session; nothing has changed yet; plan remains draft and included tasks remain draft
 Immediate effects: plan.yaml status draft→approved; included task projections draft→ready
-Later authorized effects: git.commit (isolated worktree only, after a separate execution request); delivery.push (delivery gate)
+Later authorized effects: maintainer git.commit of the approval projection (separate card, same session, product-source only); worktree git.commit after execute; delivery.push (delivery gate)
 Will change after confirmation: plan.yaml status draft→approved; included task projections draft→ready
 Will not change: Git, leases, worktrees, execution, delivery, publication, or runtime state
 Risks/open decisions: confirmation does not commit Git and does not start Run approved plan

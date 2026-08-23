@@ -837,6 +837,56 @@ cc_identity_norm() {
   esac
 }
 
+cc_roles_canonical() {
+  cc_roles_raw=$(cc_identity_norm "$1")
+  case "$cc_roles_raw" in
+    none) printf '%s\n' none; return 0 ;;
+  esac
+  printf '%s\n' "$cc_roles_raw" | awk '{
+    gsub(",[[:space:]]+", ",", $0)
+    gsub("[[:space:]]+,", ",", $0)
+    gsub("^[[:space:]]+|[[:space:]]+$", "", $0)
+    if ($0 == "" || $0 == "none") print "none"
+    else print $0
+  }'
+}
+
+cc_workspace_roles() {
+  cc_roles_file=$1
+  test -f "$cc_roles_file" || { printf '%s\n' ''; return 0; }
+  awk '
+    /^workspace:[[:space:]]*$/ { in_ws=1; next }
+    /^[^[:space:]#]/ {
+      if (in_roles) { print acc; printed=1; exit }
+      in_ws=0
+      in_roles=0
+      next
+    }
+    in_ws && /^  roles:[[:space:]]*\[\][[:space:]]*$/ { print ""; exit }
+    in_ws && /^  roles:[[:space:]]*$/ { in_roles=1; acc=""; next }
+    in_ws && /^  roles:[[:space:]]*/ {
+      sub("^  roles:[[:space:]]*", "")
+      gsub("[[:space:]]+$", "")
+      print
+      exit
+    }
+    in_roles && /^    -[[:space:]]*/ {
+      item=$0
+      sub("^    -[[:space:]]*", "", item)
+      gsub("[[:space:]]+$", "", item)
+      if (acc != "") acc = acc "," item
+      else acc = item
+      next
+    }
+    in_roles && /^  [A-Za-z0-9._-]+:/ {
+      print acc
+      printed=1
+      exit
+    }
+    END { if (in_roles && !printed) print acc }
+  ' "$cc_roles_file"
+}
+
 cc_proposed_default() {
   case "$1" in
     mode) printf '%s\n' solo ;;
@@ -862,12 +912,11 @@ cc_identity_canonical_from_workspace() {
   cc_identity_name=$(cc_workspace_section_field "$cc_identity_file" workspace name)
   cc_identity_mode=$(cc_workspace_section_field "$cc_identity_file" workspace mode)
   cc_identity_branch=$(cc_workspace_section_field "$cc_identity_file" workspace default_branch)
-  cc_identity_roles=$(cc_workspace_section_field "$cc_identity_file" workspace roles)
+  cc_identity_roles=$(cc_roles_canonical "$(cc_workspace_roles "$cc_identity_file")")
   cc_identity_kind=$(cc_workspace_section_field "$cc_identity_file" identity kind)
   cc_identity_status=$(cc_workspace_section_field "$cc_identity_file" identity status)
   test -n "$cc_identity_mode" || cc_identity_mode=solo
   test -n "$cc_identity_branch" || cc_identity_branch=main
-  cc_identity_roles=$(cc_identity_norm "$cc_identity_roles")
   {
     printf 'default_branch: %s\n' "$cc_identity_branch"
     printf 'kind: %s\n' "$cc_identity_kind"
@@ -899,10 +948,9 @@ cc_identity_canonical_from_region_file() {
   cc_region_kind=$(awk '/^kind:[[:space:]]*/ { sub("^kind:[[:space:]]*", ""); print; exit }' "$cc_region_file")
   cc_region_status=$(awk '/^status:[[:space:]]*/ { sub("^status:[[:space:]]*", ""); print; exit }' "$cc_region_file")
   cc_region_branch=$(awk '/^default_branch:[[:space:]]*/ { sub("^default_branch:[[:space:]]*", ""); print; exit }' "$cc_region_file")
-  cc_region_roles=$(awk '/^roles:[[:space:]]*/ { sub("^roles:[[:space:]]*", ""); print; exit }' "$cc_region_file")
+  cc_region_roles=$(cc_roles_canonical "$(awk '/^roles:[[:space:]]*/ { sub("^roles:[[:space:]]*", ""); print; exit }' "$cc_region_file")")
   test -n "$cc_region_mode" || cc_region_mode=solo
   test -n "$cc_region_branch" || cc_region_branch=main
-  cc_region_roles=$(cc_identity_norm "$cc_region_roles")
   {
     printf 'default_branch: %s\n' "$cc_region_branch"
     printf 'kind: %s\n' "$cc_region_kind"
@@ -956,12 +1004,11 @@ cc_identity_region_body_from_file() {
   cc_body_name=$(cc_workspace_section_field "$cc_body_file" workspace name)
   cc_body_mode=$(cc_workspace_section_field "$cc_body_file" workspace mode)
   cc_body_branch=$(cc_workspace_section_field "$cc_body_file" workspace default_branch)
-  cc_body_roles=$(cc_workspace_section_field "$cc_body_file" workspace roles)
+  cc_body_roles=$(cc_roles_canonical "$(cc_workspace_roles "$cc_body_file")")
   cc_body_kind=$(cc_workspace_section_field "$cc_body_file" identity kind)
   cc_body_status=$(cc_workspace_section_field "$cc_body_file" identity status)
   test -n "$cc_body_mode" || cc_body_mode=solo
   test -n "$cc_body_branch" || cc_body_branch=main
-  cc_body_roles=$(cc_identity_norm "$cc_body_roles")
   printf 'name: %s\n' "$cc_body_name"
   printf 'mode: %s\n' "$cc_body_mode"
   printf 'kind: %s\n' "$cc_body_kind"
@@ -1008,10 +1055,7 @@ cc_identity_projection_applies() {
   cc_applies_root=$1
   test -f "$cc_applies_root/workspace.yaml" || return 1
   cc_applies_kind=$(cc_workspace_section_field "$cc_applies_root/workspace.yaml" identity kind)
-  test "$cc_applies_kind" = instantiated-workspace || return 1
-  test -f "$cc_applies_root/context/WORKSPACE.md" \
-    || test -f "$cc_applies_root/context/PROJECT.md" \
-    || test -f "$cc_applies_root/context/INDEX.md"
+  test "$cc_applies_kind" = instantiated-workspace
 }
 
 cc_validate_identity_projection() {
@@ -1183,11 +1227,23 @@ cc_workspace_apply_displayed_identity() {
   cc_ws_branch=$5
   cc_ws_status=$6
   awk -v mode="$cc_ws_mode" -v roles="$cc_ws_roles" -v branch="$cc_ws_branch" -v status="$cc_ws_status" '
+    function emit_roles() {
+      if (roles == "none" || roles == "") {
+        print "  roles: none"
+        return
+      }
+      print "  roles:"
+      n = split(roles, items, ",")
+      for (i = 1; i <= n; i++) {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", items[i])
+        if (items[i] != "") print "    - " items[i]
+      }
+    }
     function flush_workspace() {
       if (in_workspace) {
         if (!saw_mode) print "  mode: " mode
         if (!saw_branch) print "  default_branch: " branch
-        if (!saw_roles) print "  roles: " roles
+        if (!saw_roles) emit_roles()
       }
       in_workspace=0
     }
@@ -1195,12 +1251,14 @@ cc_workspace_apply_displayed_identity() {
       if (in_identity && !saw_status) print "  status: " status
       in_identity=0
     }
-    /^workspace:/ { flush_identity(); in_workspace=1; in_identity=0; print; next }
-    /^identity:/ { flush_workspace(); in_identity=1; print; next }
-    /^[^[:space:]#]/ { flush_workspace(); flush_identity(); print; next }
+    /^workspace:/ { flush_identity(); in_workspace=1; in_identity=0; skip_role_items=0; print; next }
+    /^identity:/ { flush_workspace(); in_identity=1; skip_role_items=0; print; next }
+    /^[^[:space:]#]/ { flush_workspace(); flush_identity(); skip_role_items=0; print; next }
+    in_workspace && skip_role_items && /^    -/ { next }
+    in_workspace && skip_role_items { skip_role_items=0 }
     in_workspace && /^  mode:/ { print "  mode: " mode; saw_mode=1; next }
     in_workspace && /^  default_branch:/ { print "  default_branch: " branch; saw_branch=1; next }
-    in_workspace && /^  roles:/ { print "  roles: " roles; saw_roles=1; next }
+    in_workspace && /^  roles:/ { emit_roles(); saw_roles=1; skip_role_items=1; next }
     in_identity && /^  status:/ { print "  status: " status; saw_status=1; next }
     { print }
     END { flush_workspace(); flush_identity() }
@@ -1212,7 +1270,7 @@ cc_identity_acceptance_card() {
   cc_card_mode=$(cc_resolve_displayed_field mode "$(cc_workspace_section_field "$cc_card_root/workspace.yaml" workspace mode)")
   cc_card_repos=$(cc_workspace_repository_keys "$cc_card_root/workspace.yaml")
   test -n "$cc_card_repos" || cc_card_repos=$(cc_resolve_displayed_field repositories "")
-  cc_card_roles=$(cc_resolve_displayed_field roles "$(cc_workspace_section_field "$cc_card_root/workspace.yaml" workspace roles)")
+  cc_card_roles=$(cc_resolve_displayed_field roles "$(cc_roles_canonical "$(cc_workspace_roles "$cc_card_root/workspace.yaml")")")
   cc_card_branch=$(cc_resolve_displayed_field default_branch "$(cc_workspace_section_field "$cc_card_root/workspace.yaml" workspace default_branch)")
   printf 'Action: identity-acceptance\n'
   printf 'Target: workspace identity\n'
@@ -1269,7 +1327,7 @@ cc_accept_identity() {
   if test -z "$cc_accept_repos"; then
     cc_accept_repos=$(cc_resolve_displayed_field repositories "") || return 1
   fi
-  cc_accept_roles=$(cc_resolve_displayed_field roles "$cc_accept_roles") || return 1
+  cc_accept_roles=$(cc_roles_canonical "$(cc_resolve_displayed_field roles "$cc_accept_roles")") || return 1
   cc_accept_branch=$(cc_resolve_displayed_field default_branch "$cc_accept_branch") || return 1
   cc_ws_tmp="$cc_accept_root/workspace.yaml.tmp.$$"
   cc_workspace_apply_displayed_identity "$cc_accept_root/workspace.yaml" "$cc_ws_tmp" "$cc_accept_mode" "$cc_accept_roles" "$cc_accept_branch" accepted

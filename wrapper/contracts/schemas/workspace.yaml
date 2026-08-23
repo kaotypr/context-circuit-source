@@ -5,7 +5,7 @@ properties:
   workspace.name: {type: string, required: true, proposed_default: null}
   workspace.mode: {enum: [solo, team], proposed_default: solo}
   workspace.default_branch: {type: string, proposed_default: main}
-  workspace.roles: {type: sequence, optional: true, proposed_default: none}
+  workspace.roles: {type: sequence, optional: true, proposed_default: none, accepts: [sequence, none-scalar, comma-separated-scalar], canonical_projection: none-or-comma-separated}
   repositories: {type: mapping, owner: shared-repository-identity, proposed_default: none}
   repositories.<key>.canonical_url: {type: string, optional: true, credential_free: true}
   repositories.<key>.default_branch: {type: string, optional: true}
@@ -23,10 +23,14 @@ identity_region:
     end: '<!-- context-circuit:identity-region:end -->'
     count: 1
   files: [context/WORKSPACE.md, context/PROJECT.md, context/INDEX.md]
-  fields: [name, mode, identity.kind, identity.status, repositories.<key>, repositories.<key>.canonical_url, repositories.<key>.default_branch]
+  fields: [name, mode, identity.kind, identity.status, roles, repositories.<key>, repositories.<key>.canonical_url, repositories.<key>.default_branch]
   product_knowledge: outside-region-only
   missing_or_disagreeing_result: projection-mismatch
   projection_mismatch_authorizes: never
+  applies:
+    instantiated-workspace: always
+    product-source: exempt
+  missing_files: projection-mismatch
 displayed_defaults:
   owner: wrapper/contracts/schemas/workspace.yaml
   identity_acceptance:
