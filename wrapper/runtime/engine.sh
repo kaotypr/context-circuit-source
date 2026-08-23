@@ -828,7 +828,208 @@ cc_validate_delegation() {
   if grep -F 'role: verifier' "$cc_packet" >/dev/null 2>&1; then
     grep -F 'write_worktree: false' "$cc_packet" >/dev/null 2>&1 || return 1
     grep -F 'write_plan: false' "$cc_packet" >/dev/null 2>&1 || return 1
+    cc_validate_verifier_readonly "$cc_packet" >/dev/null || return 1
   fi
+  cc_validate_delegation_evidence "$cc_packet" >/dev/null || return 1
+}
+
+# Evidence-layer comparison implements wrapper/contracts/schemas/plan.yaml.
+# Skill and role files are not a second policy owner.
+
+cc_evidence_layer_known() {
+  case "$1" in
+    schema|store|api|process|browser|human) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+cc_runtime_yaml_field() {
+  awk -F': ' -v field="$2" '
+    {
+      key=$1
+      sub(/^[ \t]+/, "", key)
+      if (key == field) { print $2; exit }
+    }
+  ' "$1"
+}
+
+cc_compare_evidence_layer() {
+  cc_required=$1
+  cc_observed=$2
+  cc_claimed=${3:-}
+  cc_source=${4:-independent}
+  cc_capability=${5:-available}
+  if test "$cc_claimed" = waived; then
+    printf '%s\n' waived
+    return 0
+  fi
+  if test "$cc_capability" = unavailable || test "$cc_claimed" = blocked; then
+    printf '%s\n' blocked
+    return 0
+  fi
+  if test -z "$cc_observed" || test "$cc_observed" = omitted || test "$cc_observed" = missing || test "$cc_observed" = null; then
+    printf '%s\n' failed
+    return 0
+  fi
+  if ! cc_evidence_layer_known "$cc_required" || ! cc_evidence_layer_known "$cc_observed"; then
+    printf '%s\n' failed
+    return 0
+  fi
+  if test "$cc_required" != "$cc_observed"; then
+    printf '%s\n' failed
+    return 0
+  fi
+  if test "$cc_source" = writer-claim; then
+    printf '%s\n' failed
+    return 0
+  fi
+  if test -n "$cc_claimed" && test "$cc_claimed" != passed; then
+    printf '%s\n' failed
+    return 0
+  fi
+  printf '%s\n' passed
+}
+
+cc_validate_evidence_mapping() {
+  cc_mapping=$1
+  test -f "$cc_mapping" || { printf '%s\n' EVIDENCE_LAYER_MISSING >&2; return 1; }
+  cc_required=$(cc_runtime_yaml_field "$cc_mapping" required_layer)
+  cc_observed=$(cc_runtime_yaml_field "$cc_mapping" observed_layer)
+  cc_claimed=$(cc_runtime_yaml_field "$cc_mapping" outcome)
+  cc_source=$(cc_runtime_yaml_field "$cc_mapping" evidence_source)
+  cc_capability=$(cc_runtime_yaml_field "$cc_mapping" host_capability)
+  test -n "$cc_source" || cc_source=independent
+  test -n "$cc_capability" || cc_capability=available
+  if test -z "$cc_required"; then
+    printf '%s\n' EVIDENCE_LAYER_MISSING >&2
+    return 1
+  fi
+  cc_computed=$(cc_compare_evidence_layer "$cc_required" "$cc_observed" "$cc_claimed" "$cc_source" "$cc_capability")
+  if test "$cc_source" = writer-claim; then
+    printf '%s\n' EVIDENCE_WRITER_CLAIM >&2
+    return 1
+  fi
+  case "$cc_computed" in
+    passed)
+      printf '%s\n' EVIDENCE_LAYER_MATCH
+      return 0
+      ;;
+    blocked)
+      printf '%s\n' EVIDENCE_LAYER_BLOCKED >&2
+      return 1
+      ;;
+    waived)
+      printf '%s\n' EVIDENCE_LAYER_WAIVED >&2
+      return 1
+      ;;
+    *)
+      if test -z "$cc_observed" || test "$cc_observed" = omitted || test "$cc_observed" = missing || test "$cc_observed" = null; then
+        printf '%s\n' EVIDENCE_LAYER_MISSING >&2
+      else
+        printf '%s\n' EVIDENCE_LAYER_MISMATCH >&2
+      fi
+      return 1
+      ;;
+  esac
+}
+
+cc_validate_delegation_evidence() {
+  cc_packet=$1
+  grep -E '^evidence_layers:' "$cc_packet" >/dev/null 2>&1 || return 0
+  cc_required=$(cc_runtime_yaml_field "$cc_packet" required_layer)
+  cc_observed=$(cc_runtime_yaml_field "$cc_packet" observed_layer)
+  test -n "$cc_required" || test -n "$cc_observed" || return 0
+  if test -n "$cc_required" && test -n "$cc_observed" && test "$cc_required" != "$cc_observed"; then
+    printf '%s\n' EVIDENCE_LAYER_MISMATCH >&2
+    return 1
+  fi
+  cc_claimed=$(cc_runtime_yaml_field "$cc_packet" outcome)
+  if test "$cc_claimed" = passed || test -z "$cc_claimed"; then
+    cc_validate_evidence_mapping "$cc_packet" || return 1
+  else
+    cc_source=$(cc_runtime_yaml_field "$cc_packet" evidence_source)
+    cc_capability=$(cc_runtime_yaml_field "$cc_packet" host_capability)
+    test -n "$cc_source" || cc_source=independent
+    test -n "$cc_capability" || cc_capability=available
+    cc_computed=$(cc_compare_evidence_layer "$cc_required" "$cc_observed" "$cc_claimed" "$cc_source" "$cc_capability")
+    test "$cc_computed" = passed && { printf '%s\n' EVIDENCE_LAYER_MISMATCH >&2; return 1; }
+  fi
+  return 0
+}
+
+cc_validate_handoff_evidence() {
+  cc_handoff=$1
+  test -f "$cc_handoff" || return 1
+  grep -E '^evidence_layers:|^  observed_layer:|^  required_layer:' "$cc_handoff" >/dev/null 2>&1 || return 0
+  cc_validate_delegation_evidence "$cc_handoff"
+}
+
+cc_validate_completion_evidence() {
+  cc_completion=$1
+  test -f "$cc_completion" || return 1
+  cc_status=$(cc_runtime_yaml_field "$cc_completion" status)
+  if grep -E '^evidence_layers:|^  required_layer:|^  observed_layer:' "$cc_completion" >/dev/null 2>&1; then
+    cc_required=$(cc_runtime_yaml_field "$cc_completion" required_layer)
+    cc_observed=$(cc_runtime_yaml_field "$cc_completion" observed_layer)
+    if test -n "$cc_required" && test -n "$cc_observed" && test "$cc_required" != "$cc_observed"; then
+      printf '%s\n' EVIDENCE_LAYER_MISMATCH >&2
+      return 1
+    fi
+    cc_claimed=$(cc_runtime_yaml_field "$cc_completion" outcome)
+    if test "$cc_claimed" = passed || test -z "$cc_claimed"; then
+      cc_validate_evidence_mapping "$cc_completion" || return 1
+    fi
+  fi
+  case "$cc_status" in
+    ready-for-human-status-change|completed)
+      if grep -E '^evidence_layers:|^  required_layer:|^  observed_layer:' "$cc_completion" >/dev/null 2>&1; then
+        cc_validate_evidence_mapping "$cc_completion" || {
+          printf '%s\n' EVIDENCE_COMPLETION_NOT_READY >&2
+          return 1
+        }
+      else
+        printf '%s\n' EVIDENCE_LAYER_MISSING >&2
+        return 1
+      fi
+      ;;
+  esac
+  return 0
+}
+
+cc_validate_verifier_readonly() {
+  cc_packet=$1
+  grep -F 'role: verifier' "$cc_packet" >/dev/null 2>&1 || return 0
+  grep -F 'write_worktree: false' "$cc_packet" >/dev/null 2>&1 || { printf '%s\n' EVIDENCE_VERIFIER_WRITE >&2; return 1; }
+  grep -F 'write_plan: false' "$cc_packet" >/dev/null 2>&1 || { printf '%s\n' EVIDENCE_VERIFIER_WRITE >&2; return 1; }
+  grep -F 'write_activity: false' "$cc_packet" >/dev/null 2>&1 || { printf '%s\n' EVIDENCE_VERIFIER_WRITE >&2; return 1; }
+  if grep -E '^repair: true' "$cc_packet" >/dev/null 2>&1; then
+    printf '%s\n' EVIDENCE_VERIFIER_REPAIR >&2
+    return 1
+  fi
+  printf '%s\n' EVIDENCE_VERIFIER_READONLY
+}
+
+cc_runtime_emit_evidence_layers() {
+  cc_request=$1
+  cc_required_layer=$(cc_runtime_request_value "$cc_request" required_layer)
+  cc_produced_layer=$(cc_runtime_request_value "$cc_request" produced_layer)
+  cc_observed_layer=$(cc_runtime_request_value "$cc_request" observed_layer)
+  cc_evidence_outcome=$(cc_runtime_request_value "$cc_request" outcome)
+  cc_evidence_ref=$(cc_runtime_request_value "$cc_request" evidence_ref)
+  cc_evidence_source=$(cc_runtime_request_value "$cc_request" evidence_source)
+  cc_host_capability=$(cc_runtime_request_value "$cc_request" host_capability)
+  if test -z "$cc_required_layer" && test -z "$cc_produced_layer" && test -z "$cc_observed_layer"; then
+    return 0
+  fi
+  printf 'evidence_layers:\n'
+  if test -n "$cc_required_layer"; then printf '  required_layer: %s\n' "$cc_required_layer"; fi
+  if test -n "$cc_produced_layer"; then printf '  produced_layer: %s\n' "$cc_produced_layer"; fi
+  if test -n "$cc_observed_layer"; then printf '  observed_layer: %s\n' "$cc_observed_layer"; fi
+  if test -n "$cc_evidence_outcome"; then printf '  outcome: %s\n' "$cc_evidence_outcome"; fi
+  if test -n "$cc_evidence_ref"; then printf '  evidence_ref: %s\n' "$cc_evidence_ref"; fi
+  if test -n "$cc_evidence_source"; then printf '  evidence_source: %s\n' "$cc_evidence_source"; fi
+  if test -n "$cc_host_capability"; then printf '  host_capability: %s\n' "$cc_host_capability"; fi
+  return 0
 }
 
 # Runtime record constructors and graph publication.  These functions accept
@@ -1018,6 +1219,7 @@ cc_construct_delegation() {
     printf 'objective: %s\nscope: %s\nnon_goals: %s\ncontext_set: %s\ncontext_receipt: context-receipt.yaml\n' "$cc_objective" "$cc_scope" "$cc_non_goals" "$cc_context_set"
     printf 'repository: %s\nworktree: %s\npermissions:\n  write_worktree: %s\n  write_plan: false\n  write_activity: false\n' "$cc_repository" "$cc_worktree" "$cc_permissions_writer"
     printf 'acceptance_criteria: %s\nverification: %s\nexpected_evidence: %s\nstop_conditions: %s\nhandoff_schema: wrapper/contracts/schemas/handoff.yaml\n' "$cc_acceptance_criteria" "$cc_verification" "$cc_expected_evidence" "$cc_stop_conditions"
+    cc_runtime_emit_evidence_layers "$cc_request"
     printf '%s\n' "$cc_host_block"
   } > "$cc_output" || return 1
   cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
@@ -1031,7 +1233,8 @@ cc_construct_handoff() {
   {
     printf '%s\n' '---'
     printf 'schema_version: 1\nwrapper_version: %s\nhandoff_id: %s-handoff\nsession_id: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}" "$cc_transaction" "$cc_session"
-    printf '%s\n' '---' '# Runtime handoff skeleton' '' '## Observed state' '' 'Generated by the host-neutral engine.' '' '## Selected route and reason' '' 'Bounded runtime graph construction.' '' '## Evidence read' '' 'Validated session, receipt, delegation, and ownership inputs.' '' '## Host evidence' '' 'Provider-neutral host evidence remains in the delegation record.' '' '## Action performed or proposed' '' 'No provider or host action is performed by the engine.' '' '## Files/state changed' '' 'Runtime graph transaction only.' '' '## Verification' '' 'Independent verification required.' '' '## Blockers and human decisions' '' 'None recorded by the constructor.' '' '## One next safe action' '' 'Validate the complete graph before publication.'
+    cc_runtime_emit_evidence_layers "$cc_request"
+    printf '%s\n' '---' '# Runtime handoff skeleton' '' '## Observed state' '' 'Generated by the host-neutral engine.' '' '## Selected route and reason' '' 'Bounded runtime graph construction.' '' '## Evidence read' '' 'Validated session, receipt, delegation, and ownership inputs.' '' '## Host evidence' '' 'Provider-neutral host evidence remains in the delegation record.' '' '## Action performed or proposed' '' 'No provider or host action is performed by the engine.' '' '## Files/state changed' '' 'Runtime graph transaction only.' '' '## Verification' '' 'Independent verification required. Writer-recorded mappings are claims.' '' '## Blockers and human decisions' '' 'None recorded by the constructor.' '' '## One next safe action' '' 'Validate the complete graph before publication.'
     printf '<!-- created_at: %s -->\n' "$cc_now"
   } > "$cc_output" || return 1
   cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
@@ -1043,6 +1246,7 @@ cc_construct_completion() {
   cc_parent_dir=$(dirname "$cc_output"); mkdir -p "$cc_parent_dir" || return 1
   {
     printf 'schema_version: 1\nwrapper_version: %s\ncompletion_id: %s-completion\nplan: %s\nstatus: not-ready\ntask_evidence: pending\nverifier: pending\nworktree: pending\ngit: pending\nhuman_gate: required\n' "${CC_WRAPPER_VERSION:-1.0.0}" "$cc_transaction" "$cc_plan"
+    cc_runtime_emit_evidence_layers "$cc_request"
   } > "$cc_output" || return 1
   cc_runtime_record_seal "$cc_output" "$cc_transaction" staged
 }
@@ -1250,6 +1454,9 @@ cc_validate_runtime_graph() {
   for cc_handoff_section in '## Observed state' '## Selected route and reason' '## Evidence read' '## Host evidence' '## Action performed or proposed' '## Files/state changed' '## Verification' '## Blockers and human decisions' '## One next safe action'; do
     grep -F "$cc_handoff_section" "$cc_records/handoff.md" >/dev/null 2>&1 || { printf 'HANDOFF_SECTION_MISSING: %s\n' "$cc_handoff_section" >&2; return 1; }
   done
+  cc_validate_delegation_evidence "$cc_records/delegation.yaml" || return 1
+  cc_validate_handoff_evidence "$cc_records/handoff.md" || return 1
+  cc_validate_completion_evidence "$cc_records/completion.yaml" || return 1
   cc_lease_session=$(sed -n 's/^session_id: //p' "$cc_records/lease.yaml" | head -n 1)
   cc_lease_root=$(sed -n 's/^root_session_id: //p' "$cc_records/lease.yaml" | head -n 1)
   cc_lease_repository=$(sed -n 's/^repository: //p' "$cc_records/lease.yaml" | head -n 1)

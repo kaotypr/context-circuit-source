@@ -1,0 +1,16 @@
+case: blocked
+description: unavailable host capability is a provider-neutral non-passing limitation
+plan_owned:
+  acceptance_id: VEL-FX-AC-BLOCK
+  required_layer: browser
+  verification_id: VEL-FX-VT-BLOCK
+  produced_layer: browser
+runtime:
+  observed_present: false
+  outcome: blocked
+  evidence_ref: host-blocked
+host_capability: unavailable
+provider_neutral: true
+offline_fallback: filesystem-only
+satisfies_completion: false
+converted_to_pass: false

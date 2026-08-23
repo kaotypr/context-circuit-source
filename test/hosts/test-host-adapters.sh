@@ -118,4 +118,32 @@ for host in codex claude-code cursor-agent; do
     printf 'LIVE %s: unavailable (optional probe not invoked)\n' "$host"
   fi
 done
+
+contains "$ROOT/docs/host-capabilities.md" 'wrapper/contracts/schemas/plan.yaml'
+contains "$ROOT/docs/host-capabilities.md" 'human-visible `waived` limitation'
+contains "$ROOT/docs/host-capabilities.md" 'Live smoke remains optional and label-only.'
+limit_root="$ROOT/test/hosts/fixtures/limitations"
+for host in codex claude-code cursor-agent; do
+  for case_name in unavailable host-blocked waived; do
+    fixture="$limit_root/$host-$case_name.yaml"
+    require_file "$fixture"
+    contains "$fixture" "host_id: $host"
+    contains "$fixture" 'converted_to_pass: false'
+    contains "$fixture" 'live_check: none'
+    not_contains "$fixture" 'password:'
+    not_contains "$fixture" 'api_key:'
+    not_contains "$fixture" 'provider_payload:'
+    not_contains "$fixture" 'transcript:'
+    result=$(cc_validate_evidence_mapping "$fixture" 2>&1 || true)
+    printf '%s\n' "$result" | grep -F EVIDENCE_LAYER_MATCH >/dev/null && fail "$host $case_name became a false pass"
+    case "$case_name" in
+      waived)
+        printf '%s\n' "$result" | grep -F EVIDENCE_LAYER_WAIVED >/dev/null || fail "$host waiver was not reported as waived"
+        ;;
+      *)
+        printf '%s\n' "$result" | grep -F EVIDENCE_LAYER_BLOCKED >/dev/null || fail "$host $case_name was not blocked"
+        ;;
+    esac
+  done
+done
 pass 'Codex, Claude Code, and Cursor adapters share route, role, resume, and offline boundaries'

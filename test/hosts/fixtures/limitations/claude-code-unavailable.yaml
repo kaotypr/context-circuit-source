@@ -1,0 +1,12 @@
+host_id: claude-code
+case: unavailable
+required_layer: browser
+produced_layer: browser
+observed_layer: omitted
+outcome: blocked
+evidence_source: independent
+host_capability: unavailable
+provider_status: disabled
+offline_fallback: filesystem-only
+converted_to_pass: false
+live_check: none

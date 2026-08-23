@@ -1,0 +1,13 @@
+case: missing
+description: absent observed_layer cannot satisfy a required_layer
+plan_owned:
+  acceptance_id: VEL-FX-AC-MISS
+  required_layer: store
+  verification_id: VEL-FX-VT-MISS
+  produced_layer: store
+runtime:
+  observed_present: false
+  outcome: failed
+  evidence_ref: missing
+comparison: missing
+satisfies_completion: false

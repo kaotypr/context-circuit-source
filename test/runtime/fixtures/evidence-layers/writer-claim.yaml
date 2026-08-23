@@ -1,0 +1,7 @@
+case: writer-claim
+required_layer: process
+produced_layer: process
+observed_layer: process
+outcome: passed
+evidence_source: writer-claim
+evidence_ref: writer-handoff

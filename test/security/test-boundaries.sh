@@ -80,4 +80,26 @@ cp "$ROOT/wrapper/contracts/schemas/completion.yaml" "$packet_fixture/wrapper/co
 cp "$ROOT/agents/verifier.md" "$packet_fixture/agents/verifier.md"
 sed -i '/^  - id: verifier$/,/^  - id: resume$/ s/^    budget_bytes: 11264$/    budget_bytes: 1/' "$packet_fixture/wrapper/contracts/context-sets.yaml"
 expect_failure cc_context_packet_measure "$packet_fixture" verifier $packet_paths
+
+neg="$ROOT/test/security/fixtures/negatives"
+require_file "$neg/provider-payload-record.yaml"
+require_file "$neg/forbidden-fields.yaml"
+contains "$neg/provider-payload-record.yaml" 'provider_payload:'
+contains "$neg/provider-payload-record.yaml" 'transcript:'
+contains "$neg/forbidden-fields.yaml" 'ship: never'
+for tree in \
+  "$ROOT/wrapper/contracts" \
+  "$ROOT/docs/host-capabilities.md" \
+  "$ROOT/wrapper/migrations/README.md" \
+  "$ROOT/wrapper/migrations/upgrade.sh" \
+  "$ROOT/test/hosts/fixtures" \
+  "$ROOT/test/contracts/fixtures/evidence-layers" \
+  "$ROOT/test/runtime/fixtures/evidence-layers"; do
+  if rg -n '^[[:space:]]*(password|api_key|access_token|client_secret|provider_payload|transcript):' "$tree" >/dev/null 2>&1; then
+    fail "credential or provider payload leaked into $tree"
+  fi
+done
+not_contains "$ROOT/docs/host-capabilities.md" 'provider_payload:'
+not_contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'provider_payload:'
+not_contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'transcript:'
 pass 'path traversal, credential boundary, request-scoped source, and live packet overread boundaries'
