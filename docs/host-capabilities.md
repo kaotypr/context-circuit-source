@@ -66,9 +66,20 @@ The root coordinator records `session_role: root`; bounded child packets record
 consolidation. The writer is the only implementation writer, and the verifier
 is independent and read-only.
 
+Host integration is a thin mapping around the engine-generated graph. The root
+validates the graph and commit marker, then transports only
+`cc_runtime_launch_projection`; writer and verifier roles consume the same
+delegation, child-start, receipt, and handoff records. Host-local permission
+flags never alter the packet or grant authorization.
+
 If a host cannot create a required writer or verifier child, the route is
 host-blocked and remains read-only. The agent does not skip independent
 verification or silently self-verify.
+
+If the provider is disabled, denied, or unavailable, retain the filesystem-only
+workflow and its evidence checks. `host-blocked` is reserved for a missing
+required child primitive; it is not a reason to downgrade the role or broaden
+the launch projection.
 
 ## Optional question-prompt primitive
 

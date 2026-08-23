@@ -26,6 +26,13 @@ upgrade_receipt=$(mktemp "${TMPDIR:-/tmp}/cc-upgrade-receipt.XXXXXX")
 printf 'wrapper_version: 1.0.0\n' > "$upgrade_receipt"
 assert_eq "$(cc_migration_receipt_status "$upgrade_receipt")" compatible
 contains "$ROOT/wrapper/migrations/README.md" 'compatible receipt is retained'
+contains "$ROOT/wrapper/migrations/README.md" 'legacy child-start record is retained'
+printf '%s\n' "$(cc_migration_packet_fixtures)" | grep -Fx 'wrapper/contracts/schemas/child-start.yaml' >/dev/null || fail 'child-start migration fixture missing'
+legacy_child_start=$(mktemp "${TMPDIR:-/tmp}/cc-legacy-child-start.XXXXXX")
+printf 'schema_version: 1\nwrapper_version: 1.0.0\ntransaction_state: legacy-readable\ncommit_marker: null\n' > "$legacy_child_start"
+assert_eq "$(cc_migration_receipt_status "$legacy_child_start")" compatible
+contains "$legacy_child_start" 'transaction_state: legacy-readable'
+contains "$legacy_child_start" 'commit_marker: null'
 for fixture in lease.yaml worktree-state.txt handoff.md plan.yaml stack.yaml; do
   require_file "$ROOT/test/upgrades/legacy-live/$fixture"
 done
@@ -33,7 +40,7 @@ contains "$ROOT/test/upgrades/legacy-live/worktree-state.txt" 'preserve: do-not-
 contains "$ROOT/test/upgrades/legacy-live/plan.yaml" 'status: approved'
 contains "$ROOT/test/upgrades/legacy-live/stack.yaml" 'status: interrupted'
 legacy=$(mktemp -d "${TMPDIR:-/tmp}/cc-identity-upgrade.XXXXXX")
-trap 'rm -rf "$legacy" "$upgrade_receipt"' EXIT HUP INT TERM
+trap 'rm -rf "$legacy" "$upgrade_receipt"; rm -f "$legacy_child_start"' EXIT HUP INT TERM
 cp -R "$ROOT/test/contracts/fixtures/identity-projection/missing-region/." "$legacy/"
 contains "$legacy/workspace.yaml" 'status: accepted'
 not_contains "$legacy/context/WORKSPACE.md" 'context-circuit:identity-region:start'

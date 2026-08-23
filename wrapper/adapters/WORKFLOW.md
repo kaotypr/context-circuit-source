@@ -1,22 +1,19 @@
 # Context Circuit workflow
 
-One two-stage router handles human language. Stage A selects one bounded probe;
-Stage B emits one normalized action with eligibility, authorization, reason
-codes, and any exact human gate. Recommendations never mutate state.
+One two-stage router selects a bounded probe and normalized action; recommendations
+never mutate state. Action selects one registered `context_set`; the shared packet loader enforces exact allowlists, selected evidence, byte budgets, and
+receipts. Undeclared, missing, stale, or over-budget evidence stops and adapters
+never broaden packets or copy route policy.
 
-The final action maps to one registered `context_set`. The shared packet loader
-validates its exact allowlist, conditional evidence, measured bytes, and receipt
-digests. Undeclared, missing, stale, or over-budget evidence stops; adapters
-never broaden a packet or copy route policy.
-
-Plans, tasks, sessions, worktrees, and runtime evidence stay distinct. Review
-is read-only. Approval, execution, finish, delivery, publication, deployment,
-merge, archive, takeover, and cleanup are separate human gates. Writers use
-exclusive worktrees; independent verifiers are read-only. A missing child is
-`host-blocked`, never self-verification.
-
-Resume checks receipt, primary evidence, wrapper, Git, and ownership. Disabled,
-denied, or unavailable providers use the filesystem-only fallback. Codex,
-Claude Code, and Cursor Agent CLI share the packet loader and
-provider-neutral `host_evidence`; host capability never authorizes a route,
-role, lease, gate, or verification result.
+Plans, tasks, sessions, worktrees, and runtime evidence stay distinct. Review is
+read-only; approval, execution, finish, delivery, publication, deployment,
+merge, archive, takeover, and cleanup remain separate gates. Writers use
+exclusive worktrees and verifiers are independent/read-only. Resume checks
+receipt, primary evidence, wrapper, Git, and ownership; disabled, denied, or
+unavailable providers remain filesystem-only. Hosts share the packet loader and
+provider-neutral `host_evidence`; capability never authorizes route, role,
+lease, gate, or verification. Committed graph is authoritative; children
+consume delegation/child-start/receipt/handoff via
+`cc_runtime_launch_projection`; `cc_runtime_graph_authoritative` blocks
+stale/unmarked/foreign resume; missing child is `host-blocked`; provider failure
+remains filesystem-only.
