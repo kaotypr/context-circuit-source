@@ -1,6 +1,6 @@
 # Route-selected context packet enforcement
 
-Status: draft
+Status: done
 Repository: context-circuit-source
 Source: sources/wrapper-action-cost-and-integrity-prd.md
 

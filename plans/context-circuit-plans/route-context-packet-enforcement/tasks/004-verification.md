@@ -2,7 +2,7 @@
 schema_version: 2
 id: RCP-004
 plan: route-context-packet-enforcement
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - docs/agent-workspace-workflow.md

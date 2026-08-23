@@ -2,7 +2,7 @@
 schema_version: 2
 id: RCP-001
 plan: route-context-packet-enforcement
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - wrapper/contracts/routes.yaml

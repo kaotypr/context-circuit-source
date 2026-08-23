@@ -2,7 +2,7 @@ schema_version: 2
 id: route-context-packet-enforcement
 number: CC-008
 title: Route-selected context packet enforcement
-status: approved
+status: done
 repository: context-circuit-source
 source: sources/wrapper-action-cost-and-integrity-prd.md
 product_knowledge:
