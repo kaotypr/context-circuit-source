@@ -39,4 +39,41 @@ assert_eq "$(cc_provider_fallback unavailable)" offline-fallback
 assert_eq "$(cc_provider_fallback denied)" provider-denied-manual-fallback
 contains "$ROOT/docs/gates.md" 'separate explicit gates'
 contains "$ROOT/docs/integrations.md" 'offline'
+contains "$ROOT/docs/gates.md" 'Action: identity-acceptance'
+contains "$ROOT/docs/gates.md" 'Proposed defaults:'
+contains "$ROOT/docs/gates.md" 'Immediate effects: workspace.accept_identity'
+contains "$ROOT/docs/gates.md" 'Action: repository-registration'
+contains "$ROOT/docs/gates.md" 'Immediate effects: workspace.register_repository'
+contains "$ROOT/docs/gates.md" 'Later authorized effects: repository-bootstrap; repository-create-empty (reserved, not activated); execute-plan'
+contains "$ROOT/docs/gates.md" 'Immediate effects: repository-bootstrap'
+contains "$ROOT/docs/gates.md" 'Immediate effects: git.commit'
+contains "$ROOT/docs/gates.md" 'Later authorized effects: delivery.push'
+contains "$ROOT/docs/gates.md" 'Later authorized effects: maintainer git.commit of the approval projection (separate card, same session, product-source only); worktree git.commit after execute; delivery.push (delivery gate)'
+contains "$ROOT/docs/gates.md" 'They never grant authorization'
+
+fx=$(mktemp -d "${TMPDIR:-/tmp}/cc-gates-identity.XXXXXX")
+trap 'rm -rf "$runtime" "$fx"' EXIT HUP INT TERM
+cp -R "$ROOT/test/contracts/fixtures/identity-projection/matching/." "$fx/"
+id_card=$(cc_identity_acceptance_card "$fx")
+printf '%s\n' "$id_card" | grep -F 'mode: solo' >/dev/null || fail 'identity-acceptance card omitted mode default'
+printf '%s\n' "$id_card" | grep -F 'Immediate effects: workspace.accept_identity' >/dev/null || fail 'identity-acceptance card omitted immediate effects'
+reg_card=$(cc_repository_registration_card "$fx" app '' '')
+printf '%s\n' "$reg_card" | grep -F 'canonical URL: none' >/dev/null || fail 'repository-registration card omitted URL default'
+printf '%s\n' "$reg_card" | grep -F 'default branch: main' >/dev/null || fail 'repository-registration card omitted branch default'
+printf '%s\n' "$reg_card" | grep -F 'Immediate effects: workspace.register_repository' >/dev/null || fail 'repository-registration card omitted immediate effects'
+cc_accept_identity "$fx" confirmed '' '' '' ''
+contains "$fx/workspace.yaml" 'status: accepted'
+contains "$fx/workspace.yaml" 'mode: solo'
+contains "$fx/workspace.yaml" 'roles: none'
+contains "$fx/context/WORKSPACE.md" 'status: accepted'
+contains "$fx/context/WORKSPACE.md" 'Preserve this authored Product Knowledge in WORKSPACE.md.'
+invented=$(cc_accept_identity "$fx" confirmed solo none none main owner=alice 2>&1 || true)
+printf '%s\n' "$invented" | grep -F FIELD_INVENTED >/dev/null || fail 'post-confirmation invented field was accepted'
+cc_register_repository "$fx" app 'https://github.com/acme/app.git' main confirmed
+contains "$fx/workspace.yaml" 'canonical_url: https://github.com/acme/app.git'
+contains "$fx/context/PROJECT.md" 'canonical_url: https://github.com/acme/app.git'
+contains "$fx/context/INDEX.md" '  app:'
+not_contains "$fx/workspace.yaml" 'path:'
+test ! -e "$fx/repositories.local.yaml" || fail 'registration created local bindings'
+assert_eq "$(cc_validate_identity_projection "$fx")" identity-projection-ok
 pass 'confirmation cards, append-only archive, offline fallback, and cleanup gate'

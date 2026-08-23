@@ -209,6 +209,15 @@ cc_route() {
       *) cc_authorization=explicitly-requested ;;
     esac
   fi
+  if cc_identity_projection_applies "$cc_workspace_root"; then
+    if ! cc_validate_identity_projection "$cc_workspace_root" >/dev/null; then
+      cc_stage_b=block-projection-mismatch
+      cc_eligibility=blocked
+      cc_gate=none
+      cc_reason=projection-mismatch
+      cc_authorization=absent
+    fi
+  fi
   cat <<EOF
 intent: $cc_stage_b
 session_kind: root
@@ -719,6 +728,9 @@ cc_repository_bootstrap_card() {
   printf 'Branch: %s\n' "${cc_branch:-main}"
   printf 'Destination: %s\n' "$cc_destination"
   printf 'Existing-path check: %s\n' "$cc_existing_check"
+  printf 'Immediate effects: repository-bootstrap\n'
+  printf 'Later authorized effects: execute-plan\n'
+  printf 'Not execute-plan effects: git.init, git.clone\n'
   printf 'Will change: create the exact destination and clone the selected remote after confirmation.\n'
   printf 'Will not change: existing paths, bound repositories, credentials, or delivery state.\n'
   printf 'Risks/open decisions: host Git credentials and provider availability remain external.\n'
@@ -768,6 +780,662 @@ cc_bootstrap_repository() {
     printf '%s\n' BOOTSTRAP_FAILED >&2
     return 1
   fi
+}
+
+# Identity-region projection, displayed defaults, and descriptive effect
+# identifiers. These primitives enforce agreement with workspace.yaml; they
+# never derive Product Knowledge or grant authorization.
+
+cc_identity_region_start() {
+  printf '%s' '<!-- context-circuit:identity-region:start -->'
+}
+
+cc_identity_region_end() {
+  printf '%s' '<!-- context-circuit:identity-region:end -->'
+}
+
+cc_identity_region_relpaths() {
+  printf '%s\n' context/WORKSPACE.md context/PROJECT.md context/INDEX.md
+}
+
+cc_workspace_section_field() {
+  cc_section_file=$1
+  cc_section_name=$2
+  cc_section_field=$3
+  test -f "$cc_section_file" || return 0
+  awk -v section="$cc_section_name" -v field="$cc_section_field" '
+    $0 ~ "^" section ":" { in_section=1; next }
+    /^[^[:space:]#]/ { in_section=0 }
+    in_section && $0 ~ "^  " field ":[[:space:]]*" {
+      sub("^  " field ":[[:space:]]*", "")
+      gsub("[[:space:]]+$", "")
+      print
+      exit
+    }
+  ' "$cc_section_file"
+}
+
+cc_workspace_repository_keys() {
+  cc_keys_file=$1
+  test -f "$cc_keys_file" || return 0
+  awk '
+    /^repositories:[[:space:]]*\{\}[[:space:]]*$/ { exit }
+    /^repositories:[[:space:]]*$/ { in_repositories=1; next }
+    /^[^[:space:]#]/ { in_repositories=0 }
+    in_repositories && /^  [A-Za-z0-9._-]+:[[:space:]]*$/ {
+      key=$1
+      sub(":", "", key)
+      print key
+    }
+  ' "$cc_keys_file"
+}
+
+cc_identity_norm() {
+  case "$1" in
+    ''|null|[]) printf '%s\n' none ;;
+    *) printf '%s\n' "$1" ;;
+  esac
+}
+
+cc_roles_canonical() {
+  cc_roles_raw=$(cc_identity_norm "$1")
+  case "$cc_roles_raw" in
+    none) printf '%s\n' none; return 0 ;;
+  esac
+  printf '%s\n' "$cc_roles_raw" | awk '{
+    gsub(",[[:space:]]+", ",", $0)
+    gsub("[[:space:]]+,", ",", $0)
+    gsub("^[[:space:]]+|[[:space:]]+$", "", $0)
+    if ($0 == "" || $0 == "none") print "none"
+    else print $0
+  }'
+}
+
+cc_workspace_roles() {
+  cc_roles_file=$1
+  test -f "$cc_roles_file" || { printf '%s\n' ''; return 0; }
+  awk '
+    /^workspace:[[:space:]]*$/ { in_ws=1; next }
+    /^[^[:space:]#]/ {
+      if (in_roles) { print acc; printed=1; exit }
+      in_ws=0
+      in_roles=0
+      next
+    }
+    in_ws && /^  roles:[[:space:]]*\[\][[:space:]]*$/ { print ""; exit }
+    in_ws && /^  roles:[[:space:]]*$/ { in_roles=1; acc=""; next }
+    in_ws && /^  roles:[[:space:]]*/ {
+      sub("^  roles:[[:space:]]*", "")
+      gsub("[[:space:]]+$", "")
+      print
+      exit
+    }
+    in_roles && /^    -[[:space:]]*/ {
+      item=$0
+      sub("^    -[[:space:]]*", "", item)
+      gsub("[[:space:]]+$", "", item)
+      if (acc != "") acc = acc "," item
+      else acc = item
+      next
+    }
+    in_roles && /^  [A-Za-z0-9._-]+:/ {
+      print acc
+      printed=1
+      exit
+    }
+    END { if (in_roles && !printed) print acc }
+  ' "$cc_roles_file"
+}
+
+cc_proposed_default() {
+  case "$1" in
+    mode) printf '%s\n' solo ;;
+    repositories|roles) printf '%s\n' none ;;
+    default_branch|default_branches) printf '%s\n' main ;;
+    canonical_url) printf '%s\n' none ;;
+    *) printf '%s\n' INCOMPLETE_FIELD >&2; return 1 ;;
+  esac
+}
+
+cc_resolve_displayed_field() {
+  cc_displayed_field=$1
+  cc_displayed_value=$2
+  if test -n "$cc_displayed_value"; then
+    printf '%s\n' "$cc_displayed_value"
+    return 0
+  fi
+  cc_proposed_default "$cc_displayed_field"
+}
+
+cc_identity_canonical_from_workspace() {
+  cc_identity_file=$1
+  cc_identity_name=$(cc_workspace_section_field "$cc_identity_file" workspace name)
+  cc_identity_mode=$(cc_workspace_section_field "$cc_identity_file" workspace mode)
+  cc_identity_branch=$(cc_workspace_section_field "$cc_identity_file" workspace default_branch)
+  cc_identity_roles=$(cc_roles_canonical "$(cc_workspace_roles "$cc_identity_file")")
+  cc_identity_kind=$(cc_workspace_section_field "$cc_identity_file" identity kind)
+  cc_identity_status=$(cc_workspace_section_field "$cc_identity_file" identity status)
+  test -n "$cc_identity_mode" || cc_identity_mode=solo
+  test -n "$cc_identity_branch" || cc_identity_branch=main
+  {
+    printf 'default_branch: %s\n' "$cc_identity_branch"
+    printf 'kind: %s\n' "$cc_identity_kind"
+    printf 'mode: %s\n' "$cc_identity_mode"
+    printf 'name: %s\n' "$cc_identity_name"
+    printf 'roles: %s\n' "$cc_identity_roles"
+    printf 'status: %s\n' "$cc_identity_status"
+    cc_repo_keys=$(cc_workspace_repository_keys "$cc_identity_file")
+    if test -z "$cc_repo_keys"; then
+      printf 'repositories: none\n'
+    else
+      printf '%s\n' "$cc_repo_keys" | while IFS= read -r cc_repo_key; do
+        test -n "$cc_repo_key" || continue
+        cc_repo_url=$(cc_repository_field "$cc_identity_file" "$cc_repo_key" canonical_url)
+        cc_repo_branch=$(cc_repository_field "$cc_identity_file" "$cc_repo_key" default_branch)
+        test -n "$cc_repo_url" || cc_repo_url=none
+        test -n "$cc_repo_branch" || cc_repo_branch=none
+        printf 'repository:%s:canonical_url:%s\n' "$cc_repo_key" "$cc_repo_url"
+        printf 'repository:%s:default_branch:%s\n' "$cc_repo_key" "$cc_repo_branch"
+      done
+    fi
+  } | sort
+}
+
+cc_identity_canonical_from_region_file() {
+  cc_region_file=$1
+  cc_region_name=$(awk '/^name:[[:space:]]*/ { sub("^name:[[:space:]]*", ""); print; exit }' "$cc_region_file")
+  cc_region_mode=$(awk '/^mode:[[:space:]]*/ { sub("^mode:[[:space:]]*", ""); print; exit }' "$cc_region_file")
+  cc_region_kind=$(awk '/^kind:[[:space:]]*/ { sub("^kind:[[:space:]]*", ""); print; exit }' "$cc_region_file")
+  cc_region_status=$(awk '/^status:[[:space:]]*/ { sub("^status:[[:space:]]*", ""); print; exit }' "$cc_region_file")
+  cc_region_branch=$(awk '/^default_branch:[[:space:]]*/ { sub("^default_branch:[[:space:]]*", ""); print; exit }' "$cc_region_file")
+  cc_region_roles=$(cc_roles_canonical "$(awk '/^roles:[[:space:]]*/ { sub("^roles:[[:space:]]*", ""); print; exit }' "$cc_region_file")")
+  test -n "$cc_region_mode" || cc_region_mode=solo
+  test -n "$cc_region_branch" || cc_region_branch=main
+  {
+    printf 'default_branch: %s\n' "$cc_region_branch"
+    printf 'kind: %s\n' "$cc_region_kind"
+    printf 'mode: %s\n' "$cc_region_mode"
+    printf 'name: %s\n' "$cc_region_name"
+    printf 'roles: %s\n' "$cc_region_roles"
+    printf 'status: %s\n' "$cc_region_status"
+    if grep -Eq '^repositories:[[:space:]]*(none|\{\})[[:space:]]*$' "$cc_region_file"; then
+      printf 'repositories: none\n'
+    elif grep -Eq '^repositories:[[:space:]]*$' "$cc_region_file"; then
+      awk '
+        /^repositories:[[:space:]]*$/ { in_repositories=1; next }
+        /^[^[:space:]]/ { in_repositories=0 }
+        in_repositories && /^  [A-Za-z0-9._-]+:[[:space:]]*$/ {
+          key=$1
+          sub(":", "", key)
+          print key
+        }
+      ' "$cc_region_file" | while IFS= read -r cc_repo_key; do
+        test -n "$cc_repo_key" || continue
+        cc_repo_url=$(cc_repository_field "$cc_region_file" "$cc_repo_key" canonical_url)
+        cc_repo_branch=$(cc_repository_field "$cc_region_file" "$cc_repo_key" default_branch)
+        test -n "$cc_repo_url" || cc_repo_url=none
+        test -n "$cc_repo_branch" || cc_repo_branch=none
+        printf 'repository:%s:canonical_url:%s\n' "$cc_repo_key" "$cc_repo_url"
+        printf 'repository:%s:default_branch:%s\n' "$cc_repo_key" "$cc_repo_branch"
+      done
+    else
+      printf 'repositories: none\n'
+    fi
+  } | sort
+}
+
+cc_identity_region_extract() {
+  cc_extract_file=$1
+  test -f "$cc_extract_file" || return 1
+  cc_start=$(cc_identity_region_start)
+  cc_end=$(cc_identity_region_end)
+  cc_starts=$(grep -Fxc "$cc_start" "$cc_extract_file" || true)
+  cc_ends=$(grep -Fxc "$cc_end" "$cc_extract_file" || true)
+  test "$cc_starts" = 1 && test "$cc_ends" = 1 || return 1
+  awk -v start="$cc_start" -v end="$cc_end" '
+    $0 == start { in_region=1; next }
+    $0 == end { in_region=0; next }
+    in_region { print }
+  ' "$cc_extract_file"
+}
+
+cc_identity_region_body_from_file() {
+  cc_body_file=$1
+  cc_body_name=$(cc_workspace_section_field "$cc_body_file" workspace name)
+  cc_body_mode=$(cc_workspace_section_field "$cc_body_file" workspace mode)
+  cc_body_branch=$(cc_workspace_section_field "$cc_body_file" workspace default_branch)
+  cc_body_roles=$(cc_roles_canonical "$(cc_workspace_roles "$cc_body_file")")
+  cc_body_kind=$(cc_workspace_section_field "$cc_body_file" identity kind)
+  cc_body_status=$(cc_workspace_section_field "$cc_body_file" identity status)
+  test -n "$cc_body_mode" || cc_body_mode=solo
+  test -n "$cc_body_branch" || cc_body_branch=main
+  printf 'name: %s\n' "$cc_body_name"
+  printf 'mode: %s\n' "$cc_body_mode"
+  printf 'kind: %s\n' "$cc_body_kind"
+  printf 'status: %s\n' "$cc_body_status"
+  printf 'default_branch: %s\n' "$cc_body_branch"
+  printf 'roles: %s\n' "$cc_body_roles"
+  cc_body_keys=$(cc_workspace_repository_keys "$cc_body_file")
+  if test -z "$cc_body_keys"; then
+    printf 'repositories: none\n'
+    return 0
+  fi
+  printf 'repositories:\n'
+  printf '%s\n' "$cc_body_keys" | while IFS= read -r cc_body_key; do
+    test -n "$cc_body_key" || continue
+    cc_body_url=$(cc_repository_field "$cc_body_file" "$cc_body_key" canonical_url)
+    cc_body_repo_branch=$(cc_repository_field "$cc_body_file" "$cc_body_key" default_branch)
+    printf '  %s:\n' "$cc_body_key"
+    test -n "$cc_body_url" && test "$cc_body_url" != none && printf '    canonical_url: %s\n' "$cc_body_url"
+    test -n "$cc_body_repo_branch" && test "$cc_body_repo_branch" != none && printf '    default_branch: %s\n' "$cc_body_repo_branch"
+  done
+}
+
+cc_identity_region_replace() {
+  cc_replace_file=$1
+  cc_replace_body=$2
+  cc_replace_dest=$3
+  cc_start=$(cc_identity_region_start)
+  cc_end=$(cc_identity_region_end)
+  awk -v start="$cc_start" -v end="$cc_end" -v body_file="$cc_replace_body" '
+    BEGIN {
+      while ((getline line < body_file) > 0) {
+        body = body line "\n"
+      }
+      close(body_file)
+    }
+    $0 == start { print; printf "%s", body; skip=1; next }
+    $0 == end { skip=0; print; next }
+    skip { next }
+    { print }
+  ' "$cc_replace_file" > "$cc_replace_dest"
+}
+
+cc_identity_projection_applies() {
+  cc_applies_root=$1
+  test -f "$cc_applies_root/workspace.yaml" || return 1
+  cc_applies_kind=$(cc_workspace_section_field "$cc_applies_root/workspace.yaml" identity kind)
+  test "$cc_applies_kind" = instantiated-workspace
+}
+
+cc_validate_identity_projection() {
+  cc_validate_root=$1
+  if test -f "$cc_validate_root/.runtime/identity-publish.journal"; then
+    printf '%s\n' projection-mismatch
+    return 1
+  fi
+  test -f "$cc_validate_root/workspace.yaml" || { printf '%s\n' projection-mismatch; return 1; }
+  cc_expected=$(cc_identity_canonical_from_workspace "$cc_validate_root/workspace.yaml")
+  cc_identity_region_relpaths | while IFS= read -r cc_rel; do
+    cc_summary="$cc_validate_root/$cc_rel"
+    test -f "$cc_summary" || { printf '%s\n' projection-mismatch; exit 1; }
+    cc_region_tmp="$cc_summary.region.$$"
+    if ! cc_identity_region_extract "$cc_summary" > "$cc_region_tmp"; then
+      rm -f "$cc_region_tmp"
+      printf '%s\n' projection-mismatch
+      exit 1
+    fi
+    if grep -E 'path:[[:space:]]*/|path:[[:space:]]*\.\./' "$cc_region_tmp" >/dev/null 2>&1; then
+      rm -f "$cc_region_tmp"
+      printf '%s\n' projection-mismatch
+      exit 1
+    fi
+    cc_actual=$(cc_identity_canonical_from_region_file "$cc_region_tmp")
+    rm -f "$cc_region_tmp"
+    test "$cc_expected" = "$cc_actual" || { printf '%s\n' projection-mismatch; exit 1; }
+  done || { printf '%s\n' projection-mismatch; return 1; }
+  printf '%s\n' identity-projection-ok
+}
+
+cc_entry_preflight() {
+  cc_preflight_root=$1
+  if cc_identity_projection_applies "$cc_preflight_root"; then
+    cc_validate_identity_projection "$cc_preflight_root" || return 1
+  fi
+  printf '%s\n' entry-preflight-ok
+}
+
+cc_write_preflight() {
+  cc_preflight_root=$1
+  if cc_identity_projection_applies "$cc_preflight_root"; then
+    cc_validate_identity_projection "$cc_preflight_root" || return 1
+  fi
+  printf '%s\n' write-preflight-ok
+}
+
+cc_identity_publish_files() {
+  cc_publish_root=$1
+  cc_workspace_source=${2:-$cc_publish_root/workspace.yaml}
+  cc_publish_workspace_dest=${3:-}
+  cc_journal="$cc_publish_root/.runtime/identity-publish.journal"
+  mkdir -p "$cc_publish_root/.runtime"
+  cc_body="$cc_journal.body.$$"
+  cc_identity_region_body_from_file "$cc_workspace_source" > "$cc_body" || { rm -f "$cc_body"; printf '%s\n' projection-mismatch >&2; return 1; }
+  cc_fail_after=${CC_IDENTITY_PUBLISH_FAIL_AFTER:-0}
+  cc_moved=0
+  cc_list="$cc_journal.list.$$"
+  : > "$cc_list"
+  cc_ok=1
+  cc_identity_region_relpaths | while IFS= read -r cc_rel; do
+    printf '%s\n' "$cc_publish_root/$cc_rel"
+  done > "$cc_list.files.$$"
+  while IFS= read -r cc_summary; do
+    test -f "$cc_summary" || { cc_ok=0; break; }
+    cc_tmp="$cc_summary.tmp.$$"
+    cc_bak="$cc_summary.bak.$$"
+    if ! cc_identity_region_extract "$cc_summary" >/dev/null; then
+      cc_ok=0
+      break
+    fi
+    cp "$cc_summary" "$cc_bak"
+    if ! cc_identity_region_replace "$cc_summary" "$cc_body" "$cc_tmp"; then
+      cc_ok=0
+      break
+    fi
+    printf '%s\t%s\t%s\n' "$cc_tmp" "$cc_summary" "$cc_bak" >> "$cc_list"
+  done < "$cc_list.files.$$"
+  rm -f "$cc_list.files.$$" "$cc_body"
+  if test -n "$cc_publish_workspace_dest" && test "$cc_ok" -eq 1; then
+    cc_ws_bak="$cc_publish_workspace_dest.bak.$$"
+    cp "$cc_publish_workspace_dest" "$cc_ws_bak"
+    printf '%s\t%s\t%s\n' "$cc_workspace_source" "$cc_publish_workspace_dest" "$cc_ws_bak" >> "$cc_list"
+  fi
+  if test "$cc_ok" -ne 1; then
+    while IFS='	' read -r cc_tmp cc_summary cc_bak; do
+      rm -f "$cc_tmp"
+      test -n "$cc_bak" && test -f "$cc_bak" && mv "$cc_bak" "$cc_summary"
+    done < "$cc_list"
+    rm -f "$cc_list"
+    printf '%s\n' projection-mismatch >&2
+    return 1
+  fi
+  printf 'status: committing\n' > "$cc_journal"
+  while IFS='	' read -r cc_tmp cc_summary cc_bak; do
+    test -n "$cc_tmp" || continue
+    mv "$cc_tmp" "$cc_summary" || cc_ok=0
+    cc_moved=$((cc_moved + 1))
+    if test "$cc_fail_after" -gt 0 && test "$cc_moved" -ge "$cc_fail_after"; then
+      cc_ok=0
+      break
+    fi
+  done < "$cc_list"
+  if test "$cc_ok" -ne 1; then
+    while IFS='	' read -r cc_tmp cc_summary cc_bak; do
+      rm -f "$cc_tmp"
+      test -n "$cc_bak" && test -f "$cc_bak" && mv "$cc_bak" "$cc_summary"
+    done < "$cc_list"
+    rm -f "$cc_list" "$cc_journal"
+    printf '%s\n' IDENTITY_PUBLISH_INTERRUPTED >&2
+    return 1
+  fi
+  while IFS='	' read -r cc_tmp cc_summary cc_bak; do
+    rm -f "$cc_bak"
+  done < "$cc_list"
+  rm -f "$cc_list" "$cc_journal"
+}
+
+cc_publish_identity_regions() {
+  cc_identity_publish_files "$1"
+}
+
+cc_workspace_write_repository() {
+  cc_ws_src=$1
+  cc_ws_dest=$2
+  cc_ws_key=$3
+  cc_ws_url=$4
+  cc_ws_branch=$5
+  awk -v key="$cc_ws_key" -v url="$cc_ws_url" -v branch="$cc_ws_branch" '
+    function emit_key() {
+      print "  " key ":"
+      if (url != "" && url != "none") print "    canonical_url: " url
+      if (branch != "" && branch != "none") print "    default_branch: " branch
+    }
+    /^repositories:[[:space:]]*\{\}[[:space:]]*$/ {
+      print "repositories:"
+      emit_key()
+      added=1
+      next
+    }
+    /^repositories:[[:space:]]*$/ { in_repositories=1; print; next }
+    in_repositories && /^  [A-Za-z0-9._-]+:[[:space:]]*$/ {
+      current=$1
+      sub(":", "", current)
+      if (current == key) { skipping=1; next }
+      skipping=0
+      if (!added) { emit_key(); added=1 }
+      print
+      next
+    }
+    in_repositories && skipping && /^    / { next }
+    in_repositories && /^[^[:space:]#]/ {
+      if (!added) { emit_key(); added=1 }
+      in_repositories=0
+      skipping=0
+      print
+      next
+    }
+    { if (!(in_repositories && skipping)) print }
+    END { if (in_repositories && !added) emit_key() }
+  ' "$cc_ws_src" > "$cc_ws_dest"
+}
+
+cc_workspace_apply_displayed_identity() {
+  cc_ws_src=$1
+  cc_ws_dest=$2
+  cc_ws_mode=$3
+  cc_ws_roles=$4
+  cc_ws_branch=$5
+  cc_ws_status=$6
+  awk -v mode="$cc_ws_mode" -v roles="$cc_ws_roles" -v branch="$cc_ws_branch" -v status="$cc_ws_status" '
+    function emit_roles() {
+      if (roles == "none" || roles == "") {
+        print "  roles: none"
+        return
+      }
+      print "  roles:"
+      n = split(roles, items, ",")
+      for (i = 1; i <= n; i++) {
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", items[i])
+        if (items[i] != "") print "    - " items[i]
+      }
+    }
+    function flush_workspace() {
+      if (in_workspace) {
+        if (!saw_mode) print "  mode: " mode
+        if (!saw_branch) print "  default_branch: " branch
+        if (!saw_roles) emit_roles()
+      }
+      in_workspace=0
+    }
+    function flush_identity() {
+      if (in_identity && !saw_status) print "  status: " status
+      in_identity=0
+    }
+    /^workspace:/ { flush_identity(); in_workspace=1; in_identity=0; skip_role_items=0; print; next }
+    /^identity:/ { flush_workspace(); in_identity=1; skip_role_items=0; print; next }
+    /^[^[:space:]#]/ { flush_workspace(); flush_identity(); skip_role_items=0; print; next }
+    in_workspace && skip_role_items && /^    -/ { next }
+    in_workspace && skip_role_items { skip_role_items=0 }
+    in_workspace && /^  mode:/ { print "  mode: " mode; saw_mode=1; next }
+    in_workspace && /^  default_branch:/ { print "  default_branch: " branch; saw_branch=1; next }
+    in_workspace && /^  roles:/ { emit_roles(); saw_roles=1; skip_role_items=1; next }
+    in_identity && /^  status:/ { print "  status: " status; saw_status=1; next }
+    { print }
+    END { flush_workspace(); flush_identity() }
+  ' "$cc_ws_src" > "$cc_ws_dest"
+}
+
+cc_identity_acceptance_card() {
+  cc_card_root=$1
+  cc_card_mode=$(cc_resolve_displayed_field mode "$(cc_workspace_section_field "$cc_card_root/workspace.yaml" workspace mode)")
+  cc_card_repos=$(cc_workspace_repository_keys "$cc_card_root/workspace.yaml")
+  test -n "$cc_card_repos" || cc_card_repos=$(cc_resolve_displayed_field repositories "")
+  cc_card_roles=$(cc_resolve_displayed_field roles "$(cc_roles_canonical "$(cc_workspace_roles "$cc_card_root/workspace.yaml")")")
+  cc_card_branch=$(cc_resolve_displayed_field default_branch "$(cc_workspace_section_field "$cc_card_root/workspace.yaml" workspace default_branch)")
+  printf 'Action: identity-acceptance\n'
+  printf 'Target: workspace identity\n'
+  printf 'Observed state: current session; identity remains uninitialized until confirmation\n'
+  printf 'Proposed defaults:\n'
+  printf '  mode: %s\n' "$cc_card_mode"
+  printf '  repositories: %s\n' "$cc_card_repos"
+  printf '  roles: %s\n' "$cc_card_roles"
+  printf '  default branches: %s\n' "$cc_card_branch"
+  printf 'Immediate effects: workspace.accept_identity\n'
+  printf 'Later authorized effects: none from this confirmation\n'
+  printf 'Will change after confirmation: accepted identity fields and identity regions in WORKSPACE.md, PROJECT.md, and INDEX.md\n'
+  printf 'Will not change: Product Knowledge outside the identity region, Git, leases, clone, create-empty, execution, or delivery\n'
+  printf 'Risks/open decisions: omitted fields are recorded as the displayed defaults; fields with no default remain incomplete\n'
+  printf 'Confirmation requested: Confirm identity acceptance for this workspace in the current session.\n'
+}
+
+cc_repository_registration_card() {
+  cc_card_root=$1
+  cc_card_key=$2
+  cc_card_url=${3:-}
+  cc_card_branch=${4:-}
+  test -n "$cc_card_url" || cc_card_url=$(cc_resolve_displayed_field canonical_url "")
+  test -n "$cc_card_branch" || cc_card_branch=$(cc_resolve_displayed_field default_branch "")
+  printf 'Action: repository-registration\n'
+  printf 'Target: %s\n' "${cc_card_key:-incomplete}"
+  printf 'Observed state: shared identity card for a later clone or create-empty gate; no destination is created now\n'
+  printf 'Proposed defaults:\n'
+  printf '  logical key: %s\n' "${cc_card_key:-incomplete}"
+  printf '  canonical URL: %s\n' "$cc_card_url"
+  printf '  default branch: %s\n' "$cc_card_branch"
+  printf 'Immediate effects: workspace.register_repository\n'
+  printf 'Later authorized effects: repository-bootstrap; repository-create-empty (reserved, not activated); execute-plan\n'
+  printf 'Will change after confirmation: shared logical key, optional URL, optional branch, and identity regions\n'
+  printf 'Will not change: repositories.local.yaml, clone, create-empty, execution, delivery, or authored Product Knowledge outside the identity region\n'
+  printf 'Risks/open decisions: this card does not authorize clone or create-empty; those remain later gates\n'
+  printf 'Confirmation requested: Confirm repository registration for this logical key in the current session.\n'
+}
+
+cc_accept_identity() {
+  cc_accept_root=$1
+  cc_accept_confirmation=${2:-}
+  cc_accept_mode=${3:-}
+  cc_accept_repos=${4:-}
+  cc_accept_roles=${5:-}
+  cc_accept_branch=${6:-}
+  cc_accept_invented=${7:-}
+  test "$cc_accept_confirmation" = confirmed || { printf '%s\n' GATE_REQUIRED >&2; return 1; }
+  test -z "$cc_accept_invented" || { printf '%s\n' FIELD_INVENTED >&2; return 1; }
+  cc_write_preflight "$cc_accept_root" >/dev/null || return 1
+  cc_accept_name=$(cc_workspace_section_field "$cc_accept_root/workspace.yaml" workspace name)
+  test -n "$cc_accept_name" || { printf '%s\n' INCOMPLETE_FIELD >&2; return 1; }
+  cc_accept_mode=$(cc_resolve_displayed_field mode "$cc_accept_mode") || return 1
+  if test -z "$cc_accept_repos"; then
+    cc_accept_repos=$(cc_resolve_displayed_field repositories "") || return 1
+  fi
+  cc_accept_roles=$(cc_roles_canonical "$(cc_resolve_displayed_field roles "$cc_accept_roles")") || return 1
+  cc_accept_branch=$(cc_resolve_displayed_field default_branch "$cc_accept_branch") || return 1
+  cc_ws_tmp="$cc_accept_root/workspace.yaml.tmp.$$"
+  cc_workspace_apply_displayed_identity "$cc_accept_root/workspace.yaml" "$cc_ws_tmp" "$cc_accept_mode" "$cc_accept_roles" "$cc_accept_branch" accepted
+  cc_identity_publish_files "$cc_accept_root" "$cc_ws_tmp" "$cc_accept_root/workspace.yaml" || { rm -f "$cc_ws_tmp"; return 1; }
+  rm -f "$cc_ws_tmp"
+}
+
+cc_register_repository() {
+  cc_reg_root=$1
+  cc_reg_key=$2
+  cc_reg_url=${3:-}
+  cc_reg_branch=${4:-}
+  cc_reg_confirmation=${5:-}
+  cc_reg_invented=${6:-}
+  test "$cc_reg_confirmation" = confirmed || { printf '%s\n' GATE_REQUIRED >&2; return 1; }
+  test -z "$cc_reg_invented" || { printf '%s\n' FIELD_INVENTED >&2; return 1; }
+  test -n "$cc_reg_key" || { printf '%s\n' INCOMPLETE_FIELD >&2; return 1; }
+  cc_safe_id "$cc_reg_key" || { printf '%s\n' INVALID_REPOSITORY_KEY >&2; return 1; }
+  case "$cc_reg_key" in */*|.*|/*) printf '%s\n' INVALID_REPOSITORY_KEY >&2; return 1 ;; esac
+  test -z "$cc_reg_url" || cc_repository_canonical_safe "$cc_reg_url" || { printf '%s\n' UNSAFE_CANONICAL_URL >&2; return 1; }
+  test -n "$cc_reg_branch" || cc_reg_branch=$(cc_resolve_displayed_field default_branch "") || return 1
+  cc_safe_id "$cc_reg_branch" || { printf '%s\n' INVALID_DEFAULT_BRANCH >&2; return 1; }
+  case "$cc_reg_url" in *'/home/'*|*'path:'*) printf '%s\n' MACHINE_PATH_FORBIDDEN >&2; return 1 ;; esac
+  cc_write_preflight "$cc_reg_root" >/dev/null || return 1
+  cc_ws_tmp="$cc_reg_root/workspace.yaml.tmp.$$"
+  cc_workspace_write_repository "$cc_reg_root/workspace.yaml" "$cc_ws_tmp" "$cc_reg_key" "$cc_reg_url" "$cc_reg_branch"
+  if grep -E 'path:[[:space:]]' "$cc_ws_tmp" >/dev/null 2>&1; then
+    rm -f "$cc_ws_tmp"
+    printf '%s\n' MACHINE_PATH_FORBIDDEN >&2
+    return 1
+  fi
+  cc_identity_publish_files "$cc_reg_root" "$cc_ws_tmp" "$cc_reg_root/workspace.yaml" || { rm -f "$cc_ws_tmp"; return 1; }
+  rm -f "$cc_ws_tmp"
+}
+
+cc_locked_effect_identifiers() {
+  printf '%s\n' \
+    workspace.accept_identity \
+    workspace.register_repository \
+    repository-bootstrap \
+    repository-create-empty \
+    git.commit \
+    delivery.push
+}
+
+cc_validate_delegated_effects() {
+  cc_approved_file=$1
+  cc_delegated_file=$2
+  test -f "$cc_approved_file" && test -f "$cc_delegated_file" || { printf '%s\n' UNDECLARED_EFFECT; return 1; }
+  while IFS= read -r cc_effect; do
+    test -n "$cc_effect" || continue
+    case "$cc_effect" in
+      git.init|git.clone|repository-create-empty)
+        printf '%s\n' UNDECLARED_EFFECT
+        return 1
+        ;;
+    esac
+    grep -Fx "$cc_effect" "$cc_approved_file" >/dev/null 2>&1 || { printf '%s\n' UNDECLARED_EFFECT; return 1; }
+    cc_locked_effect_identifiers | grep -Fx "$cc_effect" >/dev/null 2>&1 || { printf '%s\n' UNDECLARED_EFFECT; return 1; }
+  done < "$cc_delegated_file"
+  printf '%s\n' delegated-effects-ok
+}
+
+cc_insert_identity_region() {
+  cc_insert_file=$1
+  cc_insert_body=$2
+  test -f "$cc_insert_file" || return 1
+  if cc_identity_region_extract "$cc_insert_file" >/dev/null; then
+    return 0
+  fi
+  cc_start=$(cc_identity_region_start)
+  cc_end=$(cc_identity_region_end)
+  cc_tmp="$cc_insert_file.tmp.$$"
+  awk -v start="$cc_start" -v end="$cc_end" -v body_file="$cc_insert_body" '
+    BEGIN {
+      while ((getline line < body_file) > 0) {
+        body = body line "\n"
+      }
+      close(body_file)
+    }
+    NR == 1 {
+      print
+      print ""
+      print start
+      printf "%s", body
+      print end
+      print ""
+      inserted=1
+      next
+    }
+    { print }
+  ' "$cc_insert_file" > "$cc_tmp"
+  mv "$cc_tmp" "$cc_insert_file"
+}
+
+cc_remove_identity_region() {
+  cc_remove_file=$1
+  test -f "$cc_remove_file" || return 1
+  cc_start=$(cc_identity_region_start)
+  cc_end=$(cc_identity_region_end)
+  cc_tmp="$cc_remove_file.tmp.$$"
+  awk -v start="$cc_start" -v end="$cc_end" '
+    $0 == start { skip=1; next }
+    $0 == end { skip=0; next }
+    skip { next }
+    { print }
+  ' "$cc_remove_file" > "$cc_tmp"
+  mv "$cc_tmp" "$cc_remove_file"
 }
 
 # Stable aliases used by host adapters and semantic fixtures.

@@ -1,14 +1,13 @@
 # Workspace
 
 <!-- context-circuit:identity-region:start -->
-name: uninitialized-workspace
+name: matching-workspace
 mode: solo
 kind: instantiated-workspace
 status: uninitialized
 default_branch: main
-roles: none
+roles: owner
 repositories: none
 <!-- context-circuit:identity-region:end -->
 
-Status: uninitialized. Confirm mode, repositories or project items, roles, and
-default branches before recording accepted workspace identity.
+Preserve this authored Product Knowledge in WORKSPACE.md.

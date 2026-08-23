@@ -25,4 +25,23 @@ done
 contains "$ROOT/test/upgrades/legacy-live/worktree-state.txt" 'preserve: do-not-discard'
 contains "$ROOT/test/upgrades/legacy-live/plan.yaml" 'status: approved'
 contains "$ROOT/test/upgrades/legacy-live/stack.yaml" 'status: interrupted'
+legacy=$(mktemp -d "${TMPDIR:-/tmp}/cc-identity-upgrade.XXXXXX")
+trap 'rm -rf "$legacy"' EXIT HUP INT TERM
+cp -R "$ROOT/test/contracts/fixtures/identity-projection/missing-region/." "$legacy/"
+contains "$legacy/workspace.yaml" 'status: accepted'
+not_contains "$legacy/context/WORKSPACE.md" 'context-circuit:identity-region:start'
+cc_migrate_identity_regions "$legacy"
+contains "$legacy/workspace.yaml" 'status: accepted'
+contains "$legacy/context/WORKSPACE.md" 'Legacy authored Product Knowledge without an identity region.'
+contains "$legacy/context/PROJECT.md" 'Legacy authored Product Knowledge without an identity region.'
+contains "$legacy/context/INDEX.md" 'Legacy authored Product Knowledge without an identity region.'
+contains "$legacy/context/WORKSPACE.md" 'name: missing-region-workspace'
+assert_eq "$(cc_validate_identity_projection "$legacy")" identity-projection-ok
+cc_rollback_identity_regions "$legacy"
+contains "$legacy/workspace.yaml" 'status: accepted'
+not_contains "$legacy/context/WORKSPACE.md" 'context-circuit:identity-region:start'
+contains "$legacy/context/WORKSPACE.md" 'Legacy authored Product Knowledge without an identity region.'
+contains "$ROOT/docs/configuration.md" 'workspace.yaml` is the workspace identifier'
+contains "$ROOT/docs/getting-started.md" 'proposed defaults'
+contains "$ROOT/wrapper/migrations/README.md" 'does not change accepted'
 pass 'compatible, migration-needed, blocked, legacy-unknown, and rollback boundaries'

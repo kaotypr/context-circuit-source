@@ -69,6 +69,20 @@ invariants:
     rule: Bound source repositories remain untouched; execution prepares only .runtime/worktrees/<repository-key>/<plan-id>/ and rejects dirty bases.
   - id: INV-REPO-07
     rule: Wrapper upgrades and release assembly preserve local bindings and repository work while excluding repositories.local.yaml, repositories/, maintainer plans, and runtime state from artifacts.
+  - id: INV-REPO-08
+    rule: Registering a logical repository updates workspace.yaml shared identity and the identity region in WORKSPACE.md, PROJECT.md, and INDEX.md in one atomic operation; machine-specific paths remain only in repositories.local.yaml.
+  - id: INV-PROJ-01
+    rule: workspace.yaml remains the canonical workspace identifier and context/ remains Product Knowledge; the bounded identity region is a projection of identity metadata and never a source, generator, or replacement of Product Knowledge.
+  - id: INV-PROJ-02
+    rule: A missing or disagreeing identity region in WORKSPACE.md, PROJECT.md, or INDEX.md yields the stable projection-mismatch result and does not authorize a route or gate.
+  - id: INV-PROJ-03
+    rule: Authored Product Knowledge outside the identity region is neither a projection input nor a projection output; render, validation, and migration rewrite only the one contract-owned delimited region per file.
+  - id: INV-GATE-07
+    rule: Effect identifiers are descriptive metadata owned by the route and gate contracts; they never grant authorization, select a route, or bypass confirmation.
+  - id: INV-GATE-08
+    rule: Omitted confirmation fields are shown as proposed defaults on the current card; confirmation records those displayed values; fields with no default remain incomplete; no field is invented after confirmation.
+  - id: INV-GATE-09
+    rule: Delegated effects must be a subset of approved intent; git.init and git.clone are not execute-plan effects; undeclared effects fail closed before a child starts and do not authorize a route or gate.
 owners:
   authority_order: WORKFLOW.md
   source_boundary: AGENTS.md
@@ -80,3 +94,9 @@ owners:
   repository_binding: wrapper/runtime/engine.sh
   repository_bootstrap_gate: wrapper/contracts/routes.yaml
   repository_release_boundary: wrapper/manifest.yaml
+  identity_projection: wrapper/contracts/schemas/workspace.yaml
+  identity_region_runtime: wrapper/runtime/engine.sh
+  displayed_defaults: wrapper/contracts/schemas/workspace.yaml
+  gate_effects: wrapper/contracts/routes.yaml
+  identity_acceptance_card: docs/gates.md
+  repository_registration_card: docs/gates.md

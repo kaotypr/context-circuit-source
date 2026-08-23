@@ -70,3 +70,11 @@ upgrade_boundary:
 identity:
   source_workspace: Context Circuit product source
   instantiated_workspace: uninitialized until human identity confirmation
+identity_projection:
+  owner: wrapper/contracts/schemas/workspace.yaml
+  delimiter: context-circuit:identity-region
+  files: [context/WORKSPACE.md, context/PROJECT.md, context/INDEX.md]
+  mismatch_result: projection-mismatch
+gate_effects:
+  owner: wrapper/contracts/routes.yaml
+  authorization: never
