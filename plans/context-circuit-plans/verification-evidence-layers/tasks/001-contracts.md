@@ -2,7 +2,7 @@
 schema_version: 2
 id: VEL-001
 plan: verification-evidence-layers
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/contracts/invariants.yaml
@@ -18,10 +18,10 @@ acceptance: [VEL-AC-01, VEL-AC-02, VEL-AC-03, VEL-AC-04, VEL-AC-06]
 verification: [VEL-VT-01]
 expected_evidence:
   - One canonical evidence-layer vocabulary and comparison model.
-  - Schema fixtures for sufficient, weaker, missing, blocked, and waived evidence.
+  - Schema fixtures for matching, non-matching, missing, blocked, and waived evidence.
   - Legacy compatibility rules preserve completed historical evidence.
 stop_conditions:
-  - A simple total ordering misrepresents incomparable evidence layers.
+  - Implicit cross-layer inference or a global strength hierarchy misrepresents evidence layers.
   - Waiver metadata grants authorization or counts as verifier success.
   - Migration invents required or observed evidence for historical work.
 ---
@@ -35,8 +35,8 @@ including safe legacy and waiver behavior.
 
 ## Work
 
-Specify evidence layers and their valid comparison relationships across
-acceptance, verification, task, delegation, handoff, and completion records.
+Specify evidence layers and exact-match validation across acceptance,
+verification, task, delegation, handoff, and completion records.
 Define pass, fail, blocked, and waived outcomes. Require mappings for new and
 unfinished work while preserving completed historical records unchanged.
 
