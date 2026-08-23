@@ -15,11 +15,12 @@ depends_on: [ERR-001]
 acceptance: [ERR-AC-01, ERR-AC-02, ERR-AC-03, ERR-AC-04, ERR-AC-05]
 verification: [ERR-VT-02, ERR-VT-03, ERR-VT-06]
 expected_evidence:
-  - Atomic constructors emit complete validated records and a bounded handoff skeleton.
+  - Atomic constructors emit complete validated records, child-start evidence,
+    a commit marker, and a bounded handoff skeleton.
   - Ownership graph validation rejects stale, foreign, partial, and mismatched inputs.
   - Writer and verifier launch projections cannot expand packet scope.
 stop_conditions:
-  - Multi-record publication can expose a partially authoritative graph.
+  - A commit marker can be observed without every staged record validating.
   - The engine starts a provider or becomes a scheduler.
   - Child role guidance duplicates ownership policy instead of citing contracts.
 ---
@@ -34,10 +35,12 @@ and authorization outside the engine.
 ## Work
 
 Generate sessions, receipts, delegations, child-start evidence, handoff
-skeletons, and completion records from validated inputs. Stage the graph,
-validate ancestry, lease, repository, worktree, host evidence, receipt, scope,
-permissions, verification, and handoff, then atomically publish or leave no
-authoritative partial state. Return a bounded launch projection.
+skeletons, and completion records from validated inputs. Stage the complete
+graph in one transaction directory, validate ancestry, lease, repository,
+worktree, host evidence, receipt, scope, permissions, verification, and
+handoff, then publish one commit marker only after all records validate. Readers
+must treat unmarked or incomplete transactions as non-authoritative. Return a
+bounded launch projection.
 
 ## Non-goals
 

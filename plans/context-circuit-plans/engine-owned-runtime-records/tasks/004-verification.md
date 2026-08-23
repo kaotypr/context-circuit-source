@@ -7,6 +7,7 @@ repository: context-circuit-source
 paths:
   - wrapper/migrations/README.md
   - wrapper/migrations/upgrade.sh
+  - wrapper/contracts/schemas/child-start.yaml
   - scripts/release-artifact.sh
   - scripts/release-manifest.txt
   - test/contracts/test-contracts.sh
@@ -21,9 +22,9 @@ depends_on: [ERR-003]
 acceptance: [ERR-AC-02, ERR-AC-06, ERR-AC-07]
 verification: [ERR-VT-01, ERR-VT-02, ERR-VT-03, ERR-VT-04, ERR-VT-06, ERR-VT-07, ERR-VT-08, ERR-VT-09]
 expected_evidence:
-  - Failure injection proves no partial record becomes authoritative.
+  - Failure injection proves no partial transaction or commit marker becomes authoritative.
   - Legacy upgrade and rollback preserve readable evidence without new authority.
-  - Release inspection and complete semantic acceptance pass.
+  - Release inspection proves the child-start schema ships while runtime state does not, and complete semantic acceptance passes.
 stop_conditions:
   - Compatibility rewrites user runtime evidence destructively.
   - Release assembly includes runtime state or maintainer plans.

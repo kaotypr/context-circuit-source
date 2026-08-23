@@ -9,6 +9,7 @@ paths:
   - wrapper/contracts/schemas/session.yaml
   - wrapper/contracts/schemas/context-receipt.yaml
   - wrapper/contracts/schemas/delegation.yaml
+  - wrapper/contracts/schemas/child-start.yaml
   - wrapper/contracts/schemas/handoff.yaml
   - wrapper/contracts/schemas/completion.yaml
   - wrapper/manifest.yaml
@@ -17,8 +18,10 @@ depends_on: []
 acceptance: [ERR-AC-01, ERR-AC-02, ERR-AC-03, ERR-AC-04, ERR-AC-07]
 verification: [ERR-VT-01]
 expected_evidence:
-  - Constructor inputs and generated fields are explicit for every record.
+  - Constructor inputs and generated fields are explicit for every record,
+    including child-start evidence.
   - Ownership graph and launch-validation relationships have one canonical owner.
+  - Child-start evidence cannot authorize execution or expand delegation scope.
   - Legacy compatibility cannot grant ownership or authorization.
 stop_conditions:
   - A record field is supplied by an unvalidated prompt when the engine can derive it.
@@ -32,14 +35,18 @@ stop_conditions:
 
 Specify engine-owned constructor inputs, generated metadata, atomic publication,
 ownership relationships, and compatibility behavior for the complete runtime
-record set.
+record set, including a distinct child-start evidence schema.
 
 ## Work
 
-Extend existing schemas and invariants rather than adding a parallel record
-layer. Distinguish caller-provided intent from engine-derived timestamps,
-versions, revisions, bytes, digests, ancestry, and ownership. Define staged,
-valid, published, interrupted, and legacy-readable outcomes.
+Extend existing schemas and invariants rather than adding a parallel authority
+layer. Define `child-start.yaml` as engine-owned evidence containing validated
+graph identifiers, digests, timestamps, and launch locators only; delegation
+remains the sole child-scope authority. Distinguish caller-provided intent from
+engine-derived timestamps, versions, revisions, bytes, digests, ancestry, and
+ownership. Define staged, valid, committed, interrupted, and legacy-readable
+outcomes, including the transaction commit marker that makes a graph
+authoritative.
 
 ## Non-goals
 
