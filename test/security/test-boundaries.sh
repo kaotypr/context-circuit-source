@@ -52,4 +52,30 @@ mkdir -p "$binding_root/real-app"
 ln -s "$binding_root/real-app" "$binding_root/repositories/app"
 sed -i 's#path: ../outside#path: repositories/app#' "$binding_root/repositories.local.yaml"
 expect_failure cc_resolve_repository_binding "$binding_root" app
-pass 'path traversal, credential boundary, and request-scoped source boundary'
+
+# The live packet boundary rejects an overread before bytes are exposed. The
+# verifier packet is small enough for an offline fixture and has no mutable
+# workspace or provider evidence.
+packet_receipt=$(mktemp "${TMPDIR:-/tmp}/cc-context-receipt.XXXXXX")
+packet_session=security-packet-fixture
+packet_paths="wrapper/contracts/schemas/delegation.yaml wrapper/contracts/schemas/completion.yaml agents/verifier.md"
+cc_context_packet_load "$ROOT" verifier "$packet_receipt" sha256:security "$packet_session" $packet_paths >/dev/null
+contains "$packet_receipt" 'packet_id: verifier'
+contains "$packet_receipt" 'actual_bytes:'
+assert_eq "$(cc_validate_context_receipt "$ROOT" "$packet_receipt" verifier)" context-receipt-ok
+expect_failure cc_context_packet_measure "$ROOT" verifier wrapper/runtime/engine.sh
+expect_failure cc_context_packet_read "$ROOT" verifier wrapper/runtime/engine.sh
+
+sed -i 's/^packet_id: verifier$/packet_id: wrong-packet/' "$packet_receipt"
+expect_failure cc_validate_context_receipt "$ROOT" "$packet_receipt" verifier
+
+packet_fixture=$(mktemp -d "${TMPDIR:-/tmp}/cc-context-overrun.XXXXXX")
+trap 'rm -rf "$binding_root" "$packet_fixture" "$packet_receipt"' EXIT HUP INT TERM
+mkdir -p "$packet_fixture/wrapper/contracts/schemas" "$packet_fixture/agents"
+cp "$ROOT/wrapper/contracts/context-sets.yaml" "$packet_fixture/wrapper/contracts/context-sets.yaml"
+cp "$ROOT/wrapper/contracts/schemas/delegation.yaml" "$packet_fixture/wrapper/contracts/schemas/delegation.yaml"
+cp "$ROOT/wrapper/contracts/schemas/completion.yaml" "$packet_fixture/wrapper/contracts/schemas/completion.yaml"
+cp "$ROOT/agents/verifier.md" "$packet_fixture/agents/verifier.md"
+sed -i '/^  - id: verifier$/,/^  - id: resume$/ s/^    budget_bytes: 11264$/    budget_bytes: 1/' "$packet_fixture/wrapper/contracts/context-sets.yaml"
+expect_failure cc_context_packet_measure "$packet_fixture" verifier $packet_paths
+pass 'path traversal, credential boundary, request-scoped source, and live packet overread boundaries'

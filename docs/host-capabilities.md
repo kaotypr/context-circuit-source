@@ -6,6 +6,12 @@ filesystem contract. They discover the natural-language skills in
 integration adapters. They do not define a second route, lifecycle, ownership
 authority, or authorization path.
 
+All three hosts pass the final route `context_set` to the same bounded loader.
+The loader is the filesystem enforcement boundary: it rejects undeclared
+paths, unsafe links, stale receipts, and byte overruns. A host that cannot
+intercept a direct read is not described as sandboxed; the live overread check
+fails read-only or returns `host-blocked`.
+
 The shipped discovery names are `cc-entry`, `cc-next`, `cc-plan`, `cc-execute`,
 `cc-verify`, `cc-gates`, and `cc-upgrade`.
 The human never needs to type these names.

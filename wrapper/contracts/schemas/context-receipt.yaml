@@ -1,8 +1,12 @@
 schema_version: 1
 owner: .runtime/sessions/<session-id>/context-receipt.yaml
 required: [schema_version, wrapper_version, session_id, route_decision_digest, context_set, references, invariants, created_at]
+packet_fields: [packet_id, declared_budget_bytes, actual_bytes, packet_digest]
 reference_fields: [path, revision, bytes]
 rules:
   - references are locators and digests, not copied source content
+  - packet_id equals the selected registered context_set id
+  - actual_bytes is the sum of selected reference bytes and cannot exceed declared_budget_bytes
+  - packet_digest covers selected path, revision, and byte tuples in receipt order
   - digest mismatch reloads primary evidence
   - invalid or incompatible receipt cannot authorize a write

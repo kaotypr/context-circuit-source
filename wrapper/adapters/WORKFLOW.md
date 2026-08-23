@@ -1,34 +1,22 @@
-# Context Circuit entry workflow
+# Context Circuit workflow
 
-Human language enters one two-stage router. Stage A selects exactly one bounded
-probe from Tier 0. Stage B reads that probe and emits one normalized action
-decision with eligibility, authorization, reason codes, and any exact human
-gate. A recommendation is never a mutation.
+One two-stage router handles human language. Stage A selects one bounded probe;
+Stage B emits one normalized action with eligibility, authorization, reason
+codes, and any exact human gate. Recommendations never mutate state.
 
-Plans, sessions, tasks, worktrees, and runtime evidence are distinct. Review is
-read-only. `Approve plan <id>` presents a card and mutates nothing;
-`Confirm approval of plan <id>` is the status-only gate and does not commit
-Git or start `Run approved plan`. On product-source, that confirmed turn may
-then present the existing maintainer commit card; commit remains a separate
-exact confirmation. Instantiated or wrapped workspaces keep
-`Run approved plan <id>` as the next explicit request. Completion requires a
-separate status-change confirmation. Writers use exclusive worktrees and
-verifiers are independent and read-only.
+The final action maps to one registered `context_set`. The shared packet loader
+validates its exact allowlist, conditional evidence, measured bytes, and receipt
+digests. Undeclared, missing, stale, or over-budget evidence stops; adapters
+never broaden a packet or copy route policy.
 
-On interruption, preserve state and resume only after receipt, ownership, Git,
-and wrapper compatibility checks. Offline filesystem operation is complete;
-external delivery, publication, deployment, merge, archive, takeover, and
-destructive cleanup remain explicit human gates.
+Plans, tasks, sessions, worktrees, and runtime evidence stay distinct. Review
+is read-only. Approval, execution, finish, delivery, publication, deployment,
+merge, archive, takeover, and cleanup are separate human gates. Writers use
+exclusive worktrees; independent verifiers are read-only. A missing child is
+`host-blocked`, never self-verification.
 
-Use the owner files named by `wrapper/contracts/routes.yaml` and
-`wrapper/contracts/invariants.yaml`; do not create parallel policy.
-
-Host mapping is evidence around this workflow. A Codex native subagent, Claude
-Task/subagent, or Cursor Task/subagent may receive the same bounded writer or
-independent verifier packet. The packet includes host evidence and preserves
-its role permissions. A missing child primitive emits `host-blocked`; it never
-downgrades verification or bypasses a human gate.
-
-Resume is host-neutral: re-read the session receipt, latest handoff, wrapper
-version, Git state, and ownership before re-entering the same route. Provider
-status `disabled`, `denied`, or `unavailable` uses the filesystem-only fallback.
+Resume checks receipt, primary evidence, wrapper, Git, and ownership. Disabled,
+denied, or unavailable providers use the filesystem-only fallback. Codex,
+Claude Code, and Cursor Agent CLI share the packet loader and
+provider-neutral `host_evidence`; host capability never authorizes a route,
+role, lease, gate, or verification result.
