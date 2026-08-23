@@ -2,7 +2,7 @@
 schema_version: 2
 id: VEL-003
 plan: verification-evidence-layers
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - docs/host-capabilities.md

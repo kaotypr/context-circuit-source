@@ -2,7 +2,7 @@
 schema_version: 2
 id: VEL-002
 plan: verification-evidence-layers
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh
@@ -15,7 +15,7 @@ depends_on: [VEL-001]
 acceptance: [VEL-AC-02, VEL-AC-03, VEL-AC-04, VEL-AC-05]
 verification: [VEL-VT-02]
 expected_evidence:
-  - Runtime comparison rejects weaker or missing observed layers.
+  - Runtime comparison rejects non-matching or missing observed layers.
   - Verifier handoff reports passed, failed, blocked, and waived criteria separately.
   - Writer claims never substitute for independently observed evidence.
 stop_conditions:
@@ -29,7 +29,7 @@ stop_conditions:
 ## Objective
 
 Make independent verification compare required and observed evidence and
-refuse false equivalence between lower-layer checks and promised behavior.
+refuse false equivalence between non-matching checks and promised behavior.
 
 ## Work
 
@@ -54,5 +54,5 @@ unavailable-host, waiver, writer-claim, and verifier-read-only results.
 
 ## Stop conditions
 
-Stop if weaker evidence can pass, outcomes collapse into a single success
+Stop if non-matching evidence can pass, outcomes collapse into a single success
 state, or verifier behavior crosses write or repair boundaries.
