@@ -2,7 +2,7 @@
 schema_version: 2
 id: WPE-003
 plan: workspace-projection-and-gate-effects
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - wrapper/migrations/README.md
