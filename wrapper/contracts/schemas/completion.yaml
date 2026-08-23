@@ -1,6 +1,13 @@
 schema_version: 1
 owner: .runtime/plans/<plan-id>/completion.yaml
 required: [schema_version, wrapper_version, plan, status, task_evidence, verifier, worktree, git, human_gate]
+record_contract:
+  constructor_inputs:
+    caller_intent: [plan, task_evidence, verifier, worktree, git, human_gate]
+    validated_evidence: [status]
+  engine_generated: [schema_version, wrapper_version, completion_id, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
+  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
+  compatibility: legacy-readable is read-only and cannot change plan status or satisfy the independent verifier and human gate requirements
 statuses: [not-ready, ready-for-human-status-change, completed]
 rules:
   - ready requires all task evidence and independent verifier pass

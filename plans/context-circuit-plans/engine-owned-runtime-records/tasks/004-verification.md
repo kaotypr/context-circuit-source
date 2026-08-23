@@ -2,7 +2,7 @@
 schema_version: 2
 id: ERR-004
 plan: engine-owned-runtime-records
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/migrations/README.md

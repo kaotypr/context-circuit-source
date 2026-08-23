@@ -26,6 +26,7 @@ required wrapper/contracts/routes.yaml
 required wrapper/contracts/context-sets.yaml
 required wrapper/contracts/schemas/context-receipt.yaml
 required wrapper/contracts/schemas/delegation.yaml
+required wrapper/contracts/schemas/child-start.yaml
 required wrapper/contracts/schemas/plan.yaml
 required wrapper/contracts/schemas/task.yaml
 required wrapper/migrations/README.md

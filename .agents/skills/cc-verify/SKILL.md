@@ -15,3 +15,8 @@ The verifier records host identity and observed capability in
 permissions. Codex, Claude Code, and Cursor Agent child mechanisms are
 interchangeable adapters around the same verifier packet. If the required child
 cannot be created, record `host-blocked` and do not verify in the root session.
+
+The verifier reads the engine-generated graph and calls
+`cc_validate_runtime_graph` plus current receipt validation before checking
+the worktree. It consumes the same delegation and handoff skeleton as the
+writer; it never reconstructs records or uses launch text to expand scope.

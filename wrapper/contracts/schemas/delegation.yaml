@@ -1,6 +1,13 @@
 schema_version: 1
 owner: .runtime/sessions/<child-id>/delegation.yaml
 required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, role, objective, scope, non_goals, context_set, context_receipt, repository, worktree, permissions, acceptance_criteria, verification, expected_evidence, stop_conditions, handoff_schema]
+record_contract:
+  constructor_inputs:
+    caller_intent: [role, objective, scope, non_goals, permissions, acceptance_criteria, verification, expected_evidence, stop_conditions]
+    validated_evidence: [session_id, parent_session_id, root_session_id, context_set, context_receipt, repository, worktree, handoff_schema, host_evidence]
+  engine_generated: [schema_version, wrapper_version, delegation_id, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
+  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
+  compatibility: legacy-readable is read-only and cannot expand scope, grant ownership, authorize launch, or replace current evidence
 evidence:
   host_evidence:
     required: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]
@@ -23,4 +30,7 @@ evidence:
 permissions:
   writer: {write_worktree: true, write_plan: false, write_activity: false}
   verifier: {write_worktree: false, write_plan: false, write_activity: false}
+ownership:
+  child_scope: delegation.yaml is the sole authority for child scope
+  forbidden_scope_sources: [prompt, host_evidence, child-start, handoff]
 missing_field_result: CHILD_DELEGATION_INCOMPLETE

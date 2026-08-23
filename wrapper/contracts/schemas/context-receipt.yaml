@@ -1,6 +1,13 @@
 schema_version: 1
 owner: .runtime/sessions/<session-id>/context-receipt.yaml
 required: [schema_version, wrapper_version, session_id, route_decision_digest, context_set, references, invariants, created_at]
+record_contract:
+  constructor_inputs:
+    caller_intent: [route_decision_digest, context_set]
+    validated_evidence: [references, invariants]
+  engine_generated: [schema_version, wrapper_version, session_id, packet_id, declared_budget_bytes, actual_bytes, packet_digest, created_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
+  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
+  compatibility: legacy-readable is read-only; an incompatible or stale receipt must be reloaded and cannot authorize a write
 packet_fields: [packet_id, declared_budget_bytes, actual_bytes, packet_digest]
 reference_fields: [path, revision, bytes]
 rules:

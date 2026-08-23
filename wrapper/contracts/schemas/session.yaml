@@ -1,6 +1,13 @@
 schema_version: 1
 owner: .runtime/sessions/<session-id>/session.yaml
 required: [schema_version, wrapper_version, session_id, parent_session_id, root_session_id, kind, role, objective, scope, permissions, worktree, status, created_at, updated_at]
+record_contract:
+  constructor_inputs:
+    caller_intent: [kind, role, objective, scope, permissions, worktree]
+    validated_evidence: [parent_session_id, root_session_id, host_evidence]
+  engine_generated: [schema_version, wrapper_version, session_id, status, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
+  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
+  compatibility: legacy-readable is read-only and cannot authorize ownership, resume, verification, execution, or completion
 evidence:
   host_evidence:
     required: [host_id, observed_version, instruction_surface, session_role, root_capability, child_capability, verifier_capability, resume_capability, permission_mode, provider_status, offline_fallback]

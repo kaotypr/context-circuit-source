@@ -3,7 +3,8 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 
 runtime=$(mktemp -d "${TMPDIR:-/tmp}/cc-recovery.XXXXXX")
-trap 'rm -rf "$runtime"' EXIT HUP INT TERM
+resume_receipt=""
+trap 'rm -rf "$runtime"; test -z "$resume_receipt" || rm -f "$resume_receipt"' EXIT HUP INT TERM
 cc_acquire_lease "$runtime" live sess-live sess-live app .runtime/worktrees/app/live main
 expect_failure cc_acquire_lease "$runtime" live sess-other sess-other app .runtime/worktrees/app/takeover main
 test -d "$runtime/plans/live/lease.lock" || fail 'live lease disappeared during contention'
@@ -17,6 +18,19 @@ assert_eq "$(cc_upgrade_classify 9.0.0)" blocked
 digest=$(cc_digest "$ROOT/wrapper/manifest.yaml")
 printf '%s\n' "$digest" | grep -E '^(sha256|cksum):' >/dev/null || fail 'receipt digest missing'
 contains "$ROOT/docs/migration.md" 'never rewrites accepted context'
+
+resume_receipt=$(mktemp "${TMPDIR:-/tmp}/cc-resume-receipt.XXXXXX")
+cc_context_packet_load "$ROOT" verifier "$resume_receipt" sha256:resume resume-fixture \
+  wrapper/contracts/schemas/delegation.yaml wrapper/contracts/schemas/completion.yaml agents/verifier.md >/dev/null
+cc_validate_context_receipt "$ROOT" "$resume_receipt" verifier >/dev/null
+sed -i '0,/^    revision: /s//    revision: sha256:stale/' "$resume_receipt"
+expect_failure cc_validate_context_receipt "$ROOT" "$resume_receipt" verifier
+
+interrupted_graph="$runtime/.transactions/interrupted"
+mkdir -p "$interrupted_graph"
+cc_atomic_write "$interrupted_graph/transaction.yaml" \
+  'schema_version: 1' 'transaction_id: interrupted' 'transaction_state: valid' 'commit_marker: null'
+expect_failure cc_runtime_graph_authoritative "$interrupted_graph"
 
 bootstrap_root="$runtime/bootstrap-workspace"
 origin="$runtime/bootstrap-origin"
@@ -74,5 +88,5 @@ printf 'status: committing\n' > "$identity_root/.runtime/identity-publish.journa
 journal_mismatch=$(cc_validate_identity_projection "$identity_root" || true)
 printf '%s\n' "$journal_mismatch" | grep -Fx projection-mismatch >/dev/null || fail 'leftover publish journal did not fail closed'
 rm -f "$identity_root/.runtime/identity-publish.journal"
-trap 'rm -rf "$runtime" "$identity_root"' EXIT HUP INT TERM
+trap 'rm -rf "$runtime" "$identity_root"; test -z "$resume_receipt" || rm -f "$resume_receipt"' EXIT HUP INT TERM
 pass 'interruption preservation, legacy receipt classification, and recovery safety'

@@ -27,3 +27,10 @@ independent verifier delegation packet and include provider-neutral
 the verifier child is unavailable, stop with the canonical host-blocked outcome
 instead of changing the role or verification path. Resume uses the same
 receipt, wrapper, Git, lease, and worktree checks on every host.
+
+The root runtime path consumes the engine graph through
+`cc_construct_runtime_graph`, `cc_validate_runtime_graph`, and the commit
+marker. Project only `cc_runtime_launch_projection` to the child; the writer
+and verifier receive the same generated delegation, child-start, receipt, and
+handoff records. Do not reconstruct a record, broaden the delegation from
+launch text, or treat a host permission flag as authorization.
