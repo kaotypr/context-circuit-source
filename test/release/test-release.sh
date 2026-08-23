@@ -82,4 +82,17 @@ require_file "$build_out/context-circuit-v0.5.0.tar.gz"
 test ! -e "$build_artifact/template" || fail 'source template directory leaked into dist build'
 test ! -e "$build_artifact/sources/context-circuit-design" || fail 'source design material leaked into dist build'
 printf '%s\n' "$build_result" | grep -F "dist_dir: $build_out" >/dev/null || fail 'dist build did not report output directory'
+contains "$artifact/wrapper/contracts/schemas/plan.yaml" 'vocabulary: [schema, store, api, process, browser, human]'
+contains "$artifact/wrapper/contracts/invariants.yaml" 'INV-EVID-01'
+contains "$artifact/.agents/skills/cc-verify/SKILL.md" 'wrapper/contracts/schemas/plan.yaml'
+contains "$artifact/wrapper/migrations/README.md" 'Completed historical evidence remains readable without rewrite'
+test ! -e "$artifact/test/hosts/fixtures/limitations" || fail 'host limitation fixtures leaked into artifact'
+test ! -e "$artifact/test/upgrades/fixtures/evidence-layers" || fail 'upgrade evidence fixtures leaked into artifact'
+test ! -e "$artifact/.runtime/sessions" || fail 'runtime session evidence leaked into artifact'
+if rg -n '^[[:space:]]*(password|api_key|provider_payload|transcript):' "$artifact" >/dev/null 2>&1; then
+  fail 'release artifact contained credentials, provider payloads, or transcripts'
+fi
+if rg -n '^outcome: waived$' "$artifact" >/dev/null 2>&1; then
+  fail 'release artifact contained waiver runtime evidence'
+fi
 pass 'staged artifact identity, blank seed, exclusion boundary, and rollback-safe source state'

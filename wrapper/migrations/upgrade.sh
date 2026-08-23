@@ -65,3 +65,84 @@ cc_rollback_identity_regions() {
   cc_rollback_status_after=$(cc_workspace_section_field "$cc_rollback_root/workspace.yaml" identity status)
   test "$cc_rollback_status" = "$cc_rollback_status_after" || return 1
 }
+
+cc_migration_yaml_field() {
+  awk -F': ' -v field="$2" '
+    {
+      key=$1
+      sub(/^[ \t]+/, "", key)
+      if (key == field) { print $2; exit }
+    }
+  ' "$1"
+}
+
+cc_migration_evidence_fields() {
+  printf '%s\n' required_layer produced_layer observed_layer evidence_ref
+}
+
+cc_migration_evidence_rules() {
+  printf '%s\n' 'completed-historical: preserve-without-rewrite'
+  printf '%s\n' 'unfinished: explicit-mapping-required'
+  printf '%s\n' 'invent-evidence: forbidden'
+}
+
+cc_legacy_evidence_classify() {
+  cc_legacy_file=$1
+  test -f "$cc_legacy_file" || { printf '%s\n' mapping-required; return 0; }
+  cc_legacy_status=$(cc_migration_yaml_field "$cc_legacy_file" plan_status)
+  test -n "$cc_legacy_status" || cc_legacy_status=$(cc_migration_yaml_field "$cc_legacy_file" status)
+  cc_legacy_required=$(cc_migration_yaml_field "$cc_legacy_file" required_layer)
+  case "$cc_legacy_status" in
+    done|completed)
+      printf '%s\n' legacy-completed-readable
+      return 0
+      ;;
+  esac
+  if test -z "$cc_legacy_required" || test "$cc_legacy_required" = omitted; then
+    printf '%s\n' mapping-required
+    return 0
+  fi
+  printf '%s\n' mapping-present
+}
+
+cc_migrate_legacy_evidence() {
+  cc_legacy_src=$1
+  cc_legacy_dest=$2
+  test -f "$cc_legacy_src" || return 1
+  cp "$cc_legacy_src" "$cc_legacy_dest"
+}
+
+cc_legacy_evidence_invented() {
+  cc_legacy_before=$1
+  cc_legacy_after=$2
+  test -f "$cc_legacy_before" && test -f "$cc_legacy_after" || { printf '%s\n' EVIDENCE_INVENTED; return 0; }
+  for cc_legacy_field in required_layer produced_layer observed_layer evidence_ref; do
+    cc_legacy_before_value=$(cc_migration_yaml_field "$cc_legacy_before" "$cc_legacy_field")
+    cc_legacy_after_value=$(cc_migration_yaml_field "$cc_legacy_after" "$cc_legacy_field")
+    if test -z "$cc_legacy_before_value" || test "$cc_legacy_before_value" = omitted; then
+      if test -n "$cc_legacy_after_value" && test "$cc_legacy_after_value" != omitted; then
+        printf '%s\n' EVIDENCE_INVENTED
+        return 0
+      fi
+    fi
+  done
+  printf '%s\n' EVIDENCE_NOT_INVENTED
+}
+
+cc_require_explicit_evidence_mapping() {
+  cc_legacy_class=$(cc_legacy_evidence_classify "$1")
+  case "$cc_legacy_class" in
+    mapping-required)
+      printf '%s\n' EVIDENCE_MAPPING_REQUIRED
+      return 1
+      ;;
+    legacy-completed-readable)
+      printf '%s\n' LEGACY_COMPLETED_READABLE
+      return 0
+      ;;
+    *)
+      printf '%s\n' EVIDENCE_MAPPING_PRESENT
+      return 0
+      ;;
+  esac
+}

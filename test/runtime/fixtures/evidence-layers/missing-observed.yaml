@@ -1,0 +1,6 @@
+case: missing-observed
+required_layer: store
+produced_layer: store
+outcome: passed
+evidence_source: independent
+evidence_ref: missing
