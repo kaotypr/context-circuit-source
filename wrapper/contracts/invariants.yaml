@@ -15,6 +15,12 @@ invariants:
     rule: Context budgets are hard ceilings; an overrun reports a reason and never silently broadens context.
   - id: INV-CTX-03
     rule: Receipts locate primary evidence and cannot replace or authorize it; stale receipts block writes.
+  - id: INV-CTX-04
+    rule: Every normalized root action maps to one registered context packet; probe, phase, action, and context-set identifiers remain distinct.
+  - id: INV-CTX-05
+    rule: Packet allowlists are exact and conditional selections are validated before bytes or evidence are exposed; an overrun reports CONTEXT_BUDGET_EXCEEDED and never broadens context.
+  - id: INV-CTX-06
+    rule: Canonical packet fixtures are wrapper-owned examples and never include maintainer plans, customer workspaces, runtime state, tests, credentials, or provider payloads.
   - id: INV-OWN-01
     rule: A plan has one active writing lease; exclusive-create ownership is atomic and contention remains read-only.
   - id: INV-OWN-02

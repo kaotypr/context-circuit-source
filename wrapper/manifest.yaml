@@ -27,6 +27,18 @@ budgets:
   static_reduction_percent: 70
   live_token_reduction_percent: 50
   live_token_evidence: optional-with-waiver
+canonical_packet_fixtures:
+  owner: wrapper/manifest.yaml
+  rule: Schemas remain authoritative; these shipped examples are bounded inputs for initialization and plan drafting.
+  files:
+    - wrapper/contracts/schemas/context-receipt.yaml
+    - wrapper/contracts/schemas/delegation.yaml
+    - wrapper/contracts/schemas/plan.yaml
+    - wrapper/contracts/schemas/task.yaml
+    - docs/templates/plan.md
+    - docs/templates/plan.yaml
+    - docs/templates/task.md
+    - docs/gates.md
 release_boundary:
   shipped:
     - root adapters from wrapper/adapters/ (AGENTS.md, CLAUDE.md, WORKFLOW.md, README.md)

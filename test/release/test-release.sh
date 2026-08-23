@@ -16,6 +16,15 @@ require_file "$artifact/workspace.yaml"
 require_file "$artifact/wrapper/manifest.yaml"
 require_file "$artifact/wrapper/runtime/engine.sh"
 require_file "$artifact/wrapper/migrations/upgrade.sh"
+require_file "$artifact/wrapper/contracts/schemas/context-receipt.yaml"
+require_file "$artifact/wrapper/contracts/schemas/delegation.yaml"
+require_file "$artifact/wrapper/contracts/schemas/plan.yaml"
+require_file "$artifact/wrapper/contracts/schemas/task.yaml"
+require_file "$artifact/docs/gates.md"
+require_file "$artifact/docs/templates/plan.md"
+require_file "$artifact/docs/templates/plan.yaml"
+require_file "$artifact/docs/templates/task.md"
+require_file "$artifact/docs/templates/prd.md"
 require_file "$artifact/context/PROJECT.md"
 require_file "$artifact/sources/README.md"
 require_file "$artifact/plans/README.md"
@@ -36,6 +45,7 @@ test ! -e "$artifact/.cursor" || fail 'host-local Cursor state leaked into artif
 test ! -e "$artifact/PLAN.md" || fail 'maintainer plan leaked into artifact'
 test ! -e "$artifact/sources/context-circuit-design" || fail 'source design material leaked into artifact'
 test ! -e "$artifact/template" || fail 'source template directory leaked into artifact'
+test ! -e "$artifact/plans/context-circuit-plans" || fail 'maintainer plan stack leaked into artifact'
 test ! -e "$artifact/repositories.local.yaml" || fail 'local binding leaked into artifact'
 test ! -e "$artifact/repositories" || fail 'repository checkout leaked into artifact'
 test ! -e "$artifact/sources/secret.txt" || fail 'source inbox leaked into artifact'

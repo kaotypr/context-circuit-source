@@ -6,12 +6,19 @@ description: Enter or resume a Context Circuit workspace through the single two-
 Use when a human asks to start, resume, orient, or explain the workspace.
 Read the shipped entry adapters and Tier 0 only. Source the host-neutral
 primitives from `wrapper/runtime/engine.sh`, select one probe, then load only
-that context set before emitting one normalized route decision.
+the route-selected context set before emitting one normalized route decision.
 
 The router owner is `wrapper/contracts/routes.yaml`; cite invariant IDs rather
 than restating lifecycle or ownership policy. A read-only orientation does not
 create runtime state. Never infer a gate, lease, approval, or execution from a
 generic start/resume request.
+
+Stage B's action is mapped to a registered packet ID by the route owner. Use
+the shared packet loader to validate its exact allowlist, conditional selected
+evidence, hard byte budget, and receipt references. Do not load router
+implementation or deep contracts into ordinary model context; blocked and
+recovery packets may select only their declared contract evidence. An
+undeclared path or overrun is a stop result, never a reason to search wider.
 
 Before any write-like action, inspect `workspace.yaml` identity state. If the
 workspace is `instantiated-workspace` with `identity.status: uninitialized`,

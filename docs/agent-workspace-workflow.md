@@ -11,7 +11,13 @@ then performs or proposes one action.
    workspace identity, and three context summaries.
 2. Identify root/child role and any exact host binding.
 3. Stage A selects one context set or one focused question.
-4. Read only that set, then Stage B emits one normalized decision.
+4. Load only that set through the host-neutral packet operation; it validates
+   exact paths, selected conditional evidence, measured bytes, and receipt
+   digests before Stage B emits one normalized decision.
+
+Direct host reads are not represented as sandbox enforcement when a host cannot
+provide it. The semantic overread fixture must fail or produce a host-blocked
+read-only outcome; it never widens the selected packet.
 
 Separate observed state, instruction/decision, assumption, blocker, action, and
 verification in every consequential handoff. Runtime evidence cannot redefine

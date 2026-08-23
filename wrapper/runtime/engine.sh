@@ -166,6 +166,37 @@ cc_request_read_only() {
   esac
 }
 
+# The route contract owns action-to-packet selection.  A fixture or live
+# workspace without that owner is a blocked boundary, never an invitation to
+# maintain a second route table here.
+cc_route_context_set() {
+  cc_route_action=$1
+  cc_route_root=${2:-.}
+  cc_route_contract_root=$cc_route_root
+  cc_route_contract="$cc_route_contract_root/wrapper/contracts/routes.yaml"
+  test -f "$cc_route_contract" || { printf '%s\n' CONTEXT_ROUTE_OWNER_MISSING >&2; return 1; }
+  cc_route_mapped=""
+  cc_route_mapped=$(awk -v wanted="$cc_route_action" '
+    /^context_set_map:/ { in_map=1; next }
+    in_map && /^[^[:space:]]/ { exit }
+    in_map && /^    [^:]+:/ {
+      key=$1
+      sub(":$", "", key)
+      if (key == wanted) {
+        value=$2
+        print value
+        exit
+      }
+    }
+  ' "$cc_route_contract")
+  test -n "$cc_route_mapped" || { printf 'CONTEXT_ROUTE_UNMAPPED: %s\n' "$cc_route_action" >&2; return 1; }
+  cc_context_set_registered "$cc_route_contract_root" "$cc_route_mapped" || {
+    printf 'CONTEXT_SET_UNREGISTERED: %s\n' "$cc_route_mapped" >&2
+    return 1
+  }
+  printf '%s\n' "$cc_route_mapped"
+}
+
 cc_route() {
   cc_request=$1
   cc_workspace_root=${2:-.}
@@ -218,6 +249,7 @@ cc_route() {
       cc_authorization=absent
     fi
   fi
+  cc_context_set=$(cc_route_context_set "$cc_stage_b" "$cc_workspace_root") || return 1
   cat <<EOF
 intent: $cc_stage_b
 session_kind: root
@@ -228,7 +260,7 @@ capability: $cc_stage_b
 authorization: $cc_authorization
 reason_codes:
   - $cc_reason
-context_set: $cc_stage_a
+context_set: $cc_context_set
 human_gate: $cc_gate
 EOF
 }
@@ -467,6 +499,326 @@ cc_receipt_delta() {
     if test "$cc_current_revision" = "$cc_revision"; then printf 'UNCHANGED: %s\n' "$cc_path"; else printf 'RELOAD: %s\n' "$cc_path"; fi
   done
 }
+
+# Bounded context packet primitives.  The route contract selects the packet;
+# this host-neutral library reads only the packet's declared paths, measures
+# actual bytes, and records locators in a receipt.  It never broadens a packet
+# to satisfy a missing file or a host request.
+cc_digest_text() {
+  cc_text=$1
+  if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s' "$cc_text" | sha256sum | awk '{print "sha256:" $1}'
+  else
+    printf '%s' "$cc_text" | cksum | awk '{print "cksum:" $1}'
+  fi
+}
+
+cc_context_set_contract() {
+  cc_context_root=$1
+  cc_context_file="$cc_context_root/wrapper/contracts/context-sets.yaml"
+  test -f "$cc_context_file" || { printf '%s\n' CONTEXT_SET_CONTRACT_MISSING >&2; return 1; }
+  test ! -L "$cc_context_file" || { printf '%s\n' CONTEXT_SET_CONTRACT_SYMLINK >&2; return 1; }
+  printf '%s\n' "$cc_context_file"
+}
+
+cc_context_set_registered() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_safe_id "$cc_context_set" || return 1
+  cc_context_file=$(cc_context_set_contract "$cc_context_root") || return 1
+  awk -v wanted="$cc_context_set" '
+    /^  - id:[[:space:]]*/ { if ($3 == wanted) count++ }
+    END { exit count == 1 ? 0 : 1 }
+  ' "$cc_context_file"
+}
+
+cc_context_set_budget() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_context_file=$(cc_context_set_contract "$cc_context_root") || return 1
+  awk -v wanted="$cc_context_set" '
+    /^  - id:[[:space:]]*/ { in_set=($3 == wanted); next }
+    in_set && /^    budget_bytes:[[:space:]]*/ { print $2; exit }
+  ' "$cc_context_file"
+}
+
+cc_context_set_paths() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_context_field=$3
+  cc_context_file=$(cc_context_set_contract "$cc_context_root") || return 1
+  case "$cc_context_field" in allowlist|conditional_allowlist) ;; *) return 1 ;; esac
+  awk -v wanted="$cc_context_set" -v field="$cc_context_field" '
+    /^  - id:[[:space:]]*/ { in_set=($3 == wanted); in_list=0; next }
+    in_set && $0 ~ "^    " field ":[[:space:]]*$" { in_list=1; next }
+    in_set && /^    [A-Za-z_][A-Za-z0-9_-]*:/ { in_list=0 }
+    in_set && in_list && /^      -[[:space:]]*/ {
+      sub("^      -[[:space:]]*", "")
+      print
+    }
+  ' "$cc_context_file"
+}
+
+cc_context_path_pattern_matches() {
+  cc_context_pattern=$1
+  cc_context_path=$2
+  case "$cc_context_pattern" in
+    sources/\<selected-path\>)
+      case "$cc_context_path" in sources/*) test "${cc_context_path#sources/}" != "" ;; *) return 1 ;; esac
+      ;;
+    context/domains/\<domain\>/README.md)
+      case "$cc_context_path" in
+        context/domains/*/README.md)
+          cc_context_domain=${cc_context_path#context/domains/}
+          cc_context_domain=${cc_context_domain%/README.md}
+          cc_safe_id "$cc_context_domain"
+          ;;
+        *) return 1 ;;
+      esac
+      ;;
+    context/roles/\<role\>.md)
+      case "$cc_context_path" in
+        context/roles/*.md)
+          cc_context_role=${cc_context_path#context/roles/}
+          cc_context_role=${cc_context_role%.md}
+          cc_safe_id "$cc_context_role"
+          ;;
+        *) return 1 ;;
+      esac
+      ;;
+    plans/\<repository\>-plans/\<plan\>/plan.yaml)
+      case "$cc_context_path" in plans/*-plans/*/plan.yaml)
+        cc_context_plan=${cc_context_path#plans/}; cc_context_plan=${cc_context_plan%/plan.yaml}
+        cc_context_repo=${cc_context_plan%%/*}; cc_context_name=${cc_context_plan#*/}
+        cc_context_repo=${cc_context_repo%-plans}
+        cc_safe_id "$cc_context_repo" && cc_safe_id "$cc_context_name"
+        ;; *) return 1 ;; esac
+      ;;
+    plans/\<repository\>-plans/\<plan\>/PLAN.md)
+      case "$cc_context_path" in plans/*-plans/*/PLAN.md)
+        cc_context_plan=${cc_context_path#plans/}; cc_context_plan=${cc_context_plan%/PLAN.md}
+        cc_context_repo=${cc_context_plan%%/*}; cc_context_name=${cc_context_plan#*/}
+        cc_context_repo=${cc_context_repo%-plans}
+        cc_safe_id "$cc_context_repo" && cc_safe_id "$cc_context_name"
+        ;; *) return 1 ;; esac
+      ;;
+    plans/\<repository\>-plans/\<plan\>/tasks/\<task\>.md)
+      case "$cc_context_path" in plans/*-plans/*/tasks/*.md)
+        cc_context_task=${cc_context_path#plans/}; cc_context_task=${cc_context_task%/tasks/*}
+        cc_context_file=${cc_context_path##*/}; cc_context_file=${cc_context_file%.md}
+        cc_context_repo=${cc_context_task%%/*}; cc_context_name=${cc_context_task#*/}
+        cc_context_repo=${cc_context_repo%-plans}
+        cc_safe_id "$cc_context_repo" && cc_safe_id "$cc_context_name" && cc_safe_id "$cc_context_file"
+        ;; *) return 1 ;; esac
+      ;;
+    .runtime/plans/\<plan\>/lease.yaml|.runtime/plans/\<plan\>/completion.yaml)
+      case "$cc_context_path" in .runtime/plans/*/lease.yaml|.runtime/plans/*/completion.yaml)
+        cc_context_plan=${cc_context_path#*.runtime/plans/}
+        cc_context_plan=${cc_context_plan%/lease.yaml}
+        cc_context_plan=${cc_context_plan%/completion.yaml}
+        cc_safe_id "$cc_context_plan" ;; *) return 1 ;; esac
+      ;;
+    .runtime/plans/\<plan\>/lease.lock/owner.yaml)
+      case "$cc_context_path" in .runtime/plans/*/lease.lock/owner.yaml)
+        cc_context_plan=${cc_context_path#*.runtime/plans/}; cc_context_plan=${cc_context_plan%/lease.lock/owner.yaml}
+        cc_safe_id "$cc_context_plan" ;; *) return 1 ;; esac
+      ;;
+    .runtime/sessions/\<session-id\>/*)
+      case "$cc_context_path" in .runtime/sessions/*/*)
+        cc_context_session=${cc_context_path#*.runtime/sessions/}; cc_context_session=${cc_context_session%%/*}
+        cc_safe_id "$cc_context_session" ;; *) return 1 ;; esac
+      ;;
+    *) test "$cc_context_pattern" = "$cc_context_path" ;;
+  esac
+}
+
+cc_context_path_allowed() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_context_path=$3
+  cc_safe_relative "$cc_context_path" || return 1
+  cc_context_set_registered "$cc_context_root" "$cc_context_set" || return 1
+  cc_context_set_paths "$cc_context_root" "$cc_context_set" allowlist | grep -Fx "$cc_context_path" >/dev/null 2>&1 && return 0
+  while IFS= read -r cc_context_pattern; do
+    test -n "$cc_context_pattern" || continue
+    cc_context_path_pattern_matches "$cc_context_pattern" "$cc_context_path" && return 0
+  done <<EOF
+$(cc_context_set_paths "$cc_context_root" "$cc_context_set" conditional_allowlist)
+EOF
+  return 1
+}
+
+cc_context_path_validate() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_context_path=$3
+  cc_context_path_allowed "$cc_context_root" "$cc_context_set" "$cc_context_path" || {
+    printf 'CONTEXT_PATH_UNDECLARED: %s\n' "$cc_context_path" >&2
+    return 1
+  }
+  case "$cc_context_path" in
+    *credentials*|*.credentials|*.env|*secret*|*token*) printf 'CONTEXT_SENSITIVE_PATH\n' >&2; return 1 ;;
+  esac
+  cc_context_root=$(CDPATH= cd -- "$cc_context_root" 2>/dev/null && pwd -P) || return 1
+  cc_context_target="$cc_context_root/$cc_context_path"
+  test -f "$cc_context_target" || { printf 'CONTEXT_PATH_MISSING: %s\n' "$cc_context_path" >&2; return 1; }
+  test ! -L "$cc_context_target" || { printf 'CONTEXT_UNSAFE_SYMLINK: %s\n' "$cc_context_path" >&2; return 1; }
+  cc_context_real=$(realpath -e -- "$cc_context_target" 2>/dev/null) || return 1
+  test "$cc_context_real" = "$cc_context_target" || { printf 'CONTEXT_UNSAFE_PATH: %s\n' "$cc_context_path" >&2; return 1; }
+}
+
+cc_context_packet_measure() {
+  cc_context_root=$1
+  cc_context_set=$2
+  shift 2
+  cc_context_set_registered "$cc_context_root" "$cc_context_set" || { printf 'CONTEXT_SET_UNREGISTERED: %s\n' "$cc_context_set" >&2; return 1; }
+  cc_context_budget=$(cc_context_set_budget "$cc_context_root" "$cc_context_set")
+  case "$cc_context_budget" in ''|*[!0-9]*) printf 'CONTEXT_BUDGET_MISSING: %s\n' "$cc_context_set" >&2; return 1 ;; esac
+  cc_context_list=$(mktemp "${TMPDIR:-/tmp}/cc-context-paths.XXXXXX") || return 1
+  cc_context_records=$(mktemp "${TMPDIR:-/tmp}/cc-context-records.XXXXXX") || { rm -f "$cc_context_list"; return 1; }
+  if test "$#" -eq 0; then
+    cc_context_set_paths "$cc_context_root" "$cc_context_set" allowlist > "$cc_context_list"
+  else
+    for cc_context_path in "$@"; do
+      test -n "$cc_context_path" || { rm -f "$cc_context_list" "$cc_context_records"; printf 'CONTEXT_PATH_EMPTY\n' >&2; return 1; }
+      if grep -Fx "$cc_context_path" "$cc_context_list" >/dev/null 2>&1; then
+        rm -f "$cc_context_list" "$cc_context_records"
+        printf 'CONTEXT_PATH_DUPLICATE: %s\n' "$cc_context_path" >&2
+        return 1
+      fi
+      printf '%s\n' "$cc_context_path" >> "$cc_context_list"
+    done
+  fi
+  cc_context_actual=0
+  while IFS= read -r cc_context_path; do
+    test -n "$cc_context_path" || continue
+    cc_context_path_validate "$cc_context_root" "$cc_context_set" "$cc_context_path" || { rm -f "$cc_context_list" "$cc_context_records"; return 1; }
+    cc_context_bytes=$(wc -c < "$cc_context_root/$cc_context_path" | tr -d ' \t\n')
+    cc_context_revision=$(cc_digest "$cc_context_root/$cc_context_path")
+    cc_context_actual=$((cc_context_actual + cc_context_bytes))
+    printf '%s|%s|%s\n' "$cc_context_path" "$cc_context_revision" "$cc_context_bytes" >> "$cc_context_records"
+  done < "$cc_context_list"
+  if test "$cc_context_actual" -gt "$cc_context_budget"; then
+    printf 'CONTEXT_BUDGET_EXCEEDED selected_set=%s actual_bytes=%s budget_bytes=%s newly_requested_evidence=%s\n' \
+      "$cc_context_set" "$cc_context_actual" "$cc_context_budget" "${*:-none}" >&2
+    rm -f "$cc_context_list" "$cc_context_records"
+    return 1
+  fi
+  cat "$cc_context_records"
+  rm -f "$cc_context_list" "$cc_context_records"
+}
+
+cc_load_context_packet() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_context_receipt=$3
+  cc_context_route_digest=${4:-sha256:unavailable}
+  cc_context_session=${5:-context-packet}
+  shift 5
+  cc_safe_id "$cc_context_session" || { printf 'INVALID_CONTEXT_SESSION\n' >&2; return 1; }
+  test -n "$cc_context_receipt" || { printf 'CONTEXT_RECEIPT_REQUIRED\n' >&2; return 1; }
+  test ! -L "$cc_context_receipt" || { printf 'CONTEXT_RECEIPT_SYMLINK\n' >&2; return 1; }
+  cc_context_load_records=$(mktemp "${TMPDIR:-/tmp}/cc-context-load.XXXXXX") || return 1
+  if ! cc_context_packet_measure "$cc_context_root" "$cc_context_set" "$@" > "$cc_context_load_records"; then
+    rm -f "$cc_context_load_records"
+    return 1
+  fi
+  cc_context_budget=$(cc_context_set_budget "$cc_context_root" "$cc_context_set")
+  cc_context_actual=$(awk -F'|' '{sum += $3} END {print sum + 0}' "$cc_context_load_records")
+  cc_context_material=$(awk -F'|' '{printf "%s|%s|%s\n", $1, $2, $3}' "$cc_context_load_records")
+  cc_context_packet_digest=$(cc_digest_text "$cc_context_material")
+  cc_context_parent=$(dirname -- "$cc_context_receipt")
+  mkdir -p "$cc_context_parent" || { rm -f "$cc_context_load_records"; return 1; }
+  cc_context_tmp="$cc_context_receipt.tmp.$$"
+  {
+    printf 'schema_version: 1\n'
+    printf 'wrapper_version: %s\n' "${CC_WRAPPER_VERSION:-1.0.0}"
+    printf 'session_id: %s\n' "$cc_context_session"
+    printf 'route_decision_digest: %s\n' "$cc_context_route_digest"
+    printf 'context_set: %s\n' "$cc_context_set"
+    printf 'packet_id: %s\n' "$cc_context_set"
+    printf 'declared_budget_bytes: %s\n' "$cc_context_budget"
+    printf 'actual_bytes: %s\n' "$cc_context_actual"
+    printf 'packet_digest: %s\n' "$cc_context_packet_digest"
+    printf 'selected_paths:\n'
+    while IFS='|' read -r cc_context_path cc_context_revision cc_context_bytes; do
+      printf '  - %s\n' "$cc_context_path"
+    done < "$cc_context_load_records"
+    printf 'references:\n'
+    while IFS='|' read -r cc_context_path cc_context_revision cc_context_bytes; do
+      printf '  - path: %s\n' "$cc_context_path"
+      printf '    revision: %s\n' "$cc_context_revision"
+      printf '    bytes: %s\n' "$cc_context_bytes"
+    done < "$cc_context_load_records"
+    printf 'invariants: [INV-CTX-01, INV-CTX-02, INV-CTX-03, INV-CTX-04, INV-CTX-05]\n'
+    printf 'created_at: %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null || printf '%s' 1970-01-01T00:00:00Z)"
+    } > "$cc_context_tmp" || { rm -f "$cc_context_load_records" "$cc_context_tmp"; return 1; }
+  mv "$cc_context_tmp" "$cc_context_receipt" || { rm -f "$cc_context_load_records" "$cc_context_tmp"; return 1; }
+  rm -f "$cc_context_load_records"
+  printf '%s\n' "$cc_context_receipt"
+}
+
+cc_validate_context_receipt() {
+  cc_context_root=$1
+  cc_context_receipt=$2
+  cc_context_expected_set=${3:-}
+  cc_validate_receipt "$cc_context_receipt" || { printf 'INVALID_CONTEXT_RECEIPT\n' >&2; return 1; }
+  for cc_context_field in packet_id declared_budget_bytes actual_bytes packet_digest; do
+    grep -E "^$cc_context_field:" "$cc_context_receipt" >/dev/null 2>&1 || { printf 'CONTEXT_RECEIPT_FIELD_MISSING: %s\n' "$cc_context_field" >&2; return 1; }
+  done
+  cc_context_set=$(sed -n 's/^context_set: //p' "$cc_context_receipt" | head -n 1)
+  test -z "$cc_context_expected_set" || test "$cc_context_expected_set" = "$cc_context_set" || { printf 'CONTEXT_SET_MISMATCH\n' >&2; return 1; }
+  cc_context_packet_id=$(sed -n 's/^packet_id: //p' "$cc_context_receipt" | head -n 1)
+  test "$cc_context_packet_id" = "$cc_context_set" || { printf 'CONTEXT_PACKET_ID_MISMATCH\n' >&2; return 1; }
+  cc_context_expected_wrapper=${4:-${CC_WRAPPER_VERSION:-1.0.0}}
+  cc_context_recorded_wrapper=$(sed -n 's/^wrapper_version: //p' "$cc_context_receipt" | head -n 1)
+  test "$cc_context_recorded_wrapper" = "$cc_context_expected_wrapper" || { printf 'RELOAD_WRAPPER_CONTEXT\n' >&2; return 1; }
+  cc_context_set_registered "$cc_context_root" "$cc_context_set" || { printf 'CONTEXT_SET_UNREGISTERED: %s\n' "$cc_context_set" >&2; return 1; }
+  cc_context_budget=$(sed -n 's/^declared_budget_bytes: //p' "$cc_context_receipt" | head -n 1)
+  cc_context_actual=$(sed -n 's/^actual_bytes: //p' "$cc_context_receipt" | head -n 1)
+  case "$cc_context_budget:$cc_context_actual" in *[!0-9:]*|:) printf 'CONTEXT_RECEIPT_BYTES_INVALID\n' >&2; return 1 ;; esac
+  test "$cc_context_actual" -le "$cc_context_budget" || { printf 'CONTEXT_BUDGET_EXCEEDED\n' >&2; return 1; }
+  cc_context_records=$(mktemp "${TMPDIR:-/tmp}/cc-context-validate.XXXXXX") || return 1
+  cc_context_sum=0
+  while IFS='|' read -r cc_context_path cc_context_revision cc_context_bytes; do
+    test -n "$cc_context_path" || continue
+    cc_context_path_validate "$cc_context_root" "$cc_context_set" "$cc_context_path" || { rm -f "$cc_context_records"; return 1; }
+    if grep -F "$cc_context_path|" "$cc_context_records" >/dev/null 2>&1; then
+      rm -f "$cc_context_records"
+      printf 'CONTEXT_RECEIPT_DUPLICATE: %s\n' "$cc_context_path" >&2
+      return 1
+    fi
+    cc_context_current=$(cc_digest "$cc_context_root/$cc_context_path")
+    test "$cc_context_current" = "$cc_context_revision" || { rm -f "$cc_context_records"; printf 'STALE_RECEIPT: %s\n' "$cc_context_path" >&2; return 1; }
+    cc_context_now_bytes=$(wc -c < "$cc_context_root/$cc_context_path" | tr -d ' \t\n')
+    test "$cc_context_now_bytes" = "$cc_context_bytes" || { rm -f "$cc_context_records"; printf 'STALE_RECEIPT: %s\n' "$cc_context_path" >&2; return 1; }
+    cc_context_sum=$((cc_context_sum + cc_context_bytes))
+    printf '%s|%s|%s\n' "$cc_context_path" "$cc_context_revision" "$cc_context_bytes" >> "$cc_context_records"
+  done <<EOF
+$(awk -F': ' '/^  - path: / { path=$2 } /^    revision: / { revision=$2 } /^    bytes: / { print path "|" revision "|" $2 }' "$cc_context_receipt")
+EOF
+  test "$cc_context_sum" -eq "$cc_context_actual" || { rm -f "$cc_context_records"; printf 'CONTEXT_RECEIPT_TOTAL_MISMATCH\n' >&2; return 1; }
+  cc_context_material=$(cat "$cc_context_records")
+  cc_context_expected_digest=$(cc_digest_text "$cc_context_material")
+  cc_context_recorded_digest=$(sed -n 's/^packet_digest: //p' "$cc_context_receipt" | head -n 1)
+  rm -f "$cc_context_records"
+  test "$cc_context_expected_digest" = "$cc_context_recorded_digest" || { printf 'CONTEXT_RECEIPT_DIGEST_MISMATCH\n' >&2; return 1; }
+  printf '%s\n' context-receipt-ok
+}
+
+cc_read_context_packet() {
+  cc_context_root=$1
+  cc_context_set=$2
+  cc_context_path=$3
+  cc_context_path_validate "$cc_context_root" "$cc_context_set" "$cc_context_path" || return 1
+  cat "$cc_context_root/$cc_context_path"
+}
+
+# Descriptive aliases keep host adapters thin while the implementation remains
+# in this host-neutral engine library.
+cc_context_packet_load() { cc_load_context_packet "$@"; }
+cc_measure_context_packet() { cc_context_packet_measure "$@"; }
+cc_context_packet_read() { cc_read_context_packet "$@"; }
 
 cc_validate_delegation() {
   cc_packet=$1
