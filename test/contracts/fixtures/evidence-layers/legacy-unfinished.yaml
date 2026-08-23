@@ -1,0 +1,14 @@
+case: legacy-unfinished
+description: unfinished legacy work cannot start new verification without an explicit mapping
+historical:
+  plan_status: approved
+  task_status: ready
+  schema_version: 1
+  required_layer: omitted
+  produced_layer: omitted
+readable: true
+rewrite: false
+invent_evidence: false
+requires_explicit_mapping: true
+new_verification: blocked
+satisfies_completion: false

@@ -56,6 +56,11 @@ and committed, write runtime `completion.yaml` with
 update approved → done and task projections ready → done, release the owned
 lease, and preserve runtime/worktrees/branches for later delivery or cleanup.
 
+Only an independent `passed` outcome satisfies completion. Exact-match
+evidence-layer comparison is owned by `wrapper/contracts/schemas/plan.yaml`.
+Writer handoff mappings are claims. `failed`, `blocked`, and `waived` remain
+non-passing and are never a finish authorization.
+
 Implemented is runtime evidence; Done is human-confirmed canonical status.
 
 ## Archive

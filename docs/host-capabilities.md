@@ -99,3 +99,12 @@ the prompt, the chosen option, or any transcript.
 needed. Use `host-blocked` only when a required child primitive cannot be
 created. Optional live smoke evidence is labeled `pass`, `unavailable`, or
 `host-blocked`; offline tests never invoke a provider.
+
+## Evidence-layer limitations
+
+Missing host capability is recorded provider-neutrally as `unavailable`,
+`host-blocked`, or a human-visible `waived` limitation. Those outcomes never
+become a verifier `passed`. Evidence-layer comparison stays owned by
+`wrapper/contracts/schemas/plan.yaml`. Offline host fixtures do not
+authenticate a provider, store credentials, or run implicit external checks.
+Live smoke remains optional and label-only.

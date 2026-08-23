@@ -91,3 +91,11 @@ identity_projection:
 gate_effects:
   owner: wrapper/contracts/routes.yaml
   authorization: never
+evidence_layers:
+  owner: wrapper/contracts/schemas/plan.yaml
+  vocabulary: [schema, store, api, process, browser, human]
+  comparison: exact-match-only
+  outcomes: [passed, failed, blocked, waived]
+  completion_rule: only-passed
+  strength_hierarchy: none
+  waiver_gate: none

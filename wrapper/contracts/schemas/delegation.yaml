@@ -27,6 +27,15 @@ evidence:
   recording: Every new writer or verifier packet records host_evidence for the
     host that created it and may record a live_smoke_status; it is evidence, not
     authorization.
+evidence_layers:
+  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
+  runtime_fields: [observed_layer, outcome, evidence_ref]
+  observed_layer: [schema, store, api, process, browser, human]
+  outcomes: [passed, failed, blocked, waived]
+  launch: assigned acceptance_criteria and verification ids only; observed fields are absent until evidence exists
+  comparison: exact-match against plan required_layer; no inferred substitute layer
+  writer_claim: writer-recorded observed_layer is a claim until independent verification
+  waived: non-passing; never counts as verifier success
 permissions:
   writer: {write_worktree: true, write_plan: false, write_activity: false}
   verifier: {write_worktree: false, write_plan: false, write_activity: false}

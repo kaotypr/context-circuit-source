@@ -14,3 +14,8 @@ The verifier packet records provider-neutral `host_evidence` and remains
 independent across Codex, Claude Code, and Cursor Agent. A host child feature or
 permission flag cannot grant implementation access, satisfy a gate, or permit
 self-verification; missing child capability is `host-blocked`.
+
+Evidence-layer comparison is owned by `wrapper/contracts/schemas/plan.yaml` and
+executed by the engine. This role file does not own vocabulary, outcomes, or
+equivalence rules. Writer mappings remain claims. Waived and unavailable
+capability never become a pass. The verifier does not repair.

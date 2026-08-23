@@ -148,4 +148,88 @@ printf '%s\n' "$card" | grep -F 'roles: none' >/dev/null || fail 'displayed-defa
 printf '%s\n' "$card" | grep -F 'default branches: main' >/dev/null || fail 'displayed-default card omitted branch default'
 incomplete=$(cc_register_repository "$fx/incomplete" '' '' '' confirmed 2>&1 || true)
 printf '%s\n' "$incomplete" | grep -F INCOMPLETE_FIELD >/dev/null || fail 'missing logical key was not incomplete'
-pass 'contract inventory, schema ownership, unique invariant IDs, and identity-projection fixtures'
+
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'vocabulary: [schema, store, api, process, browser, human]'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'comparison: exact-match-only'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'strength_hierarchy: none'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'required_layer: owned by each acceptance entry'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'produced_layer: owned by each verification mapping'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'values: [passed, failed, blocked, waived]'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'waiver_gate: none'
+contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'completed historical evidence remains readable and is never rewritten or invented'
+contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'task_fields: [acceptance, verification]'
+contains "$ROOT/wrapper/contracts/schemas/task.yaml" 'tasks retain acceptance and verification ids only'
+contains "$ROOT/wrapper/contracts/schemas/delegation.yaml" 'runtime_fields: [observed_layer, outcome, evidence_ref]'
+contains "$ROOT/wrapper/contracts/schemas/handoff.yaml" 'runtime_fields: [observed_layer, outcome, evidence_ref]'
+contains "$ROOT/wrapper/contracts/schemas/completion.yaml" 'completion_rule: only passed satisfies completion'
+contains "$ROOT/wrapper/contracts/schemas/completion.yaml" 'waiver_gate: none'
+contains "$ROOT/wrapper/contracts/schemas/completion.yaml" 'migration: must not invent required_layer, produced_layer, observed_layer, or evidence_ref'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-EVID-01'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-EVID-02'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-EVID-03'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-EVID-04'
+contains "$ROOT/wrapper/contracts/invariants.yaml" 'evidence_layers: wrapper/contracts/schemas/plan.yaml'
+contains "$ROOT/wrapper/manifest.yaml" 'vocabulary: [schema, store, api, process, browser, human]'
+contains "$ROOT/wrapper/manifest.yaml" 'comparison: exact-match-only'
+contains "$ROOT/wrapper/manifest.yaml" 'completion_rule: only-passed'
+contains "$ROOT/wrapper/manifest.yaml" 'strength_hierarchy: none'
+contains "$ROOT/wrapper/manifest.yaml" 'waiver_gate: none'
+not_contains "$ROOT/wrapper/contracts/schemas/plan.yaml" 'weaker_layer_passes'
+not_contains "$ROOT/wrapper/contracts/schemas/completion.yaml" 'waived_counts_as_success: true'
+
+fx_evid="$ROOT/test/contracts/fixtures/evidence-layers"
+require_file "$fx_evid/matching.yaml"
+require_file "$fx_evid/non-matching.yaml"
+require_file "$fx_evid/missing.yaml"
+require_file "$fx_evid/blocked.yaml"
+require_file "$fx_evid/waived.yaml"
+require_file "$fx_evid/legacy-completed.yaml"
+require_file "$fx_evid/legacy-unfinished.yaml"
+
+yaml_field() {
+  awk -F': ' -v field="$2" '
+    {
+      key=$1
+      sub(/^[ \t]+/, "", key)
+      if (key == field) { print $2; exit }
+    }
+  ' "$1"
+}
+
+match_req=$(yaml_field "$fx_evid/matching.yaml" required_layer)
+match_obs=$(yaml_field "$fx_evid/matching.yaml" observed_layer)
+test "$match_req" = "$match_obs" || fail 'matching fixture layers are not exact-match'
+test "$(yaml_field "$fx_evid/matching.yaml" outcome)" = passed || fail 'matching fixture must be passed'
+test "$(yaml_field "$fx_evid/matching.yaml" satisfies_completion)" = true || fail 'matching passed evidence must satisfy completion'
+
+weak_req=$(yaml_field "$fx_evid/non-matching.yaml" required_layer)
+weak_obs=$(yaml_field "$fx_evid/non-matching.yaml" observed_layer)
+test "$weak_req" = browser || fail 'non-matching fixture must require browser'
+test "$weak_obs" = process || fail 'non-matching fixture must observe process'
+test "$weak_req" != "$weak_obs" || fail 'non-matching fixture layers must differ'
+test "$(yaml_field "$fx_evid/non-matching.yaml" outcome)" = failed || fail 'non-matching fixture must be failed'
+test "$(yaml_field "$fx_evid/non-matching.yaml" satisfies_completion)" = false || fail 'non-matching evidence must not satisfy completion'
+test "$(yaml_field "$fx_evid/non-matching.yaml" inferred_equivalence)" = false || fail 'non-matching fixture inferred a substitute layer'
+
+test "$(yaml_field "$fx_evid/missing.yaml" observed_present)" = false || fail 'missing fixture still has observed evidence'
+test "$(yaml_field "$fx_evid/missing.yaml" comparison)" = missing || fail 'missing fixture comparison is not missing'
+test "$(yaml_field "$fx_evid/missing.yaml" satisfies_completion)" = false || fail 'missing evidence must not satisfy completion'
+
+test "$(yaml_field "$fx_evid/blocked.yaml" outcome)" = blocked || fail 'blocked fixture missing blocked outcome'
+test "$(yaml_field "$fx_evid/blocked.yaml" host_capability)" = unavailable || fail 'blocked fixture must record unavailable capability'
+test "$(yaml_field "$fx_evid/blocked.yaml" converted_to_pass)" = false || fail 'blocked fixture converted limitation into pass'
+test "$(yaml_field "$fx_evid/blocked.yaml" satisfies_completion)" = false || fail 'blocked evidence must not satisfy completion'
+
+test "$(yaml_field "$fx_evid/waived.yaml" outcome)" = waived || fail 'waived fixture missing waived outcome'
+test "$(yaml_field "$fx_evid/waived.yaml" waiver_gate)" = none || fail 'waived fixture introduced a waiver gate'
+test "$(yaml_field "$fx_evid/waived.yaml" counts_as_success)" = false || fail 'waived fixture counted as success'
+test "$(yaml_field "$fx_evid/waived.yaml" satisfies_completion)" = false || fail 'waived evidence must not satisfy completion'
+
+test "$(yaml_field "$fx_evid/legacy-completed.yaml" rewrite)" = false || fail 'legacy-completed fixture rewrote historical evidence'
+test "$(yaml_field "$fx_evid/legacy-completed.yaml" invent_evidence)" = false || fail 'legacy-completed fixture invented evidence'
+test "$(yaml_field "$fx_evid/legacy-completed.yaml" readable)" = true || fail 'legacy-completed fixture is not readable'
+test "$(yaml_field "$fx_evid/legacy-unfinished.yaml" requires_explicit_mapping)" = true || fail 'legacy-unfinished fixture skipped mapping'
+test "$(yaml_field "$fx_evid/legacy-unfinished.yaml" new_verification)" = blocked || fail 'legacy-unfinished fixture allowed new verification'
+test "$(yaml_field "$fx_evid/legacy-unfinished.yaml" invent_evidence)" = false || fail 'legacy-unfinished fixture invented evidence'
+
+pass 'contract inventory, schema ownership, unique invariant IDs, identity-projection fixtures, and evidence-layer contracts'

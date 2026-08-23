@@ -88,6 +88,17 @@ validation. Changed references, stale digests, foreign leases, mismatched
 ancestry, or incomplete child evidence fail closed; resume never reconstructs
 records from a template or prior prompt.
 
+## Evidence layers
+
+`wrapper/contracts/schemas/plan.yaml` owns `required_layer` and
+`produced_layer`. Runtime records carry `observed_layer`, `outcome`, and
+`evidence_ref` through delegation, handoff, and completion. The engine compares
+required and observed layers with exact match only. Writer-recorded mappings
+are claims and cannot satisfy independent verification. Only `passed` satisfies
+completion; `failed`, `blocked`, and `waived` remain non-passing. Missing host
+capability is recorded as a non-passing limitation and is never converted into
+a pass.
+
 ## Completion and stacks
 
 Completion evidence is runtime only: all task evidence, independent verifier
