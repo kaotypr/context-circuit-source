@@ -95,6 +95,14 @@ invariants:
     rule: Omitted confirmation fields are shown as proposed defaults on the current card; confirmation records those displayed values; fields with no default remain incomplete; no field is invented after confirmation.
   - id: INV-GATE-09
     rule: Delegated effects must be a subset of approved intent; git.init and git.clone are not execute-plan effects; undeclared effects fail closed before a child starts and do not authorize a route or gate.
+  - id: INV-EVID-01
+    rule: Evidence layers are schema, store, api, process, browser, and human; comparison is exact-match only with no global strength hierarchy or cross-layer inference.
+  - id: INV-EVID-02
+    rule: Plan schema owns required_layer and produced_layer; tasks keep acceptance and verification ids; runtime records carry observed_layer, outcome, and evidence_ref.
+  - id: INV-EVID-03
+    rule: Verification outcomes are passed, failed, blocked, and waived; only passed satisfies completion; waived is non-passing metadata and not a gate or verifier success.
+  - id: INV-EVID-04
+    rule: Completed historical evidence remains readable without rewrite; unfinished legacy work requires an explicit evidence-layer mapping before new verification; migration must not invent evidence.
 owners:
   authority_order: WORKFLOW.md
   source_boundary: AGENTS.md
@@ -117,3 +125,5 @@ owners:
   child_start_evidence: wrapper/contracts/schemas/child-start.yaml
   child_scope_authority: wrapper/contracts/schemas/delegation.yaml
   record_compatibility: wrapper/contracts/invariants.yaml
+  evidence_layers: wrapper/contracts/schemas/plan.yaml
+  evidence_layer_runtime: wrapper/contracts/schemas/{delegation,handoff,completion}.yaml

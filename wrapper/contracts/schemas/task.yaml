@@ -7,10 +7,18 @@ projection:
   draft: draft
   approved: ready
   done: done
-rules:
-  - task status is projected from plan status and is not an approval gate
+evidence_layers:
+  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
+  task_fields: [acceptance, verification]
+  plan_owned: [required_layer, produced_layer]
+  runtime_owned: [observed_layer, outcome, evidence_ref]
+  rule: tasks retain acceptance and verification ids only; they do not declare layers, outcomes, or evidence refs
 format:
   frontmatter:
     opening: The first line of every task Markdown file is exactly `---`.
     closing: A second `---` closes the YAML frontmatter before the Markdown body.
   plan_yaml: plan.yaml is pure YAML and is not wrapped in Markdown frontmatter.
+rules:
+  - task status is projected from plan status and is not an approval gate
+  - tasks retain acceptance and verification ids only; required_layer and produced_layer remain plan-owned
+  - tasks do not declare observed_layer, outcome, or evidence_ref

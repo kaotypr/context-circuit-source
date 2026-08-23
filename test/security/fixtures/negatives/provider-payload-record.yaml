@@ -1,0 +1,10 @@
+case: forbidden-provider-payload
+required_layer: process
+produced_layer: process
+observed_layer: process
+outcome: passed
+evidence_source: independent
+provider_payload: forbidden-fixture
+transcript: forbidden-fixture
+password: forbidden-fixture
+api_key: forbidden-fixture

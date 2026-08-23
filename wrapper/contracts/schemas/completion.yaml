@@ -8,7 +8,24 @@ record_contract:
   engine_generated: [schema_version, wrapper_version, completion_id, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
   transaction_states: [staged, valid, committed, interrupted, legacy-readable]
   compatibility: legacy-readable is read-only and cannot change plan status or satisfy the independent verifier and human gate requirements
+evidence_layers:
+  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
+  runtime_fields: [observed_layer, outcome, evidence_ref]
+  observed_layer: [schema, store, api, process, browser, human]
+  outcomes: [passed, failed, blocked, waived]
+  completion_rule: only passed satisfies completion
+  non_passing: [failed, blocked, waived]
+  waiver_gate: none
+  verifier_pass: independent verifier observed_layer must exactly match plan required_layer
+  legacy:
+    completed_historical: preserve without rewrite
+    unfinished: require explicit mapping before new verification
+    migration: must not invent required_layer, produced_layer, observed_layer, or evidence_ref
 statuses: [not-ready, ready-for-human-status-change, completed]
 rules:
   - ready requires all task evidence and independent verifier pass
   - completion does not itself change plan status
+  - only outcome passed satisfies completion; failed, blocked, and waived remain not-ready
+  - waived is non-passing metadata and is not a completion gate
+  - completed historical task evidence is preserved without rewrite
+  - unfinished legacy evidence cannot become ready until an explicit evidence-layer mapping exists

@@ -1,0 +1,15 @@
+case: non-matching
+description: process evidence cannot prove a browser required_layer; no inferred substitute passes
+plan_owned:
+  acceptance_id: VEL-FX-AC-WEAK
+  required_layer: browser
+  verification_id: VEL-FX-VT-WEAK
+  produced_layer: process
+runtime:
+  observed_layer: process
+  outcome: failed
+  evidence_ref: test/contracts/fixtures/evidence-layers/non-matching.yaml
+comparison: mismatch
+satisfies_completion: false
+inferred_equivalence: false
+strength_hierarchy: none

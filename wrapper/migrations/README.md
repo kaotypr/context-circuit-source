@@ -27,3 +27,9 @@ as runtime evidence, and a legacy child-start record is retained as well;
 migration-needed or unknown evidence is classified for a current human decision and is never
 rewritten merely to pass upgrade. Legacy-readable evidence never gains a
 commit marker or current ownership through compatibility handling.
+
+Completed historical evidence remains readable without rewrite. Unfinished
+legacy work requires an explicit evidence-layer mapping before new
+verification. Migration must not invent `required_layer`, `produced_layer`,
+`observed_layer`, or `evidence_ref`. Rollback restores wrapper-owned files
+only and leaves completed evidence unchanged.

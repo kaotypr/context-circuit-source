@@ -1,0 +1,11 @@
+case: mapped-unfinished
+plan_status: approved
+task_status: ready
+schema_version: 2
+required_layer: process
+produced_layer: process
+readable: true
+rewrite: false
+invent_evidence: false
+requires_explicit_mapping: false
+new_verification: allowed
