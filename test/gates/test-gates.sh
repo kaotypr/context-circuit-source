@@ -46,9 +46,9 @@ contains "$ROOT/docs/gates.md" 'Action: repository-registration'
 contains "$ROOT/docs/gates.md" 'Immediate effects: workspace.register_repository'
 contains "$ROOT/docs/gates.md" 'Later authorized effects: repository-bootstrap; repository-create-empty (reserved, not activated); execute-plan'
 contains "$ROOT/docs/gates.md" 'Immediate effects: repository-bootstrap'
-contains "$ROOT/docs/gates.md" 'Later authorized effects: git.commit'
 contains "$ROOT/docs/gates.md" 'Immediate effects: git.commit'
 contains "$ROOT/docs/gates.md" 'Later authorized effects: delivery.push'
+contains "$ROOT/docs/gates.md" 'Later authorized effects: maintainer git.commit of the approval projection (separate card, same session, product-source only); worktree git.commit after execute; delivery.push (delivery gate)'
 contains "$ROOT/docs/gates.md" 'They never grant authorization'
 
 fx=$(mktemp -d "${TMPDIR:-/tmp}/cc-gates-identity.XXXXXX")

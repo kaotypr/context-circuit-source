@@ -35,6 +35,9 @@ contains "$ROOT/wrapper/contracts/routes.yaml" 'unavailable_child: block-missing
 contains "$ROOT/wrapper/contracts/invariants.yaml" 'INV-HOST-01'
 contains "$ROOT/.gitignore" 'repositories/'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'workspace.roles'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'canonical_projection: none-or-comma-separated'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'product-source: exempt'
+contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'missing_files: projection-mismatch'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'identity_region:'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'missing_or_disagreeing_result: projection-mismatch'
 contains "$ROOT/wrapper/contracts/schemas/workspace.yaml" 'proposed_default: solo'
@@ -90,6 +93,20 @@ mismatch=$(cc_validate_identity_projection "$fx/mismatched" || true)
 printf '%s\n' "$mismatch" | grep -Fx projection-mismatch >/dev/null || fail 'mismatched region did not yield projection-mismatch'
 missing=$(cc_validate_identity_projection "$fx/missing-region" || true)
 printf '%s\n' "$missing" | grep -Fx projection-mismatch >/dev/null || fail 'missing region did not yield projection-mismatch'
+missing_files=$(cc_validate_identity_projection "$fx/missing-files" || true)
+printf '%s\n' "$missing_files" | grep -Fx projection-mismatch >/dev/null || fail 'missing summaries did not yield projection-mismatch'
+entry_missing=$(cc_entry_preflight "$fx/missing-files" || true)
+printf '%s\n' "$entry_missing" | grep -Fx projection-mismatch >/dev/null || fail 'entry preflight fail-opened when summaries were missing'
+printf '%s\n' "$entry_missing" | grep -F entry-preflight-ok >/dev/null && fail 'entry preflight reported ok without summaries'
+write_missing=$(cc_write_preflight "$fx/missing-files" || true)
+printf '%s\n' "$write_missing" | grep -Fx projection-mismatch >/dev/null || fail 'write preflight fail-opened when summaries were missing'
+assert_eq "$(cc_validate_identity_projection "$fx/roles-sequence")" identity-projection-ok
+roles_disagree=$(mktemp -d "${TMPDIR:-/tmp}/cc-roles-disagree.XXXXXX")
+trap 'rm -rf "$roles_disagree"' EXIT HUP INT TERM
+cp -R "$fx/roles-sequence/." "$roles_disagree/"
+sed -i 's/roles: owner/roles: none/' "$roles_disagree/context/WORKSPACE.md"
+roles_mismatch=$(cc_validate_identity_projection "$roles_disagree" || true)
+printf '%s\n' "$roles_mismatch" | grep -Fx projection-mismatch >/dev/null || fail 'sequence roles collapsed to none instead of disagreeing'
 undeclared=$(cc_validate_delegated_effects "$fx/undeclared-effect/approved-effects.txt" "$fx/undeclared-effect/delegated-effects.txt" || true)
 assert_eq "$undeclared" UNDECLARED_EFFECT
 assert_eq "$(cc_validate_delegated_effects "$fx/undeclared-effect/approved-effects.txt" "$fx/undeclared-effect/valid-delegated-effects.txt")" delegated-effects-ok
