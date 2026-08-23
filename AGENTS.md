@@ -1,8 +1,9 @@
-# Context Circuit source-repository safety
+# context-circuit-source repository safety
 
-This checkout is the Context Circuit product source, not an instantiated
-workspace. The active source specification is
-`sources/context-circuit-design/DESIGN-SPEC.md`; do not turn it into a
+This checkout is context-circuit-source, the maintainer source repository for
+Context Circuit. It is not context-circuit-template and not an instantiated
+universal project workspace. The active source specification is
+`sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md`; do not turn it into a
 canonical workspace plan or restore the obsolete Context Circuit lifecycle,
 routing model, or legacy skill behavior.
 
