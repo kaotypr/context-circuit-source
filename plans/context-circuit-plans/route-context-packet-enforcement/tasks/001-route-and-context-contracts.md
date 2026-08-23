@@ -12,6 +12,7 @@ paths:
   - wrapper/contracts/schemas/context-receipt.yaml
   - wrapper/manifest.yaml
   - test/routing/fixtures.yaml
+  - test/contracts/test-contracts.sh
 depends_on: []
 acceptance: [RCP-AC-01, RCP-AC-02, RCP-AC-04, RCP-AC-05]
 verification: [RCP-VT-01, RCP-VT-02]

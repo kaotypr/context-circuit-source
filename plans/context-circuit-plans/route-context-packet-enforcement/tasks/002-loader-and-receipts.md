@@ -11,6 +11,8 @@ paths:
   - wrapper/adapters/WORKFLOW.md
   - .agents/skills/cc-entry/SKILL.md
   - test/context-budget/test-budgets.sh
+  - test/context-budget/ledger.tsv
+  - test/context-budget/ledger.yaml
   - test/hosts/test-host-adapters.sh
   - test/security/test-boundaries.sh
 depends_on: [RCP-001]
