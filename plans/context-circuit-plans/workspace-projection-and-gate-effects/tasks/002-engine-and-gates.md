@@ -2,7 +2,7 @@
 schema_version: 2
 id: WPE-002
 plan: workspace-projection-and-gate-effects
-status: ready
+status: done
 repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh
