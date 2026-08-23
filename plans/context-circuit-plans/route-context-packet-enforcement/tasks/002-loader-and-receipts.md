@@ -2,7 +2,7 @@
 schema_version: 2
 id: RCP-002
 plan: route-context-packet-enforcement
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - wrapper/runtime/engine.sh
