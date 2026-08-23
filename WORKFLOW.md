@@ -1,14 +1,16 @@
-# Context Circuit source workflow
+# context-circuit-source workflow
 
 Implementation proceeds directly from
-`sources/context-circuit-design/DESIGN-SPEC.md` in FINAL-001 through FINAL-009.
+`sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md` in its
+implementation order.
 This source workflow is not the product lifecycle and does not require plan
 approval, run-plan, run-stack, finish-plan, or cleanup ceremonies.
 
 Each phase owns its files, updates `test/baselines/implementation-log.md`, and
 runs the semantic tests that exist at that point. Preserve the dependency order:
-baseline → wrapper/template → contracts/router → human plan artifacts →
-runtime/roles → gates/operations → compatibility → semantic suites → final A/B.
+workspace/plan contract → Product Knowledge → runtime reduction → conversational
+adapter → multi-repository execution → independent verification → repair loop →
+recovery/delivery → semantic verification.
 
 The released product's lifecycle is specified by `wrapper/adapters/WORKFLOW.md`
 and owned by `wrapper/contracts/`. The source workflow only governs safe

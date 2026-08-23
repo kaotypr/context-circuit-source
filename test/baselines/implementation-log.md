@@ -90,15 +90,15 @@ passed and no external publication or deployment was performed.
 
 Status: complete. The source-only `template/` directory is no longer copied
 into the generated workspace. Its mutable seed is overlaid at the artifact
-root, matching DESIGN-SPEC §4.2. The release manifest and acceptance suite now assert
+root, matching the v0.5 design workspace model. The release manifest and acceptance suite now assert
 that the nested directory is absent while root `workspace.yaml`, `context/`,
 `sources/`, and `plans/` remain present.
 
 ## Source design and adapter naming cleanup
 
 Status: complete. Comparative design drafts and the active specification live
-under `sources/context-circuit-design/`, with the active file named
-`DESIGN-SPEC.md`. The redesigned host adapters use the `cc-*` discovery prefix;
+under `sources/context-circuit-v0.5-design/`, with the active file named
+`context-circuit-v0.5-design.md`. The redesigned host adapters use the `cc-*` discovery prefix;
 their new contract-driven behavior is unchanged and the obsolete skill set is
 not restored.
 

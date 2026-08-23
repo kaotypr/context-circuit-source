@@ -1,6 +1,6 @@
 schema_version: 1
 baseline_id: pre-redesign-2026-08-21
-source: sources/context-circuit-design/DESIGN-SPEC.md section 17.1 and the green legacy acceptance run
+source: sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md section 21 and the green legacy acceptance run
 unit: bytes
 profiles:
   tier-0:

@@ -45,7 +45,7 @@ test ! -e "$artifact/.transactions" || fail 'transaction staging leaked into art
 test ! -e "$artifact/test" || fail 'semantic tests leaked into artifact'
 test ! -e "$artifact/.cursor" || fail 'host-local Cursor state leaked into artifact'
 test ! -e "$artifact/PLAN.md" || fail 'maintainer plan leaked into artifact'
-test ! -e "$artifact/sources/context-circuit-design" || fail 'source design material leaked into artifact'
+test ! -e "$artifact/sources/context-circuit-v0.5-design" || fail 'source design material leaked into artifact'
 test ! -e "$artifact/template" || fail 'source template directory leaked into artifact'
 test ! -e "$artifact/plans/context-circuit-plans" || fail 'maintainer plan stack leaked into artifact'
 test ! -e "$artifact/repositories.local.yaml" || fail 'local binding leaked into artifact'
@@ -80,7 +80,7 @@ build_artifact="$build_out/context-circuit-v0.5.0"
 require_file "$build_artifact/README.md"
 require_file "$build_out/context-circuit-v0.5.0.tar.gz"
 test ! -e "$build_artifact/template" || fail 'source template directory leaked into dist build'
-test ! -e "$build_artifact/sources/context-circuit-design" || fail 'source design material leaked into dist build'
+test ! -e "$build_artifact/sources/context-circuit-v0.5-design" || fail 'source design material leaked into dist build'
 printf '%s\n' "$build_result" | grep -F "dist_dir: $build_out" >/dev/null || fail 'dist build did not report output directory'
 contains "$artifact/wrapper/contracts/schemas/plan.yaml" 'vocabulary: [schema, store, api, process, browser, human]'
 contains "$artifact/wrapper/contracts/invariants.yaml" 'INV-EVID-01'

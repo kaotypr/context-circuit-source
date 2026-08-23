@@ -61,7 +61,7 @@ release_boundary:
     - test/
     - scripts/
     - template/
-    - sources/context-circuit-design/
+    - sources/context-circuit-v0.5-design/
     - maintainer-only docs
     - repositories.local.yaml
     - repositories/
