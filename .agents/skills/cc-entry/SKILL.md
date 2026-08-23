@@ -40,3 +40,10 @@ identifier and observed capability in `host_evidence` when entering or
 resuming. The host adapter is not a second router: use the same probe and
 reason codes. If a required writer or verifier child cannot be created, return
 `block-missing-child-primitive` with `host-blocked`; never self-verify.
+
+On resume, consume the engine-owned runtime graph rather than rebuilding
+records: require `cc_runtime_graph_authoritative`,
+`cc_validate_runtime_graph`, and current receipt/primary-evidence validation.
+An interrupted or unmarked transaction, stale receipt, changed digest, or
+foreign owner is a read-only stop. Host capability and provider status remain
+bounded evidence only; they cannot expand the packet or authorize resume.

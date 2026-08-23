@@ -7,6 +7,7 @@ schema_versions:
   workspace: [1]
   session: [1]
   delegation: [1]
+  child_start: [1]
   context_receipt: [1]
   lease: [1]
   handoff: [1]
