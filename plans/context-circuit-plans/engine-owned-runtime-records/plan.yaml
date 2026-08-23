@@ -15,6 +15,8 @@ product_knowledge:
   - wrapper/contracts/schemas/session.yaml
   - wrapper/contracts/schemas/context-receipt.yaml
   - wrapper/contracts/schemas/delegation.yaml
+  - wrapper/contracts/schemas/handoff.yaml
+  - wrapper/contracts/schemas/lease.yaml
   - wrapper/contracts/schemas/completion.yaml
 objective: >-
   Replace handmade runtime reconstruction with validated engine operations
@@ -23,8 +25,10 @@ objective: >-
   child scope and host capability as evidence only.
 scope:
   - atomic constructors for root and child runtime records
+  - canonical child-start evidence schema and ownership entry
   - engine-owned timestamps, versions, revisions, byte counts, and digests
   - ownership-graph and delegation validation before child launch
+  - one staged transaction boundary and commit marker for graph publication
   - bounded child prompt projection and handoff skeleton
   - interruption, resume, migration, host, security, and semantic verification
 non_goals:
@@ -53,13 +57,15 @@ acceptance:
   - id: ERR-AC-01
     outcome: >-
       Engine operations create schema-valid session, context-receipt,
-      delegation, child-start, handoff skeleton, and completion records with
-      real timestamps, versions, revisions, byte counts, and digests.
+      delegation, distinct child-start evidence, handoff skeleton, and
+      completion records with real timestamps, versions, revisions, byte
+      counts, and digests.
   - id: ERR-AC-02
     outcome: >-
-      Every record is staged, validated, and atomically published; interruption
-      leaves no partial record that can grant ownership, resume, verification,
-      or completion eligibility.
+      Every record is staged and validated inside one transaction, and a commit
+      marker is published only after the complete graph is valid; interruption
+      leaves no partial record or marker that can grant ownership, resume,
+      verification, or completion eligibility.
   - id: ERR-AC-03
     outcome: >-
       A child cannot start until the engine validates session ancestry, lease,
@@ -83,21 +89,21 @@ acceptance:
   - id: ERR-AC-07
     outcome: >-
       Legacy readable records remain recoverable through explicit compatibility
-      handling, and release artifacts ship constructors and schemas without
-      runtime state.
+      handling, and release artifacts ship constructors, the child-start
+      schema, and related schemas without runtime state.
 verification:
   - id: ERR-VT-01
     command: sh test/contracts/test-contracts.sh
-    proves: Record fields, ownership relationships, host evidence, and schema inventory remain canonical.
+    proves: Record fields, child-start ownership, host evidence, and schema inventory remain canonical.
   - id: ERR-VT-02
     command: sh test/runtime/test-runtime.sh
-    proves: Constructors validate and atomically publish complete records with real revisions and digests.
+    proves: Constructors validate complete records and publish the graph only with a valid transaction commit marker.
   - id: ERR-VT-03
     command: sh test/ownership/test-ownership.sh
     proves: Ownership graph, lease, worktree, child permissions, and launch validation fail closed.
   - id: ERR-VT-04
     command: sh test/recovery/test-recovery.sh
-    proves: Interruption, stale receipts, partial records, and resume preserve authoritative evidence boundaries.
+    proves: Interruption, stale receipts, partial transactions, commit markers, and resume preserve authoritative evidence boundaries.
   - id: ERR-VT-05
     command: sh test/hosts/test-host-adapters.sh
     proves: Host mappings launch the same packet or report host-blocked without scope expansion.
@@ -109,7 +115,7 @@ verification:
     proves: Upgrade and rollback preserve readable runtime evidence and apply explicit compatibility handling.
   - id: ERR-VT-08
     command: sh test/release/test-release.sh
-    proves: Constructors and schemas ship while sessions, leases, worktrees, and handoffs do not.
+    proves: Constructors and schemas, including child-start, ship while sessions, leases, worktrees, and handoffs do not.
   - id: ERR-VT-09
     command: sh test/acceptance.sh
     proves: Complete semantic acceptance after runtime record integration.
@@ -120,4 +126,4 @@ human_gates:
   - publication
   - cleanup
 created_at: 2026-08-22T18:30:00Z
-updated_at: 2026-08-22T18:30:00Z
+updated_at: 2026-08-23T08:24:09Z
