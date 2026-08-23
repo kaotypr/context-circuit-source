@@ -51,4 +51,11 @@ for host_fixture in "$ROOT"/test/hosts/fixtures/*.yaml; do
 done
 test "$host_fixtures" -le 8192 || fail "host fixture evidence exceeds tier-0 budget: $host_fixtures"
 printf 'BUDGET host-overlay: %s/8192 bytes; fixtures: %s/8192 bytes\n' "$host_overlay" "$host_fixtures"
+packet_bytes=$(cc_context_packet_measure "$ROOT" verifier \
+  wrapper/contracts/schemas/delegation.yaml \
+  wrapper/contracts/schemas/completion.yaml \
+  agents/verifier.md | awk -F'|' '{sum += $3} END {print sum + 0}')
+packet_budget=$(cc_context_set_budget "$ROOT" verifier)
+test "$packet_bytes" -le "$packet_budget" || fail "measured verifier packet exceeded: $packet_bytes > $packet_budget"
+printf 'PACKET verifier: %s/%s bytes\n' "$packet_bytes" "$packet_budget"
 pass "context budgets and static reduction ${reduction}% (L1=$l1 bytes)"

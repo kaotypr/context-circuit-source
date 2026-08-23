@@ -2,7 +2,7 @@
 schema_version: 2
 id: RCP-003
 plan: route-context-packet-enforcement
-status: draft
+status: ready
 repository: context-circuit-source
 paths:
   - docs/templates/plan.md

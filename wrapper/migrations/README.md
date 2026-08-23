@@ -19,3 +19,9 @@ authored Product Knowledge outside that region and does not change accepted
 identity. Rollback removes the inserted region and still leaves accepted
 identity and authored Product Knowledge unchanged. Effect identifiers remain
 descriptive and never authorize a route or gate.
+
+Canonical packet fixtures remain wrapper-owned: the context-receipt,
+delegation, plan, and task schemas plus the plan, task, and PRD templates and
+gate card are installed with the wrapper. A compatible receipt is retained as
+runtime evidence; migration-needed or unknown receipt versions are classified
+for a current human decision and are never rewritten merely to pass upgrade.

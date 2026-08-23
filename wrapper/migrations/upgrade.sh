@@ -19,6 +19,25 @@ cc_rollback_scope() {
   for path in wrapper .agents/skills agents AGENTS.md CLAUDE.md WORKFLOW.md README.md; do printf '%s\n' "$path"; done
 }
 
+cc_migration_packet_fixtures() {
+  for path in \
+    wrapper/contracts/schemas/context-receipt.yaml \
+    wrapper/contracts/schemas/delegation.yaml \
+    wrapper/contracts/schemas/plan.yaml \
+    wrapper/contracts/schemas/task.yaml \
+    docs/gates.md docs/templates/plan.md docs/templates/plan.yaml \
+    docs/templates/task.md docs/templates/prd.md; do
+    printf '%s\n' "$path"
+  done
+}
+
+cc_migration_receipt_status() {
+  cc_migration_receipt=${1:-}
+  test -f "$cc_migration_receipt" || { printf '%s\n' legacy-unknown; return 0; }
+  cc_migration_receipt_version=$(sed -n 's/^wrapper_version: //p' "$cc_migration_receipt" | head -n 1)
+  cc_migration_classify "${cc_migration_receipt_version:-legacy-unknown}"
+}
+
 cc_migrate_identity_regions() {
   cc_migrate_root=$1
   test -f "$cc_migrate_root/workspace.yaml" || return 1

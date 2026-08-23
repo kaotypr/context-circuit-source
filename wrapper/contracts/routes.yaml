@@ -25,6 +25,58 @@ stage_b:
     - reason_codes
     - context_set
     - human_gate
+context_set_map:
+  owner: wrapper/contracts/routes.yaml
+  rule: Map the final normalized action to one registered context-set id; probe and phase labels are not set ids.
+  actions:
+    orient: orientation
+    recommend-next: tier-0
+    initialize: initialization
+    repository-bootstrap: repository-bootstrap
+    present-repository-bootstrap-card: repository-bootstrap
+    draft-idea-brief: idea-brief
+    draft-prd: prd
+    inspect-source: selected-source
+    propose-context: context-review
+    review-context: context-review
+    draft-plan: plan-draft
+    review-plan: plan-review
+    clarify-target: plan-review
+    present-approval-card: gate
+    approve-plan: gate
+    present-commit-approved-plan-card: gate
+    commit-approved-plan: gate
+    block-unapproved: recovery
+    execute-plan: run-plan
+    execute-stack: run-plan
+    resume-session: resume
+    present-takeover-card: recovery
+    takeover-lease: recovery
+    block-foreign-owner: recovery
+    block-dirty-base: recovery
+    block-incomplete-delegation: recovery
+    block-missing-child-primitive: recovery
+    block-scope-expansion: recovery
+    verify-plan: verification
+    repair-plan: verification
+    present-finish-card: gate
+    finish-plan: gate
+    recommend-finish: gate
+    present-archive-card: gate
+    archive-plan: gate
+    present-restore-card: gate
+    restore-plan: gate
+    present-configuration-card: gate
+    configure-delivery: gate
+    present-delivery-card: gate
+    offline-fallback: tier-0
+    show-handoff: resume
+    inspect-cleanup: gate
+    cleanup-runtime: gate
+    classify-upgrade: upgrade
+    migrate-wrapper: upgrade
+    block-unresolved-dependency: recovery
+    block-projection-mismatch: recovery
 precedence:
   - id: ROUTE-PRECEDENCE-01
     when: conflicting instructions, unsafe paths, corrupt records, or dirty ownership

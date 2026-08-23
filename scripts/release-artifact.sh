@@ -59,9 +59,19 @@ done
 for relpath in $required_files; do
   [ -e "$stage_tree/$relpath" ] || fail "missing required file: $relpath"
 done
+for fixture in \
+  wrapper/contracts/schemas/context-receipt.yaml \
+  wrapper/contracts/schemas/delegation.yaml \
+  wrapper/contracts/schemas/plan.yaml \
+  wrapper/contracts/schemas/task.yaml \
+  docs/gates.md docs/templates/plan.md docs/templates/plan.yaml \
+  docs/templates/task.md docs/templates/prd.md; do
+  [ -f "$stage_tree/$fixture" ] || fail "missing canonical packet fixture: $fixture"
+done
 for forbidden_path in repositories.local.yaml repositories; do
   [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
 done
+[ ! -e "$stage_tree/plans/context-circuit-plans" ] || fail 'maintainer plan stack leaked into artifact'
 find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
 for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
