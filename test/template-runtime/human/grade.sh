@@ -112,8 +112,13 @@ while IFS= read -r line; do
 			if [ "$recs" -eq 0 ]; then ok "no_execution_records (none)"
 			else bad "no_execution_records ($recs found)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		product_knowledge_unchanged_silently)
-			if diff -r "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then ok "product_knowledge_unchanged_silently"
-			else bad "product_knowledge_unchanged_silently (context/ differs from baseline)"; FAIL_A=$((FAIL_A+1)); fi ;;
+			# Only ACCEPTED Product Knowledge counts. context/proposals/ is the sanctioned
+			# NON-silent path (a proposal is pending, not accepted — INV-KNOWLEDGE-02), so
+			# adding proposals is not a silent change; exclude it from the diff.
+			if diff -r -x proposals "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then
+				if diff -r "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then ok "product_knowledge_unchanged_silently"
+				else ok "product_knowledge_unchanged_silently (accepted PK unchanged; context proposals were added, which is the non-silent path)"; fi
+			else bad "product_knowledge_unchanged_silently (accepted context/ differs from baseline)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
