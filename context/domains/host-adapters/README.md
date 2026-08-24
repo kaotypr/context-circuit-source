@@ -84,6 +84,17 @@ Optional live host probes are explicitly pass, unavailable, or blocked; never a
 false success. Cursor does not require `.cursor/rules` for this behavior; a
 future scoped Cursor rule must remain a thin adapter.
 
+## Adapter duties and limits
+
+The adapter's positive duties: pass the execution brief, ask the runtime to
+record commits and evidence, coordinate repair attempts, and return child
+results. It must provide actual read-only capability for the verifier child or
+report blocked.
+
+The adapter must not bypass a missing approval, must not change the plan to done
+after a verification pass, and must not self-verify when the verifier child is
+unavailable.
+
 ## Implementation references
 
 - `wrapper/adapters/AGENTS.md`, `wrapper/adapters/CLAUDE.md`,

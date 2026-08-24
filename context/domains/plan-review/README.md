@@ -83,6 +83,23 @@ Read only the selected context units, not the whole directory. Review writes
 nothing — no `plan.yaml`, task status, lease, runtime, or Git. There is no
 eighth shipped skill for review; `cc-plan` carries it.
 
+## Plan brief, PLAN.md, and plan.yaml
+
+Authoring starts from an internal plan-creation brief (request, objective,
+repositories, product_knowledge, context_grounding, sources, known_decisions,
+open_questions) that grounds scope before any plan is written.
+
+The readable `PLAN.md` carries the status and execution summary, repository
+ownership, scope and non-goals, acceptance, verification, risks, expected commits
+and delivery, human decisions, and expected Product Knowledge impact. The
+canonical `plan.yaml` additionally owns allowed paths, declared effects,
+acceptance and verification ids, the repair limit, plan-level stop conditions,
+and the context units to reassess at completion.
+
+Request fidelity: a plan removes repetition, not meaning; detail is not discarded
+merely to shorten. (Note: `INV-PLAN-03`, the never-reused / next-after-highest id
+rule, is a shipped invariant beyond the design; see `context/DESIGN-DELTAS.md`.)
+
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`

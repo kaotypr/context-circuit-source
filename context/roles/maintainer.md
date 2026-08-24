@@ -15,6 +15,7 @@ domains:
   - context/domains/completion/README.md
   - context/domains/plan-organization/README.md
   - context/domains/delivery/README.md
+  - context/domains/source-release-and-upgrade/README.md
 related_workflows:
   - docs/release.md
 sources: []
@@ -79,6 +80,7 @@ explicit actions.
 - [Completion](../domains/completion/README.md)
 - [Plan organization](../domains/plan-organization/README.md)
 - [Delivery](../domains/delivery/README.md)
+- [Source release and upgrade](../domains/source-release-and-upgrade/README.md)
 - Release assembly: `docs/release.md`
 
 ## Role-specific behavior and limitations

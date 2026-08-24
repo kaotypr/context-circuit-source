@@ -12,6 +12,7 @@ retrievable.
 
 | Term | Meaning |
 | --- | --- |
+| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product. The directory `wrapper/` holds its shipped layer (runtime, contracts, adapters). |
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit / context index | One knowledge unit; the retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to units. |
 | Plan / plan status | Human-reviewed intent for an outcome; its human-owned `draft`/`approved`/`done` state. |

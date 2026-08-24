@@ -65,3 +65,26 @@ maintainer role, INDEX owner pointers, and terminology authority pointer.
 `context/sources.yaml` provenance was retired (the wrapper is not a `sources/`
 read). The proposals for this refresh were consumed from `context/proposals/`
 on acceptance, as usual.
+
+## 2026-08-24 — design↔context reconciliation
+
+Decision: reconcile the accepted `context/` Product Knowledge against the v0.5
+design under `sources/context-circuit-v0.5-design/`, under the policy
+"shipped is truth; log deltas". Keep "wrapper" as an accepted synonym for the
+universal project workspace product and update the design source to accept it
+(rather than aligning context to the design's deprecation).
+
+Rationale: the current shipped state is built toward that design, so context
+should describe shipped behavior while design↔implementation divergences stay
+visible instead of silently overwriting either side.
+
+Consequence: accepted the reconciliation proposals. Fixed contradictions in
+ARCHITECTURE.md (removed the two-stage-router-as-canonical framing and the
+"lease" wording; added the execution model), PROJECT.md (stated the universal
+multi-repository workspace identity; removed the "operating system" metaphor and
+router framing), and INDEX.md (retrieval-catalog role). Enriched the lifecycle domain pages from the shipped wrapper. Added the
+`source-release-and-upgrade` domain, a `context/DESIGN-DELTAS.md` log (evidence
+layers, repair-limit, plan-id reuse, terminology authority), and CONVENTIONS
+policy-change escalation. The design source (`08-terminology.md`,
+`09-source-and-template.md`) was updated to accept "wrapper", and the glossaries
+gained the term.
