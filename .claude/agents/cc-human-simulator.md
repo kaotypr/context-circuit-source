@@ -5,7 +5,7 @@ description: >
   with a goal who has never heard of Context Circuit, and drives the product
   coordinator through a natural conversation so the harness can observe whether
   the product experience is correct for a lay user. Spawn only from the template
-  test harness (test/template-runtime/human/); never a product role.
+  test harness (template-harness/human/); never a product role.
 tools: []
 ---
 

@@ -35,7 +35,11 @@ completion, archive, restore, and delivery are separate explicit human actions.
   released.
 - `sources/context-circuit-v0.5-design/` — the authoritative v0.5 design;
   maintainer material only, never shipped.
-- `test/` — semantic acceptance suites and the template-runtime laboratory.
+- `test/` — semantic acceptance suites (the deterministic engine-level laboratory
+  is run from here via `template-harness/test-template-runtime.sh`).
+- `template-harness/` — the built-template behavior laboratory: the deterministic
+  engine-level suite plus the human-simulated harness (`human/`, `scenarios/`).
+  Source-only; never shipped in `context-circuit-template`.
 - `scripts/` — maintainer-only release assembly.
 - `repositories/`, `repositories.local.yaml`, `.runtime/` — host-local, ignored,
   never released.

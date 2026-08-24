@@ -11,7 +11,7 @@ dist/
 /template/repositories.local.yaml
 
 # Disposable output from the human-simulated template test harness.
-/test/template-runtime/human/.out/
-/test/template-runtime/human/.live.log
+/template-harness/human/.out/
+/template-harness/human/.live.log
 # Local, this-machine-only opt-in to run the coordinator UNSANDBOXED (never shipped).
-/test/template-runtime/human/drivers/.allow-unsandboxed
+/template-harness/human/drivers/.allow-unsandboxed

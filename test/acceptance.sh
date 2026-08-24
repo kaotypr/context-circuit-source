@@ -18,7 +18,7 @@ run_suite test/archive/test-archive.sh
 run_suite test/delivery/test-delivery.sh
 run_suite test/security/test-boundaries.sh
 run_suite test/release/test-release.sh
-run_suite test/template-runtime/test-template-runtime.sh
+run_suite template-harness/test-template-runtime.sh
 
 # --- semantic criteria mapping cross-check ---
 printf '\n--- acceptance criteria mapping ---\n'

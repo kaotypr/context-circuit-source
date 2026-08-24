@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eu
-. "$(dirname -- "$0")/../lib/assert.sh"
+. "$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel)/test/lib/assert.sh"
 
 # The template-runtime laboratory assembles the distributable
 # context-circuit-template, initializes an isolated project workspace from it,

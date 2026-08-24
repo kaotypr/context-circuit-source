@@ -31,7 +31,7 @@ allowlist and the `test/`/`.claude/` exclusions keep it out of the template).
 Prepare a run (no live model needed):
 
 ```
-sh test/template-runtime/human/run-scenario.sh --host claude-code 01-new-project-simple-idea
+sh template-harness/human/run-scenario.sh --host claude-code 01-new-project-simple-idea
 ```
 
 This prints a run directory under `.out/` containing the isolated `workspace/`,
@@ -92,7 +92,7 @@ Automatic after a driver run, or manually against any run directory that has a
 transcript:
 
 ```
-sh test/template-runtime/human/grade.sh .out/<run-id>
+sh template-harness/human/grade.sh .out/<run-id>
 ```
 
 ## Grader dimensions
