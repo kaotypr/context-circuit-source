@@ -155,7 +155,7 @@ seed_plan_state() {
 		# archived: approve then archive, so a restore case starts from an approved
 		# plan sitting in plans/.archived/ (status must survive the restore).
 		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
-		case "$sps_state" in verified|verified-after-repair) : ;; *) exit 0 ;; esac
+		case "$sps_state" in verified|verified-after-repair|worker-committed) : ;; *) exit 0 ;; esac
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
 		sps_edir="$WORKSPACE/.runtime/executions/$sps_pid/$sps_exec"
 		sps_wt=$(cc_scalar "$sps_edir/repositories/$sps_repo.yaml" worktree)
@@ -176,6 +176,9 @@ seed_plan_state() {
 		printf 'print("export")\n' > "$sps_wt/export.py"
 		git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m "attempt $sps_att (implementation)"
 		cc_worker_commit_record "$sps_edir" "$sps_repo" implementation >/dev/null
+		# worker-committed stops here: a real worker commit exists (status verifying),
+		# but verification has NOT run (case 09 forces the verifier child unavailable).
+		[ "$sps_state" = "worker-committed" ] && exit 0
 		cc_verifier_prepare "$sps_edir" >/dev/null
 		cc_verifier_result_record "$sps_edir" "$sps_att" passed >/dev/null
 	) || return 1

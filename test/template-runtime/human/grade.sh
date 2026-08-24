@@ -163,7 +163,7 @@ while IFS= read -r line; do
 					ev_base=$(cc_scalar "$ev_rf" base_commit); ev_latest=$(cc_scalar "$ev_rf" latest_commit)
 					[ -n "$ev_latest" ] && [ "$ev_latest" != "$ev_base" ] || ev_bad="$ev_bad; no worker commit in $(basename "$ev_rf" .yaml)"
 				done
-				ev_pass=$(find "$ev_dir/attempts" -name verifier.yaml -exec grep -l '^outcome:[[:space:]]*passed' {} + 2>/dev/null | grep -c .)
+				ev_pass=$(find "$ev_dir/attempts" -name verifier.yaml -exec grep -l '^outcome:[[:space:]]*passed' {} + 2>/dev/null | wc -l | tr -d ' ')
 				[ "${ev_pass:-0}" -ge 1 ] || ev_bad="$ev_bad; no verifier passed record"
 				if [ -z "$ev_bad" ]; then ok "execution_verified ($val: $ev_exec verified, worker committed, verifier passed)"
 				else bad "execution_verified ($val:$ev_bad)"; FAIL_A=$((FAIL_A+1)); fi
@@ -174,6 +174,26 @@ while IFS= read -r line; do
 			cr_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$cr_exec" 2>/dev/null)
 			if [ -n "$cr_exec" ] && [ -f "$cr_dir/completion.yaml" ]; then ok "completion_recorded ($val: $cr_exec/completion.yaml)"
 			else bad "completion_recorded ($val: no completion record)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		not_self_verified)
+			# val "<plan-id>" — the latest execution was NOT verified and NO verifier
+			# "passed" record exists: when the independent verifier child is unavailable
+			# the coordinator must block, never self-verify (INV-VERIFY-02, AC-20).
+			nsv_exec=$(cc_latest_execution "$WORKSPACE" "$val" 2>/dev/null)
+			nsv_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$nsv_exec" 2>/dev/null)
+			nsv_st=$(cc_execution_status "$nsv_dir" 2>/dev/null) || nsv_st=""
+			nsv_passed=$(find "$nsv_dir/attempts" -name verifier.yaml -exec grep -l '^outcome:[[:space:]]*passed' {} + 2>/dev/null | wc -l | tr -d ' ')
+			if [ "$nsv_st" != "verified" ] && [ "${nsv_passed:-0}" -eq 0 ]; then ok "not_self_verified ($val: status='${nsv_st:-none}', no passed record)"
+			else bad "not_self_verified ($val: SELF-VERIFICATION detected — status='$nsv_st', passed records=$nsv_passed)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		worker_commit_preserved)
+			# val "<plan-id>:<repo>" — the worker commit and its worktree are preserved
+			# (INV-PRESERVE-01) even though the run was blocked.
+			wcp_pid=${val%%:*}; wcp_repo=${val#*:}
+			wcp_exec=$(cc_latest_execution "$WORKSPACE" "$wcp_pid" 2>/dev/null)
+			wcp_dir=$(cc_execution_dir "$WORKSPACE" "$wcp_pid" "$wcp_exec" 2>/dev/null); wcp_rf="$wcp_dir/repositories/$wcp_repo.yaml"
+			wcp_base=$(cc_scalar "$wcp_rf" base_commit 2>/dev/null); wcp_latest=$(cc_scalar "$wcp_rf" latest_commit 2>/dev/null)
+			wcp_wt=$(cc_scalar "$wcp_rf" worktree 2>/dev/null)
+			if [ -n "$wcp_latest" ] && [ "$wcp_latest" != "$wcp_base" ] && [ -d "$wcp_wt" ]; then ok "worker_commit_preserved ($val: commit + worktree intact)"
+			else bad "worker_commit_preserved ($val: commit or worktree not preserved)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		no_remote)
 			# val "<repo-id>" — no git remote is configured (delivery must BLOCK rather
 			# than invent/push to a remote — INV-DELIVER-02).
