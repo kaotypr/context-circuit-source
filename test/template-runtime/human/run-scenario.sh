@@ -155,25 +155,29 @@ seed_plan_state() {
 		# archived: approve then archive, so a restore case starts from an approved
 		# plan sitting in plans/.archived/ (status must survive the restore).
 		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
-		[ "$sps_state" = "verified-after-repair" ] || exit 0
+		case "$sps_state" in verified|verified-after-repair) : ;; *) exit 0 ;; esac
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
 		sps_edir="$WORKSPACE/.runtime/executions/$sps_pid/$sps_exec"
 		sps_wt=$(cc_scalar "$sps_edir/repositories/$sps_repo.yaml" worktree)
 		[ -d "$sps_wt" ] || { printf 'FAIL: seed worktree missing for %s\n' "$sps_pid" >&2; exit 1; }
-		# attempt 1: an implementation that does NOT satisfy verification -> failed
-		cc_attempt_begin "$sps_edir" >/dev/null
-		printf 'incomplete first attempt\n' > "$sps_wt/notes-wip.txt"
-		git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m 'attempt 1 (incomplete)'
-		cc_worker_commit_record "$sps_edir" "$sps_repo" implementation >/dev/null
-		cc_verifier_prepare "$sps_edir" >/dev/null
-		cc_verifier_result_record "$sps_edir" 1 failed >/dev/null   # worker_failures -> 1, repairing
-		# repair attempt 2: satisfy verification (create export.py) -> passed
+		sps_att=1
+		if [ "$sps_state" = "verified-after-repair" ]; then
+			# attempt 1: an implementation that does NOT satisfy verification -> failed
+			cc_attempt_begin "$sps_edir" >/dev/null
+			printf 'incomplete first attempt\n' > "$sps_wt/notes-wip.txt"
+			git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m 'attempt 1 (incomplete)'
+			cc_worker_commit_record "$sps_edir" "$sps_repo" implementation >/dev/null
+			cc_verifier_prepare "$sps_edir" >/dev/null
+			cc_verifier_result_record "$sps_edir" 1 failed >/dev/null   # worker_failures -> 1, repairing
+			sps_att=2
+		fi
+		# passing attempt: satisfy verification (create export.py) -> passed -> verified
 		cc_attempt_begin "$sps_edir" >/dev/null
 		printf 'print("export")\n' > "$sps_wt/export.py"
-		git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m 'attempt 2 (repair)'
-		cc_worker_commit_record "$sps_edir" "$sps_repo" repair >/dev/null
+		git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m "attempt $sps_att (implementation)"
+		cc_worker_commit_record "$sps_edir" "$sps_repo" implementation >/dev/null
 		cc_verifier_prepare "$sps_edir" >/dev/null
-		cc_verifier_result_record "$sps_edir" 2 passed >/dev/null   # -> verified
+		cc_verifier_result_record "$sps_edir" "$sps_att" passed >/dev/null
 	) || return 1
 }
 
