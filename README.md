@@ -1,36 +1,53 @@
 # Context Circuit source
 
-This repository builds Context Circuit 1.0, a filesystem-backed wrapper for
-AI-assisted project work. The released workspace is a clean, uninitialized
-template; this checkout is the product source and maintainer workspace.
+This repository is `context-circuit-source`, the maintainer source that builds
+Context Circuit v0.5 — a universal project workspace for AI-assisted work that
+connects and coordinates one or more Git repositories. The released artifact is
+`context-circuit-template`: a clean, uninitialized universal project workspace.
+This checkout is the product source and its self-hosted maintainer workspace.
 
-## Human entry
+## Product experience
 
-In a released workspace, say:
+In a released workspace you talk to the agent in ordinary language:
 
-> Start or resume work in this workspace.
+> What is this workspace?
+> Create a plan for adding billing.
+> Approve plan 0001-billing-v2 and execute it.
+> Mark 0001-billing-v2 complete.
 
-The agent reads a compact safety spine, selects one bounded evidence probe, then
-selects exactly one eligible action. Humans operate through the root README, a
-plan's `PLAN.md`, the conversational “what's next” card, and surfaced handoffs.
-
-Approval, execution, completion, delivery, archive, takeover, publication,
-deployment, and cleanup are separate human actions. The core works offline and
-stores no credentials.
+The coordinator drafts or reviews a readable plan; you approve it in
+conversation; the workspace prepares isolated repository worktrees; one worker
+implements the whole plan and commits each repository; an independent read-only
+verifier checks the latest commits; the worker repairs failures with new
+commits; and you decide when the plan is complete. Approval, execution,
+completion, archive, restore, and delivery are separate explicit human actions.
 
 ## Source layout
 
-- `wrapper/` — versioned shipped adapters, contracts, schemas, runtime guards,
-  and migrations.
-- `template/` — blank mutable seed for new workspaces.
-- `plans/` — source-only maintainer implementation plans; not released.
-- `repositories.local.yaml` — ignored host-local repository bindings; never released.
-- `repositories/` — optional ignored convenience checkouts; never released.
-- `.agents/skills/` and `agents/` — thin host and role adapters.
-- `context/` — Product Knowledge for the Context Circuit product itself.
-- `test/` — semantic suites, budgets, upgrade, and release verification.
-- `scripts/` — maintainer-only release assembly; nothing here is user workflow.
+- `wrapper/` — shipped runtime, contracts, schemas, adapters, and migration
+  boundary. `wrapper/runtime/engine.sh` is the small host-neutral deterministic
+  runtime; `wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
+- `template/` — the blank mutable seed for a new workspace.
+- `.agents/skills/` and `agents/` — thin host skills and worker/verifier/
+  coordinator role deltas.
+- `docs/` — shipped guides and plan/task templates.
+- `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
+  released.
+- `sources/context-circuit-v0.5-design/` — the authoritative v0.5 design;
+  maintainer material only, never shipped.
+- `test/` — semantic acceptance suites and the template-runtime laboratory.
+- `scripts/` — maintainer-only release assembly.
+- `repositories/`, `repositories.local.yaml`, `.runtime/` — host-local, ignored,
+  never released.
 
-Read `sources/context-circuit-design/DESIGN-SPEC.md` only as maintainer design
-material. The released artifact uses the shipped wrapper and template, not the
-source repository's maintainer state.
+## Tests
+
+Run the complete semantic acceptance suite:
+
+```sh
+sh test/acceptance.sh
+```
+
+Read `sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md` only as
+maintainer design material. The released artifact uses the shipped wrapper and
+template, not the source repository's maintainer state.

@@ -1,101 +1,88 @@
 schema_version: 1
-wrapper_version: 1.0.0
+owner: wrapper/manifest.yaml
 product: context-circuit
-artifact_kind: blank-workspace
-release_contract: wrapper-owned-files-only
-schema_versions:
+runtime_version: 0.5.0
+template_version: 0.5.0
+artifact_kind: universal-project-workspace-template
+release_contract: template-owned-files-only
+
+purpose: >
+  Declares the Context Circuit product template boundary: which files are
+  shipped and replaceable on upgrade, which blank seed files are copied once,
+  and which workspace-owned material an upgrade must always preserve.
+
+accepted_schema_versions:
   workspace: [1]
-  session: [1]
-  delegation: [1]
-  child_start: [1]
-  context_receipt: [1]
-  lease: [1]
-  handoff: [1]
-  plan: [1, 2]
-  task: [1, 2]
-  archive: [1]
+  repositories-local: [1]
+  plan: [1]
+  task: [1]
+  execution: [1]
+  worker-handoff: [1]
+  verifier-result: [1]
   completion: [1]
-  stack: [1]
-budgets:
-  tier_0_bytes: 8192
-  orientation_bytes: 20480
-  run_plan_bytes: 22528
-  writer_bytes: 12288
-  verifier_bytes: 11264
-  single_plan_lifecycle_bytes: 46080
-  three_task_resume_bytes: 58368
-  resume_delta_bytes: 12288
-  static_reduction_percent: 70
-  live_token_reduction_percent: 50
-  live_token_evidence: optional-with-waiver
-canonical_packet_fixtures:
-  owner: wrapper/manifest.yaml
-  rule: Schemas remain authoritative; these shipped examples are bounded inputs for initialization and plan drafting.
-  files:
-    - wrapper/contracts/schemas/context-receipt.yaml
-    - wrapper/contracts/schemas/delegation.yaml
-    - wrapper/contracts/schemas/plan.yaml
-    - wrapper/contracts/schemas/task.yaml
-    - docs/templates/plan.md
-    - docs/templates/plan.yaml
-    - docs/templates/task.md
-    - docs/gates.md
+  context-impact: [1]
+  context-proposal: [1]
+  context-index: [1]
+
+runtime:
+  entrypoint: wrapper/runtime/engine.sh
+  kind: host-neutral-deterministic-library
+  excludes:
+    - provider-specific child-agent launch
+    - model prompts and SDKs
+    - Product Knowledge interpretation
+    - plan-writing intelligence
+    - conversational routing policy
+    - confirmation cards or confirmation tokens
+    - product test-runner logic
+    - automatic pull-request, merge, push, publication, deployment, or cleanup
+    - automatic plan completion
+
 release_boundary:
   shipped:
-    - root adapters from wrapper/adapters/ (AGENTS.md, CLAUDE.md, WORKFLOW.md, README.md)
-    - wrapper/manifest.yaml
-    - wrapper/contracts/
-    - wrapper/migrations/
-    - wrapper/runtime/engine.sh
+    - wrapper/
     - .agents/skills/
     - agents/
     - docs/
   mutable_seed:
-    - workspace.yaml
-    - context/
-    - sources/
-    - plans/
+    - template/
   never_ship:
     - .git/
     - .runtime/
+    - context/
+    - plans/
+    - sources/
     - test/
     - scripts/
-    - template/
-    - sources/context-circuit-v0.5-design/
-    - maintainer-only docs
-    - repositories.local.yaml
     - repositories/
-    - plans/context-circuit-plans/
+    - repositories.local.yaml
+    - node_modules/
+
 upgrade_boundary:
   wrapper_only:
     - wrapper/
     - .agents/skills/
     - agents/
-    - shipped root adapters (including CLAUDE.md)
+    - docs/
   preserve:
     - workspace.yaml
     - context/
     - sources/
     - plans/
-    - .runtime/
     - repositories.local.yaml
-    - registered repositories
+    - repositories/
+    - .runtime/
+
 identity:
-  source_workspace: Context Circuit product source
-  instantiated_workspace: uninitialized until human identity confirmation
-identity_projection:
-  owner: wrapper/contracts/schemas/workspace.yaml
-  delimiter: context-circuit:identity-region
-  files: [context/WORKSPACE.md, context/PROJECT.md, context/INDEX.md]
-  mismatch_result: projection-mismatch
-gate_effects:
-  owner: wrapper/contracts/routes.yaml
+  kind: product-template
+  product: Context Circuit
+  release_seed: template/
+
+host_evidence:
+  purpose: provider-neutral bounded evidence only
   authorization: never
-evidence_layers:
-  owner: wrapper/contracts/schemas/plan.yaml
-  vocabulary: [schema, store, api, process, browser, human]
-  comparison: exact-match-only
-  outcomes: [passed, failed, blocked, waived]
-  completion_rule: only-passed
-  strength_hierarchy: none
-  waiver_gate: none
+  forbids:
+    - credentials
+    - provider payloads
+    - transcripts
+    - auth state

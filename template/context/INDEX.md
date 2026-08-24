@@ -1,20 +1,19 @@
 # Context index
 
-<!-- context-circuit:identity-region:start -->
-name: uninitialized-workspace
-mode: solo
-kind: instantiated-workspace
-status: uninitialized
-default_branch: main
-roles: none
-repositories: none
-<!-- context-circuit:identity-region:end -->
+This is the agent retrieval catalog for Product Knowledge. It maps concepts,
+aliases, repositories, domains, decisions, and constraints to knowledge units so
+an agent can locate the right knowledge without scanning the whole directory.
 
-Read the entry adapters and this navigation page first. `WORKSPACE.md` and
-`PROJECT.md` are uninitialized summaries until a human accepts identity. Load
-only the domain, role, source, plan, repository, or runtime evidence selected by
-the route. `sources/` is passive and is never scanned during ordinary entry.
+Retrieval metadata and entry shape are owned by
+`wrapper/contracts/schemas/context-index.yaml`.
 
-Owners: identity is `workspace.yaml`; route policy is
-`wrapper/contracts/routes.yaml`; invariants are
-`wrapper/contracts/invariants.yaml`; runtime shapes are the wrapper schemas.
+## Knowledge units
+
+No accepted context units yet. Add units during context gathering, each with a
+stable context ID, summary, topics, domains, repositories, decisions,
+constraints, status, freshness, and provenance.
+
+## Pending context impacts
+
+None. Completion reconciliation and stale-context warnings are listed here by
+target context ID, related plan, topic, repository, and impact status.

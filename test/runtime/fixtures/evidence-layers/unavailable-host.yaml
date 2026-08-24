@@ -1,8 +1,0 @@
-case: unavailable-host
-required_layer: browser
-produced_layer: browser
-observed_layer: omitted
-outcome: blocked
-evidence_source: independent
-host_capability: unavailable
-evidence_ref: host-blocked
