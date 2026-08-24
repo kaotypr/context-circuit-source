@@ -93,6 +93,27 @@ Credentials stay in host Git configuration or the SSH agent. Relative paths
 resolve from the workspace root and reject traversal. A dirty or mismatched
 bound source fails closed rather than being repaired implicitly.
 
+## Registration and connected-repository states
+
+Portable identity in `workspace.yaml` carries `schema_version`, `workspace`,
+`title`, and `purpose`; the reserved `workspace` entry is omitted when the root
+is unversioned. Portable identity must never contain local machine paths, access
+tokens, private keys, provider payloads, or credentials.
+
+Registration is two parts: record the portable logical identity and add a
+host-local binding. Registration does not clone; a clone or `git init` first
+reports the source URL, destination, branch, and external Git effect. A `git
+init` creates the directory, initializes with the anchor as the initial branch,
+records identity and anchor, and makes an initial (optionally empty) anchor
+commit; a repository with no commit is registered but not ready, because it
+cannot provide a worktree base.
+
+A connected repository moves through states — registered, bound, unavailable,
+mismatched, dirty, ready, active — reported in project terms rather than raw
+record names. `anchor_branch` is the user's actual active branch (for example
+`development` or `kao/development/v0.5`), not the same as `default_branch`;
+different users may set different anchors for the same logical repository.
+
 ## Implementation references
 
 - `wrapper/runtime/engine.sh`: `cc_repository_register`, `cc_binding_field`,

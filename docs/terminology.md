@@ -16,6 +16,7 @@ importantly, how the coordinator translates them into plain language for a user.
 
 | Term | Meaning |
 | --- | --- |
+| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product a user works in. The directory `wrapper/` holds its shipped layer. |
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit | One Product Knowledge unit with a stable ID, summary, scope, facts, decisions, and provenance. |
 | Context index | The retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to context units. |

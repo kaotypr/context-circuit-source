@@ -75,6 +75,26 @@ Completion refuses unless the latest execution is `verified`; a `failed` or
 `blocked` result is reported plainly. The runtime preserves reconciliation
 references but never interprets Product Knowledge.
 
+## Reconciliation, impact status, and staleness
+
+A successful verifier creates pending completion evidence — execution status
+`verified`, plan status `approved`, human completion `pending` — before the human
+completion request.
+
+Reconciliation reads the final plan and task files and revisions, the Product
+Knowledge references and grounding summary, the changed paths and commits per
+repository, the worker handoffs and verifier evidence, and the current revisions
+of relevant context units. Each impact moves through `not-assessed` ->
+`review-needed` -> `accepted` / `deferred` / `conflict`, plus `no-update-needed`;
+only `review-needed`, `deferred`, and `conflict` get a stored proposal file. A
+deferred proposal stays visible to future plan creation when its context is
+relevant.
+
+Staleness: a page is stale when its freshness rule expired, a cited repository
+revision materially changed, or a relevant decision changed. Stale context may
+guide read-only orientation, but a consequential plan surfaces the stale
+reference and refreshes it before execution.
+
 ## Implementation references
 
 - `.agents/skills/cc-complete/SKILL.md`

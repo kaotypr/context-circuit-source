@@ -78,6 +78,18 @@ Approval never runs deterministic readiness against a nonexistent plan, never
 combines silently with execution, and never persists as a reusable token.
 Unrelated dirty working-tree files are preserved.
 
+## Readiness checks
+
+The deterministic readiness checks that gate `draft -> approved`:
+
+- the objective is represented accurately;
+- repository mappings are explicit;
+- no task depends on an unknown repository;
+- context conflicts are resolved or accepted as risks;
+- acceptance and verification are testable;
+- worker and verifier scope are bounded;
+- the plan status is currently draft.
+
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`, `.agents/skills/cc-execute/SKILL.md`

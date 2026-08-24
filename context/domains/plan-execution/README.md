@@ -36,9 +36,9 @@ resume/recovery requests here. Owned by the `cc-execute` skill and the
 ## Scope
 
 Inside: execution begin from the anchor tip, isolated worktrees and branches,
-per-repository worker commits, the worker handoff (a claim), the exclusive
-writer lease, the three-failure repair counter, and preserved, resumable runtime
-records.
+per-repository worker commits, the worker handoff (a claim), the exclusive-create
+ownership lock, the three-failure repair counter, and preserved, resumable
+runtime records.
 
 Outside: the approval gate ([plan-approval](../plan-approval/README.md)), the
 read-only check ([verification](../verification/README.md)), completion
@@ -69,6 +69,21 @@ records are written atomically; a partial or contradictory record cannot grant
 ownership, resume a writer, prove verification, or authorize completion
 (INV-RUNTIME-01, INV-RUNTIME-02).
 
+## Execution brief, snapshot, and repair discipline
+
+Before the worker runs, execution preflights the affected repositories (approval,
+dependency order, clean anchor checkouts, bounded scope) and generates a bounded
+execution brief plus an immutable plan-snapshot — a serialized copy of `PLAN.md`,
+`plan.yaml`, and all task files that the worker and verifier prompts read.
+
+Repair is disciplined: a repair may not redesign the plan. A repair continues in
+the same execution only when the intended scope and acceptance are unchanged; if
+repair requires new scope, execution stops and the human is asked to change the
+plan, and the old-execution → new-revision relationship is recorded.
+
+Resume is allowed only when the plan revision, the configured anchor branches and
+captured anchor commits, the worktree paths, and ownership all still match.
+
 ## Workflows
 
 - Approve and execute, then inspect results: `docs/getting-started.md`
@@ -84,15 +99,15 @@ ownership, resume a writer, prove verification, or authorize completion
 `execution.yaml` holds `execution_id`, a `plan_revision` digest, `owner`,
 `status` (`running`/`verifying`/`repairing`/`verified`/`failed`/`blocked`),
 `worker_failures` 0..3, and per-repository worktree/branch/base/latest records.
-The worker handoff is a claim (commits, tasks, checks, assumptions, limits), not
+The worker handoff is a claim (commits, tasks done, checks, assumptions, limits,
+suggested verifier focus, and whether a repair is being performed), not
 verification proof.
 
 ## Constraints and edge cases
 
 The writer never edits the anchor checkout, changes approval/completion status,
-marks its own work verified, expands scope silently, or merges/pushes/publishes.
-Resume is allowed only when mid-flight with an intact snapshot, present
-worktrees, and a matching owner.
+marks its own work verified, claims independent verification, rewrites or accepts
+Product Knowledge, expands scope silently, or merges/pushes/publishes.
 
 ## Implementation references
 

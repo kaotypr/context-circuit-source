@@ -32,3 +32,4 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 - [Plan organization](plan-organization/README.md) — status-agnostic archive and restore. Status: accepted.
 - [Delivery](delivery/README.md) — separate pull-request/merge/push actions; source/target branch model. Status: accepted.
 - [Host adapters](host-adapters/README.md) — Codex, Claude Code, and Cursor Agent CLI as evidence-only transports. Status: accepted.
+- [Source release and upgrade](source-release-and-upgrade/README.md) — assembly, ships-vs-never-ships, upgrade preservation + migration-needed. Status: accepted.

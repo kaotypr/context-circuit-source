@@ -74,6 +74,22 @@ evidence requirement because a host lacks a capability.
 `blocked`/`waived` are non-passing and never a false success. The verifier writes
 only its own result and handoff, never product files.
 
+## Verifier report and read-only capability
+
+The verifier runs each canonical verification command plus the bounded additional
+checks needed to establish the declared acceptance. For each acceptance and
+verification id it reports the observed evidence, the passed/failed/blocked
+outcome, the exact failure and a repair recommendation, and the repository and
+commit checked.
+
+The host adapter must provide actual read-only capability for the verifier child;
+if it cannot guarantee it, the adapter reports blocked. A prompt saying "do not
+edit" is not enough.
+
+Not represented here: the design requires an evidence layer per acceptance
+criterion, but the shipped verifier does not implement it. That divergence is
+logged in `context/DESIGN-DELTAS.md`; this page describes the shipped verifier.
+
 ## Implementation references
 
 - `.agents/skills/cc-verify/SKILL.md`, `agents/verifier.md`
