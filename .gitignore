@@ -10,3 +10,4 @@ repositories.local.yaml
 
 # Disposable output from the human-simulated template test harness.
 /test/template-runtime/human/.out/
+/test/template-runtime/human/.live.log
