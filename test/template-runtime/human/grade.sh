@@ -146,6 +146,28 @@ while IFS= read -r line; do
 			got=$(cc_plan_status "$WORKSPACE" "$pid" 2>/dev/null) || got=""
 			if [ "$got" = "$want" ]; then ok "plan_status ($pid=$got)"
 			else bad "plan_status ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		execution_verified)
+			# val "<plan-id>" — the latest execution passed independent verification AND
+			# a worker commit preceded it (commit-before-verify verified INDEPENDENTLY of
+			# the engine's status: every affected repo record must show latest_commit
+			# advanced past base_commit, and a verifier record must show passed).
+			ev_exec=$(cc_latest_execution "$WORKSPACE" "$val" 2>/dev/null) || ev_exec=""
+			if [ -z "$ev_exec" ]; then bad "execution_verified ($val: no execution record)"; FAIL_A=$((FAIL_A+1))
+			else
+				ev_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$ev_exec")
+				ev_st=$(cc_execution_status "$ev_dir" 2>/dev/null) || ev_st=""
+				ev_bad=""
+				[ "$ev_st" = "verified" ] || ev_bad="status='${ev_st:-<none>}' not verified"
+				for ev_rf in "$ev_dir"/repositories/*.yaml; do
+					[ -f "$ev_rf" ] || continue
+					ev_base=$(cc_scalar "$ev_rf" base_commit); ev_latest=$(cc_scalar "$ev_rf" latest_commit)
+					[ -n "$ev_latest" ] && [ "$ev_latest" != "$ev_base" ] || ev_bad="$ev_bad; no worker commit in $(basename "$ev_rf" .yaml)"
+				done
+				ev_pass=$(find "$ev_dir/attempts" -name verifier.yaml -exec grep -l '^outcome:[[:space:]]*passed' {} + 2>/dev/null | grep -c .)
+				[ "${ev_pass:-0}" -ge 1 ] || ev_bad="$ev_bad; no verifier passed record"
+				if [ -z "$ev_bad" ]; then ok "execution_verified ($val: $ev_exec verified, worker committed, verifier passed)"
+				else bad "execution_verified ($val:$ev_bad)"; FAIL_A=$((FAIL_A+1)); fi
+			fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
@@ -185,10 +207,13 @@ action_occurred() {
 		connect-repo) [ -f "$WORKSPACE/repositories.local.yaml" ] && \
 			grep -q '^    path:' "$WORKSPACE/repositories.local.yaml" 2>/dev/null ;;  # a binding exists
 		review) return 0 ;;                                   # a review conversation always occurs
-		approve)                                              # a plan reached status approved
+		approve)                                              # a plan reached status approved or done
 			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/.archived/*' 2>/dev/null); do
-				grep -q '^status:[[:space:]]*approved' "$f" 2>/dev/null && return 0
+				grep -qE '^status:[[:space:]]*(approved|done)' "$f" 2>/dev/null && return 0
 			done; return 1 ;;
+		execute|execute-plan)                                 # an execution record exists
+			[ -d "$WORKSPACE/.runtime/executions" ] && \
+			find "$WORKSPACE/.runtime/executions" -mindepth 2 -maxdepth 2 -type d -name 'exec-*' 2>/dev/null | grep -q . ;;
 		*) return 0 ;;                                        # unknown: assume it occurred
 	esac
 }
