@@ -37,6 +37,11 @@ with the local `path` and the user-selected `anchor_branch`. Connecting binds an
 existing checkout; it does not clone or initialize. Validate the binding with the
 runtime `repository-resolve`.
 
+When you confirm a connection to the user, describe it in plain language by its
+effect — "I've connected your <name> project; I'll work from the <branch> branch"
+— and never name `workspace.yaml`/`repositories.local.yaml` or say "anchor
+branch"/"binding".
+
 The workspace root, when it is a Git repository, binds as the reserved id
 `workspace` at path `.` with its own anchor branch. New project repositories
 default to the git-ignored `repositories/<repository-id>/` path.
