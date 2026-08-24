@@ -315,12 +315,23 @@ cc_repository_register() {
 	if cc_plan_repositories "$cc_reg_ws" | grep -Fxq "$cc_reg_id"; then
 		: # identity already present; leave it
 	else
-		{
-			awk '/^repositories:[[:space:]]*(\[\])?[[:space:]]*$/{print "repositories:"; next}{print}' "$cc_reg_ws"
-			printf '  - id: %s\n' "$cc_reg_id"
-			[ -n "$cc_reg_url" ] && printf '    canonical_url: %s\n' "$cc_reg_url" || :
-			[ -n "$cc_reg_default" ] && printf '    default_branch: %s\n' "$cc_reg_default" || :
-		} | cc_atomic_write "$cc_reg_ws"
+		# Insert the new identity entry immediately AFTER the `repositories:` line,
+		# not at end-of-file: workspace.yaml keeps other top-level blocks (e.g.
+		# `identity:`) after `repositories:`, and an EOF append would place the
+		# entry in the wrong section where cc_plan_repositories cannot see it.
+		awk -v id="$cc_reg_id" -v url="$cc_reg_url" -v defb="$cc_reg_default" '
+			/^repositories:[[:space:]]*(\[\])?[[:space:]]*$/ && !ins {
+				print "repositories:"
+				print "  - id: " id
+				if (url  != "") print "    canonical_url: "  url
+				if (defb != "") print "    default_branch: " defb
+				ins=1; next
+			}
+			{ print }
+			END { if (!ins) { print "repositories:"; print "  - id: " id;
+				if (url != "") print "    canonical_url: " url;
+				if (defb != "") print "    default_branch: " defb } }
+		' "$cc_reg_ws" | cc_atomic_write "$cc_reg_ws"
 	fi
 	# host-local binding in repositories.local.yaml
 	cc_reg_local="$cc_reg_root/repositories.local.yaml"
