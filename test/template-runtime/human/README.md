@@ -51,8 +51,11 @@ The driver is therefore **safe by default**:
   read-only except the workspace, the run dir, `/tmp`, and `~/.claude`), and
 - if bubblewrap cannot confine writes on this host (e.g. unprivileged user
   namespaces are disabled — `bwrap: setting up uid map: Permission denied`), the
-  driver **refuses to run** unless you set `CC_ALLOW_UNSANDBOXED=1` to accept the
-  risk. Prefer running the whole harness inside a throwaway **container/VM**.
+  driver **refuses to run** unless you opt in to the risk, one of:
+  - `CC_ALLOW_UNSANDBOXED=1` in the environment (per-run), or
+  - a local, **gitignored** marker so unsandboxed becomes the default on THIS
+    machine without shipping the risk: `touch drivers/.allow-unsandboxed`.
+  Prefer running the whole harness inside a throwaway **container/VM** instead.
 - a post-run **isolation guard** flags any repository binding whose path escapes
   the workspace and records `isolation_violation:` in `run.yaml`.
 
