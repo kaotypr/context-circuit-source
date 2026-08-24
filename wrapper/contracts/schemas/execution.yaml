@@ -42,6 +42,7 @@ repository_record_fields:
   anchor_branch: recorded user-local anchor branch (default pull-request target)
   base_commit: captured anchor-branch tip at execution start
   latest_commit: latest worker commit inspected by the verifier
+  allowed_paths: union of the bounded paths of every task mapped to this repository
 
 rules:
   - INV-EXEC-01

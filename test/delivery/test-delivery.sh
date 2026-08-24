@@ -18,14 +18,22 @@ edir=$(cc_fx_exec_dir "$ws" 0001-deliver "$exec")
 contains "$edir/repositories/api.yaml" "branch: cc/0001-deliver/api"
 contains "$edir/repositories/api.yaml" "anchor_branch: development"
 
-# --- the runtime performs no delivery itself ---
+# --- the runtime performs no delivery action itself (report-only) ---
 not_contains "$ROOT/wrapper/runtime/engine.sh" "git push"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "git merge"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "pull request"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "gh pr"
+not_contains "$ROOT/wrapper/runtime/engine.sh" "git -C \"\$cc_dt_abs\" push"
 
 # --- delivery is not a runtime command ---
 expect_failure sh "$ROOT/wrapper/runtime/engine.sh" open-pull-request "$ws" 0001-deliver
+
+# --- the read-only delivery-targets helper reports source and target per repo ---
+dt=$(cc_delivery_targets "$ws" 0001-deliver)
+printf '%s\n' "$dt" | grep -Fq "source_branch: cc/0001-deliver/api" || fail "missing api source branch"
+printf '%s\n' "$dt" | grep -Fq "target_branch: development" || fail "missing target branch"
+printf '%s\n' "$dt" | grep -Fq "source_present: true" || fail "execution branch should exist"
+# it never performs delivery and needs an execution to report
+expect_failure cc_delivery_targets "$ws" 9999-none
 
 # --- the delivery skill fixes source, target, and the blocked boundary ---
 skill="$ROOT/.agents/skills/cc-deliver/SKILL.md"

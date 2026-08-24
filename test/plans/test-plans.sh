@@ -53,6 +53,39 @@ assert_eq "approved" "$(cc_plan_status "$ws" "$id1")"
 contains "$ws/plans/INDEX.md" "approved"
 expect_failure cc_plan_approve "$ws" "$id1"          # cannot approve non-draft
 
+# --- a plan authored with block-list task fields also validates ---
+mkdir -p "$ws/plans/0011-block/tasks"
+cat >"$ws/plans/0011-block/plan.yaml" <<'EOF'
+schema_version: 1
+plan: 0011-block
+title: Block form
+status: draft
+objective: block
+repositories:
+  - id: api
+  - id: web
+tasks:
+  - id: T-001
+    title: t1
+    repositories:
+      - api
+    paths:
+      - src
+    depends_on: []
+  - id: T-002
+    title: t2
+    repositories:
+      - web
+    paths:
+      - app
+    depends_on:
+      - T-001
+EOF
+printf '# Block\n' >"$ws/plans/0011-block/PLAN.md"
+cc_plan_validate "$ws/plans/0011-block" >/dev/null
+assert_eq "api
+web" "$(cc_plan_affected_repositories "$ws/plans/0011-block/plan.yaml")"
+
 # --- compound approve-and-execute (sequential explicit actions) ---
 cc_fx_plan "$ws" 0010-compound "Compound" "api"
 cc_plan_approve "$ws" 0010-compound >/dev/null
