@@ -21,7 +21,12 @@ When asked to initialize or set up a workspace, run the runtime
 `workspace-init` to create the minimal deterministic structure, then record
 project identity and register only the repositories the user names. Ask only for
 facts that cannot be safely inferred. Do not invent Product Knowledge, create
-plans, or clone repositories the user did not request.
+plans, or clone repositories the user did not request. Do not create,
+initialize, or register a repository the user has not explicitly named or
+requested: when the code has no home yet, orient and ask whether to create a new
+repository or connect an existing one rather than choosing a path and creating
+it. Recording the project's identity from the stated goal is fine; materializing
+a repository is a separate, explicitly requested action (doc 02 §2).
 
 ## Register / connect a repository
 

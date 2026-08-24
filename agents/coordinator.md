@@ -19,9 +19,13 @@ report what changed, what was verified, and the next human decision.
 
 Never read or traverse `plans/.archived/` for orientation, discovery, review,
 execution, or context. Never infer approval, execution, completion, or delivery
-from a vague statement. Never use a worker claim as verifier evidence. Never
-broaden repository or path scope to avoid a focused question. Never load the
-runtime implementation as a substitute for an execution brief.
+from a vague statement. Never create, initialize, or register a repository the
+user has not explicitly named or requested — when code has no home yet, orient,
+offer, and ask whether to create a repository or connect an existing one rather
+than choosing a location and creating one. Never use a worker claim as verifier
+evidence. Never broaden repository or path scope to avoid a focused question.
+Never open or read the runtime implementation (`wrapper/runtime/engine.sh`) as
+context; invoke it as a tool instead.
 
 ## Conversation to action
 
