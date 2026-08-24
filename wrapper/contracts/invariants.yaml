@@ -167,6 +167,14 @@ invariants:
       Host identity, version, capability, permission mode, and provider status
       are bounded provider-neutral evidence only. They never authorize a route,
       role, lease, gate, verification, or completion.
+  - id: INV-SKILL-01
+    rule: >
+      Product skills ship only at `.agents/skills/<name>/SKILL.md` and are
+      read-as-procedure packets the coordinator resolves by path. A host may
+      additionally surface a skill as a directly invocable slash command, but
+      that host bridge is an optional convenience owned by the host adapter and
+      is never a separate route, role, or authority. The shipped workspace never
+      contains a host-specific skill directory or symlink.
 
 owners:
   authority_order: WORKFLOW.md
@@ -185,6 +193,7 @@ owners:
   completion_record: wrapper/contracts/schemas/completion.yaml
   context_impact: wrapper/contracts/schemas/context-impact.yaml
   release_boundary: wrapper/manifest.yaml
+  skill_packets: .agents/skills/
   coordinator_role: agents/coordinator.md
   worker_role: agents/writer.md
   verifier_role: agents/verifier.md
