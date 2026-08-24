@@ -1,0 +1,78 @@
+id: 07-archive-and-restore
+title: Archive a plan by name, then restore it — no status validation, nothing lost
+mode: conversation-only
+setup:
+  # An APPROVED plan is seeded so the run shows archiving works WITHOUT validating
+  # status (INV-ARCHIVE-01), and that the status survives the round-trip. No
+  # execution is needed.
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add an export.py command that exports the notes to a chosen output file.
+      seed_state: approved
+  sources: []
+
+human:
+  persona: >
+    A solo maker who wants to set an approved plan aside for now and pull it back
+    later. Has never heard of Context Circuit and does not know its internals.
+  turns:
+    - say: "Let's put that export plan aside for now — I'm not ready to work on it."
+    - say: "Actually, bring it back — I want it active again."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It sets the plan aside when asked, confirming in plain terms, without warning
+      about or changing its status.
+    - It brings the plan back when asked, by name, with nothing lost.
+    - It does not claim to have completed, deleted, delivered, or run anything.
+    - It never exposes internal jargon or file names to a lay user.
+
+grader:
+  acceptance_criteria: [AC-24]
+  invariants: [INV-ARCHIVE-01, INV-ARCHIVE-02]
+  # A. state post-conditions (hard gate) — final state is AFTER the restore round-trip
+  post_conditions:
+    - repositories_registered: 1
+    - plan_status: 0001-md-export:approved     # status preserved through archive+restore (no validation/mutation)
+    - plan_not_archived: 0001-md-export          # moved back out of plans/.archived/
+    - plan_indexed: 0001-md-export               # active index row restored
+    - no_execution_records: true                 # archiving/restoring runs nothing
+    - product_knowledge_unchanged_silently: true
+  # B. transcript checks (hard gate)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["aside", "set aside", "archive", "bring it back", "back", "restore"]
+      reason: It should archive on request and restore by name.
+  # C. access-discipline audit (session-level; forbidden = hard gate; claude -p driver has a trace)
+  access_policy:
+    archive:
+      required: []
+      allowed:  ["plans/**"]
+      forbidden:
+        - "plans/.archived/**"          # never READ the archived area (restore MOVES it via the runtime)
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+    restore:
+      required: []
+      allowed:  ["plans/**"]
+      forbidden:
+        - "plans/.archived/**"          # restore moves it via the runtime; it does not read it
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+  # D. efficiency ledger (soft, warning-only)
+  budgets:
+    archive: { max_turns: 1, max_tokens: 6000 }
+    restore: { max_turns: 1, max_tokens: 6000 }

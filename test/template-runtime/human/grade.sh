@@ -174,6 +174,14 @@ while IFS= read -r line; do
 			cr_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$cr_exec" 2>/dev/null)
 			if [ -n "$cr_exec" ] && [ -f "$cr_dir/completion.yaml" ]; then ok "completion_recorded ($val: $cr_exec/completion.yaml)"
 			else bad "completion_recorded ($val: no completion record)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		plan_not_archived)
+			# val "<plan-id>" — after a restore round-trip the plan is NOT left in .archived
+			if [ ! -d "$WORKSPACE/plans/.archived/$val" ]; then ok "plan_not_archived ($val: not in .archived)"
+			else bad "plan_not_archived ($val: still under plans/.archived/)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		plan_indexed)
+			# val "<plan-id>" — an active-index row is present (restored to the active area)
+			if cc_plan_index_row_present "$WORKSPACE" "$val" 2>/dev/null; then ok "plan_indexed ($val: active index row present)"
+			else bad "plan_indexed ($val: no active index row)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		repair_occurred)
 			# val "<plan-id>" — the execution went through at least one repair (INV-REPAIR-01);
 			# the failed attempt and repair commit are preserved (INV-PRESERVE-01).
