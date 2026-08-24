@@ -12,6 +12,7 @@ Route-selected knowledge:
 - architecture: `context/ARCHITECTURE.md`
 - conventions: `context/CONVENTIONS.md`
 - accepted decisions: `context/DECISIONS.md`
+- terminology: `context/TERMINOLOGY.md`
 - provenance rules: `context/SOURCES.md` and `context/sources.yaml`
 - bounded domains: `context/domains/`
 - cross-domain roles: `context/roles/`

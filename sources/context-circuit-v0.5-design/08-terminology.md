@@ -119,3 +119,29 @@ referring to that path, write the path explicitly. For example:
 - the host adapter owns provider-native child creation.
 - the worker owns implementation commits.
 - the verifier owns independent verification results.
+
+## 7. User-facing translation of internal terms
+
+The terms above are the design and runtime vocabulary. They are not the words a
+coordinator uses with an ordinary user. The coordinator reports actions and
+state by their effect, in plain project language, and never exposes internal
+mechanism unless the user explicitly asks for diagnostics (doc 02 §1). This
+table is the single canonical mapping; the shipped projection is
+`docs/terminology.md`, and the coordinator role references that projection
+instead of restating the list.
+
+| Internal term or artifact | Never say to a lay user | Say instead, by effect |
+| --- | --- | --- |
+| Worktree | "worktree" | describe the effect ("a separate working copy of your project"), or say nothing about the mechanism |
+| Anchor branch | "anchor branch" | the branch's plain name — "I'll work from `develop`" |
+| Local binding / binding | "binding" | "I've connected your `<name>` project" |
+| Execution branch (`cc/<plan>/<repo>`) | the `cc/...` branch name | "the changes for `<plan title>`" |
+| Default branch (as jargon) | "default branch" | the branch name in plain terms |
+| Verifier | "the verifier" | "an independent check" — "I had it checked independently" |
+| Worker | "the worker" | "I made the changes" |
+| Host-blocked | "host-blocked" | "I can't run an independent check in this environment right now" |
+| Workspace and runtime files (`workspace.yaml`, `repositories.local.yaml`, `plan.yaml`, `plans/INDEX.md`, `engine.sh`) | any internal file name | the thing by its effect — "your plan", "your connected projects" |
+| Delivery / delivery boundary | "delivery boundary" | "opening a pull request", named as a separate step |
+| Archive / restore (as file moves) | the file-move mechanics | "set aside" / "bring back" the plan |
+
+Reveal these mechanics only when the user explicitly asks for diagnostics.

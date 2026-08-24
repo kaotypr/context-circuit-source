@@ -4,7 +4,7 @@
 
 - Kind: mechanical, deterministic — **not** an LLM agent.
 - Level: maintainer test actor (source-only; never shipped).
-- Lives at: `test/template-runtime/human/grade.sh`.
+- Lives at: `template-harness/human/grade.sh`.
 
 The grader is mechanical on purpose. What files were read, what state changed,
 and how much was consumed are ground-truth traces from the runner. Judging them

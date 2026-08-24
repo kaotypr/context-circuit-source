@@ -1,9 +1,14 @@
 # Product Knowledge
 
 `context/` holds accepted, durable, agent-oriented knowledge about the project:
-purpose, architecture, conventions, decisions, domain rules, roles, and
-provenance. It is human-readable, but it exists first so an agent can locate and
-apply the right knowledge when creating a plan.
+purpose, architecture, conventions, decisions, domain rules, roles, terminology,
+and provenance. It is human-readable, but it exists first so an agent can locate
+and apply the right knowledge when creating a plan.
+
+`context/TERMINOLOGY.md` is this project's own domain glossary — the words the
+team and codebase use, with an agreed meaning for each. It is distinct from the
+Context Circuit product glossary in `docs/terminology.md`; use the template at
+`docs/templates/terminology-context.md` when proposing glossary units.
 
 `context/INDEX.md` is the retrieval catalog: it maps concepts, aliases,
 repositories, domains, decisions, and constraints to knowledge units so an agent

@@ -2,7 +2,7 @@
 
 Status: maintainer design for a human-simulated product test harness
 Related design: `sources/context-circuit-v0.5-design/`
-Related runtime laboratory: `test/template-runtime/` (deterministic engine-level)
+Related runtime laboratory: `template-harness/` (deterministic engine-level)
 
 This design defines how to test the **built** `context-circuit-template` as a
 real project workspace, driven by natural human conversation rather than by
@@ -21,7 +21,7 @@ correct.
 
 ## Why this is separate from the existing laboratory
 
-`test/template-runtime/` already assembles the template and exercises the
+`template-harness/` already assembles the template and exercises the
 **runtime boundary** deterministically (it calls `cc_*` functions). It proves the
 mechanism works. It does not prove that a real conversation with a person who
 knows nothing about the internals produces the intended product experience.

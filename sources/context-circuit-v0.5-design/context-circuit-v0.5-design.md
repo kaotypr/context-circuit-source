@@ -297,7 +297,7 @@ product template: its own Product Knowledge, plans, repository mappings, and
 to itself. Source-side knowledge and runtime evidence remain private to the
 source project and are not template content.
 
-The source repository also owns `test/template-runtime/`, a behavior laboratory
+The source repository also owns `template-harness/`, a behavior laboratory
 that assembles the built `context-circuit-template` and runs realistic project
 prompts and small implementation fixtures against isolated initialized
 workspaces. It verifies the product experience at the template boundary,
