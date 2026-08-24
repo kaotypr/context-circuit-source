@@ -6,7 +6,7 @@ plays. They live under `test/` and are maintainer-only.
 ## 1. Layout
 
 ```
-test/template-runtime/
+template-harness/
 ├── human/                         # the harness + grader (source-only)
 │   ├── run-scenario.sh            # assemble template, isolate, drive one case
 │   └── grade.sh                   # deterministic post-condition checks

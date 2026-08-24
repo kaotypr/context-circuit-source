@@ -21,6 +21,7 @@ scope, and connect to evidence.
 | Decisions | accepted tradeoffs and constraints | DECISIONS.md and linked pages |
 | Domain knowledge | billing, checkout, permissions, workflows | context/domains |
 | Role perspectives | support, operations, finance, platform | context/roles |
+| Terminology | project-specific vocabulary, entity and state names | context/TERMINOLOGY.md and glossary pages |
 | Provenance | source references, revisions, freshness | SOURCES.md and sources.yaml |
 | Raw evidence | source documents, repository files, traces | sources/ and repositories |
 

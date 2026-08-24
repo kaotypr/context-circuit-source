@@ -74,7 +74,7 @@ context-circuit-source/
 ├── template/                        # blank/product workspace seed
 ├── wrapper/                         # physical implementation path during migration
 ├── test/                            # source-only acceptance and test suites
-│   └── template-runtime/            # built-template behavior laboratory
+├── template-harness/                # built-template behavior laboratory
 ├── sources/context-circuit-v0.5-design/
 │                                     # canonical maintainer design
 └── maintainer files and release assembly
@@ -93,7 +93,7 @@ across normal work, and excluded from template assembly.
 
 ### 2.2 Testing the built Cc template with realistic work
 
-`test/template-runtime/` is a source-only behavior laboratory for the built
+`template-harness/` is a source-only behavior laboratory for the built
 Cc template. It answers a different question from unit tests of source
 functions: does the assembled product provide the intended experience when an
 agent receives realistic project requests?
@@ -114,7 +114,7 @@ conversation and runtime boundaries. It must not accidentally import the
 source repository's Product Knowledge, plans, `.runtime/`, or implementation
 state as if they were installed product files.
 
-The template-runtime laboratory is source-owned and is not part of
+The template-harness laboratory is source-owned and is not part of
 `context-circuit-template`. Generated workspaces, fixture worktrees, commits,
 and runtime records are disposable test state and must live outside the
 source-side `.runtime/`. The scenarios should include, at minimum, context
@@ -226,7 +226,7 @@ It excludes:
 - maintainer plans and implementation logs;
 - source-only tests and evidence;
 - source repository runtime state;
-- `test/template-runtime/` scenarios, fixtures, generated workspaces, and
+- `template-harness/` scenarios, fixtures, generated workspaces, and
   evidence;
 - credentials and local bindings;
 - connected repositories;

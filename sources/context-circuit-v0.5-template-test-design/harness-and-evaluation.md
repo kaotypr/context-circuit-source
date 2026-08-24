@@ -118,7 +118,7 @@ phrasing:
 ## 5. Where results go
 
 - Transcript, conversational verdict, and grader report are written under a
-  disposable per-run directory (for example `test/template-runtime/human/.out/`,
+  disposable per-run directory (for example `template-harness/human/.out/`,
   git-ignored), never under the source `.runtime/`.
 - A run summary lists each case, its mapped acceptance criteria, and pass/fail.
 
@@ -137,7 +137,7 @@ phrasing:
 
 ## 7. Relationship to the deterministic laboratory and CI
 
-- `test/template-runtime/test-template-runtime.sh` stays in `test/acceptance.sh`:
+- `template-harness/test-template-runtime.sh` stays in `test/acceptance.sh`:
   it is fast, deterministic, and needs no live model.
 - The human-simulator suite is **agent-driven** (it needs a live model and
   sub-agent spawning), so it is a separate, opt-in maintainer suite — invoked
@@ -151,8 +151,8 @@ phrasing:
 1. Add the human-simulator role for the driver host (start with
    `.claude/agents/cc-human-simulator.md`) and the coordinator-under-test spawn
    contract.
-2. Scaffold `test/template-runtime/scenarios/` with case 01 and its `case.yaml`.
-3. Implement `test/template-runtime/human/run-scenario.sh --host <h>` (assemble,
+2. Scaffold `template-harness/scenarios/` with case 01 and its `case.yaml`.
+3. Implement `template-harness/human/run-scenario.sh --host <h>` (assemble,
    isolate, drive) and `grade.sh` (dimensions A–D).
 4. Add cases 02–09 (09 is the host-blocked case).
 5. Add the per-host bindings for `codex` and `cursor-agent`

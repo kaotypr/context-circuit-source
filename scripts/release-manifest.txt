@@ -19,6 +19,7 @@ required context/PROJECT.md
 required context/ARCHITECTURE.md
 required context/CONVENTIONS.md
 required context/DECISIONS.md
+required context/TERMINOLOGY.md
 required context/SOURCES.md
 required context/sources.yaml
 required context/domains/README.md
@@ -50,9 +51,11 @@ required docs/getting-started.md
 required docs/planning.md
 required docs/plan-review.md
 required docs/product-knowledge.md
+required docs/terminology.md
 required docs/templates/plan.md
 required docs/templates/plan.yaml
 required docs/templates/task.md
+required docs/templates/terminology-context.md
 
 # Skills and role deltas.
 required .agents/skills/cc-workspace/SKILL.md

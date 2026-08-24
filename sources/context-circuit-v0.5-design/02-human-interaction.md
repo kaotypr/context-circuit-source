@@ -17,6 +17,11 @@ The conversational adapter must:
 - never infer a consequential action from “okay,” “looks good,” or an old reply;
 - never require a hidden confirmation token.
 
+Project language means the effect, not the mechanism. The canonical mapping from
+each internal term to its user-facing phrasing is doc 08 §7; the shipped
+projection an instantiated workspace reads is `docs/terminology.md`. Internal
+mechanism is revealed only when the user explicitly asks for diagnostics.
+
 If two plans match, ask which plan. Do not inspect unrelated bundles to guess.
 
 ## 2. Normal request vocabulary

@@ -20,7 +20,7 @@ default is the driver host, so "run it here" tests the host you are on.
 
 The bulk of the harness does not change per host:
 
-- the **scenario library** (`test/template-runtime/scenarios/`) — natural prompts
+- the **scenario library** (`template-harness/scenarios/`) — natural prompts
   and human-visible expectations;
 - the **human-simulator** persona behavior — it is an ignorant user regardless of
   host;
@@ -96,7 +96,7 @@ These are exercised by a dedicated scenario:
 
 ## 7. Runner and summary
 
-- `test/template-runtime/human/run-scenario.sh --host <h>` runs one case on one
+- `template-harness/human/run-scenario.sh --host <h>` runs one case on one
   host; an opt-in matrix runner iterates {scenario × host}.
 - The run summary is keyed by (scenario, host) and records the per-host verdict,
   the trace-availability flag, and the mapped acceptance criteria and invariants.
