@@ -1,5 +1,5 @@
 version: 1
-template_version: 1.0.0
+template_version: 0.5.0
 
 workspace:
   name: context-circuit-source
@@ -14,12 +14,6 @@ repositories:
 context:
   sources_file: context/sources.yaml
 
-workflow:
-  human_gates:
-    - source-release
-    - wrapper-change
-    - publication
-  wrapper_change_policy: pull-request
 identity:
   kind: product-source
   product: Context Circuit

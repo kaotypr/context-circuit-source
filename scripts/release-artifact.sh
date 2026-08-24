@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-DESTINATION_REPO='kaotypr/context-circuit-release'
+DESTINATION_REPO='kaotypr/context-circuit-template'
 DESTINATION_REF='main'
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 usage() { printf 'usage: sh scripts/release-artifact.sh <staging-dir> <output-dir> <version>\n' >&2; exit 2; }
@@ -23,18 +23,24 @@ stage_tree="$staging_dir/tree"
 [ ! -e "$stage_tree" ] || fail "staging tree already exists: $stage_tree"
 mkdir -p "$stage_tree"
 
-(CDPATH= cd "$source_root" && tar -cf - \
-  .gitignore .agents agents docs wrapper) | tar -xf - -C "$stage_tree"
+# Stage template-owned source trees only.
+(CDPATH= cd "$source_root" && tar -cf - .agents agents docs wrapper) | tar -xf - -C "$stage_tree"
 
+# Root adapters become the workspace entry files.
 cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
 cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
 cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
+
+# Blank workspace seed from the template.
+cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
 cp "$source_root/template/workspace.yaml" "$stage_tree/workspace.yaml"
-mkdir -p "$stage_tree/context" "$stage_tree/sources" "$stage_tree/plans"
+mkdir -p "$stage_tree/context" "$stage_tree/sources" "$stage_tree/plans/.archived"
 cp -R "$source_root/template/context/." "$stage_tree/context/"
 cp "$source_root/template/sources/README.md" "$stage_tree/sources/README.md"
 cp "$source_root/template/plans/README.md" "$stage_tree/plans/README.md"
+cp "$source_root/template/plans/INDEX.md" "$stage_tree/plans/INDEX.md"
+[ -f "$source_root/template/plans/.archived/README.md" ] && cp "$source_root/template/plans/.archived/README.md" "$stage_tree/plans/.archived/README.md" || :
 
 required_files=''
 exclude_paths=''
@@ -52,36 +58,38 @@ while IFS= read -r line || [ -n "$line" ]; do
 done < "$manifest"
 
 for relpath in $exclude_paths; do
-  case "$relpath" in
-    *) target="$stage_tree/$relpath"; if [ -e "$target" ] || [ -L "$target" ]; then rm -rf "$target"; fi ;;
-  esac
+  target="$stage_tree/$relpath"
+  if [ -e "$target" ] || [ -L "$target" ]; then rm -rf "$target"; fi
 done
 for relpath in $required_files; do
   [ -e "$stage_tree/$relpath" ] || fail "missing required file: $relpath"
 done
-for fixture in \
-  wrapper/contracts/schemas/context-receipt.yaml \
-  wrapper/contracts/schemas/delegation.yaml \
-  wrapper/contracts/schemas/child-start.yaml \
-  wrapper/contracts/schemas/plan.yaml \
-  wrapper/contracts/schemas/task.yaml \
-  docs/gates.md docs/templates/plan.md docs/templates/plan.yaml \
-  docs/templates/task.md docs/templates/prd.md; do
-  [ -f "$stage_tree/$fixture" ] || fail "missing canonical packet fixture: $fixture"
+
+# Canonical schema fixtures must be present.
+for schema in workspace repositories-local plan task execution worker-handoff \
+  verifier-result completion context-impact context-proposal context-index; do
+  [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
+
+# No repository state, credentials, or maintainer plans in the artifact.
 for forbidden_path in repositories.local.yaml repositories; do
   [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
 done
 [ ! -e "$stage_tree/plans/context-circuit-plans" ] || fail 'maintainer plan stack leaked into artifact'
+[ ! -e "$stage_tree/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
 find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
+
+# Only v0.5 skills may ship.
 for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-entry|cc-next|cc-plan|cc-execute|cc-verify|cc-gates|cc-upgrade) ;;
-    *) fail "unexpected legacy skill remains: $skill_name" ;;
+    cc-workspace|cc-plan|cc-execute|cc-verify|cc-complete|cc-archive|cc-deliver) ;;
+    *) fail "unexpected skill remains: $skill_name" ;;
   esac
 done
+
+# No package-manager or node artifacts.
 for name in package.json package-lock.json npm-shrinkwrap.json yarn.lock pnpm-lock.yaml bun.lock bun.lockb tsconfig.json; do
   find "$stage_tree" -name "$name" -print -quit | grep . && fail "forbidden package-manager file: $name" || :
 done
@@ -95,7 +103,7 @@ archive_path="$output_dir/$artifact_name.tar.gz"
 (CDPATH= cd "$artifact_dir" && tar -cf - .) | gzip -n > "$archive_path"
 
 printf 'version: %s\n' "$version"
-printf 'wrapper_version: 1.0.0\n'
+printf 'runtime_version: 0.5.0\n'
 printf 'source_revision: %s\n' "$source_sha"
 printf 'source_state: %s\n' "$source_state"
 printf 'destination: %s %s\n' "$DESTINATION_REPO" "$DESTINATION_REF"

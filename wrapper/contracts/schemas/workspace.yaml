@@ -1,73 +1,47 @@
 schema_version: 1
-owner: workspace.yaml
-required: [version, template_version, workspace, repositories, context, workflow]
-properties:
-  workspace.name: {type: string, required: true, proposed_default: null}
-  workspace.mode: {enum: [solo, team], proposed_default: solo}
-  workspace.default_branch: {type: string, proposed_default: main}
-  workspace.roles: {type: sequence, optional: true, proposed_default: none, accepts: [sequence, none-scalar, comma-separated-scalar], canonical_projection: none-or-comma-separated}
-  repositories: {type: mapping, owner: shared-repository-identity, proposed_default: none}
-  repositories.<key>.canonical_url: {type: string, optional: true, credential_free: true}
-  repositories.<key>.default_branch: {type: string, optional: true}
-  repositories.local_file: {value: repositories.local.yaml, ignored: true, host_local: true}
-  repositories.local.<key>.path: {type: string, host_local: true}
-  repositories.local.<key>.remote: {type: string, host_local: true, credential_free: true}
-  workflow.human_gates: {type: sequence}
-  identity.kind: {enum: [product-source, instantiated-workspace]}
-  identity.status: {enum: [uninitialized, accepted]}
-identity_region:
-  owner: wrapper/contracts/schemas/workspace.yaml
-  runtime: wrapper/runtime/engine.sh
-  delimiter:
-    start: '<!-- context-circuit:identity-region:start -->'
-    end: '<!-- context-circuit:identity-region:end -->'
-    count: 1
-  files: [context/WORKSPACE.md, context/PROJECT.md, context/INDEX.md]
-  fields: [name, mode, identity.kind, identity.status, roles, repositories.<key>, repositories.<key>.canonical_url, repositories.<key>.default_branch]
-  product_knowledge: outside-region-only
-  missing_or_disagreeing_result: projection-mismatch
-  projection_mismatch_authorizes: never
-  applies:
-    instantiated-workspace: always
-    product-source: exempt
-  missing_files: projection-mismatch
-displayed_defaults:
-  owner: wrapper/contracts/schemas/workspace.yaml
-  identity_acceptance:
-    fields: [mode, repositories, roles, default_branches]
-    proposed_defaults:
-      mode: solo
-      repositories: none
-      roles: none
-      default_branches: main
-    omitted: show-as-proposed-default-then-record-on-confirmation
-    no_default: incomplete
-    post_confirmation_invention: forbidden
-  repository_registration:
-    fields: [logical_key, canonical_url, default_branch]
-    proposed_defaults:
-      canonical_url: none
-      default_branch: main
-    required_no_default: [logical_key]
-    omitted: show-as-proposed-default-then-record-on-confirmation
-    no_default: incomplete
-    post_confirmation_invention: forbidden
-ownership:
-  shared_identity: workspace.yaml
-  host_binding: repositories.local.yaml
-  runtime_resolution: wrapper/runtime/engine.sh
-  release_boundary: wrapper/manifest.yaml
-  identity_projection: wrapper/contracts/schemas/workspace.yaml
-  displayed_defaults: wrapper/contracts/schemas/workspace.yaml
-binding_rules:
-  - path is explicit and may be absolute, workspace-relative, or repositories/<key>
-  - relative paths resolve from the workspace root and reject traversal
-  - missing, existing, dirty, unsafe-symlink, or identity-mismatched targets fail safely
-  - the convenience repositories/ directory is optional and is never scanned implicitly
+owner: wrapper/contracts/schemas/workspace.yaml
+describes: workspace.yaml
+concern: repository_identity
+
+purpose: >
+  Canonical portable workspace identity: project name, purpose, and logical
+  repository identities. It records logical identity only; machine-specific
+  paths and anchor branches live in the ignored repositories.local.yaml.
+
+fields:
+  schema_version: { type: integer, required: true }
+  workspace: { type: string, required: true, description: portable workspace key }
+  title: { type: string, required: false }
+  purpose: { type: string, required: false }
+  repositories:
+    type: list
+    required: true
+    item:
+      id: { type: string, required: true, description: logical repository key }
+      purpose: { type: string, required: false }
+      canonical_url:
+        type: string
+        required: false
+        description: optional credential-free clone URL
+      default_branch:
+        type: string
+        required: false
+        description: >
+          Portable clone/setup hint only. It is never the user's active branch
+          and never, by itself, the execution base or pull-request target.
+
+reserved_ids:
+  workspace: >
+    When the workspace root is itself a Git repository it is bound as the
+    reserved logical id "workspace" at local path ".", with its own independent
+    anchor_branch. The workspace repository is never placed under repositories/.
+
 forbidden:
-  - credentials
-  - provider_payloads
-  - implicit_external_authorization
-  - machine_specific_paths_in_workspace.yaml
-  - deriving_product_knowledge_from_workspace.yaml
-  - replacing_product_knowledge_from_workspace.yaml
+  - machine-specific local paths
+  - credentials, tokens, private keys, provider payloads
+  - deriving Product Knowledge from this file
+
+rules:
+  - INV-REPO-01
+  - INV-REPO-02
+  - INV-REPO-03

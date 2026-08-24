@@ -1,24 +1,35 @@
-schema_version: 2
-owner: plans/<repository>-plans/<plan>/tasks/<task>.md frontmatter projection
-required: [schema_version, id, plan, status, paths, depends_on, acceptance, verification, expected_evidence, stop_conditions]
-enums:
-  status: [draft, ready, done]
-projection:
-  draft: draft
-  approved: ready
-  done: done
-evidence_layers:
-  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
-  task_fields: [acceptance, verification]
-  plan_owned: [required_layer, produced_layer]
-  runtime_owned: [observed_layer, outcome, evidence_ref]
-  rule: tasks retain acceptance and verification ids only; they do not declare layers, outcomes, or evidence refs
-format:
-  frontmatter:
-    opening: The first line of every task Markdown file is exactly `---`.
-    closing: A second `---` closes the YAML frontmatter before the Markdown body.
-  plan_yaml: plan.yaml is pure YAML and is not wrapped in Markdown frontmatter.
+schema_version: 1
+owner: wrapper/contracts/schemas/task.yaml
+describes: plans/<plan-id>/tasks/NNN-<slug>.md
+concern: task_projection
+
+purpose: >
+  Readable per-task detail file. It explains rationale, intended behavior,
+  concrete change, affected surfaces, inputs, outputs, risks, and stop
+  conditions. It does not own lifecycle status and never duplicates canonical
+  identifiers defined in plan.yaml.
+
+frontmatter_fields:
+  id: { type: string, required: true, description: must match a plan.yaml task id }
+  title: { type: string, required: true }
+  repositories: { type: list, required: true }
+  paths: { type: list, required: true }
+  depends_on: { type: list, required: true }
+  acceptance: { type: list, required: true, description: acceptance ids only }
+  verification: { type: list, required: true, description: verification ids only }
+
+body_sections:
+  - intended behavior
+  - concrete change and affected surfaces
+  - inputs and outputs
+  - context references
+  - risks and open questions
+  - stop conditions
+
+notes: >
+  A task status is a synchronized projection of the plan status (draft/ready/
+  done); it is never an independent lifecycle authority.
+
 rules:
-  - task status is projected from plan status and is not an approval gate
-  - tasks retain acceptance and verification ids only; required_layer and produced_layer remain plan-owned
-  - tasks do not declare observed_layer, outcome, or evidence_ref
+  - INV-PLAN-01
+  - INV-PLAN-02

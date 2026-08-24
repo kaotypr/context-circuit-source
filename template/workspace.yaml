@@ -1,26 +1,14 @@
-version: 1
-template_version: 1.0.0
-workspace:
-  name: uninitialized-workspace
-  mode: solo
-  default_branch: main
-# Shared repository identity belongs here. Host-local paths belong only in the
-# ignored root repositories.local.yaml file.
-repositories: {}
-context:
-  sources_file: context/sources.yaml
-workflow:
-  human_gates:
-    - identity-acceptance
-    - context-acceptance
-    - plan-approval
-    - execution-trigger
-    - status-change
-    - takeover
-    - delivery
-    - archive
-    - cleanup
-  wrapper_change_policy: preserve-runtime
+schema_version: 1
+workspace: uninitialized-workspace
+title: Uninitialized workspace
+purpose: >
+  Describe the project purpose during initialization. This is a blank Context
+  Circuit universal project workspace; it has not been configured for a project
+  yet.
+
+# Portable logical repository identity only. Host-local paths and anchor
+# branches belong in the ignored repositories.local.yaml file.
+repositories: []
 
 identity:
   kind: instantiated-workspace

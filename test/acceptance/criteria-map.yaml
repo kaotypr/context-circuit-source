@@ -1,0 +1,94 @@
+schema_version: 1
+owner: sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md
+purpose: >
+  Maps each Context Circuit v0.5 acceptance criterion (design section 21) to the
+  runnable, credential-free semantic suite that demonstrates it.
+credential_free: true
+provider_neutral: true
+implicit_external_checks: false
+
+criteria:
+  - id: AC-01
+    statement: Register zero or more repositories without machine paths in portable identity.
+    suite: test/repositories/test-repositories.sh
+  - id: AC-02
+    statement: Locate Product Knowledge by concept/domain/repository/decision/constraint via the retrieval index.
+    suite: test/contracts/test-contracts.sh
+  - id: AC-03
+    statement: A plan maps every change to one or more repositories and stays readable.
+    suite: test/plans/test-plans.sh
+  - id: AC-04
+    statement: Plans preserve request detail as requirements, constraints, non-goals, assumptions, questions, risks.
+    suite: test/plans/test-plans.sh
+  - id: AC-05
+    statement: An unapproved plan cannot execute.
+    suite: test/runtime/test-runtime.sh
+  - id: AC-06
+    statement: Approve-and-execute performs both explicit actions without a confirmation card.
+    suite: test/plans/test-plans.sh
+  - id: AC-07
+    statement: Execution creates one isolated branch/worktree per affected repository.
+    suite: test/execution/test-execution.sh
+  - id: AC-08
+    statement: One worker implements all tasks in dependency order across repositories.
+    suite: test/execution/test-execution.sh
+  - id: AC-09
+    statement: The worker commits each affected repository before verification.
+    suite: test/execution/test-execution.sh
+  - id: AC-10
+    statement: An independent verifier checks latest commits without modifying product files or plan status.
+    suite: test/runtime/test-runtime.sh
+  - id: AC-11
+    statement: A verifier failure can initiate worker repair in the same execution.
+    suite: test/execution/test-execution.sh
+  - id: AC-12
+    statement: Every repair produces a new commit rather than amending prior work.
+    suite: test/execution/test-execution.sh
+  - id: AC-13
+    statement: The third worker failure stops execution and preserves all evidence.
+    suite: test/runtime/test-runtime.sh
+  - id: AC-14
+    statement: A verifier pass produces verified evidence but does not mark the plan complete.
+    suite: test/completion/test-completion.sh
+  - id: AC-15
+    statement: Explicit human completion marks done only after successful verification.
+    suite: test/completion/test-completion.sh
+  - id: AC-16
+    statement: Pull request, merge, push, publication, deployment, and cleanup require separate human actions.
+    suite: test/delivery/test-delivery.sh
+  - id: AC-17
+    statement: An agent can execute a plan without reading the full runtime implementation.
+    suite: test/runtime/test-runtime.sh
+  - id: AC-18
+    statement: The refactored runtime contains no provider-specific child-launch logic.
+    suite: test/runtime/test-runtime.sh
+  - id: AC-19
+    statement: Interrupted executions resume or stop read-only without losing commits, worktrees, or evidence.
+    suite: test/runtime/test-runtime.sh
+  - id: AC-20
+    statement: Missing verifier capability blocks execution rather than allowing self-verification.
+    suite: test/execution/test-execution.sh
+  - id: AC-21
+    statement: The suite covers multi-repo mapping, approval, isolation, commits, verifier independence, repair, failure limit, completion, recovery.
+    suite: test/execution/test-execution.sh
+  - id: AC-22
+    statement: Marking done records commits and verifier evidence and reconciles PK without silent acceptance.
+    suite: test/completion/test-completion.sh
+  - id: AC-23
+    statement: New plans receive consistent, stable, human-friendly canonical IDs.
+    suite: test/plans/test-plans.sh
+  - id: AC-24
+    statement: Archiving moves to plans/.archived, removes the index row, preserves files/status, performs no validation.
+    suite: test/archive/test-archive.sh
+  - id: AC-25
+    statement: An archived plan's execution continues from its immutable snapshot.
+    suite: test/archive/test-archive.sh
+  - id: AC-26
+    statement: default_branch stays portable guidance; execution validates anchor_branch and its captured tip.
+    suite: test/repositories/test-repositories.sh
+  - id: AC-27
+    statement: The workspace root may bind as `workspace`; new repos default to gitignored repositories/ with clone/init.
+    suite: test/repositories/test-repositories.sh
+  - id: AC-28
+    statement: A pull request uses execution branch as source and anchor_branch as default target; delivery blocks when unavailable.
+    suite: test/delivery/test-delivery.sh

@@ -1,0 +1,33 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/context-impact.yaml
+describes: .runtime/executions/<plan-id>/<execution-id>/context-impact.yaml
+concern: context_impact
+
+purpose: >
+  References produced by post-implementation knowledge reconciliation. The
+  runtime only preserves these references; the root/coordinator produces them and
+  never interprets or accepts Product Knowledge on the runtime's behalf.
+
+fields:
+  schema_version: { type: integer, required: true }
+  execution_id: { type: string, required: true }
+  plan: { type: string, required: true }
+  status:
+    type: enum
+    required: true
+    values: [no-update-needed, review-needed, deferred, conflict]
+  proposals:
+    type: list
+    required: false
+    description: ids of context update proposals stored under context/proposals/
+
+reconciliation_inputs:
+  - final plan and tasks plus revisions
+  - plan grounding references and summary
+  - changed paths and commits for every affected repository
+  - worker handoffs and verifier evidence
+  - current revisions of relevant context units
+
+rules:
+  - INV-KNOWLEDGE-02
+  - INV-COMPLETE-02

@@ -1,36 +1,52 @@
 ---
 name: cc-execute
-description: Execute an explicitly requested approved plan or connected plan stack through isolated writer and verifier roles.
+description: Approve and execute an approved plan with one worker and one independent verifier, coordinating repair within the three-failure limit.
 ---
 
-Use only after an explicit named run request. Preflight status, dependencies,
-archive eligibility, dirty base, wrapper compatibility, lease ownership, child
-primitives, and worktree safety. Acquire the atomic plan lease, create an
-exclusive worktree, write a bounded delegation packet and receipt, direct one
-writer, then create a separate read-only verifier. Sequential tasks share the
-writer/worktree; connected plans use frozen graph/progress records.
+## Approval
 
-If the workspace identity is `product-source` and the only dirty changes are
-the exact approved-plan projection (`plan.yaml: draft → approved` and task
-frontmatter `draft → ready`), classify the state as
-`MAINTAINER_APPROVAL_COMMIT_REQUIRED` and show a focused commit card. Do not
-discard, revert, or auto-commit it. Any other dirty path remains
-`DIRTY_BASE_BLOCKED`. After the maintainer explicitly commits those exact
-approval changes, rerun the named execution request.
+Approval is an explicit conversational human gate, not a confirmation card. On
+"approve plan X", run the runtime `plan-approve` (draft → approved after
+readiness checks). If the user asks to execute a draft plan, refuse plainly:
+the plan must be approved first. Support the compound request "approve plan X
+and execute it" by approving, re-reading the approved status, then executing.
 
-Do not auto-approve, auto-finish, merge, push, publish, deploy, or discard.
-Runtime shapes and ownership checks belong to the wrapper schemas and engine.
+## Execute
 
-When the host supplies a native child, map it to the existing bounded writer or
-independent verifier delegation packet and include provider-neutral
-`host_evidence`. Host permission flags are observations, not authorization. If
-the verifier child is unavailable, stop with the canonical host-blocked outcome
-instead of changing the role or verification path. Resume uses the same
-receipt, wrapper, Git, lease, and worktree checks on every host.
+Execute only an approved plan. Give a short summary (plan, objective,
+repositories/branches, task count, worker and verifier roles, failure limit),
+then:
 
-The root runtime path consumes the engine graph through
-`cc_construct_runtime_graph`, `cc_validate_runtime_graph`, and the commit
-marker. Project only `cc_runtime_launch_projection` to the child; the writer
-and verifier receive the same generated delegation, child-start, receipt, and
-handoff records. Do not reconstruct a record, broaden the delegation from
-launch text, or treat a host permission flag as authorization.
+1. Run `execution-begin`: it validates approval and repository bindings,
+   validates and captures each `anchor_branch` tip, rejects dirty anchors,
+   acquires the one-writer lock, snapshots the plan, and creates one branch and
+   worktree per affected repository.
+2. Launch exactly one worker with the execution brief and assigned worktrees
+   (see `agents/writer.md`). The worker executes all tasks in dependency order
+   and commits each affected repository. Record each commit with
+   `worker-commit-record` and the handoff with `worker-handoff-record`.
+3. Launch one independent, read-only verifier (see `agents/verifier.md`) after
+   `verifier-prepare`. It inspects the latest commit of every affected
+   repository. Record its outcome with `verifier-result-record`.
+
+Do not require confirmation for individual tasks, branches, worktrees, commits,
+verifier steps, or repairs. The approved plan is the scope.
+
+## Repair
+
+On a verifier failure, pass the failure evidence back to the same worker within
+the same execution. Check `repair-allowed`, begin a new attempt, let the worker
+create a new commit for every repository it changes, and verify again. The
+worker-failure counter increments on each rejection (including the first); at
+three failures execution stops and all evidence is preserved.
+
+## Blocked verifier
+
+If the host cannot create an independent read-only verifier, the execution is
+blocked (`host-blocked`). Do not self-verify and do not downgrade the evidence
+requirement. Preserve worktrees and commits.
+
+## Boundaries
+
+Never auto-approve, auto-complete, merge, push, publish, deploy, or discard.
+Verification produces `verified` evidence; it never marks the plan `done`.

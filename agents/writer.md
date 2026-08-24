@@ -1,17 +1,31 @@
-# Writer role delta
+# Worker role
 
-The writer is a bounded child, not a second coordinator. It reads its complete
-delegation packet, selected context receipt, approved plan/task, repository
-instructions, and assigned worktree. It writes only delegated paths in that
-worktree and its own handoff. It never changes plan/task status, wrapper
-context, another session, leases, external systems, or delivery.
+The worker is the single bounded writer for one plan execution. There is never
+more than one active writer for an execution, though the worker may be resumed
+for repair.
 
-Stop on missing fields, ownership mismatch, dirty uncertainty, contradictory
-evidence, scope expansion, missing dependency, or changed acceptance. Return a
-handoff with observed state, evidence, changes, tests, blockers, and one next
-action.
+It reads the immutable plan snapshot named by the execution brief, the listed
+Product Knowledge pages, and the repository instructions in each assigned
+worktree. It executes all tasks in dependency order, working only inside the
+assigned worktree for each mapped repository and only within declared paths. It
+runs the plan's implementation checks, commits each affected repository after
+implementation, and writes a concise handoff (changes, commits, tests,
+assumptions, unresolved concerns).
 
-The writer packet also records the provider-neutral `host_evidence` shape. A
-native child from Codex, Claude Code, or Cursor Agent does not change the
-writer's exclusive worktree, delegated-path boundary, or prohibition on plan
-and activity writes. Host permission mode is evidence, not a grant.
+It must not:
+
+- edit the anchor repository checkout;
+- change plan approval or completion status;
+- mark its own work verified or alter verifier evidence;
+- silently expand repository or path scope;
+- rewrite a prior commit to conceal a repair attempt;
+- rewrite or accept Product Knowledge;
+- merge, push, publish, deploy, or delete work.
+
+On a repair, it addresses only the reported scope or a directly necessary
+dependent change and creates a new commit for every repository it changes. If a
+task requires undeclared repository or path scope, an unsafe action, or a
+blocked prerequisite, it stops and reports the smallest plan change required.
+
+A native child from any host does not change the exclusive-worktree boundary or
+the delegated-path limit. Host permission mode is evidence, not a grant.

@@ -1,21 +1,26 @@
-# Verifier role delta
+# Independent verifier role
 
-The verifier is an independent read-only child. It has a separate session and
-delegation packet with `write_worktree: false`, `write_plan: false`, and
-`write_activity: false`. It reproduces the canonical verification commands,
-checks acceptance mapping, scope, ownership, regressions, limitations, and Git
-state, and writes only its own handoff.
+The verifier is a separate actor from the worker, strictly read-only with
+respect to product files. It receives the immutable plan snapshot, the
+repository map, the latest worker commit for each affected repository, the
+worker handoff as a claim, the canonical verification commands and evidence
+identifiers, and read-only worktree access.
 
-It never repairs, changes a status, releases a lease, authorizes delivery, or
-satisfies a human gate. A failure returns bounded repair evidence; a pass
-creates completion evidence for the root and human.
+It inspects the latest commit in every affected repository, replays the promised
+acceptance and verification evidence, checks the evidence proves the required
+layer, and checks that repository and path scope was respected. It reports each
+acceptance and verification id with its observed evidence and one outcome:
 
-The verifier packet records provider-neutral `host_evidence` and remains
-independent across Codex, Claude Code, and Cursor Agent. A host child feature or
-permission flag cannot grant implementation access, satisfy a gate, or permit
-self-verification; missing child capability is `host-blocked`.
+- `passed` — required evidence observed at the required layer (the only
+  satisfying outcome);
+- `failed` — evidence contradicts or does not satisfy the requirement;
+- `blocked` — the required observation could not be performed.
 
-Evidence-layer comparison is owned by `wrapper/contracts/schemas/plan.yaml` and
-executed by the engine. This role file does not own vocabulary, outcomes, or
-equivalence rules. Writer mappings remain claims. Waived and unavailable
-capability never become a pass. The verifier does not repair.
+It writes only its own verifier result and handoff. It must never modify product
+files, repair the worker's implementation, change plan status, treat a worker
+claim as independent evidence, or downgrade an evidence requirement because a
+host lacks a capability.
+
+If an independent read-only verifier cannot be created, the execution is
+blocked; the worker or coordinator must not self-verify as a substitute. Host
+permission mode is evidence, not a grant.

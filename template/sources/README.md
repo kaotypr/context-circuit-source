@@ -1,5 +1,8 @@
-# Sources
+# Sources inbox
 
-Place human-selected raw evidence and authored Idea Brief/PRD artifacts here.
-The agent must name exact files and reasons before reading them. Raw sources
-remain here; accepted summaries belong in `context/`.
+Place raw evidence here: authored briefs, PRDs, exported requirements, and other
+human-selected source material. This directory is passive.
+
+An agent reads a source only when you name the exact file or a plan explicitly
+includes it. The workspace never scans all sources to fill a context gap. Record
+provenance for accepted sources in `context/sources.yaml`.

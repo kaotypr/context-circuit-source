@@ -1,43 +1,42 @@
 ---
 name: cc-plan
-description: Draft, review, or prepare a human-facing plan bundle without executing it, including named-plan read-only review.
+description: Create a detailed grounded plan from a request, or conversationally review a draft plan without approving or executing it.
 ---
 
-Use for idea briefs, PRDs, context-grounded plans, and named-plan read-only
-review — for example `Review plan <id>` or `Walk me through plan <id>`. The
-human entry is `PLAN.md`; `plan.yaml` owns canonical fields and lifecycle
-status. Tasks reference acceptance and verification IDs instead of copying
-commands. There is no separate review skill; this is the only discovery
-adapter for both drafting and reviewing a plan.
+## Create a plan
 
-When entry routes a generic build or implementation request to `draft-plan`,
-create only the bounded draft plan bundle. Do not create implementation files,
-claim a lease, create a worktree, or treat the original build request as plan
-approval or execution authorization.
+Retrieve relevant Product Knowledge by the request's concepts, domains,
+repositories, decisions, and constraints using `context/INDEX.md`; read only the
+selected units, not the whole directory. Read repository instructions and only
+request-named source files.
 
-## Read-only review mode
+Expand the request into a detailed readable plan. Preserve the request's
+requirements, desired behavior, constraints, non-goals, assumptions, open
+questions, and risks — remove repetition, not meaning. Write `PLAN.md` (readable)
+and `plan.yaml` (canonical) with:
 
-When the engine selects `review-plan`, load only the `plan-review` context
-set and emit the Review Card from `docs/plan-review.md`. In this mode never
-draft, approve, claim a lease, start a child, or change plan/task status —
-review only reports outcome, risks, and open decisions. A review request with
-no usable plan id routes to `clarify-target` instead; ask which plan, do not
-guess or inspect an unrelated bundle.
+- a stable plan id `NNNN-<kebab-slug>` allocated by the runtime `plan-allocate-id`;
+- original request and request coverage;
+- objective, desired behavior, constraints, non-goals;
+- Product Knowledge grounding (each reference: stable id, path, reason);
+- source and repository evidence;
+- explicit repository mapping for every task, with bounded paths and dependencies;
+- implementation details, acceptance criteria, and verification (distinct ids);
+- expected commits, assumptions, open questions, risks, delivery notes;
+- expected Product Knowledge impact, or an explicit no-durable-impact statement.
 
-When the Review Card carries one to three focused human decisions, also offer
-those decisions through the current host's optional native question prompt
-(see `docs/plan-review.md`). A missing, denied, or failed prompt is not
-`host-blocked`; fall back to the card text and never retry the prompt as a
-required child. A chosen next-action label may continue only into that
-route's existing first card in the same session — selecting it never skips
-confirmation or changes status.
+Perform a context-grounding drift check and a request-fidelity check. Any
+contradiction or missing detail becomes an explicit open question, assumption,
+or risk — never a silently chosen implementation. Add the plan to `plans/INDEX.md`
+and validate it with the runtime `plan-validate`. Creating a plan does not
+approve or execute it.
 
-Task Markdown files must begin with a line containing exactly `---`, contain
-their YAML task frontmatter, close it with a second line containing exactly
-`---`, and only then start the Markdown body. `plan.yaml` is pure YAML and does
-not use Markdown frontmatter.
+## Review a plan
 
-For approval, hand off to `cc-gates` and show the exact card from
-`docs/gates.md`; only a current explicit confirmation there may change `draft`
-to `approved` and project tasks to `ready`. `cc-plan` does not keep its own
-copy of that confirmation procedure.
+`review plan X` is a non-executing, status-preserving discussion. Walk through
+request coverage, task detail, repository/path mapping, dependencies, context
+references, acceptance, verification, assumptions, open questions, and risks.
+When the human resolves a question, corrects a requirement, changes scope, or
+asks for more detail, update the draft plan content and continue. Review never
+changes plan status, approves, or executes. Approval is a separate explicit
+request handled during execution.

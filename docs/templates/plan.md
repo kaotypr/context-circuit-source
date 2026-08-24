@@ -1,51 +1,55 @@
-# {{title}}
+# <Plan title>
 
-Status: {{status}}
-Repository: {{repository}}
-Source: {{source}}
+Plan ID: 0001-example
+Status: draft
 
-## Review summary
+## Original request and coverage
 
-{{outcome_and_users}}
+- What the human asked for, and how each important detail is represented below.
 
-## What approval authorizes
+## Objective and desired behavior
 
-{{bounded_implementation_intent}}
+- The outcome and the behavior a user should observe.
 
-Approval does not start execution, claim a lease, create a worktree, change
-Git, deliver, publish, deploy, merge, or clean runtime.
+## Constraints and non-goals
 
-## Scope and non-goals
+- Constraints that bound the work.
+- Explicit non-goals.
 
-Paths and behavior boundaries are linked to `plan.yaml`.
+## Product Knowledge grounding
 
-## Proposed solution
+- domain.example (context/domains/example/README.md) — why it applies.
+- Grounding summary, constraints, and decisions that shape the plan.
 
-{{reviewable_behavior_and_architecture}}
+## Repositories and source evidence
 
-## Tasks and dependencies
+- api — owns X. Evidence: repositories/api/... at <revision>.
 
-| Task | Outcome | Depends on |
-| --- | --- | --- |
-| {{task_id}} | {{task_outcome}} | {{dependencies}} |
+## Tasks
+
+1. API-001 (api, paths: src/example, test/example; depends on: none) — concrete
+   change, acceptance API-AC-001, verification API-VT-001.
 
 ## Acceptance criteria
 
-- {{acceptance_id}}: {{observable_outcome}}
+- API-AC-001 — observable desired result.
 
 ## Verification
 
-List verification IDs, what they prove, and independent-review expectations.
-Executable commands remain canonical in `plan.yaml`.
+- API-VT-001 — command and evidence layer.
 
-## Risks, assumptions, and open decisions
+## Assumptions, open questions, risks
 
-Only items that can affect approval or execution.
+- Assumptions made explicit.
+- Open questions to resolve during review.
+- Risks and their impact.
 
-## Delivery boundary
+## Expected commits and delivery notes
 
-Commit, push, merge, publication, deployment, and cleanup remain unapproved.
+- One commit per affected repository. Delivery (pull request, merge) is a
+  separate explicit action targeting each repository's anchor branch.
 
-## Provenance
+## Expected Product Knowledge impact
 
-Exact accepted context, source, and repository evidence used.
+- Context units to reassess at completion, or an explicit statement that no
+  durable context change is currently expected.
