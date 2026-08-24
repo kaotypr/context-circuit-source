@@ -1,0 +1,161 @@
+#!/bin/sh
+# Human-simulated template test harness — prepare and (optionally) drive one case.
+#
+# Deterministic responsibilities (done here, no live model needed):
+#   1. assemble context-circuit-template with scripts/release-artifact.sh;
+#   2. instantiate an isolated workspace from that artifact;
+#   3. apply the case `setup` fixtures (seed repos / source files);
+#   4. capture a pristine baseline snapshot (context/ + workspace.yaml);
+#   5. write a run manifest under human/.out/<run-id>/ (git-ignored).
+#
+# Agent-driven responsibility (delegated to a per-host driver via --driver/
+#   $CC_HUMAN_DRIVER): spawn the product coordinator with cwd = the instantiated
+#   workspace, spawn the human-simulator with only the case `human:` block, run
+#   the turns, and record transcript.txt (+ optional file-access-trace.tsv and
+#   telemetry.tsv). When no driver is wired the run stops at `prepared`, which is
+#   a normal outcome — the prepared workspace can be driven and graded later.
+#
+# This suite is opt-in and NOT part of `sh test/acceptance.sh` (harness §7).
+#
+# usage: sh run-scenario.sh [--host H] [--driver CMD] [--no-grade] <case-id|case-dir>
+set -eu
+
+HOST=claude-code
+DRIVER="${CC_HUMAN_DRIVER:-}"
+LIVE=0
+AUTOGRADE=1
+CASE_ARG=
+
+while [ "$#" -gt 0 ]; do
+	case "$1" in
+		--host) HOST=${2:?--host needs a value}; shift 2 ;;
+		--host=*) HOST=${1#--host=}; shift ;;
+		--driver) DRIVER=${2:?--driver needs a value}; shift 2 ;;
+		--driver=*) DRIVER=${1#--driver=}; shift ;;
+		--live) LIVE=1; shift ;;
+		--no-grade) AUTOGRADE=0; shift ;;
+		-h|--help)
+			printf 'usage: sh run-scenario.sh [--host H] [--live|--driver CMD] [--no-grade] <case>\n'
+			printf 'hosts: codex | claude-code | cursor-agent (default: claude-code)\n'
+			printf '  --live    use the built-in driver for the host (human/drivers/<host>.sh)\n'
+			printf '  --driver  use a custom driver command instead\n'
+			exit 0 ;;
+		--*) printf 'FAIL: unknown flag: %s\n' "$1" >&2; exit 2 ;;
+		*) CASE_ARG=$1; shift ;;
+	esac
+done
+[ -n "$CASE_ARG" ] || { printf 'FAIL: no case given\n' >&2; exit 2; }
+case "$HOST" in codex|claude-code|cursor-agent) : ;; *) printf 'FAIL: unknown host: %s\n' "$HOST" >&2; exit 2 ;; esac
+
+HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ROOT=$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null) || { printf 'FAIL: not a git source checkout\n' >&2; exit 1; }
+SCENARIOS="$HERE/../scenarios"
+
+# --live selects the built-in per-host driver unless --driver overrode it.
+if [ "$LIVE" -eq 1 ] && [ -z "$DRIVER" ]; then
+	BUILTIN="$HERE/drivers/$HOST.sh"
+	[ -f "$BUILTIN" ] || { printf 'FAIL: no built-in driver for host %s (%s)\n' "$HOST" "$BUILTIN" >&2; exit 1; }
+	DRIVER="sh '$BUILTIN'"
+fi
+
+# Resolve the case directory (accept an id or a path).
+if [ -d "$CASE_ARG" ]; then CASE_DIR=$(CDPATH= cd -- "$CASE_ARG" && pwd)
+elif [ -d "$SCENARIOS/$CASE_ARG" ]; then CASE_DIR="$SCENARIOS/$CASE_ARG"
+else printf 'FAIL: case not found: %s\n' "$CASE_ARG" >&2; exit 1; fi
+CASE_FILE="$CASE_DIR/case.yaml"
+[ -f "$CASE_FILE" ] || { printf 'FAIL: missing case.yaml in %s\n' "$CASE_DIR" >&2; exit 1; }
+
+# Minimal top-level scalar reader (controlled subset; same discipline as engine.sh).
+yscalar() { awk -v k="$2" '$0 ~ "^" k ":[[:space:]]" { sub("^" k ":[[:space:]]*",""); sub(/[[:space:]]*#.*$/,""); sub(/[[:space:]]+$/,""); print; exit }' "$1"; }
+CASE_ID=$(yscalar "$CASE_FILE" id); [ -n "$CASE_ID" ] || CASE_ID=$(basename -- "$CASE_DIR")
+CASE_MODE=$(yscalar "$CASE_FILE" mode); [ -n "$CASE_MODE" ] || CASE_MODE=conversation-only
+
+RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$-${CASE_ID}-${HOST}"
+OUT_ROOT="$HERE/.out"
+RUN_DIR="$OUT_ROOT/$RUN_ID"
+WORKSPACE="$RUN_DIR/workspace"
+BASELINE="$RUN_DIR/baseline"
+TRANSCRIPT="$RUN_DIR/transcript.txt"
+TRACE="$RUN_DIR/file-access-trace.tsv"
+TELEMETRY="$RUN_DIR/telemetry.tsv"
+mkdir -p "$RUN_DIR"
+
+# Temp assembly area (disposable; never the source .runtime).
+STAGE=$(mktemp -d "${TMPDIR:-/tmp}/cc-hs-stage.XXXXXX")
+OUT=$(mktemp -d "${TMPDIR:-/tmp}/cc-hs-out.XXXXXX")
+trap 'rm -rf "$STAGE" "$OUT"' EXIT HUP INT TERM
+
+# 1. Assemble the released template (the same artifact a user receives).
+sh "$ROOT/scripts/release-artifact.sh" "$STAGE" "$OUT" v0.5.0 >/dev/null
+ARTIFACT="$OUT/context-circuit-v0.5.0"
+[ -d "$ARTIFACT" ] || { printf 'FAIL: assembly produced no artifact\n' >&2; exit 1; }
+
+# 2. Instantiate an isolated workspace from the artifact only.
+cp -R "$ARTIFACT" "$WORKSPACE"
+# Safety: the seed must not carry any source-side state.
+for leak in .runtime plans/context-circuit-plans repositories.local.yaml repositories; do
+	[ ! -e "$WORKSPACE/$leak" ] || { printf 'FAIL: source state leaked into workspace: %s\n' "$leak" >&2; exit 1; }
+done
+
+# 3. Apply case setup fixtures.
+#    Only the empty form (`repositories: []` / `sources: []`) is handled here;
+#    non-empty fixtures are a documented TODO for cases 02+ (worktree/seed shape).
+setup_empty() { awk -v k="$1" '$0 ~ "^  " k ":[[:space:]]*\\[\\]" {f=1} END{exit f?0:1}' "$CASE_FILE"; }
+FIXTURE_NOTE=none
+if setup_empty repositories && setup_empty sources; then
+	FIXTURE_NOTE=none
+else
+	FIXTURE_NOTE=todo
+	printf 'WARN: non-empty setup fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2
+fi
+
+# 4. Capture the pristine baseline snapshot (harness §1) for dimension A diffs.
+mkdir -p "$BASELINE"
+cp -R "$WORKSPACE/context" "$BASELINE/context"
+cp "$WORKSPACE/workspace.yaml" "$BASELINE/workspace.yaml"
+
+# 5. Write the run manifest.
+{
+	printf 'run_id: %s\n' "$RUN_ID"
+	printf 'case_id: %s\n' "$CASE_ID"
+	printf 'case_file: %s\n' "$CASE_FILE"
+	printf 'host: %s\n' "$HOST"
+	printf 'mode: %s\n' "$CASE_MODE"
+	printf 'workspace: %s\n' "$WORKSPACE"
+	printf 'baseline: %s\n' "$BASELINE"
+	printf 'transcript: %s\n' "$TRANSCRIPT"
+	printf 'trace: %s\n' "$TRACE"
+	printf 'telemetry: %s\n' "$TELEMETRY"
+	printf 'human_simulator: %s\n' "$ROOT/.claude/agents/cc-human-simulator.md"
+	printf 'fixtures: %s\n' "$FIXTURE_NOTE"
+	printf 'status: prepared\n'
+} > "$RUN_DIR/run.yaml"
+
+printf 'prepared run: %s\n' "$RUN_DIR"
+printf '  case=%s host=%s mode=%s\n' "$CASE_ID" "$HOST" "$CASE_MODE"
+printf '  workspace=%s\n' "$WORKSPACE"
+
+# 6. Drive the conversation via the per-host driver, if one is wired.
+if [ -n "$DRIVER" ]; then
+	printf 'driving via: %s\n' "$DRIVER"
+	CC_RUN_DIR="$RUN_DIR" CC_WORKSPACE="$WORKSPACE" CC_BASELINE="$BASELINE" \
+	CC_CASE_FILE="$CASE_FILE" CC_CASE_ID="$CASE_ID" CC_HOST="$HOST" CC_MODE="$CASE_MODE" \
+	CC_HUMAN_SIM="$ROOT/.claude/agents/cc-human-simulator.md" \
+	CC_TRANSCRIPT="$TRANSCRIPT" CC_TRACE="$TRACE" CC_TELEMETRY="$TELEMETRY" \
+		sh -c "$DRIVER" || { printf 'FAIL: driver returned non-zero\n' >&2; exit 1; }
+	awk '/^status:[[:space:]]/{print "status: driven";next}{print}' "$RUN_DIR/run.yaml" > "$RUN_DIR/run.yaml.tmp" && mv "$RUN_DIR/run.yaml.tmp" "$RUN_DIR/run.yaml"
+	if [ "$AUTOGRADE" -eq 1 ]; then
+		printf '\n'
+		sh "$HERE/grade.sh" "$RUN_DIR"
+		exit $?
+	fi
+else
+	printf '\nNo driver wired (status: prepared). To drive on this host:\n'
+	printf '  - spawn the product coordinator with cwd=%s\n' "$WORKSPACE"
+	printf '  - spawn the human-simulator (.claude/agents/cc-human-simulator.md) with the\n'
+	printf "    case's human: block only, run the turns, and write:\n"
+	printf '      transcript:  %s\n' "$TRANSCRIPT"
+	printf '      trace (opt): %s   (TSV: action<TAB>tool<TAB>path)\n' "$TRACE"
+	printf '      telem (opt): %s   (TSV: action<TAB>turns<TAB>tokens)\n' "$TELEMETRY"
+	printf '  then grade with:  sh %s %s\n' "$HERE/grade.sh" "$RUN_DIR"
+fi
