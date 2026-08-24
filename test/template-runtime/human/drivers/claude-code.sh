@@ -142,8 +142,11 @@ turns_tsv | while IFS='	' read -r kind payload; do
 			else printf '(skipped on_open_questions: coordinator asked nothing)\n' >> "$CC_TRANSCRIPT"; continue; fi ;;
 		*) printf '(unknown turn kind: %s)\n' "$kind" >> "$CC_TRANSCRIPT"; continue ;;
 	esac
-	# a plan-related say also advances the action label
-	case "$send" in *plan*|*"show me"*) ACTION=create-plan ;; esac
+	# advance the (informational) action label by the kind of request
+	case "$send" in
+		*plan*|*"show me"*) ACTION=create-plan ;;
+		*connect*|*"hook it up"*|*"hook up"*) ACTION=connect-repo ;;
+	esac
 	printf '\nhuman: %s\n' "$send" >> "$CC_TRANSCRIPT"
 	reply=$(coordinator_turn "$send" "$ACTION")
 	printf 'coordinator: %s\n' "$reply" >> "$CC_TRANSCRIPT"

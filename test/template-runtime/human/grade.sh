@@ -119,6 +119,27 @@ while IFS= read -r line; do
 				if diff -r "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then ok "product_knowledge_unchanged_silently"
 				else ok "product_knowledge_unchanged_silently (accepted PK unchanged; context proposals were added, which is the non-silent path)"; fi
 			else bad "product_knowledge_unchanged_silently (accepted context/ differs from baseline)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		anchor_branch)
+			# val is "<repo>:<expected-branch>": the anchor must be the human's branch,
+			# never inferred from default_branch (INV-REPO-02).
+			repo=${val%%:*}; want=${val#*:}
+			got=$(cc_binding_field "$WORKSPACE" "$repo" anchor_branch 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "anchor_branch ($repo=$got)"
+			else bad "anchor_branch ($repo: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		no_repository_clone)
+			n=0; [ -d "$WORKSPACE/repositories" ] && n=$(find "$WORKSPACE/repositories" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
+			if [ "$n" -eq 0 ]; then ok "no_repository_clone (nothing under repositories/)"
+			else bad "no_repository_clone ($n dir(s) under repositories/ — connect must not clone)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		no_credentials_in_workspace)
+			hit=$(grep -rniE 'password|ghp_|github_pat_|x-access-token|://[^/[:space:]]+:[^/[:space:]]+@' \
+				"$WORKSPACE/workspace.yaml" "$WORKSPACE/repositories.local.yaml" 2>/dev/null | head -3)
+			if [ -z "$hit" ]; then ok "no_credentials_in_workspace"
+			else bad "no_credentials_in_workspace (found: $hit)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		no_machine_path_in_identity)
+			# portable identity (workspace.yaml) must embed no absolute filesystem path
+			hit=$(grep -nE ':[[:space:]]*/|/home/|/Users/|/root/' "$WORKSPACE/workspace.yaml" 2>/dev/null | head -3)
+			if [ -z "$hit" ]; then ok "no_machine_path_in_identity"
+			else bad "no_machine_path_in_identity (found: $hit)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
@@ -154,6 +175,8 @@ action_occurred() {
 		orient) return 0 ;;                                   # every conversation orients
 		create-plan) find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml \
 			-not -path '*/.archived/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
+		connect-repo) [ -f "$WORKSPACE/repositories.local.yaml" ] && \
+			grep -q '^    path:' "$WORKSPACE/repositories.local.yaml" 2>/dev/null ;;  # a binding exists
 		*) return 0 ;;                                        # unknown: assume it occurred
 	esac
 }
