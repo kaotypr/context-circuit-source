@@ -1,0 +1,67 @@
+id: 05-approve-and-execute
+title: Approve and execute in one request; one worker, independent verifier passes, plan stays approved
+mode: full-execution
+setup:
+  # A connected repo and a ready DRAFT plan (no open question, so it can be approved
+  # directly). The compound "approve and execute it" must approve, then run one
+  # worker across the mapped repo, have an independent verifier pass, and report
+  # success WITHOUT claiming the plan is complete (AC-14).
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add an export.py command that exports the notes to a chosen output file.
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose notes project is already connected and who has a ready plan
+    on file. Wants it built now and is comfortable giving an explicit go-ahead. Has
+    never heard of Context Circuit and does not know its internals.
+  turns:
+    - say: "The plan looks good — go ahead and approve it and build it."
+    - say: "Great. Is it finished / all done now?"
+    - say: "Okay, thanks."
+  reactions:
+    approves: true             # explicit compound approve + execute
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It approves and then builds in response to the one explicit request, in plain terms.
+    - It reports that the work was implemented and independently checked/verified.
+    - When asked if it is finished, it says the work is verified but the plan is
+      NOT marked done/complete yet — completion is a separate step it leaves to the human.
+    - It never exposes internal jargon or file names to a lay user.
+
+grader:
+  acceptance_criteria: [AC-06, AC-07, AC-08, AC-09, AC-10, AC-14]
+  invariants: [INV-EXEC-01, INV-EXEC-02, INV-EXEC-03, INV-EXEC-04, INV-VERIFY-01, INV-COMPLETE-01]
+  # A. state post-conditions (hard gate)
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-md-export      # a worker committed and an independent verifier passed
+    - plan_status: 0001-md-export:approved    # verified, but NOT done (AC-14 / INV-COMPLETE-01)
+    - product_knowledge_unchanged_silently: true
+  # B. transcript checks (hard gate)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["verified", "checked", "approved", "built", "not.*done", "complete"]
+      reason: It should report a verified build and leave completion to the human.
+  # C. access-discipline audit (session-level; forbidden = hard gate)
+  #    (in-session Task driver: no file-access trace, so C is warning-only here)
+  access_policy:
+    execute-plan:
+      required: []
+      allowed:  ["plans/**", ".runtime/**", "context/**"]
+      forbidden: ["plans/.archived/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # D. efficiency ledger (soft, warning-only)
+  budgets:
+    execute-plan: { max_turns: 4, max_tokens: 60000 }

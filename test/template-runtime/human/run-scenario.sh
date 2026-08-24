@@ -187,10 +187,19 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 		{
 			printf 'schema_version: 1\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$pid" "$title" "$obj"
 			printf 'repositories:\n  - id: %s\n' "$prepo"
-			printf 'open_questions:\n  - %s\n' "$oq"
+			[ -n "$oq" ] && printf 'open_questions:\n  - %s\n' "$oq" || :
 			printf 'tasks:\n  - id: EXPORT-001\n    title: %s\n    repositories: [%s]\n    paths: [.]\n    depends_on: []\n' "$title" "$prepo"
+			# a concrete, trivially-verifiable target so full-execution cases have real
+			# worker work (create export.py) and a real verifier check (test -f export.py)
+			printf '    changes: [Add an export.py implementing the export command.]\n'
+			printf '    acceptance:\n      - id: EXPORT-AC-001\n        statement: An export.py file exists in the repository.\n'
+			printf '    verification:\n      - id: EXPORT-VT-001\n        command: test -f export.py\n'
 		} > "$pdir/plan.yaml"
-		printf '# %s\n\n%s\n\n## Open question\n\n- %s\n' "$title" "$obj" "$oq" > "$pdir/PLAN.md"
+		if [ -n "$oq" ]; then
+			printf '# %s\n\n%s\n\n## Open question\n\n- %s\n' "$title" "$obj" "$oq" > "$pdir/PLAN.md"
+		else
+			printf '# %s\n\n%s\n' "$title" "$obj" > "$pdir/PLAN.md"
+		fi
 		sh "$ENGINE_CLI" plan-validate "$pdir" >/dev/null || { printf 'FAIL: seeded plan %s is invalid\n' "$pid" >&2; exit 1; }
 		sh "$ENGINE_CLI" plan-index-upsert "$WORKSPACE" "$pid" >/dev/null || :
 		printf '[setup] seeded draft plan %s (repo %s, one open question)\n' "$pid" "$prepo"
