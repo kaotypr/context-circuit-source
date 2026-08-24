@@ -13,7 +13,12 @@ For one scenario case:
 2. **Instantiate an isolated workspace.** Copy the assembled artifact into a
    fresh temp directory. This is the coordinator's working directory. It must not
    import the source repository's Product Knowledge, plans, `.runtime/`,
-   bindings, or implementation state — only the shipped template.
+   bindings, or implementation state — only the shipped template. Immediately
+   record a read-only **baseline snapshot** of the pristine tree (at least
+   `context/` and `workspace.yaml`) before the coordinator runs, so the grader can
+   later prove Product Knowledge was not silently changed and workspace identity
+   was not fabricated (dimension A). The runtime exposes no read for these two
+   post-conditions; they are a diff against this baseline.
 3. **Apply case setup.** Create any `setup.repositories` fixture git repos and
    `setup.sources` files. Case 01 creates none.
 4. **Spawn the coordinator sub-agent** under the run's chosen product host

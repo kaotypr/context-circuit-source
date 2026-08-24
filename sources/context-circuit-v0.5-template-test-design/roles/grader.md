@@ -27,8 +27,9 @@ result back to the product acceptance criterion and invariant it protects.
   wall-clock from the runner.
 - The product host the run used (`codex` / `claude-code` / `cursor-agent`) and a
   flag for whether the trace was available on that host.
-- The case's `grader:` block (post-conditions, transcript checks, access policy,
-  budgets). It never receives the `human:` block's private reasoning.
+- The case's `grader:` block (acceptance-criteria and invariant mapping,
+  post-conditions, transcript checks, access policy, budgets). It never receives
+  the `human:` block's private reasoning.
 
 ## Host-neutral
 
@@ -50,9 +51,14 @@ See [../host-matrix.md](../host-matrix.md) §5.
 ### A. State post-conditions — hard gate
 
 Inspects the workspace using the runtime's read-only operations and file checks:
-workspace initialized, repositories registered count, plans created and their
-status, presence/absence of execution records, commit-before-verify ordering,
-`done` only after a verifier pass, Product Knowledge not silently changed.
+repositories registered count, plans created and their status, presence/absence
+of execution records, commit-before-verify ordering, and `done` only after a
+verifier pass. Two post-conditions have no runtime read and are diffed against
+the pristine baseline snapshot the harness captured at instantiation (see
+[../harness-and-evaluation.md](../harness-and-evaluation.md) §1): Product
+Knowledge was not silently changed, and workspace identity was not fabricated (a
+real identity appears only when the human supplied one; the shipped placeholder
+is a pass).
 
 ### B. Transcript checks — hard gate
 
@@ -98,6 +104,8 @@ template versions. Each failing finding names the violated `AC-nn` and invariant
 
 ```yaml
 grader:
+  acceptance_criteria: [ AC-nn, ... ]  # §21 criteria this case demonstrates
+  invariants: [ INV-..., ... ]         # invariants.yaml rules it protects
   post_conditions: [ ... ]            # dimension A
   transcript_checks: [ ... ]          # dimension B
   access_policy:                       # dimension C, keyed by action
