@@ -182,18 +182,56 @@ cc_task_field() {
 	' "$1"
 }
 
+# cc_task_list FILE TASK_ID FIELD -> items of a per-task list field, whether the
+# field is authored inline (`field: [a, b]`) or as a block list (`field:` then
+# `      - a`). Prints one item per line.
+cc_task_list() {
+	[ -f "$1" ] || return 1
+	awk -v want="$2" -v field="$3" '
+		/^[A-Za-z_][A-Za-z0-9_]*:/ { in_tasks = ($0 ~ "^tasks:") ; cur=0 ; infield=0 ; next }
+		in_tasks && /^  -[[:space:]]*id:[[:space:]]*/ {
+			v=$0; sub("^  -[[:space:]]*id:[[:space:]]*", "", v); gsub(/[[:space:]]+$/, "", v)
+			cur = (v == want) ; infield=0 ; next
+		}
+		in_tasks && cur && $0 ~ "^    " field ":[[:space:]]*" {
+			val=$0; sub("^    " field ":[[:space:]]*", "", val); gsub(/[[:space:]]+$/, "", val)
+			if (val ~ /^\[/) {
+				gsub(/^\[|\]$/, "", val); n=split(val, a, ",")
+				for (i=1;i<=n;i++){ gsub(/^[[:space:]]+|[[:space:]]+$/, "", a[i]); if (a[i]!="") print a[i] }
+				infield=0
+			} else if (val == "") { infield=1 }
+			else { print val; infield=0 }
+			next
+		}
+		in_tasks && cur && infield && /^      -[[:space:]]*/ {
+			it=$0; sub("^      -[[:space:]]*", "", it); gsub(/[[:space:]]+$/, "", it)
+			if (it != "") print it; next
+		}
+		in_tasks && cur && infield && /^    [A-Za-z]/ { infield=0 }
+	' "$1"
+}
+
 # cc_task_ids FILE -> all task ids in order
 cc_task_ids() { cc_list_ids "$1" "tasks"; }
 
 # cc_plan_repositories FILE -> repository ids declared in the plan header
 cc_plan_repositories() { cc_list_ids "$1" "repositories"; }
 
+# cc_plan_repo_paths FILE REPO -> union of bounded paths of every task mapped to REPO
+cc_plan_repo_paths() {
+	cc_prp_file="$1"; cc_prp_repo="$2"
+	for cc_prp_t in $(cc_task_ids "$cc_prp_file"); do
+		if cc_task_list "$cc_prp_file" "$cc_prp_t" "repositories" | grep -Fxq "$cc_prp_repo"; then
+			cc_task_list "$cc_prp_file" "$cc_prp_t" "paths"
+		fi
+	done | sort -u | sed '/^$/d'
+}
+
 # cc_plan_affected_repositories FILE -> union of every task's repositories
 cc_plan_affected_repositories() {
 	cc_par_file="$1"
 	for cc_par_t in $(cc_task_ids "$cc_par_file"); do
-		cc_par_repos=$(cc_task_field "$cc_par_file" "$cc_par_t" "repositories")
-		cc_inline_list "$cc_par_repos"
+		cc_task_list "$cc_par_file" "$cc_par_t" "repositories"
 	done | sort -u | sed '/^$/d'
 }
 
@@ -259,6 +297,43 @@ cc_binding_field() {
 			print; exit
 		}
 	' "$cc_bf_file"
+}
+
+# cc_repository_register ROOT ID PATH ANCHOR [CANONICAL_URL] [DEFAULT_BRANCH]
+# Records portable logical identity in workspace.yaml and a host-local binding
+# in repositories.local.yaml. It does not clone, init, or execute anything.
+cc_repository_register() {
+	cc_reg_root="$1"; cc_reg_id="$2"; cc_reg_path="$3"; cc_reg_anchor="$4"
+	cc_reg_url="${5:-}"; cc_reg_default="${6:-}"
+	cc_safe_id "$cc_reg_id" || { cc_fail REPOSITORY_ID_UNSAFE "$cc_reg_id"; return 1; }
+	[ -n "$cc_reg_path" ] || { cc_fail REPOSITORY_PATH_MISSING; return 1; }
+	[ -n "$cc_reg_anchor" ] || { cc_fail REPOSITORY_ANCHOR_UNSET "$cc_reg_id"; return 1; }
+	case "$cc_reg_url" in *[Pp]assword@*|*://*:*@*) cc_fail REPOSITORY_URL_HAS_CREDENTIALS; return 1 ;; esac
+	# portable identity in workspace.yaml (never a machine path)
+	cc_reg_ws="$cc_reg_root/workspace.yaml"
+	[ -f "$cc_reg_ws" ] || { cc_fail WORKSPACE_IDENTITY_MISSING; return 1; }
+	if cc_plan_repositories "$cc_reg_ws" | grep -Fxq "$cc_reg_id"; then
+		: # identity already present; leave it
+	else
+		{
+			awk '/^repositories:[[:space:]]*(\[\])?[[:space:]]*$/{print "repositories:"; next}{print}' "$cc_reg_ws"
+			printf '  - id: %s\n' "$cc_reg_id"
+			[ -n "$cc_reg_url" ] && printf '    canonical_url: %s\n' "$cc_reg_url" || :
+			[ -n "$cc_reg_default" ] && printf '    default_branch: %s\n' "$cc_reg_default" || :
+		} | cc_atomic_write "$cc_reg_ws"
+	fi
+	# host-local binding in repositories.local.yaml
+	cc_reg_local="$cc_reg_root/repositories.local.yaml"
+	if [ ! -f "$cc_reg_local" ] || grep -q '^bindings:[[:space:]]*{}' "$cc_reg_local" 2>/dev/null || ! grep -q '^bindings:' "$cc_reg_local" 2>/dev/null; then
+		printf 'schema_version: %s\nbindings:\n' "$CC_SCHEMA_VERSION" | cc_atomic_write "$cc_reg_local"
+	fi
+	if cc_binding_field "$cc_reg_root" "$cc_reg_id" "path" >/dev/null 2>&1 && [ -n "$(cc_binding_field "$cc_reg_root" "$cc_reg_id" path)" ]; then
+		cc_fail REPOSITORY_BINDING_EXISTS "$cc_reg_id"; return 1
+	fi
+	printf '  %s:\n    path: %s\n    anchor_branch: %s\n' "$cc_reg_id" "$cc_reg_path" "$cc_reg_anchor" >>"$cc_reg_local"
+	cc_emit repository "$cc_reg_id"
+	cc_emit registered ok
+	return 0
 }
 
 # cc_repo_resolve ROOT REPO -> validate binding; emit path/anchor; REPOSITORY_* codes
@@ -374,13 +449,13 @@ cc_plan_validate() {
 	cc_pv_tasks=$(cc_task_ids "$cc_pv_dir/plan.yaml")
 	[ -n "$cc_pv_tasks" ] || { cc_fail PLAN_NO_TASKS; return 1; }
 	for cc_pv_t in $cc_pv_tasks; do
-		cc_pv_treps=$(cc_inline_list "$(cc_task_field "$cc_pv_dir/plan.yaml" "$cc_pv_t" "repositories")")
+		cc_pv_treps=$(cc_task_list "$cc_pv_dir/plan.yaml" "$cc_pv_t" "repositories")
 		[ -n "$cc_pv_treps" ] || { cc_fail TASK_NO_REPOSITORY "$cc_pv_t"; return 1; }
 		for cc_pv_tr in $cc_pv_treps; do
 			printf '%s\n' "$cc_pv_repos" | grep -Fxq "$cc_pv_tr" \
 				|| { cc_fail TASK_UNDECLARED_REPOSITORY "$cc_pv_t:$cc_pv_tr"; return 1; }
 		done
-		for cc_pv_dep in $(cc_inline_list "$(cc_task_field "$cc_pv_dir/plan.yaml" "$cc_pv_t" "depends_on")"); do
+		for cc_pv_dep in $(cc_task_list "$cc_pv_dir/plan.yaml" "$cc_pv_t" "depends_on"); do
 			printf '%s\n' "$cc_pv_tasks" | grep -Fxq "$cc_pv_dep" \
 				|| { cc_fail TASK_UNKNOWN_DEPENDENCY "$cc_pv_t:$cc_pv_dep"; return 1; }
 		done
@@ -494,10 +569,15 @@ cc_plan_archive() {
 	cc_plan_org_lock "$cc_ar_root" || return 1
 	mkdir -p "$cc_ar_root/plans/.archived"
 	if mv "$cc_ar_src" "$cc_ar_dst" 2>/dev/null; then
-		cc_plan_index_remove "$cc_ar_root" "$cc_ar_plan"
+		if cc_plan_index_remove "$cc_ar_root" "$cc_ar_plan"; then
+			cc_plan_org_unlock "$cc_ar_root"
+			cc_emit archived "$cc_ar_plan"
+			return 0
+		fi
+		# index update failed: roll the move back so files and index stay intact
+		mv "$cc_ar_dst" "$cc_ar_src" 2>/dev/null || true
 		cc_plan_org_unlock "$cc_ar_root"
-		cc_emit archived "$cc_ar_plan"
-		return 0
+		cc_fail ARCHIVE_INDEX_FAILED "$cc_ar_plan"; return 1
 	fi
 	cc_plan_org_unlock "$cc_ar_root"
 	cc_fail ARCHIVE_MOVE_FAILED "$cc_ar_plan"; return 1
@@ -513,10 +593,15 @@ cc_plan_restore() {
 	[ -e "$cc_re_dst" ] && { cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
 	cc_plan_org_lock "$cc_re_root" || return 1
 	if mv "$cc_re_src" "$cc_re_dst" 2>/dev/null; then
-		cc_plan_index_upsert "$cc_re_root" "$cc_re_plan" >/dev/null
+		if cc_plan_index_upsert "$cc_re_root" "$cc_re_plan" >/dev/null; then
+			cc_plan_org_unlock "$cc_re_root"
+			cc_emit restored "$cc_re_plan"
+			return 0
+		fi
+		# index update failed: roll the move back so files and index stay intact
+		mv "$cc_re_dst" "$cc_re_src" 2>/dev/null || true
 		cc_plan_org_unlock "$cc_re_root"
-		cc_emit restored "$cc_re_plan"
-		return 0
+		cc_fail RESTORE_INDEX_FAILED "$cc_re_plan"; return 1
 	fi
 	cc_plan_org_unlock "$cc_re_root"
 	cc_fail RESTORE_MOVE_FAILED "$cc_re_plan"; return 1
@@ -606,9 +691,11 @@ cc_execution_begin() {
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
 		cc_eb_bc=$(printf '%s' "$cc_eb_out" | sed -n 's/^base_commit: //p')
 		cc_eb_an=$(cc_binding_field "$cc_eb_root" "$cc_eb_id" "anchor_branch")
-		printf 'repository: %s\nworktree: %s\nbranch: %s\nanchor_branch: %s\nbase_commit: %s\nlatest_commit: %s\n' \
-			"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" \
-			| cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml"
+		cc_eb_paths=$(cc_plan_repo_paths "$cc_eb_dir/plan.yaml" "$cc_eb_id" | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+		{
+			printf 'repository: %s\nworktree: %s\nbranch: %s\nanchor_branch: %s\nbase_commit: %s\nlatest_commit: %s\nallowed_paths: [%s]\n' \
+				"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
+		} | cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml"
 	done
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
@@ -665,9 +752,12 @@ cc_worker_commit_record() {
 		| cc_atomic_write "$cc_wc_rf"
 	cc_wc_att=$(cc_scalar "$cc_wc_dir/execution.yaml" "current_attempt")
 	cc_wc_pad=$(printf '%03d' "$cc_wc_att")
-	printf 'commit repository=%s revision=%s kind=%s at=%s\n' \
-		"$cc_wc_repo" "$cc_wc_cur" "$cc_wc_kind" "$(cc_now)" \
-		>>"$cc_wc_dir/attempts/$cc_wc_pad/worker.yaml"
+	cc_wc_wf="$cc_wc_dir/attempts/$cc_wc_pad/worker.yaml"
+	{
+		[ -f "$cc_wc_wf" ] && cat "$cc_wc_wf" || :
+		printf 'commit repository=%s revision=%s kind=%s at=%s\n' \
+			"$cc_wc_repo" "$cc_wc_cur" "$cc_wc_kind" "$(cc_now)"
+	} | cc_atomic_write "$cc_wc_wf"
 	cc_exec_set "$cc_wc_dir" status verifying
 	cc_emit repository "$cc_wc_repo"
 	cc_emit commit "$cc_wc_cur"
@@ -735,7 +825,15 @@ cc_verifier_result_record() {
 		cc_emit status blocked
 		return 0
 	fi
-	# failed (or waived treated as non-passing failure for the counter)
+	if [ "$cc_vr_out" = "waived" ]; then
+		# A human limitation decision: non-passing, but not a worker fault.
+		# It never satisfies verification and never increments the failure counter.
+		cc_exec_set "$cc_vr_dir" status blocked
+		cc_emit outcome waived
+		cc_emit status blocked
+		return 0
+	fi
+	# failed: the independent verifier rejected the worker result
 	cc_vr_wf=$(cc_scalar "$cc_vr_dir/execution.yaml" "worker_failures")
 	cc_vr_wf=$((cc_vr_wf + 1))
 	cc_exec_set "$cc_vr_dir" worker_failures "$cc_vr_wf"
@@ -827,23 +925,85 @@ cc_context_impact_record() {
 	return 0
 }
 
+# cc_delivery_targets ROOT PLAN -> read-only report of pull-request source and
+# default target for each affected repository of the latest execution. It never
+# pushes, merges, or opens a pull request; it only reports and flags gaps.
+cc_delivery_targets() {
+	cc_dt_root="$1"; cc_dt_plan="$2"
+	cc_dt_exec=$(cc_latest_execution "$cc_dt_root" "$cc_dt_plan") || { cc_fail DELIVERY_NO_EXECUTION; return 1; }
+	[ -n "$cc_dt_exec" ] || { cc_fail DELIVERY_NO_EXECUTION; return 1; }
+	cc_dt_edir=$(cc_execution_dir "$cc_dt_root" "$cc_dt_plan" "$cc_dt_exec")
+	cc_emit execution_id "$cc_dt_exec"
+	for cc_dt_rf in "$cc_dt_edir"/repositories/*.yaml; do
+		[ -f "$cc_dt_rf" ] || continue
+		cc_dt_id=$(cc_scalar "$cc_dt_rf" repository)
+		cc_dt_src=$(cc_scalar "$cc_dt_rf" branch)
+		cc_dt_tgt=$(cc_scalar "$cc_dt_rf" anchor_branch)
+		cc_dt_abs=$(cc_repo_resolve "$cc_dt_root" "$cc_dt_id" 2>/dev/null | sed -n 's/^path: //p')
+		cc_dt_present=unknown
+		if [ -n "$cc_dt_abs" ]; then
+			if git -C "$cc_dt_abs" show-ref --verify --quiet "refs/heads/$cc_dt_src"; then
+				cc_dt_present=true
+			else
+				cc_dt_present=false
+			fi
+		fi
+		cc_emit "repository" "$cc_dt_id"
+		cc_emit "  source_branch" "$cc_dt_src"
+		cc_emit "  target_branch" "$cc_dt_tgt"
+		cc_emit "  source_present" "$cc_dt_present"
+	done
+	return 0
+}
+
 # ---------------------------------------------------------------------------
 # Recovery
 # ---------------------------------------------------------------------------
 
-# cc_recovery_inspect EXEC_DIR -> report status, ownership, and resume eligibility
+# cc_recovery_inspect EXEC_DIR [OWNER] -> report status, ownership, and resume
+# eligibility. Resume is eligible only when the execution is mid-flight, its
+# snapshot is intact, every worktree still exists, and (when OWNER is given) the
+# requesting owner matches the recorded owner. Interrupted state is preserved.
 cc_recovery_inspect() {
-	cc_ri_dir="$1"
+	cc_ri_dir="$1"; cc_ri_req="${2:-}"
 	[ -f "$cc_ri_dir/execution.yaml" ] || { cc_fail RECOVERY_NO_EXECUTION; return 1; }
 	cc_ri_st=$(cc_execution_status "$cc_ri_dir")
 	cc_ri_owner=$(cc_scalar "$cc_ri_dir/execution.yaml" "owner")
 	cc_emit status "$cc_ri_st"
 	cc_emit owner "$cc_ri_owner"
 	cc_emit worker_failures "$(cc_scalar "$cc_ri_dir/execution.yaml" worker_failures)"
+	# preservation evidence
+	cc_ri_snap=false; [ -f "$cc_ri_dir/snapshot/plan.yaml" ] && cc_ri_snap=true
+	cc_emit snapshot_present "$cc_ri_snap"
+	cc_ri_wt=intact
+	for cc_ri_rf in "$cc_ri_dir"/repositories/*.yaml; do
+		[ -f "$cc_ri_rf" ] || continue
+		cc_ri_w=$(cc_scalar "$cc_ri_rf" worktree)
+		[ -d "$cc_ri_w" ] || cc_ri_wt=missing
+	done
+	cc_emit worktrees "$cc_ri_wt"
+	# resume eligibility
+	cc_ri_elig=false; cc_ri_reason=""
+	case "$cc_ri_st" in
+		running|verifying|repairing)
+			if [ "$cc_ri_snap" = true ] && [ "$cc_ri_wt" = intact ]; then
+				if [ -z "$cc_ri_req" ] || [ "$cc_ri_req" = "$cc_ri_owner" ]; then
+					cc_ri_elig=true
+				else
+					cc_ri_reason=OWNER_MISMATCH
+				fi
+			else
+				cc_ri_reason=STATE_INCOMPLETE
+			fi ;;
+		verified|failed|blocked) cc_ri_reason=TERMINAL_STATE ;;
+		*) cc_ri_reason=UNKNOWN_STATE ;;
+	esac
+	cc_emit resume_eligible "$cc_ri_elig"
+	[ -n "$cc_ri_reason" ] && cc_emit resume_reason "$cc_ri_reason" || :
+	# resumable retained for backward-compatible callers
 	case "$cc_ri_st" in
 		running|verifying|repairing) cc_emit resumable true ;;
-		verified|failed|blocked) cc_emit resumable false ;;
-		*) cc_emit resumable unknown ;;
+		*) cc_emit resumable false ;;
 	esac
 	return 0
 }
@@ -858,8 +1018,10 @@ cc_main() {
 	case "$cc_cmd" in
 		workspace-validate)      cc_workspace_validate "$@" ;;
 		workspace-init)          cc_workspace_init "$@" ;;
+		repository-register)     cc_repository_register "$@" ;;
 		repository-resolve)      cc_repo_resolve "$@" ;;
 		repository-preflight)    cc_repository_preflight "$@" ;;
+		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
 		plan-validate)           cc_plan_validate "$@" ;;
 		plan-allocate-id)        cc_plan_allocate_id "$@" ;;

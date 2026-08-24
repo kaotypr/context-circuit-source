@@ -130,6 +130,22 @@ cc_recovery_inspect "$edir" >/dev/null
 require_file "$edir/execution.yaml"
 require_dir "$ws/.runtime/worktrees/0001-alpha/api"
 
+# --- resume eligibility: mid-flight + matching owner is eligible; a terminal or
+#     foreign-owner request is not ---
+cc_fx_plan "$ws" 0011-resume "Resume" "api"
+cc_plan_approve "$ws" 0011-resume >/dev/null
+rexec=$(cc_execution_begin "$ws" 0011-resume owner-a | sed -n 's/^execution_id: //p')
+redir=$(cc_fx_exec_dir "$ws" 0011-resume "$rexec")
+cc_attempt_begin "$redir" >/dev/null
+ri=$(cc_recovery_inspect "$redir" owner-a)
+printf '%s\n' "$ri" | grep -Fq "resume_eligible: true" || fail "owner should resume"
+rj=$(cc_recovery_inspect "$redir" owner-b)
+printf '%s\n' "$rj" | grep -Fq "resume_eligible: false" || fail "foreign owner must not resume"
+printf '%s\n' "$rj" | grep -Fq "resume_reason: OWNER_MISMATCH" || fail "expected OWNER_MISMATCH"
+# the failed execution above is terminal and not resume-eligible
+rt=$(cc_recovery_inspect "$edir" sess1)
+printf '%s\n' "$rt" | grep -Fq "resume_eligible: false" || fail "failed execution not resumable"
+
 # --- provider-specific launch and old-design machinery absent from the runtime ---
 not_contains "$ROOT/wrapper/runtime/engine.sh" "cc_probe"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "cc_route"
