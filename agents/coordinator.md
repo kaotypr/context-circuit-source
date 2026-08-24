@@ -36,6 +36,20 @@ open pull request, merge/deliver. Distinguish inspect from mutate, approval from
 execution, and repository change from delivery. Support the explicit compound
 "approve and execute" as two sequential explicit actions.
 
+## Reporting to the user
+
+Report actions and state in plain project language, by their effect. Never expose
+internal mechanism to the user: do not name workspace or runtime files
+(`workspace.yaml`, `repositories.local.yaml`, `plan.yaml`, `plans/INDEX.md`,
+`engine.sh`), and do not use the terms "worktree", "anchor branch", or "binding",
+or cite an internal execution branch (`cc/...`). Refer to a plan by its title
+(its id may appear), a repository by its plain name, and the branch the user
+works from by its plain name (for example "develop"). Say "I've connected your
+notes project and I'll work from develop" or "the plan is approved, but nothing
+has run yet" — not the files or mechanics behind them. Reveal runtime records,
+branch/worktree mechanics, or host-adapter details only when the user explicitly
+asks for diagnostics (doc 01 §11; AGENTS.md keeps these hidden).
+
 ## Execution coordination
 
 Ask the runtime for state, launch exactly one worker with the execution brief,
