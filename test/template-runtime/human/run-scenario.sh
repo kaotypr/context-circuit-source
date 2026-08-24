@@ -104,28 +104,49 @@ done
 setup_empty() { awk -v k="$1" '$0 ~ "^  " k ":[[:space:]]*\\[\\]" {f=1} END{exit f?0:1}' "$CASE_FILE"; }
 TAB=$(printf '\t')
 
-# Emit one TSV row per setup.repositories entry: id  dest  default_branch  branches  seed_files
+ENGINE_CLI="$WORKSPACE/wrapper/runtime/engine.sh"
+
+# Emit one TSV row per setup.repositories entry: id dest default_branch branches seed_files connect
 repo_fixtures() {
 	awk '
 		/^  repositories:/{inr=1; next}
 		inr && /^  [A-Za-z]/ && $0 !~ /^    /{inr=0}
 		inr && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf;
+			if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf"\t"conn;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			dest="";defb="";br="";sf=""; next
+			dest="";defb="";br="";sf="";conn=""; next
 		}
-		inr && id!="" && /^      dest:/{v=$0;sub(/^      dest:[[:space:]]*/,"",v);gsub(/[[:space:]]+$/,"",v);dest=v;next}
-		inr && id!="" && /^      default_branch:/{v=$0;sub(/^      default_branch:[[:space:]]*/,"",v);gsub(/[[:space:]]+$/,"",v);defb=v;next}
+		inr && id!="" && /^      dest:/{v=$0;sub(/^      dest:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);dest=v;next}
+		inr && id!="" && /^      default_branch:/{v=$0;sub(/^      default_branch:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);defb=v;next}
 		inr && id!="" && /^      branches:/{v=$0;sub(/^      branches:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);br=v;next}
 		inr && id!="" && /^      seed_files:/{v=$0;sub(/^      seed_files:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);sf=v;next}
-		END{ if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf }
+		inr && id!="" && /^      connect:/{v=$0;sub(/^      connect:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);conn=v;next}
+		END{ if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf"\t"conn }
+	' "$CASE_FILE"
+}
+
+# Emit one TSV row per setup.plans entry: id title repository objective open_question
+plan_fixtures() {
+	awk '
+		/^  plans:/{inp=1; next}
+		inp && /^  [A-Za-z]/ && $0 !~ /^    /{inp=0}
+		inp && /^    -[[:space:]]*id:[[:space:]]*/{
+			if(id!="") print id"\t"title"\t"repo"\t"obj"\t"oq;
+			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
+			title="";repo="";obj="";oq=""; next
+		}
+		inp && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
+		inp && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
+		inp && id!="" && /^      objective:/{v=$0;sub(/^      objective:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);obj=v;next}
+		inp && id!="" && /^      open_question:/{v=$0;sub(/^      open_question:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);oq=v;next}
+		END{ if(id!="") print id"\t"title"\t"repo"\t"obj"\t"oq }
 	' "$CASE_FILE"
 }
 
 FIXTURE_NOTE=none
 if ! setup_empty repositories; then
 	FIXTURE_NOTE=repos
-	repo_fixtures | while IFS="$TAB" read -r id dest defb branches seeds; do
+	repo_fixtures | while IFS="$TAB" read -r id dest defb branches seeds conn; do
 		[ -n "$id" ] || continue
 		dest=${dest:-$id}; defb=${defb:-main}
 		case "$dest" in /*|*..*) printf 'FAIL: unsafe fixture dest: %s\n' "$dest" >&2; exit 1 ;; esac
@@ -140,14 +161,43 @@ if ! setup_empty repositories; then
 		done
 		git -C "$repo" add -A
 		git -C "$repo" commit -q -m 'seed'
-		# create the other branches (at the seed commit); HEAD stays on default_branch
 		for b in $(printf '%s' "$branches" | tr ',' ' '); do
 			[ -n "$b" ] && [ "$b" != "$defb" ] && git -C "$repo" branch "$b" 2>/dev/null || :
 		done
-		printf '[setup] seeded fixture repo %s at %s (default %s; branches %s)\n' "$id" "$dest" "$defb" "${branches:-$defb}"
+		# optional pre-connect: register + bind via the shipped engine so a seeded
+		# plan can reference it (case 03). Without `connect:` the repo is left for the
+		# coordinator to connect in-conversation (case 02).
+		if [ -n "$conn" ]; then
+			sh "$ENGINE_CLI" repository-register "$WORKSPACE" "$id" "$dest" "$conn" >/dev/null \
+				|| { printf 'FAIL: could not pre-connect fixture %s\n' "$id" >&2; exit 1; }
+			printf '[setup] seeded + connected repo %s at %s (anchor %s)\n' "$id" "$dest" "$conn"
+		else
+			printf '[setup] seeded fixture repo %s at %s (default %s; branches %s)\n' "$id" "$dest" "$defb" "${branches:-$defb}"
+		fi
 	done
 fi
-setup_empty sources || { FIXTURE_NOTE="${FIXTURE_NOTE},sources-todo"; printf 'WARN: setup.sources fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2; }
+
+# setup.plans: seed a DRAFT plan (plan.yaml + PLAN.md + INDEX row) via the engine,
+# so review/approve cases start from an existing plan with an open question.
+if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
+	FIXTURE_NOTE="${FIXTURE_NOTE},plans"
+	plan_fixtures | while IFS="$TAB" read -r pid title prepo obj oq; do
+		[ -n "$pid" ] || continue
+		pdir="$WORKSPACE/plans/$pid"; mkdir -p "$pdir"
+		{
+			printf 'schema_version: 1\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$pid" "$title" "$obj"
+			printf 'repositories:\n  - id: %s\n' "$prepo"
+			printf 'open_questions:\n  - %s\n' "$oq"
+			printf 'tasks:\n  - id: EXPORT-001\n    title: %s\n    repositories: [%s]\n    paths: [.]\n    depends_on: []\n' "$title" "$prepo"
+		} > "$pdir/plan.yaml"
+		printf '# %s\n\n%s\n\n## Open question\n\n- %s\n' "$title" "$obj" "$oq" > "$pdir/PLAN.md"
+		sh "$ENGINE_CLI" plan-validate "$pdir" >/dev/null || { printf 'FAIL: seeded plan %s is invalid\n' "$pid" >&2; exit 1; }
+		sh "$ENGINE_CLI" plan-index-upsert "$WORKSPACE" "$pid" >/dev/null || :
+		printf '[setup] seeded draft plan %s (repo %s, one open question)\n' "$pid" "$prepo"
+	done
+fi
+
+setup_empty sources || grep -q '^  sources:[[:space:]]*\[\]' "$CASE_FILE" || { FIXTURE_NOTE="${FIXTURE_NOTE},sources-todo"; printf 'WARN: setup.sources fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2; }
 
 # 4. Capture the pristine baseline snapshot (harness §1) for dimension A diffs.
 mkdir -p "$BASELINE"
