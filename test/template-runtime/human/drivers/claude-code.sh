@@ -35,14 +35,24 @@ SANDBOX=0
 if command -v bwrap >/dev/null 2>&1 && bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp true >/dev/null 2>&1; then
 	SANDBOX=1
 fi
-if [ "$SANDBOX" -ne 1 ] && [ "${CC_ALLOW_UNSANDBOXED:-0}" != "1" ]; then
+# Unsandboxed runs require an EXPLICIT opt-in, one of:
+#   - CC_ALLOW_UNSANDBOXED=1 in the environment, or
+#   - a local, gitignored marker file next to this driver: .allow-unsandboxed
+# The committed default stays safe (refuse); the marker lets an operator who owns
+# the machine make "just run" the default WITHOUT baking risk into the repo.
+DRV_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+ALLOW_UNSANDBOXED=0
+[ "${CC_ALLOW_UNSANDBOXED:-0}" = "1" ] && ALLOW_UNSANDBOXED=1
+[ -f "$DRV_DIR/.allow-unsandboxed" ] && ALLOW_UNSANDBOXED=1
+if [ "$SANDBOX" -ne 1 ] && [ "$ALLOW_UNSANDBOXED" -ne 1 ]; then
 	printf 'FAIL: no working filesystem sandbox on this host (bubblewrap/user-namespaces unavailable).\n' >&2
 	printf '      The coordinator runs with --permission-mode bypassPermissions and would NOT be confined\n' >&2
 	printf '      to the disposable workspace — it could write into your real home directory.\n' >&2
-	printf '      Run the harness inside a container/VM, or set CC_ALLOW_UNSANDBOXED=1 to accept the risk.\n' >&2
+	printf '      Options: run inside a container/VM; set CC_ALLOW_UNSANDBOXED=1; or, to make unsandboxed\n' >&2
+	printf '      the default on THIS machine, create the local marker: touch %s/.allow-unsandboxed\n' "$DRV_DIR" >&2
 	exit 2
 fi
-[ "$SANDBOX" -eq 1 ] || printf '[driver] WARNING: running UNSANDBOXED (CC_ALLOW_UNSANDBOXED=1) — coordinator writes are NOT confined.\n' >&2
+[ "$SANDBOX" -eq 1 ] || printf '[driver] WARNING: running UNSANDBOXED (opt-in) — coordinator writes are NOT confined; the isolation guard only reports escapes.\n' >&2
 
 # run_claude WORKDIR CLAUDE_ARGS...  (stdin always /dev/null; sandboxed when possible)
 run_claude() {
