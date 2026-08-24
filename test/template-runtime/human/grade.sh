@@ -174,6 +174,20 @@ while IFS= read -r line; do
 			cr_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$cr_exec" 2>/dev/null)
 			if [ -n "$cr_exec" ] && [ -f "$cr_dir/completion.yaml" ]; then ok "completion_recorded ($val: $cr_exec/completion.yaml)"
 			else bad "completion_recorded ($val: no completion record)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		plan_archived)
+			# val "<plan-id>[:<expected-status>]" — plan is in plans/.archived/, gone from
+			# the active area and the index, with its status preserved (INV-ARCHIVE-01).
+			pa_pid=${val%%:*}; pa_want=""; case "$val" in *:*) pa_want=${val#*:} ;; esac
+			pa_bad=""
+			[ -f "$WORKSPACE/plans/.archived/$pa_pid/plan.yaml" ] || pa_bad="not in .archived"
+			[ -d "$WORKSPACE/plans/$pa_pid" ] && pa_bad="$pa_bad; still in active area"
+			cc_plan_index_row_present "$WORKSPACE" "$pa_pid" 2>/dev/null && pa_bad="$pa_bad; index row still present"
+			if [ -n "$pa_want" ]; then
+				pa_st=$(cc_scalar "$WORKSPACE/plans/.archived/$pa_pid/plan.yaml" status 2>/dev/null) || pa_st=""
+				[ "$pa_st" = "$pa_want" ] || pa_bad="$pa_bad; status '${pa_st:-<none>}' != '$pa_want'"
+			fi
+			if [ -z "$pa_bad" ]; then ok "plan_archived ($pa_pid: in .archived, deindexed${pa_want:+, status $pa_want})"
+			else bad "plan_archived ($pa_pid:$pa_bad)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		plan_not_archived)
 			# val "<plan-id>" — after a restore round-trip the plan is NOT left in .archived
 			if [ ! -d "$WORKSPACE/plans/.archived/$val" ]; then ok "plan_not_archived ($val: not in .archived)"

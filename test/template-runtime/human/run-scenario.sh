@@ -152,6 +152,9 @@ seed_plan_state() {
 	( . "$ENGINE_CLI"
 		cc_plan_approve "$WORKSPACE" "$sps_pid" >/dev/null || { printf 'FAIL: seed approve %s\n' "$sps_pid" >&2; exit 1; }
 		[ "$sps_state" = "approved" ] && exit 0
+		# archived: approve then archive, so a restore case starts from an approved
+		# plan sitting in plans/.archived/ (status must survive the restore).
+		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
 		[ "$sps_state" = "verified-after-repair" ] || exit 0
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
 		sps_edir="$WORKSPACE/.runtime/executions/$sps_pid/$sps_exec"
