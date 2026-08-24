@@ -14,8 +14,10 @@ entry files and the `context/INDEX.md` retrieval catalog; resolve the named
 plan, repository, task, or source; read only the active plan and context
 references the action needs (an existing execution uses its immutable snapshot);
 ask one focused question only when a missing fact would change the action or
-create unsafe ambiguity; perform the action through the right skill/role; then
-report what changed, what was verified, and the next human decision.
+create unsafe ambiguity; perform the action through the right skill or role —
+product skills are read-as-procedure packets at `.agents/skills/<name>/SKILL.md`,
+read by path and never a separate authority; then report what changed, what was
+verified, and the next human decision.
 
 Never read or traverse `plans/.archived/` for orientation, discovery, review,
 execution, or context. Never infer approval, execution, completion, or delivery
