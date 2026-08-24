@@ -102,17 +102,17 @@ done
 #    "already-existing code"), created at prep time so the coordinator sees them
 #    as pre-existing and only has to CONNECT them. `setup.sources` is still a TODO.
 setup_empty() { awk -v k="$1" '$0 ~ "^  " k ":[[:space:]]*\\[\\]" {f=1} END{exit f?0:1}' "$CASE_FILE"; }
-TAB=$(printf '\t')
+US=$(printf '\037')   # non-whitespace field separator: preserves EMPTY middle fields (TAB, being IFS-whitespace, collapses them)
 
 ENGINE_CLI="$WORKSPACE/wrapper/runtime/engine.sh"
 
 # Emit one TSV row per setup.repositories entry: id dest default_branch branches seed_files connect
 repo_fixtures() {
-	awk '
+	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  repositories:/{inr=1; next}
 		inr && /^  [A-Za-z]/ && $0 !~ /^    /{inr=0}
 		inr && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf"\t"conn;
+			if(id!="") print id S dest S defb S br S sf S conn;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
 			dest="";defb="";br="";sf="";conn=""; next
 		}
@@ -121,32 +121,63 @@ repo_fixtures() {
 		inr && id!="" && /^      branches:/{v=$0;sub(/^      branches:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);br=v;next}
 		inr && id!="" && /^      seed_files:/{v=$0;sub(/^      seed_files:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);sf=v;next}
 		inr && id!="" && /^      connect:/{v=$0;sub(/^      connect:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);conn=v;next}
-		END{ if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf"\t"conn }
+		END{ if(id!="") print id S dest S defb S br S sf S conn }
 	' "$CASE_FILE"
 }
 
-# Emit one TSV row per setup.plans entry: id title repository objective open_question
+# Emit one TSV row per setup.plans entry: id title repository objective open_question seed_state
 plan_fixtures() {
-	awk '
+	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  plans:/{inp=1; next}
 		inp && /^  [A-Za-z]/ && $0 !~ /^    /{inp=0}
 		inp && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id"\t"title"\t"repo"\t"obj"\t"oq;
+			if(id!="") print id S title S repo S obj S oq S ss;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			title="";repo="";obj="";oq=""; next
+			title="";repo="";obj="";oq="";ss=""; next
 		}
 		inp && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
 		inp && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
 		inp && id!="" && /^      objective:/{v=$0;sub(/^      objective:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);obj=v;next}
 		inp && id!="" && /^      open_question:/{v=$0;sub(/^      open_question:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);oq=v;next}
-		END{ if(id!="") print id"\t"title"\t"repo"\t"obj"\t"oq }
+		inp && id!="" && /^      seed_state:/{v=$0;sub(/^      seed_state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);ss=v;next}
+		END{ if(id!="") print id S title S repo S obj S oq S ss }
 	' "$CASE_FILE"
+}
+
+# Drive the shipped engine to bring a seeded plan to a pre-execution state.
+# seed_state=approved: approve only. seed_state=verified-after-repair: approve,
+# execute, one FAILED verify + a repair commit, then a PASSED verify (worker_failures=1).
+seed_plan_state() {
+	sps_pid="$1"; sps_repo="$2"; sps_state="$3"
+	( . "$ENGINE_CLI"
+		cc_plan_approve "$WORKSPACE" "$sps_pid" >/dev/null || { printf 'FAIL: seed approve %s\n' "$sps_pid" >&2; exit 1; }
+		[ "$sps_state" = "approved" ] && exit 0
+		[ "$sps_state" = "verified-after-repair" ] || exit 0
+		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
+		sps_edir="$WORKSPACE/.runtime/executions/$sps_pid/$sps_exec"
+		sps_wt=$(cc_scalar "$sps_edir/repositories/$sps_repo.yaml" worktree)
+		[ -d "$sps_wt" ] || { printf 'FAIL: seed worktree missing for %s\n' "$sps_pid" >&2; exit 1; }
+		# attempt 1: an implementation that does NOT satisfy verification -> failed
+		cc_attempt_begin "$sps_edir" >/dev/null
+		printf 'incomplete first attempt\n' > "$sps_wt/notes-wip.txt"
+		git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m 'attempt 1 (incomplete)'
+		cc_worker_commit_record "$sps_edir" "$sps_repo" implementation >/dev/null
+		cc_verifier_prepare "$sps_edir" >/dev/null
+		cc_verifier_result_record "$sps_edir" 1 failed >/dev/null   # worker_failures -> 1, repairing
+		# repair attempt 2: satisfy verification (create export.py) -> passed
+		cc_attempt_begin "$sps_edir" >/dev/null
+		printf 'print("export")\n' > "$sps_wt/export.py"
+		git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m 'attempt 2 (repair)'
+		cc_worker_commit_record "$sps_edir" "$sps_repo" repair >/dev/null
+		cc_verifier_prepare "$sps_edir" >/dev/null
+		cc_verifier_result_record "$sps_edir" 2 passed >/dev/null   # -> verified
+	) || return 1
 }
 
 FIXTURE_NOTE=none
 if ! setup_empty repositories; then
 	FIXTURE_NOTE=repos
-	repo_fixtures | while IFS="$TAB" read -r id dest defb branches seeds conn; do
+	repo_fixtures | while IFS="$US" read -r id dest defb branches seeds conn; do
 		[ -n "$id" ] || continue
 		dest=${dest:-$id}; defb=${defb:-main}
 		case "$dest" in /*|*..*) printf 'FAIL: unsafe fixture dest: %s\n' "$dest" >&2; exit 1 ;; esac
@@ -181,7 +212,7 @@ fi
 # so review/approve cases start from an existing plan with an open question.
 if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	FIXTURE_NOTE="${FIXTURE_NOTE},plans"
-	plan_fixtures | while IFS="$TAB" read -r pid title prepo obj oq; do
+	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate; do
 		[ -n "$pid" ] || continue
 		pdir="$WORKSPACE/plans/$pid"; mkdir -p "$pdir"
 		{
@@ -202,7 +233,12 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 		fi
 		sh "$ENGINE_CLI" plan-validate "$pdir" >/dev/null || { printf 'FAIL: seeded plan %s is invalid\n' "$pid" >&2; exit 1; }
 		sh "$ENGINE_CLI" plan-index-upsert "$WORKSPACE" "$pid" >/dev/null || :
-		printf '[setup] seeded draft plan %s (repo %s, one open question)\n' "$pid" "$prepo"
+		if [ -n "$seedstate" ]; then
+			seed_plan_state "$pid" "$prepo" "$seedstate" || { printf 'FAIL: could not seed state %s for %s\n' "$seedstate" "$pid" >&2; exit 1; }
+			printf '[setup] seeded plan %s at state "%s" (repo %s)\n' "$pid" "$seedstate" "$prepo"
+		else
+			printf '[setup] seeded draft plan %s (repo %s%s)\n' "$pid" "$prepo" "$([ -n "$oq" ] && printf ', one open question')"
+		fi
 	done
 fi
 
