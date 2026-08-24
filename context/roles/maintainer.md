@@ -1,6 +1,6 @@
 ---
 kind: role
-status: proposed
+status: accepted
 title: Product-source maintainer
 slug: maintainer
 role_type: business
@@ -10,81 +10,91 @@ domains:
   - context/domains/host-adapters/README.md
   - context/domains/plan-review/README.md
   - context/domains/plan-approval/README.md
+  - context/domains/plan-execution/README.md
+  - context/domains/verification/README.md
+  - context/domains/completion/README.md
+  - context/domains/plan-organization/README.md
+  - context/domains/delivery/README.md
 related_workflows:
-  - docs/gates.md
   - docs/release.md
-sources:
-  - plans/context-circuit-plans/repository-bootstrap/plan.yaml
-  - plans/context-circuit-plans/multi-host-agent-support/plan.yaml
-  - plans/context-circuit-plans/local-binding-troubleshoot/plan.yaml
-  - plans/context-circuit-plans/approval-gate-ux-performance/plan.yaml
-  - plans/context-circuit-plans/interactive-plan-review/plan.yaml
+sources: []
 source_revisions:
-  - workspace_identity: product-source
-  - HEAD: b7a11f3
-generated_at: 2026-08-23T00:00:00Z
-review_date: 2026-09-22
-freshness: proposed-from-done-plans
+  - wrapper: HEAD
+    commit: 4b8ac0b
+    basis: current-wrapper
+generated_at: 2026-08-24T00:00:00Z
+review_date: 2026-11-24
+freshness: accepted-from-current-wrapper
 assumptions:
   - This checkout remains identity.kind product-source, not an instantiated workspace.
 unknowns: []
 contradictions: []
 acceptance:
-  state: pending
-  accepted_at:
-  accepted_by:
+  state: accepted
+  accepted_at: 2026-08-24
+  accepted_by: maintainer
 ---
 
 # Product-source maintainer
 
 ## Role definition
 
-The person maintaining the Context Circuit source repository. This checkout
-is the product, not a customer workspace. The role ships wrapper contracts,
+The person maintaining the Context Circuit source repository. This checkout is
+the product, not a customer workspace. The role ships wrapper contracts,
 adapters, skills, docs, and tests, and keeps `template/` as the blank seed.
 
 ## Primary outcomes
 
-- Keep one router, one lifecycle, and one owner per rule.
-- Land bounded plans without turning this repo into an instantiated workspace.
+- Keep one coordinator, one lifecycle, and one owner per rule.
+- Land bounded changes without turning this repo into an instantiated workspace.
 - Preserve dirty unrelated work, local bindings, and user data across release
   and upgrade.
 
 ## Product surfaces
 
-- Maintainer plans under `plans/context-circuit-plans/`
-- Wrapper contracts and `wrapper/runtime/engine.sh`
-- Shipped adapters and the seven `cc-*` skills
-- Human gates in `docs/gates.md`, including the product-source commit card
+- Maintainer plans under `plans/context-circuit-plans/` (the namespace exists
+  per `plans/README.md`; it is currently empty).
+- Wrapper contracts and `wrapper/runtime/engine.sh`.
+- Shipped adapters and the seven `cc-*` skills: `cc-workspace`, `cc-plan`,
+  `cc-execute`, `cc-verify`, `cc-complete`, `cc-archive`, `cc-deliver`.
+- Release assembly under `scripts/`, described in `docs/release.md`.
 
 ## Cross-domain perspective
 
-Repository binding is how registered product repos stay portable; this source
-checkout itself is already identified. Host adapters are how Codex, Claude
-Code, and Cursor enter the same workflow. Plan review is read-only. Plan
-approval on product-source is status-only, then a separate maintainer commit
-of the exact approval projection, then a later `Run approved plan`.
+Repository binding keeps registered product repos portable; this source checkout
+is already identified. Host adapters are how Codex, Claude Code, and Cursor enter
+the same lifecycle as evidence-only transports. Planning and review are
+non-mutating; approval is an explicit conversational gate; execution, independent
+verification, completion, archive/restore, and delivery are each separate
+explicit actions.
 
 ## Related domains and workflows
 
-- [Repository binding and bootstrap](../domains/repository-binding/README.md)
+- [Workspace orientation and repository binding](../domains/repository-binding/README.md)
 - [Host adapters](../domains/host-adapters/README.md)
-- [Named-plan review](../domains/plan-review/README.md)
-- [Plan approval and product-source commit](../domains/plan-approval/README.md)
+- [Planning and plan review](../domains/plan-review/README.md)
+- [Plan approval](../domains/plan-approval/README.md)
+- [Plan execution](../domains/plan-execution/README.md)
+- [Verification](../domains/verification/README.md)
+- [Completion](../domains/completion/README.md)
+- [Plan organization](../domains/plan-organization/README.md)
+- [Delivery](../domains/delivery/README.md)
+- Release assembly: `docs/release.md`
 
 ## Role-specific behavior and limitations
 
-An explicit user request may authorize a source-only commit. Registered
-product repositories still need their own delivery and publication gates.
-Do not scan `sources/` unless the request names exact files. Do not treat
-this checkout as a user project or restore an obsolete lifecycle.
+An explicit user request may authorize a source-only commit. Registered product
+repositories still need their own delivery and publication gates. Do not scan
+`sources/` unless the request names exact files. Do not treat this checkout as a
+user project or restore an obsolete lifecycle.
 
 ## Provenance
 
-Read the five done maintainer plans listed in `sources`. Raw `sources/` was
-not scanned. HEAD at generation was `b7a11f3`.
+Re-grounded on the current wrapper at HEAD `4b8ac0b`. The five previous-version
+maintainer plans that first seeded this page were deleted in `4b8ac0b`; their
+provenance was retired. Raw `sources/` was not scanned.
 
 ## Acceptance notes
 
-This role is proposed. Agent execution roles remain under `agents/` and are
-not replaced by this page. Human context acceptance is still required.
+Accepted 2026-08-24. Agent execution roles remain under `agents/` (coordinator,
+writer, verifier) and are not replaced by this page.
