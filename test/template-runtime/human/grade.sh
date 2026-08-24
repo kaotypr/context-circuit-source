@@ -38,7 +38,7 @@ ENGINE="$WORKSPACE/wrapper/runtime/engine.sh"
 
 # --- grader block extraction (controlled subset; awk, no yq) --------------------
 GBLOCK=$(mktemp "${TMPDIR:-/tmp}/cc-gb.XXXXXX")
-trap 'rm -f "$GBLOCK" "$GBLOCK".pc "$GBLOCK".fbd' EXIT HUP INT TERM
+trap 'rm -f "$GBLOCK" "$GBLOCK".*' EXIT HUP INT TERM
 awk '/^grader:/{f=1;next} f&&/^[A-Za-z_]/{f=0} f{print}' "$CASE_FILE" > "$GBLOCK"
 
 inline_list() { # "[a, "b", c]" -> one item per line, unquoted
@@ -161,22 +161,36 @@ if [ -f "$TRACE" ] && [ -s "$TRACE" ]; then
 	C_ENFORCED=1
 	set -f  # forbidden/required patterns must NOT be pathname-expanded against the CWD
 	TRACED=$(cut -f3 "$TRACE" | sed '/^$/d' | sort -u)
-	# forbidden: union across all actions; a hit anywhere in the trace fails.
-	awk '
-		$0 ~ "^  access_policy:"{ap=1;next} ap&&/^  [A-Za-z]/&&$0 !~ /^    /{ap=0}
-		ap&&/^      forbidden:/{v=$0;sub(/^      forbidden:[[:space:]]*/,"",v);if(v~/^\[/){gsub(/^\[|\]$/,"",v);n=split(v,a2,",");for(i=1;i<=n;i++){it=a2[i];gsub(/^[[:space:]]+|[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it};inf=0}else{inf=1};next}
-		ap&&inf&&/^        -/{it=$0;sub(/^        -[[:space:]]*/,"",it);sub(/[[:space:]]*#.*$/,"",it);gsub(/[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it;next}
-		ap&&inf&&/^      [A-Za-z]/{inf=0}
-		ap&&/^    [A-Za-z0-9_-]+:/{inf=0}
-	' "$GBLOCK" | sort -u > "$GBLOCK.fbd"
+	# forbidden: INTERSECTION across the actions that OCCURRED — flag only paths
+	# forbidden REGARDLESS of action (e.g. engine.sh, sources/, plans/.archived/).
+	# A path forbidden by only some actions (e.g. wrapper/contracts/** for orient but
+	# permitted for create-plan) can't be attributed to a turn reliably, so it is not
+	# flagged; that per-action nuance is unenforceable at session level.
+	fbd_for_action() {
+		awk -v act="$1" '
+			$0 ~ "^  access_policy:"{ap=1;next} ap&&/^  [A-Za-z]/&&$0 !~ /^    /{ap=0}
+			ap&&$0 ~ "^    "act":"{cur=1;next}
+			ap&&cur&&/^      forbidden:/{v=$0;sub(/^      forbidden:[[:space:]]*/,"",v);if(v~/^\[/){gsub(/^\[|\]$/,"",v);n=split(v,a2,",");for(i=1;i<=n;i++){it=a2[i];gsub(/^[[:space:]]+|[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it};inf=0}else{inf=1};next}
+			ap&&cur&&inf&&/^        -/{it=$0;sub(/^        -[[:space:]]*/,"",it);sub(/[[:space:]]*#.*$/,"",it);gsub(/[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it;next}
+			ap&&cur&&inf&&/^      [A-Za-z]/{inf=0}
+			ap&&cur&&/^    [A-Za-z0-9_-]+:/{cur=0}
+		' "$GBLOCK" | sort -u
+	}
+	INTER="$GBLOCK.fbd"; : > "$INTER"; firstf=1
+	for action in $(awk '/^  access_policy:/{f=1;next} f&&/^  [A-Za-z]/&&$0 !~ /^    /{f=0} f&&/^    [A-Za-z0-9_-]+:/{sub(/^    /,"");sub(/:.*/,"");print}' "$GBLOCK"); do
+		action_occurred "$action" || continue
+		fbd_for_action "$action" > "$GBLOCK.fbd1"
+		if [ "$firstf" -eq 1 ]; then cp "$GBLOCK.fbd1" "$INTER"; firstf=0
+		else grep -Fxf "$GBLOCK.fbd1" "$INTER" > "$GBLOCK.fbd2" 2>/dev/null || :; mv "$GBLOCK.fbd2" "$INTER"; fi
+	done
 	while IFS= read -r fbd; do
 		[ -n "$fbd" ] || continue
 		pat=$(printf '%s' "$fbd" | sed 's/\*\*/*/g')
 		viol=""
 		for p in $TRACED; do case "$p" in $pat) viol="$p"; break ;; esac; done
-		if [ -z "$viol" ]; then ok "forbidden clear (whole session): $fbd"
+		if [ -z "$viol" ]; then ok "forbidden clear (session): $fbd"
 		else bad "READ forbidden path (any point): $fbd (via $viol)"; FAIL_C=$((FAIL_C+1)); fi
-	done < "$GBLOCK.fbd"
+	done < "$INTER"
 	# required: per action, enforced only when that action actually occurred.
 	for action in $(awk '/^  access_policy:/{f=1;next} f&&/^  [A-Za-z]/&&$0 !~ /^    /{f=0} f&&/^    [A-Za-z0-9_-]+:/{sub(/^    /,"");sub(/:.*/,"");print}' "$GBLOCK"); do
 		if ! action_occurred "$action"; then info "$action did not occur — required checks skipped"; continue; fi
