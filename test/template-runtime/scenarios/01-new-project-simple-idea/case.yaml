@@ -37,15 +37,15 @@ grader:
   acceptance_criteria: [AC-01, AC-04, AC-05]
   invariants: [INV-REPO-04, INV-PLAN-04, INV-EXEC-01, INV-SEC-02]
   # A. state post-conditions (hard gate)
+  # Calibrated against design doc 02 §2 (request vocabulary) and §1 (never infer a
+  # consequential action from vague input):
+  #  - Initializing workspace identity on "help me get started" IS allowed (a setup
+  #    request; the name is safely inferable), so identity is NOT gated here.
+  #  - Creating/registering a repository the user never NAMED is NOT allowed — the
+  #    only triggers are "connect/clone/initialize the <named> repository"
+  #    (cc-workspace: "register only the repositories the user names"). Kept strict.
   post_conditions:
-    # Scoping-only turn: the persona does not name or approve a project, so
-    # initialization is optional. The template already ships workspace.yaml, so
-    # assert only that identity was NOT fabricated — a real identity appears here
-    # only if the human supplied one; the shipped placeholder is a pass. Whether
-    # the coordinator OFFERED to get set up is a transcript check (dimension B).
-    # Checked by diffing against the pristine baseline snapshot (harness §1).
-    - workspace_identity_not_fabricated: true
-    - repositories_registered: 0           # none invented
+    - repositories_registered: 0           # user named no repository -> none may be created
     - plans_created: ">=0"                 # a draft plan may exist; none approved
     - no_plan_status: [approved, done]     # nothing advanced past draft
     - no_execution_records: true           # nothing ran
@@ -70,7 +70,10 @@ grader:
         - "sources/**"                     # passive unless explicitly named (INV-SEC-02)
         - "wrapper/contracts/**"           # do not re-read all contracts to orient
     create-plan:
-      required: [context/INDEX.md, context/PROJECT.md]
+      # PROJECT.md is a blank placeholder in a new workspace; grounding is driven by
+      # the retrieval index (cc-plan), so only INDEX.md is required. PROJECT.md stays
+      # permitted via context/**.
+      required: [context/INDEX.md]
       allowed:  ["context/**"]
       forbidden: ["plans/.archived/**", "wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
