@@ -168,6 +168,20 @@ while IFS= read -r line; do
 				if [ -z "$ev_bad" ]; then ok "execution_verified ($val: $ev_exec verified, worker committed, verifier passed)"
 				else bad "execution_verified ($val:$ev_bad)"; FAIL_A=$((FAIL_A+1)); fi
 			fi ;;
+		completion_recorded)
+			# val "<plan-id>" — completion recorded an implementation record (INV-COMPLETE-02)
+			cr_exec=$(cc_latest_execution "$WORKSPACE" "$val" 2>/dev/null) || cr_exec=""
+			cr_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$cr_exec" 2>/dev/null)
+			if [ -n "$cr_exec" ] && [ -f "$cr_dir/completion.yaml" ]; then ok "completion_recorded ($val: $cr_exec/completion.yaml)"
+			else bad "completion_recorded ($val: no completion record)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		repair_occurred)
+			# val "<plan-id>" — the execution went through at least one repair (INV-REPAIR-01);
+			# the failed attempt and repair commit are preserved (INV-PRESERVE-01).
+			ro_exec=$(cc_latest_execution "$WORKSPACE" "$val" 2>/dev/null) || ro_exec=""
+			ro_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$ro_exec" 2>/dev/null)
+			ro_wf=$(cc_scalar "$ro_dir/execution.yaml" worker_failures 2>/dev/null) || ro_wf=0
+			if [ -n "$ro_exec" ] && [ "${ro_wf:-0}" -ge 1 ]; then ok "repair_occurred ($val: worker_failures=$ro_wf)"
+			else bad "repair_occurred ($val: worker_failures=${ro_wf:-0}, expected >=1)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
