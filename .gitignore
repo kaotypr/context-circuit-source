@@ -1,12 +1,14 @@
 .DS_Store
 .runtime/
 dist/
-repositories/
-repositories.local.yaml
 
 # Repository bindings and checkout contents are host-local and never shipped.
+# Anchored to the workspace root and the template seed ONLY — a bare `repositories/`
+# also matched test/repositories/ and left that acceptance suite untracked.
 /repositories/
 /repositories.local.yaml
+/template/repositories/
+/template/repositories.local.yaml
 
 # Disposable output from the human-simulated template test harness.
 /test/template-runtime/human/.out/
