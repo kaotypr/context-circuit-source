@@ -83,12 +83,17 @@ sh test/template-runtime/human/grade.sh .out/<run-id>
 - **B. Transcript checks** (hard gate) — `forbids_regex` (no internals leaked to a
   lay user) and `requires_any` (a natural intent phrase). Note "verifier" is
   intentionally NOT forbidden — the product surfaces it by design.
-- **C. Access-discipline audit** (hard gate) — the file-access trace vs the
-  per-action `access_policy`. **Requires the host to expose a per-child
-  file-access trace; where it does not, C degrades to warning-only** and the
-  verdict rests on A and B (host-matrix §5). No host CLI is yet known to expose
-  this trace, so treat a green run as "state + transcript audited", not
-  "access-audited", until a trace source is wired.
+- **C. Access-discipline audit** (hard gate, **session-level**) — the file-access
+  trace vs the `access_policy`. Because which turn a read lands on is
+  non-deterministic across model runs, C is evaluated over the whole session, not
+  per turn: a `forbidden` path read **at any point** fails; a `required` file must
+  be read **at some point** for an action that **actually occurred** (occurrence
+  judged from workspace state — e.g. a `plan.yaml` exists — never from turn
+  timing). The action label in the trace is retained only for human reading.
+  **Requires the host to expose a file-access trace; where it does not, C degrades
+  to warning-only** and the verdict rests on A and B (host-matrix §5). The
+  `claude-code` driver captures the trace from the coordinator's `Read`/`Grep`/
+  `Glob` tool calls (stream-json).
 - **D. Efficiency ledger** (soft, warning-only) — per-action turns/tokens vs
   `budgets`; never fails a run.
 

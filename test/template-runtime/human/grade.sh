@@ -38,7 +38,7 @@ ENGINE="$WORKSPACE/wrapper/runtime/engine.sh"
 
 # --- grader block extraction (controlled subset; awk, no yq) --------------------
 GBLOCK=$(mktemp "${TMPDIR:-/tmp}/cc-gb.XXXXXX")
-trap 'rm -f "$GBLOCK"' EXIT HUP INT TERM
+trap 'rm -f "$GBLOCK" "$GBLOCK".pc "$GBLOCK".fbd' EXIT HUP INT TERM
 awk '/^grader:/{f=1;next} f&&/^[A-Za-z_]/{f=0} f{print}' "$CASE_FILE" > "$GBLOCK"
 
 inline_list() { # "[a, "b", c]" -> one item per line, unquoted
@@ -135,37 +135,53 @@ if [ -n "$RA" ]; then
 fi
 
 # --- C. access-discipline audit (hard gate; degrades when no trace) ------------
-printf '\n--- C. access-discipline audit (hard gate) ---\n'
+# Session-level, not per-turn: which turn a read lands on is non-deterministic
+# across model runs, so per-action attribution is unreliable. Instead: a forbidden
+# path read AT ANY POINT is a violation; a required file must be read AT SOME POINT
+# for an action that ACTUALLY OCCURRED (occurrence judged from workspace state,
+# never from turn timing). The action label in the trace is kept only for humans.
+printf '\n--- C. access-discipline audit (hard gate, session-level) ---\n'
 C_ENFORCED=0
+# an action "occurred" if the workspace shows its effect (state, not trace timing)
+action_occurred() {
+	# glob-free (this runs under `set -f`): use find, not a shell glob.
+	case "$1" in
+		orient) return 0 ;;                                   # every conversation orients
+		create-plan) find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml \
+			-not -path '*/.archived/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
+		*) return 0 ;;                                        # unknown: assume it occurred
+	esac
+}
 if [ -f "$TRACE" ] && [ -s "$TRACE" ]; then
 	C_ENFORCED=1
 	set -f  # forbidden/required patterns must NOT be pathname-expanded against the CWD
-	# each action block under access_policy
-	for action in $(awk '/^  access_policy:/{f=1;next} f&&/^  [A-Za-z]/{f=0} f&&/^    [A-Za-z0-9_-]+:/{sub(/^    /,"");sub(/:.*/,"");print}' "$GBLOCK"); do
-		traced=$(awk -F'\t' -v a="$action" '$1==a{print $3}' "$TRACE")
-		if [ -z "$traced" ]; then info "$action not exercised (no traced reads) — skipped"; continue; fi
-		# required: each must be present
+	TRACED=$(cut -f3 "$TRACE" | sed '/^$/d' | sort -u)
+	# forbidden: union across all actions; a hit anywhere in the trace fails.
+	awk '
+		$0 ~ "^  access_policy:"{ap=1;next} ap&&/^  [A-Za-z]/&&$0 !~ /^    /{ap=0}
+		ap&&/^      forbidden:/{v=$0;sub(/^      forbidden:[[:space:]]*/,"",v);if(v~/^\[/){gsub(/^\[|\]$/,"",v);n=split(v,a2,",");for(i=1;i<=n;i++){it=a2[i];gsub(/^[[:space:]]+|[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it};inf=0}else{inf=1};next}
+		ap&&inf&&/^        -/{it=$0;sub(/^        -[[:space:]]*/,"",it);sub(/[[:space:]]*#.*$/,"",it);gsub(/[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it;next}
+		ap&&inf&&/^      [A-Za-z]/{inf=0}
+		ap&&/^    [A-Za-z0-9_-]+:/{inf=0}
+	' "$GBLOCK" | sort -u > "$GBLOCK.fbd"
+	while IFS= read -r fbd; do
+		[ -n "$fbd" ] || continue
+		pat=$(printf '%s' "$fbd" | sed 's/\*\*/*/g')
+		viol=""
+		for p in $TRACED; do case "$p" in $pat) viol="$p"; break ;; esac; done
+		if [ -z "$viol" ]; then ok "forbidden clear (whole session): $fbd"
+		else bad "READ forbidden path (any point): $fbd (via $viol)"; FAIL_C=$((FAIL_C+1)); fi
+	done < "$GBLOCK.fbd"
+	# required: per action, enforced only when that action actually occurred.
+	for action in $(awk '/^  access_policy:/{f=1;next} f&&/^  [A-Za-z]/&&$0 !~ /^    /{f=0} f&&/^    [A-Za-z0-9_-]+:/{sub(/^    /,"");sub(/:.*/,"");print}' "$GBLOCK"); do
+		if ! action_occurred "$action"; then info "$action did not occur — required checks skipped"; continue; fi
 		for req in $(awk -v act="$action" '
-			$0 ~ "^  access_policy:"{ap=1;next} ap&&/^  [A-Za-z]/{ap=0}
+			$0 ~ "^  access_policy:"{ap=1;next} ap&&/^  [A-Za-z]/&&$0 !~ /^    /{ap=0}
 			ap&&$0 ~ "^    "act":"{cur=1;next} ap&&cur&&/^    [A-Za-z0-9_-]+:/{cur=0}
 			ap&&cur&&/^      required:/{v=$0;sub(/^      required:[[:space:]]*/,"",v);if(v~/^\[/){gsub(/^\[|\]$/,"",v);n=split(v,a2,",");for(i=1;i<=n;i++){it=a2[i];gsub(/^[[:space:]]+|[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it}}}
 		' "$GBLOCK"); do
-			if printf '%s\n' "$traced" | grep -Fxq "$req"; then ok "$action required: $req"
-			else bad "$action MISSING required read: $req"; FAIL_C=$((FAIL_C+1)); fi
-		done
-		# forbidden: none may appear (block-list or inline; ** treated as *)
-		for fbd in $(awk -v act="$action" '
-			$0 ~ "^  access_policy:"{ap=1;next} ap&&/^  [A-Za-z]/{ap=0}
-			ap&&$0 ~ "^    "act":"{cur=1;next} ap&&cur&&/^    [A-Za-z0-9_-]+:/{cur=0}
-			ap&&cur&&/^      forbidden:/{v=$0;sub(/^      forbidden:[[:space:]]*/,"",v);if(v~/^\[/){gsub(/^\[|\]$/,"",v);n=split(v,a2,",");for(i=1;i<=n;i++){it=a2[i];gsub(/^[[:space:]]+|[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it}}else{inf=1};next}
-			ap&&cur&&inf&&/^        -/{it=$0;sub(/^        -[[:space:]]*/,"",it);sub(/[[:space:]]*#.*$/,"",it);gsub(/[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it;next}
-			ap&&cur&&inf&&/^      [A-Za-z]/{inf=0}
-		' "$GBLOCK"); do
-			pat=$(printf '%s' "$fbd" | sed 's/\*\*/*/g')
-			viol=""
-			for p in $traced; do case "$p" in $pat) viol="$p" ;; esac; done
-			if [ -z "$viol" ]; then ok "$action forbidden clear: $fbd"
-			else bad "$action READ forbidden path: $fbd (via $viol)"; FAIL_C=$((FAIL_C+1)); fi
+			if printf '%s\n' "$TRACED" | grep -Fxq "$req"; then ok "$action required (read at some point): $req"
+			else bad "$action MISSING required read (whole session): $req"; FAIL_C=$((FAIL_C+1)); fi
 		done
 	done
 	set +f
