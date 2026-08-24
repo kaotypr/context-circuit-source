@@ -2,10 +2,11 @@
 
 Accepted glossary for the Context Circuit source project. The source project's
 domain is Context Circuit itself, so this page accepts the product vocabulary
-settled in the design (`sources/context-circuit-v0.5-design/08-terminology.md`)
-and shipped to workspaces as `docs/terminology.md`. Term *meaning* and the
-*user-facing translation* are owned there; this page records that the source
-project accepts that vocabulary as Product Knowledge and makes it retrievable.
+shipped to workspaces as `docs/terminology.md`. Term *meaning* and the
+*user-facing translation* are owned there, and their exact authority is settled
+by the runtime contracts under `wrapper/contracts/`; this page records that the
+source project accepts that vocabulary as Product Knowledge and makes it
+retrievable.
 
 ## Product and runtime terms
 
@@ -27,14 +28,18 @@ project accepts that vocabulary as Product Knowledge and makes it retrievable.
 
 The coordinator reports actions by their effect and never exposes internal
 mechanism unless a user asks for diagnostics. The canonical internal → plain
-mapping is design chapter 08 §7, shipped as the table in `docs/terminology.md`
+mapping is the "say the effect, not the mechanism" table in `docs/terminology.md`
 (worktree, anchor branch, binding, execution branch, verifier, worker,
-host-blocked, delivery, archive/restore, and internal file names).
+host-blocked, delivery, archive/restore, and internal file names), whose
+authority is settled by the runtime contracts under `wrapper/contracts/`.
 
 ## Provenance
 
-- `sources/context-circuit-v0.5-design/08-terminology.md` — authoritative term meanings and translation table.
-- `docs/terminology.md` — shipped product projection referenced by the coordinator.
+- `docs/terminology.md` — the shipped product glossary and internal → user-facing
+  translation table; the coordinator references it, and its authority is settled
+  by the runtime contracts under `wrapper/contracts/`.
 - `agents/coordinator.md` — the role that applies the translation.
+- Design material under `sources/` is historical maintainer input, not a live
+  owner, and is read only when a request names it.
 
 Accepted from proposal `0001-terminology-glossary` on 2026-08-24.

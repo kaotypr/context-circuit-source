@@ -1,101 +1,107 @@
 ---
 kind: domain
-status: proposed
-title: Named-plan review
+status: accepted
+title: Planning and plan review
 slug: plan-review
 owners: []
-sources:
-  - plans/context-circuit-plans/interactive-plan-review/plan.yaml
-  - plans/context-circuit-plans/interactive-plan-review/PLAN.md
+sources: []
 source_revisions:
-  - plan: interactive-plan-review
-    status: done
-    updated_at: 2026-08-22T18:12:12Z
-generated_at: 2026-08-23T00:00:00Z
-review_date: 2026-09-22
-freshness: proposed-from-done-plans
+  - wrapper: HEAD
+    commit: 4b8ac0b
+    basis: current-wrapper
+generated_at: 2026-08-24T00:00:00Z
+review_date: 2026-11-24
+freshness: accepted-from-current-wrapper
 assumptions:
-  - Canonical lifecycle status is plan.yaml, not PLAN.md.
+  - The cc-plan skill owns both plan authoring and plan review.
 unknowns: []
-contradictions:
-  - interactive-plan-review PLAN.md still says Status: draft while plan.yaml is done.
+contradictions: []
 acceptance:
-  state: pending
-  accepted_at:
-  accepted_by:
+  state: accepted
+  accepted_at: 2026-08-24
+  accepted_by: maintainer
 workflows:
+  - docs/planning.md
   - docs/plan-review.md
 ---
 
-# Named-plan review
+# Planning and plan review
 
 ## Summary
 
-A human names one plan and gets a read-only Review Card. Optional host
-question prompts may repeat at most three focused choices. Route
-`Review plan <id>` and equivalent named-plan review requests here.
+Authoring a grounded plan from a request, and conversationally reviewing a draft
+plan without approving or executing it. Both are owned by the `cc-plan` skill.
+Route "create a plan for …" and "review plan `<id>`" here.
 
 ## Scope
 
-Inside: named-plan review routing, the `plan-review` context set, Review Card
-contents, missing-target clarification, and optional host question prompts.
+Inside: grounded plan creation, stable plan-id allocation, plan/task structure,
+the readable `PLAN.md` and canonical `plan.yaml`, and non-executing review.
 
-Outside: mutating plan or task status, treating a prompt answer as a gate,
-adding `cc-review-plan`, inspecting an unrelated plan, and expanding into
-`sources/` or other plan bundles.
+Outside: approval (see [plan-approval](../plan-approval/README.md)), execution
+(see [plan-execution](../plan-execution/README.md)), and any status change.
 
 ## Behavior
 
-`Review plan <id>` and equivalent named phrasing route to `review-plan` with
-`authorization: read-only`. Hosts discover this through `cc-plan`; there is
-no eighth shipped skill.
+Creating a plan does not approve or execute it. `cc-plan` drafts against
+route-selected Product Knowledge (`context/INDEX.md`), grounding the plan in
+available evidence; missing or contradictory information becomes an explicit
+open question, assumption, or risk rather than an invented decision
+(INV-PLAN-04). Every task names the repository or repositories it may change and
+bounded paths or an explicit repository-wide scope, with explicit dependencies
+(INV-PLAN-02). New plans use stable ids `NNNN-<kebab-slug>`; the four-digit
+sequence is the next after the highest ever allocated and is never reused
+(INV-PLAN-03).
 
-A review request with no usable plan id routes to `clarify-target` and does
-not inspect an unrelated bundle.
+`plan.yaml` owns human plan status (`draft`, `approved`, `done`); task status is
+a synchronized projection and never a second lifecycle authority (INV-PLAN-01).
 
-The Review Card reports outcome, summary, approval scope, non-effects, tasks,
-acceptance mapping, risks, contradictions, and at most three focused human
-decisions. When the current host exposes an optional native question prompt,
-those decisions are also offered there:
-
-| Host | Optional primitive | Fallback |
-| --- | --- | --- |
-| Cursor Agent | `AskQuestion` | Review Card text |
-| Claude Code | `AskUserQuestion` | Review Card text |
-| Codex CLI | `request_user_input` when listed | Review Card text |
-
-A missing, denied, or failed prompt is not `host-blocked` and must not retry
-as a required child. Question transcripts are not recorded in `host_evidence`.
-
-Choosing a next-action label such as `Approve this plan` may continue only
-into that route's existing first card in the same session. It cannot skip
-confirmation or change status.
+Reviewing a named plan is a read-only discussion: it walks the original request,
+objective/constraints/non-goals, grounding evidence, repository and task
+mapping, task order and dependencies, acceptance and verification ids,
+assumptions/open questions/risks, and delivery effects. It never changes plan
+status, approves, or executes. Resolving questions may update the draft;
+approval stays a separate explicit request. When the host exposes a native
+question prompt (`AskUserQuestion`, `AskQuestion`, `request_user_input`), focused
+choices may be offered there, but a missing or failed prompt is not
+`host-blocked` and question transcripts are not recorded.
 
 ## Workflows
 
-- Review Card owner: `docs/plan-review.md`
-- Approval confirmation, if chosen later: `docs/gates.md` via `cc-gates`
+- Plan authoring: `docs/planning.md`
+- Plan review: `docs/plan-review.md`
+
+## Interfaces
+
+- Canonical machine plan: `plan.yaml`; readable plan: `PLAN.md`
+- Retrieval catalog for grounding: `context/INDEX.md`
+- Active plan index: `plans/INDEX.md`
 
 ## Constraints and edge cases
 
-Review never writes `plan.yaml`, task status, leases, runtime, or Git.
-`cc-plan` does not keep a second approval procedure.
+Read only the selected context units, not the whole directory. Review writes
+nothing — no `plan.yaml`, task status, lease, runtime, or Git. There is no
+eighth shipped skill for review; `cc-plan` carries it.
 
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`
-- `wrapper/runtime/engine.sh` `plan-review` / `review-plan`
-- Shipped skill allowlist remains the existing seven adapters
-
-## Verification
-
-Done-plan verification IDs IPR-VT-01–IPR-VT-05.
+- `wrapper/runtime/engine.sh`: `cc_plan_allocate_id`, `cc_plan_validate`,
+  `cc_plan_status`
+- `wrapper/contracts/schemas/plan.yaml`, `wrapper/contracts/schemas/task.yaml`
+- `wrapper/contracts/invariants.yaml`: INV-PLAN-01, INV-PLAN-02, INV-PLAN-03,
+  INV-PLAN-04
 
 ## Provenance
 
-Read only the selected done plan `interactive-plan-review` (CC-005). Raw
-`sources/` was not scanned. HEAD at generation was `b7a11f3`.
+Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
+`interactive-plan-review` plan that seeded this page was deleted in `4b8ac0b`;
+its provenance was retired, along with the previous-version route tokens
+`review-plan` / `plan-review` / `clarify-target`, which are absent from the
+current engine. Raw `sources/` was not scanned.
 
 ## Acceptance notes
 
-This page is proposed. Human context acceptance is still required.
+Accepted 2026-08-24. Broadened from the former review-only `plan-review` draft to
+cover plan authoring as well, since the single `cc-plan` skill owns both. Slug
+kept as `plan-review`.

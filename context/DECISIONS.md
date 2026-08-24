@@ -43,3 +43,25 @@ it rather than duplicating policy.
 Consequence: the shipped template gains `context/TERMINOLOGY.md`,
 `docs/terminology.md`, and `docs/templates/terminology-context.md`. Accepted from
 proposal `0002-template-harness-and-terminology-decision`.
+
+## 2026-08-24 — current-state context refresh
+
+Decision: after `plans/context-circuit-plans/` was deleted in commit `4b8ac0b`
+as obsolete previous-version plans, re-ground the entire `context/` Product
+Knowledge on the current wrapper (skills, `engine.sh`, schemas, `invariants.yaml`,
+docs/adapters) rather than on the deleted plans, and accept the result.
+
+Rationale: the domain/role pages were reverse-engineered from previous-version
+plans and had drifted from the shipped contract (consolidated invariant ids,
+renamed skills, deleted `routes.yaml`/`context-sets.yaml`/`docs/gates.md`, and an
+approval card/token mechanism that contradicted `INV-APPROVE-01`). The current
+wrapper is the authoritative present-day evidence.
+
+Consequence: the domain set is now the nine domains that mirror the shipped
+lifecycle — repository-binding (broadened with orientation), plan-review
+(broadened to planning), plan-approval, plan-execution, verification,
+completion, plan-organization, delivery, and host-adapters — plus the refreshed
+maintainer role, INDEX owner pointers, and terminology authority pointer.
+`context/sources.yaml` provenance was retired (the wrapper is not a `sources/`
+read). The proposals for this refresh were consumed from `context/proposals/`
+on acceptance, as usual.
