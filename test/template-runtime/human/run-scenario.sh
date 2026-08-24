@@ -98,16 +98,56 @@ for leak in .runtime plans/context-circuit-plans repositories.local.yaml reposit
 done
 
 # 3. Apply case setup fixtures.
-#    Only the empty form (`repositories: []` / `sources: []`) is handled here;
-#    non-empty fixtures are a documented TODO for cases 02+ (worktree/seed shape).
+#    `setup.repositories` seeds real git repos INSIDE the workspace (the human's
+#    "already-existing code"), created at prep time so the coordinator sees them
+#    as pre-existing and only has to CONNECT them. `setup.sources` is still a TODO.
 setup_empty() { awk -v k="$1" '$0 ~ "^  " k ":[[:space:]]*\\[\\]" {f=1} END{exit f?0:1}' "$CASE_FILE"; }
+TAB=$(printf '\t')
+
+# Emit one TSV row per setup.repositories entry: id  dest  default_branch  branches  seed_files
+repo_fixtures() {
+	awk '
+		/^  repositories:/{inr=1; next}
+		inr && /^  [A-Za-z]/ && $0 !~ /^    /{inr=0}
+		inr && /^    -[[:space:]]*id:[[:space:]]*/{
+			if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf;
+			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
+			dest="";defb="";br="";sf=""; next
+		}
+		inr && id!="" && /^      dest:/{v=$0;sub(/^      dest:[[:space:]]*/,"",v);gsub(/[[:space:]]+$/,"",v);dest=v;next}
+		inr && id!="" && /^      default_branch:/{v=$0;sub(/^      default_branch:[[:space:]]*/,"",v);gsub(/[[:space:]]+$/,"",v);defb=v;next}
+		inr && id!="" && /^      branches:/{v=$0;sub(/^      branches:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);br=v;next}
+		inr && id!="" && /^      seed_files:/{v=$0;sub(/^      seed_files:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);sf=v;next}
+		END{ if(id!="") print id"\t"dest"\t"defb"\t"br"\t"sf }
+	' "$CASE_FILE"
+}
+
 FIXTURE_NOTE=none
-if setup_empty repositories && setup_empty sources; then
-	FIXTURE_NOTE=none
-else
-	FIXTURE_NOTE=todo
-	printf 'WARN: non-empty setup fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2
+if ! setup_empty repositories; then
+	FIXTURE_NOTE=repos
+	repo_fixtures | while IFS="$TAB" read -r id dest defb branches seeds; do
+		[ -n "$id" ] || continue
+		dest=${dest:-$id}; defb=${defb:-main}
+		case "$dest" in /*|*..*) printf 'FAIL: unsafe fixture dest: %s\n' "$dest" >&2; exit 1 ;; esac
+		repo="$WORKSPACE/$dest"
+		mkdir -p "$repo"
+		git -C "$repo" init -q -b "$defb"
+		git -C "$repo" config user.email 'cc-fixture@example.invalid'
+		git -C "$repo" config user.name 'cc-fixture'
+		for f in $(printf '%s' "${seeds:-README.md}" | tr ',' ' '); do
+			mkdir -p "$repo/$(dirname -- "$f")"
+			printf '# %s\n\nseed content for the %s fixture.\n' "$f" "$id" > "$repo/$f"
+		done
+		git -C "$repo" add -A
+		git -C "$repo" commit -q -m 'seed'
+		# create the other branches (at the seed commit); HEAD stays on default_branch
+		for b in $(printf '%s' "$branches" | tr ',' ' '); do
+			[ -n "$b" ] && [ "$b" != "$defb" ] && git -C "$repo" branch "$b" 2>/dev/null || :
+		done
+		printf '[setup] seeded fixture repo %s at %s (default %s; branches %s)\n' "$id" "$dest" "$defb" "${branches:-$defb}"
+	done
 fi
+setup_empty sources || { FIXTURE_NOTE="${FIXTURE_NOTE},sources-todo"; printf 'WARN: setup.sources fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2; }
 
 # 4. Capture the pristine baseline snapshot (harness §1) for dimension A diffs.
 mkdir -p "$BASELINE"
