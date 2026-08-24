@@ -24,6 +24,42 @@ TURN_TIMEOUT=${CC_TURN_TIMEOUT:-300}
 command -v "$CLAUDE" >/dev/null 2>&1 || { printf 'FAIL: no claude CLI (%s)\n' "$CLAUDE" >&2; exit 1; }
 command -v jq >/dev/null 2>&1 || { printf 'FAIL: jq required for trace capture\n' >&2; exit 1; }
 
+# --- filesystem sandbox (safe by default) --------------------------------------
+# The coordinator runs headless with --permission-mode bypassPermissions, so it has
+# no interactive gate. Without an OS sandbox it can write OUTSIDE the disposable
+# workspace (observed: it once `git init`-ed a repo in the user's home dir). We
+# therefore REFUSE to run unless bubblewrap can actually confine writes, unless the
+# operator explicitly accepts the risk (CC_ALLOW_UNSANDBOXED=1) — e.g. when the whole
+# harness already runs inside a throwaway container/VM.
+SANDBOX=0
+if command -v bwrap >/dev/null 2>&1 && bwrap --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp true >/dev/null 2>&1; then
+	SANDBOX=1
+fi
+if [ "$SANDBOX" -ne 1 ] && [ "${CC_ALLOW_UNSANDBOXED:-0}" != "1" ]; then
+	printf 'FAIL: no working filesystem sandbox on this host (bubblewrap/user-namespaces unavailable).\n' >&2
+	printf '      The coordinator runs with --permission-mode bypassPermissions and would NOT be confined\n' >&2
+	printf '      to the disposable workspace — it could write into your real home directory.\n' >&2
+	printf '      Run the harness inside a container/VM, or set CC_ALLOW_UNSANDBOXED=1 to accept the risk.\n' >&2
+	exit 2
+fi
+[ "$SANDBOX" -eq 1 ] || printf '[driver] WARNING: running UNSANDBOXED (CC_ALLOW_UNSANDBOXED=1) — coordinator writes are NOT confined.\n' >&2
+
+# run_claude WORKDIR CLAUDE_ARGS...  (stdin always /dev/null; sandboxed when possible)
+run_claude() {
+	rc_wd=$1; shift
+	if [ "$SANDBOX" -eq 1 ]; then
+		# whole FS read-only except the workspace, the run dir, /tmp, and claude's config.
+		set -- --ro-bind / / --dev /dev --proc /proc --tmpfs /tmp \
+			--bind "$CC_WORKSPACE" "$CC_WORKSPACE" --bind "$CC_RUN_DIR" "$CC_RUN_DIR" \
+			--bind "$HOME/.claude" "$HOME/.claude" \
+			$( [ -d "$HOME/.config" ] && printf -- '--bind %s %s' "$HOME/.config" "$HOME/.config" ) \
+			--chdir "$rc_wd" timeout "$TURN_TIMEOUT" "$CLAUDE" "$@"
+		bwrap "$@" </dev/null
+	else
+		( cd "$rc_wd" && timeout "$TURN_TIMEOUT" "$CLAUDE" "$@" </dev/null )
+	fi
+}
+
 new_uuid() { if [ -r /proc/sys/kernel/random/uuid ]; then cat /proc/sys/kernel/random/uuid; else "$CLAUDE" --version >/dev/null; printf '00000000-0000-4000-8000-%012d' "$$"; fi; }
 CID=$(new_uuid)
 RAW="$CC_RUN_DIR/coordinator-stream.jsonl"    # accumulated stream-json (all turns)
@@ -52,14 +88,14 @@ rm -f "$STARTED_FLAG"
 coordinator_turn() {
 	msg=$1; action=$2; turn_raw="$CC_RUN_DIR/.turn.$$.jsonl"
 	if [ ! -f "$STARTED_FLAG" ]; then
-		( cd "$CC_WORKSPACE" && timeout "$TURN_TIMEOUT" "$CLAUDE" -p "$msg" \
+		run_claude "$CC_WORKSPACE" -p "$msg" \
 			--session-id "$CID" --output-format stream-json --verbose \
-			--permission-mode bypassPermissions </dev/null ) > "$turn_raw" 2>>"$CC_RUN_DIR/driver.err" || true
+			--permission-mode bypassPermissions > "$turn_raw" 2>>"$CC_RUN_DIR/driver.err" || true
 		: > "$STARTED_FLAG"
 	else
-		( cd "$CC_WORKSPACE" && timeout "$TURN_TIMEOUT" "$CLAUDE" -p "$msg" \
+		run_claude "$CC_WORKSPACE" -p "$msg" \
 			--resume "$CID" --output-format stream-json --verbose \
-			--permission-mode bypassPermissions </dev/null ) > "$turn_raw" 2>>"$CC_RUN_DIR/driver.err" || true
+			--permission-mode bypassPermissions > "$turn_raw" 2>>"$CC_RUN_DIR/driver.err" || true
 	fi
 	cat "$turn_raw" >> "$RAW"
 	reply=$(jq -rs 'map(select(.type=="result")) | last | .result // ""' "$turn_raw" 2>/dev/null || printf '')
@@ -109,7 +145,8 @@ done
 HUMAN_BLOCK=$(awk '/^human:/{f=1} /^grader:/{f=0} f{print}' "$CC_CASE_FILE")
 SIM_SYS=$(cat "$CC_HUMAN_SIM")
 VERDICT="$CC_RUN_DIR/conversational-verdict.txt"
-SCRATCH=$(mktemp -d "${TMPDIR:-/tmp}/cc-sim.XXXXXX")
+SCRATCH="$CC_RUN_DIR/.sim"           # under the run dir so it works inside the sandbox
+mkdir -p "$SCRATCH"
 {
 	printf 'You are judging a finished conversation as the human-simulator.\n'
 	printf 'Here is the case human: block you were given:\n\n%s\n\n' "$HUMAN_BLOCK"
@@ -117,10 +154,27 @@ SCRATCH=$(mktemp -d "${TMPDIR:-/tmp}/cc-sim.XXXXXX")
 	cat "$CC_TRANSCRIPT"
 	printf '\n\nFor EACH visible_expectation, output one line: "PASS: <evidence>" or "FAIL: <evidence>", in order. Then a final line "verdict: pass" or "verdict: fail".\n'
 } > "$SCRATCH/prompt.txt"
-( cd "$SCRATCH" && timeout "$TURN_TIMEOUT" "$CLAUDE" -p "$(cat "$SCRATCH/prompt.txt")" \
+run_claude "$SCRATCH" -p "$(cat "$SCRATCH/prompt.txt")" \
 	--append-system-prompt "$SIM_SYS" --output-format text \
-	--permission-mode bypassPermissions </dev/null ) > "$VERDICT" 2>>"$CC_RUN_DIR/driver.err" || true
+	--permission-mode bypassPermissions > "$VERDICT" 2>>"$CC_RUN_DIR/driver.err" || true
 rm -rf "$SCRATCH"
+
+# Isolation guard: flag any repository binding whose path escapes the workspace,
+# so out-of-sandbox side effects (e.g. an external `git init`) are surfaced and can
+# be cleaned up. Especially important when running UNSANDBOXED.
+LOCAL="$CC_WORKSPACE/repositories.local.yaml"
+if [ -f "$LOCAL" ]; then
+	awk '/^[[:space:]]+path:[[:space:]]/{sub(/^[[:space:]]+path:[[:space:]]*/,"");sub(/[[:space:]]+$/,"");print}' "$LOCAL" \
+	| while IFS= read -r bp; do
+		[ -n "$bp" ] || continue
+		case "$bp" in
+			"$CC_WORKSPACE"/*|repositories/*|./repositories/*|.|./) : ;;   # inside the workspace
+			/*) printf '[driver] ISOLATION WARNING: binding path OUTSIDE the workspace: %s\n' "$bp" >&2
+			    printf 'isolation_violation: %s\n' "$bp" >> "$CC_RUN_DIR/run.yaml" ;;
+			*) : ;;                                                        # relative → resolved under workspace
+		esac
+	done
+fi
 
 printf '\n[driver] coordinator turns complete; transcript=%s\n' "$CC_TRANSCRIPT"
 printf '[driver] conversational verdict=%s\n' "$VERDICT"

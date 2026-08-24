@@ -37,6 +37,25 @@ sh test/template-runtime/human/run-scenario.sh --host claude-code 01-new-project
 This prints a run directory under `.out/` containing the isolated `workspace/`,
 the pristine `baseline/`, and a `run.yaml` manifest, with `status: prepared`.
 
+### Safety / sandboxing (important)
+
+The `claude-code` driver runs the real coordinator headless with
+`--permission-mode bypassPermissions`, which has **no filesystem confinement on
+its own**. To observe the coordinator faithfully it keeps the full toolset
+(including Bash), so an over-eager coordinator can `git init` / write **outside**
+the disposable workspace (observed once: a repo created in the user's home dir).
+
+The driver is therefore **safe by default**:
+
+- it runs each `claude` invocation inside a **bubblewrap** sandbox (whole FS
+  read-only except the workspace, the run dir, `/tmp`, and `~/.claude`), and
+- if bubblewrap cannot confine writes on this host (e.g. unprivileged user
+  namespaces are disabled — `bwrap: setting up uid map: Permission denied`), the
+  driver **refuses to run** unless you set `CC_ALLOW_UNSANDBOXED=1` to accept the
+  risk. Prefer running the whole harness inside a throwaway **container/VM**.
+- a post-run **isolation guard** flags any repository binding whose path escapes
+  the workspace and records `isolation_violation:` in `run.yaml`.
+
 ### Driving the conversation
 
 `run-scenario.sh` delegates the live conversation to a driver (`--driver CMD` or
