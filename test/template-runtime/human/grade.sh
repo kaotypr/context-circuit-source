@@ -174,6 +174,24 @@ while IFS= read -r line; do
 			cr_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$cr_exec" 2>/dev/null)
 			if [ -n "$cr_exec" ] && [ -f "$cr_dir/completion.yaml" ]; then ok "completion_recorded ($val: $cr_exec/completion.yaml)"
 			else bad "completion_recorded ($val: no completion record)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		no_remote)
+			# val "<repo-id>" — no git remote is configured (delivery must BLOCK rather
+			# than invent/push to a remote — INV-DELIVER-02).
+			nr_bp=$(cc_binding_field "$WORKSPACE" "$val" path 2>/dev/null); nr_path="$WORKSPACE/${nr_bp:-$val}"
+			if [ -z "$(git -C "$nr_path" remote 2>/dev/null)" ]; then ok "no_remote ($val: none configured)"
+			else bad "no_remote ($val: a remote was configured — delivery must block, not invent one)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		execution_not_merged)
+			# val "<plan-id>:<repo>:<anchor>" — the verified execution commit was NOT
+			# merged into the anchor branch (no silent delivery — INV-DELIVER-01).
+			enm_pid=${val%%:*}; enm_rest=${val#*:}; enm_repo=${enm_rest%%:*}; enm_anchor=${enm_rest#*:}
+			enm_exec=$(cc_latest_execution "$WORKSPACE" "$enm_pid" 2>/dev/null)
+			enm_dir=$(cc_execution_dir "$WORKSPACE" "$enm_pid" "$enm_exec" 2>/dev/null)
+			enm_commit=$(cc_scalar "$enm_dir/repositories/$enm_repo.yaml" latest_commit 2>/dev/null)
+			enm_bp=$(cc_binding_field "$WORKSPACE" "$enm_repo" path 2>/dev/null); enm_path="$WORKSPACE/${enm_bp:-$enm_repo}"
+			if [ -z "$enm_commit" ]; then bad "execution_not_merged ($val: no execution commit found)"; FAIL_A=$((FAIL_A+1))
+			elif git -C "$enm_path" merge-base --is-ancestor "$enm_commit" "$enm_anchor" 2>/dev/null; then
+				bad "execution_not_merged ($val: execution commit IS on $enm_anchor — silent delivery)"; FAIL_A=$((FAIL_A+1))
+			else ok "execution_not_merged ($val: execution commit not merged into $enm_anchor)"; fi ;;
 		plan_archived)
 			# val "<plan-id>[:<expected-status>]" — plan is in plans/.archived/, gone from
 			# the active area and the index, with its status preserved (INV-ARCHIVE-01).
