@@ -10,7 +10,8 @@ worktree. It executes all tasks in dependency order, working only inside the
 assigned worktree for each mapped repository and only within declared paths. It
 runs the plan's implementation checks, commits each affected repository after
 implementation, and writes a concise handoff (changes, commits, tests,
-assumptions, unresolved concerns).
+assumptions, unresolved concerns). Every commit message follows the
+Conventional Commits convention owned by INV-COMMIT-01.
 
 It must not:
 
