@@ -140,6 +140,12 @@ while IFS= read -r line; do
 			hit=$(grep -nE ':[[:space:]]*/|/home/|/Users/|/root/' "$WORKSPACE/workspace.yaml" 2>/dev/null | head -3)
 			if [ -z "$hit" ]; then ok "no_machine_path_in_identity"
 			else bad "no_machine_path_in_identity (found: $hit)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		plan_status)
+			# val "<plan-id>:<expected-status>" — the explicit approve must flip status
+			pid=${val%%:*}; want=${val#*:}
+			got=$(cc_plan_status "$WORKSPACE" "$pid" 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "plan_status ($pid=$got)"
+			else bad "plan_status ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
@@ -177,6 +183,11 @@ action_occurred() {
 			-not -path '*/.archived/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
 		connect-repo) [ -f "$WORKSPACE/repositories.local.yaml" ] && \
 			grep -q '^    path:' "$WORKSPACE/repositories.local.yaml" 2>/dev/null ;;  # a binding exists
+		review) return 0 ;;                                   # a review conversation always occurs
+		approve)                                              # a plan reached status approved
+			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/.archived/*' 2>/dev/null); do
+				grep -q '^status:[[:space:]]*approved' "$f" 2>/dev/null && return 0
+			done; return 1 ;;
 		*) return 0 ;;                                        # unknown: assume it occurred
 	esac
 }

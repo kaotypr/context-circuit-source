@@ -144,8 +144,10 @@ turns_tsv | while IFS='	' read -r kind payload; do
 	esac
 	# advance the (informational) action label by the kind of request
 	case "$send" in
-		*plan*|*"show me"*) ACTION=create-plan ;;
+		*approve*) ACTION=approve ;;
+		*"show me the plan"*|*review*) ACTION=review ;;
 		*connect*|*"hook it up"*|*"hook up"*) ACTION=connect-repo ;;
+		*plan*|*"show me"*) ACTION=create-plan ;;
 	esac
 	printf '\nhuman: %s\n' "$send" >> "$CC_TRANSCRIPT"
 	reply=$(coordinator_turn "$send" "$ACTION")
