@@ -7,3 +7,6 @@ repositories.local.yaml
 # Repository bindings and checkout contents are host-local and never shipped.
 /repositories/
 /repositories.local.yaml
+
+# Disposable output from the human-simulated template test harness.
+/test/template-runtime/human/.out/

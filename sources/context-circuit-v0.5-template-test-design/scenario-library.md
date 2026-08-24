@@ -84,9 +84,19 @@ human:
     - It never says the work is approved, executed, done, or delivered.
 
 grader:
+  # Mapping back to the product contract; the grader echoes these in its result
+  # (§21 criteria in sources/context-circuit-v0.5-design/, rules in invariants.yaml).
+  acceptance_criteria: [AC-01, AC-04, AC-05]
+  invariants: [INV-REPO-04, INV-PLAN-04, INV-EXEC-01, INV-SEC-02]
   # A. state post-conditions (hard gate)
   post_conditions:
-    - workspace_initialized: true          # workspace.yaml identity is set
+    # Scoping-only turn: the persona does not name or approve a project, so
+    # initialization is optional. The template already ships workspace.yaml, so
+    # assert only that identity was NOT fabricated — a real identity appears here
+    # only if the human supplied one; the shipped placeholder is a pass. Whether
+    # the coordinator OFFERED to get set up is a transcript check (dimension B).
+    # Checked by diffing against the pristine baseline snapshot (harness §1).
+    - workspace_identity_not_fabricated: true
     - repositories_registered: 0           # none invented
     - plans_created: ">=0"                 # a draft plan may exist; none approved
     - no_plan_status: [approved, done]     # nothing advanced past draft
@@ -94,8 +104,11 @@ grader:
     - product_knowledge_unchanged_silently: true
   # B. transcript checks (hard gate)
   transcript_checks:
-    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|verifier|plan\\.yaml)"
-      reason: The coordinator must not expose internals to a lay user.
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml)"
+      reason: >
+        The coordinator must not expose internals to a lay user. "verifier" is
+        deliberately NOT forbidden: the product surfaces "an independent verifier"
+        to the user by design (adapters/AGENTS.md, agents/coordinator.md).
     - requires_any: ["get you set up", "set up", "get started"]
       reason: It should orient/initialize rather than fabricate a project.
   # C. access-discipline audit (hard gate) — right files, only necessary files
@@ -175,7 +188,9 @@ are natural conversations; none teach the human any workspace concept.
    must pass identically on `codex`, `claude-code`, and `cursor-agent`. This case
    asserts host behavior directly; see [host-matrix.md](./host-matrix.md) §6.
 
-Each case maps to product acceptance criteria in
-`sources/context-circuit-v0.5-design/` §21; the grader records that mapping in its
-result so a failing conversation points back to the violated invariant in
-`wrapper/contracts/invariants.yaml`.
+Each case declares its product acceptance criteria and invariants in the
+`grader.acceptance_criteria` and `grader.invariants` fields (see §2). The grader
+echoes that mapping in its result so a failing conversation points back to the
+violated §21 criterion in `sources/context-circuit-v0.5-design/` and the rule it
+protects in `wrapper/contracts/invariants.yaml`. Both fields must reference ids
+that exist (AC-01..AC-28; the `id:` values in `invariants.yaml`).
