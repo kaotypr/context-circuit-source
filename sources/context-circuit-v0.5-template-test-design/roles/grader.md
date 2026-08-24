@@ -66,22 +66,29 @@ Over the recorded conversation: `forbids_regex` (no `cc_*`/`engine.sh`/`worktree
 `plan.yaml` leaked to a lay user) and `requires_any` (a natural intent phrase,
 matched by intent, not exact wording).
 
-### C. Access-discipline audit — hard gate
+### C. Access-discipline audit — `forbidden` is the hard gate; `required` is advisory
 
-The core v0.5 check: did the coordinator read the **right** files and **only the
-necessary** files for each action? Compares the file-access trace to a per-action
-`access_policy`:
+The core v0.5 check: did the coordinator read **only the necessary** files and
+never the internals it must not? Compares the file-access trace to a per-action
+`access_policy`, evaluated at the **session** level (which turn a read lands on is
+non-deterministic across model runs, so per-turn attribution is unreliable):
 
-- `required` — files the action must read to be correct (miss = failure);
-- `allowed` — files it may read;
-- `forbidden` — files it must not read (read = failure), e.g. `plans/.archived/**`
-  (archived exclusion), `wrapper/runtime/engine.sh` (don't load the runtime as a
-  substitute), `sources/**` unless explicitly named (INV-SEC-02), and re-reading
-  all of `wrapper/contracts/**` for an ordinary request.
+- `forbidden` — files it must not read; a match **anywhere in the session fails**
+  (the hard gate), e.g. `plans/.archived/**` (archived exclusion),
+  `wrapper/runtime/engine.sh` (don't load the runtime as a substitute), `sources/**`
+  unless explicitly named (INV-SEC-02). Evaluated as the **intersection** of the
+  forbidden sets of the actions that actually occurred, so a path forbidden only
+  for some actions (e.g. `wrapper/contracts/**` for orient but not create-plan) is
+  not flagged session-wide.
+- `required` — files the action ought to read; a miss is **advisory (warning), not
+  a failure**, because a capable model can reach a correct outcome via a different
+  read path (state, tool invocation, already-loaded context). Enforced only for an
+  action that actually occurred (occurrence judged from workspace state).
+- `allowed` — files it may read.
 
-This dimension directly proves the v0.5 promise that motivated the refactor:
-read only what the action needs; never reconstruct the lifecycle. Requires the
-runner to expose the file-access trace; where it does not, it degrades to a
+This dimension proves the v0.5 promise that motivated the refactor: never
+reconstruct the lifecycle by loading internals. It requires the runner to expose
+the file-access trace; where it does not, the whole dimension degrades to
 best-effort transcript inference and is reported as warning-only.
 
 ### D. Efficiency ledger — soft, warning-only
@@ -96,9 +103,11 @@ heuristic (classify by which files were touched); see the analyst note below.
 
 ## Verdict
 
-A run passes only when every **hard-gate** dimension (A, B, C) passes. Dimension
-D never fails a run; it annotates the result and feeds trend tracking across
-template versions. Each failing finding names the violated `AC-nn` and invariant.
+A run passes only when every **hard-gate** dimension passes: A (state), B
+(transcript), and C's **forbidden**-read check. C's `required`-read misses and
+dimension D never fail a run; they annotate the result and feed trend tracking
+across template versions. Each failing finding names the violated `AC-nn` and
+invariant.
 
 ## Case `grader:` schema
 

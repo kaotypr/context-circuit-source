@@ -105,13 +105,15 @@ sh test/template-runtime/human/grade.sh .out/<run-id>
 - **B. Transcript checks** (hard gate) — `forbids_regex` (no internals leaked to a
   lay user) and `requires_any` (a natural intent phrase). Note "verifier" is
   intentionally NOT forbidden — the product surfaces it by design.
-- **C. Access-discipline audit** (hard gate, **session-level**) — the file-access
-  trace vs the `access_policy`. Because which turn a read lands on is
-  non-deterministic across model runs, C is evaluated over the whole session, not
-  per turn: a `forbidden` path read **at any point** fails; a `required` file must
-  be read **at some point** for an action that **actually occurred** (occurrence
-  judged from workspace state — e.g. a `plan.yaml` exists — never from turn
-  timing). The action label in the trace is retained only for human reading.
+- **C. Access-discipline audit** (**session-level**; forbidden = hard gate,
+  required = advisory) — the file-access trace vs the `access_policy`. Because
+  which turn a read lands on is non-deterministic across model runs, C is
+  evaluated over the whole session, not per turn: a `forbidden` path read **at any
+  point** fails (evaluated as the intersection of the occurring actions' forbidden
+  sets); a `required` file miss is **advisory (warning), never a failure**, since a
+  capable model can reach a correct outcome via a different read path. Occurrence
+  of an action is judged from workspace state (e.g. a `plan.yaml` exists), never
+  from turn timing; the trace's action label is retained only for human reading.
   **Requires the host to expose a file-access trace; where it does not, C degrades
   to warning-only** and the verdict rests on A and B (host-matrix §5). The
   `claude-code` driver captures the trace from the coordinator's `Read`/`Grep`/
