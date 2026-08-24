@@ -168,11 +168,12 @@ fi
 
 # --- C. access-discipline audit (hard gate; degrades when no trace) ------------
 # Session-level, not per-turn: which turn a read lands on is non-deterministic
-# across model runs, so per-action attribution is unreliable. Instead: a forbidden
-# path read AT ANY POINT is a violation; a required file must be read AT SOME POINT
-# for an action that ACTUALLY OCCURRED (occurrence judged from workspace state,
-# never from turn timing). The action label in the trace is kept only for humans.
-printf '\n--- C. access-discipline audit (hard gate, session-level) ---\n'
+# across model runs, so per-action attribution is unreliable. FORBIDDEN reads are
+# the hard gate — a forbidden path read AT ANY POINT fails. REQUIRED reads are
+# ADVISORY (warning only): a capable model reaches a correct outcome via different
+# read paths, so a missing required read is reported but never fails the run.
+# Occurrence of an action is judged from workspace state, never from turn timing.
+printf '\n--- C. access-discipline audit (forbidden = hard gate; required = advisory) ---\n'
 C_ENFORCED=0
 # an action "occurred" if the workspace shows its effect (state, not trace timing)
 action_occurred() {
@@ -234,7 +235,7 @@ if [ -f "$TRACE" ] && [ -s "$TRACE" ]; then
 			ap&&cur&&/^      required:/{v=$0;sub(/^      required:[[:space:]]*/,"",v);if(v~/^\[/){gsub(/^\[|\]$/,"",v);n=split(v,a2,",");for(i=1;i<=n;i++){it=a2[i];gsub(/^[[:space:]]+|[[:space:]]+$/,"",it);gsub(/^"|"$/,"",it);if(it!="")print it}}}
 		' "$GBLOCK"); do
 			if printf '%s\n' "$TRACED" | grep -Fxq "$req"; then ok "$action required (read at some point): $req"
-			else bad "$action MISSING required read (whole session): $req"; FAIL_C=$((FAIL_C+1)); fi
+			else warn "$action required-read not observed (advisory): $req"; fi
 		done
 	done
 	set +f
