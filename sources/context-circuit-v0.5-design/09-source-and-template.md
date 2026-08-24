@@ -72,7 +72,7 @@ context-circuit-source/
 ├── plans/                           # Cc source plans
 ├── .runtime/                        # persistent source-side execution state
 ├── template/                        # blank/product workspace seed
-├── wrapper/                         # physical implementation path during migration
+├── wrapper/                         # shipped product layer (runtime, contracts, adapters)
 ├── test/                            # source-only acceptance and test suites
 ├── template-harness/                # built-template behavior laboratory
 ├── sources/context-circuit-v0.5-design/
@@ -290,5 +290,6 @@ New user-facing documentation should use:
 - instantiated project workspace;
 - Context Circuit runtime.
 
-Avoid calling the product a wrapper. Keep wrapper/ only when naming an actual
-legacy or implementation directory during migration.
+Wrapper is an accepted synonym for the product — the universal project
+workspace. The directory wrapper/ holds the product's shipped layer; write the
+path explicitly when referring to that directory rather than the product.

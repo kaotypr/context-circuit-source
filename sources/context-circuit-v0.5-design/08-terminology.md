@@ -15,6 +15,7 @@ if they were the same thing.
 | context-circuit-template | The product repository/template distributed for use with projects. It contains the universal project workspace structure and the Context Circuit runtime, contracts, skills, and starter files. | The maintainer source repository. |
 | Universal project workspace | The project-oriented product provided by context-circuit-template. It can be initialized for any project and can connect one or more Git repositories. | A single repository checkout. |
 | Project workspace | An instantiated universal project workspace configured for one specific project or product area. | The template before initialization. |
+| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product a user works in. Use it interchangeably with the workspace product. | The maintainer source repository; the `wrapper/` implementation directory taken alone. |
 
 The v0.5 product is context-circuit-template as a repository template and
 universal project workspace. context-circuit-source is where that product is
@@ -90,21 +91,22 @@ source design, source artifact, or repository source.
 | Plan status | Human-owned draft, approved, or done state. |
 | Execution status | Runtime state such as running, verifying, repairing, verified, failed, or blocked. |
 
-## 5. Deprecated product language
+## 5. The term "wrapper"
 
-Do not use wrapper as the product name or as a general synonym for Context
-Circuit. Use universal project workspace, project workspace, product template,
-or Context Circuit runtime according to meaning.
+Wrapper is an accepted synonym for the universal project workspace — the Context
+Circuit product. "The wrapper" and "the workspace product" name the same thing;
+use either according to what reads clearly.
 
-The physical directory wrapper/ may remain in context-circuit-source or
-context-circuit-template as an implementation path during migration. When
-referring to that path, write the path explicitly. For example:
+The physical directory wrapper/ holds the product's shipped layer (runtime,
+contracts, adapters) inside context-circuit-source and context-circuit-template.
+The term names the product; the directory names one part of it. When referring
+to the directory, write the path explicitly so the two are not confused. For
+example:
 
-- correct: the runtime implementation at wrapper/runtime/engine.sh;
-- correct: the template-owned wrapper/ directory is replaced during migration;
-- avoid: the wrapper creates a plan;
-- preferred: the project workspace creates a plan;
-- preferred: the Context Circuit runtime prepares worktrees.
+- the runtime implementation at wrapper/runtime/engine.sh;
+- the template-owned wrapper/ directory is replaced during an upgrade;
+- the wrapper (equivalently, the project workspace) creates a plan;
+- the Context Circuit runtime prepares worktrees.
 
 ## 6. Authority by term
 
