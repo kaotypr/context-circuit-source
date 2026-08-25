@@ -16,8 +16,9 @@ source cleanup.
 The detailed design modules in this folder expand the overview: agent behavior,
 human interaction, workspace and repository connections, Product Knowledge
 lifecycle, planning and execution, runtime responsibilities, source/template
-identity, terminology, and examples with acceptance scenarios. The overview
-remains normative; the modules explain how to apply its decisions.
+identity, template publication and versioning, terminology, and examples with
+acceptance scenarios. The overview remains normative; the modules explain how to
+apply its decisions.
 
 See [README.md](./README.md) for the reading order.
 

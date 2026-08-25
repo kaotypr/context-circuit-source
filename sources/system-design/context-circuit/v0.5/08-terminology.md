@@ -32,6 +32,11 @@ the full names where ambiguity would matter.
 | --- | --- |
 | Source repository | The maintainer repository containing the product source and release assembly. |
 | Product template | The distributable repository/template that becomes a project workspace. |
+| Published template release version | The context-circuit-template repository's own semantic version (starts 0.0.1-alpha.1), independent of the source runtime line and advanced only when a source change reaches the assembled artifact. Authoritative form is the repository's git tag. |
+| Release ledger | The source-side `release/` directory: `binding.yaml` plus one release request per published version. Source-only; never shipped. |
+| Release request | A `release/requests/<version>.md` file whose name is the version and whose body is the release notes; the input the publication workflow consumes. |
+| Template binding | The one-time link from source to context-circuit-template recorded in `release/binding.yaml`; realized by the first publication. |
+| Template publication | Writing an assembled artifact into context-circuit-template as one release commit, tag, and GitHub Release via the source publication workflow. Distinct from workspace Delivery. |
 | Cc source | Short form of context-circuit-source. It means the maintainer source repository together with its self-hosted Cc development workspace. |
 | Cc template | Short form of context-circuit-template. It means the distributable product repository/template and the universal project workspace it provides. |
 | Template seed | Blank files and directories copied into a new project workspace. |
