@@ -29,6 +29,9 @@ introduce a competing lifecycle, router, authority, or policy owner.
    deprecated product terms.
 10. [09-source-and-template.md](./09-source-and-template.md) — source
     repository, product template, and instantiated workspace boundaries.
+11. [10-template-publication.md](./10-template-publication.md) — publishing the
+    template repository via GitHub Actions: its independent semantic version,
+    the `release/` ledger, one-commit-per-bump history, tags, and releases.
 
 ## Authority
 

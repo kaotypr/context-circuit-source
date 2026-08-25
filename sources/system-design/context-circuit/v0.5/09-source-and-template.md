@@ -232,7 +232,8 @@ It excludes:
 - connected repositories;
 - project Product Knowledge;
 - customer plans and execution records;
-- archived plan contents and any archive-only organization state.
+- archived plan contents and any archive-only organization state;
+- the source-side `release/` ledger and the publication workflow.
 
 The assembled template must identify itself as the Context Circuit product
 template and as an uninitialized universal project workspace.
@@ -263,6 +264,12 @@ guidance. It must preserve workspace-owned files:
 If a template change changes the meaning of a plan, context unit, or runtime
 record, the upgrade must report migration-needed and preserve the old state.
 
+The published template carries its own semantic version, independent of the
+source runtime line and advanced only when a source change reaches the assembled
+artifact. Binding the `context-circuit-template` repository, that version, its
+one-commit-per-release history, tags, and GitHub Releases are defined in
+[10-template-publication.md](./10-template-publication.md).
+
 ## 8. Self-hosting
 
 context-circuit-source may use its own template and runtime while developing
@@ -278,7 +285,9 @@ Context Circuit. Self-hosting does not collapse the identities:
 - test and release artifacts remain source-owned.
 
 A source change is not a product-template change until release assembly includes
-it and the template acceptance checks pass.
+it and the template acceptance checks pass. When it changes the assembled
+artifact it becomes a new published template release with its own version (see
+[10-template-publication.md](./10-template-publication.md)).
 
 ## 9. Naming requirements
 
