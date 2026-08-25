@@ -1,24 +1,39 @@
 # Context Circuit
 
-Start or resume work in this workspace in natural language. The agent reads a
-small entry spine, selects the smallest safe evidence packet, and tells you
-what it can do next.
+A universal project workspace for AI-assisted work. It holds agent-oriented
+Product Knowledge and readable plans so an agent can understand your project,
+create a grounded plan, and execute it safely across one or more Git
+repositories.
 
-The human surfaces are:
+## Get started
 
-- `README.md` for the quick start;
-- `plans/<repository>-plans/<plan>/PLAN.md` for the complete human plan;
-- the conversational “what’s next” card;
-- the latest surfaced runtime handoff.
+Talk to the workspace in ordinary language:
 
-Approval never starts execution and never commits Git. Say `Approve plan
-<name>` to see a session-bound card; nothing has changed yet. The exact
-confirmation is `Confirm approval of plan <name>`. On an instantiated or
-wrapped workspace, later say `Run approved plan <name>`. On product-source,
-if confirmation leaves only the approval status projection dirty, the existing
-maintainer commit card is presented next; it still requires
-`Confirm commit of the approved plan state.` Finishing, delivery, publication,
-deployment, archive, takeover, and runtime cleanup are separate confirmations.
+> What is this workspace?
 
-The workspace is filesystem-first and works offline. Never put credentials in
-workspace files. Inspect `wrapper/manifest.yaml` for version and budgets.
+To set up a project:
+
+> Initialize this workspace for <project>, and connect the <repo> repository.
+
+To do work:
+
+> Create a plan for <feature>.
+> Review plan <plan-id>.
+> Approve plan <plan-id> and execute it.
+> Mark <plan-id> complete.
+
+## What you control
+
+Approval, execution, completion, archive, restore, and delivery (pull request,
+merge, push, publication, deployment) are separate explicit actions you request.
+Creating or reviewing a plan never approves or executes it. Verification produces
+evidence; only you decide when a plan is complete.
+
+## Human surfaces
+
+- `plans/<plan-id>/PLAN.md` — the readable plan.
+- `plans/INDEX.md` — active plans.
+- the worker handoff and the independent verifier result after an execution.
+
+The workspace works offline and stores no credentials. Branches, worktrees, and
+runtime records are managed for you.

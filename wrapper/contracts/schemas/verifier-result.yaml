@@ -1,0 +1,37 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/verifier-result.yaml
+describes: .runtime/executions/<plan-id>/<execution-id>/attempts/NNN/verifier.yaml
+concern: verifier_result
+
+purpose: >
+  The independent verifier's own result for one attempt. It is the only
+  authority for whether an execution attempt is verified. It is strictly
+  read-only with respect to product files.
+
+fields:
+  attempt: { type: integer, required: true }
+  outcome:
+    type: enum
+    required: true
+    values: [passed, failed, blocked, waived]
+  read_only: { const: true, required: true }
+  checked_at: { type: string, required: true }
+  evidence_refs: { type: list, required: false }
+  failures: { type: list, required: false, description: failed acceptance/verification ids }
+
+outcome_semantics:
+  passed: required evidence observed at the required layer; the only satisfying outcome
+  failed: evidence contradicts or does not satisfy the requirement; increments worker_failures
+  blocked: required observation could not be performed (host/external); not a worker failure
+  waived: a human limitation decision exists; non-passing metadata, not a verifier pass
+
+read_only_enforcement:
+  - the verifier never modifies product files, plan files, Product Knowledge, or worker commits
+  - branch tips must be unchanged between the worker commit and the verifier result
+  - an explicit product write is rejected (VERIFIER_WRITE_REJECTED)
+  - a modified branch tip is rejected (VERIFIER_MODIFIED_PRODUCT)
+
+rules:
+  - INV-VERIFY-01
+  - INV-VERIFY-02
+  - INV-REPAIR-01

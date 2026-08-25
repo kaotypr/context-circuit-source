@@ -1,14 +1,11 @@
 # Project
 
-<!-- context-circuit:identity-region:start -->
-name: uninitialized-workspace
-mode: solo
-kind: instantiated-workspace
-status: uninitialized
-default_branch: main
-roles: none
-repositories: none
-<!-- context-circuit:identity-region:end -->
+Status: uninitialized
 
-Status: uninitialized. The project purpose and boundaries are not yet defined.
-Zero registered repositories is valid.
+Describe what the product does, who it serves, and the outcomes it must achieve.
+Keep this readable for humans and structured for agent retrieval: state stable
+facts, not implementation detail.
+
+Add durable project knowledge only from accepted evidence. Proposals are staged
+under `context/proposals/` and require an explicit human decision before they
+change accepted Product Knowledge.

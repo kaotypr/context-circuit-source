@@ -1,7 +1,7 @@
 # context-circuit-source workflow
 
 Implementation proceeds directly from
-`sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md` in its
+`sources/system-design/context-circuit/v0.5/context-circuit-v0.5-design.md` in its
 implementation order.
 This source workflow is not the product lifecycle and does not require plan
 approval, run-plan, run-stack, finish-plan, or cleanup ceremonies.

@@ -1,31 +1,42 @@
 schema_version: 1
-owner: .runtime/plans/<plan-id>/completion.yaml
-required: [schema_version, wrapper_version, plan, status, task_evidence, verifier, worktree, git, human_gate]
-record_contract:
-  constructor_inputs:
-    caller_intent: [plan, task_evidence, verifier, worktree, git, human_gate]
-    validated_evidence: [status]
-  engine_generated: [schema_version, wrapper_version, completion_id, created_at, updated_at, record_revision, record_bytes, record_digest, transaction_id, transaction_state, commit_marker]
-  transaction_states: [staged, valid, committed, interrupted, legacy-readable]
-  compatibility: legacy-readable is read-only and cannot change plan status or satisfy the independent verifier and human gate requirements
-evidence_layers:
-  vocabulary_owner: wrapper/contracts/schemas/plan.yaml
-  runtime_fields: [observed_layer, outcome, evidence_ref]
-  observed_layer: [schema, store, api, process, browser, human]
-  outcomes: [passed, failed, blocked, waived]
-  completion_rule: only passed satisfies completion
-  non_passing: [failed, blocked, waived]
-  waiver_gate: none
-  verifier_pass: independent verifier observed_layer must exactly match plan required_layer
-  legacy:
-    completed_historical: preserve without rewrite
-    unfinished: require explicit mapping before new verification
-    migration: must not invent required_layer, produced_layer, observed_layer, or evidence_ref
-statuses: [not-ready, ready-for-human-status-change, completed]
+owner: wrapper/contracts/schemas/completion.yaml
+describes: .runtime/executions/<plan-id>/<execution-id>/completion.yaml
+concern: completion_record
+
+purpose: >
+  Durable implementation completion record proving which verified execution and
+  repository commits a human accepted as done. It is written only by an explicit
+  human completion request, and only when the latest execution passed
+  independent verification. It never changes Product Knowledge.
+
+preconditions:
+  - the latest execution status is verified
+  - plan status is approved at the moment of completion
+  - completion is an explicit human request
+
+fields:
+  schema_version: { type: integer, required: true }
+  execution_id: { type: string, required: true }
+  plan: { type: string, required: true }
+  human_completion: { const: accepted, required: true }
+  completed_at: { type: string, required: true }
+  commits:
+    type: map
+    required: true
+    key: repository id
+    value: accepted commit revision
+
+effects:
+  - plan status changes approved -> done
+  - implementation completion record is written
+  - knowledge reconciliation starts and produces proposals or a no-update-needed result
+
+non_effects:
+  - does not accept any Product Knowledge update
+  - does not merge, push, open a pull request, publish, deploy, or clean up
+  - a verification pass alone never performs this transition
+
 rules:
-  - ready requires all task evidence and independent verifier pass
-  - completion does not itself change plan status
-  - only outcome passed satisfies completion; failed, blocked, and waived remain not-ready
-  - waived is non-passing metadata and is not a completion gate
-  - completed historical task evidence is preserved without rewrite
-  - unfinished legacy evidence cannot become ready until an explicit evidence-layer mapping exists
+  - INV-COMPLETE-01
+  - INV-COMPLETE-02
+  - INV-KNOWLEDGE-02
