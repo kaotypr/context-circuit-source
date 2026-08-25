@@ -85,7 +85,7 @@ human:
 
 grader:
   # Mapping back to the product contract; the grader echoes these in its result
-  # (§21 criteria in sources/context-circuit-v0.5-design/, rules in invariants.yaml).
+  # (§21 criteria in sources/system-design/context-circuit/v0.5/, rules in invariants.yaml).
   acceptance_criteria: [AC-01, AC-04, AC-05]
   invariants: [INV-REPO-04, INV-PLAN-04, INV-EXEC-01, INV-SEC-02]
   # A. state post-conditions (hard gate)
@@ -191,6 +191,6 @@ are natural conversations; none teach the human any workspace concept.
 Each case declares its product acceptance criteria and invariants in the
 `grader.acceptance_criteria` and `grader.invariants` fields (see §2). The grader
 echoes that mapping in its result so a failing conversation points back to the
-violated §21 criterion in `sources/context-circuit-v0.5-design/` and the rule it
+violated §21 criterion in `sources/system-design/context-circuit/v0.5/` and the rule it
 protects in `wrapper/contracts/invariants.yaml`. Both fields must reference ids
 that exist (AC-01..AC-28; the `id:` values in `invariants.yaml`).

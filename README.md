@@ -33,7 +33,7 @@ completion, archive, restore, and delivery are separate explicit human actions.
 - `docs/` — shipped guides and plan/task templates.
 - `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
   released.
-- `sources/context-circuit-v0.5-design/` — the authoritative v0.5 design;
+- `sources/system-design/context-circuit/v0.5/` — the authoritative v0.5 design;
   maintainer material only, never shipped.
 - `test/` — semantic acceptance suites (the deterministic engine-level laboratory
   is run from here via `template-harness/test-template-runtime.sh`).
@@ -52,6 +52,6 @@ Run the complete semantic acceptance suite:
 sh test/acceptance.sh
 ```
 
-Read `sources/context-circuit-v0.5-design/context-circuit-v0.5-design.md` only as
+Read `sources/system-design/context-circuit/v0.5/context-circuit-v0.5-design.md` only as
 maintainer design material. The released artifact uses the shipped wrapper and
 template, not the source repository's maintainer state.

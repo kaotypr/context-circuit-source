@@ -75,7 +75,7 @@ context-circuit-source/
 ├── wrapper/                         # shipped product layer (runtime, contracts, adapters)
 ├── test/                            # source-only acceptance and test suites
 ├── template-harness/                # built-template behavior laboratory
-├── sources/context-circuit-v0.5-design/
+├── sources/system-design/context-circuit/v0.5/
 │                                     # canonical maintainer design
 └── maintainer files and release assembly
 ~~~

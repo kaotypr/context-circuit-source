@@ -10,7 +10,7 @@
   workspace.
 
 This spec does not redefine product behavior — the product design in
-`sources/context-circuit-v0.5-design/` and `wrapper/contracts/invariants.yaml`
+`sources/system-design/context-circuit/v0.5/` and `wrapper/contracts/invariants.yaml`
 own that. It only fixes how the coordinator is **configured and constrained in
 the test context** so the observation is faithful.
 
