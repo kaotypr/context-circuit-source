@@ -1,7 +1,7 @@
 # Context Circuit v0.5 template test design
 
 Status: maintainer design for a human-simulated product test harness
-Related design: `sources/context-circuit-v0.5-design/`
+Related design: `sources/system-design/context-circuit/v0.5/`
 Related runtime laboratory: `template-harness/` (deterministic engine-level)
 
 This design defines how to test the **built** `context-circuit-template` as a
@@ -64,6 +64,6 @@ role.
 ## Authority
 
 This is maintainer test design. It does not change the product contract in
-`sources/context-circuit-v0.5-design/` or `wrapper/contracts/`. Where it observes
+`sources/system-design/context-circuit/v0.5/` or `wrapper/contracts/`. Where it observes
 product behavior, the product design and `wrapper/contracts/invariants.yaml`
 remain the authority for what "correct" means.

@@ -1,7 +1,7 @@
 # Design ↔ implementation deltas
 
 Where the shipped wrapper diverges from the v0.5 design under
-`sources/context-circuit-v0.5-design/`. Policy: the context pages describe what
+`sources/system-design/context-circuit/v0.5/`. Policy: the context pages describe what
 ships today ("shipped is truth"); the divergences are logged here as a design/
 implementation backlog and kept visible. Each entry: what the design says, what
 ships, where seen, and disposition.

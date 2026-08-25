@@ -48,7 +48,7 @@ printf '%s\n' "$result" | grep -F "source_state: $expected_source_state" >/dev/n
 
 # --- exclusion boundary: no maintainer, source, test, or runtime state ---
 for leaked in .runtime test .github scripts template repositories repositories.local.yaml \
-  wrapper/adapters plans/context-circuit-plans sources/context-circuit-v0.5-design \
+  wrapper/adapters plans/context-circuit-plans sources/system-design sources/reports \
   docs/release.md wrapper/contracts/routes.yaml wrapper/contracts/context-sets.yaml \
   wrapper/contracts/schemas/delegation.yaml .agents/skills/cc-entry; do
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"

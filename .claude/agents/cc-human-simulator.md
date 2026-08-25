@@ -85,4 +85,4 @@ why it stopped.
   could, or the conversation loops).
 
 Full role contract:
-`sources/context-circuit-v0.5-template-harness-design/roles/human-simulator.md`.
+`sources/system-design/template-harness/v0.5/roles/human-simulator.md`.

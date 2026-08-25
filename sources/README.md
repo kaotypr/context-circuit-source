@@ -8,6 +8,22 @@ prescribe subdirectories, filenames, or naming conventions inside this tree.
 When an artifact is drafted or a raw file is read, record the exact chosen
 path in provenance.
 
+## Current layout in this checkout
+
+This maintainer checkout organizes its own sources with the suggested layout
+(the same ergonomic convention documented for template workspaces):
+
+```
+sources/
+├── system-design/
+│   ├── context-circuit/v0.5/       # authoritative product design
+│   └── template-harness/v0.5/      # test-harness design
+└── reports/                        # implementation reports and audits
+```
+
+Domains are versioned independently. The layout is ergonomics only; passivity
+below still governs every read.
+
 Raw sources remain passive and request-scoped:
 
 1. identify only the files relevant to the requested artifact;

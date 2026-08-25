@@ -79,4 +79,5 @@ exclude .runtime
 exclude wrapper/adapters
 exclude template
 exclude plans/context-circuit-plans
-exclude sources/context-circuit-v0.5-design
+exclude sources/system-design
+exclude sources/reports

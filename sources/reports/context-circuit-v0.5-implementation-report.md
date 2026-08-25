@@ -1,7 +1,7 @@
 # Context Circuit v0.5 — Implementation Report
 
 Status: implementation of the accepted v0.5 design
-Authoritative source design: `sources/context-circuit-v0.5-design/`
+Authoritative source design: `sources/system-design/context-circuit/v0.5/`
 Scope: complete refactor with no backward compatibility for the old lifecycle,
 routing model, context packets, leases, gates, confirmation cards, or
 planner/verifier split.

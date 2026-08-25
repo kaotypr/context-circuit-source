@@ -69,7 +69,7 @@ on acceptance, as usual.
 ## 2026-08-24 — design↔context reconciliation
 
 Decision: reconcile the accepted `context/` Product Knowledge against the v0.5
-design under `sources/context-circuit-v0.5-design/`, under the policy
+design under `sources/system-design/context-circuit/v0.5/`, under the policy
 "shipped is truth; log deltas". Keep "wrapper" as an accepted synonym for the
 universal project workspace product and update the design source to accept it
 (rather than aligning context to the design's deprecation).
