@@ -74,6 +74,7 @@ exclude test
 exclude template-harness
 exclude .github
 exclude scripts
+exclude release
 exclude docs/release.md
 exclude .runtime
 exclude wrapper/adapters
