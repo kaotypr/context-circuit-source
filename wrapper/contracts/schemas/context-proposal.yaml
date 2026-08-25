@@ -1,0 +1,36 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/context-proposal.yaml
+describes: context/proposals/<proposal-id>.md
+concern: context_proposals
+
+purpose: >
+  A reviewable, evidence-linked proposal to add, change, retire, or mark a
+  Product Knowledge unit stale. A proposal is never applied automatically; only
+  an explicit separate human decision accepts it.
+
+fields:
+  id: { type: string, required: true }
+  target_context_unit: { type: string, required: true }
+  operation:
+    type: enum
+    required: true
+    values: [add, change, retire, stale]
+  statement: { type: string, required: true, description: concise proposed fact or change }
+  evidence_refs: { type: list, required: true }
+  affected_repositories: { type: list, required: false }
+  affected_commits: { type: list, required: false }
+  related_plan: { type: string, required: false }
+  confidence: { type: enum, required: true, values: [low, medium, high] }
+  conflict: { type: string, required: false, description: conflict with an accepted decision }
+  status:
+    type: enum
+    required: true
+    values: [review-needed, accepted, deferred, conflict]
+
+acceptance:
+  - accepting a proposal updates the context page, provenance, and retrieval index atomically
+  - deferring a proposal leaves plan completion intact and keeps the proposal visible
+    to future plan creation
+
+rules:
+  - INV-KNOWLEDGE-02

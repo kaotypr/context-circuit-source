@@ -2,16 +2,32 @@
 
 @AGENTS.md
 
-Read `WORKFLOW.md` after the shared instructions. Claude Code is a thin host
-adapter: its root session uses the canonical two-stage router, and its
-Task/subagent primitive maps to the existing bounded writer or independent
-read-only verifier packet. Record only provider-neutral `host_evidence`.
+Follow the shared `AGENTS.md` and `WORKFLOW.md` contract. Claude Code is a thin
+transport. The root Claude session is the coordinator (see `agents/coordinator.md`)
+for all normal conversation: orientation, context gathering, planning, review,
+approval interpretation, completion, archive/restore, and delivery discussion.
 
-Permission prompts, print mode, authentication, memory, MCP settings, and
-transcripts remain host-local and never authorize a route, gate, lease, or role
-change. If a required Task/subagent cannot be created, return `host-blocked`
-and preserve the filesystem-only workflow; do not self-verify.
+A Claude Task/subagent maps only to the single bounded worker (`agents/writer.md`)
+or the independent read-only verifier (`agents/verifier.md`) for one execution.
+Record provider-neutral `host_evidence` for the child; a host permission flag is
+an observation, not authorization.
 
-The adapter passes the canonical route `context_set` to the shared bounded
-packet loader. It does not copy route policy, read undeclared files, or treat a
-receipt as authorization. A path or byte rejection remains a read-only failure.
+Claude permission prompts, print mode, authentication, memory, and MCP settings
+are host-local. They never replace a human approval or completion gate and never
+enter workspace state. If Task/subagent creation is unavailable, report
+`host-blocked` and keep the route read-only; never self-verify.
+
+## Optional: slash-invocation of skills
+
+Product skills ship only at `.agents/skills/<name>/SKILL.md`, and the coordinator
+resolves them by path (see INV-SKILL-01). Claude Code does not discover
+`.agents/skills/`, so to also invoke a skill directly — for example
+`/cc-execute plan 0078` — create per-skill symlinks under `.claude/skills/` once:
+
+    mkdir -p .claude/skills && for d in .agents/skills/*/; do ln -s "../../$d" ".claude/skills/$(basename "$d")"; done
+
+`.claude/` is host-local: it is never part of workspace or shipped state and an
+upgrade neither creates nor preserves it. Re-run the command after an upgrade
+that adds or renames a skill; remove any dangling links for skills an upgrade
+dropped. This is a host convenience only — it grants no route, role, or authority
+that the read-as-procedure path does not already carry.

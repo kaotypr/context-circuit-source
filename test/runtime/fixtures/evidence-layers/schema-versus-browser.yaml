@@ -1,7 +1,0 @@
-case: schema-versus-browser
-required_layer: browser
-produced_layer: schema
-observed_layer: schema
-outcome: passed
-evidence_source: independent
-evidence_ref: test/runtime/fixtures/evidence-layers/schema-versus-browser.yaml
