@@ -6,3 +6,9 @@ context gap. An agent reads a source only when the human names the exact file or
 a plan explicitly includes it.
 
 Record provenance for each accepted source in `context/sources.yaml`.
+
+`sources/README.md` documents a suggested folder layout (`raw/`,
+`system-design/<domain>/<version>/`, `research/`, `decisions/`, `data-samples/`,
+`reports/`, `.archived/`). It is an ergonomic convention only: the agent infers
+no status or authority from folder or file names, and passivity above still
+applies.
