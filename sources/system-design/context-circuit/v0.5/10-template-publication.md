@@ -210,7 +210,9 @@ unpublished requests, no input) it fails rather than guessing.
                     → identical: fail ("nothing to publish for v<X>")
                     → no tags yet (first release): skip the gate, publish
 6. guard            v<X> must not already be a tag in the template repo
-7. checkout template repo using the fine-grained PAT (Section 8)
+7. clone template repo with the fine-grained PAT; if it is empty (no branch
+                    yet), point the unborn HEAD at main so the first release
+                    becomes main's first commit (release-only history)
 8. full-tree replace the template working tree with the assembled tree
                     (copy with delete, so the tree equals the artifact exactly)
 9. stamp            set template_version=<X> in wrapper/manifest.yaml;

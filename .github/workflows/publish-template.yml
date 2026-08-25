@@ -28,19 +28,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Checkout template repository
-        uses: actions/checkout@v4
-        with:
-          repository: kaotypr/context-circuit-template
-          ref: main
-          token: ${{ secrets.TEMPLATE_REPO_TOKEN }}
-          path: .template-repo
-          fetch-depth: 0
-
-      - name: Configure maintainer identity
+      - name: Clone template repository
+        env:
+          GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
         run: |
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/kaotypr/context-circuit-template.git" .template-repo
           git -C .template-repo config user.name  "${{ vars.MAINTAINER_NAME }}"
           git -C .template-repo config user.email "${{ vars.MAINTAINER_EMAIL }}"
+          # A brand-new template repo is empty (no branch). Point the unborn HEAD
+          # at main so the first release commit becomes main's first commit and
+          # the history stays release-only. An existing repo already has main
+          # checked out from the clone.
+          if git -C .template-repo rev-parse -q --verify HEAD >/dev/null 2>&1; then
+            git -C .template-repo checkout main
+          else
+            git -C .template-repo symbolic-ref HEAD refs/heads/main
+          fi
 
       - name: Run acceptance suite
         run: sh test/acceptance.sh
