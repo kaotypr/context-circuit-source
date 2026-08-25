@@ -1,0 +1,84 @@
+name: Publish template
+
+# Publishes one release of the assembled product into context-circuit-template.
+# Manual (workflow_dispatch) or on a new request file landing on main.
+# Design: sources/system-design/context-circuit/v0.5/10-template-publication.md
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Template version to publish (blank = the single unpublished request)"
+        required: false
+  push:
+    branches: [main]
+    paths:
+      - "release/requests/**"
+
+concurrency:
+  group: publish-template
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout template repository
+        uses: actions/checkout@v4
+        with:
+          repository: kaotypr/context-circuit-template
+          ref: main
+          token: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          path: .template-repo
+          fetch-depth: 0
+
+      - name: Configure maintainer identity
+        run: |
+          git -C .template-repo config user.name  "${{ vars.MAINTAINER_NAME }}"
+          git -C .template-repo config user.email "${{ vars.MAINTAINER_EMAIL }}"
+
+      - name: Run acceptance suite
+        run: sh test/acceptance.sh
+
+      - name: Resolve target version
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: sh scripts/resolve-release-version.sh .template-repo
+
+      - name: Publish (assemble, gate, commit, tag)
+        id: publish
+        env:
+          MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
+          MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
+        run: |
+          out=$(sh scripts/publish-template.sh "${{ steps.resolve.outputs.version }}" .template-repo)
+          printf '%s\n' "$out"
+          echo "archive=$(printf '%s\n' "$out" | sed -n 's/^artifact_archive: //p')" >> "$GITHUB_OUTPUT"
+
+      - name: Push commit and tag
+        run: |
+          V="${{ steps.resolve.outputs.version }}"
+          git -C .template-repo push origin main
+          git -C .template-repo push origin "v$V"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+        run: |
+          V="${{ steps.resolve.outputs.version }}"
+          awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
+            "release/requests/$V.md" > release-notes.md
+          gh release create "v$V" \
+            --repo kaotypr/context-circuit-template \
+            --title "v$V" \
+            --notes-file release-notes.md \
+            "${{ steps.publish.outputs.archive }}#context-circuit-v$V.tar.gz"

@@ -1,8 +1,6 @@
 #!/bin/sh
 set -eu
 
-DESTINATION_REPO='kaotypr/context-circuit-template'
-DESTINATION_REF='main'
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 usage() { printf 'usage: sh scripts/release-artifact.sh <staging-dir> <output-dir> <version>\n' >&2; exit 2; }
 path_unsafe() { case "$1" in ''|/*|..|../*|*/..|*/../*) return 0 ;; esac; return 1; }
@@ -13,6 +11,14 @@ output_dir=$2
 version=$3
 case "$version" in ''|*/*|.*|-*|*' '*|*..*) fail "invalid version: $version" ;; esac
 source_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'not a git source checkout'
+
+# Destination identity comes from the source-only release binding, never hardcoded.
+binding="$source_root/release/binding.yaml"
+[ -f "$binding" ] || fail "missing release binding: $binding"
+DESTINATION_REPO=$(sed -n 's/^destination_repo:[[:space:]]*//p' "$binding" | head -n1)
+DESTINATION_REF=$(sed -n 's/^destination_ref:[[:space:]]*//p' "$binding" | head -n1)
+[ -n "$DESTINATION_REPO" ] && [ -n "$DESTINATION_REF" ] || fail "invalid release binding: $binding"
+
 manifest="$source_root/scripts/release-manifest.txt"
 [ -f "$manifest" ] || fail "missing release manifest: $manifest"
 source_sha=$(git -C "$source_root" rev-parse HEAD 2>/dev/null || printf uncommitted)
