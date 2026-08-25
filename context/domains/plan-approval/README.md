@@ -1,110 +1,114 @@
 ---
 kind: domain
-status: proposed
-title: Plan approval and product-source commit
+status: accepted
+title: Plan approval
 slug: plan-approval
 owners: []
-sources:
-  - plans/context-circuit-plans/approval-gate-ux-performance/plan.yaml
-  - plans/context-circuit-plans/approval-gate-ux-performance/PLAN.md
-  - docs/gates.md
+sources: []
 source_revisions:
-  - plan: approval-gate-ux-performance
-    working_tree_status: done
-    HEAD_status: approved
-    updated_at: 2026-08-22T18:00:00Z
-generated_at: 2026-08-23T00:00:00Z
-review_date: 2026-09-22
-freshness: proposed-from-done-plans
+  - wrapper: HEAD
+    commit: 4b8ac0b
+    basis: current-wrapper
+generated_at: 2026-08-24T00:00:00Z
+review_date: 2026-11-24
+freshness: accepted-from-current-wrapper
 assumptions:
-  - Working-tree plan.yaml status done is the selected done-plan evidence.
+  - Approval is a single explicit conversational gate with no confirmation card or token.
 unknowns: []
-contradictions:
-  - approval-gate-ux-performance is done in the working tree but still dirty
-    versus HEAD, which has status approved. The uncommitted diff is the finish
-    status projection (approved→done and task ready→done).
+contradictions: []
 acceptance:
-  state: pending
-  accepted_at:
-  accepted_by:
+  state: accepted
+  accepted_at: 2026-08-24
+  accepted_by: maintainer
 workflows:
-  - docs/gates.md
   - docs/planning.md
 ---
 
-# Plan approval and product-source commit
+# Plan approval
 
 ## Summary
 
-Plan approval is a two-turn, status-only gate. On this product-source
-checkout, confirmed approval may immediately present the existing maintainer
-commit card. Execution remains a later explicit request. Route approval,
-confirm-approval, and the follow-on commit-approved-plan card here.
+Approval is an explicit conversational human gate that changes plan status from
+`draft` to `approved` after deterministic readiness checks. It is not a
+confirmation card and carries no hidden confirmation token. Route "approve plan
+`<id>`" here. Execution is a separate authorization.
 
 ## Scope
 
-Inside: `Approve plan <id>`, `Confirm approval of plan <id>`, the canonical
-status transition, task projections, and the product-source
-`commit-approved-plan` card.
+Inside: the `draft → approved` transition and its readiness checks, and the
+synchronized task-status projection.
 
-Outside: combining approval with commit or execution, auto-committing, creating
-a worktree from a dirty product-source base, and treating
-`MAINTAINER_APPROVAL_COMMIT_REQUIRED` as an execution exemption.
+Outside: execution and the writer loop (see
+[plan-execution](../plan-execution/README.md)), plan authoring/review (see
+[plan-review](../plan-review/README.md)), and completion.
 
 ## Behavior
 
-`Approve plan <id>` presents a current session-bound card and mutates nothing.
-The exact confirmation is `Confirm approval of plan <id>`. That confirmation
-calls one canonical transition: `plan.yaml` `draft` → `approved` and included
-task projections `draft` → `ready`. Task bodies, file endings, and unrelated
-working-tree changes are preserved.
+Approval only changes plan status `draft → approved` after deterministic
+readiness checks pass; it creates no worktree, claims no lease, starts no
+implementation, and commits no Git (INV-APPROVE-01). Eligibility is not
+authorization: a vague "yes" is not approval, and the decision is an explicit
+conversational act bound to the named plan.
 
-The confirmed path does not create a worktree, claim a lease, start
-implementation, or commit Git.
+`plan.yaml` owns the human status; included task projections move in sync and
+are never a second authority (INV-PLAN-01).
 
-On an instantiated or wrapped workspace, the handoff says approval is complete
-and `Run approved plan <id>` is the separate next request.
+Only an approved plan may execute, and execution is a separate authorization
+from approval unless one request explicitly asks for both — "approve plan `<id>`
+and execute it" is two sequential explicit actions (INV-EXEC-01).
 
-On `product-source`, if the dirty set is exactly that approval projection,
-present the existing commit card in the same session:
-
-- Confirmation: `Confirm commit of the approved plan state.`
-- Instantiated or wrapped workspaces do not receive this card.
-- Unrelated dirty files remain `DIRTY_BASE_BLOCKED`.
-- Running before that commit reports `MAINTAINER_APPROVAL_COMMIT_REQUIRED`.
-
-After that commit, `Run approved plan <id>` is the next explicit request.
+On this `product-source` checkout, committing the approved plan state is an
+ordinary source-only commit that an explicit user request may authorize (see
+`AGENTS.md`); it is not a gated card and there is no
+`MAINTAINER_APPROVAL_COMMIT_REQUIRED` token. Registered product repositories
+still require their own delivery and publication gates.
 
 ## Workflows
 
-- Approval card and maintainer commit card: `docs/gates.md`
-- Lifecycle separation: `docs/planning.md`
+- Lifecycle separation and the approval gate: `docs/planning.md`
+
+## Interfaces
+
+- Human request: "Approve plan `<id>`"
+- Canonical status: `plan.yaml` `status`
 
 ## Constraints and edge cases
 
-Eligibility is not authorization. Confirmation is bound to the displayed
-target and current session. Vague “yes” is not approval. Dirty files outside
-the exact status projection must be preserved.
+Approval never runs deterministic readiness against a nonexistent plan, never
+combines silently with execution, and never persists as a reusable token.
+Unrelated dirty working-tree files are preserved.
+
+## Readiness checks
+
+The deterministic readiness checks that gate `draft -> approved`:
+
+- the objective is represented accurately;
+- repository mappings are explicit;
+- no task depends on an unknown repository;
+- context conflicts are resolved or accepted as risks;
+- acceptance and verification are testable;
+- worker and verifier scope are bounded;
+- the plan status is currently draft.
 
 ## Implementation references
 
-- `wrapper/runtime/engine.sh` `cc_transition_plan_status`,
-  `cc_maintainer_approval_commit_required`
-- `wrapper/contracts/invariants.yaml` INV-AUTH-01, INV-AUTH-02, INV-OWN-07
-- `docs/gates.md`
-
-## Verification
-
-Done-plan verification IDs AGF-VT-01–AGF-VT-05.
+- `.agents/skills/cc-plan/SKILL.md`, `.agents/skills/cc-execute/SKILL.md`
+- `wrapper/runtime/engine.sh`: `cc_plan_approve`, `cc_plan_set_status`
+- `wrapper/contracts/schemas/plan.yaml`
+- `wrapper/contracts/invariants.yaml`: INV-APPROVE-01, INV-PLAN-01, INV-EXEC-01
 
 ## Provenance
 
-Read only the selected plan `approval-gate-ux-performance` (CC-004) from the
-working tree, plus `docs/gates.md` named by that plan. Raw `sources/` was not
-scanned. HEAD at generation was `b7a11f3`.
+Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
+`approval-gate-ux-performance` plan that seeded this page was deleted in
+`4b8ac0b`; its provenance was retired. Raw `sources/` was not scanned.
 
 ## Acceptance notes
 
-This page is proposed. It extends the accepted “separate lifecycle gates”
-decision with the product-source commit-card sequencing; it does not replace
-that decision. Human context acceptance is still required.
+Accepted 2026-08-24. Substantively corrected: the earlier draft's two-turn
+confirmation card, `commit-approved-plan` card, `MAINTAINER_APPROVAL_COMMIT_REQUIRED`,
+and `DIRTY_BASE_BLOCKED` machinery, and the engine functions
+`cc_transition_plan_status` / `cc_maintainer_approval_commit_required`, are all
+absent from the current wrapper and contradicted INV-APPROVE-01 ("no confirmation
+card and no hidden confirmation token"). Extends the accepted "separate lifecycle
+gates" decision in `context/DECISIONS.md`.

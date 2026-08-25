@@ -1,0 +1,30 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/worker-handoff.yaml
+describes: .runtime/executions/<plan-id>/<execution-id>/handoff.md
+concern: worker_handoff
+
+purpose: >
+  The worker's concise handoff after implementation or repair. It is a claim,
+  not verification evidence. The independent verifier treats it as input, never
+  as proof.
+
+required_sections:
+  - execution and attempt ids
+  - repository commits (per affected repository)
+  - tasks completed
+  - implementation checks run and results
+  - assumptions
+  - known limitations
+  - suggested verifier focus
+  - whether this handoff follows a repair
+
+forbidden:
+  - claiming independent verification
+  - changing plan approval or completion status
+  - altering verifier evidence
+  - credentials or provider payloads
+
+rules:
+  - INV-EXEC-04
+  - INV-VERIFY-01
+  - INV-SEC-01

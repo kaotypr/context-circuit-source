@@ -1,129 +1,219 @@
 schema_version: 1
 owner: wrapper/contracts/invariants.yaml
+purpose: >
+  Single authoritative index of Context Circuit v0.5 product rules and the one
+  file that owns each rule. One rule has one owner. Other artifacts reference an
+  effect defined here; they never define a parallel copy of it.
+
 invariants:
-  - id: INV-AUTH-01
-    rule: Eligibility never implies authorization; explicit human confirmation is required for every consequential gate.
-  - id: INV-AUTH-02
-    rule: Review is read-only, approval changes status only, execution requires a separate request, and finish requires a separate status gate.
-  - id: INV-AUTH-03
-    rule: An uninitialized workspace permits read-only orientation only; every write, plan, execution, or external-action request first requires identity acceptance.
-  - id: INV-AUTH-04
-    rule: In an accepted workspace, a generic write-like request without a named approved plan routes to draft-plan; implementation requires approval and a separate execution request.
-  - id: INV-CTX-01
-    rule: Stage A selects one bounded context set; Stage B selects one final action only after that evidence is loaded.
-  - id: INV-CTX-02
-    rule: Context budgets are hard ceilings; an overrun reports a reason and never silently broadens context.
-  - id: INV-CTX-03
-    rule: Receipts locate primary evidence and cannot replace or authorize it; stale receipts block writes.
-  - id: INV-CTX-04
-    rule: Every normalized root action maps to one registered context packet; probe, phase, action, and context-set identifiers remain distinct.
-  - id: INV-CTX-05
-    rule: Packet allowlists are exact and conditional selections are validated before bytes or evidence are exposed; an overrun reports CONTEXT_BUDGET_EXCEEDED and never broadens context.
-  - id: INV-CTX-06
-    rule: Canonical packet fixtures are wrapper-owned examples and never include maintainer plans, customer workspaces, runtime state, tests, credentials, or provider payloads.
-  - id: INV-OWN-01
-    rule: A plan has one active writing lease; exclusive-create ownership is atomic and contention remains read-only.
-  - id: INV-OWN-02
-    rule: A writer changes only its delegated paths in its assigned worktree; a verifier cannot write implementation or runtime owned by another session.
-  - id: INV-OWN-03
-    rule: Every child packet includes identity, scope, permissions, acceptance, verification, expected evidence, and stop conditions.
-  - id: INV-OWN-07
-    rule: Normal repositories reject every dirty base; a product-source checkout may classify only the exact approval status projection as requiring an explicit maintainer commit, never as an execution exemption.
-  - id: INV-LIFE-01
-    rule: plan.yaml owns plan status draft, approved, done; task status is a synchronized projection draft, ready, done.
-  - id: INV-LIFE-02
-    rule: Implemented runtime evidence never marks a plan done; only an explicit finish gate does.
-  - id: INV-REC-01
-    rule: Interruption preserves lease, worktree, dirty state, receipt, and handoff; heartbeat expiry never grants takeover.
-  - id: INV-REC-02
-    rule: Wrapper upgrades replace wrapper-owned files only and preserve workspace data and runtime evidence.
-  - id: INV-REC-03
-    rule: Runtime record constructors separate caller intent and bounded host evidence from engine-derived versions, ancestry, timestamps, revisions, byte counts, digests, ownership, transaction state, and commit markers.
-  - id: INV-REC-04
-    rule: A runtime record is authoritative only after the complete validated record graph reaches committed with a matching engine commit marker; staged, valid, interrupted, or legacy-readable records cannot grant ownership, resume, verification, execution, or completion eligibility.
-  - id: INV-REC-05
-    rule: Legacy-readable records remain explicitly read-compatible and are never silently rewritten, upgraded, or treated as current authority without a new validated transaction.
-  - id: INV-SEC-01
-    rule: Workspace-relative paths reject traversal, unsafe symlinks, credentials, and writes outside assigned roots.
-  - id: INV-SEC-02
-    rule: sources/ is passive; only exact request-scoped files may be read and provenance is recorded.
-  - id: INV-OFFLINE-01
-    rule: Provider failure produces disabled, denied, or unavailable and never blocks filesystem evidence.
-  - id: INV-HOST-01
-    rule: Host identity, version, capability, permission mode, and provider status are provider-neutral evidence only; they never authorize a route, role, lease, gate, or verification result.
-  - id: INV-HOST-02
-    rule: A missing required host child produces host-blocked without self-verification or role downgrade, while disabled, denied, or unavailable provider status uses the filesystem-only fallback.
-  - id: INV-HOST-03
-    rule: Host evidence and optional live smoke records contain only bounded host and executable/version outcomes and never credentials, provider payloads, transcripts, or host auth state.
-  - id: INV-GATE-01
-    rule: Archive and restore are append-only eligibility events and do not change plan status or delete evidence.
-  - id: INV-GATE-02
-    rule: Delivery, publication, deployment, merge, and destructive cleanup are separate explicit gates.
-  - id: INV-GATE-03
-    rule: Completion requires all task evidence and an independent verifier pass before a finish card.
-  - id: INV-GATE-04
-    rule: A foreign live owner or ambiguous lease blocks writing and cannot be silently stolen.
-  - id: INV-GATE-05
-    rule: Scope expansion, contradictory evidence, missing child primitives, and failed verification stop within-scope work.
-  - id: INV-GATE-06
-    rule: Cleanup inspects dirty and unpushed work and cannot discard it without an additional explicit confirmation.
+  - id: INV-KNOWLEDGE-01
+    rule: >
+      Product Knowledge is optimized first for agent retrieval (stable IDs,
+      summaries, domains, repositories, decisions, constraints, freshness,
+      provenance) while remaining human-readable. The context index is a
+      retrieval catalog, not a full copy of page content.
+  - id: INV-KNOWLEDGE-02
+    rule: >
+      Completion, verification, worker claims, and code changes never silently
+      accept a Product Knowledge update. A context update is accepted only by an
+      explicit separate human decision; a plan may be done while a proposal is
+      pending.
+  - id: INV-PLAN-01
+    rule: >
+      plan.yaml owns human plan status (draft, approved, done). Task status is a
+      synchronized projection and never a second lifecycle authority.
+  - id: INV-PLAN-02
+    rule: >
+      Every task names the repository or repositories it may change and bounded
+      paths or an explicit repository-wide scope. Dependencies are explicit.
+  - id: INV-PLAN-03
+    rule: >
+      New plans use stable IDs of the form NNNN-<kebab-slug>. The four-digit
+      sequence is the next after the highest ever allocated and is never reused,
+      including after archive or restore.
+  - id: INV-PLAN-04
+    rule: >
+      Plans are grounded against available Product Knowledge, source evidence,
+      and repository evidence. Missing or contradictory information becomes an
+      explicit open question, assumption, or risk; the agent never silently
+      invents a decision.
+  - id: INV-APPROVE-01
+    rule: >
+      Approval is an explicit conversational human gate that only changes plan
+      status draft to approved after deterministic readiness checks. There is no
+      confirmation card and no hidden confirmation token.
+  - id: INV-EXEC-01
+    rule: >
+      Only an approved plan may execute. Execution is a separate authorization
+      from approval unless one request explicitly asks for both.
+  - id: INV-EXEC-02
+    rule: >
+      One worker executes every task of one approved plan in one bounded
+      execution, in dependency order, across all mapped repositories.
+  - id: INV-EXEC-03
+    rule: >
+      Execution creates exactly one deterministic branch (cc/<plan-id>/<repo-id>)
+      and one isolated worktree per affected repository, from the captured
+      anchor-branch tip. The anchor checkout is never written during execution.
+  - id: INV-EXEC-04
+    rule: >
+      The worker commits each changed repository before verification. Every
+      repair creates a new commit; a prior commit is never amended to conceal a
+      repair attempt.
+  - id: INV-COMMIT-01
+    rule: >
+      Every commit an agent authors anywhere in the product, and every
+      pull-request title, follows Conventional Commits: a lowercase type from
+      the fixed set (feat, fix, docs, refactor, perf, test, build, ci, chore,
+      revert), an optional scope naming the affected repository id or component,
+      an optional "!" before the colon for a breaking change, and a short
+      imperative subject with no trailing period. An optional body explains what
+      changed and why; an optional "Refs:" footer names the plan and task IDs
+      the commit implements. A repair commit uses the same convention and is a
+      new commit, never an amendment (see INV-EXEC-04). Commit and pull-request
+      text never contain credentials, provider payloads, or host-specific paths.
+      No commit message, pull request, merge request, review, or comment an
+      agent authors ever carries an AI attribution, credit, co-author, or
+      "generated by" footer or trailer for any tool, model, provider, or the
+      agent itself; the human author is the sole recorded author. Any such text
+      the host would inject automatically is disabled rather than re-added.
+  - id: INV-VERIFY-01
+    rule: >
+      One independent verifier checks the latest commit of every affected
+      repository, strictly read-only with respect to product files. It never
+      repairs, modifies product files, changes plan status, or self-verifies.
+  - id: INV-VERIFY-02
+    rule: >
+      If the host cannot create an independent verifier with read-only
+      capability, the execution is blocked. The worker or coordinator must not
+      self-verify as a substitute.
+  - id: INV-REPAIR-01
+    rule: >
+      The worker-failure counter increments on each verifier rejection including
+      the initial implementation. The maximum is three, after which execution
+      stops. A block from missing host capability or external evidence is a
+      blocked execution, not an invented worker failure.
+  - id: INV-PRESERVE-01
+    rule: >
+      Failure, interruption, or blocking preserves branches, worktrees, commits,
+      worker handoffs, verifier evidence, repair attempts, and runtime records.
+      Failed work is never silently cleaned up.
+  - id: INV-COMPLETE-01
+    rule: >
+      Only an explicit human request changes plan status to done, and only when
+      the latest execution passed independent verification. Verification alone
+      never marks a plan complete.
+  - id: INV-COMPLETE-02
+    rule: >
+      Marking a plan done records an implementation completion record (plan
+      revision, execution, per-repository commits, verifier result, human
+      request) and starts Product Knowledge reconciliation.
+  - id: INV-ARCHIVE-01
+    rule: >
+      Archiving moves plans/<id>/ to plans/.archived/<id>/, removes the row from
+      plans/INDEX.md, and preserves plan files, status, and runtime evidence. It
+      performs no plan-status or execution validation and implies no completion,
+      delivery, cleanup, or deletion.
+  - id: INV-ARCHIVE-02
+    rule: >
+      The normal agent must not read or traverse plans/.archived/. An explicit
+      restore is the only operation that returns a named archived plan to the
+      active plan area before normal reading resumes.
   - id: INV-REPO-01
-    rule: Shared repository identity contains only a logical key, optional credential-free canonical URL, and optional default branch; it never contains a machine-specific path.
+    rule: >
+      Portable workspace identity holds only a logical repository key, an
+      optional credential-free canonical URL, and an optional default_branch.
+      It never contains a machine-specific path or credentials.
   - id: INV-REPO-02
-    rule: Host-local repository bindings belong only in the ignored root repositories.local.yaml file and may select an explicit external, workspace-relative, or repositories/<key> path.
+    rule: >
+      anchor_branch is the required user-local execution base and the default
+      pull-request target. default_branch is only portable clone/setup guidance
+      and is never inferred as the anchor branch or execution base.
   - id: INV-REPO-03
-    rule: Binding resolution is explicit and bounded; missing, ambiguous, traversal, unsafe-symlink, missing-Git, or identity-mismatched paths fail without filesystem scanning or substitution.
+    rule: >
+      repositories/ is the gitignored default destination for cloned or
+      initialized project repositories. The workspace root, when it is a Git
+      repository, binds as the reserved logical id workspace at path "." with its
+      own anchor branch, and is never placed under repositories/.
   - id: INV-REPO-04
-    rule: Repository bootstrap displays the exact logical repository, canonical URL, selected remote, branch, destination, and existing-path check, then requires a current repository-bootstrap confirmation before clone or destination creation.
-  - id: INV-REPO-05
-    rule: Repository credentials remain owned by the host Git configuration or agent and are never read into, persisted in, or emitted by workspace, binding, runtime, or release records.
-  - id: INV-REPO-06
-    rule: Bound source repositories remain untouched; execution prepares only .runtime/worktrees/<repository-key>/<plan-id>/ and rejects dirty bases.
-  - id: INV-REPO-07
-    rule: Wrapper upgrades and release assembly preserve local bindings and repository work while excluding repositories.local.yaml, repositories/, maintainer plans, and runtime state from artifacts.
-  - id: INV-REPO-08
-    rule: Registering a logical repository updates workspace.yaml shared identity and the identity region in WORKSPACE.md, PROJECT.md, and INDEX.md in one atomic operation; machine-specific paths remain only in repositories.local.yaml.
-  - id: INV-PROJ-01
-    rule: workspace.yaml remains the canonical workspace identifier and context/ remains Product Knowledge; the bounded identity region is a projection of identity metadata and never a source, generator, or replacement of Product Knowledge.
-  - id: INV-PROJ-02
-    rule: A missing or disagreeing identity region in WORKSPACE.md, PROJECT.md, or INDEX.md yields the stable projection-mismatch result and does not authorize a route or gate.
-  - id: INV-PROJ-03
-    rule: Authored Product Knowledge outside the identity region is neither a projection input nor a projection output; render, validation, and migration rewrite only the one contract-owned delimited region per file.
-  - id: INV-GATE-07
-    rule: Effect identifiers are descriptive metadata owned by the route and gate contracts; they never grant authorization, select a route, or bypass confirmation.
-  - id: INV-GATE-08
-    rule: Omitted confirmation fields are shown as proposed defaults on the current card; confirmation records those displayed values; fields with no default remain incomplete; no field is invented after confirmation.
-  - id: INV-GATE-09
-    rule: Delegated effects must be a subset of approved intent; git.init and git.clone are not execute-plan effects; undeclared effects fail closed before a child starts and do not authorize a route or gate.
-  - id: INV-EVID-01
-    rule: Evidence layers are schema, store, api, process, browser, and human; comparison is exact-match only with no global strength hierarchy or cross-layer inference.
-  - id: INV-EVID-02
-    rule: Plan schema owns required_layer and produced_layer; tasks keep acceptance and verification ids; runtime records carry observed_layer, outcome, and evidence_ref.
-  - id: INV-EVID-03
-    rule: Verification outcomes are passed, failed, blocked, and waived; only passed satisfies completion; waived is non-passing metadata and not a gate or verifier success.
-  - id: INV-EVID-04
-    rule: Completed historical evidence remains readable without rewrite; unfinished legacy work requires an explicit evidence-layer mapping before new verification; migration must not invent evidence.
+    rule: >
+      Binding resolution is explicit and bounded. Missing, ambiguous, non-Git,
+      traversal, unsafe-symlink, or identity-mismatched bindings fail closed
+      without scanning the filesystem or substituting a similarly named path.
+  - id: INV-DELIVER-01
+    rule: >
+      Pull-request creation, merge, push, publication, deployment, archive, and
+      cleanup are separate human-requested actions. A pull request uses each
+      execution branch as source and the repository's recorded anchor_branch as
+      the default target; it never substitutes default_branch or silently follows
+      a moving remote.
+  - id: INV-DELIVER-02
+    rule: >
+      Delivery blocks and reports when the source branch, configured provider or
+      remote, or target branch is unavailable, rather than inferring a remote or
+      pushing silently.
+  - id: INV-SEC-01
+    rule: >
+      Workspace-relative paths reject traversal and unsafe symlinks. Credentials
+      remain in host Git configuration or the host agent and never enter
+      workspace files or runtime records.
+  - id: INV-SEC-02
+    rule: >
+      sources/ is passive raw evidence. Only exact request-scoped source files
+      are read; the workspace never scans all sources or sibling workspaces to
+      fill a context gap.
+  - id: INV-RUNTIME-01
+    rule: >
+      The Context Circuit runtime is a small host-neutral deterministic library.
+      It contains no provider launch code, model prompts, Product Knowledge
+      interpretation, plan-writing intelligence, conversational routing policy,
+      confirmation cards, product test-runner logic, or automatic
+      pull-request/merge/push/publish/deploy/cleanup/completion.
+  - id: INV-RUNTIME-02
+    rule: >
+      Runtime records are written atomically. A partial or contradictory record
+      cannot grant ownership, resume a writer, prove verification, or authorize
+      completion.
+  - id: INV-OWN-01
+    rule: >
+      At most one active writer owns a plan execution, enforced by an atomic
+      exclusive-create lock. A competing writer receives a read-only or blocked
+      result; a live lock is never silently stolen.
+  - id: INV-HOST-01
+    rule: >
+      Host identity, version, capability, permission mode, and provider status
+      are bounded provider-neutral evidence only. They never authorize a route,
+      role, lease, gate, verification, or completion.
+  - id: INV-SKILL-01
+    rule: >
+      Product skills ship only at `.agents/skills/<name>/SKILL.md` and are
+      read-as-procedure packets the coordinator resolves by path. A host may
+      additionally surface a skill as a directly invocable slash command, but
+      that host bridge is an optional convenience owned by the host adapter and
+      is never a separate route, role, or authority. The shipped workspace never
+      contains a host-specific skill directory or symlink.
+
 owners:
   authority_order: WORKFLOW.md
   source_boundary: AGENTS.md
-  context_sets: wrapper/contracts/context-sets.yaml
-  routes: wrapper/contracts/routes.yaml
-  lifecycle: wrapper/contracts/schemas/plan.yaml
-  runtime: wrapper/runtime/engine.sh
+  product_knowledge: context/INDEX.md
+  context_retrieval: wrapper/contracts/schemas/context-index.yaml
+  context_proposals: wrapper/contracts/schemas/context-proposal.yaml
+  plan_lifecycle: wrapper/contracts/schemas/plan.yaml
+  task_projection: wrapper/contracts/schemas/task.yaml
   repository_identity: wrapper/contracts/schemas/workspace.yaml
-  repository_binding: wrapper/runtime/engine.sh
-  repository_bootstrap_gate: wrapper/contracts/routes.yaml
-  repository_release_boundary: wrapper/manifest.yaml
-  identity_projection: wrapper/contracts/schemas/workspace.yaml
-  identity_region_runtime: wrapper/runtime/engine.sh
-  displayed_defaults: wrapper/contracts/schemas/workspace.yaml
-  gate_effects: wrapper/contracts/routes.yaml
-  identity_acceptance_card: docs/gates.md
-  repository_registration_card: docs/gates.md
-  runtime_record_contracts: wrapper/contracts/schemas/{session,context-receipt,delegation,child-start,handoff,completion}.yaml
-  runtime_record_transaction: wrapper/contracts/invariants.yaml
-  child_start_evidence: wrapper/contracts/schemas/child-start.yaml
-  child_scope_authority: wrapper/contracts/schemas/delegation.yaml
-  record_compatibility: wrapper/contracts/invariants.yaml
-  evidence_layers: wrapper/contracts/schemas/plan.yaml
-  evidence_layer_runtime: wrapper/contracts/schemas/{delegation,handoff,completion}.yaml
+  local_binding: wrapper/contracts/schemas/repositories-local.yaml
+  commit_convention: wrapper/contracts/invariants.yaml
+  runtime: wrapper/runtime/engine.sh
+  execution_records: wrapper/contracts/schemas/execution.yaml
+  worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
+  verifier_result: wrapper/contracts/schemas/verifier-result.yaml
+  completion_record: wrapper/contracts/schemas/completion.yaml
+  context_impact: wrapper/contracts/schemas/context-impact.yaml
+  release_boundary: wrapper/manifest.yaml
+  skill_packets: .agents/skills/
+  coordinator_role: agents/coordinator.md
+  worker_role: agents/writer.md
+  verifier_role: agents/verifier.md
+  host_adapter: wrapper/adapters/AGENTS.md
+  delivery_boundary: wrapper/adapters/WORKFLOW.md

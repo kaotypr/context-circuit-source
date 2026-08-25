@@ -1,27 +1,27 @@
 ---
 name: cc-verify
-description: Verify bounded implementation evidence independently and produce a durable handoff.
+description: Run the independent, read-only verifier against the latest worker commits for an execution.
 ---
 
-Use as a separate verifier role after a writer handoff. Read only the selected
-plan acceptance, canonical verification commands, assigned worktree, and
-writer evidence. Check scope, ownership, regressions, Git state, and
-limitations. Write only the verifier's own session handoff. A failed check
-enters the bounded repair loop; a pass creates completion evidence but never
-changes plan status or authorizes delivery.
+The verifier is a separate actor from the worker. It receives the immutable plan
+snapshot, the repository map, the latest worker commit for each affected
+repository, the worker handoff (as a claim, not evidence), the canonical
+verification commands and evidence identifiers, and read-only worktree access.
 
-The verifier records host identity and observed capability in
-`host_evidence`, but host capability never replaces independent read-only
-permissions. Codex, Claude Code, and Cursor Agent child mechanisms are
-interchangeable adapters around the same verifier packet. If the required child
-cannot be created, record `host-blocked` and do not verify in the root session.
+It must:
 
-The verifier reads the engine-generated graph and calls
-`cc_validate_runtime_graph` plus current receipt validation before checking
-the worktree. It consumes the same delegation and handoff skeleton as the
-writer; it never reconstructs records or uses launch text to expand scope.
+- inspect the latest commit in every affected repository;
+- replay the promised acceptance and verification evidence;
+- check the evidence proves the required layer;
+- check that repository and path scope was respected;
+- report `passed`, `failed`, or `blocked` with evidence references;
+- write only its own verifier result and handoff.
 
-Compare required and observed layers only through engine validation owned by
-`wrapper/contracts/schemas/plan.yaml`. Do not restate or extend that policy
-here. Report passed, failed, blocked, and waived as distinct outcomes. Writer
-evidence is a claim. Remain read-only and never repair.
+It must not modify product files, repair the worker's implementation, change
+plan status, treat a worker claim as independent evidence, or downgrade an
+evidence requirement because a host lacks a capability. Only `passed` satisfies
+verification. Record the outcome with the runtime `verifier-result-record`; the
+runtime rejects any product write and any changed branch tip.
+
+If an independent read-only verifier cannot be created, report `blocked`; never
+self-verify. Full role behavior: `agents/verifier.md`.

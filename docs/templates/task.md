@@ -1,38 +1,33 @@
 ---
-schema_version: 2
-id: {{task_id}}
-plan: {{plan_id}}
-status: draft
-repository: {{repository}}
-paths:
-  - {{bounded/path}}
+id: API-001
+title: First task
+repositories: [api]
+paths: [src/example, test/example]
 depends_on: []
-acceptance: [{{acceptance_id}}]
-verification: [{{verification_id}}]
+acceptance: [API-AC-001]
+verification: [API-VT-001]
 ---
 
-# {{task_title}}
+## Intended behavior
 
-## Objective
+What the result should do.
 
-One bounded implementation outcome.
+## Concrete change and affected surfaces
 
-## Work
+The change to make and the files or interfaces it touches.
 
-Expected behavior, not speculative commands.
+## Inputs and outputs
 
-## Non-goals
+Inputs consumed and outputs produced.
 
-Paths and behavior the writer must not change.
+## Context references
 
-## Verification
+- context/domains/example/README.md
 
-Reference verification IDs; do not copy canonical commands.
+## Risks and open questions
 
-## Expected evidence
-
-Changed files, test results, limitations, and handoff path.
+- Anything unresolved.
 
 ## Stop conditions
 
-Scope expansion, contradiction, ownership conflict, or missing evidence.
+- Do not expand scope beyond the declared repositories and paths.

@@ -23,7 +23,13 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 
 ## Domain entries
 
-- [Repository binding and bootstrap](repository-binding/README.md) — shared identity, host-local bindings, explicit bootstrap, isolated worktrees. Status: proposed.
-- [Host adapters](host-adapters/README.md) — Codex, Claude Code, and Cursor Agent CLI as evidence-only hosts. Status: proposed.
-- [Named-plan review](plan-review/README.md) — read-only Review Card and optional host question prompts. Status: proposed.
-- [Plan approval and product-source commit](plan-approval/README.md) — two-turn status-only approval and the maintainer commit card. Status: proposed.
+- [Workspace orientation and repository binding](repository-binding/README.md) — orientation, portable identity, host-local bindings, fail-closed resolution. Status: accepted.
+- [Planning and plan review](plan-review/README.md) — grounded plan authoring and non-executing review. Status: accepted.
+- [Plan approval](plan-approval/README.md) — the explicit conversational `draft → approved` gate. Status: accepted.
+- [Plan execution](plan-execution/README.md) — one-writer loop, isolated worktrees, repair, preserved runtime records. Status: accepted.
+- [Verification](verification/README.md) — independent read-only check; sole authority for `verified`. Status: accepted.
+- [Completion](completion/README.md) — human-gated `approved → done` and knowledge reconciliation. Status: accepted.
+- [Plan organization](plan-organization/README.md) — status-agnostic archive and restore. Status: accepted.
+- [Delivery](delivery/README.md) — separate pull-request/merge/push actions; source/target branch model. Status: accepted.
+- [Host adapters](host-adapters/README.md) — Codex, Claude Code, and Cursor Agent CLI as evidence-only transports. Status: accepted.
+- [Source release and upgrade](source-release-and-upgrade/README.md) — assembly, ships-vs-never-ships, upgrade preservation + migration-needed. Status: accepted.

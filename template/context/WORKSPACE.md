@@ -1,14 +1,13 @@
 # Workspace
 
-<!-- context-circuit:identity-region:start -->
-name: uninitialized-workspace
-mode: solo
-kind: instantiated-workspace
-status: uninitialized
-default_branch: main
-roles: none
-repositories: none
-<!-- context-circuit:identity-region:end -->
+Status: uninitialized
 
-Status: uninitialized. Confirm mode, repositories or project items, roles, and
-default branches before recording accepted workspace identity.
+This universal project workspace has not been configured for a project yet.
+During initialization, record the workspace name and purpose in
+`workspace.yaml`, register the repositories the project spans, and set each
+repository's local `anchor_branch` in the ignored `repositories.local.yaml`.
+
+Portable identity (name, purpose, logical repository keys, optional
+credential-free URLs, optional `default_branch`) lives in `workspace.yaml`.
+Machine-specific paths and anchor branches live only in
+`repositories.local.yaml`.
