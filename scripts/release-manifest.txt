@@ -1,13 +1,17 @@
-# Context Circuit release boundary.
-# Format: "required <path>" or "exclude <path>".
-# The assembler stages wrapper-owned files and copies the template seed into a
-# clean, uninitialized artifact. Maintainer state is never user workspace data.
+# Context Circuit v0.5 release boundary.
+# Format: "required <path>" or "exclude <path>" (relative to the staged tree).
+# The assembler stages template-owned files and copies the blank template seed
+# into a clean, uninitialized universal project workspace. Maintainer state,
+# source design, tests, and runtime evidence are never user workspace data.
 
-required wrapper/manifest.yaml
+# Root adapters (from wrapper/adapters/).
 required AGENTS.md
 required CLAUDE.md
 required WORKFLOW.md
 required README.md
+
+# Blank workspace seed (from template/).
+required .gitignore
 required workspace.yaml
 required context/INDEX.md
 required context/WORKSPACE.md
@@ -15,48 +19,66 @@ required context/PROJECT.md
 required context/ARCHITECTURE.md
 required context/CONVENTIONS.md
 required context/DECISIONS.md
+required context/TERMINOLOGY.md
 required context/SOURCES.md
 required context/sources.yaml
 required context/domains/README.md
 required context/roles/README.md
-required plans/README.md
+required context/proposals/README.md
 required sources/README.md
+required plans/INDEX.md
+required plans/README.md
+
+# Runtime, contracts, and schemas.
+required wrapper/manifest.yaml
+required wrapper/runtime/engine.sh
+required wrapper/migrations/README.md
 required wrapper/contracts/invariants.yaml
-required wrapper/contracts/routes.yaml
-required wrapper/contracts/context-sets.yaml
-required wrapper/contracts/schemas/context-receipt.yaml
-required wrapper/contracts/schemas/delegation.yaml
-required wrapper/contracts/schemas/child-start.yaml
+required wrapper/contracts/schemas/workspace.yaml
+required wrapper/contracts/schemas/repositories-local.yaml
 required wrapper/contracts/schemas/plan.yaml
 required wrapper/contracts/schemas/task.yaml
-required wrapper/migrations/README.md
-required wrapper/migrations/upgrade.sh
-required wrapper/runtime/engine.sh
-required docs/gates.md
+required wrapper/contracts/schemas/execution.yaml
+required wrapper/contracts/schemas/worker-handoff.yaml
+required wrapper/contracts/schemas/verifier-result.yaml
+required wrapper/contracts/schemas/completion.yaml
+required wrapper/contracts/schemas/context-impact.yaml
+required wrapper/contracts/schemas/context-proposal.yaml
+required wrapper/contracts/schemas/context-index.yaml
+
+# Guides and templates.
+required docs/getting-started.md
+required docs/planning.md
+required docs/plan-review.md
+required docs/product-knowledge.md
+required docs/terminology.md
 required docs/templates/plan.md
 required docs/templates/plan.yaml
 required docs/templates/task.md
-required docs/templates/prd.md
-required .gitignore
-required .agents/skills/cc-entry/SKILL.md
-required .agents/skills/cc-next/SKILL.md
+required docs/templates/terminology-context.md
+
+# Skills and role deltas.
+required .agents/skills/cc-workspace/SKILL.md
 required .agents/skills/cc-plan/SKILL.md
 required .agents/skills/cc-execute/SKILL.md
 required .agents/skills/cc-verify/SKILL.md
-required .agents/skills/cc-gates/SKILL.md
-required .agents/skills/cc-upgrade/SKILL.md
+required .agents/skills/cc-complete/SKILL.md
+required .agents/skills/cc-archive/SKILL.md
+required .agents/skills/cc-deliver/SKILL.md
 required agents/coordinator.md
 required agents/writer.md
 required agents/verifier.md
 
-# These are removed from the staged tree and verified absent.
+# Removed from the staged tree and verified absent.
 exclude test
+exclude template-harness
 exclude .github
 exclude scripts
+exclude release
 exclude docs/release.md
 exclude .runtime
 exclude wrapper/adapters
 exclude template
-exclude sources/context-circuit-design
-exclude repositories.local.yaml
-exclude repositories
+exclude plans/context-circuit-plans
+exclude sources/system-design
+exclude sources/reports

@@ -24,4 +24,4 @@ contradictory refresh remains visible for human review.
 
 ## Role entries
 
-- [Product-source maintainer](maintainer.md) — ships the wrapper and seed; does not treat this checkout as a customer workspace. Status: proposed.
+- [Product-source maintainer](maintainer.md) — ships the wrapper and seed; does not treat this checkout as a customer workspace. Status: accepted.

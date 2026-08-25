@@ -1,128 +1,62 @@
 # Getting started
 
-In a released workspace, say “Start or resume work in this workspace.” The
-agent reads the compact entry spine and reports identity, repositories,
-runtime state, the selected probe, and one safe next action.
+Context Circuit is a universal project workspace. You talk to it in ordinary
+language; it holds Product Knowledge and readable plans and executes approved
+plans safely across one or more Git repositories.
 
-The same request works from Codex CLI, Claude Code, and Cursor Agent CLI.
-Codex and Cursor read the shared root `AGENTS.md`; Claude Code reads the
-shipped `CLAUDE.md`, which imports that same contract. Host versions and
-capabilities are evidence only. They never replace the router, a human gate,
-the exclusive writer, or the independent verifier.
+## 1. Initialize
 
-## Host entry and resume
+> Initialize this workspace for <project name and purpose>.
 
-The same request is used in interactive mode for Codex CLI, Claude Code, and
-Cursor Agent CLI. Print or non-interactive mode is a read-only probe unless the
-same Context Circuit human gate is already present. Resume re-reads the
-session receipt, latest handoff, wrapper version, Git state, lease, and
-worktree before re-entering the route.
+This records project identity in `workspace.yaml` and creates the minimal
+structure. It does not invent Product Knowledge or create plans.
 
-Codex native subagents, Claude Task/subagents, and Cursor Task/subagents map to
-the bounded writer or independent read-only verifier packet. If the required
-child is unavailable, the result is host-blocked and the root does not
-self-verify. If a provider is disabled, denied, or unavailable, continue with
-the filesystem-only workflow.
+## 2. Connect repositories
 
-## New workspace
+> Connect the api repository at ../commerce-api on branch development.
 
-Until `workspace.yaml` records `identity.status: accepted`, requests that
-would create or change anything are routed back to initialization. This
-includes broad requests such as “help me build this”; the agent must not infer
-identity, create a plan, or write implementation files. Read-only orientation
-remains available.
+Registration records portable logical identity in `workspace.yaml` and a
+host-local binding (path + `anchor_branch`) in `repositories.local.yaml`. New
+project repositories can be cloned or initialized under the git-ignored
+`repositories/<id>/`. The workspace root itself may be bound as the reserved
+`workspace` repository. `anchor_branch` — not `default_branch` — is the
+execution base and default pull-request target.
 
-`workspace.yaml` is the workspace identifier. `context/` is Product Knowledge.
-The bounded identity region in `WORKSPACE.md`, `PROJECT.md`, and `INDEX.md`
-must agree with that identifier. Entry and write preflight fail with
-`projection-mismatch` when the region is missing or disagrees; that result
-does not authorize a route or gate. Authored Product Knowledge outside the
-region is preserved.
+## 3. Gather context (optional)
 
-Initialization records only mode, repositories or project items, roles, and
-default branches. Omitted confirmation fields are shown as proposed defaults
-on the current card; confirmation records those displayed values. Fields with
-no default remain incomplete. Effect identifiers are descriptive metadata and
-never authorize a route or gate. Zero repositories is valid. Identity
-acceptance is a human gate. Later, selected evidence may produce an Idea Brief,
-PRD, accepted Product Knowledge, or direct plan; no artifact is forced when
-the request is already clear.
+> Gather context about billing from sources/billing-requirements.md.
 
-## Bind a repository
+Context proposals are staged and require explicit human acceptance.
 
-Shared `workspace.yaml` metadata identifies a logical repository without a
-machine-specific path:
+## 4. Create and review a plan
 
-```yaml
-repositories:
-  app:
-    canonical_url: https://github.com/acme/app.git
-    default_branch: main
-```
+> Create a plan for adding recurring billing.
+> Review plan 0001-billing-v2.
 
-Each host may create the ignored root file `repositories.local.yaml`:
+Creating or reviewing a plan never approves or executes it. Review is a
+discussion that can update draft content.
 
-```yaml
-repositories:
-  app:
-    path: /home/alice/projects/app
-    remote: git@github.com:acme/app.git
-```
+## 5. Approve and execute
 
-The binding path may also be workspace-relative, such as `projects/app`, or
-use the optional convenience location `repositories/app`. The path is
-explicit; Context Circuit never scans for repositories or stores credentials.
-A missing, unsafe, identity-mismatched, or dirty source is reported and
-remains untouched.
+> Approve plan 0001-billing-v2 and execute it.
 
-If `repositories.local.yaml` is missing, that is expected on a fresh or newly
-cloned workspace: the file is host-local, gitignored, and never shipped.
-Context Circuit reports the missing binding and does not scan the filesystem,
-invent a path, or create the file on its own. Create the ignored root file
-with an explicit `path` for the logical repository already named in
-`workspace.yaml`. If the checkout does not exist yet, say
-`Bootstrap repository <key>` instead of guessing a destination. Keep
-credentials in host Git configuration; never put secrets or machine-specific
-paths into shared workspace files.
+One worker implements every task in dependency order across the mapped
+repositories and commits each one; an independent read-only verifier checks the
+latest commits and the worker repairs failures with new commits (stopping after
+three failures).
 
-## Bootstrap a repository
+## 6. Complete
 
-Say “Bootstrap repository app” to request a clone. The agent presents a
-repository-bootstrap card containing the logical repository, canonical URL,
-selected remote, branch, exact destination, and existing-path check. Only a
-current confirmation of that exact card may create the destination or invoke
-Git. Host Git configuration or an SSH agent supplies authentication; secrets
-are never requested, recorded, or copied into workspace state. Provider
-failure produces an offline fallback while filesystem evidence remains
-resumable.
+> Mark 0001-billing-v2 complete.
 
-Registering a logical repository is a shared-identity confirmation. It updates
-`workspace.yaml` and the identity region in all three summaries without
-exposing host-local bindings. Clone and reserved create-empty remain later
-gates.
+Completion is human-controlled and allowed only after a verifier pass. It records
+the implementation and reconciles it against Product Knowledge, surfacing
+proposals you accept or defer separately.
 
-## Plan journey
+## 7. Deliver (separate)
 
-Create a plan bundle with `plan.yaml`, human-facing `PLAN.md`, and task files.
-Say `Review plan <id>` or `Walk me through plan <id>` for a read-only Review
-Card through the same `cc-plan` skill; a review request with no usable plan id
-asks which plan instead of guessing one. When the card has a few focused
-decisions, the current host may also offer them through its own optional
-question-prompt UI (see `docs/plan-review.md`); a missing prompt just falls
-back to the card text. Approval changes `draft` → `approved` and tasks to
-`ready`; it does not execute. A separate named run request creates the root
-session, exclusive lease/worktree, writer delegation, and independent verifier.
-After evidence is ready, a separate finish confirmation changes `approved` →
-`done`. Runtime and worktrees remain until a later, separately gated cleanup.
+> Open a pull request for 0001-billing-v2.
 
-## Interrupted work
-
-Resume validates the session, receipt, handoff, wrapper version, primary
-evidence, Git state, and ownership. A foreign live owner or ambiguous lease is
-read-only and needs a human takeover decision. Dirty work is preserved.
-
-## Human surfaces
-
-Humans normally need only this README, a plan's `PLAN.md`, the conversational
-next-action card, and the latest surfaced handoff. Machine records remain
-inspectable but are not a manual editing workflow.
+Pull request, merge, push, publication, deployment, archive, and cleanup are
+separate explicit actions. A pull request uses each execution branch as source
+and the recorded `anchor_branch` as the default target.

@@ -1,120 +1,141 @@
 ---
 kind: domain
-status: proposed
-title: Repository binding and bootstrap
+status: accepted
+title: Workspace orientation and repository binding
 slug: repository-binding
 owners: []
-sources:
-  - plans/context-circuit-plans/repository-bootstrap/plan.yaml
-  - plans/context-circuit-plans/repository-bootstrap/PLAN.md
-  - plans/context-circuit-plans/local-binding-troubleshoot/plan.yaml
-  - plans/context-circuit-plans/local-binding-troubleshoot/PLAN.md
+sources: []
 source_revisions:
-  - plan: repository-bootstrap
-    status: done
-    updated_at: 2026-08-22T11:04:19Z
-  - plan: local-binding-troubleshoot
-    status: done
-    updated_at: 2026-08-22T12:20:00Z
-generated_at: 2026-08-23T00:00:00Z
-review_date: 2026-09-22
-freshness: proposed-from-done-plans
+  - wrapper: HEAD
+    commit: 4b8ac0b
+    basis: current-wrapper
+generated_at: 2026-08-24T00:00:00Z
+review_date: 2026-11-24
+freshness: accepted-from-current-wrapper
 assumptions:
-  - Canonical lifecycle status is plan.yaml, not PLAN.md.
-unknowns:
-  - Runtime completion sidecars were not present under .runtime/.
-contradictions:
-  - repository-bootstrap PLAN.md still says Status: draft while plan.yaml is done.
-  - local-binding-troubleshoot PLAN.md still says Status: draft while plan.yaml is done.
+  - Portable identity lives in workspace.yaml; host-local paths in repositories.local.yaml.
+unknowns: []
+contradictions: []
 acceptance:
-  state: pending
-  accepted_at:
-  accepted_by:
+  state: accepted
+  accepted_at: 2026-08-24
+  accepted_by: maintainer
 workflows:
   - docs/getting-started.md
-  - docs/gates.md
 ---
 
-# Repository binding and bootstrap
+# Workspace orientation and repository binding
 
 ## Summary
 
-Shared repository identity stays in `workspace.yaml`. Host-local paths stay in
-the ignored root file `repositories.local.yaml`. Cloning is an explicit
-bootstrap gate. Route a bind, clone, missing-binding, or worktree-isolation
-request here.
+Orienting a workspace and connecting its repositories. Shared repository
+identity stays in `workspace.yaml`; host-local paths stay in the ignored root
+file `repositories.local.yaml`. Route orient, register, connect, clone, `git
+init`, missing-binding, and repository-resolution requests here. Owned by the
+`cc-workspace` skill.
 
 ## Scope
 
-Inside: logical repository keys, credential-free canonical URLs, default
-branches, explicit path bindings, bootstrap confirmation, isolated execution
-worktrees, and the missing-binding troubleshooting text.
+Inside: workspace orientation (read-only), portable logical repository ids,
+credential-free canonical URLs, `default_branch` as portable clone guidance,
+host-local bindings (`path` + user-selected `anchor_branch`), the reserved
+`workspace` id at path `.`, and fail-closed binding resolution.
 
-Outside: automatic clone/fetch/push/merge, credential storage, filesystem
-scanning for checkouts, and using a bound source repo as the writer worktree.
+Outside: the execution worktree lifecycle (see [plan-execution](../plan-execution/README.md)),
+credential storage, filesystem scanning for checkouts, and using a bound source
+checkout as the writer worktree.
 
 ## Behavior
 
-`workspace.yaml` may name repositories with an optional canonical URL and
-default branch. It must not contain a machine-specific path (INV-REPO-01).
+`cc-workspace` initializes or orients a workspace and never creates plans or
+executes work. Orientation reports whether each repository's local binding is
+available.
 
-Each host may create `repositories.local.yaml` and bind a key already named in
-`workspace.yaml` to an explicit absolute path, a workspace-relative path, or
-`repositories/<key>` (INV-REPO-02). A missing binding file is expected on a
-fresh clone: report `BINDING_MISSING`, do not scan, invent a path, or create
-the file. The human either writes an explicit `path` or says
-`Bootstrap repository <key>`.
+`workspace.yaml` holds only portable identity: a logical repository key, an
+optional credential-free canonical URL, and an optional `default_branch`. It
+never contains a machine-specific path or credentials (INV-REPO-01).
 
-`Bootstrap repository <key>` presents the logical key, canonical URL, selected
-remote, branch, destination, and existing-path check. Only a current
-`repository-bootstrap` confirmation may clone or create the destination
-(INV-REPO-04). Existing paths, dirty sources, unsafe paths, missing
-credentials, and offline providers fail without overwrite, stash, reset, or
-credential persistence (INV-REPO-03, INV-REPO-05).
+Each host may create `repositories.local.yaml` binding a key already named in
+`workspace.yaml` to a concrete `path` and a user-selected `anchor_branch`.
+`anchor_branch` is the required execution base and default pull-request target;
+`default_branch` is only portable clone/setup guidance and is never inferred as
+the anchor (INV-REPO-02). A missing binding file is expected on a fresh clone:
+the engine reports `BINDING_MISSING`; the agent does not scan, invent a path, or
+create the file — the human supplies an explicit `path` or connects/clones the
+repository.
 
-After binding, execution prepares
-`.runtime/worktrees/<repository-key>/<plan-id>/` and leaves the bound source
-untouched (INV-REPO-06). Wrapper upgrade and release preserve local bindings
-and exclude them from artifacts (INV-REPO-07).
+`repositories/<key>` is the gitignored default destination for cloned or
+initialized repositories. When the workspace root is itself a Git repository it
+binds as the reserved logical id `workspace` at path `.` and is never placed
+under `repositories/` (INV-REPO-03).
+
+Binding resolution is explicit and bounded. Missing, ambiguous, non-Git,
+traversal, unsafe-symlink, or identity-mismatched bindings fail closed without
+scanning the filesystem or substituting a similarly named path (INV-REPO-04).
+Workspace-relative paths reject traversal and unsafe symlinks; credentials
+remain in host Git configuration or the host agent (INV-SEC-01).
 
 ## Workflows
 
-- Bind a repository: `docs/getting-started.md`
-- Missing `repositories.local.yaml`: same getting-started troubleshooting paragraph
-- Bootstrap confirmation: `docs/gates.md` repository bootstrap card
+- Orient, connect, clone, or initialize a repository: `docs/getting-started.md`
 
 ## Interfaces
 
 - Shared identity: `workspace.yaml` `repositories.<key>`
-- Host binding: `repositories.local.yaml`
-- Optional convenience directory: `repositories/<key>` (never assumed to exist)
-- Human request: `Bootstrap repository <key>`
-- Runtime worktrees: `.runtime/worktrees/<repository-key>/<plan-id>/`
+- Host binding: `repositories.local.yaml` (`path`, `anchor_branch`)
+- Convenience directory: `repositories/<key>` (gitignored; never assumed present)
+- Reserved id: `workspace` at path `.`
+- Missing-binding signal: `BINDING_MISSING`
 
 ## Constraints and edge cases
 
 Credentials stay in host Git configuration or the SSH agent. Relative paths
-resolve from the workspace root and reject traversal. Dirty bound sources
-block execution rather than being repaired implicitly.
+resolve from the workspace root and reject traversal. A dirty or mismatched
+bound source fails closed rather than being repaired implicitly.
+
+## Registration and connected-repository states
+
+Portable identity in `workspace.yaml` carries `schema_version`, `workspace`,
+`title`, and `purpose`; the reserved `workspace` entry is omitted when the root
+is unversioned. Portable identity must never contain local machine paths, access
+tokens, private keys, provider payloads, or credentials.
+
+Registration is two parts: record the portable logical identity and add a
+host-local binding. Registration does not clone; a clone or `git init` first
+reports the source URL, destination, branch, and external Git effect. A `git
+init` creates the directory, initializes with the anchor as the initial branch,
+records identity and anchor, and makes an initial (optionally empty) anchor
+commit; a repository with no commit is registered but not ready, because it
+cannot provide a worktree base.
+
+A connected repository moves through states — registered, bound, unavailable,
+mismatched, dirty, ready, active — reported in project terms rather than raw
+record names. `anchor_branch` is the user's actual active branch (for example
+`development` or `kao/development/v0.5`), not the same as `default_branch`;
+different users may set different anchors for the same logical repository.
 
 ## Implementation references
 
-- `wrapper/runtime/engine.sh` repository bootstrap and binding primitives
-- `wrapper/contracts/invariants.yaml` INV-REPO-01 through INV-REPO-07
-- `wrapper/contracts/schemas/workspace.yaml`
-
-## Verification
-
-Done-plan verification IDs RB-VT-01–RB-VT-08 and LBT-VT-01–LBT-VT-03.
+- `wrapper/runtime/engine.sh`: `cc_repository_register`, `cc_binding_field`,
+  `cc_repo_resolve`, `cc_repo_anchor_commit`, `cc_repo_clean`,
+  `cc_repository_preflight`, `cc_worktree_prepare`, `cc_workspace_validate`,
+  `cc_workspace_init`
+- `wrapper/contracts/schemas/workspace.yaml`,
+  `wrapper/contracts/schemas/repositories-local.yaml`
+- `wrapper/contracts/invariants.yaml`: INV-REPO-01, INV-REPO-02, INV-REPO-03,
+  INV-REPO-04, INV-SEC-01
+- `.agents/skills/cc-workspace/SKILL.md`
 
 ## Provenance
 
-Read only the selected done plans `repository-bootstrap` (CC-001) and
-`local-binding-troubleshoot` (CC-003), plus the getting-started troubleshooting
-paragraph those plans landed. Raw `sources/` was not scanned. HEAD at
-generation was `b7a11f3`.
+Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
+maintainer plans that first seeded this page were deleted in `4b8ac0b`; their
+provenance was retired (see the accepted retirement of `context/sources.yaml`).
+Raw `sources/` was not scanned.
 
 ## Acceptance notes
 
-This page is proposed. It does not replace accepted decisions in
-`context/DECISIONS.md`. Human context acceptance is still required.
+Accepted 2026-08-24. Consolidated from the former `repository-binding` draft,
+re-grounded on the shipped wrapper, and broadened to include `cc-workspace`
+orientation. The worktree isolation lifecycle moved to
+[plan-execution](../plan-execution/README.md).

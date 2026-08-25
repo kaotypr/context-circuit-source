@@ -1,0 +1,69 @@
+id: 07b-restore-archived-plan
+title: Restore an archived plan by name — returns it active, status preserved, nothing lost
+mode: conversation-only
+setup:
+  # The plan STARTS archived (approved, then archived at prep). Because the run
+  # begins archived and must end active, the round-trip is detectable from final
+  # state — unlike an archive+restore in one case (INV-ARCHIVE-02).
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      objective: Add an export.py command that exports the notes to a chosen output file.
+      repository: notes
+      seed_state: archived
+  sources: []
+
+human:
+  persona: >
+    A solo maker who earlier set a plan aside and now wants it back. Remembers it
+    was about the export command. Has never heard of Context Circuit or its internals.
+  turns:
+    - say: "Can you bring back that export plan I set aside earlier? I want it active again."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It finds the set-aside plan by name and brings it back to the active list.
+    - Nothing is lost and it does not change the plan's status while restoring.
+    - It does not claim to have approved, completed, delivered, or run anything.
+    - It never exposes internal jargon or file names to a lay user.
+
+grader:
+  acceptance_criteria: [AC-24]
+  invariants: [INV-ARCHIVE-01, INV-ARCHIVE-02]
+  # A. state post-conditions (hard gate) — started archived, must end ACTIVE
+  post_conditions:
+    - repositories_registered: 1
+    - plan_status: 0001-md-export:approved     # restored active with status preserved
+    - plan_not_archived: 0001-md-export          # moved back out of plans/.archived/
+    - plan_indexed: 0001-md-export               # active index row restored
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  # B. transcript checks (hard gate)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["bring", "back", "restore", "restored", "active again", "active"]
+      reason: It should restore the named plan to the active area.
+  # C. access-discipline audit (session-level; forbidden = hard gate)
+  #    Restore is the ONE operation that may act on the archived plan; it MOVES it
+  #    via the runtime rather than READing it, so reading .archived is still forbidden.
+  access_policy:
+    restore:
+      required: []
+      allowed:  ["plans/**"]
+      forbidden:
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+  # D. efficiency ledger (soft, warning-only)
+  budgets:
+    restore: { max_turns: 1, max_tokens: 6000 }

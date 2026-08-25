@@ -1,4 +1,8 @@
-.runtime/
-*.secret
-*.credential
-*.token
+.DS_Store
+
+# Host-local repository bindings and checkouts are never portable.
+/repositories/
+/repositories.local.yaml
+
+# Private execution evidence.
+/.runtime/
