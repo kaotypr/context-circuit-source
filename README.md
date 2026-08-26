@@ -52,6 +52,6 @@ Run the complete semantic acceptance suite:
 sh test/acceptance.sh
 ```
 
-Read `sources/system-design/context-circuit/v0.5/context-circuit-v0.5-design.md` only as
+Read `sources/system-design/context-circuit/v0.5/core/design.md` only as
 maintainer design material. The released artifact uses the shipped wrapper and
 template, not the source repository's maintainer state.
