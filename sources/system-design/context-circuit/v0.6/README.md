@@ -14,8 +14,12 @@ version index; each scope owns its own design.
   first-class, optional lifecycle stage between Product Knowledge and Plans: design
   the change, get it accepted, then let plans slice the accepted design. Start at
   [system-design-stage/design.md](./system-design-stage/design.md).
+- [repository-grounding/](./repository-grounding/) — ground the **writer** in the
+  target repository's own agent guidance (discovered live) and hand it a prepared
+  worktree, delivered through a generated brief instead of hand-authored prose.
+  Start at [repository-grounding/design.md](./repository-grounding/design.md).
 
-These two scopes are independent capabilities released together in v0.6. They
+These three scopes are independent capabilities released together in v0.6. They
 share a coordinated contract bump (plan schema `[1, 2]`, `runtime_version 0.6.0`).
 
 ## Layout convention
