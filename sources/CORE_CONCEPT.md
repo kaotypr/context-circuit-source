@@ -262,24 +262,134 @@ overrides human plan status.** A plan is `done` only because a human said so
 
 ## 6. Invariants: one rule, one owner
 
-An **invariant** is a product rule that must always hold, expressed with a stable
-ID (`INV-<AREA>-NN`) and exactly **one owning file**. Every other artifact
-*references* the effect; it never re-encodes it. This prevents "parallel policy"
-drift, where two files slowly disagree about the same rule.
+### In plain terms
+
+An **invariant** is a promise the system always keeps — a rule about how Context
+Circuit must behave, no matter which host, which repository, or which agent is
+acting. "Only an approved plan may execute." "A pull request targets the anchor
+branch, never the default branch." "Never silently clean up failed work." Each
+such promise gets a **stable name** (`INV-<AREA>-NN`, e.g. `INV-EXEC-01`) and is
+written down in exactly **one place**.
+
+Think of `wrapper/contracts/invariants.yaml` as the project's **constitution plus
+a table of contents**: it states every rule once and records which single file is
+responsible for it. It is *not* program code that runs — it is the authoritative
+index that people and agents consult to answer "what is the rule here, and who
+owns it?"
+
+### What problem it solves
+
+Context Circuit's behavior is spread across many files: role descriptions, skill
+packets, schemas, the runtime, and host adapters. Without a single owner per rule,
+two files would eventually describe the *same* rule slightly differently and drift
+apart — "parallel policy." The invariant model forbids that:
+
+> **One rule has one owner. Every other file may *reference* the rule by its ID,
+> but must never re-state or re-define it.**
 
 ```mermaid
-flowchart LR
-    INV["invariants.yaml<br/>INV-COMMIT-01 defines commit convention"]
-    S1["writer.md"] -->|references| INV
-    S2["cc-execute SKILL"] -->|references| INV
-    S3["adapters/CLAUDE.md"] -->|restates, cites| INV
-    S4["adapters/AGENTS.md"] -->|restates, cites| INV
+flowchart TB
+    subgraph BAD["❌ Without invariants — parallel policy drifts"]
+        b1["writer.md: 'commit like this…'"]
+        b2["cc-execute: 'commit like that…'"]
+        b3["adapter: 'and also this…'"]
+        b1 -.slowly disagree.- b2
+        b2 -.slowly disagree.- b3
+    end
+    subgraph GOOD["✅ With invariants — one owner, others cite it"]
+        INV["INV-COMMIT-01<br/>(defined once in invariants.yaml)"]
+        g1["writer.md"] -->|cites ID| INV
+        g2["cc-execute"] -->|cites ID| INV
+        g3["adapter"] -->|cites ID| INV
+    end
 
+    classDef bad fill:#fdecea,stroke:#c44,color:#1f2937;
+    classDef good fill:#e8f5e9,stroke:#4a4,color:#1f2937;
     classDef owner fill:#f3e5f5,stroke:#93c,stroke-width:2px,color:#1f2937;
+    class b1,b2,b3 bad;
+    class g1,g2,g3 good;
     class INV owner;
 ```
 
-The invariant families and their concerns:
+### What a rule connects to: the owner map
+
+The file has two parts. `invariants:` lists the rules; `owners:` maps each
+*concern* to the one file that actually implements/enforces it. The invariant
+**names** the promise; the **owner file** is where the behavior truly lives.
+
+```mermaid
+flowchart LR
+    RULE["INV-COMMIT-01<br/>'commits follow Conventional Commits,<br/>no AI attribution'"]
+    RULE -->|owner map points to| OWN["invariants.yaml<br/>(owns commit_convention)"]
+    OWN -->|enforced/expressed in| ENF["writer.md commits · cc-execute steps ·<br/>proven by test/ semantic suite"]
+    REF["writer.md · cc-execute · adapters/*.md"] -.->|"reference by ID<br/>(never redefine)"| RULE
+
+    classDef rule fill:#f3e5f5,stroke:#93c,stroke-width:2px,color:#1f2937;
+    classDef own fill:#e1f5fe,stroke:#08a,color:#1f2937;
+    classDef enf fill:#e8f5e9,stroke:#4a4,color:#1f2937;
+    classDef ref fill:#eceff1,stroke:#678,color:#1f2937;
+    class RULE rule;
+    class OWN own;
+    class ENF enf;
+    class REF ref;
+```
+
+Different concerns have different owners — a schema file owns record shapes, the
+runtime owns locking, a role file owns worker behavior. The `owners:` block is the
+lookup table from concern → owning file.
+
+### Who reads the invariants, and when
+
+The invariants file is consulted, not executed. Three kinds of reader use it:
+
+```mermaid
+flowchart TB
+    INV["wrapper/contracts/invariants.yaml"]
+
+    A["🤖 Agents (coordinator/worker/verifier)<br/>at decision time"] -->|"'what is the rule, and which file owns it?'<br/>→ follow the owner, never invent parallel policy"| INV
+    M["🛠 Maintainers<br/>when changing behavior"] -->|"'find the canonical owner before editing,<br/>then update the fixture that proves it'"| INV
+    T["✅ Semantic acceptance tests (test/)<br/>on every meaningful change"] -->|"prove each invariant still holds"| INV
+
+    classDef inv fill:#f3e5f5,stroke:#93c,stroke-width:2px,color:#1f2937;
+    classDef reader fill:#ede7f6,stroke:#63c,color:#1f2937;
+    class INV inv;
+    class A,M,T reader;
+```
+
+- **Agents** consult it to find the *one* authoritative source for a rule so they
+  act consistently and don't quietly write a competing policy into a skill or role
+  file (`AGENTS.md`: "do not add parallel policy").
+- **Maintainers** consult it to locate a rule's owner *before* changing it, then
+  update the test that proves it (`WORKFLOW.md`: "identify its canonical owner").
+- **Tests** consult it as the checklist of promises the semantic acceptance suite
+  must keep proving true.
+
+### Worked example: `INV-COMMIT-01`
+
+> *Rule:* every commit an agent authors follows Conventional Commits and carries
+> **no** AI attribution. *Owner:* `invariants.yaml` (`commit_convention`).
+
+```mermaid
+flowchart LR
+    W["Worker writes a commit"] -->|"must obey"| INV["INV-COMMIT-01"]
+    SK["cc-execute skill"] -->|"cites for repair commits"| INV
+    AD["adapters/AGENTS.md + CLAUDE.md"] -->|"restate + explicitly cite<br/>'this restates INV-COMMIT-01'"| INV
+    TST["semantic suite"] -->|"asserts commit shape<br/>+ no attribution trailer"| INV
+
+    classDef owner fill:#f3e5f5,stroke:#93c,stroke-width:2px,color:#1f2937;
+    classDef node fill:#e8f5e9,stroke:#4a4,color:#1f2937;
+    class INV owner;
+    class W,SK,AD,TST node;
+```
+
+The adapter files even say so out loud — they note their commit text "restates
+INV-COMMIT-01, which owns the rule." That sentence is the invariant model working
+as designed: mention the effect, point at the one owner, never fork it.
+
+### The full catalog
+
+These are all the invariant families and the concern each one guards — the "table
+of contents" of promises:
 
 ```mermaid
 mindmap
