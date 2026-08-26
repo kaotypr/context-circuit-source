@@ -4,7 +4,7 @@ Natural-language conversations the human-simulator plays against the product
 coordinator. Source-only: the release manifest excludes `test/`, so nothing here
 ships in `context-circuit-template`.
 
-Design: `sources/system-design/template-harness/v0.5/scenario-library.md`.
+Design: `sources/system-design/context-circuit/v0.5/template-harness/scenario-library.md`.
 
 ## Cases
 

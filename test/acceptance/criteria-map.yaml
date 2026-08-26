@@ -1,5 +1,5 @@
 schema_version: 1
-owner: sources/system-design/context-circuit/v0.5/context-circuit-v0.5-design.md
+owner: sources/system-design/context-circuit/v0.5/core/design.md
 purpose: >
   Maps each Context Circuit v0.5 acceptance criterion (design section 21) to the
   runnable, credential-free semantic suite that demonstrates it.
