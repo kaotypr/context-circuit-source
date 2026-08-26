@@ -90,7 +90,7 @@ for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-workspace|cc-plan|cc-execute|cc-verify|cc-complete|cc-archive|cc-deliver) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-verify|cc-complete|cc-archive|cc-deliver) ;;
     *) fail "unexpected skill remains: $skill_name" ;;
   esac
 done
@@ -109,7 +109,7 @@ archive_path="$output_dir/$artifact_name.tar.gz"
 (CDPATH= cd "$artifact_dir" && tar -cf - .) | gzip -n > "$archive_path"
 
 printf 'version: %s\n' "$version"
-printf 'runtime_version: 0.5.0\n'
+printf 'runtime_version: 0.6.0\n'
 printf 'source_revision: %s\n' "$source_sha"
 printf 'source_state: %s\n' "$source_state"
 printf 'destination: %s %s\n' "$DESTINATION_REPO" "$DESTINATION_REF"

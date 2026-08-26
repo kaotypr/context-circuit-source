@@ -13,6 +13,8 @@ run_suite test/runtime/test-runtime.sh
 run_suite test/repositories/test-repositories.sh
 run_suite test/plans/test-plans.sh
 run_suite test/execution/test-execution.sh
+run_suite test/concurrency/test-leases.sh
+run_suite test/run-stack/test-run-stack.sh
 run_suite test/completion/test-completion.sh
 run_suite test/archive/test-archive.sh
 run_suite test/delivery/test-delivery.sh

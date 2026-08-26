@@ -61,6 +61,7 @@ required docs/templates/terminology-context.md
 required .agents/skills/cc-workspace/SKILL.md
 required .agents/skills/cc-plan/SKILL.md
 required .agents/skills/cc-execute/SKILL.md
+required .agents/skills/cc-run-stack/SKILL.md
 required .agents/skills/cc-verify/SKILL.md
 required .agents/skills/cc-complete/SKILL.md
 required .agents/skills/cc-archive/SKILL.md

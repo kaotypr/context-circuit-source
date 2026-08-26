@@ -40,7 +40,15 @@ repository_record_fields:
   worktree: isolated worktree path under .runtime/worktrees/<plan-id>/<repository-id>/
   branch: cc/<plan-id>/<repository-id>
   anchor_branch: recorded user-local anchor branch (default pull-request target)
-  base_commit: captured anchor-branch tip at execution start
+  base_commit: >
+    the execution base tip captured at start. For a plan with no same-repo
+    predecessor this is the anchor-branch tip (v0.5, unchanged). For a dependent
+    plan (v0.6, INV-CONCURRENCY-02) it is the single predecessor branch tip
+    (stack) or a runtime-authored integration merge commit (>=2 predecessors).
+  based_on: >
+    optional (v0.6). When present, the same-repo predecessor plan ids this
+    repository's base was built on. Absent for a plan with no same-repo
+    predecessor. The kept base ref lives at refs/cc-base/<plan-id>/<repository-id>.
   latest_commit: latest worker commit inspected by the verifier
   allowed_paths: union of the bounded paths of every task mapped to this repository
 
@@ -52,3 +60,4 @@ rules:
   - INV-PRESERVE-01
   - INV-RUNTIME-02
   - INV-OWN-01
+  - INV-CONCURRENCY-02

@@ -24,6 +24,13 @@ TURN_TIMEOUT=${CC_TURN_TIMEOUT:-300}
 command -v "$CLAUDE" >/dev/null 2>&1 || { printf 'FAIL: no claude CLI (%s)\n' "$CLAUDE" >&2; exit 1; }
 command -v jq >/dev/null 2>&1 || { printf 'FAIL: jq required for trace capture\n' >&2; exit 1; }
 
+# A per-turn timeout is best-effort: GNU `timeout` (Linux) or `gtimeout`
+# (coreutils on macOS). When neither is present, run claude without a wall clock
+# rather than failing the whole run (macOS default has no `timeout`).
+if command -v timeout >/dev/null 2>&1; then TIMEOUT="timeout $TURN_TIMEOUT"
+elif command -v gtimeout >/dev/null 2>&1; then TIMEOUT="gtimeout $TURN_TIMEOUT"
+else TIMEOUT=""; printf '[driver] no timeout command found; running claude without a per-turn wall clock\n' >&2; fi
+
 # --- filesystem sandbox (safe by default) --------------------------------------
 # The coordinator runs headless with --permission-mode bypassPermissions, so it has
 # no interactive gate. Without an OS sandbox it can write OUTSIDE the disposable
@@ -63,10 +70,10 @@ run_claude() {
 			--bind "$CC_WORKSPACE" "$CC_WORKSPACE" --bind "$CC_RUN_DIR" "$CC_RUN_DIR" \
 			--bind "$HOME/.claude" "$HOME/.claude" \
 			$( [ -d "$HOME/.config" ] && printf -- '--bind %s %s' "$HOME/.config" "$HOME/.config" ) \
-			--chdir "$rc_wd" timeout "$TURN_TIMEOUT" "$CLAUDE" "$@"
+			--chdir "$rc_wd" $TIMEOUT "$CLAUDE" "$@"
 		bwrap "$@" </dev/null
 	else
-		( cd "$rc_wd" && timeout "$TURN_TIMEOUT" "$CLAUDE" "$@" </dev/null )
+		( cd "$rc_wd" && $TIMEOUT "$CLAUDE" "$@" </dev/null )
 	fi
 }
 

@@ -242,6 +242,32 @@ while IFS= read -r line; do
 			ro_wf=$(cc_scalar "$ro_dir/execution.yaml" worker_failures 2>/dev/null) || ro_wf=0
 			if [ -n "$ro_exec" ] && [ "${ro_wf:-0}" -ge 1 ]; then ok "repair_occurred ($val: worker_failures=$ro_wf)"
 			else bad "repair_occurred ($val: worker_failures=${ro_wf:-0}, expected >=1)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		based_on)
+			# val "<plan>:<repo>:<pred1>,<pred2>" — the dependent's per-repository
+			# base record names each same-repo predecessor in based_on (INV-CONCURRENCY-02).
+			bo_pid=${val%%:*}; bo_rest=${val#*:}; bo_repo=${bo_rest%%:*}; bo_preds=${bo_rest#*:}
+			bo_exec=$(cc_latest_execution "$WORKSPACE" "$bo_pid" 2>/dev/null) || bo_exec=""
+			bo_rf=$(cc_execution_dir "$WORKSPACE" "$bo_pid" "$bo_exec" 2>/dev/null)/repositories/$bo_repo.yaml
+			bo_got=$(cc_scalar "$bo_rf" based_on 2>/dev/null) || bo_got=""
+			bo_missing=""
+			for pr in $(printf '%s' "$bo_preds" | tr ',' ' '); do
+				[ -n "$pr" ] || continue
+				printf '%s' "$bo_got" | grep -Fq "$pr" || bo_missing="$pr $bo_missing"
+			done
+			if [ -n "$bo_got" ] && [ -z "$bo_missing" ]; then ok "based_on ($bo_pid/$bo_repo -> $bo_got)"
+			else bad "based_on ($bo_pid/$bo_repo: got '${bo_got:-<none>}' missing '$bo_missing')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		built_on)
+			# val "<plan>:<repo>:<pred>" — the predecessor's verified commit is an
+			# ancestor of the dependent's base: the ORDER proof (built on top of it).
+			bu_pid=${val%%:*}; bu_rest=${val#*:}; bu_repo=${bu_rest%%:*}; bu_pred=${bu_rest#*:}
+			bu_exec=$(cc_latest_execution "$WORKSPACE" "$bu_pid" 2>/dev/null)
+			bu_base=$(cc_scalar "$(cc_execution_dir "$WORKSPACE" "$bu_pid" "$bu_exec")/repositories/$bu_repo.yaml" base_commit 2>/dev/null)
+			bp_exec=$(cc_latest_execution "$WORKSPACE" "$bu_pred" 2>/dev/null)
+			bp_commit=$(cc_scalar "$(cc_execution_dir "$WORKSPACE" "$bu_pred" "$bp_exec")/repositories/$bu_repo.yaml" latest_commit 2>/dev/null)
+			bu_bp=$(cc_binding_field "$WORKSPACE" "$bu_repo" path 2>/dev/null); bu_path="$WORKSPACE/${bu_bp:-$bu_repo}"
+			if [ -n "$bu_base" ] && [ -n "$bp_commit" ] && git -C "$bu_path" merge-base --is-ancestor "$bp_commit" "$bu_base" 2>/dev/null; then
+				ok "built_on ($bu_pred's verified commit is an ancestor of $bu_pid's base in $bu_repo)"
+			else bad "built_on ($bu_pid/$bu_repo not built on $bu_pred: base='${bu_base:-<none>}' pred='${bp_commit:-<none>}')"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"

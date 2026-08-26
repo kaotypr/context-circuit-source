@@ -1,9 +1,10 @@
 schema_version: 1
 owner: wrapper/contracts/invariants.yaml
 purpose: >
-  Single authoritative index of Context Circuit v0.5 product rules and the one
-  file that owns each rule. One rule has one owner. Other artifacts reference an
-  effect defined here; they never define a parallel copy of it.
+  Single authoritative index of Context Circuit product rules (v0.5 core plus the
+  v0.6 run-stack delta) and the one file that owns each rule. One rule has one
+  owner. Other artifacts reference an effect defined here; they never define a
+  parallel copy of it.
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -37,6 +38,14 @@ invariants:
       and repository evidence. Missing or contradictory information becomes an
       explicit open question, assumption, or risk; the agent never silently
       invents a decision.
+  - id: INV-PLAN-05
+    rule: >
+      A plan may declare optional inter-plan plan_dependencies (a list of
+      {id, reason}), distinct from a task's intra-plan depends_on. A plan that
+      declares plan_dependencies must set schema_version 2; a plan without the
+      field stays schema_version 1. Every dependency entry references an
+      existing, non-self plan id in the same workspace, and the inter-plan
+      dependency graph is acyclic. schema_version outside [1, 2] is unsupported.
   - id: INV-APPROVE-01
     rule: >
       Approval is an explicit conversational human gate that only changes plan
@@ -146,7 +155,11 @@ invariants:
       cleanup are separate human-requested actions. A pull request uses each
       execution branch as source and the repository's recorded anchor_branch as
       the default target; it never substitutes default_branch or silently follows
-      a moving remote.
+      a moving remote. Drift guard (v0.6): when a plan is delivered and its
+      recorded base has diverged from the current anchor_branch tip (because a
+      sibling plan already merged), the plan is rebased onto the current tip and
+      re-verified before its pull request opens. A plan is never merged from a
+      base that no longer reflects the branch it will land on.
   - id: INV-DELIVER-02
     rule: >
       Delivery blocks and reports when the source branch, configured provider or
@@ -179,6 +192,35 @@ invariants:
       At most one active writer owns a plan execution, enforced by an atomic
       exclusive-create lock. A competing writer receives a read-only or blocked
       result; a live lock is never silently stolen.
+  - id: INV-CONCURRENCY-01
+    rule: >
+      A path lease generalizes the one-writer lock (INV-OWN-01) from plan scope
+      to (repository, path-region) scope, recorded atomically under
+      .runtime/locks/paths/. While an execution holds a lease on a path region in
+      a repository, no other execution that is not a descendant of the holder in
+      the plan-dependency graph may acquire an overlapping region in that
+      repository (regions overlap when equal, when one is a path-prefix ancestor
+      of the other, or when either is the repository-wide "."). A competing plan
+      receives a read-only or blocked result, the same outcome INV-OWN-01 gives a
+      competing writer; a live lease is never silently stolen. A declared
+      descendant is exempt because it builds on the holder rather than competing
+      with it. A lease is held from execution start until the plan is delivered,
+      not merely verified. It composes with INV-OWN-01 and does not redefine it.
+  - id: INV-CONCURRENCY-02
+    rule: >
+      When a plan becomes runnable the runtime selects its base in each
+      repository it touches, before the worker starts: the anchor tip when there
+      are no same-repo predecessors, the single predecessor branch when there is
+      exactly one, or a runtime-authored integration merge of the predecessor
+      branches when there are two or more, recorded as base_commit. The
+      integration merge is authored by the runtime, never counted as a worker
+      attempt; a base that cannot be built cleanly is a blocked execution, not a
+      worker failure. Cross-repo predecessors never affect the base; they are
+      ordering gates only. A kept base reference lives in the reserved namespace
+      refs/cc-base/<plan>/<repo> and is never nested beneath a branch ref. If a
+      predecessor is repaired after a dependent's base was built, the dependent's
+      base is stale and is rebuilt from the predecessor's new tip before the
+      dependent re-runs; a stale base never silently persists.
   - id: INV-HOST-01
     rule: >
       Host identity, version, capability, permission mode, and provider status
@@ -205,6 +247,10 @@ owners:
   local_binding: wrapper/contracts/schemas/repositories-local.yaml
   commit_convention: wrapper/contracts/invariants.yaml
   runtime: wrapper/runtime/engine.sh
+  path_leases: wrapper/runtime/engine.sh
+  path_lease_records: wrapper/contracts/schemas/lease.yaml
+  base_selection: wrapper/runtime/engine.sh
+  run_stack_action: wrapper/adapters/WORKFLOW.md
   execution_records: wrapper/contracts/schemas/execution.yaml
   worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
   verifier_result: wrapper/contracts/schemas/verifier-result.yaml

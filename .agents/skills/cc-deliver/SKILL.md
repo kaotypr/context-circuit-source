@@ -26,6 +26,17 @@ substitute a target. If the source branch is unpublished, the provider/remote is
 unavailable, or the recorded anchor branch is missing or renamed, report the
 delivery as blocked and ask for an explicit human decision.
 
+## Drift guard (v0.6)
+
+Before opening a pull request, check `delivery-drift`: when a sibling plan has
+already merged and advanced the recorded `anchor_branch`, the plan's base has
+diverged from the tip it will land on. If drift is detected, run `delivery-rebase`
+to rebase the execution branch onto the current anchor tip, then re-verify (one
+fresh independent verifier pass) before the pull request opens — a plan is never
+merged from a base that no longer reflects its target branch. A rebase conflict
+(`DELIVERY_REBASE_CONFLICT`) is reported as blocked, with the work preserved, for
+an explicit human decision (INV-DELIVER-01).
+
 ## Merge / push / cleanup
 
 Report the effect and the branches involved; take the action only on an explicit
