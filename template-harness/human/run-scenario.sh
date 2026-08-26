@@ -125,22 +125,29 @@ repo_fixtures() {
 	' "$CASE_FILE"
 }
 
-# Emit one TSV row per setup.plans entry: id title repository objective open_question seed_state
+# Emit one TSV row per setup.plans entry:
+#   id title repository objective open_question seed_state path deps
+# `path` scopes the task and its verifiable target (a live worker creates
+# <path>/mod.txt; verification is `test -f <path>/mod.txt`). `deps` (an inline
+# list) makes the plan schema_version 2 with a plan_dependencies block. Both are
+# optional: a plan with neither behaves exactly as before (case 05/06).
 plan_fixtures() {
 	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  plans:/{inp=1; next}
 		inp && /^  [A-Za-z]/ && $0 !~ /^    /{inp=0}
 		inp && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id S title S repo S obj S oq S ss;
+			if(id!="") print id S title S repo S obj S oq S ss S path S deps;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			title="";repo="";obj="";oq="";ss=""; next
+			title="";repo="";obj="";oq="";ss="";path="";deps=""; next
 		}
 		inp && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
 		inp && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
 		inp && id!="" && /^      objective:/{v=$0;sub(/^      objective:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);obj=v;next}
 		inp && id!="" && /^      open_question:/{v=$0;sub(/^      open_question:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);oq=v;next}
 		inp && id!="" && /^      seed_state:/{v=$0;sub(/^      seed_state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);ss=v;next}
-		END{ if(id!="") print id S title S repo S obj S oq S ss }
+		inp && id!="" && /^      path:/{v=$0;sub(/^      path:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);path=v;next}
+		inp && id!="" && /^      deps:/{v=$0;sub(/^      deps:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);deps=v;next}
+		END{ if(id!="") print id S title S repo S obj S oq S ss S path S deps }
 	' "$CASE_FILE"
 }
 
@@ -222,19 +229,30 @@ fi
 # so review/approve cases start from an existing plan with an open question.
 if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	FIXTURE_NOTE="${FIXTURE_NOTE},plans"
-	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate; do
+	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate path deps; do
 		[ -n "$pid" ] || continue
 		pdir="$WORKSPACE/plans/$pid"; mkdir -p "$pdir"
+		# path scopes the task; without it the task is repo-wide (backward compatible).
+		# The verifiable target is <path>/mod.txt when a path is given, else export.py.
+		if [ -n "$path" ]; then taskpath="$path"; target="$path/mod.txt"; else taskpath="."; target="export.py"; fi
+		# deps present => schema_version 2 with a plan_dependencies block (v0.6).
+		schema=1; [ -n "$deps" ] && schema=2
 		{
-			printf 'schema_version: 1\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$pid" "$title" "$obj"
+			printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$schema" "$pid" "$title" "$obj"
 			printf 'repositories:\n  - id: %s\n' "$prepo"
+			if [ -n "$deps" ]; then
+				printf 'plan_dependencies:\n'
+				for d in $(printf '%s' "$deps" | tr ',' ' '); do
+					[ -n "$d" ] && printf '  - id: %s\n    reason: builds on %s\n' "$d" "$d" || :
+				done
+			fi
 			[ -n "$oq" ] && printf 'open_questions:\n  - %s\n' "$oq" || :
-			printf 'tasks:\n  - id: EXPORT-001\n    title: %s\n    repositories: [%s]\n    paths: [.]\n    depends_on: []\n' "$title" "$prepo"
+			printf 'tasks:\n  - id: EXPORT-001\n    title: %s\n    repositories: [%s]\n    paths: [%s]\n    depends_on: []\n' "$title" "$prepo" "$taskpath"
 			# a concrete, trivially-verifiable target so full-execution cases have real
-			# worker work (create export.py) and a real verifier check (test -f export.py)
-			printf '    changes: [Add an export.py implementing the export command.]\n'
-			printf '    acceptance:\n      - id: EXPORT-AC-001\n        statement: An export.py file exists in the repository.\n'
-			printf '    verification:\n      - id: EXPORT-VT-001\n        command: test -f export.py\n'
+			# worker work (create the target file) and a real verifier check (test -f).
+			printf '    changes: [Create %s.]\n' "$target"
+			printf '    acceptance:\n      - id: EXPORT-AC-001\n        statement: %s exists in the repository.\n' "$target"
+			printf '    verification:\n      - id: EXPORT-VT-001\n        command: test -f %s\n' "$target"
 		} > "$pdir/plan.yaml"
 		if [ -n "$oq" ]; then
 			printf '# %s\n\n%s\n\n## Open question\n\n- %s\n' "$title" "$obj" "$oq" > "$pdir/PLAN.md"

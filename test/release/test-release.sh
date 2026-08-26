@@ -54,17 +54,17 @@ for leaked in .runtime test .github scripts template repositories repositories.l
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"
 done
 
-# --- only the v0.5 skills ship ---
+# --- only the shipped skills ship (v0.5 seven + v0.6 cc-run-stack) ---
 count=0
 for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   name=${skill_dir##*/}
   case "$name" in
-    cc-workspace|cc-plan|cc-execute|cc-verify|cc-complete|cc-archive|cc-deliver) count=$((count + 1)) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-verify|cc-complete|cc-archive|cc-deliver) count=$((count + 1)) ;;
     *) fail "unexpected skill leaked into artifact: $name" ;;
   esac
 done
-test "$count" -eq 7 || fail "shipped skill count: $count"
+test "$count" -eq 8 || fail "shipped skill count: $count"
 
 # --- no credentials or provider payloads anywhere in the artifact ---
 if grep -REn '^[[:space:]]*(password|api_key|access_token|provider_payload|transcript):' "$artifact" >/dev/null 2>&1; then

@@ -38,6 +38,14 @@ open pull request, merge/deliver. Distinguish inspect from mutate, approval from
 execution, and repository change from delivery. Support the explicit compound
 "approve and execute" as two sequential explicit actions.
 
+A request to run a *set* of already-approved plans ("execute plans X through Z",
+"run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
+WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
+(their dependencies verified and their paths free) and selects each plan's base;
+each plan is still executed by one worker and one independent verifier under the
+three-failure limit; a failed or blocked plan holds only its descendants. Nothing
+is marked done or delivered. Report progress and outcomes in plain language.
+
 ## Reporting to the user
 
 Report actions and state in plain project language, by their effect. Never expose

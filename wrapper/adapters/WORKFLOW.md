@@ -24,6 +24,7 @@ Circuit workspace.
 | Approve plan X. | Explicit approval gate: draft → approved. |
 | Execute plan X. | Execute only if already approved. |
 | Approve plan X and execute it. | Approve, then execute if preflight passes. |
+| Execute plans X…Z / run the ready stack. | Run a set of already-approved plans in dependency order: the runtime detects which are ready (dependencies verified, paths free) and selects each base; each plan is still one worker and one independent verifier. Adds no authority; marks nothing done or delivered. |
 | What happened with X? | Summarize execution evidence. |
 | Repair the failed X verification. | Another worker attempt if allowed. |
 | Mark X complete. | Human-controlled completion; only when verified. |
