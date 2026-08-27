@@ -1,0 +1,69 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/publication-record.yaml
+describes: publication/<name>/published/<plan-id>.yaml
+concern: publication_record
+
+purpose: >
+  The authoritative mapping between a plan (and its tasks) and the external work
+  items a publication created for them — the idempotency key that lets a re-run
+  update the same items instead of duplicating them. It lives under the
+  publication's published/ folder, keyed by the stable plan id. Its lifecycle is
+  independent of the plan's archive state: the external items stay live whether or
+  not the plan is archived, so the record that tracks them stays put and reachable
+  too. The external item id is environment-specific projection state, never written
+  onto plan.yaml (which owns plan identity and status only, INV-PLAN-01).
+
+layout:
+  published_dir: publication/<name>/published/
+  file: <plan-id>.yaml   # one record per published plan (e.g. 0100-csv-export-reports.yaml)
+
+fields:
+  schema_version: { type: integer, required: true, values: [1] }
+  plan: { type: string, required: true, description: the plan id this record publishes }
+  provider: { type: string, required: true }
+  plan_item:
+    type: object
+    required: true
+    description: the external work item mirroring the plan
+    fields:
+      id: { type: string, required: true }
+      url: { type: string, required: false }
+  task_items:
+    type: list
+    required: true
+    description: one entry per plan task, mirroring it as a child item
+    item:
+      task: { type: string, required: true, description: the plan.yaml task id }
+      id: { type: string, required: true, description: external child-item id }
+      url: { type: string, required: false }
+      synced_digest:
+        type: string
+        required: true
+        description: >
+          Digest of the task content at last publish (via the runtime's existing
+          cc_digest). A re-run compares the current digest to this to update in
+          place and skip unchanged tasks; it is what makes publish idempotent.
+
+authority:
+  direction: >
+    Written after the host/MCP call returns the external ids; the deterministic
+    write reuses the runtime's atomic-write path. The runtime gains no provider or
+    network action for this (INV-RUNTIME-01).
+  non_authoritative_external: >
+    Status flows one-way out of plan.yaml at publish time; a human editing the
+    external item is cosmetic drift and never returns to the workspace
+    (INV-PLAN-01, INV-EXTERNAL-02).
+  not_an_execution_input: >
+    This record lives under publication/, never under plans/, so no planning,
+    execution, verification, or delivery step encounters it, and no such step
+    updates external state or status. It is read and written only by the cc-publish
+    skill on explicit manual invocation (INV-EXTERNAL-01).
+
+forbidden:
+  - credentials, tokens, or provider payloads
+  - any field on plan.yaml holding an external id
+
+rules:
+  - INV-EXTERNAL-02
+  - INV-PLAN-01
+  - INV-RUNTIME-02

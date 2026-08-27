@@ -70,6 +70,60 @@ cc_fx_plan() {
 	cc_plan_index_upsert "$cc_fxp_ws" "$cc_fxp_pid" >/dev/null
 }
 
+# cc_fx_plan_ex WS PID TITLE REPO PATH "dep1 dep2..." -> write a valid draft plan
+# with ONE task scoped to PATH in REPO, whose acceptance is trivially achievable
+# (a file PATH/mod.txt). When deps are given the plan is schema_version 2 with a
+# plan_dependencies block; otherwise schema_version 1 (v0.5 shape). Used by the
+# run-stack and lease gates to build inter-plan dependency graphs.
+cc_fx_plan_ex() {
+	cc_fxe_ws=$1; cc_fxe_pid=$2; cc_fxe_title=$3; cc_fxe_repo=$4; cc_fxe_path=$5; cc_fxe_deps=${6:-}
+	cc_fxe_dir="$cc_fxe_ws/plans/$cc_fxe_pid"
+	mkdir -p "$cc_fxe_dir/tasks"
+	cc_fxe_schema=1; [ -n "$cc_fxe_deps" ] && cc_fxe_schema=2
+	cc_fxe_tid=$(printf '%s' "$cc_fxe_repo" | tr '[:lower:]' '[:upper:]')-001
+	{
+		printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective\n' \
+			"$cc_fxe_schema" "$cc_fxe_pid" "$cc_fxe_title" "$cc_fxe_title"
+		printf 'repositories:\n  - id: %s\n    purpose: %s scope\n' "$cc_fxe_repo" "$cc_fxe_repo"
+		if [ -n "$cc_fxe_deps" ]; then
+			printf 'plan_dependencies:\n'
+			for cc_fxe_d in $cc_fxe_deps; do
+				printf '  - id: %s\n    reason: builds on %s\n' "$cc_fxe_d" "$cc_fxe_d"
+			done
+		fi
+		printf 'product_knowledge:\n  - id: project.core\n    path: context/PROJECT.md\n    reason: Grounds the objective.\n'
+		printf 'context_grounding:\n  summary: Fixture grounding.\n  constraints: []\n  decisions: []\n'
+		printf 'knowledge_impact:\n  expected_context_units: []\n  review_on_completion: true\n'
+		printf 'tasks:\n  - id: %s\n    title: Work in %s\n    repositories: [%s]\n    paths: [%s]\n    depends_on: []\n' \
+			"$cc_fxe_tid" "$cc_fxe_path" "$cc_fxe_repo" "$cc_fxe_path"
+		printf '    changes:\n      - Create %s/mod.txt.\n' "$cc_fxe_path"
+		printf '    acceptance:\n      - id: %s-AC\n        statement: %s/mod.txt exists.\n' "$cc_fxe_tid" "$cc_fxe_path"
+		printf '    verification:\n      - id: %s-VT\n        command: test -f %s/mod.txt\n' "$cc_fxe_tid" "$cc_fxe_path"
+		printf 'execution:\n  worker: one\n  independent_verifier: required\n  max_worker_failures: 3\n'
+	} >"$cc_fxe_dir/plan.yaml"
+	printf '# %s\n\nObjective: %s objective.\n' "$cc_fxe_title" "$cc_fxe_title" >"$cc_fxe_dir/PLAN.md"
+	cc_plan_index_upsert "$cc_fxe_ws" "$cc_fxe_pid" >/dev/null
+}
+
+# cc_fx_run_ok WS PID REPO PATH -> approve/execute/worker-commit (PATH/mod.txt)/verify
+# passed. Leaves the plan verified. Uses OWNER=<pid>-w.
+cc_fx_run_ok() {
+	cc_fxo_ws=$1; cc_fxo_pid=$2; cc_fxo_repo=$3; cc_fxo_path=$4
+	[ "$(cc_plan_status "$cc_fxo_ws" "$cc_fxo_pid" 2>/dev/null)" = draft ] \
+		&& { cc_plan_approve "$cc_fxo_ws" "$cc_fxo_pid" >/dev/null || return 1; } || :
+	cc_fxo_exec=$(cc_execution_begin "$cc_fxo_ws" "$cc_fxo_pid" "$cc_fxo_pid-w" | sed -n 's/^execution_id: //p') || return 1
+	cc_fxo_edir="$cc_fxo_ws/.runtime/executions/$cc_fxo_pid/$cc_fxo_exec"
+	cc_fxo_wt="$cc_fxo_ws/.runtime/worktrees/$cc_fxo_pid/$cc_fxo_repo"
+	cc_attempt_begin "$cc_fxo_edir" >/dev/null || return 1
+	mkdir -p "$cc_fxo_wt/$cc_fxo_path"
+	printf 'mod\n' >"$cc_fxo_wt/$cc_fxo_path/mod.txt"
+	git -C "$cc_fxo_wt" add -A
+	git -C "$cc_fxo_wt" commit -q -m "feat($cc_fxo_repo): add $cc_fxo_path/mod.txt"
+	cc_worker_commit_record "$cc_fxo_edir" "$cc_fxo_repo" implementation >/dev/null || return 1
+	cc_verifier_prepare "$cc_fxo_edir" >/dev/null || return 1
+	cc_verifier_result_record "$cc_fxo_edir" 1 passed >/dev/null || return 1
+}
+
 # cc_fx_commit WS PID REPO [MSG] -> make a worker commit in the execution worktree
 cc_fx_commit() {
 	cc_fxc_ws=$1; cc_fxc_pid=$2; cc_fxc_repo=$3; cc_fxc_msg=${4:-work}

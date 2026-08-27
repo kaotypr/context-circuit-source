@@ -37,16 +37,20 @@ cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
 cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
 cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
+# The writer-brief template is an adapter-layer artifact used at runtime; promote
+# it to the workspace root alongside the other adapters.
+cp "$source_root/wrapper/adapters/writer-brief.md" "$stage_tree/writer-brief.md"
 
 # Blank workspace seed from the template.
 cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
 cp "$source_root/template/workspace.yaml" "$stage_tree/workspace.yaml"
-mkdir -p "$stage_tree/context" "$stage_tree/sources" "$stage_tree/plans/.archived"
+mkdir -p "$stage_tree/context" "$stage_tree/sources/archive" "$stage_tree/plans/archive"
 cp -R "$source_root/template/context/." "$stage_tree/context/"
 cp "$source_root/template/sources/README.md" "$stage_tree/sources/README.md"
+cp "$source_root/template/sources/archive/README.md" "$stage_tree/sources/archive/README.md"
 cp "$source_root/template/plans/README.md" "$stage_tree/plans/README.md"
 cp "$source_root/template/plans/INDEX.md" "$stage_tree/plans/INDEX.md"
-[ -f "$source_root/template/plans/.archived/README.md" ] && cp "$source_root/template/plans/.archived/README.md" "$stage_tree/plans/.archived/README.md" || :
+[ -f "$source_root/template/plans/archive/README.md" ] && cp "$source_root/template/plans/archive/README.md" "$stage_tree/plans/archive/README.md" || :
 
 required_files=''
 exclude_paths=''
@@ -73,7 +77,9 @@ done
 
 # Canonical schema fixtures must be present.
 for schema in workspace repositories-local plan task execution worker-handoff \
-  verifier-result completion context-impact context-proposal context-index; do
+  verifier-result completion context-impact context-proposal context-index \
+  lease grounding-manifest publication-config publication-record \
+  publication-thread-record; do
   [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
 
@@ -90,7 +96,7 @@ for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-workspace|cc-plan|cc-execute|cc-verify|cc-complete|cc-archive|cc-deliver) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-publish) ;;
     *) fail "unexpected skill remains: $skill_name" ;;
   esac
 done
@@ -109,7 +115,7 @@ archive_path="$output_dir/$artifact_name.tar.gz"
 (CDPATH= cd "$artifact_dir" && tar -cf - .) | gzip -n > "$archive_path"
 
 printf 'version: %s\n' "$version"
-printf 'runtime_version: 0.5.0\n'
+printf 'runtime_version: 0.6.0\n'
 printf 'source_revision: %s\n' "$source_sha"
 printf 'source_state: %s\n' "$source_state"
 printf 'destination: %s %s\n' "$DESTINATION_REPO" "$DESTINATION_REF"

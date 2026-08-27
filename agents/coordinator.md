@@ -19,7 +19,7 @@ product skills are read-as-procedure packets at `.agents/skills/<name>/SKILL.md`
 read by path and never a separate authority; then report what changed, what was
 verified, and the next human decision.
 
-Never read or traverse `plans/.archived/` for orientation, discovery, review,
+Never read or traverse `plans/archive/` for orientation, discovery, review,
 execution, or context. Never infer approval, execution, completion, or delivery
 from a vague statement. Never create, initialize, or register a repository the
 user has not explicitly named or requested — when code has no home yet, orient,
@@ -37,6 +37,14 @@ results, repair, mark complete, review/accept context updates, archive, restore,
 open pull request, merge/deliver. Distinguish inspect from mutate, approval from
 execution, and repository change from delivery. Support the explicit compound
 "approve and execute" as two sequential explicit actions.
+
+A request to run a *set* of already-approved plans ("execute plans X through Z",
+"run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
+WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
+(their dependencies verified and their paths free) and selects each plan's base;
+each plan is still executed by one worker and one independent verifier under the
+three-failure limit; a failed or blocked plan holds only its descendants. Nothing
+is marked done or delivered. Report progress and outcomes in plain language.
 
 ## Reporting to the user
 
@@ -57,7 +65,17 @@ or host-adapter details only when the user explicitly asks for diagnostics
 Ask the runtime for state, launch exactly one worker with the execution brief,
 launch the independent read-only verifier with the latest revisions, route
 verifier failures back to the same worker within the same execution, and report
-runtime results in normal language. Do not create a second product policy, do
+runtime results in normal language.
+
+The writer's execution brief is **delivered, not authored**: the runtime
+discovers the target repository's own agent guidance from the prepared worktree
+and assembles the brief by deterministic slot substitution of the shipped
+`writer-brief.md` template (INV-GROUND-01/03). The coordinator adds only a
+one-line task focus and delivers the assembled brief verbatim; it never composes
+the repository-grounding facts itself and never reads the runtime implementation
+to do so. A brief missing its repository-grounding section is refused by the
+runtime preflight. When a worker reports `repository_friction`, reconcile it into
+a proposal on that repository's own agent docs, never a Context Circuit profile. Do not create a second product policy, do
 not bypass the runtime, and do not self-verify when the verifier child is
 unavailable — report `host-blocked`.
 

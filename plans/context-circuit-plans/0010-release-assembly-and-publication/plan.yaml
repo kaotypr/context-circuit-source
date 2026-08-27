@@ -1,0 +1,112 @@
+schema_version: 2
+plan: 0010-release-assembly-and-publication
+title: Source/template boundary, seed, release assembly and publication
+status: done
+objective: >-
+  Draw the release boundary that ships the machinery, seeds the blank workspace
+  once, preserves everything the user creates across upgrades, and assembles then
+  publishes the context-circuit-template artifact behind the acceptance gate.
+repositories:
+  - id: context-circuit-source
+    purpose: The factory that assembles and publishes the template artifact.
+plan_dependencies:
+  - id: 0001-contracts-runtime-foundation
+    reason: The manifest boundary references the shipped contracts and runtime.
+  - id: 0002-workspace-repository-model
+    reason: The seed includes the blank workspace identity and binding scaffold.
+  - id: 0003-context-lifecycle
+    reason: The seed includes the blank context scaffold.
+  - id: 0004-planning
+    reason: The seed includes the blank plan area and templates.
+  - id: 0005-approval-and-execution
+    reason: The shipped surface includes the execution runtime and skills.
+  - id: 0006-verification-and-repair
+    reason: The shipped surface includes verification and repair.
+  - id: 0007-completion-and-reconciliation
+    reason: The shipped surface includes completion.
+  - id: 0008-archive-and-restore
+    reason: The shipped surface includes archive/restore.
+  - id: 0009-delivery
+    reason: The shipped surface includes delivery.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: The release boundary is owned by wrapper/manifest.yaml.
+  - id: architecture
+    path: context/ARCHITECTURE.md
+    reason: Source vs template vs workspace three-identity model.
+context_grounding:
+  summary: >-
+    manifest.yaml classifies shipped, mutable_seed, and never_ship; an upgrade
+    replaces only the machinery and preserves user knowledge, plans, and bindings.
+  constraints:
+    - The runtime never pushes or publishes; publication is workflow-only (INV-RUNTIME-01).
+    - Secrets never enter the assembled artifact (INV-SEC-01).
+    - Assembly ships only template-owned files via an explicit allowlist.
+  decisions:
+    - The template carries its own SemVer line, stamped at publish time.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: REL-001
+    title: Release boundary, manifest, and blank template seed
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/manifest.yaml
+      - scripts/release-manifest.txt
+      - template/
+    depends_on: []
+    changes:
+      - Author the release boundary (shipped / mutable_seed / never_ship).
+      - Author the blank workspace seed under template/ with its .gitignore.
+      - List the staged shipped inventory in release-manifest.txt.
+    acceptance:
+      - id: REL-AC-01
+        statement: The manifest classifies every path as shipped, seed, or never-ship.
+      - id: REL-AC-02
+        statement: An upgrade preserves workspace.yaml, context/, plans/, and bindings.
+    verification:
+      - id: REL-VT-01
+        command: sh test/release/test-release.sh
+  - id: REL-002
+    title: Assembler and upgrade migrations
+    repositories: [context-circuit-source]
+    paths:
+      - scripts/release-artifact.sh
+      - scripts/build-dist.sh
+      - wrapper/migrations
+    depends_on: [REL-001]
+    changes:
+      - Assemble context-circuit-template enforcing the template-owned allowlist.
+      - Provide upgrade migrations that replace machinery and preserve user state.
+    acceptance:
+      - id: REL-AC-03
+        statement: Assembly rejects any file outside the shipped allowlist.
+    verification:
+      - id: REL-VT-02
+        command: sh test/release/test-release.sh
+  - id: REL-003
+    title: Publication workflow behind the acceptance gate
+    repositories: [context-circuit-source]
+    paths:
+      - scripts/publish-template.sh
+      - scripts/resolve-release-version.sh
+      - test/acceptance.sh
+      - test/release/test-publish.sh
+    depends_on: [REL-002]
+    changes:
+      - Run the acceptance suite as the publish gate before assembling.
+      - Stamp the template version and publish as one commit plus a tag.
+    acceptance:
+      - id: REL-AC-04
+        statement: Publication runs only after the full acceptance suite passes.
+      - id: REL-AC-05
+        statement: No AI attribution or credential ever reaches the published record.
+    verification:
+      - id: REL-VT-03
+        command: sh test/release/test-publish.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

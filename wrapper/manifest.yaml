@@ -1,10 +1,10 @@
 schema_version: 1
 owner: wrapper/manifest.yaml
 product: context-circuit
-runtime_version: 0.5.0
+runtime_version: 0.6.0
 # Published template release version (see 10-template-publication.md). Stamped
 # at publish time; the context-circuit-template git tag is authoritative.
-template_version: 0.0.1-alpha.1
+template_version: 0.0.1-alpha.2
 artifact_kind: universal-project-workspace-template
 release_contract: template-owned-files-only
 
@@ -16,7 +16,7 @@ purpose: >
 accepted_schema_versions:
   workspace: [1]
   repositories-local: [1]
-  plan: [1]
+  plan: [1, 2]
   task: [1]
   execution: [1]
   worker-handoff: [1]
@@ -25,6 +25,9 @@ accepted_schema_versions:
   context-impact: [1]
   context-proposal: [1]
   context-index: [1]
+  publication-config: [1]
+  publication-record: [1]
+  publication-thread-record: [1]
 
 runtime:
   entrypoint: wrapper/runtime/engine.sh
@@ -37,7 +40,7 @@ runtime:
     - conversational routing policy
     - confirmation cards or confirmation tokens
     - product test-runner logic
-    - automatic pull-request, merge, push, publication, deployment, or cleanup
+    - automatic pull-request, merge, push, deployment, or cleanup
     - automatic plan completion
 
 release_boundary:
@@ -53,6 +56,7 @@ release_boundary:
     - .runtime/
     - context/
     - plans/
+    - publication/
     - sources/
     - test/
     - scripts/

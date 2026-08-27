@@ -62,7 +62,7 @@ ws_identity() { # print workspace identity from a workspace.yaml (scalar or nest
 	[ -n "$id" ] || id=$(awk '/^workspace:$/{f=1;next} f&&/^[[:space:]]+name:/{sub("^[[:space:]]+name:[[:space:]]*","");print;exit} /^[A-Za-z]/{f=0}' "$1")
 	printf '%s' "$id"
 }
-plan_dirs() { for d in "$WORKSPACE"/plans/*/; do b=$(basename -- "$d"); [ "$b" = ".archived" ] && continue; [ -f "$d/plan.yaml" ] && printf '%s\n' "$b"; done; }
+plan_dirs() { for d in "$WORKSPACE"/plans/*/; do b=$(basename -- "$d"); [ "$b" = "archive" ] && continue; [ -f "$d/plan.yaml" ] && printf '%s\n' "$b"; done; }
 num_compare() { # value $1 against spec $2 like ">=0" / "0" / ">1"
 	v=$1; s=$2
 	case "$s" in
@@ -213,23 +213,23 @@ while IFS= read -r line; do
 				bad "execution_not_merged ($val: execution commit IS on $enm_anchor — silent delivery)"; FAIL_A=$((FAIL_A+1))
 			else ok "execution_not_merged ($val: execution commit not merged into $enm_anchor)"; fi ;;
 		plan_archived)
-			# val "<plan-id>[:<expected-status>]" — plan is in plans/.archived/, gone from
+			# val "<plan-id>[:<expected-status>]" — plan is in plans/archive/, gone from
 			# the active area and the index, with its status preserved (INV-ARCHIVE-01).
 			pa_pid=${val%%:*}; pa_want=""; case "$val" in *:*) pa_want=${val#*:} ;; esac
 			pa_bad=""
-			[ -f "$WORKSPACE/plans/.archived/$pa_pid/plan.yaml" ] || pa_bad="not in .archived"
+			[ -f "$WORKSPACE/plans/archive/$pa_pid/plan.yaml" ] || pa_bad="not in archive"
 			[ -d "$WORKSPACE/plans/$pa_pid" ] && pa_bad="$pa_bad; still in active area"
 			cc_plan_index_row_present "$WORKSPACE" "$pa_pid" 2>/dev/null && pa_bad="$pa_bad; index row still present"
 			if [ -n "$pa_want" ]; then
-				pa_st=$(cc_scalar "$WORKSPACE/plans/.archived/$pa_pid/plan.yaml" status 2>/dev/null) || pa_st=""
+				pa_st=$(cc_scalar "$WORKSPACE/plans/archive/$pa_pid/plan.yaml" status 2>/dev/null) || pa_st=""
 				[ "$pa_st" = "$pa_want" ] || pa_bad="$pa_bad; status '${pa_st:-<none>}' != '$pa_want'"
 			fi
-			if [ -z "$pa_bad" ]; then ok "plan_archived ($pa_pid: in .archived, deindexed${pa_want:+, status $pa_want})"
+			if [ -z "$pa_bad" ]; then ok "plan_archived ($pa_pid: in archive, deindexed${pa_want:+, status $pa_want})"
 			else bad "plan_archived ($pa_pid:$pa_bad)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		plan_not_archived)
-			# val "<plan-id>" — after a restore round-trip the plan is NOT left in .archived
-			if [ ! -d "$WORKSPACE/plans/.archived/$val" ]; then ok "plan_not_archived ($val: not in .archived)"
-			else bad "plan_not_archived ($val: still under plans/.archived/)"; FAIL_A=$((FAIL_A+1)); fi ;;
+			# val "<plan-id>" — after a restore round-trip the plan is NOT left in archive
+			if [ ! -d "$WORKSPACE/plans/archive/$val" ]; then ok "plan_not_archived ($val: not archived)"
+			else bad "plan_not_archived ($val: still under a plan archive directory)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		plan_indexed)
 			# val "<plan-id>" — an active-index row is present (restored to the active area)
 			if cc_plan_index_row_present "$WORKSPACE" "$val" 2>/dev/null; then ok "plan_indexed ($val: active index row present)"
@@ -242,6 +242,62 @@ while IFS= read -r line; do
 			ro_wf=$(cc_scalar "$ro_dir/execution.yaml" worker_failures 2>/dev/null) || ro_wf=0
 			if [ -n "$ro_exec" ] && [ "${ro_wf:-0}" -ge 1 ]; then ok "repair_occurred ($val: worker_failures=$ro_wf)"
 			else bad "repair_occurred ($val: worker_failures=${ro_wf:-0}, expected >=1)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		based_on)
+			# val "<plan>:<repo>:<pred1>,<pred2>" — the dependent's per-repository
+			# base record names each same-repo predecessor in based_on (INV-CONCURRENCY-02).
+			bo_pid=${val%%:*}; bo_rest=${val#*:}; bo_repo=${bo_rest%%:*}; bo_preds=${bo_rest#*:}
+			bo_exec=$(cc_latest_execution "$WORKSPACE" "$bo_pid" 2>/dev/null) || bo_exec=""
+			bo_rf=$(cc_execution_dir "$WORKSPACE" "$bo_pid" "$bo_exec" 2>/dev/null)/repositories/$bo_repo.yaml
+			bo_got=$(cc_scalar "$bo_rf" based_on 2>/dev/null) || bo_got=""
+			bo_missing=""
+			for pr in $(printf '%s' "$bo_preds" | tr ',' ' '); do
+				[ -n "$pr" ] || continue
+				printf '%s' "$bo_got" | grep -Fq "$pr" || bo_missing="$pr $bo_missing"
+			done
+			if [ -n "$bo_got" ] && [ -z "$bo_missing" ]; then ok "based_on ($bo_pid/$bo_repo -> $bo_got)"
+			else bad "based_on ($bo_pid/$bo_repo: got '${bo_got:-<none>}' missing '$bo_missing')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		based_on_absent)
+			# val "<plan>:<repo>" — the plan's per-repository record has NO based_on,
+			# proving a cross-repo dependency was treated as an ordering gate, not a git
+			# base (INV-CONCURRENCY-02: cross-repo predecessors never affect the base).
+			boa_pid=${val%%:*}; boa_repo=${val#*:}
+			boa_exec=$(cc_latest_execution "$WORKSPACE" "$boa_pid" 2>/dev/null) || boa_exec=""
+			boa_rf=$(cc_execution_dir "$WORKSPACE" "$boa_pid" "$boa_exec" 2>/dev/null)/repositories/$boa_repo.yaml
+			if [ -f "$boa_rf" ] && ! grep -q '^based_on:' "$boa_rf"; then ok "based_on_absent ($boa_pid/$boa_repo: cross-repo gate — no git base)"
+			else bad "based_on_absent ($boa_pid/$boa_repo: a based_on was recorded, but a cross-repo dep must not produce a base)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		built_on)
+			# val "<plan>:<repo>:<pred>" — the predecessor's verified commit is an
+			# ancestor of the dependent's base: the ORDER proof (built on top of it).
+			bu_pid=${val%%:*}; bu_rest=${val#*:}; bu_repo=${bu_rest%%:*}; bu_pred=${bu_rest#*:}
+			bu_exec=$(cc_latest_execution "$WORKSPACE" "$bu_pid" 2>/dev/null)
+			bu_base=$(cc_scalar "$(cc_execution_dir "$WORKSPACE" "$bu_pid" "$bu_exec")/repositories/$bu_repo.yaml" base_commit 2>/dev/null)
+			bp_exec=$(cc_latest_execution "$WORKSPACE" "$bu_pred" 2>/dev/null)
+			bp_commit=$(cc_scalar "$(cc_execution_dir "$WORKSPACE" "$bu_pred" "$bp_exec")/repositories/$bu_repo.yaml" latest_commit 2>/dev/null)
+			bu_bp=$(cc_binding_field "$WORKSPACE" "$bu_repo" path 2>/dev/null); bu_path="$WORKSPACE/${bu_bp:-$bu_repo}"
+			if [ -n "$bu_base" ] && [ -n "$bp_commit" ] && git -C "$bu_path" merge-base --is-ancestor "$bp_commit" "$bu_base" 2>/dev/null; then
+				ok "built_on ($bu_pred's verified commit is an ancestor of $bu_pid's base in $bu_repo)"
+			else bad "built_on ($bu_pid/$bu_repo not built on $bu_pred: base='${bu_base:-<none>}' pred='${bp_commit:-<none>}')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		grounding_manifest_recorded)
+			# val "<plan>:<repo>:<file>" — repository-grounding discovery recorded a
+			# manifest listing the repo's own guidance file (INV-GROUND-01).
+			gm_pid=${val%%:*}; gm_rest=${val#*:}; gm_repo=${gm_rest%%:*}; gm_file=${gm_rest#*:}
+			gm_exec=$(cc_latest_execution "$WORKSPACE" "$gm_pid" 2>/dev/null) || gm_exec=""
+			gm_mf=$(cc_execution_dir "$WORKSPACE" "$gm_pid" "$gm_exec" 2>/dev/null)/grounding/$gm_repo.yaml
+			if [ -f "$gm_mf" ] && grep -Fq "$gm_file" "$gm_mf"; then ok "grounding_manifest_recorded ($gm_pid/$gm_repo lists $gm_file)"
+			else bad "grounding_manifest_recorded ($gm_pid/$gm_repo: manifest missing or without $gm_file)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		file_grounded)
+			# val "<plan>:<repo>:<relpath>:<needle>" — the committed artifact honors a
+			# convention stated ONLY in the repo's own guidance: proof the writer
+			# discovered, read, and honored it (INV-GROUND-01/02). The needle is not
+			# required by the plan, so its presence can only come from the repo guidance.
+			fg_pid=${val%%:*}; fg_r1=${val#*:}; fg_repo=${fg_r1%%:*}; fg_r2=${fg_r1#*:}
+			fg_path=${fg_r2%%:*}; fg_needle=${fg_r2#*:}
+			fg_exec=$(cc_latest_execution "$WORKSPACE" "$fg_pid" 2>/dev/null) || fg_exec=""
+			fg_edir=$(cc_execution_dir "$WORKSPACE" "$fg_pid" "$fg_exec" 2>/dev/null)
+			fg_wt=$(cc_scalar "$fg_edir/repositories/$fg_repo.yaml" worktree 2>/dev/null)
+			fg_target="$fg_wt/$fg_path"
+			if [ -f "$fg_target" ] && grep -Fq "$fg_needle" "$fg_target"; then ok "file_grounded ($fg_path honors repo convention '$fg_needle')"
+			else bad "file_grounded ($fg_path missing '$fg_needle' — writer did not honor the repo's own guidance)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
@@ -277,12 +333,12 @@ action_occurred() {
 	case "$1" in
 		orient) return 0 ;;                                   # every conversation orients
 		create-plan) find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml \
-			-not -path '*/.archived/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
+			-not -path '*/archive/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
 		connect-repo) [ -f "$WORKSPACE/repositories.local.yaml" ] && \
 			grep -q '^    path:' "$WORKSPACE/repositories.local.yaml" 2>/dev/null ;;  # a binding exists
 		review) return 0 ;;                                   # a review conversation always occurs
 		approve)                                              # a plan reached status approved or done
-			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/.archived/*' 2>/dev/null); do
+			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/archive/*' 2>/dev/null); do
 				grep -qE '^status:[[:space:]]*(approved|done)' "$f" 2>/dev/null && return 0
 			done; return 1 ;;
 		execute|execute-plan)                                 # an execution record exists
@@ -296,7 +352,7 @@ if [ -f "$TRACE" ] && [ -s "$TRACE" ]; then
 	set -f  # forbidden/required patterns must NOT be pathname-expanded against the CWD
 	TRACED=$(cut -f3 "$TRACE" | sed '/^$/d' | sort -u)
 	# forbidden: INTERSECTION across the actions that OCCURRED — flag only paths
-	# forbidden REGARDLESS of action (e.g. engine.sh, sources/, plans/.archived/).
+	# forbidden REGARDLESS of action (e.g. engine.sh, sources/, plans/archive/).
 	# A path forbidden by only some actions (e.g. wrapper/contracts/** for orient but
 	# permitted for create-plan) can't be attributed to a turn reliably, so it is not
 	# flagged; that per-action nuance is unenforceable at session level.
@@ -344,11 +400,43 @@ else
 fi
 
 # --- D. efficiency ledger (soft, warning-only) ---------------------------------
+# Per-action ledger (v0.6 template-harness): action, conversational turns,
+# agent-loop turns, generated output tokens, context peak, cost — compared to the
+# case `budgets` and reported WITHIN/OVER. NEVER changes the verdict (soft).
 printf '\n--- D. efficiency ledger (soft) ---\n'
+# budget_field ACTION FIELD -> the numeric value of a budget field (inline flow map)
+budget_field() {
+	awk -v act="$1" -v f="$2" '
+		/^  budgets:/{b=1;next} b&&/^  [A-Za-z]/&&$0 !~ /^    /{b=0}
+		b && $0 ~ ("^    " act ":") {
+			if (match($0, f "[[:space:]]*:[[:space:]]*[0-9.]+")) {
+				s=substr($0, RSTART, RLENGTH); sub(/^.*:[[:space:]]*/, "", s); print s; exit
+			}
+		}
+	' "$GBLOCK"
+}
+within_int() { [ "${1:-0}" -le "${2:-0}" ] 2>/dev/null && printf WITHIN || printf OVER; }
+within_num() { awk -v o="${1:-0}" -v b="${2:-0}" 'BEGIN{print (o+0<=b+0)?"WITHIN":"OVER"}'; }
+# budget action keys; if a ledger row's action does not match one but the case has
+# exactly one budgeted action, compare against that (tolerates action-label drift).
+BUDGET_ACTIONS=$(awk '/^  budgets:/{b=1;next} b&&/^  [A-Za-z]/&&$0 !~ /^    /{b=0} b&&/^    [A-Za-z0-9_-]+:/{sub(/^    /,"");sub(/:.*/,"");print}' "$GBLOCK")
+N_BUDGET=$(printf '%s\n' "$BUDGET_ACTIONS" | sed '/^$/d' | wc -l | tr -d ' ')
 if [ -f "$TELEMETRY" ] && [ -s "$TELEMETRY" ]; then
-	while IFS='	' read -r act turns tokens; do
+	while IFS='	' read -r act conv agent out cp cost; do
 		[ -n "$act" ] || continue
-		info "budget check $act: turns=$turns tokens=$tokens (compare to case budgets; warnings only)"
+		bact="$act"
+		if [ -z "$(budget_field "$bact" max_tokens)" ] && [ "$N_BUDGET" -eq 1 ]; then
+			bact=$(printf '%s\n' "$BUDGET_ACTIONS" | sed '/^$/d' | head -1)
+		fi
+		mtok=$(budget_field "$bact" max_tokens); mturn=$(budget_field "$bact" max_turns)
+		maturn=$(budget_field "$bact" max_agent_turns); mcost=$(budget_field "$bact" max_cost_usd)
+		rep="$act:"
+		if [ -n "$mtok" ]; then rep="$rep output ${out:-0}/$mtok $(within_int "$out" "$mtok") ·"; else rep="$rep output ${out:-0} ·"; fi
+		[ -n "$mturn" ] && rep="$rep conv-turns ${conv:-0}/$mturn $(within_int "$conv" "$mturn") ·"
+		[ -n "$maturn" ] && rep="$rep agent-turns ${agent:-0}/$maturn $(within_int "$agent" "$maturn") ·"
+		[ -n "$mcost" ] && rep="$rep cost \$${cost:-0}/\$$mcost $(within_num "$cost" "$mcost") ·"
+		rep="$rep context-peak ${cp:-0}"
+		info "$rep"
 	done < "$TELEMETRY"
 else
 	info "no telemetry on host '$HOST' — dimension D unavailable"

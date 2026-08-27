@@ -124,12 +124,78 @@ assert_eq "verified" "$(cc_execution_status "$edir")"
 cc_plan_complete "$ws" "$pid" >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" "$pid")"
 cc_plan_archive "$ws" "$pid" >/dev/null
-require_dir "$ws/plans/.archived/$pid"
+require_dir "$ws/plans/archive/$pid"
 cc_plan_restore "$ws" "$pid" >/dev/null
 require_dir "$ws/plans/$pid"
 
 # 9. The lab workspace's runtime state is separate from the source repository's.
 test "$ws/.runtime" != "$ROOT/.runtime" || fail 'lab runtime collided with source runtime'
 require_dir "$ws/.runtime/executions/$pid"
+
+# 10. Run-stack (v0.6): the SHIPPED template carries base selection + path leases.
+#     Two roots and one integration dependent, all in api; plus one lease check.
+mkplan() { # pid title repo path "deps"
+	mp_dir="$ws/plans/$1"; mkdir -p "$mp_dir/tasks"
+	mp_schema=1; [ -n "$5" ] && mp_schema=2
+	{
+		printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective.\n' "$mp_schema" "$1" "$2" "$2"
+		printf 'repositories:\n  - id: %s\n' "$3"
+		if [ -n "$5" ]; then printf 'plan_dependencies:\n'; for d in $5; do printf '  - id: %s\n    reason: builds on %s\n' "$d" "$d"; done; fi
+		printf 'product_knowledge:\n  - id: project.core\n    path: context/PROJECT.md\n    reason: Grounds it.\n'
+		printf 'context_grounding:\n  summary: s\n  constraints: []\n  decisions: []\n'
+		printf 'knowledge_impact:\n  expected_context_units: []\n  review_on_completion: true\n'
+		printf 'tasks:\n  - id: T-001\n    title: Work\n    repositories: [%s]\n    paths: [%s]\n    depends_on: []\n' "$3" "$4"
+		printf '    changes: [Create %s/mod.txt.]\n    acceptance:\n      - id: T-AC\n        statement: %s/mod.txt exists.\n    verification:\n      - id: T-VT\n        command: test -f %s/mod.txt\n' "$4" "$4" "$4"
+		printf 'execution:\n  worker: one\n  independent_verifier: required\n  max_worker_failures: 3\n'
+	} >"$mp_dir/plan.yaml"
+	printf '# %s\n' "$2" >"$mp_dir/PLAN.md"
+	cc_plan_index_upsert "$ws" "$1" >/dev/null
+}
+runok() { # pid repo path
+	cc_plan_approve "$ws" "$1" >/dev/null
+	ro_ex=$(cc_execution_begin "$ws" "$1" "$1-w" | sed -n 's/^execution_id: //p')
+	ro_ed="$ws/.runtime/executions/$1/$ro_ex"; ro_wt="$ws/.runtime/worktrees/$1/$2"
+	cc_attempt_begin "$ro_ed" >/dev/null
+	mkdir -p "$ro_wt/$3"; printf 'm\n' >"$ro_wt/$3/mod.txt"
+	git -C "$ro_wt" add -A; git -C "$ro_wt" commit -q -m "feat($2): $3"
+	cc_worker_commit_record "$ro_ed" "$2" implementation >/dev/null
+	cc_verifier_prepare "$ro_ed" >/dev/null
+	cc_verifier_result_record "$ro_ed" 1 passed >/dev/null
+}
+mkplan 0002-sa  "Stack A"   api src/a ""
+mkplan 0003-sb  "Stack B"   api src/b ""
+mkplan 0004-int "Integrate" api src/c "0002-sa 0003-sb"
+runok 0002-sa api src/a
+runok 0003-sb api src/b
+cc_plan_approve "$ws" 0004-int >/dev/null
+bp=$(cc_base_prepare "$ws" 0004-int api)
+printf '%s' "$bp" | grep -q 'based_on: \[0002-sa, 0003-sb\]' || fail 'shipped integration base is missing based_on'
+intbase=$(printf '%s' "$bp" | sed -n 's/^base_commit: //p')
+a_tip=$(git -C "$ws/repositories/api" rev-parse --verify refs/heads/cc/0002-sa/api)
+b_tip=$(git -C "$ws/repositories/api" rev-parse --verify refs/heads/cc/0003-sb/api)
+git -C "$ws/repositories/api" merge-base --is-ancestor "$a_tip" "$intbase" || fail 'shipped integration base not built on predecessor A'
+git -C "$ws/repositories/api" merge-base --is-ancestor "$b_tip" "$intbase" || fail 'shipped integration base not built on predecessor B'
+# one lease: a held region blocks an unrelated plan but exempts a declared descendant
+cc_lease_acquire "$ws" api 0002-sa "src/a" >/dev/null
+expect_failure cc_lease_check "$ws" api 0003-sb "src/a"
+cc_lease_check "$ws" api 0004-int "src/a" >/dev/null || fail 'shipped lease must exempt a descendant'
+
+# 11. Repository grounding (v0.6): the SHIPPED template discovers the repo's own
+#     agent guidance and assembles a writer brief with the required grounding slot.
+require_file "$ws/writer-brief.md"    # the brief template is promoted to the root
+git -C "$ws/repositories/api" checkout -q development
+printf '# API agent guide\n\nStart every new source file with `// @grounded`.\n' >"$ws/repositories/api/AGENTS.md"
+git -C "$ws/repositories/api" add -A; git -C "$ws/repositories/api" commit -q -m 'chore(api): add agent guidance'
+mkplan 0005-grounded "Grounded" api src/g ""
+cc_plan_approve "$ws" 0005-grounded >/dev/null
+gex=$(cc_execution_begin "$ws" 0005-grounded sess-g | sed -n 's/^execution_id: //p')
+gedir="$ws/.runtime/executions/0005-grounded/$gex"
+require_file "$gedir/grounding/api.yaml"
+contains "$gedir/grounding/api.yaml" "- AGENTS.md"
+cc_writer_brief_assemble "$ws" "$gedir" api "Add the grounded module." >/dev/null
+require_file "$gedir/brief-api.md"
+contains "$gedir/brief-api.md" "## Repository grounding"
+contains "$gedir/brief-api.md" "AGENTS.md — read and honor it"
+cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 
 pass 'template-runtime laboratory'

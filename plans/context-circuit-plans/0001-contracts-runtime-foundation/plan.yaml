@@ -1,0 +1,105 @@
+schema_version: 1
+plan: 0001-contracts-runtime-foundation
+title: Contracts, runtime foundation, and host adapters
+status: done
+objective: >-
+  Establish the deterministic host-neutral runtime, the one-rule-one-owner
+  invariant index and authority order, the safety spine, the shared terminology,
+  and the host-adapter surface every later capability builds on.
+repositories:
+  - id: context-circuit-source
+    purpose: The maintainer source repository that assembles the product.
+product_knowledge:
+  - id: architecture
+    path: context/ARCHITECTURE.md
+    reason: Names the layered architecture (runtime, contracts, skills, roles).
+  - id: decisions
+    path: context/DECISIONS.md
+    reason: Records the intelligence-in-roles / determinism-in-runtime split.
+  - id: terminology
+    path: context/TERMINOLOGY.md
+    reason: Fixes the controlled vocabulary the whole product references.
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: The authoritative index this plan establishes.
+context_grounding:
+  summary: >-
+    The runtime is a small POSIX-sh deterministic library that owns state
+    mutation and nothing intelligent; every product rule has exactly one owner.
+  constraints:
+    - Runtime carries no provider launch, prompts, routing, or PR/merge/push.
+    - Runtime records are written atomically (INV-RUNTIME-02).
+    - Host evidence is observation only and never authorizes a route (INV-HOST-01).
+  decisions:
+    - One rule, one owner; other files cite an invariant id, never redefine it.
+    - Skills ship only at .agents/skills/<name>/SKILL.md (INV-SKILL-01).
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: FND-001
+    title: Author the invariant index, authority order, and safety spine
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/invariants.yaml
+      - wrapper/adapters/WORKFLOW.md
+      - wrapper/adapters/AGENTS.md
+      - docs/terminology.md
+      - context/TERMINOLOGY.md
+    depends_on: []
+    changes:
+      - Write the invariants.yaml catalog and owner map (one rule, one owner).
+      - Define the authority order and conversational contract in WORKFLOW.md.
+      - Write the AGENTS.md safety spine and host-adapter surface.
+      - Fix the internal->plain-language terminology projection.
+    acceptance:
+      - id: FND-AC-01
+        statement: Every product rule resolves to exactly one owning file via the owner map.
+      - id: FND-AC-02
+        statement: Host evidence never authorizes a route, role, gate, or completion.
+    verification:
+      - id: FND-VT-01
+        command: sh test/contracts/test-contracts.sh
+  - id: FND-002
+    title: Build the deterministic runtime skeleton
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+    depends_on: [FND-001]
+    changes:
+      - Implement safe path/id checks, atomic writes, and content digests.
+      - Implement the atomic exclusive-create one-writer lock (INV-OWN-01).
+      - Enforce the runtime exclusion list (no provider/prompt/routing/PR logic).
+    acceptance:
+      - id: FND-AC-03
+        statement: State writes are atomic; a partial record grants no ownership or authority.
+      - id: FND-AC-04
+        statement: The runtime contains no provider launch, prompts, or delivery logic.
+    verification:
+      - id: FND-VT-02
+        command: sh test/runtime/test-runtime.sh
+  - id: FND-003
+    title: Establish host adapters, roles, and the skill-packet convention
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/adapters/AGENTS.md
+      - agents/coordinator.md
+      - agents/writer.md
+      - agents/verifier.md
+    depends_on: [FND-001]
+    changes:
+      - Define coordinator, writer, and verifier role boundaries.
+      - Bind Codex/Claude/Cursor as transports with provider-neutral host evidence.
+      - Establish skills as read-as-procedure packets resolved by path.
+    acceptance:
+      - id: FND-AC-05
+        statement: The three roles have fixed, non-overlapping boundaries across hosts.
+      - id: FND-AC-06
+        statement: A shipped skill is resolved only by path; no host-specific skill dir ships.
+    verification:
+      - id: FND-VT-03
+        command: sh test/security/test-boundaries.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

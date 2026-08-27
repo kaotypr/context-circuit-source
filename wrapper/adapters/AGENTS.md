@@ -29,8 +29,8 @@ are not hidden.
   child cannot be created, the result is `host-blocked` — never self-verify.
 - `sources/` is passive: read only exact request-named files; never scan all
   sources or sibling workspaces to fill a context gap.
-- `plans/.archived/` is outside normal context; read it only via explicit restore.
-- Completion, pull requests, merge, push, publication, deployment, archive, and
+- `plans/archive/` is outside normal context; read it only via explicit restore.
+- Completion, pull requests, merge, push, deployment, archive, and
   cleanup are separate explicit human actions. Verification never implies any.
 - Credentials stay in host Git config or the host agent; never in workspace files
   or runtime records.

@@ -9,6 +9,7 @@ required AGENTS.md
 required CLAUDE.md
 required WORKFLOW.md
 required README.md
+required writer-brief.md
 
 # Blank workspace seed (from template/).
 required .gitignore
@@ -26,8 +27,10 @@ required context/domains/README.md
 required context/roles/README.md
 required context/proposals/README.md
 required sources/README.md
+required sources/archive/README.md
 required plans/INDEX.md
 required plans/README.md
+required plans/archive/README.md
 
 # Runtime, contracts, and schemas.
 required wrapper/manifest.yaml
@@ -45,10 +48,16 @@ required wrapper/contracts/schemas/completion.yaml
 required wrapper/contracts/schemas/context-impact.yaml
 required wrapper/contracts/schemas/context-proposal.yaml
 required wrapper/contracts/schemas/context-index.yaml
+required wrapper/contracts/schemas/lease.yaml
+required wrapper/contracts/schemas/grounding-manifest.yaml
+required wrapper/contracts/schemas/publication-config.yaml
+required wrapper/contracts/schemas/publication-record.yaml
+required wrapper/contracts/schemas/publication-thread-record.yaml
 
 # Guides and templates.
 required docs/getting-started.md
 required docs/planning.md
+required docs/publishing.md
 required docs/plan-review.md
 required docs/product-knowledge.md
 required docs/terminology.md
@@ -61,10 +70,13 @@ required docs/templates/terminology-context.md
 required .agents/skills/cc-workspace/SKILL.md
 required .agents/skills/cc-plan/SKILL.md
 required .agents/skills/cc-execute/SKILL.md
+required .agents/skills/cc-run-stack/SKILL.md
+required .agents/skills/cc-system-design/SKILL.md
 required .agents/skills/cc-verify/SKILL.md
 required .agents/skills/cc-complete/SKILL.md
 required .agents/skills/cc-archive/SKILL.md
 required .agents/skills/cc-deliver/SKILL.md
+required .agents/skills/cc-publish/SKILL.md
 required agents/coordinator.md
 required agents/writer.md
 required agents/verifier.md

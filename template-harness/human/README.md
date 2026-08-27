@@ -12,7 +12,7 @@ This suite is **opt-in and source-only**. It is NOT part of `sh test/acceptance.
 all of `test/`, so nothing here ships in `context-circuit-template`.
 
 Design set:
-`sources/system-design/template-harness/v0.5/`.
+`sources/system-design/context-circuit/v0.5/template-harness/`.
 
 ## Files
 

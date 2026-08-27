@@ -4,7 +4,7 @@ Natural-language conversations the human-simulator plays against the product
 coordinator. Source-only: the release manifest excludes `test/`, so nothing here
 ships in `context-circuit-template`.
 
-Design: `sources/system-design/template-harness/v0.5/scenario-library.md`.
+Design: `sources/system-design/context-circuit/v0.5/template-harness/scenario-library.md`.
 
 ## Cases
 
@@ -19,8 +19,30 @@ scenarios/
 ├── 07-archive-plan/                   conv         (claude -p driver)
 ├── 07b-restore-archived-plan/         conv         (claude -p driver)
 ├── 08-delivery-boundary/              full-exec    (claude -p driver; no nesting needed)
-└── 09-verifier-unavailable-host-blocked/  full-exec + fault  (in-session, host-can't-spawn)
+├── 09-verifier-unavailable-host-blocked/  full-exec + fault  (in-session, host-can't-spawn)
+├── 10-run-approved-stack/               full-exec    (claude -p driver; run-stack, v0.6)
+├── 11-repo-grounding/                   full-exec    (claude -p driver; repository grounding, v0.6)
+└── 12-run-multi-repo-stack/             full-exec    (claude -p driver; multi-repo run-stack, v0.6)
 ```
+
+Case 10 exercises the v0.6 run-stack: ten approved, inter-dependent plans of a
+small task-tracker CLI, built in one request. The runtime runs them in dependency
+order, stacks each dependent on its predecessor, and builds runtime-authored
+integration bases for the fan-ins (0005, 0009, 0010); the grader proves each plan
+was independently verified and that the fan-in bases were built on their
+predecessors' verified commits (based_on / built_on), with nothing marked done.
+
+Case 11 exercises v0.6 repository grounding: the connected repo ships its own
+`AGENTS.md` stating a convention the plan never mentions (every file starts with
+`// @grounded`). The grader proves the grounding manifest was recorded and that the
+committed file carries that header — the observable proof that the writer
+discovered, read, and honored the repository's own agent guidance.
+
+Case 12 exercises v0.6 run-stack across TWO repositories: seven approved plans
+spanning a backend and a web app. The grader proves cross-repo concurrency, that a
+cross-repo dependency is an ordering gate with no git base (`based_on_absent`), and
+that same-repo dependencies still stack/integrate (`based_on` + `built_on`), with
+all seven verified and nothing marked done.
 
 Case 07 (design "archive-and-restore") is split into `07-archive-plan` +
 `07b-restore-archived-plan` because an archive→restore round-trip is undetectable

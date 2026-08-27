@@ -25,7 +25,7 @@ To do work:
 ## What you control
 
 Approval, execution, completion, archive, restore, and delivery (pull request,
-merge, push, publication, deployment) are separate explicit actions you request.
+merge, push, deployment) are separate explicit actions you request.
 Creating or reviewing a plan never approves or executes it. Verification produces
 evidence; only you decide when a plan is complete.
 
