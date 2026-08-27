@@ -78,7 +78,7 @@ done
 # Canonical schema fixtures must be present.
 for schema in workspace repositories-local plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
-  lease grounding-manifest; do
+  lease grounding-manifest publication-config publication-record; do
   [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
 
@@ -95,7 +95,7 @@ for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-publish) ;;
     *) fail "unexpected skill remains: $skill_name" ;;
   esac
 done

@@ -33,7 +33,7 @@ effects:
 
 non_effects:
   - does not accept any Product Knowledge update
-  - does not merge, push, open a pull request, publish, deploy, or clean up
+  - does not merge, push, open a pull request, deploy, or clean up
   - a verification pass alone never performs this transition
 
 rules:

@@ -10,19 +10,23 @@ require_file "$inv"
 for id in INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 INV-VERIFY-01 INV-VERIFY-02 \
 	INV-REPAIR-01 INV-COMPLETE-01 INV-ARCHIVE-01 INV-REPO-02 INV-DELIVER-01 \
 	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
-	INV-GROUND-01 INV-GROUND-02 INV-GROUND-03; do
+	INV-GROUND-01 INV-GROUND-02 INV-GROUND-03 INV-EXTERNAL-01 INV-EXTERNAL-02 \
+	INV-EXTERNAL-03; do
 	contains "$inv" "$id"
 done
 for concern in plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
 	base_selection run_stack_action repository_grounding grounding_manifest \
-	writer_brief; do
+	writer_brief external_surface publication_config publication_record; do
 	contains "$inv" "$concern:"
 done
 # old-design owners are gone
 not_contains "$inv" "context_sets:"
 not_contains "$inv" "routes:"
+# Path A: git delivery no longer says "publish/publication"
+not_contains "$inv" "push, publication, deployment"
+not_contains "$inv" "push/publish/deploy"
 
 # --- manifest declares runtime exclusions and the release boundary ---
 man="$W/manifest.yaml"
@@ -36,7 +40,7 @@ contains "$man" "provider-specific child-agent launch"
 # --- v0.5 schemas present; old-design schemas absent ---
 for s in workspace repositories-local plan task execution worker-handoff \
 	verifier-result completion context-impact context-proposal context-index lease \
-	grounding-manifest; do
+	grounding-manifest publication-config publication-record; do
 	require_file "$W/contracts/schemas/$s.yaml"
 done
 for old in delegation session stack child-start context-receipt handoff archive; do
@@ -53,7 +57,7 @@ not_contains "$W/runtime/engine.sh" "cc_route"
 not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
 
 # --- v0.5 skills present; old-design skills absent ---
-for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver; do
+for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-publish; do
 	require_file "$ROOT/.agents/skills/$sk/SKILL.md"
 done
 for old in cc-entry cc-gates cc-next cc-upgrade; do

@@ -3,7 +3,7 @@ name: cc-deliver
 description: Handle separate delivery actions (pull request, merge, push) with explicit targets; never implied by verification or completion.
 ---
 
-Merge, push, pull-request creation, publication, and deployment are separate
+Merge, push, pull-request creation, and deployment are separate
 human-requested actions. None is implied by worker success, verifier success, or
 plan completion. The runtime never performs them and never interprets
 verification as merge authorization.

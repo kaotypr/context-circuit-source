@@ -24,7 +24,7 @@ require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
-  lease grounding-manifest; do
+  lease grounding-manifest publication-config publication-record; do
   require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
 done
 require_file "$artifact/docs/getting-started.md"
@@ -62,11 +62,11 @@ for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   name=${skill_dir##*/}
   case "$name" in
-    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver) count=$((count + 1)) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-publish) count=$((count + 1)) ;;
     *) fail "unexpected skill leaked into artifact: $name" ;;
   esac
 done
-test "$count" -eq 9 || fail "shipped skill count: $count"
+test "$count" -eq 10 || fail "shipped skill count: $count"
 
 # --- no credentials or provider payloads anywhere in the artifact ---
 if grep -REn '^[[:space:]]*(password|api_key|access_token|provider_payload|transcript):' "$artifact" >/dev/null 2>&1; then
