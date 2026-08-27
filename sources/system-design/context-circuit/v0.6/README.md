@@ -19,11 +19,18 @@ version index; each scope owns its own design.
   target repository's own agent guidance (discovered live) and hand it a prepared
   worktree, delivered through a generated brief instead of hand-authored prose.
   Start at [repository-grounding/design.md](./repository-grounding/design.md).
+- [external-surface/](./external-surface/) — a **manually-triggered, config-driven**
+  way to push Context Circuit data to external systems (task trackers, chat, docs),
+  **fully orthogonal to the core workflow** — a peer command, never a phase. The
+  first *kind* is `publish-plan` (a plan and its tasks → ClickUp / Jira / GitHub /
+  Notion / …).
+  Start at [external-surface/design.md](./external-surface/design.md).
 
-These three scopes are independent product capabilities released together in v0.6.
+These four scopes are independent product capabilities released together in v0.6.
 run-stack and repository-grounding share a coordinated contract bump (plan schema
 `[1, 2]`, `runtime_version 0.6.0`); system-design-authoring ships only a skill and
-needs no contract change.
+external-surface ships a skill plus config/record schemas, both with no core
+contract change.
 
 ## Maintainer tooling (not a product scope)
 
