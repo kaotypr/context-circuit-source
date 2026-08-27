@@ -101,10 +101,10 @@ title, so a human can map what went where:
 
 Beyond the fixed mapping, a publication's `instructions`
 ([configuration-and-records.md](./configuration-and-records.md#language-and-instructions))
-can ask the agent to fill **optional provider fields** it derives from the plan —
+can ask `cc-publish` to fill **optional provider fields** it derives from the plan —
 for example a **time estimate per task** or a **target date range** for the plan,
 mapped to ClickUp's time-estimate and start/due-date fields (or a provider's
-equivalent). These are the agent's **best-effort estimates**: written one-way,
+equivalent). These are `cc-publish`'s **best-effort estimates**: written one-way,
 clearly estimates rather than facts the plan asserted, and never returned to the
 workspace. Enrichment adds optional fields; it never changes the plan→work-item and
 task→child-item mapping, and it stays within the self-contained rule (no internal

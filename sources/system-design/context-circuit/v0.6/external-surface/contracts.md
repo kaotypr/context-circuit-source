@@ -17,7 +17,7 @@ enforceable rather than merely described.
   workflow**. No core-workflow phase (plan, approve, execute, verify, deliver),
   runtime action, coordinator route, or role references, triggers, waits on, or is
   affected by any publication, and none runs except on an explicit human invocation
-  of its adapter skill. A publication is a command, not a standing relationship; it
+  of the cc-publish skill. A publication is a command, not a standing relationship; it
   observes the workspace as it finds it at invocation time. There is no automatic,
   scheduled, event, or workflow-driven trigger.
 
