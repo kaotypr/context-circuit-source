@@ -1,0 +1,10 @@
+schema_version: 1
+plan: 0018-external-surface-thread-kind
+provider: github
+plan_item:
+  id: "90"
+  url: "https://github.com/kaotypr/context-circuit/issues/90"
+task_items:
+  - task: THR-001
+    id: "90"
+    synced_digest: "sha256:3bb9fd11d00c73c339baf26b605620221c577f23bec29ffe3354f7914124b7fe"

@@ -1,0 +1,28 @@
+schema_version: 1
+publication: plans-github
+kind: plan
+provider: github
+direction: export
+trigger: manual
+instructions: >-
+  Tracking-only publication of the maintainer implementation plans. Author in
+  English (the source plan language). Plain, self-contained prose per
+  INV-EXTERNAL-03: no workspace paths, file names, or internal ids in external
+  text; the only cross-reference is the four-digit plan number in the title and
+  clickable issue links for plan dependencies. Realized in the lightweight form
+  the human chose for this run: one GitHub issue per plan (not one parent issue
+  plus a sub-issue per task); each plan's tasks are a checklist in the issue body
+  with acceptance criteria as plain human done-criteria. Issues are created Open.
+reads:
+  - plans
+  - tasks
+target_ref:
+  repository: kaotypr/context-circuit
+mapping:
+  plan_to_work_item: github-issue
+  task_to_child_item: description-checklist
+  acceptance_as: description-checklist
+  status:
+    draft: open
+    approved: open
+    done: open
