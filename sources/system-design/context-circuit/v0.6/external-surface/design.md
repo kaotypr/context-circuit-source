@@ -110,7 +110,9 @@ Three small pieces, and nothing more:
    invoked by name or slash command `/cc-publish` (v0.5 INV-SKILL-01). It publishes
    a publication according to the `kind` in its `config.yaml` — the `plan` kind
    here, other kinds as the surface grows. Skills are resolved only when explicitly
-   invoked, so the trigger is isolated by construction.
+   invoked, so the trigger is isolated by construction. The coordinator runs
+   `cc-publish` as a read-as-procedure skill (INV-SKILL-01), the same way it runs
+   `cc-deliver` and `cc-archive`.
 3. **An isolation contract** — invariants stating the orthogonality, the
    export-only data boundary, and that every published artifact is self-contained
    (no workspace file, path, id, or internal mechanism leaks outward). Detail in
@@ -223,8 +225,8 @@ This design does not authorize implementation, delivery, or publication by itsel
 - Every kind honors a **`language`** config (default `en`): `cc-publish` authors all
   external text in that language, whatever language the source plan is written in;
   workspace text is never changed.
-- Every kind honors optional **`instructions`** config — free-text guidance to the
-  publishing agent covering both *how* external text reads (tone, phrasing, term
+- Every kind honors optional **`instructions`** config — free-text guidance to
+  `cc-publish` covering both *how* external text reads (tone, phrasing, term
   handling) and *which optional provider fields to enrich* by estimation (e.g. a
   time estimate per task, a target date range), written one-way as best-effort
   estimates. Instructions guide wording and optional field values only; they never

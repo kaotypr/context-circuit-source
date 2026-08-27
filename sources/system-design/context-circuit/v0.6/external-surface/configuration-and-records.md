@@ -47,7 +47,7 @@ provider: clickup              # clickup | jira | github | notion | slack | … 
 direction: export              # export-first; the only value in this scope
 trigger: manual                # manual is the only allowed value
 language: en                   # language to author external text in (any kind); default en
-instructions: >                # optional free-text instructions to the publishing agent
+instructions: >                # optional free-text guidance cc-publish follows
   Everyday, conversational tone; keep technical terms in English. Estimate a time
   estimate per task and a target date range for the plan.
 reads:                         # DECLARED, bounded artifact scope — no scanning
@@ -86,22 +86,22 @@ whatever language the source plan is written in. It is an authoring choice for t
 external audience; it never changes `plan.yaml` or any workspace text, which stay in
 their own language (INV-PLAN-01). `target_ref` and ids are not translated.
 
-`instructions` is optional free-text guidance to the **publishing agent**. It covers
-two things:
+`instructions` is optional free-text guidance that **`cc-publish`** (the
+coordinator's publish skill, INV-SKILL-01) follows. It covers two things:
 
 - **How the external text reads** — tone, phrasing, term handling (e.g. "Everyday,
   conversational tone; keep technical terms in English").
 - **Which optional provider fields to enrich** by deriving them from the plan (e.g.
   "Estimate a time estimate per task and a target date range for the plan"), which
-  the agent maps to the provider's own fields (a ClickUp time estimate, start/due
-  dates, priority, tags). Enriched values are the agent's **best-effort estimates**,
+  `cc-publish` maps to the provider's own fields (a ClickUp time estimate, start/due
+  dates, priority, tags). Enriched values are its **best-effort estimates**,
   written one-way like everything else — clearly estimates, never presented as facts
   the plan asserted, and never returned to the workspace.
 
 It guides authoring and optional enrichment only, always within the invariants:
 
 - It **never overrides the self-contained rule** (INV-EXTERNAL-03): no instruction
-  can make the agent leak a workspace file, path, id, or internal mechanism.
+  can make `cc-publish` leak a workspace file, path, id, or internal mechanism.
 - It **never expands scope or authority** — it cannot read artifacts beyond `reads`,
   write back to `plan.yaml` or any workspace file, change the core plan→work-item
   mapping, or relax a boundary or safety rule. It guides wording and optional field
