@@ -256,6 +256,15 @@ while IFS= read -r line; do
 			done
 			if [ -n "$bo_got" ] && [ -z "$bo_missing" ]; then ok "based_on ($bo_pid/$bo_repo -> $bo_got)"
 			else bad "based_on ($bo_pid/$bo_repo: got '${bo_got:-<none>}' missing '$bo_missing')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		based_on_absent)
+			# val "<plan>:<repo>" — the plan's per-repository record has NO based_on,
+			# proving a cross-repo dependency was treated as an ordering gate, not a git
+			# base (INV-CONCURRENCY-02: cross-repo predecessors never affect the base).
+			boa_pid=${val%%:*}; boa_repo=${val#*:}
+			boa_exec=$(cc_latest_execution "$WORKSPACE" "$boa_pid" 2>/dev/null) || boa_exec=""
+			boa_rf=$(cc_execution_dir "$WORKSPACE" "$boa_pid" "$boa_exec" 2>/dev/null)/repositories/$boa_repo.yaml
+			if [ -f "$boa_rf" ] && ! grep -q '^based_on:' "$boa_rf"; then ok "based_on_absent ($boa_pid/$boa_repo: cross-repo gate — no git base)"
+			else bad "based_on_absent ($boa_pid/$boa_repo: a based_on was recorded, but a cross-repo dep must not produce a base)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		built_on)
 			# val "<plan>:<repo>:<pred>" — the predecessor's verified commit is an
 			# ancestor of the dependent's base: the ORDER proof (built on top of it).
