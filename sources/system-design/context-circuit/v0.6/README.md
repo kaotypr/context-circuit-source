@@ -20,10 +20,11 @@ version index; each scope owns its own design.
   worktree, delivered through a generated brief instead of hand-authored prose.
   Start at [repository-grounding/design.md](./repository-grounding/design.md).
 - [external-surface/](./external-surface/) — a **manually-triggered, config-driven**
-  way to push Context Circuit data to external systems (task trackers, chat, docs),
-  **fully orthogonal to the core workflow** — a peer command, never a phase. The
-  first *kind* is `publish-plan` (a plan and its tasks → ClickUp / Jira / GitHub /
-  Notion / …).
+  way to publish Context Circuit data to external systems (task trackers, chat,
+  docs), **fully orthogonal to the core workflow** — a publication is a peer
+  command, never a phase. Publications live under `publication/<name>/` (e.g.
+  `plans-clickup`); the first *kind* is `publish-plan` (a plan and its tasks →
+  ClickUp / Jira / GitHub / Notion / …).
   Start at [external-surface/design.md](./external-surface/design.md).
 
 These four scopes are independent product capabilities released together in v0.6.

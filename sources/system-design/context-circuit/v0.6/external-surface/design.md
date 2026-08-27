@@ -1,7 +1,7 @@
 # Context Circuit v0.6 — External-surface (overview)
 
 Status: authoritative source design for the v0.6 external-surface scope (delta on v0.5)
-Revision: 1 — 2026-08-27
+Revision: 2 — 2026-08-27
 
 This is the **overview** of the external-surface scope: the capability, the
 principles, and the shape of the solution. Each mechanism has its own detail file
@@ -12,14 +12,14 @@ everything this delta builds on.
 ## The one capability
 
 v0.5 keeps everything a workspace produces — plans, tasks, completion records,
-context — **inside the workspace**. v0.6 adds a way to take that data and push it
-to an **external system** the team already lives in (a task tracker, a chat
-channel, a docs space), on demand.
+context — **inside the workspace**. v0.6 adds a way to take that data and publish it
+to an **external system** the team already lives in (a task tracker, a chat channel,
+a docs space), on demand.
 
-The whole capability is one idea: an **external target** is a user-configured,
-manually-triggered command that *reads Context Circuit artifacts as it finds them
-and reflects them outward*. It is **not** a lifecycle stage, not a step of any
-phase, and not something the core workflow ever calls.
+A configured pipeline is a **publication**: a user-declared, manually-triggered
+command that *reads Context Circuit artifacts as it finds them and reflects them
+outward*. A publication is **not** a lifecycle stage, not a step of any phase, and
+not something the core workflow ever calls.
 
 ```mermaid
 flowchart LR
@@ -27,16 +27,16 @@ flowchart LR
     direction LR
     P["plan"] --> A["approve"] --> E["execute"] --> V["verify"] --> D["deliver"]
   end
-  subgraph ext["External surface — separate, user-driven"]
+  subgraph ext["Publications — separate, user-driven"]
     direction LR
-    U(["user runs<br/>/publish-plan 0023"]) --> K["adapter skill reads<br/>the workspace as-found"] --> X["ClickUp / Jira /<br/>GitHub / Slack / …"]
+    U(["user runs<br/>/cc-publish-plan 0023"]) --> K["adapter skill reads<br/>the workspace as-found"] --> X["ClickUp / Jira /<br/>GitHub / Slack / …"]
   end
   core -.->|"NO edge — the two never connect"| ext
 ```
 
 The dashed line is crossed out on purpose: **there is no edge** between the core
-workflow and the external surface, in either direction. They are peers that happen
-to share a workspace. The surface runs only when, and exactly when, a human invokes
+workflow and the publications, in either direction. They are peers that happen to
+share a workspace. A publication runs only when, and exactly when, a human invokes
 it.
 
 ## Problem
@@ -51,15 +51,17 @@ state. v0.6 gives the reflection a home that touches none of that.
 
 ## Goals
 
-1. Let a user push Context Circuit data (starting with a plan and its tasks) to an
-   external system with one explicit command.
+1. Let a user publish Context Circuit data (starting with a plan and its tasks) to
+   an external system with one explicit command.
 2. Keep it **opt-in and manual** — nothing happens unless the user asks, every time.
-3. Make it **general**: one backbone that hosts many *kinds* of target (tracker,
-   chat, docs), with `publish-plan` as the first.
+3. Make it **general**: one backbone that hosts many *kinds* of publication
+   (plans → a tracker, docs → a docs space, open questions → a chat thread), with
+   plan publishing as the first.
 4. Add **zero weight** to the core workflow — no runtime code, no agent load, no
    reference anywhere in the plan/approve/execute/verify/deliver path.
-5. Keep the external copy a **non-authoritative reflection**: `plan.yaml` remains
-   the single source of truth for plan identity and status.
+5. Keep the external copy **self-contained and non-authoritative**: it reads as
+   ordinary project work to someone who has never heard of Context Circuit, and
+   `plan.yaml` remains the single source of truth for plan identity and status.
 
 ## Non-goals
 
@@ -68,26 +70,27 @@ state. v0.6 gives the reflection a home that touches none of that.
 - **No coupling to the workflow.** No hook, no callback, no lifecycle listener,
   no "emit on phase X." Nothing to wire, because nothing triggers it.
 - **No import (this scope is export-first).** Data flows Context Circuit →
-  outward. Pulling external issues *into* plans would bypass the human
+  outward. Pulling external items *into* plans would bypass the human
   plan-authoring and approval gates and is out of scope; any future import must go
   through the normal authoring gate, never around it.
 - **No bidirectional sync / no status flow-back.** The external item may drift
   (a human edits it); that is cosmetic and never returns to `plan.yaml`.
 - **No provider code in the runtime** (v0.5 INV-RUNTIME-01). Network and
   credentialed calls live in the host / MCP layer.
-- **No new authority.** The surface never changes plan status, approves, executes,
-  verifies, completes, or delivers.
+- **No new authority.** A publication never changes plan status, approves,
+  executes, verifies, completes, or delivers.
 
 ## Principles
 
 - **Bind to data, never to control flow.** This is what makes "zero core-flow
-  weight" a structural fact rather than a coding discipline. The surface is a
+  weight" a structural fact rather than a coding discipline. A publication is a
   *downstream reader* of workspace artifacts; the workflow is a *producer* that is
   unaware anything reads it.
-- **A target is a command, not a link.** It has no standing relationship to the
+- **A publication is a command, not a link.** It has no standing relationship to a
   plan — it runs once, when invoked, against whatever is on disk at that instant.
-- **The external copy is a reflection.** One-way, non-authoritative, idempotent
-  on re-run; the workspace stays canonical.
+- **The external copy is a self-contained reflection.** One-way, non-authoritative,
+  idempotent on re-run, and written in plain language a reader without workspace
+  access understands; the workspace stays canonical.
 - **The host carries the provider weight.** The runtime stays the small
   deterministic library it already is; adapters reach providers through the host
   (MCP), and configuration files never hold credentials.
@@ -96,55 +99,75 @@ state. v0.6 gives the reflection a home that touches none of that.
 
 Three small pieces, and nothing more:
 
-1. **A user-owned config surface** — an `external-targets/` folder holding one
-   `external-target.yaml` per configured target. It is **created on first use**,
-   not shipped empty into every workspace, so no unexplained folder ever sits in a
-   workspace the user never opted into. Detail in
+1. **A user-owned `publication/` folder.** One sub-folder per configured
+   publication, named for what it publishes and where — `plans-clickup`,
+   `plans-github`, `docs-clickup`, `thread-slack`. Each holds a `config.yaml` and a
+   `published/` folder of records. It is **created on first use**, not shipped empty
+   into every workspace. **Everything a publication reads or writes lives here;
+   nothing is ever written under `plans/`.** Detail in
    [configuration-and-records.md](./configuration-and-records.md).
-2. **A manual trigger** — each target *kind* ships as an adapter **skill**
-   (`.agents/skills/<kind>/SKILL.md`) the user invokes by name or slash command
-   (v0.5 INV-SKILL-01). Skills are resolved only when explicitly invoked, so the
+2. **A manual trigger** — each publication *kind* ships as an adapter **skill**
+   named `cc-<kind>` (`.agents/skills/cc-<kind>/SKILL.md`), invoked by name or slash
+   command `/cc-<kind>` (v0.5 INV-SKILL-01). The first kind is `publish-plan`
+   (`cc-publish-plan`). Skills are resolved only when explicitly invoked, so the
    trigger is isolated by construction.
-3. **An isolation contract** — one invariant stating the orthogonality above so it
-   is enforceable, plus the data boundary (reads declared artifacts, writes only
-   its own records, credentials at the host). Detail in
+3. **An isolation contract** — invariants stating the orthogonality, the
+   export-only data boundary, and that every published artifact is self-contained
+   (no workspace file, path, id, or internal mechanism leaks outward). Detail in
    [contracts.md](./contracts.md).
 
-No event system is needed: because nothing in the workflow triggers a target,
+No event system is needed: because nothing in the workflow triggers a publication,
 there is nothing to hook.
+
+## Publications are named for what they publish and where
+
+Each folder under `publication/` is one configured publication whose name is,
+conventionally, `<subject>-<provider>`:
+
+| Publication (folder) | kind | provider | publishes |
+| --- | --- | --- | --- |
+| `plans-clickup` | publish-plan | clickup | a plan and its tasks |
+| `plans-github` | publish-plan | github | a plan and its tasks |
+| `docs-clickup` | *(future)* | clickup | context docs / decisions |
+| `thread-slack` | *(future)* | slack | open questions / discussion |
+
+Only `publish-plan` is designed in this scope; the others show that the same
+backbone hosts other kinds without touching the core workflow — a new kind is a new
+adapter skill plus a `config.yaml`, nothing more.
 
 ## What changes relative to v0.5
 
 | Area | v0.5 | v0.6 (this scope) |
 | --- | --- | --- |
-| Reach of workspace data | stays inside the workspace | can be pushed outward, on demand |
-| Trigger | — | a manual skill / slash command, never the workflow |
-| Config | workspace / plan / context files | adds a user-owned `external-targets/` (create-on-first-use) |
-| External records | — | authoritative per-plan mapping in the plan dir; derived catalog under `external-targets/` |
-| Core workflow | plan → … → deliver | **unchanged**; gains no reference to the surface |
+| Reach of workspace data | stays inside the workspace | can be published outward, on demand |
+| Trigger | — | a manual `cc-<kind>` skill / slash command, never the workflow |
+| Config + records | workspace / plan / context files | adds a user-owned `publication/` (create-on-first-use) |
+| External records | — | per-plan records under `publication/<name>/published/`; nothing under `plans/` |
+| Core workflow | plan → … → deliver | **unchanged**; gains no reference to publications |
 | Runtime | deterministic library | **unchanged**; no provider/network code (INV-RUNTIME-01) |
 
 Everything else in v0.5 is unchanged. Note that "publication" in the v0.5 delivery
 boundary (INV-DELIVER-01) means **git** publication (push the branch, open the PR)
-and remains core-workflow; the external surface is a separate thing and must keep
+and remains core-workflow; this external surface is a separate thing and must keep
 that word qualified where the two meet (see [contracts.md](./contracts.md)).
 
 ## Detailed design
 
 - [configuration-and-records.md](./configuration-and-records.md) — the
-  `external-targets/` folder, `external-target.yaml`, create-on-first-use,
-  authoritative-per-plan vs derived-catalog records, credentials boundary.
-- [publish-plan.md](./publish-plan.md) — the first consumer: plan → work-item,
+  `publication/<name>/` folders, `config.yaml`, create-on-first-use, the per-plan
+  records under `published/`, on-demand cross-plan lookup, credentials boundary.
+- [publish-plan.md](./publish-plan.md) — the first kind: plan → work-item,
   task → child-item across ClickUp / Jira / GitHub / Notion (provider is a config
-  field, list open-ended); containment vs dependency; one-way idempotent reflection;
-  provider wrinkles; a worked trace.
+  field, list open-ended); containment vs dependency; self-contained external text;
+  the `[NNNN]` title convention; one-way idempotent reflection; provider wrinkles;
+  a worked trace.
 - [contracts.md](./contracts.md) — proposed invariants, owner-map additions, the
   "publish" wording guardrail, and why no core contract bumps.
 
 ## Compatibility (summary)
 
 Fully additive and opt-in. No existing plan, schema, runtime version, or workflow
-phase changes. A workspace that never configures a target is byte-for-byte a v0.5
+phase changes. A workspace that configures no publication is byte-for-byte a v0.5
 workspace plus the availability of the adapter skills. The plan schema does **not**
 bump and `execution.yaml` does not change; unlike run-stack and repository-grounding
 this scope needs no coordinated contract bump.
@@ -153,37 +176,43 @@ this scope needs no coordinated contract bump.
 
 Bounded, independently reviewable phases:
 
-1. **Isolation contract** — add the external-surface invariant(s) and owner-map
+1. **Isolation contract** — add the external-surface invariants and owner-map
    entries; assert the core workflow references nothing here.
-2. **Config + records schema** — `external-target.yaml` and the per-plan mapping
-   record; create-on-first-use behavior; derived-catalog regeneration.
-3. **`publish-plan` adapter skill** — the first kind: the plan→work-item mapping,
-   idempotent re-run, and the provider realizations, driven through host/MCP.
-4. **Semantic verification** — a worked trace (configure a target, publish a plan,
-   re-publish and update in place) plus an assertion that the core acceptance
+2. **Config + record schemas** — `config.yaml` and the per-plan record; the
+   `publication/<name>/` layout; create-on-first-use; on-demand cross-plan lookup.
+3. **`cc-publish-plan` adapter skill** — the first kind: the plan→work-item mapping,
+   self-contained external text, idempotent re-run, and the provider realizations,
+   driven through host/MCP.
+4. **Semantic verification** — a worked trace (configure a publication, publish a
+   plan, re-publish and update in place) plus an assertion that the core acceptance
    suite is unchanged by the surface's presence.
 
 This design does not authorize implementation, delivery, or publication by itself.
 
 ## Final design decisions
 
-- The external surface is **orthogonal to the core workflow** — a peer command,
-  never a phase, trigger, gate, dependency, or side effect of any phase.
-- A target runs **only on explicit manual invocation**, every time; no automatic,
-  scheduled, or workflow-driven trigger exists.
-- The surface is a **downstream reader**: it reads declared workspace artifacts and
-  writes only its own records plus external side effects; it never mutates core
-  Context Circuit state or plan status.
+- The external surface is **orthogonal to the core workflow** — a publication is a
+  peer command, never a phase, trigger, gate, dependency, or side effect of one.
+- A publication runs **only on explicit manual invocation**, every time; no
+  automatic, scheduled, or workflow-driven trigger exists.
+- A publication is a **downstream reader**: it reads declared workspace artifacts
+  and writes only its own records under `publication/`; it never mutates core
+  Context Circuit state or plan status, and **nothing is written under `plans/`**.
 - The scope is **export-first**; import (external → plan) is out of scope and, if
   ever added, must flow through the normal plan-authoring gate.
-- The external copy is **one-way and non-authoritative**; `plan.yaml` stays
-  canonical (INV-PLAN-01); drift in the external item is cosmetic.
-- Configuration lives in a **user-owned `external-targets/` folder, created on
+- The external copy is **one-way, non-authoritative, and self-contained**;
+  `plan.yaml` stays canonical (INV-PLAN-01) and no workspace file, path, id, or
+  internal mechanism ever appears in an external artifact (a plan id in a title is
+  the one allowed cross-reference).
+- Configuration lives in a **user-owned `publication/<name>/config.yaml`, created on
   first use**, and is **credential-free**; credentials stay at the host / MCP layer
   (INV-SEC-01).
-- Each target *kind* is triggered as an **adapter skill** (INV-SKILL-01); the host
-  carries all provider/network weight (INV-RUNTIME-01 unchanged).
-- The concept and this source scope are named **external-surface**; the user-facing
-  workspace folder is **`external-targets/`**; the first kind is **`publish-plan`**.
+- Each publication *kind* is triggered as a **`cc-<kind>` adapter skill**
+  (INV-SKILL-01); the host carries all provider/network weight (INV-RUNTIME-01
+  unchanged).
+- The concept and this source scope are named **external-surface**; the product
+  root folder is **`publication/`**; a publication folder is named `<subject>-<provider>`
+  (e.g. `plans-clickup`); its config file is **`config.yaml`**; the first kind is
+  **`publish-plan`** (skill `cc-publish-plan`).
 - The scope adds **no core contract bump** — no plan-schema, execution, or
   runtime-version change.
