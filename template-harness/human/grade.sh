@@ -62,7 +62,7 @@ ws_identity() { # print workspace identity from a workspace.yaml (scalar or nest
 	[ -n "$id" ] || id=$(awk '/^workspace:$/{f=1;next} f&&/^[[:space:]]+name:/{sub("^[[:space:]]+name:[[:space:]]*","");print;exit} /^[A-Za-z]/{f=0}' "$1")
 	printf '%s' "$id"
 }
-plan_dirs() { for d in "$WORKSPACE"/plans/*/; do b=$(basename -- "$d"); [ "$b" = ".archived" ] && continue; [ -f "$d/plan.yaml" ] && printf '%s\n' "$b"; done; }
+plan_dirs() { for d in "$WORKSPACE"/plans/*/; do b=$(basename -- "$d"); [ "$b" = "archive" ] && continue; [ -f "$d/plan.yaml" ] && printf '%s\n' "$b"; done; }
 num_compare() { # value $1 against spec $2 like ">=0" / "0" / ">1"
 	v=$1; s=$2
 	case "$s" in
@@ -213,23 +213,23 @@ while IFS= read -r line; do
 				bad "execution_not_merged ($val: execution commit IS on $enm_anchor — silent delivery)"; FAIL_A=$((FAIL_A+1))
 			else ok "execution_not_merged ($val: execution commit not merged into $enm_anchor)"; fi ;;
 		plan_archived)
-			# val "<plan-id>[:<expected-status>]" — plan is in plans/.archived/, gone from
+			# val "<plan-id>[:<expected-status>]" — plan is in plans/archive/, gone from
 			# the active area and the index, with its status preserved (INV-ARCHIVE-01).
 			pa_pid=${val%%:*}; pa_want=""; case "$val" in *:*) pa_want=${val#*:} ;; esac
 			pa_bad=""
-			[ -f "$WORKSPACE/plans/.archived/$pa_pid/plan.yaml" ] || pa_bad="not in .archived"
+			[ -f "$WORKSPACE/plans/archive/$pa_pid/plan.yaml" ] || pa_bad="not in archive"
 			[ -d "$WORKSPACE/plans/$pa_pid" ] && pa_bad="$pa_bad; still in active area"
 			cc_plan_index_row_present "$WORKSPACE" "$pa_pid" 2>/dev/null && pa_bad="$pa_bad; index row still present"
 			if [ -n "$pa_want" ]; then
-				pa_st=$(cc_scalar "$WORKSPACE/plans/.archived/$pa_pid/plan.yaml" status 2>/dev/null) || pa_st=""
+				pa_st=$(cc_scalar "$WORKSPACE/plans/archive/$pa_pid/plan.yaml" status 2>/dev/null) || pa_st=""
 				[ "$pa_st" = "$pa_want" ] || pa_bad="$pa_bad; status '${pa_st:-<none>}' != '$pa_want'"
 			fi
-			if [ -z "$pa_bad" ]; then ok "plan_archived ($pa_pid: in .archived, deindexed${pa_want:+, status $pa_want})"
+			if [ -z "$pa_bad" ]; then ok "plan_archived ($pa_pid: in archive, deindexed${pa_want:+, status $pa_want})"
 			else bad "plan_archived ($pa_pid:$pa_bad)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		plan_not_archived)
-			# val "<plan-id>" — after a restore round-trip the plan is NOT left in .archived
-			if [ ! -d "$WORKSPACE/plans/.archived/$val" ]; then ok "plan_not_archived ($val: not in .archived)"
-			else bad "plan_not_archived ($val: still under plans/.archived/)"; FAIL_A=$((FAIL_A+1)); fi ;;
+			# val "<plan-id>" — after a restore round-trip the plan is NOT left in archive
+			if [ ! -d "$WORKSPACE/plans/archive/$val" ]; then ok "plan_not_archived ($val: not archived)"
+			else bad "plan_not_archived ($val: still under a plan archive directory)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		plan_indexed)
 			# val "<plan-id>" — an active-index row is present (restored to the active area)
 			if cc_plan_index_row_present "$WORKSPACE" "$val" 2>/dev/null; then ok "plan_indexed ($val: active index row present)"
@@ -333,12 +333,12 @@ action_occurred() {
 	case "$1" in
 		orient) return 0 ;;                                   # every conversation orients
 		create-plan) find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml \
-			-not -path '*/.archived/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
+			-not -path '*/archive/*' 2>/dev/null | grep -q . ;;   # a plan.yaml exists
 		connect-repo) [ -f "$WORKSPACE/repositories.local.yaml" ] && \
 			grep -q '^    path:' "$WORKSPACE/repositories.local.yaml" 2>/dev/null ;;  # a binding exists
 		review) return 0 ;;                                   # a review conversation always occurs
 		approve)                                              # a plan reached status approved or done
-			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/.archived/*' 2>/dev/null); do
+			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/archive/*' 2>/dev/null); do
 				grep -qE '^status:[[:space:]]*(approved|done)' "$f" 2>/dev/null && return 0
 			done; return 1 ;;
 		execute|execute-plan)                                 # an execution record exists
@@ -352,7 +352,7 @@ if [ -f "$TRACE" ] && [ -s "$TRACE" ]; then
 	set -f  # forbidden/required patterns must NOT be pathname-expanded against the CWD
 	TRACED=$(cut -f3 "$TRACE" | sed '/^$/d' | sort -u)
 	# forbidden: INTERSECTION across the actions that OCCURRED — flag only paths
-	# forbidden REGARDLESS of action (e.g. engine.sh, sources/, plans/.archived/).
+	# forbidden REGARDLESS of action (e.g. engine.sh, sources/, plans/archive/).
 	# A path forbidden by only some actions (e.g. wrapper/contracts/** for orient but
 	# permitted for create-plan) can't be attributed to a turn reliably, so it is not
 	# flagged; that per-action nuance is unenforceable at session level.

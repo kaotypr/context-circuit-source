@@ -78,7 +78,7 @@ criteria:
     statement: New plans receive consistent, stable, human-friendly canonical IDs.
     suite: test/plans/test-plans.sh
   - id: AC-24
-    statement: Archiving moves to plans/.archived, removes the index row, preserves files/status, performs no validation.
+    statement: Archiving moves to plans/archive, removes the index row, preserves files/status, performs no validation.
     suite: test/archive/test-archive.sh
   - id: AC-25
     statement: An archived plan's execution continues from its immutable snapshot.

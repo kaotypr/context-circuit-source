@@ -64,14 +64,14 @@ grader:
       required: [workspace.yaml]
       allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md", context/INDEX.md]
       forbidden:
-        - "plans/.archived/**"
+        - "plans/archive/**"
         - "wrapper/runtime/engine.sh"
         - "sources/**"
         - "wrapper/contracts/**"
     connect-repo:
       required: [workspace.yaml]
       allowed:  ["context/**"]
-      forbidden: ["plans/.archived/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
   budgets:
     orient:       { max_turns: 2, max_tokens: 8000 }
