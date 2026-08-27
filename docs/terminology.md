@@ -28,7 +28,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Repair attempt | A new worker commit plus a new independent check after a failed verification. |
 | Completion | The human decision to mark a plan done after a verified execution. |
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
-| Delivery | Opening a pull request, merging, pushing, or publishing — always a separate, explicit action. |
+| Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
 | Host-blocked | A state where the environment cannot run a required step (for example, an independent check), so the coordinator reports it and preserves the work rather than faking the step. |
 | Plan stack | A named set of approved plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
@@ -40,6 +40,9 @@ importantly, how the coordinator translates them into plain language for a user.
 | Grounding manifest | The discovered record of a repository's agent guidance (files, skills, prepared environment) for one execution. |
 | Writer brief | The instructions handed to the worker for one execution, assembled from the grounding manifest and the plan. |
 | System design | A structured write-up of the shape of a larger change, authored as source material; a source, not a lifecycle stage. |
+| Publication | A pipeline you declare once and trigger by hand (`cc-publish`) to publish workspace data to an external system — a tracker, chat, or docs space; separate from the core workflow, one folder per publication under `publication/`. |
+| Publish / `cc-publish` | Sending workspace data outward to an external system, on request. Reserved for the external surface — git delivery is "push" or "open a pull request", never "publish". |
+| Publication kind | What a publication sends: `plan` (a plan and its tasks → a tracker) or `thread` (a plan's open questions → a chat discussion). |
 
 The exact meanings and authority of these terms are settled by the runtime
 contracts under `wrapper/contracts/`; this page is the plain-language reference.
