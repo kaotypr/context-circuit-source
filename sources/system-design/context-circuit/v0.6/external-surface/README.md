@@ -20,10 +20,11 @@ for the version index and [../../v0.5/](../../v0.5/) for the base design.
 4. [thread.md](./thread.md) — the `thread` kind: a plan's open questions as a chat
    discussion (Slack first) — a `[thread]`-prefixed parent plus one fully-described
    reply per question, discussion-safe on re-run.
-5. [usage.md](./usage.md) — how a template/wrapper user configures and publishes, in
-   plain language (the prompts they use); ships in the getting-started docs.
-6. [contracts.md](./contracts.md) — the proposed invariants and owner-map
+5. [contracts.md](./contracts.md) — the proposed invariants and owner-map
    additions, and why this scope needs **no core contract bump**.
+
+The user-facing guide (how to configure and publish, in plain language) ships as
+`docs/publishing.md`, not in this design source.
 
 ## Authority
 
