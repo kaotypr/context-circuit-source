@@ -29,7 +29,7 @@ flowchart LR
   end
   subgraph ext["Publications — separate, user-driven"]
     direction LR
-    U(["user runs<br/>/cc-publish-plan 0023"]) --> K["adapter skill reads<br/>the workspace as-found"] --> X["ClickUp / Jira /<br/>GitHub / Slack / …"]
+    U(["user runs<br/>/cc-publish 0023"]) --> K["cc-publish reads<br/>the workspace as-found"] --> X["ClickUp / Jira /<br/>GitHub / Slack / …"]
   end
   core -.->|"NO edge — the two never connect"| ext
 ```
@@ -106,11 +106,11 @@ Three small pieces, and nothing more:
    into every workspace. **Everything a publication reads or writes lives here;
    nothing is ever written under `plans/`.** Detail in
    [configuration-and-records.md](./configuration-and-records.md).
-2. **A manual trigger** — each publication *kind* ships as an adapter **skill**
-   named `cc-<kind>` (`.agents/skills/cc-<kind>/SKILL.md`), invoked by name or slash
-   command `/cc-<kind>` (v0.5 INV-SKILL-01). The first kind is `publish-plan`
-   (`cc-publish-plan`). Skills are resolved only when explicitly invoked, so the
-   trigger is isolated by construction.
+2. **A manual trigger** — the **`cc-publish`** skill (`.agents/skills/cc-publish/SKILL.md`),
+   invoked by name or slash command `/cc-publish` (v0.5 INV-SKILL-01). It publishes
+   a publication according to the `kind` in its `config.yaml` — the `plan` kind
+   here, other kinds as the surface grows. Skills are resolved only when explicitly
+   invoked, so the trigger is isolated by construction.
 3. **An isolation contract** — invariants stating the orthogonality, the
    export-only data boundary, and that every published artifact is self-contained
    (no workspace file, path, id, or internal mechanism leaks outward). Detail in
@@ -126,49 +126,49 @@ conventionally, `<subject>-<provider>`:
 
 | Publication (folder) | kind | provider | publishes |
 | --- | --- | --- | --- |
-| `plans-clickup` | publish-plan | clickup | a plan and its tasks |
-| `plans-github` | publish-plan | github | a plan and its tasks |
-| `docs-clickup` | *(future)* | clickup | context docs / decisions |
-| `thread-slack` | *(future)* | slack | open questions / discussion |
+| `plans-clickup` | plan | clickup | a plan and its tasks |
+| `plans-github` | plan | github | a plan and its tasks |
+| `docs-clickup` | docs *(future)* | clickup | context docs / decisions |
+| `thread-slack` | thread *(future)* | slack | open questions / discussion |
 
-Only `publish-plan` is designed in this scope; the others show that the same
-backbone hosts other kinds without touching the core workflow — a new kind is a new
-adapter skill plus a `config.yaml`, nothing more.
+Only the `plan` kind is designed in this scope; the others show that the same
+backbone hosts other kinds without touching the core workflow — a new kind is new
+behavior in `cc-publish` plus a `config.yaml`, nothing more.
 
 ## What changes relative to v0.5
 
 | Area | v0.5 | v0.6 (this scope) |
 | --- | --- | --- |
 | Reach of workspace data | stays inside the workspace | can be published outward, on demand |
-| Trigger | — | a manual `cc-<kind>` skill / slash command, never the workflow |
+| Trigger | — | the manual `cc-publish` skill / slash command, never the workflow |
 | Config + records | workspace / plan / context files | adds a user-owned `publication/` (create-on-first-use) |
 | External records | — | per-plan records under `publication/<name>/published/`; nothing under `plans/` |
 | Core workflow | plan → … → deliver | **unchanged**; gains no reference to publications |
 | Runtime | deterministic library | **unchanged**; no provider/network code (INV-RUNTIME-01) |
 
-Everything else in v0.5 is unchanged. Note that "publication" in the v0.5 delivery
-boundary (INV-DELIVER-01) means **git** publication (push the branch, open the PR)
-and remains core-workflow; this external surface is a separate thing and must keep
-that word qualified where the two meet (see [contracts.md](./contracts.md)).
+Everything else in v0.5 is unchanged. In this product, "publish" and "publication"
+name sending data to an external system; git delivery is "push the branch" and
+"open a pull request" (INV-DELIVER-01), never "publish." The two never share a word,
+so no qualifier is needed (see [contracts.md](./contracts.md)).
 
 ## Detailed design
 
 - [configuration-and-records.md](./configuration-and-records.md) — the
   `publication/<name>/` folders, `config.yaml`, create-on-first-use, the per-plan
   records under `published/`, on-demand cross-plan lookup, credentials boundary.
-- [publish-plan.md](./publish-plan.md) — the first kind: plan → work-item,
+- [publish-plan.md](./publish-plan.md) — the `plan` kind: plan → work-item,
   task → child-item across ClickUp / Jira / GitHub / Notion (provider is a config
   field, list open-ended); containment vs dependency; self-contained external text;
   the `[NNNN]` title convention; one-way idempotent reflection; provider wrinkles;
   a worked trace.
 - [contracts.md](./contracts.md) — proposed invariants, owner-map additions, the
-  "publish" wording guardrail, and why no core contract bumps.
+  publish/git-delivery vocabulary split, and why no core contract bumps.
 
 ## Compatibility (summary)
 
 Fully additive and opt-in. No existing plan, schema, runtime version, or workflow
 phase changes. A workspace that configures no publication is byte-for-byte a v0.5
-workspace plus the availability of the adapter skills. The plan schema does **not**
+workspace plus the availability of the `cc-publish` skill. The plan schema does **not**
 bump and `execution.yaml` does not change; unlike run-stack and repository-grounding
 this scope needs no coordinated contract bump.
 
@@ -180,7 +180,7 @@ Bounded, independently reviewable phases:
    entries; assert the core workflow references nothing here.
 2. **Config + record schemas** — `config.yaml` and the per-plan record; the
    `publication/<name>/` layout; create-on-first-use; on-demand cross-plan lookup.
-3. **`cc-publish-plan` adapter skill** — the first kind: the plan→work-item mapping,
+3. **`cc-publish` skill** — the `plan` kind: the plan→work-item mapping,
    self-contained external text, idempotent re-run, and the provider realizations,
    driven through host/MCP.
 4. **Semantic verification** — a worked trace (configure a publication, publish a
@@ -207,12 +207,12 @@ This design does not authorize implementation, delivery, or publication by itsel
 - Configuration lives in a **user-owned `publication/<name>/config.yaml`, created on
   first use**, and is **credential-free**; credentials stay at the host / MCP layer
   (INV-SEC-01).
-- Each publication *kind* is triggered as a **`cc-<kind>` adapter skill**
-  (INV-SKILL-01); the host carries all provider/network weight (INV-RUNTIME-01
-  unchanged).
+- Publications are triggered by the **`cc-publish`** skill (INV-SKILL-01), which
+  publishes per the publication's `kind`; the host carries all provider/network
+  weight (INV-RUNTIME-01 unchanged).
 - The concept and this source scope are named **external-surface**; the product
   root folder is **`publication/`**; a publication folder is named `<subject>-<provider>`
-  (e.g. `plans-clickup`); its config file is **`config.yaml`**; the first kind is
-  **`publish-plan`** (skill `cc-publish-plan`).
+  (e.g. `plans-clickup`); its config file is **`config.yaml`**; the publish command
+  is the single **`cc-publish`** skill; the first kind is **`plan`**.
 - The scope adds **no core contract bump** — no plan-schema, execution, or
   runtime-version change.

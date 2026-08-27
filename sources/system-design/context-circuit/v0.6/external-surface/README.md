@@ -14,7 +14,7 @@ for the version index and [../../v0.5/](../../v0.5/) for the base design.
 2. [configuration-and-records.md](./configuration-and-records.md) — the
    `publication/<name>/` folders, `config.yaml`, create-on-first-use, and the
    per-plan records under `published/` (with cross-plan lookup produced on demand).
-3. [publish-plan.md](./publish-plan.md) — the first kind: mapping a plan and its
+3. [publish-plan.md](./publish-plan.md) — the `plan` kind: mapping a plan and its
    tasks onto ClickUp / Jira / GitHub / Notion work items, self-contained,
    one-way, and idempotent, with a worked trace.
 4. [contracts.md](./contracts.md) — the proposed invariants and owner-map

@@ -42,7 +42,7 @@ an agent working there during execution never encounters a publication record.
 ```yaml
 schema_version: 1
 publication: plans-clickup     # matches the folder name
-kind: publish-plan             # names the cc-<kind> adapter skill (cc-publish-plan)
+kind: plan                     # what cc-publish publishes (plan | docs | thread | …)
 provider: clickup              # clickup | jira | github | notion | slack | … (open-ended)
 direction: export              # export-first; the only value in this scope
 trigger: manual                # manual is the only allowed value
@@ -61,14 +61,14 @@ mapping:                       # kind-specific field map (see publish-plan.md)
     done: completed
 ```
 
-- **`kind` names the adapter skill.** A publication of kind `publish-plan` is run by
-  the `cc-publish-plan` skill; `provider` selects that skill's host/MCP adapter. A
-  future `docs`/`thread` kind is a new adapter skill plus a `config.yaml`, nothing
-  in the core.
+- **`kind` selects the publish procedure.** The `cc-publish` skill publishes a
+  publication according to its `kind` (`plan` here); `provider` selects the host/MCP
+  adapter. A future `docs`/`thread` kind is new behavior in `cc-publish` plus a
+  `config.yaml`, nothing in the core.
 - **`reads` is a bounded, declared allow-list.** A publication reads only the
   artifact types it names, echoing the v0.5 discipline that the workspace never
-  scans to fill a gap (INV-SEC-02 ethos). A `publish-plan` publication reads
-  `plans`/`tasks`; a `thread-slack` publication might read open questions only.
+  scans to fill a gap (INV-SEC-02 ethos). A `plan` publication reads `plans`/`tasks`;
+  a `thread` publication might read open questions only.
 - **`direction: export` and `trigger: manual`** are the only values this scope
   allows; they exist as fields so the contract can refuse anything else rather than
   silently doing something coupling or automatic.

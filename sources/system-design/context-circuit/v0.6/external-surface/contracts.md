@@ -54,12 +54,12 @@ Added under the `owners:` map in `wrapper/contracts/invariants.yaml`:
 | `external_surface` (isolation, data boundary, self-contained artifacts) | `wrapper/contracts/invariants.yaml` (INV-EXTERNAL-01/02/03) |
 | `publication_config` | `wrapper/contracts/schemas/publication-config.yaml` (new — describes `config.yaml`) |
 | `publication_record` | `wrapper/contracts/schemas/publication-record.yaml` (new — describes `published/<plan-id>.yaml`) |
-| publication-kind trigger | INV-SKILL-01 (existing) — kinds ship as `cc-<kind>` at `.agents/skills/cc-<kind>/SKILL.md` (first: `cc-publish-plan`) |
+| publish trigger | INV-SKILL-01 (existing) — the `cc-publish` skill at `.agents/skills/cc-publish/SKILL.md` publishes a publication per its `kind` |
 
 The config schema owns the `config.yaml` shape; the record schema owns the per-plan
-record shape; the trigger is **not** a new authority — it is an ordinary skill under
-the existing INV-SKILL-01, surfaced as a slash command by the host adapter as an
-optional convenience.
+record shape; the trigger is **not** a new authority — `cc-publish` is an ordinary
+skill under the existing INV-SKILL-01, surfaced as a slash command by the host
+adapter as an optional convenience.
 
 ## No core contract bump
 
@@ -76,14 +76,19 @@ contract bump**:
 The scope ships a **skill + two schemas + a config convention**, comparable to how
 `system-design-authoring` ships only a skill and needs no contract change. It is
 fully additive and opt-in: a workspace that configures no publication is a
-v0.5-shaped workspace plus the availability of the adapter skills.
+v0.5-shaped workspace plus the availability of the `cc-publish` skill.
 
-## The "publish" wording guardrail
+## Vocabulary: "publish" is external; git delivery is "push / open a pull request"
 
-`publish-plan` shares the word "publish" with the v0.5 delivery boundary, where
-"publication" means **git** publication (INV-DELIVER-01, and the enumerated
-`…/push/publish/deploy/…` list in INV-RUNTIME-01). The senses are separated by
-object — a *plan* is published to a tracker; a *branch / pull request* is published
-in git — but to keep the record unambiguous, every core-delivery mention stays
-qualified as **git publication**. This is a wording discipline on the
-delivery/runtime owners, not a new rule of its own.
+The product reserves "publish" and "publication" for the external surface, and
+git delivery speaks in its own terms — "push the branch", "open a pull request",
+"deliver" — and never "publish." So the word carries one meaning everywhere, and no
+per-mention qualifier is ever needed.
+
+Implementing this scope therefore includes a **wording-only** edit to the git-side
+invariants that vacates the word: INV-DELIVER-01 and INV-RUNTIME-01 (and the
+`runtime.excludes` list in `wrapper/manifest.yaml`, and acceptance criterion AC-16)
+change "publication"/"publish" to "push" / "open a pull request". This changes no
+behavior, version, or authority — git delivery still requires the same separate
+human actions; only the word changes. It is the one edit this scope makes outside
+`publication/`, and it is what lets the external surface own "publish" cleanly.
