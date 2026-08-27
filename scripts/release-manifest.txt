@@ -57,6 +57,7 @@ required wrapper/contracts/schemas/publication-thread-record.yaml
 # Guides and templates.
 required docs/getting-started.md
 required docs/planning.md
+required docs/publishing.md
 required docs/plan-review.md
 required docs/product-knowledge.md
 required docs/terminology.md
