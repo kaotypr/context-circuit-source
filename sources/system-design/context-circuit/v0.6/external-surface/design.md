@@ -223,6 +223,13 @@ This design does not authorize implementation, delivery, or publication by itsel
 - Every kind honors a **`language`** config (default `en`): `cc-publish` authors all
   external text in that language, whatever language the source plan is written in;
   workspace text is never changed.
+- Every kind honors optional **`instructions`** config — free-text guidance to the
+  publishing agent covering both *how* external text reads (tone, phrasing, term
+  handling) and *which optional provider fields to enrich* by estimation (e.g. a
+  time estimate per task, a target date range), written one-way as best-effort
+  estimates. Instructions guide wording and optional field values only; they never
+  override the self-contained rule (INV-EXTERNAL-03), expand `reads`, write back to
+  the workspace, change the core mapping, or relax any boundary.
 - The **`thread`** kind publishes a plan's open questions as a chat discussion — a
   **`[thread]`**-prefixed parent plus **one fully-described reply per question** —
   and is discussion-safe: on re-run it edits only its own messages and never a
