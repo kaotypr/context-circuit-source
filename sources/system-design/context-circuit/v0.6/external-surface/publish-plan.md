@@ -1,4 +1,4 @@
-# External-surface — the `publish-plan` kind
+# External-surface — the `plan` kind
 
 Continues from [design.md](./design.md); the config and record shapes it uses are
 in [configuration-and-records.md](./configuration-and-records.md). This file
@@ -7,10 +7,10 @@ tasks onto an external task tracker (ClickUp, Jira, GitHub, Notion, …).
 
 ## What it does
 
-On `/cc-publish-plan <plan-id>` (the `cc-publish-plan` adapter skill implementing
-kind `publish-plan`, against a configured publication such as `plans-clickup`), the
-adapter reads the plan and its tasks and creates — or, on re-run, updates — the
-matching work items in the external tracker. It is **one-way, non-authoritative,
+On `/cc-publish <plan-id>` (the `cc-publish` skill, publishing the `plan` kind
+against a configured publication such as `plans-clickup`), the skill reads the plan
+and its tasks and creates — or, on re-run, updates — the matching work items in the
+external tracker. It is **one-way, non-authoritative,
 self-contained, and idempotent**: `plan.yaml` stays the source of truth, published
 text reads as ordinary project work, and re-running reflects the current state onto
 the *same* external items rather than duplicating them.
@@ -37,7 +37,7 @@ tracker has:
 | **Task** | Subtask | Sub-task | sub-issue | sub-item |
 | Task `acceptance` + `verification` | checklist | description checklist | task-list | to-do checklist in the page |
 
-The provider column is open-ended: a tracker is a valid `publish-plan` provider
+The provider column is open-ended: a tracker is a valid `plan`-kind provider
 whenever it offers a first-class work item with a child level and a status. The plan
 maps to a first-class work item, not a container (a ClickUp List / Jira Epic) — that
 is what makes the mapping generalize.
@@ -102,8 +102,8 @@ title, so a human can map what went where:
 Status flows **out** of `plan.yaml` on publish — mapped through the config's
 `status:` map onto the target's discovered status set — and never back. The external
 item has its own status field, set at publish time; a human editing it in the
-tracker is cosmetic drift that never returns to the workspace (INV-PLAN-01). This is
-why the kind is `publish-plan`, not `sync-plan`: "sync" would promise a
+tracker is cosmetic drift that never returns to the workspace (INV-PLAN-01). The
+surface *publishes*; it does not *sync* — a two-way sync would promise a
 bidirectional relationship the design refuses.
 
 ## Idempotent re-run
@@ -141,20 +141,11 @@ absorbs its own constraints:
   statuses and maps the plan's draft/approved/done through the config's `status:`
   map. There is no universal status vocabulary to assume.
 
-## The "publish" wording guardrail
-
-`publish-plan` reuses the word "publish," which the v0.5 delivery boundary uses for
-**git** publication (push the branch, open the PR — a core-workflow action,
-INV-DELIVER-01 / INV-RUNTIME-01). The two are disambiguated by object: this kind
-publishes a *plan* to a tracker; delivery publishes a *branch / pull request* in git
-and never "publishes a plan." Every core-delivery mention stays qualified as *git*
-publication, so bare "publish" + "plan" unambiguously means this kind.
-
 ## Worked trace
 
 1. **Configure (first use).** User: *"set up publishing plans to our ClickUp
    Engineering list."* The adapter creates `publication/plans-clickup/` with a
-   `config.yaml` (`kind: publish-plan`, `provider: clickup`,
+   `config.yaml` (`kind: plan`, `provider: clickup`,
    `target_ref.list: Engineering`); the ClickUp token stays in the host / MCP layer.
 2. **Publish.** User: *"publish plan 0023 to ClickUp."* The adapter reads
    `plans/0023-.../` (declared `reads: [plans, tasks]`), creates one Task for the
