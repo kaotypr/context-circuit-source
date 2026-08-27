@@ -1,0 +1,13 @@
+schema_version: 1
+plan: 0012-scenario-library-and-host-matrix
+provider: github
+plan_item:
+  id: "84"
+  url: "https://github.com/kaotypr/context-circuit/issues/84"
+task_items:
+  - task: SCN-001
+    id: "84"
+    synced_digest: "sha256:7bce6d06d0bcdadf7869a884ec47dfaac2b6808ed272388774b9abe69af81959"
+  - task: SCN-002
+    id: "84"
+    synced_digest: "sha256:7bce6d06d0bcdadf7869a884ec47dfaac2b6808ed272388774b9abe69af81959"

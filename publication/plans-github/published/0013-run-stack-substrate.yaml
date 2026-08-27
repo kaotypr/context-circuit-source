@@ -1,0 +1,16 @@
+schema_version: 1
+plan: 0013-run-stack-substrate
+provider: github
+plan_item:
+  id: "85"
+  url: "https://github.com/kaotypr/context-circuit/issues/85"
+task_items:
+  - task: RSS-001
+    id: "85"
+    synced_digest: "sha256:deebb4c4df2849ee6bd9eacc94df3b64477c41c12bb2c40abeb645346188eab4"
+  - task: RSS-002
+    id: "85"
+    synced_digest: "sha256:deebb4c4df2849ee6bd9eacc94df3b64477c41c12bb2c40abeb645346188eab4"
+  - task: RSS-003
+    id: "85"
+    synced_digest: "sha256:deebb4c4df2849ee6bd9eacc94df3b64477c41c12bb2c40abeb645346188eab4"

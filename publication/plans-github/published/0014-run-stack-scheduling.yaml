@@ -1,0 +1,16 @@
+schema_version: 1
+plan: 0014-run-stack-scheduling
+provider: github
+plan_item:
+  id: "86"
+  url: "https://github.com/kaotypr/context-circuit/issues/86"
+task_items:
+  - task: RSC-001
+    id: "86"
+    synced_digest: "sha256:b9031dfdf42664db32fe3688ed9ae1640037bece3e350fe0ccb2faa68c1d28c5"
+  - task: RSC-002
+    id: "86"
+    synced_digest: "sha256:b9031dfdf42664db32fe3688ed9ae1640037bece3e350fe0ccb2faa68c1d28c5"
+  - task: RSC-003
+    id: "86"
+    synced_digest: "sha256:b9031dfdf42664db32fe3688ed9ae1640037bece3e350fe0ccb2faa68c1d28c5"
