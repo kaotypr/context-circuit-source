@@ -15,6 +15,7 @@ require_file "$artifact/AGENTS.md"
 require_file "$artifact/CLAUDE.md"
 require_file "$artifact/WORKFLOW.md"
 require_file "$artifact/README.md"
+require_file "$artifact/writer-brief.md"
 require_file "$artifact/.gitignore"
 require_file "$artifact/workspace.yaml"
 require_file "$artifact/wrapper/manifest.yaml"
@@ -22,7 +23,8 @@ require_file "$artifact/wrapper/runtime/engine.sh"
 require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local plan task execution worker-handoff \
-  verifier-result completion context-impact context-proposal context-index; do
+  verifier-result completion context-impact context-proposal context-index \
+  lease grounding-manifest; do
   require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
 done
 require_file "$artifact/docs/getting-started.md"

@@ -78,11 +78,15 @@ Repeat until no plan in the set is runnable:
       (`BASE_UNBUILDABLE`) or otherwise fails, the plan is **blocked**, not a worker
       failure: preserve its evidence, run no worker, and hold its descendants.
 
-   c. **One worker.** Launch exactly one worker (`agents/writer.md`) with the plan
-      snapshot and its assigned worktree(s). It implements every task in dependency
-      order, inside the assigned worktree and declared paths only, and commits each
-      repository. Record each commit with `worker-commit-record` and the handoff
-      with `worker-handoff-record`.
+   c. **One worker.** Assemble the writer brief with `writer-brief-assemble` (it
+      carries the repository-grounding directive discovered from the worktree; add
+      only a one-line task focus and deliver it verbatim — INV-GROUND-01/03), then
+      launch exactly one worker (`agents/writer.md`) with that brief and its
+      assigned worktree(s). It reads and honors the repository's own agent
+      guidance, implements every task in dependency order inside the assigned
+      worktree and declared paths only, and commits each repository. Record each
+      commit with `worker-commit-record` and the handoff with
+      `worker-handoff-record`.
 
    d. **One independent verifier.** After `verifier-prepare`, launch exactly one
       independent, read-only verifier (`agents/verifier.md`) over the latest commit

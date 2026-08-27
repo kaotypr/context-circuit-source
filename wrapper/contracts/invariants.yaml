@@ -221,6 +221,32 @@ invariants:
       predecessor is repaired after a dependent's base was built, the dependent's
       base is stale and is rebuilt from the predecessor's new tip before the
       dependent re-runs; a stale base never silently persists.
+  - id: INV-GROUND-01
+    rule: >
+      Before implementing, the writer reads and honors the target repository's own
+      agent guidance (AGENTS.md, CLAUDE.md, .cursor/rules, .github/copilot-
+      instructions.md, and .agents/skills/*/SKILL.md), discovered live from the
+      execution worktree by a deterministic runtime scan. The runtime emits data
+      (a grounding manifest recorded as execution evidence), never prompt text
+      (INV-RUNTIME-01). The repository's guidance is referenced, never captured
+      into Product Knowledge; there is no per-repo profile and no plan.yaml field.
+  - id: INV-GROUND-02
+    rule: >
+      Precedence: the writer brief's scope and safety rules are authoritative on
+      what and where a writer may change; the repository's own guidance is
+      authoritative on how to write code correctly there (conventions, patterns,
+      build, test) within that scope. Where they conflict on scope or safety the
+      writer stops and reports; the repository's guidance never overrides a
+      Context Circuit safety or scope rule.
+  - id: INV-GROUND-03
+    rule: >
+      The writer brief's fact-bearing sections are a fixed template
+      (wrapper/adapters/writer-brief.md) filled by deterministic slot
+      substitution from the grounding manifest and the plan; the coordinator
+      delivers the brief and authors only a one-line task focus, never the fact
+      sections. The repository-grounding section is required; a preflight refuses
+      to deliver a brief that omits or leaves it unfilled. Execution-environment
+      workarounds are eliminated by worktree hardening, never documented by hand.
   - id: INV-HOST-01
     rule: >
       Host identity, version, capability, permission mode, and provider status
@@ -251,6 +277,9 @@ owners:
   path_lease_records: wrapper/contracts/schemas/lease.yaml
   base_selection: wrapper/runtime/engine.sh
   run_stack_action: wrapper/adapters/WORKFLOW.md
+  repository_grounding: wrapper/runtime/engine.sh
+  grounding_manifest: wrapper/contracts/schemas/grounding-manifest.yaml
+  writer_brief: wrapper/adapters/writer-brief.md
   execution_records: wrapper/contracts/schemas/execution.yaml
   worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
   verifier_result: wrapper/contracts/schemas/verifier-result.yaml

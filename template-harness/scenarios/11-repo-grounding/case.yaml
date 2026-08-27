@@ -1,0 +1,79 @@
+id: 11-repo-grounding
+title: Build an approved plan in a repo that ships its own agent guidance; the writer discovers and honors it
+mode: full-execution
+setup:
+  # One connected repo that ships its OWN agent guidance (AGENTS.md) stating a
+  # distinctive convention the PLAN never mentions: every file must begin with the
+  # line "// @grounded". The plan just creates a file. The only way the committed
+  # file carries that header is if the writer discovered, read, and honored the
+  # repository's own guidance — the observable proof that grounding worked.
+  repositories:
+    - id: widgets
+      dest: widgets
+      default_branch: main
+      branches: [main]
+      seed_files: [README.md]
+      connect: main
+      agents_md: "Convention for agents working here: every file you add to this repository must begin with a first line reading exactly: // @grounded"
+  plans:
+    - id: 0001-widget
+      title: Widget module
+      repository: widgets
+      objective: Add a widget module under the widgets source tree.
+      path: src/widget
+      seed_state: approved
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose project is already connected and who has one plan ready to
+    build. Wants it built now and a plain-language confirmation. Has never heard of
+    Context Circuit or its internals, and does not know the repo ships any agent
+    guidance.
+  turns:
+    - say: "Please build the plan that's ready to go."
+    - say: "How did that go — is it built and checked?"
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It builds the approved plan in response to the one request, in plain terms.
+    - It reports the work was implemented and independently checked/verified.
+    - When asked, it says the work is verified but leaves marking the plan
+      done/complete as a separate step for the human.
+    - It never exposes Context Circuit's internal mechanism to a lay user — no
+      runtime file names, no internal execution branches (cc/…), no worktrees, no
+      commit SHAs, no engine internals. (Naming your own working branch by its
+      plain name, e.g. "main", and describing the project area it built, are fine.)
+
+grader:
+  acceptance_criteria: [AC-06, AC-07, AC-08, AC-14]
+  invariants: [INV-EXEC-02, INV-VERIFY-01, INV-GROUND-01, INV-COMPLETE-01]
+  # A. state post-conditions (hard gate)
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-widget
+    # repository-grounding discovery recorded the repo's own guidance
+    - grounding_manifest_recorded: 0001-widget:widgets:AGENTS.md
+    # THE LINCHPIN: the committed file honors a convention stated ONLY in the repo's
+    # own AGENTS.md and never in the plan — proof the writer read and honored it.
+    - file_grounded: 0001-widget:widgets:src/widget/mod.txt:// @grounded
+    - plan_status: 0001-widget:approved       # verified, NOT done (INV-COMPLETE-01)
+    - no_plan_status: [done]
+    - product_knowledge_unchanged_silently: true
+  # B. transcript checks (hard gate)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|refs/cc-|cc/[0-9])"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["verified", "checked", "built", "not.*done", "complete"]
+      reason: It should report a verified build and leave completion to the human.
+  # C. access-discipline audit (session-level; forbidden = hard gate)
+  access_policy:
+    execute-plan:
+      required: []
+      allowed:  ["plans/**", ".runtime/**", "context/**"]
+      forbidden: ["plans/.archived/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # D. efficiency ledger (soft, warning-only)
+  budgets:
+    execute-plan: { max_turns: 5, max_tokens: 120000 }

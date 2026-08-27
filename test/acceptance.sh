@@ -15,6 +15,7 @@ run_suite test/plans/test-plans.sh
 run_suite test/execution/test-execution.sh
 run_suite test/concurrency/test-leases.sh
 run_suite test/run-stack/test-run-stack.sh
+run_suite test/grounding/test-grounding.sh
 run_suite test/completion/test-completion.sh
 run_suite test/archive/test-archive.sh
 run_suite test/delivery/test-delivery.sh
