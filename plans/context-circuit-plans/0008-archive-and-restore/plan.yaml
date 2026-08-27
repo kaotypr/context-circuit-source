@@ -1,0 +1,71 @@
+schema_version: 2
+plan: 0008-archive-and-restore
+title: Archive and restore
+status: done
+objective: >-
+  Let a human move a plan out of the active area and back with an exact,
+  status-preserving move, so archived plans leave normal context without any
+  completion, delivery, cleanup, or deletion implied.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the archive/restore runtime moves and the cc-archive skill.
+plan_dependencies:
+  - id: 0004-planning
+    reason: There must be plans and an active index to archive and restore.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: INV-ARCHIVE-01/02 apply here.
+  - id: conventions
+    path: context/CONVENTIONS.md
+    reason: Active index and archive-directory conventions.
+context_grounding:
+  summary: >-
+    Archiving moves plans/<id>/ to plans/archive/<id>/, drops the active index
+    row, and preserves files, status, and evidence; restore is the only way back.
+  constraints:
+    - Archiving performs no status or execution validation (INV-ARCHIVE-01).
+    - The normal agent never reads or traverses plans/archive/ (INV-ARCHIVE-02).
+    - Archive implies no completion, delivery, cleanup, or deletion.
+  decisions:
+    - A short-lived plan-organization lock guards the move, distinct from execution.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: ARC-001
+    title: Exact archive and restore moves
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+    depends_on: []
+    changes:
+      - Move plans/<id>/ to plans/archive/<id>/ and remove the active index row.
+      - Restore a named archived plan back to the active area before normal reads.
+      - Preserve plan files, status, and runtime evidence across the move.
+    acceptance:
+      - id: ARC-AC-01
+        statement: Archiving preserves status and evidence and changes no lifecycle state.
+      - id: ARC-AC-02
+        statement: Only an explicit restore returns an archived plan to the active area.
+    verification:
+      - id: ARC-VT-01
+        command: sh test/archive/test-archive.sh
+  - id: ARC-002
+    title: Author the cc-archive skill
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-archive/SKILL.md
+    depends_on: [ARC-001]
+    changes:
+      - Map "archive" and "restore" language to the exact runtime moves.
+    acceptance:
+      - id: ARC-AC-03
+        statement: The skill never traverses the archive during normal orientation.
+    verification:
+      - id: ARC-VT-02
+        command: sh test/archive/test-archive.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

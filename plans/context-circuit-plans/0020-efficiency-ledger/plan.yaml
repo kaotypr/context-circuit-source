@@ -1,0 +1,61 @@
+schema_version: 2
+plan: 0020-efficiency-ledger
+title: "Harness efficiency ledger (dimension D)"
+status: done
+objective: >-
+  Make the harness efficiency ledger real: emit per-action usage telemetry from
+  the runner's own per-turn result, define the budget units, and have the grader
+  compare observed usage to each case's budgets - still soft and warning-only.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the harness telemetry, budget units, and grader comparison.
+plan_dependencies:
+  - id: 0011-human-simulated-harness
+    reason: Extends the existing runner telemetry and grader dimension D.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: Dimension D is keyed to invariants; it adds no product gate.
+  - id: architecture
+    path: context/ARCHITECTURE.md
+    reason: The harness is source-only tooling that observes the product.
+context_grounding:
+  summary: >-
+    The driver derives a per-action ledger from each coordinator turn's result;
+    the grader reports WITHIN/OVER against each case's budgets, degrading to
+    unavailable when no ledger exists; the verdict is never changed.
+  constraints:
+    - Source-only maintainer tooling; nothing ships and no product surface changes.
+    - Dimension D stays soft and warning-only; A/B/C-forbidden remain the hard gates.
+    - context_peak is tracked and reported but is a diagnostic, never a budget.
+  decisions:
+    - Recalibrate case budgets from measured green runs with headroom.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: EFL-001
+    title: Telemetry, budget units, grader compare, and recalibration
+    repositories: [context-circuit-source]
+    paths:
+      - template-harness/human/run-scenario.sh
+      - template-harness/human/grade.sh
+      - template-harness/scenarios
+    depends_on: []
+    changes:
+      - Emit the extended per-action telemetry (turns, tokens, peak, cost).
+      - Define budget units and the optional max_agent_turns and max_cost_usd fields.
+      - Compare observed usage to budgets per action, reporting WITHIN/OVER.
+      - Recalibrate the affected case budgets from measured runs with headroom.
+    acceptance:
+      - id: EFL-AC-01
+        statement: The ledger reports per-action usage and grader dimension D stays soft.
+      - id: EFL-AC-02
+        statement: A run with no telemetry degrades dimension D to unavailable, not a failure.
+    verification:
+      - id: EFL-VT-01
+        command: sh template-harness/human/run-scenario.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
