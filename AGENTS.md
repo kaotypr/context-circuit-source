@@ -2,10 +2,12 @@
 
 This checkout is context-circuit-source, the maintainer source repository for
 Context Circuit. It is not context-circuit-template and not an instantiated
-universal project workspace. The active source specification is
-`sources/system-design/context-circuit/v0.5/core/design.md`; do not turn it into a
-canonical workspace plan or restore the obsolete Context Circuit lifecycle,
-routing model, or legacy skill behavior.
+universal project workspace. The source is not bound to a version: it holds the
+current design and may lead the version last published to
+context-circuit-template. The active specification is the maintainer design set
+under `sources/system-design/context-circuit/`; do not turn it into a canonical
+workspace plan or restore an obsolete Context Circuit lifecycle, routing model,
+or legacy skill behavior.
 
 The shipped product contract is under `wrapper/`; the mutable blank seed is
 under `template/`. Product behavior has one owner per rule: use the owner map
