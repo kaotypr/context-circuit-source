@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0011-human-simulated-harness
+provider: clickup
+plan_item:
+  id: "86eyrr05w"
+  url: "https://app.clickup.com/t/86eyrr05w"
+task_items:
+  - task: HRN-001
+    id: "86eyrr1cu"
+    url: "https://app.clickup.com/t/86eyrr1cu"
+    synced_digest: "sha256:21dac90baa822b673de5043705d6c127b790271619e05846b744842479fc37ac"
+  - task: HRN-002
+    id: "86eyrr1er"
+    url: "https://app.clickup.com/t/86eyrr1er"
+    synced_digest: "sha256:ff0c2d735493babe63492faeea4f9640627f37918205353c78207cf92efc680a"
+  - task: HRN-003
+    id: "86eyrr1hw"
+    url: "https://app.clickup.com/t/86eyrr1hw"
+    synced_digest: "sha256:4ca3d52ba7bf85faee6a3da63b42feec3ddd74d8f278b6283d27cc0e79ee649f"

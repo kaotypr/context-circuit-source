@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0006-verification-and-repair
+provider: clickup
+plan_item:
+  id: "86eyrr04j"
+  url: "https://app.clickup.com/t/86eyrr04j"
+task_items:
+  - task: VER-001
+    id: "86eyrr0ex"
+    url: "https://app.clickup.com/t/86eyrr0ex"
+    synced_digest: "sha256:bef81ef70f04c22f4f0a23145e12afb08d83a2fab14236747004ebcff6824b22"
+  - task: VER-002
+    id: "86eyrr0fd"
+    url: "https://app.clickup.com/t/86eyrr0fd"
+    synced_digest: "sha256:580ef88d287afd1bad1069b67af82cdd222638ab969566bb4486ff0f0c33e33a"
+  - task: VER-003
+    id: "86eyrr0fn"
+    url: "https://app.clickup.com/t/86eyrr0fn"
+    synced_digest: "sha256:0c9a089815e1e37070e8a48c5a5f472d0c4b1249985f5f4e9fc3e4f45b149868"

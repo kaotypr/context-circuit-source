@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0004-planning
+provider: clickup
+plan_item:
+  id: "86eyrr03x"
+  url: "https://app.clickup.com/t/86eyrr03x"
+task_items:
+  - task: PLN-001
+    id: "86eyrr0d7"
+    url: "https://app.clickup.com/t/86eyrr0d7"
+    synced_digest: "sha256:d99490c34502f003dc4248ad1e10932e361896fb4c225a9327e78b04a0f02926"
+  - task: PLN-002
+    id: "86eyrr0dh"
+    url: "https://app.clickup.com/t/86eyrr0dh"
+    synced_digest: "sha256:1859f7009f7e4571a58234419c185516431f355dae307d66b7af3820ba9ece0c"
+  - task: PLN-003
+    id: "86eyrr0dn"
+    url: "https://app.clickup.com/t/86eyrr0dn"
+    synced_digest: "sha256:f7908675f93249b9d4f524b13469fa7853267d43b9be2a4ea49bfe4dbb4fee99"

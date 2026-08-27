@@ -1,0 +1,35 @@
+schema_version: 1
+publication: plans-clickup
+kind: plan
+provider: clickup
+direction: export
+trigger: manual
+instructions: >-
+  Publish the 20 maintainer implementation plans under an existing ClickUp story
+  as a dated 4-week work schedule. Author in English (the source plan language),
+  plain and self-contained per INV-EXTERNAL-03: no workspace paths, file names,
+  or internal AC-/VR- ids in external text. Each plan becomes a subtask of the
+  story; each plan's tasks become nested subtasks; acceptance is a markdown
+  checklist in the subtask description. Enrich each plan (best-effort, one-way):
+  native Dates (start_date/due_date) and native Time estimate. Schedule model:
+  a single-track workday calendar starting 2026-08-17, 8 hours per workday,
+  weekends skipped, effort complexity-weighted across plans and summing to 20
+  workdays (160 hours) so the span is exactly four weeks (2026-08-17 to
+  2026-09-11); Time estimate is workdays x 8h. Plan dependencies and task
+  depends_on are realized as ClickUp "waiting on" links. Status is one-way todo.
+reads:
+  - plans
+  - tasks
+target_ref:
+  story_task_id: "86eyrqxvd"
+  list_id: "901820749886"
+  space_id: "901810444070"
+  url: "https://app.clickup.com/t/9018427820/86eyrqxvd"
+mapping:
+  plan_to_work_item: clickup-subtask-of-story
+  task_to_child_item: clickup-nested-subtask
+  acceptance_as: description-checklist
+  status:
+    draft: todo
+    approved: todo
+    done: todo
