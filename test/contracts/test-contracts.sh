@@ -53,12 +53,26 @@ not_contains "$W/runtime/engine.sh" "cc_route"
 not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
 
 # --- v0.5 skills present; old-design skills absent ---
-for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-verify cc-complete cc-archive cc-deliver; do
+for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver; do
 	require_file "$ROOT/.agents/skills/$sk/SKILL.md"
 done
 for old in cc-entry cc-gates cc-next cc-upgrade; do
 	test ! -e "$ROOT/.agents/skills/$old" || fail "old skill remains: $old"
 done
+
+# --- cc-system-design carries the authoring rubric and adds no runtime surface ---
+sd="$ROOT/.agents/skills/cc-system-design/SKILL.md"
+contains "$sd" "sources/system-design/"
+contains "$sd" "three-tier"
+contains "$sd" "design.md"
+contains "$sd" "by concern"
+contains "$sd" "never by repository"
+contains "$sd" "Never approve"
+# system-design is authoring-only: no runtime schema, no invariant, no WORKFLOW action
+test ! -e "$W/contracts/schemas/system-design.yaml" || fail "system-design must add no runtime schema"
+test ! -e "$W/contracts/schemas/design-acceptance.yaml" || fail "system-design must add no acceptance schema"
+not_contains "$inv" "INV-DESIGN"
+not_contains "$W/adapters/WORKFLOW.md" "design the system"
 
 # --- adapters and roles present; role aliases removed ---
 for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md writer-brief.md; do
