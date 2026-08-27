@@ -391,11 +391,43 @@ else
 fi
 
 # --- D. efficiency ledger (soft, warning-only) ---------------------------------
+# Per-action ledger (v0.6 template-harness): action, conversational turns,
+# agent-loop turns, generated output tokens, context peak, cost — compared to the
+# case `budgets` and reported WITHIN/OVER. NEVER changes the verdict (soft).
 printf '\n--- D. efficiency ledger (soft) ---\n'
+# budget_field ACTION FIELD -> the numeric value of a budget field (inline flow map)
+budget_field() {
+	awk -v act="$1" -v f="$2" '
+		/^  budgets:/{b=1;next} b&&/^  [A-Za-z]/&&$0 !~ /^    /{b=0}
+		b && $0 ~ ("^    " act ":") {
+			if (match($0, f "[[:space:]]*:[[:space:]]*[0-9.]+")) {
+				s=substr($0, RSTART, RLENGTH); sub(/^.*:[[:space:]]*/, "", s); print s; exit
+			}
+		}
+	' "$GBLOCK"
+}
+within_int() { [ "${1:-0}" -le "${2:-0}" ] 2>/dev/null && printf WITHIN || printf OVER; }
+within_num() { awk -v o="${1:-0}" -v b="${2:-0}" 'BEGIN{print (o+0<=b+0)?"WITHIN":"OVER"}'; }
+# budget action keys; if a ledger row's action does not match one but the case has
+# exactly one budgeted action, compare against that (tolerates action-label drift).
+BUDGET_ACTIONS=$(awk '/^  budgets:/{b=1;next} b&&/^  [A-Za-z]/&&$0 !~ /^    /{b=0} b&&/^    [A-Za-z0-9_-]+:/{sub(/^    /,"");sub(/:.*/,"");print}' "$GBLOCK")
+N_BUDGET=$(printf '%s\n' "$BUDGET_ACTIONS" | sed '/^$/d' | wc -l | tr -d ' ')
 if [ -f "$TELEMETRY" ] && [ -s "$TELEMETRY" ]; then
-	while IFS='	' read -r act turns tokens; do
+	while IFS='	' read -r act conv agent out cp cost; do
 		[ -n "$act" ] || continue
-		info "budget check $act: turns=$turns tokens=$tokens (compare to case budgets; warnings only)"
+		bact="$act"
+		if [ -z "$(budget_field "$bact" max_tokens)" ] && [ "$N_BUDGET" -eq 1 ]; then
+			bact=$(printf '%s\n' "$BUDGET_ACTIONS" | sed '/^$/d' | head -1)
+		fi
+		mtok=$(budget_field "$bact" max_tokens); mturn=$(budget_field "$bact" max_turns)
+		maturn=$(budget_field "$bact" max_agent_turns); mcost=$(budget_field "$bact" max_cost_usd)
+		rep="$act:"
+		if [ -n "$mtok" ]; then rep="$rep output ${out:-0}/$mtok $(within_int "$out" "$mtok") ·"; else rep="$rep output ${out:-0} ·"; fi
+		[ -n "$mturn" ] && rep="$rep conv-turns ${conv:-0}/$mturn $(within_int "$conv" "$mturn") ·"
+		[ -n "$maturn" ] && rep="$rep agent-turns ${agent:-0}/$maturn $(within_int "$agent" "$maturn") ·"
+		[ -n "$mcost" ] && rep="$rep cost \$${cost:-0}/\$$mcost $(within_num "$cost" "$mcost") ·"
+		rep="$rep context-peak ${cp:-0}"
+		info "$rep"
 	done < "$TELEMETRY"
 else
 	info "no telemetry on host '$HOST' — dimension D unavailable"

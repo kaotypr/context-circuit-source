@@ -74,6 +74,8 @@ grader:
       required: []
       allowed:  ["plans/**", ".runtime/**", "context/**"]
       forbidden: ["plans/.archived/**", "wrapper/runtime/engine.sh", "sources/**"]
-  # D. efficiency ledger (soft, warning-only)
+  # D. efficiency ledger (soft, warning-only) — recalibrated from measured runs.
+  # max_tokens = generated output tokens; max_turns = conversational turns;
+  # max_agent_turns = agent-loop turns; max_cost_usd = dollars. (v0.6 template-harness)
   budgets:
-    execute-plan: { max_turns: 5, max_tokens: 120000 }
+    execute-plan: { max_turns: 3, max_tokens: 20000, max_agent_turns: 45, max_cost_usd: 5 }
