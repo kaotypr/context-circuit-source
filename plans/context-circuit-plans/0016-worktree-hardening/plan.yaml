@@ -1,0 +1,75 @@
+schema_version: 2
+plan: 0016-worktree-hardening
+title: Worktree hardening and repository-friction feedback
+status: done
+objective: >-
+  Harden the execution worktree so environment workarounds become unnecessary,
+  set the manifest environment state, and route "guidance did not cover X" back
+  as a proposal on the repository's own agent docs.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts worktree hardening and the friction feedback loop.
+plan_dependencies:
+  - id: 0015-repository-grounding
+    reason: Writes the manifest environment field and extends the worker contract.
+  - id: 0007-completion-and-reconciliation
+    reason: Friction becomes a proposal through the reconciliation flow.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: Extends INV-GROUND-01/03 (environment state, hand-authored workarounds removed).
+  - id: design-deltas
+    path: context/DESIGN-DELTAS.md
+    reason: Worktree hardening phasing and the kind-A/B/C model.
+context_grounding:
+  summary: >-
+    Toolchain detection and dependency provisioning make the isolated worktree
+    ready without hand-written workarounds; unresolved gaps become a proposal on
+    the repository's own docs, not Product Knowledge.
+  constraints:
+    - Environment workarounds are eliminated by hardening, never documented by hand (INV-GROUND-03).
+    - The runtime sets the manifest environment field (ready | no-toolchain).
+    - Repository friction routes to the repo's own agent docs, not core context.
+  decisions:
+    - Hardening is the heaviest piece and lands after discovery + brief + contract.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: WTH-001
+    title: Toolchain detection, provisioning, and environment state
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+    depends_on: []
+    changes:
+      - Detect toolchain from lockfiles/manifests and provision dependencies.
+      - Handle commit hooks in the isolated context; set the manifest environment.
+    acceptance:
+      - id: WTH-AC-01
+        statement: A hardened worktree needs no hand-authored environment workaround.
+      - id: WTH-AC-02
+        statement: The manifest environment field reflects ready or no-toolchain honestly.
+    verification:
+      - id: WTH-VT-01
+        command: sh test/grounding/test-grounding.sh
+  - id: WTH-002
+    title: Repository-friction feedback loop
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/schemas/worker-handoff.yaml
+      - wrapper/runtime/engine.sh
+    depends_on: [WTH-001]
+    changes:
+      - Add a repository_friction field to the worker handoff.
+      - Route friction to a proposal on the repository's own agent docs.
+    acceptance:
+      - id: WTH-AC-03
+        statement: Uncovered guidance becomes a proposal on the repo docs, not core context.
+    verification:
+      - id: WTH-VT-02
+        command: sh test/grounding/test-grounding.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

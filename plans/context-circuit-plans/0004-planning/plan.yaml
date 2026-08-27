@@ -1,0 +1,98 @@
+schema_version: 2
+plan: 0004-planning
+title: Grounded planning
+status: done
+objective: >-
+  Turn a request into a readable, grounded plan with stable ids, explicit
+  repository and path scope, and per-task acceptance and verification, so a human
+  can review intent before anything executes.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the plan contract, runtime plan operations, and the cc-plan skill.
+plan_dependencies:
+  - id: 0002-workspace-repository-model
+    reason: Tasks map to declared repositories bound by the workspace model.
+  - id: 0003-context-lifecycle
+    reason: Plans are grounded against accepted Product Knowledge.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: INV-PLAN-01..04 are owned by the plan schema and skill.
+  - id: conventions
+    path: context/CONVENTIONS.md
+    reason: Plan id and task-scope conventions.
+  - id: decisions
+    path: context/DECISIONS.md
+    reason: Human-owned plan status vs runtime execution status.
+context_grounding:
+  summary: >-
+    plan.yaml owns human status and identifiers; PLAN.md is the readable half;
+    task status is a synchronized projection, never a second authority.
+  constraints:
+    - Ids are NNNN-<kebab-slug>, next after the highest ever allocated (INV-PLAN-03).
+    - Every task names repositories and bounded paths or repo-wide scope (INV-PLAN-02).
+    - Missing/contradictory info becomes an open question, never an invention (INV-PLAN-04).
+  decisions:
+    - Creating or reviewing a plan never approves or executes it.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: PLN-001
+    title: Define the plan and task schemas
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/task.yaml
+      - docs/templates/plan.md
+      - docs/templates/task.md
+    depends_on: []
+    changes:
+      - Author plan.yaml (schema_version 1) with repositories, grounding, tasks.
+      - Author task.yaml as the synchronized projection, not a second lifecycle.
+      - Ship readable PLAN.md and per-task templates.
+    acceptance:
+      - id: PLN-AC-01
+        statement: plan.yaml is canonical for id and status; task status is a projection.
+      - id: PLN-AC-02
+        statement: Acceptance and verification use distinct identifiers per task.
+    verification:
+      - id: PLN-VT-01
+        command: sh test/plans/test-plans.sh
+  - id: PLN-002
+    title: Implement plan id allocation, validation, and the active index
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+    depends_on: [PLN-001]
+    changes:
+      - Implement plan-allocate-id (next after highest, never reused).
+      - Implement plan-validate (structure, repo mapping, task deps).
+      - Maintain plans/INDEX.md active rows deterministically.
+    acceptance:
+      - id: PLN-AC-03
+        statement: An allocated id is unique for the workspace lifetime and never reused.
+      - id: PLN-AC-04
+        statement: A task naming an undeclared repository or unknown dependency is rejected.
+    verification:
+      - id: PLN-VT-02
+        command: sh test/plans/test-plans.sh
+  - id: PLN-003
+    title: Author the cc-plan create and review skill
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-plan/SKILL.md
+    depends_on: [PLN-002]
+    changes:
+      - Author the create procedure (retrieve grounding, expand request, validate).
+      - Author the review procedure (non-executing, status-preserving discussion).
+    acceptance:
+      - id: PLN-AC-05
+        statement: Review edits a draft without changing status, approving, or executing.
+    verification:
+      - id: PLN-VT-03
+        command: sh test/plans/test-plans.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
