@@ -10,7 +10,7 @@ plans/
 │   ├── PLAN.md           # readable plan
 │   ├── plan.yaml         # canonical status, ids, repository map, tasks
 │   └── tasks/            # per-task detail files
-└── .archived/<plan-id>/  # archived plans; never normal agent context
+└── archive/<plan-id>/    # archived plans; never normal agent context
 ```
 
 - Plan IDs are stable and take the form `NNNN-<kebab-slug>` (for example

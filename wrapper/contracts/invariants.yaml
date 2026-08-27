@@ -119,13 +119,13 @@ invariants:
       request) and starts Product Knowledge reconciliation.
   - id: INV-ARCHIVE-01
     rule: >
-      Archiving moves plans/<id>/ to plans/.archived/<id>/, removes the row from
+      Archiving moves plans/<id>/ to plans/archive/<id>/, removes the row from
       plans/INDEX.md, and preserves plan files, status, and runtime evidence. It
       performs no plan-status or execution validation and implies no completion,
       delivery, cleanup, or deletion.
   - id: INV-ARCHIVE-02
     rule: >
-      The normal agent must not read or traverse plans/.archived/. An explicit
+      The normal agent must not read or traverse plans/archive/. An explicit
       restore is the only operation that returns a named archived plan to the
       active plan area before normal reading resumes.
   - id: INV-REPO-01

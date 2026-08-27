@@ -60,7 +60,7 @@ grader:
       required: []
       allowed:  ["plans/**"]
       forbidden:
-        - "plans/.archived/**"
+        - "plans/archive/**"
         - "wrapper/runtime/engine.sh"
         - "sources/**"
         - "wrapper/contracts/**"

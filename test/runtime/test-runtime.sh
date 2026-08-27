@@ -109,14 +109,14 @@ not_contains "$ws/context/PROJECT.md" "web"
 # --- archive preserves files/status, removes index; no status validation ---
 prevstatus=$(cc_plan_status "$ws" 0003-gamma)
 cc_plan_archive "$ws" 0003-gamma >/dev/null
-require_dir "$ws/plans/.archived/0003-gamma"
-require_file "$ws/plans/.archived/0003-gamma/plan.yaml"
+require_dir "$ws/plans/archive/0003-gamma"
+require_file "$ws/plans/archive/0003-gamma/plan.yaml"
 not_contains "$ws/plans/INDEX.md" "| 0003-gamma |"
-assert_eq "$prevstatus" "$(cc_scalar "$ws/plans/.archived/0003-gamma/plan.yaml" status)"
+assert_eq "$prevstatus" "$(cc_scalar "$ws/plans/archive/0003-gamma/plan.yaml" status)"
 
 # --- archive collision leaves state unchanged ---
 cc_fx_plan "$ws" 0004-delta "Delta" "web"
-mkdir -p "$ws/plans/.archived/0004-delta"
+mkdir -p "$ws/plans/archive/0004-delta"
 expect_failure cc_plan_archive "$ws" 0004-delta
 require_dir "$ws/plans/0004-delta"
 
