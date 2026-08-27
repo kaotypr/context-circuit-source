@@ -168,6 +168,8 @@ so no qualifier is needed (see [contracts.md](./contracts.md)).
   thread (Slack first); a `[thread]`-prefixed parent plus one fully-described reply
   per question; discussion-safe idempotency (edit only its own messages, never human
   replies); its own record shape.
+- [usage.md](./usage.md) — how a template/wrapper user configures and publishes in
+  plain language (the prompts), create-on-first-use; ships in getting-started docs.
 - [contracts.md](./contracts.md) — proposed invariants, owner-map additions, the
   publish/git-delivery vocabulary split, and why no core contract bumps.
 
