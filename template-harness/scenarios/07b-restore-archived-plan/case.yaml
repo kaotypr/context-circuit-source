@@ -44,7 +44,7 @@ grader:
   post_conditions:
     - repositories_registered: 1
     - plan_status: 0001-md-export:approved     # restored active with status preserved
-    - plan_not_archived: 0001-md-export          # moved back out of plans/.archived/
+    - plan_not_archived: 0001-md-export          # moved back out of plans/archive/
     - plan_indexed: 0001-md-export               # active index row restored
     - no_execution_records: true
     - product_knowledge_unchanged_silently: true
@@ -56,7 +56,7 @@ grader:
       reason: It should restore the named plan to the active area.
   # C. access-discipline audit (session-level; forbidden = hard gate)
   #    Restore is the ONE operation that may act on the archived plan; it MOVES it
-  #    via the runtime rather than READing it, so reading .archived is still forbidden.
+  #    via the runtime rather than READing it, so reading archive is still forbidden.
   access_policy:
     restore:
       required: []

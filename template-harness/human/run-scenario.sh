@@ -164,7 +164,7 @@ seed_plan_state() {
 		cc_plan_approve "$WORKSPACE" "$sps_pid" >/dev/null || { printf 'FAIL: seed approve %s\n' "$sps_pid" >&2; exit 1; }
 		[ "$sps_state" = "approved" ] && exit 0
 		# archived: approve then archive, so a restore case starts from an approved
-		# plan sitting in plans/.archived/ (status must survive the restore).
+		# plan sitting in plans/archive/ (status must survive the restore).
 		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
 		case "$sps_state" in verified|verified-after-repair|worker-committed) : ;; *) exit 0 ;; esac
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')

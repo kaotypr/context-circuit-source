@@ -11,7 +11,7 @@ provenance for accepted sources in `context/sources.yaml`.
 
 The structure below is an ergonomic convention for humans. It is not a contract:
 the agent does not infer status, ordering, or authority from folder or file
-names. A file under `.archived/` is not auto-ignored, and a file under
+names. A file under `archive/` is not auto-ignored, and a file under
 `system-design/` is not auto-loaded — you still name the file or cite it in a
 plan.
 
@@ -29,7 +29,7 @@ sources/
 ├── decisions/               # short decision records: chose X over Y because…
 ├── data-samples/            # sample payloads, CSV rows, fixtures-as-evidence
 ├── reports/                 # generated analyses, audits, review outputs
-└── .archived/               # superseded sources, kept for provenance
+└── archive/                 # superseded sources, kept for provenance
 ```
 
 - `raw/` holds originals you never edit. `system-design/` holds design you
@@ -48,8 +48,8 @@ sources/
 - **Numeric prefixes** for reading order within a set: `01-overview.md`,
   `02-data-model.md`.
 - **Date prefixes** for time-ordered inbox items: `2026-08-20-prd.pdf`.
-- **`.archived/`** mirrors `plans/.archived/`: dot-prefixed, superseded but kept
-  for provenance. When archiving, **preserve the original subpath** so
+- **`archive/`** mirrors `plans/archive/`: superseded but kept for provenance.
+  When archiving, **preserve the original subpath** so
   provenance stays legible — for example a retired
   `system-design/billing/v0.1/` moves to
-  `.archived/system-design/billing/v0.1/`.
+  `archive/system-design/billing/v0.1/`.

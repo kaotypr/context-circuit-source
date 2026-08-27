@@ -27,8 +27,10 @@ required context/domains/README.md
 required context/roles/README.md
 required context/proposals/README.md
 required sources/README.md
+required sources/archive/README.md
 required plans/INDEX.md
 required plans/README.md
+required plans/archive/README.md
 
 # Runtime, contracts, and schemas.
 required wrapper/manifest.yaml

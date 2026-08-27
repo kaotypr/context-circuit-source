@@ -13,7 +13,7 @@ catalog. Report the workspace name and purpose, registered repository keys and
 whether their local bindings are available, important Product Knowledge areas,
 the active plans in `plans/INDEX.md`, and current execution state only when
 asked. State uncertainty instead of inventing project facts. Do not read
-`plans/.archived/`. Recommending a next action is not authorization to take it.
+`plans/archive/`. Recommending a next action is not authorization to take it.
 
 ## Initialize
 

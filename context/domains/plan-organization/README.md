@@ -34,20 +34,20 @@ the `cc-archive` skill.
 
 ## Scope
 
-Inside: the `plans/<id>/` ↔ `plans/.archived/<id>/` move under a short
+Inside: the `plans/<id>/` ↔ `plans/archive/<id>/` move under a short
 organization lock, resolution by plan id only, active-index add/drop, and the
-rule that the normal agent never traverses `plans/.archived/`.
+rule that the normal agent never traverses `plans/archive/`.
 
 Outside: completion, delivery, execution cleanup, and any status/verification
 validation.
 
 ## Behavior
 
-Archiving moves `plans/<id>/` to `plans/.archived/<id>/`, removes the row from
+Archiving moves `plans/<id>/` to `plans/archive/<id>/`, removes the row from
 `plans/INDEX.md`, and preserves plan files, status, and runtime evidence. It
 performs no plan-status or execution validation and implies no completion,
 delivery, cleanup, or deletion (INV-ARCHIVE-01). The normal agent must not read
-or traverse `plans/.archived/`; an explicit restore is the only operation that
+or traverse `plans/archive/`; an explicit restore is the only operation that
 returns a named archived plan to the active plan area before normal reading
 resumes (INV-ARCHIVE-02).
 
@@ -63,7 +63,7 @@ from its immutable snapshot.
 ## Interfaces
 
 - Human requests: "Archive plan `<id>`", "Restore plan `<id>`"
-- Locations: `plans/<id>/`, `plans/.archived/<id>/`, `plans/INDEX.md`
+- Locations: `plans/<id>/`, `plans/archive/<id>/`, `plans/INDEX.md`
 
 ## Constraints and edge cases
 
@@ -90,3 +90,5 @@ scanned.
 ## Acceptance notes
 
 Accepted 2026-08-24 from proposal `0014-domain-plan-organization`.
+Updated 2026-08-27 by explicit maintainer request to use the visible
+`plans/archive/` location.

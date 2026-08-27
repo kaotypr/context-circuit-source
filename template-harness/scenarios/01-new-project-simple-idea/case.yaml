@@ -65,7 +65,7 @@ grader:
       required: [workspace.yaml, context/INDEX.md]
       allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md"]
       forbidden:
-        - "plans/.archived/**"             # archived exclusion
+        - "plans/archive/**"               # archived exclusion
         - "wrapper/runtime/engine.sh"      # never load the runtime as a substitute
         - "sources/**"                     # passive unless explicitly named (INV-SEC-02)
         - "wrapper/contracts/**"           # do not re-read all contracts to orient
@@ -75,7 +75,7 @@ grader:
       # permitted via context/**.
       required: [context/INDEX.md]
       allowed:  ["context/**"]
-      forbidden: ["plans/.archived/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
   budgets:
     orient:      { max_turns: 2, max_tokens: 8000 }
