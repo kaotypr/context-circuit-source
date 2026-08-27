@@ -52,6 +52,7 @@ required wrapper/contracts/schemas/lease.yaml
 required wrapper/contracts/schemas/grounding-manifest.yaml
 required wrapper/contracts/schemas/publication-config.yaml
 required wrapper/contracts/schemas/publication-record.yaml
+required wrapper/contracts/schemas/publication-thread-record.yaml
 
 # Guides and templates.
 required docs/getting-started.md

@@ -1,15 +1,16 @@
 ---
 name: cc-publish
-description: Publish Context Circuit data to an external system (ClickUp, Jira, GitHub, Notion, …) as self-contained, one-way, idempotent records. A manually-triggered publication, orthogonal to the core workflow — never a plan/approve/execute/verify/deliver step, and it never changes plan status. The first kind is publishing a plan and its tasks.
+description: Publish Context Circuit data to an external system (ClickUp, Jira, GitHub, Notion, Slack, …) as self-contained, one-way, idempotent records. A manually-triggered publication, orthogonal to the core workflow — never a plan/approve/execute/verify/deliver step, and it never changes plan status. It publishes either a plan and its tasks (kind plan), or a plan's open questions as a chat discussion thread (kind thread).
 ---
 
 ## When to use
 
 Only on an explicit human request to reflect Context Circuit data outward — "publish
 plan 0023 to ClickUp", "push this plan to our Jira", "mirror 0023 to the team's
-Notion". A configured pipeline is a **publication** (INV-EXTERNAL-01/02/03); this
-skill publishes it according to its `kind`. The first kind is **`plan`** (a plan and
-its tasks); this file specifies that kind.
+Notion", "open a discussion thread for 0023's open questions in Slack". A configured
+pipeline is a **publication** (INV-EXTERNAL-01/02/03); this skill publishes it
+according to its `kind`: **`plan`** (a plan and its tasks → a tracker) or **`thread`**
+(a plan's open questions → a chat discussion).
 
 Publishing is **orthogonal to the core workflow**. It is not a phase and is not
 triggered by one: approving, executing, verifying, delivering, or completing a plan
@@ -24,7 +25,8 @@ system. Git delivery is "push" / "open a pull request" (`cc-deliver`) and never
 ## What it is allowed to do
 
 - **Read** only the workspace artifacts the publication's `config.yaml` declares
-  (`reads:`, normally `plans` and `tasks` for the `plan` kind).
+  (`reads:` — `plans`/`tasks` for the `plan` kind; a plan's open questions for the
+  `thread` kind).
 - **Create or update** work items in the external system, through the **host or MCP
   provider tools** — never through the runtime engine, which has no provider action
   (INV-RUNTIME-01).
@@ -57,6 +59,21 @@ config's `status:` map; and check which structures the adapter can create. Where
 adapter reaches the provider through a surface with no checklist-create call, realize
 `acceptance`/`verification` as a description checklist (`acceptance_as:
 description-checklist`).
+
+## Authoring: language and instructions
+
+All external text you write honors the publication's config, for every kind:
+
+- **`language`** (default `en`) — author every title, description, checklist item,
+  and message in that language, whatever language the plan is written in. Never
+  translate ids or `target_ref`, and never change any workspace text (INV-PLAN-01).
+- **`instructions`** (optional free text) — follow it for tone, phrasing, and term
+  handling (e.g. "everyday conversational tone; keep technical terms in English"),
+  and to fill optional provider fields it names by deriving them from the plan (e.g.
+  a time estimate per task, a target date range) as **best-effort estimates**,
+  written one-way. Instructions guide wording and optional field values only: they
+  never make you leak internals (INV-EXTERNAL-03), read beyond `reads`, write back to
+  the workspace, change the mapping, or relax a boundary.
 
 ## Publish (the `plan` kind)
 
@@ -112,14 +129,37 @@ unchanged tasks. Never create a second item for a plan or task that already has 
 mapped id. Leave provider fields the record does not own (a human's manual edits)
 untouched.
 
+## Publish (the `thread` kind)
+
+For a `kind: thread` publication, read the plan's **open questions** (from its
+readable plan/task sections) and open a discussion:
+
+- **Parent message** — headline `[thread] [<plan-number>] <plan title> — open
+  questions`, then one line of context. `[thread]` marks the kind; `[<plan-number>]`
+  is the only cross-reference.
+- **One reply per question, fully described** — each open question is a single
+  threaded reply that states the question *and* the context needed to answer it, so a
+  reader can engage with just that message. One question, one message.
+- **Self-contained** — same INV-EXTERNAL-03 rule: no workspace file, path, id, or
+  internal mechanism; the plan id appears only in the parent headline.
+- **Discussion-safe idempotency** — the thread is for asking, not mirroring state. On
+  re-run, edit only *your own* question messages in place and append a reply for a
+  newly-added question; **never** edit or delete a human's reply, and **never delete a
+  message** (a no-longer-open question is left in place, optionally with a short
+  "resolved" reply).
+
+Write the record per `wrapper/contracts/schemas/publication-thread-record.yaml` —
+the thread `parent_ts` and each question's `reply_ts`, keyed by a stable per-question
+`ref`.
+
 ## Record and report
 
 After the provider calls return the external ids, write the record to
-`publication/<name>/published/<plan-id>.yaml` per
-`wrapper/contracts/schemas/publication-record.yaml`. Everything about the
-publication lives under `publication/`; nothing is written under `plans/`. If a
-cross-plan or reverse view is asked for, produce it on demand by scanning the
-publication's `published/` records.
+`publication/<name>/published/<plan-id>.yaml` per the kind's record schema
+(`publication-record.yaml` for `plan`, `publication-thread-record.yaml` for
+`thread`). Everything about the publication lives under `publication/`; nothing is
+written under `plans/`. If a cross-plan or reverse view is asked for, produce it on
+demand by scanning the publication's `published/` records.
 
 Report in plain project language: which plan was reflected where, how many items were
 created versus updated versus skipped, and the link to the external parent. Never

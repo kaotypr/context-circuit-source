@@ -33,8 +33,9 @@ fields:
     required: true
     description: >
       What this publication publishes; the cc-publish skill publishes according to
-      it. The first kind is "plan" (a plan and its tasks). Future kinds (docs,
-      thread) are new behavior in cc-publish, not new authority.
+      it. Implemented kinds are "plan" (a plan and its tasks) and "thread" (a plan's
+      open questions as a chat discussion; see publication-thread-record.yaml). A
+      future kind (e.g. docs) is new behavior in cc-publish, not new authority.
   provider:
     type: string
     required: true
@@ -56,13 +57,34 @@ fields:
     description: >
       Manual invocation is the only allowed trigger (INV-EXTERNAL-01). The field
       exists so an automatic or scheduled value is refused, never honored.
+  language:
+    type: string
+    required: false
+    description: >
+      BCP-47 code (for example en, id, ja); default en. cc-publish authors all
+      external text it writes in this language, whatever language the source plan is
+      written in. It changes no workspace text (INV-PLAN-01); ids and target_ref are
+      not translated. Applies to every kind.
+  instructions:
+    type: string
+    required: false
+    description: >
+      Optional free-text guidance cc-publish follows when authoring external text:
+      tone, phrasing, and term handling (for example "everyday conversational tone;
+      keep technical terms in English"), and which optional provider fields to enrich
+      by deriving them from the plan (for example a time estimate per task or a
+      target date range), written one-way as best-effort estimates. It guides
+      wording and optional field values only; it never overrides INV-EXTERNAL-03,
+      expands reads, writes back to the workspace, changes the core mapping, or
+      relaxes a boundary. Applies to every kind.
   reads:
     type: list
     required: true
     description: >
       Bounded, declared allow-list of the workspace artifact types this publication
-      may read (for example plans, tasks). It reads only what it names and never
-      scans to fill a gap (INV-SEC-02 ethos, INV-EXTERNAL-02).
+      may read (for example plans, tasks; a thread publication reads a plan's open
+      questions). It reads only what it names and never scans to fill a gap
+      (INV-SEC-02 ethos, INV-EXTERNAL-02).
   target_ref:
     type: object
     required: true

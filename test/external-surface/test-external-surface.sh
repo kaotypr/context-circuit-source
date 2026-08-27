@@ -29,8 +29,11 @@ contains "$cfg" "publication/<name>/config.yaml"
 contains "$cfg" "values: [export]"
 contains "$cfg" "values: [manual]"
 contains "$cfg" "credential-free"
+# language and instructions apply to every kind
+contains "$cfg" "language:"
+contains "$cfg" "instructions:"
 
-# --- record schema: under the publication, idempotent, not an execution input ---
+# --- record schema (plan kind): under the publication, idempotent ---
 rec="$W/contracts/schemas/publication-record.yaml"
 require_file "$rec"
 contains "$rec" "concern: publication_record"
@@ -40,6 +43,15 @@ contains "$rec" "INV-PLAN-01"
 contains "$rec" "never under plans/"
 contains "$rec" "not_an_execution_input"
 contains "$rec" "any field on plan.yaml holding an external id"
+
+# --- record schema (thread kind): discussion-safe, ids/timestamps only ---
+trec="$W/contracts/schemas/publication-thread-record.yaml"
+require_file "$trec"
+contains "$trec" "concern: publication_thread_record"
+contains "$trec" "publication/<name>/published/<plan-id>.yaml"
+contains "$trec" "parent_ts"
+contains "$trec" "discussion_safe"
+contains "$trec" "not_an_execution_input"
 
 # --- cc-publish skill: manual, export, one-way, self-contained, host/MCP ---
 sk="$ROOT/.agents/skills/cc-publish/SKILL.md"
@@ -55,6 +67,14 @@ contains "$sk" "Never put in any external field"
 contains "$sk" "[<plan-number>] <plan title>"
 contains "$sk" "id slug appears nowhere"
 contains "$sk" "never write under"
+# language + instructions honored
+contains "$sk" "Authoring: language and instructions"
+contains "$sk" "best-effort estimates"
+# the thread kind
+contains "$sk" "Publish (the \`thread\` kind)"
+contains "$sk" "[thread] [<plan-number>]"
+contains "$sk" "One reply per question, fully described"
+contains "$sk" "never delete a"
 
 # --- manifest registers the schemas and the workspace-owned folder ---
 man="$W/manifest.yaml"
