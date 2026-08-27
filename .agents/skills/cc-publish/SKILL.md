@@ -60,20 +60,24 @@ adapter reaches the provider through a surface with no checklist-create call, re
 `acceptance`/`verification` as a description checklist (`acceptance_as:
 description-checklist`).
 
-## Authoring: language and instructions
+## Authoring: instructions
 
-All external text you write honors the publication's config, for every kind:
+All external text you write honors the publication's `instructions` (optional free
+text), for every kind:
 
-- **`language`** (default `en`) — author every title, description, checklist item,
-  and message in that language, whatever language the plan is written in. Never
-  translate ids or `target_ref`, and never change any workspace text (INV-PLAN-01).
-- **`instructions`** (optional free text) — follow it for tone, phrasing, and term
-  handling (e.g. "everyday conversational tone; keep technical terms in English"),
-  and to fill optional provider fields it names by deriving them from the plan (e.g.
-  a time estimate per task, a target date range) as **best-effort estimates**,
-  written one-way. Instructions guide wording and optional field values only: they
-  never make you leak internals (INV-EXTERNAL-03), read beyond `reads`, write back to
-  the workspace, change the mapping, or relax a boundary.
+- **The language to author in** — e.g. "write in Bahasa Indonesia"; default is the
+  source plan's language. Author every title, description, checklist item, and
+  message in that language; never translate ids or `target_ref`, and never change any
+  workspace text (INV-PLAN-01).
+- **Tone, phrasing, and term handling** — e.g. "everyday conversational tone; keep
+  technical terms in English."
+- **Optional provider fields to enrich** — fields the instructions name, derived
+  from the plan (e.g. a time estimate per task, a target date range), as
+  **best-effort estimates**, written one-way.
+
+Instructions guide wording and optional field values only: they never make you leak
+internals (INV-EXTERNAL-03), read beyond `reads`, write back to the workspace, change
+the mapping, or relax a boundary.
 
 ## Publish (the `plan` kind)
 

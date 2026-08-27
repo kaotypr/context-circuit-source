@@ -57,26 +57,20 @@ fields:
     description: >
       Manual invocation is the only allowed trigger (INV-EXTERNAL-01). The field
       exists so an automatic or scheduled value is refused, never honored.
-  language:
-    type: string
-    required: false
-    description: >
-      BCP-47 code (for example en, id, ja); default en. cc-publish authors all
-      external text it writes in this language, whatever language the source plan is
-      written in. It changes no workspace text (INV-PLAN-01); ids and target_ref are
-      not translated. Applies to every kind.
   instructions:
     type: string
     required: false
     description: >
       Optional free-text guidance cc-publish follows when authoring external text:
-      tone, phrasing, and term handling (for example "everyday conversational tone;
-      keep technical terms in English"), and which optional provider fields to enrich
-      by deriving them from the plan (for example a time estimate per task or a
-      target date range), written one-way as best-effort estimates. It guides
-      wording and optional field values only; it never overrides INV-EXTERNAL-03,
-      expands reads, writes back to the workspace, changes the core mapping, or
-      relaxes a boundary. Applies to every kind.
+      the language to author in (for example "write in Bahasa Indonesia"; default is
+      the source plan's language), tone, phrasing, and term handling (for example
+      "everyday conversational tone; keep technical terms in English"), and which
+      optional provider fields to enrich by deriving them from the plan (for example
+      a time estimate per task or a target date range), written one-way as
+      best-effort estimates. It guides wording and optional field values only; it
+      never overrides INV-EXTERNAL-03, expands reads, writes back to the workspace,
+      changes the core mapping, or relaxes a boundary. It changes no workspace text
+      (INV-PLAN-01); ids and target_ref are never translated. Applies to every kind.
   reads:
     type: list
     required: true
