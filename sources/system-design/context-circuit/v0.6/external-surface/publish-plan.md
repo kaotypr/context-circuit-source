@@ -97,6 +97,19 @@ title, so a human can map what went where:
   `[0100] csv-export-reports`. The id slug appears nowhere in external text.
 - **Child** — `<task-number> · <task title>` (e.g. `001 · …`).
 
+## Optional field enrichment (via `instructions`)
+
+Beyond the fixed mapping, a publication's `instructions`
+([configuration-and-records.md](./configuration-and-records.md#language-and-instructions))
+can ask the agent to fill **optional provider fields** it derives from the plan —
+for example a **time estimate per task** or a **target date range** for the plan,
+mapped to ClickUp's time-estimate and start/due-date fields (or a provider's
+equivalent). These are the agent's **best-effort estimates**: written one-way,
+clearly estimates rather than facts the plan asserted, and never returned to the
+workspace. Enrichment adds optional fields; it never changes the plan→work-item and
+task→child-item mapping, and it stays within the self-contained rule (no internal
+leakage) and `reads` scope.
+
 ## One-way and non-authoritative
 
 Status flows **out** of `plan.yaml` on publish — mapped through the config's
