@@ -27,9 +27,12 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 - [Planning and plan review](plan-review/README.md) — grounded plan authoring and non-executing review. Status: accepted.
 - [Plan approval](plan-approval/README.md) — the explicit conversational `draft → approved` gate. Status: accepted.
 - [Plan execution](plan-execution/README.md) — one-writer loop, isolated worktrees, repair, preserved runtime records. Status: accepted.
+- [Run-stack](run-stack/README.md) — executing a set of approved plans in one run: inter-plan dependencies, path leases, execution bases, scheduling, failure containment, drift guard. Status: accepted.
+- [Repository grounding](repository-grounding/README.md) — the worker honors the target repository's own agent guidance, discovered live and delivered via a generated brief. Status: accepted.
 - [Verification](verification/README.md) — independent read-only check; sole authority for `verified`. Status: accepted.
 - [Completion](completion/README.md) — human-gated `approved → done` and knowledge reconciliation. Status: accepted.
 - [Plan organization](plan-organization/README.md) — status-agnostic archive and restore. Status: accepted.
 - [Delivery](delivery/README.md) — separate pull-request/merge/push actions; source/target branch model. Status: accepted.
 - [Host adapters](host-adapters/README.md) — Codex, Claude Code, and Cursor Agent CLI as evidence-only transports. Status: accepted.
 - [Source release and upgrade](source-release-and-upgrade/README.md) — assembly, ships-vs-never-ships, upgrade preservation + migration-needed. Status: accepted.
+- [System-design authoring](system-design-authoring/README.md) — the `cc-system-design` skill for authoring a system design as structured source material. Status: accepted.

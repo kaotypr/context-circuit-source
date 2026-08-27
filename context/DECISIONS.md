@@ -88,3 +88,80 @@ layers, repair-limit, plan-id reuse, terminology authority), and CONVENTIONS
 policy-change escalation. The design source (`08-terminology.md`,
 `09-source-and-template.md`) was updated to accept "wrapper", and the glossaries
 gained the term.
+
+## 2026-08-27 — v0.6 coordinated contract bump
+
+Decision: `runtime_version` 0.5.0 → 0.6.0 and plan `accepted_schema_versions`
+becomes `[1, 2]`; `execution.yaml` stays schema 1.
+
+Rationale: `plan_dependencies` is load-bearing, so a v0.5 engine must refuse a
+`schema_version: 2` plan rather than schedule it dependency-blind (INV-PLAN-05);
+`execution.yaml` is private single-version evidence with no cross-version reader.
+Consequence: only plans using `plan_dependencies` stamp 2; existing plans stay 1
+and read identically on both engines. Accepted from proposal
+`0021-change-decisions`.
+
+## 2026-08-27 — concurrency is orchestration, not authority (run-stack)
+
+Decision: executing a set of approved plans in one run changes only order and
+overlap; conflicts are prevented (dependencies order waves, path leases serialize
+file overlaps, a dependent's base already contains its prerequisites), not
+resolved afterward.
+
+Rationale: approval, verification, completion, and delivery gates must be
+untouched; the runtime detects readiness/leases/bases deterministically and the
+coordinator decides how many ready plans to launch — no scheduler heuristic in the
+runtime (INV-RUNTIME-01, INV-CONCURRENCY-01/02).
+Consequence: a failed or blocked plan holds only its descendants; unrelated
+verified plans are unaffected. Accepted from proposal `0021-change-decisions`.
+
+## 2026-08-27 — delivery drift guard
+
+Decision: a plan whose recorded base has diverged from the current anchor tip is
+rebased onto the tip and re-verified before its pull request (INV-DELIVER-01,
+extended).
+
+Rationale: a plan must never merge from a base that no longer reflects the branch
+it will land on; the only merge the runtime authors is the integration base on a
+plan's own branch, never a delivery merge.
+Consequence: `cc_delivery_drift` / `cc_delivery_rebase`, with
+`DELIVERY_REBASE_CONFLICT` reported as blocked. Accepted from proposal
+`0021-change-decisions`.
+
+## 2026-08-27 — repository grounding: reference, not capture
+
+Decision: the worker reads and honors the target repository's own agent guidance,
+discovered live from the worktree as data (INV-GROUND-01); precedence is CC
+scope/safety on what/where and repo guidance on how within that scope
+(INV-GROUND-02); the writer brief is a fixed template filled from the manifest and
+delivered, never authored (INV-GROUND-03).
+
+Rationale: repository knowledge should be discovered and referenced, not
+hand-injected per prompt or captured into a per-repo profile.
+Consequence: no per-repo profile and no `plan.yaml` field; writer friction returns
+as `repository_friction` and becomes a proposal on the repo's own agent docs.
+Accepted from proposal `0021-change-decisions`.
+
+## 2026-08-27 — a system design is a source, not a lifecycle stage
+
+Decision: the v0.6 system-design scope ships only the `cc-system-design` authoring
+skill; a system design lives under `sources/system-design/` with no status,
+acceptance gate, or runtime record, and feeds Product Knowledge and plans through
+the existing flow.
+
+Rationale: a system design is deliberation, authored as structured source; the
+durable accepted residue still lives in `context/` via the existing proposal path.
+Consequence: no engine change, no new schema, no new invariant, no WORKFLOW action,
+and no first-class `design/` area. Accepted from proposal `0021-change-decisions`.
+
+## 2026-08-27 — template-harness efficiency ledger made real
+
+Decision: template-harness dimension D now measures per-action usage from the
+runner's own result and compares it to case budgets (units fixed: `max_tokens` =
+generated output tokens, `max_turns` = conversational turns; optional
+`max_agent_turns`, `max_cost_usd`), staying soft (never gates a run).
+
+Rationale: dimension D was declared in v0.5 but never measured; a budget with no
+defined unit is unfalsifiable.
+Consequence: maintainer tooling only — no product surface change. Accepted from
+proposal `0021-change-decisions`.
