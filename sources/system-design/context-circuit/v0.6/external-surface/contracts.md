@@ -53,13 +53,18 @@ Added under the `owners:` map in `wrapper/contracts/invariants.yaml`:
 | --- | --- |
 | `external_surface` (isolation, data boundary, self-contained artifacts) | `wrapper/contracts/invariants.yaml` (INV-EXTERNAL-01/02/03) |
 | `publication_config` | `wrapper/contracts/schemas/publication-config.yaml` (new — describes `config.yaml`) |
-| `publication_record` | `wrapper/contracts/schemas/publication-record.yaml` (new — describes `published/<plan-id>.yaml`) |
+| `publication_record` | `wrapper/contracts/schemas/publication-record.yaml` (new — the `plan` kind's record) |
+| `publication_thread_record` | `wrapper/contracts/schemas/publication-thread-record.yaml` (new — the `thread` kind's record) |
 | publish trigger | INV-SKILL-01 (existing) — the `cc-publish` skill at `.agents/skills/cc-publish/SKILL.md` publishes a publication per its `kind` |
 
-The config schema owns the `config.yaml` shape; the record schema owns the per-plan
-record shape; the trigger is **not** a new authority — `cc-publish` is an ordinary
-skill under the existing INV-SKILL-01, surfaced as a slash command by the host
-adapter as an optional convenience.
+The config schema owns the `config.yaml` shape; each kind's record schema owns that
+kind's record shape (record shapes are per-kind); the trigger is **not** a new
+authority — `cc-publish` is an ordinary skill under the existing INV-SKILL-01,
+surfaced as a slash command by the host adapter as an optional convenience.
+
+`config.yaml` carries an optional **`language`** (default `en`) that applies to every
+kind: `cc-publish` authors all external text in that language. It changes no workspace
+text and no owner; it is an authoring choice recorded in `publication-config.yaml`.
 
 ## No core contract bump
 

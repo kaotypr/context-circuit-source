@@ -46,6 +46,7 @@ kind: plan                     # what cc-publish publishes (plan | docs | thread
 provider: clickup              # clickup | jira | github | notion | slack | … (open-ended)
 direction: export              # export-first; the only value in this scope
 trigger: manual                # manual is the only allowed value
+language: en                   # language to author external text in (any kind); default en
 reads:                         # DECLARED, bounded artifact scope — no scanning
   - plans
   - tasks
@@ -62,16 +63,25 @@ mapping:                       # kind-specific field map (see publish-plan.md)
 ```
 
 - **`kind` selects the publish procedure.** The `cc-publish` skill publishes a
-  publication according to its `kind` (`plan` here); `provider` selects the host/MCP
-  adapter. A future `docs`/`thread` kind is new behavior in `cc-publish` plus a
-  `config.yaml`, nothing in the core.
+  publication according to its `kind` (`plan` here, `thread` in
+  [thread.md](./thread.md)); `provider` selects the host/MCP adapter. A new kind is
+  new behavior in `cc-publish` plus a `config.yaml`, nothing in the core.
 - **`reads` is a bounded, declared allow-list.** A publication reads only the
   artifact types it names, echoing the v0.5 discipline that the workspace never
   scans to fill a gap (INV-SEC-02 ethos). A `plan` publication reads `plans`/`tasks`;
-  a `thread` publication might read open questions only.
+  a `thread` publication reads a plan's open questions.
 - **`direction: export` and `trigger: manual`** are the only values this scope
   allows; they exist as fields so the contract can refuse anything else rather than
   silently doing something coupling or automatic.
+
+## Language
+
+`language` (a BCP-47 code such as `en`, `id`, `ja`; default `en`) applies to **every
+kind** — plan, docs, thread. `cc-publish` authors all external text it writes (work-
+item titles and descriptions, checklist items, thread messages) in that language,
+whatever language the source plan is written in. It is an authoring choice for the
+external audience; it never changes `plan.yaml` or any workspace text, which stay in
+their own language (INV-PLAN-01). `target_ref` and ids are not translated.
 
 ## Credentials never enter the workspace
 
@@ -84,6 +94,12 @@ gitignored `.local.yaml`, mirroring how machine-specific binding lives in
 `repositories.local.yaml`.
 
 ## The authoritative record (under the publication)
+
+The record's *shape* is per-kind — it mirrors whatever the kind created. The `plan`
+kind's record (below) is keyed by tasks; the `thread` kind's record is keyed by the
+thread and its questions ([thread.md](./thread.md)). Each kind therefore has its own
+record schema, but every record lives the same way, under the publication's
+`published/` folder keyed by plan id.
 
 ```yaml
 # publication/plans-clickup/published/0023-add-oauth.yaml

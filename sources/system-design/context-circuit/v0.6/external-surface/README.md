@@ -17,7 +17,10 @@ for the version index and [../../v0.5/](../../v0.5/) for the base design.
 3. [publish-plan.md](./publish-plan.md) — the `plan` kind: mapping a plan and its
    tasks onto ClickUp / Jira / GitHub / Notion work items, self-contained,
    one-way, and idempotent, with a worked trace.
-4. [contracts.md](./contracts.md) — the proposed invariants and owner-map
+4. [thread.md](./thread.md) — the `thread` kind: a plan's open questions as a chat
+   discussion (Slack first) — a `[thread]`-prefixed parent plus one fully-described
+   reply per question, discussion-safe on re-run.
+5. [contracts.md](./contracts.md) — the proposed invariants and owner-map
    additions, and why this scope needs **no core contract bump**.
 
 ## Authority

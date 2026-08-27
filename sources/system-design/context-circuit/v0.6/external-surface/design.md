@@ -128,12 +128,13 @@ conventionally, `<subject>-<provider>`:
 | --- | --- | --- | --- |
 | `plans-clickup` | plan | clickup | a plan and its tasks |
 | `plans-github` | plan | github | a plan and its tasks |
+| `thread-slack` | thread | slack | a plan's open questions, as a discussion |
 | `docs-clickup` | docs *(future)* | clickup | context docs / decisions |
-| `thread-slack` | thread *(future)* | slack | open questions / discussion |
 
-Only the `plan` kind is designed in this scope; the others show that the same
-backbone hosts other kinds without touching the core workflow — a new kind is new
-behavior in `cc-publish` plus a `config.yaml`, nothing more.
+The `plan` and `thread` kinds are designed in this scope ([publish-plan.md](./publish-plan.md),
+[thread.md](./thread.md)); `docs` is illustrative. A new kind is new behavior in
+`cc-publish` plus a `config.yaml`, nothing more — the same backbone hosts them all
+without touching the core workflow.
 
 ## What changes relative to v0.5
 
@@ -161,6 +162,10 @@ so no qualifier is needed (see [contracts.md](./contracts.md)).
   field, list open-ended); containment vs dependency; self-contained external text;
   the `[NNNN]` title convention; one-way idempotent reflection; provider wrinkles;
   a worked trace.
+- [thread.md](./thread.md) — the `thread` kind: a plan's open questions → a chat
+  thread (Slack first); a `[thread]`-prefixed parent plus one fully-described reply
+  per question; discussion-safe idempotency (edit only its own messages, never human
+  replies); its own record shape.
 - [contracts.md](./contracts.md) — proposed invariants, owner-map additions, the
   publish/git-delivery vocabulary split, and why no core contract bumps.
 
@@ -213,6 +218,15 @@ This design does not authorize implementation, delivery, or publication by itsel
 - The concept and this source scope are named **external-surface**; the product
   root folder is **`publication/`**; a publication folder is named `<subject>-<provider>`
   (e.g. `plans-clickup`); its config file is **`config.yaml`**; the publish command
-  is the single **`cc-publish`** skill; the first kind is **`plan`**.
+  is the single **`cc-publish`** skill; the designed kinds are **`plan`** and
+  **`thread`**.
+- Every kind honors a **`language`** config (default `en`): `cc-publish` authors all
+  external text in that language, whatever language the source plan is written in;
+  workspace text is never changed.
+- The **`thread`** kind publishes a plan's open questions as a chat discussion — a
+  **`[thread]`**-prefixed parent plus **one fully-described reply per question** —
+  and is discussion-safe: on re-run it edits only its own messages and never a
+  human's reply, and it never deletes messages. Its record shape is its own; record
+  shapes are per-kind.
 - The scope adds **no core contract bump** — no plan-schema, execution, or
   runtime-version change.

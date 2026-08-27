@@ -23,8 +23,9 @@ version index; each scope owns its own design.
   way to publish Context Circuit data to external systems (task trackers, chat,
   docs), **fully orthogonal to the core workflow** — a publication is a peer
   command, never a phase. Publications live under `publication/<name>/` (e.g.
-  `plans-clickup`); the publish command is the `cc-publish` skill and the first
-  *kind* is `plan` (a plan and its tasks → ClickUp / Jira / GitHub / Notion / …).
+  `plans-clickup`); the publish command is the `cc-publish` skill and the designed
+  *kinds* are `plan` (a plan and its tasks → ClickUp / Jira / GitHub / Notion) and
+  `thread` (a plan's open questions → a Slack discussion).
   Start at [external-surface/design.md](./external-surface/design.md).
 
 These four scopes are independent product capabilities released together in v0.6.
