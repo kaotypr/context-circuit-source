@@ -10,18 +10,20 @@ version index; each scope owns its own design.
   stack*): inter-plan dependencies, path leases, execution bases, the scheduling
   loop, failure containment, and the delivery drift guard. Start at
   [run-stack/design.md](./run-stack/design.md).
-- [system-design-stage/](./system-design-stage/) — make a **System Design** a
-  first-class, optional lifecycle stage between Product Knowledge and Plans: design
-  the change, get it accepted, then let plans slice the accepted design. Start at
-  [system-design-stage/design.md](./system-design-stage/design.md).
+- [system-design-authoring/](./system-design-authoring/) — a **skill** for
+  authoring and structuring a **system design** as source material: the three-tier
+  layout, how much detail per file, and scope separation by concern. It adds no
+  lifecycle, status, gate, or runtime — a system design is one kind of source.
+  Start at [system-design-authoring/design.md](./system-design-authoring/design.md).
 - [repository-grounding/](./repository-grounding/) — ground the **writer** in the
   target repository's own agent guidance (discovered live) and hand it a prepared
   worktree, delivered through a generated brief instead of hand-authored prose.
   Start at [repository-grounding/design.md](./repository-grounding/design.md).
 
 These three scopes are independent product capabilities released together in v0.6.
-They share a coordinated contract bump (plan schema `[1, 2]`, `runtime_version
-0.6.0`).
+run-stack and repository-grounding share a coordinated contract bump (plan schema
+`[1, 2]`, `runtime_version 0.6.0`); system-design-authoring ships only a skill and
+needs no contract change.
 
 ## Maintainer tooling (not a product scope)
 
