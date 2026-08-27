@@ -19,8 +19,19 @@ version index; each scope owns its own design.
   worktree, delivered through a generated brief instead of hand-authored prose.
   Start at [repository-grounding/design.md](./repository-grounding/design.md).
 
-These three scopes are independent capabilities released together in v0.6. They
-share a coordinated contract bump (plan schema `[1, 2]`, `runtime_version 0.6.0`).
+These three scopes are independent product capabilities released together in v0.6.
+They share a coordinated contract bump (plan schema `[1, 2]`, `runtime_version
+0.6.0`).
+
+## Maintainer tooling (not a product scope)
+
+- [template-harness/](./template-harness/) — a delta on the v0.5 human-simulated
+  test harness: make **dimension D (the efficiency ledger)** real by emitting
+  per-action usage telemetry from the runner's own result, defining the budget
+  units, and having the grader compare observed usage to each case's `budgets`
+  (still soft, warning-only). Source-only maintainer tooling; changes no product
+  surface and ships nothing. Start at
+  [template-harness/design.md](./template-harness/design.md).
 
 ## Layout convention
 
