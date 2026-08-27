@@ -180,4 +180,22 @@ cc_lease_acquire "$ws" api 0002-sa "src/a" >/dev/null
 expect_failure cc_lease_check "$ws" api 0003-sb "src/a"
 cc_lease_check "$ws" api 0004-int "src/a" >/dev/null || fail 'shipped lease must exempt a descendant'
 
+# 11. Repository grounding (v0.6): the SHIPPED template discovers the repo's own
+#     agent guidance and assembles a writer brief with the required grounding slot.
+require_file "$ws/writer-brief.md"    # the brief template is promoted to the root
+git -C "$ws/repositories/api" checkout -q development
+printf '# API agent guide\n\nStart every new source file with `// @grounded`.\n' >"$ws/repositories/api/AGENTS.md"
+git -C "$ws/repositories/api" add -A; git -C "$ws/repositories/api" commit -q -m 'chore(api): add agent guidance'
+mkplan 0005-grounded "Grounded" api src/g ""
+cc_plan_approve "$ws" 0005-grounded >/dev/null
+gex=$(cc_execution_begin "$ws" 0005-grounded sess-g | sed -n 's/^execution_id: //p')
+gedir="$ws/.runtime/executions/0005-grounded/$gex"
+require_file "$gedir/grounding/api.yaml"
+contains "$gedir/grounding/api.yaml" "- AGENTS.md"
+cc_writer_brief_assemble "$ws" "$gedir" api "Add the grounded module." >/dev/null
+require_file "$gedir/brief-api.md"
+contains "$gedir/brief-api.md" "## Repository grounding"
+contains "$gedir/brief-api.md" "AGENTS.md — read and honor it"
+cc_brief_preflight "$gedir/brief-api.md" >/dev/null
+
 pass 'template-runtime laboratory'

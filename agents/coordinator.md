@@ -65,7 +65,17 @@ or host-adapter details only when the user explicitly asks for diagnostics
 Ask the runtime for state, launch exactly one worker with the execution brief,
 launch the independent read-only verifier with the latest revisions, route
 verifier failures back to the same worker within the same execution, and report
-runtime results in normal language. Do not create a second product policy, do
+runtime results in normal language.
+
+The writer's execution brief is **delivered, not authored**: the runtime
+discovers the target repository's own agent guidance from the prepared worktree
+and assembles the brief by deterministic slot substitution of the shipped
+`writer-brief.md` template (INV-GROUND-01/03). The coordinator adds only a
+one-line task focus and delivers the assembled brief verbatim; it never composes
+the repository-grounding facts itself and never reads the runtime implementation
+to do so. A brief missing its repository-grounding section is refused by the
+runtime preflight. When a worker reports `repository_friction`, reconcile it into
+a proposal on that repository's own agent docs, never a Context Circuit profile. Do not create a second product policy, do
 not bypass the runtime, and do not self-verify when the verifier child is
 unavailable — report `host-blocked`.
 

@@ -591,6 +591,160 @@ cc_base_prepare() {
 }
 
 # ---------------------------------------------------------------------------
+# Repository grounding (INV-GROUND-01/02/03) — discover the target repository's
+# own agent guidance from the worktree, harden the worktree, and assemble the
+# writer brief by deterministic slot substitution of a shipped template. The
+# runtime emits DATA (a manifest) and a report-style directive, never a model
+# prompt (INV-RUNTIME-01); the brief prose lives in wrapper/adapters/, not here.
+# ---------------------------------------------------------------------------
+
+# cc_harden_worktree WORKTREE -> detect the toolchain and report the prepared
+# environment. Detection is a table lookup; no network, no per-worktree install
+# here (full provisioning is a later phase). Emits environment ready|no-toolchain.
+cc_harden_worktree() {
+	cc_hw_wt="$1"
+	[ -d "$cc_hw_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_hw_wt"; return 1; }
+	cc_hw_tc=""
+	for cc_hw_lf in package-lock.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock \
+		go.mod Cargo.lock Gemfile.lock requirements.txt poetry.lock composer.lock \
+		pom.xml build.gradle build.gradle.kts; do
+		[ -f "$cc_hw_wt/$cc_hw_lf" ] && { cc_hw_tc="$cc_hw_lf"; break; }
+	done
+	if [ -n "$cc_hw_tc" ]; then
+		cc_emit environment ready
+		cc_emit toolchain "$cc_hw_tc"
+	else
+		cc_emit environment no-toolchain
+	fi
+	return 0
+}
+
+# cc_skill_desc SKILL_FILE -> the first line of a skill's frontmatter description
+cc_skill_desc() {
+	awk '
+		/^---[[:space:]]*$/{ fm++; if(fm>=2) exit; next }
+		fm==1 && /^description:[[:space:]]*/{
+			d=$0; sub(/^description:[[:space:]]*/,"",d)
+			if (d=="" || d==">" || d=="|" || d==">-" || d=="|-"){ folded=1; next }
+			print d; exit
+		}
+		fm==1 && folded && /^[[:space:]]+/{ line=$0; sub(/^[[:space:]]+/,"",line); if(line!=""){ print line; exit } }
+		fm==1 && folded && /^[^[:space:]-]/{ exit }
+	' "$1"
+}
+
+# cc_discover_repo_grounding WORKTREE [REPO] -> print the grounding manifest for
+# the worktree: the agent-guidance files present, the skills (name + description),
+# and the prepared-environment status. Deterministic scan; data, not prompt text.
+cc_discover_repo_grounding() {
+	cc_dg_wt="$1"; cc_dg_repo="${2:-}"
+	[ -d "$cc_dg_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_dg_wt"; return 1; }
+	cc_dg_env=$(cc_harden_worktree "$cc_dg_wt" | sed -n 's/^environment: //p'); [ -n "$cc_dg_env" ] || cc_dg_env=no-toolchain
+	printf 'schema_version: 1\n'
+	[ -n "$cc_dg_repo" ] && printf 'repository: %s\n' "$cc_dg_repo" || :
+	printf 'worktree: %s\n' "$cc_dg_wt"
+	# files — accumulate to a temp so the result is independent of shell word-splitting
+	cc_dg_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-dg.XXXXXX") || return 1
+	: >"$cc_dg_tmp"
+	for cc_dg_f in AGENTS.md CLAUDE.md .github/copilot-instructions.md; do
+		[ -f "$cc_dg_wt/$cc_dg_f" ] && printf '  - %s\n' "$cc_dg_f" >>"$cc_dg_tmp" || :
+	done
+	if [ -d "$cc_dg_wt/.cursor/rules" ] && [ -n "$(ls -A "$cc_dg_wt/.cursor/rules" 2>/dev/null)" ]; then
+		printf '  - .cursor/rules/\n' >>"$cc_dg_tmp"
+	fi
+	if [ -s "$cc_dg_tmp" ]; then printf 'files:\n'; cat "$cc_dg_tmp"; else printf 'files: []\n'; fi
+	: >"$cc_dg_tmp"
+	if [ -d "$cc_dg_wt/.agents/skills" ]; then
+		for cc_dg_s in "$cc_dg_wt"/.agents/skills/*/SKILL.md; do
+			[ -f "$cc_dg_s" ] || continue
+			cc_dg_nm=$(cc_scalar "$cc_dg_s" name 2>/dev/null); [ -n "$cc_dg_nm" ] || cc_dg_nm=$(basename -- "$(dirname -- "$cc_dg_s")")
+			cc_dg_de=$(cc_skill_desc "$cc_dg_s"); [ -n "$cc_dg_de" ] || cc_dg_de="(no description)"
+			printf '  - name: %s\n    description: %s\n' "$cc_dg_nm" "$cc_dg_de" >>"$cc_dg_tmp"
+		done
+	fi
+	if [ -s "$cc_dg_tmp" ]; then printf 'skills:\n'; cat "$cc_dg_tmp"; else printf 'skills: []\n'; fi
+	rm -f "$cc_dg_tmp"
+	printf 'environment: %s\n' "$cc_dg_env"
+	return 0
+}
+
+# cc_grounding_directive MANIFEST_FILE -> the writer-facing grounding directive,
+# rendered deterministically from the manifest (empty vs non-empty variants).
+cc_grounding_directive() {
+	cc_gd_mf="$1"; [ -f "$cc_gd_mf" ] || { cc_fail GROUNDING_MANIFEST_MISSING "$cc_gd_mf"; return 1; }
+	cc_gd_nf=$(awk '/^files:/{f=1;next} f&&/^  - /{c++} /^[a-z]/&&!/^files:/{f=0} END{print c+0}' "$cc_gd_mf")
+	cc_gd_ns=$(awk '/^skills:/{s=1;next} s&&/^  - name:/{c++} /^[a-z]/&&!/^skills:/{s=0} END{print c+0}' "$cc_gd_mf")
+	if [ "${cc_gd_nf:-0}" -eq 0 ] && [ "${cc_gd_ns:-0}" -eq 0 ]; then
+		printf 'No repository agent guidance was discovered (no AGENTS.md, CLAUDE.md, skills, or rules). Ground your work in the plan and Product Knowledge, and follow any patterns already present in the code.\n'
+		return 0
+	fi
+	printf "Before you write any code, read and apply this repository's own agent guidance.\n"
+	printf 'It is authoritative on HOW to write code here, within the scope this brief sets.\n\n'
+	awk '/^files:/{f=1;next} f&&/^  - /{v=$0;sub(/^  - /,"",v);print "- " v " — read and honor it."} /^[a-z]/&&!/^files:/{f=0}' "$cc_gd_mf"
+	if [ "${cc_gd_ns:-0}" -gt 0 ]; then
+		printf -- "- Skills — all of this repo's skills are listed below; read and follow only the ones RELEVANT TO YOUR TASK, chosen by description; skip the rest:\n"
+		awk '/^skills:/{s=1;next} s&&/^  - name:/{n=$0;sub(/^  - name:[[:space:]]*/,"",n);getline;d=$0;sub(/^    description:[[:space:]]*/,"",d);print "    - " n " — " d} /^[a-z]/&&!/^skills:/{s=0}' "$cc_gd_mf"
+	fi
+	printf "\nIf anything here conflicts with this brief's scope or safety rules, STOP and report.\n"
+	return 0
+}
+
+# cc_brief_preflight BRIEF_FILE -> refuse a brief missing or with an unfilled
+# repository-grounding slot (INV-GROUND-03).
+cc_brief_preflight() {
+	[ -f "$1" ] || { cc_fail BRIEF_MISSING "$1"; return 1; }
+	grep -q '^## Repository grounding' "$1" || { cc_fail BRIEF_GROUNDING_SLOT_MISSING "$1"; return 1; }
+	grep -q '@@GROUNDING@@' "$1" && { cc_fail BRIEF_GROUNDING_UNFILLED "$1"; return 1; }
+	cc_emit brief_preflight ok
+	return 0
+}
+
+# cc_writer_brief_assemble ROOT EXEC_DIR REPO TASK_FOCUS -> assemble the writer
+# brief by deterministic slot substitution of the shipped template, filling the
+# grounding directive + environment from the recorded manifest and the rest from
+# the execution record and plan snapshot. Writes brief-<repo>.md and preflights it.
+cc_writer_brief_assemble() {
+	cc_wb_root="$1"; cc_wb_edir="$2"; cc_wb_repo="$3"; cc_wb_tf="${4:-Implement the plan.}"
+	cc_wb_tpl=""
+	[ -f "$cc_wb_root/writer-brief.md" ] && cc_wb_tpl="$cc_wb_root/writer-brief.md"
+	[ -z "$cc_wb_tpl" ] && [ -f "$cc_wb_root/wrapper/adapters/writer-brief.md" ] && cc_wb_tpl="$cc_wb_root/wrapper/adapters/writer-brief.md"
+	[ -n "$cc_wb_tpl" ] || { cc_fail BRIEF_TEMPLATE_MISSING; return 1; }
+	cc_wb_rf="$cc_wb_edir/repositories/$cc_wb_repo.yaml"
+	[ -f "$cc_wb_rf" ] || { cc_fail EXECUTION_REPOSITORY_UNKNOWN "$cc_wb_repo"; return 1; }
+	cc_wb_pid=$(cc_scalar "$cc_wb_edir/execution.yaml" plan)
+	cc_wb_w=$(cc_scalar "$cc_wb_rf" worktree); cc_wb_br=$(cc_scalar "$cc_wb_rf" branch)
+	cc_wb_bc=$(cc_scalar "$cc_wb_rf" base_commit); cc_wb_ap=$(cc_scalar "$cc_wb_rf" allowed_paths)
+	cc_wb_mf="$cc_wb_edir/grounding/$cc_wb_repo.yaml"
+	cc_wb_env=no-toolchain; [ -f "$cc_wb_mf" ] && cc_wb_env=$(cc_scalar "$cc_wb_mf" environment)
+	cc_wb_grf="$cc_wb_edir/grounding/$cc_wb_repo.directive.txt"
+	if [ -f "$cc_wb_mf" ]; then cc_grounding_directive "$cc_wb_mf" >"$cc_wb_grf"; else printf 'No repository agent guidance was discovered.\n' >"$cc_wb_grf"; fi
+	cc_wb_envf="$cc_wb_edir/grounding/$cc_wb_repo.env.txt"
+	if [ "$cc_wb_env" = "ready" ]; then
+		printf "Ready: dependencies provisioned, commit hooks handled. Do NOT install or modify dependencies. Use the repository's own build/test/lint commands.\n" >"$cc_wb_envf"
+	else
+		printf 'No dependency toolchain detected. If this plan scaffolds one, create it within the allowed paths; add no dependencies beyond what the plan specifies.\n' >"$cc_wb_envf"
+	fi
+	cc_wb_snap="$cc_wb_edir/snapshot/plan.yaml"
+	cc_wb_out="$cc_wb_edir/brief-$cc_wb_repo.md"
+	awk -v pid="$cc_wb_pid" -v wt="$cc_wb_w" -v br="$cc_wb_br" -v bc="$cc_wb_bc" \
+	    -v ap="$cc_wb_ap" -v tf="$cc_wb_tf" -v snap="$cc_wb_snap" \
+	    -v envf="$cc_wb_envf" -v grf="$cc_wb_grf" '
+		/@@ENVIRONMENT@@/{ while((getline l<envf)>0) print l; close(envf); next }
+		/@@GROUNDING@@/{ while((getline l<grf)>0) print l; close(grf); next }
+		{
+			gsub(/\{plan_id\}/,pid); gsub(/\{worktree_path\}/,wt); gsub(/\{branch\}/,br)
+			gsub(/\{base_commit\}/,bc); gsub(/\{allowed_paths\}/,ap)
+			gsub(/\{plan_snapshot\}/,snap); gsub(/\{task_focus\}/,tf)
+			print
+		}
+	' "$cc_wb_tpl" | cc_atomic_write "$cc_wb_out"
+	cc_brief_preflight "$cc_wb_out" >/dev/null || { cc_fail BRIEF_PREFLIGHT_FAILED "$cc_wb_repo"; return 1; }
+	cc_emit brief "$cc_wb_out"
+	cc_emit grounding_manifest "$cc_wb_mf"
+	return 0
+}
+
+# ---------------------------------------------------------------------------
 # Plan structure, status, and active index
 # ---------------------------------------------------------------------------
 
@@ -988,6 +1142,10 @@ cc_execution_begin() {
 				"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
 			[ -n "$cc_eb_based" ] && printf 'based_on: %s\n' "$cc_eb_based" || :
 		} | cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml"
+		# repository grounding (INV-GROUND-01): discover the target repo's own agent
+		# guidance from the prepared worktree and record it as execution evidence.
+		mkdir -p "$cc_eb_edir/grounding"
+		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml"
 	done
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
@@ -1508,6 +1666,11 @@ cc_main() {
 		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
 		base-prepare)            cc_base_prepare "$@" ;;
+		discover-repo-grounding) cc_discover_repo_grounding "$@" ;;
+		harden-worktree)         cc_harden_worktree "$@" ;;
+		grounding-directive)     cc_grounding_directive "$@" ;;
+		writer-brief-assemble)   cc_writer_brief_assemble "$@" ;;
+		brief-preflight)         cc_brief_preflight "$@" ;;
 		lease-check)             cc_lease_check "$@" ;;
 		lease-acquire)           cc_lease_acquire "$@" ;;
 		lease-release)           cc_lease_release "$@" ;;

@@ -37,6 +37,9 @@ cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
 cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
 cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
+# The writer-brief template is an adapter-layer artifact used at runtime; promote
+# it to the workspace root alongside the other adapters.
+cp "$source_root/wrapper/adapters/writer-brief.md" "$stage_tree/writer-brief.md"
 
 # Blank workspace seed from the template.
 cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
@@ -73,7 +76,8 @@ done
 
 # Canonical schema fixtures must be present.
 for schema in workspace repositories-local plan task execution worker-handoff \
-  verifier-result completion context-impact context-proposal context-index; do
+  verifier-result completion context-impact context-proposal context-index \
+  lease grounding-manifest; do
   [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
 

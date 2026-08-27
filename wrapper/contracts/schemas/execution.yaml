@@ -19,6 +19,9 @@ layout:
     attempts/NNN/worker.yaml: worker attempt record and captured commits
     attempts/NNN/verifier.yaml: independent verifier result for that attempt
     repositories/<repository-id>.yaml: per-repository worktree, branch, base and latest commit
+    grounding/<repository-id>.yaml: repository-grounding manifest discovered for the
+      execution worktree (INV-GROUND-01; schema grounding-manifest.yaml)
+    brief-<repository-id>.md: the assembled writer brief (deterministic; optional evidence)
 
 fields:
   schema_version: { type: integer, required: true }

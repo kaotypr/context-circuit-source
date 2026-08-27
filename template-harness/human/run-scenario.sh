@@ -106,22 +106,26 @@ US=$(printf '\037')   # non-whitespace field separator: preserves EMPTY middle f
 
 ENGINE_CLI="$WORKSPACE/wrapper/runtime/engine.sh"
 
-# Emit one TSV row per setup.repositories entry: id dest default_branch branches seed_files connect
+# Emit one TSV row per setup.repositories entry:
+#   id dest default_branch branches seed_files connect agents_md
+# `agents_md` (optional) seeds the repo's OWN agent guidance (an AGENTS.md with a
+# distinctive convention) so repository-grounding discovery finds real guidance.
 repo_fixtures() {
 	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  repositories:/{inr=1; next}
 		inr && /^  [A-Za-z]/ && $0 !~ /^    /{inr=0}
 		inr && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id S dest S defb S br S sf S conn;
+			if(id!="") print id S dest S defb S br S sf S conn S am;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			dest="";defb="";br="";sf="";conn=""; next
+			dest="";defb="";br="";sf="";conn="";am=""; next
 		}
 		inr && id!="" && /^      dest:/{v=$0;sub(/^      dest:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);dest=v;next}
 		inr && id!="" && /^      default_branch:/{v=$0;sub(/^      default_branch:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);defb=v;next}
 		inr && id!="" && /^      branches:/{v=$0;sub(/^      branches:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);br=v;next}
 		inr && id!="" && /^      seed_files:/{v=$0;sub(/^      seed_files:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);sf=v;next}
 		inr && id!="" && /^      connect:/{v=$0;sub(/^      connect:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);conn=v;next}
-		END{ if(id!="") print id S dest S defb S br S sf S conn }
+		inr && id!="" && /^      agents_md:/{v=$0;sub(/^      agents_md:[[:space:]]*/,"",v);gsub(/[[:space:]]+$/,"",v);gsub(/^"|"$/,"",v);am=v;next}
+		END{ if(id!="") print id S dest S defb S br S sf S conn S am }
 	' "$CASE_FILE"
 }
 
@@ -194,7 +198,7 @@ seed_plan_state() {
 FIXTURE_NOTE=none
 if ! setup_empty repositories; then
 	FIXTURE_NOTE=repos
-	repo_fixtures | while IFS="$US" read -r id dest defb branches seeds conn; do
+	repo_fixtures | while IFS="$US" read -r id dest defb branches seeds conn agentsmd; do
 		[ -n "$id" ] || continue
 		dest=${dest:-$id}; defb=${defb:-main}
 		case "$dest" in /*|*..*) printf 'FAIL: unsafe fixture dest: %s\n' "$dest" >&2; exit 1 ;; esac
@@ -207,6 +211,11 @@ if ! setup_empty repositories; then
 			mkdir -p "$repo/$(dirname -- "$f")"
 			printf '# %s\n\nseed content for the %s fixture.\n' "$f" "$id" > "$repo/$f"
 		done
+		# optional: the repository's OWN agent guidance (discovered by grounding)
+		if [ -n "$agentsmd" ]; then
+			printf '# %s — agent guide\n\n%s\n' "$id" "$agentsmd" > "$repo/AGENTS.md"
+			printf '[setup] seeded repo agent guidance (AGENTS.md) for %s\n' "$id"
+		fi
 		git -C "$repo" add -A
 		git -C "$repo" commit -q -m 'seed'
 		for b in $(printf '%s' "$branches" | tr ',' ' '); do

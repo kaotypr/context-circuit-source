@@ -9,6 +9,7 @@ required AGENTS.md
 required CLAUDE.md
 required WORKFLOW.md
 required README.md
+required writer-brief.md
 
 # Blank workspace seed (from template/).
 required .gitignore
@@ -45,6 +46,8 @@ required wrapper/contracts/schemas/completion.yaml
 required wrapper/contracts/schemas/context-impact.yaml
 required wrapper/contracts/schemas/context-proposal.yaml
 required wrapper/contracts/schemas/context-index.yaml
+required wrapper/contracts/schemas/lease.yaml
+required wrapper/contracts/schemas/grounding-manifest.yaml
 
 # Guides and templates.
 required docs/getting-started.md

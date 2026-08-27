@@ -268,6 +268,27 @@ while IFS= read -r line; do
 			if [ -n "$bu_base" ] && [ -n "$bp_commit" ] && git -C "$bu_path" merge-base --is-ancestor "$bp_commit" "$bu_base" 2>/dev/null; then
 				ok "built_on ($bu_pred's verified commit is an ancestor of $bu_pid's base in $bu_repo)"
 			else bad "built_on ($bu_pid/$bu_repo not built on $bu_pred: base='${bu_base:-<none>}' pred='${bp_commit:-<none>}')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		grounding_manifest_recorded)
+			# val "<plan>:<repo>:<file>" — repository-grounding discovery recorded a
+			# manifest listing the repo's own guidance file (INV-GROUND-01).
+			gm_pid=${val%%:*}; gm_rest=${val#*:}; gm_repo=${gm_rest%%:*}; gm_file=${gm_rest#*:}
+			gm_exec=$(cc_latest_execution "$WORKSPACE" "$gm_pid" 2>/dev/null) || gm_exec=""
+			gm_mf=$(cc_execution_dir "$WORKSPACE" "$gm_pid" "$gm_exec" 2>/dev/null)/grounding/$gm_repo.yaml
+			if [ -f "$gm_mf" ] && grep -Fq "$gm_file" "$gm_mf"; then ok "grounding_manifest_recorded ($gm_pid/$gm_repo lists $gm_file)"
+			else bad "grounding_manifest_recorded ($gm_pid/$gm_repo: manifest missing or without $gm_file)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		file_grounded)
+			# val "<plan>:<repo>:<relpath>:<needle>" — the committed artifact honors a
+			# convention stated ONLY in the repo's own guidance: proof the writer
+			# discovered, read, and honored it (INV-GROUND-01/02). The needle is not
+			# required by the plan, so its presence can only come from the repo guidance.
+			fg_pid=${val%%:*}; fg_r1=${val#*:}; fg_repo=${fg_r1%%:*}; fg_r2=${fg_r1#*:}
+			fg_path=${fg_r2%%:*}; fg_needle=${fg_r2#*:}
+			fg_exec=$(cc_latest_execution "$WORKSPACE" "$fg_pid" 2>/dev/null) || fg_exec=""
+			fg_edir=$(cc_execution_dir "$WORKSPACE" "$fg_pid" "$fg_exec" 2>/dev/null)
+			fg_wt=$(cc_scalar "$fg_edir/repositories/$fg_repo.yaml" worktree 2>/dev/null)
+			fg_target="$fg_wt/$fg_path"
+			if [ -f "$fg_target" ] && grep -Fq "$fg_needle" "$fg_target"; then ok "file_grounded ($fg_path honors repo convention '$fg_needle')"
+			else bad "file_grounded ($fg_path missing '$fg_needle' — writer did not honor the repo's own guidance)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
