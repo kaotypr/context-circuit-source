@@ -29,8 +29,7 @@ contains "$cfg" "publication/<name>/config.yaml"
 contains "$cfg" "values: [export]"
 contains "$cfg" "values: [manual]"
 contains "$cfg" "credential-free"
-# language and instructions apply to every kind
-contains "$cfg" "language:"
+# instructions apply to every kind (language, tone, optional field enrichment)
 contains "$cfg" "instructions:"
 
 # --- record schema (plan kind): under the publication, idempotent ---
@@ -67,8 +66,8 @@ contains "$sk" "Never put in any external field"
 contains "$sk" "[<plan-number>] <plan title>"
 contains "$sk" "id slug appears nowhere"
 contains "$sk" "never write under"
-# language + instructions honored
-contains "$sk" "Authoring: language and instructions"
+# instructions honored (language, tone, field enrichment)
+contains "$sk" "Authoring: instructions"
 contains "$sk" "best-effort estimates"
 # the thread kind
 contains "$sk" "Publish (the \`thread\` kind)"

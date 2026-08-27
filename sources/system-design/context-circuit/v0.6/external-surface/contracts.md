@@ -62,13 +62,13 @@ kind's record shape (record shapes are per-kind); the trigger is **not** a new
 authority — `cc-publish` is an ordinary skill under the existing INV-SKILL-01,
 surfaced as a slash command by the host adapter as an optional convenience.
 
-`config.yaml` carries an optional **`language`** (default `en`) and optional
-**`instructions`** (free-text authoring guidance — tone, phrasing, and which optional
-provider fields to enrich by estimation, e.g. time estimates or a date range), both
-applying to every kind. They shape how `cc-publish` authors external text and which
-optional fields it fills; they change no workspace text and no owner, and neither can
-override the invariants (self-contained artifacts, `reads` scope, one-way,
-boundaries). They are recorded in `publication-config.yaml`.
+`config.yaml` carries optional **`instructions`** — free-text authoring guidance
+applying to every kind: the language to author in, tone and phrasing, and which
+optional provider fields to enrich by estimation (e.g. time estimates or a date
+range). It shapes how `cc-publish` authors external text and which optional fields it
+fills; it changes no workspace text and no owner, and it cannot override the
+invariants (self-contained artifacts, `reads` scope, one-way, boundaries). It is
+recorded in `publication-config.yaml`.
 
 ## No core contract bump
 

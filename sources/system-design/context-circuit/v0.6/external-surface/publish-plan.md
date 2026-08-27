@@ -100,7 +100,7 @@ title, so a human can map what went where:
 ## Optional field enrichment (via `instructions`)
 
 Beyond the fixed mapping, a publication's `instructions`
-([configuration-and-records.md](./configuration-and-records.md#language-and-instructions))
+([configuration-and-records.md](./configuration-and-records.md#instructions))
 can ask `cc-publish` to fill **optional provider fields** it derives from the plan —
 for example a **time estimate per task** or a **target date range** for the plan,
 mapped to ClickUp's time-estimate and start/due-date fields (or a provider's

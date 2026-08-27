@@ -41,12 +41,11 @@ Every message reads as an ordinary team discussion to someone who has never hear
 Context Circuit: no workspace file, path, or internal id, and no internal mechanism.
 The plan id in the parent headline is the only cross-reference.
 
-## Language
+## Language, tone, and instructions
 
-The thread is written in the publication's configured `language` (see
-[configuration-and-records.md](./configuration-and-records.md#language)). `cc-publish`
-authors the parent and every reply in that language, whatever language the plan is
-written in.
+The parent and every reply follow the publication's `instructions` (see
+[configuration-and-records.md](./configuration-and-records.md#instructions)) — the
+language to author in, tone, and phrasing — whatever language the plan is written in.
 
 ## One-way and non-authoritative
 
@@ -101,7 +100,8 @@ so a re-run can find and edit the right message.
 ## Worked trace
 
 1. **Configure.** `publication/thread-slack/config.yaml`: `kind: thread`,
-   `provider: slack`, `reads: [plans]`, `target_ref.channel_id`, and a `language`.
+   `provider: slack`, `reads: [plans]`, `target_ref.channel_id`, and optional
+   `instructions` (language, tone).
 2. **Publish.** *"open a discussion thread for plan 0100's open questions."*
    `cc-publish` posts the `[thread] [0100] …` parent and one fully-described reply
    per open question, then writes the record to

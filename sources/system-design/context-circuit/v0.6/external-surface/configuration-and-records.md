@@ -46,10 +46,9 @@ kind: plan                     # what cc-publish publishes (plan | docs | thread
 provider: clickup              # clickup | jira | github | notion | slack | … (open-ended)
 direction: export              # export-first; the only value in this scope
 trigger: manual                # manual is the only allowed value
-language: en                   # language to author external text in (any kind); default en
 instructions: >                # optional free-text guidance cc-publish follows
-  Everyday, conversational tone; keep technical terms in English. Estimate a time
-  estimate per task and a target date range for the plan.
+  Write in Bahasa Indonesia, everyday conversational tone; keep technical terms in
+  English. Estimate a time estimate per task and a target date range for the plan.
 reads:                         # DECLARED, bounded artifact scope — no scanning
   - plans
   - tasks
@@ -77,26 +76,23 @@ mapping:                       # kind-specific field map (see publish-plan.md)
   allows; they exist as fields so the contract can refuse anything else rather than
   silently doing something coupling or automatic.
 
-## Language and instructions
+## Instructions
 
-`language` (a BCP-47 code such as `en`, `id`, `ja`; default `en`) applies to **every
-kind** — plan, docs, thread. `cc-publish` authors all external text it writes (work-
-item titles and descriptions, checklist items, thread messages) in that language,
-whatever language the source plan is written in. It is an authoring choice for the
-external audience; it never changes `plan.yaml` or any workspace text, which stay in
-their own language (INV-PLAN-01). `target_ref` and ids are not translated.
+`instructions` is optional free-text guidance that **`cc-publish`** (the coordinator's
+publish skill, INV-SKILL-01) follows when authoring external text, for every kind. It
+covers:
 
-`instructions` is optional free-text guidance that **`cc-publish`** (the
-coordinator's publish skill, INV-SKILL-01) follows. It covers two things:
-
-- **How the external text reads** — tone, phrasing, term handling (e.g. "Everyday,
+- **The language to author in** — e.g. "write in Bahasa Indonesia"; the default is
+  the source plan's language. `cc-publish` authors every title, description, checklist
+  item, and message in that language; ids and `target_ref` are never translated.
+- **How the text reads** — tone, phrasing, term handling (e.g. "everyday
   conversational tone; keep technical terms in English").
 - **Which optional provider fields to enrich** by deriving them from the plan (e.g.
-  "Estimate a time estimate per task and a target date range for the plan"), which
-  `cc-publish` maps to the provider's own fields (a ClickUp time estimate, start/due
-  dates, priority, tags). Enriched values are its **best-effort estimates**,
-  written one-way like everything else — clearly estimates, never presented as facts
-  the plan asserted, and never returned to the workspace.
+  "estimate a time estimate per task and a target date range"), which `cc-publish`
+  maps to the provider's own fields (a ClickUp time estimate, start/due dates,
+  priority, tags). Enriched values are its **best-effort estimates**, written one-way
+  — clearly estimates, never presented as facts the plan asserted, and never returned
+  to the workspace.
 
 It guides authoring and optional enrichment only, always within the invariants:
 
@@ -104,9 +100,8 @@ It guides authoring and optional enrichment only, always within the invariants:
   can make `cc-publish` leak a workspace file, path, id, or internal mechanism.
 - It **never expands scope or authority** — it cannot read artifacts beyond `reads`,
   write back to `plan.yaml` or any workspace file, change the core plan→work-item
-  mapping, or relax a boundary or safety rule. It guides wording and optional field
-  values, not actions.
-- It applies to every kind, and like `language` it changes no workspace text.
+  mapping, or relax a boundary or safety rule.
+- It changes no workspace text (INV-PLAN-01), which stays in its own language.
 
 ## Credentials never enter the workspace
 
