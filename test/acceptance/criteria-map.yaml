@@ -54,7 +54,7 @@ criteria:
     statement: Explicit human completion marks done only after successful verification.
     suite: test/completion/test-completion.sh
   - id: AC-16
-    statement: Pull request, merge, push, publication, deployment, and cleanup require separate human actions.
+    statement: Pull request, merge, push, deployment, and cleanup require separate human actions.
     suite: test/delivery/test-delivery.sh
   - id: AC-17
     statement: An agent can execute a plan without reading the full runtime implementation.

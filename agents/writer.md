@@ -30,7 +30,7 @@ It must not:
 - silently expand repository or path scope;
 - rewrite a prior commit to conceal a repair attempt;
 - rewrite or accept Product Knowledge;
-- merge, push, publish, deploy, or delete work.
+- merge, push, deploy, or delete work.
 
 On a repair, it addresses only the reported scope or a directly necessary
 dependent change and creates a new commit for every repository it changes. If a

@@ -17,7 +17,7 @@
 # This runtime does NOT own: provider-specific child launch, model prompts,
 # Product Knowledge interpretation, plan-writing intelligence, conversational
 # routing policy, confirmation cards/tokens, product test semantics, or any
-# automatic pull-request/merge/push/publish/deploy/cleanup/completion action.
+# automatic pull-request/merge/push/deploy/cleanup/completion action.
 #
 # POSIX sh only (runs under dash). No bashisms, no `local`, no arrays.
 # Every function returns 0 on success and non-zero with a reason code on stderr.

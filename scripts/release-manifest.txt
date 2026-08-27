@@ -50,6 +50,8 @@ required wrapper/contracts/schemas/context-proposal.yaml
 required wrapper/contracts/schemas/context-index.yaml
 required wrapper/contracts/schemas/lease.yaml
 required wrapper/contracts/schemas/grounding-manifest.yaml
+required wrapper/contracts/schemas/publication-config.yaml
+required wrapper/contracts/schemas/publication-record.yaml
 
 # Guides and templates.
 required docs/getting-started.md
@@ -72,6 +74,7 @@ required .agents/skills/cc-verify/SKILL.md
 required .agents/skills/cc-complete/SKILL.md
 required .agents/skills/cc-archive/SKILL.md
 required .agents/skills/cc-deliver/SKILL.md
+required .agents/skills/cc-publish/SKILL.md
 required agents/coordinator.md
 required agents/writer.md
 required agents/verifier.md

@@ -151,7 +151,7 @@ invariants:
       without scanning the filesystem or substituting a similarly named path.
   - id: INV-DELIVER-01
     rule: >
-      Pull-request creation, merge, push, publication, deployment, archive, and
+      Pull-request creation, merge, push, deployment, archive, and
       cleanup are separate human-requested actions. A pull request uses each
       execution branch as source and the repository's recorded anchor_branch as
       the default target; it never substitutes default_branch or silently follows
@@ -181,7 +181,7 @@ invariants:
       It contains no provider launch code, model prompts, Product Knowledge
       interpretation, plan-writing intelligence, conversational routing policy,
       confirmation cards, product test-runner logic, or automatic
-      pull-request/merge/push/publish/deploy/cleanup/completion.
+      pull-request/merge/push/deploy/cleanup/completion.
   - id: INV-RUNTIME-02
     rule: >
       Runtime records are written atomically. A partial or contradictory record
@@ -260,6 +260,43 @@ invariants:
       that host bridge is an optional convenience owned by the host adapter and
       is never a separate route, role, or authority. The shipped workspace never
       contains a host-specific skill directory or symlink.
+  - id: INV-EXTERNAL-01
+    rule: >
+      The external surface is a set of opt-in, manually-triggered publications
+      that push workspace data to external systems and are orthogonal to the core
+      workflow. No core-workflow phase (plan, approve, execute, verify, deliver),
+      runtime action, coordinator route, or role references, triggers, schedules,
+      waits on, or is affected by any publication, and none runs except on an
+      explicit human invocation of the cc-publish skill. A publication is a
+      command, not a standing relationship: it observes the workspace as it finds
+      it at invocation time. There is no automatic, scheduled, event, or
+      workflow-driven trigger.
+  - id: INV-EXTERNAL-02
+    rule: >
+      A publication reads only the workspace artifact types its config.yaml names
+      and writes only its own records under publication/<name>/published/. Nothing
+      is written under plans/, so no planning, execution, verification, or delivery
+      step encounters a publication record and none updates external state or
+      status. It never mutates core Context Circuit state or human plan status
+      (INV-PLAN-01), and it is export-only — data flows from the workspace outward.
+      External side effects are performed through the host or MCP layer, never the
+      runtime (INV-RUNTIME-01); configuration and records are credential-free and
+      hold no provider payload (INV-SEC-01). A record's lifecycle is independent of
+      a plan's archive state, keyed to the stable plan id. Any future inbound flow
+      must pass through the normal plan-authoring and approval gates
+      (INV-APPROVE-01), never around them.
+  - id: INV-EXTERNAL-03
+    rule: >
+      Every external artifact a publication creates or updates (a task, document,
+      or message) is self-contained: its title, description, and any checklist or
+      field describe the plan, task, or document in plain language understandable
+      to a reader with no access to the workspace. It never contains a workspace
+      file name (for example plan.yaml, config.yaml), a workspace-internal path
+      (for example plans/, context/, publication/), a workspace-internal
+      identifier (for example an acceptance or verification id), or internal
+      Context Circuit mechanism or vocabulary. A stable plan or task identifier may
+      appear — normally in the title, as [<plan-number>] — solely so a human can
+      map what went where.
 
 owners:
   authority_order: WORKFLOW.md
@@ -292,3 +329,6 @@ owners:
   verifier_role: agents/verifier.md
   host_adapter: wrapper/adapters/AGENTS.md
   delivery_boundary: wrapper/adapters/WORKFLOW.md
+  external_surface: wrapper/contracts/invariants.yaml
+  publication_config: wrapper/contracts/schemas/publication-config.yaml
+  publication_record: wrapper/contracts/schemas/publication-record.yaml

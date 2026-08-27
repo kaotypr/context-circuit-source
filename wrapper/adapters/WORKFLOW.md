@@ -42,7 +42,7 @@ Circuit workspace.
   execution and preserve all evidence.
 - Verification produces `verified` evidence; only an explicit human request marks
   a plan `done`, and only when verified.
-- Delivery (pull request, merge, push, publish, deploy) and cleanup are separate
+- Delivery (pull request, merge, push, deploy) and cleanup are separate
   explicit actions; a pull request targets the recorded `anchor_branch`, never
   `default_branch`.
 - Failed or interrupted work is preserved, never silently cleaned up.
