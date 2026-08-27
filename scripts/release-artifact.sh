@@ -44,12 +44,13 @@ cp "$source_root/wrapper/adapters/writer-brief.md" "$stage_tree/writer-brief.md"
 # Blank workspace seed from the template.
 cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
 cp "$source_root/template/workspace.yaml" "$stage_tree/workspace.yaml"
-mkdir -p "$stage_tree/context" "$stage_tree/sources" "$stage_tree/plans/.archived"
+mkdir -p "$stage_tree/context" "$stage_tree/sources/archive" "$stage_tree/plans/archive"
 cp -R "$source_root/template/context/." "$stage_tree/context/"
 cp "$source_root/template/sources/README.md" "$stage_tree/sources/README.md"
+cp "$source_root/template/sources/archive/README.md" "$stage_tree/sources/archive/README.md"
 cp "$source_root/template/plans/README.md" "$stage_tree/plans/README.md"
 cp "$source_root/template/plans/INDEX.md" "$stage_tree/plans/INDEX.md"
-[ -f "$source_root/template/plans/.archived/README.md" ] && cp "$source_root/template/plans/.archived/README.md" "$stage_tree/plans/.archived/README.md" || :
+[ -f "$source_root/template/plans/archive/README.md" ] && cp "$source_root/template/plans/archive/README.md" "$stage_tree/plans/archive/README.md" || :
 
 required_files=''
 exclude_paths=''

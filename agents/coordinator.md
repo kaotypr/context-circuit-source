@@ -19,7 +19,7 @@ product skills are read-as-procedure packets at `.agents/skills/<name>/SKILL.md`
 read by path and never a separate authority; then report what changed, what was
 verified, and the next human decision.
 
-Never read or traverse `plans/.archived/` for orientation, discovery, review,
+Never read or traverse `plans/archive/` for orientation, discovery, review,
 execution, or context. Never infer approval, execution, completion, or delivery
 from a vague statement. Never create, initialize, or register a repository the
 user has not explicitly named or requested — when code has no home yet, orient,

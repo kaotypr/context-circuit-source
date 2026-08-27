@@ -124,7 +124,7 @@ assert_eq "verified" "$(cc_execution_status "$edir")"
 cc_plan_complete "$ws" "$pid" >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" "$pid")"
 cc_plan_archive "$ws" "$pid" >/dev/null
-require_dir "$ws/plans/.archived/$pid"
+require_dir "$ws/plans/archive/$pid"
 cc_plan_restore "$ws" "$pid" >/dev/null
 require_dir "$ws/plans/$pid"
 

@@ -300,7 +300,7 @@ cc_workspace_init() {
 	[ -n "$cc_wi_root" ] || { cc_fail WORKSPACE_ROOT_MISSING; return 1; }
 	mkdir -p "$cc_wi_root/context/domains" "$cc_wi_root/context/roles" \
 		"$cc_wi_root/context/proposals" "$cc_wi_root/sources" \
-		"$cc_wi_root/plans/.archived" "$cc_wi_root/.runtime/executions" \
+		"$cc_wi_root/plans/archive" "$cc_wi_root/.runtime/executions" \
 		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/locks" \
 		"$cc_wi_root/repositories" || return 1
 	[ -f "$cc_wi_root/plans/INDEX.md" ] || cc_plan_index_init "$cc_wi_root"
@@ -808,7 +808,7 @@ cc_plan_allocate_id() {
 	cc_ai_root="$1"; cc_ai_slug="$2"
 	cc_safe_slug "$cc_ai_slug" || { cc_fail PLAN_SLUG_INVALID "$cc_ai_slug"; return 1; }
 	cc_ai_max=0
-	for cc_ai_d in "$cc_ai_root/plans"/*/ "$cc_ai_root/plans/.archived"/*/; do
+	for cc_ai_d in "$cc_ai_root/plans"/*/ "$cc_ai_root/plans/archive"/*/; do
 		[ -d "$cc_ai_d" ] || continue
 		cc_ai_base=$(basename -- "$cc_ai_d")
 		case "$cc_ai_base" in
@@ -895,16 +895,16 @@ cc_plan_org_lock() {
 }
 cc_plan_org_unlock() { rmdir "$1/.runtime/locks/plan-organization.lock" 2>/dev/null || true; }
 
-# cc_plan_archive ROOT PLAN -> move plans/PLAN -> plans/.archived/PLAN; drop index row
+# cc_plan_archive ROOT PLAN -> move plans/PLAN -> plans/archive/PLAN; drop index row
 cc_plan_archive() {
 	cc_ar_root="$1"; cc_ar_plan="$2"
 	cc_safe_id "$cc_ar_plan" || { cc_fail PLAN_ID_UNSAFE "$cc_ar_plan"; return 1; }
 	cc_ar_src="$cc_ar_root/plans/$cc_ar_plan"
-	cc_ar_dst="$cc_ar_root/plans/.archived/$cc_ar_plan"
+	cc_ar_dst="$cc_ar_root/plans/archive/$cc_ar_plan"
 	[ -d "$cc_ar_src" ] || { cc_fail ARCHIVE_SOURCE_MISSING "$cc_ar_plan"; return 1; }
 	[ -e "$cc_ar_dst" ] && { cc_fail ARCHIVE_TARGET_COLLISION "$cc_ar_plan"; return 1; }
 	cc_plan_org_lock "$cc_ar_root" || return 1
-	mkdir -p "$cc_ar_root/plans/.archived"
+	mkdir -p "$cc_ar_root/plans/archive"
 	if mv "$cc_ar_src" "$cc_ar_dst" 2>/dev/null; then
 		if cc_plan_index_remove "$cc_ar_root" "$cc_ar_plan"; then
 			cc_plan_org_unlock "$cc_ar_root"
@@ -920,11 +920,11 @@ cc_plan_archive() {
 	cc_fail ARCHIVE_MOVE_FAILED "$cc_ar_plan"; return 1
 }
 
-# cc_plan_restore ROOT PLAN -> move plans/.archived/PLAN -> plans/PLAN; re-add index
+# cc_plan_restore ROOT PLAN -> move plans/archive/PLAN -> plans/PLAN; re-add index
 cc_plan_restore() {
 	cc_re_root="$1"; cc_re_plan="$2"
 	cc_safe_id "$cc_re_plan" || { cc_fail PLAN_ID_UNSAFE "$cc_re_plan"; return 1; }
-	cc_re_src="$cc_re_root/plans/.archived/$cc_re_plan"
+	cc_re_src="$cc_re_root/plans/archive/$cc_re_plan"
 	cc_re_dst="$cc_re_root/plans/$cc_re_plan"
 	[ -d "$cc_re_src" ] || { cc_fail RESTORE_SOURCE_MISSING "$cc_re_plan"; return 1; }
 	[ -e "$cc_re_dst" ] && { cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
