@@ -1,0 +1,16 @@
+schema_version: 1
+plan: 0010-release-assembly-and-publication
+provider: github
+plan_item:
+  id: "82"
+  url: "https://github.com/kaotypr/context-circuit/issues/82"
+task_items:
+  - task: REL-001
+    id: "82"
+    synced_digest: "sha256:8c384c517bf9d21c074c652e672fad619a8c0c7db3bc894b9340183c6d6f2a8c"
+  - task: REL-002
+    id: "82"
+    synced_digest: "sha256:8c384c517bf9d21c074c652e672fad619a8c0c7db3bc894b9340183c6d6f2a8c"
+  - task: REL-003
+    id: "82"
+    synced_digest: "sha256:8c384c517bf9d21c074c652e672fad619a8c0c7db3bc894b9340183c6d6f2a8c"

@@ -1,0 +1,16 @@
+schema_version: 1
+plan: 0002-workspace-repository-model
+provider: github
+plan_item:
+  id: "74"
+  url: "https://github.com/kaotypr/context-circuit/issues/74"
+task_items:
+  - task: WRK-001
+    id: "74"
+    synced_digest: "sha256:e7213adeb66a803202c7bb2a0b7136cb873c787485dd3df5d819ffc77421132c"
+  - task: WRK-002
+    id: "74"
+    synced_digest: "sha256:e7213adeb66a803202c7bb2a0b7136cb873c787485dd3df5d819ffc77421132c"
+  - task: WRK-003
+    id: "74"
+    synced_digest: "sha256:e7213adeb66a803202c7bb2a0b7136cb873c787485dd3df5d819ffc77421132c"
