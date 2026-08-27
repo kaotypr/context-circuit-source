@@ -1,10 +1,12 @@
 # Context Circuit source
 
 This repository is `context-circuit-source`, the maintainer source that builds
-Context Circuit v0.5 — a universal project workspace for AI-assisted work that
-connects and coordinates one or more Git repositories. The released artifact is
-`context-circuit-template`: a clean, uninitialized universal project workspace.
-This checkout is the product source and its self-hosted maintainer workspace.
+Context Circuit — a universal project workspace for AI-assisted work that
+connects and coordinates one or more Git repositories. The source is not bound to
+a version; it holds the current design and may lead the version last published as
+the released artifact, `context-circuit-template`: a clean, uninitialized
+universal project workspace. This checkout is the product source and its
+self-hosted maintainer workspace.
 
 ## Product experience
 
@@ -33,8 +35,9 @@ completion, archive, restore, and delivery are separate explicit human actions.
 - `docs/` — shipped guides and plan/task templates.
 - `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
   released.
-- `sources/system-design/context-circuit/v0.5/` — the authoritative v0.5 design;
-  maintainer material only, never shipped.
+- `sources/system-design/context-circuit/` — the authoritative maintainer design
+  set (core plus scoped increments in versioned subfolders); maintainer material
+  only, never shipped.
 - `test/` — semantic acceptance suites (the deterministic engine-level laboratory
   is run from here via `template-harness/test-template-runtime.sh`).
 - `template-harness/` — the built-template behavior laboratory: the deterministic
@@ -52,6 +55,6 @@ Run the complete semantic acceptance suite:
 sh test/acceptance.sh
 ```
 
-Read `sources/system-design/context-circuit/v0.5/core/design.md` only as
+Read the design set under `sources/system-design/context-circuit/` only as
 maintainer design material. The released artifact uses the shipped wrapper and
 template, not the source repository's maintainer state.
