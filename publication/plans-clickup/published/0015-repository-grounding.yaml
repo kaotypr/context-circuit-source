@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0015-repository-grounding
+provider: clickup
+plan_item:
+  id: "86eyrr06t"
+  url: "https://app.clickup.com/t/86eyrr06t"
+task_items:
+  - task: RGD-001
+    id: "86eyrr1qt"
+    url: "https://app.clickup.com/t/86eyrr1qt"
+    synced_digest: "sha256:8c2d92dd97ec1ee19f4db8b98b9d4ce4f6c7d87179b316d9498394a3d458fd5d"
+  - task: RGD-002
+    id: "86eyrr1r7"
+    url: "https://app.clickup.com/t/86eyrr1r7"
+    synced_digest: "sha256:ef5bd4f3de805cf7d499ef1bc1fdfdd48573e8e1b23c096ecfa828788773ea7f"
+  - task: RGD-003
+    id: "86eyrr1r9"
+    url: "https://app.clickup.com/t/86eyrr1r9"
+    synced_digest: "sha256:30b2067bf118d483226e058c40be36f2f1413eaa8795206d2f611dfc33360907"
