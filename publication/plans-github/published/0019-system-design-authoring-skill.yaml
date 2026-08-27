@@ -1,0 +1,10 @@
+schema_version: 1
+plan: 0019-system-design-authoring-skill
+provider: github
+plan_item:
+  id: "91"
+  url: "https://github.com/kaotypr/context-circuit/issues/91"
+task_items:
+  - task: SDA-001
+    id: "91"
+    synced_digest: "sha256:61367b06932ca18cfaef13666283f7144af54537dab959d634c263410a3f92a9"
