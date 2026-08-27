@@ -33,6 +33,7 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 - [Completion](completion/README.md) — human-gated `approved → done` and knowledge reconciliation. Status: accepted.
 - [Plan organization](plan-organization/README.md) — status-agnostic archive and restore. Status: accepted.
 - [Delivery](delivery/README.md) — separate pull-request/merge/push actions; source/target branch model. Status: accepted.
+- [External surface](external-surface/README.md) — manually-triggered, config-driven publishing of Context Circuit data (a plan and its tasks, or a plan's open-question thread) to external systems, orthogonal to the core workflow; no runtime/network code, no new authority. Status: accepted.
 - [Host adapters](host-adapters/README.md) — Codex, Claude Code, and Cursor Agent CLI as evidence-only transports. Status: accepted.
 - [Source release and upgrade](source-release-and-upgrade/README.md) — assembly, ships-vs-never-ships, upgrade preservation + migration-needed. Status: accepted.
 - [System-design authoring](system-design-authoring/README.md) — the `cc-system-design` skill for authoring a system design as structured source material. Status: accepted.

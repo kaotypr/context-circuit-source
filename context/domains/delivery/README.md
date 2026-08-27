@@ -28,10 +28,15 @@ workflows:
 
 ## Summary
 
-Opening a pull request, merging, pushing, or publishing — each a separate,
-explicit human action never implied by a prior success. Route "open a pull
-request for `<id>`", merge, and push requests here. Owned by the `cc-deliver`
-skill; the delivery boundary is owned by `wrapper/adapters/WORKFLOW.md`.
+Opening a pull request, merging, or pushing — each a separate, explicit human
+action never implied by a prior success. Route "open a pull request for `<id>`",
+merge, and push requests here. Owned by the `cc-deliver` skill; the delivery
+boundary is owned by `wrapper/adapters/WORKFLOW.md`.
+
+In this product "publish"/"publication" names sending data to an external system
+([external-surface](../external-surface/README.md)); git delivery is "push" / "open
+a pull request" and never "publish" — the two never share a word, so no qualifier is
+needed.
 
 ## Scope
 
@@ -43,7 +48,7 @@ branch creation itself ([plan-execution](../plan-execution/README.md)).
 
 ## Behavior
 
-Pull-request creation, merge, push, publication, deployment, archive, and
+Pull-request creation, merge, push, deployment, archive, and
 cleanup are separate human-requested actions. A pull request uses each execution
 branch `cc/<plan-id>/<repo-id>` as source and the repository's recorded
 `anchor_branch` as the default target; it never substitutes `default_branch` or
@@ -105,4 +110,7 @@ scanned.
 ## Acceptance notes
 
 Accepted 2026-08-24 from proposal `0015-domain-delivery`. Extended 2026-08-27 from
-proposal `0019-change-delivery` (the v0.6 drift guard).
+proposal `0019-change-delivery` (the v0.6 drift guard), and 2026-08-28 from proposal
+`0024-change-delivery` (vacate "publish"/"publication" from git delivery; the word is
+reserved for the [external surface](../external-surface/README.md), matching
+INV-DELIVER-01 and AC-16).

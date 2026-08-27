@@ -165,3 +165,57 @@ Rationale: dimension D was declared in v0.5 but never measured; a budget with no
 defined unit is unfalsifiable.
 Consequence: maintainer tooling only — no product surface change. Accepted from
 proposal `0021-change-decisions`.
+
+## 2026-08-28 — the external surface is orthogonal to the core workflow
+
+Decision: publishing Context Circuit data outward is a peer command (`cc-publish`),
+never a phase, trigger, gate, dependency, or side effect of one; it runs only on
+explicit manual invocation, every time, against the workspace as found.
+
+Rationale: coupling an external, credentialed, provider-specific side effect to the
+deterministic core loop would add weight to the runtime and the agent and hand an
+outside system a foothold on plan state.
+Consequence: INV-EXTERNAL-01; no runtime or network code, no hook, no lifecycle
+listener — nothing in the workflow triggers a publication, so there is nothing to
+hook. Accepted from proposal `0026-change-decisions`.
+
+## 2026-08-28 — external surface: export-first, non-authoritative, self-contained
+
+Decision: data flows Context Circuit → outward only; the external copy is one-way,
+idempotent on re-run, and self-contained (no workspace file, path, id, or internal
+mechanism leaks; a plan id in a title is the one allowed cross-reference);
+`plan.yaml` stays canonical and nothing is written under `plans/`.
+
+Rationale: import would bypass the human plan-authoring and approval gates; a leaked
+internal makes the external copy unreadable to a lay reader.
+Consequence: INV-EXTERNAL-02, INV-EXTERNAL-03; any future import must pass through the
+normal authoring gate (INV-APPROVE-01). Records live under a user-owned `publication/`
+folder created on first use; config is credential-free (INV-SEC-01) and the host / MCP
+layer carries all provider weight (INV-RUNTIME-01 unchanged). Accepted from proposal
+`0026-change-decisions`.
+
+## 2026-08-28 — "publish" is the external surface's word; git delivery is push / pull request
+
+Decision: the product reserves "publish"/"publication" for the external surface and
+vacates it from git delivery, which speaks only in push / pull request / merge /
+deliver.
+
+Rationale: one word, one meaning everywhere, so no per-mention qualifier is ever
+needed.
+Consequence: a wording-only edit to INV-DELIVER-01, INV-RUNTIME-01,
+`wrapper/manifest.yaml`, and AC-16 (no behavior, version, or authority change); the
+delivery page and glossaries follow (proposals `0024-change-delivery`,
+`0025-change-terminology`). Accepted from proposal `0026-change-decisions`.
+
+## 2026-08-28 — the external surface adds no core contract bump
+
+Decision: the scope ships a skill (`cc-publish`) + two record schemas + a config
+convention (`publication-config.yaml`) + three invariants, and changes no plan-schema,
+execution, or runtime-version.
+
+Rationale: it binds to data, never to control flow, so it needs no coordinated bump —
+comparable to how system-design-authoring ships only a skill.
+Consequence: a workspace that configures no publication is a v0.5-shaped workspace plus
+the availability of `cc-publish`; kinds (`plan`, `thread`, future `docs`) are new
+`cc-publish` behavior plus a `config.yaml`, never new authority. Accepted from proposal
+`0026-change-decisions`.
