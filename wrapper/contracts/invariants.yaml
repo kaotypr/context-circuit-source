@@ -332,3 +332,4 @@ owners:
   external_surface: wrapper/contracts/invariants.yaml
   publication_config: wrapper/contracts/schemas/publication-config.yaml
   publication_record: wrapper/contracts/schemas/publication-record.yaml
+  publication_thread_record: wrapper/contracts/schemas/publication-thread-record.yaml

@@ -78,7 +78,8 @@ done
 # Canonical schema fixtures must be present.
 for schema in workspace repositories-local plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
-  lease grounding-manifest publication-config publication-record; do
+  lease grounding-manifest publication-config publication-record \
+  publication-thread-record; do
   [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
 

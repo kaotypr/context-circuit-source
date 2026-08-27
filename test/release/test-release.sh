@@ -24,7 +24,8 @@ require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
-  lease grounding-manifest publication-config publication-record; do
+  lease grounding-manifest publication-config publication-record \
+  publication-thread-record; do
   require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
 done
 require_file "$artifact/docs/getting-started.md"
