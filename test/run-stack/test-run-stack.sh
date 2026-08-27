@@ -207,4 +207,39 @@ expect_failure cc_delivery_rebase "$ws" 0020-cf
 # the plan's work is preserved after the aborted rebase
 require_dir "$ws/.runtime/worktrees/0020-cf/api"
 
+# ============================================================================
+# 7. Multi-repo: a CROSS-repo dependency is an ordering gate only — it gates
+#    readiness but never produces a git base (INV-CONCURRENCY-02). A same-repo
+#    dependency in the other repo still stacks.
+# ============================================================================
+cc_fx_repo "$ws" web development
+webdir="$ws/repositories/web"
+cc_fx_plan_ex "$ws" 0021-xrapi "XR api"  api src/xr ""
+cc_fx_plan_ex "$ws" 0022-xrweb "XR web"  web src/xr "0021-xrapi"   # cross-repo dep (web -> api)
+cc_fx_plan_ex "$ws" 0023-xrweb2 "XR web2" web src/xr2 "0022-xrweb" # same-repo dep (web -> web)
+cc_plan_approve "$ws" 0021-xrapi >/dev/null
+cc_plan_approve "$ws" 0022-xrweb >/dev/null
+cc_plan_approve "$ws" 0023-xrweb2 >/dev/null
+# the cross-repo dependent has NO same-repo predecessor
+expect_failure cc_plan_has_same_repo_pred "$ws" 0022-xrweb web
+# readiness gates on the cross-repo dependency until it verifies
+xr_before=$(cc_plan_ready "$ws" 0022-xrweb || :)
+printf '%s' "$xr_before" | grep -q '^readiness: waiting' || fail "0022 must wait on its cross-repo dep"
+cc_fx_run_ok "$ws" 0021-xrapi api src/xr
+xr_after=$(cc_plan_ready "$ws" 0022-xrweb || :)
+printf '%s' "$xr_after" | grep -q '^readiness: ready' || fail "0022 must be ready once the cross-repo dep verified"
+# execute 0022: base is web's anchor tip and NO based_on is recorded (gate, not base)
+cc_fx_run_ok "$ws" 0022-xrweb web src/xr
+xr_rf="$(edir_of 0022-xrweb)/repositories/web.yaml"
+not_contains "$xr_rf" "based_on:"
+web_tip=$(git -C "$webdir" rev-parse --verify refs/heads/development)
+git -C "$webdir" merge-base --is-ancestor "$web_tip" "$(cc_scalar "$xr_rf" base_commit)" \
+	|| fail "cross-repo dependent must be based on its own anchor tip"
+# a SAME-repo dependent in web still stacks on its predecessor's branch
+cc_fx_run_ok "$ws" 0023-xrweb2 web src/xr2
+xr2_rf="$(edir_of 0023-xrweb2)/repositories/web.yaml"
+contains "$xr2_rf" "based_on: [0022-xrweb]"
+xrweb_tip=$(git -C "$webdir" rev-parse --verify refs/heads/cc/0022-xrweb/web)
+assert_eq "$xrweb_tip" "$(cc_scalar "$xr2_rf" base_commit)"
+
 pass 'run-stack'
