@@ -15,6 +15,7 @@ require_file "$artifact/AGENTS.md"
 require_file "$artifact/CLAUDE.md"
 require_file "$artifact/WORKFLOW.md"
 require_file "$artifact/README.md"
+require_file "$artifact/writer-brief.md"
 require_file "$artifact/.gitignore"
 require_file "$artifact/workspace.yaml"
 require_file "$artifact/wrapper/manifest.yaml"
@@ -22,7 +23,9 @@ require_file "$artifact/wrapper/runtime/engine.sh"
 require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local plan task execution worker-handoff \
-  verifier-result completion context-impact context-proposal context-index; do
+  verifier-result completion context-impact context-proposal context-index \
+  lease grounding-manifest publication-config publication-record \
+  publication-thread-record; do
   require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
 done
 require_file "$artifact/docs/getting-started.md"
@@ -54,17 +57,17 @@ for leaked in .runtime test .github scripts template repositories repositories.l
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"
 done
 
-# --- only the v0.5 skills ship ---
+# --- only the shipped skills ship (v0.5 seven + v0.6 cc-run-stack, cc-system-design) ---
 count=0
 for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   name=${skill_dir##*/}
   case "$name" in
-    cc-workspace|cc-plan|cc-execute|cc-verify|cc-complete|cc-archive|cc-deliver) count=$((count + 1)) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-publish) count=$((count + 1)) ;;
     *) fail "unexpected skill leaked into artifact: $name" ;;
   esac
 done
-test "$count" -eq 7 || fail "shipped skill count: $count"
+test "$count" -eq 10 || fail "shipped skill count: $count"
 
 # --- no credentials or provider payloads anywhere in the artifact ---
 if grep -REn '^[[:space:]]*(password|api_key|access_token|provider_payload|transcript):' "$artifact" >/dev/null 2>&1; then

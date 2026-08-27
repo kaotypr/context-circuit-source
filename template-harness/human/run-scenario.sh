@@ -106,41 +106,52 @@ US=$(printf '\037')   # non-whitespace field separator: preserves EMPTY middle f
 
 ENGINE_CLI="$WORKSPACE/wrapper/runtime/engine.sh"
 
-# Emit one TSV row per setup.repositories entry: id dest default_branch branches seed_files connect
+# Emit one TSV row per setup.repositories entry:
+#   id dest default_branch branches seed_files connect agents_md
+# `agents_md` (optional) seeds the repo's OWN agent guidance (an AGENTS.md with a
+# distinctive convention) so repository-grounding discovery finds real guidance.
 repo_fixtures() {
 	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  repositories:/{inr=1; next}
 		inr && /^  [A-Za-z]/ && $0 !~ /^    /{inr=0}
 		inr && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id S dest S defb S br S sf S conn;
+			if(id!="") print id S dest S defb S br S sf S conn S am;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			dest="";defb="";br="";sf="";conn=""; next
+			dest="";defb="";br="";sf="";conn="";am=""; next
 		}
 		inr && id!="" && /^      dest:/{v=$0;sub(/^      dest:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);dest=v;next}
 		inr && id!="" && /^      default_branch:/{v=$0;sub(/^      default_branch:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);defb=v;next}
 		inr && id!="" && /^      branches:/{v=$0;sub(/^      branches:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);br=v;next}
 		inr && id!="" && /^      seed_files:/{v=$0;sub(/^      seed_files:[[:space:]]*/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);sf=v;next}
 		inr && id!="" && /^      connect:/{v=$0;sub(/^      connect:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);conn=v;next}
-		END{ if(id!="") print id S dest S defb S br S sf S conn }
+		inr && id!="" && /^      agents_md:/{v=$0;sub(/^      agents_md:[[:space:]]*/,"",v);gsub(/[[:space:]]+$/,"",v);gsub(/^"|"$/,"",v);am=v;next}
+		END{ if(id!="") print id S dest S defb S br S sf S conn S am }
 	' "$CASE_FILE"
 }
 
-# Emit one TSV row per setup.plans entry: id title repository objective open_question seed_state
+# Emit one TSV row per setup.plans entry:
+#   id title repository objective open_question seed_state path deps
+# `path` scopes the task and its verifiable target (a live worker creates
+# <path>/mod.txt; verification is `test -f <path>/mod.txt`). `deps` (an inline
+# list) makes the plan schema_version 2 with a plan_dependencies block. Both are
+# optional: a plan with neither behaves exactly as before (case 05/06).
 plan_fixtures() {
 	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  plans:/{inp=1; next}
 		inp && /^  [A-Za-z]/ && $0 !~ /^    /{inp=0}
 		inp && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id S title S repo S obj S oq S ss;
+			if(id!="") print id S title S repo S obj S oq S ss S path S deps;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			title="";repo="";obj="";oq="";ss=""; next
+			title="";repo="";obj="";oq="";ss="";path="";deps=""; next
 		}
 		inp && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
 		inp && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
 		inp && id!="" && /^      objective:/{v=$0;sub(/^      objective:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);obj=v;next}
 		inp && id!="" && /^      open_question:/{v=$0;sub(/^      open_question:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);oq=v;next}
 		inp && id!="" && /^      seed_state:/{v=$0;sub(/^      seed_state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);ss=v;next}
-		END{ if(id!="") print id S title S repo S obj S oq S ss }
+		inp && id!="" && /^      path:/{v=$0;sub(/^      path:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);path=v;next}
+		inp && id!="" && /^      deps:/{v=$0;sub(/^      deps:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);deps=v;next}
+		END{ if(id!="") print id S title S repo S obj S oq S ss S path S deps }
 	' "$CASE_FILE"
 }
 
@@ -153,7 +164,7 @@ seed_plan_state() {
 		cc_plan_approve "$WORKSPACE" "$sps_pid" >/dev/null || { printf 'FAIL: seed approve %s\n' "$sps_pid" >&2; exit 1; }
 		[ "$sps_state" = "approved" ] && exit 0
 		# archived: approve then archive, so a restore case starts from an approved
-		# plan sitting in plans/.archived/ (status must survive the restore).
+		# plan sitting in plans/archive/ (status must survive the restore).
 		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
 		case "$sps_state" in verified|verified-after-repair|worker-committed) : ;; *) exit 0 ;; esac
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
@@ -187,7 +198,7 @@ seed_plan_state() {
 FIXTURE_NOTE=none
 if ! setup_empty repositories; then
 	FIXTURE_NOTE=repos
-	repo_fixtures | while IFS="$US" read -r id dest defb branches seeds conn; do
+	repo_fixtures | while IFS="$US" read -r id dest defb branches seeds conn agentsmd; do
 		[ -n "$id" ] || continue
 		dest=${dest:-$id}; defb=${defb:-main}
 		case "$dest" in /*|*..*) printf 'FAIL: unsafe fixture dest: %s\n' "$dest" >&2; exit 1 ;; esac
@@ -200,6 +211,11 @@ if ! setup_empty repositories; then
 			mkdir -p "$repo/$(dirname -- "$f")"
 			printf '# %s\n\nseed content for the %s fixture.\n' "$f" "$id" > "$repo/$f"
 		done
+		# optional: the repository's OWN agent guidance (discovered by grounding)
+		if [ -n "$agentsmd" ]; then
+			printf '# %s — agent guide\n\n%s\n' "$id" "$agentsmd" > "$repo/AGENTS.md"
+			printf '[setup] seeded repo agent guidance (AGENTS.md) for %s\n' "$id"
+		fi
 		git -C "$repo" add -A
 		git -C "$repo" commit -q -m 'seed'
 		for b in $(printf '%s' "$branches" | tr ',' ' '); do
@@ -222,19 +238,30 @@ fi
 # so review/approve cases start from an existing plan with an open question.
 if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	FIXTURE_NOTE="${FIXTURE_NOTE},plans"
-	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate; do
+	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate path deps; do
 		[ -n "$pid" ] || continue
 		pdir="$WORKSPACE/plans/$pid"; mkdir -p "$pdir"
+		# path scopes the task; without it the task is repo-wide (backward compatible).
+		# The verifiable target is <path>/mod.txt when a path is given, else export.py.
+		if [ -n "$path" ]; then taskpath="$path"; target="$path/mod.txt"; else taskpath="."; target="export.py"; fi
+		# deps present => schema_version 2 with a plan_dependencies block (v0.6).
+		schema=1; [ -n "$deps" ] && schema=2
 		{
-			printf 'schema_version: 1\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$pid" "$title" "$obj"
+			printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$schema" "$pid" "$title" "$obj"
 			printf 'repositories:\n  - id: %s\n' "$prepo"
+			if [ -n "$deps" ]; then
+				printf 'plan_dependencies:\n'
+				for d in $(printf '%s' "$deps" | tr ',' ' '); do
+					[ -n "$d" ] && printf '  - id: %s\n    reason: builds on %s\n' "$d" "$d" || :
+				done
+			fi
 			[ -n "$oq" ] && printf 'open_questions:\n  - %s\n' "$oq" || :
-			printf 'tasks:\n  - id: EXPORT-001\n    title: %s\n    repositories: [%s]\n    paths: [.]\n    depends_on: []\n' "$title" "$prepo"
+			printf 'tasks:\n  - id: EXPORT-001\n    title: %s\n    repositories: [%s]\n    paths: [%s]\n    depends_on: []\n' "$title" "$prepo" "$taskpath"
 			# a concrete, trivially-verifiable target so full-execution cases have real
-			# worker work (create export.py) and a real verifier check (test -f export.py)
-			printf '    changes: [Add an export.py implementing the export command.]\n'
-			printf '    acceptance:\n      - id: EXPORT-AC-001\n        statement: An export.py file exists in the repository.\n'
-			printf '    verification:\n      - id: EXPORT-VT-001\n        command: test -f export.py\n'
+			# worker work (create the target file) and a real verifier check (test -f).
+			printf '    changes: [Create %s.]\n' "$target"
+			printf '    acceptance:\n      - id: EXPORT-AC-001\n        statement: %s exists in the repository.\n' "$target"
+			printf '    verification:\n      - id: EXPORT-VT-001\n        command: test -f %s\n' "$target"
 		} > "$pdir/plan.yaml"
 		if [ -n "$oq" ]; then
 			printf '# %s\n\n%s\n\n## Open question\n\n- %s\n' "$title" "$obj" "$oq" > "$pdir/PLAN.md"

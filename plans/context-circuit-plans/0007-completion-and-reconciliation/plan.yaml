@@ -1,0 +1,90 @@
+schema_version: 2
+plan: 0007-completion-and-reconciliation
+title: Human completion and knowledge reconciliation
+status: done
+objective: >-
+  Let only an explicit human request mark a plan done, and only when the latest
+  execution passed independent verification, then record a completion record and
+  start Product Knowledge reconciliation.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the completion runtime, record schema, and cc-complete skill.
+plan_dependencies:
+  - id: 0006-verification-and-repair
+    reason: Completion is eligible only after passing independent verification.
+  - id: 0003-context-lifecycle
+    reason: Reconciliation produces context proposals against Product Knowledge.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: INV-COMPLETE-01/02 apply here.
+  - id: decisions
+    path: context/DECISIONS.md
+    reason: Verification never auto-completes; humans mark done.
+context_grounding:
+  summary: >-
+    Completion is human-only and gated on verified evidence; marking done writes
+    a completion record and begins reconciliation into proposals.
+  constraints:
+    - Verification alone never marks a plan complete (INV-COMPLETE-01).
+    - Completion records revision, execution, commits, verifier result, request (INV-COMPLETE-02).
+    - Accepting a resulting context proposal is a separate explicit decision (INV-KNOWLEDGE-02).
+  decisions:
+    - A plan may be done while a context proposal remains pending.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: CMP-001
+    title: Completion schema, eligibility, and record
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/schemas/completion.yaml
+      - wrapper/runtime/engine.sh
+    depends_on: []
+    changes:
+      - Author the completion record shape.
+      - Implement completion eligibility (requires passing verification).
+      - Record the implementation completion record on the done transition.
+    acceptance:
+      - id: CMP-AC-01
+        statement: A plan cannot be marked done unless the latest execution verified.
+      - id: CMP-AC-02
+        statement: Marking done writes a completion record with full provenance.
+    verification:
+      - id: CMP-VT-01
+        command: sh test/completion/test-completion.sh
+  - id: CMP-002
+    title: Knowledge reconciliation
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/schemas/context-impact.yaml
+      - wrapper/runtime/engine.sh
+    depends_on: [CMP-001]
+    changes:
+      - Start reconciliation producing proposals or an explicit no-update statement.
+      - Keep acceptance of any proposal a separate human decision.
+    acceptance:
+      - id: CMP-AC-03
+        statement: Completion starts reconciliation without silently accepting any update.
+    verification:
+      - id: CMP-VT-02
+        command: sh test/completion/test-completion.sh
+  - id: CMP-003
+    title: Author the cc-complete skill
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-complete/SKILL.md
+    depends_on: [CMP-002]
+    changes:
+      - Map "mark complete" language to the gated human completion + reconcile.
+    acceptance:
+      - id: CMP-AC-04
+        statement: The skill refuses completion when the latest execution is not verified.
+    verification:
+      - id: CMP-VT-03
+        command: sh test/completion/test-completion.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

@@ -19,18 +19,45 @@ then:
 
 1. Run `execution-begin`: it validates approval and repository bindings,
    validates and captures each `anchor_branch` tip, rejects dirty anchors,
-   acquires the one-writer lock, snapshots the plan, and creates one branch and
-   worktree per affected repository.
-2. Launch exactly one worker with the execution brief and assigned worktrees
-   (see `agents/writer.md`). The worker executes all tasks in dependency order
-   and commits each affected repository. Record each commit with
-   `worker-commit-record` and the handoff with `worker-handoff-record`.
-3. Launch one independent, read-only verifier (see `agents/verifier.md`) after
+   acquires the one-writer lock, snapshots the plan, creates one branch and
+   worktree per affected repository, and discovers each repository's own agent
+   guidance from the prepared worktree (recorded as a grounding manifest).
+2. Assemble the writer brief with `writer-brief-assemble` (per affected
+   repository), adding only a one-line task focus. The runtime fills the brief
+   from the grounding manifest and the plan and refuses a brief missing its
+   repository-grounding section (preflight). Deliver the assembled brief
+   verbatim — do not author or omit the repository-grounding facts, and do not
+   read the runtime implementation to compose them (INV-GROUND-01/03).
+3. Launch exactly one worker with that brief and the assigned worktrees
+   (see `agents/writer.md`). The worker reads and honors the repository's own
+   agent guidance, executes all tasks in dependency order, and commits each
+   affected repository. Record each commit with `worker-commit-record` and the
+   handoff with `worker-handoff-record` (including any `repository_friction`).
+4. Launch one independent, read-only verifier (see `agents/verifier.md`) after
    `verifier-prepare`. It inspects the latest commit of every affected
    repository. Record its outcome with `verifier-result-record`.
 
 Do not require confirmation for individual tasks, branches, worktrees, commits,
 verifier steps, or repairs. The approved plan is the scope.
+
+## Runtime actions — invoke, never read the engine
+
+You never need to open the runtime implementation; invoke each action as
+`sh wrapper/runtime/engine.sh <action> <args>` from the workspace directory.
+Reading `wrapper/runtime/engine.sh` itself is out of scope for the coordinator.
+
+- `execution-begin . <plan-id> <owner>` — preflight, snapshot, worktree(s), and
+  repository-grounding discovery; prints `execution_id`.
+- `writer-brief-assemble . <execution-dir> <repo> "<task focus>"` — assemble the
+  grounded writer brief (fills the grounding directive + environment from the
+  manifest); it preflights the required grounding slot.
+- `attempt-begin <execution-dir>` · `worker-commit-record <execution-dir> <repo> implementation|repair`
+  · `worker-handoff-record <execution-dir> <handoff-file>`.
+- `verifier-prepare <execution-dir>` · `verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
+- `repair-allowed <execution-dir>`.
+
+The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
+assigned worktree(s) and the grounding manifest are named in that record.
 
 ## Repair
 
@@ -45,6 +72,17 @@ three failures execution stops and all evidence is preserved.
 If the host cannot create an independent read-only verifier, the execution is
 blocked (`host-blocked`). Do not self-verify and do not downgrade the evidence
 requirement. Preserve worktrees and commits.
+
+## Report — plain language only
+
+Report by effect, in plain project language. Never expose internal mechanism to a
+lay user: no runtime file names, no execution branches (`cc/...`), no worktrees, no
+base-commit SHAs, and no preflight/verifier internals — even in a summary table.
+Say "I built it and it was independently checked, and the check passed; nothing is
+marked complete yet — that's your call" — not the branches, worktrees, or commits
+behind it. Refer to a plan by its title and the branch the user works from by its
+plain name. Reveal runtime records or branch mechanics only if the user explicitly
+asks for diagnostics (`docs/terminology.md` is the internal→user-facing mapping).
 
 ## Boundaries
 

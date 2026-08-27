@@ -24,6 +24,13 @@ TURN_TIMEOUT=${CC_TURN_TIMEOUT:-300}
 command -v "$CLAUDE" >/dev/null 2>&1 || { printf 'FAIL: no claude CLI (%s)\n' "$CLAUDE" >&2; exit 1; }
 command -v jq >/dev/null 2>&1 || { printf 'FAIL: jq required for trace capture\n' >&2; exit 1; }
 
+# A per-turn timeout is best-effort: GNU `timeout` (Linux) or `gtimeout`
+# (coreutils on macOS). When neither is present, run claude without a wall clock
+# rather than failing the whole run (macOS default has no `timeout`).
+if command -v timeout >/dev/null 2>&1; then TIMEOUT="timeout $TURN_TIMEOUT"
+elif command -v gtimeout >/dev/null 2>&1; then TIMEOUT="gtimeout $TURN_TIMEOUT"
+else TIMEOUT=""; printf '[driver] no timeout command found; running claude without a per-turn wall clock\n' >&2; fi
+
 # --- filesystem sandbox (safe by default) --------------------------------------
 # The coordinator runs headless with --permission-mode bypassPermissions, so it has
 # no interactive gate. Without an OS sandbox it can write OUTSIDE the disposable
@@ -63,17 +70,18 @@ run_claude() {
 			--bind "$CC_WORKSPACE" "$CC_WORKSPACE" --bind "$CC_RUN_DIR" "$CC_RUN_DIR" \
 			--bind "$HOME/.claude" "$HOME/.claude" \
 			$( [ -d "$HOME/.config" ] && printf -- '--bind %s %s' "$HOME/.config" "$HOME/.config" ) \
-			--chdir "$rc_wd" timeout "$TURN_TIMEOUT" "$CLAUDE" "$@"
+			--chdir "$rc_wd" $TIMEOUT "$CLAUDE" "$@"
 		bwrap "$@" </dev/null
 	else
-		( cd "$rc_wd" && timeout "$TURN_TIMEOUT" "$CLAUDE" "$@" </dev/null )
+		( cd "$rc_wd" && $TIMEOUT "$CLAUDE" "$@" </dev/null )
 	fi
 }
 
 new_uuid() { if [ -r /proc/sys/kernel/random/uuid ]; then cat /proc/sys/kernel/random/uuid; else "$CLAUDE" --version >/dev/null; printf '00000000-0000-4000-8000-%012d' "$$"; fi; }
 CID=$(new_uuid)
 RAW="$CC_RUN_DIR/coordinator-stream.jsonl"    # accumulated stream-json (all turns)
-: > "$CC_TRANSCRIPT"; : > "$CC_TRACE"; : > "$RAW"
+TELRAW="$CC_RUN_DIR/.telemetry-raw.tsv"        # one row per coordinator turn (pre-aggregation)
+: > "$CC_TRANSCRIPT"; : > "$CC_TRACE"; : > "$RAW"; : > "$TELRAW"
 
 # Extract the ordered human turns as TYPE<TAB>PAYLOAD.
 turns_tsv() {
@@ -117,6 +125,14 @@ coordinator_turn() {
 		rel=$(printf '%s' "$p" | sed "s|^$CC_WORKSPACE/||; s|^\./||")
 		printf '%s\tRead\t%s\n' "$action" "$rel" >> "$CC_TRACE"
 	done
+	# efficiency telemetry (dimension D): this turn's usage from the runner's own
+	# result event — agent-loop turns, generated output tokens, context peak
+	# (cache-read), and cost. One raw row per turn, tagged by action; aggregated
+	# per action after the loop (v0.6 template-harness/telemetry.md).
+	usage=$(jq -rs 'map(select(.type=="result")) | last
+		| [ (.num_turns // 0), (.usage.output_tokens // 0), (.usage.cache_read_input_tokens // 0), (.total_cost_usd // 0) ]
+		| @tsv' "$turn_raw" 2>/dev/null || printf '')
+	[ -n "$usage" ] && printf '%s\t%s\n' "$action" "$usage" >> "$TELRAW" || :
 	rm -f "$turn_raw"
 	printf '%s' "$reply"
 }
@@ -142,8 +158,12 @@ turns_tsv | while IFS='	' read -r kind payload; do
 			else printf '(skipped on_open_questions: coordinator asked nothing)\n' >> "$CC_TRANSCRIPT"; continue; fi ;;
 		*) printf '(unknown turn kind: %s)\n' "$kind" >> "$CC_TRANSCRIPT"; continue ;;
 	esac
-	# advance the (informational) action label by the kind of request
+	# advance the (informational) action label by the kind of request. Execution
+	# intent (build/run/execute, incl. compound "approve and build") is checked
+	# first so the trace + telemetry tag as execute-plan.
 	case "$send" in
+		*approve*build*|*approve*execute*|*approve*run*) ACTION=execute-plan ;;
+		*build*|*execute*|*"run them"*|*"run all"*|*"run the"*|*"go ahead and build"*) ACTION=execute-plan ;;
 		*approve*) ACTION=approve ;;
 		*"show me the plan"*|*review*) ACTION=review ;;
 		*connect*|*"hook it up"*|*"hook up"*) ACTION=connect-repo ;;
@@ -154,6 +174,18 @@ turns_tsv | while IFS='	' read -r kind payload; do
 	printf 'coordinator: %s\n' "$reply" >> "$CC_TRANSCRIPT"
 	LAST_REPLY=$reply
 done
+
+# Aggregate the per-turn telemetry into the per-action ledger the grader reads
+# (v0.6 template-harness/telemetry.md): action, conversational turns, agent-loop
+# turns, generated output tokens, context peak (max cache-read), cost.
+if [ -s "$TELRAW" ]; then
+	awk -F'\t' '
+		{ conv[$1]++; at[$1]+=$2; ot[$1]+=$3; if(($4+0)>cp[$1]) cp[$1]=$4+0; cost[$1]+=$5 }
+		END { for (a in conv) printf "%s\t%d\t%d\t%d\t%d\t%.4f\n", a, conv[a], at[a], ot[a], cp[a], cost[a] }
+	' "$TELRAW" > "$CC_TELEMETRY"
+	printf '[driver] wrote efficiency telemetry: %s\n' "$CC_TELEMETRY" >&2
+fi
+rm -f "$TELRAW"
 
 # Conversational verdict: the human-simulator judges visible_expectations from the
 # transcript alone, tool-less, in a scratch cwd it cannot use to inspect state.

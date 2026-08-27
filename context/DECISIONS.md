@@ -88,3 +88,134 @@ layers, repair-limit, plan-id reuse, terminology authority), and CONVENTIONS
 policy-change escalation. The design source (`08-terminology.md`,
 `09-source-and-template.md`) was updated to accept "wrapper", and the glossaries
 gained the term.
+
+## 2026-08-27 — v0.6 coordinated contract bump
+
+Decision: `runtime_version` 0.5.0 → 0.6.0 and plan `accepted_schema_versions`
+becomes `[1, 2]`; `execution.yaml` stays schema 1.
+
+Rationale: `plan_dependencies` is load-bearing, so a v0.5 engine must refuse a
+`schema_version: 2` plan rather than schedule it dependency-blind (INV-PLAN-05);
+`execution.yaml` is private single-version evidence with no cross-version reader.
+Consequence: only plans using `plan_dependencies` stamp 2; existing plans stay 1
+and read identically on both engines. Accepted from proposal
+`0021-change-decisions`.
+
+## 2026-08-27 — concurrency is orchestration, not authority (run-stack)
+
+Decision: executing a set of approved plans in one run changes only order and
+overlap; conflicts are prevented (dependencies order waves, path leases serialize
+file overlaps, a dependent's base already contains its prerequisites), not
+resolved afterward.
+
+Rationale: approval, verification, completion, and delivery gates must be
+untouched; the runtime detects readiness/leases/bases deterministically and the
+coordinator decides how many ready plans to launch — no scheduler heuristic in the
+runtime (INV-RUNTIME-01, INV-CONCURRENCY-01/02).
+Consequence: a failed or blocked plan holds only its descendants; unrelated
+verified plans are unaffected. Accepted from proposal `0021-change-decisions`.
+
+## 2026-08-27 — delivery drift guard
+
+Decision: a plan whose recorded base has diverged from the current anchor tip is
+rebased onto the tip and re-verified before its pull request (INV-DELIVER-01,
+extended).
+
+Rationale: a plan must never merge from a base that no longer reflects the branch
+it will land on; the only merge the runtime authors is the integration base on a
+plan's own branch, never a delivery merge.
+Consequence: `cc_delivery_drift` / `cc_delivery_rebase`, with
+`DELIVERY_REBASE_CONFLICT` reported as blocked. Accepted from proposal
+`0021-change-decisions`.
+
+## 2026-08-27 — repository grounding: reference, not capture
+
+Decision: the worker reads and honors the target repository's own agent guidance,
+discovered live from the worktree as data (INV-GROUND-01); precedence is CC
+scope/safety on what/where and repo guidance on how within that scope
+(INV-GROUND-02); the writer brief is a fixed template filled from the manifest and
+delivered, never authored (INV-GROUND-03).
+
+Rationale: repository knowledge should be discovered and referenced, not
+hand-injected per prompt or captured into a per-repo profile.
+Consequence: no per-repo profile and no `plan.yaml` field; writer friction returns
+as `repository_friction` and becomes a proposal on the repo's own agent docs.
+Accepted from proposal `0021-change-decisions`.
+
+## 2026-08-27 — a system design is a source, not a lifecycle stage
+
+Decision: the v0.6 system-design scope ships only the `cc-system-design` authoring
+skill; a system design lives under `sources/system-design/` with no status,
+acceptance gate, or runtime record, and feeds Product Knowledge and plans through
+the existing flow.
+
+Rationale: a system design is deliberation, authored as structured source; the
+durable accepted residue still lives in `context/` via the existing proposal path.
+Consequence: no engine change, no new schema, no new invariant, no WORKFLOW action,
+and no first-class `design/` area. Accepted from proposal `0021-change-decisions`.
+
+## 2026-08-27 — template-harness efficiency ledger made real
+
+Decision: template-harness dimension D now measures per-action usage from the
+runner's own result and compares it to case budgets (units fixed: `max_tokens` =
+generated output tokens, `max_turns` = conversational turns; optional
+`max_agent_turns`, `max_cost_usd`), staying soft (never gates a run).
+
+Rationale: dimension D was declared in v0.5 but never measured; a budget with no
+defined unit is unfalsifiable.
+Consequence: maintainer tooling only — no product surface change. Accepted from
+proposal `0021-change-decisions`.
+
+## 2026-08-28 — the external surface is orthogonal to the core workflow
+
+Decision: publishing Context Circuit data outward is a peer command (`cc-publish`),
+never a phase, trigger, gate, dependency, or side effect of one; it runs only on
+explicit manual invocation, every time, against the workspace as found.
+
+Rationale: coupling an external, credentialed, provider-specific side effect to the
+deterministic core loop would add weight to the runtime and the agent and hand an
+outside system a foothold on plan state.
+Consequence: INV-EXTERNAL-01; no runtime or network code, no hook, no lifecycle
+listener — nothing in the workflow triggers a publication, so there is nothing to
+hook. Accepted from proposal `0026-change-decisions`.
+
+## 2026-08-28 — external surface: export-first, non-authoritative, self-contained
+
+Decision: data flows Context Circuit → outward only; the external copy is one-way,
+idempotent on re-run, and self-contained (no workspace file, path, id, or internal
+mechanism leaks; a plan id in a title is the one allowed cross-reference);
+`plan.yaml` stays canonical and nothing is written under `plans/`.
+
+Rationale: import would bypass the human plan-authoring and approval gates; a leaked
+internal makes the external copy unreadable to a lay reader.
+Consequence: INV-EXTERNAL-02, INV-EXTERNAL-03; any future import must pass through the
+normal authoring gate (INV-APPROVE-01). Records live under a user-owned `publication/`
+folder created on first use; config is credential-free (INV-SEC-01) and the host / MCP
+layer carries all provider weight (INV-RUNTIME-01 unchanged). Accepted from proposal
+`0026-change-decisions`.
+
+## 2026-08-28 — "publish" is the external surface's word; git delivery is push / pull request
+
+Decision: the product reserves "publish"/"publication" for the external surface and
+vacates it from git delivery, which speaks only in push / pull request / merge /
+deliver.
+
+Rationale: one word, one meaning everywhere, so no per-mention qualifier is ever
+needed.
+Consequence: a wording-only edit to INV-DELIVER-01, INV-RUNTIME-01,
+`wrapper/manifest.yaml`, and AC-16 (no behavior, version, or authority change); the
+delivery page and glossaries follow (proposals `0024-change-delivery`,
+`0025-change-terminology`). Accepted from proposal `0026-change-decisions`.
+
+## 2026-08-28 — the external surface adds no core contract bump
+
+Decision: the scope ships a skill (`cc-publish`) + two record schemas + a config
+convention (`publication-config.yaml`) + three invariants, and changes no plan-schema,
+execution, or runtime-version.
+
+Rationale: it binds to data, never to control flow, so it needs no coordinated bump —
+comparable to how system-design-authoring ships only a skill.
+Consequence: a workspace that configures no publication is a v0.5-shaped workspace plus
+the availability of `cc-publish`; kinds (`plan`, `thread`, future `docs`) are new
+`cc-publish` behavior plus a `config.yaml`, never new authority. Accepted from proposal
+`0026-change-decisions`.

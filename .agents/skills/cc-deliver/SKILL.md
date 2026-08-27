@@ -3,7 +3,7 @@ name: cc-deliver
 description: Handle separate delivery actions (pull request, merge, push) with explicit targets; never implied by verification or completion.
 ---
 
-Merge, push, pull-request creation, publication, and deployment are separate
+Merge, push, pull-request creation, and deployment are separate
 human-requested actions. None is implied by worker success, verifier success, or
 plan completion. The runtime never performs them and never interprets
 verification as merge authorization.
@@ -25,6 +25,17 @@ branch exists. Do not discover an unrelated remote, silently push, or silently
 substitute a target. If the source branch is unpublished, the provider/remote is
 unavailable, or the recorded anchor branch is missing or renamed, report the
 delivery as blocked and ask for an explicit human decision.
+
+## Drift guard (v0.6)
+
+Before opening a pull request, check `delivery-drift`: when a sibling plan has
+already merged and advanced the recorded `anchor_branch`, the plan's base has
+diverged from the tip it will land on. If drift is detected, run `delivery-rebase`
+to rebase the execution branch onto the current anchor tip, then re-verify (one
+fresh independent verifier pass) before the pull request opens — a plan is never
+merged from a base that no longer reflects its target branch. A rebase conflict
+(`DELIVERY_REBASE_CONFLICT`) is reported as blocked, with the work preserved, for
+an explicit human decision (INV-DELIVER-01).
 
 ## Merge / push / cleanup
 

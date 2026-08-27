@@ -54,6 +54,17 @@ branch `cc/<plan-id>/<repo-id>` and one isolated worktree per affected
 repository, from the captured anchor-branch tip; the anchor checkout is never
 written (INV-EXEC-03).
 
+A plan with **same-repo predecessors** (a v0.6 dependency, see
+[run-stack](../run-stack/README.md)) begins base-aware: its worktree is prepared
+on the predecessor branch (stack) or a runtime-authored integration merge, and the
+repository record gains `based_on`. A plan with **no** dependency is unchanged — it
+still branches from the captured anchor tip (INV-EXEC-03). Execution also discovers
+the target repository's own agent guidance and delivers a grounded, runtime-
+assembled brief rather than a free-composed one (see
+[repository-grounding](../repository-grounding/README.md)). The plan contract now
+accepts `schema_version` `[1, 2]` (2 required when `plan_dependencies` is present,
+INV-PLAN-05); v0.5 single-plan plans stay `1` and behave as before.
+
 The worker commits each changed repository before verification; every repair
 creates a new commit and a prior commit is never amended to conceal a repair
 (INV-EXEC-04). At most one active writer owns a plan execution, enforced by an
@@ -98,7 +109,9 @@ captured anchor commits, the worktree paths, and ownership all still match.
 
 `execution.yaml` holds `execution_id`, a `plan_revision` digest, `owner`,
 `status` (`running`/`verifying`/`repairing`/`verified`/`failed`/`blocked`),
-`worker_failures` 0..3, and per-repository worktree/branch/base/latest records.
+`worker_failures` 0..3, and per-repository worktree/branch/base/latest records
+(a dependent plan's record also carries `based_on`). Each execution records a
+grounding manifest under `grounding/<repo>.yaml`.
 The worker handoff is a claim (commits, tasks done, checks, assumptions, limits,
 suggested verifier focus, and whether a repair is being performed), not
 verification proof.
@@ -112,10 +125,12 @@ Product Knowledge, expands scope silently, or merges/pushes/publishes.
 ## Implementation references
 
 - `.agents/skills/cc-execute/SKILL.md`, `agents/writer.md`
-- `wrapper/runtime/engine.sh`: `cc_execution_begin`, `cc_execution_next_id`,
-  `cc_exec_set`, `cc_attempt_begin`, `cc_worker_commit_record`,
-  `cc_worker_handoff_record`, `cc_lock_acquire`, `cc_lock_owner`,
-  `cc_lock_release`, `cc_repair_allowed`, `cc_recovery_inspect`
+- `wrapper/runtime/engine.sh`: `cc_execution_begin` (base-aware for dependents),
+  `cc_execution_next_id`, `cc_exec_set`, `cc_attempt_begin`,
+  `cc_worker_commit_record`, `cc_worker_handoff_record`, `cc_lock_acquire`,
+  `cc_lock_owner`, `cc_lock_release`, `cc_repair_allowed`, `cc_recovery_inspect`;
+  base selection and grounding: `cc_base_prepare`, `cc_discover_repo_grounding`,
+  `cc_writer_brief_assemble` (see the run-stack and repository-grounding domains)
 - `wrapper/contracts/schemas/execution.yaml`,
   `wrapper/contracts/schemas/worker-handoff.yaml`
 - `wrapper/contracts/invariants.yaml`: INV-EXEC-01, INV-EXEC-02, INV-EXEC-03,
@@ -135,4 +150,6 @@ plan; it describes the runtime records that ship today.
 
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0011-domain-plan-execution`.
+Accepted 2026-08-24 from proposal `0011-domain-plan-execution`. Extended
+2026-08-27 from proposal `0018-change-plan-execution` (v0.6 base-aware begin for
+dependents, the grounded brief, and plan `schema_version [1, 2]`).

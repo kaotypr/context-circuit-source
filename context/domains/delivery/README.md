@@ -28,10 +28,15 @@ workflows:
 
 ## Summary
 
-Opening a pull request, merging, pushing, or publishing — each a separate,
-explicit human action never implied by a prior success. Route "open a pull
-request for `<id>`", merge, and push requests here. Owned by the `cc-deliver`
-skill; the delivery boundary is owned by `wrapper/adapters/WORKFLOW.md`.
+Opening a pull request, merging, or pushing — each a separate, explicit human
+action never implied by a prior success. Route "open a pull request for `<id>`",
+merge, and push requests here. Owned by the `cc-deliver` skill; the delivery
+boundary is owned by `wrapper/adapters/WORKFLOW.md`.
+
+In this product "publish"/"publication" names sending data to an external system
+([external-surface](../external-surface/README.md)); git delivery is "push" / "open
+a pull request" and never "publish" — the two never share a word, so no qualifier is
+needed.
 
 ## Scope
 
@@ -43,7 +48,7 @@ branch creation itself ([plan-execution](../plan-execution/README.md)).
 
 ## Behavior
 
-Pull-request creation, merge, push, publication, deployment, archive, and
+Pull-request creation, merge, push, deployment, archive, and
 cleanup are separate human-requested actions. A pull request uses each execution
 branch `cc/<plan-id>/<repo-id>` as source and the repository's recorded
 `anchor_branch` as the default target; it never substitutes `default_branch` or
@@ -55,6 +60,17 @@ None of these is implied by worker success, verifier success, or plan
 completion. The engine's delivery function is report-only: it produces the
 per-repository pull-request source and default target and never pushes, merges,
 or opens pull requests itself.
+
+**Drift guard (v0.6, INV-DELIVER-01 extended).** When a plan is delivered and its
+recorded base has diverged from the current `anchor_branch` tip (because a sibling
+plan already merged), the plan is rebased onto the current tip and re-verified
+before its pull request opens — a plan is never merged from a base that no longer
+reflects the branch it will land on. `cc_delivery_drift` reports divergence
+(read-only); `cc_delivery_rebase` rebases the execution branch onto the tip and
+flags re-verification, and a rebase conflict is reported as blocked
+(`DELIVERY_REBASE_CONFLICT`) with the work preserved. The only merge the runtime
+authors anywhere is the integration *base* on a plan's own branch (run-stack,
+INV-CONCURRENCY-02) — never a delivery merge.
 
 ## Workflows
 
@@ -75,9 +91,12 @@ requested; a failed execution is never cleaned up as a side effect.
 ## Implementation references
 
 - `.agents/skills/cc-deliver/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_delivery_targets` (read-only report)
+- `wrapper/runtime/engine.sh`: `cc_delivery_targets` (read-only report),
+  `cc_delivery_drift`, `cc_delivery_rebase` (v0.6 drift guard)
+- `.agents/skills/cc-deliver/SKILL.md` (Drift guard section)
 - `wrapper/adapters/WORKFLOW.md` (delivery-boundary owner per `invariants.yaml`)
-- `wrapper/contracts/invariants.yaml`: INV-DELIVER-01, INV-DELIVER-02
+- `wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (with the drift-guard
+  clause), INV-DELIVER-02
 
 ## Verification
 
@@ -90,4 +109,8 @@ scanned.
 
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0015-domain-delivery`.
+Accepted 2026-08-24 from proposal `0015-domain-delivery`. Extended 2026-08-27 from
+proposal `0019-change-delivery` (the v0.6 drift guard), and 2026-08-28 from proposal
+`0024-change-delivery` (vacate "publish"/"publication" from git delivery; the word is
+reserved for the [external surface](../external-surface/README.md), matching
+INV-DELIVER-01 and AC-16).

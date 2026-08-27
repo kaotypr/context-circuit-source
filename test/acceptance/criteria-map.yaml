@@ -1,5 +1,5 @@
 schema_version: 1
-owner: sources/system-design/context-circuit/v0.5/context-circuit-v0.5-design.md
+owner: sources/system-design/context-circuit/v0.5/core/design.md
 purpose: >
   Maps each Context Circuit v0.5 acceptance criterion (design section 21) to the
   runnable, credential-free semantic suite that demonstrates it.
@@ -54,7 +54,7 @@ criteria:
     statement: Explicit human completion marks done only after successful verification.
     suite: test/completion/test-completion.sh
   - id: AC-16
-    statement: Pull request, merge, push, publication, deployment, and cleanup require separate human actions.
+    statement: Pull request, merge, push, deployment, and cleanup require separate human actions.
     suite: test/delivery/test-delivery.sh
   - id: AC-17
     statement: An agent can execute a plan without reading the full runtime implementation.
@@ -78,7 +78,7 @@ criteria:
     statement: New plans receive consistent, stable, human-friendly canonical IDs.
     suite: test/plans/test-plans.sh
   - id: AC-24
-    statement: Archiving moves to plans/.archived, removes the index row, preserves files/status, performs no validation.
+    statement: Archiving moves to plans/archive, removes the index row, preserves files/status, performs no validation.
     suite: test/archive/test-archive.sh
   - id: AC-25
     statement: An archived plan's execution continues from its immutable snapshot.

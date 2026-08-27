@@ -1,5 +1,5 @@
 #!/bin/sh
-# Context Circuit v0.5 runtime engine.
+# Context Circuit v0.6 runtime engine.
 #
 # A small, host-neutral, deterministic runtime library for workspace, Git, and
 # execution-state operations. It is sourced by host adapters and tests, and can
@@ -17,7 +17,7 @@
 # This runtime does NOT own: provider-specific child launch, model prompts,
 # Product Knowledge interpretation, plan-writing intelligence, conversational
 # routing policy, confirmation cards/tokens, product test semantics, or any
-# automatic pull-request/merge/push/publish/deploy/cleanup/completion action.
+# automatic pull-request/merge/push/deploy/cleanup/completion action.
 #
 # POSIX sh only (runs under dash). No bashisms, no `local`, no arrays.
 # Every function returns 0 on success and non-zero with a reason code on stderr.
@@ -26,7 +26,7 @@
 # Constants
 # ---------------------------------------------------------------------------
 
-CC_RUNTIME_VERSION="0.5.0"
+CC_RUNTIME_VERSION="0.6.0"
 CC_SCHEMA_VERSION="1"
 
 # ---------------------------------------------------------------------------
@@ -235,6 +235,44 @@ cc_plan_affected_repositories() {
 	done | sort -u | sed '/^$/d'
 }
 
+# cc_plan_dependencies FILE -> inter-plan dependency plan ids (one per line)
+cc_plan_dependencies() { cc_list_ids "$1" "plan_dependencies"; }
+
+# cc_plan_dep_closure PLANS_DIR PLAN -> every transitive plan_dependencies id of
+# PLAN (one per line, sorted). PLANS_DIR is the directory that holds <plan>/plan.yaml
+# for every plan. A plan appears in its OWN closure iff it participates in a cycle.
+cc_plan_dep_closure() {
+	cc_pdc_root="$1"; cc_pdc_start="$2"
+	cc_pdc_seen=$(mktemp "${TMPDIR:-/tmp}/cc-cl.XXXXXX") || return 1
+	cc_pdc_front=$(mktemp "${TMPDIR:-/tmp}/cc-cl.XXXXXX") || { rm -f "$cc_pdc_seen"; return 1; }
+	cc_pdc_next=$(mktemp "${TMPDIR:-/tmp}/cc-cl.XXXXXX") || { rm -f "$cc_pdc_seen" "$cc_pdc_front"; return 1; }
+	: >"$cc_pdc_seen"
+	if [ -f "$cc_pdc_root/$cc_pdc_start/plan.yaml" ]; then
+		cc_plan_dependencies "$cc_pdc_root/$cc_pdc_start/plan.yaml" >"$cc_pdc_front"
+	else
+		: >"$cc_pdc_front"
+	fi
+	while [ -s "$cc_pdc_front" ]; do
+		: >"$cc_pdc_next"
+		while IFS= read -r cc_pdc_d; do
+			[ -n "$cc_pdc_d" ] || continue
+			grep -Fxq "$cc_pdc_d" "$cc_pdc_seen" 2>/dev/null && continue
+			printf '%s\n' "$cc_pdc_d" >>"$cc_pdc_seen"
+			[ -f "$cc_pdc_root/$cc_pdc_d/plan.yaml" ] \
+				&& cc_plan_dependencies "$cc_pdc_root/$cc_pdc_d/plan.yaml" >>"$cc_pdc_next" || :
+		done <"$cc_pdc_front"
+		cp "$cc_pdc_next" "$cc_pdc_front"
+	done
+	sort -u "$cc_pdc_seen"
+	rm -f "$cc_pdc_seen" "$cc_pdc_front" "$cc_pdc_next"
+}
+
+# cc_plan_is_descendant PLANS_DIR CANDIDATE ANCESTOR -> ok if CANDIDATE transitively
+# depends on ANCESTOR (ANCESTOR is in CANDIDATE's dependency closure).
+cc_plan_is_descendant() {
+	cc_plan_dep_closure "$1" "$2" | grep -Fxq "$3"
+}
+
 # ---------------------------------------------------------------------------
 # Workspace
 # ---------------------------------------------------------------------------
@@ -262,7 +300,7 @@ cc_workspace_init() {
 	[ -n "$cc_wi_root" ] || { cc_fail WORKSPACE_ROOT_MISSING; return 1; }
 	mkdir -p "$cc_wi_root/context/domains" "$cc_wi_root/context/roles" \
 		"$cc_wi_root/context/proposals" "$cc_wi_root/sources" \
-		"$cc_wi_root/plans/.archived" "$cc_wi_root/.runtime/executions" \
+		"$cc_wi_root/plans/archive" "$cc_wi_root/.runtime/executions" \
 		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/locks" \
 		"$cc_wi_root/repositories" || return 1
 	[ -f "$cc_wi_root/plans/INDEX.md" ] || cc_plan_index_init "$cc_wi_root"
@@ -437,6 +475,276 @@ cc_worktree_prepare() {
 }
 
 # ---------------------------------------------------------------------------
+# Execution bases (INV-CONCURRENCY-02) — base selection for a dependent plan.
+# ---------------------------------------------------------------------------
+
+# cc_plan_same_repo_preds ROOT PLAN REPO -> same-repo predecessor plan ids: the
+# plan_dependencies of PLAN whose own plan also touches REPO (one per line).
+cc_plan_same_repo_preds() {
+	cc_srp_root="$1"; cc_srp_plan="$2"; cc_srp_repo="$3"
+	cc_srp_pf="$cc_srp_root/plans/$cc_srp_plan/plan.yaml"
+	[ -f "$cc_srp_pf" ] || return 0
+	for cc_srp_dep in $(cc_plan_dependencies "$cc_srp_pf"); do
+		cc_srp_df="$cc_srp_root/plans/$cc_srp_dep/plan.yaml"
+		[ -f "$cc_srp_df" ] || continue
+		if cc_plan_affected_repositories "$cc_srp_df" | grep -Fxq "$cc_srp_repo"; then
+			printf '%s\n' "$cc_srp_dep"
+		fi
+	done
+}
+
+# cc_plan_has_same_repo_pred ROOT PLAN REPO -> ok(0) if PLAN has >=1 same-repo pred.
+cc_plan_has_same_repo_pred() {
+	[ -n "$(cc_plan_same_repo_preds "$1" "$2" "$3")" ]
+}
+
+# cc_base_prepare ROOT PLAN REPO -> base-aware branch + worktree for a dependent
+# plan. Selects the base (anchor tip / single predecessor branch / runtime-authored
+# integration merge), keeps the base ref at refs/cc-base/<plan>/<repo>, and detects
+# a stale base (predecessor repaired) to rebuild it. Emits the same keys as
+# cc_worktree_prepare plus based_on and base_kind. BASE_UNBUILDABLE -> blocked.
+cc_base_prepare() {
+	cc_bp_root="$1"; cc_bp_plan="$2"; cc_bp_repo="$3"
+	cc_bp_abs=$(cc_repo_resolve "$cc_bp_root" "$cc_bp_repo" | sed -n 's/^path: //p') || return 1
+	cc_bp_anchor=$(cc_binding_field "$cc_bp_root" "$cc_bp_repo" "anchor_branch")
+	cc_bp_anchortip=$(git -C "$cc_bp_abs" rev-parse --verify "refs/heads/$cc_bp_anchor" 2>/dev/null) \
+		|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_bp_repo"; return 1; }
+	cc_bp_branch="cc/$cc_bp_plan/$cc_bp_repo"
+	cc_bp_tree="$cc_bp_root/.runtime/worktrees/$cc_bp_plan/$cc_bp_repo"
+	cc_bp_baseref="refs/cc-base/$cc_bp_plan/$cc_bp_repo"
+	# same-repo predecessors and their current branch tips
+	cc_bp_preds=""; cc_bp_tips=""; cc_bp_n=0
+	for cc_bp_dep in $(cc_plan_same_repo_preds "$cc_bp_root" "$cc_bp_plan" "$cc_bp_repo"); do
+		cc_bp_ptip=$(git -C "$cc_bp_abs" rev-parse --verify "refs/heads/cc/$cc_bp_dep/$cc_bp_repo" 2>/dev/null) \
+			|| { cc_fail BASE_UNBUILDABLE "$cc_bp_repo:$cc_bp_dep:branch-missing"; return 1; }
+		cc_bp_preds="${cc_bp_preds:+$cc_bp_preds }$cc_bp_dep"
+		cc_bp_tips="${cc_bp_tips:+$cc_bp_tips }$cc_bp_ptip"
+		cc_bp_n=$((cc_bp_n + 1))
+	done
+	# stale/reuse: if a worktree already exists, keep it only when every current
+	# predecessor tip is still reachable from the recorded base; otherwise rebuild.
+	if [ -d "$cc_bp_tree" ]; then
+		cc_bp_rec=$(git -C "$cc_bp_abs" rev-parse --verify "$cc_bp_baseref" 2>/dev/null) || cc_bp_rec=""
+		cc_bp_stale=0
+		[ -n "$cc_bp_rec" ] || cc_bp_stale=1
+		for cc_bp_t in $cc_bp_tips; do
+			git -C "$cc_bp_abs" merge-base --is-ancestor "$cc_bp_t" "$cc_bp_rec" 2>/dev/null || cc_bp_stale=1
+		done
+		if [ "$cc_bp_stale" -eq 0 ]; then
+			cc_bp_based=$(printf '%s' "$cc_bp_preds" | tr ' ' ',' | sed 's/,/, /g')
+			cc_emit worktree "$cc_bp_tree"
+			cc_emit branch "$cc_bp_branch"
+			cc_emit base_commit "$cc_bp_rec"
+			cc_emit based_on "[$cc_bp_based]"
+			cc_emit base_kind reused
+			cc_emit worktree_reused true
+			return 0
+		fi
+		# invalidate a stale base entirely before rebuilding
+		git -C "$cc_bp_abs" worktree remove --force "$cc_bp_tree" >/dev/null 2>&1 || rm -rf "$cc_bp_tree"
+		git -C "$cc_bp_abs" branch -D "$cc_bp_branch" >/dev/null 2>&1 || :
+		git -C "$cc_bp_abs" update-ref -d "$cc_bp_baseref" >/dev/null 2>&1 || :
+		git -C "$cc_bp_abs" worktree prune >/dev/null 2>&1 || :
+	fi
+	mkdir -p "$(dirname -- "$cc_bp_tree")"
+	# select and build the base
+	if [ "$cc_bp_n" -eq 0 ]; then
+		cc_bp_kind=anchor; cc_bp_start="$cc_bp_anchortip"
+		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_start" >/dev/null 2>&1 \
+			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_bp_repo"; return 1; }
+		cc_bp_base="$cc_bp_anchortip"
+	elif [ "$cc_bp_n" -eq 1 ]; then
+		cc_bp_kind=stack; cc_bp_start="$cc_bp_tips"
+		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_start" >/dev/null 2>&1 \
+			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_bp_repo"; return 1; }
+		cc_bp_base="$cc_bp_start"
+	else
+		cc_bp_kind=integration
+		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_anchortip" >/dev/null 2>&1 \
+			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_bp_repo"; return 1; }
+		cc_bp_mbr=""
+		for cc_bp_dep in $cc_bp_preds; do
+			cc_bp_mbr="${cc_bp_mbr:+$cc_bp_mbr }cc/$cc_bp_dep/$cc_bp_repo"
+		done
+		cc_bp_deplist=$(printf '%s' "$cc_bp_preds" | tr ' ' ',' | sed 's/,/, /g')
+		# runtime-authored integration merge — NOT a worker attempt, NOT delivery.
+		if ! git -C "$cc_bp_tree" merge --no-ff \
+				-m "cc: integration base $cc_bp_plan (merge $cc_bp_deplist)" \
+				$cc_bp_mbr >/dev/null 2>&1; then
+			git -C "$cc_bp_tree" merge --abort >/dev/null 2>&1 || :
+			git -C "$cc_bp_abs" worktree remove --force "$cc_bp_tree" >/dev/null 2>&1 || rm -rf "$cc_bp_tree"
+			git -C "$cc_bp_abs" branch -D "$cc_bp_branch" >/dev/null 2>&1 || :
+			git -C "$cc_bp_abs" worktree prune >/dev/null 2>&1 || :
+			cc_fail BASE_UNBUILDABLE "$cc_bp_repo:integration-conflict"; return 1
+		fi
+		cc_bp_base=$(git -C "$cc_bp_tree" rev-parse HEAD)
+	fi
+	git -C "$cc_bp_abs" update-ref "$cc_bp_baseref" "$cc_bp_base" >/dev/null 2>&1 || :
+	cc_bp_based=$(printf '%s' "$cc_bp_preds" | tr ' ' ',' | sed 's/,/, /g')
+	cc_emit worktree "$cc_bp_tree"
+	cc_emit branch "$cc_bp_branch"
+	cc_emit base_commit "$cc_bp_base"
+	cc_emit based_on "[$cc_bp_based]"
+	cc_emit base_kind "$cc_bp_kind"
+	cc_emit worktree_reused false
+	return 0
+}
+
+# ---------------------------------------------------------------------------
+# Repository grounding (INV-GROUND-01/02/03) — discover the target repository's
+# own agent guidance from the worktree, harden the worktree, and assemble the
+# writer brief by deterministic slot substitution of a shipped template. The
+# runtime emits DATA (a manifest) and a report-style directive, never a model
+# prompt (INV-RUNTIME-01); the brief prose lives in wrapper/adapters/, not here.
+# ---------------------------------------------------------------------------
+
+# cc_harden_worktree WORKTREE -> detect the toolchain and report the prepared
+# environment. Detection is a table lookup; no network, no per-worktree install
+# here (full provisioning is a later phase). Emits environment ready|no-toolchain.
+cc_harden_worktree() {
+	cc_hw_wt="$1"
+	[ -d "$cc_hw_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_hw_wt"; return 1; }
+	cc_hw_tc=""
+	for cc_hw_lf in package-lock.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock \
+		go.mod Cargo.lock Gemfile.lock requirements.txt poetry.lock composer.lock \
+		pom.xml build.gradle build.gradle.kts; do
+		[ -f "$cc_hw_wt/$cc_hw_lf" ] && { cc_hw_tc="$cc_hw_lf"; break; }
+	done
+	if [ -n "$cc_hw_tc" ]; then
+		cc_emit environment ready
+		cc_emit toolchain "$cc_hw_tc"
+	else
+		cc_emit environment no-toolchain
+	fi
+	return 0
+}
+
+# cc_skill_desc SKILL_FILE -> the first line of a skill's frontmatter description
+cc_skill_desc() {
+	awk '
+		/^---[[:space:]]*$/{ fm++; if(fm>=2) exit; next }
+		fm==1 && /^description:[[:space:]]*/{
+			d=$0; sub(/^description:[[:space:]]*/,"",d)
+			if (d=="" || d==">" || d=="|" || d==">-" || d=="|-"){ folded=1; next }
+			print d; exit
+		}
+		fm==1 && folded && /^[[:space:]]+/{ line=$0; sub(/^[[:space:]]+/,"",line); if(line!=""){ print line; exit } }
+		fm==1 && folded && /^[^[:space:]-]/{ exit }
+	' "$1"
+}
+
+# cc_discover_repo_grounding WORKTREE [REPO] -> print the grounding manifest for
+# the worktree: the agent-guidance files present, the skills (name + description),
+# and the prepared-environment status. Deterministic scan; data, not prompt text.
+cc_discover_repo_grounding() {
+	cc_dg_wt="$1"; cc_dg_repo="${2:-}"
+	[ -d "$cc_dg_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_dg_wt"; return 1; }
+	cc_dg_env=$(cc_harden_worktree "$cc_dg_wt" | sed -n 's/^environment: //p'); [ -n "$cc_dg_env" ] || cc_dg_env=no-toolchain
+	printf 'schema_version: 1\n'
+	[ -n "$cc_dg_repo" ] && printf 'repository: %s\n' "$cc_dg_repo" || :
+	printf 'worktree: %s\n' "$cc_dg_wt"
+	# files — accumulate to a temp so the result is independent of shell word-splitting
+	cc_dg_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-dg.XXXXXX") || return 1
+	: >"$cc_dg_tmp"
+	for cc_dg_f in AGENTS.md CLAUDE.md .github/copilot-instructions.md; do
+		[ -f "$cc_dg_wt/$cc_dg_f" ] && printf '  - %s\n' "$cc_dg_f" >>"$cc_dg_tmp" || :
+	done
+	if [ -d "$cc_dg_wt/.cursor/rules" ] && [ -n "$(ls -A "$cc_dg_wt/.cursor/rules" 2>/dev/null)" ]; then
+		printf '  - .cursor/rules/\n' >>"$cc_dg_tmp"
+	fi
+	if [ -s "$cc_dg_tmp" ]; then printf 'files:\n'; cat "$cc_dg_tmp"; else printf 'files: []\n'; fi
+	: >"$cc_dg_tmp"
+	if [ -d "$cc_dg_wt/.agents/skills" ]; then
+		for cc_dg_s in "$cc_dg_wt"/.agents/skills/*/SKILL.md; do
+			[ -f "$cc_dg_s" ] || continue
+			cc_dg_nm=$(cc_scalar "$cc_dg_s" name 2>/dev/null); [ -n "$cc_dg_nm" ] || cc_dg_nm=$(basename -- "$(dirname -- "$cc_dg_s")")
+			cc_dg_de=$(cc_skill_desc "$cc_dg_s"); [ -n "$cc_dg_de" ] || cc_dg_de="(no description)"
+			printf '  - name: %s\n    description: %s\n' "$cc_dg_nm" "$cc_dg_de" >>"$cc_dg_tmp"
+		done
+	fi
+	if [ -s "$cc_dg_tmp" ]; then printf 'skills:\n'; cat "$cc_dg_tmp"; else printf 'skills: []\n'; fi
+	rm -f "$cc_dg_tmp"
+	printf 'environment: %s\n' "$cc_dg_env"
+	return 0
+}
+
+# cc_grounding_directive MANIFEST_FILE -> the writer-facing grounding directive,
+# rendered deterministically from the manifest (empty vs non-empty variants).
+cc_grounding_directive() {
+	cc_gd_mf="$1"; [ -f "$cc_gd_mf" ] || { cc_fail GROUNDING_MANIFEST_MISSING "$cc_gd_mf"; return 1; }
+	cc_gd_nf=$(awk '/^files:/{f=1;next} f&&/^  - /{c++} /^[a-z]/&&!/^files:/{f=0} END{print c+0}' "$cc_gd_mf")
+	cc_gd_ns=$(awk '/^skills:/{s=1;next} s&&/^  - name:/{c++} /^[a-z]/&&!/^skills:/{s=0} END{print c+0}' "$cc_gd_mf")
+	if [ "${cc_gd_nf:-0}" -eq 0 ] && [ "${cc_gd_ns:-0}" -eq 0 ]; then
+		printf 'No repository agent guidance was discovered (no AGENTS.md, CLAUDE.md, skills, or rules). Ground your work in the plan and Product Knowledge, and follow any patterns already present in the code.\n'
+		return 0
+	fi
+	printf "Before you write any code, read and apply this repository's own agent guidance.\n"
+	printf 'It is authoritative on HOW to write code here, within the scope this brief sets.\n\n'
+	awk '/^files:/{f=1;next} f&&/^  - /{v=$0;sub(/^  - /,"",v);print "- " v " — read and honor it."} /^[a-z]/&&!/^files:/{f=0}' "$cc_gd_mf"
+	if [ "${cc_gd_ns:-0}" -gt 0 ]; then
+		printf -- "- Skills — all of this repo's skills are listed below; read and follow only the ones RELEVANT TO YOUR TASK, chosen by description; skip the rest:\n"
+		awk '/^skills:/{s=1;next} s&&/^  - name:/{n=$0;sub(/^  - name:[[:space:]]*/,"",n);getline;d=$0;sub(/^    description:[[:space:]]*/,"",d);print "    - " n " — " d} /^[a-z]/&&!/^skills:/{s=0}' "$cc_gd_mf"
+	fi
+	printf "\nIf anything here conflicts with this brief's scope or safety rules, STOP and report.\n"
+	return 0
+}
+
+# cc_brief_preflight BRIEF_FILE -> refuse a brief missing or with an unfilled
+# repository-grounding slot (INV-GROUND-03).
+cc_brief_preflight() {
+	[ -f "$1" ] || { cc_fail BRIEF_MISSING "$1"; return 1; }
+	grep -q '^## Repository grounding' "$1" || { cc_fail BRIEF_GROUNDING_SLOT_MISSING "$1"; return 1; }
+	grep -q '@@GROUNDING@@' "$1" && { cc_fail BRIEF_GROUNDING_UNFILLED "$1"; return 1; }
+	cc_emit brief_preflight ok
+	return 0
+}
+
+# cc_writer_brief_assemble ROOT EXEC_DIR REPO TASK_FOCUS -> assemble the writer
+# brief by deterministic slot substitution of the shipped template, filling the
+# grounding directive + environment from the recorded manifest and the rest from
+# the execution record and plan snapshot. Writes brief-<repo>.md and preflights it.
+cc_writer_brief_assemble() {
+	cc_wb_root="$1"; cc_wb_edir="$2"; cc_wb_repo="$3"; cc_wb_tf="${4:-Implement the plan.}"
+	cc_wb_tpl=""
+	[ -f "$cc_wb_root/writer-brief.md" ] && cc_wb_tpl="$cc_wb_root/writer-brief.md"
+	[ -z "$cc_wb_tpl" ] && [ -f "$cc_wb_root/wrapper/adapters/writer-brief.md" ] && cc_wb_tpl="$cc_wb_root/wrapper/adapters/writer-brief.md"
+	[ -n "$cc_wb_tpl" ] || { cc_fail BRIEF_TEMPLATE_MISSING; return 1; }
+	cc_wb_rf="$cc_wb_edir/repositories/$cc_wb_repo.yaml"
+	[ -f "$cc_wb_rf" ] || { cc_fail EXECUTION_REPOSITORY_UNKNOWN "$cc_wb_repo"; return 1; }
+	cc_wb_pid=$(cc_scalar "$cc_wb_edir/execution.yaml" plan)
+	cc_wb_w=$(cc_scalar "$cc_wb_rf" worktree); cc_wb_br=$(cc_scalar "$cc_wb_rf" branch)
+	cc_wb_bc=$(cc_scalar "$cc_wb_rf" base_commit); cc_wb_ap=$(cc_scalar "$cc_wb_rf" allowed_paths)
+	cc_wb_mf="$cc_wb_edir/grounding/$cc_wb_repo.yaml"
+	cc_wb_env=no-toolchain; [ -f "$cc_wb_mf" ] && cc_wb_env=$(cc_scalar "$cc_wb_mf" environment)
+	cc_wb_grf="$cc_wb_edir/grounding/$cc_wb_repo.directive.txt"
+	if [ -f "$cc_wb_mf" ]; then cc_grounding_directive "$cc_wb_mf" >"$cc_wb_grf"; else printf 'No repository agent guidance was discovered.\n' >"$cc_wb_grf"; fi
+	cc_wb_envf="$cc_wb_edir/grounding/$cc_wb_repo.env.txt"
+	if [ "$cc_wb_env" = "ready" ]; then
+		printf "Ready: dependencies provisioned, commit hooks handled. Do NOT install or modify dependencies. Use the repository's own build/test/lint commands.\n" >"$cc_wb_envf"
+	else
+		printf 'No dependency toolchain detected. If this plan scaffolds one, create it within the allowed paths; add no dependencies beyond what the plan specifies.\n' >"$cc_wb_envf"
+	fi
+	cc_wb_snap="$cc_wb_edir/snapshot/plan.yaml"
+	cc_wb_out="$cc_wb_edir/brief-$cc_wb_repo.md"
+	awk -v pid="$cc_wb_pid" -v wt="$cc_wb_w" -v br="$cc_wb_br" -v bc="$cc_wb_bc" \
+	    -v ap="$cc_wb_ap" -v tf="$cc_wb_tf" -v snap="$cc_wb_snap" \
+	    -v envf="$cc_wb_envf" -v grf="$cc_wb_grf" '
+		/@@ENVIRONMENT@@/{ while((getline l<envf)>0) print l; close(envf); next }
+		/@@GROUNDING@@/{ while((getline l<grf)>0) print l; close(grf); next }
+		{
+			gsub(/\{plan_id\}/,pid); gsub(/\{worktree_path\}/,wt); gsub(/\{branch\}/,br)
+			gsub(/\{base_commit\}/,bc); gsub(/\{allowed_paths\}/,ap)
+			gsub(/\{plan_snapshot\}/,snap); gsub(/\{task_focus\}/,tf)
+			print
+		}
+	' "$cc_wb_tpl" | cc_atomic_write "$cc_wb_out"
+	cc_brief_preflight "$cc_wb_out" >/dev/null || { cc_fail BRIEF_PREFLIGHT_FAILED "$cc_wb_repo"; return 1; }
+	cc_emit brief "$cc_wb_out"
+	cc_emit grounding_manifest "$cc_wb_mf"
+	return 0
+}
+
+# ---------------------------------------------------------------------------
 # Plan structure, status, and active index
 # ---------------------------------------------------------------------------
 
@@ -455,6 +763,24 @@ cc_plan_validate() {
 		draft|approved|done) : ;;
 		*) cc_fail PLAN_STATUS_INVALID "$cc_pv_status"; return 1 ;;
 	esac
+	# schema version and inter-plan dependencies (INV-PLAN-05)
+	cc_pv_schema=$(cc_scalar "$cc_pv_dir/plan.yaml" "schema_version") || cc_pv_schema=""
+	case "$cc_pv_schema" in
+		1|2) : ;;
+		*) cc_fail PLAN_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1 ;;
+	esac
+	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
+	if [ -n "$cc_pv_deps" ]; then
+		[ "$cc_pv_schema" = "2" ] || { cc_fail PLAN_DEPS_REQUIRE_SCHEMA_2 "$cc_pv_id"; return 1; }
+		cc_pv_plansdir=$(dirname -- "$cc_pv_dir")
+		for cc_pv_dep in $cc_pv_deps; do
+			[ "$cc_pv_dep" != "$cc_pv_id" ] || { cc_fail PLAN_DEP_SELF "$cc_pv_dep"; return 1; }
+			[ -f "$cc_pv_plansdir/$cc_pv_dep/plan.yaml" ] || { cc_fail PLAN_DEP_UNKNOWN "$cc_pv_dep"; return 1; }
+		done
+		if cc_plan_dep_closure "$cc_pv_plansdir" "$cc_pv_id" | grep -Fxq "$cc_pv_id"; then
+			cc_fail PLAN_DEP_CYCLE "$cc_pv_id"; return 1
+		fi
+	fi
 	# every task maps to at least one declared repository; deps reference tasks
 	cc_pv_repos=$(cc_plan_repositories "$cc_pv_dir/plan.yaml")
 	cc_pv_tasks=$(cc_task_ids "$cc_pv_dir/plan.yaml")
@@ -482,7 +808,7 @@ cc_plan_allocate_id() {
 	cc_ai_root="$1"; cc_ai_slug="$2"
 	cc_safe_slug "$cc_ai_slug" || { cc_fail PLAN_SLUG_INVALID "$cc_ai_slug"; return 1; }
 	cc_ai_max=0
-	for cc_ai_d in "$cc_ai_root/plans"/*/ "$cc_ai_root/plans/.archived"/*/; do
+	for cc_ai_d in "$cc_ai_root/plans"/*/ "$cc_ai_root/plans/archive"/*/; do
 		[ -d "$cc_ai_d" ] || continue
 		cc_ai_base=$(basename -- "$cc_ai_d")
 		case "$cc_ai_base" in
@@ -569,16 +895,16 @@ cc_plan_org_lock() {
 }
 cc_plan_org_unlock() { rmdir "$1/.runtime/locks/plan-organization.lock" 2>/dev/null || true; }
 
-# cc_plan_archive ROOT PLAN -> move plans/PLAN -> plans/.archived/PLAN; drop index row
+# cc_plan_archive ROOT PLAN -> move plans/PLAN -> plans/archive/PLAN; drop index row
 cc_plan_archive() {
 	cc_ar_root="$1"; cc_ar_plan="$2"
 	cc_safe_id "$cc_ar_plan" || { cc_fail PLAN_ID_UNSAFE "$cc_ar_plan"; return 1; }
 	cc_ar_src="$cc_ar_root/plans/$cc_ar_plan"
-	cc_ar_dst="$cc_ar_root/plans/.archived/$cc_ar_plan"
+	cc_ar_dst="$cc_ar_root/plans/archive/$cc_ar_plan"
 	[ -d "$cc_ar_src" ] || { cc_fail ARCHIVE_SOURCE_MISSING "$cc_ar_plan"; return 1; }
 	[ -e "$cc_ar_dst" ] && { cc_fail ARCHIVE_TARGET_COLLISION "$cc_ar_plan"; return 1; }
 	cc_plan_org_lock "$cc_ar_root" || return 1
-	mkdir -p "$cc_ar_root/plans/.archived"
+	mkdir -p "$cc_ar_root/plans/archive"
 	if mv "$cc_ar_src" "$cc_ar_dst" 2>/dev/null; then
 		if cc_plan_index_remove "$cc_ar_root" "$cc_ar_plan"; then
 			cc_plan_org_unlock "$cc_ar_root"
@@ -594,11 +920,11 @@ cc_plan_archive() {
 	cc_fail ARCHIVE_MOVE_FAILED "$cc_ar_plan"; return 1
 }
 
-# cc_plan_restore ROOT PLAN -> move plans/.archived/PLAN -> plans/PLAN; re-add index
+# cc_plan_restore ROOT PLAN -> move plans/archive/PLAN -> plans/PLAN; re-add index
 cc_plan_restore() {
 	cc_re_root="$1"; cc_re_plan="$2"
 	cc_safe_id "$cc_re_plan" || { cc_fail PLAN_ID_UNSAFE "$cc_re_plan"; return 1; }
-	cc_re_src="$cc_re_root/plans/.archived/$cc_re_plan"
+	cc_re_src="$cc_re_root/plans/archive/$cc_re_plan"
 	cc_re_dst="$cc_re_root/plans/$cc_re_plan"
 	[ -d "$cc_re_src" ] || { cc_fail RESTORE_SOURCE_MISSING "$cc_re_plan"; return 1; }
 	[ -e "$cc_re_dst" ] && { cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
@@ -657,6 +983,89 @@ cc_lock_release() {
 }
 
 # ---------------------------------------------------------------------------
+# Path leases (INV-CONCURRENCY-01) — composes with the one-writer lock above.
+# A lease reserves (repository, path-region) scope. Records live at
+# .runtime/locks/paths/<repo>/<holder>.yaml and are preserved on release.
+# ---------------------------------------------------------------------------
+
+# cc_region_overlap A B -> ok(0) when the two path regions overlap:
+# equal, one a path-prefix ancestor of the other, or either repository-wide ".".
+cc_region_overlap() {
+	[ "$1" = "." ] && return 0
+	[ "$2" = "." ] && return 0
+	[ "$1" = "$2" ] && return 0
+	case "$2/" in "$1/"*) return 0 ;; esac
+	case "$1/" in "$2/"*) return 0 ;; esac
+	return 1
+}
+
+cc_lease_dir() { printf '%s/.runtime/locks/paths/%s' "$1" "$2"; }
+cc_lease_file() { printf '%s/.runtime/locks/paths/%s/%s.yaml' "$1" "$2" "$3"; }
+
+# cc_lease_regions FILE -> the held regions of a lease record, one per line.
+cc_lease_regions() {
+	cc_lg_raw=$(cc_scalar "$1" "regions" 2>/dev/null) || cc_lg_raw=""
+	cc_inline_list "$cc_lg_raw"
+}
+
+# cc_lease_check ROOT REPO PLAN "region ..." -> ok when no non-descendant holder
+# reserves an overlapping region in REPO. Own lease and descendants are exempt.
+cc_lease_check() {
+	cc_lc_root="$1"; cc_lc_repo="$2"; cc_lc_plan="$3"; cc_lc_regions="$4"
+	cc_lc_dir=$(cc_lease_dir "$cc_lc_root" "$cc_lc_repo")
+	[ -d "$cc_lc_dir" ] || { cc_emit lease free; return 0; }
+	for cc_lc_f in "$cc_lc_dir"/*.yaml; do
+		[ -f "$cc_lc_f" ] || continue
+		cc_lc_holder=$(cc_scalar "$cc_lc_f" "plan" 2>/dev/null) || cc_lc_holder=""
+		[ -n "$cc_lc_holder" ] || continue
+		[ "$cc_lc_holder" = "$cc_lc_plan" ] && continue           # own lease (reentrant)
+		cc_lc_rel=$(cc_scalar "$cc_lc_f" "released_at" 2>/dev/null) || cc_lc_rel=""
+		[ -n "$cc_lc_rel" ] && continue                            # released; not held
+		# a declared descendant of the holder builds on it, never competes
+		cc_plan_is_descendant "$cc_lc_root/plans" "$cc_lc_plan" "$cc_lc_holder" && continue
+		for cc_lc_held in $(cc_lease_regions "$cc_lc_f"); do
+			for cc_lc_want in $cc_lc_regions; do
+				if cc_region_overlap "$cc_lc_held" "$cc_lc_want"; then
+					cc_fail LEASE_CONFLICT "$cc_lc_repo:$cc_lc_holder:$cc_lc_held"
+					return 1
+				fi
+			done
+		done
+	done
+	cc_emit lease free
+	return 0
+}
+
+# cc_lease_acquire ROOT REPO PLAN "region ..." -> reserve regions in REPO for PLAN
+# after a conflict check. Re-acquiring PLAN's own lease is idempotent (reentrant).
+cc_lease_acquire() {
+	cc_la2_root="$1"; cc_la2_repo="$2"; cc_la2_plan="$3"; cc_la2_regions="$4"
+	[ -n "$cc_la2_regions" ] || { cc_fail LEASE_NO_REGIONS "$cc_la2_plan"; return 1; }
+	cc_lease_check "$cc_la2_root" "$cc_la2_repo" "$cc_la2_plan" "$cc_la2_regions" >/dev/null || return 1
+	cc_la2_file=$(cc_lease_file "$cc_la2_root" "$cc_la2_repo" "$cc_la2_plan")
+	cc_la2_inline=$(printf '%s' "$cc_la2_regions" | tr ' ' '\n' | sed '/^$/d' | paste -sd',' - 2>/dev/null | sed 's/,/, /g')
+	[ -n "$cc_la2_inline" ] || cc_la2_inline=$(printf '%s' "$cc_la2_regions" | tr ' ' ',' | sed 's/,/, /g')
+	printf 'schema_version: 1\nplan: %s\nrepository: %s\nregions: [%s]\nacquired_at: %s\nreleased_at:\n' \
+		"$cc_la2_plan" "$cc_la2_repo" "$cc_la2_inline" "$(cc_now)" \
+		| cc_atomic_write "$cc_la2_file"
+	cc_emit lease acquired
+	cc_emit repository "$cc_la2_repo"
+	cc_emit holder "$cc_la2_plan"
+	return 0
+}
+
+# cc_lease_release ROOT REPO PLAN -> mark PLAN's lease in REPO released, preserving
+# the record (released_at set; regions kept for inspection).
+cc_lease_release() {
+	cc_lr2_file=$(cc_lease_file "$1" "$2" "$3")
+	[ -f "$cc_lr2_file" ] || { cc_emit lease absent; return 0; }
+	awk -v ts="$(cc_now)" '/^released_at:/{print "released_at: " ts; seen=1; next}{print} END{if(!seen)print "released_at: " ts}' \
+		"$cc_lr2_file" | cc_atomic_write "$cc_lr2_file"
+	cc_emit lease released
+	return 0
+}
+
+# ---------------------------------------------------------------------------
 # Execution records
 # ---------------------------------------------------------------------------
 
@@ -680,6 +1089,11 @@ cc_execution_next_id() {
 # cc_execution_begin ROOT PLAN OWNER -> preflight, snapshot, worktrees, record
 cc_execution_begin() {
 	cc_eb_root="$1"; cc_eb_plan="$2"; cc_eb_owner="$3"
+	# Canonicalize the workspace root to an absolute path so every persisted
+	# worktree/branch path is cwd-independent — a worker or verifier child that
+	# runs from a different directory must still resolve them (a "." root would
+	# otherwise store relative worktree paths that break across cwds).
+	cc_eb_root=$(CDPATH= cd -- "$cc_eb_root" 2>/dev/null && pwd) || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$1"; return 1; }
 	cc_eb_dir="$cc_eb_root/plans/$cc_eb_plan"
 	cc_plan_validate "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PLAN_INVALID; return 1; }
 	cc_eb_status=$(cc_scalar "$cc_eb_dir/plan.yaml" "status")
@@ -694,10 +1108,30 @@ cc_execution_begin() {
 	cp "$cc_eb_dir/PLAN.md" "$cc_eb_edir/snapshot/PLAN.md"
 	[ -d "$cc_eb_dir/tasks" ] && cp -R "$cc_eb_dir/tasks" "$cc_eb_edir/snapshot/tasks"
 	cc_eb_rev=$(cc_digest "$cc_eb_dir/plan.yaml")
-	# per-repository branch + worktree
+	# per-repository branch + worktree. A plan with same-repo predecessors is
+	# base-aware (INV-CONCURRENCY-02): its base is the predecessor branch (stack)
+	# or a runtime-authored integration merge. A plan with no dependency keeps the
+	# v0.5 anchor-tip worktree unchanged. Leases are NOT acquired here; the
+	# run-stack loop manages them (v0.5 fixtures run overlapping-path plans).
 	for cc_eb_id in $(cc_plan_affected_repositories "$cc_eb_dir/plan.yaml"); do
-		cc_eb_out=$(cc_worktree_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id") \
-			|| { cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
+		cc_eb_based=""
+		if cc_plan_has_same_repo_pred "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"; then
+			if ! cc_eb_out=$(cc_base_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"); then
+				# a base that cannot be built cleanly is a blocked execution, not a
+				# worker failure (INV-CONCURRENCY-02); preserve evidence, no worker runs.
+				printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: blocked\nblocked_reason: BASE_UNBUILDABLE\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+					"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
+					| cc_atomic_write "$cc_eb_edir/execution.yaml"
+				cc_emit execution_id "$cc_eb_exec"
+				cc_emit status blocked
+				cc_emit blocked_reason BASE_UNBUILDABLE
+				cc_fail EXECUTION_BASE_UNBUILDABLE "$cc_eb_id"; return 1
+			fi
+			cc_eb_based=$(printf '%s' "$cc_eb_out" | sed -n 's/^based_on: //p')
+		else
+			cc_eb_out=$(cc_worktree_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id") \
+				|| { cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
+		fi
 		cc_eb_wt=$(printf '%s' "$cc_eb_out" | sed -n 's/^worktree: //p')
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
 		cc_eb_bc=$(printf '%s' "$cc_eb_out" | sed -n 's/^base_commit: //p')
@@ -706,7 +1140,12 @@ cc_execution_begin() {
 		{
 			printf 'repository: %s\nworktree: %s\nbranch: %s\nanchor_branch: %s\nbase_commit: %s\nlatest_commit: %s\nallowed_paths: [%s]\n' \
 				"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
+			[ -n "$cc_eb_based" ] && printf 'based_on: %s\n' "$cc_eb_based" || :
 		} | cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml"
+		# repository grounding (INV-GROUND-01): discover the target repo's own agent
+		# guidance from the prepared worktree and record it as execution evidence.
+		mkdir -p "$cc_eb_edir/grounding"
+		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml"
 	done
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
@@ -879,6 +1318,109 @@ cc_repair_allowed() {
 cc_execution_status() { cc_scalar "$1/execution.yaml" "status"; }
 
 # ---------------------------------------------------------------------------
+# Readiness and the run-stack partition (deterministic; the coordinator decides
+# how many ready plans to launch — the runtime never schedules, INV-RUNTIME-01).
+# ---------------------------------------------------------------------------
+
+# cc_plan_latest_status ROOT PLAN -> the plan's latest execution status, or "none".
+cc_plan_latest_status() {
+	cc_pls_e=$(cc_latest_execution "$1" "$2" 2>/dev/null) || cc_pls_e=""
+	[ -n "$cc_pls_e" ] || { printf 'none'; return 0; }
+	cc_execution_status "$(cc_execution_dir "$1" "$2" "$cc_pls_e")"
+}
+
+# cc_plan_ready ROOT PLAN -> readiness AND-join: every plan dependency verified
+# AND every needed path region free in each repository. Emits readiness (ready |
+# waiting | blocked) and a reason; returns 0 only when ready.
+cc_plan_ready() {
+	# tolerate a missing workspace root when invoked from within the workspace:
+	# `plan-ready <plan>` means root ".".
+	if [ -n "$2" ] && { [ -f "$1/workspace.yaml" ] || [ -d "$1/plans" ]; }; then
+		cc_pr_root="$1"; cc_pr_plan="$2"
+	else
+		cc_pr_root="."; cc_pr_plan="$1"
+	fi
+	cc_pr_pf="$cc_pr_root/plans/$cc_pr_plan/plan.yaml"
+	[ -f "$cc_pr_pf" ] || { cc_fail PLAN_YAML_MISSING "$cc_pr_plan"; return 1; }
+	# 1. dependency AND-join
+	for cc_pr_dep in $(cc_plan_dependencies "$cc_pr_pf"); do
+		cc_pr_ds=$(cc_plan_latest_status "$cc_pr_root" "$cc_pr_dep")
+		case "$cc_pr_ds" in
+			verified) : ;;
+			failed|blocked)
+				cc_emit readiness blocked
+				cc_emit reason "DEP_FAILED:$cc_pr_dep"
+				return 1 ;;
+			*)
+				cc_emit readiness waiting
+				cc_emit reason "DEP_NOT_VERIFIED:$cc_pr_dep"
+				return 1 ;;
+		esac
+	done
+	# 2. lease gate: each affected repository's needed regions must be free
+	for cc_pr_repo in $(cc_plan_affected_repositories "$cc_pr_pf"); do
+		cc_pr_reg=$(cc_plan_repo_paths "$cc_pr_pf" "$cc_pr_repo" | tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//')
+		[ -n "$cc_pr_reg" ] || cc_pr_reg="."
+		if ! cc_lease_check "$cc_pr_root" "$cc_pr_repo" "$cc_pr_plan" "$cc_pr_reg" >/dev/null 2>&1; then
+			cc_emit readiness waiting
+			cc_emit reason "LEASE_BUSY:$cc_pr_repo"
+			return 1
+		fi
+	done
+	cc_emit readiness ready
+	return 0
+}
+
+# cc_run_stack_ready ROOT PLAN... -> partition a set of plans into
+# verified / ready / waiting / failed / blocked / refused. A plan whose latest
+# execution is terminal (verified/failed/blocked) or in-progress
+# (running/verifying/repairing) is NOT runnable; only an approved, never-run plan
+# that passes readiness is `ready`. Emits one "<plan>: <bucket>" line per plan.
+cc_run_stack_ready() {
+	# tolerate invocation from within the workspace: the root defaults to "." when
+	# the first argument is not a workspace root (a real root has plans/), so
+	# `run-stack-ready <plan> <plan> ...` works with the current directory.
+	if [ -f "$1/workspace.yaml" ] || [ -d "$1/plans" ]; then
+		cc_rsr_root="$1"; shift 2>/dev/null || true
+	else
+		cc_rsr_root="."
+	fi
+	for cc_rsr_plan in "$@"; do
+		[ -n "$cc_rsr_plan" ] || continue
+		# resolve a bare four-digit prefix (e.g. 0001) to its unique full plan id
+		if [ ! -f "$cc_rsr_root/plans/$cc_rsr_plan/plan.yaml" ]; then
+			case "$cc_rsr_plan" in
+				[0-9][0-9][0-9][0-9])
+					for cc_rsr_m in "$cc_rsr_root/plans/$cc_rsr_plan-"*/; do
+						[ -d "$cc_rsr_m" ] && { cc_rsr_plan=$(basename -- "$cc_rsr_m"); break; }
+					done ;;
+			esac
+		fi
+		cc_rsr_status=$(cc_plan_status "$cc_rsr_root" "$cc_rsr_plan" 2>/dev/null) || cc_rsr_status=""
+		if [ "$cc_rsr_status" != "approved" ]; then
+			cc_emit "$cc_rsr_plan" refused
+			continue
+		fi
+		cc_rsr_le=$(cc_plan_latest_status "$cc_rsr_root" "$cc_rsr_plan")
+		case "$cc_rsr_le" in
+			verified) cc_emit "$cc_rsr_plan" verified; continue ;;
+			failed)   cc_emit "$cc_rsr_plan" failed;   continue ;;
+			blocked)  cc_emit "$cc_rsr_plan" blocked;  continue ;;
+			running|verifying|repairing) cc_emit "$cc_rsr_plan" waiting; continue ;;
+		esac
+		# never executed: evaluate readiness
+		cc_rsr_out=$(cc_plan_ready "$cc_rsr_root" "$cc_rsr_plan" 2>/dev/null) || :
+		cc_rsr_r=$(printf '%s' "$cc_rsr_out" | sed -n 's/^readiness: //p')
+		case "$cc_rsr_r" in
+			ready)   cc_emit "$cc_rsr_plan" ready ;;
+			blocked) cc_emit "$cc_rsr_plan" blocked ;;
+			*)       cc_emit "$cc_rsr_plan" waiting ;;
+		esac
+	done
+	return 0
+}
+
+# ---------------------------------------------------------------------------
 # Completion (human-controlled) and knowledge-impact handoff
 # ---------------------------------------------------------------------------
 
@@ -967,6 +1509,95 @@ cc_delivery_targets() {
 	return 0
 }
 
+# cc_delivery_drift ROOT PLAN -> read-only report: for each repository of the
+# latest execution, whether the recorded base has drifted from the current anchor
+# tip (a sibling merged and advanced the anchor). Drift = the current anchor tip
+# is not already reachable from the execution branch (INV-DELIVER-01 drift guard).
+cc_delivery_drift() {
+	cc_dd_root="$1"; cc_dd_plan="$2"
+	cc_dd_exec=$(cc_latest_execution "$cc_dd_root" "$cc_dd_plan") || { cc_fail DELIVERY_NO_EXECUTION; return 1; }
+	[ -n "$cc_dd_exec" ] || { cc_fail DELIVERY_NO_EXECUTION; return 1; }
+	cc_dd_edir=$(cc_execution_dir "$cc_dd_root" "$cc_dd_plan" "$cc_dd_exec")
+	cc_emit execution_id "$cc_dd_exec"
+	cc_dd_any=false
+	for cc_dd_rf in "$cc_dd_edir"/repositories/*.yaml; do
+		[ -f "$cc_dd_rf" ] || continue
+		cc_dd_id=$(cc_scalar "$cc_dd_rf" repository)
+		cc_dd_anchor=$(cc_scalar "$cc_dd_rf" anchor_branch)
+		cc_dd_base=$(cc_scalar "$cc_dd_rf" base_commit)
+		cc_dd_latest=$(cc_scalar "$cc_dd_rf" latest_commit)
+		cc_dd_abs=$(cc_repo_resolve "$cc_dd_root" "$cc_dd_id" 2>/dev/null | sed -n 's/^path: //p')
+		cc_dd_tip=$(git -C "$cc_dd_abs" rev-parse --verify "refs/heads/$cc_dd_anchor" 2>/dev/null) || cc_dd_tip=""
+		cc_dd_drift=unknown
+		if [ -n "$cc_dd_abs" ] && [ -n "$cc_dd_tip" ]; then
+			if git -C "$cc_dd_abs" merge-base --is-ancestor "$cc_dd_tip" "$cc_dd_latest" 2>/dev/null; then
+				cc_dd_drift=false
+			else
+				cc_dd_drift=true; cc_dd_any=true
+			fi
+		fi
+		cc_emit "repository" "$cc_dd_id"
+		cc_emit "  anchor_tip" "${cc_dd_tip:-unknown}"
+		cc_emit "  recorded_base" "$cc_dd_base"
+		cc_emit "  drifted" "$cc_dd_drift"
+	done
+	cc_emit drift_detected "$cc_dd_any"
+	return 0
+}
+
+# cc_delivery_rebase ROOT PLAN -> rebase every drifted repository's execution
+# branch onto the current anchor tip, update base_commit/latest_commit, and flag
+# a required re-verification. A rebase conflict is DELIVERY_REBASE_CONFLICT (the
+# runtime performs no delivery merge). Preserves work on abort.
+cc_delivery_rebase() {
+	cc_dr_root="$1"; cc_dr_plan="$2"
+	cc_dr_exec=$(cc_latest_execution "$cc_dr_root" "$cc_dr_plan") || { cc_fail DELIVERY_NO_EXECUTION; return 1; }
+	[ -n "$cc_dr_exec" ] || { cc_fail DELIVERY_NO_EXECUTION; return 1; }
+	cc_dr_edir=$(cc_execution_dir "$cc_dr_root" "$cc_dr_plan" "$cc_dr_exec")
+	cc_emit execution_id "$cc_dr_exec"
+	cc_dr_rebased=0
+	for cc_dr_rf in "$cc_dr_edir"/repositories/*.yaml; do
+		[ -f "$cc_dr_rf" ] || continue
+		cc_dr_id=$(cc_scalar "$cc_dr_rf" repository)
+		cc_dr_anchor=$(cc_scalar "$cc_dr_rf" anchor_branch)
+		cc_dr_wt=$(cc_scalar "$cc_dr_rf" worktree)
+		cc_dr_latest=$(cc_scalar "$cc_dr_rf" latest_commit)
+		cc_dr_abs=$(cc_repo_resolve "$cc_dr_root" "$cc_dr_id" 2>/dev/null | sed -n 's/^path: //p')
+		[ -n "$cc_dr_abs" ] || continue
+		cc_dr_tip=$(git -C "$cc_dr_abs" rev-parse --verify "refs/heads/$cc_dr_anchor" 2>/dev/null) || continue
+		# already contained: nothing to rebase for this repository
+		if git -C "$cc_dr_abs" merge-base --is-ancestor "$cc_dr_tip" "$cc_dr_latest" 2>/dev/null; then
+			cc_emit "repository" "$cc_dr_id"
+			cc_emit "  rebased" false
+			continue
+		fi
+		[ -d "$cc_dr_wt" ] || { cc_fail DELIVERY_WORKTREE_MISSING "$cc_dr_id"; return 1; }
+		if ! git -C "$cc_dr_wt" rebase "$cc_dr_tip" >/dev/null 2>&1; then
+			git -C "$cc_dr_wt" rebase --abort >/dev/null 2>&1 || :
+			cc_fail DELIVERY_REBASE_CONFLICT "$cc_dr_id"; return 1
+		fi
+		cc_dr_new=$(git -C "$cc_dr_wt" rev-parse HEAD)
+		awk -v b="$cc_dr_tip" -v l="$cc_dr_new" '
+			/^base_commit:[[:space:]]/{print "base_commit: " b; next}
+			/^latest_commit:[[:space:]]/{print "latest_commit: " l; next}
+			{print}
+		' "$cc_dr_rf" | cc_atomic_write "$cc_dr_rf"
+		cc_dr_rebased=$((cc_dr_rebased + 1))
+		cc_emit "repository" "$cc_dr_id"
+		cc_emit "  rebased" true
+		cc_emit "  new_base" "$cc_dr_tip"
+		cc_emit "  new_latest" "$cc_dr_new"
+	done
+	if [ "$cc_dr_rebased" -gt 0 ]; then
+		# a rebased base must be re-verified before its pull request opens
+		cc_exec_set "$cc_dr_edir" status verifying
+		cc_emit reverify_required true
+	else
+		cc_emit reverify_required false
+	fi
+	return 0
+}
+
 # ---------------------------------------------------------------------------
 # Recovery
 # ---------------------------------------------------------------------------
@@ -1034,6 +1665,19 @@ cc_main() {
 		repository-preflight)    cc_repository_preflight "$@" ;;
 		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
+		base-prepare)            cc_base_prepare "$@" ;;
+		discover-repo-grounding) cc_discover_repo_grounding "$@" ;;
+		harden-worktree)         cc_harden_worktree "$@" ;;
+		grounding-directive)     cc_grounding_directive "$@" ;;
+		writer-brief-assemble)   cc_writer_brief_assemble "$@" ;;
+		brief-preflight)         cc_brief_preflight "$@" ;;
+		lease-check)             cc_lease_check "$@" ;;
+		lease-acquire)           cc_lease_acquire "$@" ;;
+		lease-release)           cc_lease_release "$@" ;;
+		plan-ready)              cc_plan_ready "$@" ;;
+		run-stack-ready)         cc_run_stack_ready "$@" ;;
+		delivery-drift)          cc_delivery_drift "$@" ;;
+		delivery-rebase)         cc_delivery_rebase "$@" ;;
 		plan-validate)           cc_plan_validate "$@" ;;
 		plan-allocate-id)        cc_plan_allocate_id "$@" ;;
 		plan-approve)            cc_plan_approve "$@" ;;

@@ -30,7 +30,14 @@ plan_id:
     - never reused, including after archive or restore
 
 fields:
-  schema_version: { type: integer, required: true }
+  schema_version:
+    type: integer
+    required: true
+    values: [1, 2]
+    description: >
+      1 for a plan with no inter-plan dependencies (v0.5 shape, unchanged). 2 is
+      required when plan_dependencies is present, so a v0.5 engine refuses the
+      plan rather than scheduling it dependency-blind (INV-PLAN-05).
   plan: { type: string, required: true, description: canonical plan id }
   title: { type: string, required: true }
   status: { type: enum, required: true, values: [draft, approved, done] }
@@ -41,6 +48,17 @@ fields:
     item:
       id: { type: string, required: true }
       purpose: { type: string, required: false }
+  plan_dependencies:
+    type: list
+    required: false
+    description: >
+      Inter-plan ordering, distinct from a task's intra-plan depends_on. Each
+      entry names another plan this plan builds on, with a reason. Its presence
+      requires schema_version 2 (INV-PLAN-05). Its effect (same-repo git base vs
+      cross-repo ordering gate) is derived per repository, never declared.
+    item:
+      id: { type: string, required: true, description: an existing, non-self plan id }
+      reason: { type: string, required: true }
   product_knowledge:
     type: list
     required: true
@@ -83,9 +101,13 @@ invariants:
   - acceptance and verification use distinct identifiers
   - each product_knowledge reference has a stable id, path, and reason (INV-PLAN-04)
   - plan status is human-controlled (INV-PLAN-01)
+  - schema_version is 1 or 2; declaring plan_dependencies requires 2 (INV-PLAN-05)
+  - every plan_dependencies entry references an existing, non-self plan id and the
+    inter-plan dependency graph is acyclic (INV-PLAN-05)
 
 rules:
   - INV-PLAN-01
   - INV-PLAN-02
   - INV-PLAN-03
   - INV-PLAN-04
+  - INV-PLAN-05

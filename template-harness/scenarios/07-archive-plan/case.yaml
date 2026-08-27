@@ -42,7 +42,7 @@ grader:
   # A. state post-conditions (hard gate)
   post_conditions:
     - repositories_registered: 1
-    - plan_archived: 0001-md-export:approved   # in .archived, deindexed, status preserved (no validation)
+    - plan_archived: 0001-md-export:approved   # in archive, deindexed, status preserved (no validation)
     - no_execution_records: true
     - product_knowledge_unchanged_silently: true
   # B. transcript checks (hard gate)
@@ -57,7 +57,7 @@ grader:
       required: []
       allowed:  ["plans/**"]
       forbidden:
-        - "plans/.archived/**"          # never READ the archived area (the runtime MOVES the plan there)
+        - "plans/archive/**"            # never READ the archived area (the runtime MOVES the plan there)
         - "wrapper/runtime/engine.sh"
         - "sources/**"
   # D. efficiency ledger (soft, warning-only)

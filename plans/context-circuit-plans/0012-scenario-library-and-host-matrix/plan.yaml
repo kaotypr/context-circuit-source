@@ -1,0 +1,70 @@
+schema_version: 2
+plan: 0012-scenario-library-and-host-matrix
+title: Scenario library and host matrix
+status: done
+objective: >-
+  Fill out the harness with the full case library (conversation-only,
+  full-execution, delivery-boundary, and host-behavior cases) and per-host
+  bindings, plus an opt-in matrix runner over {scenario x host}.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the scenario library and host bindings under template-harness/.
+plan_dependencies:
+  - id: 0011-human-simulated-harness
+    reason: Builds on the harness mechanism, runner, and grader.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: Each case references acceptance criteria and invariant ids.
+  - id: architecture
+    path: context/ARCHITECTURE.md
+    reason: Full-execution cases exercise worker and verifier spawning.
+context_grounding:
+  summary: >-
+    The case library spans orientation, planning, approval/execution, repair,
+    archive/restore, delivery, and the verifier-unavailable host-blocked path.
+  constraints:
+    - Full-execution cases require nested worker/verifier spawning.
+    - The matrix runner is opt-in and outside the deterministic acceptance gate.
+    - Trace-unavailable hosts degrade dimension C to warning, D to unavailable.
+  decisions:
+    - One persona contract is packaged per host (Claude/Codex/Cursor).
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: SCN-001
+    title: Author the full case library
+    repositories: [context-circuit-source]
+    paths:
+      - template-harness/scenarios
+    depends_on: []
+    changes:
+      - Add conversation-only cases (connect, review/approve, refuse-unapproved).
+      - Add full-execution cases (approve-and-execute, repair-then-complete).
+      - Add the delivery-boundary and archive/restore and host-blocked cases.
+    acceptance:
+      - id: SCN-AC-01
+        statement: Each case carries a human block and a grader block mapped to invariants.
+    verification:
+      - id: SCN-VT-01
+        command: sh template-harness/test-template-runtime.sh
+  - id: SCN-002
+    title: Per-host bindings and matrix runner
+    repositories: [context-circuit-source]
+    paths:
+      - template-harness/human
+    depends_on: [SCN-001]
+    changes:
+      - Add host-native human-simulator definitions and spawn/trace bindings.
+      - Add an opt-in matrix runner over {scenario x host} with a keyed summary.
+    acceptance:
+      - id: SCN-AC-02
+        statement: The matrix runner reports per (scenario, host) with a trace-availability flag.
+    verification:
+      - id: SCN-VT-02
+        command: sh template-harness/test-template-runtime.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
