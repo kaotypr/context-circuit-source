@@ -24,6 +24,14 @@ retrievable.
 | Delivery | Opening a pull request, merging, pushing, or publishing — always a separate, explicit action. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
 | Host-blocked | A state where the environment cannot run a required step, so the coordinator reports it and preserves the work rather than faking it. |
+| Plan stack | A named set of approved plans executed in one run (v0.6 run-stack); ordered and overlapped safely with no new authority. |
+| Plan dependency | Inter-plan ordering (`plan_dependencies`); declaring it makes a plan `schema_version: 2`. Distinct from a task's `depends_on`. |
+| Path lease | A `(repository, path-region)` reservation extending the one-writer lock; overlapping plans serialize, disjoint ones run together. |
+| Execution base / integration base | The commit a plan builds on: anchor tip, a predecessor branch (stack), or a runtime-authored integration merge (≥2 predecessors). |
+| Drift guard | Rebase-onto-current-anchor-tip + re-verify before a pull request when the recorded base has diverged. |
+| Repository grounding | The worker honoring the target repository's own agent guidance, discovered live from the worktree. |
+| Grounding manifest / writer brief | The discovered guidance (files, skills, environment) for one execution; the assembled instructions handed to the worker. |
+| System design | A structured source describing the shape of a change, authored via `cc-system-design`; a source, not a lifecycle stage. |
 
 ## User-facing translation
 
@@ -43,4 +51,7 @@ authority is settled by the runtime contracts under `wrapper/contracts/`.
 - Design material under `sources/` is historical maintainer input, not a live
   owner, and is read only when a request names it.
 
-Accepted from proposal `0001-terminology-glossary` on 2026-08-24.
+Accepted from proposal `0001-terminology-glossary` on 2026-08-24. Extended
+2026-08-27 from proposal `0022-change-terminology` with the v0.6 terms (plan
+stack, path lease, execution/integration base, drift guard, repository grounding,
+grounding manifest, writer brief, system design), mirrored in `docs/terminology.md`.

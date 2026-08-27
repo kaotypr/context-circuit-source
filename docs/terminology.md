@@ -31,6 +31,15 @@ importantly, how the coordinator translates them into plain language for a user.
 | Delivery | Opening a pull request, merging, pushing, or publishing — always a separate, explicit action. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
 | Host-blocked | A state where the environment cannot run a required step (for example, an independent check), so the coordinator reports it and preserves the work rather than faking the step. |
+| Plan stack | A named set of approved plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
+| Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`; declaring it makes the plan `schema_version: 2`. |
+| Path lease | A `(repository, path region)` reservation extending the one-writer lock, so plans touching overlapping paths serialize while disjoint ones run together. |
+| Execution base | The commit a plan's work is built on: the anchor tip, a predecessor's branch (stack), or a runtime-authored integration merge of several predecessors. |
+| Drift guard | Rebasing a plan onto the current branch tip and re-checking it before a pull request, when a sibling already merged. |
+| Repository grounding | The worker reading and honoring the target repository's own agent guidance, discovered from the working copy. |
+| Grounding manifest | The discovered record of a repository's agent guidance (files, skills, prepared environment) for one execution. |
+| Writer brief | The instructions handed to the worker for one execution, assembled from the grounding manifest and the plan. |
+| System design | A structured write-up of the shape of a larger change, authored as source material; a source, not a lifecycle stage. |
 
 The exact meanings and authority of these terms are settled by the runtime
 contracts under `wrapper/contracts/`; this page is the plain-language reference.
@@ -54,5 +63,9 @@ explicitly asks for diagnostics.
 | Workspace and runtime files (`workspace.yaml`, `repositories.local.yaml`, `plan.yaml`, `plans/INDEX.md`, `engine.sh`) | any internal file name | the thing by its effect — "your plan", "your connected projects" |
 | Delivery / delivery boundary | "delivery boundary" | "opening a pull request", named as a separate step |
 | Archive / restore (as file moves) | the file-move mechanics | "set aside" / "bring back" the plan |
+| Path lease / region | "lease", "path region" | say nothing about the mechanism; if relevant, "I ran those together" or "I did those one after another" |
+| Execution base / integration base / `refs/cc-base/...` | "base", "integration merge", the ref name | "built on top of the earlier work", by effect |
+| Grounding manifest / writer brief | those terms | "I followed your project's own contributor guidance" |
+| Drift guard / rebase-and-re-verify | "drift", "rebase" | "I brought it up to date with your branch and checked it again" |
 
 Reveal these mechanics only when the user explicitly asks for diagnostics.
