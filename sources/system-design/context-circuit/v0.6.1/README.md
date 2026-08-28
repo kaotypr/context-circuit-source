@@ -14,6 +14,12 @@ version index; each scope owns its own design.
   knowledge (stays in `domains/`, tagged by `repositories`) from the *external
   service itself* (no repo, no `repositories` tag — the void this scope fills).
   Start at [context-references/design.md](./context-references/design.md).
+- [writer-brief-placement/](./writer-brief-placement/) — relocate the runtime
+  `writer-brief.md` template out of the user-facing workspace root (where it
+  reads as clutter next to the real entry docs) into an unobtrusive machinery
+  location, re-pointing the engine lookup and release manifest. Source of truth
+  and repository-grounding behavior unchanged; no core contract bump. Start at
+  [writer-brief-placement/design.md](./writer-brief-placement/design.md).
 
 ## Layout convention
 
