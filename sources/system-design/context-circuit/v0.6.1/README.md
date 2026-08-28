@@ -20,6 +20,13 @@ version index; each scope owns its own design.
   location, re-pointing the engine lookup and release manifest. Source of truth
   and repository-grounding behavior unchanged; no core contract bump. Start at
   [writer-brief-placement/design.md](./writer-brief-placement/design.md).
+- [design-layout-grouping/](./design-layout-grouping/) — refine the system-design
+  layout convention: the middle path segment is a *grouping* dimension (version
+  by default, optionally `phase-N`/`Q1`/milestone), version groupings use
+  3-number semver going forward, and the agent defaults the grouping to the
+  project's current/next version. A delta on v0.6
+  [system-design-authoring](../v0.6/system-design-authoring/). Start at
+  [design-layout-grouping/design.md](./design-layout-grouping/design.md).
 
 ## Layout convention
 
