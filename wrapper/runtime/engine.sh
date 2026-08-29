@@ -26,7 +26,7 @@
 # Constants
 # ---------------------------------------------------------------------------
 
-CC_RUNTIME_VERSION="0.6.1"
+CC_RUNTIME_VERSION="0.7.0"
 CC_SCHEMA_VERSION="1"
 
 # ---------------------------------------------------------------------------
@@ -49,6 +49,46 @@ cc_fail() {
 cc_emit() { printf '%s: %s\n' "$1" "$2"; }
 
 cc_now() { date -u +%Y-%m-%dT%H:%M:%SZ; }
+
+# cc_now_ms -> epoch milliseconds, best-effort and portable. GNU date exposes
+# nanoseconds (%N); BSD/macOS date does not, so fall back to whole-second
+# precision (a sub-second deterministic phase then records as 0 ms, which is an
+# honest reflection of "near-free"). Used only for additive timing evidence
+# (v0.7.0 execution-latency measurement); it never gates anything (INV-HOST-01).
+cc_now_ms() {
+	cc_nm=$(date +%s%N 2>/dev/null)
+	case "$cc_nm" in
+		*[!0-9]* | '' ) printf '%s000' "$(date +%s)" ;;   # BSD: no ns -> s*1000
+		* ) printf '%s' "$(( cc_nm / 1000000 ))" ;;        # GNU: ns -> ms
+	esac
+}
+
+# cc_phase_block BASE GROUND INTEG VERIFY -> the additive deterministic-phase
+# timing map (v0.7.0 measurement). Written atomically inside an execution record;
+# a partial record carries no meaning (INV-RUNTIME-02). It is pure bookkeeping
+# over work the engine already does — no model prompt, no launch logic
+# (INV-RUNTIME-01) — and pure evidence: it never gates a route or verdict.
+cc_phase_block() {
+	printf 'phase_ms:\n  base_prepare: %s\n  grounding_discovery: %s\n  integration_merge: %s\n  verifier_prepare: %s\n' \
+		"${1:-0}" "${2:-0}" "${3:-0}" "${4:-0}"
+}
+
+# cc_phase_add EXEC_DIR PHASE MS -> add MS to a deterministic phase already in the
+# execution record's phase_ms map (used for phases that recur, e.g. verifier
+# preparation across repair attempts). Touches updated_at; no-op if unstamped.
+cc_phase_add() {
+	cc_pa_f="$1/execution.yaml"; cc_pa_k="$2"; cc_pa_ms="$3"
+	[ -f "$cc_pa_f" ] || return 0
+	awk -v key="$cc_pa_k" -v add="$cc_pa_ms" -v ts="$(cc_now)" '
+		/^phase_ms:[[:space:]]*$/ { inmap=1; print; next }
+		inmap && $0 ~ ("^  " key ":[[:space:]]") {
+			v=$0; sub("^  " key ":[[:space:]]*", "", v); print "  " key ": " (v + add); next
+		}
+		inmap && /^[^[:space:]]/ { inmap=0 }
+		/^updated_at:[[:space:]]/ { print "updated_at: " ts; next }
+		{ print }
+	' "$cc_pa_f" | cc_atomic_write "$cc_pa_f"
+}
 
 # ---------------------------------------------------------------------------
 # Safe identifiers and paths
@@ -769,6 +809,13 @@ cc_plan_validate() {
 		1|2) : ;;
 		*) cc_fail PLAN_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1 ;;
 	esac
+	# optional v0.7.0 complexity hint (additive; absent by default). A coordinator
+	# tiering hint only (INV-HOST-01) — never a gate; the runtime stays model-blind.
+	cc_pv_cx=$(cc_scalar "$cc_pv_dir/plan.yaml" "complexity") || cc_pv_cx=""
+	case "$cc_pv_cx" in
+		''|standard|high) : ;;
+		*) cc_fail PLAN_COMPLEXITY_INVALID "$cc_pv_cx"; return 1 ;;
+	esac
 	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
 	if [ -n "$cc_pv_deps" ]; then
 		[ "$cc_pv_schema" = "2" ] || { cc_fail PLAN_DEPS_REQUIRE_SCHEMA_2 "$cc_pv_id"; return 1; }
@@ -1113,15 +1160,31 @@ cc_execution_begin() {
 	# or a runtime-authored integration merge. A plan with no dependency keeps the
 	# v0.5 anchor-tip worktree unchanged. Leases are NOT acquired here; the
 	# run-stack loop manages them (v0.5 fixtures run overlapping-path plans).
+	# additive deterministic-phase timing (v0.7.0 measurement), summed across the
+	# affected repositories. Pure bookkeeping over work already performed here.
+	cc_eb_ms_base=0; cc_eb_ms_ground=0; cc_eb_ms_integ=0
 	for cc_eb_id in $(cc_plan_affected_repositories "$cc_eb_dir/plan.yaml"); do
 		cc_eb_based=""
+		cc_eb_t0=$(cc_now_ms)
 		if cc_plan_has_same_repo_pred "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"; then
-			if ! cc_eb_out=$(cc_base_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"); then
+			cc_eb_out=$(cc_base_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"); cc_eb_rc=$?
+			cc_eb_t1=$(cc_now_ms); cc_eb_dms=$(( cc_eb_t1 - cc_eb_t0 ))
+			# a runtime-authored integration merge is its own phase; a plain
+			# anchor/stack base counts as base_prepare.
+			case "$cc_eb_out" in
+				*base_kind:\ integration*) cc_eb_ms_integ=$(( cc_eb_ms_integ + cc_eb_dms )) ;;
+				*) cc_eb_ms_base=$(( cc_eb_ms_base + cc_eb_dms )) ;;
+			esac
+			if [ "$cc_eb_rc" -ne 0 ]; then
 				# a base that cannot be built cleanly is a blocked execution, not a
 				# worker failure (INV-CONCURRENCY-02); preserve evidence, no worker runs.
-				printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: blocked\nblocked_reason: BASE_UNBUILDABLE\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-					"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
-					| cc_atomic_write "$cc_eb_edir/execution.yaml"
+				# The deterministic phases run so far are recorded (measurement.md:
+				# a blocked trace still records what ran).
+				{
+					printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: blocked\nblocked_reason: BASE_UNBUILDABLE\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+						"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)"
+					cc_phase_block "$cc_eb_ms_base" "$cc_eb_ms_ground" "$cc_eb_ms_integ" 0
+				} | cc_atomic_write "$cc_eb_edir/execution.yaml"
 				cc_emit execution_id "$cc_eb_exec"
 				cc_emit status blocked
 				cc_emit blocked_reason BASE_UNBUILDABLE
@@ -1131,6 +1194,7 @@ cc_execution_begin() {
 		else
 			cc_eb_out=$(cc_worktree_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id") \
 				|| { cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
+			cc_eb_t1=$(cc_now_ms); cc_eb_ms_base=$(( cc_eb_ms_base + (cc_eb_t1 - cc_eb_t0) ))
 		fi
 		cc_eb_wt=$(printf '%s' "$cc_eb_out" | sed -n 's/^worktree: //p')
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
@@ -1145,11 +1209,15 @@ cc_execution_begin() {
 		# repository grounding (INV-GROUND-01): discover the target repo's own agent
 		# guidance from the prepared worktree and record it as execution evidence.
 		mkdir -p "$cc_eb_edir/grounding"
+		cc_eb_tg0=$(cc_now_ms)
 		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml"
+		cc_eb_tg1=$(cc_now_ms); cc_eb_ms_ground=$(( cc_eb_ms_ground + (cc_eb_tg1 - cc_eb_tg0) ))
 	done
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
-		| cc_atomic_write "$cc_eb_edir/execution.yaml"
+	{
+		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+			"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)"
+		cc_phase_block "$cc_eb_ms_base" "$cc_eb_ms_ground" "$cc_eb_ms_integ" 0
+	} | cc_atomic_write "$cc_eb_edir/execution.yaml"
 	cc_emit execution_id "$cc_eb_exec"
 	cc_emit status running
 	return 0
@@ -1176,7 +1244,11 @@ cc_attempt_begin() {
 	mkdir -p "$cc_ab_dir/attempts/$cc_ab_pad"
 	cc_exec_set "$cc_ab_dir" current_attempt "$cc_ab_next"
 	cc_exec_set "$cc_ab_dir" status running
-	printf 'attempt: %s\nstatus: started\nstarted_at: %s\n' "$cc_ab_next" "$(cc_now)" \
+	# attempt_started_at is the per-attempt boundary the coordinator pairs with its
+	# observed worker/verifier wall-clock (v0.7.0 measurement); attempt_count is
+	# current_attempt in execution.yaml, surfaced as a first-class timing dimension.
+	printf 'attempt: %s\nstatus: started\nstarted_at: %s\nattempt_started_at: %s\n' \
+		"$cc_ab_next" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_ab_dir/attempts/$cc_ab_pad/worker.yaml"
 	cc_emit attempt "$cc_ab_next"
 	return 0
@@ -1226,12 +1298,16 @@ cc_worker_handoff_record() {
 # cc_verifier_prepare EXEC_DIR -> validate latest revisions and read-only scope
 cc_verifier_prepare() {
 	cc_vp_dir="$1"
+	cc_vp_t0=$(cc_now_ms)
 	for cc_vp_rf in "$cc_vp_dir"/repositories/*.yaml; do
 		[ -f "$cc_vp_rf" ] || continue
 		cc_vp_latest=$(cc_scalar "$cc_vp_rf" "latest_commit")
 		cc_vp_base=$(cc_scalar "$cc_vp_rf" "base_commit")
 		[ "$cc_vp_latest" != "$cc_vp_base" ] || { cc_fail VERIFIER_NO_WORKER_COMMIT "$(basename "$cc_vp_rf" .yaml)"; return 1; }
 	done
+	# deterministic verifier-preparation duration (v0.7.0 measurement); it recurs
+	# per repair attempt, so accumulate into the phase_ms map.
+	cc_vp_t1=$(cc_now_ms); cc_phase_add "$cc_vp_dir" verifier_prepare "$(( cc_vp_t1 - cc_vp_t0 ))"
 	cc_emit verifier_scope read-only
 	return 0
 }
@@ -1260,8 +1336,10 @@ cc_verifier_result_record() {
 	done
 	cc_vr_pad=$(printf '%03d' "$cc_vr_att")
 	mkdir -p "$cc_vr_dir/attempts/$cc_vr_pad"
-	printf 'attempt: %s\noutcome: %s\nread_only: true\nchecked_at: %s\n' \
-		"$cc_vr_att" "$cc_vr_out" "$(cc_now)" \
+	# attempt_ended_at closes the per-attempt boundary opened by attempt-begin
+	# (v0.7.0 measurement); monotonic with attempt_started_at.
+	printf 'attempt: %s\noutcome: %s\nread_only: true\nchecked_at: %s\nattempt_ended_at: %s\n' \
+		"$cc_vr_att" "$cc_vr_out" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_vr_dir/attempts/$cc_vr_pad/verifier.yaml"
 	if [ "$cc_vr_out" = "passed" ]; then
 		cc_exec_set "$cc_vr_dir" status verified
@@ -1299,6 +1377,46 @@ cc_verifier_result_record() {
 	cc_emit outcome "$cc_vr_out"
 	cc_emit worker_failures "$cc_vr_wf"
 	cc_emit status repairing
+	return 0
+}
+
+# cc_attempt_evidence_record EXEC_DIR ATTEMPT KEY=VALUE ... -> record bounded,
+# provider-neutral host evidence for one attempt (v0.7.0 measurement + tiering):
+# the coordinator-observed inference wall-clock (worker_wall_s / verifier_wall_s)
+# and the (model, effort) each role ran at. This is EVIDENCE ONLY (INV-HOST-01):
+# the engine stores it, never selects a model, never interprets it, and no gate,
+# route, lease, verdict, or the worker-failure counter (INV-REPAIR-01) ever reads
+# it. The key set is a fixed allowlist and values are credential-free
+# (INV-SEC-01); an unknown key or unsafe value is refused, keeping the surface
+# bounded. Records are written atomically (INV-RUNTIME-02).
+cc_attempt_evidence_record() {
+	cc_ae_dir="$1"; cc_ae_att="$2"
+	[ -n "$cc_ae_dir" ] && [ -n "$cc_ae_att" ] || { cc_fail ATTEMPT_EVIDENCE_ARGS; return 1; }
+	shift 2
+	[ -f "$cc_ae_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	case "$cc_ae_att" in ''|*[!0-9]*) cc_fail ATTEMPT_INVALID "$cc_ae_att"; return 1 ;; esac
+	cc_ae_pad=$(printf '%03d' "$cc_ae_att")
+	[ -d "$cc_ae_dir/attempts/$cc_ae_pad" ] || { cc_fail ATTEMPT_UNKNOWN "$cc_ae_att"; return 1; }
+	[ "$#" -gt 0 ] || { cc_fail ATTEMPT_EVIDENCE_EMPTY; return 1; }
+	cc_ae_f="$cc_ae_dir/attempts/$cc_ae_pad/host-evidence.yaml"
+	[ -f "$cc_ae_f" ] || printf 'attempt: %s\n' "$cc_ae_att" | cc_atomic_write "$cc_ae_f"
+	for cc_ae_kv in "$@"; do
+		case "$cc_ae_kv" in *=*) : ;; *) cc_fail ATTEMPT_EVIDENCE_MALFORMED "$cc_ae_kv"; return 1 ;; esac
+		cc_ae_k=${cc_ae_kv%%=*}; cc_ae_v=${cc_ae_kv#*=}
+		case "$cc_ae_k" in
+			worker_wall_s|verifier_wall_s|worker_model|worker_effort|verifier_model|verifier_effort|complexity|escalated) : ;;
+			*) cc_fail ATTEMPT_EVIDENCE_KEY_UNKNOWN "$cc_ae_k"; return 1 ;;
+		esac
+		case "$cc_ae_v" in
+			''|*[!A-Za-z0-9._-]*) cc_fail ATTEMPT_EVIDENCE_VALUE_INVALID "$cc_ae_k"; return 1 ;;
+		esac
+		awk -v k="$cc_ae_k" -v v="$cc_ae_v" '
+			$0 ~ ("^" k ":[[:space:]]") { next }
+			{ print }
+			END { print k ": " v }
+		' "$cc_ae_f" | cc_atomic_write "$cc_ae_f"
+		cc_emit "$cc_ae_k" "$cc_ae_v"
+	done
 	return 0
 }
 
@@ -1691,6 +1809,7 @@ cc_main() {
 		worker-handoff-record)   cc_worker_handoff_record "$@" ;;
 		verifier-prepare)        cc_verifier_prepare "$@" ;;
 		verifier-result-record)  cc_verifier_result_record "$@" ;;
+		attempt-evidence-record) cc_attempt_evidence_record "$@" ;;
 		repair-allowed)          cc_repair_allowed "$@" ;;
 		execution-status)        cc_execution_status "$@" ;;
 		completion-ready)        cc_completion_ready "$@" ;;

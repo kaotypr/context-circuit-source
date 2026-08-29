@@ -42,9 +42,13 @@ A request to run a *set* of already-approved plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
 WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
 (their dependencies verified and their paths free) and selects each plan's base;
-each plan is still executed by one worker and one independent verifier under the
-three-failure limit; a failed or blocked plan holds only its descendants. Nothing
-is marked done or delivered. Report progress and outcomes in plain language.
+the coordinator may overlap provably-independent ready plans up to a fan-out width
+(a coordinator policy over the already-safe path lease, INV-CONCURRENCY-01/02, not
+a new rule; the lease arbitrates any race); each plan is still executed by one
+worker and one independent verifier under the three-failure limit; a failed or
+blocked plan holds only its descendants. Nothing is marked done or delivered.
+Report progress and outcomes in plain language — concurrent progress interleaves,
+so narrate interleaved effects, never the overlap mechanism.
 
 ## Reporting to the user
 
@@ -87,4 +91,10 @@ or a no-update-needed result. Never silently accept a Product Knowledge change.
 
 Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,
-or completion.
+or completion. The per-role `(model, effort)` the coordinator spawns worker and
+verifier at (from the host-local role-tiering config with adapter defaults,
+`wrapper/adapters/role-tiering.md`) is the same kind of bounded host evidence: it
+changes cost and speed, never meaning, is recorded per attempt with
+`attempt-evidence-record`, and is never surfaced to a lay user except under
+explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01), and a hard
+pin is respected even at the third failure with its cost reported honestly.

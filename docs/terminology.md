@@ -34,6 +34,9 @@ importantly, how the coordinator translates them into plain language for a user.
 | Plan stack | A named set of approved plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`; declaring it makes the plan `schema_version: 2`. |
 | Path lease | A `(repository, path region)` reservation extending the one-worker lock, so plans touching overlapping paths serialize while disjoint ones run together. |
+| Fan-out width | How many provably-independent ready plans a plan stack runs at once — a coordinator policy bounded by the host, not a gate; width 1 is plain serial order, and the path lease arbitrates any race. |
+| Role tiering | The per-role `(model, effort)` the coordinator runs the worker and verifier at, from a host-local config with adapter defaults; bounded host evidence that changes cost and speed, never meaning, and never independence or the failure limit. |
+| Execution timing | Additive per-phase (engine) and per-attempt (inference wall-clock) durations recorded as evidence to show where the time went; always evidence, never a gate. |
 | Execution base | The commit a plan's work is built on: the anchor tip, a predecessor's branch (stack), or a runtime-authored integration merge of several predecessors. |
 | Drift guard | Rebasing a plan onto the current branch tip and re-checking it before a pull request, when a sibling already merged. |
 | Repository grounding | The worker reading and honoring the target repository's own agent guidance, discovered from the working copy. |
@@ -70,5 +73,8 @@ explicitly asks for diagnostics.
 | Execution base / integration base / `refs/cc-base/...` | "base", "integration merge", the ref name | "built on top of the earlier work", by effect |
 | Grounding manifest / worker brief | those terms | "I followed your project's own contributor guidance" |
 | Drift guard / rebase-and-re-verify | "drift", "rebase" | "I brought it up to date with your branch and checked it again" |
+| Fan-out width / concurrent pipelines | "fan-out", "width N", "leases" | "I'm working on several at once" / a waiting plan is "waiting on another plan's area" |
+| Role tiering / `(model, effort)` | the model id or effort level | say nothing about the model; describe only the effect, "I ran the harder step with more effort" |
+| Execution timing / `phase_ms` / wall-clock | the field names or millisecond numbers | plain outcome only ("it finished in about a minute"), and only if asked |
 
 Reveal these mechanics only when the user explicitly asks for diagnostics.

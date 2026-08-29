@@ -32,7 +32,7 @@ not_contains "$inv" "push/publish/deploy"
 # --- manifest declares runtime exclusions and the release boundary ---
 man="$W/manifest.yaml"
 require_file "$man"
-contains "$man" "runtime_version: 0.6.1"
+contains "$man" "runtime_version: 0.7.0"
 contains "$man" "plan: [1, 2]"
 contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
@@ -81,9 +81,15 @@ not_contains "$inv" "INV-DESIGN"
 not_contains "$W/adapters/WORKFLOW.md" "design the system"
 
 # --- adapters and roles present; role aliases removed ---
-for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md worker-brief.md; do
+for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md worker-brief.md role-tiering.md; do
 	require_file "$W/adapters/$a"
 done
+# v0.7.0 execution-latency: additive-only, no new invariant id
+contains "$inv" "role_tiering:"
+contains "$inv" "execution_timing:"
+not_contains "$inv" "INV-LATENCY"
+not_contains "$inv" "INV-TIER"
+contains "$man" "runtime_version: 0.7.0"
 for r in coordinator worker verifier; do
 	require_file "$ROOT/agents/$r.md"
 done

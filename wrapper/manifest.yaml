@@ -1,7 +1,7 @@
 schema_version: 1
 owner: wrapper/manifest.yaml
 product: context-circuit
-runtime_version: 0.6.1
+runtime_version: 0.7.0
 # Published template release version (see 10-template-publication.md). Stamped
 # at publish time; the context-circuit-template git tag is authoritative.
 template_version: 0.0.1-alpha.2
@@ -62,6 +62,7 @@ release_boundary:
     - scripts/
     - repositories/
     - repositories.local.yaml
+    - role-tiering.local.yaml
     - node_modules/
 
 upgrade_boundary:

@@ -42,6 +42,7 @@ actions as a tool.
 - `worker-handoff-record <execution-dir> <handoff-file>` — store the worker handoff.
 - `verifier-prepare <execution-dir>` — confirm a worker commit exists to verify.
 - `verifier-result-record <execution-dir> <attempt> passed|failed|blocked` — record the independent verifier's outcome.
+- `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record bounded per-attempt host evidence (inference wall-clock and the `(model, effort)` each role ran at). Evidence only; never a gate.
 - `repair-allowed <execution-dir>` — whether another repair attempt remains.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
@@ -60,9 +61,30 @@ Repeat until no plan in the set is runnable:
 
 2. If nothing is **ready**, stop the loop.
 
-3. For each **ready** plan (you may start several when they are provably
-   independent; a single-repository stack is simplest run one at a time in id
-   order). For each such plan:
+3. **Fan out over the ready bucket.** Launch up to a **fan-out width** of the
+   ready plans as concurrent worker → verifier pipelines, then re-partition when
+   any finishes. The safety is already built — INV-CONCURRENCY-01's atomic path
+   lease and INV-CONCURRENCY-02's per-plan base make independent-plan overlap
+   safe — so this is a coordinator policy, not a new rule; running plans together
+   only removes avoidable wall-clock.
+
+   - **Fan-out width is your policy, bounded by the host.** Start conservative
+     (2–3 concurrent pipelines); the ceiling is host concurrency and your own
+     ability to track several pipelines cleanly, never a contract limit. **Width
+     1 is exactly serial id-order behavior** — the compatibility floor; use it for
+     a single-repository stack or whenever tracking overlap would be error-prone.
+   - **The lease is the race arbiter, so you need not prove disjointness first.**
+     Readiness is evaluated at partition time, so two ready plans could target
+     overlapping paths; step 3a `lease-acquire` is an atomic exclusive-create, so
+     the first to acquire proceeds and the other gets `LEASE_CONFLICT` and stays
+     **waiting**. A naive "attempt to lease all ready" is already correct; proving
+     independence up front only avoids wasted `execution-begin` work.
+   - **Keep the in-flight pipelines from cross-contaminating.** Each pipeline owns
+     its own execution directory and records; drive each by its own
+     `<execution-dir>`. Runtime records are atomic and per-execution, which
+     contains the blast radius.
+
+   For each ready plan you launch this round:
 
    a. **Acquire path leases.** For every repository the plan touches, acquire a
       lease on its bounded paths with `lease-acquire`. If `lease-acquire` reports a
@@ -82,23 +104,28 @@ Repeat until no plan in the set is runnable:
       carries the repository-grounding directive discovered from the worktree; add
       only a one-line task focus and deliver it verbatim — INV-GROUND-01/03), then
       launch exactly one worker (`agents/worker.md`) with that brief and its
-      assigned worktree(s). It reads and honors the repository's own agent
-      guidance, implements every task in dependency order inside the assigned
-      worktree and declared paths only, and commits each repository. Record each
-      commit with `worker-commit-record` and the handoff with
-      `worker-handoff-record`.
+      assigned worktree(s), at the worker's configured `(model, effort)`. It reads
+      and honors the repository's own agent guidance, implements every task in
+      dependency order inside the assigned worktree and declared paths only, and
+      commits each repository. Record each commit with `worker-commit-record` and
+      the handoff with `worker-handoff-record`.
 
    d. **One independent verifier.** After `verifier-prepare`, launch exactly one
-      independent, read-only verifier (`agents/verifier.md`) over the latest commit
-      of every affected repository. Record its outcome with `verifier-result-record`.
-      If the host cannot create an independent verifier child, the result is
-      `host-blocked` — never self-verify.
+      independent, read-only verifier (`agents/verifier.md`), at the verifier's
+      configured `(model, effort)`, over the latest commit of every affected
+      repository. Record its outcome with `verifier-result-record`, and record the
+      observed inference wall-clock and the `(model, effort)` each role ran at with
+      `attempt-evidence-record`. If the host cannot create an independent verifier
+      child, the result is `host-blocked` — never self-verify.
 
    e. **Repair within the limit.** On a verifier failure, pass the evidence back to
       the same worker within the same execution: check `repair-allowed`, begin a new
-      attempt, let the worker create a new commit, and verify again. The failure
-      counter increments on each rejection; at three failures the plan is **failed**
-      and execution stops with all evidence preserved.
+      attempt, let the worker create a new commit, and verify again. When the
+      worker's role has `escalate_on_repair: true`, raise the repair attempt's
+      `(model, effort)` above its configured start (`wrapper/adapters/role-tiering.md`);
+      escalation changes only which model runs the attempt, never the accounting.
+      The failure counter increments on each rejection; at three failures the plan
+      is **failed** and execution stops with all evidence preserved.
 
    f. **On verified:** keep the plan's leases held (they hold until delivery, not
       merely verification) so an unrelated plan cannot grab the same region and
@@ -114,8 +141,15 @@ When nothing is runnable, report in plain project language, by effect: which pla
 were built and independently checked, which need attention and why (failed after
 its checks, or blocked because a prerequisite did not pass), and which were skipped
 because they were not approved. Never expose internal mechanism — no runtime file
-names, no `cc/...` branches, no worktrees. Do not use a worker's own claim as
-verifier evidence.
+names, no `cc/...` branches, no worktrees, no fan-out width, and no `(model,
+effort)` values. Do not use a worker's own claim as verifier evidence.
+
+Concurrent progress interleaves — several plans build and check at once — so
+narrate interleaved **effects** ("one plan is built and being checked while
+another is still building"), never the mechanism behind the overlap. A plan left
+waiting for a busy path region reads simply as "waiting on another plan's area";
+never mention leases or conflicts. `docs/terminology.md` is the internal→user
+mapping.
 
 ## Boundaries
 

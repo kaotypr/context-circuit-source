@@ -38,4 +38,7 @@ task requires undeclared repository or path scope, an unsafe action, or a
 blocked prerequisite, it stops and reports the smallest plan change required.
 
 A native child from any host does not change the exclusive-worktree boundary or
-the delegated-path limit. Host permission mode is evidence, not a grant.
+the delegated-path limit. Host permission mode is evidence, not a grant. The
+`(model, effort)` the coordinator runs this worker at is likewise bounded host
+evidence (INV-HOST-01): it changes cost and speed, never the scope, safety, or
+commit obligations above.
