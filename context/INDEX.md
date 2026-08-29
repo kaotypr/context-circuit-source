@@ -24,6 +24,7 @@ Route-selected knowledge:
 - design deltas: `context/DESIGN-DELTAS.md`
 - bounded domains: `context/domains/`
 - cross-domain roles: `context/roles/`
+- external references: `context/references/`
 
 The source inbox and instantiated workspace plans are separate layers. Raw
 sources are passive and request-scoped; ordinary entry never scans them.

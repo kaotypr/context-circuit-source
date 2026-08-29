@@ -1,0 +1,23 @@
+schema_version: 1
+plan: 0005-approval-and-execution
+provider: clickup
+plan_item:
+  id: "86eyrr04f"
+  url: "https://app.clickup.com/t/86eyrr04f"
+task_items:
+  - task: EXE-001
+    id: "86eyrr0dx"
+    url: "https://app.clickup.com/t/86eyrr0dx"
+    synced_digest: "sha256:6c9258814fb4d93c9409e2e1f208feecaddd6af5f8b25ce65819e26ebc85040b"
+  - task: EXE-002
+    id: "86eyrr0e0"
+    url: "https://app.clickup.com/t/86eyrr0e0"
+    synced_digest: "sha256:68c8d5d2a2e53433df4617cfe851039ec4701b14ee54262b3250255d20732968"
+  - task: EXE-003
+    id: "86eyrr0ec"
+    url: "https://app.clickup.com/t/86eyrr0ec"
+    synced_digest: "sha256:ab32121cb85912b0444695a9e4ee7626ac6ac1dffd77f4561878e57f67b11117"
+  - task: EXE-004
+    id: "86eyrr0em"
+    url: "https://app.clickup.com/t/86eyrr0em"
+    synced_digest: "sha256:5e34c0636b909191846fc0e082d6b70455b1324035bc1aa1da75a3cc81303820"

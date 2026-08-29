@@ -52,7 +52,7 @@ verification ([verification](../verification/README.md)), completion
   `depends_on`. Declaring them requires `schema_version: 2`; entries reference an
   existing, non-self plan id and the graph is acyclic. Plans without the field
   stay `schema_version: 1` and behave exactly as v0.5.
-- **Path leases (INV-CONCURRENCY-01).** The one-writer lock generalizes to
+- **Path leases (INV-CONCURRENCY-01).** The one-worker lock generalizes to
   `(repository, path-region)` scope, recorded under `.runtime/locks/paths/`.
   Regions overlap when equal, when one is a path-prefix ancestor of the other, or
   when either is the repository-wide `.`. A non-descendant holder blocks an

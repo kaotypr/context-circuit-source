@@ -1,8 +1,8 @@
 # Worker role
 
-The worker is the single bounded writer for one plan execution. There is never
-more than one active writer for an execution, though the worker may be resumed
-for repair.
+The worker is the single bounded role that implements one plan execution and
+commits its changes. There is never more than one active worker for an
+execution, though the worker may be resumed for repair.
 
 It reads the immutable plan snapshot named by the execution brief, the listed
 Product Knowledge pages, and the repository instructions in each assigned

@@ -15,7 +15,7 @@ natural-language adapters. The core execution model: one worker executes all
 tasks of one approved plan in dependency order across mapped repositories,
 committing each repository before an independent read-only verifier checks the
 latest commits; repairs add new commits and execution stops after three worker
-failures. Writers are isolated by an atomic exclusive-create ownership lock
+failures. Workers are isolated by an atomic exclusive-create ownership lock
 (`locks/<plan-id>/owner.yaml`) and per-repository worktrees; a live lock is never
 silently stolen. Runtime records are filesystem evidence, not a database or
 scheduler.

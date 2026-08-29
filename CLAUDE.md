@@ -5,7 +5,7 @@
 Follow the shared `AGENTS.md` and `WORKFLOW.md` contract. Enter or resume work
 through the same Context Circuit root or child session, including the same
 receipt, lease, worktree, and handoff checks. A Claude Task/subagent maps only
-to the bounded writer or independent read-only verifier packet and records
+to the bounded worker or independent read-only verifier packet and records
 provider-neutral `host_evidence`.
 
 Claude permission prompts, print mode, authentication, memory, MCP settings,

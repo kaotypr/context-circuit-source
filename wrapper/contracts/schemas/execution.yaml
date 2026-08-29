@@ -21,14 +21,14 @@ layout:
     repositories/<repository-id>.yaml: per-repository worktree, branch, base and latest commit
     grounding/<repository-id>.yaml: repository-grounding manifest discovered for the
       execution worktree (INV-GROUND-01; schema grounding-manifest.yaml)
-    brief-<repository-id>.md: the assembled writer brief (deterministic; optional evidence)
+    brief-<repository-id>.md: the assembled worker brief (deterministic; optional evidence)
 
 fields:
   schema_version: { type: integer, required: true }
   execution_id: { type: string, required: true, description: exec-<plan-id>-NNN }
   plan: { type: string, required: true }
   plan_revision: { type: string, required: true, description: digest of the snapshot plan.yaml }
-  owner: { type: string, required: true, description: writer/session id holding the lock }
+  owner: { type: string, required: true, description: worker/session id holding the lock }
   status:
     type: enum
     required: true

@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0001-contracts-runtime-foundation
+provider: clickup
+plan_item:
+  id: "86eyrr030"
+  url: "https://app.clickup.com/t/86eyrr030"
+task_items:
+  - task: FND-001
+    id: "86eyrr0ba"
+    url: "https://app.clickup.com/t/86eyrr0ba"
+    synced_digest: "sha256:432cdadc4387c2a330c6ef08a6c7aa50cac8f9b4ac762c620cd4d9bd584c96c7"
+  - task: FND-002
+    id: "86eyrr0bf"
+    url: "https://app.clickup.com/t/86eyrr0bf"
+    synced_digest: "sha256:1425deeb524af630c732d1cfda70f769785a9a0e99c6782f6e7408d64a0a665b"
+  - task: FND-003
+    id: "86eyrr0bk"
+    url: "https://app.clickup.com/t/86eyrr0bk"
+    synced_digest: "sha256:bd0989cb20af99074f62c1a87f572dfcf68c07fc3a6e05f06e4c442314e06fb0"

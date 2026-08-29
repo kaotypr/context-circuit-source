@@ -1,0 +1,61 @@
+schema_version: 2
+plan: 0025-dist-build-version
+title: Version and clean the local dist build from the template source of truth
+status: done
+objective: >-
+  Make scripts/build-dist.sh name its artifact for the template release version
+  it actually carries by defaulting from wrapper/manifest.yaml template_version
+  (not a hardcoded literal and not context-circuit's runtime_version), and make
+  each run replace the dist output rather than fail on an existing artifact or
+  accumulate stale ones - guarded against wiping an unintended tree.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the dist build script and the manifest that owns the version stamps.
+plan_dependencies:
+  - id: 0010-release-assembly-and-publication
+    reason: Owns release assembly (release-artifact.sh, the manifest, publish-template.sh) that build-dist wraps.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: The owner map names wrapper/manifest.yaml as the release-boundary and version-stamp owner.
+context_grounding:
+  summary: >-
+    build-dist.sh hardcoded v0.5.0, stamping the wrong version onto the local
+    dist artifact. The artifact is the context-circuit-template, so its identity
+    is template_version, not context-circuit's internal runtime_version; the
+    publication path already names the published archive context-circuit-vTEMPLATE.
+    Re-running also failed because release-artifact.sh refuses to overwrite.
+  constraints:
+    - Default derives from wrapper/manifest.yaml template_version (v-prefixed); not runtime_version, not a literal.
+    - An explicit [version] argument still overrides; the command interface is unchanged.
+    - Fail loudly if template_version is empty; the derived value must pass release-artifact.sh validation.
+    - release-artifact.sh keeps its strict no-overwrite guard; only the dev wrapper cleans.
+  decisions:
+    - The clean removes and recreates output_dir, guarded against an empty path, /, or the source root.
+    - dist/ is never-ship build output; the stale v0.5.0 tree is regenerable, not migrated state.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: DIST-001
+    title: Default the version from template_version and clean the output dir
+    repositories: [context-circuit-source]
+    paths:
+      - scripts/build-dist.sh
+    depends_on: []
+    changes:
+      - Replace the hardcoded v0.5.0 default with a v-prefixed read of wrapper/manifest.yaml template_version.
+      - Fail loudly when template_version is empty; keep the explicit-argument override.
+      - Remove and recreate output_dir before staging, guarded against unsafe targets.
+    acceptance:
+      - id: DIST-AC-01
+        statement: With no argument, build-dist.sh names the artifact context-circuit-v<template_version>; an explicit version overrides; an empty template_version fails loudly.
+      - id: DIST-AC-02
+        statement: A second run replaces the prior dist output instead of failing or accumulating; an empty path, /, or the source root is refused.
+    verification:
+      - id: DIST-VT-01
+        command: sh scripts/build-dist.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

@@ -21,7 +21,7 @@ required_sections:
 optional_sections:
   - repository_friction: >
       When the target repository's own agent guidance did not cover something the
-      writer needed (e.g. no AGENTS.md, an undiscoverable test command), the writer
+      worker needed (e.g. no AGENTS.md, an undiscoverable test command), the worker
       records it here (INV-GROUND-01). Reconciliation routes it to a proposal on
       the repository's OWN agent docs (a normal plan targeting its AGENTS.md /
       skills), never a Context Circuit per-repo profile.

@@ -5,7 +5,7 @@ concern: path_lease_records
 
 purpose: >
   Private runtime evidence for one path lease: the (repository, path-region)
-  reservation an execution holds. A path lease generalizes the one-writer lock
+  reservation an execution holds. A path lease generalizes the one-worker lock
   (INV-OWN-01) from plan scope to path-region scope and composes with it
   (INV-CONCURRENCY-01). Records are written atomically; a partial or
   contradictory record grants nothing (INV-RUNTIME-02).

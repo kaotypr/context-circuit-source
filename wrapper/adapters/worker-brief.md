@@ -1,7 +1,7 @@
-# Writer brief — plan {plan_id}
+# Worker brief — plan {plan_id}
 
 You are the single bounded WORKER for this plan. Implement the entire plan and
-make one commit per affected repository. You are the only writer.
+make one commit per affected repository. You are the only worker.
 
 ## Worktree (work only here)
 
