@@ -35,11 +35,13 @@ version index; each scope owns its own design.
   [writer-brief-placement](./writer-brief-placement/) on the same brief file.
   Start at [worker-role-naming/design.md](./worker-role-naming/design.md).
 - [dist-build-version/](./dist-build-version/) — stop `scripts/build-dist.sh`
-  from stamping a stale, hardcoded version onto the local dist artifact (it
-  still builds `context-circuit-v0.5.0`); derive its default version from the
-  single source of truth (`wrapper/manifest.yaml` `runtime_version`), the same
-  read the publication path already uses. Command interface and
-  `release-artifact.sh` unchanged; no core contract bump. Start at
+  from stamping the wrong version onto the local dist artifact (it still builds
+  `context-circuit-v0.5.0`). The artifact **is** the template, so its version is
+  the template release identity: derive the default from `wrapper/manifest.yaml`
+  `template_version` — matching the published archive name in
+  `publish-template.sh` — not context-circuit's internal `runtime_version` and
+  not a hardcoded literal. Command interface and `release-artifact.sh` unchanged;
+  no core contract bump. Start at
   [dist-build-version/design.md](./dist-build-version/design.md).
 
 ## Layout convention
