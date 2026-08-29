@@ -87,7 +87,7 @@ raised `(model, effort)` and `escalated=true` with `attempt-evidence-record`.
 
 Spawn the worker and verifier at the concrete `(model, effort)` configured for
 each role in the host-local role-tiering config, with adapter-shipped defaults for
-any unset role (`wrapper/adapters/role-tiering.md` owns the shape, defaults, and
+any unset role (`docs/role-tiering.md` owns the shape, defaults, and
 escalation ladder). This is a coordinator/host decision — the runtime is
 model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning.

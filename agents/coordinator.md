@@ -93,7 +93,7 @@ Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,
 or completion. The per-role `(model, effort)` the coordinator spawns worker and
 verifier at (from the host-local role-tiering config with adapter defaults,
-`wrapper/adapters/role-tiering.md`) is the same kind of bounded host evidence: it
+`docs/role-tiering.md`) is the same kind of bounded host evidence: it
 changes cost and speed, never meaning, is recorded per attempt with
 `attempt-evidence-record`, and is never surfaced to a lay user except under
 explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01), and a hard
