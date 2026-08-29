@@ -1,5 +1,5 @@
 version: 1
-template_version: 0.6.0
+template_version: 0.6.1
 
 workspace:
   name: context-circuit-source
