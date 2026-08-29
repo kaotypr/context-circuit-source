@@ -7,7 +7,7 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 4b8ac0b
+    commit: 6921a31
     basis: current-wrapper
 generated_at: 2026-08-24T00:00:00Z
 review_date: 2026-11-24
@@ -66,6 +66,17 @@ bindings, connected repositories, runtime evidence, and active worktrees. When a
 template change alters the meaning of a plan, context, or runtime record, the
 upgrade reports migration-needed and preserves the old state.
 
+The template artifact's version is its `template_version` (`wrapper/manifest.yaml`),
+never the product's internal `runtime_version`. The dev build
+`scripts/build-dist.sh` derives its default version from that field — matching the
+published archive name `scripts/publish-template.sh` produces
+(`context-circuit-v<template_version>`) — carries no hardcoded literal, and fails
+loudly on an empty read. Each run is a guarded clean rebuild: it removes and
+recreates the output directory (refusing an empty path, `/`, or the source root) so
+runs replace rather than accumulate. `scripts/release-artifact.sh` is unchanged —
+it still takes a validated positional version and keeps its strict no-overwrite
+guard.
+
 Release is a gate: a source change is not a product-template change until release
 assembly includes it and the template acceptance checks pass.
 
@@ -103,3 +114,7 @@ chapter 09 was the checklist. Raw `sources/` was not otherwise scanned.
 ## Acceptance notes
 
 Accepted 2026-08-24 from proposal `0011-domain-source-release-and-upgrade`.
+Updated 2026-08-29 from proposal `0028-dist-build-version-identity` (v0.6.1
+dist-build-version): the template artifact's version is its `template_version`, and
+`build-dist.sh` derives its default from that field and clean-rebuilds its output.
+Implementation `10f864b`, `6921a31`.
