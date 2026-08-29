@@ -82,6 +82,18 @@ its own literal, and no build labels the template with context-circuit's interna
 6. **`release-artifact.sh` is unchanged.** It still takes the version as a
    required, validated positional argument; only where `build-dist.sh` *sources
    its default* changes. No manifest edit, no change to the publication scripts.
+7. **Clean rebuild — the dist output is replaced, not accumulated.** Every
+   `build-dist.sh` run yields a fresh output directory: before building, it
+   removes any prior output tree at `output_dir` (the default `dist/`, or `$2`)
+   and recreates it. Without this, a second run either fails —
+   `release-artifact.sh` refuses to overwrite an existing
+   `output_dir/context-circuit-$version` (its "output artifact already exists"
+   guard) — or, across versions, silently leaves stale artifacts (the
+   `context-circuit-v0.5.0` tree) beside the new one. The clean is scoped to the
+   *dev wrapper*; `release-artifact.sh` keeps its strict no-overwrite guard so
+   the publication path is never made to clobber. The clean is **guarded**: it
+   refuses to remove an empty path, `/`, or the source root, so a mistyped
+   `output-dir` cannot wipe an unintended tree.
 
 ## Shape of the change (surfaces that move)
 
@@ -93,12 +105,13 @@ Each is owned elsewhere and changed through its owner's normal action:
   `sed -n 's/^template_version:...' | head -n1` shape `publish-template.sh`
   already uses for `runtime_version`), preserving the `$1` override; error if the
   read is empty. The `usage` line and the second positional (`output-dir`) are
-  unchanged.
+  unchanged. It also **clears any prior `output_dir` and recreates it** before
+  staging (decision 7), so the run replaces rather than accumulates or fails.
 
 No other source changes. `dist/` is build output (in the manifest `never_ship`
 set), not source: the stale `context-circuit-v0.5.0` tree already there is a
-regenerable artifact, cleaned by re-running the build after the fix, not tracked
-design state this scope needs to migrate.
+regenerable artifact — now removed automatically by the next clean rebuild — not
+tracked design state this scope needs to migrate.
 
 No core contract bump. No owner is added; the version owner
 (`wrapper/manifest.yaml`) and INV semantics are unchanged.
@@ -120,6 +133,12 @@ No core contract bump. No owner is added; the version owner
 - **Source-checkout only.** `build-dist.sh` and `release-artifact.sh` already
   require a git source checkout; the manifest read is against that same
   `source_root`, so the derivation always has the file it needs.
+- **The clean must not become a foot-gun.** Because `output_dir` defaults to
+  `dist/` but is overridable as `$2`, the pre-build removal guards against
+  catastrophic targets: it refuses an empty value, `/`, and the source root
+  itself, failing loudly instead of deleting. A user pointing `$2` at a real
+  directory still owns that choice, but the obvious mistakes cannot wipe a tree
+  the build never created.
 - **Publication path unaffected.** `publish-template.sh` computes its own
   versions and never calls `build-dist.sh`, so its behavior is untouched; this
   scope only brings the *dev* build's default into line with the published
