@@ -19,7 +19,7 @@ find dist/context-circuit-v0.5.0 -type f | sort
 ```
 
 Pass a version explicitly when building another release, for example
-`sh scripts/build-dist.sh v0.6.0`.
+`sh scripts/build-dist.sh v0.6.1`.
 
 Pass a second output directory when testing without using the repository's
 `dist/` folder.
