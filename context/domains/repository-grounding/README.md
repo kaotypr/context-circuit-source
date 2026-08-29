@@ -7,7 +7,7 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: cb84870
+    commit: 2c2adab
     basis: current-wrapper
 generated_at: 2026-08-27T00:00:00Z
 review_date: 2026-11-27
@@ -59,7 +59,7 @@ plan ([run-stack](../run-stack/README.md)).
   workarounds are eliminated rather than documented (full dependency provisioning
   is a later phase).
 - **Deliver, not author (INV-GROUND-03).** A fixed shipped template
-  (`worker-brief.md`, promoted to the workspace root) is filled by deterministic
+  (`wrapper/runtime/worker-brief.md`, shipped beside the runtime) is filled by deterministic
   slot substitution from the manifest and the plan; the coordinator adds only a
   one-line task focus and delivers it verbatim. A preflight refuses a brief that
   omits or leaves unfilled the required repository-grounding section.
@@ -80,7 +80,7 @@ plan ([run-stack](../run-stack/README.md)).
 
 - Records: `.runtime/executions/<plan>/<exec>/grounding/<repo>.yaml` (manifest);
   the assembled brief `brief-<repo>.md`; `repository_friction` in the handoff
-- Template: `worker-brief.md` (workspace root, shipped)
+- Template: `wrapper/runtime/worker-brief.md` (shipped, beside the runtime)
 
 ## Data
 
@@ -120,3 +120,7 @@ was named by the accepting request.
 ## Acceptance notes
 
 Accepted 2026-08-27 from proposal `0017-domain-repository-grounding`.
+Updated 2026-08-29 from proposal `0026-repository-grounding-brief-location` (v0.6.1
+writer-brief-placement): the shipped brief moved out of the workspace root to
+`wrapper/runtime/worker-brief.md`; source of truth (`wrapper/adapters/worker-brief.md`)
+and INV-GROUND semantics unchanged. Implementation `2c2adab`.
