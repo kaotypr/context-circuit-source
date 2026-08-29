@@ -48,11 +48,14 @@ shipped runtime copy's location* moves.
 ## Fixed decisions
 
 1. **Relocate the promoted copy** out of the user-facing root into an
-   unobtrusive machinery location that already ships. The concrete candidate is
-   `.agents/writer-brief.md` — grouping it with the shipped `.agents/skills/`
-   machinery, out of the user's default view. (Final path is an implementation
-   detail; `.runtime/` is **not** eligible — it is excluded from the artifact as
-   runtime evidence.)
+   unobtrusive machinery location that already ships. The chosen path is
+   `wrapper/runtime/writer-brief.md` — beside `engine.sh`, the runtime code that
+   consumes it. The template is the runtime's own artifact, so it belongs with
+   the runtime; and this keeps `.agents/` reserved for its folder-per-kind
+   machinery (`skills/`, …) rather than housing a lone file. (`.runtime/` is
+   **not** eligible — it is excluded from the artifact as runtime evidence.
+   `.agents/writer-brief.md` was an earlier candidate but was set aside so that
+   `.agents/` stays a purely structured directory.)
 2. **The engine lookup follows the file, with the source fallback preserved.**
    `cc_writer_brief_assemble` prefers the new shipped location, then falls back
    to `wrapper/adapters/writer-brief.md` for the source checkout. No behavior
