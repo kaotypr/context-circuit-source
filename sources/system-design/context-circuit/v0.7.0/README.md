@@ -1,0 +1,33 @@
+# Context Circuit v0.7.0
+
+Source design for Context Circuit v0.7.0 — a **delta on v0.6 / v0.6.1**. Read the
+v0.6 design first ([../v0.6/](../v0.6/)) and the v0.5 base it builds on
+([../v0.5/](../v0.5/)); v0.7.0 changes only what it names. This README is the
+version index; each scope owns its own design.
+
+## Scopes
+
+- [ui-refinement/](./ui-refinement/) — an **interactive, human-gated refinement
+  mode** for taste-driven work whose acceptance criterion is subjective ("refine
+  the UI until it looks good"). Its driving instance is frontend/UI layout, but
+  the mechanism is general. It answers three product questions at once — *no new
+  role* (roles are authority-shaped, domain competence is loaded context), *one
+  new skill* (`cc-refine`), and *a distinct execution mode bracketed by the normal
+  spine* (one plan, one lease, one independent verify + baseline freeze at the
+  end). Start at [ui-refinement/design.md](./ui-refinement/design.md).
+
+## Layout convention
+
+`sources/system-design/<product>/<version>/<scope>/`. Every folder has a
+`README.md` landing/index; each scope's normative design is `design.md`, with
+detail split into files or sub-folders as it grows. Version groupings use 3-number
+semver going forward (v0.6.1 `design-layout-grouping`).
+
+## Authority
+
+v0.7.0 adds no owner it does not name and duplicates no rule. It introduces one new
+capability (`cc-refine`), one new plan acceptance *kind* (human-gated visual
+acceptance), and provisional invariants for the interactive mode. The canonical
+owners stay under `wrapper/` (`wrapper/contracts/invariants.yaml`); the contract
+delta is summarized in
+[ui-refinement/skill-and-schema.md](./ui-refinement/skill-and-schema.md).
