@@ -16,12 +16,14 @@ version index; each scope owns its own design.
   spine* (one plan, one lease, one independent verify + baseline freeze at the
   end). Start at [ui-refinement/design.md](./ui-refinement/design.md).
 - [execution-latency/](./execution-latency/) — making actions **finish sooner
-  without changing what they mean**. Measure first (two clocks: deterministic vs
-  inference), then apply two inference-layer levers whose safety the contract
-  already guarantees — overlapping provably-independent run-stack plans (no new
-  invariant; INV-CONCURRENCY-01/02) and model tiering (a coordinator/host concern;
-  INV-HOST-01, INV-RUNTIME-01) — while the deterministic runtime stays thin. Start
-  at [execution-latency/design.md](./execution-latency/design.md).
+  without changing what they mean** by applying two inference-layer levers whose
+  safety the contract already guarantees — overlapping provably-independent
+  run-stack plans (no new invariant; INV-CONCURRENCY-01/02) and per-role model
+  tiering the host adapter applies on the child spawn (a coordinator/host concern;
+  INV-HOST-01, INV-RUNTIME-01) — while the deterministic runtime stays thin. The
+  only new record is the per-attempt `(model, effort)` evidence; an early
+  "measure the layers" cut (phase timing, coordinator wall-clock) was built and
+  trimmed. Start at [execution-latency/design.md](./execution-latency/design.md).
 - [runtime-opacity/](./runtime-opacity/) — hardening the **invoke-not-read**
   boundary: the coordinator invokes `wrapper/runtime/engine.sh` as an opaque tool
   and must never read its implementation. A live v0.6 run showed a real coordinator
@@ -58,7 +60,8 @@ mode (contract delta in
 **execution-latency** introduces **no new skill and no new invariant** — its
 safety is existing INV-CONCURRENCY-01/02 (overlap) and INV-HOST-01 /
 INV-RUNTIME-01 (tiering); its only contract surface is additive schema fields and
-coordinator policy. **runtime-opacity** introduces **no new invariant** — it
+coordinator/host policy (fan-out width, the tier ladder, and the host-adapter
+spawn-application mechanism). **runtime-opacity** introduces **no new invariant** — it
 strengthens the coordinator-side corollary of INV-RUNTIME-01 (invoke the engine,
 never read it) as a wording and single-ownership cleanup across
 `wrapper/adapters/AGENTS.md` and the invoking skills. **publication-fields**
