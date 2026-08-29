@@ -8,7 +8,7 @@ Inter-plan ordering is encoded in each `plan.yaml` `plan_dependencies` field
 
 Layers: **A** v0.5 core product (0001–0010) · **B** v0.5 test harness, source-only
 (0011–0012) · **C** v0.6 product scopes (0013–0018) · **D** v0.6 skill + maintainer
-tooling (0019–0020).
+tooling (0019–0020) · **E** v0.6.1 refinements (0021–0025).
 
 | Plan ID | Title | Status | Depends on | Path |
 | --- | --- | --- | --- | --- |
@@ -32,3 +32,8 @@ tooling (0019–0020).
 | 0018-external-surface-thread-kind | External surface: the thread publication kind | done | 0017 | plans/context-circuit-plans/0018-external-surface-thread-kind/PLAN.md |
 | 0019-system-design-authoring-skill | cc-system-design authoring skill | done | 0010 | plans/context-circuit-plans/0019-system-design-authoring-skill/PLAN.md |
 | 0020-efficiency-ledger | Harness efficiency ledger (dimension D) | done | 0011 | plans/context-circuit-plans/0020-efficiency-ledger/PLAN.md |
+| 0021-context-references | External-service reference knowledge category (context/references/) | done | 0003 | plans/context-circuit-plans/0021-context-references/PLAN.md |
+| 0022-worker-brief-placement | Relocate the runtime worker-brief template out of the workspace root | done | 0015, 0010 | plans/context-circuit-plans/0022-worker-brief-placement/PLAN.md |
+| 0023-design-layout-grouping | Generalize the system-design middle path segment to a grouping dimension | done | 0019 | plans/context-circuit-plans/0023-design-layout-grouping/PLAN.md |
+| 0024-worker-role-naming | Unify the implementing execution role name on worker | done | 0005, 0015 | plans/context-circuit-plans/0024-worker-role-naming/PLAN.md |
+| 0025-dist-build-version | Version and clean the local dist build from the template source of truth | done | 0010 | plans/context-circuit-plans/0025-dist-build-version/PLAN.md |
