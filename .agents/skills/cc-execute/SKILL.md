@@ -38,9 +38,11 @@ then:
    `verifier-prepare`, at the verifier's configured `(model, effort)`. It inspects
    the latest commit of every affected repository. Record its outcome with
    `verifier-result-record`.
-5. Record the observed inference wall-clock and the `(model, effort)` each role
-   ran at as host evidence with `attempt-evidence-record` (below). This is
-   evidence only; it never changes a verdict or the failure counter.
+5. Record the `(model, effort)` each role ran at as host evidence with
+   `attempt-evidence-record` (below). Do not record inference wall-clock — an
+   attempt already carries `started_at` / `checked_at` timestamps whose span is its
+   duration, so timing is not a coordinator step. This is evidence only; it never
+   changes a verdict or the failure counter.
 
 Do not require confirmation for individual tasks, branches, worktrees, commits,
 verifier steps, or repairs. The approved plan is the scope.
@@ -61,9 +63,10 @@ and the execution brief carry everything needed to drive it. Invoke each action 
   · `worker-handoff-record <execution-dir> <handoff-file>`.
 - `verifier-prepare <execution-dir>` · `verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
 - `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record
-  bounded per-attempt host evidence (`worker_wall_s`, `verifier_wall_s`,
-  `worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`,
-  `complexity`, `escalated`). The runtime stores it and never interprets it.
+  bounded per-attempt host evidence: the `(model, effort)` each role ran at
+  (`worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`,
+  `complexity`, `escalated`). The runtime stores it and never interprets it; it
+  records no wall-clock (timing is engine-stamped).
 - `repair-allowed <execution-dir>`.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the

@@ -7,9 +7,9 @@ purpose: >
   defined here; they never define a parallel copy of it. The v0.7.0
   execution-latency scope adds no new invariant: its concurrency safety is the
   existing INV-CONCURRENCY-01/02 and its per-role model/effort tiering safety is
-  the existing INV-HOST-01 / INV-RUNTIME-01. It contributes only additive schema
-  fields (execution timing, an optional plan `complexity`) and coordinator/host
-  policy (run-stack fan-out width, the per-role tier ladder).
+  the existing INV-HOST-01 / INV-RUNTIME-01. It contributes only additive host
+  evidence (per-role model/effort), an optional plan `complexity` field, and
+  coordinator/host policy (run-stack fan-out width, the per-role tier ladder).
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -324,7 +324,6 @@ owners:
   worker_brief: wrapper/adapters/worker-brief.md
   role_tiering: docs/role-tiering.md
   execution_records: wrapper/contracts/schemas/execution.yaml
-  execution_timing: wrapper/contracts/schemas/execution.yaml
   worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
   verifier_result: wrapper/contracts/schemas/verifier-result.yaml
   completion_record: wrapper/contracts/schemas/completion.yaml

@@ -91,7 +91,7 @@ fields:
     required: false
     values: [standard, high]
     description: >
-      Optional v0.7.0 hint that this plan is known hard up front. Absent (the
+      Optional hint that this plan is known hard up front. Absent (the
       default) means behavior is exactly the configured per-role (model, effort)
       in the host-local role-tiering config (docs/role-tiering.md).
       When `high`, the coordinator nudges the worker's attempt-1 (model, effort)

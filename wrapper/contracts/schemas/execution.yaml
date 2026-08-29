@@ -19,9 +19,9 @@ layout:
     attempts/NNN/worker.yaml: worker attempt record and captured commits
     attempts/NNN/verifier.yaml: independent verifier result for that attempt
     attempts/NNN/host-evidence.yaml: >
-      additive v0.7.0 per-attempt host evidence — coordinator-observed inference
-      wall-clock and the (model, effort) each role ran at (see timing_fields).
-      Evidence only; no gate, route, verdict, or counter reads it (INV-HOST-01).
+      additive per-attempt host evidence — the (model, effort) each role
+      ran at (see timing_fields). Evidence only; no gate, route, verdict, or
+      counter reads it (INV-HOST-01).
     repositories/<repository-id>.yaml: per-repository worktree, branch, base and latest commit
     grounding/<repository-id>.yaml: repository-grounding manifest discovered for the
       execution worktree (INV-GROUND-01; schema grounding-manifest.yaml)
@@ -41,46 +41,30 @@ fields:
   current_attempt: { type: integer, required: true }
   created_at: { type: string, required: true }
   updated_at: { type: string, required: true }
-  phase_ms:
-    type: map
-    required: false
-    description: >
-      Additive v0.7.0 deterministic-phase durations (milliseconds) the engine
-      stamps for work it performs itself: base_prepare, grounding_discovery,
-      integration_merge, verifier_prepare. Present on running and blocked records
-      alike; a blocked trace still records the phases that ran. Best-effort clock
-      (0 ms where a phase is sub-second on a host without nanosecond date). Pure
-      bookkeeping over existing work — no model prompt, no launch logic
-      (INV-RUNTIME-01); evidence only, never a gate (INV-HOST-01 in spirit).
 
-timing_fields:
+host_evidence_fields:
   purpose: >
-    v0.7.0 execution-latency measurement. The two observers are split by
-    construction: the engine self-stamps deterministic durations it performs; the
-    coordinator records inference wall-clock only it can see. All additive, all
-    evidence, none a gate; a v0.6 reader ignores every field.
-  engine_stamped:
-    execution.phase_ms: deterministic phase durations (above).
-    attempts/NNN/worker.yaml.attempt_started_at: per-attempt start boundary.
-    attempts/NNN/verifier.yaml.attempt_ended_at: per-attempt end boundary (monotonic).
-  coordinator_recorded:
-    file: attempts/NNN/host-evidence.yaml
-    written_by: runtime action attempt-evidence-record (atomic; INV-RUNTIME-02)
-    key_allowlist:
-      - worker_wall_s       # launch-to-result for the worker child
-      - verifier_wall_s     # launch-to-result for the independent verifier child
-      - worker_model        # (model, effort) the worker ran at — host evidence
-      - worker_effort
-      - verifier_model      # (model, effort) the verifier ran at — host evidence
-      - verifier_effort
-      - complexity          # per-plan hint applied this attempt, if any
-      - escalated           # whether a repair raised the role above its start
-    notes: >
-      attempt_count is current_attempt in this record, surfaced as a first-class
-      timing dimension. A host-blocked verifier records worker_wall_s but no
-      verifier_wall_s; the missing value IS the evidence of the block, not a gap.
-      Unknown keys and unsafe values are refused so the surface stays bounded and
-      credential-free (INV-HOST-01 / INV-SEC-01).
+    per-attempt host evidence: the (model, effort) each role ran at — the
+    one thing the engine cannot know, being model-blind (INV-RUNTIME-01). Bounded,
+    additive, evidence only, never a gate; a v0.6 reader ignores it.
+  file: attempts/NNN/host-evidence.yaml
+  written_by: runtime action attempt-evidence-record (atomic; INV-RUNTIME-02)
+  key_allowlist:
+    - worker_model        # (model, effort) the worker ran at — host evidence
+    - worker_effort
+    - verifier_model      # (model, effort) the verifier ran at — host evidence
+    - verifier_effort
+    - complexity          # per-plan hint applied this attempt, if any
+    - escalated           # whether a repair raised the role above its start
+  notes: >
+    No wall-clock is recorded here: an attempt already carries started_at
+    (worker.yaml) and checked_at (verifier.yaml), whose span is its duration, so
+    timing needs no coordinator step (the most precise per-role figure lives in the
+    host's own sub-agent transcript, outside workspace state). A host-blocked
+    verifier records worker_model but no verifier_model (none ran); the missing
+    value, with status: blocked and no passed verifier record, is the evidence of
+    the block. Unknown keys and unsafe values are refused so the surface stays
+    bounded and credential-free (INV-HOST-01 / INV-SEC-01).
 
 repository_record_fields:
   repository: logical repository id
