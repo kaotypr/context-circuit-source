@@ -1,0 +1,60 @@
+schema_version: 2
+plan: 0023-design-layout-grouping
+title: Generalize the system-design middle path segment to a grouping dimension
+status: done
+objective: >-
+  Refine the system-design layout convention in the cc-system-design skill: the
+  middle path segment is a grouping dimension (a version by default, optionally a
+  named phase/quarter/milestone), version groupings use 3-number semver with a v
+  prefix going forward, and the agent defaults the grouping from the project's
+  own current/next version - adding no lifecycle, status, gate, or runtime.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the cc-system-design skill that owns the layout convention.
+plan_dependencies:
+  - id: 0019-system-design-authoring-skill
+    reason: Owns the system-design authoring rubric this scope refines.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: The skill is a read-as-procedure packet under INV-SKILL-01.
+context_grounding:
+  summary: >-
+    The v0.6 convention named the middle segment a strict version and exemplified
+    2-number folders. Two gaps: the level is not always a version, and version
+    depth was inconsistent with the 3-number semver every shipped surface uses.
+    Generalize to a grouping, fix the default derivation, and settle number depth.
+  constraints:
+    - Version is the default grouping; version groupings use 3-number semver going forward (v0.6.1).
+    - Legacy 2-number folders (v0.5, v0.6) stay and are not retroactively renamed.
+    - Named groupings are an explicit author choice; one grouping dimension per product.
+    - README.md + design.md structure is unchanged at every level; no new owner, no runtime.
+  decisions:
+    - The agent derives an unspecified grouping from the project's own source of truth, never invented.
+    - If the targeted version is genuinely ambiguous, the agent surfaces the choice rather than guessing.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: LAYOUT-001
+    title: Refine the layout convention in the cc-system-design skill
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-system-design/SKILL.md
+    depends_on: []
+    changes:
+      - Rename the middle segment to a grouping dimension with a version default.
+      - State 3-number-semver-going-forward and the legacy no-rename rule.
+      - Specify the agent's default derivation and the ambiguity surfacing rule.
+    acceptance:
+      - id: LAYOUT-AC-01
+        statement: The skill describes the grouping dimension, the version default, and named groupings.
+      - id: LAYOUT-AC-02
+        statement: The skill states 3-number semver going forward, the legacy no-rename rule, and the current/next default derivation from the project's own version source.
+    verification:
+      - id: LAYOUT-VT-01
+        command: sh test/release/test-release.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
