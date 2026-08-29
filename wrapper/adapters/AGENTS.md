@@ -54,3 +54,14 @@ Codex, Claude Code, and Cursor Agent are transports. Host identity, version,
 capability, permission mode, and provider status are bounded provider-neutral
 `host_evidence` only; they never authorize a route, role, verification, or
 completion. A native child maps to the single worker or the independent verifier.
+
+## Per-role model & effort
+
+The coordinator may run the worker and verifier at a per-role `(model, effort)`
+from an optional host-local, per-user, gitignored `role-tiering.local.yaml`,
+grouped by host so each host names the models available on it. This is bounded
+host evidence (`host_evidence`): it changes cost and speed, never a route, role,
+lease, verification, completion, verifier independence, or the failure limit, and
+the runtime never learns it (INV-RUNTIME-01). Reading the config does not apply
+it — the host adapter sets the model on the child spawn; absent any config, the
+adapter defaults apply. Full rules: `docs/role-tiering.md`.

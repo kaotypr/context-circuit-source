@@ -42,7 +42,7 @@ actions as a tool.
 - `worker-handoff-record <execution-dir> <handoff-file>` — store the worker handoff.
 - `verifier-prepare <execution-dir>` — confirm a worker commit exists to verify.
 - `verifier-result-record <execution-dir> <attempt> passed|failed|blocked` — record the independent verifier's outcome.
-- `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record bounded per-attempt host evidence (inference wall-clock and the `(model, effort)` each role ran at). Evidence only; never a gate.
+- `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record bounded per-attempt host evidence: the `(model, effort)` each role ran at (no wall-clock; timing is engine-stamped). Evidence only; never a gate.
 - `repair-allowed <execution-dir>` — whether another repair attempt remains.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
@@ -113,10 +113,11 @@ Repeat until no plan in the set is runnable:
    d. **One independent verifier.** After `verifier-prepare`, launch exactly one
       independent, read-only verifier (`agents/verifier.md`), at the verifier's
       configured `(model, effort)`, over the latest commit of every affected
-      repository. Record its outcome with `verifier-result-record`, and record the
-      observed inference wall-clock and the `(model, effort)` each role ran at with
-      `attempt-evidence-record`. If the host cannot create an independent verifier
-      child, the result is `host-blocked` — never self-verify.
+      repository. Record its outcome with `verifier-result-record`, then record the
+      `(model, effort)` each role ran at with `attempt-evidence-record` (no
+      wall-clock — timing is the deterministic span of the engine's own attempt
+      boundaries). If the host cannot create an independent verifier child, the
+      result is `host-blocked` — never self-verify.
 
    e. **Repair within the limit.** On a verifier failure, pass the evidence back to
       the same worker within the same execution: check `repair-allowed`, begin a new
