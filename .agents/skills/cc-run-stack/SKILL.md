@@ -122,7 +122,7 @@ Repeat until no plan in the set is runnable:
       the same worker within the same execution: check `repair-allowed`, begin a new
       attempt, let the worker create a new commit, and verify again. When the
       worker's role has `escalate_on_repair: true`, raise the repair attempt's
-      `(model, effort)` above its configured start (`wrapper/adapters/role-tiering.md`);
+      `(model, effort)` above its configured start (`docs/role-tiering.md`);
       escalation changes only which model runs the attempt, never the accounting.
       The failure counter increments on each rejection; at three failures the plan
       is **failed** and execution stops with all evidence preserved.

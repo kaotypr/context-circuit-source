@@ -322,7 +322,7 @@ owners:
   repository_grounding: wrapper/runtime/engine.sh
   grounding_manifest: wrapper/contracts/schemas/grounding-manifest.yaml
   worker_brief: wrapper/adapters/worker-brief.md
-  role_tiering: wrapper/adapters/role-tiering.md
+  role_tiering: docs/role-tiering.md
   execution_records: wrapper/contracts/schemas/execution.yaml
   execution_timing: wrapper/contracts/schemas/execution.yaml
   worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
