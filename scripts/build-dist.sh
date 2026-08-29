@@ -24,6 +24,16 @@ if [ -z "$version" ]; then
 fi
 output_dir=${2:-$source_root/dist}
 
+# Clean rebuild: replace any prior output so each run yields a fresh dist tree
+# (without this, release-artifact.sh refuses to overwrite an existing artifact,
+# or stale artifacts pile up beside the new one). Guard against wiping an
+# unintended tree via a mistyped output-dir.
+case "$output_dir" in
+  ''|/) printf 'FAIL: refusing to clean unsafe output dir: %s\n' "$output_dir" >&2; exit 1 ;;
+esac
+[ "$output_dir" != "$source_root" ] || { printf 'FAIL: refusing to clean the source root\n' >&2; exit 1; }
+rm -rf "$output_dir"
+
 mkdir -p "$output_dir"
 staging_dir=$(mktemp -d "$output_dir/.staging.XXXXXX")
 cleanup() { rm -rf "$staging_dir"; }
