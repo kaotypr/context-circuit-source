@@ -9,7 +9,19 @@ usage() {
 [ "$#" -le 2 ] || usage
 
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-version=${1:-v0.5.0}
+
+# The dist artifact is the context-circuit-template; its version is the template
+# release identity. Default it from the single source of truth
+# (wrapper/manifest.yaml template_version), matching the published archive name
+# in publish-template.sh. An explicit [version] argument still overrides.
+version=${1:-}
+if [ -z "$version" ]; then
+  manifest="$source_root/wrapper/manifest.yaml"
+  [ -f "$manifest" ] || { printf 'FAIL: missing manifest: %s\n' "$manifest" >&2; exit 1; }
+  template_version=$(sed -n 's/^template_version:[[:space:]]*//p' "$manifest" | head -n1)
+  [ -n "$template_version" ] || { printf 'FAIL: no template_version in %s\n' "$manifest" >&2; exit 1; }
+  version=v$template_version
+fi
 output_dir=${2:-$source_root/dist}
 
 mkdir -p "$output_dir"
