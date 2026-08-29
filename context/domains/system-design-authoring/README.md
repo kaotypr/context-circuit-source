@@ -7,7 +7,7 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: cb84870
+    commit: c67dd23
     basis: current-wrapper
 generated_at: 2026-08-27T00:00:00Z
 review_date: 2026-11-27
@@ -44,8 +44,18 @@ context acceptance, execution, delivery. The skill only shapes source files.
 ## Behavior
 
 - **A source, not a stage.** A system design lives at
-  `sources/system-design/<product>/<version>/<scope>/`; it is read like any named
-  source (passive, INV-SEC-02) and has no status, gate, or record.
+  `sources/system-design/<product-or-project>/<grouping>/<scope>/`; it is read like
+  any named source (passive, INV-SEC-02) and has no status, gate, or record.
+- **Grouping segment.** The middle segment is a *grouping* dimension, default a
+  version (3-number semver with a `v` prefix going forward, e.g. `v0.6.1`); a named
+  grouping (`phase-2`, `Q1`, a milestone) is an explicit author choice, one
+  dimension per product. When unspecified, the agent derives it from the version
+  the design targets — the project's **next** version for forthcoming design, the
+  **current** version for as-built state — read from the project's own source of
+  truth (`workspace.yaml` `template_version`, release manifests), never invented,
+  and surfaces a genuinely ambiguous choice rather than guessing. Legacy 2-number
+  folders (`v0.5`, `v0.6`) are not renamed; `<product-or-project>` may collapse to
+  one segment in a single-project workspace.
 - **Three-tier layout.** Every folder has a `README.md` index; each scope's
   normative content is `design.md`; detail splits into files or sub-folders as it
   grows (scale-triggered — don't pre-fragment).
@@ -65,7 +75,7 @@ context acceptance, execution, delivery. The skill only shapes source files.
 ## Interfaces
 
 - Human request: "Design the system for `<X>`" / `/cc-system-design`
-- Output: authored files under `sources/system-design/<product>/<version>/<scope>/`
+- Output: authored files under `sources/system-design/<product-or-project>/<grouping>/<scope>/`
 
 ## Constraints and edge cases
 
@@ -94,3 +104,7 @@ was named by the accepting request.
 ## Acceptance notes
 
 Accepted 2026-08-27 from proposal `0020-domain-system-design-authoring`.
+Updated 2026-08-29 from proposal `0027-system-design-grouping` (v0.6.1
+design-layout-grouping): the middle path segment is a grouping dimension
+(version-default, 3-number semver going forward; named groupings allowed) with an
+agent current/next default derivation. Implementation `c67dd23`.
