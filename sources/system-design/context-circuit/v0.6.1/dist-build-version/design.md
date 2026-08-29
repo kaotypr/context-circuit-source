@@ -3,72 +3,83 @@
 ## Capability
 
 Make the local dist build (`scripts/build-dist.sh`) name its artifact for the
-version the source actually is, by deriving its default version from the single
-source of truth (`wrapper/manifest.yaml` `runtime_version`) instead of a
-hardcoded literal that drifts.
+**template release version** the artifact actually carries, by deriving its
+default version from the single source of truth (`wrapper/manifest.yaml`
+`template_version`) instead of a hardcoded literal that drifts.
 
 ## Problem
 
 `scripts/build-dist.sh` is the developer/local convenience wrapper around
 `scripts/release-artifact.sh`. Run with no version argument, it currently
-produces `context-circuit-v0.5.0` — the exact symptom that prompted this scope,
-and visible in the committed build output (`dist/context-circuit-v0.5.0/` and its
+produces `context-circuit-v0.5.0` — the symptom that prompted this scope, and
+visible in the committed build output (`dist/context-circuit-v0.5.0/` and its
 tarball). The cause is a stale hardcoded default:
 
 ```sh
 version=${1:-v0.5.0}
 ```
 
-The source is well past v0.5.0 — `wrapper/manifest.yaml` declares
-`runtime_version: 0.6.0` — so the default is wrong: the staged tree, the artifact
-directory name (`context-circuit-$version`), and the `.tar.gz` all carry a
-version the source is not.
+But the real defect is deeper than a stale literal: it is the **wrong version
+altogether**. The shipped artifact is the `context-circuit-template` — a
+universal-project-workspace-template (`wrapper/manifest.yaml`
+`artifact_kind`). Its release identity is `template_version`, not the
+context-circuit product's own `runtime_version`. `wrapper/manifest.yaml` carries
+both, and they mean different things:
 
-The literal is a **second, drifting copy** of the version number. It is not kept
-in step with the source of truth by anything; every version bump would need a
-manual edit here, and that edit was missed. This is exactly the failure mode the
-publication path already avoids: `scripts/publish-template.sh` derives its
-source-versioned assembly from the manifest —
+- `runtime_version: 0.6.0` — context-circuit's **own runtime/source** version.
+- `template_version: 0.0.1-alpha.2` — the **published template release**
+  version; "Stamped at publish time; the context-circuit-template git tag is
+  authoritative."
 
-```sh
-src_version=v$(sed -n 's/^runtime_version:[[:space:]]*//p' \
-  "$source_root/wrapper/manifest.yaml" | head -n1)
-```
+The dist build builds *the template*, so the artifact's version is the
+**template** version. A hardcoded `v0.5.0` is neither — it is a third,
+drifting copy that matches nothing.
 
-— and passes *that* to `release-artifact.sh`. `build-dist.sh` is the only version
-consumer that hardcodes instead of deriving, so it alone falls out of date.
+The publication path already treats the template version as the release
+identity: `scripts/publish-template.sh` takes the template `<version>` as its
+argument, stamps `template_version: $version` into the shipped manifest, tags the
+template repo `v$version`, and names the published archive
+`context-circuit-v$version` (its final line copies
+`dist/context-circuit-v$version.tar.gz`). The `runtime_version`-derived
+`src_version` in that script is only an **internal staging name** for the
+pre-stamp assembly, never the release identity. `build-dist.sh` should mirror the
+*published* artifact name — `context-circuit-v<template_version>` — not the
+staging label and not a literal.
 
 ## Principle
 
-The version is declared once. `wrapper/manifest.yaml` is the owner of the release
-boundary and version stamps (`wrapper/contracts/invariants.yaml` owner map:
-`release_boundary: wrapper/manifest.yaml`); its `runtime_version` is the source
-of truth for the source/runtime version. Any build that needs a *default* version
-derives it from that owner — no script restates the version as its own literal.
-An explicit argument may still override for ad-hoc builds.
+The version is declared once. `wrapper/manifest.yaml` owns the release boundary
+and version stamps (`wrapper/contracts/invariants.yaml` owner map:
+`release_boundary: wrapper/manifest.yaml`). The **template artifact's** identity
+is its `template_version`; any build that produces the template and needs a
+default version derives it from that field — no script restates the version as
+its own literal, and no build labels the template with context-circuit's internal
+`runtime_version`. An explicit argument may still override for ad-hoc builds.
 
 ## Fixed decisions
 
-1. **Derive the default from the manifest.** `build-dist.sh`'s default version
-   comes from `wrapper/manifest.yaml` `runtime_version`, formatted with the `v`
-   prefix the artifact naming already uses (`release-artifact.sh`'s
-   `context-circuit-$version`, `publish-template.sh`'s `src_version`). With
-   `runtime_version: 0.6.0` the default becomes `v0.6.0`. This is the same read
-   `publish-template.sh` already performs; the two paths now agree by
-   construction. (The 3-number `runtime_version` also satisfies the
-   [design-layout-grouping](../design-layout-grouping/) 3-number-semver
-   direction, so the derived tag needs no reshaping.)
-2. **An explicit `[version]` argument still wins.** The command interface is
+1. **Derive the default from `template_version`.** `build-dist.sh`'s default
+   version comes from `wrapper/manifest.yaml` `template_version`, formatted with
+   the `v` prefix the release naming already uses. With
+   `template_version: 0.0.1-alpha.2` the default becomes `v0.0.1-alpha.2`,
+   producing `context-circuit-v0.0.1-alpha.2` — the **same name the published
+   archive carries** in `publish-template.sh` (`context-circuit-v$version`). Dev
+   and publication now agree on what the artifact is called.
+2. **Not `runtime_version`.** The context-circuit runtime version is an internal
+   detail of the product, not the template's release identity; the dist build
+   must not stamp it onto the template artifact. (It remains what
+   `publish-template.sh` uses for its intermediate staging name only.)
+3. **An explicit `[version]` argument still wins.** The command interface is
    unchanged — `sh scripts/build-dist.sh [version] [output-dir]`; only the
    *source of the default* changes.
-3. **No hardcoded version literal remains** in `build-dist.sh`.
-4. **Fail loudly on a missing manifest value.** If the `runtime_version` read
+4. **No hardcoded version literal remains** in `build-dist.sh`.
+5. **Fail loudly on a missing manifest value.** If the `template_version` read
    yields empty (malformed or missing manifest), the build stops with an error
    rather than falling back to a literal or an empty/`context-circuit-v` name.
-   This matches `release-artifact.sh`'s existing invalid-version guard, which the
-   derived value must anyway pass (no slash, space, leading `.`/`-`); `v` +
-   semver satisfies it.
-5. **`release-artifact.sh` is unchanged.** It still takes the version as a
+   The derived value must anyway pass `release-artifact.sh`'s invalid-version
+   guard (no slash, space, leading `.`/`-`); a `v`-prefixed semver — including a
+   prerelease like `v0.0.1-alpha.2` — satisfies it.
+6. **`release-artifact.sh` is unchanged.** It still takes the version as a
    required, validated positional argument; only where `build-dist.sh` *sources
    its default* changes. No manifest edit, no change to the publication scripts.
 
@@ -78,9 +89,11 @@ Each is owned elsewhere and changed through its owner's normal action:
 
 - **Dist wrapper** (`scripts/build-dist.sh`): replace the
   `version=${1:-v0.5.0}` default with a default read from
-  `wrapper/manifest.yaml` `runtime_version` (prefixed `v`), preserving the `$1`
-  override; error if the read is empty. The `usage` line and the second
-  positional (`output-dir`) are unchanged.
+  `wrapper/manifest.yaml` `template_version` (prefixed `v`, the same
+  `sed -n 's/^template_version:...' | head -n1` shape `publish-template.sh`
+  already uses for `runtime_version`), preserving the `$1` override; error if the
+  read is empty. The `usage` line and the second positional (`output-dir`) are
+  unchanged.
 
 No other source changes. `dist/` is build output (in the manifest `never_ship`
 set), not source: the stale `context-circuit-v0.5.0` tree already there is a
@@ -92,17 +105,25 @@ No core contract bump. No owner is added; the version owner
 
 ## Constraints and edge cases
 
-- **The derived value must pass `release-artifact.sh` validation**
-  (`''|*/*|.*|-*|*' '*|*..*`). A `v`-prefixed 3-number semver does; a blank read
-  does not, which is why decision 4 fails rather than passing an empty string
-  downstream.
+- **Prerelease versions must survive validation.** `release-artifact.sh` rejects
+  `''|*/*|.*|-*|*' '*|*..*`. `v0.0.1-alpha.2` passes: it starts with `v` (not
+  `-` or `.`), has no slash, space, or `..`, and the internal `-` is not leading.
+  A blank read does *not* pass, which is why decision 5 fails rather than passing
+  an empty string downstream.
+- **The source's `template_version` is the last published one.** A local build
+  therefore names the artifact for that release (plus whatever uncommitted source
+  it contains) — the honest identity of "the template as of the last release."
+  Producing the *next* version's name is `publish-template.sh`'s job (it takes an
+  explicit version and stamps it); `build-dist.sh` is a pre-publish inspection
+  build, so defaulting to the current `template_version` is correct. A user who
+  wants a specific label still passes it as `$1`.
 - **Source-checkout only.** `build-dist.sh` and `release-artifact.sh` already
-  require a git source checkout (`git rev-parse --show-toplevel`); the manifest
-  read is against that same `source_root`, so the derivation has the file it
-  needs wherever the build can run at all.
-- **Publication path unaffected.** `publish-template.sh` computes `src_version`
-  itself and never calls `build-dist.sh`, so its behavior is untouched; this
-  scope only brings the *dev* build into line with what publication already does.
+  require a git source checkout; the manifest read is against that same
+  `source_root`, so the derivation always has the file it needs.
+- **Publication path unaffected.** `publish-template.sh` computes its own
+  versions and never calls `build-dist.sh`, so its behavior is untouched; this
+  scope only brings the *dev* build's default into line with the published
+  artifact's identity.
 
 ## How it feeds the rest — unchanged
 
