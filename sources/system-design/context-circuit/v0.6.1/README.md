@@ -34,6 +34,13 @@ version index; each scope owns its own design.
   or contract semantics change, and no core contract bump. Coordinates with
   [writer-brief-placement](./writer-brief-placement/) on the same brief file.
   Start at [worker-role-naming/design.md](./worker-role-naming/design.md).
+- [dist-build-version/](./dist-build-version/) — stop `scripts/build-dist.sh`
+  from stamping a stale, hardcoded version onto the local dist artifact (it
+  still builds `context-circuit-v0.5.0`); derive its default version from the
+  single source of truth (`wrapper/manifest.yaml` `runtime_version`), the same
+  read the publication path already uses. Command interface and
+  `release-artifact.sh` unchanged; no core contract bump. Start at
+  [dist-build-version/design.md](./dist-build-version/design.md).
 
 ## Layout convention
 
