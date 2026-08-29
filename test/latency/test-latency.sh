@@ -1,9 +1,9 @@
 #!/bin/sh
-# Execution-latency semantics (v0.7.0): the two-observer measurement model
-# (engine-stamped deterministic phase_ms + per-attempt timing boundaries;
-# coordinator-recorded inference wall-clock and (model, effort) as bounded host
-# evidence), per-role tiering that never touches the failure counter, the optional
-# plan complexity hint, and concurrent-run-stack overlap arbitrated by the lease.
+# Execution-latency semantics: the coordinator-recorded per-role
+# (model, effort) as bounded host evidence (the attempt's own started_at /
+# checked_at give its duration, so no wall-clock is recorded), per-role tiering
+# that never touches the failure counter, the optional plan complexity hint, and
+# concurrent-run-stack overlap arbitrated by the lease.
 # These prove the additive fields exist and are monotonic, that escalation is
 # evidence-only, and that independent plans may overlap while conflicting ones
 # serialize — deterministically, because a live model cannot be timed on command.
@@ -18,82 +18,72 @@ cc_fx_repo "$ws" api development
 edir_of() { printf '%s/.runtime/executions/%s/%s' "$ws" "$1" "$(cc_latest_execution "$ws" "$1")"; }
 
 # ============================================================================
-# 1. Measurement: engine-stamped deterministic phases on a normal execution.
+# 1. Evidence + timing: the coordinator records only the (model, effort) each role
+#    ran at; the attempt's own started_at / checked_at timestamps give its duration
+#    with no coordinator step.
 # ============================================================================
 cc_fx_plan "$ws" 0001-meas "Measure" "api"
 cc_plan_approve "$ws" 0001-meas >/dev/null
 exec=$(cc_execution_begin "$ws" 0001-meas sess1 | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/0001-meas/$exec"
 ey="$edir/execution.yaml"
-# the phase_ms map exists with all four deterministic phases, each a non-negative integer
-contains "$ey" "phase_ms:"
-for ph in base_prepare grounding_discovery integration_merge verifier_prepare; do
-	grep -Eq "^  $ph: [0-9]+$" "$ey" || fail "phase_ms.$ph missing or non-integer"
-done
 
-# per-attempt start boundary is stamped by attempt-begin
+# per-attempt start boundary already exists (started_at), no field needed
 cc_attempt_begin "$edir" >/dev/null
 wy="$edir/attempts/001/worker.yaml"
-contains "$wy" "attempt_started_at:"
-astart=$(cc_scalar "$wy" attempt_started_at)
-[ -n "$astart" ] || fail "attempt_started_at empty"
+astart=$(cc_scalar "$wy" started_at)
+[ -n "$astart" ] || fail "started_at empty"
 
 cc_fx_commit "$ws" 0001-meas api impl
 cc_worker_commit_record "$edir" api implementation >/dev/null
-# verifier-prepare folds its (recurring) duration into phase_ms.verifier_prepare
 cc_verifier_prepare "$edir" >/dev/null
-grep -Eq "^  verifier_prepare: [0-9]+$" "$ey" || fail "verifier_prepare not stamped after verifier-prepare"
 
-# coordinator records inference wall-clock + (model, effort) as bounded evidence
+# coordinator records only the (model, effort) each role ran at — the one thing
+# the engine cannot know. No wall-clock: the attempt boundaries give the duration.
 cc_attempt_evidence_record "$edir" 1 \
-	worker_wall_s=12.4 worker_model=opus worker_effort=high \
-	verifier_wall_s=3.1 verifier_model=sonnet verifier_effort=medium >/dev/null
+	worker_model=model-hi worker_effort=high \
+	verifier_model=model-lo verifier_effort=medium >/dev/null
 hy="$edir/attempts/001/host-evidence.yaml"
-for kv in "worker_wall_s: 12.4" "worker_model: opus" "verifier_wall_s: 3.1" "verifier_model: sonnet"; do
+for kv in "worker_model: model-hi" "worker_effort: high" "verifier_model: model-lo"; do
 	contains "$hy" "$kv"
 done
-# attempt_count is current_attempt, surfaced as a timing dimension
 assert_eq "1" "$(cc_scalar "$ey" current_attempt)"
 
-# per-attempt end boundary is stamped by verifier-result-record, monotonic with start
+# the attempt's end boundary (checked_at) bounds its duration; monotonic with start
 cc_verifier_result_record "$edir" 1 passed >/dev/null
 vy="$edir/attempts/001/verifier.yaml"
-contains "$vy" "attempt_ended_at:"
-aend=$(cc_scalar "$vy" attempt_ended_at)
-[ -n "$aend" ] || fail "attempt_ended_at empty"
+aend=$(cc_scalar "$vy" checked_at)
+[ -n "$aend" ] || fail "checked_at empty"
 # ISO-8601 UTC sorts lexicographically == chronologically
 { [ "$aend" = "$astart" ] || [ "$aend" \> "$astart" ]; } || fail "attempt end precedes start (not monotonic)"
-
-# the engine phases are a rounding error against inference — proven by shape, not
-# magnitude: both are recorded, so the split is real and attributable.
 
 # ============================================================================
 # 2. Bounded evidence surface: unknown key and unsafe value are refused.
 # ============================================================================
 expect_failure cc_attempt_evidence_record "$edir" 1 bogus_key=x
-expect_failure cc_attempt_evidence_record "$edir" 1 "worker_model=opus;rm"
+expect_failure cc_attempt_evidence_record "$edir" 1 "worker_model=model-hi;rm"
 expect_failure cc_attempt_evidence_record "$edir" 1 malformed_no_equals
 # a refused call writes nothing new
 not_contains "$hy" "bogus_key:"
 
 # ============================================================================
-# 3. Host-blocked verifier: worker_wall_s recorded, verifier_wall_s absent — the
-#    missing value is the evidence of the block. Deterministic phases still present.
+# 3. Host-blocked verifier: worker_model recorded, verifier_model absent (no
+#    verifier ran) — the missing value, with status: blocked, is the evidence of
+#    the block.
 # ============================================================================
 cc_fx_plan "$ws" 0002-blk "Blocked" "api"
 cc_plan_approve "$ws" 0002-blk >/dev/null
 bexec=$(cc_execution_begin "$ws" 0002-blk sess2 | sed -n 's/^execution_id: //p')
 bedir="$ws/.runtime/executions/0002-blk/$bexec"
-contains "$bedir/execution.yaml" "phase_ms:"          # phases present before any verify
 cc_attempt_begin "$bedir" >/dev/null
 cc_fx_commit "$ws" 0002-blk api impl
 cc_worker_commit_record "$bedir" api implementation >/dev/null
-cc_attempt_evidence_record "$bedir" 1 worker_wall_s=9.0 worker_model=opus >/dev/null
+cc_attempt_evidence_record "$bedir" 1 worker_model=model-hi worker_effort=high >/dev/null
 cc_verifier_result_record "$bedir" 1 blocked >/dev/null
 assert_eq "blocked" "$(cc_execution_status "$bedir")"
 bhy="$bedir/attempts/001/host-evidence.yaml"
-contains "$bhy" "worker_wall_s: 9.0"
-not_contains "$bhy" "verifier_wall_s:"                # the block's evidence is the absence
+contains "$bhy" "worker_model: model-hi"
+not_contains "$bhy" "verifier_model:"                 # the block's evidence is the absence
 
 # a BASE_UNBUILDABLE blocked trace also records the deterministic phases that ran.
 # two predecessors write DIFFERENT content to the same path -> the runtime-authored
@@ -120,7 +110,6 @@ expect_failure cc_execution_begin "$ws" 0005-cc 0005-cc-w
 ce="$(edir_of 0005-cc)"
 assert_eq "blocked" "$(cc_execution_status "$ce")"
 contains "$ce/execution.yaml" "blocked_reason: BASE_UNBUILDABLE"
-contains "$ce/execution.yaml" "phase_ms:"             # a blocked trace still records what ran
 
 # ============================================================================
 # 4. Tiering is evidence-only: escalation across a repair changes the recorded
@@ -134,21 +123,21 @@ eed="$ws/.runtime/executions/0006-esc/$eex"
 cc_attempt_begin "$eed" >/dev/null
 cc_fx_commit "$ws" 0006-esc api a1
 cc_worker_commit_record "$eed" api implementation >/dev/null
-cc_attempt_evidence_record "$eed" 1 worker_model=sonnet worker_effort=high escalated=false >/dev/null
+cc_attempt_evidence_record "$eed" 1 worker_model=model-lo worker_effort=high escalated=false >/dev/null
 cc_verifier_result_record "$eed" 1 failed >/dev/null
 assert_eq "1" "$(cc_scalar "$eed/execution.yaml" worker_failures)"
 # attempt 2 escalated above the start -> passes; escalation did NOT buy an attempt
 cc_attempt_begin "$eed" >/dev/null
 cc_fx_commit "$ws" 0006-esc api a2
 cc_worker_commit_record "$eed" api repair >/dev/null
-cc_attempt_evidence_record "$eed" 2 worker_model=opus worker_effort=max escalated=true >/dev/null
+cc_attempt_evidence_record "$eed" 2 worker_model=model-hi worker_effort=max escalated=true >/dev/null
 cc_verifier_result_record "$eed" 2 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$eed")"
 # the counter is exactly the one rejection — escalation changed the model, not the accounting
 assert_eq "1" "$(cc_scalar "$eed/execution.yaml" worker_failures)"
 assert_eq "2" "$(cc_scalar "$eed/execution.yaml" current_attempt)"
-contains "$eed/attempts/001/host-evidence.yaml" "worker_model: sonnet"
-contains "$eed/attempts/002/host-evidence.yaml" "worker_model: opus"
+contains "$eed/attempts/001/host-evidence.yaml" "worker_model: model-lo"
+contains "$eed/attempts/002/host-evidence.yaml" "worker_model: model-hi"
 contains "$eed/attempts/002/host-evidence.yaml" "escalated: true"
 
 # ============================================================================

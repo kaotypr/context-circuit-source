@@ -298,6 +298,32 @@ while IFS= read -r line; do
 			fg_target="$fg_wt/$fg_path"
 			if [ -f "$fg_target" ] && grep -Fq "$fg_needle" "$fg_target"; then ok "file_grounded ($fg_path honors repo convention '$fg_needle')"
 			else bad "file_grounded ($fg_path missing '$fg_needle' — worker did not honor the repo's own guidance)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		attempt_evidence_recorded)
+			# val "<plan-id>" — the coordinator recorded bounded per-attempt host evidence
+			# via the attempt-evidence-record action: the (model) each role ran at
+			# (INV-HOST-01 evidence, never a gate). Timing is engine-stamped, not recorded
+			# here, so only the model fields are required.
+			ae_exec=$(cc_latest_execution "$WORKSPACE" "$val" 2>/dev/null) || ae_exec=""
+			ae_dir=$(cc_execution_dir "$WORKSPACE" "$val" "$ae_exec" 2>/dev/null)
+			ae_f=$(find "$ae_dir/attempts" -name host-evidence.yaml 2>/dev/null | sort | tail -1)
+			ae_bad=""
+			if [ -z "$ae_f" ] || [ ! -f "$ae_f" ]; then ae_bad="no host-evidence.yaml"
+			else for kf in worker_model verifier_model; do
+				grep -q "^$kf:" "$ae_f" || ae_bad="$ae_bad $kf"
+			done; fi
+			if [ -z "$ae_bad" ]; then ok "attempt_evidence_recorded ($val: per-role model evidence present)"
+			else bad "attempt_evidence_recorded ($val:$ae_bad)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		role_evidence)
+			# val "<plan-id>:<role>:<model>" — the recorded model the given role ran at
+			# matches the seeded host-local role tiering: proof the coordinator READ and
+			# HONORED role-tiering.local.yaml (INV-HOST-01 evidence; never a gate).
+			re_pid=${val%%:*}; re_rest=${val#*:}; re_role=${re_rest%%:*}; re_model=${re_rest#*:}
+			re_exec=$(cc_latest_execution "$WORKSPACE" "$re_pid" 2>/dev/null) || re_exec=""
+			re_dir=$(cc_execution_dir "$WORKSPACE" "$re_pid" "$re_exec" 2>/dev/null)
+			re_f=$(find "$re_dir/attempts" -name host-evidence.yaml 2>/dev/null | sort | tail -1)
+			re_got=$(cc_scalar "$re_f" "${re_role}_model" 2>/dev/null) || re_got=""
+			if [ "$re_got" = "$re_model" ]; then ok "role_evidence ($re_pid: $re_role ran at '$re_model' as configured)"
+			else bad "role_evidence ($re_pid: $re_role model '${re_got:-<none>}' != seeded '$re_model' — tiering not honored)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
