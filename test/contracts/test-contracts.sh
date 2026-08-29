@@ -32,7 +32,7 @@ not_contains "$inv" "push/publish/deploy"
 # --- manifest declares runtime exclusions and the release boundary ---
 man="$W/manifest.yaml"
 require_file "$man"
-contains "$man" "runtime_version: 0.6.0"
+contains "$man" "runtime_version: 0.6.1"
 contains "$man" "plan: [1, 2]"
 contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
