@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0002-workspace-repository-model
+provider: clickup
+plan_item:
+  id: "86eyrr03e"
+  url: "https://app.clickup.com/t/86eyrr03e"
+task_items:
+  - task: WRK-001
+    id: "86eyrr0br"
+    url: "https://app.clickup.com/t/86eyrr0br"
+    synced_digest: "sha256:1c83b80efc828e57653aee72f0823cdf676cec77299ac27e1daa3546b6096b2f"
+  - task: WRK-002
+    id: "86eyrr0c2"
+    url: "https://app.clickup.com/t/86eyrr0c2"
+    synced_digest: "sha256:6d432246b75cdbee9e5fe97f0ce508c5ec5ca7968a3b389207b472d79ded0b4e"
+  - task: WRK-003
+    id: "86eyrr0cc"
+    url: "https://app.clickup.com/t/86eyrr0cc"
+    synced_digest: "sha256:6b58a15e536b5a1b0ff08765f082ab432349e1aae62f6eca8a55b20b5a7327a3"

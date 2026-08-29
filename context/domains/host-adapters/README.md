@@ -37,7 +37,7 @@ here.
 ## Scope
 
 Inside: provider-neutral `host_evidence`, the shared `AGENTS.md` instruction
-surface, the `CLAUDE.md` Claude Code adapter, native-child mapping to the writer
+surface, the `CLAUDE.md` Claude Code adapter, native-child mapping to the worker
 or verifier packet, and `host-blocked` missing-child behavior.
 
 Outside: embedding a host CLI or SDK, storing credentials/transcripts/auth
@@ -53,14 +53,14 @@ gate, verification, or completion (INV-HOST-01).
 
 | Host | Instruction surface | Native child mapping |
 | --- | --- | --- |
-| Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | subagent → writer or verifier packet |
+| Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | subagent → worker or verifier packet |
 | Claude Code | `wrapper/adapters/CLAUDE.md` imports `AGENTS.md` | Task/subagent → same packet |
 | Cursor Agent CLI | root `AGENTS.md` (`CLAUDE.md` also readable) | Task/subagent if available; otherwise host-blocked |
 
-A native child maps only to the bounded writer or independent read-only
+A native child maps only to the bounded worker or independent read-only
 verifier packet. If a required child is unavailable, the route stays read-only
 and reports `host-blocked`; the host must never self-verify or downgrade a
-verifier into a writer.
+verifier into a worker.
 
 `host_evidence` records only bounded host, version, capability, role,
 permission-mode, and provider-status fields. It never stores credentials,

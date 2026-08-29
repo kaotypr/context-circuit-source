@@ -30,15 +30,15 @@ workflows:
 
 Grounding the worker in the *target repository's own* agent guidance — discovered
 live from the execution worktree and delivered through a generated brief, never
-hand-authored into each writer prompt. Part of execution setup; owned by the
-runtime discovery/hardening/brief functions and the shipped `writer-brief.md`
+hand-authored into each worker prompt. Part of execution setup; owned by the
+runtime discovery/hardening/brief functions and the shipped `worker-brief.md`
 template, applied by the `cc-execute` and `cc-run-stack` skills and honored by the
-`agents/writer.md` worker.
+`agents/worker.md` worker.
 
 ## Scope
 
 Inside: the deterministic discovery scan and its manifest, worktree hardening, the
-assembled writer brief and its preflight, the writer's read-and-honor obligation,
+assembled worker brief and its preflight, the worker's read-and-honor obligation,
 precedence, and the repository-friction feedback loop.
 
 Outside: what a worker changes and where (the plan and its scope), verification
@@ -59,16 +59,16 @@ plan ([run-stack](../run-stack/README.md)).
   workarounds are eliminated rather than documented (full dependency provisioning
   is a later phase).
 - **Deliver, not author (INV-GROUND-03).** A fixed shipped template
-  (`writer-brief.md`, promoted to the workspace root) is filled by deterministic
+  (`worker-brief.md`, promoted to the workspace root) is filled by deterministic
   slot substitution from the manifest and the plan; the coordinator adds only a
   one-line task focus and delivers it verbatim. A preflight refuses a brief that
   omits or leaves unfilled the required repository-grounding section.
 - **Precedence (INV-GROUND-02).** The brief's scope and safety rules are
   authoritative on *what* and *where*; the repository's guidance is authoritative
   on *how* to write code there, within that scope. On a scope or safety conflict
-  the writer stops and reports; repository guidance never overrides a CC rule.
+  the worker stops and reports; repository guidance never overrides a CC rule.
 - **Reference, not capture.** No per-repo profile and no `plan.yaml` field. When
-  the repository's guidance did not cover something the writer needed, it returns
+  the repository's guidance did not cover something the worker needed, it returns
   a `repository_friction` note in the handoff, reconciled into a proposal on the
   repository's own agent docs — never a CC-side profile.
 
@@ -80,7 +80,7 @@ plan ([run-stack](../run-stack/README.md)).
 
 - Records: `.runtime/executions/<plan>/<exec>/grounding/<repo>.yaml` (manifest);
   the assembled brief `brief-<repo>.md`; `repository_friction` in the handoff
-- Template: `writer-brief.md` (workspace root, shipped)
+- Template: `worker-brief.md` (workspace root, shipped)
 
 ## Data
 
@@ -95,10 +95,10 @@ may author the repo's agent docs, which later stacked plans then discover).
 
 ## Implementation references
 
-- `wrapper/adapters/writer-brief.md`; `.agents/skills/cc-execute/SKILL.md`,
-  `.agents/skills/cc-run-stack/SKILL.md`; `agents/writer.md`, `agents/coordinator.md`
+- `wrapper/adapters/worker-brief.md`; `.agents/skills/cc-execute/SKILL.md`,
+  `.agents/skills/cc-run-stack/SKILL.md`; `agents/worker.md`, `agents/coordinator.md`
 - `wrapper/runtime/engine.sh`: `cc_discover_repo_grounding`, `cc_harden_worktree`,
-  `cc_grounding_directive`, `cc_writer_brief_assemble`, `cc_brief_preflight`,
+  `cc_grounding_directive`, `cc_worker_brief_assemble`, `cc_brief_preflight`,
   `cc_skill_desc`
 - `wrapper/contracts/schemas/grounding-manifest.yaml`, `execution.yaml` (grounding
   record), `worker-handoff.yaml` (`repository_friction`)

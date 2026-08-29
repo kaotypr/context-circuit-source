@@ -19,17 +19,17 @@ then:
 
 1. Run `execution-begin`: it validates approval and repository bindings,
    validates and captures each `anchor_branch` tip, rejects dirty anchors,
-   acquires the one-writer lock, snapshots the plan, creates one branch and
+   acquires the one-worker lock, snapshots the plan, creates one branch and
    worktree per affected repository, and discovers each repository's own agent
    guidance from the prepared worktree (recorded as a grounding manifest).
-2. Assemble the writer brief with `writer-brief-assemble` (per affected
+2. Assemble the worker brief with `worker-brief-assemble` (per affected
    repository), adding only a one-line task focus. The runtime fills the brief
    from the grounding manifest and the plan and refuses a brief missing its
    repository-grounding section (preflight). Deliver the assembled brief
    verbatim — do not author or omit the repository-grounding facts, and do not
    read the runtime implementation to compose them (INV-GROUND-01/03).
 3. Launch exactly one worker with that brief and the assigned worktrees
-   (see `agents/writer.md`). The worker reads and honors the repository's own
+   (see `agents/worker.md`). The worker reads and honors the repository's own
    agent guidance, executes all tasks in dependency order, and commits each
    affected repository. Record each commit with `worker-commit-record` and the
    handoff with `worker-handoff-record` (including any `repository_friction`).
@@ -48,8 +48,8 @@ Reading `wrapper/runtime/engine.sh` itself is out of scope for the coordinator.
 
 - `execution-begin . <plan-id> <owner>` — preflight, snapshot, worktree(s), and
   repository-grounding discovery; prints `execution_id`.
-- `writer-brief-assemble . <execution-dir> <repo> "<task focus>"` — assemble the
-  grounded writer brief (fills the grounding directive + environment from the
+- `worker-brief-assemble . <execution-dir> <repo> "<task focus>"` — assemble the
+  grounded worker brief (fills the grounding directive + environment from the
   manifest); it preflights the required grounding slot.
 - `attempt-begin <execution-dir>` · `worker-commit-record <execution-dir> <repo> implementation|repair`
   · `worker-handoff-record <execution-dir> <handoff-file>`.

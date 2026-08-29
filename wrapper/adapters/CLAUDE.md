@@ -7,7 +7,7 @@ transport. The root Claude session is the coordinator (see `agents/coordinator.m
 for all normal conversation: orientation, context gathering, planning, review,
 approval interpretation, completion, archive/restore, and delivery discussion.
 
-A Claude Task/subagent maps only to the single bounded worker (`agents/writer.md`)
+A Claude Task/subagent maps only to the single bounded worker (`agents/worker.md`)
 or the independent read-only verifier (`agents/verifier.md`) for one execution.
 Record provider-neutral `host_evidence` for the child; a host permission flag is
 an observation, not authorization.

@@ -67,10 +67,10 @@ launch the independent read-only verifier with the latest revisions, route
 verifier failures back to the same worker within the same execution, and report
 runtime results in normal language.
 
-The writer's execution brief is **delivered, not authored**: the runtime
+The worker's execution brief is **delivered, not authored**: the runtime
 discovers the target repository's own agent guidance from the prepared worktree
 and assembles the brief by deterministic slot substitution of the shipped
-`writer-brief.md` template (INV-GROUND-01/03). The coordinator adds only a
+`worker-brief.md` template (INV-GROUND-01/03). The coordinator adds only a
 one-line task focus and delivers the assembled brief verbatim; it never composes
 the repository-grounding facts itself and never reads the runtime implementation
 to do so. A brief missing its repository-grounding section is refused by the

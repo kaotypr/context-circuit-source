@@ -1,0 +1,19 @@
+schema_version: 1
+plan: 0014-run-stack-scheduling
+provider: clickup
+plan_item:
+  id: "86eyrr06g"
+  url: "https://app.clickup.com/t/86eyrr06g"
+task_items:
+  - task: RSC-001
+    id: "86eyrr1px"
+    url: "https://app.clickup.com/t/86eyrr1px"
+    synced_digest: "sha256:7d0a12e97fba9ca86649c0613e33e3c741cf54fef9a5aca1a08aa87a95f06992"
+  - task: RSC-002
+    id: "86eyrr1qc"
+    url: "https://app.clickup.com/t/86eyrr1qc"
+    synced_digest: "sha256:0f33e42d39d95fede7c8399c32ffa384bc211607f939c9b640cbd6fa60092d8c"
+  - task: RSC-003
+    id: "86eyrr1qe"
+    url: "https://app.clickup.com/t/86eyrr1qe"
+    synced_digest: "sha256:7e2df2570666b71b7db39bc58337bc0c307f9f097b4e025a92d291dbbdfb833c"

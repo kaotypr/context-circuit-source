@@ -1,11 +1,11 @@
 id: 11-repo-grounding
-title: Build an approved plan in a repo that ships its own agent guidance; the writer discovers and honors it
+title: Build an approved plan in a repo that ships its own agent guidance; the worker discovers and honors it
 mode: full-execution
 setup:
   # One connected repo that ships its OWN agent guidance (AGENTS.md) stating a
   # distinctive convention the PLAN never mentions: every file must begin with the
   # line "// @grounded". The plan just creates a file. The only way the committed
-  # file carries that header is if the writer discovered, read, and honored the
+  # file carries that header is if the worker discovered, read, and honored the
   # repository's own guidance — the observable proof that grounding worked.
   repositories:
     - id: widgets
@@ -57,7 +57,7 @@ grader:
     # repository-grounding discovery recorded the repo's own guidance
     - grounding_manifest_recorded: 0001-widget:widgets:AGENTS.md
     # THE LINCHPIN: the committed file honors a convention stated ONLY in the repo's
-    # own AGENTS.md and never in the plan — proof the writer read and honored it.
+    # own AGENTS.md and never in the plan — proof the worker read and honored it.
     - file_grounded: 0001-widget:widgets:src/widget/mod.txt:// @grounded
     - plan_status: 0001-widget:approved       # verified, NOT done (INV-COMPLETE-01)
     - no_plan_status: [done]

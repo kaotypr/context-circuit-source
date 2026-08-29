@@ -19,13 +19,26 @@ files; it never approves, accepts, plans, executes, or writes Product Knowledge.
 Author under `sources/`, which is passive source material:
 
 ```
-sources/system-design/<product>/<version>/<scope>/
+sources/system-design/<product-or-project>/<grouping>/<scope>/
 ```
 
-- `<product>` (or `<initiative>`) names the product **as a whole — never a single
-  repository**. In a single-product workspace this level may collapse to
-  `sources/system-design/<version>/<scope>/`.
-- `<version>` is the design revision (`v0.1`, …). `<scope>` is a **concern**.
+- `<product-or-project>` (or `<initiative>`) names the product **as a whole —
+  never a single repository**. In a single-product workspace this level may
+  collapse to `sources/system-design/<grouping>/<scope>/`.
+- `<grouping>` is the organizing dimension for a body of design work. **Default:
+  a version** — use **3-number semver with a `v` prefix going forward**
+  (`v0.6.1`, not `v0.6`); legacy 2-number folders (`v0.5`, `v0.6`) stay and are
+  **not** retroactively renamed. Optionally a **named grouping** — a slug such as
+  `phase-2`, `Q1`, or a milestone — as a deliberate author choice when a team does
+  not organize design by release. Within one product, pick one grouping dimension
+  rather than mixing release and phase folders arbitrarily.
+- When the author does not specify a grouping, derive it from the version the
+  design targets: the project's **next** version for forthcoming design (the
+  normal case), or the **current** version when documenting as-built state. Read
+  the version token from the project's own source of truth (`workspace.yaml`
+  `template_version`, release manifests) — never invent it; if the targeted
+  version is genuinely ambiguous, surface the choice rather than guessing.
+- `<scope>` is a **concern**.
 
 Writing these files is a normal authoring write; `sources/` stays passive for
 later reads (read only when a request names a file).
@@ -36,10 +49,10 @@ Every folder has a `README.md` index; each scope's normative content is
 `design.md`; detail splits into files or sub-folders **as it grows**:
 
 ```text
-sources/system-design/<product>/
-  README.md                 # index of versions (landing + reading order)
-  <version>/
-    README.md               # version index: the scopes + the reading order
+sources/system-design/<product-or-project>/
+  README.md                 # index of groupings (landing + reading order)
+  <grouping>/
+    README.md               # grouping index: the scopes + the reading order
     <scope>/
       README.md             # scope landing/index
       design.md             # scope overview — NORMATIVE, readable end to end

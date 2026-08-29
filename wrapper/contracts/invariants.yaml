@@ -185,16 +185,16 @@ invariants:
   - id: INV-RUNTIME-02
     rule: >
       Runtime records are written atomically. A partial or contradictory record
-      cannot grant ownership, resume a writer, prove verification, or authorize
+      cannot grant ownership, resume a worker, prove verification, or authorize
       completion.
   - id: INV-OWN-01
     rule: >
-      At most one active writer owns a plan execution, enforced by an atomic
-      exclusive-create lock. A competing writer receives a read-only or blocked
+      At most one active worker owns a plan execution, enforced by an atomic
+      exclusive-create lock. A competing worker receives a read-only or blocked
       result; a live lock is never silently stolen.
   - id: INV-CONCURRENCY-01
     rule: >
-      A path lease generalizes the one-writer lock (INV-OWN-01) from plan scope
+      A path lease generalizes the one-worker lock (INV-OWN-01) from plan scope
       to (repository, path-region) scope, recorded atomically under
       .runtime/locks/paths/. While an execution holds a lease on a path region in
       a repository, no other execution that is not a descendant of the holder in
@@ -202,7 +202,7 @@ invariants:
       repository (regions overlap when equal, when one is a path-prefix ancestor
       of the other, or when either is the repository-wide "."). A competing plan
       receives a read-only or blocked result, the same outcome INV-OWN-01 gives a
-      competing writer; a live lease is never silently stolen. A declared
+      competing worker; a live lease is never silently stolen. A declared
       descendant is exempt because it builds on the holder rather than competing
       with it. A lease is held from execution start until the plan is delivered,
       not merely verified. It composes with INV-OWN-01 and does not redefine it.
@@ -223,7 +223,7 @@ invariants:
       dependent re-runs; a stale base never silently persists.
   - id: INV-GROUND-01
     rule: >
-      Before implementing, the writer reads and honors the target repository's own
+      Before implementing, the worker reads and honors the target repository's own
       agent guidance (AGENTS.md, CLAUDE.md, .cursor/rules, .github/copilot-
       instructions.md, and .agents/skills/*/SKILL.md), discovered live from the
       execution worktree by a deterministic runtime scan. The runtime emits data
@@ -232,16 +232,16 @@ invariants:
       into Product Knowledge; there is no per-repo profile and no plan.yaml field.
   - id: INV-GROUND-02
     rule: >
-      Precedence: the writer brief's scope and safety rules are authoritative on
-      what and where a writer may change; the repository's own guidance is
+      Precedence: the worker brief's scope and safety rules are authoritative on
+      what and where a worker may change; the repository's own guidance is
       authoritative on how to write code correctly there (conventions, patterns,
       build, test) within that scope. Where they conflict on scope or safety the
-      writer stops and reports; the repository's guidance never overrides a
+      worker stops and reports; the repository's guidance never overrides a
       Context Circuit safety or scope rule.
   - id: INV-GROUND-03
     rule: >
-      The writer brief's fact-bearing sections are a fixed template
-      (wrapper/adapters/writer-brief.md) filled by deterministic slot
+      The worker brief's fact-bearing sections are a fixed template
+      (wrapper/adapters/worker-brief.md) filled by deterministic slot
       substitution from the grounding manifest and the plan; the coordinator
       delivers the brief and authors only a one-line task focus, never the fact
       sections. The repository-grounding section is required; a preflight refuses
@@ -316,7 +316,7 @@ owners:
   run_stack_action: wrapper/adapters/WORKFLOW.md
   repository_grounding: wrapper/runtime/engine.sh
   grounding_manifest: wrapper/contracts/schemas/grounding-manifest.yaml
-  writer_brief: wrapper/adapters/writer-brief.md
+  worker_brief: wrapper/adapters/worker-brief.md
   execution_records: wrapper/contracts/schemas/execution.yaml
   worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
   verifier_result: wrapper/contracts/schemas/verifier-result.yaml
@@ -325,7 +325,7 @@ owners:
   release_boundary: wrapper/manifest.yaml
   skill_packets: .agents/skills/
   coordinator_role: agents/coordinator.md
-  worker_role: agents/writer.md
+  worker_role: agents/worker.md
   verifier_role: agents/verifier.md
   host_adapter: wrapper/adapters/AGENTS.md
   delivery_boundary: wrapper/adapters/WORKFLOW.md

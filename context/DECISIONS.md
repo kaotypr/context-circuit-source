@@ -133,12 +133,12 @@ Consequence: `cc_delivery_drift` / `cc_delivery_rebase`, with
 Decision: the worker reads and honors the target repository's own agent guidance,
 discovered live from the worktree as data (INV-GROUND-01); precedence is CC
 scope/safety on what/where and repo guidance on how within that scope
-(INV-GROUND-02); the writer brief is a fixed template filled from the manifest and
+(INV-GROUND-02); the worker brief is a fixed template filled from the manifest and
 delivered, never authored (INV-GROUND-03).
 
 Rationale: repository knowledge should be discovered and referenced, not
 hand-injected per prompt or captured into a per-repo profile.
-Consequence: no per-repo profile and no `plan.yaml` field; writer friction returns
+Consequence: no per-repo profile and no `plan.yaml` field; worker friction returns
 as `repository_friction` and becomes a proposal on the repo's own agent docs.
 Accepted from proposal `0021-change-decisions`.
 

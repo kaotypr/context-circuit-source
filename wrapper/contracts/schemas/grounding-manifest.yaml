@@ -7,8 +7,8 @@ purpose: >
   Private runtime evidence for one repository's grounding discovery: the target
   repository's own agent guidance found live in the execution worktree, plus the
   prepared-environment status. It is data, not prompt text (INV-RUNTIME-01): a
-  deterministic filesystem scan the writer brief consumes and a later reviewer
-  reads to see exactly what the writer was pointed at (INV-GROUND-01). Recorded
+  deterministic filesystem scan the worker brief consumes and a later reviewer
+  reads to see exactly what the worker was pointed at (INV-GROUND-01). Recorded
   per execution so a run is reproducible.
 
 layout:
@@ -31,7 +31,7 @@ fields:
     required: true
     description: >
       Each .agents/skills/*/SKILL.md discovered, as {name, description} read from
-      its frontmatter, so the writer can judge relevance without opening each one.
+      its frontmatter, so the worker can judge relevance without opening each one.
     item:
       name: { type: string, required: true }
       description: { type: string, required: true }

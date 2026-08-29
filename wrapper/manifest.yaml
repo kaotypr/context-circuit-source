@@ -1,7 +1,7 @@
 schema_version: 1
 owner: wrapper/manifest.yaml
 product: context-circuit
-runtime_version: 0.6.0
+runtime_version: 0.6.1
 # Published template release version (see 10-template-publication.md). Stamped
 # at publish time; the context-circuit-template git tag is authoritative.
 template_version: 0.0.1-alpha.2

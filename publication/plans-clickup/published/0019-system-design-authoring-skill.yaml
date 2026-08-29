@@ -1,0 +1,11 @@
+schema_version: 1
+plan: 0019-system-design-authoring-skill
+provider: clickup
+plan_item:
+  id: "86eyrr081"
+  url: "https://app.clickup.com/t/86eyrr081"
+task_items:
+  - task: SDA-001
+    id: "86eyrr1t3"
+    url: "https://app.clickup.com/t/86eyrr1t3"
+    synced_digest: "sha256:d65efa6d7700b02d749fb802613684beb836af20ecc12447de615bcd8bc52c0b"
