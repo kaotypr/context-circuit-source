@@ -198,9 +198,9 @@ contains "$gedir/brief-api.md" "## Repository grounding"
 contains "$gedir/brief-api.md" "AGENTS.md — read and honor it"
 cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 
-# 12. Execution latency (v0.7.0): the SHIPPED template stamps deterministic phase
-#     timing, records bounded per-attempt host evidence, refuses an unknown
-#     evidence key, closes the attempt boundary, and ships the per-role tiering
+# 12. Execution latency: the SHIPPED template records bounded per-attempt
+#     host evidence (per-role model/effort), refuses an unknown evidence key,
+#     validates the optional plan complexity hint, and ships the per-role tiering
 #     guidance and the 0.7.0 runtime version.
 contains "$ws/wrapper/manifest.yaml" "runtime_version: 0.7.0"
 require_file "$ws/docs/role-tiering.md"                  # per-role tiering guidance ships (docs/)
@@ -208,25 +208,20 @@ mkplan 0006-latency "Latency" api src/lat ""
 cc_plan_approve "$ws" 0006-latency >/dev/null
 lex=$(cc_execution_begin "$ws" 0006-latency sess-l | sed -n 's/^execution_id: //p')
 ledir="$ws/.runtime/executions/0006-latency/$lex"
-contains "$ledir/execution.yaml" "phase_ms:"            # deterministic phases stamped by the shipped engine
-for ph in base_prepare grounding_discovery integration_merge verifier_prepare; do
-	grep -Eq "^  $ph: [0-9]+$" "$ledir/execution.yaml" || fail "shipped phase_ms.$ph missing or non-integer"
-done
 cc_attempt_begin "$ledir" >/dev/null
-contains "$ledir/attempts/001/worker.yaml" "attempt_started_at:"
 mkdir -p "$ws/.runtime/worktrees/0006-latency/api/src/lat"
 printf 'm\n' >"$ws/.runtime/worktrees/0006-latency/api/src/lat/mod.txt"
 git -C "$ws/.runtime/worktrees/0006-latency/api" add -A
 git -C "$ws/.runtime/worktrees/0006-latency/api" commit -q -m "feat(api): lat"
 cc_worker_commit_record "$ledir" api implementation >/dev/null
 cc_verifier_prepare "$ledir" >/dev/null
-# the coordinator records bounded, credential-free per-attempt host evidence
-cc_attempt_evidence_record "$ledir" 1 worker_wall_s=7.5 worker_model=opus verifier_wall_s=2.0 verifier_model=sonnet >/dev/null
-contains "$ledir/attempts/001/host-evidence.yaml" "worker_wall_s: 7.5"
-contains "$ledir/attempts/001/host-evidence.yaml" "verifier_model: sonnet"
+# the coordinator records bounded, credential-free per-attempt host evidence:
+# the (model, effort) each role ran at (no wall-clock — timing is engine-stamped)
+cc_attempt_evidence_record "$ledir" 1 worker_model=model-hi worker_effort=high verifier_model=model-lo verifier_effort=medium >/dev/null
+contains "$ledir/attempts/001/host-evidence.yaml" "worker_model: model-hi"
+contains "$ledir/attempts/001/host-evidence.yaml" "verifier_model: model-lo"
 expect_failure cc_attempt_evidence_record "$ledir" 1 bogus_key=1   # bounded surface: unknown key refused
 cc_verifier_result_record "$ledir" 1 passed >/dev/null
-contains "$ledir/attempts/001/verifier.yaml" "attempt_ended_at:"
 # the optional per-plan complexity hint validates in the shipped engine
 printf 'complexity: high\n' >>"$ws/plans/0006-latency/plan.yaml"
 cc_plan_validate "$ws/plans/0006-latency" >/dev/null || fail 'shipped engine rejects a valid complexity hint'

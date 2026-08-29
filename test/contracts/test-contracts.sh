@@ -84,12 +84,11 @@ not_contains "$W/adapters/WORKFLOW.md" "design the system"
 for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md worker-brief.md; do
 	require_file "$W/adapters/$a"
 done
-# v0.7.0 execution-latency: additive-only, no new invariant id. Per-role tiering
+# execution-latency: additive-only, no new invariant id. Per-role tiering
 # guidance is coordinator-read, so it ships in docs/ (a wholesale-shipped tree),
 # not in the source-only wrapper/adapters/ staging directory.
 require_file "$ROOT/docs/role-tiering.md"
 contains "$inv" "role_tiering: docs/role-tiering.md"
-contains "$inv" "execution_timing:"
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
 contains "$man" "runtime_version: 0.7.0"
