@@ -22,6 +22,14 @@ version index; each scope owns its own design.
   invariant; INV-CONCURRENCY-01/02) and model tiering (a coordinator/host concern;
   INV-HOST-01, INV-RUNTIME-01) — while the deterministic runtime stays thin. Start
   at [execution-latency/design.md](./execution-latency/design.md).
+- [runtime-opacity/](./runtime-opacity/) — hardening the **invoke-not-read**
+  boundary: the coordinator invokes `wrapper/runtime/engine.sh` as an opaque tool
+  and must never read its implementation. A live v0.6 run showed a real coordinator
+  read the engine source anyway, tripping the maintainer access gate
+  non-deterministically. The fix strengthens the INV-RUNTIME-01 corollary (say
+  "must not read," not "need not"; state it once and reference it) and closes any
+  skill information gap that tempts the read — **no new invariant**. Start at
+  [runtime-opacity/design.md](./runtime-opacity/design.md).
 
 ## Layout convention
 
@@ -40,5 +48,8 @@ mode (contract delta in
 **execution-latency** introduces **no new skill and no new invariant** — its
 safety is existing INV-CONCURRENCY-01/02 (overlap) and INV-HOST-01 /
 INV-RUNTIME-01 (tiering); its only contract surface is additive schema fields and
-coordinator policy. The canonical owners stay under `wrapper/`
-(`wrapper/contracts/invariants.yaml`).
+coordinator policy. **runtime-opacity** introduces **no new invariant** — it
+strengthens the coordinator-side corollary of INV-RUNTIME-01 (invoke the engine,
+never read it) as a wording and single-ownership cleanup across
+`wrapper/adapters/AGENTS.md` and the invoking skills. The canonical owners stay
+under `wrapper/` (`wrapper/contracts/invariants.yaml`).
