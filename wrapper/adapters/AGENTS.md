@@ -38,8 +38,15 @@ are not hidden.
 ## Runtime
 
 `wrapper/runtime/engine.sh` is a small host-neutral deterministic library for
-workspace, Git, and execution-state operations. You never need to read its
-implementation to understand or execute a plan; the execution brief is enough.
+workspace, Git, and execution-state operations. A role that invokes the engine
+**must not read** `wrapper/runtime/engine.sh` or any runtime implementation file:
+invoke actions as `sh wrapper/runtime/engine.sh <action> <args>` and consume their
+printed results. The invoking skill and the execution brief carry everything needed
+to drive every action by construction, and because the runtime holds no prompts,
+Product Knowledge interpretation, or routing policy (INV-RUNTIME-01) there is
+nothing in it to interpret — only actions to call. This is the coordinator-side
+corollary of INV-RUNTIME-01; every skill that drives the engine references this
+statement rather than restating it.
 
 ## Host adapters
 

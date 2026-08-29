@@ -27,10 +27,10 @@ broken.
 
 ## Runtime actions — invoke, never read the engine
 
-You never need to open the runtime implementation; everything the loop needs is
-below. Invoke each as `sh wrapper/runtime/engine.sh <action> <args>` from the
-workspace directory (its root is the current directory). Reading
-`wrapper/runtime/engine.sh` itself is out of scope for the coordinator — use these
+You **must not read** `wrapper/runtime/engine.sh` or any runtime implementation
+file (`wrapper/adapters/AGENTS.md` → Runtime owns this boundary); everything the
+loop needs is below. Invoke each as `sh wrapper/runtime/engine.sh <action> <args>`
+from the workspace directory (its root is the current directory) — use these
 actions as a tool.
 
 - `run-stack-ready <plan-id> ...` — partition the set; prints one `<plan>: <bucket>` line each.

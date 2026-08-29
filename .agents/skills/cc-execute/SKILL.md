@@ -42,9 +42,10 @@ verifier steps, or repairs. The approved plan is the scope.
 
 ## Runtime actions — invoke, never read the engine
 
-You never need to open the runtime implementation; invoke each action as
+You **must not read** `wrapper/runtime/engine.sh` or any runtime implementation
+file (`wrapper/adapters/AGENTS.md` → Runtime owns this boundary): the actions below
+and the execution brief carry everything needed to drive it. Invoke each action as
 `sh wrapper/runtime/engine.sh <action> <args>` from the workspace directory.
-Reading `wrapper/runtime/engine.sh` itself is out of scope for the coordinator.
 
 - `execution-begin . <plan-id> <owner>` — preflight, snapshot, worktree(s), and
   repository-grounding discovery; prints `execution_id`.
