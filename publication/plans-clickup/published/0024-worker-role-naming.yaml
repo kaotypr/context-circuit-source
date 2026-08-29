@@ -1,0 +1,11 @@
+schema_version: 1
+plan: 0024-worker-role-naming
+provider: clickup
+plan_item:
+  id: "86eyt0wzu"
+  url: "https://app.clickup.com/t/86eyt0wzu"
+task_items:
+  - task: RENAME-001
+    id: "86eyt0x14"
+    url: "https://app.clickup.com/t/86eyt0x14"
+    synced_digest: "sha256:65d33fdf70364474e8ffc69aa77948755d681f432b0a3e8ffabc49367b7556c3"
