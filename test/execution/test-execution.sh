@@ -91,7 +91,7 @@ test "$first_commit" != "$repair_commit" || fail "repair did not create a new co
 cc_verifier_result_record "$edir3" 2 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir3")"
 
-# --- concurrent second writer is blocked (one active writer) ---
+# --- concurrent second worker is blocked (one active worker) ---
 expect_failure cc_lock_acquire "$ws" 0001-checkout other-session
 
 pass 'execution'

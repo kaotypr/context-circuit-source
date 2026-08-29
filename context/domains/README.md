@@ -26,7 +26,7 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 - [Workspace orientation and repository binding](repository-binding/README.md) — orientation, portable identity, host-local bindings, fail-closed resolution. Status: accepted.
 - [Planning and plan review](plan-review/README.md) — grounded plan authoring and non-executing review. Status: accepted.
 - [Plan approval](plan-approval/README.md) — the explicit conversational `draft → approved` gate. Status: accepted.
-- [Plan execution](plan-execution/README.md) — one-writer loop, isolated worktrees, repair, preserved runtime records. Status: accepted.
+- [Plan execution](plan-execution/README.md) — one-worker loop, isolated worktrees, repair, preserved runtime records. Status: accepted.
 - [Run-stack](run-stack/README.md) — executing a set of approved plans in one run: inter-plan dependencies, path leases, execution bases, scheduling, failure containment, drift guard. Status: accepted.
 - [Repository grounding](repository-grounding/README.md) — the worker honors the target repository's own agent guidance, discovered live and delivered via a generated brief. Status: accepted.
 - [Verification](verification/README.md) — independent read-only check; sole authority for `verified`. Status: accepted.

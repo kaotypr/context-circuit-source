@@ -11,9 +11,10 @@ set -eu
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
-# the shipped brief template is promoted to the workspace root on release; mirror
-# that here so cc_writer_brief_assemble can find it in the fixture.
-cp "$ROOT/wrapper/adapters/writer-brief.md" "$ws/writer-brief.md"
+# the shipped brief template is promoted beside the runtime on release; mirror
+# that here so cc_worker_brief_assemble can find it in the fixture.
+mkdir -p "$ws/wrapper/runtime"
+cp "$ROOT/wrapper/adapters/worker-brief.md" "$ws/wrapper/runtime/worker-brief.md"
 
 # --- a rich repo: agent guidance + a skill + cursor rules + a lockfile ---
 cc_fx_repo "$ws" widgets development
@@ -49,10 +50,10 @@ printf '%s' "$dir" | grep -q "widget-style — DLS components" || fail "directiv
 printf '%s' "$dir" | grep -q "STOP and report" || fail "directive missing the precedence/conflict stop"
 
 # 3. brief assembly fills every slot and passes the preflight
-cc_writer_brief_assemble "$ws" "$edir" widgets "Add the widget module." >/dev/null
+cc_worker_brief_assemble "$ws" "$edir" widgets "Add the widget module." >/dev/null
 brief="$edir/brief-widgets.md"
 require_file "$brief"
-contains "$brief" "Writer brief — plan 0001-widget"
+contains "$brief" "Worker brief — plan 0001-widget"
 contains "$brief" "## Repository grounding"
 contains "$brief" "AGENTS.md — read and honor it"
 not_contains "$brief" "@@GROUNDING@@"          # the slot is filled, not left raw
@@ -74,7 +75,7 @@ contains "$mf2" "environment: no-toolchain"    # no lockfile in the seed repo
 dir2=$(cc_grounding_directive "$mf2")
 printf '%s' "$dir2" | grep -q "No repository agent guidance was discovered" || fail "doc-less directive wrong"
 # the brief still carries the (empty-variant) grounding section and passes preflight
-cc_writer_brief_assemble "$ws" "$edir2" plain "Add the plain module." >/dev/null
+cc_worker_brief_assemble "$ws" "$edir2" plain "Add the plain module." >/dev/null
 contains "$edir2/brief-plain.md" "## Repository grounding"
 cc_brief_preflight "$edir2/brief-plain.md" >/dev/null
 
@@ -83,9 +84,9 @@ cc_harden_worktree "$wr" | grep -q "environment: ready" || fail "lockfile repo s
 cc_harden_worktree "$ws/repositories/plain" | grep -q "environment: no-toolchain" || fail "toolchain-less repo should be no-toolchain"
 
 # --- preflight refuses a brief missing / with an unfilled grounding slot ---
-printf '# Writer brief\n\nno grounding here\n' >"$ws/bad-brief.md"
+printf '# Worker brief\n\nno grounding here\n' >"$ws/bad-brief.md"
 expect_failure cc_brief_preflight "$ws/bad-brief.md"
-printf '# Writer brief\n\n## Repository grounding\n\n@@GROUNDING@@\n' >"$ws/unfilled-brief.md"
+printf '# Worker brief\n\n## Repository grounding\n\n@@GROUNDING@@\n' >"$ws/unfilled-brief.md"
 expect_failure cc_brief_preflight "$ws/unfilled-brief.md"
 
 # --- contracts: precedence + friction->proposal are owned, not duplicated ---

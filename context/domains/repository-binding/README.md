@@ -43,7 +43,7 @@ host-local bindings (`path` + user-selected `anchor_branch`), the reserved
 
 Outside: the execution worktree lifecycle (see [plan-execution](../plan-execution/README.md)),
 credential storage, filesystem scanning for checkouts, and using a bound source
-checkout as the writer worktree.
+checkout as the worker worktree.
 
 ## Behavior
 

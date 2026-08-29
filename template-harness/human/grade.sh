@@ -287,7 +287,7 @@ while IFS= read -r line; do
 			else bad "grounding_manifest_recorded ($gm_pid/$gm_repo: manifest missing or without $gm_file)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		file_grounded)
 			# val "<plan>:<repo>:<relpath>:<needle>" — the committed artifact honors a
-			# convention stated ONLY in the repo's own guidance: proof the writer
+			# convention stated ONLY in the repo's own guidance: proof the worker
 			# discovered, read, and honored it (INV-GROUND-01/02). The needle is not
 			# required by the plan, so its presence can only come from the repo guidance.
 			fg_pid=${val%%:*}; fg_r1=${val#*:}; fg_repo=${fg_r1%%:*}; fg_r2=${fg_r1#*:}
@@ -297,7 +297,7 @@ while IFS= read -r line; do
 			fg_wt=$(cc_scalar "$fg_edir/repositories/$fg_repo.yaml" worktree 2>/dev/null)
 			fg_target="$fg_wt/$fg_path"
 			if [ -f "$fg_target" ] && grep -Fq "$fg_needle" "$fg_target"; then ok "file_grounded ($fg_path honors repo convention '$fg_needle')"
-			else bad "file_grounded ($fg_path missing '$fg_needle' — writer did not honor the repo's own guidance)"; FAIL_A=$((FAIL_A+1)); fi ;;
+			else bad "file_grounded ($fg_path missing '$fg_needle' — worker did not honor the repo's own guidance)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"
