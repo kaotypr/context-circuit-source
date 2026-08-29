@@ -29,13 +29,18 @@ then:
    verbatim — do not author or omit the repository-grounding facts, and do not
    read the runtime implementation to compose them (INV-GROUND-01/03).
 3. Launch exactly one worker with that brief and the assigned worktrees
-   (see `agents/worker.md`). The worker reads and honors the repository's own
-   agent guidance, executes all tasks in dependency order, and commits each
+   (see `agents/worker.md`), at the worker's configured `(model, effort)` (see
+   "Model & effort per role" below). The worker reads and honors the repository's
+   own agent guidance, executes all tasks in dependency order, and commits each
    affected repository. Record each commit with `worker-commit-record` and the
    handoff with `worker-handoff-record` (including any `repository_friction`).
 4. Launch one independent, read-only verifier (see `agents/verifier.md`) after
-   `verifier-prepare`. It inspects the latest commit of every affected
-   repository. Record its outcome with `verifier-result-record`.
+   `verifier-prepare`, at the verifier's configured `(model, effort)`. It inspects
+   the latest commit of every affected repository. Record its outcome with
+   `verifier-result-record`.
+5. Record the observed inference wall-clock and the `(model, effort)` each role
+   ran at as host evidence with `attempt-evidence-record` (below). This is
+   evidence only; it never changes a verdict or the failure counter.
 
 Do not require confirmation for individual tasks, branches, worktrees, commits,
 verifier steps, or repairs. The approved plan is the scope.
@@ -55,6 +60,10 @@ and the execution brief carry everything needed to drive it. Invoke each action 
 - `attempt-begin <execution-dir>` · `worker-commit-record <execution-dir> <repo> implementation|repair`
   · `worker-handoff-record <execution-dir> <handoff-file>`.
 - `verifier-prepare <execution-dir>` · `verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
+- `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record
+  bounded per-attempt host evidence (`worker_wall_s`, `verifier_wall_s`,
+  `worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`,
+  `complexity`, `escalated`). The runtime stores it and never interprets it.
 - `repair-allowed <execution-dir>`.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
@@ -67,6 +76,34 @@ the same execution. Check `repair-allowed`, begin a new attempt, let the worker
 create a new commit for every repository it changes, and verify again. The
 worker-failure counter increments on each rejection (including the first); at
 three failures execution stops and all evidence is preserved.
+
+When the worker's role has `escalate_on_repair: true`, launch the repair attempt
+at a `(model, effort)` **raised above** the configured start (see below);
+escalation changes only which model runs the attempt, never what a rejection
+costs — the failure counter and the three-failure limit are untouched. Record the
+raised `(model, effort)` and `escalated=true` with `attempt-evidence-record`.
+
+## Model & effort per role
+
+Spawn the worker and verifier at the concrete `(model, effort)` configured for
+each role in the host-local role-tiering config, with adapter-shipped defaults for
+any unset role (`wrapper/adapters/role-tiering.md` owns the shape, defaults, and
+escalation ladder). This is a coordinator/host decision — the runtime is
+model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
+(INV-HOST-01). It changes cost and speed, never meaning.
+
+- Attempt 1 runs each role at its configured start. If the plan carries
+  `complexity: high`, nudge the worker's attempt-1 start one step above the
+  configured `(model, effort)`; a hard-pinned role ignores the hint.
+- On repair, raise a role above its start only when its `escalate_on_repair` is
+  true; a hard pin (`false`) holds the same setting at every attempt, even the
+  third, and you report that pin's cost honestly rather than silently escalating.
+- Verifier independence is role + read-only, never model class (INV-VERIFY-01/02):
+  a smaller-model verifier — even the same model as the worker — is still a
+  separate independent agent over committed state. Never collapse the two roles
+  or let the verifier reuse the worker's context for cost.
+- Record the `(model, effort)` used per attempt with `attempt-evidence-record`;
+  never surface it to a lay user except under explicit diagnostics.
 
 ## Blocked verifier
 

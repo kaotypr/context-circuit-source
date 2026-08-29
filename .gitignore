@@ -10,6 +10,11 @@ dist/
 /template/repositories/
 /template/repositories.local.yaml
 
+# Per-user, host-local role tiering (model/effort). Preferences differ per person
+# and per host, so it is never shipped and never portable (role-tiering.md).
+/role-tiering.local.yaml
+/template/role-tiering.local.yaml
+
 # Disposable output from the human-simulated template test harness.
 /template-harness/human/.out/
 /template-harness/human/.live.log
