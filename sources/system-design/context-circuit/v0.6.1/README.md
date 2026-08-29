@@ -27,6 +27,13 @@ version index; each scope owns its own design.
   project's current/next version. A delta on v0.6
   [system-design-authoring](../v0.6/system-design-authoring/). Start at
   [design-layout-grouping/design.md](./design-layout-grouping/design.md).
+- [worker-role-naming/](./worker-role-naming/) — unify the implementing execution
+  role's name on **worker**, retiring **writer** as a synonym across roles,
+  contracts, runtime, adapters, skills, and Product Knowledge (including the
+  "writer brief" → "worker brief"). A pure rename: no behavior, authority, gate,
+  or contract semantics change, and no core contract bump. Coordinates with
+  [writer-brief-placement](./writer-brief-placement/) on the same brief file.
+  Start at [worker-role-naming/design.md](./worker-role-naming/design.md).
 
 ## Layout convention
 
