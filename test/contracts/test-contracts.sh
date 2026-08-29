@@ -18,7 +18,7 @@ for concern in plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
 	base_selection run_stack_action repository_grounding grounding_manifest \
-	writer_brief external_surface publication_config publication_record \
+	worker_brief external_surface publication_config publication_record \
 	publication_thread_record; do
 	contains "$inv" "$concern:"
 done
@@ -81,10 +81,10 @@ not_contains "$inv" "INV-DESIGN"
 not_contains "$W/adapters/WORKFLOW.md" "design the system"
 
 # --- adapters and roles present; role aliases removed ---
-for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md writer-brief.md; do
+for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md worker-brief.md; do
 	require_file "$W/adapters/$a"
 done
-for r in coordinator writer verifier; do
+for r in coordinator worker verifier; do
 	require_file "$ROOT/agents/$r.md"
 done
 for alias in repository-worker reviewer; do

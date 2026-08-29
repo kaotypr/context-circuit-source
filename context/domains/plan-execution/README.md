@@ -28,10 +28,10 @@ workflows:
 
 ## Summary
 
-Implementing an approved plan with one bounded writer. Execution is a separate
+Implementing an approved plan with one bounded worker. Execution is a separate
 authorization from approval. Route "execute plan `<id>`", repair, and
 resume/recovery requests here. Owned by the `cc-execute` skill and the
-`agents/writer.md` worker role.
+`agents/worker.md` worker role.
 
 ## Scope
 
@@ -67,8 +67,8 @@ INV-PLAN-05); v0.5 single-plan plans stay `1` and behave as before.
 
 The worker commits each changed repository before verification; every repair
 creates a new commit and a prior commit is never amended to conceal a repair
-(INV-EXEC-04). At most one active writer owns a plan execution, enforced by an
-atomic exclusive-create lock; a competing writer gets a read-only or blocked
+(INV-EXEC-04). At most one active worker owns a plan execution, enforced by an
+atomic exclusive-create lock; a competing worker gets a read-only or blocked
 result and a live lock is never silently stolen (INV-OWN-01).
 
 The worker-failure counter increments on each verifier rejection including the
@@ -77,7 +77,7 @@ initial implementation, to a maximum of three, after which execution stops
 worktrees, commits, handoffs, verifier evidence, repair attempts, and runtime
 records; failed work is never silently cleaned up (INV-PRESERVE-01). Runtime
 records are written atomically; a partial or contradictory record cannot grant
-ownership, resume a writer, prove verification, or authorize completion
+ownership, resume a worker, prove verification, or authorize completion
 (INV-RUNTIME-01, INV-RUNTIME-02).
 
 ## Execution brief, snapshot, and repair discipline
@@ -118,19 +118,19 @@ verification proof.
 
 ## Constraints and edge cases
 
-The writer never edits the anchor checkout, changes approval/completion status,
+The worker never edits the anchor checkout, changes approval/completion status,
 marks its own work verified, claims independent verification, rewrites or accepts
 Product Knowledge, expands scope silently, or merges/pushes/publishes.
 
 ## Implementation references
 
-- `.agents/skills/cc-execute/SKILL.md`, `agents/writer.md`
+- `.agents/skills/cc-execute/SKILL.md`, `agents/worker.md`
 - `wrapper/runtime/engine.sh`: `cc_execution_begin` (base-aware for dependents),
   `cc_execution_next_id`, `cc_exec_set`, `cc_attempt_begin`,
   `cc_worker_commit_record`, `cc_worker_handoff_record`, `cc_lock_acquire`,
   `cc_lock_owner`, `cc_lock_release`, `cc_repair_allowed`, `cc_recovery_inspect`;
   base selection and grounding: `cc_base_prepare`, `cc_discover_repo_grounding`,
-  `cc_writer_brief_assemble` (see the run-stack and repository-grounding domains)
+  `cc_worker_brief_assemble` (see the run-stack and repository-grounding domains)
 - `wrapper/contracts/schemas/execution.yaml`,
   `wrapper/contracts/schemas/worker-handoff.yaml`
 - `wrapper/contracts/invariants.yaml`: INV-EXEC-01, INV-EXEC-02, INV-EXEC-03,

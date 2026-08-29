@@ -38,7 +38,7 @@ confirmation card and carries no hidden confirmation token. Route "approve plan
 Inside: the `draft → approved` transition and its readiness checks, and the
 synchronized task-status projection.
 
-Outside: execution and the writer loop (see
+Outside: execution and the worker loop (see
 [plan-execution](../plan-execution/README.md)), plan authoring/review (see
 [plan-review](../plan-review/README.md)), and completion.
 

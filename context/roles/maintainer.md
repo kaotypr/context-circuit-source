@@ -99,4 +99,4 @@ provenance was retired. Raw `sources/` was not scanned.
 ## Acceptance notes
 
 Accepted 2026-08-24. Agent execution roles remain under `agents/` (coordinator,
-writer, verifier) and are not replaced by this page.
+worker, verifier) and are not replaced by this page.

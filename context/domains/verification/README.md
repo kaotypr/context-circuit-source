@@ -39,7 +39,7 @@ Inside: independent verification of the latest commit of every affected
 repository, the outcome vocabulary, worker-claim-is-not-evidence, write and
 tip-change rejection, and the host-blocked fallback.
 
-Outside: repairing the implementation, changing plan status, and the writer loop
+Outside: repairing the implementation, changing plan status, and the worker loop
 ([plan-execution](../plan-execution/README.md)).
 
 ## Behavior

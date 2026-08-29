@@ -9,7 +9,8 @@ required AGENTS.md
 required CLAUDE.md
 required WORKFLOW.md
 required README.md
-required writer-brief.md
+# Runtime-only brief template, promoted beside the runtime (not the root).
+required wrapper/runtime/worker-brief.md
 
 # Blank workspace seed (from template/).
 required .gitignore
@@ -78,7 +79,7 @@ required .agents/skills/cc-archive/SKILL.md
 required .agents/skills/cc-deliver/SKILL.md
 required .agents/skills/cc-publish/SKILL.md
 required agents/coordinator.md
-required agents/writer.md
+required agents/worker.md
 required agents/verifier.md
 
 # Removed from the staged tree and verified absent.

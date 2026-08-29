@@ -10,7 +10,7 @@
 # branch/worktree preparation, plan structure and approval-state validation,
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
-# the three-failure counter, one-writer locking, completion eligibility,
+# the three-failure counter, one-worker locking, completion eligibility,
 # implementation completion records, context-impact handoff references, and
 # recovery inspection.
 #
@@ -593,7 +593,7 @@ cc_base_prepare() {
 # ---------------------------------------------------------------------------
 # Repository grounding (INV-GROUND-01/02/03) — discover the target repository's
 # own agent guidance from the worktree, harden the worktree, and assemble the
-# writer brief by deterministic slot substitution of a shipped template. The
+# worker brief by deterministic slot substitution of a shipped template. The
 # runtime emits DATA (a manifest) and a report-style directive, never a model
 # prompt (INV-RUNTIME-01); the brief prose lives in wrapper/adapters/, not here.
 # ---------------------------------------------------------------------------
@@ -668,7 +668,7 @@ cc_discover_repo_grounding() {
 	return 0
 }
 
-# cc_grounding_directive MANIFEST_FILE -> the writer-facing grounding directive,
+# cc_grounding_directive MANIFEST_FILE -> the worker-facing grounding directive,
 # rendered deterministically from the manifest (empty vs non-empty variants).
 cc_grounding_directive() {
 	cc_gd_mf="$1"; [ -f "$cc_gd_mf" ] || { cc_fail GROUNDING_MANIFEST_MISSING "$cc_gd_mf"; return 1; }
@@ -699,15 +699,15 @@ cc_brief_preflight() {
 	return 0
 }
 
-# cc_writer_brief_assemble ROOT EXEC_DIR REPO TASK_FOCUS -> assemble the writer
+# cc_worker_brief_assemble ROOT EXEC_DIR REPO TASK_FOCUS -> assemble the worker
 # brief by deterministic slot substitution of the shipped template, filling the
 # grounding directive + environment from the recorded manifest and the rest from
 # the execution record and plan snapshot. Writes brief-<repo>.md and preflights it.
-cc_writer_brief_assemble() {
+cc_worker_brief_assemble() {
 	cc_wb_root="$1"; cc_wb_edir="$2"; cc_wb_repo="$3"; cc_wb_tf="${4:-Implement the plan.}"
 	cc_wb_tpl=""
-	[ -f "$cc_wb_root/writer-brief.md" ] && cc_wb_tpl="$cc_wb_root/writer-brief.md"
-	[ -z "$cc_wb_tpl" ] && [ -f "$cc_wb_root/wrapper/adapters/writer-brief.md" ] && cc_wb_tpl="$cc_wb_root/wrapper/adapters/writer-brief.md"
+	[ -f "$cc_wb_root/wrapper/runtime/worker-brief.md" ] && cc_wb_tpl="$cc_wb_root/wrapper/runtime/worker-brief.md"
+	[ -z "$cc_wb_tpl" ] && [ -f "$cc_wb_root/wrapper/adapters/worker-brief.md" ] && cc_wb_tpl="$cc_wb_root/wrapper/adapters/worker-brief.md"
 	[ -n "$cc_wb_tpl" ] || { cc_fail BRIEF_TEMPLATE_MISSING; return 1; }
 	cc_wb_rf="$cc_wb_edir/repositories/$cc_wb_repo.yaml"
 	[ -f "$cc_wb_rf" ] || { cc_fail EXECUTION_REPOSITORY_UNKNOWN "$cc_wb_repo"; return 1; }
@@ -945,10 +945,10 @@ cc_plan_restore() {
 }
 
 # ---------------------------------------------------------------------------
-# One-writer execution locks
+# One-worker execution locks
 # ---------------------------------------------------------------------------
 
-# cc_lock_acquire ROOT PLAN OWNER -> exclusive-create writer lock for a plan
+# cc_lock_acquire ROOT PLAN OWNER -> exclusive-create worker lock for a plan
 cc_lock_acquire() {
 	cc_la_root="$1"; cc_la_plan="$2"; cc_la_owner="$3"
 	[ -n "$cc_la_owner" ] || { cc_fail LOCK_OWNER_MISSING; return 1; }
@@ -983,7 +983,7 @@ cc_lock_release() {
 }
 
 # ---------------------------------------------------------------------------
-# Path leases (INV-CONCURRENCY-01) — composes with the one-writer lock above.
+# Path leases (INV-CONCURRENCY-01) — composes with the one-worker lock above.
 # A lease reserves (repository, path-region) scope. Records live at
 # .runtime/locks/paths/<repo>/<holder>.yaml and are preserved on release.
 # ---------------------------------------------------------------------------
@@ -1669,7 +1669,7 @@ cc_main() {
 		discover-repo-grounding) cc_discover_repo_grounding "$@" ;;
 		harden-worktree)         cc_harden_worktree "$@" ;;
 		grounding-directive)     cc_grounding_directive "$@" ;;
-		writer-brief-assemble)   cc_writer_brief_assemble "$@" ;;
+		worker-brief-assemble)   cc_worker_brief_assemble "$@" ;;
 		brief-preflight)         cc_brief_preflight "$@" ;;
 		lease-check)             cc_lease_check "$@" ;;
 		lease-acquire)           cc_lease_acquire "$@" ;;

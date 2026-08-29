@@ -17,7 +17,7 @@ retrievable.
 | Context unit / context index | One knowledge unit; the retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to units. |
 | Plan / plan status | Human-reviewed intent for an outcome; its human-owned `draft`/`approved`/`done` state. |
 | Execution | One runtime attempt to implement an approved plan, with one worker and one independent verifier. |
-| Worker / verifier | The single writer role for an execution; the independent read-only role that checks the worker's latest commits. |
+| Worker / verifier | The single role that implements an approved plan and commits its changes for an execution; the independent read-only role that checks the worker's latest commits. |
 | Repair attempt | A new worker commit plus a new independent check after a failed verification. |
 | Completion | The human decision to mark a plan done after a verified execution. |
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
@@ -26,11 +26,11 @@ retrievable.
 | Host-blocked | A state where the environment cannot run a required step, so the coordinator reports it and preserves the work rather than faking it. |
 | Plan stack | A named set of approved plans executed in one run (v0.6 run-stack); ordered and overlapped safely with no new authority. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`); declaring it makes a plan `schema_version: 2`. Distinct from a task's `depends_on`. |
-| Path lease | A `(repository, path-region)` reservation extending the one-writer lock; overlapping plans serialize, disjoint ones run together. |
+| Path lease | A `(repository, path-region)` reservation extending the one-worker lock; overlapping plans serialize, disjoint ones run together. |
 | Execution base / integration base | The commit a plan builds on: anchor tip, a predecessor branch (stack), or a runtime-authored integration merge (≥2 predecessors). |
 | Drift guard | Rebase-onto-current-anchor-tip + re-verify before a pull request when the recorded base has diverged. |
 | Repository grounding | The worker honoring the target repository's own agent guidance, discovered live from the worktree. |
-| Grounding manifest / writer brief | The discovered guidance (files, skills, environment) for one execution; the assembled instructions handed to the worker. |
+| Grounding manifest / worker brief | The discovered guidance (files, skills, environment) for one execution; the assembled instructions handed to the worker. |
 | System design | A structured source describing the shape of a change, authored via `cc-system-design`; a source, not a lifecycle stage. |
 | Publication | A user-declared, manually-triggered pipeline (`publication/<subject>-<provider>/`, created on first use) that publishes Context Circuit data to an external system; orthogonal to the core workflow (v0.6 external-surface). |
 | Publish / `cc-publish` | Sending workspace data outward via the manual `cc-publish` skill; reserved for the external surface. Git delivery is "push" / "open a pull request", never "publish" — the two never share a word. |
@@ -58,7 +58,7 @@ authority is settled by the runtime contracts under `wrapper/contracts/`.
 Accepted from proposal `0001-terminology-glossary` on 2026-08-24. Extended
 2026-08-27 from proposal `0022-change-terminology` with the v0.6 terms (plan
 stack, path lease, execution/integration base, drift guard, repository grounding,
-grounding manifest, writer brief, system design), mirrored in `docs/terminology.md`.
+grounding manifest, worker brief, system design), mirrored in `docs/terminology.md`.
 Extended 2026-08-28 from proposal `0025-change-terminology`: the Delivery row drops
 "publishing" (git delivery no longer uses the word), and the external-surface terms
 (publication, publish/`cc-publish`, publication kind, publication `instructions`) are

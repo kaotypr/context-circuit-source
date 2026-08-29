@@ -15,7 +15,7 @@ it lives under `context/references/`, one sub-directory per service. A wrapper
 repo is not its service: keep the two apart.
 
 Preserve dirty state and runtime evidence. Never store credentials or infer
-authorization from eligibility, tests, Git state, or provider status. Writers
+authorization from eligibility, tests, Git state, or provider status. Workers
 and verifiers stay isolated, and human-gated actions remain separate.
 
 A policy change must not live only in a context page: an update that changes

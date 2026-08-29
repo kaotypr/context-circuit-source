@@ -37,9 +37,9 @@ cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
 cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
 cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
-# The writer-brief template is an adapter-layer artifact used at runtime; promote
-# it to the workspace root alongside the other adapters.
-cp "$source_root/wrapper/adapters/writer-brief.md" "$stage_tree/writer-brief.md"
+# The worker-brief template is a runtime-only artifact; promote it beside the
+# runtime that consumes it (wrapper/runtime/) rather than to the user-facing root.
+cp "$source_root/wrapper/adapters/worker-brief.md" "$stage_tree/wrapper/runtime/worker-brief.md"
 
 # Blank workspace seed from the template.
 cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"

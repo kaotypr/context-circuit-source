@@ -35,7 +35,7 @@ predecessors' verified commits (based_on / built_on), with nothing marked done.
 Case 11 exercises v0.6 repository grounding: the connected repo ships its own
 `AGENTS.md` stating a convention the plan never mentions (every file starts with
 `// @grounded`). The grader proves the grounding manifest was recorded and that the
-committed file carries that header — the observable proof that the writer
+committed file carries that header — the observable proof that the worker
 discovered, read, and honored the repository's own agent guidance.
 
 Case 12 exercises v0.6 run-stack across TWO repositories: seven approved plans
