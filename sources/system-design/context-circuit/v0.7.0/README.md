@@ -15,6 +15,13 @@ version index; each scope owns its own design.
   new skill* (`cc-refine`), and *a distinct execution mode bracketed by the normal
   spine* (one plan, one lease, one independent verify + baseline freeze at the
   end). Start at [ui-refinement/design.md](./ui-refinement/design.md).
+- [execution-latency/](./execution-latency/) — making actions **finish sooner
+  without changing what they mean**. Measure first (two clocks: deterministic vs
+  inference), then apply two inference-layer levers whose safety the contract
+  already guarantees — overlapping provably-independent run-stack plans (no new
+  invariant; INV-CONCURRENCY-01/02) and model tiering (a coordinator/host concern;
+  INV-HOST-01, INV-RUNTIME-01) — while the deterministic runtime stays thin. Start
+  at [execution-latency/design.md](./execution-latency/design.md).
 
 ## Layout convention
 
@@ -25,9 +32,13 @@ semver going forward (v0.6.1 `design-layout-grouping`).
 
 ## Authority
 
-v0.7.0 adds no owner it does not name and duplicates no rule. It introduces one new
-capability (`cc-refine`), one new plan acceptance *kind* (human-gated visual
-acceptance), and provisional invariants for the interactive mode. The canonical
-owners stay under `wrapper/` (`wrapper/contracts/invariants.yaml`); the contract
-delta is summarized in
-[ui-refinement/skill-and-schema.md](./ui-refinement/skill-and-schema.md).
+v0.7.0 adds no owner it does not name and duplicates no rule. **ui-refinement**
+introduces one new capability (`cc-refine`), one new plan acceptance *kind*
+(human-gated visual acceptance), and provisional invariants for the interactive
+mode (contract delta in
+[ui-refinement/skill-and-schema.md](./ui-refinement/skill-and-schema.md)).
+**execution-latency** introduces **no new skill and no new invariant** — its
+safety is existing INV-CONCURRENCY-01/02 (overlap) and INV-HOST-01 /
+INV-RUNTIME-01 (tiering); its only contract surface is additive schema fields and
+coordinator policy. The canonical owners stay under `wrapper/`
+(`wrapper/contracts/invariants.yaml`).
