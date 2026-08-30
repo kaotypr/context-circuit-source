@@ -12,10 +12,10 @@ default way a field change is made.
 Flow:
 
 1. **Load the three local layers** — the plan as-found (`plans/<plan>/`), the intent
-   (`desired/<plan-id>.yaml`), and the last snapshot (`published/<plan-id>.yaml`
-   `fields:`). If no `desired/` file exists, derive a first draft from the
+   (`intent/<plan-id>.yaml`), and the last snapshot (`published/<plan-id>.yaml`
+   `fields:`). If no `intent/` file exists, derive a first draft from the
    `instructions:` schedule policy and write it (the only write the preview makes,
-   and only to the publication's own `desired/` — never to `plans/`).
+   and only to the publication's own `intent/` — never to `plans/`).
 2. **Render a plain-language diff.** For each plan and task, show intended vs
    last-pushed values in the human format, marking added / changed / unchanged:
 
@@ -28,7 +28,7 @@ Flow:
    ```
 
 3. **Converse and edit.** The human and agent discuss; edits land in
-   `desired/<plan-id>.yaml`; re-preview until it reads right. No provider call has
+   `intent/<plan-id>.yaml`; re-preview until it reads right. No provider call has
    happened yet.
 4. **Publish on an explicit go.** Only "publish" pushes through the host/MCP tools
    and then refreshes the `fields:` snapshot in the record. Preview and publish are
@@ -40,8 +40,8 @@ The preview is a **mode of an existing skill**, not a new skill, route, or autho
 ## The default diff needs no provider read
 
 Because the record now snapshots what was pushed
-([desired-and-record.md](./desired-and-record.md)), the default preview diffs
-**desired vs last-published snapshot** entirely from local data — the common "let
+([intent-and-record.md](./intent-and-record.md)), the default preview diffs
+**intent vs last-published snapshot** entirely from local data — the common "let
 me review the dates before I re-publish" case touches the provider zero times.
 
 ## Optional: the display-only drift read
@@ -57,7 +57,7 @@ provider's *current* field values and add a third column:
 This read is strictly bounded:
 
 - **Display only.** The values are shown in the diff and then discarded. **Nothing
-  read is written** to `desired/`, to the record, to `plan.yaml`, or to any
+  read is written** to `intent/`, to the record, to `plan.yaml`, or to any
   workspace file.
 - **Never authority.** A publish still pushes the **desired** value; the tracker's
   current value never becomes intent and never flows into the workspace. Human drift
@@ -90,7 +90,7 @@ new invariant):
 2. **Name the publication's own writable folder.** The rule currently says a
    publication "writes only its own records under `publication/<name>/published/`."
    Widen this to the publication's own folder — `publication/<name>/` (config,
-   `desired/`, and `published/`) — still **never under `plans/`**. The `reads:`
+   `intent/`, and `published/`) — still **never under `plans/`**. The `reads:`
    allow-list continues to bound only the **workspace artifact types** (plans,
    tasks); a publication reading and writing its own `publication/<name>/` files is
    its private state, not a `reads:` expansion.

@@ -1,20 +1,20 @@
-# Desired-field layer, the estimate unit, and the record snapshot
+# Intent-field layer, the estimate unit, and the record snapshot
 
 Continues [design.md](./design.md). This file is the implementation-depth design
 for where publishable field values live and how they are stored.
 
-## The `desired/` layer
+## The `intent/` layer
 
 A new user-owned file per plan under a publication:
 
 ```
-publication/<name>/desired/<plan-id>.yaml
+publication/<name>/intent/<plan-id>.yaml
 ```
 
 It holds the **field intent** a publication contributes that is *not* derivable
 from the plan itself — the schedule dates and the time estimate. Everything the
 plan already owns (title, task list, `depends_on`, status) stays read from the plan
-as-found; `desired/` never restates it.
+as-found; `intent/` never restates it.
 
 ```yaml
 schema_version: 1
@@ -33,7 +33,7 @@ Properties:
 
 - **User-owned, structured, diffable.** Unlike the prose schedule in
   `instructions:`, this is data the consult session edits and the preview diffs.
-- **Derived once, then owned.** On first publish with no `desired/<plan-id>.yaml`,
+- **Derived once, then owned.** On first publish with no `intent/<plan-id>.yaml`,
   `cc-publish` derives a **first draft** from the `instructions:` schedule policy
   (workday hours, weekends skipped, start date) and the plan set — the same
   derivation v0.6 does inline today — and writes it here as a starting point. From
@@ -47,9 +47,9 @@ Properties:
 
 `config.yaml` `instructions:` keeps exactly its v0.6 job — language, tone, term
 handling, and the **schedule policy** — but the concrete per-plan resolved values
-move out of the prose and into `desired/`. The prose sentence "8h workdays, skip
+move out of the prose and into `intent/`. The prose sentence "8h workdays, skip
 weekends, start 2026-08-17" is policy and stays; "0021 2h, 0022 3h on 2026-09-14"
-is resolved intent and becomes `desired/` data.
+is resolved intent and becomes `intent/` data.
 
 ## The estimate unit
 
@@ -113,7 +113,7 @@ task_items:
 ```
 
 - **Purpose:** answer "what did we send?" and "what changed since?" from **local
-  data**, with no provider read. The preview diffs `desired/` against this snapshot
+  data**, with no provider read. The preview diffs `intent/` against this snapshot
   by default.
 - **Idempotency covers fields now.** A re-run compares both the content
   `synced_digest` *and* the `fields:` snapshot: a task whose content is unchanged
@@ -133,7 +133,7 @@ task_items:
 | --- | --- |
 | Plan title, tasks, `depends_on`, status | `plans/<plan>/` (read-only source) |
 | Language, tone, schedule *policy* | `config.yaml` `instructions:` |
-| Resolved per-plan dates and estimates (**intent**) | `desired/<plan-id>.yaml` |
+| Resolved per-plan dates and estimates (**intent**) | `intent/<plan-id>.yaml` |
 | External ids/urls (**identity**) | `published/<plan-id>.yaml` |
 | Field values **last pushed** (**snapshot**) | `published/<plan-id>.yaml` `fields:` |
 | Field values the provider **now holds** | the provider (read display-only, never stored) |
