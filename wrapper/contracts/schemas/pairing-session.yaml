@@ -1,0 +1,36 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/pairing-session.yaml
+describes: .runtime/pairing/<session>/{pointer,closed}.yaml
+concern: pairing_session
+
+purpose: >
+  The light, resumable pointer for one direct-collaboration session. It identifies
+  one repository, isolated worktree, pairing branch, and base commit. It is not an
+  execution record and carries no attempts, evidence, verifier result, lease,
+  failure counter, plan status, or completion state (INV-PAIR-01).
+
+layout:
+  active: .runtime/pairing/<session>/pointer.yaml
+  closed: .runtime/pairing/<session>/closed.yaml
+  worktree: .runtime/worktrees/cc-pair/<session>/<repository-id>/
+
+fields:
+  schema_version: { type: integer, required: true, values: [1] }
+  repo: { type: string, required: true, description: one connected logical repository id }
+  worktree: { type: string, required: true, description: isolated pairing worktree path }
+  branch: { type: string, required: true, description: cc-pair/<session> }
+  base: { type: string, required: true, description: resolved base commit }
+
+state:
+  active: pointer.yaml exists and closed.yaml does not
+  closed: closed.yaml exists and pointer.yaml does not
+
+rules:
+  - a session id is a safe lowercase kebab-case slug
+  - exactly one repository is named per session
+  - active and closed pointers are mutually exclusive
+  - closing moves the pointer without removing the branch or worktree
+  - no execution, verification, completion, or delivery authority is recorded
+  - INV-PAIR-01
+  - INV-RUNTIME-02
+  - INV-SEC-01

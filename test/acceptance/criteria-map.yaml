@@ -92,3 +92,6 @@ criteria:
   - id: AC-28
     statement: A pull request uses execution branch as source and anchor_branch as default target; delivery blocks when unavailable.
     suite: test/delivery/test-delivery.sh
+  - id: AC-29
+    statement: Direct collaboration isolates one repository in its own branch and working copy, keeps only a resumable pointer, remains human-supervised rather than verified, preserves work on close, and blocks delivery drift.
+    suite: test/pairing/test-pairing.sh
