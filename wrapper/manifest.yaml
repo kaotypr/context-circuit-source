@@ -27,6 +27,7 @@ accepted_schema_versions:
   context-index: [1]
   pairing-session: [1]
   publication-config: [1]
+  publication-intent: [1]
   publication-record: [1]
   publication-thread-record: [1]
 
