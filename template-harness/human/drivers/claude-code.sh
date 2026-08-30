@@ -162,6 +162,7 @@ turns_tsv | while IFS='	' read -r kind payload; do
 	# intent (build/run/execute, incl. compound "approve and build") is checked
 	# first so the trace + telemetry tag as execute-plan.
 	case "$send" in
+		*"work with me directly"*|*collaborate*directly*) ACTION=direct-collaboration ;;
 		*approve*build*|*approve*execute*|*approve*run*) ACTION=execute-plan ;;
 		*"build the"*|*"build all"*|*execute*|*"run them"*|*"run all"*|*"run the"*|*"go ahead and build"*) ACTION=execute-plan ;;
 		*approve*) ACTION=approve ;;

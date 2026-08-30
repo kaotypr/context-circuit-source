@@ -44,10 +44,13 @@ run_codex() {
 RAW="$CC_RUN_DIR/coordinator-stream.jsonl"
 TELRAW="$CC_RUN_DIR/.telemetry-raw.tsv"
 THREAD_FILE="$CC_RUN_DIR/.codex-thread-id"
+ROLE_EVIDENCE=${CC_ROLE_EVIDENCE:-$CC_RUN_DIR/role-evidence.tsv}
+CODEX_STATE_DIR=${CC_CODEX_STATE_DIR:-${CODEX_HOME:-$HOME/.codex}}
 : > "$CC_TRANSCRIPT"
 : > "$CC_TRACE"
 : > "$RAW"
 : > "$TELRAW"
+: > "$ROLE_EVIDENCE"
 rm -f "$THREAD_FILE"
 
 # Extract the ordered human turns as TYPE<TAB>PAYLOAD.
@@ -141,7 +144,9 @@ turns_tsv | while IFS='	' read -r kind payload; do
 			else printf '(skipped on_open_questions: coordinator asked nothing)\n' >> "$CC_TRANSCRIPT"; continue; fi ;;
 		*) printf '(unknown turn kind: %s)\n' "$kind" >> "$CC_TRANSCRIPT"; continue ;;
 	esac
-	case "$send" in
+	send_lc=$(printf '%s' "$send" | tr '[:upper:]' '[:lower:]')
+	case "$send_lc" in
+		*"work with me directly"*|*collaborate*directly*) ACTION=direct-collaboration ;;
 		*approve*build*|*approve*execute*|*approve*run*) ACTION=execute-plan ;;
 		*"build the"*|*"build all"*|*execute*|*"run them"*|*"run all"*|*"run the"*|*"go ahead and build"*) ACTION=execute-plan ;;
 		*approve*) ACTION=approve ;;
@@ -167,6 +172,42 @@ if [ -s "$TELRAW" ]; then
 
 fi
 rm -f "$TELRAW"
+
+# Codex persists bounded child metadata separately from `exec --json`. Record
+# only role/model/effort for immediate children whose task names follow the
+# adapter's *_worker / *_verifier convention. Never copy prompts or payloads.
+record_role_evidence() {
+	[ -f "$THREAD_FILE" ] || return 0
+	parent_id=$(sed -n '1p' "$THREAD_FILE")
+	sessions="$CODEX_STATE_DIR/sessions"
+	[ -d "$sessions" ] || return 0
+	find "$sessions" -type f -name '*.jsonl' 2>/dev/null \
+	| while IFS= read -r session_file; do
+		grep -Fq "\"parent_thread_id\":\"$parent_id\"" "$session_file" 2>/dev/null || continue
+		agent_path=$(jq -r 'select(.type == "session_meta")
+			| if (.payload.source | type) == "object"
+			  then (.payload.source.subagent.thread_spawn.agent_path // .payload.source.thread_spawn.agent_path // "")
+			  else ""
+			  end' \
+			"$session_file" 2>/dev/null | sed -n '1p')
+		case "$agent_path" in
+			*_worker) role=worker ;;
+			*_verifier) role=verifier ;;
+			*) continue ;;
+		esac
+		model_effort=$(jq -r 'select(.type == "turn_context")
+			| [(.payload.model // ""), (.payload.effort // "")] | @tsv' \
+			"$session_file" 2>/dev/null | sed -n '1p')
+		[ -n "$model_effort" ] && printf '%s\t%s\n' "$role" "$model_effort" >> "$ROLE_EVIDENCE"
+	done
+	if [ -s "$ROLE_EVIDENCE" ]; then
+		sort -u "$ROLE_EVIDENCE" > "$ROLE_EVIDENCE.tmp" && mv "$ROLE_EVIDENCE.tmp" "$ROLE_EVIDENCE"
+		printf '[driver] wrote bounded role evidence: %s\n' "$ROLE_EVIDENCE" >&2
+	else
+		rm -f "$ROLE_EVIDENCE"
+	fi
+}
+record_role_evidence
 
 # Conversational verdict: an isolated, ephemeral Codex session judges only the
 # simulator definition, case human block, and visible transcript supplied here.

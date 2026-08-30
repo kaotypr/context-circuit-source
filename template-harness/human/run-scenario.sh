@@ -78,6 +78,7 @@ BASELINE="$RUN_DIR/baseline"
 TRANSCRIPT="$RUN_DIR/transcript.txt"
 TRACE="$RUN_DIR/file-access-trace.tsv"
 TELEMETRY="$RUN_DIR/telemetry.tsv"
+ROLE_EVIDENCE="$RUN_DIR/role-evidence.tsv"
 mkdir -p "$RUN_DIR"
 
 # Temp assembly area (disposable; never the source .runtime).
@@ -324,6 +325,7 @@ cp "$WORKSPACE/workspace.yaml" "$BASELINE/workspace.yaml"
 	printf 'transcript: %s\n' "$TRANSCRIPT"
 	printf 'trace: %s\n' "$TRACE"
 	printf 'telemetry: %s\n' "$TELEMETRY"
+	printf 'role_evidence: %s\n' "$ROLE_EVIDENCE"
 	printf 'human_simulator: %s\n' "$ROOT/.claude/agents/cc-human-simulator.md"
 	printf 'fixtures: %s\n' "$FIXTURE_NOTE"
 	printf 'status: prepared\n'
@@ -340,6 +342,7 @@ if [ -n "$DRIVER" ]; then
 	CC_CASE_FILE="$CASE_FILE" CC_CASE_ID="$CASE_ID" CC_HOST="$HOST" CC_MODE="$CASE_MODE" \
 	CC_HUMAN_SIM="$ROOT/.claude/agents/cc-human-simulator.md" \
 	CC_TRANSCRIPT="$TRANSCRIPT" CC_TRACE="$TRACE" CC_TELEMETRY="$TELEMETRY" \
+	CC_ROLE_EVIDENCE="$ROLE_EVIDENCE" \
 		sh -c "$DRIVER" || { printf 'FAIL: driver returned non-zero\n' >&2; exit 1; }
 	awk '/^status:[[:space:]]/{print "status: driven";next}{print}' "$RUN_DIR/run.yaml" > "$RUN_DIR/run.yaml.tmp" && mv "$RUN_DIR/run.yaml.tmp" "$RUN_DIR/run.yaml"
 	if [ "$AUTOGRADE" -eq 1 ]; then

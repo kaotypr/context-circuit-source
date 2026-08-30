@@ -89,7 +89,9 @@ and the light pointer.
 Narrate what changed and what the user still needs to decide. Do not expose the
 pairing branch name, worktree path, base commit, pointer, or runtime commands
 unless the user explicitly asks for diagnostics. Say "a separate working copy"
-and "the changes we made together," following `docs/terminology.md`.
+and "the changes we made together," following `docs/terminology.md`. Name changed
+files by repository-relative path (for example, `src/widget.ts`), never with an
+absolute clickable target that reveals the hidden working-copy path.
 
 ## Boundaries
 

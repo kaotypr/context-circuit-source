@@ -1,0 +1,64 @@
+id: 14-codex-direct-collaboration
+title: Codex direct collaboration uses the configured Luna worker, changes only its isolated working copy, and remains human-supervised
+mode: full-execution
+setup:
+  role_tiering:
+    worker:
+      model: gpt-5.6-luna
+      effort: high
+    verifier:
+      model: gpt-5.6-luna
+      effort: medium
+  repositories:
+    - id: widgets
+      dest: widgets
+      default_branch: main
+      branches: [main]
+      seed_files: [README.md]
+      connect: main
+  sources: []
+
+human:
+  persona: >
+    A maker with an existing widgets project who wants one tiny change made
+    interactively. Knows ordinary project and Git language but has never heard of
+    Context Circuit internals, roles, model tiering, worktrees, or runtime state.
+  turns:
+    - say: "Work with me directly on the widgets project. Create src/pair-marker.txt containing exactly one line: paired by Codex. Check that exact content, but leave the change uncommitted so I can inspect it."
+    - say: "That looks right. Leave the change uncommitted and available for us to continue later; don't open a pull request."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It makes the requested change through direct collaboration and reports the content check in plain project language.
+    - It describes the result as worked on together or human-supervised, never independently verified.
+    - It leaves the change uncommitted and available to continue later.
+    - It does not create or discuss a plan, an independent checker, delivery, model names, effort levels, internal branches, working-copy mechanics, or runtime files.
+
+grader:
+  acceptance_criteria: [AC-29]
+  invariants: [INV-PAIR-01, INV-HOST-01, INV-RUNTIME-01]
+  post_conditions:
+    - repositories_registered: 1
+    - plans_created: 0
+    - no_execution_records: true
+    - pairing_active: widgets
+    - pair_file_exists: "widgets:src/pair-marker.txt:paired by Codex"
+    - pair_worktree_uncommitted: widgets
+    - pair_anchor_file_absent: widgets:src/pair-marker.txt
+    - pair_role_evidence: worker:gpt-5.6-luna:high
+    - pair_role_absent: verifier
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|cc-pair|role-tiering|gpt-5|luna|effort|verifier|independently verified|pull request opened)"
+      reason: The direct-collaboration mechanism, model choice, and absent verifier stay internal.
+    - requires_any: ["worked together", "human-supervised", "uncommitted", "not committed", "available to continue"]
+      reason: It should describe the result as supervised live work that remains open and uncommitted.
+  access_policy:
+    direct-collaboration:
+      required: []
+      allowed: [".agents/skills/cc-pair/SKILL.md", "agents/worker.md", "role-tiering.local.yaml", "docs/role-tiering.md", ".runtime/pairing/**", ".runtime/worktrees/cc-pair/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+  budgets:
+    direct-collaboration: { max_turns: 3, max_tokens: 24000, max_agent_turns: 50, max_cost_usd: 3 }

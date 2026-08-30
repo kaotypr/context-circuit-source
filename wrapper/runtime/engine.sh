@@ -87,6 +87,10 @@ cc_safe_relative() {
 	return 0
 }
 
+# cc_root_abs ROOT -> physical absolute directory path. Runtime-authored paths
+# must not depend on whether a host invokes the CLI with `.` or an absolute root.
+cc_root_abs() { (CDPATH= cd "$1" 2>/dev/null && pwd -P); }
+
 # cc_plan_id_valid ID -> NNNN-<kebab-slug>
 cc_plan_id_valid() {
 	cc_pid="$1"
@@ -522,6 +526,7 @@ cc_pair_pointer_validate() {
 cc_pair_begin() {
 	cc_pb_root="$1"; cc_pb_repo="$2"; cc_pb_session="$3"; cc_pb_requested_base="${4:-}"
 	cc_workspace_validate "$cc_pb_root" >/dev/null || return 1
+	cc_pb_root=$(cc_root_abs "$cc_pb_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pb_root"; return 1; }
 	cc_safe_id "$cc_pb_repo" || { cc_fail PAIR_REPOSITORY_INVALID "$cc_pb_repo"; return 1; }
 	cc_safe_slug "$cc_pb_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pb_session"; return 1; }
 	cc_pb_dir="$cc_pb_root/.runtime/pairing/$cc_pb_session"
@@ -569,6 +574,8 @@ cc_pair_begin() {
 # cc_pair_inspect ROOT SESSION -> report resumable state without changing it.
 cc_pair_inspect() {
 	cc_pi_root="$1"; cc_pi_session="$2"
+	cc_workspace_validate "$cc_pi_root" >/dev/null || return 1
+	cc_pi_root=$(cc_root_abs "$cc_pi_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pi_root"; return 1; }
 	cc_pi_file=$(cc_pair_pointer_file "$cc_pi_root" "$cc_pi_session") || return 1
 	cc_pair_pointer_validate "$cc_pi_root" "$cc_pi_session" "$cc_pi_file" || return 1
 	cc_pi_repo=$(cc_scalar "$cc_pi_file" repo)
@@ -609,6 +616,8 @@ cc_pair_inspect() {
 # decides whether the worker should commit its changes.
 cc_pair_close() {
 	cc_pc_root="$1"; cc_pc_session="$2"
+	cc_workspace_validate "$cc_pc_root" >/dev/null || return 1
+	cc_pc_root=$(cc_root_abs "$cc_pc_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pc_root"; return 1; }
 	cc_safe_slug "$cc_pc_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pc_session"; return 1; }
 	cc_pc_dir="$cc_pc_root/.runtime/pairing/$cc_pc_session"
 	cc_pc_pointer="$cc_pc_dir/pointer.yaml"
@@ -636,6 +645,8 @@ cc_pair_close() {
 # pushes, merges, or opens a pull request.
 cc_pair_delivery_targets() {
 	cc_pd_root="$1"; cc_pd_session="$2"
+	cc_workspace_validate "$cc_pd_root" >/dev/null || return 1
+	cc_pd_root=$(cc_root_abs "$cc_pd_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pd_root"; return 1; }
 	cc_safe_slug "$cc_pd_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pd_session"; return 1; }
 	cc_pd_dir="$cc_pd_root/.runtime/pairing/$cc_pd_session"
 	[ ! -f "$cc_pd_dir/pointer.yaml" ] || { cc_fail PAIR_SESSION_ACTIVE "$cc_pd_session"; return 1; }
