@@ -1,5 +1,5 @@
 #!/bin/sh
-# Context Circuit v0.6 runtime engine.
+# Context Circuit v0.7.0 runtime engine.
 #
 # A small, host-neutral, deterministic runtime library for workspace, Git, and
 # execution-state operations. It is sourced by host adapters and tests, and can
@@ -11,8 +11,8 @@
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
 # the three-failure counter, one-worker locking, completion eligibility,
-# implementation completion records, context-impact handoff references, and
-# recovery inspection.
+# implementation completion records, context-impact handoff references, light
+# direct-collaboration session pointers, and recovery inspection.
 #
 # This runtime does NOT own: provider-specific child launch, model prompts,
 # Product Knowledge interpretation, plan-writing intelligence, conversational
@@ -26,7 +26,7 @@
 # Constants
 # ---------------------------------------------------------------------------
 
-CC_RUNTIME_VERSION="0.6.1"
+CC_RUNTIME_VERSION="0.7.0"
 CC_SCHEMA_VERSION="1"
 
 # ---------------------------------------------------------------------------
@@ -86,6 +86,10 @@ cc_safe_relative() {
 	esac
 	return 0
 }
+
+# cc_root_abs ROOT -> physical absolute directory path. Runtime-authored paths
+# must not depend on whether a host invokes the CLI with `.` or an absolute root.
+cc_root_abs() { (CDPATH= cd "$1" 2>/dev/null && pwd -P); }
 
 # cc_plan_id_valid ID -> NNNN-<kebab-slug>
 cc_plan_id_valid() {
@@ -301,7 +305,8 @@ cc_workspace_init() {
 	mkdir -p "$cc_wi_root/context/domains" "$cc_wi_root/context/roles" \
 		"$cc_wi_root/context/proposals" "$cc_wi_root/sources" \
 		"$cc_wi_root/plans/archive" "$cc_wi_root/.runtime/executions" \
-		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/locks" \
+		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/pairing" \
+		"$cc_wi_root/.runtime/locks" \
 		"$cc_wi_root/repositories" || return 1
 	[ -f "$cc_wi_root/plans/INDEX.md" ] || cc_plan_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/context/INDEX.md" ] || printf '# Context index\n\nNo accepted context units yet.\n' | cc_atomic_write "$cc_wi_root/context/INDEX.md"
@@ -471,6 +476,207 @@ cc_worktree_prepare() {
 	cc_emit branch "$cc_wp_branch"
 	cc_emit base_commit "$cc_wp_base"
 	cc_emit worktree_reused false
+	return 0
+}
+
+# ---------------------------------------------------------------------------
+# Direct collaboration (INV-PAIR-01) — one repository, one fresh pairing
+# branch/worktree, and one light resumable pointer. This is not an execution.
+# ---------------------------------------------------------------------------
+
+# cc_pair_pointer_file ROOT SESSION -> print the active or closed pointer path.
+# Active and closed pointers are mutually exclusive; contradictory state fails.
+cc_pair_pointer_file() {
+	cc_pp_root="$1"; cc_pp_session="$2"
+	cc_safe_slug "$cc_pp_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pp_session"; return 1; }
+	cc_pp_dir="$cc_pp_root/.runtime/pairing/$cc_pp_session"
+	cc_pp_active="$cc_pp_dir/pointer.yaml"
+	cc_pp_closed="$cc_pp_dir/closed.yaml"
+	if [ -f "$cc_pp_active" ] && [ -f "$cc_pp_closed" ]; then
+		cc_fail PAIR_STATE_CONTRADICTORY "$cc_pp_session"; return 1
+	fi
+	if [ -f "$cc_pp_active" ]; then printf '%s\n' "$cc_pp_active"; return 0; fi
+	if [ -f "$cc_pp_closed" ]; then printf '%s\n' "$cc_pp_closed"; return 0; fi
+	cc_fail PAIR_SESSION_MISSING "$cc_pp_session"; return 1
+}
+
+# cc_pair_pointer_validate ROOT SESSION POINTER -> validate runtime-authored
+# identity and deterministic paths before any later operation consumes them.
+cc_pair_pointer_validate() {
+	cc_pv_root="$1"; cc_pv_session="$2"; cc_pv_file="$3"
+	[ -f "$cc_pv_file" ] || { cc_fail PAIR_POINTER_MISSING "$cc_pv_session"; return 1; }
+	cc_pv_schema=$(cc_scalar "$cc_pv_file" schema_version) || cc_pv_schema=""
+	[ "$cc_pv_schema" = "1" ] || { cc_fail PAIR_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1; }
+	cc_pv_repo=$(cc_scalar "$cc_pv_file" repo) || cc_pv_repo=""
+	cc_pv_wt=$(cc_scalar "$cc_pv_file" worktree) || cc_pv_wt=""
+	cc_pv_branch=$(cc_scalar "$cc_pv_file" branch) || cc_pv_branch=""
+	cc_pv_base=$(cc_scalar "$cc_pv_file" base) || cc_pv_base=""
+	cc_safe_id "$cc_pv_repo" || { cc_fail PAIR_REPOSITORY_INVALID "$cc_pv_repo"; return 1; }
+	cc_pv_expected_wt="$cc_pv_root/.runtime/worktrees/cc-pair/$cc_pv_session/$cc_pv_repo"
+	cc_pv_expected_branch="cc-pair/$cc_pv_session"
+	[ "$cc_pv_wt" = "$cc_pv_expected_wt" ] || { cc_fail PAIR_WORKTREE_MISMATCH "$cc_pv_session"; return 1; }
+	[ "$cc_pv_branch" = "$cc_pv_expected_branch" ] || { cc_fail PAIR_BRANCH_MISMATCH "$cc_pv_session"; return 1; }
+	[ -n "$cc_pv_base" ] || { cc_fail PAIR_BASE_MISSING "$cc_pv_session"; return 1; }
+	return 0
+}
+
+# cc_pair_begin ROOT REPO SESSION [BASE] -> create a fresh pairing branch and
+# worktree from BASE (the connected repository's anchor tip by default), then
+# atomically write the only resumable session state.
+cc_pair_begin() {
+	cc_pb_root="$1"; cc_pb_repo="$2"; cc_pb_session="$3"; cc_pb_requested_base="${4:-}"
+	cc_workspace_validate "$cc_pb_root" >/dev/null || return 1
+	cc_pb_root=$(cc_root_abs "$cc_pb_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pb_root"; return 1; }
+	cc_safe_id "$cc_pb_repo" || { cc_fail PAIR_REPOSITORY_INVALID "$cc_pb_repo"; return 1; }
+	cc_safe_slug "$cc_pb_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pb_session"; return 1; }
+	cc_pb_dir="$cc_pb_root/.runtime/pairing/$cc_pb_session"
+	cc_pb_pointer="$cc_pb_dir/pointer.yaml"
+	cc_pb_closed="$cc_pb_dir/closed.yaml"
+	[ ! -e "$cc_pb_pointer" ] && [ ! -e "$cc_pb_closed" ] \
+		|| { cc_fail PAIR_SESSION_EXISTS "$cc_pb_session"; return 1; }
+	cc_pb_abs=$(cc_repo_resolve "$cc_pb_root" "$cc_pb_repo" | sed -n 's/^path: //p') || return 1
+	cc_pb_anchor=$(cc_binding_field "$cc_pb_root" "$cc_pb_repo" anchor_branch) || cc_pb_anchor=""
+	if [ -n "$cc_pb_requested_base" ]; then
+		case "$cc_pb_requested_base" in
+			-*|*' '*|*..*) cc_fail PAIR_BASE_INVALID "$cc_pb_requested_base"; return 1 ;;
+		esac
+		cc_pb_base=$(git -C "$cc_pb_abs" rev-parse --verify "$cc_pb_requested_base^{commit}" 2>/dev/null) \
+			|| { cc_fail PAIR_BASE_INVALID "$cc_pb_requested_base"; return 1; }
+	else
+		cc_pb_base=$(git -C "$cc_pb_abs" rev-parse --verify "refs/heads/$cc_pb_anchor" 2>/dev/null) \
+			|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_pb_repo:$cc_pb_anchor"; return 1; }
+	fi
+	cc_pb_branch="cc-pair/$cc_pb_session"
+	cc_pb_wt="$cc_pb_root/.runtime/worktrees/cc-pair/$cc_pb_session/$cc_pb_repo"
+	git -C "$cc_pb_abs" show-ref --verify --quiet "refs/heads/$cc_pb_branch" \
+		&& { cc_fail PAIR_BRANCH_EXISTS "$cc_pb_branch"; return 1; }
+	[ ! -e "$cc_pb_wt" ] || { cc_fail PAIR_WORKTREE_EXISTS "$cc_pb_wt"; return 1; }
+	mkdir -p "$(dirname -- "$cc_pb_wt")" "$cc_pb_dir" || { cc_fail PAIR_STATE_CREATE_FAILED "$cc_pb_session"; return 1; }
+	git -C "$cc_pb_abs" worktree add -b "$cc_pb_branch" "$cc_pb_wt" "$cc_pb_base" >/dev/null 2>&1 \
+		|| { cc_fail PAIR_WORKTREE_CREATE_FAILED "$cc_pb_repo"; return 1; }
+	{
+		printf 'schema_version: 1\n'
+		printf 'repo: %s\n' "$cc_pb_repo"
+		printf 'worktree: %s\n' "$cc_pb_wt"
+		printf 'branch: %s\n' "$cc_pb_branch"
+		printf 'base: %s\n' "$cc_pb_base"
+	} | cc_atomic_write "$cc_pb_pointer" \
+		|| { cc_fail PAIR_POINTER_WRITE_FAILED "$cc_pb_session"; return 1; }
+	cc_emit session "$cc_pb_session"
+	cc_emit repository "$cc_pb_repo"
+	cc_emit worktree "$cc_pb_wt"
+	cc_emit branch "$cc_pb_branch"
+	cc_emit base_commit "$cc_pb_base"
+	cc_emit supervision human-supervised
+	return 0
+}
+
+# cc_pair_inspect ROOT SESSION -> report resumable state without changing it.
+cc_pair_inspect() {
+	cc_pi_root="$1"; cc_pi_session="$2"
+	cc_workspace_validate "$cc_pi_root" >/dev/null || return 1
+	cc_pi_root=$(cc_root_abs "$cc_pi_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pi_root"; return 1; }
+	cc_pi_file=$(cc_pair_pointer_file "$cc_pi_root" "$cc_pi_session") || return 1
+	cc_pair_pointer_validate "$cc_pi_root" "$cc_pi_session" "$cc_pi_file" || return 1
+	cc_pi_repo=$(cc_scalar "$cc_pi_file" repo)
+	cc_pi_wt=$(cc_scalar "$cc_pi_file" worktree)
+	cc_pi_branch=$(cc_scalar "$cc_pi_file" branch)
+	cc_pi_base=$(cc_scalar "$cc_pi_file" base)
+	cc_pi_abs=$(cc_repo_resolve "$cc_pi_root" "$cc_pi_repo" | sed -n 's/^path: //p') || return 1
+	cc_pi_status=active; [ "$(basename -- "$cc_pi_file")" = closed.yaml ] && cc_pi_status=closed
+	cc_pi_resumable=false
+	cc_pi_branch_present=false
+	cc_pi_worktree_present=false
+	cc_pi_dirty=unknown
+	if git -C "$cc_pi_abs" show-ref --verify --quiet "refs/heads/$cc_pi_branch"; then cc_pi_branch_present=true; fi
+	if [ -d "$cc_pi_wt" ]; then
+		cc_pi_worktree_present=true
+		if [ -n "$(git -C "$cc_pi_wt" status --porcelain 2>/dev/null)" ]; then cc_pi_dirty=true; else cc_pi_dirty=false; fi
+	fi
+	if [ "$cc_pi_status" = active ] && [ "$cc_pi_branch_present" = true ] && [ "$cc_pi_worktree_present" = true ]; then
+		cc_pi_head=$(git -C "$cc_pi_wt" symbolic-ref --quiet --short HEAD 2>/dev/null) || cc_pi_head=""
+		[ "$cc_pi_head" = "$cc_pi_branch" ] && cc_pi_resumable=true
+	fi
+	cc_emit session "$cc_pi_session"
+	cc_emit status "$cc_pi_status"
+	cc_emit repository "$cc_pi_repo"
+	cc_emit worktree "$cc_pi_wt"
+	cc_emit branch "$cc_pi_branch"
+	cc_emit base_commit "$cc_pi_base"
+	cc_emit branch_present "$cc_pi_branch_present"
+	cc_emit worktree_present "$cc_pi_worktree_present"
+	cc_emit dirty "$cc_pi_dirty"
+	cc_emit resumable "$cc_pi_resumable"
+	cc_emit supervision human-supervised
+	return 0
+}
+
+# cc_pair_close ROOT SESSION -> close only a clean session pointer. The branch
+# and worktree remain. A dirty worktree stays active until the human explicitly
+# decides whether the worker should commit its changes.
+cc_pair_close() {
+	cc_pc_root="$1"; cc_pc_session="$2"
+	cc_workspace_validate "$cc_pc_root" >/dev/null || return 1
+	cc_pc_root=$(cc_root_abs "$cc_pc_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pc_root"; return 1; }
+	cc_safe_slug "$cc_pc_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pc_session"; return 1; }
+	cc_pc_dir="$cc_pc_root/.runtime/pairing/$cc_pc_session"
+	cc_pc_pointer="$cc_pc_dir/pointer.yaml"
+	cc_pc_closed="$cc_pc_dir/closed.yaml"
+	if [ -f "$cc_pc_closed" ] && [ ! -f "$cc_pc_pointer" ]; then
+		cc_emit session "$cc_pc_session"; cc_emit status closed; cc_emit reused true; return 0
+	fi
+	[ -f "$cc_pc_pointer" ] || { cc_fail PAIR_SESSION_MISSING "$cc_pc_session"; return 1; }
+	[ ! -e "$cc_pc_closed" ] || { cc_fail PAIR_STATE_CONTRADICTORY "$cc_pc_session"; return 1; }
+	cc_pair_pointer_validate "$cc_pc_root" "$cc_pc_session" "$cc_pc_pointer" || return 1
+	cc_pc_wt=$(cc_scalar "$cc_pc_pointer" worktree)
+	[ -d "$cc_pc_wt" ] || { cc_fail PAIR_WORKTREE_MISSING "$cc_pc_session"; return 1; }
+	[ -z "$(git -C "$cc_pc_wt" status --porcelain 2>/dev/null)" ] \
+		|| { cc_fail PAIR_WORKTREE_DIRTY "$cc_pc_session"; return 1; }
+	mv "$cc_pc_pointer" "$cc_pc_closed" || { cc_fail PAIR_CLOSE_FAILED "$cc_pc_session"; return 1; }
+	cc_emit session "$cc_pc_session"
+	cc_emit status closed
+	cc_emit branch_preserved true
+	cc_emit worktree_preserved true
+	return 0
+}
+
+# cc_pair_delivery_targets ROOT SESSION -> report the closed pairing branch and
+# current connected anchor target. Drift blocks; this function never rebases,
+# pushes, merges, or opens a pull request.
+cc_pair_delivery_targets() {
+	cc_pd_root="$1"; cc_pd_session="$2"
+	cc_workspace_validate "$cc_pd_root" >/dev/null || return 1
+	cc_pd_root=$(cc_root_abs "$cc_pd_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_pd_root"; return 1; }
+	cc_safe_slug "$cc_pd_session" || { cc_fail PAIR_SESSION_INVALID "$cc_pd_session"; return 1; }
+	cc_pd_dir="$cc_pd_root/.runtime/pairing/$cc_pd_session"
+	[ ! -f "$cc_pd_dir/pointer.yaml" ] || { cc_fail PAIR_SESSION_ACTIVE "$cc_pd_session"; return 1; }
+	cc_pd_file="$cc_pd_dir/closed.yaml"
+	cc_pair_pointer_validate "$cc_pd_root" "$cc_pd_session" "$cc_pd_file" || return 1
+	cc_pd_repo=$(cc_scalar "$cc_pd_file" repo)
+	cc_pd_wt=$(cc_scalar "$cc_pd_file" worktree)
+	cc_pd_branch=$(cc_scalar "$cc_pd_file" branch)
+	cc_pd_base=$(cc_scalar "$cc_pd_file" base)
+	if [ -d "$cc_pd_wt" ] && [ -n "$(git -C "$cc_pd_wt" status --porcelain 2>/dev/null)" ]; then
+		cc_fail PAIR_WORKTREE_DIRTY "$cc_pd_session"; return 1
+	fi
+	cc_pd_abs=$(cc_repo_resolve "$cc_pd_root" "$cc_pd_repo" | sed -n 's/^path: //p') || return 1
+	cc_pd_anchor=$(cc_binding_field "$cc_pd_root" "$cc_pd_repo" anchor_branch) || cc_pd_anchor=""
+	cc_pd_tip=$(git -C "$cc_pd_abs" rev-parse --verify "refs/heads/$cc_pd_branch" 2>/dev/null) \
+		|| { cc_fail PAIR_BRANCH_MISSING "$cc_pd_branch"; return 1; }
+	cc_pd_anchor_tip=$(git -C "$cc_pd_abs" rev-parse --verify "refs/heads/$cc_pd_anchor" 2>/dev/null) \
+		|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_pd_repo:$cc_pd_anchor"; return 1; }
+	cc_pd_drift=true
+	if git -C "$cc_pd_abs" merge-base --is-ancestor "$cc_pd_anchor_tip" "$cc_pd_tip" 2>/dev/null; then cc_pd_drift=false; fi
+	cc_emit session "$cc_pd_session"
+	cc_emit repository "$cc_pd_repo"
+	cc_emit source_branch "$cc_pd_branch"
+	cc_emit target_branch "$cc_pd_anchor"
+	cc_emit base_commit "$cc_pd_base"
+	cc_emit branch_tip "$cc_pd_tip"
+	cc_emit anchor_tip "$cc_pd_anchor_tip"
+	cc_emit drift_detected "$cc_pd_drift"
+	cc_emit result_label human-supervised
+	if [ "$cc_pd_drift" = true ]; then cc_fail PAIR_ANCHOR_DRIFT "$cc_pd_session"; return 1; fi
 	return 0
 }
 
@@ -768,6 +974,13 @@ cc_plan_validate() {
 	case "$cc_pv_schema" in
 		1|2) : ;;
 		*) cc_fail PLAN_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1 ;;
+	esac
+	# optional complexity hint (additive; absent by default). A coordinator
+	# tiering hint only (INV-HOST-01) — never a gate; the runtime stays model-blind.
+	cc_pv_cx=$(cc_scalar "$cc_pv_dir/plan.yaml" "complexity") || cc_pv_cx=""
+	case "$cc_pv_cx" in
+		''|standard|high) : ;;
+		*) cc_fail PLAN_COMPLEXITY_INVALID "$cc_pv_cx"; return 1 ;;
 	esac
 	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
 	if [ -n "$cc_pv_deps" ]; then
@@ -1302,6 +1515,50 @@ cc_verifier_result_record() {
 	return 0
 }
 
+# cc_attempt_evidence_record EXEC_DIR ATTEMPT KEY=VALUE ... -> record bounded,
+# provider-neutral host evidence for one attempt (tiering): the
+# (model, effort) each role ran at — the one thing only the coordinator knows,
+# since the engine is model-blind (INV-RUNTIME-01). Inference timing is NOT
+# recorded here: the attempt already carries started_at (worker.yaml) and
+# checked_at (verifier.yaml), whose span is the attempt duration, so no fragile
+# coordinator stopwatch is needed. This is EVIDENCE ONLY (INV-HOST-01): the engine
+# stores it,
+# never selects a model, never interprets it, and no gate, route, lease, verdict,
+# or the worker-failure counter (INV-REPAIR-01) ever reads it. The key set is a
+# fixed allowlist and values are credential-free (INV-SEC-01); an unknown key or
+# unsafe value is refused, keeping the surface bounded. Written atomically
+# (INV-RUNTIME-02).
+cc_attempt_evidence_record() {
+	cc_ae_dir="$1"; cc_ae_att="$2"
+	[ -n "$cc_ae_dir" ] && [ -n "$cc_ae_att" ] || { cc_fail ATTEMPT_EVIDENCE_ARGS; return 1; }
+	shift 2
+	[ -f "$cc_ae_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	case "$cc_ae_att" in ''|*[!0-9]*) cc_fail ATTEMPT_INVALID "$cc_ae_att"; return 1 ;; esac
+	cc_ae_pad=$(printf '%03d' "$cc_ae_att")
+	[ -d "$cc_ae_dir/attempts/$cc_ae_pad" ] || { cc_fail ATTEMPT_UNKNOWN "$cc_ae_att"; return 1; }
+	[ "$#" -gt 0 ] || { cc_fail ATTEMPT_EVIDENCE_EMPTY; return 1; }
+	cc_ae_f="$cc_ae_dir/attempts/$cc_ae_pad/host-evidence.yaml"
+	[ -f "$cc_ae_f" ] || printf 'attempt: %s\n' "$cc_ae_att" | cc_atomic_write "$cc_ae_f"
+	for cc_ae_kv in "$@"; do
+		case "$cc_ae_kv" in *=*) : ;; *) cc_fail ATTEMPT_EVIDENCE_MALFORMED "$cc_ae_kv"; return 1 ;; esac
+		cc_ae_k=${cc_ae_kv%%=*}; cc_ae_v=${cc_ae_kv#*=}
+		case "$cc_ae_k" in
+			worker_model|worker_effort|verifier_model|verifier_effort|complexity|escalated) : ;;
+			*) cc_fail ATTEMPT_EVIDENCE_KEY_UNKNOWN "$cc_ae_k"; return 1 ;;
+		esac
+		case "$cc_ae_v" in
+			''|*[!A-Za-z0-9._-]*) cc_fail ATTEMPT_EVIDENCE_VALUE_INVALID "$cc_ae_k"; return 1 ;;
+		esac
+		awk -v k="$cc_ae_k" -v v="$cc_ae_v" '
+			$0 ~ ("^" k ":[[:space:]]") { next }
+			{ print }
+			END { print k ": " v }
+		' "$cc_ae_f" | cc_atomic_write "$cc_ae_f"
+		cc_emit "$cc_ae_k" "$cc_ae_v"
+	done
+	return 0
+}
+
 # cc_repair_allowed EXEC_DIR -> yes/no with remaining attempts
 cc_repair_allowed() {
 	cc_ra_wf=$(cc_scalar "$1/execution.yaml" "worker_failures")
@@ -1665,6 +1922,10 @@ cc_main() {
 		repository-preflight)    cc_repository_preflight "$@" ;;
 		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
+		pair-begin)              cc_pair_begin "$@" ;;
+		pair-inspect)            cc_pair_inspect "$@" ;;
+		pair-close)              cc_pair_close "$@" ;;
+		pair-delivery-targets)   cc_pair_delivery_targets "$@" ;;
 		base-prepare)            cc_base_prepare "$@" ;;
 		discover-repo-grounding) cc_discover_repo_grounding "$@" ;;
 		harden-worktree)         cc_harden_worktree "$@" ;;
@@ -1691,6 +1952,7 @@ cc_main() {
 		worker-handoff-record)   cc_worker_handoff_record "$@" ;;
 		verifier-prepare)        cc_verifier_prepare "$@" ;;
 		verifier-result-record)  cc_verifier_result_record "$@" ;;
+		attempt-evidence-record) cc_attempt_evidence_record "$@" ;;
 		repair-allowed)          cc_repair_allowed "$@" ;;
 		execution-status)        cc_execution_status "$@" ;;
 		completion-ready)        cc_completion_ready "$@" ;;

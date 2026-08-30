@@ -36,6 +36,14 @@ Context proposals are staged and require explicit human acceptance.
 Creating or reviewing a plan never approves or executes it. Review is a
 discussion that can update draft content.
 
+For a small change you want to judge live, you can work directly instead:
+
+> Work with me on tightening the checkout screen in the web repository.
+
+Direct collaboration uses one worker in a separate working copy of one connected
+repository. It creates no plan or independent check; the result is
+human-supervised, never verified, and delivery remains separate.
+
 ## 5. Approve and execute
 
 > Approve plan 0001-billing-v2 and execute it.

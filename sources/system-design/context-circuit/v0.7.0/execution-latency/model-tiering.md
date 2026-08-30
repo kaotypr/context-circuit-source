@@ -1,4 +1,4 @@
-# Model & effort per role — concrete, per-role, host-local
+# Model & effort per role — concrete, per-role, host-grouped
 
 This concern continues from [design.md](./design.md). It reduces per-agent
 inference cost and latency by running the right **(model, reasoning-effort)** for
@@ -26,45 +26,87 @@ Two invariants place it precisely:
 Together: this is a performance knob the coordinator applies and records, and the
 runtime never learns about. That is why it needs no new invariant.
 
-## The config — concrete, per role, host-local
+## The config — concrete, per role, host-local, grouped by host
 
-The configuration names real `(model, effort)` values per role, plus one flag:
+The configuration names real `(model, effort)` values per role. Because a model id
+only means something on a host that offers it, and one user may run different plans
+on different hosts, the config is **grouped by host**: each `hosts.<id>` group
+names the models available on that host.
 
 ```yaml
-# host-local Context Circuit config — NOT portable workspace state
-worker:
-  model: opus
-  effort: high
-  escalate_on_repair: true
-verifier:
-  model: sonnet
-  effort: medium
-  escalate_on_repair: false   # hard pin — same (model, effort) every attempt
+# host-local, per-user, gitignored — one group per host you use
+hosts:
+  <host-id>:                 # the host adapter's own id (the CLI/agent you run)
+    worker:
+      model: <a-capable-model-on-this-host>
+      effort: high
+      escalate_on_repair: true
+    verifier:
+      model: <a-cheaper-model-on-this-host>
+      effort: medium
+      escalate_on_repair: false   # hard pin — same (model, effort) every attempt
+  <another-host-id>:
+    worker:   { model: <a-model-on-that-host>, effort: high }
+    verifier: { model: <a-model-on-that-host>, effort: medium }
 ```
 
-- **Only `worker` and `verifier` appear.** The **coordinator** is the root session
-  the user already controls at the host level (Claude Code `/model`, `/fast`,
-  effort); the design defers to it and never auto-retiers it, so it needs no entry.
+- **Grouped by host.** The coordinator reads the group matching the host it runs on
+  (its own `host_evidence` id). The same workspace run from a different host reads
+  that host's own group; a host with no group uses the adapter defaults.
+- **Only `worker` and `verifier`** appear in a group. The **coordinator** is the
+  root session the user already controls at the host level (its own model/effort
+  controls); the design defers to it and never auto-retiers it, so it needs no
+  entry.
 - **`escalate_on_repair`** is per role: `false` is a hard pin; `true` makes the
   configured `(model, effort)` the *starting point and floor* (see below).
-- **Adapter-shipped defaults.** When a role is unset, the host adapter supplies a
-  sensible concrete default for that host. There is no abstract default to resolve.
+- **Adapter-shipped defaults.** When the current host has no group, or a role is
+  unset, the host adapter supplies a sensible concrete default for that host
+  (typically the coordinator session's own current model). There is no abstract
+  default to resolve.
 
-### Why host-local, not portable workspace state
+### Where it lives — host-local, per-user
 
-Model ids are inherently host/provider-specific — "opus" or a given effort level
-only means something on a host that offers it — and model/provider is
-non-authoritative host evidence by INV-HOST-01. So this config is **host-local**,
-in the same category as `.claude/`: it is never part of shipped template or
-workspace state, never travels with the workspace, and an upgrade neither creates
-nor preserves it. A user configures it once for the host they work on; a different
-host has its own file (or just its adapter defaults). Nothing about it is portable,
-and nothing needs to be — unlike the workspace's logical repository identity
-(INV-REPO-01), which is portable precisely because it holds no host-specific value.
+Model ids are host/provider-specific, and each person's preference differs, so this
+config is **host-local and per-user**, in the same category as
+`repositories.local.yaml`: `role-tiering.local.yaml` at the workspace root,
+gitignored, never part of shipped template or workspace state, and an upgrade
+neither creates nor preserves it. Grouping by host lets one file serve a user
+across all their hosts without holding a machine-specific path — so unlike
+`repositories.local.yaml` it is safe for a user to sync across their own machines,
+though it is still a per-user preference, not portable workspace identity.
 
-This resolves the earlier open question of "where per-role config lives": it is a
-single host-local file of concrete values, with adapter defaults as the fallback —
-no workspace schema, no abstract-tier mapping table.
+This resolves the earlier open question of "where per-role config lives": a single
+host-local, host-grouped file of concrete values, with adapter defaults as the
+fallback — no workspace schema, no abstract-tier mapping table.
+
+## Applying the tier — recording is not running
+
+The sharpest lesson from building this: **reading and recording a `(model, effort)`
+does not, by itself, change what runs.** The coordinator can read the config and
+faithfully record `verifier_model: <cheaper>` as host evidence while still spawning
+the verifier at its own session model — and then nothing has actually been tiered.
+The recorded value is *intent*; the model the sub-agent truly ran is a separate
+fact (it lives in the host's sub-agent transcript, not workspace state).
+
+So application is an explicit host-adapter step: when the coordinator launches the
+worker or verifier child, the adapter **sets the model on that spawn** (for Claude
+Code, the `Task`/subagent `model` parameter). A child launched with no model
+override inherits the coordinator's session model — which is the whole tier
+silently ignored. The host adapter (`wrapper/adapters/`) owns this mechanism; the
+skills stay host-neutral and simply say "launch at the configured model".
+
+**Effort may not be per-child on a host.** A host can expose a per-child model but
+no per-child effort (Claude Code's spawn has no effort knob). Where per-child
+effort is unavailable, effort is recorded as evidence but not applied, and tiering
+degrades to **model-only** — no block, no error. The coordinator's own effort stays
+the user's session control.
+
+**What tiering buys, honestly.** On substantial tasks a smaller/cheaper model or
+lower effort finishes sooner. On trivial tasks the wall-clock difference is small,
+because fixed overhead (reading the brief, git plumbing, tool round-trips)
+dominates, not token generation; there the real lever tiering pulls is **cost**
+(running the checker on a cheaper model) rather than latency. Both are legitimate;
+the doc no longer claims a large latency win where the work is tiny.
 
 ## Escalate on repair
 
@@ -141,8 +183,9 @@ The rule is: separate agent always; `(model, effort)` is free to vary.
 ## Recording and honesty
 
 - The coordinator records the `(model, effort)` used per attempt as host evidence
-  (pairs naturally with `worker_wall_s` / `verifier_wall_s` from
-  [measurement.md](./measurement.md)), enabling a first-try-pass-rate read.
+  ([measurement.md](./measurement.md)), enabling a first-try-pass-rate read; timing
+  itself is the attempt's own `started_at`/`checked_at` span, not part of this
+  record.
 - A host that exposes only one model runs everything on it; escalation silently
   degrades to raising effort only, or to uniform — no block, no error.
 - The values are never surfaced to a lay user as mechanism (doc-01 reporting
@@ -154,13 +197,16 @@ The rule is: separate agent always; `(model, effort)` is free to vary.
   (INV-RUNTIME-01).
 - `(model, effort)` authorizes nothing (INV-HOST-01) and never changes the failure
   counter (INV-REPAIR-01) or the independence requirement (INV-VERIFY-01/02).
-- The config is **host-local**, concrete, and non-portable; adapter defaults fill
-  any unset role. It is never shipped template or workspace state.
+- The config is **host-local, per-user, and grouped by host**; adapter defaults
+  fill any unset host or role. It is never shipped template or workspace state.
+- Applying the tier is a host-adapter step (set the model on the spawn); recording
+  it alone changes nothing. Per-child effort may be unavailable on a host, in which
+  case tiering is model-only.
 - A hard pin is respected even at the third failure, and its cost is reported
   honestly — never silently overridden.
 - No new invariant. The only additive contract surface is the optional `complexity`
-  plan field; the per-role config shape and adapter defaults are host-adapter
-  concerns that settle in `wrapper/adapters/` on acceptance.
+  plan field; the per-role config shape, the spawn-application mechanism, and the
+  adapter defaults are host-adapter concerns that settle in `wrapper/adapters/`.
 
 ## Open questions
 

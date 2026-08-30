@@ -76,7 +76,20 @@ sub-agents instead of a headless `claude -p`.
    result. C will show its forbidden checks (hard) and warn that required-reads /
    the trace are unavailable in this driver.
 
-8. **Report** to the maintainer: transcript highlights, the grader verdict, any
+8. **Snapshot the sub-agent transcripts** into the run dir:
+   `sh template-harness/human/snapshot-subagents.sh <RUN>`. The in-session driver
+   spawns real nested sub-agents whose JSONL transcripts live in the host session
+   store (`~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl`),
+   NOT under `.out` — unlike the shell `--live` driver, which records one
+   `<RUN>/coordinator-stream.jsonl`. This copies the ones belonging to the run
+   (matched by workspace path) into `<RUN>/subagents/`, so both drivers leave
+   comparable transcript artifacts under `.out`. These transcripts are also the
+   only place the **actual model** each agent ran at is recorded (the `"model"`
+   field) — the workspace's per-attempt `host-evidence.yaml` holds the model the
+   coordinator *recorded/intended*, which is not the same as the model the nested
+   sub-agent truly ran (a grandchild sub-agent inherits the parent model here).
+
+9. **Report** to the maintainer: transcript highlights, the grader verdict, any
    isolation warning in `run.yaml`, and whether `~/…` outside the workspace was
    touched. Leave the run under `.out/` (git-ignored, disposable).
 

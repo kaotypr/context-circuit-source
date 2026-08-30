@@ -1,5 +1,5 @@
 #!/bin/sh
-# Context Circuit v0.5 semantic acceptance suite.
+# Context Circuit semantic acceptance suite.
 set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 
@@ -15,7 +15,9 @@ run_suite test/plans/test-plans.sh
 run_suite test/execution/test-execution.sh
 run_suite test/concurrency/test-leases.sh
 run_suite test/run-stack/test-run-stack.sh
+run_suite test/latency/test-latency.sh
 run_suite test/grounding/test-grounding.sh
+run_suite test/pairing/test-pairing.sh
 run_suite test/external-surface/test-external-surface.sh
 run_suite test/completion/test-completion.sh
 run_suite test/archive/test-archive.sh
@@ -24,6 +26,8 @@ run_suite test/security/test-boundaries.sh
 run_suite test/release/test-release.sh
 run_suite test/release/test-publish.sh
 run_suite template-harness/test-template-runtime.sh
+run_suite template-harness/human/test-codex-driver.sh
+run_suite template-harness/human/test-direct-collaboration-scenario.sh
 
 # --- semantic criteria mapping cross-check ---
 printf '\n--- acceptance criteria mapping ---\n'
@@ -33,7 +37,7 @@ grep -q '^credential_free: true' "$map" || { printf 'FAIL: criteria map not cred
 grep -q '^implicit_external_checks: false' "$map" || { printf 'FAIL: criteria map declares implicit external checks\n' >&2; exit 1; }
 
 n=1
-while [ "$n" -le 28 ]; do
+while [ "$n" -le 29 ]; do
 	id=$(printf 'AC-%02d' "$n")
 	grep -q "id: $id" "$map" || { printf 'FAIL: criteria map missing %s\n' "$id" >&2; exit 1; }
 	n=$((n + 1))
@@ -44,4 +48,4 @@ grep '^    suite:' "$map" | sed 's/^    suite:[[:space:]]*//' | sort -u | while 
 	[ -f "$ROOT/$s" ] || { printf 'FAIL: criteria map references missing suite %s\n' "$s" >&2; exit 1; }
 done
 
-printf '\nPASS: Context Circuit v0.5 semantic acceptance\n'
+printf '\nPASS: Context Circuit semantic acceptance\n'

@@ -23,4 +23,9 @@ host lacks a capability.
 
 If an independent read-only verifier cannot be created, the execution is
 blocked; the worker or coordinator must not self-verify as a substitute. Host
-permission mode is evidence, not a grant.
+permission mode is evidence, not a grant. Independence is role and read-only
+access to committed state, never model class: a verifier run at a smaller
+`(model, effort)` — even the same model as the worker — is still independent so
+long as it is a separate agent inspecting the worker's committed result. The
+`(model, effort)` is bounded host evidence and never weakens this requirement
+(INV-HOST-01 / INV-VERIFY-01/02).

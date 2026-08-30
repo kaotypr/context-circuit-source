@@ -1,10 +1,15 @@
 schema_version: 1
 owner: wrapper/contracts/invariants.yaml
 purpose: >
-  Single authoritative index of Context Circuit product rules (v0.5 core plus the
-  v0.6 run-stack delta) and the one file that owns each rule. One rule has one
-  owner. Other artifacts reference an effect defined here; they never define a
-  parallel copy of it.
+  Single authoritative index of Context Circuit product rules (v0.5 core, the
+  v0.6 run-stack delta, and the v0.7.0 deltas) and the one file
+  that owns each rule. One rule has one owner. Other artifacts reference an effect
+  defined here; they never define a parallel copy of it. The v0.7.0
+  execution-latency scope adds no new invariant: its concurrency safety is the
+  existing INV-CONCURRENCY-01/02 and its per-role model/effort tiering safety is
+  the existing INV-HOST-01 / INV-RUNTIME-01. It contributes only additive host
+  evidence (per-role model/effort), an optional plan `complexity` field, and
+  coordinator/host policy (run-stack fan-out width, the per-role tier ladder).
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -260,6 +265,25 @@ invariants:
       that host bridge is an optional convenience owned by the host adapter and
       is never a separate route, role, or authority. The shipped workspace never
       contains a host-specific skill directory or symlink.
+  - id: INV-PAIR-01
+    rule: >
+      Direct collaboration (`cc-pair`) is an interactive working mode outside the
+      plan lifecycle, limited to one connected repository per session. Its actors
+      are the user, the coordinator, and one worker: the coordinator interprets
+      and delegates but never writes, the worker writes only in a fresh
+      `cc-pair/<session>` branch and isolated worktree created from a chosen base
+      commit, and the user is the live acceptance oracle. It has no verifier,
+      lease, execution record, failure counter, plan status, or completion gate;
+      its only runtime state is a light resumable pairing-session pointer. Pairing
+      output is human-supervised and never "verified", never edits the active
+      checkout or a plan execution branch in place, and never auto-completes or
+      delivers. Worker commits occur only on explicit human request and follow
+      INV-COMMIT-01. Closing a clean session preserves its branch and worktree;
+      cleanup remains separate and explicit. If the current anchor tip is not in
+      the pairing branch at delivery time, delivery blocks and the work must be
+      brought forward in a new human-supervised session rather than silently
+      rebased. If the host cannot create the worker child or the isolated
+      worktree, the outcome is host-blocked and read-only.
   - id: INV-EXTERNAL-01
     rule: >
       The external surface is a set of opt-in, manually-triggered publications
@@ -274,15 +298,21 @@ invariants:
   - id: INV-EXTERNAL-02
     rule: >
       A publication reads only the workspace artifact types its config.yaml names
-      and writes only its own records under publication/<name>/published/. Nothing
+      and writes only its own files under its own publication/<name>/ folder — its
+      config, its intent/ field-intent files, and its published/ records. Nothing
       is written under plans/, so no planning, execution, verification, or delivery
-      step encounters a publication record and none updates external state or
-      status. It never mutates core Context Circuit state or human plan status
-      (INV-PLAN-01), and it is export-only — data flows from the workspace outward.
+      step encounters a publication file and none updates external state or status.
+      It is export-only, and export-only governs authority and persistence: data
+      flows from the workspace outward, and external state never becomes, or writes
+      to, any workspace artifact. Reading external field values solely to display them to the human —
+      a preview diff — is not an inbound flow, provided nothing read is persisted to
+      any workspace artifact; a read that ends at the screen crosses no boundary. It
+      never mutates core Context Circuit state or human plan status (INV-PLAN-01).
       External side effects are performed through the host or MCP layer, never the
-      runtime (INV-RUNTIME-01); configuration and records are credential-free and
-      hold no provider payload (INV-SEC-01). A record's lifecycle is independent of
-      a plan's archive state, keyed to the stable plan id. Any future inbound flow
+      runtime (INV-RUNTIME-01); configuration, intent, and records are
+      credential-free and hold no provider payload (INV-SEC-01). A record's
+      lifecycle is independent of a plan's archive state, keyed to the stable plan
+      id. Any inbound flow — external state pulled into plans or workspace state —
       must pass through the normal plan-authoring and approval gates
       (INV-APPROVE-01), never around them.
   - id: INV-EXTERNAL-03
@@ -317,6 +347,7 @@ owners:
   repository_grounding: wrapper/runtime/engine.sh
   grounding_manifest: wrapper/contracts/schemas/grounding-manifest.yaml
   worker_brief: wrapper/adapters/worker-brief.md
+  role_tiering: docs/role-tiering.md
   execution_records: wrapper/contracts/schemas/execution.yaml
   worker_handoff: wrapper/contracts/schemas/worker-handoff.yaml
   verifier_result: wrapper/contracts/schemas/verifier-result.yaml
@@ -329,7 +360,10 @@ owners:
   verifier_role: agents/verifier.md
   host_adapter: wrapper/adapters/AGENTS.md
   delivery_boundary: wrapper/adapters/WORKFLOW.md
+  pairing_mode: .agents/skills/cc-pair/SKILL.md
+  pairing_session: wrapper/contracts/schemas/pairing-session.yaml
   external_surface: wrapper/contracts/invariants.yaml
   publication_config: wrapper/contracts/schemas/publication-config.yaml
+  publication_intent: wrapper/contracts/schemas/publication-intent.yaml
   publication_record: wrapper/contracts/schemas/publication-record.yaml
   publication_thread_record: wrapper/contracts/schemas/publication-thread-record.yaml
