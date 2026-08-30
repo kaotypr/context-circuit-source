@@ -24,7 +24,7 @@ require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
-  lease grounding-manifest publication-config publication-record \
+  lease grounding-manifest pairing-session publication-config publication-record \
   publication-thread-record; do
   require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
 done
@@ -48,6 +48,7 @@ else
   expected_source_state=clean
 fi
 printf '%s\n' "$result" | grep -F "source_state: $expected_source_state" >/dev/null || fail "release did not record source state: $expected_source_state"
+printf '%s\n' "$result" | grep -F "runtime_version: 0.7.0" >/dev/null || fail 'release did not report manifest runtime version'
 
 # --- exclusion boundary: no maintainer, source, test, or runtime state ---
 for leaked in .runtime test .github scripts template repositories repositories.local.yaml \
@@ -57,17 +58,17 @@ for leaked in .runtime test .github scripts template repositories repositories.l
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"
 done
 
-# --- only the shipped skills ship (v0.5 seven + v0.6 cc-run-stack, cc-system-design) ---
+# --- only the shipped skills ship ---
 count=0
 for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   name=${skill_dir##*/}
   case "$name" in
-    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-publish) count=$((count + 1)) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) count=$((count + 1)) ;;
     *) fail "unexpected skill leaked into artifact: $name" ;;
   esac
 done
-test "$count" -eq 10 || fail "shipped skill count: $count"
+test "$count" -eq 11 || fail "shipped skill count: $count"
 
 # --- no credentials or provider payloads anywhere in the artifact ---
 if grep -REn '^[[:space:]]*(password|api_key|access_token|provider_payload|transcript):' "$artifact" >/dev/null 2>&1; then

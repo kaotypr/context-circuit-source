@@ -129,3 +129,5 @@ asks for diagnostics (`docs/terminology.md` is the internal→user-facing mappin
 
 Never auto-approve, auto-complete, merge, push, publish, deploy, or discard.
 Verification produces `verified` evidence; it never marks the plan `done`.
+After a successful execution, you may offer direct collaboration as an optional
+next step before delivery. Never start `cc-pair` automatically.

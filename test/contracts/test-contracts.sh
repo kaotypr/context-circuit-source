@@ -11,7 +11,7 @@ for id in INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 INV-VERIFY-01 INV-V
 	INV-REPAIR-01 INV-COMPLETE-01 INV-ARCHIVE-01 INV-REPO-02 INV-DELIVER-01 \
 	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
 	INV-GROUND-01 INV-GROUND-02 INV-GROUND-03 INV-EXTERNAL-01 INV-EXTERNAL-02 \
-	INV-EXTERNAL-03; do
+	INV-EXTERNAL-03 INV-PAIR-01; do
 	contains "$inv" "$id"
 done
 for concern in plan_lifecycle runtime repository_identity local_binding \
@@ -19,7 +19,7 @@ for concern in plan_lifecycle runtime repository_identity local_binding \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
 	base_selection run_stack_action repository_grounding grounding_manifest \
 	worker_brief external_surface publication_config publication_record \
-	publication_thread_record; do
+	publication_thread_record pairing_mode pairing_session; do
 	contains "$inv" "$concern:"
 done
 # old-design owners are gone
@@ -37,11 +37,12 @@ contains "$man" "plan: [1, 2]"
 contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
+contains "$man" "pairing-session: [1]"
 
 # --- v0.5 schemas present; old-design schemas absent ---
 for s in workspace repositories-local plan task execution worker-handoff \
 	verifier-result completion context-impact context-proposal context-index lease \
-	grounding-manifest publication-config publication-record \
+	grounding-manifest pairing-session publication-config publication-record \
 	publication-thread-record; do
 	require_file "$W/contracts/schemas/$s.yaml"
 done
@@ -59,9 +60,20 @@ not_contains "$W/runtime/engine.sh" "cc_route"
 not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
 
 # --- v0.5 skills present; old-design skills absent ---
-for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-publish; do
+for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
 	require_file "$ROOT/.agents/skills/$sk/SKILL.md"
 done
+
+# --- direct collaboration is outside the plan lifecycle ---
+pair="$ROOT/.agents/skills/cc-pair/SKILL.md"
+contains "$pair" "outside the plan lifecycle"
+contains "$pair" "Do not launch a verifier"
+contains "$pair" "human-supervised"
+contains "$pair" "pair-begin"
+contains "$pair" "pair-close"
+contains "$W/adapters/WORKFLOW.md" "/cc-pair"
+contains "$ROOT/agents/coordinator.md" "INV-PAIR-01"
+contains "$ROOT/agents/worker.md" "Direct-collaboration mode"
 for old in cc-entry cc-gates cc-next cc-upgrade; do
 	test ! -e "$ROOT/.agents/skills/$old" || fail "old skill remains: $old"
 done

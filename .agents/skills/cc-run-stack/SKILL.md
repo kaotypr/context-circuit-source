@@ -159,3 +159,5 @@ a stack produces `verified` evidence per plan; it never marks a plan `done` and
 never delivers. Completion and delivery remain separate, explicit, per-plan human
 actions. A drift guard (`delivery-drift` / `delivery-rebase`) applies only when the
 human later delivers a plan whose base has diverged (see `cc-deliver`).
+After the run finishes, you may offer direct collaboration on one repository as
+an optional next step. Never start `cc-pair` automatically.

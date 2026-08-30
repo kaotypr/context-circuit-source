@@ -32,10 +32,11 @@ context; invoke it as a tool instead.
 ## Conversation to action
 
 Map ordinary language to one contract: orient, gather context, connect/clone/
-init repository, create plan, review plan, approve plan, execute plan, inspect
-results, repair, mark complete, review/accept context updates, archive, restore,
-open pull request, merge/deliver. Distinguish inspect from mutate, approval from
-execution, and repository change from delivery. Support the explicit compound
+init repository, collaborate directly, create plan, review plan, approve plan,
+execute plan, inspect results, repair, mark complete, review/accept context
+updates, archive, restore, open pull request, merge/deliver. Distinguish inspect
+from mutate, approval from execution, and repository change from delivery.
+Support the explicit compound
 "approve and execute" as two sequential explicit actions.
 
 A request to run a *set* of already-approved plans ("execute plans X through Z",
@@ -98,3 +99,12 @@ changes cost and speed, never meaning, is recorded per attempt with
 `attempt-evidence-record`, and is never surfaced to a lay user except under
 explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01), and a hard
 pin is respected even at the third failure with its cost reported honestly.
+
+## Direct collaboration
+
+For direct, live work, resolve `.agents/skills/cc-pair/SKILL.md`. This is an
+orthogonal user ↔ coordinator ↔ worker loop, not a plan execution. The coordinator
+interprets and delegates but never writes; one worker changes one connected
+repository in the session's isolated working copy; the user judges the result
+live. There is no verifier, lease, execution record, completion, or implied
+delivery. Report the output as human-supervised, never verified (INV-PAIR-01).
