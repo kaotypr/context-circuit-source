@@ -154,7 +154,7 @@ turns_tsv | while IFS='	' read -r kind payload; do
 			else printf '(skipped on_offer_plan: coordinator did not offer a plan)\n' >> "$CC_TRANSCRIPT"; continue; fi ;;
 		on_open_questions)
 			if asked_question "$LAST_REPLY"; then
-				send="Whatever's simplest is fine — I don't have strong preferences, just make it work for me."
+				send="The simplest option sounds fine. For now, please only show me the plan and stop there."
 			else printf '(skipped on_open_questions: coordinator asked nothing)\n' >> "$CC_TRANSCRIPT"; continue; fi ;;
 		*) printf '(unknown turn kind: %s)\n' "$kind" >> "$CC_TRANSCRIPT"; continue ;;
 	esac
@@ -163,7 +163,7 @@ turns_tsv | while IFS='	' read -r kind payload; do
 	# first so the trace + telemetry tag as execute-plan.
 	case "$send" in
 		*approve*build*|*approve*execute*|*approve*run*) ACTION=execute-plan ;;
-		*build*|*execute*|*"run them"*|*"run all"*|*"run the"*|*"go ahead and build"*) ACTION=execute-plan ;;
+		*"build the"*|*"build all"*|*execute*|*"run them"*|*"run all"*|*"run the"*|*"go ahead and build"*) ACTION=execute-plan ;;
 		*approve*) ACTION=approve ;;
 		*"show me the plan"*|*review*) ACTION=review ;;
 		*connect*|*"hook it up"*|*"hook up"*) ACTION=connect-repo ;;

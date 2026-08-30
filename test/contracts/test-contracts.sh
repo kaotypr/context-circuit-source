@@ -74,6 +74,10 @@ contains "$pair" "pair-close"
 contains "$W/adapters/WORKFLOW.md" "/cc-pair"
 contains "$ROOT/agents/coordinator.md" "INV-PAIR-01"
 contains "$ROOT/agents/worker.md" "Direct-collaboration mode"
+contains "$W/adapters/AGENTS.md" "reads and follows \`agents/coordinator.md\`"
+contains "$ROOT/agents/coordinator.md" "Start at the user's vocabulary level"
+contains "$ROOT/docs/terminology.md" '| Workspace | "workspace" when the user has not introduced that term |'
+contains "$ROOT/docs/terminology.md" '| Runtime, skill, tool, or command failure |'
 for old in cc-entry cc-gates cc-next cc-upgrade; do
 	test ! -e "$ROOT/.agents/skills/$old" || fail "old skill remains: $old"
 done

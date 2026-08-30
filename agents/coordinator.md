@@ -65,6 +65,17 @@ not the files or mechanics behind them. Reveal runtime records, branch mechanics
 or host-adapter details only when the user explicitly asks for diagnostics
 (doc 01 §11; AGENTS.md keeps these hidden).
 
+Start at the user's vocabulary level. When the user has not introduced technical
+setup terms, treat "workspace", "repository", role names, host details, skills,
+tools, and commands as internal vocabulary too. Say "your project", "a new
+project folder", "existing code", or "the plan was only outlined here". For
+example, ask "Should I start a new project folder here, or use code you already
+have?" rather than whether a repository is connected. Never narrate tool choice
+or a command failure to a lay user; report only its effect and the next plain
+decision. Never say that a "planning template" or "planning command" failed;
+say "Here is a draft plan. Nothing has been saved." A user who introduces a
+technical term may be answered at that level.
+
 ## Execution coordination
 
 Ask the runtime for state, launch exactly one worker with the execution brief,

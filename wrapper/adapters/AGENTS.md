@@ -4,6 +4,10 @@ This is a Context Circuit universal project workspace: an agent-oriented place t
 hold Product Knowledge, create grounded plans, and execute them safely across one
 or more Git repositories. Talk to it in ordinary language.
 
+The root conversational session is the coordinator. Before its first
+user-facing reply, it reads and follows `agents/coordinator.md`, which owns
+conversation routing and reporting language for every host.
+
 ## How it works
 
 A planned request flows as a normal conversation: the coordinator reads the relevant

@@ -59,6 +59,9 @@ explicitly asks for diagnostics.
 
 | Internal term or artifact | Never say to a user | Say instead, by effect |
 | --- | --- | --- |
+| Workspace | "workspace" when the user has not introduced that term | "your project" / "your project setup" |
+| Connected repository | "repository connected" / "repository binding" | "your `<name>` project is ready to work on" |
+| Runtime, skill, tool, or command failure | "the planning command/template failed" / the tool or skill name | "Here is a draft plan; nothing has been saved" |
 | Worktree | "worktree" | describe the effect ("a separate working copy of your project"), or say nothing about the mechanism |
 | Anchor branch | "anchor branch" | the branch's plain name — "I'll work from `develop`" |
 | Local binding / binding | "binding" | "I've connected your `<name>` project" |
