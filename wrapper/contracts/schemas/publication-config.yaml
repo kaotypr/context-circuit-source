@@ -20,10 +20,12 @@ layout:
   files:
     config.yaml: this declaration (committed with the workspace or not, a workspace choice)
     .local.yaml: optional, gitignored — non-secret instance ids only, never credentials
+    intent/<plan-id>.yaml: user-owned per-plan field intent (publication-intent.yaml)
     published/<plan-id>.yaml: authoritative per-plan records (publication-record.yaml)
   note: >
     Everything about a publication lives under publication/<name>/ — this
-    configuration and the published/ records. Nothing is written under plans/.
+    configuration, the intent/ field-intent files, and the published/ records.
+    Nothing is written under plans/.
 
 fields:
   schema_version: { type: integer, required: true, values: [1] }
@@ -94,6 +96,19 @@ fields:
       description-checklist when the adapter has no native checklist-create call);
       and a status map from plan status (draft, approved, done) onto the target's
       own discovered status set, since status vocabularies are provider-defined.
+  preview:
+    type: object
+    required: false
+    description: >
+      Optional settings for the cc-publish preview (consult-before-publish) mode.
+      Only recognized key: drift_read (boolean, default false). When true, the
+      preview may read the provider's *current* field values to add a display-only
+      "tracker now" column to the diff. The read is display-only — nothing read is
+      persisted to any workspace artifact, the tracker's value never becomes intent
+      or authority, and a publish still pushes the desired value (INV-EXTERNAL-02).
+      Off by default, so a publication that must never call the provider except to
+      write stays that way. It never enables an inbound flow or a runtime provider
+      action (INV-RUNTIME-01).
 
 forbidden:
   - credentials, tokens, private keys, or provider payloads
