@@ -17,9 +17,14 @@ contains "$inv" "orthogonal to the core"
 contains "$inv" "export-only"
 contains "$inv" "self-contained"
 contains "$inv" "no access to the workspace"
-for concern in external_surface publication_config publication_record; do
+for concern in external_surface publication_config publication_intent publication_record; do
 	contains "$inv" "$concern:"
 done
+# INV-EXTERNAL-02 clarified: a display-only preview read is not inbound flow, and a
+# publication writes within its own publication/<name>/ folder (config, intent/, published/).
+contains "$inv" "is not an inbound flow"
+contains "$inv" "publication/<name>/ folder"
+contains "$inv" "a read that ends at the screen"
 
 # --- config schema: credential-free, export-only, manual-only ---
 cfg="$W/contracts/schemas/publication-config.yaml"
@@ -31,6 +36,24 @@ contains "$cfg" "values: [manual]"
 contains "$cfg" "credential-free"
 # instructions apply to every kind (language, tone, optional field enrichment)
 contains "$cfg" "instructions:"
+# preview mode: opt-in, display-only drift read (off by default)
+contains "$cfg" "preview:"
+contains "$cfg" "drift_read"
+contains "$cfg" "display-only"
+contains "$cfg" "intent/<plan-id>.yaml"
+
+# --- intent schema: user-owned field layer, canonical minutes, no d/w ---
+intent="$W/contracts/schemas/publication-intent.yaml"
+require_file "$intent"
+contains "$intent" "concern: publication_intent"
+contains "$intent" "publication/<name>/intent/<plan-id>.yaml"
+contains "$intent" "estimate_minutes"
+contains "$intent" "then human-owned"
+contains "$intent" "silently overwrites a human edit"
+contains "$intent" "d and w are rejected"
+contains "$intent" "INV-SEC-01"
+# intent holds values, never identity or plan-owned facts
+contains "$intent" "an external id or url"
 
 # --- record schema (plan kind): under the publication, idempotent ---
 rec="$W/contracts/schemas/publication-record.yaml"
@@ -42,6 +65,11 @@ contains "$rec" "INV-PLAN-01"
 contains "$rec" "never under plans/"
 contains "$rec" "not_an_execution_input"
 contains "$rec" "any field on plan.yaml holding an external id"
+# fields: snapshot — last-published values, additive/backward-compatible, drives field idempotency
+contains "$rec" "Last-published snapshot"
+contains "$rec" "estimate_minutes"
+contains "$rec" "field-only"
+contains "$rec" "backward-compatible"
 
 # --- record schema (thread kind): discussion-safe, ids/timestamps only ---
 trec="$W/contracts/schemas/publication-thread-record.yaml"
@@ -69,6 +97,24 @@ contains "$sk" "never write under"
 # instructions honored (language, tone, field enrichment)
 contains "$sk" "Authoring: instructions"
 contains "$sk" "best-effort estimates"
+# intent layer + estimate unit/format
+contains "$sk" "Field intent and estimates"
+contains "$sk" "publication/<name>/intent/<plan-id>.yaml"
+contains "$sk" "estimate_minutes"
+contains "$sk" "never silently overwrites a human edit"
+contains "$sk" "input and display only"
+contains "$sk" "are rejected"
+# consult-before-publish preview mode: a mode of the skill, default local diff, opt-in drift read
+contains "$sk" "Preview and consult"
+contains "$sk" "dry-run"
+contains "$sk" "consult-first"
+contains "$sk" "intent vs last-published snapshot"
+contains "$sk" "drift_read: true"
+contains "$sk" "display only"
+contains "$sk" "Publish on an explicit go"
+# idempotency now covers fields, report notes field-only updates
+contains "$sk" "field-only update"
+contains "$sk" "nothing was pushed"
 # the thread kind
 contains "$sk" "Publish (the \`thread\` kind)"
 contains "$sk" "[thread] [<plan-number>]"
@@ -78,6 +124,7 @@ contains "$sk" "never delete a"
 # --- manifest registers the schemas and the workspace-owned folder ---
 man="$W/manifest.yaml"
 contains "$man" "publication-config: [1]"
+contains "$man" "publication-intent: [1]"
 contains "$man" "publication-record: [1]"
 contains "$man" "- publication/"
 
