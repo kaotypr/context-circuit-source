@@ -7,14 +7,18 @@ version index; each scope owns its own design.
 
 ## Scopes
 
-- [ui-refinement/](./ui-refinement/) — an **interactive, human-gated refinement
-  mode** for taste-driven work whose acceptance criterion is subjective ("refine
-  the UI until it looks good"). Its driving instance is frontend/UI layout, but
-  the mechanism is general. It answers three product questions at once — *no new
-  role* (roles are authority-shaped, domain competence is loaded context), *one
-  new skill* (`cc-refine`), and *a distinct execution mode bracketed by the normal
-  spine* (one plan, one lease, one independent verify + baseline freeze at the
-  end). Start at [ui-refinement/design.md](./ui-refinement/design.md).
+- [direct-collaboration/](./direct-collaboration/) — **`cc-pair`, a direct
+  interactive collaboration mode** for working on a bound repo with the agent, with
+  three actors (user, coordinator, worker) and **no verifier, no lease, no
+  execution records** — the human is the live oracle. It is **orthogonal to the
+  plan lifecycle** (not a plan, not an execution), entered anytime a repo is bound,
+  by intent/`/cc-pair`, or offered after a plan/stack execution completes. It
+  answers three product questions — *no new role* (the worker is the existing role
+  driven interactively), *one new skill* (`cc-pair`), and *one boundary invariant*
+  (`INV-PAIR-01`: outside the lifecycle, own branch/worktree, output
+  human-supervised and never "verified", never auto-completes or delivers). It adds
+  **no plan-contract change**. It supersedes the earlier `ui-refinement` framing.
+  Start at [direct-collaboration/design.md](./direct-collaboration/design.md).
 - [execution-latency/](./execution-latency/) — making actions **finish sooner
   without changing what they mean** by applying two inference-layer levers whose
   safety the contract already guarantees — overlapping provably-independent
@@ -52,11 +56,11 @@ semver going forward (v0.6.1 `design-layout-grouping`).
 
 ## Authority
 
-v0.7.0 adds no owner it does not name and duplicates no rule. **ui-refinement**
-introduces one new capability (`cc-refine`), one new plan acceptance *kind*
-(human-gated visual acceptance), and provisional invariants for the interactive
-mode (contract delta in
-[ui-refinement/skill-and-schema.md](./ui-refinement/skill-and-schema.md)).
+v0.7.0 adds no owner it does not name and duplicates no rule.
+**direct-collaboration** introduces one new capability (`cc-pair`), one new
+invariant (`INV-PAIR-01`) for the interactive mode's boundary, and a light
+session-pointer schema — and **no plan-contract change** (contract delta in
+[direct-collaboration/skill-and-contract.md](./direct-collaboration/skill-and-contract.md)).
 **execution-latency** introduces **no new skill and no new invariant** — its
 safety is existing INV-CONCURRENCY-01/02 (overlap) and INV-HOST-01 /
 INV-RUNTIME-01 (tiering); its only contract surface is additive schema fields and
