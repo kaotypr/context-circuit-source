@@ -298,15 +298,21 @@ invariants:
   - id: INV-EXTERNAL-02
     rule: >
       A publication reads only the workspace artifact types its config.yaml names
-      and writes only its own records under publication/<name>/published/. Nothing
+      and writes only its own files under its own publication/<name>/ folder — its
+      config, its intent/ field-intent files, and its published/ records. Nothing
       is written under plans/, so no planning, execution, verification, or delivery
-      step encounters a publication record and none updates external state or
-      status. It never mutates core Context Circuit state or human plan status
-      (INV-PLAN-01), and it is export-only — data flows from the workspace outward.
+      step encounters a publication file and none updates external state or status.
+      It is export-only, and export-only governs authority and persistence: data
+      flows from the workspace outward, and external state never becomes, or writes
+      to, any workspace artifact. Reading external field values solely to display them to the human —
+      a preview diff — is not an inbound flow, provided nothing read is persisted to
+      any workspace artifact; a read that ends at the screen crosses no boundary. It
+      never mutates core Context Circuit state or human plan status (INV-PLAN-01).
       External side effects are performed through the host or MCP layer, never the
-      runtime (INV-RUNTIME-01); configuration and records are credential-free and
-      hold no provider payload (INV-SEC-01). A record's lifecycle is independent of
-      a plan's archive state, keyed to the stable plan id. Any future inbound flow
+      runtime (INV-RUNTIME-01); configuration, intent, and records are
+      credential-free and hold no provider payload (INV-SEC-01). A record's
+      lifecycle is independent of a plan's archive state, keyed to the stable plan
+      id. Any inbound flow — external state pulled into plans or workspace state —
       must pass through the normal plan-authoring and approval gates
       (INV-APPROVE-01), never around them.
   - id: INV-EXTERNAL-03
@@ -358,5 +364,6 @@ owners:
   pairing_session: wrapper/contracts/schemas/pairing-session.yaml
   external_surface: wrapper/contracts/invariants.yaml
   publication_config: wrapper/contracts/schemas/publication-config.yaml
+  publication_intent: wrapper/contracts/schemas/publication-intent.yaml
   publication_record: wrapper/contracts/schemas/publication-record.yaml
   publication_thread_record: wrapper/contracts/schemas/publication-thread-record.yaml
