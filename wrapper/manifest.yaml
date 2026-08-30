@@ -26,6 +26,7 @@ accepted_schema_versions:
   context-proposal: [1]
   context-index: [1]
   publication-config: [1]
+  publication-intent: [1]
   publication-record: [1]
   publication-thread-record: [1]
 
