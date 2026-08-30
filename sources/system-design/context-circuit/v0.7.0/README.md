@@ -32,16 +32,16 @@ version index; each scope owns its own design.
   "must not read," not "need not"; state it once and reference it) and closes any
   skill information gap that tempts the read — **no new invariant**. Start at
   [runtime-opacity/design.md](./runtime-opacity/design.md).
-- [publication-fields/](./publication-fields/) — a **structured local home for the
+- [publication-intent/](./publication-intent/) — a **structured local home for the
   provider fields a publication pushes** (dates, time estimate) and a
   **consult-before-publish** preview. v0.6 records store external *identity* but not
   the field *values* sent, so reviewing or changing a date/estimate forces a live
-  provider read. The fix adds a user-owned `desired/` intent layer (canonical
+  provider read. The fix adds a user-owned `intent/` layer (canonical
   `estimate_minutes`, `"2h 30m"` human I/O), a last-published `fields:` snapshot on
   the record, and a `cc-publish` preview that diffs and edits before pushing — **no
   new invariant, no new skill**; one INV-EXTERNAL-02 wording clarification permits a
   display-only drift read. Start at
-  [publication-fields/design.md](./publication-fields/design.md).
+  [publication-intent/design.md](./publication-intent/design.md).
 
 ## Layout convention
 
@@ -64,9 +64,9 @@ coordinator/host policy (fan-out width, the tier ladder, and the host-adapter
 spawn-application mechanism). **runtime-opacity** introduces **no new invariant** — it
 strengthens the coordinator-side corollary of INV-RUNTIME-01 (invoke the engine,
 never read it) as a wording and single-ownership cleanup across
-`wrapper/adapters/AGENTS.md` and the invoking skills. **publication-fields**
+`wrapper/adapters/AGENTS.md` and the invoking skills. **publication-intent**
 introduces **no new skill and no new invariant** — a mode of the existing
-`cc-publish`, one additive `desired/` file schema and a `fields:` snapshot on
+`cc-publish`, one additive `intent/` file schema and a `fields:` snapshot on
 `publication-record.yaml` (owners under `wrapper/contracts/schemas/`), and a wording
 clarification of INV-EXTERNAL-02 (display-only drift read ≠ inbound flow). The
 canonical owners stay under `wrapper/` (`wrapper/contracts/invariants.yaml`).

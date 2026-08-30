@@ -1,6 +1,6 @@
 # Context Circuit v0.7.0 — Publication field metadata (overview)
 
-Status: source design for the v0.7.0 publication-fields scope (delta on v0.6
+Status: source design for the v0.7.0 publication-intent scope (delta on v0.6
 external-surface)
 Revision: 1 — 2026-08-29
 
@@ -74,8 +74,8 @@ and breaks the one-way boundary the whole external surface is built on.
 - **No new trigger.** Publishing and its preview stay **manual** (INV-EXTERNAL-01).
   The preview is a mode of `cc-publish`, not a new skill and not an automatic step.
 - **No coupling to the core workflow.** Nothing here is a plan/approve/execute/
-  verify/deliver step, and none of them reads `desired/` or the snapshot.
-- **No credentials or provider payloads** in `desired/`, the record, or anywhere
+  verify/deliver step, and none of them reads `intent/` or the snapshot.
+- **No credentials or provider payloads** in `intent/`, the record, or anywhere
   under `publication/` (INV-SEC-01).
 - **No day/week unit in an estimate.** A "day" is a scheduling *policy* (its hours
   are provider- and config-relative), so it stays in `instructions:`, never in a
@@ -85,16 +85,16 @@ and breaks the one-way boundary the whole external surface is built on.
 
 ## Principles
 
-- **Local owns intent; external is a projection.** The `desired/` layer is the
+- **Local owns intent; external is a projection.** The `intent/` layer is the
   source of truth for the *values we want*; the provider holds a copy that may
   drift. The workspace never reads the provider's copy as authority.
 - **Store canonical, speak human.** Field values are stored in an unambiguous,
   diff-stable canonical form (integer minutes, ISO dates); the friendly `"2h 30m"`
   form exists only at the I/O boundary — typed in the consult session, rendered in
   the diff.
-- **Policy in `instructions:`, values in `desired/`.** `instructions:` keeps the
+- **Policy in `instructions:`, values in `intent/`.** `instructions:` keeps the
   wording, language, tone, and *schedule policy* (workday hours, weekends skipped);
-  the concrete resolved per-plan values move into structured `desired/` files.
+  the concrete resolved per-plan values move into structured `intent/` files.
 - **Snapshot what you push.** Every publish records the field values it sent, so
   the next review is a local diff, not a provider round-trip.
 - **Consult before side effects.** The default path to changing external fields is
@@ -102,11 +102,11 @@ and breaks the one-way boundary the whole external surface is built on.
 
 ## Fixed decisions
 
-1. **A user-owned `desired/` layer.** `publication/<name>/desired/<plan-id>.yaml`
+1. **A user-owned `intent/` layer.** `publication/<name>/intent/<plan-id>.yaml`
    holds the structured field intent for a plan (dates, estimate) that is *not*
    derivable from the plan itself. Created by deriving a first draft from the
    `instructions:` policy on first publish, then human-owned. Detail in
-   [desired-and-record.md](./desired-and-record.md).
+   [intent-and-record.md](./intent-and-record.md).
 2. **`estimate_minutes` is canonical.** Integer minutes on disk — exact (no float
    `2.5h`), diff-stable (one representation per value), and convertible to every
    provider. The `"2h 30m"` / `"15m"` format is input/display only, `h` and `m`
@@ -116,7 +116,7 @@ and breaks the one-way boundary the whole external surface is built on.
    `due_date`, `estimate_minutes`). Idempotency and drift now cover fields, not just
    the content digest. Still credential-free and non-authoritative.
 4. **`cc-publish` gains a preview mode.** A manual, no-write dry run that renders a
-   plain-language diff of `desired/` vs the last-published snapshot (and, if the
+   plain-language diff of `intent/` vs the last-published snapshot (and, if the
    author opts in, vs external current), for the consult session. Publish stays a
    separate explicit action.
 5. **One contract delta: a display-only drift read.** Reading provider field values
@@ -134,30 +134,30 @@ flowchart TB
   subgraph ws["Workspace — publication/&lt;name&gt;/ (local, credential-free)"]
     direction TB
     CFG["config.yaml<br/>policy + instructions"]
-    DES["desired/&lt;plan&gt;.yaml<br/>intent: dates, estimate_minutes"]
+    INT["intent/&lt;plan&gt;.yaml<br/>intent: dates, estimate_minutes"]
     REC["published/&lt;plan&gt;.yaml<br/>identity + fields: snapshot"]
   end
   PLAN["plans/&lt;plan&gt;/ — read-only source<br/>title, tasks, depends_on, status"]
-  PREVIEW{{"cc-publish — preview (no writes)<br/>diff: desired ↔ snapshot ↔ external*"}}
+  PREVIEW{{"cc-publish — preview (no writes)<br/>diff: intent ↔ snapshot ↔ external*"}}
   EXT["ClickUp / Jira / GitHub / …<br/>(host / MCP)"]
 
   PLAN -->|read as-found| PREVIEW
-  DES -->|intent| PREVIEW
+  INT -->|intent| PREVIEW
   REC -->|last snapshot| PREVIEW
   EXT -.->|"* display-only drift read<br/>never persisted"| PREVIEW
-  PREVIEW -->|human edits| DES
+  PREVIEW -->|human edits| INT
   PREVIEW -->|explicit publish| EXT
   PREVIEW -->|on publish, write snapshot| REC
 ```
 
-The three local files divide cleanly: `config.yaml` owns policy, `desired/` owns
+The three local files divide cleanly: `config.yaml` owns policy, `intent/` owns
 the resolved per-plan intent, `published/` owns identity plus the last-pushed
 snapshot. The provider is downstream of all three and never upstream of any of
 them. The dashed edge is the only new read of the provider, and it is display-only.
 
 ## Detailed design
 
-- [desired-and-record.md](./desired-and-record.md) — the `desired/` schema, the
+- [intent-and-record.md](./intent-and-record.md) — the `intent/` schema, the
   `estimate_minutes` unit and `"2h 30m"` format, the record `fields:` snapshot, and
   provider conversion.
 - [consult-and-preview.md](./consult-and-preview.md) — the preview mode, the diff
@@ -167,7 +167,7 @@ them. The dashed edge is the only new read of the provider, and it is display-on
 
 This scope adds **no new invariant** and **no new skill**. It adds:
 
-- additive schema fields — a new `desired/` file schema and a `fields:` block on
+- additive schema fields — a new `intent/` file schema and a `fields:` block on
   `publication-record.yaml` (owners under `wrapper/contracts/schemas/`);
 - a mode of the existing `cc-publish` skill (preview / consult), with no new route
   or authority (INV-SKILL-01);
