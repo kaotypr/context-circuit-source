@@ -22,7 +22,7 @@ Design set:
 - `grade.sh` — deterministic grader over ground-truth artifacts (dimensions A–D).
 - `.out/` — disposable per-run results (git-ignored).
 
-The human-simulator persona for the Claude Code driver lives at
+The shared human-simulator persona for the built-in drivers lives at
 `.claude/agents/cc-human-simulator.md` (source-only; the assembler's skill
 allowlist and the `test/`/`.claude/` exclusions keep it out of the template).
 
@@ -38,6 +38,12 @@ This prints a run directory under `.out/` containing the isolated `workspace/`,
 the pristine `baseline/`, and a `run.yaml` manifest, with `status: prepared`.
 
 ### Safety / sandboxing (important)
+
+The `codex` driver runs the coordinator with Codex's `workspace-write` sandbox
+and automatic approval review. It never uses
+`--dangerously-bypass-approvals-and-sandbox`; generated commands can write only
+inside the disposable instantiated workspace. Its final human-simulator pass is
+ephemeral and `read-only`.
 
 The `claude-code` driver runs the real coordinator headless with
 `--permission-mode bypassPermissions`, which has **no filesystem confinement on
@@ -83,8 +89,15 @@ must, for the chosen host:
 | `CC_TRACE` | optional TSV `action<TAB>tool<TAB>path` |
 | `CC_TELEMETRY` | optional TSV `action<TAB>turns<TAB>tokens` |
 
-On Claude Code the driver is a Claude session using the Task tool to spawn the
-two sub-agents; the Codex and Cursor bindings are deferred (host-matrix §4).
+Built-in drivers are available for Claude Code and Codex; Cursor remains
+deferred. Run a Codex conversation with:
+
+```
+sh template-harness/human/run-scenario.sh --host codex --live 01-new-project-simple-idea
+```
+
+The Codex driver keeps one resumable coordinator thread for all human turns and
+uses a separate ephemeral session for the human-simulator verdict.
 
 ### Grading
 
@@ -117,7 +130,9 @@ sh template-harness/human/grade.sh .out/<run-id>
   **Requires the host to expose a file-access trace; where it does not, C degrades
   to warning-only** and the verdict rests on A and B (host-matrix §5). The
   `claude-code` driver captures the trace from the coordinator's `Read`/`Grep`/
-  `Glob` tool calls (stream-json).
+  `Glob` tool calls (stream-json). Codex JSONL does not expose an equivalent,
+  dependable file-read event, so the Codex driver retains the raw stream and
+  deliberately leaves C degraded to warning-only.
 - **D. Efficiency ledger** (soft, warning-only) — per-action turns/tokens vs
   `budgets`; never fails a run.
 
