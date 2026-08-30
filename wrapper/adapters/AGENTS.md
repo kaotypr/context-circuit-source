@@ -76,3 +76,14 @@ lease, verification, completion, verifier independence, or the failure limit, an
 the runtime never learns it (INV-RUNTIME-01). Reading the config does not apply
 it — the host adapter sets the model on the child spawn; absent any config, the
 adapter defaults apply. Full rules: `docs/role-tiering.md`.
+
+### Applying a configured tier on Codex
+
+When this host is Codex and a role has a configured model or effort, launch the
+child with `spawn_agent` using that exact `model` and `reasoning_effort`. A model
+or effort override requires `fork_turns: "none"`; provide the complete role,
+scope, working-copy path, and task in the spawn prompt instead of relying on
+forked conversation context. End the Codex `task_name` with `_worker` or
+`_verifier` so bounded host evidence can identify the role without retaining a
+provider prompt. For direct collaboration, apply the `worker` tier to its one
+worker and never launch a verifier.

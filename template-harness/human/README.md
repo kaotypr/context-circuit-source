@@ -88,6 +88,7 @@ must, for the chosen host:
 | `CC_TRANSCRIPT` | append prompts + replies here (required) |
 | `CC_TRACE` | optional TSV `action<TAB>tool<TAB>path` |
 | `CC_TELEMETRY` | optional TSV `action<TAB>turns<TAB>tokens` |
+| `CC_ROLE_EVIDENCE` | optional bounded TSV `role<TAB>model<TAB>effort` |
 
 Built-in drivers are available for Claude Code and Codex; Cursor remains
 deferred. Run a Codex conversation with:
@@ -97,7 +98,9 @@ sh template-harness/human/run-scenario.sh --host codex --live 01-new-project-sim
 ```
 
 The Codex driver keeps one resumable coordinator thread for all human turns and
-uses a separate ephemeral session for the human-simulator verdict.
+uses a separate ephemeral session for the human-simulator verdict. It also
+extracts only bounded child role/model/effort evidence from Codex's local session
+metadata; prompts, replies, provider payloads, and credentials are never copied.
 
 ### Grading
 

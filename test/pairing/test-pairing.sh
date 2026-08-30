@@ -97,4 +97,14 @@ explicit="$ws/.runtime/pairing/from-explicit-base/pointer.yaml"
 contains "$explicit" "base: $anchor_before"
 assert_eq "$anchor_before" "$(git -C "$ws/.runtime/worktrees/cc-pair/from-explicit-base/api" rev-parse HEAD)"
 
+# Host adapters invoke the engine from the workspace with `.`. Pairing state
+# and Git must agree on one absolute worktree path in that mode.
+(cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-begin . api relative-root >/dev/null)
+relative_pointer="$ws/.runtime/pairing/relative-root/pointer.yaml"
+relative_wt="$ws/.runtime/worktrees/cc-pair/relative-root/api"
+require_dir "$relative_wt"
+contains "$relative_pointer" "worktree: $relative_wt"
+(cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
+	| grep -Fq 'resumable: true' || fail 'relative-root pair is not resumable'
+
 pass 'direct collaboration'

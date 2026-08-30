@@ -22,6 +22,7 @@ man() { awk -v k="$1" '$0 ~ "^" k ":[[:space:]]" { sub("^" k ":[[:space:]]*","")
 CASE_ID=$(man case_id); CASE_FILE=$(man case_file); HOST=$(man host)
 WORKSPACE=$(man workspace); BASELINE=$(man baseline)
 TRANSCRIPT=$(man transcript); TRACE=$(man trace); TELEMETRY=$(man telemetry)
+ROLE_EVIDENCE=$(man role_evidence)
 
 [ -f "$CASE_FILE" ] || { printf 'FAIL: case file missing: %s\n' "$CASE_FILE" >&2; exit 2; }
 [ -d "$WORKSPACE" ] || { printf 'FAIL: workspace missing: %s\n' "$WORKSPACE" >&2; exit 2; }
@@ -63,6 +64,15 @@ ws_identity() { # print workspace identity from a workspace.yaml (scalar or nest
 	printf '%s' "$id"
 }
 plan_dirs() { for d in "$WORKSPACE"/plans/*/; do b=$(basename -- "$d"); [ "$b" = "archive" ] && continue; [ -f "$d/plan.yaml" ] && printf '%s\n' "$b"; done; }
+pair_pointer_for_repo() {
+	pp_repo=$1; pp_root="$WORKSPACE/.runtime/pairing"
+	[ -d "$pp_root" ] || return 1
+	for pp_file in "$pp_root"/*/pointer.yaml; do
+		[ -f "$pp_file" ] || continue
+		[ "$(cc_scalar "$pp_file" repo 2>/dev/null)" = "$pp_repo" ] && { printf '%s\n' "$pp_file"; return 0; }
+	done
+	return 1
+}
 num_compare() { # value $1 against spec $2 like ">=0" / "0" / ">1"
 	v=$1; s=$2
 	case "$s" in
@@ -87,6 +97,42 @@ while IFS= read -r line; do
 	key=$(printf '%s' "$line" | sed 's/^[[:space:]]*-[[:space:]]*//; s/:.*$//')
 	val=$(printf '%s' "$line" | sed 's/^[^:]*:[[:space:]]*//; s/[[:space:]]*$//; s/^"//; s/"$//')
 	case "$key" in
+		pairing_active)
+			pa_pointer=$(pair_pointer_for_repo "$val" 2>/dev/null) || pa_pointer=""
+			if [ -n "$pa_pointer" ]; then ok "pairing_active ($val: active human-supervised session)"
+			else bad "pairing_active ($val: no active pairing pointer)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_file_exists)
+			# val "<repo>:<relative-path>:<exact-line>"
+			pf_repo=${val%%:*}; pf_rest=${val#*:}; pf_path=${pf_rest%%:*}; pf_line=${pf_rest#*:}
+			pf_pointer=$(pair_pointer_for_repo "$pf_repo" 2>/dev/null) || pf_pointer=""
+			pf_wt=""; [ -n "$pf_pointer" ] && pf_wt=$(cc_scalar "$pf_pointer" worktree 2>/dev/null) || :
+			if [ -n "$pf_wt" ] && [ -f "$pf_wt/$pf_path" ] && grep -Fxq "$pf_line" "$pf_wt/$pf_path"; then
+				ok "pair_file_exists ($pf_repo/$pf_path has requested content)"
+			else bad "pair_file_exists ($pf_repo/$pf_path missing requested content)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_worktree_uncommitted)
+			pu_pointer=$(pair_pointer_for_repo "$val" 2>/dev/null) || pu_pointer=""
+			pu_wt=""; pu_base=""; [ -n "$pu_pointer" ] && pu_wt=$(cc_scalar "$pu_pointer" worktree 2>/dev/null) || :
+			[ -n "$pu_pointer" ] && pu_base=$(cc_scalar "$pu_pointer" base 2>/dev/null) || :
+			pu_head=""; pu_dirty=""; [ -d "$pu_wt" ] && pu_head=$(git -C "$pu_wt" rev-parse HEAD 2>/dev/null) || :
+			[ -d "$pu_wt" ] && pu_dirty=$(git -C "$pu_wt" status --porcelain 2>/dev/null) || :
+			if [ -n "$pu_dirty" ] && [ "$pu_head" = "$pu_base" ]; then ok "pair_worktree_uncommitted ($val: dirty, HEAD remains at base)"
+			else bad "pair_worktree_uncommitted ($val: dirty='${pu_dirty:+yes}' head='${pu_head:-none}' base='${pu_base:-none}')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_anchor_file_absent)
+			# val "<repo>:<relative-path>" — direct collaboration never edits the anchor checkout.
+			paf_repo=${val%%:*}; paf_path=${val#*:}
+			paf_binding=$(cc_binding_field "$WORKSPACE" "$paf_repo" path 2>/dev/null) || paf_binding=""
+			case "$paf_binding" in /*) paf_root=$paf_binding ;; *) paf_root="$WORKSPACE/$paf_binding" ;; esac
+			if [ -n "$paf_binding" ] && [ ! -e "$paf_root/$paf_path" ]; then ok "pair_anchor_file_absent ($paf_repo/$paf_path absent from active checkout)"
+			else bad "pair_anchor_file_absent ($paf_repo/$paf_path leaked into active checkout)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_role_evidence)
+			# val "<role>:<model>:<effort>" — bounded host evidence from the child session.
+			pre_role=${val%%:*}; pre_rest=${val#*:}; pre_model=${pre_rest%%:*}; pre_effort=${pre_rest#*:}
+			if [ -f "$ROLE_EVIDENCE" ] && awk -F'\t' -v r="$pre_role" -v m="$pre_model" -v e="$pre_effort" '$1==r && $2==m && $3==e{found=1} END{exit found?0:1}' "$ROLE_EVIDENCE"; then
+				ok "pair_role_evidence ($pre_role ran at $pre_model/$pre_effort)"
+			else bad "pair_role_evidence ($pre_role did not run at $pre_model/$pre_effort)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_role_absent)
+			if [ ! -f "$ROLE_EVIDENCE" ] || ! awk -F'\t' -v r="$val" '$1==r{found=1} END{exit found?0:1}' "$ROLE_EVIDENCE"; then ok "pair_role_absent ($val not spawned)"
+			else bad "pair_role_absent ($val child evidence exists)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		workspace_identity_not_fabricated)
 			b=$(ws_identity "$BASELINE/workspace.yaml"); w=$(ws_identity "$WORKSPACE/workspace.yaml")
 			if [ "$b" = "$w" ]; then ok "workspace_identity_not_fabricated (identity unchanged: '$w')"

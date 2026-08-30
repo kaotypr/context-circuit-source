@@ -10,6 +10,7 @@ case_file="$lab/case.yaml"
 simulator="$lab/human-simulator.md"
 fake_codex="$lab/codex"
 fake_log="$lab/codex.log"
+codex_state="$lab/codex-state"
 
 cat > "$case_file" <<'EOF'
 id: codex-driver-contract
@@ -56,6 +57,11 @@ printf '%s\n' "$args" >> "$FAKE_CODEX_LOG"
 : "${out:?missing --output-last-message}"
 case "$mode" in
 	coordinator)
+		mkdir -p "$FAKE_CODEX_STATE_DIR/sessions/test"
+		cat > "$FAKE_CODEX_STATE_DIR/sessions/test/worker.jsonl" <<'JSON'
+{"type":"session_meta","payload":{"source":{"subagent":{"thread_spawn":{"parent_thread_id":"11111111-1111-4111-8111-111111111111","agent_path":"/root/contract_worker"}}}}}
+{"type":"turn_context","payload":{"model":"gpt-5.6-luna","effort":"high"}}
+JSON
 		printf '%s\n' 'I can outline a plan and get you started.' > "$out"
 		printf '%s\n' '{"type":"thread.started","thread_id":"11111111-1111-4111-8111-111111111111"}'
 		printf '%s\n' '{"type":"turn.completed","usage":{"input_tokens":120,"cached_input_tokens":20,"output_tokens":30}}' ;;
@@ -69,7 +75,9 @@ EOF
 chmod +x "$fake_codex"
 
 FAKE_CODEX_LOG="$fake_log" \
+FAKE_CODEX_STATE_DIR="$codex_state" \
 CC_CODEX_BIN="$fake_codex" \
+CC_CODEX_STATE_DIR="$codex_state" \
 CC_RUN_DIR="$lab/run" \
 CC_WORKSPACE="$lab/workspace" \
 CC_BASELINE="$lab/baseline" \
@@ -81,6 +89,7 @@ CC_HUMAN_SIM="$simulator" \
 CC_TRANSCRIPT="$lab/run/transcript.txt" \
 CC_TRACE="$lab/run/file-access-trace.tsv" \
 CC_TELEMETRY="$lab/run/telemetry.tsv" \
+CC_ROLE_EVIDENCE="$lab/run/role-evidence.tsv" \
 	sh "$ROOT/template-harness/human/drivers/codex.sh" >/dev/null
 
 require_file "$lab/run/transcript.txt"
@@ -97,6 +106,10 @@ contains "$lab/run/telemetry.tsv" 'orient'
 contains "$lab/run/telemetry.tsv" 'create-plan'
 require_file "$lab/run/conversational-verdict.txt"
 contains "$lab/run/conversational-verdict.txt" 'verdict: pass'
+require_file "$lab/run/role-evidence.tsv"
+contains "$lab/run/role-evidence.tsv" 'worker'
+contains "$lab/run/role-evidence.tsv" 'gpt-5.6-luna'
+contains "$lab/run/role-evidence.tsv" 'high'
 test ! -e "$lab/run/file-access-trace.tsv" || fail 'Codex driver must not claim a file-access trace'
 
 contains "$fake_log" '[--approve-for-me]'
