@@ -1,4 +1,4 @@
-# Context Circuit v0.5 release boundary.
+# Context Circuit release boundary.
 # Format: "required <path>" or "exclude <path>" (relative to the staged tree).
 # The assembler stages template-owned files and copies the blank template seed
 # into a clean, uninitialized universal project workspace. Maintainer state,
@@ -51,6 +51,7 @@ required wrapper/contracts/schemas/context-proposal.yaml
 required wrapper/contracts/schemas/context-index.yaml
 required wrapper/contracts/schemas/lease.yaml
 required wrapper/contracts/schemas/grounding-manifest.yaml
+required wrapper/contracts/schemas/pairing-session.yaml
 required wrapper/contracts/schemas/publication-config.yaml
 required wrapper/contracts/schemas/publication-record.yaml
 required wrapper/contracts/schemas/publication-thread-record.yaml
@@ -77,6 +78,7 @@ required .agents/skills/cc-verify/SKILL.md
 required .agents/skills/cc-complete/SKILL.md
 required .agents/skills/cc-archive/SKILL.md
 required .agents/skills/cc-deliver/SKILL.md
+required .agents/skills/cc-pair/SKILL.md
 required .agents/skills/cc-publish/SKILL.md
 required agents/coordinator.md
 required agents/worker.md

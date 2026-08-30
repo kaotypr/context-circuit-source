@@ -4,5 +4,8 @@
 /repositories/
 /repositories.local.yaml
 
+# Per-user, host-local role tiering (model/effort) — differs per person and host.
+/role-tiering.local.yaml
+
 # Private execution evidence.
 /.runtime/

@@ -198,4 +198,32 @@ contains "$gedir/brief-api.md" "## Repository grounding"
 contains "$gedir/brief-api.md" "AGENTS.md — read and honor it"
 cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 
+# 12. Execution latency: the SHIPPED template records bounded per-attempt
+#     host evidence (per-role model/effort), refuses an unknown evidence key,
+#     validates the optional plan complexity hint, and ships the per-role tiering
+#     guidance and the 0.7.0 runtime version.
+contains "$ws/wrapper/manifest.yaml" "runtime_version: 0.7.0"
+require_file "$ws/docs/role-tiering.md"                  # per-role tiering guidance ships (docs/)
+mkplan 0006-latency "Latency" api src/lat ""
+cc_plan_approve "$ws" 0006-latency >/dev/null
+lex=$(cc_execution_begin "$ws" 0006-latency sess-l | sed -n 's/^execution_id: //p')
+ledir="$ws/.runtime/executions/0006-latency/$lex"
+cc_attempt_begin "$ledir" >/dev/null
+mkdir -p "$ws/.runtime/worktrees/0006-latency/api/src/lat"
+printf 'm\n' >"$ws/.runtime/worktrees/0006-latency/api/src/lat/mod.txt"
+git -C "$ws/.runtime/worktrees/0006-latency/api" add -A
+git -C "$ws/.runtime/worktrees/0006-latency/api" commit -q -m "feat(api): lat"
+cc_worker_commit_record "$ledir" api implementation >/dev/null
+cc_verifier_prepare "$ledir" >/dev/null
+# the coordinator records bounded, credential-free per-attempt host evidence:
+# the (model, effort) each role ran at (no wall-clock — timing is engine-stamped)
+cc_attempt_evidence_record "$ledir" 1 worker_model=model-hi worker_effort=high verifier_model=model-lo verifier_effort=medium >/dev/null
+contains "$ledir/attempts/001/host-evidence.yaml" "worker_model: model-hi"
+contains "$ledir/attempts/001/host-evidence.yaml" "verifier_model: model-lo"
+expect_failure cc_attempt_evidence_record "$ledir" 1 bogus_key=1   # bounded surface: unknown key refused
+cc_verifier_result_record "$ledir" 1 passed >/dev/null
+# the optional per-plan complexity hint validates in the shipped engine
+printf 'complexity: high\n' >>"$ws/plans/0006-latency/plan.yaml"
+cc_plan_validate "$ws/plans/0006-latency" >/dev/null || fail 'shipped engine rejects a valid complexity hint'
+
 pass 'template-runtime laboratory'

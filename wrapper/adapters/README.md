@@ -17,6 +17,7 @@ To set up a project:
 
 To do work:
 
+> Work with me directly on <small change> in <repository>.
 > Create a plan for <feature>.
 > Review plan <plan-id>.
 > Approve plan <plan-id> and execute it.
@@ -26,6 +27,7 @@ To do work:
 
 Approval, execution, completion, archive, restore, and delivery (pull request,
 merge, push, deployment) are separate explicit actions you request.
+Direct collaboration is human-supervised and does not produce verified status.
 Creating or reviewing a plan never approves or executes it. Verification produces
 evidence; only you decide when a plan is complete.
 

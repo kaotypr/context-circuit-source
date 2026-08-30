@@ -78,6 +78,7 @@ BASELINE="$RUN_DIR/baseline"
 TRANSCRIPT="$RUN_DIR/transcript.txt"
 TRACE="$RUN_DIR/file-access-trace.tsv"
 TELEMETRY="$RUN_DIR/telemetry.tsv"
+ROLE_EVIDENCE="$RUN_DIR/role-evidence.tsv"
 mkdir -p "$RUN_DIR"
 
 # Temp assembly area (disposable; never the source .runtime).
@@ -279,6 +280,32 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	done
 fi
 
+# setup.role_tiering: seed a host-local role-tiering.local.yaml at the workspace
+# root — the per-user, gitignored, opt-in file that names a concrete (model,
+# effort) per role, grouped by host. The case block gives a flat worker/verifier;
+# we wrap it under `hosts.<this-run's-host>` so the coordinator on that host reads
+# its own group. Seeded here so a case can prove the coordinator reads and honors
+# it; a real user writes it by hand and nothing auto-creates it.
+rt_read() { # role field -> value from setup.role_tiering
+	awk -v role="$1" -v field="$2" '
+		/^  role_tiering:/{inrt=1; next}
+		inrt && /^  [A-Za-z]/ && $0 !~ /^    / {inrt=0}
+		inrt && /^    [A-Za-z]/ {cur=$0; sub(/^    /,"",cur); sub(/:.*/,"",cur)}
+		inrt && cur==role && $0 ~ ("^      " field ":") {v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); sub(/[[:space:]]+$/,"",v); print v; exit}
+	' "$CASE_FILE"
+}
+if grep -q '^  role_tiering:' "$CASE_FILE" 2>/dev/null; then
+	rt_wm=$(rt_read worker model);   rt_we=$(rt_read worker effort)
+	rt_vm=$(rt_read verifier model); rt_ve=$(rt_read verifier effort)
+	{
+		printf 'hosts:\n  %s:\n' "$HOST"
+		if [ -n "$rt_wm" ]; then printf '    worker:\n      model: %s\n' "$rt_wm"; [ -n "$rt_we" ] && printf '      effort: %s\n' "$rt_we" || :; printf '      escalate_on_repair: false\n'; fi
+		if [ -n "$rt_vm" ]; then printf '    verifier:\n      model: %s\n' "$rt_vm"; [ -n "$rt_ve" ] && printf '      effort: %s\n' "$rt_ve" || :; printf '      escalate_on_repair: false\n'; fi
+	} > "$WORKSPACE/role-tiering.local.yaml"
+	FIXTURE_NOTE="${FIXTURE_NOTE},role-tiering"
+	printf '[setup] seeded host-local role-tiering.local.yaml under hosts.%s (worker=%s/%s, verifier=%s/%s)\n' "$HOST" "${rt_wm:-default}" "${rt_we:-default}" "${rt_vm:-default}" "${rt_ve:-default}"
+fi
+
 setup_empty sources || grep -q '^  sources:[[:space:]]*\[\]' "$CASE_FILE" || { FIXTURE_NOTE="${FIXTURE_NOTE},sources-todo"; printf 'WARN: setup.sources fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2; }
 
 # 4. Capture the pristine baseline snapshot (harness §1) for dimension A diffs.
@@ -298,6 +325,7 @@ cp "$WORKSPACE/workspace.yaml" "$BASELINE/workspace.yaml"
 	printf 'transcript: %s\n' "$TRANSCRIPT"
 	printf 'trace: %s\n' "$TRACE"
 	printf 'telemetry: %s\n' "$TELEMETRY"
+	printf 'role_evidence: %s\n' "$ROLE_EVIDENCE"
 	printf 'human_simulator: %s\n' "$ROOT/.claude/agents/cc-human-simulator.md"
 	printf 'fixtures: %s\n' "$FIXTURE_NOTE"
 	printf 'status: prepared\n'
@@ -314,6 +342,7 @@ if [ -n "$DRIVER" ]; then
 	CC_CASE_FILE="$CASE_FILE" CC_CASE_ID="$CASE_ID" CC_HOST="$HOST" CC_MODE="$CASE_MODE" \
 	CC_HUMAN_SIM="$ROOT/.claude/agents/cc-human-simulator.md" \
 	CC_TRANSCRIPT="$TRANSCRIPT" CC_TRACE="$TRACE" CC_TELEMETRY="$TELEMETRY" \
+	CC_ROLE_EVIDENCE="$ROLE_EVIDENCE" \
 		sh -c "$DRIVER" || { printf 'FAIL: driver returned non-zero\n' >&2; exit 1; }
 	awk '/^status:[[:space:]]/{print "status: driven";next}{print}' "$RUN_DIR/run.yaml" > "$RUN_DIR/run.yaml.tmp" && mv "$RUN_DIR/run.yaml.tmp" "$RUN_DIR/run.yaml"
 	if [ "$AUTOGRADE" -eq 1 ]; then

@@ -32,19 +32,24 @@ context; invoke it as a tool instead.
 ## Conversation to action
 
 Map ordinary language to one contract: orient, gather context, connect/clone/
-init repository, create plan, review plan, approve plan, execute plan, inspect
-results, repair, mark complete, review/accept context updates, archive, restore,
-open pull request, merge/deliver. Distinguish inspect from mutate, approval from
-execution, and repository change from delivery. Support the explicit compound
+init repository, collaborate directly, create plan, review plan, approve plan,
+execute plan, inspect results, repair, mark complete, review/accept context
+updates, archive, restore, open pull request, merge/deliver. Distinguish inspect
+from mutate, approval from execution, and repository change from delivery.
+Support the explicit compound
 "approve and execute" as two sequential explicit actions.
 
 A request to run a *set* of already-approved plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
 WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
 (their dependencies verified and their paths free) and selects each plan's base;
-each plan is still executed by one worker and one independent verifier under the
-three-failure limit; a failed or blocked plan holds only its descendants. Nothing
-is marked done or delivered. Report progress and outcomes in plain language.
+the coordinator may overlap provably-independent ready plans up to a fan-out width
+(a coordinator policy over the already-safe path lease, INV-CONCURRENCY-01/02, not
+a new rule; the lease arbitrates any race); each plan is still executed by one
+worker and one independent verifier under the three-failure limit; a failed or
+blocked plan holds only its descendants. Nothing is marked done or delivered.
+Report progress and outcomes in plain language — concurrent progress interleaves,
+so narrate interleaved effects, never the overlap mechanism.
 
 ## Reporting to the user
 
@@ -59,6 +64,17 @@ and I'll work from develop" or "the plan is approved, but nothing has run yet" �
 not the files or mechanics behind them. Reveal runtime records, branch mechanics,
 or host-adapter details only when the user explicitly asks for diagnostics
 (doc 01 §11; AGENTS.md keeps these hidden).
+
+Start at the user's vocabulary level. When the user has not introduced technical
+setup terms, treat "workspace", "repository", role names, host details, skills,
+tools, and commands as internal vocabulary too. Say "your project", "a new
+project folder", "existing code", or "the plan was only outlined here". For
+example, ask "Should I start a new project folder here, or use code you already
+have?" rather than whether a repository is connected. Never narrate tool choice
+or a command failure to a lay user; report only its effect and the next plain
+decision. Never say that a "planning template" or "planning command" failed;
+say "Here is a draft plan. Nothing has been saved." A user who introduces a
+technical term may be answered at that level.
 
 ## Execution coordination
 
@@ -87,4 +103,19 @@ or a no-update-needed result. Never silently accept a Product Knowledge change.
 
 Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,
-or completion.
+or completion. The per-role `(model, effort)` the coordinator spawns worker and
+verifier at (from the host-local role-tiering config with adapter defaults,
+`docs/role-tiering.md`) is the same kind of bounded host evidence: it
+changes cost and speed, never meaning, is recorded per attempt with
+`attempt-evidence-record`, and is never surfaced to a lay user except under
+explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01), and a hard
+pin is respected even at the third failure with its cost reported honestly.
+
+## Direct collaboration
+
+For direct, live work, resolve `.agents/skills/cc-pair/SKILL.md`. This is an
+orthogonal user ↔ coordinator ↔ worker loop, not a plan execution. The coordinator
+interprets and delegates but never writes; one worker changes one connected
+repository in the session's isolated working copy; the user judges the result
+live. There is no verifier, lease, execution record, completion, or implied
+delivery. Report the output as human-supervised, never verified (INV-PAIR-01).

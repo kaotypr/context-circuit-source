@@ -34,12 +34,16 @@ importantly, how the coordinator translates them into plain language for a user.
 | Plan stack | A named set of approved plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`; declaring it makes the plan `schema_version: 2`. |
 | Path lease | A `(repository, path region)` reservation extending the one-worker lock, so plans touching overlapping paths serialize while disjoint ones run together. |
+| Fan-out width | How many provably-independent ready plans a plan stack runs at once — a coordinator policy bounded by the host, not a gate; width 1 is plain serial order, and the path lease arbitrates any race. |
+| Role tiering | The per-role `(model, effort)` the coordinator runs the worker and verifier at, from a host-local config with adapter defaults; bounded host evidence that changes cost and speed, never meaning, and never independence or the failure limit. |
 | Execution base | The commit a plan's work is built on: the anchor tip, a predecessor's branch (stack), or a runtime-authored integration merge of several predecessors. |
 | Drift guard | Rebasing a plan onto the current branch tip and re-checking it before a pull request, when a sibling already merged. |
 | Repository grounding | The worker reading and honoring the target repository's own agent guidance, discovered from the working copy. |
 | Grounding manifest | The discovered record of a repository's agent guidance (files, skills, prepared environment) for one execution. |
 | Worker brief | The instructions handed to the worker for one execution, assembled from the grounding manifest and the plan. |
 | System design | A structured write-up of the shape of a larger change, authored as source material; a source, not a lifecycle stage. |
+| Direct collaboration / `cc-pair` | A live user–coordinator–worker loop for changing one connected repository without a plan or verifier. The user judges the result as it changes. |
+| Human-supervised | Work the user judged live during direct collaboration. It is never equivalent to independently verified execution evidence. |
 | Publication | A pipeline you declare once and trigger by hand (`cc-publish`) to publish workspace data to an external system — a tracker, chat, or docs space; separate from the core workflow, one folder per publication under `publication/`. |
 | Publish / `cc-publish` | Sending workspace data outward to an external system, on request. Reserved for the external surface — git delivery is "push" or "open a pull request", never "publish". |
 | Publication kind | What a publication sends: `plan` (a plan and its tasks → a tracker) or `thread` (a plan's open questions → a chat discussion). |
@@ -55,6 +59,9 @@ explicitly asks for diagnostics.
 
 | Internal term or artifact | Never say to a user | Say instead, by effect |
 | --- | --- | --- |
+| Workspace | "workspace" when the user has not introduced that term | "your project" / "your project setup" |
+| Connected repository | "repository connected" / "repository binding" | "your `<name>` project is ready to work on" |
+| Runtime, skill, tool, or command failure | "the planning command/template failed" / the tool or skill name | "Here is a draft plan; nothing has been saved" |
 | Worktree | "worktree" | describe the effect ("a separate working copy of your project"), or say nothing about the mechanism |
 | Anchor branch | "anchor branch" | the branch's plain name — "I'll work from `develop`" |
 | Local binding / binding | "binding" | "I've connected your `<name>` project" |
@@ -70,5 +77,8 @@ explicitly asks for diagnostics.
 | Execution base / integration base / `refs/cc-base/...` | "base", "integration merge", the ref name | "built on top of the earlier work", by effect |
 | Grounding manifest / worker brief | those terms | "I followed your project's own contributor guidance" |
 | Drift guard / rebase-and-re-verify | "drift", "rebase" | "I brought it up to date with your branch and checked it again" |
+| Pairing branch / pairing worktree | `cc-pair/...` or "pairing worktree" | "the changes we made together" / "a separate working copy" |
+| Fan-out width / concurrent pipelines | "fan-out", "width N", "leases" | "I'm working on several at once" / a waiting plan is "waiting on another plan's area" |
+| Role tiering / `(model, effort)` | the model id or effort level | say nothing about the model; describe only the effect, "I ran the harder step with more effort" |
 
 Reveal these mechanics only when the user explicitly asks for diagnostics.

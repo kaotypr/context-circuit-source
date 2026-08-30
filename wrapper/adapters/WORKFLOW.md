@@ -19,12 +19,13 @@ Circuit workspace.
 | What is this workspace? | Read-only orientation. |
 | Gather context about X. | Propose a context update with provenance. |
 | Connect / clone / initialize the R repository. | Register and bind; clone/init only when explicitly asked. |
+| Work on / refine X with me, or `/cc-pair`. | Start or resume direct collaboration in one connected repository; live human supervision, no plan or verifier. |
 | Create a plan for F. | Draft a grounded readable plan. Does not approve or execute. |
 | Review plan X. | Non-executing discussion; may update draft content. |
 | Approve plan X. | Explicit approval gate: draft → approved. |
 | Execute plan X. | Execute only if already approved. |
 | Approve plan X and execute it. | Approve, then execute if preflight passes. |
-| Execute plans X…Z / run the ready stack. | Run a set of already-approved plans in dependency order: the runtime detects which are ready (dependencies verified, paths free) and selects each base; each plan is still one worker and one independent verifier. Adds no authority; marks nothing done or delivered. |
+| Execute plans X…Z / run the ready stack. | Run a set of already-approved plans in dependency order: the runtime detects which are ready (dependencies verified, paths free) and selects each base; the coordinator may overlap provably-independent ready plans up to a fan-out width (the lease arbitrates races), and each plan is still one worker and one independent verifier. Adds no authority; marks nothing done or delivered. |
 | What happened with X? | Summarize execution evidence. |
 | Repair the failed X verification. | Another worker attempt if allowed. |
 | Mark X complete. | Human-controlled completion; only when verified. |
@@ -38,8 +39,10 @@ Circuit workspace.
   delivery.
 - Never infer a consequential action from "okay" or "looks good".
 - Only an approved plan executes; refuse to execute a draft plainly.
-- One worker, one independent read-only verifier; three worker failures stop
-  execution and preserve all evidence.
+- One worker and one independent read-only verifier handle each plan execution;
+  three worker failures stop it and preserve all evidence. Direct collaboration
+  instead has one worker and the human as live oracle; it is never verified
+  (INV-PAIR-01).
 - Verification produces `verified` evidence; only an explicit human request marks
   a plan `done`, and only when verified.
 - Delivery (pull request, merge, push, deploy) and cleanup are separate

@@ -10,9 +10,9 @@ Reading order:
 
 - [design.md](./design.md) — the normative overview: the gap (published records
   store identity, not the field values that were pushed), the three-layer model
-  (desired / last-published snapshot / external current), the fixed decisions, and
+  (intent / last-published snapshot / external current), the fixed decisions, and
   the shape of the solution. Stop here for the whole design.
-- [desired-and-record.md](./desired-and-record.md) — the user-owned `desired/`
+- [intent-and-record.md](./intent-and-record.md) — the user-owned `intent/`
   field layer, the `estimate_minutes` canonical unit and its `"2h 30m"` human I/O
   format, and the last-published `fields:` snapshot added to the publication
   record.

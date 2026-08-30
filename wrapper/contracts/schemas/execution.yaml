@@ -18,6 +18,10 @@ layout:
     context-impact.yaml: knowledge reconciliation references (written by coordinator)
     attempts/NNN/worker.yaml: worker attempt record and captured commits
     attempts/NNN/verifier.yaml: independent verifier result for that attempt
+    attempts/NNN/host-evidence.yaml: >
+      additive per-attempt host evidence — the (model, effort) each role
+      ran at (see timing_fields). Evidence only; no gate, route, verdict, or
+      counter reads it (INV-HOST-01).
     repositories/<repository-id>.yaml: per-repository worktree, branch, base and latest commit
     grounding/<repository-id>.yaml: repository-grounding manifest discovered for the
       execution worktree (INV-GROUND-01; schema grounding-manifest.yaml)
@@ -37,6 +41,30 @@ fields:
   current_attempt: { type: integer, required: true }
   created_at: { type: string, required: true }
   updated_at: { type: string, required: true }
+
+host_evidence_fields:
+  purpose: >
+    per-attempt host evidence: the (model, effort) each role ran at — the
+    one thing the engine cannot know, being model-blind (INV-RUNTIME-01). Bounded,
+    additive, evidence only, never a gate; a v0.6 reader ignores it.
+  file: attempts/NNN/host-evidence.yaml
+  written_by: runtime action attempt-evidence-record (atomic; INV-RUNTIME-02)
+  key_allowlist:
+    - worker_model        # (model, effort) the worker ran at — host evidence
+    - worker_effort
+    - verifier_model      # (model, effort) the verifier ran at — host evidence
+    - verifier_effort
+    - complexity          # per-plan hint applied this attempt, if any
+    - escalated           # whether a repair raised the role above its start
+  notes: >
+    No wall-clock is recorded here: an attempt already carries started_at
+    (worker.yaml) and checked_at (verifier.yaml), whose span is its duration, so
+    timing needs no coordinator step (the most precise per-role figure lives in the
+    host's own sub-agent transcript, outside workspace state). A host-blocked
+    verifier records worker_model but no verifier_model (none ran); the missing
+    value, with status: blocked and no passed verifier record, is the evidence of
+    the block. Unknown keys and unsafe values are refused so the surface stays
+    bounded and credential-free (INV-HOST-01 / INV-SEC-01).
 
 repository_record_fields:
   repository: logical repository id
@@ -61,6 +89,8 @@ rules:
   - INV-EXEC-03
   - INV-REPAIR-01
   - INV-PRESERVE-01
+  - INV-RUNTIME-01
   - INV-RUNTIME-02
+  - INV-HOST-01
   - INV-OWN-01
   - INV-CONCURRENCY-02

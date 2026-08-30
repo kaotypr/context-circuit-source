@@ -78,7 +78,7 @@ done
 # Canonical schema fixtures must be present.
 for schema in workspace repositories-local plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
-  lease grounding-manifest publication-config publication-record \
+  lease grounding-manifest pairing-session publication-config publication-record \
   publication-thread-record; do
   [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
@@ -96,7 +96,7 @@ for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-publish) ;;
+    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) ;;
     *) fail "unexpected skill remains: $skill_name" ;;
   esac
 done
@@ -114,8 +114,11 @@ mv "$stage_tree" "$artifact_dir"
 archive_path="$output_dir/$artifact_name.tar.gz"
 (CDPATH= cd "$artifact_dir" && tar -cf - .) | gzip -n > "$archive_path"
 
+runtime_version=$(sed -n 's/^runtime_version:[[:space:]]*//p' "$artifact_dir/wrapper/manifest.yaml" | head -n1)
+[ -n "$runtime_version" ] || fail 'staged manifest has no runtime_version'
+
 printf 'version: %s\n' "$version"
-printf 'runtime_version: 0.6.0\n'
+printf 'runtime_version: %s\n' "$runtime_version"
 printf 'source_revision: %s\n' "$source_sha"
 printf 'source_state: %s\n' "$source_state"
 printf 'destination: %s %s\n' "$DESTINATION_REPO" "$DESTINATION_REF"
