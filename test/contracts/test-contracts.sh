@@ -35,7 +35,7 @@ not_contains "$inv" "push/publish/deploy"
 # --- manifest declares runtime exclusions and the release boundary ---
 man="$W/manifest.yaml"
 require_file "$man"
-contains "$man" "runtime_version: 0.7.0"
+contains "$man" "runtime_version: 1.0.0"
 contains "$man" "plan: [1, 2, 3]"
 contains "$man" "intent-contract: [1]"
 contains "$man" "candidate: [1]"
@@ -129,7 +129,7 @@ require_file "$ROOT/docs/role-tiering.md"
 contains "$inv" "role_tiering: docs/role-tiering.md"
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
-contains "$man" "runtime_version: 0.7.0"
+contains "$man" "runtime_version: 1.0.0"
 for r in coordinator worker verifier; do
 	require_file "$ROOT/agents/$r.md"
 done

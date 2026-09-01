@@ -4,21 +4,32 @@ describes: .runtime/executions/<plan-id>/<execution-id>/completion.yaml
 concern: completion_record
 
 purpose: >
-  Durable implementation completion record proving which verified execution and
-  repository commits a human accepted as done. It is written only by an explicit
-  human completion request, and only when the latest execution passed
-  independent verification. It never changes Product Knowledge.
+  Durable implementation completion record proving which execution and repository
+  commits were accepted as done. Under Context Circuit v1.0 the way it is reached
+  depends on the intent's consequence tier (INV-COMPLETE-01): at Explore and
+  Standard it is INFERRED from a current candidate-bound human acceptance plus a
+  recorded delivery (`human_completion: inferred`); at Critical, and for a legacy
+  plan, it is written only by an EXPLICIT human completion request after independent
+  verification (`human_completion: accepted`). It never changes Product Knowledge.
 
 preconditions:
-  - the latest execution status is verified
+  - completion-ready passes for the plan's tier (Explore: candidate-bound
+    acceptance; Standard/Critical: candidate-bound independent pass)
   - plan status is approved at the moment of completion
-  - completion is an explicit human request
+  - inferred completion (Explore/Standard) additionally requires a recorded delivery
+    still binding to the current candidate; Critical requires an explicit human request
 
 fields:
   schema_version: { type: integer, required: true }
   execution_id: { type: string, required: true }
   plan: { type: string, required: true }
-  human_completion: { const: accepted, required: true }
+  human_completion:
+    type: enum
+    required: true
+    values: [accepted, inferred]
+    description: >
+      accepted = an explicit human completion (Critical, or legacy); inferred = a
+      projection of candidate acceptance + delivery (Explore/Standard).
   completed_at: { type: string, required: true }
   commits:
     type: map

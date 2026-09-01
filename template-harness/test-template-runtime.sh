@@ -202,7 +202,7 @@ cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 #     host evidence (per-role model/effort), refuses an unknown evidence key,
 #     validates the optional plan complexity hint, and ships the per-role tiering
 #     guidance and the 0.7.0 runtime version.
-contains "$ws/wrapper/manifest.yaml" "runtime_version: 0.7.0"
+contains "$ws/wrapper/manifest.yaml" "runtime_version: 1.0.0"
 require_file "$ws/docs/role-tiering.md"                  # per-role tiering guidance ships (docs/)
 mkplan 0006-latency "Latency" api src/lat ""
 cc_plan_approve "$ws" 0006-latency >/dev/null

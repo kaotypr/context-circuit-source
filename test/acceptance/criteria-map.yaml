@@ -110,3 +110,9 @@ criteria:
   - id: AC-34
     statement: Completion emits a candidate-keyed reconciliation-debt marker; the next plan's grounding blocks (Standard/Critical) or loudly warns (Explore) while delivered work in its knowledge scope is unreconciled, and an explicit human reconcile or defer clears it without auto-accepting Product Knowledge.
     suite: test/knowledge/test-debt.sh
+  - id: AC-35
+    statement: Completion is inferred from candidate acceptance plus recorded delivery at Explore/Standard and refused (explicit human completion required) at Critical; a change set of plans delivered as one pull request has one deterministic, order-independent candidate so it is verified and accepted once.
+    suite: test/completion/test-inferred.sh
+  - id: AC-36
+    statement: The v1.0 human-simulated scenarios (Standard feature with two gates and inferred completion, Explore-then-promote, change-set-as-one-PR, envelope-drift re-gate, knowledge-debt block) play end-to-end, and the expected conversations carry the two gates and honest assurance wording with no internal vocabulary.
+    suite: test/scenarios/test-scenarios.sh

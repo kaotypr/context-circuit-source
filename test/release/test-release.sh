@@ -53,7 +53,7 @@ else
   expected_source_state=clean
 fi
 printf '%s\n' "$result" | grep -F "source_state: $expected_source_state" >/dev/null || fail "release did not record source state: $expected_source_state"
-printf '%s\n' "$result" | grep -F "runtime_version: 0.7.0" >/dev/null || fail 'release did not report manifest runtime version'
+printf '%s\n' "$result" | grep -F "runtime_version: 1.0.0" >/dev/null || fail 'release did not report manifest runtime version'
 
 # --- exclusion boundary: no maintainer, source, test, or runtime state ---
 for leaked in .runtime test .github scripts template repositories repositories.local.yaml \
