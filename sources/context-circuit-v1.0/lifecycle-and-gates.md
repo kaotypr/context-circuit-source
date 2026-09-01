@@ -60,7 +60,7 @@ tiered verification, acceptance binding, drift rebase, reconciliation debt.
 
 ## What happened to today's four gates
 
-| Today's gate | vNext |
+| Today's gate | v1.0 |
 | --- | --- |
 | **Approve** (draft→approved, INV-APPROVE-01) | moved up to **Gate 1 (intent)**; plan approval is automatic within the envelope |
 | **Execute** (separate authorization, INV-EXEC-01) | authorized by the approved intent's envelope; no separate human step within scope |

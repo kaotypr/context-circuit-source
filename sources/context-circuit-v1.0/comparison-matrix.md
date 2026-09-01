@@ -1,14 +1,14 @@
-# Comparison matrix — vNext vs. current Context Circuit
+# Comparison matrix — v1.0 vs. current Context Circuit
 
 Legend: 🟩 kept · 🟧 reworked · 🟦 new · 🟥 removed. The baseline is the current
 product contract under `wrapper/` (v0.7), read line-by-line.
 
-## The ideas vNext adopts and declines
+## The ideas v1.0 adopts and declines
 
-Nine design ideas vNext weighed, and where each stands in current Context Circuit
-versus vNext. ✓ = present · ◐ = partial/inherited · ✗ = absent/declined.
+Nine design ideas v1.0 weighed, and where each stands in current Context Circuit
+versus v1.0. ✓ = present · ◐ = partial/inherited · ✗ = absent/declined.
 
-| Idea | CC today | vNext | |
+| Idea | CC today | v1.0 | |
 | --- | :--: | :--: | --- |
 | Gate outcomes, not every transition | ✗ | ✓ | 🟧 |
 | Candidate/tree‑bound evidence staleness | ✗ | ✓ | 🟦 |
@@ -20,7 +20,7 @@ versus vNext. ✓ = present · ◐ = partial/inherited · ✗ = absent/declined.
 | Fencing tokens on leases | ✗ | ✗ declined | — |
 | Deterministic context/token compiler | ✗ | ✗ declined | — |
 
-vNext adopts the top five and declines the bottom three. The one deliberate ◐
+v1.0 adopts the top five and declines the bottom three. The one deliberate ◐
 (deterministic non‑model orchestrator) keeps the engine model‑blind but leaves
 routing to the conversational coordinator — a CC strength it declines to trade away
 (see `preserved-core.md`, `roles-and-spawning.md`). The three declines
@@ -30,7 +30,7 @@ future addition, not part of the core evolution.
 
 ## Core philosophy
 
-| Aspect | Context Circuit today | vNext | |
+| Aspect | Context Circuit today | v1.0 | |
 | --- | --- | --- | --- |
 | What is gated | every plan **state transition** | the **claim of correct** (intent) + **delivery** | 🟧 |
 | Human gates | 4 (approve, execute, complete, deliver) | 2 (intent, delivery) | 🟧 |
@@ -40,7 +40,7 @@ future addition, not part of the core evolution.
 
 ## Mechanisms
 
-| Capability | Today | vNext | |
+| Capability | Today | v1.0 | |
 | --- | --- | --- | --- |
 | Intent / bigger-picture object | none (sources → proposals → plan) | first-class `intent/` + frozen contract | 🟦 |
 | Criteria challenged before code | no | **spec adversary** | 🟦 |
@@ -98,7 +98,7 @@ future addition, not part of the core evolution.
 
 ## Summary line
 
-vNext keeps everything the code read shows is load-bearing and correct, spends its
+v1.0 keeps everything the code read shows is load-bearing and correct, spends its
 new energy on the two things Context Circuit under-invests in — **proving what
 "correct" means** and **making evidence un-fakeable** — and moves the human's
 attention from four transition gates to the two decisions only a human can make.

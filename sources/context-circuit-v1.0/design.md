@@ -1,8 +1,8 @@
-# vNext design — normative overview
+# v1.0 design — normative overview
 
 A reviewer can stop at this file. Everything else is depth.
 
-## The one structural error vNext corrects
+## The one structural error v1.0 corrects
 
 Context Circuit spends its heaviest machinery gating the **state transitions of a
 plan**: approval (draft→approved), execution (separate authorization), completion
@@ -15,7 +15,7 @@ plan, the done-flip) and under-builds the **source** (the intent). The result is
 ceremony that trains habituated approval — and habituated approval is worse than
 no approval, because it looks like safety while being reflex.
 
-vNext moves the gate to where the decision actually lives, and makes the rest
+v1.0 moves the gate to where the decision actually lives, and makes the rest
 mechanical.
 
 ## The shape: two gates, four mechanisms, one preserved kernel
@@ -57,7 +57,7 @@ self-invalidating**, realized by four mechanisms:
 **One preserved kernel.** The deterministic mechanics — leases, base selection,
 worktree isolation, verifier read-only enforcement, delivery drift guard,
 preserve-on-failure, atomic records — are kept as-is. They are already correct and
-subtle; vNext rides on top of them through the same stable engine-action seam. See
+subtle; v1.0 rides on top of them through the same stable engine-action seam. See
 `preserved-core.md`.
 
 ## Why not a from-scratch rebuild
@@ -65,7 +65,7 @@ subtle; vNext rides on top of them through the same stable engine-action seam. S
 The current `engine.sh` is not a tangle. It is disciplined, correctness-dense
 POSIX shell whose own boundary (INV-RUNTIME-01) already matches the
 "small, model-blind, deterministic mechanics kernel with all intelligence at
-swappable edges" that a trust core wants. The changes vNext wants live in the
+swappable edges" that a trust core wants. The changes v1.0 wants live in the
 **invariants + skills** layer plus a
 handful of new verbs — not in the kernel. A from-scratch design would spend most
 of its effort re-earning correctness the kernel already has, and would arrive more
@@ -74,7 +74,7 @@ this evolution delivers without discarding the mechanics.
 
 ## The gate model, before and after
 
-| Decision | Context Circuit today | vNext |
+| Decision | Context Circuit today | v1.0 |
 | --- | --- | --- |
 | What "correct" means | one unassisted human glance folded into plan approval | **explicit intent gate + independent adversary** |
 | Plan is ready | explicit human approval (INV-APPROVE-01) | automatic derivation within the approved envelope; re-gates only on drift |
@@ -86,7 +86,7 @@ this evolution delivers without discarding the mechanics.
 
 ## The two things that must be right
 
-vNext moves safety from "gate every transition" to "gate the two that matter,"
+v1.0 moves safety from "gate every transition" to "gate the two that matter,"
 which concentrates the entire safety property into two deterministic checks. Both
 must **fail upward** (when unsure, treat as riskier / re-gate):
 
@@ -100,9 +100,9 @@ These are the crown jewels: the smallest, most-tested components in the whole
 system. Everything else is now concentrated in a few auditable verbs rather than
 smeared across a large script — which is the point of having read the core first.
 
-## What vNext deliberately does NOT adopt
+## What v1.0 deliberately does NOT adopt
 
-vNext declines three of the ideas it weighed:
+v1.0 declines three of the ideas it weighed:
 
 - **Fencing tokens on leases** — cheap to add later; single-host CC does not hit
   the zombie-writer race today.

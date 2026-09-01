@@ -41,7 +41,7 @@ acceptance for the old candidate become **void** — not "stale, use judgment,"
 void.
 
 The engine already detects a commit change (`cc_verifier_result_record` compares
-tips; `VERIFIER_MODIFIED_PRODUCT`). vNext generalizes that from "tips unchanged
+tips; `VERIFIER_MODIFIED_PRODUCT`). v1.0 generalizes that from "tips unchanged
 since worker commit" to "candidate unchanged since evidence was recorded," and
 extends it to human acceptance. "It passed earlier" becomes impossible by
 construction rather than by discipline — evidence cannot float free of the exact
@@ -84,7 +84,7 @@ tells everyone what was accepted and by whom — so the team-visibility that
 ## Interaction with delivery drift (kept mechanic)
 
 The existing drift guard (`cc_delivery_rebase`, INV-DELIVER-01) already rebases a
-drifted branch and forces re-verification before a pull request opens. Under vNext
+drifted branch and forces re-verification before a pull request opens. Under v1.0
 that is exactly right and gets sharper: a rebase changes the commit map, which
 changes the candidate, which **voids** the prior verification and acceptance by
 INV-CANDIDATE-01 — so the re-verification the drift guard demands is no longer a

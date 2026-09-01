@@ -1,6 +1,6 @@
 # Glossary and vocabulary
 
-vNext adds concepts, so it must also hold a concept budget: **any new user-facing term
+v1.0 adds concepts, so it must also hold a concept budget: **any new user-facing term
 should retire one.** This file lists the new vocabulary, the internal→human
 translations the coordinator uses, and the net change in how many concepts a human
 carries.
@@ -49,7 +49,7 @@ As today, these never blur into each other:
 
 ## The concept budget (net change)
 
-vNext adds terms — but it also **removes** things the human juggles today, so the net
+v1.0 adds terms — but it also **removes** things the human juggles today, so the net
 count should not rise:
 
 | Added (must learn) | Removed (no longer juggled) |

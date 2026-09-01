@@ -1,6 +1,6 @@
 # The two crown-jewel checks, specified
 
-vNext moves safety from "gate every transition" to "gate the two that matter," which
+v1.0 moves safety from "gate every transition" to "gate the two that matter," which
 concentrates the entire safety property into two deterministic checks. This file
 specifies them precisely, because everything rests on them. Both **fail upward**:
 when the check cannot conclude "safe," it escalates rather than proceeds.
@@ -102,7 +102,7 @@ has or can cheaply derive:
 
 ## Why both must be the most-tested components
 
-Everything else in vNext degrades gracefully; these two do not. A too-loose envelope
+Everything else in v1.0 degrades gracefully; these two do not. A too-loose envelope
 ships scope creep under an approval never given; a mis-low tier ships an unverified
 Critical change. They are small and deterministic *on purpose* — so they can carry
 the deepest fixtures and be audited in isolation, which is the payoff of keeping the

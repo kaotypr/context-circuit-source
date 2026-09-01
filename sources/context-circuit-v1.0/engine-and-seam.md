@@ -1,6 +1,6 @@
 # Engine verbs and the stable seam
 
-All vNext changes are expressed as new or changed verbs *behind the existing CLI
+All v1.0 changes are expressed as new or changed verbs *behind the existing CLI
 seam* (`sh wrapper/runtime/engine.sh <action> <args>`, invoke-not-read). The seam
 is the reason evolution is safe: skills that call stable verbs keep working.
 
@@ -9,8 +9,10 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 | Verb | Purpose | Mechanism |
 | --- | --- | --- |
 | `intent-validate <dir>` | validate `intent/<id>/` structure + `contract.yaml` | M1 |
-| `intent-allocate-id <slug>` | next `NNNN-slug` for intents (mirrors plan id allocation) | M1 |
+| `intent-allocate-id <slug>` | next `i<NNNN>-slug` for intents (own sequence, mirrors plan id allocation) | M1 |
 | `intent-approve <id>` | draft→approved; freeze `contract_digest`; the one upstream gate | M1 |
+| `intent-archive <id>` | move `intent/<id>/` to `intent/archive/<id>/`; status-blind (INV-ARCHIVE-01/02) | M1 |
+| `intent-restore <id>` | move an archived intent back to the active area | M1 |
 | `intent-envelope-check <plan>` | plan repos/paths ⊆ intent scope; fail-upward re-gate | M1 (crown jewel 1) |
 | `candidate-digest <plan> <exec>` | deterministic digest over commit map + bases + `contract_digest` | M2 |
 | `candidate-current <plan>` | report the current candidate id | M2 |
@@ -44,7 +46,7 @@ the Explore tier with a promote step.
 
 From the skill/engine coupling read:
 
-| Skill | Coupling | Under vNext |
+| Skill | Coupling | Under v1.0 |
 | --- | --- | --- |
 | `cc-publish` | none (host/MCP only) | **unchanged** (depends only on `cc_digest` + atomic write, preserved) |
 | `cc-system-design` | none | **unchanged** — and now feeds the new intent object naturally |
@@ -66,5 +68,5 @@ identical verb surface and emit format — a **behavior-preserving port first**,
 policy — killing the two accidental-complexity hotspots identified in the read:
 the hand-rolled YAML-in-awk readers and the string-emit/re-parse return convention.
 This is justified only if testability and removing the YAML fragility are worth the
-regression risk; it is **not** required to deliver any of M1–M4. vNext's policy
+regression risk; it is **not** required to deliver any of M1–M4. v1.0's policy
 changes and the mechanics port are independent tracks that share the seam.

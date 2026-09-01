@@ -1,6 +1,6 @@
 # Human experience — the conversational surface
 
-vNext changes *what the human decides and when*, so it changes the conversation. This
+v1.0 changes *what the human decides and when*, so it changes the conversation. This
 file describes the human-facing surface: the two gates in plain language, what the
 coordinator says when it re-gates, the transparency questions the human can ask, and
 the reporting rules. The mechanics stay hidden; the decisions do not — the same
@@ -71,7 +71,7 @@ feel like the system protecting the human's approval, not nagging.
 
 ## Transparency — the questions a human can ask
 
-Because vNext removes gates and leans on mechanical checks, the human must be able to
+Because v1.0 removes gates and leans on mechanical checks, the human must be able to
 interrogate the machinery in words. The coordinator answers these from runtime facts
 (no new gate, just reporting):
 
@@ -98,7 +98,7 @@ interrogate the machinery in words. The coordinator answers these from runtime f
 ## The net effect on felt ceremony
 
 Today the human is asked to approve the plan, mark it done, and remember to reconcile —
-three touch points per change that feel like bookkeeping. vNext replaces them with one
+three touch points per change that feel like bookkeeping. v1.0 replaces them with one
 upstream decision that matters (the intent), an accept-and-ship moment, and a system
 that refuses to *let* reconciliation be forgotten. Fewer prompts, and the prompts that
 remain are real decisions — "that is how you get few questions rather than no
