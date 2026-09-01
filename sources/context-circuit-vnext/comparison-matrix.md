@@ -3,6 +3,31 @@
 Legend: 🟩 kept · 🟧 reworked · 🟦 new · 🟥 removed. The baseline is the current
 product contract under `wrapper/` (v0.7), read line-by-line.
 
+## The ideas vNext adopts and declines
+
+Nine design ideas vNext weighed, and where each stands in current Context Circuit
+versus vNext. ✓ = present · ◐ = partial/inherited · ✗ = absent/declined.
+
+| Idea | CC today | vNext | |
+| --- | :--: | :--: | --- |
+| Gate outcomes, not every transition | ✗ | ✓ | 🟧 |
+| Candidate/tree‑bound evidence staleness | ✗ | ✓ | 🟦 |
+| Consequence/risk‑based process tiering | ✗ | ✓ | 🟦 |
+| Verifier gets evidence, not prose | ◐ | ✓ | 🟩 |
+| No fake multi‑repo atomicity | ◐ | ✓ | 🟩 |
+| Event‑sourced / replayable ledger = truth | ✗ | ✗ declined | — |
+| Deterministic non‑model orchestrator | ◐ | ◐ | 🟩 |
+| Fencing tokens on leases | ✗ | ✗ declined | — |
+| Deterministic context/token compiler | ✗ | ✗ declined | — |
+
+vNext adopts the top five and declines the bottom three. The one deliberate ◐
+(deterministic non‑model orchestrator) keeps the engine model‑blind but leaves
+routing to the conversational coordinator — a CC strength it declines to trade away
+(see `preserved-core.md`, `roles-and-spawning.md`). The three declines
+(event‑sourcing, fencing tokens, a context/token compiler) each solve a problem this
+single‑host, human‑in‑the‑loop product does not have today; each is a defensible
+future addition, not part of the core evolution.
+
 ## Core philosophy
 
 | Aspect | Context Circuit today | vNext | |

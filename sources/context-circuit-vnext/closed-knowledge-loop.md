@@ -64,9 +64,9 @@ moved.
 
 ## Optional: the production feedback edge
 
-The two Proof Circuit studies both proposed a "closed production loop" where a
-shipped change keeps a live link to its criteria and a production failure reopens
-the claim. vNext treats this as an **optional extension**, not core: the
+A "closed production loop" — where a shipped change keeps a live link to its
+criteria and a production failure reopens the claim — is a natural extension.
+vNext treats it as an **optional extension**, not core: the
 reconciliation-debt machinery already gives the hook (a delivered candidate with a
 durable link to its intent's criteria), so an inbound signal — via the existing
 publication inbound-as-counter-evidence path (INV-EXTERNAL-02) — could later lower

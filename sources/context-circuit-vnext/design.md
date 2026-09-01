@@ -65,8 +65,8 @@ subtle; vNext rides on top of them through the same stable engine-action seam. S
 The current `engine.sh` is not a tangle. It is disciplined, correctness-dense
 POSIX shell whose own boundary (INV-RUNTIME-01) already matches the
 "small, model-blind, deterministic mechanics kernel with all intelligence at
-swappable edges" that Bench, Drydock, Lattice, and both Proof Circuits groped
-toward. The changes vNext wants live in the **invariants + skills** layer plus a
+swappable edges" that a trust core wants. The changes vNext wants live in the
+**invariants + skills** layer plus a
 handful of new verbs — not in the kernel. A from-scratch design would spend most
 of its effort re-earning correctness the kernel already has, and would arrive more
 complex, not easier. Ease comes from **subtraction and moving the gate**, which
@@ -102,8 +102,7 @@ smeared across a large script — which is the point of having read the core fir
 
 ## What vNext deliberately does NOT adopt
 
-From the convergent-idea cluster, vNext declines three, matching the judgment both
-CC-specific redesigns reached:
+vNext declines three of the ideas it weighed:
 
 - **Fencing tokens on leases** — cheap to add later; single-host CC does not hit
   the zombie-writer race today.

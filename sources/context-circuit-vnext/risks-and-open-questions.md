@@ -23,8 +23,8 @@ prevent.
   something the criteria did not anticipate) is not caught by a path check — that is
   what the spec adversary and the acceptance criteria are for. The envelope guards
   *where*; the criteria guard *what*. A weak criteria set plus in-scope paths can
-  still ship the wrong thing. This is the same residual every design in the corpus
-  carries.
+  still ship the wrong thing. This residual is inherent — no acceptance contract
+  fully anticipates intent.
 
 ### 2. Consequence tiering (M3)
 

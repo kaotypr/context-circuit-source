@@ -1,6 +1,6 @@
 # What vNext preserves — and why each piece is load-bearing
 
-This file is what separates this study from a from-scratch redesign. It is written
+This file is what separates this study from a ground-up rewrite. It is written
 from a full read of `wrapper/runtime/engine.sh` (1,975 lines) and
 `wrapper/contracts/invariants.yaml`. Each item below is **correctness that already
 exists, is subtle, and would be at risk in a rewrite**. vNext keeps every one of
@@ -12,7 +12,7 @@ The runtime's own header and INV-RUNTIME-01 declare that it owns deterministic
 mechanics and does **not** own provider launch, model prompts, Product Knowledge
 interpretation, plan-writing intelligence, routing, confirmation cards, or
 automatic pull-request/merge/complete. That is exactly the model-blind kernel
-shape the six studies reinvented. **Preserve it as the invariant it already is.**
+shape a trust core wants. **Preserve it as the invariant it already is.**
 
 ## The stable engine-action seam — the single most valuable thing to keep
 
