@@ -43,9 +43,9 @@ void.
 The engine already detects a commit change (`cc_verifier_result_record` compares
 tips; `VERIFIER_MODIFIED_PRODUCT`). vNext generalizes that from "tips unchanged
 since worker commit" to "candidate unchanged since evidence was recorded," and
-extends it to human acceptance. This is the same idea three of the surveyed
-designs reached independently — Bench's "greens go grey," Drydock's "not stale,
-void," Lattice's freshness algebra — expressed in Context Circuit's own terms.
+extends it to human acceptance. "It passed earlier" becomes impossible by
+construction rather than by discipline — evidence cannot float free of the exact
+code and criteria it observed.
 
 Because `contract_digest` is *inside* the candidate, hardening or changing the
 criteria (M1) correctly re-invalidates proofs too — you cannot silently move the
@@ -68,8 +68,8 @@ the candidate.
 ## First-class human acceptance (pain 7)
 
 New verb `human-acceptance-record <candidate>` writes a first-class acceptance bound
-to the exact candidate and the checklist it was accepted against — adopting
-Codex-PC's move. "Done" then becomes **inferred** from `candidate accepted +
+to the exact candidate and the checklist it was accepted against. "Done" then
+becomes **inferred** from `candidate accepted +
 delivered` rather than a separate status flip the human resents or forgets:
 
 - At Explore/Standard tiers, completion is a projection of "this candidate was

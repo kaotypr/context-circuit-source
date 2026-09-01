@@ -59,9 +59,10 @@ Skipping the verifier at Explore is safe **only** if tiering is deterministic an
 ## cc-pair becomes the Explore tier
 
 Direct collaboration is not deleted — it is **promoted from a separate mode to the
-bottom rung of the ladder**. This is where three independent designs converged:
-claude-PC folded pairing into "the Touch tier of the one dial"; codex-PC into "the
-Explore profile of the one change model"; and this study reaches the same place.
+bottom rung of the ladder**. The separate-mode design is what gave cc-pair its one
+structural flaw (a disjoint island with a cliff between it and the plan world);
+making it the Explore tier removes that flaw while keeping everything cc-pair does
+well.
 
 What is preserved from today's `cc-pair` (INV-PAIR-01) unchanged:
 

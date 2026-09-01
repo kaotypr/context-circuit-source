@@ -64,8 +64,8 @@ contract_digest:                # set on approval; identifies the frozen criteri
 Rules that make it load-bearing:
 
 - **Every criterion is executable or explicitly `manual` — no third option.** This
-  is Bench's discipline: the acceptance contract *is* the definition of correct,
-  and "done" (M2) is computed against it, not asserted.
+  makes the acceptance contract *the* definition of correct, and "done" (M2) is
+  computed against it, not asserted.
 - **Approval freezes `contract_digest`.** Changing the criteria after approval is a
   new decision that re-enters the gate, and (via M2) voids evidence bound to the
   old contract.
