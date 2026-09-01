@@ -1,6 +1,6 @@
 # Risks and open questions
 
-Reported honestly. vNext moves safety from "gate every transition" to "gate the two
+Reported honestly. v1.0 moves safety from "gate every transition" to "gate the two
 that matter," which concentrates the entire safety property into two deterministic
 checks. If either is wrong, the design is worse than what it replaces. Everything
 else here is secondary.
@@ -96,7 +96,7 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
 
 ## What would falsify the design
 
-vNext is worth adopting only if, in real use: (a) moving the gate to intent
+v1.0 is worth adopting only if, in real use: (a) moving the gate to intent
 *reduces* felt ceremony without a scope-drift regression; (b) the spec adversary
 changes criteria often enough to be worth its cost; and (c) tiering removes verifier
 spawns on low-risk work without a mislabeled-Critical escaping unverified. If the

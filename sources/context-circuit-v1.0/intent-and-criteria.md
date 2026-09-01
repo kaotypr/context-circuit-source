@@ -17,7 +17,7 @@ elaboration the human already trusts. The gate is on the derivative.
 A first-class `intent/` object, parallel to `plans/`:
 
 ```
-intent/0007-checkout-retries/
+intent/i0007-checkout-retries/
   INTENT.md        # human-facing: the bigger picture, reviewable as one thing
   contract.yaml    # the frozen decision (schema below)
   adversary.md     # the independent critique of the criteria
@@ -31,7 +31,7 @@ tasks.
 
 ```yaml
 schema_version: 1
-intent: 0007-checkout-retries
+intent: i0007-checkout-retries
 title: Retry failed checkout charges
 goal: >
   A failed card charge at checkout is retried up to 3 times with backoff before
@@ -99,7 +99,7 @@ Once intent is approved, `cc-plan` derives tasks from the approved `contract.yam
 + Product Knowledge + repository grounding, and `plan.yaml` gains a required field:
 
 ```yaml
-intent: 0007-checkout-retries
+intent: i0007-checkout-retries
 ```
 
 Because the human already approved the intent, **the plan carries no second
@@ -156,7 +156,7 @@ picture belongs one level up in `sources/system-design/`, which feeds the intent
 
 Moving the gate up is safe **only** if a plan (or, later, a candidate) that exceeds
 the approved scope reliably re-gates to a human. This is the price of gate-outcomes,
-and vNext pays it explicitly:
+and v1.0 pays it explicitly:
 
 - A new verb `intent-envelope-check <plan>` compares the plan's declared
   repositories and path regions against the parent intent's `scope`.

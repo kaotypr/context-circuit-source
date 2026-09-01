@@ -12,7 +12,7 @@ Lives at `intent/<id>/contract.yaml`.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `schema_version` | int | 1 |
-| `intent` | id | `NNNN-<slug>`, allocated like a plan id |
+| `intent` | id | `i<NNNN>-<slug>` (e.g. `i0007-checkout-retries`) — distinct from plan ids; its own never-reused sequence |
 | `title` | string | human title |
 | `goal` | text | one paragraph |
 | `non_goals` | list<text> | explicit exclusions |
@@ -74,14 +74,14 @@ Everything else in the existing schemas is unchanged.
 
 ```
 intent/                          # NEW — parallel to plans/
-  0007-checkout-retries/
+  i0007-checkout-retries/
     INTENT.md
     contract.yaml
     adversary.md
   INDEX.md                       # active intents (mirrors plans/INDEX.md)
   archive/                       # archived intents (status-blind move, like plans)
 
-plans/0012-.../plan.yaml         # gains `intent: 0007-checkout-retries`
+plans/0012-.../plan.yaml         # gains `intent: i0007-checkout-retries`
 
 .runtime/executions/<plan>/<exec>/
     candidate.yaml               # NEW — the current candidate identity

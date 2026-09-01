@@ -13,7 +13,7 @@ with no verifier at all — which means Context Circuit already has a "no verifi
 answer, but it quarantined that answer into an island with a cliff between it and
 the plan world.
 
-vNext replaces both the always-on verifier and the separate pairing mode with **one
+v1.0 replaces both the always-on verifier and the separate pairing mode with **one
 continuous consequence ladder**.
 
 ## The ladder

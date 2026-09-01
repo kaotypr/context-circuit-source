@@ -14,7 +14,7 @@ explicit human decision). Nothing prevents the *next* plan from being authored a
 grounded while merged work sits unreconciled. So a plan can be grounded on Product
 Knowledge that the last merge already made stale — exactly pain 8.
 
-vNext keeps the human acceptance gate (it is right) but makes the **debt visible
+v1.0 keeps the human acceptance gate (it is right) but makes the **debt visible
 and blocking** so it cannot be silently skipped.
 
 ## The mechanism: reconciliation debt
@@ -66,7 +66,7 @@ moved.
 
 A "closed production loop" — where a shipped change keeps a live link to its
 criteria and a production failure reopens the claim — is a natural extension.
-vNext treats it as an **optional extension**, not core: the
+v1.0 treats it as an **optional extension**, not core: the
 reconciliation-debt machinery already gives the hook (a delivered candidate with a
 durable link to its intent's criteria), so an inbound signal — via the existing
 publication inbound-as-counter-evidence path (INV-EXTERNAL-02) — could later lower
@@ -82,4 +82,4 @@ must never become an automatic mutation of workspace state.
   `cc-complete`/delivery emit the marker.
 - **Unchanged:** the `context/` durable-knowledge format, the retrieval index
   (INV-KNOWLEDGE-01), the proposal/acceptance mechanic, and the human acceptance
-  gate (INV-KNOWLEDGE-02) — vNext makes the loop *closed*, not *automatic*.
+  gate (INV-KNOWLEDGE-02) — v1.0 makes the loop *closed*, not *automatic*.

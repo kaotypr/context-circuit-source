@@ -1,9 +1,9 @@
-# What vNext preserves — and why each piece is load-bearing
+# What v1.0 preserves — and why each piece is load-bearing
 
 This file is what separates this study from a ground-up rewrite. It is written
 from a full read of `wrapper/runtime/engine.sh` (1,975 lines) and
 `wrapper/contracts/invariants.yaml`. Each item below is **correctness that already
-exists, is subtle, and would be at risk in a rewrite**. vNext keeps every one of
+exists, is subtle, and would be at risk in a rewrite**. v1.0 keeps every one of
 them unchanged and builds on top.
 
 ## The engine's boundary is already right — keep it
@@ -19,7 +19,7 @@ shape a trust core wants. **Preserve it as the invariant it already is.**
 Skills drive the engine as a CLI — `sh wrapper/runtime/engine.sh <action> <args>`
 — and are forbidden from *reading* it (the "invoke, don't read" rule in
 `wrapper/adapters/AGENTS.md`). The ~50-verb dispatch table at the bottom of
-`engine.sh` is therefore a **stable adapter boundary**. Every vNext change is
+`engine.sh` is therefore a **stable adapter boundary**. Every v1.0 change is
 expressed as new or changed verbs *behind this seam*, so:
 
 - Two-thirds of the periphery ports unchanged (see `engine-and-seam.md`).
@@ -31,7 +31,7 @@ safe.
 
 ## The subtle mechanics — reproduce exactly, never "clean up" casually
 
-These are the functions where a rewrite would silently lose correctness. vNext
+These are the functions where a rewrite would silently lose correctness. v1.0
 does not modify them.
 
 - **Path leases with region overlap + descendant exemption** (`cc_lease_check`,
@@ -50,14 +50,14 @@ does not modify them.
 - **Verifier read-only enforcement is structural, not asked-nicely**
   (`cc_verifier_result_record`, INV-VERIFY-01). It rejects an explicit
   `--wrote-products` flag **and** re-checks that every branch tip is unchanged
-  since the worker commit (`VERIFIER_MODIFIED_PRODUCT`). vNext keeps this exact
+  since the worker commit (`VERIFIER_MODIFIED_PRODUCT`). v1.0 keeps this exact
   mechanic and merely *binds its result to a candidate* (M2).
 - **Commit-before-verify, new-commit repairs** (`cc_worker_commit_record`,
   INV-EXEC-04). A repair must be a *new* commit (`COMMIT_NO_CHANGE` refuses a
   no-op), never an amendment that conceals an attempt.
 - **The three-failure counter and waived≠passed** (`cc_verifier_result_record`,
   INV-REPAIR-01). `waived` and `blocked` never satisfy verification and never
-  increment the failure counter; only an independent rejection does. vNext keeps
+  increment the failure counter; only an independent rejection does. v1.0 keeps
   the counter; a tier may adjust the *budget*, but the honesty rules stay.
 - **Preserve-on-failure** (INV-PRESERVE-01, `cc_recovery_inspect`). Failure,
   interruption, or blocking preserves branches, worktrees, commits, handoffs,
@@ -74,7 +74,7 @@ does not modify them.
   `cc_delivery_rebase`, INV-DELIVER-01/02). Pull request, merge, push, deploy are
   separate human actions; a plan whose recorded base drifted is rebased and
   re-verified before its pull request opens; the target is the recorded
-  `anchor_branch`, never a moving remote. **vNext keeps delivery as the second
+  `anchor_branch`, never a moving remote. **v1.0 keeps delivery as the second
   gate, untouched.**
 
 ## Identity, security, and host neutrality — untouched
@@ -89,7 +89,7 @@ does not modify them.
   is passive raw evidence read only by exact request-named files (INV-SEC-02).
 - **Host neutrality** (INV-HOST-01): host identity, version, capability,
   permission mode, provider status, and per-role `(model, effort)` tiering are
-  bounded provider-neutral `host_evidence` that authorizes nothing. vNext's tiers
+  bounded provider-neutral `host_evidence` that authorizes nothing. v1.0's tiers
   are a *consequence* concept, orthogonal to and never conflated with this
   *host/model* tiering.
 - **Two low-level helpers other subsystems depend on**: `cc_digest` and the
@@ -101,19 +101,19 @@ does not modify them.
 
 - **Publication is orthogonal** (INV-EXTERNAL-01/02/03): manual, one-way,
   export-only, self-contained, credential-free, writing only under
-  `publication/<name>/`, referencing no core phase. vNext does not touch it. Its
+  `publication/<name>/`, referencing no core phase. v1.0 does not touch it. Its
   one nuance — an inbound flow must pass through the normal planning/approval gates
-  — maps cleanly onto vNext's intent gate.
+  — maps cleanly onto v1.0's intent gate.
 - **Repository grounding** (INV-GROUND-01/02/03): the worker reads the target
   repo's own `AGENTS.md`/`CLAUDE.md`/rules/skills via a deterministic runtime scan
   that emits a data manifest (never prompt text); the worker brief is a fixed
   template filled by slot substitution with a required, preflighted grounding
-  section. vNext keeps this whole subsystem; it composes with M1 (the intent's
+  section. v1.0 keeps this whole subsystem; it composes with M1 (the intent's
   criteria) rather than replacing it.
 
 ## The principle
 
-Everything above is *how to do the work safely*. vNext changes *what the human
+Everything above is *how to do the work safely*. v1.0 changes *what the human
 decides and when* — the policy layer — and leaves the safety mechanics exactly
 where a full read of the code shows they are already correct. That is the
 difference between an evolution and a rewrite: the rewrite would have to

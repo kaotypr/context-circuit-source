@@ -1,6 +1,6 @@
 # Roles and spawning
 
-vNext has **four agent roles** (Context Circuit today has three). This file states
+v1.0 has **four agent roles** (Context Circuit today has three). This file states
 the cast, when each is spawned, and the independence rules — once, explicitly, so no
 other file has to reconstruct it.
 

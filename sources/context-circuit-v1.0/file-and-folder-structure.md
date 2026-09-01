@@ -1,8 +1,8 @@
 # Files and folder structure
 
-The installed workspace layout under vNext, the conventions every folder and file
+The installed workspace layout under v1.0, the conventions every folder and file
 follows, and — specifically — how `sources/` is organized and how it relates to the
-new `intent/` object. Additive: vNext adds `intent/` and a few runtime records; it
+new `intent/` object. Additive: v1.0 adds `intent/` and a few runtime records; it
 renames nothing and keeps every existing convention.
 
 ## The installed workspace tree
@@ -22,7 +22,7 @@ renames nothing and keeps every existing convention.
     sources.yaml
 
   intent/                        # NEW — the decision for each change           [committed]
-    0007-checkout-retries/
+    i0007-checkout-retries/
       INTENT.md                  #   human-facing: the bigger picture
       contract.yaml              #   frozen criteria + scope + tier (M1)
       adversary.md               #   spec-adversary findings
@@ -68,7 +68,7 @@ handful of runtime records. Everything else is today's layout.
 
 `sources/` is **passive raw evidence** — the same role it has today (INV-SEC-02): only
 files a request explicitly names are read; the workspace never scans all of `sources/`
-or a sibling workspace to fill a gap. vNext does not change that. Two kinds of content
+or a sibling workspace to fill a gap. v1.0 does not change that. Two kinds of content
 live there:
 
 - **Ad-hoc source files** — a pasted spec, a transcript, an exported doc — dropped in
@@ -100,10 +100,13 @@ sources/  (raw evidence, structured design)   ── grounds ──▶   intent/
 
 ## File and folder conventions
 
-- **Stable ids.** Both `intent/` and `plans/` use `NNNN-<kebab-slug>` ids from
-  independent, never-reused sequences (the next after the highest ever allocated in
-  that tree, including archived — reusing the existing plan-id allocation logic).
-  Slugs are lowercase kebab-case, no dates, no underscores.
+- **Stable ids — distinct for intents and plans.** Plans use `<NNNN>-<kebab-slug>`
+  (for example `0012-add-retry`). **Intents use an `i`-prefixed form,
+  `i<NNNN>-<kebab-slug>`** (for example `i0007-checkout-retries`), so an id reads as an
+  intent on sight and never collides with a plan id when it appears alone (as in a
+  plan's `intent:` field). Each tree keeps its own never-reused four-digit sequence
+  (the next after the highest ever allocated, archived included), reusing the existing
+  plan-id allocation logic. Slugs are lowercase kebab-case, no dates, no underscores.
 - **`.md` + `.yaml` pairing.** Every first-class object pairs a human-facing Markdown
   file with a machine record: `INTENT.md`/`contract.yaml`, `PLAN.md`/`plan.yaml`. The
   human reads the `.md`; the engine reads the `.yaml`. Neither duplicates the other's
@@ -117,7 +120,7 @@ sources/  (raw evidence, structured design)   ── grounds ──▶   intent/
   traverse `archive/`; an explicit restore returns an item first.
 - **Three-tier design docs.** `sources/system-design/` follows README → design →
   concern altitude, one concern per file, diagrams inline as fenced ` ```mermaid `.
-- **This study is itself source material.** `sources/context-circuit-vnext/` is
+- **This study is itself source material.** `sources/context-circuit-v1.0/` is
   exactly the "structured design under `sources/`" convention applied to the
   product's own evolution — no status, no authority.
 
@@ -142,4 +145,4 @@ In the maintainer source repository, the product layout above is what
 (`wrapper/contracts/schemas/intent-contract.yaml`), and the `cc-intent` skill
 (`.agents/skills/cc-intent/`) are the additions delivered into that shipped layout.
 The maintainer-source `sources/` (where this study lives) is a source-only surface,
-never part of `context-circuit-template`, unchanged by vNext.
+never part of `context-circuit-template`, unchanged by v1.0.

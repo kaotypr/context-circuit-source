@@ -1,11 +1,11 @@
-# Context Circuit vNext — an intent-gated, candidate-proven evolution
+# Context Circuit v1.0 — an intent-gated, candidate-proven evolution
 
 **Status: source material only.** This is a design study. It has no status, no
 authority, and changes nothing on its own. It is not a plan, not accepted Product
 Knowledge, not a release, and not permission to change the product. Read it as an
-argument to test, not an answer to adopt. The working name "vNext" is a
-design-line label, not a rebrand of the product; the product stays Context
-Circuit unless a separate, explicit vocabulary decision says otherwise.
+argument to test, not an answer to adopt. "v1.0" names this design line — the
+proposed next major version of Context Circuit, following today's v0.7 — not a
+rebrand; the product stays Context Circuit.
 
 ## What this is
 
@@ -20,7 +20,7 @@ to start over.
 
 ## The thesis in one sentence
 
-> Context Circuit today gates the *state transitions* of a plan; vNext gates the
+> Context Circuit today gates the *state transitions* of a plan; v1.0 gates the
 > two things a human actually decides — **what "correct" means** (the intent) and
 > **what ships** (delivery) — and makes everything between them mechanical,
 > consequence-tiered, and self-invalidating.
@@ -28,7 +28,7 @@ to start over.
 ## Where it came from
 
 A grounded read of Context Circuit's own core, to separate **hard-won correctness
-worth preserving** from **policy worth changing**. vNext keeps what the read
+worth preserving** from **policy worth changing**. v1.0 keeps what the read
 showed is load-bearing and adopts only the changes that fit Context Circuit's
 single-host, human-in-the-loop, provider-neutral shape. It deliberately declines
 three otherwise-appealing ideas — fencing tokens, a full event-sourced rewrite,
@@ -37,7 +37,7 @@ yet have (see `comparison-matrix.md`).
 
 ## The eight lived pains this design answers
 
-vNext is anchored to real usage friction, not theory:
+v1.0 is anchored to real usage friction, not theory:
 
 1. No place to see the *bigger picture* of what will be built before it fragments
    into plans and tasks — no "intent" home.
@@ -59,7 +59,7 @@ Every mechanism below maps to one or more of these.
 
 **The argument**
 - `design.md` — the normative overview. A reviewer can stop here.
-- `preserved-core.md` — what vNext keeps unchanged, and why each piece is
+- `preserved-core.md` — what v1.0 keeps unchanged, and why each piece is
   load-bearing. Grounded in the engine read; this is what separates this study
   from a ground-up rewrite.
 
@@ -105,5 +105,5 @@ Every mechanism below maps to one or more of these.
 - `risks-and-open-questions.md` — the two crown-jewel checks and honest tradeoffs.
 - `glossary.md` — the new vocabulary, internal→human translations, and the concept
   budget.
-- `comparison-matrix.md` — vNext vs. current Context Circuit, and the ideas it
+- `comparison-matrix.md` — v1.0 vs. current Context Circuit, and the ideas it
   adopts and declines.

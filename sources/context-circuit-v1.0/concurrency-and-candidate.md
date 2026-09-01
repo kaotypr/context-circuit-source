@@ -32,7 +32,7 @@ identical to today.
 
 ## The verification point: the integration tip
 
-vNext reuses INV-CONCURRENCY-02's integration base, inverted for delivery:
+v1.0 reuses INV-CONCURRENCY-02's integration base, inverted for delivery:
 
 - During execution, each plan still runs independently with its own lease, base, and
   worktree — **unchanged**. Per-plan attempts and repairs are unchanged.
@@ -71,7 +71,7 @@ The candidate is a *view for evidence*, not a new lock. It grants no ownership
 ## Drift and re-candidacy
 
 The existing drift guard (`cc_delivery_rebase`) already rebases and forces
-re-verification. Under vNext this is the general candidate rule: a rebase changes the
+re-verification. Under v1.0 this is the general candidate rule: a rebase changes the
 tip set → new candidate → prior verification and acceptance void → re-verify and
 re-accept. No special case; the drift guard is the candidate rule applied at delivery.
 
@@ -88,10 +88,10 @@ re-accept. No special case; the drift guard is the candidate rule applied at del
 - **Integration-unbuildable at candidate time.** If the change set's integration tip
   will not build cleanly (`BASE_UNBUILDABLE`), there is no candidate to verify — the
   change set is blocked (not a worker failure), exactly as INV-CONCURRENCY-02 already
-  treats an unbuildable base. The human splits or reorders. vNext adds no new
+  treats an unbuildable base. The human splits or reorders. v1.0 adds no new
   atomicity claim across repositories (kept honesty; see `preserved-core.md`).
 - **Per-plan vs change-set verification choice.** For a Standard change set a team may
-  prefer to verify each plan *and* the integration; vNext requires only the
+  prefer to verify each plan *and* the integration; v1.0 requires only the
   integration verification but does not forbid per-plan checks. Recommendation: verify
   the integration candidate (the thing that ships); per-plan checks are optional
   belt-and-suspenders, not the gate.
