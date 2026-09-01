@@ -77,6 +77,13 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
 - **Should Explore work ever auto-produce a candidate** (for knowledge feedback)
   without promotion, or only on promotion? Recommendation: only on promotion, to
   keep the fast path truly recordless.
+- **Does promotion author a plan, or a plan-less candidate?** When an Explore session
+  is promoted, its already-made commits need a candidate — but does a `plans/<id>`
+  get created (a lightweight plan of record, authored partly retroactively), or does
+  the execution/candidate form directly from the pairing branch with no plan?
+  Recommendation: author a plan of record, so "every candidate has a plan behind it"
+  stays a uniform rule (see `lifecycle-and-gates.md`). The invariant either way: no
+  plan file for un-promoted Explore work.
 - **Tier defaults per risk signal** — the exact signal→tier table. Recommendation:
   ship conservative (bias to Standard) and tune from real mis-tier incidents, the
   way `role-tiering` is host-local and adjustable.
