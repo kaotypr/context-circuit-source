@@ -1,8 +1,15 @@
 # Getting started
 
 Context Circuit is a universal project workspace. You talk to it in ordinary
-language; it holds Product Knowledge and readable plans and executes approved
-plans safely across one or more Git repositories.
+language; it holds Product Knowledge and readable plans and executes changes safely
+across one or more Git repositories.
+
+There are **two decisions you make**, and only two: you approve an **intent** —
+what "correct" means and what scope is in bounds (Gate 1) — and you authorize
+**delivery** — the irreversible act of shipping (Gate 2). Everything between them
+is mechanical and scaled to risk: a plan derives from the approved intent, an
+independent check runs when the risk warrants it, you accept the result, and
+completion follows on its own for lower-risk work.
 
 ## 1. Initialize
 
@@ -28,43 +35,44 @@ execution base and default pull-request target.
 
 Context proposals are staged and require explicit human acceptance.
 
-## 4. Create and review a plan
+## 4. Describe and approve an intent (Gate 1)
 
-> Create a plan for adding recurring billing.
-> Review plan 0001-billing-v2.
+> Add recurring billing.
 
-Creating or reviewing a plan never approves or executes it. Review is a
-discussion that can update draft content.
+The coordinator writes up what it understands you want — the goal, what's out of
+scope, and the acceptance criteria — has those criteria challenged adversarially
+first, and tells you the risk tier ("Standard risk, so it gets an independent
+check"). You approve it in one conversational decision, or say what to change.
+Approving the intent is the real decision; you are not asked to approve a plan
+afterward — the plan derives from what you approved.
 
 For a small change you want to judge live, you can work directly instead:
 
 > Work with me on tightening the checkout screen in the web repository.
 
-Direct collaboration uses one worker in a separate working copy of one connected
-repository. It creates no plan or independent check; the result is
-human-supervised, never verified, and delivery remains separate.
+Direct collaboration is the **Explore tier**: one worker in a separate working copy
+of one connected repository, no plan and no independent check; the result is
+human-supervised, never verified. If it turns out to be real work, the coordinator
+offers to **promote** it in place — attach an intent, raise the tier, and it gains
+an independent check — without restarting.
 
-## 5. Approve and execute
+## 5. It builds and checks itself
 
-> Approve plan 0001-billing-v2 and execute it.
+Once the intent is approved the coordinator builds it and, at Standard/Critical,
+has it independently checked against your exact change. You are not asked to
+approve each step. When it reports "built and independently checked," you try it and
+accept it — "looks right, ship it."
 
-One worker implements every task in dependency order across the mapped
-repositories and commits each one; an independent read-only verifier checks the
-latest commits and the worker repairs failures with new commits (stopping after
-three failures).
+If the work turns out to need scope you did not approve (a new repository or path),
+the coordinator pauses and asks — it never widens what you approved on its own.
 
-## 6. Complete
+## 6. Deliver (Gate 2)
 
-> Mark 0001-billing-v2 complete.
+> Open a pull request for the billing change.
 
-Completion is human-controlled and allowed only after a verifier pass. It records
-the implementation and reconciles it against Product Knowledge, surfacing
-proposals you accept or defer separately.
-
-## 7. Deliver (separate)
-
-> Open a pull request for 0001-billing-v2.
-
-Pull request, merge, push, publication, deployment, archive, and cleanup are
-separate explicit actions. A pull request uses each execution branch as source
-and the recorded `anchor_branch` as the default target.
+Delivery is the second and final decision — pull request, merge, push, deployment —
+always separate and explicit. A pull request uses each change's branch as source
+and the recorded `anchor_branch` as the default target. For lower-risk work,
+"done" then follows from your acceptance plus delivery; a Critical change asks you
+to confirm completion explicitly. Before your next change in the same area, the
+coordinator makes sure the merged work is folded into what the project knows.

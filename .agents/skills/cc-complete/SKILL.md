@@ -3,14 +3,26 @@ name: cc-complete
 description: Mark a verified plan done at explicit human request and reconcile the implementation against Product Knowledge.
 ---
 
-Completion is human-controlled. Verification never marks a plan complete.
+Completion is gated by the intent's consequence tier (INV-COMPLETE-01), and
+verification never marks a plan complete.
 
-On "mark plan X complete", run the runtime `plan-complete`. It refuses unless the
-latest execution passed independent verification; if the current result is
-`failed` or `blocked`, report that plainly and do not change status. On success
-it changes plan status `approved → done`, writes the implementation completion
-record (plan revision, execution, per-repository commits, verifier result, human
-request), and keeps branches and worktrees intact (no merge or publication).
+- **Explore / Standard — inferred.** Completion is a projection of "candidate
+  accepted + delivered". After the human accepts the candidate and delivery is
+  recorded (Gate 2), run `completion-infer . <plan-id>`; it sets `approved → done`
+  when `completion-ready` passes for the tier and a delivery record still binds to
+  the current candidate. The human does not have to "mark done" — it follows from
+  the decisions they already made. A post-delivery change re-gates rather than
+  completing stale work.
+- **Critical — explicit.** An explicit human completion is still required: on "mark
+  plan X complete", run `plan-complete`. It refuses unless the tier floor is met
+  (a candidate-bound independent pass). At Explore/Standard, `plan-complete` also
+  remains available for an explicit human completion when asked.
+
+On success either path changes plan status `approved → done`, writes the
+implementation completion record (execution, per-repository commits, whether the
+completion was accepted or inferred), and keeps branches and worktrees intact (no
+merge or publication). If the current result is `failed` or `blocked`, or the
+candidate is stale, report that plainly and do not change status.
 
 Then reconcile the implementation against Product Knowledge. Compare the actual
 committed changes, changed paths, worker handoffs, and verifier evidence with the

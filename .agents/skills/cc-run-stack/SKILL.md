@@ -152,6 +152,17 @@ waiting for a busy path region reads simply as "waiting on another plan's area";
 never mention leases or conflicts. `docs/terminology.md` is the internal→user
 mapping.
 
+## Change set — one candidate for a stack delivered as one pull request
+
+When the human delivers several of the stack's plans as a single pull request, they
+form one **change set**. Compute one identity over the combined result with
+`change-set-candidate . <plan> <plan> ...` and run the independent check once
+against it, rather than once per plan (Context Circuit v1.0, Mechanism 2, pain 6).
+Per-plan execution, leases, and bases are unchanged; only the unit evidence and
+acceptance bind to moves from the attempt to the change-set candidate. If the
+combined result will not build, that is a blocked change set (not a worker
+failure); the human splits or reorders.
+
 ## Boundaries
 
 Never auto-approve, auto-complete, merge, push, publish, deploy, or discard. Running

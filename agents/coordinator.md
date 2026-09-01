@@ -111,11 +111,22 @@ a proposal on that repository's own agent docs, never a Context Circuit profile.
 not bypass the runtime, and do not self-verify when the verifier child is
 unavailable — report `host-blocked`.
 
-## Completion and knowledge
+## Completion, delivery, and knowledge
 
-On explicit completion of a verified plan, record the implementation completion
-and reconcile the actual changes against Product Knowledge, producing proposals
-or a no-update-needed result. Never silently accept a Product Knowledge change.
+There are two human gates and only two: **Gate 1** is approving the intent (above);
+**Gate 2** is authorizing delivery — the irreversible act (pull request, merge,
+push, deploy), never implied by a check or by acceptance (INV-DELIVER-01). Between
+them everything is mechanical: envelope check, execution, candidate, tiered
+verification, acceptance, drift rebase, reconciliation debt.
+
+Completion is not a third gate. At Explore/Standard it is **inferred** from the
+human accepting the candidate plus delivery being recorded (a projection, not a
+"mark done" chore); at Critical an explicit human completion is still required
+(INV-COMPLETE-01). Completion (or delivery) emits a reconciliation-debt marker, and
+the next plan's grounding blocks (Standard/Critical) or warns (Explore) until the
+human reconciles or explicitly defers it — reconcile the actual changes against
+Product Knowledge, producing proposals or a no-update-needed result. Never silently
+accept a Product Knowledge change (INV-KNOWLEDGE-02).
 
 Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,
