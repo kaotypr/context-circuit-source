@@ -1,13 +1,10 @@
 # Diagrams
 
 Mermaid views of the full flow, the roles-per-tier, the object states, and the edge
-cases. These render inline (the `cc-system-design` convention). Node labels avoid
-parentheses so they render on every viewer.
+cases, each with a short walkthrough. These render inline (the `cc-system-design`
+convention). Node labels avoid parentheses so they render on every viewer.
 
 ## 1 — Core planned flow (Standard / Critical)
-
-Where the plan is created, and the two human gates. This is the path for anything
-above Explore.
 
 ```mermaid
 flowchart TD
@@ -31,10 +28,20 @@ flowchart TD
     DEBT --> DONE[Done inferred, explicit at Critical]
 ```
 
-## 2 — Explore and promotion
+**Walkthrough.** A request becomes an **intent** — the decision, with its criteria and
+scope — which an independent **spec adversary** attacks before anyone approves it.
+**Gate 1** is the human approving that intent; approval freezes the criteria as a
+digest. From there the plan is *derived automatically* (not approved), and the
+**envelope check** is the only thing standing between derivation and execution: stay
+inside the approved scope and work proceeds; step outside and it re-gates. Execution is
+unchanged from today — one worker, isolated worktree. Its result becomes a
+**candidate**: a fingerprint of the exact commits + bases + frozen criteria. The
+**tier** decides what checks the candidate gets — an independent verifier at
+Standard/Critical, human supervision at Explore. The human accepts the candidate, then
+**Gate 2** authorizes the irreversible delivery. Two human gates total (the two
+double-bordered nodes); everything else is mechanical.
 
-Explore creates no intent, no plan, no candidate — only the pairing session. A plan
-first appears at **promotion**.
+## 2 — Explore and promotion
 
 ```mermaid
 flowchart TD
@@ -47,28 +54,41 @@ flowchart TD
     MADE --> STD[Enter the Standard or Critical pipeline from Execute onward]
 ```
 
-## 3 — Roles and spawning by tier
+**Walkthrough.** Explore is the fast path (today's `cc-pair`) — the coordinator plus
+**one worker**, live human supervision, and **nothing recorded** beyond a working copy:
+no intent, no plan, no candidate. Most quick fixes end there, honestly labeled
+"human-supervised, not verified." The interesting arrow is **PROMOTE**: the moment the
+human decides the work is real, an intent and its criteria are created, the adversary
+runs, the tier rises, and *only now* does a plan file and a candidate exist. So Explore
+is the one path that creates no plan — until it is promoted, at which point it joins the
+Diagram 1 flow from Execute onward. This is the ramp that replaces the old cliff between
+pairing and plans.
 
-The coordinator is the root; the other roles are spawned children, and how many
-depends on the tier.
+## 3 — Roles and spawning by tier
 
 ```mermaid
 flowchart TD
     CO[Coordinator - root session, never writes] --> T{tier}
-    T -->|Explore| E1[Spawn: 1 worker]
-    T -->|Standard| S1[Spawn at intent time: spec adversary]
-    T -->|Standard| S2[Spawn at execution: worker]
-    T -->|Standard| S3[Spawn per candidate: independent verifier]
-    T -->|Critical| C1[Spawn: spec adversary - full]
-    T -->|Critical| C2[Spawn: worker]
-    T -->|Critical| C3[Spawn: independent verifier + explicit human completion]
-    E1 -.no verifier, no adversary.-> NOTE1[ ]
+    T -->|Explore| E1[Spawn: 1 worker only]
+    T -->|Standard| S1[At intent time: spec adversary]
+    T -->|Standard| S2[At execution: worker]
+    T -->|Standard| S3[Per candidate: independent verifier]
+    T -->|Critical| C1[Spec adversary, full battery]
+    T -->|Critical| C2[Worker]
+    T -->|Critical| C3[Independent verifier + explicit human completion]
 ```
 
-## 4 — Object states
+**Walkthrough.** There are four roles but they are not all spawned every time. The
+**coordinator** is the root session you talk to — it never writes code. The other three
+are spawned children, and the **tier decides how many**: Explore spawns just **one
+worker** (no verifier, no adversary); Standard and Critical add the **spec adversary**
+(at intent time, before code) and the **independent verifier** (once per candidate,
+after code). They never all run at once — the adversary fires before the worktree
+exists, the worker during execution, the verifier after each candidate. Critical differs
+from Standard mainly by a fuller adversary pass and an explicit human completion instead
+of an inferred one.
 
-The intent and the plan each have a lifecycle; the candidate has none — it is an
-identity that is recomputed and can go void.
+## 4 — Object states
 
 ```mermaid
 stateDiagram-v2
@@ -97,10 +117,17 @@ stateDiagram-v2
     voided --> candidate: recompute and re-verify
 ```
 
-## 5 — Edge cases
+**Walkthrough.** The **intent** (first diagram) has a tiny lifecycle: `draft` →
+`approved` (which freezes the criteria digest) → `archived` after the change ships. The
+**plan/candidate** (second diagram) is richer. A derived plan either executes (inside
+the envelope) or is `regated` (outside it) and returns once the intent is widened or the
+plan narrowed. Execution produces a `candidate`, which is `verified` at Standard/Critical
+or `supervised` at Explore, then `accepted`, `delivered`, and finally `done`. The
+load-bearing edge is `verified → voided`: **any new commit or criteria change voids the
+candidate**, forcing a recompute and re-verify. That single transition is what makes "it
+passed earlier" impossible — evidence cannot outlive the exact code and criteria it saw.
 
-The branches that make the two-gate model safe. Each is a mechanical check, not a
-human gate.
+## 5 — Edge cases
 
 ```mermaid
 flowchart LR
@@ -113,10 +140,17 @@ flowchart LR
     C7[Worker fails verification 3 times] --> C7b[Failure limit reached, execution stops, work preserved]
 ```
 
-## 6 — Sources, intent, plan, knowledge
+**Walkthrough.** Each row is a mechanical branch, not a human gate — the design's safety
+comes from these firing reliably rather than from asking a human at every step. C1 and C5
+are the candidate rule doing its job (a change voids evidence). C2 is crown jewel 1 (the
+envelope) pulling the human back in when scope drifts. C3 keeps the honest multi-repo
+stance — combined work that will not build is blocked, never faked. C4 is the closed
+knowledge loop refusing to let reconciliation be forgotten. C6 and C7 are preserved from
+today (host-blocked never self-verifies; the three-failure cap stops and preserves).
+Every one of them **fails safe**: it either re-checks, re-gates, blocks, or preserves —
+none of them proceeds on a guess.
 
-How material flows into a decision and back into durable knowledge. `sources/` stays
-passive; `intent/` carries the authority; reconciliation feeds `context/`.
+## 6 — Sources, intent, plan, knowledge
 
 ```mermaid
 flowchart LR
@@ -127,3 +161,14 @@ flowchart LR
     CHANGE -->|reconciliation debt| RECON[knowledge proposals]
     RECON -->|human accepts| PK
 ```
+
+**Walkthrough.** This is the information flow around a change. `sources/` — raw evidence
+and, for larger work, the multi-topic **system-design** docs — is passive material that
+*grounds* an intent but carries no authority. Durable **Product Knowledge** (`context/`)
+also grounds the intent. The **intent** is where authority sits: it derives the
+**plan(s)**, which become an executed, delivered change. Delivery raises **reconciliation
+debt**, which produces knowledge **proposals** — and only a **human acceptance** folds
+them back into Product Knowledge. The loop is closed but never automatic: the arrows into
+`context` always pass through a human. This is also the layering that answers
+"multi-topic big picture": it lives in `sources/system-design/` on the far left and
+spawns one intent per topic.

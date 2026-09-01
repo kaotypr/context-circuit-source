@@ -99,7 +99,9 @@ already-approved intent. So artifacts appear in this order:
 
 **A plan file is created only at Standard/Critical, after intent approval.** It is the
 mechanical elaboration of the approved intent, grounded in the contract + Product
-Knowledge + repository, and it must stay within the intent's scope envelope.
+Knowledge + repository, and it must stay within the intent's scope envelope. Derivation
+is **automatic** — the coordinator's next action, not a gate — and one intent may yield
+**one or more** stacked plans (`intent-and-criteria.md`).
 
 ## Explore creates no plan — and the promotion decision
 
