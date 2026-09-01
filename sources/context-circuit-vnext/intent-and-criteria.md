@@ -107,6 +107,51 @@ approval gate** (pains 3, 4). The approval did not disappear — it moved upstre
 where the decision actually lives (pain 1). What replaces per-plan approval is a
 mechanical check, not a human one.
 
+## One intent, one or more plans — and structuring larger work
+
+An intent is one *decision*; a plan is one *execution*. The relationship is **1 : N**:
+
+- A small change is one intent → one plan.
+- A larger change is one intent → **several stacked plans** (for example an API plan
+  and a consumer plan) that together satisfy the intent. Each names `intent: <id>`,
+  each stays inside the intent's envelope, and together they may form one change set
+  at delivery (`concurrency-and-candidate.md`).
+
+**Plan derivation is automatic.** Once the intent is approved, `cc-plan` derives the
+plan(s) as the coordinator's next action — grounding, task breakdown, envelope check —
+with **no separate plan-approval gate**. Because the intent's approval also authorizes
+execution within the envelope (INV-EXEC-01 reworked), work then proceeds; the human
+hears "here's the breakdown, building now," not "approve this plan." (A human who wants
+to lock the intent without building yet can say so — that separates approval from
+execution, the one case INV-EXEC-01 still distinguishes.)
+
+**Genuinely separate decisions are separate intents.** If a request spans topics the
+human would review and ship independently, each is its own intent — not one giant
+intent. Intents may declare **dependencies on other intents** (mirroring inter-plan
+`plan_dependencies`, INV-PLAN-05) so a multi-topic initiative can be ordered.
+
+**The big multi-topic picture lives above intents, in `sources/system-design/`.** When
+the human wants a detailed picture reviewed as a whole and split by topic, that is the
+existing three-tier design layout (README → design → one file per concern). A system
+design then *spawns multiple intents* — typically one per concern — each approved on
+its own:
+
+```
+sources/system-design/   the big picture, by concern, reviewed whole
+        │  spawns
+        ▼
+intent/                  one coherent decision per topic, approved individually
+        │  derives
+        ▼
+plans/                   one or more execution plans per intent
+```
+
+So "a detailed intent I can review as a big picture" is answered two ways: the
+`INTENT.md` can be as detailed as the human wants, and a genuinely large, multi-topic
+picture belongs one level up in `sources/system-design/`, which feeds the intents.
+`sources/` stays passive; the intent carries the authority
+(`file-and-folder-structure.md`).
+
 ## The envelope check — the crown-jewel safety mechanism
 
 Moving the gate up is safe **only** if a plan (or, later, a candidate) that exceeds

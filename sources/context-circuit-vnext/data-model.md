@@ -22,6 +22,7 @@ Lives at `intent/<id>/contract.yaml`.
 | `scope` | object | the **envelope**: `repositories: [{id, paths[]}]` |
 | `tier` | enum | `explore \| standard \| critical` |
 | `status` | enum | `draft \| approved` |
+| `intent_dependencies` | list | optional; `{id, reason}` entries naming other intents this one depends on (mirrors `plan_dependencies`, INV-PLAN-05) |
 | `contract_digest` | digest | set on approval; the frozen identity of the criteria |
 
 `INTENT.md` (human-facing) sits beside it; `adversary.md` holds the adversary
