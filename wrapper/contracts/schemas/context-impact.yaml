@@ -4,9 +4,11 @@ describes: .runtime/executions/<plan-id>/<execution-id>/context-impact.yaml
 concern: context_impact
 
 purpose: >
-  References produced by post-implementation knowledge reconciliation. The
-  runtime only preserves these references; the root/coordinator produces them and
-  never interprets or accepts Product Knowledge on the runtime's behalf.
+  References produced by post-implementation knowledge reconciliation, and the
+  owner of the v1.0 reconciliation-debt marker (Context Circuit v1.0, Mechanism 4).
+  The runtime only preserves these references and the debt marker; the
+  root/coordinator produces the proposals and never interprets or accepts Product
+  Knowledge on the runtime's behalf (INV-KNOWLEDGE-02).
 
 fields:
   schema_version: { type: integer, required: true }
@@ -21,6 +23,35 @@ fields:
     required: false
     description: ids of context update proposals stored under context/proposals/
 
+reconciliation_debt_marker:
+  describes: .runtime/knowledge-debt/<candidate-id>.yaml
+  purpose: >
+    Completion or delivery of a candidate emits a pending reconciliation-debt
+    marker keyed to the candidate id (INV-COMPLETE-02). The next plan's grounding
+    preflight blocks (Standard/Critical) or loudly warns (Explore) while a marker
+    whose knowledge scope overlaps the new plan remains pending, so forgetting to
+    reconcile becomes structurally hard (INV-KNOWLEDGE-02). Keyed to the candidate,
+    it inherits candidate honesty: a new candidate carries its own debt, a voided
+    candidate's debt is voided with it.
+  fields:
+    schema_version: { type: integer, required: true, values: [1] }
+    candidate_id: { type: string, required: true, description: the delivered/completed candidate }
+    plan: { type: string, required: true }
+    execution_id: { type: string, required: true }
+    repositories: { type: list, required: true, description: the plan's affected repositories (the knowledge scope) }
+    knowledge_units: { type: list, required: false, description: the Product Knowledge unit ids the plan relied on }
+    resolved:
+      type: enum
+      required: true
+      values: [pending, reconciled, deferred]
+      description: >
+        pending until a human resolves it. reconciled = proposals generated and
+        accepted/deferred through the normal proposal gate; deferred = an explicit
+        "no durable update needed" decision. Both clear the block; neither accepts
+        knowledge on the runtime's behalf.
+    created_at: { type: string, required: true }
+    resolved_at: { type: string, required: false }
+
 reconciliation_inputs:
   - final plan and tasks plus revisions
   - plan grounding references and summary
@@ -31,3 +62,4 @@ reconciliation_inputs:
 rules:
   - INV-KNOWLEDGE-02
   - INV-COMPLETE-02
+  - INV-CANDIDATE-01

@@ -107,3 +107,6 @@ criteria:
   - id: AC-33
     statement: Consequence tiering classifies deterministically and fails upward (risk surfaces are Critical; only a single-repo bounded no-signal change is Explore-eligible; anything uncertain is Standard); the runtime enforces the floor — Explore is human-supervised with no verifier and never labeled verified, Standard/Critical require a candidate-bound independent pass — and refuses dropping the verifier (Explore) on a risk surface.
     suite: test/assurance/test-tier.sh
+  - id: AC-34
+    statement: Completion emits a candidate-keyed reconciliation-debt marker; the next plan's grounding blocks (Standard/Critical) or loudly warns (Explore) while delivered work in its knowledge scope is unreconciled, and an explicit human reconcile or defer clears it without auto-accepting Product Knowledge.
+    suite: test/knowledge/test-debt.sh

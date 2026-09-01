@@ -2354,10 +2354,15 @@ cc_plan_complete() {
 	} | cc_atomic_write "$cc_pc_edir/completion.yaml"
 	cc_plan_set_status "$cc_pc_yaml" "done"
 	cc_plan_index_upsert "$cc_pc_root" "$cc_pc_plan" >/dev/null
+	# Closed knowledge loop (INV-COMPLETE-02): completion emits a reconciliation-debt
+	# marker keyed to the accepted candidate; the next plan's grounding blocks or
+	# warns until it is reconciled or explicitly deferred (INV-KNOWLEDGE-02).
+	cc_knowledge_debt_emit "$cc_pc_root" "$cc_pc_plan" "$cc_pc_exec" >/dev/null || :
 	cc_emit plan "$cc_pc_plan"
 	cc_emit status done
 	cc_emit implementation_completion recorded
 	cc_emit knowledge_impact review-pending
+	cc_emit reconciliation_debt pending
 	return 0
 }
 
@@ -2367,6 +2372,136 @@ cc_context_impact_record() {
 	cp "$2" "$1/context-impact.yaml"
 	cc_emit context_impact recorded
 	return 0
+}
+
+# ---------------------------------------------------------------------------
+# Closed knowledge loop (Context Circuit v1.0, Mechanism 4, INV-COMPLETE-02 /
+# INV-KNOWLEDGE-02). Completion or delivery of a candidate emits a
+# reconciliation-debt marker; the next plan's grounding preflight blocks
+# (Standard/Critical) or loudly warns (Explore) while delivered work in its
+# knowledge scope remains unreconciled. The human still ACCEPTS knowledge (the gate
+# never auto-accepts); the loop only refuses to let the debt be FORGOTTEN. The debt
+# marker is keyed to the candidate, so it inherits candidate honesty.
+# ---------------------------------------------------------------------------
+
+cc_knowledge_debt_dir() { printf '%s/.runtime/knowledge-debt' "$1"; }
+
+# cc_knowledge_debt_emit ROOT PLAN [EXEC] -> record a pending reconciliation-debt
+# marker for the plan's delivered/completed candidate, keyed to the candidate id.
+cc_knowledge_debt_emit() {
+	cc_kde_root="$1"; cc_kde_plan="$2"; cc_kde_exec="${3:-}"
+	[ -n "$cc_kde_exec" ] || cc_kde_exec=$(cc_latest_execution "$cc_kde_root" "$cc_kde_plan") || { cc_fail KNOWLEDGE_DEBT_NO_EXECUTION "$cc_kde_plan"; return 1; }
+	[ -n "$cc_kde_exec" ] || { cc_fail KNOWLEDGE_DEBT_NO_EXECUTION "$cc_kde_plan"; return 1; }
+	cc_kde_edir=$(cc_execution_dir "$cc_kde_root" "$cc_kde_plan" "$cc_kde_exec")
+	[ -f "$cc_kde_edir/execution.yaml" ] || { cc_fail KNOWLEDGE_DEBT_NO_EXECUTION "$cc_kde_plan"; return 1; }
+	cc_kde_cand=$(cc_candidate_id "$cc_kde_edir") || return 1
+	# knowledge scope: the plan's affected repositories and its relied-on PK unit ids
+	cc_kde_snap="$cc_kde_edir/snapshot/plan.yaml"
+	[ -f "$cc_kde_snap" ] || cc_kde_snap="$cc_kde_root/plans/$cc_kde_plan/plan.yaml"
+	cc_kde_repos=$(cc_plan_affected_repositories "$cc_kde_snap" | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+	cc_kde_units=$(cc_list_ids "$cc_kde_snap" "product_knowledge" | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+	mkdir -p "$(cc_knowledge_debt_dir "$cc_kde_root")"
+	cc_kde_file="$(cc_knowledge_debt_dir "$cc_kde_root")/$cc_kde_cand.yaml"
+	# preserve an already-resolved marker for the same candidate (idempotent emit)
+	if [ -f "$cc_kde_file" ]; then
+		cc_kde_prev=$(cc_scalar "$cc_kde_file" "resolved" 2>/dev/null) || cc_kde_prev=""
+		[ "$cc_kde_prev" = "reconciled" ] || [ "$cc_kde_prev" = "deferred" ] && { cc_emit debt already-resolved; cc_emit candidate_id "$cc_kde_cand"; return 0; }
+	fi
+	printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
+		"$cc_kde_cand" "$cc_kde_plan" "$cc_kde_exec" "$cc_kde_repos" "$cc_kde_units" "$(cc_now)" \
+		| cc_atomic_write "$cc_kde_file"
+	cc_emit debt recorded
+	cc_emit candidate_id "$cc_kde_cand"
+	return 0
+}
+
+# cc_knowledge_debt ROOT -> list every delivered candidate whose reconciliation is
+# still pending. Emits one debt line per marker plus a pending_count.
+cc_knowledge_debt() {
+	cc_kd_dir=$(cc_knowledge_debt_dir "$1")
+	cc_kd_n=0
+	if [ -d "$cc_kd_dir" ]; then
+		for cc_kd_f in "$cc_kd_dir"/*.yaml; do
+			[ -f "$cc_kd_f" ] || continue
+			cc_kd_res=$(cc_scalar "$cc_kd_f" "resolved" 2>/dev/null) || cc_kd_res=""
+			[ "$cc_kd_res" = "pending" ] || continue
+			cc_kd_n=$((cc_kd_n + 1))
+			cc_emit debt "$(cc_scalar "$cc_kd_f" candidate_id)"
+			cc_emit "  plan" "$(cc_scalar "$cc_kd_f" plan)"
+			cc_emit "  repositories" "$(cc_scalar "$cc_kd_f" repositories)"
+		done
+	fi
+	cc_emit pending_count "$cc_kd_n"
+	return 0
+}
+
+# cc_knowledge_reconciled ROOT CANDIDATE [RESOLUTION] -> clear a debt marker once the
+# impact proposals have been generated and either accepted or explicitly deferred by
+# a human. RESOLUTION is reconciled (default) or deferred; "deferred" is a
+# first-class "no durable update needed" outcome (someone decided). It never
+# accepts knowledge itself (INV-KNOWLEDGE-02).
+cc_knowledge_reconciled() {
+	cc_kr_root="$1"; cc_kr_cand="$2"; cc_kr_res="${3:-reconciled}"
+	case "$cc_kr_res" in reconciled|deferred) : ;; *) cc_fail KNOWLEDGE_RESOLUTION_INVALID "$cc_kr_res"; return 1 ;; esac
+	cc_kr_file="$(cc_knowledge_debt_dir "$cc_kr_root")/$cc_kr_cand.yaml"
+	[ -f "$cc_kr_file" ] || { cc_fail KNOWLEDGE_DEBT_UNKNOWN "$cc_kr_cand"; return 1; }
+	awk -v r="$cc_kr_res" -v ts="$(cc_now)" '
+		/^resolved:[[:space:]]/ { print "resolved: " r; next }
+		{ print }
+		END { print "resolved_at: " ts }
+	' "$cc_kr_file" | cc_atomic_write "$cc_kr_file"
+	cc_emit reconciled "$cc_kr_cand"
+	cc_emit resolution "$cc_kr_res"
+	return 0
+}
+
+# cc_knowledge_debt_check ROOT PLAN -> the cc-plan grounding preflight. If any
+# pending debt marker's knowledge scope (repositories) overlaps the new plan's
+# affected repositories, block at Standard/Critical (non-zero) or loudly warn at
+# Explore (zero). No overlap is clear. The new plan's tier comes from its intent
+# (a legacy plan with no intent blocks, treated as Standard).
+cc_knowledge_debt_check() {
+	cc_kc_root="$1"; cc_kc_plan="$2"
+	cc_kc_pfile="$cc_kc_root/plans/$cc_kc_plan/plan.yaml"
+	[ -f "$cc_kc_pfile" ] || { cc_fail KNOWLEDGE_CHECK_PLAN_MISSING "$cc_kc_plan"; return 1; }
+	cc_kc_newrepos=$(cc_plan_affected_repositories "$cc_kc_pfile")
+	# resolve the new plan's tier from its intent
+	cc_kc_intent=$(cc_scalar "$cc_kc_pfile" "intent" 2>/dev/null) || cc_kc_intent=""
+	cc_kc_tier=standard
+	if [ -n "$cc_kc_intent" ]; then
+		cc_kc_tier=$(cc_scalar "$(cc_intent_dir "$cc_kc_root" "$cc_kc_intent")/contract.yaml" "tier" 2>/dev/null) || cc_kc_tier=standard
+		[ -n "$cc_kc_tier" ] || cc_kc_tier=standard
+	fi
+	cc_kc_dir=$(cc_knowledge_debt_dir "$cc_kc_root")
+	cc_kc_hit=no
+	if [ -d "$cc_kc_dir" ]; then
+		for cc_kc_f in "$cc_kc_dir"/*.yaml; do
+			[ -f "$cc_kc_f" ] || continue
+			[ "$(cc_scalar "$cc_kc_f" resolved 2>/dev/null)" = "pending" ] || continue
+			# skip a marker for the plan's own prior candidate (self-debt does not block)
+			[ "$(cc_scalar "$cc_kc_f" plan 2>/dev/null)" = "$cc_kc_plan" ] && continue
+			cc_kc_mrepos=$(cc_inline_list "$(cc_scalar "$cc_kc_f" repositories 2>/dev/null)")
+			for cc_kc_mr in $cc_kc_mrepos; do
+				if printf '%s\n' "$cc_kc_newrepos" | grep -Fxq "$cc_kc_mr"; then
+					cc_kc_hit=yes
+					cc_emit debtor "$(cc_scalar "$cc_kc_f" candidate_id)"
+					cc_emit "  plan" "$(cc_scalar "$cc_kc_f" plan)"
+					cc_emit "  repository" "$cc_kc_mr"
+					break
+				fi
+			done
+		done
+	fi
+	if [ "$cc_kc_hit" = "no" ]; then
+		cc_emit debt clear
+		return 0
+	fi
+	if [ "$cc_kc_tier" = "explore" ]; then
+		cc_emit debt warn
+		return 0
+	fi
+	cc_emit debt blocking
+	cc_fail KNOWLEDGE_DEBT_BLOCKING "$cc_kc_plan"; return 1
 }
 
 # cc_delivery_targets ROOT PLAN -> read-only report of pull-request source and
@@ -2606,6 +2741,10 @@ cc_main() {
 		completion-ready)        cc_completion_ready "$@" ;;
 		plan-complete)           cc_plan_complete "$@" ;;
 		context-impact-record)   cc_context_impact_record "$@" ;;
+		knowledge-debt-emit)     cc_knowledge_debt_emit "$@" ;;
+		knowledge-debt)          cc_knowledge_debt "$@" ;;
+		knowledge-debt-check)    cc_knowledge_debt_check "$@" ;;
+		knowledge-reconciled)    cc_knowledge_reconciled "$@" ;;
 		recovery-inspect)        cc_recovery_inspect "$@" ;;
 		lock-acquire)            cc_lock_acquire "$@" ;;
 		lock-release)            cc_lock_release "$@" ;;

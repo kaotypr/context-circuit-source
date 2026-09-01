@@ -34,7 +34,13 @@ invariants:
       Completion, verification, worker claims, and code changes never silently
       accept a Product Knowledge update. A context update is accepted only by an
       explicit separate human decision; a plan may be done while a proposal is
-      pending.
+      pending. In addition (Context Circuit v1.0, Mechanism 4), a new plan's
+      grounding preflight consults the reconciliation-debt markers (INV-COMPLETE-02)
+      and blocks at Standard/Critical, or loudly warns at Explore, while delivered
+      work in its knowledge scope remains unreconciled. Resolution is an explicit
+      human decision — reconcile (generate proposals, accept or defer through the
+      normal gate) or an explicit deferred/no-update-needed — that clears the marker;
+      the gate refuses to let debt be forgotten but never auto-accepts knowledge.
   - id: INV-INTENT-01
     rule: >
       Every writing request is anchored to a first-class intent/<id>/ whose
@@ -215,9 +221,14 @@ invariants:
       explicit human completion only after independent verification.)
   - id: INV-COMPLETE-02
     rule: >
-      Marking a plan done records an implementation completion record (plan
-      revision, execution, per-repository commits, verifier result, human
-      request) and starts Product Knowledge reconciliation.
+      Completion (or delivery) of a candidate records an implementation completion
+      record (plan revision, execution, per-repository commits, verifier result,
+      human request) and emits a reconciliation-debt marker keyed to the accepted
+      candidate. The marker records the candidate, the affected repositories (its
+      knowledge scope), and the Product Knowledge units the plan relied on; it
+      starts, and the next plan's grounding blocks on, Product Knowledge
+      reconciliation for that scope (INV-KNOWLEDGE-02). Keyed to the candidate, the
+      debt inherits candidate honesty (INV-CANDIDATE-01).
   - id: INV-ARCHIVE-01
     rule: >
       Archiving moves plans/<id>/ to plans/archive/<id>/, removes the row from
@@ -462,6 +473,7 @@ owners:
   verifier_result: wrapper/contracts/schemas/verifier-result.yaml
   completion_record: wrapper/contracts/schemas/completion.yaml
   context_impact: wrapper/contracts/schemas/context-impact.yaml
+  reconciliation_debt: wrapper/contracts/schemas/context-impact.yaml
   release_boundary: wrapper/manifest.yaml
   skill_packets: .agents/skills/
   coordinator_role: agents/coordinator.md

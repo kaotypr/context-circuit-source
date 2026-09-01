@@ -52,8 +52,25 @@ proceed on the original approval, and never widen scope on your own. The check
 also runs again at execution start.
 
 One intent may yield **one or more** stacked plans, each naming the same intent
-and each staying inside the envelope. Deriving a plan does not execute it; the
-grounding-debt preflight (`cc-plan` at Standard/Critical) still applies.
+and each staying inside the envelope. Deriving a plan does not execute it.
+
+## Grounding-debt preflight (INV-KNOWLEDGE-02, closed loop)
+
+Before grounding a new plan, run `knowledge-debt-check . <plan-id>`. It consults
+the reconciliation-debt markers that completion/delivery emitted (INV-COMPLETE-02).
+If delivered work in this plan's knowledge scope (its repositories) is still
+unreconciled:
+
+- **Standard/Critical → it blocks.** Reconcile first — generate the impact
+  proposals and let the human accept or explicitly defer them
+  (`knowledge-reconciled . <candidate> reconciled|deferred`) — before grounding
+  proceeds. Say it in plain language: "there's merged work in this area I haven't
+  folded into what the project knows yet — reconcile it first, or mark it as no
+  update needed?" Never auto-accept knowledge (INV-KNOWLEDGE-02); the human decides.
+- **Explore → it loudly warns** but does not block, preserving the fast path for
+  throwaway work: "you're grounding on knowledge that merged work hasn't updated yet."
+
+`clear` means no overlapping debt and grounding proceeds normally.
 
 ## Review a plan
 

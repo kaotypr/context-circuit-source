@@ -16,7 +16,7 @@ for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-ASSURE-01 INV-PLAN-01
 	contains "$inv" "$id"
 done
 for concern in intent_contract intent_gate scope_envelope spec_adversary_role \
-	candidate_identity human_acceptance assurance_tiering \
+	candidate_identity human_acceptance assurance_tiering reconciliation_debt \
 	plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
