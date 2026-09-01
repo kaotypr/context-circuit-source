@@ -14,11 +14,17 @@ plan_status:
   authority: this file
   values: [draft, approved, done]
   transitions:
-    - draft -> approved   # explicit human approval, readiness checks pass
-    - approved -> done    # explicit human completion, latest execution verified
+    - draft -> approved   # v1.0: automatic within the approved intent envelope
+                          # (INV-INTENT-02); legacy: explicit human approval
+    - approved -> done    # v1.0: inferred from candidate acceptance + delivery
+                          # (Critical: explicit human); legacy: explicit human
   notes: >
     Execution status (running, verifying, repairing, verified, failed, blocked)
-    is runtime evidence and never replaces plan status.
+    is runtime evidence and never replaces plan status. For a v1.0 plan
+    (schema_version 3) status is a projection, not a second human gate: the human
+    gate moved upstream to the intent (INV-APPROVE-01 / INV-PLAN-01 reworked). A
+    legacy plan (schema_version 1 or 2, no parent intent) keeps the earlier
+    human-controlled transitions.
 
 plan_id:
   form: NNNN-<kebab-slug>
@@ -33,12 +39,25 @@ fields:
   schema_version:
     type: integer
     required: true
-    values: [1, 2]
+    values: [1, 2, 3]
     description: >
       1 for a plan with no inter-plan dependencies (v0.5 shape, unchanged). 2 is
       required when plan_dependencies is present, so a v0.5 engine refuses the
-      plan rather than scheduling it dependency-blind (INV-PLAN-05).
+      plan rather than scheduling it dependency-blind (INV-PLAN-05). 3 is a v1.0
+      intent-bearing plan: it requires the `intent` field and derives from an
+      approved intent within its scope envelope (INV-INTENT-02). A v3 plan may also
+      carry plan_dependencies. A pre-v1.0 reader ignores schema 3 rather than
+      guessing (additive schema evolution).
   plan: { type: string, required: true, description: canonical plan id }
+  intent:
+    type: string
+    required: false
+    description: >
+      The parent intent id (form i<NNNN>-slug) this plan derives from. Required for
+      a v1.0 plan (schema_version 3); absent on a legacy plan. When present, the
+      intent-envelope check (INV-INTENT-02) authorizes the plan within the intent's
+      approved scope and re-gates it on drift. The frozen contract_digest of this
+      intent is folded into the plan's execution candidate (INV-CANDIDATE-01).
   title: { type: string, required: true }
   status: { type: enum, required: true, values: [draft, approved, done] }
   objective: { type: string, required: true }
@@ -113,8 +132,9 @@ invariants:
   - task dependencies reference existing task ids (INV-PLAN-02)
   - acceptance and verification use distinct identifiers
   - each product_knowledge reference has a stable id, path, and reason (INV-PLAN-04)
-  - plan status is human-controlled (INV-PLAN-01)
-  - schema_version is 1 or 2; declaring plan_dependencies requires 2 (INV-PLAN-05)
+  - plan status is human-controlled for a legacy plan; a projection for a v1.0 plan (INV-PLAN-01)
+  - a v1.0 plan (schema_version 3) names its parent intent and stays within the intent scope envelope (INV-INTENT-02)
+  - schema_version is 1, 2, or 3; declaring plan_dependencies requires 2 or 3; a v1.0 plan is 3 (INV-PLAN-05, INV-INTENT-02)
   - every plan_dependencies entry references an existing, non-self plan id and the
     inter-plan dependency graph is acyclic (INV-PLAN-05)
 
@@ -124,3 +144,4 @@ rules:
   - INV-PLAN-03
   - INV-PLAN-04
   - INV-PLAN-05
+  - INV-INTENT-02

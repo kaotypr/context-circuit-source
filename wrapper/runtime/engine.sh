@@ -278,6 +278,313 @@ cc_plan_is_descendant() {
 }
 
 # ---------------------------------------------------------------------------
+# Intent (Context Circuit v1.0, Mechanism 1) — the first-class decision for one
+# change. The intent tree mirrors plans/ conventions (stable ids never reused,
+# a status-blind archive move, an INDEX catalog) so it reuses the same id, index,
+# and archive machinery. contract.yaml is the frozen definition of correct;
+# approval freezes contract_digest (INV-INTENT-01). The runtime owns only the
+# deterministic mechanics — id allocation, structure validation, digest freezing,
+# archive/restore, and the envelope check (INV-INTENT-02). It never authors the
+# criteria, runs the adversary, or decides a tier (INV-RUNTIME-01).
+# ---------------------------------------------------------------------------
+
+# cc_intent_id_valid ID -> i<NNNN>-<kebab-slug>
+cc_intent_id_valid() {
+	cc_iiv_id="$1"
+	case "$cc_iiv_id" in
+		i[0-9][0-9][0-9][0-9]-* ) : ;;
+		* ) return 1 ;;
+	esac
+	cc_iiv_slug=${cc_iiv_id#i????-}
+	cc_safe_slug "$cc_iiv_slug"
+}
+
+cc_intent_dir() { printf '%s/intent/%s' "$1" "$2"; }
+
+# cc_intent_contract_digest FILE -> digest over the criteria-bearing content only:
+# every line except the top-level status and contract_digest lines (which change on
+# approval and would otherwise make the digest self-referential). Deterministic:
+# identical criteria -> identical digest; any criteria change -> a new digest, which
+# is what re-gates the envelope and voids candidate evidence.
+cc_intent_contract_digest() {
+	[ -f "$1" ] || return 1
+	cc_icd_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-icd.XXXXXX") || return 1
+	awk '/^status:[[:space:]]/{next} /^status:$/{next} /^contract_digest:/{next} {print}' "$1" >"$cc_icd_tmp"
+	cc_digest "$cc_icd_tmp"
+	rm -f "$cc_icd_tmp"
+}
+
+# cc_intent_scope_repos FILE -> repository ids declared under scope.repositories
+cc_intent_scope_repos() {
+	[ -f "$1" ] || return 1
+	awk '
+		/^[A-Za-z_]/ { in_scope = ($0 ~ /^scope:/) ; in_repos=0 ; next }
+		in_scope && /^  repositories:/ { in_repos=1 ; next }
+		in_scope && /^  [A-Za-z]/ { in_repos=0 }
+		in_scope && in_repos && /^    -[[:space:]]*id:[[:space:]]*/ {
+			v=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/, "", v); gsub(/[[:space:]]+$/, "", v); print v
+		}
+	' "$1"
+}
+
+# cc_intent_scope_paths FILE REPO -> path regions declared for REPO under
+# scope.repositories, whether inline ([a, b]) or as a block list. One per line.
+cc_intent_scope_paths() {
+	[ -f "$1" ] || return 1
+	awk -v want="$2" '
+		/^[A-Za-z_]/ { in_scope = ($0 ~ /^scope:/) ; in_repos=0 ; cur=0 ; infield=0 ; next }
+		in_scope && /^  repositories:/ { in_repos=1 ; next }
+		in_scope && /^  [A-Za-z]/ { in_repos=0 }
+		in_scope && in_repos && /^    -[[:space:]]*id:[[:space:]]*/ {
+			v=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/, "", v); gsub(/[[:space:]]+$/, "", v); cur=(v==want); infield=0; next
+		}
+		in_scope && in_repos && cur && /^      paths:[[:space:]]*/ {
+			val=$0; sub(/^      paths:[[:space:]]*/, "", val); gsub(/[[:space:]]+$/, "", val)
+			if (val ~ /^\[/) {
+				gsub(/^\[|\]$/, "", val); n=split(val, a, ",")
+				for (i=1;i<=n;i++){ gsub(/^[[:space:]]+|[[:space:]]+$/, "", a[i]); if (a[i]!="") print a[i] }
+				infield=0
+			} else if (val == "") { infield=1 }
+			else { print val; infield=0 }
+			next
+		}
+		in_scope && in_repos && cur && infield && /^        -[[:space:]]*/ {
+			it=$0; sub(/^        -[[:space:]]*/, "", it); gsub(/[[:space:]]+$/, "", it); if (it != "") print it; next
+		}
+		in_scope && in_repos && cur && infield && /^      [A-Za-z]/ { infield=0 }
+	' "$1"
+}
+
+# cc_intent_criteria_methods FILE -> the method of every acceptance criterion
+cc_intent_criteria_methods() {
+	[ -f "$1" ] || return 1
+	awk '
+		/^[A-Za-z_]/ { in_ac = ($0 ~ /^acceptance_criteria:/) ; next }
+		in_ac && /^[[:space:]]+method:[[:space:]]*/ {
+			sub(/^[[:space:]]+method:[[:space:]]*/, ""); gsub(/[[:space:]]+$/, ""); print
+		}
+	' "$1"
+}
+
+# cc_intent_validate DIR -> confirm intent/<id>/ structure and contract.yaml fields
+cc_intent_validate() {
+	cc_iv_dir="$1"
+	[ -d "$cc_iv_dir" ] || { cc_fail INTENT_DIR_MISSING; return 1; }
+	[ -f "$cc_iv_dir/contract.yaml" ] || { cc_fail INTENT_CONTRACT_MISSING; return 1; }
+	[ -f "$cc_iv_dir/INTENT.md" ] || { cc_fail INTENT_MD_MISSING; return 1; }
+	cc_iv_yaml="$cc_iv_dir/contract.yaml"
+	cc_iv_id=$(cc_scalar "$cc_iv_yaml" "intent") || cc_iv_id=""
+	cc_intent_id_valid "$cc_iv_id" || { cc_fail INTENT_ID_INVALID "$cc_iv_id"; return 1; }
+	[ "$(basename -- "$cc_iv_dir")" = "$cc_iv_id" ] || { cc_fail INTENT_ID_DIR_MISMATCH "$cc_iv_id"; return 1; }
+	cc_iv_status=$(cc_scalar "$cc_iv_yaml" "status") || cc_iv_status=""
+	case "$cc_iv_status" in
+		draft|approved) : ;;
+		*) cc_fail INTENT_STATUS_INVALID "$cc_iv_status"; return 1 ;;
+	esac
+	cc_iv_tier=$(cc_scalar "$cc_iv_yaml" "tier") || cc_iv_tier=""
+	case "$cc_iv_tier" in
+		explore|standard|critical) : ;;
+		*) cc_fail INTENT_TIER_INVALID "$cc_iv_tier"; return 1 ;;
+	esac
+	# goal and at least one acceptance criterion, each executable or explicitly manual
+	cc_iv_goal=$(cc_scalar "$cc_iv_yaml" "goal") || cc_iv_goal=""
+	[ -n "$cc_iv_goal" ] || { cc_fail INTENT_GOAL_MISSING; return 1; }
+	cc_iv_methods=$(cc_intent_criteria_methods "$cc_iv_yaml")
+	[ -n "$cc_iv_methods" ] || { cc_fail INTENT_NO_CRITERIA; return 1; }
+	for cc_iv_m in $cc_iv_methods; do
+		case "$cc_iv_m" in
+			test|command|build|static|manual) : ;;
+			*) cc_fail INTENT_CRITERION_METHOD_INVALID "$cc_iv_m"; return 1 ;;
+		esac
+	done
+	# scope envelope must name at least one repository
+	cc_iv_repos=$(cc_intent_scope_repos "$cc_iv_yaml")
+	[ -n "$cc_iv_repos" ] || { cc_fail INTENT_SCOPE_EMPTY; return 1; }
+	cc_emit intent "$cc_iv_id"
+	cc_emit status "$cc_iv_status"
+	cc_emit tier "$cc_iv_tier"
+	return 0
+}
+
+# cc_intent_allocate_id ROOT SLUG -> next i<NNNN>-slug after the highest ever
+# allocated (active + archived), the intent tree's own never-reused sequence.
+cc_intent_allocate_id() {
+	cc_ia_root="$1"; cc_ia_slug="$2"
+	cc_safe_slug "$cc_ia_slug" || { cc_fail INTENT_SLUG_INVALID "$cc_ia_slug"; return 1; }
+	cc_ia_max=0
+	for cc_ia_d in "$cc_ia_root/intent"/*/ "$cc_ia_root/intent/archive"/*/; do
+		[ -d "$cc_ia_d" ] || continue
+		cc_ia_base=$(basename -- "$cc_ia_d")
+		case "$cc_ia_base" in
+			i[0-9][0-9][0-9][0-9]-*)
+				cc_ia_seq=${cc_ia_base#i}; cc_ia_seq=${cc_ia_seq%%-*}
+				cc_ia_seq=$(printf '%s' "$cc_ia_seq" | sed 's/^0*//'); [ -n "$cc_ia_seq" ] || cc_ia_seq=0
+				[ "$cc_ia_seq" -gt "$cc_ia_max" ] && cc_ia_max=$cc_ia_seq ;;
+		esac
+	done
+	cc_ia_next=$((cc_ia_max + 1))
+	printf 'i%04d-%s\n' "$cc_ia_next" "$cc_ia_slug"
+}
+
+cc_intent_index_init() {
+	printf '# Active intents\n\n| Intent ID | Title | Status | Tier | Goal | Path |\n| --- | --- | --- | --- | --- | --- |\n' \
+		| cc_atomic_write "$1/intent/INDEX.md"
+}
+
+# cc_intent_index_remove ROOT INTENT -> drop the intent's row from the active index
+cc_intent_index_remove() {
+	cc_iir_root="$1"; cc_iir_id="$2"
+	[ -f "$cc_iir_root/intent/INDEX.md" ] || return 0
+	grep -Fv "| $cc_iir_id |" "$cc_iir_root/intent/INDEX.md" | cc_atomic_write "$cc_iir_root/intent/INDEX.md"
+}
+
+# cc_intent_index_upsert ROOT INTENT -> add/update the active row
+cc_intent_index_upsert() {
+	cc_iiu_root="$1"; cc_iiu_id="$2"
+	[ -f "$cc_iiu_root/intent/INDEX.md" ] || cc_intent_index_init "$cc_iiu_root"
+	cc_iiu_dir="$cc_iiu_root/intent/$cc_iiu_id"
+	cc_iiu_title=""; cc_iiu_status=""; cc_iiu_tier=""; cc_iiu_goal=""
+	if [ -f "$cc_iiu_dir/contract.yaml" ]; then
+		cc_iiu_title=$(cc_scalar "$cc_iiu_dir/contract.yaml" "title")
+		cc_iiu_status=$(cc_scalar "$cc_iiu_dir/contract.yaml" "status")
+		cc_iiu_tier=$(cc_scalar "$cc_iiu_dir/contract.yaml" "tier")
+		cc_iiu_goal=$(cc_scalar "$cc_iiu_dir/contract.yaml" "goal")
+	fi
+	cc_intent_index_remove "$cc_iiu_root" "$cc_iiu_id"
+	printf '| %s | %s | %s | %s | %s | %s |\n' \
+		"$cc_iiu_id" "${cc_iiu_title:-}" "${cc_iiu_status:-draft}" "${cc_iiu_tier:-}" "${cc_iiu_goal:-}" "intent/$cc_iiu_id/INTENT.md" \
+		>>"$cc_iiu_root/intent/INDEX.md"
+	cc_emit index_row "$cc_iiu_id"
+	return 0
+}
+
+# cc_intent_approve ROOT INTENT -> draft->approved (Gate 1); freeze contract_digest
+cc_intent_approve() {
+	cc_iap_root="$1"; cc_iap_id="$2"
+	cc_iap_dir=$(cc_intent_dir "$cc_iap_root" "$cc_iap_id")
+	cc_intent_validate "$cc_iap_dir" >/dev/null || { cc_fail INTENT_APPROVE_INVALID "$cc_iap_id"; return 1; }
+	cc_iap_yaml="$cc_iap_dir/contract.yaml"
+	cc_iap_status=$(cc_scalar "$cc_iap_yaml" "status")
+	[ "$cc_iap_status" = "draft" ] || { cc_fail INTENT_NOT_DRAFT "$cc_iap_status"; return 1; }
+	cc_iap_digest=$(cc_intent_contract_digest "$cc_iap_yaml") || { cc_fail INTENT_DIGEST_FAILED; return 1; }
+	# set status approved and freeze contract_digest atomically
+	awk -v d="$cc_iap_digest" '
+		!sdone && /^status:[[:space:]]/ { print "status: approved"; sdone=1; next }
+		/^contract_digest:/ { next }
+		{ print }
+		END { print "contract_digest: " d }
+	' "$cc_iap_yaml" | cc_atomic_write "$cc_iap_yaml"
+	cc_intent_index_upsert "$cc_iap_root" "$cc_iap_id" >/dev/null
+	cc_emit intent "$cc_iap_id"
+	cc_emit status approved
+	cc_emit contract_digest "$cc_iap_digest"
+	return 0
+}
+
+# cc_intent_archive ROOT INTENT -> move intent/ID -> intent/archive/ID; status-blind
+cc_intent_archive() {
+	cc_iar_root="$1"; cc_iar_id="$2"
+	cc_safe_id "$cc_iar_id" || { cc_fail INTENT_ID_UNSAFE "$cc_iar_id"; return 1; }
+	cc_iar_src="$cc_iar_root/intent/$cc_iar_id"
+	cc_iar_dst="$cc_iar_root/intent/archive/$cc_iar_id"
+	[ -d "$cc_iar_src" ] || { cc_fail INTENT_ARCHIVE_SOURCE_MISSING "$cc_iar_id"; return 1; }
+	[ -e "$cc_iar_dst" ] && { cc_fail INTENT_ARCHIVE_TARGET_COLLISION "$cc_iar_id"; return 1; }
+	cc_plan_org_lock "$cc_iar_root" || return 1
+	mkdir -p "$cc_iar_root/intent/archive"
+	if mv "$cc_iar_src" "$cc_iar_dst" 2>/dev/null; then
+		if cc_intent_index_remove "$cc_iar_root" "$cc_iar_id"; then
+			cc_plan_org_unlock "$cc_iar_root"
+			cc_emit archived "$cc_iar_id"
+			return 0
+		fi
+		mv "$cc_iar_dst" "$cc_iar_src" 2>/dev/null || true
+		cc_plan_org_unlock "$cc_iar_root"
+		cc_fail INTENT_ARCHIVE_INDEX_FAILED "$cc_iar_id"; return 1
+	fi
+	cc_plan_org_unlock "$cc_iar_root"
+	cc_fail INTENT_ARCHIVE_MOVE_FAILED "$cc_iar_id"; return 1
+}
+
+# cc_intent_restore ROOT INTENT -> move intent/archive/ID -> intent/ID; re-add index
+cc_intent_restore() {
+	cc_ire_root="$1"; cc_ire_id="$2"
+	cc_safe_id "$cc_ire_id" || { cc_fail INTENT_ID_UNSAFE "$cc_ire_id"; return 1; }
+	cc_ire_src="$cc_ire_root/intent/archive/$cc_ire_id"
+	cc_ire_dst="$cc_ire_root/intent/$cc_ire_id"
+	[ -d "$cc_ire_src" ] || { cc_fail INTENT_RESTORE_SOURCE_MISSING "$cc_ire_id"; return 1; }
+	[ -e "$cc_ire_dst" ] && { cc_fail INTENT_RESTORE_TARGET_COLLISION "$cc_ire_id"; return 1; }
+	cc_plan_org_lock "$cc_ire_root" || return 1
+	if mv "$cc_ire_src" "$cc_ire_dst" 2>/dev/null; then
+		if cc_intent_index_upsert "$cc_ire_root" "$cc_ire_id" >/dev/null; then
+			cc_plan_org_unlock "$cc_ire_root"
+			cc_emit restored "$cc_ire_id"
+			return 0
+		fi
+		mv "$cc_ire_dst" "$cc_ire_src" 2>/dev/null || true
+		cc_plan_org_unlock "$cc_ire_root"
+		cc_fail INTENT_RESTORE_INDEX_FAILED "$cc_ire_id"; return 1
+	fi
+	cc_plan_org_unlock "$cc_ire_root"
+	cc_fail INTENT_RESTORE_MOVE_FAILED "$cc_ire_id"; return 1
+}
+
+# cc_intent_envelope_check ROOT PLAN -> crown jewel 1 (INV-INTENT-02). Compare the
+# plan's declared repositories and path regions against its parent intent's scope,
+# and its contract digest against the frozen one. Fails UPWARD: any indeterminate
+# comparison re-gates. Emits `envelope: within` (return 0) or `envelope: exceeds`
+# with a reason (return 1) so a caller re-gates rather than proceeds.
+cc_intent_envelope_check() {
+	cc_ec_root="$1"; cc_ec_plan="$2"
+	cc_ec_pdir="$cc_ec_root/plans/$cc_ec_plan"
+	[ -f "$cc_ec_pdir/plan.yaml" ] || { cc_fail ENVELOPE_PLAN_MISSING "$cc_ec_plan"; return 1; }
+	cc_ec_intent=$(cc_scalar "$cc_ec_pdir/plan.yaml" "intent") || cc_ec_intent=""
+	[ -n "$cc_ec_intent" ] || { cc_emit envelope exceeds; cc_emit reason NO_INTENT; cc_fail ENVELOPE_PLAN_NO_INTENT "$cc_ec_plan"; return 1; }
+	cc_ec_idir=$(cc_intent_dir "$cc_ec_root" "$cc_ec_intent")
+	cc_ec_contract="$cc_ec_idir/contract.yaml"
+	[ -f "$cc_ec_contract" ] || { cc_emit envelope exceeds; cc_emit reason INTENT_MISSING; cc_fail ENVELOPE_INTENT_MISSING "$cc_ec_intent"; return 1; }
+	cc_ec_istatus=$(cc_scalar "$cc_ec_contract" "status")
+	[ "$cc_ec_istatus" = "approved" ] || { cc_emit envelope exceeds; cc_emit reason INTENT_NOT_APPROVED; cc_fail ENVELOPE_INTENT_NOT_APPROVED "$cc_ec_intent"; return 1; }
+	# criteria change: current digest must equal the frozen one
+	cc_ec_frozen=$(cc_scalar "$cc_ec_contract" "contract_digest") || cc_ec_frozen=""
+	cc_ec_now=$(cc_intent_contract_digest "$cc_ec_contract") || cc_ec_now=""
+	if [ -z "$cc_ec_frozen" ] || [ "$cc_ec_now" != "$cc_ec_frozen" ]; then
+		cc_emit envelope exceeds; cc_emit reason CRITERIA_CHANGED
+		cc_fail ENVELOPE_EXCEEDS "criteria-changed"; return 1
+	fi
+	cc_ec_srepos=$(cc_intent_scope_repos "$cc_ec_contract")
+	for cc_ec_r in $(cc_plan_affected_repositories "$cc_ec_pdir/plan.yaml"); do
+		if ! printf '%s\n' "$cc_ec_srepos" | grep -Fxq "$cc_ec_r"; then
+			cc_emit envelope exceeds; cc_emit reason NEW_REPOSITORY; cc_emit repository "$cc_ec_r"
+			cc_fail ENVELOPE_EXCEEDS "new-repository:$cc_ec_r"; return 1
+		fi
+		cc_ec_spaths=$(cc_intent_scope_paths "$cc_ec_contract" "$cc_ec_r")
+		if [ -z "$cc_ec_spaths" ]; then
+			# indeterminate: a scoped repo with no resolvable paths -> re-gate
+			cc_emit envelope exceeds; cc_emit reason INDETERMINATE; cc_emit repository "$cc_ec_r"
+			cc_fail ENVELOPE_EXCEEDS "indeterminate:$cc_ec_r"; return 1
+		fi
+		for cc_ec_p in $(cc_plan_repo_paths "$cc_ec_pdir/plan.yaml" "$cc_ec_r"); do
+			# an unresolvable/relative plan region fails upward
+			if [ "$cc_ec_p" != "." ] && ! cc_safe_relative "$cc_ec_p"; then
+				cc_emit envelope exceeds; cc_emit reason INDETERMINATE; cc_emit repository "$cc_ec_r"
+				cc_fail ENVELOPE_EXCEEDS "indeterminate-path:$cc_ec_r:$cc_ec_p"; return 1
+			fi
+			cc_ec_ok=no
+			for cc_ec_s in $cc_ec_spaths; do
+				if cc_region_covers "$cc_ec_s" "$cc_ec_p"; then cc_ec_ok=yes; break; fi
+			done
+			if [ "$cc_ec_ok" = "no" ]; then
+				cc_emit envelope exceeds; cc_emit reason PATH_OUTSIDE_SCOPE; cc_emit repository "$cc_ec_r"; cc_emit region "$cc_ec_p"
+				cc_fail ENVELOPE_EXCEEDS "path-outside-scope:$cc_ec_r:$cc_ec_p"; return 1
+			fi
+		done
+	done
+	cc_emit envelope within
+	cc_emit intent "$cc_ec_intent"
+	return 0
+}
+
+# ---------------------------------------------------------------------------
 # Workspace
 # ---------------------------------------------------------------------------
 
@@ -304,11 +611,13 @@ cc_workspace_init() {
 	[ -n "$cc_wi_root" ] || { cc_fail WORKSPACE_ROOT_MISSING; return 1; }
 	mkdir -p "$cc_wi_root/context/domains" "$cc_wi_root/context/roles" \
 		"$cc_wi_root/context/proposals" "$cc_wi_root/sources" \
+		"$cc_wi_root/intent/archive" \
 		"$cc_wi_root/plans/archive" "$cc_wi_root/.runtime/executions" \
 		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/pairing" \
-		"$cc_wi_root/.runtime/locks" \
+		"$cc_wi_root/.runtime/locks" "$cc_wi_root/.runtime/knowledge-debt" \
 		"$cc_wi_root/repositories" || return 1
 	[ -f "$cc_wi_root/plans/INDEX.md" ] || cc_plan_index_init "$cc_wi_root"
+	[ -f "$cc_wi_root/intent/INDEX.md" ] || cc_intent_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/context/INDEX.md" ] || printf '# Context index\n\nNo accepted context units yet.\n' | cc_atomic_write "$cc_wi_root/context/INDEX.md"
 	[ -f "$cc_wi_root/repositories.local.yaml" ] || printf 'schema_version: %s\nbindings: {}\n' "$CC_SCHEMA_VERSION" | cc_atomic_write "$cc_wi_root/repositories.local.yaml"
 	cc_emit workspace_init ok
@@ -972,9 +1281,20 @@ cc_plan_validate() {
 	# schema version and inter-plan dependencies (INV-PLAN-05)
 	cc_pv_schema=$(cc_scalar "$cc_pv_dir/plan.yaml" "schema_version") || cc_pv_schema=""
 	case "$cc_pv_schema" in
-		1|2) : ;;
+		1|2|3) : ;;
 		*) cc_fail PLAN_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1 ;;
 	esac
+	# parent intent (INV-INTENT-02 / INV-PLAN-01 reworked). A v1.0 plan (schema 3)
+	# names its parent intent; schema 1/2 are legacy pre-intent plans that carry
+	# none. When present at any version the id form is validated; the envelope check
+	# (cc_intent_envelope_check) enforces the scope linkage as a preflight.
+	cc_pv_intent=$(cc_scalar "$cc_pv_dir/plan.yaml" "intent") || cc_pv_intent=""
+	if [ "$cc_pv_schema" = "3" ]; then
+		[ -n "$cc_pv_intent" ] || { cc_fail PLAN_INTENT_REQUIRED "$cc_pv_id"; return 1; }
+	fi
+	if [ -n "$cc_pv_intent" ]; then
+		cc_intent_id_valid "$cc_pv_intent" || { cc_fail PLAN_INTENT_INVALID "$cc_pv_intent"; return 1; }
+	fi
 	# optional complexity hint (additive; absent by default). A coordinator
 	# tiering hint only (INV-HOST-01) — never a gate; the runtime stays model-blind.
 	cc_pv_cx=$(cc_scalar "$cc_pv_dir/plan.yaml" "complexity") || cc_pv_cx=""
@@ -984,7 +1304,7 @@ cc_plan_validate() {
 	esac
 	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
 	if [ -n "$cc_pv_deps" ]; then
-		[ "$cc_pv_schema" = "2" ] || { cc_fail PLAN_DEPS_REQUIRE_SCHEMA_2 "$cc_pv_id"; return 1; }
+		case "$cc_pv_schema" in 2|3) : ;; *) cc_fail PLAN_DEPS_REQUIRE_SCHEMA_2 "$cc_pv_id"; return 1 ;; esac
 		cc_pv_plansdir=$(dirname -- "$cc_pv_dir")
 		for cc_pv_dep in $cc_pv_deps; do
 			[ "$cc_pv_dep" != "$cc_pv_id" ] || { cc_fail PLAN_DEP_SELF "$cc_pv_dep"; return 1; }
@@ -1088,6 +1408,13 @@ cc_plan_approve() {
 	cc_plan_validate "$cc_ap_dir" >/dev/null || { cc_fail APPROVAL_PLAN_INVALID "$cc_ap_plan"; return 1; }
 	cc_ap_status=$(cc_scalar "$cc_ap_dir/plan.yaml" "status")
 	[ "$cc_ap_status" = "draft" ] || { cc_fail APPROVAL_NOT_DRAFT "$cc_ap_status"; return 1; }
+	# An intent-bearing (v1.0) plan is authorized by its approved intent within the
+	# scope envelope (INV-INTENT-02 / INV-APPROVE-01 reworked): the human gate is on
+	# the intent, and a plan that exceeds the envelope is re-gated, never approved.
+	cc_ap_intent=$(cc_scalar "$cc_ap_dir/plan.yaml" "intent") || cc_ap_intent=""
+	if [ -n "$cc_ap_intent" ]; then
+		cc_intent_envelope_check "$cc_ap_root" "$cc_ap_plan" >/dev/null || { cc_fail APPROVAL_ENVELOPE_EXCEEDS "$cc_ap_plan"; return 1; }
+	fi
 	cc_plan_set_status "$cc_ap_dir/plan.yaml" "approved" || { cc_fail APPROVAL_WRITE_FAILED; return 1; }
 	cc_plan_index_upsert "$cc_ap_root" "$cc_ap_plan" >/dev/null
 	cc_emit plan "$cc_ap_plan"
@@ -1212,6 +1539,23 @@ cc_region_overlap() {
 	return 1
 }
 
+# cc_region_covers SCOPE REGION -> ok when SCOPE contains REGION (SCOPE is an
+# ancestor-or-equal of REGION), the directional form the intent envelope needs
+# (INV-INTENT-02): the scope must CONTAIN the plan region, not merely touch it, so
+# a plan region broader than every scope path is NOT covered. A repository-wide
+# scope "." covers anything; a bounded scope never covers a repository-wide "."
+# region. Trailing slashes are normalized so "src/checkout/" and "src/checkout"
+# compare equal. Reuses cc_region_overlap's prefix definition, one-directionally.
+cc_region_covers() {
+	cc_rc_s="$1"; cc_rc_p="$2"
+	cc_rc_s=${cc_rc_s%/}; cc_rc_p=${cc_rc_p%/}
+	[ "$cc_rc_s" = "." ] && return 0
+	[ "$cc_rc_p" = "." ] && return 1
+	[ "$cc_rc_s" = "$cc_rc_p" ] && return 0
+	case "$cc_rc_p/" in "$cc_rc_s/"*) return 0 ;; esac
+	return 1
+}
+
 cc_lease_dir() { printf '%s/.runtime/locks/paths/%s' "$1" "$2"; }
 cc_lease_file() { printf '%s/.runtime/locks/paths/%s/%s.yaml' "$1" "$2" "$3"; }
 
@@ -1309,7 +1653,21 @@ cc_execution_begin() {
 	cc_eb_root=$(CDPATH= cd -- "$cc_eb_root" 2>/dev/null && pwd) || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$1"; return 1; }
 	cc_eb_dir="$cc_eb_root/plans/$cc_eb_plan"
 	cc_plan_validate "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PLAN_INVALID; return 1; }
+	# An intent-bearing (v1.0) plan re-runs the envelope check at execution start
+	# (INV-INTENT-02, crown jewel 1): scope drift discovered after planning re-gates
+	# rather than proceeding on the original approval. Its approval is derived from
+	# the approved intent within the envelope, so a still-draft plan is authorized
+	# here (INV-EXEC-01 reworked) instead of requiring a separate plan-approval gate.
+	cc_eb_intent=$(cc_scalar "$cc_eb_dir/plan.yaml" "intent") || cc_eb_intent=""
 	cc_eb_status=$(cc_scalar "$cc_eb_dir/plan.yaml" "status")
+	if [ -n "$cc_eb_intent" ]; then
+		cc_intent_envelope_check "$cc_eb_root" "$cc_eb_plan" >/dev/null || { cc_fail EXECUTION_ENVELOPE_EXCEEDS "$cc_eb_plan"; return 1; }
+		if [ "$cc_eb_status" = "draft" ]; then
+			cc_plan_set_status "$cc_eb_dir/plan.yaml" "approved"
+			cc_plan_index_upsert "$cc_eb_root" "$cc_eb_plan" >/dev/null
+			cc_eb_status="approved"
+		fi
+	fi
 	[ "$cc_eb_status" = "approved" ] || { cc_fail EXECUTION_NOT_APPROVED "$cc_eb_status"; return 1; }
 	cc_repository_preflight "$cc_eb_root" "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PREFLIGHT_FAILED; return 1; }
 	cc_lock_acquire "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null || { cc_fail EXECUTION_LOCK_FAILED; return 1; }
@@ -1944,6 +2302,14 @@ cc_main() {
 		plan-approve)            cc_plan_approve "$@" ;;
 		plan-archive)            cc_plan_archive "$@" ;;
 		plan-restore)            cc_plan_restore "$@" ;;
+		intent-validate)         cc_intent_validate "$@" ;;
+		intent-allocate-id)      cc_intent_allocate_id "$@" ;;
+		intent-approve)          cc_intent_approve "$@" ;;
+		intent-envelope-check)   cc_intent_envelope_check "$@" ;;
+		intent-archive)          cc_intent_archive "$@" ;;
+		intent-restore)          cc_intent_restore "$@" ;;
+		intent-index-upsert)     cc_intent_index_upsert "$@" ;;
+		intent-index-remove)     cc_intent_index_remove "$@" ;;
 		plan-index-upsert)       cc_plan_index_upsert "$@" ;;
 		plan-index-remove)       cc_plan_index_remove "$@" ;;
 		execution-begin)         cc_execution_begin "$@" ;;

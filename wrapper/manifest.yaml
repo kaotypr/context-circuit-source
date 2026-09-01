@@ -16,7 +16,8 @@ purpose: >
 accepted_schema_versions:
   workspace: [1]
   repositories-local: [1]
-  plan: [1, 2]
+  intent-contract: [1]
+  plan: [1, 2, 3]
   task: [1]
   execution: [1]
   worker-handoff: [1]
@@ -57,6 +58,7 @@ release_boundary:
     - .git/
     - .runtime/
     - context/
+    - intent/
     - plans/
     - publication/
     - sources/
@@ -76,6 +78,7 @@ upgrade_boundary:
   preserve:
     - workspace.yaml
     - context/
+    - intent/
     - sources/
     - plans/
     - repositories.local.yaml

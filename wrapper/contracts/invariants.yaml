@@ -2,14 +2,25 @@ schema_version: 1
 owner: wrapper/contracts/invariants.yaml
 purpose: >
   Single authoritative index of Context Circuit product rules (v0.5 core, the
-  v0.6 run-stack delta, and the v0.7.0 deltas) and the one file
-  that owns each rule. One rule has one owner. Other artifacts reference an effect
-  defined here; they never define a parallel copy of it. The v0.7.0
+  v0.6 run-stack delta, the v0.7.0 deltas, and the v1.0 trust-core deltas) and the
+  one file that owns each rule. One rule has one owner. Other artifacts reference
+  an effect defined here; they never define a parallel copy of it. The v0.7.0
   execution-latency scope adds no new invariant: its concurrency safety is the
   existing INV-CONCURRENCY-01/02 and its per-role model/effort tiering safety is
   the existing INV-HOST-01 / INV-RUNTIME-01. It contributes only additive host
   evidence (per-role model/effort), an optional plan `complexity` field, and
   coordinator/host policy (run-stack fan-out width, the per-role tier ladder).
+  The v1.0 evolution moves the human gate upstream to the intent (what "correct"
+  means and what scope is in bounds) and makes everything between intent and
+  delivery mechanical, consequence-tiered, and self-invalidating. It adds
+  INV-INTENT-01/02 (intent gate + scope envelope), INV-CANDIDATE-01 (candidate-
+  bound evidence), and INV-ASSURE-01 (tiered assurance, with pairing folded in as
+  the Explore tier); it reworks INV-APPROVE-01, INV-EXEC-01, INV-PLAN-01,
+  INV-VERIFY-01, INV-COMPLETE-01/02, and INV-KNOWLEDGE-02; and it keeps the whole
+  mechanics spine (leases, base selection, verifier read-only enforcement,
+  preserve-on-failure, delivery drift guard, atomic records, host neutrality)
+  verbatim. All schema changes are additive; a pre-v1.0 (legacy) plan without a
+  parent intent keeps the earlier approval/execution/completion behavior.
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -24,10 +35,42 @@ invariants:
       accept a Product Knowledge update. A context update is accepted only by an
       explicit separate human decision; a plan may be done while a proposal is
       pending.
+  - id: INV-INTENT-01
+    rule: >
+      Every writing request is anchored to a first-class intent/<id>/ whose
+      contract.yaml holds the goal, non-goals, constraints, acceptance criteria
+      (each executable or explicitly manual — no third option), the scope
+      envelope, and the consequence tier. An independent spec adversary challenges
+      the acceptance criteria before approval, recording findings in adversary.md;
+      criteria that cannot survive are revised or logged as explicit open questions
+      first. Approval is the single upstream human gate (Gate 1, INV-APPROVE-01)
+      and freezes contract_digest, the frozen identity of the criteria the change
+      is later proven against (INV-CANDIDATE-01). Intent ids use the distinct form
+      i<NNNN>-slug, their own never-reused sequence.
+  - id: INV-INTENT-02
+    rule: >
+      A v1.0 plan declares its parent intent and may touch only repositories and
+      path regions within that intent's declared scope. The intent-envelope check
+      compares the plan's declared repositories and path regions against the
+      scope, reusing the lease region-overlap definition one-directionally (a scope
+      path must contain the plan region), and compares the plan's intent digest
+      against the frozen contract_digest. A plan (or candidate) that exceeds the
+      envelope — a new repository, a path region outside scope, or a changed
+      contract_digest — is held and re-gated to a human; it never proceeds on the
+      original approval. The check fails upward: any indeterminate comparison
+      (unresolvable path, missing scope entry, unapproved or missing intent)
+      re-gates rather than passes. It runs as a cc-plan preflight and again at
+      execution start.
   - id: INV-PLAN-01
     rule: >
-      plan.yaml owns human plan status (draft, approved, done). Task status is a
-      synchronized projection and never a second lifecycle authority.
+      plan.yaml carries the plan's status (draft, approved, done) and, for a v1.0
+      plan (schema_version 3), names its parent intent. Under v1.0 the status is a
+      projection, not a second human gate: approved follows automatically from the
+      approved intent within its scope envelope (INV-INTENT-02), and done is
+      inferred from candidate acceptance plus delivery, explicit only at the
+      Critical tier (INV-COMPLETE-01). A legacy plan (schema_version 1 or 2) has no
+      parent intent and keeps human-controlled draft→approved→done. Task status is
+      a synchronized projection and never a second lifecycle authority.
   - id: INV-PLAN-02
     rule: >
       Every task names the repository or repositories it may change and bounded
@@ -53,13 +96,23 @@ invariants:
       dependency graph is acyclic. schema_version outside [1, 2] is unsupported.
   - id: INV-APPROVE-01
     rule: >
-      Approval is an explicit conversational human gate that only changes plan
-      status draft to approved after deterministic readiness checks. There is no
-      confirmation card and no hidden confirmation token.
+      Approval is the explicit conversational human gate on the INTENT (Gate 1):
+      it changes the intent contract draft→approved after the spec adversary has
+      challenged the criteria, and it freezes contract_digest. There is no
+      confirmation card and no hidden confirmation token. A plan derived from an
+      approved intent carries no second human approval — plan readiness within the
+      approved scope envelope is automatic (INV-INTENT-02), and a plan that exceeds
+      the envelope is re-gated to a human, never rubber-stamped. (Legacy plans with
+      no parent intent keep the earlier explicit draft→approved plan gate after
+      deterministic readiness checks.)
   - id: INV-EXEC-01
     rule: >
-      Only an approved plan may execute. Execution is a separate authorization
-      from approval unless one request explicitly asks for both.
+      A plan derived from an approved intent and confirmed within its scope
+      envelope may execute; execution authorization comes from the intent's
+      approval, not a separate per-plan approval. A request that approves an intent
+      and asks to build in one turn is honored; a human who wants to lock an intent
+      without building yet may still separate the two. (A legacy plan with no parent
+      intent still requires its own explicit approval before execution.)
   - id: INV-EXEC-02
     rule: >
       One worker executes every task of one approved plan in one bounded
@@ -334,6 +387,10 @@ owners:
   product_knowledge: context/INDEX.md
   context_retrieval: wrapper/contracts/schemas/context-index.yaml
   context_proposals: wrapper/contracts/schemas/context-proposal.yaml
+  intent_contract: wrapper/contracts/schemas/intent-contract.yaml
+  intent_gate: wrapper/contracts/invariants.yaml
+  scope_envelope: wrapper/contracts/invariants.yaml
+  spec_adversary_role: agents/spec-adversary.md
   plan_lifecycle: wrapper/contracts/schemas/plan.yaml
   task_projection: wrapper/contracts/schemas/task.yaml
   repository_identity: wrapper/contracts/schemas/workspace.yaml

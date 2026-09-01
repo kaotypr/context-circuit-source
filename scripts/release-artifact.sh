@@ -51,6 +51,11 @@ cp "$source_root/template/sources/archive/README.md" "$stage_tree/sources/archiv
 cp "$source_root/template/plans/README.md" "$stage_tree/plans/README.md"
 cp "$source_root/template/plans/INDEX.md" "$stage_tree/plans/INDEX.md"
 [ -f "$source_root/template/plans/archive/README.md" ] && cp "$source_root/template/plans/archive/README.md" "$stage_tree/plans/archive/README.md" || :
+# Intent tree seed (Context Circuit v1.0) — the first-class decision area.
+mkdir -p "$stage_tree/intent/archive"
+cp "$source_root/template/intent/INDEX.md" "$stage_tree/intent/INDEX.md"
+cp "$source_root/template/intent/README.md" "$stage_tree/intent/README.md"
+cp "$source_root/template/intent/archive/README.md" "$stage_tree/intent/archive/README.md"
 
 required_files=''
 exclude_paths=''
@@ -76,7 +81,7 @@ for relpath in $required_files; do
 done
 
 # Canonical schema fixtures must be present.
-for schema in workspace repositories-local plan task execution worker-handoff \
+for schema in workspace repositories-local intent-contract plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
   lease grounding-manifest pairing-session publication-config publication-record \
   publication-thread-record; do
@@ -96,7 +101,7 @@ for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}
   case "$skill_name" in
-    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) ;;
+    cc-workspace|cc-intent|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) ;;
     *) fail "unexpected skill remains: $skill_name" ;;
   esac
 done

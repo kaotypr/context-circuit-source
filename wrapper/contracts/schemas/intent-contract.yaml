@@ -1,0 +1,119 @@
+schema_version: 1
+owner: wrapper/contracts/schemas/intent-contract.yaml
+describes: intent/<intent-id>/contract.yaml
+concern: intent_contract
+
+purpose: >
+  Machine-readable half of an intent — the first-class decision for one change
+  (Context Circuit v1.0, Mechanism 1). It owns the frozen definition of correct:
+  goal, non-goals, constraints, acceptance criteria, the scope envelope, and the
+  consequence tier. INTENT.md is the readable half describing the same intent;
+  adversary.md holds the spec adversary's findings on the criteria. contract.yaml
+  is canonical for identifiers, status, scope, tier, and the frozen
+  contract_digest. Approval is the single upstream human gate (Gate 1); it freezes
+  contract_digest, the identity of the criteria the candidate (candidate.yaml) is
+  later proven against.
+
+intent_status:
+  authority: this file
+  values: [draft, approved]
+  transitions:
+    - draft -> approved   # explicit human approval (Gate 1) after the spec adversary
+  notes: >
+    Approval freezes contract_digest. Changing any criteria-bearing field after
+    approval is a new decision: the digest no longer matches, the envelope check
+    reports EXCEEDS until re-approved, and prior candidate evidence voids
+    (INV-CANDIDATE-01). There is no draft<-approved transition; a change re-enters
+    the gate.
+
+intent_id:
+  form: i<NNNN>-<kebab-slug>
+  rules:
+    - a leading `i`, then four zero-padded decimal digits, then `-` and a slug
+    - distinct from a plan id (NNNN-slug) so an id reads as an intent on sight
+    - four digits are the next after the highest intent id ever allocated
+    - lowercase kebab-case slug, no dates, underscores, punctuation, or hashes
+    - unique across active and archived intents for the workspace lifetime
+    - stable after creation even if title or status changes; never reused
+
+fields:
+  schema_version: { type: integer, required: true, values: [1] }
+  intent: { type: string, required: true, description: canonical intent id, matches the directory name }
+  title: { type: string, required: true }
+  goal: { type: string, required: true, description: one paragraph }
+  non_goals: { type: list, required: false, description: explicit exclusions }
+  constraints: { type: list, required: false, description: e.g. no new deps, latency budget }
+  acceptance_criteria:
+    type: list
+    required: true
+    description: >
+      Each criterion defines one part of correct. Every criterion is executable or
+      explicitly manual — no third option. done_when is computed against these; the
+      spec adversary attacks them before approval.
+    item:
+      id: { type: string, required: true }
+      statement: { type: string, required: true }
+      method: { type: enum, required: true, values: [test, command, build, static, manual] }
+      surface: { type: string, required: false, description: the code surface the criterion targets }
+  done_when: { type: string, required: false, description: the completion condition in words }
+  scope:
+    type: object
+    required: true
+    description: >
+      The ENVELOPE — the repositories and path regions any plan derived from this
+      intent may touch. The intent-envelope-check verb compares a plan's declared
+      repositories and path regions against this, reusing lease-overlap semantics,
+      and re-gates to a human on EXCEEDS or any indeterminate comparison
+      (INV-INTENT-02, crown jewel 1).
+    fields:
+      repositories:
+        type: list
+        item:
+          id: { type: string, required: true }
+          paths: { type: list, required: true, description: bounded path regions or repository-wide "." }
+  tier:
+    type: enum
+    required: true
+    values: [explore, standard, critical]
+    description: >
+      The consequence tier (Mechanism 3). Explore is human-supervised with no
+      independent verifier and is never labeled verified; Standard and Critical
+      require an independent read-only verifier bound to the current candidate.
+      Proposed at intent time from transparent risk signals and raisable by the
+      human; the runtime enforces the verifier floor but never selects a tier
+      (INV-ASSURE-01). A v1.0 M1 reader may treat an absent tier as standard.
+  status: { type: enum, required: true, values: [draft, approved] }
+  intent_dependencies:
+    type: list
+    required: false
+    description: >
+      Optional inter-intent ordering, mirroring plan_dependencies (INV-PLAN-05).
+      Each entry names another intent this one depends on, with a reason.
+    item:
+      id: { type: string, required: true, description: an existing, non-self intent id }
+      reason: { type: string, required: true }
+  contract_digest:
+    type: string
+    required: false
+    description: >
+      Set on approval; the frozen identity of the criteria-bearing content (all
+      fields except status and contract_digest itself). It is folded into the
+      candidate digest (candidate.yaml), so a criteria change yields a new
+      candidate and voids prior evidence (INV-CANDIDATE-01). Empty while draft.
+
+invariants:
+  - every writing request is anchored to an intent whose contract.yaml holds goal,
+    scope, and acceptance criteria (INV-INTENT-01)
+  - each acceptance criterion is executable or explicitly manual (INV-INTENT-01)
+  - an independent spec adversary challenges the criteria before approval; findings
+    land in adversary.md (INV-INTENT-01)
+  - approval is the single upstream human gate and freezes contract_digest (INV-INTENT-01, INV-APPROVE-01)
+  - scope is the envelope a derived plan may not exceed (INV-INTENT-02)
+  - tier is declared here and enforced as a floor by the runtime, never selected by it (INV-ASSURE-01)
+
+rules:
+  - INV-INTENT-01
+  - INV-INTENT-02
+  - INV-APPROVE-01
+  - INV-ASSURE-01
+  - INV-CANDIDATE-01
