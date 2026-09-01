@@ -32,12 +32,28 @@ context; invoke it as a tool instead.
 ## Conversation to action
 
 Map ordinary language to one contract: orient, gather context, connect/clone/
-init repository, collaborate directly, create plan, review plan, approve plan,
-execute plan, inspect results, repair, mark complete, review/accept context
-updates, archive, restore, open pull request, merge/deliver. Distinguish inspect
-from mutate, approval from execution, and repository change from delivery.
-Support the explicit compound
-"approve and execute" as two sequential explicit actions.
+init repository, collaborate directly, author intent, approve intent, create plan,
+review plan, execute plan, inspect results, repair, mark complete, review/accept
+context updates, archive, restore, open pull request, merge/deliver. Distinguish
+inspect from mutate, intent approval from delivery, and repository change from
+delivery. Support the explicit compound "approve and build" as an intent approval
+followed by derivation and execution.
+
+## The intent front door (Context Circuit v1.0)
+
+A writing request is anchored to a first-class **intent** — the decision for one
+change: goal, non-goals, constraints, acceptance criteria (each executable or
+explicitly manual), the scope envelope, and the consequence tier
+(`.agents/skills/cc-intent`). Approving an intent is **Gate 1**, the single
+upstream human gate: it follows an independent spec adversary's challenge of the
+criteria and freezes the intent's contract (INV-INTENT-01, INV-APPROVE-01). A plan
+then **derives** from the approved intent automatically within its scope envelope —
+there is no separate per-plan approval. A plan (or later a candidate) that exceeds
+the envelope is held and re-gated in plain language: widen the intent (a new
+decision that re-runs the adversary) or narrow the plan (INV-INTENT-02). Never
+widen scope on your own; never present intent approval as a rubber stamp — it is
+the real decision. A legacy plan with no parent intent keeps the earlier explicit
+plan-approval gate.
 
 A request to run a *set* of already-approved plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,

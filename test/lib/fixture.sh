@@ -136,3 +136,50 @@ cc_fx_commit() {
 
 # cc_fx_exec_dir WS PID EXEC -> path to an execution directory
 cc_fx_exec_dir() { printf '%s/.runtime/executions/%s/%s' "$1" "$2" "$3"; }
+
+# cc_fx_intent WS IID TITLE REPO "path1 path2..." [TIER] -> author a draft intent
+# contract (goal + one test criterion + scope envelope) and its INTENT.md. Does
+# NOT approve. Prints nothing. TIER defaults to standard.
+cc_fx_intent() {
+	cc_fxi_ws=$1; cc_fxi_id=$2; cc_fxi_title=$3; cc_fxi_repo=$4; cc_fxi_paths=$5; cc_fxi_tier=${6:-standard}
+	cc_fxi_dir="$cc_fxi_ws/intent/$cc_fxi_id"
+	mkdir -p "$cc_fxi_dir"
+	cc_fxi_inline=$(printf '%s' "$cc_fxi_paths" | tr ' ' ',' | sed 's/,/, /g')
+	{
+		printf 'schema_version: 1\nintent: %s\ntitle: %s\n' "$cc_fxi_id" "$cc_fxi_title"
+		printf 'goal: %s goal.\n' "$cc_fxi_title"
+		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n    surface: %s\n' "$cc_fxi_title" "$cc_fxi_repo"
+		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$cc_fxi_repo" "$cc_fxi_inline"
+		printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$cc_fxi_tier"
+	} >"$cc_fxi_dir/contract.yaml"
+	printf '# %s\n\nGoal: %s.\n' "$cc_fxi_title" "$cc_fxi_title" >"$cc_fxi_dir/INTENT.md"
+	cc_intent_index_upsert "$cc_fxi_ws" "$cc_fxi_id" >/dev/null
+}
+
+# cc_fx_plan_intent WS PID TITLE REPO PATH IID -> a valid schema-3 draft plan bound
+# to intent IID, one task scoped to PATH in REPO whose acceptance is a file
+# PATH/mod.txt (achievable by cc_fx_run_ok). Adds the active index row.
+cc_fx_plan_intent() {
+	cc_fxpi_ws=$1; cc_fxpi_pid=$2; cc_fxpi_title=$3; cc_fxpi_repo=$4; cc_fxpi_path=$5; cc_fxpi_iid=$6
+	cc_fxpi_dir="$cc_fxpi_ws/plans/$cc_fxpi_pid"
+	mkdir -p "$cc_fxpi_dir/tasks"
+	cc_fxpi_tid=$(printf '%s' "$cc_fxpi_repo" | tr '[:lower:]' '[:upper:]')-001
+	{
+		printf 'schema_version: 3\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective\nintent: %s\n' \
+			"$cc_fxpi_pid" "$cc_fxpi_title" "$cc_fxpi_title" "$cc_fxpi_iid"
+		printf 'repositories:\n  - id: %s\n    purpose: %s scope\n' "$cc_fxpi_repo" "$cc_fxpi_repo"
+		printf 'product_knowledge:\n  - id: project.core\n    path: context/PROJECT.md\n    reason: Grounds the objective.\n'
+		printf 'context_grounding:\n  summary: Fixture grounding.\n  constraints: []\n  decisions: []\n'
+		printf 'knowledge_impact:\n  expected_context_units: []\n  review_on_completion: true\n'
+		printf 'tasks:\n  - id: %s\n    title: Work in %s\n    repositories: [%s]\n    paths: [%s]\n    depends_on: []\n' \
+			"$cc_fxpi_tid" "$cc_fxpi_path" "$cc_fxpi_repo" "$cc_fxpi_path"
+		printf '    changes:\n      - Create %s/mod.txt.\n' "$cc_fxpi_path"
+		printf '    acceptance:\n      - id: %s-AC\n        statement: %s/mod.txt exists.\n' "$cc_fxpi_tid" "$cc_fxpi_path"
+		printf '    verification:\n      - id: %s-VT\n        command: test -f %s/mod.txt\n' "$cc_fxpi_tid" "$cc_fxpi_path"
+		printf 'execution:\n  worker: one\n  independent_verifier: required\n  max_worker_failures: 3\n'
+	} >"$cc_fxpi_dir/plan.yaml"
+	printf '# %s\n\nObjective: %s objective.\n' "$cc_fxpi_title" "$cc_fxpi_title" >"$cc_fxpi_dir/PLAN.md"
+	cc_plan_index_upsert "$cc_fxpi_ws" "$cc_fxpi_pid" >/dev/null
+}

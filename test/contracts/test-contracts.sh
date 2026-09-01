@@ -7,14 +7,16 @@ W="$ROOT/wrapper"
 # --- invariants owner map: v0.5 rules and owners present ---
 inv="$W/contracts/invariants.yaml"
 require_file "$inv"
-for id in INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 INV-VERIFY-01 INV-VERIFY-02 \
+for id in INV-INTENT-01 INV-INTENT-02 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
+	INV-VERIFY-01 INV-VERIFY-02 \
 	INV-REPAIR-01 INV-COMPLETE-01 INV-ARCHIVE-01 INV-REPO-02 INV-DELIVER-01 \
 	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
 	INV-GROUND-01 INV-GROUND-02 INV-GROUND-03 INV-EXTERNAL-01 INV-EXTERNAL-02 \
 	INV-EXTERNAL-03 INV-PAIR-01; do
 	contains "$inv" "$id"
 done
-for concern in plan_lifecycle runtime repository_identity local_binding \
+for concern in intent_contract intent_gate scope_envelope spec_adversary_role \
+	plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
 	base_selection run_stack_action repository_grounding grounding_manifest \
@@ -33,14 +35,15 @@ not_contains "$inv" "push/publish/deploy"
 man="$W/manifest.yaml"
 require_file "$man"
 contains "$man" "runtime_version: 0.7.0"
-contains "$man" "plan: [1, 2]"
+contains "$man" "plan: [1, 2, 3]"
+contains "$man" "intent-contract: [1]"
 contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
 contains "$man" "pairing-session: [1]"
 
 # --- v0.5 schemas present; old-design schemas absent ---
-for s in workspace repositories-local plan task execution worker-handoff \
+for s in workspace repositories-local intent-contract plan task execution worker-handoff \
 	verifier-result completion context-impact context-proposal context-index lease \
 	grounding-manifest pairing-session publication-config publication-intent \
 	publication-record \
@@ -61,9 +64,19 @@ not_contains "$W/runtime/engine.sh" "cc_route"
 not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
 
 # --- v0.5 skills present; old-design skills absent ---
-for sk in cc-workspace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
+for sk in cc-workspace cc-intent cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
 	require_file "$ROOT/.agents/skills/$sk/SKILL.md"
 done
+# --- v1.0 intent front door: skill, schema, role, and gate wording present ---
+ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
+contains "$ci" "spec adversary"
+contains "$ci" "intent-approve"
+contains "$ci" "contract_digest"
+contains "$ci" "envelope"
+require_file "$ROOT/agents/spec-adversary.md"
+contains "$ROOT/agents/spec-adversary.md" "before any code"
+contains "$W/contracts/schemas/intent-contract.yaml" "i<NNNN>-<kebab-slug>"
+contains "$ROOT/.agents/skills/cc-plan/SKILL.md" "intent-envelope-check"
 
 # --- direct collaboration is outside the plan lifecycle ---
 pair="$ROOT/.agents/skills/cc-pair/SKILL.md"

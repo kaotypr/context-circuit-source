@@ -22,7 +22,7 @@ require_file "$artifact/wrapper/manifest.yaml"
 require_file "$artifact/wrapper/runtime/engine.sh"
 require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
-for s in workspace repositories-local plan task execution worker-handoff \
+for s in workspace repositories-local intent-contract plan task execution worker-handoff \
   verifier-result completion context-impact context-proposal context-index \
   lease grounding-manifest pairing-session publication-config publication-intent \
   publication-record \
@@ -34,8 +34,12 @@ require_file "$artifact/docs/templates/plan.yaml"
 require_file "$artifact/context/PROJECT.md"
 require_file "$artifact/context/proposals/README.md"
 require_file "$artifact/sources/README.md"
+require_file "$artifact/intent/README.md"
+require_file "$artifact/intent/INDEX.md"
+require_file "$artifact/intent/archive/README.md"
 require_file "$artifact/plans/README.md"
 require_file "$artifact/plans/INDEX.md"
+require_file "$artifact/agents/spec-adversary.md"
 
 # --- uninitialized identity and thin adapter ---
 contains "$artifact/workspace.yaml" 'workspace: uninitialized-workspace'
@@ -65,11 +69,11 @@ for skill_dir in "$artifact"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   name=${skill_dir##*/}
   case "$name" in
-    cc-workspace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) count=$((count + 1)) ;;
+    cc-workspace|cc-intent|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) count=$((count + 1)) ;;
     *) fail "unexpected skill leaked into artifact: $name" ;;
   esac
 done
-test "$count" -eq 11 || fail "shipped skill count: $count"
+test "$count" -eq 12 || fail "shipped skill count: $count"
 
 # --- no credentials or provider payloads anywhere in the artifact ---
 if grep -REn '^[[:space:]]*(password|api_key|access_token|provider_payload|transcript):' "$artifact" >/dev/null 2>&1; then

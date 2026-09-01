@@ -95,3 +95,9 @@ criteria:
   - id: AC-29
     statement: Direct collaboration isolates one repository in its own branch and working copy, keeps only a resumable pointer, remains human-supervised rather than verified, preserves work on close, and blocks delivery drift.
     suite: test/pairing/test-pairing.sh
+  - id: AC-30
+    statement: An intent is a first-class decision — goal, criteria (executable or manual), scope envelope, tier — with an i-prefixed never-reused id; approval freezes its contract digest and is the single upstream human gate; archive/restore are status-blind moves.
+    suite: test/intent/test-intent.sh
+  - id: AC-31
+    statement: The intent-envelope check re-gates a plan that exceeds the approved scope (new repository, path outside scope, criteria change) and fails upward on any indeterminate comparison, while authorizing a within-scope plan without a separate plan approval.
+    suite: test/intent/test-envelope.sh
