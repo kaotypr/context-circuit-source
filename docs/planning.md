@@ -1,8 +1,20 @@
 # Planning
 
-A plan is the central execution contract. It has a readable `PLAN.md` and a
-canonical `plan.yaml`; both describe the same plan, and `plan.yaml` owns
-identifiers, status, repository mappings, dependencies, and verification ids.
+A plan is the execution contract. It has a readable `PLAN.md` and a canonical
+`plan.yaml`; both describe the same plan, and `plan.yaml` owns identifiers, status,
+repository mappings, dependencies, and verification ids.
+
+## A plan derives from an approved intent (Context Circuit v1.0)
+
+A v1.0 plan is the **derivation of an approved intent** (`.agents/skills/cc-intent`),
+not the thing the human approves. Before planning a writing change there must be an
+approved parent intent, which holds the goal, acceptance criteria, scope envelope,
+and tier. The plan names it (`intent: i<NNNN>-slug`, `schema_version: 3`) and stays
+inside its scope envelope; the envelope check runs as a preflight and again at
+execution start, and a plan that exceeds the approved scope is re-gated to a human
+rather than approved. Because the human already approved the intent, the plan
+carries no second approval gate. A legacy plan without a parent intent keeps the
+earlier explicit `draft → approved` plan gate.
 
 ## Grounding
 
@@ -31,9 +43,12 @@ and runtime records.
 
 ## Status
 
-Plan status is human-controlled: `draft → approved → done`. Execution status
-(running, verifying, repairing, verified, failed, blocked) is runtime evidence
-and never replaces plan status.
+For a v1.0 plan, status is a **projection**: `approved` follows automatically from
+the approved intent within its envelope, and `done` is inferred from candidate
+acceptance + delivery (explicit at the Critical tier). For a legacy plan, status is
+human-controlled: `draft → approved → done`. Execution status (running, verifying,
+repairing, verified, failed, blocked) is runtime evidence and never replaces plan
+status.
 
 See `docs/templates/plan.yaml`, `docs/templates/plan.md`, and
 `docs/templates/task.md` for the shapes, and

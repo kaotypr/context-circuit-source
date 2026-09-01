@@ -6,7 +6,28 @@ description: Handle separate delivery actions (pull request, merge, push) with e
 Merge, push, pull-request creation, and deployment are separate
 human-requested actions. None is implied by worker success, verifier success, or
 plan completion. The runtime never performs them and never interprets
-verification as merge authorization.
+verification as merge authorization. Delivery is **Gate 2** — the second and final
+human gate (INV-DELIVER-01); it is never implied by the acceptance of a candidate.
+
+## Change set — one pull request, one candidate
+
+When several stacked plans converge to a single pull request, they form one
+**change set**. Compute a single identity for the combined result with
+`change-set-candidate . <plan> <plan> ...` — one candidate over the members'
+combined tip set, so the independent check runs once and the human accepts once
+(not once per plan). A single plan delivered alone is a change set of one. If the
+combined result will not build (`BASE_UNBUILDABLE`), report it as blocked, not a
+worker failure, for the human to split or reorder.
+
+## Record the delivery, and inferred completion
+
+After the human authorizes and you open the pull request (Gate 2), record the
+delivery with `delivery-record . <plan-id>` — the delivery signal, bound to the
+current candidate; it performs no git action itself. At Explore/Standard, this lets
+completion be **inferred** from candidate acceptance + delivery
+(`completion-infer . <plan-id>`), rather than a manual "mark done"; at Critical,
+completion stays an explicit human act (`plan-complete`). A post-delivery change
+yields a new candidate and re-gates rather than completing stale work.
 
 ## Pull request
 
