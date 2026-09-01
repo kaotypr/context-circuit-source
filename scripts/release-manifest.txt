@@ -49,6 +49,8 @@ required wrapper/contracts/schemas/task.yaml
 required wrapper/contracts/schemas/execution.yaml
 required wrapper/contracts/schemas/worker-handoff.yaml
 required wrapper/contracts/schemas/verifier-result.yaml
+required wrapper/contracts/schemas/candidate.yaml
+required wrapper/contracts/schemas/human-acceptance.yaml
 required wrapper/contracts/schemas/completion.yaml
 required wrapper/contracts/schemas/context-impact.yaml
 required wrapper/contracts/schemas/context-proposal.yaml

@@ -61,6 +61,19 @@ invariants:
       (unresolvable path, missing scope entry, unapproved or missing intent)
       re-gates rather than passes. It runs as a cc-plan preflight and again at
       execution start.
+  - id: INV-CANDIDATE-01
+    rule: >
+      A candidate is a deterministic digest over the per-repository commit map, the
+      selected base commits, and the intent's frozen contract_digest (legacy for a
+      pre-intent execution). Independent-check results and human acceptance bind to
+      a candidate; any new commit OR a criteria change (re-approved on the intent)
+      yields a new candidate and voids all prior evidence and acceptance for the old
+      one. No role decides whether old evidence is "close enough"; the void is by
+      construction. completion-ready refuses to complete when the verified evidence
+      no longer describes the current candidate. This generalizes the verifier's
+      existing read-only tip check (VERIFIER_MODIFIED_PRODUCT) from "tips unchanged
+      since the worker commit" to "candidate unchanged since the evidence was
+      recorded", and extends it to human acceptance.
   - id: INV-PLAN-01
     rule: >
       plan.yaml carries the plan's status (draft, approved, done) and, for a v1.0
@@ -391,6 +404,8 @@ owners:
   intent_gate: wrapper/contracts/invariants.yaml
   scope_envelope: wrapper/contracts/invariants.yaml
   spec_adversary_role: agents/spec-adversary.md
+  candidate_identity: wrapper/contracts/schemas/candidate.yaml
+  human_acceptance: wrapper/contracts/schemas/candidate.yaml
   plan_lifecycle: wrapper/contracts/schemas/plan.yaml
   task_projection: wrapper/contracts/schemas/task.yaml
   repository_identity: wrapper/contracts/schemas/workspace.yaml

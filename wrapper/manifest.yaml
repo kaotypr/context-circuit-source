@@ -22,6 +22,8 @@ accepted_schema_versions:
   execution: [1]
   worker-handoff: [1]
   verifier-result: [1]
+  candidate: [1]
+  human-acceptance: [1]
   completion: [1]
   context-impact: [1]
   context-proposal: [1]
