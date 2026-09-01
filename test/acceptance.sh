@@ -24,10 +24,12 @@ run_suite test/grounding/test-grounding.sh
 run_suite test/pairing/test-pairing.sh
 run_suite test/external-surface/test-external-surface.sh
 run_suite test/completion/test-completion.sh
+run_suite test/completion/test-inferred.sh
 run_suite test/knowledge/test-debt.sh
 run_suite test/archive/test-archive.sh
 run_suite test/delivery/test-delivery.sh
 run_suite test/security/test-boundaries.sh
+run_suite test/scenarios/test-scenarios.sh
 run_suite test/release/test-release.sh
 run_suite test/release/test-publish.sh
 run_suite template-harness/test-template-runtime.sh
@@ -42,7 +44,7 @@ grep -q '^credential_free: true' "$map" || { printf 'FAIL: criteria map not cred
 grep -q '^implicit_external_checks: false' "$map" || { printf 'FAIL: criteria map declares implicit external checks\n' >&2; exit 1; }
 
 n=1
-while [ "$n" -le 34 ]; do
+while [ "$n" -le 36 ]; do
 	id=$(printf 'AC-%02d' "$n")
 	grep -q "id: $id" "$map" || { printf 'FAIL: criteria map missing %s\n' "$id" >&2; exit 1; }
 	n=$((n + 1))

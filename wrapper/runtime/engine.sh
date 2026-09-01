@@ -1,5 +1,5 @@
 #!/bin/sh
-# Context Circuit v0.7.0 runtime engine.
+# Context Circuit v1.0.0 runtime engine.
 #
 # A small, host-neutral, deterministic runtime library for workspace, Git, and
 # execution-state operations. It is sourced by host adapters and tests, and can
@@ -26,7 +26,7 @@
 # Constants
 # ---------------------------------------------------------------------------
 
-CC_RUNTIME_VERSION="0.7.0"
+CC_RUNTIME_VERSION="1.0.0"
 CC_SCHEMA_VERSION="1"
 
 # ---------------------------------------------------------------------------
@@ -2056,6 +2056,41 @@ cc_candidate_current() {
 	return 0
 }
 
+# cc_change_set_candidate ROOT PLAN... -> one candidate over a change set: the set
+# of plans delivered together as one pull request (concurrency-and-candidate.md).
+# The digest ranges over the COMBINED per-repository tip set of the members' latest
+# executions, their bases, and their contract digests — so several stacked plans
+# that converge to one pull request become one candidate, verified once and accepted
+# once (pain 6). A single plan is a change set of one, identical to candidate-current.
+# Deterministic; any change in any member changes the change-set candidate.
+cc_change_set_candidate() {
+	cc_cs_root="$1"; shift
+	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cs_canon=$(
+		for cc_cs_plan in "$@"; do
+			cc_cs_exec=$(cc_latest_execution "$cc_cs_root" "$cc_cs_plan") || continue
+			[ -n "$cc_cs_exec" ] || continue
+			cc_cs_edir=$(cc_execution_dir "$cc_cs_root" "$cc_cs_plan" "$cc_cs_exec")
+			[ -f "$cc_cs_edir/execution.yaml" ] || continue
+			cc_cs_cdig=$(cc_scalar "$cc_cs_edir/execution.yaml" contract_digest 2>/dev/null) || cc_cs_cdig=legacy
+			[ -n "$cc_cs_cdig" ] || cc_cs_cdig=legacy
+			for cc_cs_rf in "$cc_cs_edir"/repositories/*.yaml; do
+				[ -f "$cc_cs_rf" ] || continue
+				printf '%s\t%s\t%s\t%s\n' \
+					"$(cc_scalar "$cc_cs_rf" repository)" \
+					"$(cc_scalar "$cc_cs_rf" latest_commit)" \
+					"$(cc_scalar "$cc_cs_rf" base_commit)" \
+					"$cc_cs_cdig"
+			done
+		done | LC_ALL=C sort -u
+	)
+	[ -n "$cc_cs_canon" ] || { cc_fail CHANGE_SET_NO_EXECUTIONS; return 1; }
+	cc_cs_hash=$(cc_digest_text "$cc_cs_canon")
+	cc_cs_hash=${cc_cs_hash#sha256:}; cc_cs_hash=${cc_cs_hash#cksum:}
+	cc_emit change_set_candidate "cand-$cc_cs_hash"
+	return 0
+}
+
 # cc_human_acceptance_record EXEC_DIR ACCEPTED_BY [CHECKLIST_FILE] -> write a
 # first-class human acceptance bound to the CURRENT candidate (INV-CANDIDATE-01).
 # Acceptance names the candidate it observed, so any later commit or criteria
@@ -2334,36 +2369,90 @@ cc_completion_ready() {
 	return 0
 }
 
-# cc_plan_complete ROOT PLAN -> approved->done ONLY when verified; write completion record
-cc_plan_complete() {
-	cc_pc_root="$1"; cc_pc_plan="$2"
-	cc_completion_ready "$cc_pc_root" "$cc_pc_plan" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
-	cc_pc_exec=$(cc_latest_execution "$cc_pc_root" "$cc_pc_plan")
-	cc_pc_edir=$(cc_execution_dir "$cc_pc_root" "$cc_pc_plan" "$cc_pc_exec")
-	cc_pc_yaml="$cc_pc_root/plans/$cc_pc_plan/plan.yaml"
-	cc_pc_status=$(cc_scalar "$cc_pc_yaml" "status")
-	[ "$cc_pc_status" = "approved" ] || { cc_fail COMPLETION_PLAN_NOT_APPROVED "$cc_pc_status"; return 1; }
-	# implementation completion record with the accepted commits
+# cc_completion_finalize ROOT PLAN KIND -> shared completion writer (KIND is the
+# human_completion value: accepted for an explicit human completion, inferred for a
+# projection of candidate acceptance + delivery). Writes the completion record, sets
+# status done, and emits the reconciliation-debt marker (INV-COMPLETE-02).
+cc_completion_finalize() {
+	cc_cf_root="$1"; cc_cf_plan="$2"; cc_cf_kind="$3"
+	cc_cf_exec=$(cc_latest_execution "$cc_cf_root" "$cc_cf_plan")
+	cc_cf_edir=$(cc_execution_dir "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec")
+	cc_cf_yaml="$cc_cf_root/plans/$cc_cf_plan/plan.yaml"
+	cc_cf_status=$(cc_scalar "$cc_cf_yaml" "status")
+	[ "$cc_cf_status" = "approved" ] || { cc_fail COMPLETION_PLAN_NOT_APPROVED "$cc_cf_status"; return 1; }
 	{
-		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nhuman_completion: accepted\ncompleted_at: %s\ncommits:\n' \
-			"$CC_SCHEMA_VERSION" "$cc_pc_exec" "$cc_pc_plan" "$(cc_now)"
-		for cc_pc_rf in "$cc_pc_edir"/repositories/*.yaml; do
-			[ -f "$cc_pc_rf" ] || continue
-			printf '  %s: %s\n' "$(cc_scalar "$cc_pc_rf" repository)" "$(cc_scalar "$cc_pc_rf" latest_commit)"
+		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
+			"$CC_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_kind" "$(cc_now)"
+		for cc_cf_rf in "$cc_cf_edir"/repositories/*.yaml; do
+			[ -f "$cc_cf_rf" ] || continue
+			printf '  %s: %s\n' "$(cc_scalar "$cc_cf_rf" repository)" "$(cc_scalar "$cc_cf_rf" latest_commit)"
 		done
-	} | cc_atomic_write "$cc_pc_edir/completion.yaml"
-	cc_plan_set_status "$cc_pc_yaml" "done"
-	cc_plan_index_upsert "$cc_pc_root" "$cc_pc_plan" >/dev/null
-	# Closed knowledge loop (INV-COMPLETE-02): completion emits a reconciliation-debt
-	# marker keyed to the accepted candidate; the next plan's grounding blocks or
-	# warns until it is reconciled or explicitly deferred (INV-KNOWLEDGE-02).
-	cc_knowledge_debt_emit "$cc_pc_root" "$cc_pc_plan" "$cc_pc_exec" >/dev/null || :
-	cc_emit plan "$cc_pc_plan"
+	} | cc_atomic_write "$cc_cf_edir/completion.yaml"
+	cc_plan_set_status "$cc_cf_yaml" "done"
+	cc_plan_index_upsert "$cc_cf_root" "$cc_cf_plan" >/dev/null
+	cc_knowledge_debt_emit "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec" >/dev/null || :
+	cc_emit plan "$cc_cf_plan"
 	cc_emit status done
+	cc_emit human_completion "$cc_cf_kind"
 	cc_emit implementation_completion recorded
 	cc_emit knowledge_impact review-pending
 	cc_emit reconciliation_debt pending
 	return 0
+}
+
+# cc_plan_complete ROOT PLAN -> the EXPLICIT human completion path. Required at the
+# Critical tier and for a legacy plan; also usable at Explore/Standard when a human
+# asks explicitly. Refuses unless completion-ready passes (tier floor + candidate).
+cc_plan_complete() {
+	cc_completion_ready "$1" "$2" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
+	cc_completion_finalize "$1" "$2" accepted
+}
+
+# cc_delivery_record ROOT PLAN [EXEC] -> record that the plan's current candidate was
+# delivered (Gate 2 happened). It is the delivery signal inferred completion reads;
+# it performs no git action itself (delivery is a separate coordinator/host act,
+# INV-DELIVER-01). Bound to the candidate so a post-delivery change is visible.
+cc_delivery_record() {
+	cc_del_root="$1"; cc_del_plan="$2"; cc_del_exec="${3:-}"
+	[ -n "$cc_del_exec" ] || cc_del_exec=$(cc_latest_execution "$cc_del_root" "$cc_del_plan") || { cc_fail DELIVERY_NO_EXECUTION "$cc_del_plan"; return 1; }
+	[ -n "$cc_del_exec" ] || { cc_fail DELIVERY_NO_EXECUTION "$cc_del_plan"; return 1; }
+	cc_del_edir=$(cc_execution_dir "$cc_del_root" "$cc_del_plan" "$cc_del_exec")
+	[ -f "$cc_del_edir/execution.yaml" ] || { cc_fail DELIVERY_NO_EXECUTION "$cc_del_plan"; return 1; }
+	cc_del_cand=$(cc_candidate_id "$cc_del_edir") || return 1
+	printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ndelivered_at: %s\n' \
+		"$cc_del_cand" "$cc_del_plan" "$cc_del_exec" "$(cc_now)" \
+		| cc_atomic_write "$cc_del_edir/delivered.yaml"
+	cc_emit delivery recorded
+	cc_emit candidate_id "$cc_del_cand"
+	return 0
+}
+
+# cc_completion_infer ROOT PLAN -> INFERRED completion (Context Circuit v1.0). At
+# Explore and Standard, completion is a projection of "candidate accepted +
+# delivered": it requires completion-ready AND a delivery record that still binds to
+# the current candidate. At Critical it is refused — an explicit human completion is
+# required (INV-COMPLETE-01). Idempotent: an already-done plan reports done.
+cc_completion_infer() {
+	cc_ci_root="$1"; cc_ci_plan="$2"
+	cc_ci_yaml="$cc_ci_root/plans/$cc_ci_plan/plan.yaml"
+	[ -f "$cc_ci_yaml" ] || { cc_fail COMPLETION_INFER_PLAN_MISSING "$cc_ci_plan"; return 1; }
+	if [ "$(cc_scalar "$cc_ci_yaml" status)" = "done" ]; then
+		cc_emit plan "$cc_ci_plan"; cc_emit status done; return 0
+	fi
+	cc_ci_exec=$(cc_latest_execution "$cc_ci_root" "$cc_ci_plan") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
+	cc_ci_edir=$(cc_execution_dir "$cc_ci_root" "$cc_ci_plan" "$cc_ci_exec")
+	cc_ci_tier=$(cc_scalar "$cc_ci_edir/execution.yaml" "tier" 2>/dev/null) || cc_ci_tier=standard
+	[ -n "$cc_ci_tier" ] || cc_ci_tier=standard
+	if [ "$cc_ci_tier" = "critical" ]; then
+		cc_fail COMPLETION_INFER_REQUIRES_EXPLICIT "$cc_ci_plan"; return 1
+	fi
+	cc_completion_ready "$cc_ci_root" "$cc_ci_plan" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
+	# the delivery signal must exist and still describe the current candidate
+	[ -f "$cc_ci_edir/delivered.yaml" ] || { cc_fail COMPLETION_NOT_DELIVERED "$cc_ci_plan"; return 1; }
+	cc_ci_delc=$(cc_scalar "$cc_ci_edir/delivered.yaml" "candidate_id")
+	cc_ci_now=$(cc_candidate_id "$cc_ci_edir") || return 1
+	[ "$cc_ci_delc" = "$cc_ci_now" ] || { cc_fail COMPLETION_DELIVERY_STALE "$cc_ci_delc"; return 1; }
+	cc_completion_finalize "$cc_ci_root" "$cc_ci_plan" inferred
 }
 
 # cc_context_impact_record EXEC_DIR FILE -> store reconciliation refs (no PK interpretation)
@@ -2734,12 +2823,15 @@ cc_main() {
 		execution-status)        cc_execution_status "$@" ;;
 		candidate-digest)        cc_candidate_digest "$@" ;;
 		candidate-current)       cc_candidate_current "$@" ;;
+		change-set-candidate)    cc_change_set_candidate "$@" ;;
 		human-acceptance-record) cc_human_acceptance_record "$@" ;;
 		human-acceptance-current) cc_human_acceptance_current "$@" ;;
 		tier-classify)           cc_tier_classify "$@" ;;
 		tier-lower-check)        cc_tier_lower_check "$@" ;;
 		completion-ready)        cc_completion_ready "$@" ;;
 		plan-complete)           cc_plan_complete "$@" ;;
+		completion-infer)        cc_completion_infer "$@" ;;
+		delivery-record)         cc_delivery_record "$@" ;;
 		context-impact-record)   cc_context_impact_record "$@" ;;
 		knowledge-debt-emit)     cc_knowledge_debt_emit "$@" ;;
 		knowledge-debt)          cc_knowledge_debt "$@" ;;
