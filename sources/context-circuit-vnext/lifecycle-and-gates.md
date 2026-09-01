@@ -85,6 +85,50 @@ request → Explore session (cc-pair as tier)      no intent, no candidate, no v
 
 Promotion is the ramp that replaces today's cliff between pairing and plans.
 
+## When each artifact is created
+
+A plan is **not** the thing the human approves — it is the derivation of an
+already-approved intent. So artifacts appear in this order:
+
+| Stage | Artifact created |
+| --- | --- |
+| Request → intent (`cc-intent`) | `intent/<id>/` — `INTENT.md`, `contract.yaml`, `adversary.md`. **No plan yet.** |
+| Gate 1 — approve intent | `contract_digest` frozen. Still no plan. |
+| `cc-plan` derives the plan | `plans/<id>/` — `PLAN.md`, `plan.yaml` (with `intent: <id>`), `tasks/`. **This is when a plan file is created**, only after the envelope check passes. |
+| Execute → candidate → accept → deliver | runtime records under `.runtime/…` (candidate, acceptance, debt marker). |
+
+**A plan file is created only at Standard/Critical, after intent approval.** It is the
+mechanical elaboration of the approved intent, grounded in the contract + Product
+Knowledge + repository, and it must stay within the intent's scope envelope.
+
+## Explore creates no plan — and the promotion decision
+
+**Explore (cc-pair) writes no intent, no plan, and no candidate.** Its only state is
+the light pairing-session pointer plus the `cc-pair/<session>` branch and worktree. It
+is recordless by design; that is what keeps the fast path fast.
+
+**Promotion is the first moment an intent and a plan exist for that work.** When the
+human promotes an Explore session, `cc-intent` authors the intent and the tier rises,
+and to enter the trust pipeline (candidate → verifier → delivery → reconciliation) the
+work needs the normal plan/execution scaffolding.
+
+There is a real design decision here, stated so it is not silently assumed:
+
+- **Recommended — promotion authors a lightweight plan of record.** `cc-plan` creates a
+  `plans/<id>/` whose tasks describe the change already made in the session; its
+  execution binds to the existing pairing-branch commits, which produces the candidate.
+  Everything downstream then runs on the standard scaffolding, unchanged. The cost is a
+  plan authored partly retroactively.
+- **Alternative — a plan-less candidate.** Allow an execution/candidate to be formed
+  directly from the pairing branch + the intent, with no `plans/<id>`. This is lighter
+  but makes the candidate the one execution kind with no plan behind it, which
+  complicates the otherwise-uniform "every candidate has a plan" rule.
+
+This study takes the first option (a plan is always the home of an execution), and flags
+the choice as an open question in `risks-and-open-questions.md`. Either way, the
+invariant that matters is unchanged: **no plan file is ever created for un-promoted
+Explore work.**
+
 ## Why this is safe
 
 The safety property is no longer "a human approved every transition." It is:

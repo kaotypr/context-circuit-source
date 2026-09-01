@@ -85,6 +85,10 @@ Every mechanism below maps to one or more of these.
 - `human-experience.md` — the conversational surface: the two gates in plain
   language, re-gating, and the transparency questions.
 - `scenarios.md` — four worked end-to-end walkthroughs (also acceptance fixtures).
+- `diagrams.md` — mermaid views: the full flow, roles-per-tier, object states, and
+  edge cases.
+- `conversations.md` — expected human↔agent dialogues per scenario (human-sim
+  fixtures).
 
 **The specification**
 - `data-model.md` — the new schemas (intent-contract, candidate, acceptance, debt)
