@@ -74,6 +74,25 @@ invariants:
       existing read-only tip check (VERIFIER_MODIFIED_PRODUCT) from "tips unchanged
       since the worker commit" to "candidate unchanged since the evidence was
       recorded", and extends it to human acceptance.
+  - id: INV-ASSURE-01
+    rule: >
+      Assurance is composed from parts and summarized by a consequence tier
+      (Explore / Standard / Critical), declared on the intent from transparent risk
+      signals (repository count, security/secrets, money, data migration,
+      production/deploy, irreversibility, novelty) and raisable by the human.
+      Explore is human-supervised: no independent verifier, and its output is never
+      labeled "verified". Standard and Critical require an independent read-only
+      verifier bound to the current candidate (INV-VERIFY-01). The runtime is
+      model-blind (INV-RUNTIME-01): it never selects a tier; it provides a
+      deterministic fail-upward signal classifier over declared facts and enforces
+      the floor — completion-ready refuses a Standard/Critical candidate without a
+      candidate-bound independent pass and refuses to treat an Explore result as
+      verified, and approval refuses the Explore tier (which drops the verifier)
+      whenever a risk signal is present. Tiering fails upward: when unsure, tier
+      higher. Direct collaboration (cc-pair) is the Explore tier of this ladder,
+      not a separate mode: INV-PAIR-01's mechanics stand in full, plus an explicit
+      promote step that attaches an intent and raises the tier to turn a session
+      into a candidate-bearing change without restart.
   - id: INV-PLAN-01
     rule: >
       plan.yaml carries the plan's status (draft, approved, done) and, for a v1.0
@@ -159,9 +178,13 @@ invariants:
       the host would inject automatically is disabled rather than re-added.
   - id: INV-VERIFY-01
     rule: >
-      One independent verifier checks the latest commit of every affected
-      repository, strictly read-only with respect to product files. It never
-      repairs, modifies product files, changes plan status, or self-verifies.
+      At Standard and Critical (INV-ASSURE-01), one independent verifier checks the
+      current candidate of every affected repository, strictly read-only with
+      respect to product files, and its result binds to that candidate
+      (INV-CANDIDATE-01). At Explore there is no independent verifier and the result
+      is never labeled "verified". The verifier never repairs, modifies product
+      files, changes plan status, or self-verifies. (A legacy plan with no parent
+      intent is treated as Standard: one independent verifier, always.)
   - id: INV-VERIFY-02
     rule: >
       If the host cannot create an independent verifier with read-only
@@ -180,9 +203,16 @@ invariants:
       Failed work is never silently cleaned up.
   - id: INV-COMPLETE-01
     rule: >
-      Only an explicit human request changes plan status to done, and only when
-      the latest execution passed independent verification. Verification alone
-      never marks a plan complete.
+      Completion is gated by the intent's consequence tier (INV-ASSURE-01).
+      At Explore and Standard, completion is inferred from a current candidate-bound
+      human acceptance plus delivery; at Critical an explicit human completion is
+      still required. Completion-ready enforces the tier floor: an Explore plan
+      completes on a current candidate-bound acceptance (never on a verifier pass,
+      which does not exist there and is never labeled verified), and a
+      Standard/Critical plan requires a candidate-bound independent pass that still
+      describes the current candidate. Verification alone never completes anything,
+      at any tier. (A legacy plan with no parent intent keeps the earlier rule:
+      explicit human completion only after independent verification.)
   - id: INV-COMPLETE-02
     rule: >
       Marking a plan done records an implementation completion record (plan
@@ -333,8 +363,14 @@ invariants:
       contains a host-specific skill directory or symlink.
   - id: INV-PAIR-01
     rule: >
-      Direct collaboration (`cc-pair`) is an interactive working mode outside the
-      plan lifecycle, limited to one connected repository per session. Its actors
+      Direct collaboration (`cc-pair`) is the Explore tier of the assurance ladder
+      (INV-ASSURE-01), not a separate mode. All of its mechanics stand in full, plus
+      an explicit PROMOTE step: attaching an intent and raising the tier to
+      Standard/Critical turns a session into a candidate-bearing change — the
+      adversary can then challenge the criteria and the independent verifier spawns —
+      without stopping and restarting as a separate plan. Before promotion it is an
+      interactive working mode outside the plan lifecycle, limited to one connected
+      repository per session. Its actors
       are the user, the coordinator, and one worker: the coordinator interprets
       and delegates but never writes, the worker writes only in a fresh
       `cc-pair/<session>` branch and isolated worktree created from a chosen base
@@ -406,6 +442,7 @@ owners:
   spec_adversary_role: agents/spec-adversary.md
   candidate_identity: wrapper/contracts/schemas/candidate.yaml
   human_acceptance: wrapper/contracts/schemas/candidate.yaml
+  assurance_tiering: wrapper/contracts/invariants.yaml
   plan_lifecycle: wrapper/contracts/schemas/plan.yaml
   task_projection: wrapper/contracts/schemas/task.yaml
   repository_identity: wrapper/contracts/schemas/workspace.yaml

@@ -1,18 +1,23 @@
 ---
 name: cc-pair
-description: Work directly with the user in one connected repository through a coordinator-to-worker loop, with live human supervision and no plan or verifier.
+description: Work directly with the user in one connected repository through a coordinator-to-worker loop with live human supervision and no verifier — the Explore tier of the assurance ladder, promotable in place to a proper checked change.
 ---
 
 ## When to use
 
-Use for direct, interactive work when the user wants to make or refine a change
-together without creating or executing a plan. It is available whenever one
-repository is connected, by ordinary intent or `/cc-pair`, and may be offered as
-an optional next step after a plan or stack execution. Never enter it
-automatically.
+Direct collaboration is the **Explore tier** of the one assurance ladder
+(INV-ASSURE-01), not a separate world: the bottom rung where a small, live,
+reversible change is worked with the user directly, with no independent verifier.
+It answers "do I even need a verifier for this?" — at Explore the answer is "no,"
+structurally: coordinator (root) + **one worker child**, and no verifier and no
+adversary. Use it whenever one repository is connected, by ordinary intent or
+`/cc-pair`, and it may be offered as an optional next step after a plan or stack
+execution. Never enter it automatically.
 
-This mode is outside the plan lifecycle (INV-PAIR-01). It neither invokes nor is
-invoked by plan approval, execution, verification, completion, or delivery.
+Before promotion it is outside the plan lifecycle (INV-PAIR-01): it neither invokes
+nor is invoked by plan approval, execution, verification, completion, or delivery.
+When the work turns out to be real, **promote it in place** (below) rather than
+stopping and restarting as a plan — the cliff is a ramp.
 
 ## Start or resume
 
@@ -71,6 +76,28 @@ the session should remain open. Once clean, invoke `pair-close . <session>`.
 Closing preserves the branch and worktree. Cleanup is a separate explicit human
 action. Describe the result as **human-supervised, not independently verified**.
 Offer delivery only as a separate action through `cc-deliver`.
+
+## Promote — the ramp into the trust system
+
+When an Explore session turns out to be real work — the change matters, or it
+touches logic beyond a quick tweak — offer to **promote it in place** rather than
+restart. Promotion is the moment an intent and a plan first exist for the work and
+it enters the trust pipeline (candidate → verifier → delivery → reconciliation):
+
+1. **Attach an intent.** Run `cc-intent` to author the goal, criteria, scope, and
+   tier for what the session is actually doing; the spec adversary can now
+   challenge the criteria, and the human approves it (Gate 1).
+2. **Raise the tier.** Standard/Critical, per the risk signals — this is the moment
+   the independent verifier appears (INV-ASSURE-01). A risk surface refuses to stay
+   Explore.
+3. **Author a lightweight plan of record.** `cc-plan` creates a `plans/<id>/` whose
+   tasks describe the change already made; its execution binds to the existing
+   pairing-branch commits, which produces the candidate. Everything downstream then
+   runs on the standard scaffolding, unchanged.
+
+Do not fabricate criteria or scope silently — surface them and let the human
+approve. Un-promoted Explore work never produces a plan file or a candidate; that
+is what keeps the fast path fast.
 
 ## Runtime actions — invoke, never read the engine
 

@@ -127,11 +127,25 @@ changes cost and speed, never meaning, is recorded per attempt with
 explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01), and a hard
 pin is respected even at the third failure with its cost reported honestly.
 
-## Direct collaboration
+## Assurance tiers and direct collaboration
 
-For direct, live work, resolve `.agents/skills/cc-pair/SKILL.md`. This is an
-orthogonal user ↔ coordinator ↔ worker loop, not a plan execution. The coordinator
-interprets and delegates but never writes; one worker changes one connected
-repository in the session's isolated working copy; the user judges the result
-live. There is no verifier, lease, execution record, completion, or implied
-delivery. Report the output as human-supervised, never verified (INV-PAIR-01).
+Assurance scales to consequence (INV-ASSURE-01): **Explore** is human-supervised
+with no independent verifier (and never called "verified"); **Standard** and
+**Critical** require an independent read-only verifier bound to the current
+candidate, and Critical adds an explicit human completion. The tier is declared on
+the intent from transparent risk signals (`tier-classify` reports them) and the
+human may raise it; it fails upward — anything uncertain is at least Standard, and
+the Explore tier (which drops the verifier) is refused on any risk surface. Say
+*why* a change is Critical in one line when asked; never present the tier as a
+black box.
+
+Direct collaboration (`.agents/skills/cc-pair/SKILL.md`) is the **Explore tier** of
+this ladder, not a separate mode: an orthogonal user ↔ coordinator ↔ worker loop
+where the coordinator interprets and delegates but never writes, one worker changes
+one connected repository in the session's isolated working copy, and the user
+judges the result live. There is no verifier, lease, execution record, completion,
+or implied delivery. When the work turns out to be real, **promote it in place** —
+attach an intent (the adversary can then challenge the criteria), raise the tier so
+the independent verifier appears, and author a lightweight plan of record — rather
+than stopping and restarting. Report Explore output as human-supervised, never
+verified (INV-PAIR-01).

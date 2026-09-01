@@ -464,6 +464,13 @@ cc_intent_approve() {
 	cc_iap_dir=$(cc_intent_dir "$cc_iap_root" "$cc_iap_id")
 	cc_intent_validate "$cc_iap_dir" >/dev/null || { cc_fail INTENT_APPROVE_INVALID "$cc_iap_id"; return 1; }
 	cc_iap_yaml="$cc_iap_dir/contract.yaml"
+	# Tier floor (crown jewel 2, INV-ASSURE-01, fail upward): approving an intent at
+	# the Explore tier — which drops the independent verifier — is refused when any
+	# risk signal is present in scope. Standard/Critical always keep the verifier.
+	cc_iap_tier=$(cc_scalar "$cc_iap_yaml" "tier")
+	if [ "$cc_iap_tier" = "explore" ]; then
+		cc_tier_lower_check "$cc_iap_root" "$cc_iap_id" explore >/dev/null || { cc_fail INTENT_TIER_UNSAFE "$cc_iap_id"; return 1; }
+	fi
 	cc_iap_status=$(cc_scalar "$cc_iap_yaml" "status")
 	cc_iap_digest=$(cc_intent_contract_digest "$cc_iap_yaml") || { cc_fail INTENT_DIGEST_FAILED; return 1; }
 	# A draft approves normally; an already-approved intent may be RE-approved only
@@ -1683,9 +1690,13 @@ cc_execution_begin() {
 	# candidate then folds only the commit map and bases. Recorded once, immutably,
 	# so candidate computation never has to chase the live intent file.
 	cc_eb_cdigest=legacy
+	cc_eb_tier=standard
 	if [ -n "$cc_eb_intent" ]; then
-		cc_eb_cdigest=$(cc_scalar "$(cc_intent_dir "$cc_eb_root" "$cc_eb_intent")/contract.yaml" "contract_digest" 2>/dev/null) || cc_eb_cdigest=""
+		cc_eb_icontract="$(cc_intent_dir "$cc_eb_root" "$cc_eb_intent")/contract.yaml"
+		cc_eb_cdigest=$(cc_scalar "$cc_eb_icontract" "contract_digest" 2>/dev/null) || cc_eb_cdigest=""
 		[ -n "$cc_eb_cdigest" ] || cc_eb_cdigest=legacy
+		cc_eb_tier=$(cc_scalar "$cc_eb_icontract" "tier" 2>/dev/null) || cc_eb_tier=standard
+		[ -n "$cc_eb_tier" ] || cc_eb_tier=standard
 	fi
 	cc_repository_preflight "$cc_eb_root" "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PREFLIGHT_FAILED; return 1; }
 	cc_lock_acquire "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null || { cc_fail EXECUTION_LOCK_FAILED; return 1; }
@@ -1736,8 +1747,8 @@ cc_execution_begin() {
 		mkdir -p "$cc_eb_edir/grounding"
 		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml"
 	done
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml"
 	cc_emit execution_id "$cc_eb_exec"
 	cc_emit status running
@@ -2088,6 +2099,91 @@ cc_human_acceptance_current() {
 }
 
 # ---------------------------------------------------------------------------
+# Consequence tiering (Context Circuit v1.0, Mechanism 3, crown jewel 2,
+# INV-ASSURE-01). Tier is DECLARED on the intent by the coordinator; the runtime
+# NEVER selects a tier (INV-RUNTIME-01). What the runtime provides is a
+# deterministic, fail-upward SIGNAL classifier over declared facts (scope paths and
+# repository count) — the same kind of deterministic data extraction as the
+# grounding scan, not model intelligence — plus the enforcement of the tier floor
+# (completion-ready) and a guard that refuses dropping the independent verifier
+# (tier explore) when any risk signal is present. Skipping the verifier at Explore
+# is safe only if this fails upward: when unsure, tier higher, never lower.
+# ---------------------------------------------------------------------------
+
+# cc_tier_signals CONTRACT_FILE -> emit each detected risk-signal category, one per
+# line, by matching the intent's scope path regions (and repository count) against
+# transparent patterns. Deterministic; emits data, decides nothing.
+cc_tier_signals() {
+	cc_ts_file="$1"
+	cc_ts_repos=$(cc_intent_scope_repos "$cc_ts_file")
+	cc_ts_rc=$(printf '%s\n' "$cc_ts_repos" | sed '/^$/d' | wc -l | tr -d ' ')
+	[ "$cc_ts_rc" -gt 1 ] && printf 'multi-repository\n'
+	for cc_ts_r in $cc_ts_repos; do
+		for cc_ts_p in $(cc_intent_scope_paths "$cc_ts_file" "$cc_ts_r"); do
+			[ "$cc_ts_p" = "." ] && printf 'repository-wide-scope\n'
+			cc_ts_lp=$(cc_lower "$cc_ts_p")
+			case "$cc_ts_lp" in
+				*auth*|*secret*|*credential*|*passw*|*oauth*|*token*|*security*|*/keys*|*/key/*|*login*|*session*) printf 'security\n' ;;
+			esac
+			case "$cc_ts_lp" in
+				*payment*|*billing*|*charge*|*invoice*|*money*|*wallet*|*checkout*|*refund*) printf 'money\n' ;;
+			esac
+			case "$cc_ts_lp" in
+				*migration*|*migrate*|*schema*|*/db/*|*database*) printf 'data-migration\n' ;;
+			esac
+			case "$cc_ts_lp" in
+				*deploy*|*production*|*/prod/*|*infra*|*release*|*/ci/*|*/k8s/*) printf 'production\n' ;;
+			esac
+		done
+	done | LC_ALL=C sort -u
+}
+
+# cc_tier_classify ROOT INTENT -> emit the detected signals, a classified tier, and
+# explore_ok. Fail upward: a hard signal (security/money/migration/production) is
+# critical; anything not clearly low-risk is at least standard; Explore is offered
+# only for a single-repository intent with bounded paths and no risk signal.
+cc_tier_classify() {
+	cc_tc_dir=$(cc_intent_dir "$1" "$2")
+	cc_tc_file="$cc_tc_dir/contract.yaml"
+	[ -f "$cc_tc_file" ] || { cc_fail TIER_INTENT_MISSING "$2"; return 1; }
+	cc_tc_sigs=$(cc_tier_signals "$cc_tc_file")
+	cc_tc_hard=no
+	printf '%s\n' "$cc_tc_sigs" | grep -Eq '^(security|money|data-migration|production)$' && cc_tc_hard=yes
+	cc_tc_soft=no
+	printf '%s\n' "$cc_tc_sigs" | grep -Eq '^(multi-repository|repository-wide-scope)$' && cc_tc_soft=yes
+	if [ "$cc_tc_hard" = "yes" ]; then
+		cc_tc_tier=critical; cc_tc_explore=no
+	elif [ "$cc_tc_soft" = "yes" ]; then
+		cc_tc_tier=standard; cc_tc_explore=no
+	else
+		cc_tc_tier=explore; cc_tc_explore=yes
+	fi
+	for cc_tc_s in $cc_tc_sigs; do cc_emit signal "$cc_tc_s"; done
+	cc_emit classified_tier "$cc_tc_tier"
+	cc_emit explore_ok "$cc_tc_explore"
+	return 0
+}
+
+# cc_tier_lower_check ROOT INTENT REQUESTED -> refuse dropping the independent
+# verifier (requesting Explore) when any risk signal is present. Standard<->Critical
+# both keep the verifier and are a human decision. Fails upward on any risk.
+cc_tier_lower_check() {
+	cc_tl_req="$3"
+	case "$cc_tl_req" in
+		explore|standard|critical) : ;;
+		*) cc_fail TIER_REQUEST_INVALID "$cc_tl_req"; return 1 ;;
+	esac
+	cc_tl_ok=$(cc_tier_classify "$1" "$2" | sed -n 's/^explore_ok: //p') || return 1
+	if [ "$cc_tl_req" = "explore" ] && [ "$cc_tl_ok" != "yes" ]; then
+		cc_emit tier_lower refused
+		cc_fail TIER_EXPLORE_UNSAFE "$2"; return 1
+	fi
+	cc_emit tier_lower allowed
+	cc_emit tier "$cc_tl_req"
+	return 0
+}
+
+# ---------------------------------------------------------------------------
 # Readiness and the run-stack partition (deterministic; the coordinator decides
 # how many ready plans to launch — the runtime never schedules, INV-RUNTIME-01).
 # ---------------------------------------------------------------------------
@@ -2210,6 +2306,20 @@ cc_completion_ready() {
 	cc_cr_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	[ -n "$cc_cr_exec" ] || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	cc_cr_dir=$(cc_execution_dir "$1" "$2" "$cc_cr_exec")
+	cc_cr_tier=$(cc_scalar "$cc_cr_dir/execution.yaml" "tier" 2>/dev/null) || cc_cr_tier=""
+	[ -n "$cc_cr_tier" ] || cc_cr_tier=standard
+	if [ "$cc_cr_tier" = "explore" ]; then
+		# Explore is human-supervised (INV-ASSURE-01): no independent verifier, and
+		# the result is NEVER labeled "verified". Eligibility rests on a current
+		# candidate-bound human acceptance, not a verifier pass.
+		cc_human_acceptance_current "$cc_cr_dir" >/dev/null || { cc_fail COMPLETION_NO_ACCEPTANCE "$2"; return 1; }
+		cc_emit completion eligible
+		cc_emit execution_id "$cc_cr_exec"
+		cc_emit assurance human-supervised
+		return 0
+	fi
+	# Standard/Critical require the independent verifier floor: a candidate-bound
+	# `passed` that still describes the current candidate (INV-VERIFY-01, INV-CANDIDATE-01).
 	cc_cr_st=$(cc_execution_status "$cc_cr_dir")
 	[ "$cc_cr_st" = "verified" ] || { cc_fail COMPLETION_NOT_VERIFIED "$cc_cr_st"; return 1; }
 	cc_cr_vc=$(cc_scalar "$cc_cr_dir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cr_vc=""
@@ -2219,6 +2329,7 @@ cc_completion_ready() {
 	fi
 	cc_emit completion eligible
 	cc_emit execution_id "$cc_cr_exec"
+	cc_emit assurance independent
 	[ -n "$cc_cr_vc" ] && cc_emit candidate_id "$cc_cr_vc" || :
 	return 0
 }
@@ -2490,6 +2601,8 @@ cc_main() {
 		candidate-current)       cc_candidate_current "$@" ;;
 		human-acceptance-record) cc_human_acceptance_record "$@" ;;
 		human-acceptance-current) cc_human_acceptance_current "$@" ;;
+		tier-classify)           cc_tier_classify "$@" ;;
+		tier-lower-check)        cc_tier_lower_check "$@" ;;
 		completion-ready)        cc_completion_ready "$@" ;;
 		plan-complete)           cc_plan_complete "$@" ;;
 		context-impact-record)   cc_context_impact_record "$@" ;;
