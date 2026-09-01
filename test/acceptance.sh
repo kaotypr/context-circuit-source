@@ -15,6 +15,7 @@ run_suite test/plans/test-plans.sh
 run_suite test/intent/test-intent.sh
 run_suite test/intent/test-envelope.sh
 run_suite test/candidate/test-candidate.sh
+run_suite test/assurance/test-tier.sh
 run_suite test/execution/test-execution.sh
 run_suite test/concurrency/test-leases.sh
 run_suite test/run-stack/test-run-stack.sh
@@ -40,7 +41,7 @@ grep -q '^credential_free: true' "$map" || { printf 'FAIL: criteria map not cred
 grep -q '^implicit_external_checks: false' "$map" || { printf 'FAIL: criteria map declares implicit external checks\n' >&2; exit 1; }
 
 n=1
-while [ "$n" -le 32 ]; do
+while [ "$n" -le 33 ]; do
 	id=$(printf 'AC-%02d' "$n")
 	grep -q "id: $id" "$map" || { printf 'FAIL: criteria map missing %s\n' "$id" >&2; exit 1; }
 	n=$((n + 1))

@@ -7,7 +7,7 @@ W="$ROOT/wrapper"
 # --- invariants owner map: v0.5 rules and owners present ---
 inv="$W/contracts/invariants.yaml"
 require_file "$inv"
-for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
+for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-ASSURE-01 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
 	INV-VERIFY-01 INV-VERIFY-02 \
 	INV-REPAIR-01 INV-COMPLETE-01 INV-ARCHIVE-01 INV-REPO-02 INV-DELIVER-01 \
 	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
@@ -16,7 +16,7 @@ for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-PLAN-01 INV-PLAN-05 I
 	contains "$inv" "$id"
 done
 for concern in intent_contract intent_gate scope_envelope spec_adversary_role \
-	candidate_identity human_acceptance \
+	candidate_identity human_acceptance assurance_tiering \
 	plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
@@ -89,6 +89,10 @@ contains "$pair" "human-supervised"
 contains "$pair" "pair-begin"
 contains "$pair" "pair-close"
 contains "$pair" "repository-relative path"
+# v1.0: pairing is the Explore tier with an explicit promote step (INV-ASSURE-01)
+contains "$pair" "Explore tier"
+contains "$pair" "Promote"
+contains "$inv" "INV-ASSURE-01"
 contains "$W/adapters/WORKFLOW.md" "/cc-pair"
 contains "$ROOT/agents/coordinator.md" "INV-PAIR-01"
 contains "$ROOT/agents/worker.md" "Direct-collaboration mode"
