@@ -465,8 +465,17 @@ cc_intent_approve() {
 	cc_intent_validate "$cc_iap_dir" >/dev/null || { cc_fail INTENT_APPROVE_INVALID "$cc_iap_id"; return 1; }
 	cc_iap_yaml="$cc_iap_dir/contract.yaml"
 	cc_iap_status=$(cc_scalar "$cc_iap_yaml" "status")
-	[ "$cc_iap_status" = "draft" ] || { cc_fail INTENT_NOT_DRAFT "$cc_iap_status"; return 1; }
 	cc_iap_digest=$(cc_intent_contract_digest "$cc_iap_yaml") || { cc_fail INTENT_DIGEST_FAILED; return 1; }
+	# A draft approves normally; an already-approved intent may be RE-approved only
+	# when its criteria changed (its content digest no longer matches the frozen one)
+	# — the "changing the criteria re-enters the gate" rule (INV-INTENT-01). A
+	# re-approval with nothing changed is refused, so approval is never a no-op flip.
+	if [ "$cc_iap_status" = "approved" ]; then
+		cc_iap_frozen=$(cc_scalar "$cc_iap_yaml" "contract_digest") || cc_iap_frozen=""
+		[ "$cc_iap_digest" != "$cc_iap_frozen" ] || { cc_fail INTENT_ALREADY_APPROVED "$cc_iap_id"; return 1; }
+	elif [ "$cc_iap_status" != "draft" ]; then
+		cc_fail INTENT_NOT_DRAFT "$cc_iap_status"; return 1
+	fi
 	# set status approved and freeze contract_digest atomically
 	awk -v d="$cc_iap_digest" '
 		!sdone && /^status:[[:space:]]/ { print "status: approved"; sdone=1; next }
@@ -1669,6 +1678,15 @@ cc_execution_begin() {
 		fi
 	fi
 	[ "$cc_eb_status" = "approved" ] || { cc_fail EXECUTION_NOT_APPROVED "$cc_eb_status"; return 1; }
+	# Capture the intent's frozen contract digest for this execution's candidate
+	# identity (INV-CANDIDATE-01). A legacy plan (no intent) records `legacy`; the
+	# candidate then folds only the commit map and bases. Recorded once, immutably,
+	# so candidate computation never has to chase the live intent file.
+	cc_eb_cdigest=legacy
+	if [ -n "$cc_eb_intent" ]; then
+		cc_eb_cdigest=$(cc_scalar "$(cc_intent_dir "$cc_eb_root" "$cc_eb_intent")/contract.yaml" "contract_digest" 2>/dev/null) || cc_eb_cdigest=""
+		[ -n "$cc_eb_cdigest" ] || cc_eb_cdigest=legacy
+	fi
 	cc_repository_preflight "$cc_eb_root" "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PREFLIGHT_FAILED; return 1; }
 	cc_lock_acquire "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null || { cc_fail EXECUTION_LOCK_FAILED; return 1; }
 	cc_eb_exec=$(cc_execution_next_id "$cc_eb_root" "$cc_eb_plan")
@@ -1718,8 +1736,8 @@ cc_execution_begin() {
 		mkdir -p "$cc_eb_edir/grounding"
 		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml"
 	done
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml"
 	cc_emit execution_id "$cc_eb_exec"
 	cc_emit status running
@@ -1829,15 +1847,20 @@ cc_verifier_result_record() {
 			cc_fail VERIFIER_MODIFIED_PRODUCT "$(basename "$cc_vr_rf" .yaml)"; return 1
 		fi
 	done
+	# candidate binding (INV-CANDIDATE-01): the result names the candidate it
+	# observed, so any later commit or criteria change voids it by construction.
+	cc_vr_cand=$(cc_candidate_id "$cc_vr_dir" 2>/dev/null) || cc_vr_cand=""
 	cc_vr_pad=$(printf '%03d' "$cc_vr_att")
 	mkdir -p "$cc_vr_dir/attempts/$cc_vr_pad"
-	printf 'attempt: %s\noutcome: %s\nread_only: true\nchecked_at: %s\n' \
-		"$cc_vr_att" "$cc_vr_out" "$(cc_now)" \
+	printf 'attempt: %s\noutcome: %s\nread_only: true\ncandidate_id: %s\nchecked_at: %s\n' \
+		"$cc_vr_att" "$cc_vr_out" "$cc_vr_cand" "$(cc_now)" \
 		| cc_atomic_write "$cc_vr_dir/attempts/$cc_vr_pad/verifier.yaml"
 	if [ "$cc_vr_out" = "passed" ]; then
 		cc_exec_set "$cc_vr_dir" status verified
+		cc_exec_set "$cc_vr_dir" verified_candidate "$cc_vr_cand"
 		cc_emit outcome passed
 		cc_emit status verified
+		cc_emit candidate_id "$cc_vr_cand"
 		return 0
 	fi
 	if [ "$cc_vr_out" = "blocked" ]; then
@@ -1931,6 +1954,138 @@ cc_repair_allowed() {
 
 # cc_execution_status EXEC_DIR -> current execution state
 cc_execution_status() { cc_scalar "$1/execution.yaml" "status"; }
+
+# ---------------------------------------------------------------------------
+# Candidate identity (Context Circuit v1.0, Mechanism 2, INV-CANDIDATE-01).
+# A candidate is a deterministic digest over the exact proposed result: the
+# per-repository commit map, the selected base commits, and the intent's frozen
+# contract_digest. It is an identity computed over records the engine already
+# keeps plus the contract digest — not a new state machine. Any new commit OR a
+# criteria change yields a new candidate id, which is what voids prior evidence
+# and human acceptance. The engine already detects a commit change (verifier
+# read-only tip check); the candidate generalizes that to "candidate unchanged
+# since the evidence was recorded", and extends it to human acceptance.
+# ---------------------------------------------------------------------------
+
+# cc_candidate_id EXEC_DIR -> deterministic cand-<hash> over the current commit
+# map + bases + the execution's recorded contract_digest. Recomputed from the live
+# repository records, so a new worker commit (which updates latest_commit) changes
+# the id automatically.
+cc_candidate_id() {
+	cc_cid_dir="$1"
+	[ -f "$cc_cid_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	# Resolve the contract digest the candidate folds in. Prefer the intent's CURRENT
+	# frozen contract_digest (so a criteria change re-approved on the intent voids
+	# evidence, INV-CANDIDATE-01); fall back to the value captured at execution-begin
+	# when the intent is unreachable (e.g. archived), and to `legacy` for a plan with
+	# no intent. This never chases an un-frozen file: only the frozen digest is read.
+	cc_cid_cdig=""
+	cc_cid_intent=$(cc_scalar "$cc_cid_dir/execution.yaml" "intent" 2>/dev/null) || cc_cid_intent=""
+	if [ -n "$cc_cid_intent" ]; then
+		cc_cid_root=$(cd -- "$cc_cid_dir/../../../.." 2>/dev/null && pwd) || cc_cid_root=""
+		if [ -n "$cc_cid_root" ] && [ -f "$cc_cid_root/intent/$cc_cid_intent/contract.yaml" ]; then
+			cc_cid_cdig=$(cc_scalar "$cc_cid_root/intent/$cc_cid_intent/contract.yaml" "contract_digest" 2>/dev/null) || cc_cid_cdig=""
+		fi
+	fi
+	[ -n "$cc_cid_cdig" ] || cc_cid_cdig=$(cc_scalar "$cc_cid_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cid_cdig=""
+	[ -n "$cc_cid_cdig" ] || cc_cid_cdig=legacy
+	cc_cid_canon=$(
+		for cc_cid_rf in "$cc_cid_dir"/repositories/*.yaml; do
+			[ -f "$cc_cid_rf" ] || continue
+			printf '%s\t%s\t%s\n' \
+				"$(cc_scalar "$cc_cid_rf" repository)" \
+				"$(cc_scalar "$cc_cid_rf" latest_commit)" \
+				"$(cc_scalar "$cc_cid_rf" base_commit)"
+		done | LC_ALL=C sort
+		printf 'contract\t%s\n' "$cc_cid_cdig"
+	)
+	cc_cid_hash=$(cc_digest_text "$cc_cid_canon")
+	cc_cid_hash=${cc_cid_hash#sha256:}; cc_cid_hash=${cc_cid_hash#cksum:}
+	printf 'cand-%s' "$cc_cid_hash"
+}
+
+# cc_candidate_digest ROOT PLAN EXEC -> compute the current candidate and record
+# candidate.yaml under the execution dir; prints candidate_id. Idempotent for an
+# unchanged result; writes a new identity after any commit or criteria change.
+cc_candidate_digest() {
+	cc_cd_dir=$(cc_execution_dir "$1" "$2" "$3")
+	[ -f "$cc_cd_dir/execution.yaml" ] || { cc_fail CANDIDATE_NO_EXECUTION "$2/$3"; return 1; }
+	cc_cd_id=$(cc_candidate_id "$cc_cd_dir") || return 1
+	cc_cd_cdig=$(cc_scalar "$cc_cd_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cd_cdig=legacy
+	[ -n "$cc_cd_cdig" ] || cc_cd_cdig=legacy
+	{
+		printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ncontract_digest: %s\nrepositories:\n' \
+			"$cc_cd_id" "$2" "$3" "$cc_cd_cdig"
+		for cc_cd_rf in "$cc_cd_dir"/repositories/*.yaml; do
+			[ -f "$cc_cd_rf" ] || continue
+			printf '  %s: %s\n' "$(cc_scalar "$cc_cd_rf" repository)" "$(cc_scalar "$cc_cd_rf" latest_commit)"
+		done
+		printf 'bases:\n'
+		for cc_cd_rf in "$cc_cd_dir"/repositories/*.yaml; do
+			[ -f "$cc_cd_rf" ] || continue
+			printf '  %s: %s\n' "$(cc_scalar "$cc_cd_rf" repository)" "$(cc_scalar "$cc_cd_rf" base_commit)"
+		done
+		printf 'computed_at: %s\n' "$(cc_now)"
+	} | cc_atomic_write "$cc_cd_dir/candidate.yaml"
+	cc_emit candidate_id "$cc_cd_id"
+	cc_emit plan "$2"
+	cc_emit execution_id "$3"
+	return 0
+}
+
+# cc_candidate_current ROOT PLAN -> report the current candidate id for the plan's
+# latest execution (recomputed live; not necessarily the last recorded one).
+cc_candidate_current() {
+	cc_cc_exec=$(cc_latest_execution "$1" "$2") || { cc_fail CANDIDATE_NO_EXECUTION "$2"; return 1; }
+	[ -n "$cc_cc_exec" ] || { cc_fail CANDIDATE_NO_EXECUTION "$2"; return 1; }
+	cc_cc_dir=$(cc_execution_dir "$1" "$2" "$cc_cc_exec")
+	cc_cc_id=$(cc_candidate_id "$cc_cc_dir") || return 1
+	cc_emit candidate_id "$cc_cc_id"
+	cc_emit execution_id "$cc_cc_exec"
+	return 0
+}
+
+# cc_human_acceptance_record EXEC_DIR ACCEPTED_BY [CHECKLIST_FILE] -> write a
+# first-class human acceptance bound to the CURRENT candidate (INV-CANDIDATE-01).
+# Acceptance names the candidate it observed, so any later commit or criteria
+# change (which changes the candidate) leaves this acceptance no longer matching —
+# void by construction, not by discipline. A checklist file, when given, records
+# which criteria the human confirmed (including any manual ones).
+cc_human_acceptance_record() {
+	cc_ha_dir="$1"; cc_ha_by="$2"; cc_ha_file="${3:-}"
+	[ -f "$cc_ha_dir/execution.yaml" ] || { cc_fail ACCEPTANCE_NO_EXECUTION; return 1; }
+	[ -n "$cc_ha_by" ] || { cc_fail ACCEPTANCE_NO_ACCEPTER; return 1; }
+	case "$cc_ha_by" in *[!A-Za-z0-9._@-]*) cc_fail ACCEPTANCE_ACCEPTER_INVALID "$cc_ha_by"; return 1 ;; esac
+	cc_ha_cand=$(cc_candidate_id "$cc_ha_dir") || return 1
+	{
+		printf 'schema_version: 1\ncandidate_id: %s\naccepted_by: %s\naccepted_at: %s\nchecklist:\n' \
+			"$cc_ha_cand" "$cc_ha_by" "$(cc_now)"
+		if [ -n "$cc_ha_file" ] && [ -f "$cc_ha_file" ]; then
+			while IFS= read -r cc_ha_line; do
+				[ -n "$cc_ha_line" ] || continue
+				printf '  - %s\n' "$cc_ha_line"
+			done <"$cc_ha_file"
+		fi
+	} | cc_atomic_write "$cc_ha_dir/human-acceptance.yaml"
+	cc_emit acceptance recorded
+	cc_emit candidate_id "$cc_ha_cand"
+	cc_emit accepted_by "$cc_ha_by"
+	return 0
+}
+
+# cc_human_acceptance_current EXEC_DIR -> ok when a human-acceptance record exists
+# AND still binds to the current candidate. A candidate change voids it: the record
+# names an old candidate_id that no longer matches (INV-CANDIDATE-01).
+cc_human_acceptance_current() {
+	cc_hac_dir="$1"
+	[ -f "$cc_hac_dir/human-acceptance.yaml" ] || { cc_fail ACCEPTANCE_MISSING; return 1; }
+	cc_hac_bound=$(cc_scalar "$cc_hac_dir/human-acceptance.yaml" "candidate_id")
+	cc_hac_now=$(cc_candidate_id "$cc_hac_dir") || return 1
+	[ "$cc_hac_bound" = "$cc_hac_now" ] || { cc_fail ACCEPTANCE_VOID "$cc_hac_bound"; return 1; }
+	cc_emit acceptance current
+	cc_emit candidate_id "$cc_hac_now"
+	return 0
+}
 
 # ---------------------------------------------------------------------------
 # Readiness and the run-stack partition (deterministic; the coordinator decides
@@ -2047,14 +2202,24 @@ cc_latest_execution() {
 }
 
 # cc_completion_ready ROOT PLAN -> eligible only if latest execution is verified
+# AND (for a candidate-bound execution) that verified evidence still describes the
+# current candidate (INV-CANDIDATE-01): a new commit or criteria change after the
+# pass voids the evidence, so completion is refused until re-verified. Legacy
+# executions with no recorded verified candidate keep the plain verified check.
 cc_completion_ready() {
 	cc_cr_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	[ -n "$cc_cr_exec" ] || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	cc_cr_dir=$(cc_execution_dir "$1" "$2" "$cc_cr_exec")
 	cc_cr_st=$(cc_execution_status "$cc_cr_dir")
 	[ "$cc_cr_st" = "verified" ] || { cc_fail COMPLETION_NOT_VERIFIED "$cc_cr_st"; return 1; }
+	cc_cr_vc=$(cc_scalar "$cc_cr_dir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cr_vc=""
+	if [ -n "$cc_cr_vc" ]; then
+		cc_cr_now=$(cc_candidate_id "$cc_cr_dir" 2>/dev/null) || cc_cr_now=""
+		[ "$cc_cr_vc" = "$cc_cr_now" ] || { cc_fail COMPLETION_CANDIDATE_STALE "$cc_cr_vc"; return 1; }
+	fi
 	cc_emit completion eligible
 	cc_emit execution_id "$cc_cr_exec"
+	[ -n "$cc_cr_vc" ] && cc_emit candidate_id "$cc_cr_vc" || :
 	return 0
 }
 
@@ -2321,6 +2486,10 @@ cc_main() {
 		attempt-evidence-record) cc_attempt_evidence_record "$@" ;;
 		repair-allowed)          cc_repair_allowed "$@" ;;
 		execution-status)        cc_execution_status "$@" ;;
+		candidate-digest)        cc_candidate_digest "$@" ;;
+		candidate-current)       cc_candidate_current "$@" ;;
+		human-acceptance-record) cc_human_acceptance_record "$@" ;;
+		human-acceptance-current) cc_human_acceptance_current "$@" ;;
 		completion-ready)        cc_completion_ready "$@" ;;
 		plan-complete)           cc_plan_complete "$@" ;;
 		context-impact-record)   cc_context_impact_record "$@" ;;

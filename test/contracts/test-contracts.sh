@@ -7,7 +7,7 @@ W="$ROOT/wrapper"
 # --- invariants owner map: v0.5 rules and owners present ---
 inv="$W/contracts/invariants.yaml"
 require_file "$inv"
-for id in INV-INTENT-01 INV-INTENT-02 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
+for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
 	INV-VERIFY-01 INV-VERIFY-02 \
 	INV-REPAIR-01 INV-COMPLETE-01 INV-ARCHIVE-01 INV-REPO-02 INV-DELIVER-01 \
 	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
@@ -16,6 +16,7 @@ for id in INV-INTENT-01 INV-INTENT-02 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV
 	contains "$inv" "$id"
 done
 for concern in intent_contract intent_gate scope_envelope spec_adversary_role \
+	candidate_identity human_acceptance \
 	plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
@@ -37,6 +38,8 @@ require_file "$man"
 contains "$man" "runtime_version: 0.7.0"
 contains "$man" "plan: [1, 2, 3]"
 contains "$man" "intent-contract: [1]"
+contains "$man" "candidate: [1]"
+contains "$man" "human-acceptance: [1]"
 contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
@@ -44,7 +47,7 @@ contains "$man" "pairing-session: [1]"
 
 # --- v0.5 schemas present; old-design schemas absent ---
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \
-	verifier-result completion context-impact context-proposal context-index lease \
+	verifier-result candidate human-acceptance completion context-impact context-proposal context-index lease \
 	grounding-manifest pairing-session publication-config publication-intent \
 	publication-record \
 	publication-thread-record; do

@@ -37,7 +37,10 @@ then:
 4. Launch one independent, read-only verifier (see `agents/verifier.md`) after
    `verifier-prepare`, at the verifier's configured `(model, effort)`. It inspects
    the latest commit of every affected repository. Record its outcome with
-   `verifier-result-record`.
+   `verifier-result-record`, which **binds the result to the current candidate**
+   (`candidate-digest`; INV-CANDIDATE-01). A new commit or a criteria change after
+   the check yields a new candidate and voids the prior result — re-verify against
+   the new candidate rather than reusing an old green.
 5. Record the `(model, effort)` each role ran at as host evidence with
    `attempt-evidence-record` (below). Do not record inference wall-clock — an
    attempt already carries `started_at` / `checked_at` timestamps whose span is its
@@ -62,6 +65,12 @@ and the execution brief carry everything needed to drive it. Invoke each action 
 - `attempt-begin <execution-dir>` · `worker-commit-record <execution-dir> <repo> implementation|repair`
   · `worker-handoff-record <execution-dir> <handoff-file>`.
 - `verifier-prepare <execution-dir>` · `verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
+- `candidate-digest . <plan-id> <execution-id>` — record the current candidate
+  identity (commit map + bases + frozen contract digest); `candidate-current .
+  <plan-id>` reports it. Evidence binds to the candidate (INV-CANDIDATE-01).
+- `human-acceptance-record <execution-dir> <accepted-by> [checklist-file]` — record
+  the human's first-class, candidate-bound acceptance ("looks right, ship it"),
+  after they try the change. A new candidate voids a prior acceptance.
 - `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record
   bounded per-attempt host evidence: the `(model, effort)` each role ran at
   (`worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`,

@@ -15,6 +15,14 @@ fields:
     required: true
     values: [passed, failed, blocked, waived]
   read_only: { const: true, required: true }
+  candidate_id:
+    type: string
+    required: false
+    description: >
+      The candidate this result observed (Context Circuit v1.0, Mechanism 2). The
+      result binds to it, so a new commit or criteria change yields a new candidate
+      and voids this result (INV-CANDIDATE-01). Empty for a legacy execution with
+      no computed candidate; then the plain verified check applies.
   checked_at: { type: string, required: true }
   evidence_refs: { type: list, required: false }
   failures: { type: list, required: false, description: failed acceptance/verification ids }
@@ -35,3 +43,4 @@ rules:
   - INV-VERIFY-01
   - INV-VERIFY-02
   - INV-REPAIR-01
+  - INV-CANDIDATE-01

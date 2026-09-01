@@ -101,3 +101,6 @@ criteria:
   - id: AC-31
     statement: The intent-envelope check re-gates a plan that exceeds the approved scope (new repository, path outside scope, criteria change) and fails upward on any indeterminate comparison, while authorizing a within-scope plan without a separate plan approval.
     suite: test/intent/test-envelope.sh
+  - id: AC-32
+    statement: A candidate is a deterministic digest over the commit map, bases, and frozen contract digest; verifier results and human acceptance bind to it, and any new commit or criteria change yields a new candidate that voids prior evidence and acceptance (completion refuses stale evidence).
+    suite: test/candidate/test-candidate.sh
