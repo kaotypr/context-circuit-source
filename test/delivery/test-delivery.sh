@@ -22,16 +22,17 @@ contains "$edir/repositories/api.yaml" "anchor_branch: development"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "git push"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "gh pr"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "git -C \"\$cc_dt_abs\" push"
-# v0.6: the runtime authors an integration BASE merge (INV-CONCURRENCY-02) on the
-# dependent plan's OWN worktree, before the worker starts — never a delivery merge.
-# Every `git ... merge ` in the engine must be that base merge ($cc_bp_tree), so no
-# merge ever runs against a delivery target or the anchor checkout. (merge-base and
-# rebase are not merges into a branch.)
+# The runtime authors integration merges only into a dedicated integration worktree,
+# before the worker/verifier — never a delivery merge, a delivery target, or the anchor
+# checkout (INV-CONCURRENCY-02, INV-DELIVER-01). The two integration builders are the
+# per-plan base merge ($cc_bp_tree) and the change-set integration tip ($cc_csp_wt).
+# Every `git ... merge ` in the engine must be one of those. (merge-base and rebase are
+# not merges into a branch.)
 if grep -nE 'git[^\n]*merge( |$)' "$ROOT/wrapper/runtime/engine.sh" \
-	| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree' >/dev/null 2>&1; then
+	| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree|\$cc_csp_wt' >/dev/null 2>&1; then
 	grep -nE 'git[^\n]*merge( |$)' "$ROOT/wrapper/runtime/engine.sh" \
-		| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree'
-	fail 'engine performs a git merge outside the integration-base builder'
+		| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree|\$cc_csp_wt'
+	fail 'engine performs a git merge outside an integration builder'
 fi
 
 # --- delivery is not a runtime command ---

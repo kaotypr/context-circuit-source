@@ -12,12 +12,23 @@ human gate (INV-DELIVER-01); it is never implied by the acceptance of a candidat
 ## Change set — one pull request, one candidate
 
 When several stacked plans converge to a single pull request, they form one
-**change set**. Compute a single identity for the combined result with
-`change-set-candidate . <plan> <plan> ...` — one candidate over the members'
-combined tip set, so the independent check runs once and the human accepts once
-(not once per plan). A single plan delivered alone is a change set of one. If the
-combined result will not build (`BASE_UNBUILDABLE`), report it as blocked, not a
-worker failure, for the human to split or reorder.
+**change set**, verified once against an integration tip (not once per plan):
+
+1. `change-set-prepare . <plan> <plan> ...` builds the integration tip — every
+   member branch merged onto the anchor, per repository — and records one change-set
+   candidate. If the combined result will not build it reports `BASE_UNBUILDABLE`;
+   report that as blocked, not a worker failure, for the human to split or reorder.
+2. Spawn ONE independent verifier over the integration tip and record it with
+   `change-set-verifier-record . <change-set-id> <passed|failed|blocked|waived>`
+   (read-only; a tip that moved since prepare voids it). At Explore there is none.
+3. The human accepts once: `change-set-accept . <change-set-id> <who>`.
+4. `change-set-ready . <change-set-id>` enforces the tier floor for the whole set
+   (the max tier across members): a candidate-bound acceptance, plus a candidate-bound
+   independent pass at Standard/Critical. A member that moves after prepare makes the
+   candidate stale and re-gates.
+
+A single plan delivered alone is a change set of one, identical to
+`change-set-candidate . <plan>` and `candidate-current . <plan>`.
 
 ## Record the delivery, and inferred completion
 
