@@ -26,13 +26,19 @@ When several stacked plans converge to a single pull request, they form one
    (the max tier across members): a candidate-bound acceptance, plus a candidate-bound
    independent pass at Standard/Critical. A member that moves after prepare makes the
    candidate stale and re-gates.
+5. After you open the one pull request (Gate 2), `change-set-complete . <change-set-id>`
+   marks **every member** done and emits each member's reconciliation-debt marker, from
+   the single change-set acceptance — accept once, and the whole set completes.
 
 A single plan delivered alone is a change set of one, identical to
-`change-set-candidate . <plan>` and `candidate-current . <plan>`.
+`change-set-candidate . <plan>` and `candidate-current . <plan>`; it may complete
+through this same path, or the single-plan path below.
 
-## Record the delivery, and inferred completion
+## Single-plan delivery and inferred completion
 
-After the human authorizes and you open the pull request (Gate 2), record the
+Acceptance is keyed to the candidate: a single plan uses its own execution candidate;
+a change set uses the integration candidate (above). For a single plan delivered on
+its own, after the human authorizes and you open the pull request (Gate 2), record the
 delivery with `delivery-record . <plan-id>` — the delivery signal, bound to the
 current candidate; it performs no git action itself. At Explore/Standard, this lets
 completion be **inferred** from candidate acceptance + delivery
