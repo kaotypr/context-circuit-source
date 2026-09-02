@@ -35,7 +35,7 @@ configured pipeline is a **publication**; the `cc-publish` skill runs it. Route
 and "open a discussion thread for `<id>`'s open questions in Slack" here. Owned by
 the three isolation invariants (INV-EXTERNAL-01/02/03) and the `cc-publish` skill
 (INV-SKILL-01). It is **orthogonal to the core workflow**: it adds no runtime or
-network code, no new authority, and no reference anywhere in the plan → approve →
+network code, no new authority, and no reference anywhere in the intent → plan →
 execute → verify → deliver path.
 
 In this product "publish"/"publication" names sending data to an external system;
@@ -50,8 +50,8 @@ per-kind records, and the credential/host boundary.
 
 Outside: git delivery ([delivery](../delivery/README.md)), and any inbound flow
 (external → plan), which is out of scope; a plan is only ever authored through the
-normal planning gate ([plan-review](../plan-review/README.md),
-[plan-approval](../plan-approval/README.md)).
+normal planning flow ([plan-review](../plan-review/README.md)) and authorized by
+its parent approved intent.
 
 ## Behavior
 
@@ -59,7 +59,7 @@ normal planning gate ([plan-review](../plan-review/README.md),
   phase, trigger, gate, dependency, or side effect. No workflow phase, runtime
   action, coordinator route, or role references, triggers, waits on, or is affected
   by it, and none runs except on an explicit human invocation. A plan in any state —
-  `draft`, `approved`, `done`, or never — can be published. There is no automatic,
+  `draft`, `done`, or never — can be published. There is no automatic,
   scheduled, or event trigger; nothing in the workflow triggers a publication, so
   there is nothing to hook.
 - **Data boundary, export-first (INV-EXTERNAL-02).** A publication reads only the
@@ -68,7 +68,7 @@ normal planning gate ([plan-review](../plan-review/README.md),
   `plans/`.** It never mutates `plan.yaml`, task files, or plan status
   (INV-PLAN-01); it is export-only. A record's lifecycle is independent of the
   plan's archive state, keyed to the stable plan id. Any future import must pass
-  through the normal plan-authoring gate (INV-APPROVE-01), never around it.
+  through the normal intent-approval gate (INV-APPROVE-01), never around it.
 - **Self-contained external artifacts (INV-EXTERNAL-03).** Every external artifact
   (task, document, message) is understandable to a reader with no workspace access:
   plain-language description, and never a workspace file name, workspace-internal
@@ -108,7 +108,7 @@ normal planning gate ([plan-review](../plan-review/README.md),
 
 ## Workflows
 
-- Publish an approved plan to a tracker as a separate step: `docs/getting-started.md`
+- Publish a plan to a tracker as a separate step: `docs/getting-started.md`
 
 ## Interfaces
 

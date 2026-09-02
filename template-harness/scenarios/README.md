@@ -25,7 +25,7 @@ scenarios/
 └── 12-run-multi-repo-stack/             full-exec    (claude -p driver; multi-repo run-stack, v0.6)
 ```
 
-Case 10 exercises the v0.6 run-stack: ten approved, inter-dependent plans of a
+Case 10 exercises the v0.6 run-stack: ten intent-authorized, inter-dependent plans of a
 small task-tracker CLI, built in one request. The runtime runs them in dependency
 order, stacks each dependent on its predecessor, and builds runtime-authored
 integration bases for the fan-ins (0005, 0009, 0010); the grader proves each plan
@@ -38,7 +38,7 @@ Case 11 exercises v0.6 repository grounding: the connected repo ships its own
 committed file carries that header — the observable proof that the worker
 discovered, read, and honored the repository's own agent guidance.
 
-Case 12 exercises v0.6 run-stack across TWO repositories: seven approved plans
+Case 12 exercises v0.6 run-stack across TWO repositories: seven intent-authorized plans
 spanning a backend and a web app. The grader proves cross-repo concurrency, that a
 cross-repo dependency is an ordering gate with no git base (`based_on_absent`), and
 that same-repo dependencies still stack/integrate (`based_on` + `built_on`), with

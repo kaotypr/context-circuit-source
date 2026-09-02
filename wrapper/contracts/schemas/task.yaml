@@ -27,8 +27,8 @@ body_sections:
   - stop conditions
 
 notes: >
-  A task status is a synchronized projection of the plan status (draft/ready/
-  done); it is never an independent lifecycle authority.
+  A task status is a synchronized projection of the plan status (draft/done); it
+  is never an independent lifecycle authority.
 
 rules:
   - INV-PLAN-01

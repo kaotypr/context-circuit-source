@@ -104,6 +104,9 @@ expect_failure eng execution-begin "$ws" 0003-drift sess-d       # held, not pro
 awk '/^      paths: \[src\/checkout\]/{print; print "    - id: payments-lib"; print "      paths: [src/pay]"; next}{print}' \
 	"$ws/intent/$iidD/contract.yaml" >"$ws/intent/$iidD/c.new"
 mv "$ws/intent/$iidD/c.new" "$ws/intent/$iidD/contract.yaml"
+drift_digest=$(cc_intent_contract_digest "$ws/intent/$iidD/contract.yaml")
+printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$drift_digest" \
+	>"$ws/intent/$iidD/adversary.md"
 eng intent-approve "$ws" "$iidD" >/dev/null                      # re-approve the wider scope
 eng intent-envelope-check "$ws" 0003-drift | grep -q '^envelope: within' || fail "D: widened intent should be WITHIN"
 

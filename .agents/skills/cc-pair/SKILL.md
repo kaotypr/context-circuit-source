@@ -15,7 +15,7 @@ adversary. Use it whenever one repository is connected, by ordinary intent or
 execution. Never enter it automatically.
 
 Before promotion it is outside the plan lifecycle (INV-PAIR-01): it neither invokes
-nor is invoked by plan approval, execution, verification, completion, or delivery.
+nor is invoked by intent approval, execution, verification, completion, or delivery.
 When the work turns out to be real, **promote it in place** (below) rather than
 stopping and restarting as a plan — the cliff is a ramp.
 

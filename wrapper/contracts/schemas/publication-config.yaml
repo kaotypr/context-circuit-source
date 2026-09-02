@@ -94,7 +94,7 @@ fields:
       Kind-specific field map. For the plan kind: the plan-to-work-item and
       task-to-child-item realization; acceptance_as (checklist, or
       description-checklist when the adapter has no native checklist-create call);
-      and a status map from plan status (draft, approved, done) onto the target's
+      and a status map from plan status (draft, done) onto the target's
       own discovered status set, since status vocabularies are provider-defined.
   preview:
     type: object

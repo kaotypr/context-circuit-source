@@ -17,7 +17,7 @@ fields:
   read_only: { const: true, required: true }
   candidate_id:
     type: string
-    required: false
+    required: true
     description: >
       The candidate this result observed (Context Circuit v1.0, Mechanism 2). The
       result binds to it, so a new commit or criteria change yields a new candidate
@@ -37,6 +37,8 @@ read_only_enforcement:
   - branch tips must be unchanged between the worker commit and the verifier result
   - an explicit product write is rejected (VERIFIER_WRITE_REJECTED)
   - a modified branch tip is rejected (VERIFIER_MODIFIED_PRODUCT)
+  - verifier-result-record requires the current attempt's verifier-scope.yaml,
+    created by verifier-prepare after worker commits are recorded
 
 rules:
   - INV-VERIFY-01

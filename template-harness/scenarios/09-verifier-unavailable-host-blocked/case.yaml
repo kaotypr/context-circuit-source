@@ -50,7 +50,7 @@ grader:
     - repositories_registered: 1
     - not_self_verified: 0001-md-export               # blocked, never self-verified (the core assertion)
     - worker_commit_preserved: 0001-md-export:notes    # the worker commit + worktree survive the block
-    - plan_status: 0001-md-export:approved             # cannot complete without a verifier pass
+    - plan_status: 0001-md-export:draft             # cannot complete without a verifier pass
     - product_knowledge_unchanged_silently: true
   # B. transcript checks (hard gate)
   transcript_checks:

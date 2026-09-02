@@ -13,7 +13,7 @@ generated_at: 2026-08-27T00:00:00Z
 review_date: 2026-11-27
 freshness: accepted-from-current-wrapper
 assumptions:
-  - Concurrency changes only order and overlap of already-approved plans; it adds no authority.
+  - Concurrency changes only order and overlap of already-authorized plans; it adds no authority.
 unknowns: []
 contradictions: []
 acceptance:
@@ -28,12 +28,12 @@ workflows:
 
 ## Summary
 
-Executing a *set* of approved plans in one request — a "plan stack" — so any
+Executing a *set* of intent-authorized plans in one request — a "plan stack" — so any
 conflict between them becomes a scheduling decision made before a worker runs,
 not a merge collision discovered afterward. Route "execute plans `<X>`…`<Z>`" and
 "run the ready stack" here. Owned by the `cc-run-stack` skill; the run-stack
 action is owned by `wrapper/adapters/WORKFLOW.md`. Adds no new authority: every
-plan is still separately approved, verified, completed, and delivered.
+plan is still individually authorized by its intent, verified, completed, and delivered.
 
 ## Scope
 
@@ -49,9 +49,8 @@ verification ([verification](../verification/README.md)), completion
 
 - **Inter-plan dependencies (INV-PLAN-05).** `plan.yaml` may declare optional
   `plan_dependencies` (`{id, reason}`), distinct from a task's intra-plan
-  `depends_on`. Declaring them requires `schema_version: 2`; entries reference an
-  existing, non-self plan id and the graph is acyclic. Plans without the field
-  stay `schema_version: 1` and behave exactly as v0.5.
+  `depends_on`. A v1.0 plan is `schema_version: 3` (the only supported version);
+  entries reference an existing, non-self plan id and the graph is acyclic.
 - **Path leases (INV-CONCURRENCY-01).** The one-worker lock generalizes to
   `(repository, path-region)` scope, recorded under `.runtime/locks/paths/`.
   Regions overlap when equal, when one is a path-prefix ancestor of the other, or
@@ -80,7 +79,7 @@ verification ([verification](../verification/README.md)), completion
 
 ## Workflows
 
-- Execute a batch of approved plans in one go: `docs/getting-started.md`
+- Execute a batch of intent-authorized plans in one go: `docs/getting-started.md`
 
 ## Interfaces
 

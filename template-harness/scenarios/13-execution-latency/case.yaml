@@ -1,5 +1,5 @@
 id: 13-execution-latency
-title: Run a small approved stack with a host-local tiering preference; the batch overlaps independent plans, builds a fan-in integration base, and records the per-role model/effort each role ran at — all without exposing any of it to the user
+title: Run a small intent-authorized stack with a host-local tiering preference; the batch overlaps independent plans, builds a fan-in integration base, and records the per-role model/effort each role ran at — all without exposing any of it to the user
 mode: full-execution
 setup:
   # A host-local per-user tiering preference: build with a stronger model, check
@@ -13,7 +13,7 @@ setup:
     verifier:
       model: haiku
       effort: medium
-  # One connected repo and THREE approved plans: two independent roots (alpha,
+  # One connected repo and THREE intent-authorized plans: two independent roots (alpha,
   # beta) that can overlap, and a fan-in (gamma) that depends on both — so the
   # runtime authors an integration base by merging the two predecessors.
   repositories:
@@ -29,38 +29,38 @@ setup:
       repository: widgets
       objective: Add the alpha module.
       path: src/alpha
-      seed_state: approved
+      seed_state: draft
     - id: 0002-beta
       title: Beta module
       repository: widgets
       objective: Add the beta module.
       path: src/beta
-      seed_state: approved
+      seed_state: draft
     - id: 0003-gamma
       title: Gamma module
       repository: widgets
       objective: Combine alpha and beta into the gamma module.
       path: src/gamma
       deps: [0001-alpha, 0002-beta]
-      seed_state: approved
+      seed_state: draft
   sources: []
 
 human:
   persona: >
-    A maker with three small approved plans, two of which are independent and one
+    A maker with three small authorized plans, two of which are independent and one
     that ties them together. Wants the whole batch built in one go and a plain
     confirmation that it is all built and checked. Has never heard of Context
     Circuit, knows none of its internals, and does not know or care which model
     does the building or the checking.
   turns:
-    - say: "Please build the three approved plans 0001 through 0003 in one go."
+    - say: "Please build the three plans 0001 through 0003 in one go."
     - say: "How did that go — is everything built and checked?"
   reactions:
-    approves: true             # already approved; this is an execute request
+    approves: true             # already authorized; this is an execute request
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It builds all three approved plans in one run, overlapping the two independent ones.
+    - It builds all three authorized plans in one run, overlapping the two independent ones.
     - It reports that every plan was implemented and independently checked/verified.
     - When asked, it says the work is built and verified but leaves marking each plan done as a separate step.
     - It never exposes internal jargon, file names, branch names, model names, effort levels, or timing numbers to the user.

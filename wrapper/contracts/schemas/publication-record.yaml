@@ -69,7 +69,7 @@ fields:
           Idempotency now covers fields as well as content: a re-run compares both
           the synced_digest and this fields: snapshot, so a task whose content is
           unchanged but whose desired estimate moved (60 -> 90) is a field-only
-          update, and a task unchanged on both is skipped. This closes the v0.6
+          update, and a task unchanged on both is skipped. This closes the prior
           blind spot where a date/estimate change was invisible to idempotency
           because only content was hashed.
         fields:

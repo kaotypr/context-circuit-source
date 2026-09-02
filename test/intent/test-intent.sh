@@ -36,6 +36,11 @@ expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/
 assert_eq "draft" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
 before=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 assert_eq "" "$before"
+# Gate 1 cannot be reached without an independent, digest-bound spec-adversary
+# result; an absent result is not silently treated as a pass.
+mv "$ws/intent/$id1/adversary.md" "$ws/intent/$id1/adversary.md.bak"
+expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
+mv "$ws/intent/$id1/adversary.md.bak" "$ws/intent/$id1/adversary.md"
 sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
 frozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
@@ -54,6 +59,7 @@ cp "$ws/intent/$id1/contract.yaml" "$ws/intent/$id1/contract.yaml.bak"
 sed 's/method: test/method: manual/' "$ws/intent/$id1/contract.yaml.bak" >"$ws/intent/$id1/contract.yaml"
 changed=$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")
 test "$changed" != "$frozen" || fail "criteria change did not change the digest"
+expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
 mv "$ws/intent/$id1/contract.yaml.bak" "$ws/intent/$id1/contract.yaml"
 
 # the index carries the approved row

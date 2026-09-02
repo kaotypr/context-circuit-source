@@ -101,6 +101,18 @@ fields:
       candidate digest (candidate.yaml), so a criteria change yields a new
       candidate and voids prior evidence (INV-CANDIDATE-01). Empty while draft.
 
+adversary_record:
+  file: intent/<intent-id>/adversary.md
+  required_before_approval: true
+  fields:
+    contract_digest: { type: string, required: true, description: exact contract challenged }
+    criteria_sound: { type: enum, required: true, values: [yes, needs-work] }
+    findings: { type: list, required: false, description: severity, statement, and suggested criterion }
+  rules:
+    - the record must bind to the digest about to be frozen
+    - criteria_sound must be yes for intent-approve to proceed
+    - criteria changes invalidate the record and require a new adversary run
+
 invariants:
   - every writing request is anchored to an intent whose contract.yaml holds goal,
     scope, and acceptance criteria (INV-INTENT-01)

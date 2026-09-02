@@ -28,7 +28,7 @@ optional_sections:
 
 forbidden:
   - claiming independent verification
-  - changing plan approval or completion status
+  - changing intent approval or plan completion status
   - altering verifier evidence
   - credentials or provider payloads
 

@@ -36,8 +36,9 @@ invariants:
       explicit separate human decision; a plan may be done while a proposal is
       pending. In addition (Context Circuit v1.0, Mechanism 4), a new plan's
       grounding preflight consults the reconciliation-debt markers (INV-COMPLETE-02)
-      and blocks at Standard/Critical, or loudly warns at Explore, while delivered
-      work in its knowledge scope remains unreconciled. Resolution is an explicit
+      and blocks at Standard/Critical while delivered work in its knowledge scope
+      remains unreconciled. Explore is planless and has no grounding preflight.
+      Resolution is an explicit
       human decision — reconcile (generate proposals, accept or defer through the
       normal gate) or an explicit deferred/no-update-needed — that clears the marker;
       the gate refuses to let debt be forgotten but never auto-accepts knowledge.
@@ -101,12 +102,13 @@ invariants:
       into a candidate-bearing change without restart.
   - id: INV-PLAN-01
     rule: >
-      plan.yaml carries the plan's status (draft, approved, done) and names its
-      parent intent (schema_version 3). The status is a projection, not a second
-      human gate: approved follows automatically from the approved intent within its
-      scope envelope (INV-INTENT-02), and done is inferred from candidate acceptance
-      plus delivery, explicit only at the Critical tier (INV-COMPLETE-01). Task status
-      is a synchronized projection and never a second lifecycle authority.
+      plan.yaml carries the plan's status (draft, done) and names its parent intent
+      (schema_version 3). There is no intermediate "approved" status: authorization
+      follows from the approved intent within its scope envelope (INV-INTENT-02), so a
+      plan is `draft` from creation until it completes. The status is a projection, not
+      a second human gate: done is inferred from candidate acceptance plus delivery,
+      explicit only at the Critical tier (INV-COMPLETE-01). Task status is a
+      synchronized projection and never a second lifecycle authority.
   - id: INV-PLAN-02
     rule: >
       Every task names the repository or repositories it may change and bounded
@@ -147,7 +149,7 @@ invariants:
       without building yet may still separate the two.
   - id: INV-EXEC-02
     rule: >
-      One worker executes every task of one approved plan in one bounded
+      One worker executes every task of one authorized plan in one bounded
       execution, in dependency order, across all mapped repositories.
   - id: INV-EXEC-03
     rule: >
@@ -203,19 +205,17 @@ invariants:
   - id: INV-COMPLETE-01
     rule: >
       Completion is gated by the intent's consequence tier (INV-ASSURE-01).
-      At Explore and Standard, completion is inferred from a current candidate-bound
-      human acceptance plus delivery; at Critical an explicit human completion is
-      still required. Completion-ready enforces the tier floor: an Explore plan
-      completes on a current candidate-bound acceptance (never on a verifier pass,
-      which does not exist there and is never labeled verified), and a
-      Standard/Critical plan requires a candidate-bound independent pass that still
-      describes the current candidate. Verification alone never completes anything,
-      at any tier.
+      Standard completion is inferred from a current candidate-bound human
+      acceptance plus delivery; at Critical an explicit human completion is still
+      required. Explore is planless until promotion, so it has no plan completion
+      record. Completion-ready enforces the tier floor: a Standard/Critical plan
+      requires a candidate-bound independent pass that still describes the current
+      candidate. Verification alone never completes anything.
   - id: INV-COMPLETE-02
     rule: >
       Completion (or delivery) of a candidate records an implementation completion
-      record (plan revision, execution, per-repository commits, verifier result,
-      human request) and emits a reconciliation-debt marker keyed to the accepted
+      record (plan revision, candidate, execution, per-repository commits, verifier
+      result, acceptor) and emits a reconciliation-debt marker keyed to the accepted
       candidate. The marker records the candidate, the affected repositories (its
       knowledge scope), and the Product Knowledge units the plan relied on; it
       starts, and the next plan's grounding blocks on, Product Knowledge
@@ -259,7 +259,7 @@ invariants:
       cleanup are separate human-requested actions. A pull request uses each
       execution branch as source and the repository's recorded anchor_branch as
       the default target; it never substitutes default_branch or silently follows
-      a moving remote. Drift guard (v0.6): when a plan is delivered and its
+      a moving remote. Drift guard: when a plan is delivered and its
       recorded base has diverged from the current anchor_branch tip (because a
       sibling plan already merged), the plan is rebased onto the current tip and
       re-verified before its pull request opens. A plan is never merged from a

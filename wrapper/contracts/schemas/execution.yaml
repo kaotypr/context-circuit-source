@@ -4,7 +4,8 @@ describes: .runtime/executions/<plan-id>/<execution-id>/execution.yaml
 concern: execution_records
 
 purpose: >
-  Private runtime evidence for one bounded execution of an approved plan. It is
+  Private runtime evidence for one bounded execution of a plan authorized by its
+  approved intent. It is
   execution evidence, not Product Knowledge or plan intent. Records are written
   atomically; a partial or contradictory record grants nothing.
 
@@ -14,9 +15,10 @@ layout:
     execution.yaml: this record
     snapshot/: immutable copy of PLAN.md, plan.yaml, and tasks/ at execution start
     handoff.md: latest worker handoff
-    completion.yaml: implementation completion record (written on human completion)
+    completion.yaml: implementation completion record (inferred at Standard after acceptance and delivery; explicit at Critical)
     context-impact.yaml: knowledge reconciliation references (written by coordinator)
     attempts/NNN/worker.yaml: worker attempt record and captured commits
+    attempts/NNN/verifier-scope.yaml: read-only scope prepared for the independent verifier
     attempts/NNN/verifier.yaml: independent verifier result for that attempt
     attempts/NNN/host-evidence.yaml: >
       additive per-attempt host evidence — the (model, effort) each role
@@ -46,7 +48,7 @@ host_evidence_fields:
   purpose: >
     per-attempt host evidence: the (model, effort) each role ran at — the
     one thing the engine cannot know, being model-blind (INV-RUNTIME-01). Bounded,
-    additive, evidence only, never a gate; a v0.6 reader ignores it.
+    additive, evidence only, never a gate; it does not alter execution semantics.
   file: attempts/NNN/host-evidence.yaml
   written_by: runtime action attempt-evidence-record (atomic; INV-RUNTIME-02)
   key_allowlist:
@@ -71,11 +73,11 @@ repository_record_fields:
   anchor_branch: recorded user-local anchor branch (default pull-request target)
   base_commit: >
     the execution base tip captured at start. For a plan with no same-repo
-    predecessor this is the anchor-branch tip (v0.5, unchanged). For a dependent
-    plan (v0.6, INV-CONCURRENCY-02) it is the single predecessor branch tip
+    predecessor this is the anchor-branch tip. For a dependent
+    plan (INV-CONCURRENCY-02) it is the single predecessor branch tip
     (stack) or a runtime-authored integration merge commit (>=2 predecessors).
   based_on: >
-    optional (v0.6). When present, the same-repo predecessor plan ids this
+    optional. When present, the same-repo predecessor plan ids this
     repository's base was built on. Absent for a plan with no same-repo
     predecessor. The kept base ref lives at refs/cc-base/<plan-id>/<repository-id>.
   latest_commit: latest worker commit inspected by the verifier

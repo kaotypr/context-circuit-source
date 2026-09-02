@@ -156,16 +156,18 @@ plan_fixtures() {
 	' "$CASE_FILE"
 }
 
-# Drive the shipped engine to bring a seeded plan to a pre-execution state.
-# seed_state=approved: approve only. seed_state=verified-after-repair: approve,
+# Drive the shipped engine to bring a seeded plan to a pre-execution state. A plan is
+# authorized by its approved intent within the scope envelope — there is no separate
+# plan-approval step — so a plan is `draft` until it completes.
+# seed_state=draft: leave the authorized draft as-is. seed_state=verified-after-repair:
 # execute, one FAILED verify + a repair commit, then a PASSED verify (worker_failures=1).
 seed_plan_state() {
 	sps_pid="$1"; sps_repo="$2"; sps_state="$3"
 	( . "$ENGINE_CLI"
-		cc_plan_approve "$WORKSPACE" "$sps_pid" >/dev/null || { printf 'FAIL: seed approve %s\n' "$sps_pid" >&2; exit 1; }
-		[ "$sps_state" = "approved" ] && exit 0
-		# archived: approve then archive, so a restore case starts from an approved
-		# plan sitting in plans/archive/ (status must survive the restore).
+		# a draft plan is already authorized by its intent envelope; nothing to seed
+		[ "$sps_state" = "draft" ] && exit 0
+		# archived: archive the authorized draft, so a restore case starts from a plan
+		# sitting in plans/archive/ (status must survive the restore).
 		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
 		case "$sps_state" in verified|verified-after-repair|worker-committed) : ;; *) exit 0 ;; esac
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
@@ -242,13 +244,32 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate path deps; do
 		[ -n "$pid" ] || continue
 		pdir="$WORKSPACE/plans/$pid"; mkdir -p "$pdir"
-		# path scopes the task; without it the task is repo-wide (backward compatible).
+		# path scopes the task; without it the task is repo-wide.
 		# The verifiable target is <path>/mod.txt when a path is given, else export.py.
 		if [ -n "$path" ]; then taskpath="$path"; target="$path/mod.txt"; else taskpath="."; target="export.py"; fi
-		# deps present => schema_version 2 with a plan_dependencies block (v0.6).
-		schema=1; [ -n "$deps" ] && schema=2
+		# v1.0: every plan derives from a parent intent within a scope envelope. Author
+		# an intent i<pid> scoped to the plan's repo+path, then bind the schema-3 plan to
+		# it. A plan with an unresolved open question keeps its intent DRAFT (so review /
+		# approve and refuse-before-approval scenarios have a real Gate 1 to settle); a
+		# clean plan approves the intent, so it is authorized and ready to run.
+		iid="i$pid"; idir="$WORKSPACE/intent/$iid"; mkdir -p "$idir"
 		{
-			printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' "$schema" "$pid" "$title" "$obj"
+			printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$obj"
+			printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
+			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n    method: test\n    surface: %s\n' "$obj" "$prepo"
+			printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+			printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$prepo" "$taskpath"
+			printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
+		} > "$idir/contract.yaml"
+		printf '# %s\n\nGoal: %s\n' "$title" "$obj" > "$idir/INTENT.md"
+		digest=$( ( . "$ENGINE_CLI"; cc_intent_contract_digest "$idir/contract.yaml" ) )
+		printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$digest" > "$idir/adversary.md"
+		sh "$ENGINE_CLI" intent-index-upsert "$WORKSPACE" "$iid" >/dev/null || :
+		# no open question => the intent is settled and approved (plan authorized)
+		[ -n "$oq" ] || sh "$ENGINE_CLI" intent-approve "$WORKSPACE" "$iid" >/dev/null \
+			|| { printf 'FAIL: could not approve seeded intent %s\n' "$iid" >&2; exit 1; }
+		{
+			printf 'schema_version: 3\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\nintent: %s\n' "$pid" "$title" "$obj" "$iid"
 			printf 'repositories:\n  - id: %s\n' "$prepo"
 			if [ -n "$deps" ]; then
 				printf 'plan_dependencies:\n'

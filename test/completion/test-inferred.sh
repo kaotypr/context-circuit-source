@@ -1,7 +1,8 @@
 #!/bin/sh
 # Context Circuit v1.0 — inferred completion + change-set delivery (Phase 5).
-# Completion is inferred from candidate acceptance + delivery at Explore/Standard,
-# and explicit at Critical (INV-COMPLETE-01). A change set — plans delivered as one
+# Completion is inferred from candidate acceptance + delivery at Standard, and
+# explicit at Critical (INV-COMPLETE-01). Explore is planless. A change set — plans
+# delivered as one
 # pull request — has one candidate, so it is verified and accepted once (pain 6).
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
@@ -25,7 +26,7 @@ edir=$(cc_fx_exec_dir "$ws" 0001-std "$(cc_latest_execution "$ws" 0001-std)")
 # acceptance alone does not complete — delivery has not happened
 eng human-acceptance-record "$edir" alice >/dev/null
 expect_failure eng completion-infer "$ws" 0001-std
-assert_eq "approved" "$(cc_plan_status "$ws" 0001-std)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-std)"
 
 # record delivery (Gate 2 happened); completion is then inferred, not a manual flip
 eng delivery-record "$ws" 0001-std >/dev/null
@@ -57,6 +58,9 @@ iid2=i0002-crit
 cc_fx_intent "$ws" "$iid2" "Crit" api "src/crit"
 awk '/^tier:/{print "tier: critical"; next}{print}' "$ws/intent/$iid2/contract.yaml" >"$ws/intent/$iid2/c.new"
 mv "$ws/intent/$iid2/c.new" "$ws/intent/$iid2/contract.yaml"
+crit_digest=$(cc_intent_contract_digest "$ws/intent/$iid2/contract.yaml")
+printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$crit_digest" \
+	>"$ws/intent/$iid2/adversary.md"
 eng intent-approve "$ws" "$iid2" >/dev/null
 cc_fx_plan_intent "$ws" 0002-crit "Crit" api src/crit "$iid2"
 cc_fx_run_ok "$ws" 0002-crit api src/crit
@@ -65,7 +69,7 @@ contains "$edir2/execution.yaml" "tier: critical"
 eng human-acceptance-record "$edir2" alice >/dev/null
 eng delivery-record "$ws" 0002-crit >/dev/null
 expect_failure eng completion-infer "$ws" 0002-crit           # Critical must be explicit
-assert_eq "approved" "$(cc_plan_status "$ws" 0002-crit)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0002-crit)"
 eng plan-complete "$ws" 0002-crit >/dev/null                  # explicit human completion
 assert_eq "done" "$(cc_plan_status "$ws" 0002-crit)"
 contains "$edir2/completion.yaml" "human_completion: accepted"
@@ -86,11 +90,25 @@ cs_rev=$(eng change-set-candidate "$ws" 0002-crit 0001-std | sed -n 's/^change_s
 assert_eq "$cs1" "$cs_rev"
 
 # --- change-set integration verification: one PR, one integration tip, verified and
-#     accepted ONCE against the change-set candidate (pain 6) ---
+#     accepted ONCE against the change-set candidate (pain 6). Member executions
+#     supply worker commits but do not require separate verifier results: the
+#     integration verifier is the one assurance record for the set. ---
 cc_fx_plan_ex "$ws" 0020-csa "CS A" api src/a ""
 cc_fx_plan_ex "$ws" 0021-csb "CS B" api src/b ""
-cc_fx_run_ok "$ws" 0020-csa api src/a
-cc_fx_run_ok "$ws" 0021-csb api src/b
+run_worker_only() {
+	ws_arg=$1; pid_arg=$2; repo_arg=$3; path_arg=$4
+	exec_arg=$(eng execution-begin "$ws_arg" "$pid_arg" "$pid_arg-w" | sed -n 's/^execution_id: //p')
+	edir_arg=$(cc_fx_exec_dir "$ws_arg" "$pid_arg" "$exec_arg")
+	cc_attempt_begin "$edir_arg" >/dev/null
+	wt_arg="$ws_arg/.runtime/worktrees/$pid_arg/$repo_arg"
+	mkdir -p "$wt_arg/$path_arg"
+	printf 'member\n' >"$wt_arg/$path_arg/mod.txt"
+	git -C "$wt_arg" add -A
+	git -C "$wt_arg" commit -q -m "feat($repo_arg): add $path_arg/mod.txt"
+	cc_worker_commit_record "$edir_arg" "$repo_arg" implementation >/dev/null
+}
+run_worker_only "$ws" 0020-csa api src/a
+run_worker_only "$ws" 0021-csb api src/b
 csp=$(eng change-set-prepare "$ws" 0020-csa 0021-csb)
 csid=$(printf '%s\n' "$csp" | sed -n 's/^change_set: //p')
 printf '%s\n' "$csp" | grep -q 'status: prepared' || fail "change-set prepare should succeed"
@@ -102,6 +120,7 @@ require_file "$ws/.runtime/change-sets/$csid/integration/api/src/b/mod.txt"
 # not ready until the ONE verifier pass AND the ONE acceptance bind to the candidate
 expect_failure eng change-set-ready "$ws" "$csid"
 expect_failure eng change-set-verifier-record "$ws" "$csid" passed --wrote-products   # read-only
+eng change-set-verifier-prepare "$ws" "$csid" >/dev/null
 eng change-set-verifier-record "$ws" "$csid" passed >/dev/null
 eng change-set-accept "$ws" "$csid" alice >/dev/null
 csr=$(eng change-set-ready "$ws" "$csid")
@@ -120,11 +139,22 @@ printf 'x\n' >>"$wta/src/a/mod.txt"; git -C "$wta" add -A; git -C "$wta" commit 
 cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0020-csa "$(cc_latest_execution "$ws" 0020-csa)")" api repair >/dev/null
 expect_failure eng change-set-ready "$ws" "$csid"                   # stale: a member moved
 
+# anchor drift after preparation also voids the integrated candidate, even when
+# no member branch moved (the pull request target changed underneath it).
+cc_fx_plan_ex "$ws" 0024-anchor "Anchor" api src/anchor ""
+run_worker_only "$ws" 0024-anchor api src/anchor
+anchor_set=$(eng change-set-prepare "$ws" 0024-anchor)
+anchor_csid=$(printf '%s\n' "$anchor_set" | sed -n 's/^change_set: //p')
+api_repo="$ws/repositories/api"
+printf 'anchor moved\n' >"$api_repo/anchor.txt"
+git -C "$api_repo" add anchor.txt
+git -C "$api_repo" commit -q -m "chore(api): advance anchor"
+expect_failure eng change-set-ready "$ws" "$anchor_csid"
+
 # --- change-set integration that will not build is BASE_UNBUILDABLE, not a failure ---
 cc_fx_plan_ex "$ws" 0022-cx "CX" api src/shared ""
 cc_fx_plan_ex "$ws" 0023-cy "CY" api src/shared ""
 cc_fx_run_ok "$ws" 0022-cx api src/shared
-cc_plan_approve "$ws" 0023-cy >/dev/null
 excy=$(eng execution-begin "$ws" 0023-cy 0023-cy-w | sed -n 's/^execution_id: //p')
 cc_attempt_begin "$(cc_fx_exec_dir "$ws" 0023-cy "$excy")" >/dev/null
 wtcy="$ws/.runtime/worktrees/0023-cy/api"

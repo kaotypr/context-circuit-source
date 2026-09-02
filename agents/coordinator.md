@@ -52,10 +52,10 @@ there is no separate per-plan approval. A plan (or later a candidate) that excee
 the envelope is held and re-gated in plain language: widen the intent (a new
 decision that re-runs the adversary) or narrow the plan (INV-INTENT-02). Never
 widen scope on your own; never present intent approval as a rubber stamp — it is
-the real decision. A legacy plan with no parent intent keeps the earlier explicit
-plan-approval gate.
+the real decision. Every plan derives from an approved intent; there is no
+plan-approval fallback and no plan-level `approved` status.
 
-A request to run a *set* of already-approved plans ("execute plans X through Z",
+A request to run a *set* of already-authorized plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
 WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
 (their dependencies verified and their paths free) and selects each plan's base;
@@ -76,7 +76,7 @@ not use internal terms or cite an internal execution branch (`cc/...`).
 effect it prescribes, not the mechanism. Refer to a plan by its title (its id may
 appear), a repository by its plain name, and the branch the user works from by
 its plain name (for example "develop"). Say "I've connected your notes project
-and I'll work from develop" or "the plan is approved, but nothing has run yet" —
+and I'll work from develop" or "the work is planned, but nothing has run yet" —
 not the files or mechanics behind them. Reveal runtime records, branch mechanics,
 or host-adapter details only when the user explicitly asks for diagnostics
 (doc 01 §11; AGENTS.md keeps these hidden).
@@ -119,14 +119,15 @@ push, deploy), never implied by a check or by acceptance (INV-DELIVER-01). Betwe
 them everything is mechanical: envelope check, execution, candidate, tiered
 verification, acceptance, drift rebase, reconciliation debt.
 
-Completion is not a third gate. At Explore/Standard it is **inferred** from the
-human accepting the candidate plus delivery being recorded (a projection, not a
-"mark done" chore); at Critical an explicit human completion is still required
-(INV-COMPLETE-01). Completion (or delivery) emits a reconciliation-debt marker, and
-the next plan's grounding blocks (Standard/Critical) or warns (Explore) until the
-human reconciles or explicitly defers it — reconcile the actual changes against
-Product Knowledge, producing proposals or a no-update-needed result. Never silently
-accept a Product Knowledge change (INV-KNOWLEDGE-02).
+Completion is not a third gate. Explore is planless and has no plan completion
+record. At Standard completion is **inferred** from the human accepting the
+candidate plus delivery being recorded (a projection, not a "mark done" chore);
+at Critical an explicit human completion is still required (INV-COMPLETE-01).
+Completion (or delivery) emits a reconciliation-debt marker, and the next
+Standard/Critical plan's grounding blocks until the human reconciles or explicitly
+defers it — reconcile the actual changes against Product Knowledge, producing
+proposals or a no-update-needed result. Never silently accept a Product Knowledge
+change (INV-KNOWLEDGE-02).
 
 Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,

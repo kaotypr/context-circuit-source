@@ -36,7 +36,7 @@ not_contains "$inv" "push/publish/deploy"
 man="$W/manifest.yaml"
 require_file "$man"
 contains "$man" "runtime_version: 1.0.0"
-contains "$man" "plan: [1, 2, 3]"
+contains "$man" "plan: [3]"
 contains "$man" "intent-contract: [1]"
 contains "$man" "candidate: [1]"
 contains "$man" "human-acceptance: [1]"
@@ -45,7 +45,7 @@ contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
 contains "$man" "pairing-session: [1]"
 
-# --- v0.5 schemas present; old-design schemas absent ---
+# --- shipped schemas present; old-design schemas absent ---
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \
 	verifier-result candidate human-acceptance completion context-impact context-proposal context-index lease \
 	grounding-manifest pairing-session publication-config publication-field-intent \
@@ -66,7 +66,7 @@ not_contains "$W/runtime/engine.sh" "cc_probe"
 not_contains "$W/runtime/engine.sh" "cc_route"
 not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
 
-# --- v0.5 skills present; old-design skills absent ---
+# --- shipped skills present; old-design skills absent ---
 for sk in cc-workspace cc-intent cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
 	require_file "$ROOT/.agents/skills/$sk/SKILL.md"
 done

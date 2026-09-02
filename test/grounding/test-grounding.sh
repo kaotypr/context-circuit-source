@@ -28,7 +28,6 @@ printf '{ "name": "widgets" }\n' >"$wr/package-lock.json"
 git -C "$wr" add -A && git -C "$wr" commit -q -m 'chore: add agent guidance + toolchain'
 
 cc_fx_plan_ex "$ws" 0001-widget "Widget" widgets src/widget ""
-cc_plan_approve "$ws" 0001-widget >/dev/null
 exec=$(cc_execution_begin "$ws" 0001-widget sess1 | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/0001-widget/$exec"
 
@@ -64,7 +63,6 @@ cc_brief_preflight "$brief" >/dev/null
 # --- a doc-less repo: code, but no agent guidance ---
 cc_fx_repo "$ws" plain development
 cc_fx_plan_ex "$ws" 0002-plain "Plain" plain src/plain ""
-cc_plan_approve "$ws" 0002-plain >/dev/null
 exec2=$(cc_execution_begin "$ws" 0002-plain sess2 | sed -n 's/^execution_id: //p')
 edir2="$ws/.runtime/executions/0002-plain/$exec2"
 mf2="$edir2/grounding/plain.yaml"

@@ -12,7 +12,8 @@ purpose: >
   candidate-bound artifact that says what was accepted and by whom, preserving the
   team-visibility the old explicit "mark done" flip provided, without the solo-user
   bookkeeping. "Done" is then inferred from candidate accepted + delivered at
-  Explore/Standard, and explicit only at Critical (INV-COMPLETE-01).
+  Standard, and explicit only at Critical; Explore is planless until promotion
+  (INV-COMPLETE-01).
 
 fields:
   schema_version: { type: integer, required: true, values: [1] }

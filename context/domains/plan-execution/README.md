@@ -13,7 +13,7 @@ generated_at: 2026-08-24T00:00:00Z
 review_date: 2026-11-24
 freshness: accepted-from-current-wrapper
 assumptions:
-  - One worker executes one approved plan in one bounded execution.
+  - One worker executes one intent-authorized plan in one bounded execution.
 unknowns: []
 contradictions: []
 acceptance:
@@ -28,9 +28,10 @@ workflows:
 
 ## Summary
 
-Implementing an approved plan with one bounded worker. Execution is a separate
-authorization from approval. Route "execute plan `<id>`", repair, and
-resume/recovery requests here. Owned by the `cc-execute` skill and the
+Implementing an intent-authorized plan with one bounded worker. Execution's
+authorization derives from the approved intent's scope envelope (re-checked at
+execution start), not a separate plan-approval step. Route "execute plan `<id>`",
+repair, and resume/recovery requests here. Owned by the `cc-execute` skill and the
 `agents/worker.md` worker role.
 
 ## Scope
@@ -40,30 +41,32 @@ per-repository worker commits, the worker handoff (a claim), the exclusive-creat
 ownership lock, the three-failure repair counter, and preserved, resumable
 runtime records.
 
-Outside: the approval gate ([plan-approval](../plan-approval/README.md)), the
-read-only check ([verification](../verification/README.md)), completion
+Outside: authorization itself ([plan-authorization](../plan-authorization/README.md),
+derived from the intent's approved envelope), the read-only check
+([verification](../verification/README.md)), completion
 ([completion](../completion/README.md)), and any pull request/merge/push
 ([delivery](../delivery/README.md)).
 
 ## Behavior
 
-Only an approved plan may execute (INV-EXEC-01). One worker executes every task
-of one approved plan in one bounded execution, in dependency order, across all
-mapped repositories (INV-EXEC-02). Execution creates exactly one deterministic
+Only a plan within its approved intent's scope envelope may execute (INV-EXEC-01).
+One worker executes every task of one intent-authorized plan in one bounded
+execution, in dependency order, across all mapped repositories (INV-EXEC-02).
+Execution creates exactly one deterministic
 branch `cc/<plan-id>/<repo-id>` and one isolated worktree per affected
 repository, from the captured anchor-branch tip; the anchor checkout is never
 written (INV-EXEC-03).
 
-A plan with **same-repo predecessors** (a v0.6 dependency, see
+A plan with **same-repo predecessors** (see
 [run-stack](../run-stack/README.md)) begins base-aware: its worktree is prepared
 on the predecessor branch (stack) or a runtime-authored integration merge, and the
 repository record gains `based_on`. A plan with **no** dependency is unchanged — it
 still branches from the captured anchor tip (INV-EXEC-03). Execution also discovers
 the target repository's own agent guidance and delivers a grounded, runtime-
 assembled brief rather than a free-composed one (see
-[repository-grounding](../repository-grounding/README.md)). The plan contract now
-accepts `schema_version` `[1, 2]` (2 required when `plan_dependencies` is present,
-INV-PLAN-05); v0.5 single-plan plans stay `1` and behave as before.
+[repository-grounding](../repository-grounding/README.md)). The plan contract uses
+`schema_version: 3` for every v1.0 plan, including plans without dependencies;
+legacy plan shapes are not accepted.
 
 The worker commits each changed repository before verification; every repair
 creates a new commit and a prior commit is never amended to conceal a repair
@@ -82,8 +85,9 @@ ownership, resume a worker, prove verification, or authorize completion
 
 ## Execution brief, snapshot, and repair discipline
 
-Before the worker runs, execution preflights the affected repositories (approval,
-dependency order, clean anchor checkouts, bounded scope) and generates a bounded
+Before the worker runs, execution preflights the affected repositories (the
+intent-envelope check, dependency order, clean anchor checkouts, bounded scope) and
+generates a bounded
 execution brief plus an immutable plan-snapshot — a serialized copy of `PLAN.md`,
 `plan.yaml`, and all task files that the worker and verifier prompts read.
 
@@ -97,7 +101,7 @@ captured anchor commits, the worktree paths, and ownership all still match.
 
 ## Workflows
 
-- Approve and execute, then inspect results: `docs/getting-started.md`
+- Approve the intent and execute, then inspect results: `docs/getting-started.md`
 
 ## Interfaces
 
@@ -118,7 +122,7 @@ verification proof.
 
 ## Constraints and edge cases
 
-The worker never edits the anchor checkout, changes approval/completion status,
+The worker never edits the anchor checkout, changes completion status,
 marks its own work verified, claims independent verification, rewrites or accepts
 Product Knowledge, expands scope silently, or merges/pushes/publishes.
 

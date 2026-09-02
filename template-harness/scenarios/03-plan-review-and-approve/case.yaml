@@ -1,11 +1,12 @@
 id: 03-plan-review-and-approve
-title: Review a draft plan, resolve an open question, then approve — with no execution
+title: Review a draft plan, resolve an open question, then approve the intent — with no execution
 mode: conversation-only
 setup:
-  # A connected repo + an existing DRAFT plan (with one open question) are seeded at
-  # prep time via the engine, so the conversation is purely review -> resolve ->
-  # approve. Isolates review/approval behavior (INV-PLAN-01, INV-APPROVE-01,
-  # INV-EXEC-01) instead of re-testing plan creation.
+  # A connected repo + an existing DRAFT plan whose parent intent is unresolved (one
+  # open question) are seeded at prep time via the engine, so the conversation is
+  # purely review -> resolve -> approve the intent (Gate 1). Isolates review and the
+  # intent gate (INV-PLAN-01, INV-APPROVE-01, INV-EXEC-01) instead of re-testing plan
+  # creation. The plan itself stays `draft` — there is no separate plan approval.
   repositories:
     - id: notes
       dest: notes
@@ -26,7 +27,7 @@ human:
     A solo maker whose notes project is already connected. Has never heard of
     Context Circuit. Wants to look over the plan before anything happens and will
     answer a plain question about how it should behave. Knows nothing about
-    workspaces, plan files, or approval mechanics.
+    workspaces, plan files, or how the goal is approved.
   turns:
     - say: "Can you show me the plan before we do anything?"
     - say: "For that overwrite question — just don't overwrite; treat a missing input file as an error instead."
@@ -38,9 +39,9 @@ human:
     uses_internal_terms: never
   visible_expectations:
     - When asked to show the plan, it explains it in plain terms and surfaces the open question.
-    - When the human answers the open question, it reflects that decision in the plan and does NOT approve or start work yet.
-    - It treats approval as a separate explicit step, only approving when the human explicitly says so.
-    - After approving, it says the plan is approved but that nothing has been built or run yet.
+    - When the human answers the open question, it reflects that decision and does NOT approve or start work yet.
+    - It treats approval as a separate explicit step, only settling the goal when the human explicitly says so.
+    - After approving, it says the goal is approved and the plan is ready, but that nothing has been built or run yet.
     - It never exposes internal file names or jargon while explaining the plan.
 
 grader:
@@ -49,7 +50,7 @@ grader:
   # A. state post-conditions (hard gate)
   post_conditions:
     - repositories_registered: 1
-    - plan_status: 0001-md-export:approved     # the explicit approve flipped ONLY the status
+    - plan_status: 0001-md-export:draft        # the plan stays draft; approval is on the intent
     - no_execution_records: true               # approval is not execution (INV-EXEC-01)
     - product_knowledge_unchanged_silently: true
   # B. transcript checks (hard gate)
@@ -62,7 +63,7 @@ grader:
   access_policy:
     review:
       required: []
-      allowed:  ["plans/**", "context/**", AGENTS.md, WORKFLOW.md]
+      allowed:  ["plans/**", "intent/**", "context/**", AGENTS.md, WORKFLOW.md]
       forbidden:
         - "plans/archive/**"
         - "wrapper/runtime/engine.sh"
@@ -70,7 +71,7 @@ grader:
         - "wrapper/contracts/**"
     approve:
       required: []
-      allowed:  ["plans/**"]
+      allowed:  ["plans/**", "intent/**"]
       forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
   budgets:

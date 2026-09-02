@@ -12,6 +12,10 @@ author the intent first — do not create a plan that invents its own goal or sc
 Plan derivation is then automatic — the coordinator's next action, not a gate — so
 the human hears "here's the breakdown, building now," never "approve this plan."
 
+If the approved intent is **Explore**, do not create a plan of record. Explore is
+the planless `cc-pair` path: the user supervises the work live, and there is no
+independent verifier or completion record to derive.
+
 Retrieve relevant Product Knowledge by the request's concepts, domains,
 repositories, decisions, and constraints using `context/INDEX.md`; read only the
 selected units, not the whole directory. Read repository instructions and only
@@ -67,8 +71,8 @@ unreconciled:
   proceeds. Say it in plain language: "there's merged work in this area I haven't
   folded into what the project knows yet — reconcile it first, or mark it as no
   update needed?" Never auto-accept knowledge (INV-KNOWLEDGE-02); the human decides.
-- **Explore → it loudly warns** but does not block, preserving the fast path for
-  throwaway work: "you're grounding on knowledge that merged work hasn't updated yet."
+- **Explore has no plan preflight.** Use the planless `cc-pair` path instead of
+  creating a plan that would bypass the Explore assurance model.
 
 `clear` means no overlapping debt and grounding proceeds normally.
 
@@ -79,5 +83,6 @@ request coverage, task detail, repository/path mapping, dependencies, context
 references, acceptance, verification, assumptions, open questions, and risks.
 When the human resolves a question, corrects a requirement, changes scope, or
 asks for more detail, update the draft plan content and continue. Review never
-changes plan status, approves, or executes. Approval is a separate explicit
-request handled during execution.
+changes plan status or executes. Authorization comes from the approved intent's
+scope envelope (re-checked at execution start); there is no separate plan-approval
+request.

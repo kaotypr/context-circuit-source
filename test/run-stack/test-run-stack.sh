@@ -18,7 +18,6 @@ edir_of() { printf '%s/.runtime/executions/%s/%s' "$ws" "$1" "$(cc_latest_execut
 
 # run a plan writing CONTENT to <path>/mod.txt (a clean, verifying execution)
 run_content() { # pid repo path content
-	[ "$(cc_plan_status "$ws" "$1" 2>/dev/null)" = draft ] && cc_plan_approve "$ws" "$1" >/dev/null || :
 	rc_ex=$(cc_execution_begin "$ws" "$1" "$1-w" | sed -n 's/^execution_id: //p')
 	rc_ed="$ws/.runtime/executions/$1/$rc_ex"; rc_wt="$ws/.runtime/worktrees/$1/$2"
 	cc_attempt_begin "$rc_ed" >/dev/null
@@ -78,7 +77,6 @@ cc_fx_plan_ex "$ws" 0006-cb "ConflB" api src/shared ""
 cc_fx_plan_ex "$ws" 0007-cc "ConflC" api src/cc "0005-ca 0006-cb"
 run_content 0005-ca api src/shared "AAA"
 run_content 0006-cb api src/shared "BBB"
-cc_plan_approve "$ws" 0007-cc >/dev/null
 expect_failure cc_execution_begin "$ws" 0007-cc 0007-cc-w
 # a blocked execution record is preserved; it is not a worker failure
 ce="$(edir_of 0007-cc)"
@@ -95,7 +93,6 @@ cc_fx_plan_ex "$ws" 0009-s2 "S2" api src/s2 ""
 cc_fx_plan_ex "$ws" 0010-sd "SD" api src/sd "0008-s1 0009-s2"
 cc_fx_run_ok "$ws" 0008-s1 api src/s1
 cc_fx_run_ok "$ws" 0009-s2 api src/s2
-cc_plan_approve "$ws" 0010-sd >/dev/null
 out1=$(cc_base_prepare "$ws" 0010-sd api)
 base_first=$(printf '%s' "$out1" | sed -n 's/^base_commit: //p')
 # repair predecessor 0008: advance cc/0008-s1/api with a new commit
@@ -114,8 +111,6 @@ printf '%s' "$out2" | grep -q '^worktree_reused: false' || fail "stale rebuild s
 # ============================================================================
 cc_fx_plan_ex "$ws" 0011-ra "RA" api src/ra ""
 cc_fx_plan_ex "$ws" 0012-rb "RB" api src/rb "0011-ra"
-cc_plan_approve "$ws" 0011-ra >/dev/null
-cc_plan_approve "$ws" 0012-rb >/dev/null
 # before 0011 runs, 0012 waits on its dependency
 ready11=$(cc_plan_ready "$ws" 0011-ra || :); ready12=$(cc_plan_ready "$ws" 0012-rb || :)
 printf '%s' "$ready11" | grep -q '^readiness: ready'   || fail "0011 should be ready"
@@ -133,8 +128,6 @@ printf '%s\n' "$part2" | grep -q '^0012-rb: ready'    || fail "partition: 0012 n
 # lease gate: an unrelated held lease on the same region makes a plan wait
 cc_fx_plan_ex "$ws" 0013-l1 "L1" api src/lease ""
 cc_fx_plan_ex "$ws" 0014-l2 "L2" api src/lease ""
-cc_plan_approve "$ws" 0013-l1 >/dev/null
-cc_plan_approve "$ws" 0014-l2 >/dev/null
 cc_lease_acquire "$ws" api 0013-l1 "src/lease" >/dev/null
 readyL=$(cc_plan_ready "$ws" 0014-l2 || :)
 printf '%s' "$readyL" | grep -q '^readiness: waiting' || fail "0014 should wait on a held lease"
@@ -149,9 +142,6 @@ printf '%s' "$readyLb" | grep -q '^readiness: ready' || fail "0014 should be rea
 cc_fx_plan_ex "$ws" 0015-fa "FA" api src/fa ""
 cc_fx_plan_ex "$ws" 0016-fb "FB" api src/fb "0015-fa"
 cc_fx_plan_ex "$ws" 0017-fc "FC" api src/fc ""
-cc_plan_approve "$ws" 0015-fa >/dev/null
-cc_plan_approve "$ws" 0016-fb >/dev/null
-cc_plan_approve "$ws" 0017-fc >/dev/null
 # fail 0015 with three rejected attempts
 fx_ex=$(cc_execution_begin "$ws" 0015-fa 0015-fa-w | sed -n 's/^execution_id: //p')
 fx_ed="$ws/.runtime/executions/0015-fa/$fx_ex"; fx_wt="$ws/.runtime/worktrees/0015-fa/api"
@@ -221,9 +211,6 @@ webdir="$ws/repositories/web"
 cc_fx_plan_ex "$ws" 0021-xrapi "XR api"  api src/xr ""
 cc_fx_plan_ex "$ws" 0022-xrweb "XR web"  web src/xr "0021-xrapi"   # cross-repo dep (web -> api)
 cc_fx_plan_ex "$ws" 0023-xrweb2 "XR web2" web src/xr2 "0022-xrweb" # same-repo dep (web -> web)
-cc_plan_approve "$ws" 0021-xrapi >/dev/null
-cc_plan_approve "$ws" 0022-xrweb >/dev/null
-cc_plan_approve "$ws" 0023-xrweb2 >/dev/null
 # the cross-repo dependent has NO same-repo predecessor
 expect_failure cc_plan_has_same_repo_pred "$ws" 0022-xrweb web
 # readiness gates on the cross-repo dependency until it verifies

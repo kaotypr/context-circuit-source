@@ -24,11 +24,12 @@ To do work:
 
 ## What you control
 
-Approval, execution, completion, archive, restore, and delivery (pull request,
-merge, push, deployment) are separate explicit actions you request.
-Direct collaboration is human-supervised and does not produce verified status.
-Creating or reviewing a plan never approves or executes it. Verification produces
-evidence; only you decide when a plan is complete.
+Intent approval and delivery (pull request, merge, push, deployment) are the two
+explicit human gates. Execution follows an approved intent within its envelope;
+Standard completion is inferred from candidate acceptance plus delivery, while
+Critical completion is explicit. Explore is planless and human-supervised.
+Archive and restore remain explicit organization actions. Creating or reviewing a
+plan never approves or executes it, and verification never implies completion.
 
 ## Human surfaces
 

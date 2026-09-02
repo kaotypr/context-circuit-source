@@ -31,8 +31,7 @@ printf '# Bad\n' >"$ws/plans/9999-bad/PLAN.md"
 expect_failure cc_plan_validate "$ws/plans/9999-bad"
 rm -rf "$ws/plans/9999-bad"
 
-# --- approve then execute: one branch + worktree per repo ---
-cc_plan_approve "$ws" 0001-alpha >/dev/null
+# --- execute within the intent envelope: one branch + worktree per repo ---
 exec=$(cc_execution_begin "$ws" 0001-alpha sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0001-alpha "$exec")
 require_dir "$ws/.runtime/worktrees/0001-alpha/api"
@@ -45,7 +44,6 @@ printf 'dirty\n' >"$ws/repositories/api/src/dirty.txt"
 git -C "$ws/repositories/api" add -A
 # leave uncommitted -> dirty
 cc_fx_plan "$ws" 0002-beta "Beta" "api"
-cc_plan_approve "$ws" 0002-beta >/dev/null
 expect_failure cc_execution_begin "$ws" 0002-beta sess2
 git -C "$ws/repositories/api" reset -q --hard HEAD
 git -C "$ws/repositories/api" clean -fdq
@@ -61,19 +59,21 @@ contains "$edir/repositories/api.yaml" "latest_commit: "
 cc_verifier_prepare "$edir" >/dev/null
 expect_failure cc_verifier_result_record "$edir" 1 passed --wrote-products
 cc_verifier_result_record "$edir" 1 failed >/dev/null
-assert_eq "approved" "$(cc_plan_status "$ws" 0001-alpha)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-alpha)"
 
 # --- repair creates a new commit record ---
 cc_attempt_begin "$edir" >/dev/null
 cc_fx_commit "$ws" 0001-alpha api repair
 cc_worker_commit_record "$edir" api repair >/dev/null
 require_file "$edir/attempts/002/worker.yaml"
+cc_verifier_prepare "$edir" >/dev/null
 
 # --- third worker failure stops execution ---
 cc_verifier_result_record "$edir" 2 failed >/dev/null
 cc_attempt_begin "$edir" >/dev/null
 cc_fx_commit "$ws" 0001-alpha api repair2
 cc_worker_commit_record "$edir" api repair >/dev/null
+cc_verifier_prepare "$edir" >/dev/null
 out=$(cc_verifier_result_record "$edir" 3 failed)
 printf '%s\n' "$out" | grep -Fq "stop: FAILURE_LIMIT_REACHED" || fail "expected FAILURE_LIMIT_REACHED"
 assert_eq "failed" "$(cc_execution_status "$edir")"
@@ -81,12 +81,11 @@ expect_failure cc_repair_allowed "$edir"
 
 # --- completion requires passed evidence (failed execution cannot complete) ---
 expect_failure cc_plan_complete "$ws" 0001-alpha
-assert_eq "approved" "$(cc_plan_status "$ws" 0001-alpha)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-alpha)"
 
 # --- successful path: completion records commits + preserves PK boundary ---
 cc_fx_repo "$ws" web development
 cc_fx_plan "$ws" 0003-gamma "Gamma" "web"
-cc_plan_approve "$ws" 0003-gamma >/dev/null
 exec3=$(cc_execution_begin "$ws" 0003-gamma sess3 | sed -n 's/^execution_id: //p')
 edir3=$(cc_fx_exec_dir "$ws" 0003-gamma "$exec3")
 cc_attempt_begin "$edir3" >/dev/null
@@ -95,11 +94,16 @@ cc_worker_commit_record "$edir3" web implementation >/dev/null
 cc_verifier_prepare "$edir3" >/dev/null
 cc_verifier_result_record "$edir3" 1 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir3")"
-assert_eq "approved" "$(cc_plan_status "$ws" 0003-gamma)"   # verified != done
-cc_plan_complete "$ws" 0003-gamma >/dev/null
+assert_eq "draft" "$(cc_plan_status "$ws" 0003-gamma)"   # verified execution != done plan
+expect_failure cc_completion_ready "$ws" 0003-gamma
+cc_human_acceptance_record "$edir3" alice >/dev/null
+cc_completion_ready "$ws" 0003-gamma >/dev/null
+expect_failure cc_plan_complete "$ws" 0003-gamma
+cc_delivery_record "$ws" 0003-gamma >/dev/null
+cc_completion_infer "$ws" 0003-gamma >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" 0003-gamma)"
 require_file "$edir3/completion.yaml"
-contains "$edir3/completion.yaml" "human_completion: accepted"
+contains "$edir3/completion.yaml" "human_completion: inferred"
 # runtime writes no Product Knowledge
 not_contains "$ws/context/PROJECT.md" "web"
 
@@ -130,7 +134,6 @@ require_dir "$ws/.runtime/worktrees/0001-alpha/api"
 # --- resume eligibility: mid-flight + matching owner is eligible; a terminal or
 #     foreign-owner request is not ---
 cc_fx_plan "$ws" 0011-resume "Resume" "api"
-cc_plan_approve "$ws" 0011-resume >/dev/null
 rexec=$(cc_execution_begin "$ws" 0011-resume owner-a | sed -n 's/^execution_id: //p')
 redir=$(cc_fx_exec_dir "$ws" 0011-resume "$rexec")
 cc_attempt_begin "$redir" >/dev/null

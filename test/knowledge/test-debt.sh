@@ -1,9 +1,10 @@
 #!/bin/sh
 # Context Circuit v1.0 — Mechanism 4: the closed knowledge loop. Completion emits a
 # reconciliation-debt marker keyed to the accepted candidate; the next plan's
-# grounding preflight BLOCKS (Standard/Critical) or loudly WARNS (Explore) while
-# delivered work in its knowledge scope remains unreconciled. The gate never
-# auto-accepts knowledge; it only refuses to let the debt be forgotten
+# grounding preflight BLOCKS (Standard/Critical) while delivered work in its
+# knowledge scope remains unreconciled. Explore is planless and has no plan
+# grounding preflight. The gate never auto-accepts knowledge; it only refuses to
+# let the debt be forgotten
 # (INV-COMPLETE-02, INV-KNOWLEDGE-02).
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
@@ -24,7 +25,9 @@ cc_fx_plan_intent "$ws" 0001-retry "Retry" api src "$iid"
 cc_fx_run_ok "$ws" 0001-retry api src
 edir=$(cc_fx_exec_dir "$ws" 0001-retry "$(cc_latest_execution "$ws" 0001-retry)")
 eng human-acceptance-record "$edir" alice >/dev/null
-out=$(eng plan-complete "$ws" 0001-retry)
+expect_failure eng plan-complete "$ws" 0001-retry
+eng delivery-record "$ws" 0001-retry >/dev/null
+out=$(eng completion-infer "$ws" 0001-retry)
 printf '%s\n' "$out" | grep -q 'reconciliation_debt: pending' || fail "completion must emit a pending debt marker"
 cand=$(eng candidate-current "$ws" 0001-retry | sed -n 's/^candidate_id: //p')
 require_file "$ws/.runtime/knowledge-debt/$cand.yaml"
@@ -49,15 +52,18 @@ iid3=i0003-web
 cc_fx_intent "$ws" "$iid3" "Web" web "src"
 eng intent-approve "$ws" "$iid3" >/dev/null
 cc_fx_plan_intent "$ws" 0003-web "Web" web src "$iid3"
+# Different repositories are clear only when the relied-on knowledge scope is
+# different as well; repository disjointness alone is not sufficient.
+sed 's/project\.core/web.core/g' "$ws/plans/0003-web/plan.yaml" >"$ws/plans/0003-web/plan.yaml.new"
+mv "$ws/plans/0003-web/plan.yaml.new" "$ws/plans/0003-web/plan.yaml"
 eng knowledge-debt-check "$ws" 0003-web | grep -q 'debt: clear' || fail "non-overlapping plan must be clear"
 
-# --- an Explore plan on the overlapping repo WARNS (does not block; rc 0) ---
+# --- Explore is planless; a plan-shaped Explore record is invalid ---
 iid4=i0004-explore
 cc_fx_intent "$ws" "$iid4" "Explore" api "src/widget" explore
 eng intent-approve "$ws" "$iid4" >/dev/null
 cc_fx_plan_intent "$ws" 0004-explore "Explore" api src/widget "$iid4"
-ewarn=$(eng knowledge-debt-check "$ws" 0004-explore)   # rc 0 (would exit set -e otherwise)
-printf '%s\n' "$ewarn" | grep -q 'debt: warn' || fail "Explore plan must warn, not block"
+expect_failure eng plan-validate "$ws/plans/0004-explore"
 
 # --- reconcile clears the debt; the blocked plan then grounds cleanly ---
 eng knowledge-reconciled "$ws" "$cand" reconciled >/dev/null
@@ -69,7 +75,8 @@ eng knowledge-debt "$ws" | grep -q 'pending_count: 0' || fail "no debt should re
 cc_fx_run_ok "$ws" 0003-web web src
 edir3=$(cc_fx_exec_dir "$ws" 0003-web "$(cc_latest_execution "$ws" 0003-web)")
 eng human-acceptance-record "$edir3" bob >/dev/null
-eng plan-complete "$ws" 0003-web >/dev/null
+eng delivery-record "$ws" 0003-web >/dev/null
+eng completion-infer "$ws" 0003-web >/dev/null
 cand3=$(eng candidate-current "$ws" 0003-web | sed -n 's/^candidate_id: //p')
 eng knowledge-reconciled "$ws" "$cand3" deferred >/dev/null
 contains "$ws/.runtime/knowledge-debt/$cand3.yaml" "resolved: deferred"

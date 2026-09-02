@@ -13,7 +13,7 @@ generated_at: 2026-08-24T00:00:00Z
 review_date: 2026-11-24
 freshness: accepted-from-current-wrapper
 assumptions:
-  - Only an explicit human request marks a plan done, and only after a verified execution.
+  - Standard completion is inferred from candidate acceptance plus delivery; Critical completion is explicit after a verified execution.
 unknowns: []
 contradictions: []
 acceptance:
@@ -29,14 +29,15 @@ workflows:
 
 ## Summary
 
-The human decision to mark a verified plan done, and the Product Knowledge
-reconciliation it starts. Verification alone never completes a plan. Route "mark
-plan `<id>` complete" and "review/accept context updates for `<id>`" here. Owned
-by the `cc-complete` skill.
+Completion is the candidate-bound transition from a verified implementation to a
+done plan, plus the Product Knowledge reconciliation it starts. Standard infers
+completion from acceptance plus delivery; Critical requires an explicit human
+completion request. Verification alone never completes a plan. Route completion
+and context-update review here. Owned by the `cc-complete` skill.
 
 ## Scope
 
-Inside: the `approved → done` transition gated on a verified latest execution,
+Inside: the `draft → done` transition gated on a verified latest execution,
 the durable completion record, and reconciliation that stages
 `context/proposals/` entries without applying them.
 
@@ -45,11 +46,12 @@ delivery ([delivery](../delivery/README.md)).
 
 ## Behavior
 
-Only an explicit human request changes plan status to `done`, and only when the
-latest execution passed independent verification; verification alone never marks
-a plan complete (INV-COMPLETE-01). Marking a plan done records an implementation
-completion record — plan revision, execution, per-repository commits, verifier
-result, human request — and starts Product Knowledge reconciliation
+Standard completion is inferred after the latest execution passes independent
+verification, the human accepts its candidate, and delivery is recorded. Critical
+completion additionally requires the explicit human completion request; verification
+alone never marks a plan complete (INV-COMPLETE-01). Completion records the plan
+revision, candidate, execution, per-repository commits, verifier result, and
+acceptor, then starts Product Knowledge reconciliation
 (INV-COMPLETE-02).
 
 Reconciliation may produce context update proposals or a stale/conflict warning,
@@ -78,8 +80,8 @@ references but never interprets Product Knowledge.
 ## Reconciliation, impact status, and staleness
 
 A successful verifier creates pending completion evidence — execution status
-`verified`, plan status `approved`, human completion `pending` — before the human
-completion request.
+`verified`, plan status `draft` — before candidate acceptance and, for Standard,
+delivery inference; Critical still needs the explicit human completion request.
 
 Reconciliation reads the final plan and task files and revisions, the Product
 Knowledge references and grounding summary, the changed paths and commits per
