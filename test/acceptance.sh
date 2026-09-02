@@ -35,6 +35,7 @@ run_suite test/release/test-publish.sh
 run_suite template-harness/test-template-runtime.sh
 run_suite template-harness/human/test-codex-driver.sh
 run_suite template-harness/human/test-direct-collaboration-scenario.sh
+run_suite template-harness/human/test-role-tiering-matrix.sh
 
 # --- semantic criteria mapping cross-check ---
 printf '\n--- acceptance criteria mapping ---\n'
