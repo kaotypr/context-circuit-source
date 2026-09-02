@@ -25,7 +25,7 @@ Conventional Commits convention owned by INV-COMMIT-01.
 It must not:
 
 - edit the anchor repository checkout;
-- change plan approval or completion status;
+- change plan status or completion;
 - mark its own work verified or alter verifier evidence;
 - silently expand repository or path scope;
 - rewrite a prior commit to conceal a repair attempt;

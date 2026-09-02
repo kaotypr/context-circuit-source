@@ -13,12 +13,14 @@ self-hosted maintainer workspace.
 In a released workspace you talk to the agent in ordinary language:
 
 > What is this workspace?
-> Create a plan for adding billing.
-> Approve plan 0001-billing-v2 and execute it.
-> Mark 0001-billing-v2 complete.
+> I want to add billing — retry a failed charge before failing the order.
+> Approve this intent.
+> Execute it, then ship it.
 
-The coordinator drafts or reviews a readable plan; you approve it in
-conversation; the workspace prepares isolated repository worktrees; one worker
+You approve the **intent** — what "correct" means and what scope is in bounds, after
+an independent adversary has challenged the criteria. The coordinator derives a plan
+within that scope (no separate plan approval); the workspace prepares isolated
+repository worktrees; one worker
 implements the whole plan and commits each repository; an independent read-only
 verifier checks the latest commits; the worker repairs failures with new
 commits; and you decide when the plan is complete. Approval, execution,

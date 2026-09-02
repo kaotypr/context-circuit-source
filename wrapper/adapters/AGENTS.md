@@ -31,8 +31,10 @@ verifier, and is always described as human-supervised rather than verified.
   the plan and context units an action needs.
 - Rule ownership is indexed in `wrapper/contracts/invariants.yaml`. One rule has
   one owner; do not add parallel policy to a skill or role file.
-- Only an approved plan may execute. Approval and execution are explicit
-  conversational actions, never confirmation cards or hidden tokens.
+- The human gate is on the intent (Gate 1), not the plan: a plan derived from an
+  approved intent executes within its scope envelope, and one that exceeds the
+  envelope is re-gated. Intent approval and delivery are explicit conversational
+  actions, never confirmation cards or hidden tokens.
 - During plan execution, one worker writes and one independent read-only verifier checks. If the verifier
   child cannot be created, the result is `host-blocked` — never self-verify.
 - During direct collaboration, one worker writes under live human supervision;

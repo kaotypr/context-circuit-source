@@ -1,15 +1,16 @@
 ---
 name: cc-execute
-description: Approve and execute an approved plan with one worker and one independent verifier, coordinating repair within the three-failure limit.
+description: Execute a plan derived from an approved intent, with one worker and one independent verifier, coordinating repair within the three-failure limit.
 ---
 
-## Approval
+## Authorization
 
-Approval is an explicit conversational human gate, not a confirmation card. On
-"approve plan X", run the runtime `plan-approve` (draft → approved after
-readiness checks). If the user asks to execute a draft plan, refuse plainly:
-the plan must be approved first. Support the compound request "approve plan X
-and execute it" by approving, re-reading the approved status, then executing.
+There is no separate plan-approval step. The human gate is upstream on the intent
+(Gate 1); a plan derived from an approved intent is authorized to execute as long
+as it stays within the intent's scope envelope (INV-EXEC-01). `execution-begin`
+re-checks the envelope and, when the plan is within it, proceeds — no confirmation
+card, no "approve the plan" act. A plan that exceeds the envelope is held and
+re-gated to the human, never rubber-stamped.
 
 ## Tier
 
@@ -22,11 +23,11 @@ runtime enforces the floor (`completion-ready`).
 
 ## Execute
 
-Execute only an approved plan. Give a short summary (plan, objective,
-repositories/branches, task count, worker and verifier roles, failure limit),
-then:
+Execute a plan authorized by its intent's envelope. Give a short summary (plan,
+objective, repositories/branches, task count, worker and verifier roles, failure
+limit), then:
 
-1. Run `execution-begin`: it validates approval and repository bindings,
+1. Run `execution-begin`: it re-checks the intent envelope and repository bindings,
    validates and captures each `anchor_branch` tip, rejects dirty anchors,
    acquires the one-worker lock, snapshots the plan, creates one branch and
    worktree per affected repository, and discovers each repository's own agent

@@ -2983,7 +2983,6 @@ cc_main() {
 		delivery-rebase)         cc_delivery_rebase "$@" ;;
 		plan-validate)           cc_plan_validate "$@" ;;
 		plan-allocate-id)        cc_plan_allocate_id "$@" ;;
-		plan-approve)            cc_plan_approve "$@" ;;
 		plan-archive)            cc_plan_archive "$@" ;;
 		plan-restore)            cc_plan_restore "$@" ;;
 		intent-validate)         cc_intent_validate "$@" ;;

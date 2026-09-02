@@ -88,10 +88,9 @@ cc_fx_plan_intent "$ws" 0009-missing "Missing" api src i0099-nope
 expect_failure env_check 0009-missing
 assert_eq "INTENT_MISSING" "$(env_reason 0009-missing)"
 
-# --- the envelope gates approval and execution as a preflight ---
-# an EXCEEDS plan cannot be approved and cannot begin execution (re-gate, not proceed)
+# --- the envelope gates execution as a preflight ---
+# an EXCEEDS plan cannot begin execution (re-gate, not proceed)
 cc_fx_repo "$ws" checkout-service development
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" plan-approve "$ws" 0004-broader
 expect_failure sh "$ROOT/wrapper/runtime/engine.sh" execution-begin "$ws" 0004-broader sess-x
 
 # a WITHIN plan is authorized by the approved intent's envelope: execution begins
