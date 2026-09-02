@@ -2264,6 +2264,34 @@ cc_change_set_ready() {
 	return 0
 }
 
+# cc_change_set_complete ROOT CS_ID -> complete every member of a delivered change set
+# from the ONE change-set acceptance (pain 6: accept once, complete the set). Requires
+# change-set-ready (integration tip verified + change-set accepted, not stale). Records
+# the change-set delivery, then marks each member plan done and emits its
+# reconciliation-debt marker (INV-COMPLETE-01/02). Each member is individually verified
+# by its own execution, so its tier floor is re-checked; the change-set acceptance is
+# the human acceptance for the whole set (members carry no separate per-plan acceptance).
+cc_change_set_complete() {
+	cc_csc_root="$1"; cc_csc_dir=$(cc_change_set_dir "$1" "$2")
+	[ -f "$cc_csc_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
+	cc_change_set_ready "$cc_csc_root" "$2" >/dev/null || { cc_fail CHANGE_SET_NOT_READY "$2"; return 1; }
+	cc_csc_members=$(cc_inline_list "$(cc_scalar "$cc_csc_dir/change-set.yaml" members)")
+	# Gate 2 happened for the whole set: record the change-set delivery once.
+	printf 'schema_version: 1\ncandidate_id: %s\ndelivered_at: %s\n' \
+		"$(cc_scalar "$cc_csc_dir/change-set.yaml" candidate_id)" "$(cc_now)" \
+		| cc_atomic_write "$cc_csc_dir/delivered.yaml"
+	cc_csc_done=0
+	for cc_csc_m in $cc_csc_members; do
+		cc_completion_ready "$cc_csc_root" "$cc_csc_m" >/dev/null || { cc_fail CHANGE_SET_MEMBER_NOT_READY "$cc_csc_m"; return 1; }
+		cc_completion_finalize "$cc_csc_root" "$cc_csc_m" accepted >/dev/null || { cc_fail CHANGE_SET_MEMBER_COMPLETE_FAILED "$cc_csc_m"; return 1; }
+		cc_csc_done=$((cc_csc_done + 1))
+	done
+	cc_emit change_set "$2"
+	cc_emit completed "$cc_csc_done"
+	cc_emit status delivered-and-completed
+	return 0
+}
+
 # cc_human_acceptance_record EXEC_DIR ACCEPTED_BY [CHECKLIST_FILE] -> write a
 # first-class human acceptance bound to the CURRENT candidate (INV-CANDIDATE-01).
 # Acceptance names the candidate it observed, so any later commit or criteria
@@ -3011,6 +3039,7 @@ cc_main() {
 		change-set-verifier-record) cc_change_set_verifier_record "$@" ;;
 		change-set-accept)       cc_change_set_accept "$@" ;;
 		change-set-ready)        cc_change_set_ready "$@" ;;
+		change-set-complete)     cc_change_set_complete "$@" ;;
 		human-acceptance-record) cc_human_acceptance_record "$@" ;;
 		human-acceptance-current) cc_human_acceptance_current "$@" ;;
 		tier-classify)           cc_tier_classify "$@" ;;

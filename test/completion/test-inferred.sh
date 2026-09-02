@@ -107,6 +107,13 @@ eng change-set-accept "$ws" "$csid" alice >/dev/null
 csr=$(eng change-set-ready "$ws" "$csid")
 printf '%s\n' "$csr" | grep -q 'change_set_ready: eligible' || fail "change set should be eligible"
 printf '%s\n' "$csr" | grep -q 'assurance: independent' || fail "standard change set needs an independent pass"
+# complete the whole set from the ONE change-set acceptance — every member is marked
+# done (pain 6: accept once, complete the set), with a reconciliation-debt marker each
+csc=$(eng change-set-complete "$ws" "$csid")
+printf '%s\n' "$csc" | grep -q 'completed: 2' || fail "change-set-complete must complete both members"
+assert_eq "done" "$(cc_plan_status "$ws" 0020-csa)"
+assert_eq "done" "$(cc_plan_status "$ws" 0021-csb)"
+require_file "$(cc_fx_exec_dir "$ws" 0021-csb "$(cc_latest_execution "$ws" 0021-csb)")/completion.yaml"
 # a member commit after prepare moves the candidate and voids the prepared evidence
 wta="$ws/.runtime/worktrees/0020-csa/api"
 printf 'x\n' >>"$wta/src/a/mod.txt"; git -C "$wta" add -A; git -C "$wta" commit -q -m "feat(api): more a"
