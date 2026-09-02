@@ -579,7 +579,12 @@ cc_intent_envelope_check() {
 			cc_emit envelope exceeds; cc_emit reason INDETERMINATE; cc_emit repository "$cc_ec_r"
 			cc_fail ENVELOPE_EXCEEDS "indeterminate:$cc_ec_r"; return 1
 		fi
-		for cc_ec_p in $(cc_plan_repo_paths "$cc_ec_pdir/plan.yaml" "$cc_ec_r"); do
+		# a task that names this repo with no bounded paths is repo-wide work;
+		# default it to "." (as the lease layer does) so it is checked for
+		# containment against the bounded scope instead of silently passing.
+		cc_ec_ppaths=$(cc_plan_repo_paths "$cc_ec_pdir/plan.yaml" "$cc_ec_r")
+		[ -n "$cc_ec_ppaths" ] || cc_ec_ppaths="."
+		for cc_ec_p in $cc_ec_ppaths; do
 			# an unresolvable/relative plan region fails upward
 			if [ "$cc_ec_p" != "." ] && ! cc_safe_relative "$cc_ec_p"; then
 				cc_emit envelope exceeds; cc_emit reason INDETERMINATE; cc_emit repository "$cc_ec_r"
@@ -2056,16 +2061,30 @@ cc_candidate_current() {
 	return 0
 }
 
-# cc_change_set_candidate ROOT PLAN... -> one candidate over a change set: the set
-# of plans delivered together as one pull request (concurrency-and-candidate.md).
-# The digest ranges over the COMBINED per-repository tip set of the members' latest
-# executions, their bases, and their contract digests — so several stacked plans
-# that converge to one pull request become one candidate, verified once and accepted
-# once (pain 6). A single plan is a change set of one, identical to candidate-current.
-# Deterministic; any change in any member changes the change-set candidate.
+# cc_change_set_candidate ROOT PLAN... -> the identity of a change set: the set of
+# plans delivered together as one pull request (concurrency-and-candidate.md). A
+# change set of one is exactly that plan's candidate (delegates to cc_candidate_id,
+# so it equals candidate-current). For several plans it digests the COMBINED
+# per-repository tip set + bases + contract digests into one deterministic,
+# order-independent id.
+#
+# NOTE (deferred): this computes IDENTITY only. Binding verifier evidence and human
+# acceptance to a MULTI-plan change-set candidate, and building/verifying one
+# integration tip for the whole set, is not yet wired — a single-plan change set is
+# fully supported; multi-plan "verify once at the integration tip" is future work
+# (see concurrency-and-candidate.md, open edges).
 cc_change_set_candidate() {
 	cc_cs_root="$1"; shift
 	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	# a change set of one is exactly that plan's candidate; delegate so the two
+	# never diverge (candidate-current == change-set-candidate for one plan).
+	if [ "$#" -eq 1 ]; then
+		cc_cs_exec=$(cc_latest_execution "$cc_cs_root" "$1") || { cc_fail CHANGE_SET_NO_EXECUTIONS; return 1; }
+		[ -n "$cc_cs_exec" ] || { cc_fail CHANGE_SET_NO_EXECUTIONS; return 1; }
+		cc_cs_one=$(cc_candidate_id "$(cc_execution_dir "$cc_cs_root" "$1" "$cc_cs_exec")") || return 1
+		cc_emit change_set_candidate "$cc_cs_one"
+		return 0
+	fi
 	cc_cs_canon=$(
 		for cc_cs_plan in "$@"; do
 			cc_cs_exec=$(cc_latest_execution "$cc_cs_root" "$cc_cs_plan") || continue
@@ -2175,8 +2194,11 @@ cc_tier_signals() {
 
 # cc_tier_classify ROOT INTENT -> emit the detected signals, a classified tier, and
 # explore_ok. Fail upward: a hard signal (security/money/migration/production) is
-# critical; anything not clearly low-risk is at least standard; Explore is offered
-# only for a single-repository intent with bounded paths and no risk signal.
+# critical; a soft signal (multi-repo/repo-wide) is standard; and a bounded single-
+# repo intent with no signal ALSO defaults to standard — the engine cannot see
+# reversibility, coverage, or novelty, so absence of a signal is not proof of low
+# risk. explore_ok reports whether a human MAY lower to Explore: yes only for a
+# bounded single repo with no risk signal; no whenever any signal is present.
 cc_tier_classify() {
 	cc_tc_dir=$(cc_intent_dir "$1" "$2")
 	cc_tc_file="$cc_tc_dir/contract.yaml"
@@ -2191,7 +2213,12 @@ cc_tier_classify() {
 	elif [ "$cc_tc_soft" = "yes" ]; then
 		cc_tc_tier=standard; cc_tc_explore=no
 	else
-		cc_tc_tier=explore; cc_tc_explore=yes
+		# No detected risk signal on a single bounded repository. The engine
+		# cannot see reversibility, coverage, or novelty, so it does NOT auto-
+		# classify Explore: the default fails upward to Standard. Explore stays
+		# available as an explicit human lowering (explore_ok=yes), recorded by
+		# the human declaring tier: explore on the intent.
+		cc_tc_tier=standard; cc_tc_explore=yes
 	fi
 	for cc_tc_s in $cc_tc_sigs; do cc_emit signal "$cc_tc_s"; done
 	cc_emit classified_tier "$cc_tc_tier"

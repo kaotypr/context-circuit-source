@@ -39,6 +39,29 @@ cc_fx_plan_intent "$ws" 0005-wide "Repo-wide" checkout-service . "$iid"
 expect_failure env_check 0005-wide
 assert_eq "PATH_OUTSIDE_SCOPE" "$(env_reason 0005-wide)"
 
+# --- EXCEEDS: a task that NAMES the repo but OMITS paths (repo-wide work) must be
+# checked for containment, never pass on repository membership alone (the bypass fix) ---
+mkdir -p "$ws/plans/0010-nopaths/tasks"
+cat >"$ws/plans/0010-nopaths/plan.yaml" <<Y
+schema_version: 3
+plan: 0010-nopaths
+title: No paths
+status: draft
+objective: a task naming the repo with no bounded paths
+intent: $iid
+repositories:
+  - id: checkout-service
+    purpose: repo-wide
+tasks:
+  - id: CS-001
+    title: Repo-wide work
+    repositories: [checkout-service]
+    depends_on: []
+Y
+printf '# No paths\n' >"$ws/plans/0010-nopaths/PLAN.md"
+expect_failure env_check 0010-nopaths
+assert_eq "PATH_OUTSIDE_SCOPE" "$(env_reason 0010-nopaths)"
+
 # --- RE-GATE (fail upward): an unresolvable / relative plan region ---
 cc_fx_plan_intent "$ws" 0006-rel "Relative" checkout-service ../secrets "$iid"
 expect_failure env_check 0006-rel

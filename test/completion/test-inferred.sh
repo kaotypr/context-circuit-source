@@ -78,6 +78,9 @@ assert_eq "$cs1" "$cs2"                                        # deterministic
 # a change set of one equals that plan's own candidate identity space (cand-*)
 cs_one=$(eng change-set-candidate "$ws" 0001-std | sed -n 's/^change_set_candidate: //p')
 case "$cs_one" in cand-*) : ;; *) fail "single-plan change set invalid: $cs_one" ;; esac
+# a change set of one IS that plan's own candidate identity (candidate-current), exactly
+cc_cur=$(eng candidate-current "$ws" 0001-std | sed -n 's/^candidate_id: //p')
+assert_eq "$cc_cur" "$cs_one"
 # order independence: the set is a set, not a sequence
 cs_rev=$(eng change-set-candidate "$ws" 0002-crit 0001-std | sed -n 's/^change_set_candidate: //p')
 assert_eq "$cs1" "$cs_rev"
