@@ -15,11 +15,11 @@ purpose: >
 
 accepted_schema_versions:
   workspace: [1]
-  repositories-local: [1]
+  repositories-local: [1, 2]
   intent-contract: [1]
   plan: [3]
   task: [1]
-  execution: [1]
+  execution: [1, 2]
   worker-handoff: [1]
   verifier-result: [1]
   candidate: [1]

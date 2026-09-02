@@ -59,7 +59,7 @@ verification ([verification](../verification/README.md)), completion
   it builds on the holder. A lease is held from execution start until delivery;
   release preserves the record. Composes with INV-OWN-01.
 - **Execution bases (INV-CONCURRENCY-02).** A dependent plan's base in each
-  repository is the anchor tip (no same-repo predecessor), the single predecessor
+  repository is the base tip (no same-repo predecessor), the single predecessor
   branch (stack), or a runtime-authored integration merge of the predecessor
   branches (two or more), recorded as `base_commit` with `based_on`. The kept ref
   lives at `refs/cc-base/<plan>/<repo>` (never nested under a branch ref). The

@@ -135,7 +135,7 @@ flowchart LR
     C2[Plan touches repo or path outside intent scope] --> C2b[Envelope EXCEEDS, hold, re-gate to human]
     C3[Change set integration will not build] --> C3b[BASE_UNBUILDABLE, blocked not a worker failure, human splits or reorders]
     C4[Delivered work not reconciled] --> C4b[Knowledge debt, next grounding blocks at Std or Crit and warns at Explore]
-    C5[Anchor drifted at delivery] --> C5b[Rebase, new candidate, re-verify and re-accept]
+    C5[Base drifted at delivery] --> C5b[Rebase, new candidate, re-verify and re-accept]
     C6[Host cannot spawn a verifier] --> C6b[host-blocked, read-only, never self-verify]
     C7[Worker fails verification 3 times] --> C7b[Failure limit reached, execution stops, work preserved]
 ```

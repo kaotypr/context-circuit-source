@@ -30,7 +30,7 @@ layout:
     brief-<repository-id>.md: the assembled worker brief (deterministic; optional evidence)
 
 fields:
-  schema_version: { type: integer, required: true }
+  schema_version: { type: integer, required: true, values: [1, 2] }
   execution_id: { type: string, required: true, description: exec-<plan-id>-NNN }
   plan: { type: string, required: true }
   plan_revision: { type: string, required: true, description: digest of the snapshot plan.yaml }
@@ -70,10 +70,10 @@ repository_record_fields:
   repository: logical repository id
   worktree: isolated worktree path under .runtime/worktrees/<plan-id>/<repository-id>/
   branch: cc/<plan-id>/<repository-id>
-  anchor_branch: recorded user-local anchor branch (default pull-request target)
+  base_branch: recorded user-local base branch (default pull-request target)
   base_commit: >
     the execution base tip captured at start. For a plan with no same-repo
-    predecessor this is the anchor-branch tip. For a dependent
+    predecessor this is the base-branch tip. For a dependent
     plan (INV-CONCURRENCY-02) it is the single predecessor branch tip
     (stack) or a runtime-authored integration merge commit (>=2 predecessors).
   based_on: >
@@ -82,6 +82,11 @@ repository_record_fields:
     predecessor. The kept base ref lives at refs/cc-base/<plan-id>/<repository-id>.
   latest_commit: latest worker commit inspected by the verifier
   allowed_paths: union of the bounded paths of every task mapped to this repository
+
+legacy:
+  repository_record_base_branch: >
+    Runtime readers accept the former anchor_branch field in schema 1 execution
+    records while schema 2 writers emit base_branch.
 
 rules:
   - INV-EXEC-01

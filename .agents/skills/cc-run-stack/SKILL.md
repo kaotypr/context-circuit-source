@@ -96,7 +96,7 @@ Repeat until no plan in the set is runnable:
    b. **Begin the execution (base-aware).** Run `execution-begin`. For a plan with
       same-repo predecessors the runtime selects the base for you — the single
       predecessor branch, or a runtime-authored integration merge of two or more —
-      and records `based_on`; a plan with no dependency starts from the anchor tip
+      and records `based_on`; a plan with no dependency starts from the base tip
       exactly as under `cc-execute`. Do **not** acquire leases inside execution;
       this loop owns them. If `execution-begin` reports `status: blocked`
       (`BASE_UNBUILDABLE`) or otherwise fails, the plan is **blocked**, not a worker

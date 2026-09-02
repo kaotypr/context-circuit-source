@@ -51,7 +51,7 @@ branch creation itself ([plan-execution](../plan-execution/README.md)).
 Pull-request creation, merge, push, deployment, archive, and
 cleanup are separate human-requested actions. A pull request uses each execution
 branch `cc/<plan-id>/<repo-id>` as source and the repository's recorded
-`anchor_branch` as the default target; it never substitutes `default_branch` or
+`base_branch` as the default target; it never substitutes `default_branch` or
 silently follows a moving remote (INV-DELIVER-01). Delivery blocks and reports
 when the source branch, configured provider or remote, or target branch is
 unavailable, rather than inferring a remote or pushing silently (INV-DELIVER-02).
@@ -62,7 +62,7 @@ per-repository pull-request source and default target and never pushes, merges,
 or opens pull requests itself.
 
 **Drift guard (INV-DELIVER-01 extended).** When a plan is delivered and its
-recorded base has diverged from the current `anchor_branch` tip (because a sibling
+recorded base has diverged from the current `base_branch` tip (because a sibling
 plan already merged), the plan is rebased onto the current tip and re-verified
 before its pull request opens — a plan is never merged from a base that no longer
 reflects the branch it will land on. `cc_delivery_drift` reports divergence
@@ -79,12 +79,12 @@ INV-CONCURRENCY-02) — never a delivery merge.
 ## Interfaces
 
 - Human request: "Open a pull request for `<id>`"
-- Branch model: source `cc/<plan-id>/<repo-id>`, target = recorded `anchor_branch`
+- Branch model: source `cc/<plan-id>/<repo-id>`, target = recorded `base_branch`
 
 ## Constraints and edge cases
 
 An unpublished source branch, an unavailable provider/remote, or a
-missing/renamed anchor branch blocks delivery and asks for an explicit human
+missing/renamed base branch blocks delivery and asks for an explicit human
 decision. Cleanup preserves dirty or unpushed work unless removal is explicitly
 requested; a failed execution is never cleaned up as a side effect.
 

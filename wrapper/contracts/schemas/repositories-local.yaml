@@ -5,11 +5,11 @@ concern: local_binding
 
 purpose: >
   Host-local, git-ignored mapping from a logical repository id to a concrete
-  local checkout path and the user-selected anchor branch. Never portable and
+  local checkout path and the user-selected base branch. Never portable and
   never shipped.
 
 fields:
-  schema_version: { type: integer, required: true }
+  schema_version: { type: integer, required: true, values: [1, 2] }
   bindings:
     type: map
     required: true
@@ -21,13 +21,14 @@ fields:
         description: >
           Local checkout path. May be "." for the workspace repository, a path
           under repositories/<id>/, or an explicitly provided external path.
-      anchor_branch:
+      base_branch:
         type: string
         required: true
         description: >
           The user's actual active local branch. It is the execution worktree
           base and the default pull-request target. Different users may set
-          different anchor branches for the same logical repository.
+          different base branches for the same logical repository.
+        legacy_name: anchor_branch (schema 1)
 
 resolution_rejects:
   - missing paths
@@ -36,7 +37,13 @@ resolution_rejects:
   - unsafe symlinks
   - remote identity conflicts
   - duplicate or ambiguous bindings
-  - dirty anchor checkouts when execution requires a clean anchor
+  - dirty base checkouts when execution requires a clean base
+
+migration:
+  schema_1_to_2: >
+    Rename each binding's anchor_branch key to base_branch. The v1 runtime reads
+    schema 1 legacy bindings without rewriting them; repository-binding-migrate
+    performs the explicit workspace-owned rewrite.
 
 rules:
   - INV-REPO-02

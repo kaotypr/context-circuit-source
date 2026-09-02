@@ -78,13 +78,13 @@ real current ids where a rule is reworked.
 
 INV-KNOWLEDGE-01 (retrieval-first knowledge), INV-PLAN-02/03/04/05 (task scope,
 stable ids, grounding, inter-plan dependencies), INV-EXEC-02/03/04 (one worker,
-deterministic branch/worktree from anchor tip, commit-before-verify + new-commit
+deterministic branch/worktree from base tip, commit-before-verify + new-commit
 repairs), INV-COMMIT-01 (Conventional Commits + no AI attribution), INV-VERIFY-02
 (host cannot make an independent verifier → blocked, never self-verify),
 INV-REPAIR-01 (three-failure counter; a tier may set the *budget* but the counting
 and blocked-vs-failure honesty are unchanged), INV-PRESERVE-01 (preserve on
 failure), INV-ARCHIVE-01/02 (archive/restore as status-blind moves), INV-REPO-01/02/
-03/04 (portable identity, anchor vs default branch, gitignored repositories/, fail-
+03/04 (portable identity, base branch vs default branch, gitignored repositories/, fail-
 closed binding), INV-SEC-01/02 (credentials out of workspace, passive sources),
 INV-RUNTIME-01/02 (model-blind runtime, atomic records), INV-OWN-01 (one-worker
 lock), INV-CONCURRENCY-01/02 (path leases + base selection/integration merge),

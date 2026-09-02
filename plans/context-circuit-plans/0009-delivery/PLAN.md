@@ -17,7 +17,7 @@ Source design: `sources/system-design/context-circuit/v0.5/core/03-workspace-and
 - Pull-request creation, merge, push, deployment, archive, and cleanup are
   separate human-requested actions.
 - A pull request uses each execution branch as source and the repository's
-  recorded `anchor_branch` as the default target; it never substitutes
+  recorded `base_branch` as the default target; it never substitutes
   `default_branch` or silently follows a moving remote.
 - Delivery blocks and reports when the source branch, configured provider or
   remote, or target branch is unavailable, rather than inferring a remote.
@@ -34,12 +34,12 @@ Source design: `sources/system-design/context-circuit/v0.5/core/03-workspace-and
 
 ## Tasks
 
-1. **DEL-001** — delivery boundary + anchor-targeted PR + block-not-infer.
+1. **DEL-001** — delivery boundary + base-targeted PR + block-not-infer.
 2. **DEL-002** — `cc-deliver` skill.
 
 ## Acceptance & verification
 
-- PR targets anchor; unavailable source/provider/target blocks; each verb is a
+- PR targets base branch; unavailable source/provider/target blocks; each verb is a
   distinct explicit action.
 - `sh test/delivery/test-delivery.sh`.
 

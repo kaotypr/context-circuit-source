@@ -15,7 +15,7 @@ cc_fx_ws() {
 # cc_fx_bindings_header WS -> ensure repositories.local.yaml has a real bindings block
 cc_fx_bindings_header() {
 	if [ ! -f "$1/repositories.local.yaml" ] || grep -q '^bindings: {}' "$1/repositories.local.yaml" 2>/dev/null || ! grep -q '^bindings:' "$1/repositories.local.yaml" 2>/dev/null; then
-		printf 'schema_version: 1\nbindings:\n' >"$1/repositories.local.yaml"
+		printf 'schema_version: 2\nbindings:\n' >"$1/repositories.local.yaml"
 	fi
 }
 
@@ -30,7 +30,7 @@ cc_fx_repo() {
 	git -C "$cc_fxr_ws/$cc_fxr_path" add -A
 	git -C "$cc_fxr_ws/$cc_fxr_path" commit -q -m seed
 	cc_fx_bindings_header "$cc_fxr_ws"
-	printf '  %s:\n    path: %s\n    anchor_branch: %s\n' "$cc_fxr_id" "$cc_fxr_path" "$cc_fxr_br" \
+	printf '  %s:\n    path: %s\n    base_branch: %s\n' "$cc_fxr_id" "$cc_fxr_path" "$cc_fxr_br" \
 		>>"$cc_fxr_ws/repositories.local.yaml"
 }
 

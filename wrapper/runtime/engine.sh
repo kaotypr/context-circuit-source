@@ -6,7 +6,7 @@
 # also be invoked as a thin CLI: `sh engine.sh <command> [--flag value ...]`.
 #
 # This runtime OWNS: safe path/identifier checks, atomic writes and digests,
-# workspace and repository-binding validation, anchor branch/commit validation,
+# workspace and repository-binding validation, base branch/commit validation,
 # branch/worktree preparation, plan structure and intent-derived authorization validation,
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
@@ -28,6 +28,8 @@
 
 CC_RUNTIME_VERSION="1.0.0"
 CC_SCHEMA_VERSION="1"
+CC_REPOSITORIES_LOCAL_SCHEMA_VERSION="2"
+CC_EXECUTION_SCHEMA_VERSION="2"
 
 # ---------------------------------------------------------------------------
 # Diagnostics
@@ -670,7 +672,7 @@ cc_workspace_init() {
 	[ -f "$cc_wi_root/plans/INDEX.md" ] || cc_plan_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/intent/INDEX.md" ] || cc_intent_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/context/INDEX.md" ] || printf '# Context index\n\nNo accepted context units yet.\n' | cc_atomic_write "$cc_wi_root/context/INDEX.md"
-	[ -f "$cc_wi_root/repositories.local.yaml" ] || printf 'schema_version: %s\nbindings: {}\n' "$CC_SCHEMA_VERSION" | cc_atomic_write "$cc_wi_root/repositories.local.yaml"
+	[ -f "$cc_wi_root/repositories.local.yaml" ] || printf 'schema_version: %s\nbindings: {}\n' "$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION" | cc_atomic_write "$cc_wi_root/repositories.local.yaml"
 	cc_emit workspace_init ok
 	return 0
 }
@@ -681,7 +683,7 @@ cc_plan_index_init() {
 }
 
 # ---------------------------------------------------------------------------
-# Repository bindings, anchor branches, worktrees
+# Repository bindings, base branches, worktrees
 # ---------------------------------------------------------------------------
 
 # cc_binding_field ROOT REPO FIELD -> read a field from repositories.local.yaml
@@ -697,20 +699,110 @@ cc_binding_field() {
 		in_b && cur && $0 ~ "^[[:space:]]+" field ":[[:space:]]*" {
 			sub("^[[:space:]]+" field ":[[:space:]]*", "")
 			gsub(/[[:space:]]+$/, ""); gsub(/^["'"'"']|["'"'"']$/, "")
-			print; exit
+			print; found=1; exit
 		}
+		in_b && cur && field == "base_branch" && $0 ~ "^[[:space:]]+anchor_branch:[[:space:]]*" {
+			legacy=$0
+			sub("^[[:space:]]+anchor_branch:[[:space:]]*", "", legacy)
+			gsub(/[[:space:]]+$/, "", legacy); gsub(/^['"'"']|['"'"']$/, "", legacy)
+			legacy_found=1; next
+		}
+		END { if (!found && legacy_found) print legacy }
 	' "$cc_bf_file"
 }
 
-# cc_repository_register ROOT ID PATH ANCHOR [CANONICAL_URL] [DEFAULT_BRANCH]
+# cc_binding_branch ROOT REPO -> print the canonical base branch. Existing
+# alpha.4 bindings may still use anchor_branch; read that legacy spelling until
+# the user explicitly runs repository-binding-migrate. A file containing both
+# spellings is rejected by returning non-zero rather than guessing.
+cc_binding_branch() {
+	cc_bb_base=$(cc_binding_field "$1" "$2" "base_branch") || cc_bb_base=""
+	cc_bb_legacy=$(cc_binding_field "$1" "$2" "anchor_branch") || cc_bb_legacy=""
+	if [ -n "$cc_bb_base" ] && [ -n "$cc_bb_legacy" ]; then
+		[ "$cc_bb_base" = "$cc_bb_legacy" ] || return 1
+	fi
+	[ -n "$cc_bb_base" ] && { printf '%s\n' "$cc_bb_base"; return 0; }
+	[ -n "$cc_bb_legacy" ] && { printf '%s\n' "$cc_bb_legacy"; return 0; }
+	return 1
+}
+
+# cc_record_base_branch FILE -> print the canonical base branch from a runtime
+# repository record. Records written by older releases may still contain the
+# anchor_branch spelling; reading it is safe because the branch value has not
+# changed, only its name.
+cc_record_base_branch() {
+	cc_rb_base=$(cc_scalar "$1" "base_branch") || cc_rb_base=""
+	cc_rb_legacy=$(cc_scalar "$1" "anchor_branch") || cc_rb_legacy=""
+	if [ -n "$cc_rb_base" ] && [ -n "$cc_rb_legacy" ]; then
+		[ "$cc_rb_base" = "$cc_rb_legacy" ] || return 1
+	fi
+	[ -n "$cc_rb_base" ] && { printf '%s\n' "$cc_rb_base"; return 0; }
+	[ -n "$cc_rb_legacy" ] && { printf '%s\n' "$cc_rb_legacy"; return 0; }
+	return 1
+}
+
+# cc_repository_binding_migrate ROOT -> rewrite legacy anchor_branch bindings
+# to base_branch and mark repositories.local.yaml as schema 2. This is explicit
+# because repositories.local.yaml is workspace-owned host state; normal runtime
+# reads remain non-mutating. Conflicting dual spellings are refused.
+cc_repository_binding_migrate() {
+	cc_rbm_root="$1"
+	cc_rbm_file="$cc_rbm_root/repositories.local.yaml"
+	[ -f "$cc_rbm_file" ] || { cc_fail REPOSITORY_BINDING_MISSING; return 1; }
+	cc_rbm_schema=$(cc_scalar "$cc_rbm_file" schema_version) || cc_rbm_schema=""
+	case "$cc_rbm_schema" in
+		1|2) : ;;
+		*) cc_fail REPOSITORY_BINDING_SCHEMA_UNSUPPORTED "$cc_rbm_schema"; return 1 ;;
+	esac
+	cc_rbm_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-binding-migrate.XXXXXX") || return 1
+	if awk '
+		BEGIN { in_bindings=0; in_binding=0; has_base=0; has_legacy=0; conflict=0 }
+		/^schema_version:[[:space:]]*/ { print "schema_version: 2"; next }
+		/^bindings:/ {
+			if (in_binding && has_base && has_legacy) conflict=1
+			in_bindings=1; in_binding=0; has_base=0; has_legacy=0; print; next
+		}
+		in_bindings && /^  [A-Za-z0-9._-]+:/ {
+			if (in_binding && has_base && has_legacy) conflict=1
+			in_binding=1; has_base=0; has_legacy=0; print; next
+		}
+		in_bindings && in_binding && /^    base_branch:[[:space:]]*/ {
+			has_base=1; print; next
+		}
+		in_bindings && in_binding && /^    anchor_branch:[[:space:]]*/ {
+			if (has_base) conflict=1
+			has_legacy=1; sub(/^    anchor_branch:/, "    base_branch:"); print; next
+		}
+		{ print }
+		END {
+			if (in_binding && has_base && has_legacy) conflict=1
+			if (conflict) exit 2
+		}
+	' "$cc_rbm_file" >"$cc_rbm_tmp"; then
+		:
+	else
+		cc_rbm_status=$?
+		rm -f "$cc_rbm_tmp"
+		[ "$cc_rbm_status" -eq 2 ] && { cc_fail REPOSITORY_BASE_BRANCH_CONFLICT; return 1; }
+		cc_fail REPOSITORY_BINDING_MIGRATION_FAILED
+		return 1
+	fi
+	cc_atomic_write "$cc_rbm_file" <"$cc_rbm_tmp" || { rm -f "$cc_rbm_tmp"; cc_fail REPOSITORY_BINDING_MIGRATION_FAILED; return 1; }
+	rm -f "$cc_rbm_tmp"
+	cc_emit migrated repositories.local.yaml
+	cc_emit schema_version 2
+	return 0
+}
+
+# cc_repository_register ROOT ID PATH BASE_BRANCH [CANONICAL_URL] [DEFAULT_BRANCH]
 # Records portable logical identity in workspace.yaml and a host-local binding
 # in repositories.local.yaml. It does not clone, init, or execute anything.
 cc_repository_register() {
-	cc_reg_root="$1"; cc_reg_id="$2"; cc_reg_path="$3"; cc_reg_anchor="$4"
+	cc_reg_root="$1"; cc_reg_id="$2"; cc_reg_path="$3"; cc_reg_base="$4"
 	cc_reg_url="${5:-}"; cc_reg_default="${6:-}"
 	cc_safe_id "$cc_reg_id" || { cc_fail REPOSITORY_ID_UNSAFE "$cc_reg_id"; return 1; }
 	[ -n "$cc_reg_path" ] || { cc_fail REPOSITORY_PATH_MISSING; return 1; }
-	[ -n "$cc_reg_anchor" ] || { cc_fail REPOSITORY_ANCHOR_UNSET "$cc_reg_id"; return 1; }
+	[ -n "$cc_reg_base" ] || { cc_fail REPOSITORY_BASE_BRANCH_UNSET "$cc_reg_id"; return 1; }
 	case "$cc_reg_url" in *[Pp]assword@*|*://*:*@*) cc_fail REPOSITORY_URL_HAS_CREDENTIALS; return 1 ;; esac
 	# portable identity in workspace.yaml (never a machine path)
 	cc_reg_ws="$cc_reg_root/workspace.yaml"
@@ -739,18 +831,25 @@ cc_repository_register() {
 	# host-local binding in repositories.local.yaml
 	cc_reg_local="$cc_reg_root/repositories.local.yaml"
 	if [ ! -f "$cc_reg_local" ] || grep -q '^bindings:[[:space:]]*{}' "$cc_reg_local" 2>/dev/null || ! grep -q '^bindings:' "$cc_reg_local" 2>/dev/null; then
-		printf 'schema_version: %s\nbindings:\n' "$CC_SCHEMA_VERSION" | cc_atomic_write "$cc_reg_local"
+		printf 'schema_version: %s\nbindings:\n' "$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION" | cc_atomic_write "$cc_reg_local"
+	else
+		cc_reg_schema=$(cc_scalar "$cc_reg_local" schema_version 2>/dev/null) || cc_reg_schema=""
+		case "$cc_reg_schema" in
+			1) cc_repository_binding_migrate "$cc_reg_root" >/dev/null || return 1 ;;
+			2) : ;;
+			*) cc_fail REPOSITORY_BINDING_SCHEMA_UNSUPPORTED "$cc_reg_schema"; return 1 ;;
+		esac
 	fi
 	if cc_binding_field "$cc_reg_root" "$cc_reg_id" "path" >/dev/null 2>&1 && [ -n "$(cc_binding_field "$cc_reg_root" "$cc_reg_id" path)" ]; then
 		cc_fail REPOSITORY_BINDING_EXISTS "$cc_reg_id"; return 1
 	fi
-	printf '  %s:\n    path: %s\n    anchor_branch: %s\n' "$cc_reg_id" "$cc_reg_path" "$cc_reg_anchor" >>"$cc_reg_local"
+	printf '  %s:\n    path: %s\n    base_branch: %s\n' "$cc_reg_id" "$cc_reg_path" "$cc_reg_base" >>"$cc_reg_local"
 	cc_emit repository "$cc_reg_id"
 	cc_emit registered ok
 	return 0
 }
 
-# cc_repo_resolve ROOT REPO -> validate binding; emit path/anchor; REPOSITORY_* codes
+# cc_repo_resolve ROOT REPO -> validate binding; emit path/base_branch; REPOSITORY_* codes
 cc_repo_resolve() {
 	cc_rr_root="$1"; cc_rr_id="$2"
 	cc_safe_id "$cc_rr_id" || { cc_fail REPOSITORY_ID_UNSAFE "$cc_rr_id"; return 1; }
@@ -767,27 +866,27 @@ cc_repo_resolve() {
 		cc_fail REPOSITORY_PATH_UNSAFE_SYMLINK "$cc_rr_id"; return 1
 	fi
 	git -C "$cc_rr_abs" rev-parse --git-dir >/dev/null 2>&1 || { cc_fail REPOSITORY_NOT_GIT "$cc_rr_id"; return 1; }
-	cc_rr_anchor=$(cc_binding_field "$cc_rr_root" "$cc_rr_id" "anchor_branch") || cc_rr_anchor=""
-	[ -n "$cc_rr_anchor" ] || { cc_fail REPOSITORY_ANCHOR_UNSET "$cc_rr_id"; return 1; }
+	cc_rr_base_branch=$(cc_binding_branch "$cc_rr_root" "$cc_rr_id" "base_branch") || cc_rr_base_branch=""
+	[ -n "$cc_rr_base_branch" ] || { cc_fail REPOSITORY_BASE_BRANCH_UNSET "$cc_rr_id"; return 1; }
 	cc_emit repository "$cc_rr_id"
 	cc_emit path "$cc_rr_abs"
-	cc_emit anchor_branch "$cc_rr_anchor"
+	cc_emit base_branch "$cc_rr_base_branch"
 	return 0
 }
 
-# cc_repo_anchor_commit ROOT REPO -> print the anchor branch tip commit
-cc_repo_anchor_commit() {
+# cc_repo_base_commit ROOT REPO -> print the base branch tip commit
+cc_repo_base_commit() {
 	cc_rac_abs=$(cc_repo_resolve "$1" "$2" | sed -n 's/^path: //p')
-	cc_rac_anchor=$(cc_binding_field "$1" "$2" "anchor_branch")
-	git -C "$cc_rac_abs" rev-parse --verify "refs/heads/$cc_rac_anchor" 2>/dev/null \
-		|| { cc_fail ANCHOR_BRANCH_MISSING "$2:$cc_rac_anchor"; return 1; }
+	cc_rac_base_branch=$(cc_binding_branch "$1" "$2" "base_branch")
+	git -C "$cc_rac_abs" rev-parse --verify "refs/heads/$cc_rac_base_branch" 2>/dev/null \
+		|| { cc_fail BASE_BRANCH_MISSING "$2:$cc_rac_base_branch"; return 1; }
 }
 
-# cc_repo_clean ROOT REPO -> ok if the anchor checkout has no uncommitted changes
+# cc_repo_clean ROOT REPO -> ok if the base checkout has no uncommitted changes
 cc_repo_clean() {
 	cc_rc_abs=$(cc_repo_resolve "$1" "$2" | sed -n 's/^path: //p') || return 1
 	if [ -n "$(git -C "$cc_rc_abs" status --porcelain 2>/dev/null)" ]; then
-		cc_fail REPOSITORY_ANCHOR_DIRTY "$2"; return 1
+		cc_fail REPOSITORY_BASE_DIRTY "$2"; return 1
 	fi
 	return 0
 }
@@ -799,8 +898,8 @@ cc_repository_preflight() {
 	cc_rp_ok=0
 	for cc_rp_id in $(cc_plan_affected_repositories "$cc_rp_plandir/plan.yaml"); do
 		cc_repo_resolve "$cc_rp_root" "$cc_rp_id" >/dev/null || { cc_fail REPOSITORY_PREFLIGHT_FAILED "$cc_rp_id"; return 1; }
-		cc_repo_anchor_commit "$cc_rp_root" "$cc_rp_id" >/dev/null || { cc_fail ANCHOR_PREFLIGHT_FAILED "$cc_rp_id"; return 1; }
-		cc_repo_clean "$cc_rp_root" "$cc_rp_id" || { cc_fail REPOSITORY_ANCHOR_DIRTY "$cc_rp_id"; return 1; }
+		cc_repo_base_commit "$cc_rp_root" "$cc_rp_id" >/dev/null || { cc_fail BASE_PREFLIGHT_FAILED "$cc_rp_id"; return 1; }
+		cc_repo_clean "$cc_rp_root" "$cc_rp_id" || { cc_fail REPOSITORY_BASE_DIRTY "$cc_rp_id"; return 1; }
 		cc_rp_ok=$((cc_rp_ok + 1))
 	done
 	[ "$cc_rp_ok" -gt 0 ] || { cc_fail PLAN_NO_AFFECTED_REPOSITORIES; return 1; }
@@ -808,13 +907,13 @@ cc_repository_preflight() {
 	return 0
 }
 
-# cc_worktree_prepare ROOT PLAN_ID REPO -> create branch + worktree from anchor tip
+# cc_worktree_prepare ROOT PLAN_ID REPO -> create branch + worktree from base tip
 cc_worktree_prepare() {
 	cc_wp_root="$1"; cc_wp_plan="$2"; cc_wp_id="$3"
 	cc_wp_abs=$(cc_repo_resolve "$cc_wp_root" "$cc_wp_id" | sed -n 's/^path: //p') || return 1
-	cc_wp_anchor=$(cc_binding_field "$cc_wp_root" "$cc_wp_id" "anchor_branch")
-	cc_wp_base=$(git -C "$cc_wp_abs" rev-parse --verify "refs/heads/$cc_wp_anchor" 2>/dev/null) \
-		|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_wp_id"; return 1; }
+	cc_wp_base_branch=$(cc_binding_branch "$cc_wp_root" "$cc_wp_id" "base_branch")
+	cc_wp_base=$(git -C "$cc_wp_abs" rev-parse --verify "refs/heads/$cc_wp_base_branch" 2>/dev/null) \
+		|| { cc_fail BASE_BRANCH_MISSING "$cc_wp_id"; return 1; }
 	cc_wp_branch="cc/$cc_wp_plan/$cc_wp_id"
 	cc_wp_tree="$cc_wp_root/.runtime/worktrees/$cc_wp_plan/$cc_wp_id"
 	if [ -d "$cc_wp_tree" ]; then
@@ -881,7 +980,7 @@ cc_pair_pointer_validate() {
 }
 
 # cc_pair_begin ROOT REPO SESSION [BASE] -> create a fresh pairing branch and
-# worktree from BASE (the connected repository's anchor tip by default), then
+# worktree from BASE (the connected repository's base tip by default), then
 # atomically write the only resumable session state.
 cc_pair_begin() {
 	cc_pb_root="$1"; cc_pb_repo="$2"; cc_pb_session="$3"; cc_pb_requested_base="${4:-}"
@@ -895,7 +994,7 @@ cc_pair_begin() {
 	[ ! -e "$cc_pb_pointer" ] && [ ! -e "$cc_pb_closed" ] \
 		|| { cc_fail PAIR_SESSION_EXISTS "$cc_pb_session"; return 1; }
 	cc_pb_abs=$(cc_repo_resolve "$cc_pb_root" "$cc_pb_repo" | sed -n 's/^path: //p') || return 1
-	cc_pb_anchor=$(cc_binding_field "$cc_pb_root" "$cc_pb_repo" anchor_branch) || cc_pb_anchor=""
+	cc_pb_base_branch=$(cc_binding_branch "$cc_pb_root" "$cc_pb_repo" base_branch) || cc_pb_base_branch=""
 	if [ -n "$cc_pb_requested_base" ]; then
 		case "$cc_pb_requested_base" in
 			-*|*' '*|*..*) cc_fail PAIR_BASE_INVALID "$cc_pb_requested_base"; return 1 ;;
@@ -903,8 +1002,8 @@ cc_pair_begin() {
 		cc_pb_base=$(git -C "$cc_pb_abs" rev-parse --verify "$cc_pb_requested_base^{commit}" 2>/dev/null) \
 			|| { cc_fail PAIR_BASE_INVALID "$cc_pb_requested_base"; return 1; }
 	else
-		cc_pb_base=$(git -C "$cc_pb_abs" rev-parse --verify "refs/heads/$cc_pb_anchor" 2>/dev/null) \
-			|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_pb_repo:$cc_pb_anchor"; return 1; }
+		cc_pb_base=$(git -C "$cc_pb_abs" rev-parse --verify "refs/heads/$cc_pb_base_branch" 2>/dev/null) \
+			|| { cc_fail BASE_BRANCH_MISSING "$cc_pb_repo:$cc_pb_base_branch"; return 1; }
 	fi
 	cc_pb_branch="cc-pair/$cc_pb_session"
 	cc_pb_wt="$cc_pb_root/.runtime/worktrees/cc-pair/$cc_pb_session/$cc_pb_repo"
@@ -1001,7 +1100,7 @@ cc_pair_close() {
 }
 
 # cc_pair_delivery_targets ROOT SESSION -> report the closed pairing branch and
-# current connected anchor target. Drift blocks; this function never rebases,
+# current connected base target. Drift blocks; this function never rebases,
 # pushes, merges, or opens a pull request.
 cc_pair_delivery_targets() {
 	cc_pd_root="$1"; cc_pd_session="$2"
@@ -1020,23 +1119,23 @@ cc_pair_delivery_targets() {
 		cc_fail PAIR_WORKTREE_DIRTY "$cc_pd_session"; return 1
 	fi
 	cc_pd_abs=$(cc_repo_resolve "$cc_pd_root" "$cc_pd_repo" | sed -n 's/^path: //p') || return 1
-	cc_pd_anchor=$(cc_binding_field "$cc_pd_root" "$cc_pd_repo" anchor_branch) || cc_pd_anchor=""
+	cc_pd_base_branch=$(cc_binding_branch "$cc_pd_root" "$cc_pd_repo" base_branch) || cc_pd_base_branch=""
 	cc_pd_tip=$(git -C "$cc_pd_abs" rev-parse --verify "refs/heads/$cc_pd_branch" 2>/dev/null) \
 		|| { cc_fail PAIR_BRANCH_MISSING "$cc_pd_branch"; return 1; }
-	cc_pd_anchor_tip=$(git -C "$cc_pd_abs" rev-parse --verify "refs/heads/$cc_pd_anchor" 2>/dev/null) \
-		|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_pd_repo:$cc_pd_anchor"; return 1; }
+	cc_pd_base_tip=$(git -C "$cc_pd_abs" rev-parse --verify "refs/heads/$cc_pd_base_branch" 2>/dev/null) \
+		|| { cc_fail BASE_BRANCH_MISSING "$cc_pd_repo:$cc_pd_base_branch"; return 1; }
 	cc_pd_drift=true
-	if git -C "$cc_pd_abs" merge-base --is-ancestor "$cc_pd_anchor_tip" "$cc_pd_tip" 2>/dev/null; then cc_pd_drift=false; fi
+	if git -C "$cc_pd_abs" merge-base --is-ancestor "$cc_pd_base_tip" "$cc_pd_tip" 2>/dev/null; then cc_pd_drift=false; fi
 	cc_emit session "$cc_pd_session"
 	cc_emit repository "$cc_pd_repo"
 	cc_emit source_branch "$cc_pd_branch"
-	cc_emit target_branch "$cc_pd_anchor"
+	cc_emit target_branch "$cc_pd_base_branch"
 	cc_emit base_commit "$cc_pd_base"
 	cc_emit branch_tip "$cc_pd_tip"
-	cc_emit anchor_tip "$cc_pd_anchor_tip"
+	cc_emit base_tip "$cc_pd_base_tip"
 	cc_emit drift_detected "$cc_pd_drift"
 	cc_emit result_label human-supervised
-	if [ "$cc_pd_drift" = true ]; then cc_fail PAIR_ANCHOR_DRIFT "$cc_pd_session"; return 1; fi
+	if [ "$cc_pd_drift" = true ]; then cc_fail PAIR_BASE_DRIFT "$cc_pd_session"; return 1; fi
 	return 0
 }
 
@@ -1065,16 +1164,16 @@ cc_plan_has_same_repo_pred() {
 }
 
 # cc_base_prepare ROOT PLAN REPO -> base-aware branch + worktree for a dependent
-# plan. Selects the base (anchor tip / single predecessor branch / runtime-authored
+# plan. Selects the base (base tip / single predecessor branch / runtime-authored
 # integration merge), keeps the base ref at refs/cc-base/<plan>/<repo>, and detects
 # a stale base (predecessor repaired) to rebuild it. Emits the same keys as
 # cc_worktree_prepare plus based_on and base_kind. BASE_UNBUILDABLE -> blocked.
 cc_base_prepare() {
 	cc_bp_root="$1"; cc_bp_plan="$2"; cc_bp_repo="$3"
 	cc_bp_abs=$(cc_repo_resolve "$cc_bp_root" "$cc_bp_repo" | sed -n 's/^path: //p') || return 1
-	cc_bp_anchor=$(cc_binding_field "$cc_bp_root" "$cc_bp_repo" "anchor_branch")
-	cc_bp_anchortip=$(git -C "$cc_bp_abs" rev-parse --verify "refs/heads/$cc_bp_anchor" 2>/dev/null) \
-		|| { cc_fail ANCHOR_BRANCH_MISSING "$cc_bp_repo"; return 1; }
+	cc_bp_base_branch=$(cc_binding_branch "$cc_bp_root" "$cc_bp_repo" "base_branch")
+	cc_bp_base_tip=$(git -C "$cc_bp_abs" rev-parse --verify "refs/heads/$cc_bp_base_branch" 2>/dev/null) \
+		|| { cc_fail BASE_BRANCH_MISSING "$cc_bp_repo"; return 1; }
 	cc_bp_branch="cc/$cc_bp_plan/$cc_bp_repo"
 	cc_bp_tree="$cc_bp_root/.runtime/worktrees/$cc_bp_plan/$cc_bp_repo"
 	cc_bp_baseref="refs/cc-base/$cc_bp_plan/$cc_bp_repo"
@@ -1115,10 +1214,10 @@ cc_base_prepare() {
 	mkdir -p "$(dirname -- "$cc_bp_tree")"
 	# select and build the base
 	if [ "$cc_bp_n" -eq 0 ]; then
-		cc_bp_kind=anchor; cc_bp_start="$cc_bp_anchortip"
+		cc_bp_kind=base; cc_bp_start="$cc_bp_base_tip"
 		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_start" >/dev/null 2>&1 \
 			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_bp_repo"; return 1; }
-		cc_bp_base="$cc_bp_anchortip"
+		cc_bp_base="$cc_bp_base_tip"
 	elif [ "$cc_bp_n" -eq 1 ]; then
 		cc_bp_kind=stack; cc_bp_start="$cc_bp_tips"
 		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_start" >/dev/null 2>&1 \
@@ -1126,7 +1225,7 @@ cc_base_prepare() {
 		cc_bp_base="$cc_bp_start"
 	else
 		cc_bp_kind=integration
-		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_anchortip" >/dev/null 2>&1 \
+		git -C "$cc_bp_abs" worktree add -b "$cc_bp_branch" "$cc_bp_tree" "$cc_bp_base_tip" >/dev/null 2>&1 \
 			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_bp_repo"; return 1; }
 		cc_bp_mbr=""
 		for cc_bp_dep in $cc_bp_preds; do
@@ -1713,7 +1812,7 @@ cc_execution_begin() {
 	# interrupted, recovery can see the owner and the execution remains an honest,
 	# blocked/running record instead of an orphaned lock with no evidence.
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nblocked_reason:\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
+		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
 		|| { cc_lock_release "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null 2>&1 || :; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
 	# immutable plan snapshot
@@ -1728,7 +1827,7 @@ cc_execution_begin() {
 	# per-repository branch + worktree. A plan with same-repo predecessors is
 	# base-aware (INV-CONCURRENCY-02): its base is the predecessor branch (stack)
 	# or a runtime-authored integration merge. A plan with no dependency keeps the
-	# v0.5 anchor-tip worktree unchanged. Leases are NOT acquired here; the
+	# v0.5 base-tip worktree unchanged. Leases are NOT acquired here; the
 	# run-stack loop manages them for stacked executions and overlapping paths.
 	for cc_eb_id in $(cc_plan_affected_repositories "$cc_eb_dir/plan.yaml"); do
 		cc_eb_based=""
@@ -1751,11 +1850,11 @@ cc_execution_begin() {
 		cc_eb_wt=$(printf '%s' "$cc_eb_out" | sed -n 's/^worktree: //p')
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
 		cc_eb_bc=$(printf '%s' "$cc_eb_out" | sed -n 's/^base_commit: //p')
-		cc_eb_an=$(cc_binding_field "$cc_eb_root" "$cc_eb_id" "anchor_branch")
+		cc_eb_base_branch=$(cc_binding_branch "$cc_eb_root" "$cc_eb_id" "base_branch")
 		cc_eb_paths=$(cc_plan_repo_paths "$cc_eb_dir/plan.yaml" "$cc_eb_id" | tr '\n' ',' | sed 's/,$//; s/,/, /g')
 			{
-				printf 'repository: %s\nworktree: %s\nbranch: %s\nanchor_branch: %s\nbase_commit: %s\nlatest_commit: %s\nallowed_paths: [%s]\n' \
-					"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
+				printf 'repository: %s\nworktree: %s\nbranch: %s\nbase_branch: %s\nbase_commit: %s\nlatest_commit: %s\nallowed_paths: [%s]\n' \
+					"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_base_branch" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
 				[ -n "$cc_eb_based" ] && printf 'based_on: %s\n' "$cc_eb_based" || :
 			} | cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml" \
 				|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason REPOSITORY_RECORD_WRITE_FAILED; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_id"; return 1; }
@@ -1766,7 +1865,7 @@ cc_execution_begin() {
 			|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
 	done
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
+		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
 		|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason EXECUTION_RECORD_WRITE_FAILED; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
 	cc_emit execution_id "$cc_eb_exec"
@@ -2186,7 +2285,7 @@ cc_change_set_candidate() {
 # ---------------------------------------------------------------------------
 # Change-set integration verification (concurrency-and-candidate.md): a change set
 # is delivered as ONE pull request, so it is verified ONCE against an integration
-# tip — the composite of every member branch merged onto the anchor — and accepted
+# tip — the composite of every member branch merged onto the base — and accepted
 # once (pain 6). Reuses the integration-merge machinery (INV-CONCURRENCY-02) and the
 # read-only verifier discipline (INV-VERIFY-01). Per-plan execution is unchanged.
 # ---------------------------------------------------------------------------
@@ -2209,7 +2308,7 @@ cc_change_set_record_status() {
 
 # cc_change_set_candidate_from_record ROOT CS_ID -> recompute the integrated
 # candidate from every member candidate, every recorded integration tip, and every
-# anchor tip. It is the only identity accepted after integration is prepared.
+# base tip. It is the only identity accepted after integration is prepared.
 cc_change_set_candidate_from_record() {
 	cc_cscr_root="$1"; cc_cscr_id="$2"; cc_cscr_dir=$(cc_change_set_dir "$cc_cscr_root" "$cc_cscr_id")
 	[ -f "$cc_cscr_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$cc_cscr_id"; return 1; }
@@ -2241,14 +2340,14 @@ cc_change_set_candidate_from_record() {
 			[ -d "$cc_cscr_w" ] || { exit 1; }
 			cc_cscr_head=$(git -C "$cc_cscr_w" rev-parse HEAD 2>/dev/null) || { exit 1; }
 			[ "$cc_cscr_head" = "$cc_cscr_tip" ] || { cc_fail CHANGE_SET_INTEGRATION_DRIFT "$cc_cscr_r"; exit 1; }
-			cc_cscr_af="$cc_cscr_dir/anchors/$cc_cscr_r"
-			[ -f "$cc_cscr_af" ] || { cc_fail CHANGE_SET_ANCHOR_RECORD_MISSING "$cc_cscr_r"; exit 1; }
-			cc_cscr_anchor=$(sed -n '1p' "$cc_cscr_af")
+			cc_cscr_af="$cc_cscr_dir/bases/$cc_cscr_r"
+			[ -f "$cc_cscr_af" ] || { cc_fail CHANGE_SET_BASE_RECORD_MISSING "$cc_cscr_r"; exit 1; }
+			cc_cscr_base=$(sed -n '1p' "$cc_cscr_af")
 			cc_cscr_abs=$(cc_repo_resolve "$cc_cscr_root" "$cc_cscr_r" | sed -n 's/^path: //p') || { exit 1; }
-			cc_cscr_branch=$(cc_binding_field "$cc_cscr_root" "$cc_cscr_r" anchor_branch)
-			cc_cscr_live_anchor=$(git -C "$cc_cscr_abs" rev-parse --verify "refs/heads/$cc_cscr_branch" 2>/dev/null) || { exit 1; }
-			[ "$cc_cscr_live_anchor" = "$cc_cscr_anchor" ] || { cc_fail CHANGE_SET_ANCHOR_DRIFT "$cc_cscr_r"; exit 1; }
-			printf 'integration\t%s\t%s\t%s\n' "$cc_cscr_r" "$cc_cscr_tip" "$cc_cscr_anchor"
+			cc_cscr_branch=$(cc_binding_branch "$cc_cscr_root" "$cc_cscr_r" base_branch)
+			cc_cscr_live_base=$(git -C "$cc_cscr_abs" rev-parse --verify "refs/heads/$cc_cscr_branch" 2>/dev/null) || { exit 1; }
+			[ "$cc_cscr_live_base" = "$cc_cscr_base" ] || { cc_fail CHANGE_SET_BASE_DRIFT "$cc_cscr_r"; exit 1; }
+			printf 'integration\t%s\t%s\t%s\n' "$cc_cscr_r" "$cc_cscr_tip" "$cc_cscr_base"
 		done
 	) || { cc_fail CHANGE_SET_CANDIDATE_UNAVAILABLE "$cc_cscr_id"; return 1; }
 	[ -n "$cc_cscr_canon" ] || { cc_fail CHANGE_SET_CANDIDATE_UNAVAILABLE "$cc_cscr_id"; return 1; }
@@ -2283,7 +2382,7 @@ cc_change_set_tier() {
 }
 
 # cc_change_set_prepare ROOT PLAN... -> build the integration tip per affected
-# repository (anchor tip + merge of every member branch that touches it), record the
+# repository (base tip + merge of every member branch that touches it), record the
 # change set, and print its id + candidate. A merge conflict is BASE_UNBUILDABLE
 # (blocked, not a worker failure); every member must have an executed branch.
 cc_change_set_prepare() {
@@ -2308,7 +2407,7 @@ cc_change_set_prepare() {
 	[ -n "$cc_csp_repos" ] || { cc_fail CHANGE_SET_NO_REPOSITORIES; return 1; }
 	cc_csp_memblock=$(printf '%s' "$cc_csp_members" | tr '\n' ' ' | sed 's/ *$//; s/ /, /g')
 	cc_csp_tierv=$(cc_change_set_tier "$cc_csp_root" $cc_csp_members)
-	mkdir -p "$cc_csp_dir/integration" "$cc_csp_dir/tips" "$cc_csp_dir/anchors"
+	mkdir -p "$cc_csp_dir/integration" "$cc_csp_dir/tips" "$cc_csp_dir/bases"
 	{
 		printf 'schema_version: 1\nchange_set: %s\ncandidate_id: pending\ntier: %s\nstatus: preparing\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
 			"$cc_csp_id" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
@@ -2318,8 +2417,8 @@ cc_change_set_prepare() {
 	: >"$cc_csp_repblock"
 	for cc_csp_r in $cc_csp_repos; do
 		cc_csp_abs=$(cc_repo_resolve "$cc_csp_root" "$cc_csp_r" | sed -n 's/^path: //p') || { cc_change_set_record_status "$cc_csp_dir" blocked REPOSITORY_UNRESOLVED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_csp_r"; return 1; }
-		cc_csp_anchor=$(cc_binding_field "$cc_csp_root" "$cc_csp_r" anchor_branch)
-		cc_csp_atip=$(git -C "$cc_csp_abs" rev-parse --verify "refs/heads/$cc_csp_anchor" 2>/dev/null) || { cc_change_set_record_status "$cc_csp_dir" blocked ANCHOR_BRANCH_MISSING; rm -f "$cc_csp_repblock"; cc_fail ANCHOR_BRANCH_MISSING "$cc_csp_r"; return 1; }
+		cc_csp_base_branch=$(cc_binding_branch "$cc_csp_root" "$cc_csp_r" base_branch)
+		cc_csp_base_tip=$(git -C "$cc_csp_abs" rev-parse --verify "refs/heads/$cc_csp_base_branch" 2>/dev/null) || { cc_change_set_record_status "$cc_csp_dir" blocked BASE_BRANCH_MISSING; rm -f "$cc_csp_repblock"; cc_fail BASE_BRANCH_MISSING "$cc_csp_r"; return 1; }
 		cc_csp_br=""
 		for cc_csp_m in $cc_csp_members; do
 			if cc_plan_affected_repositories "$cc_csp_root/plans/$cc_csp_m/plan.yaml" 2>/dev/null | grep -Fxq "$cc_csp_r"; then
@@ -2330,7 +2429,7 @@ cc_change_set_prepare() {
 		cc_csp_wt="$cc_csp_dir/integration/$cc_csp_r"
 		cc_csp_csbr="cs/$cc_csp_id/$cc_csp_r"
 		mkdir -p "$(dirname -- "$cc_csp_wt")"
-		git -C "$cc_csp_abs" worktree add -b "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_atip" >/dev/null 2>&1 || { cc_change_set_record_status "$cc_csp_dir" blocked WORKTREE_SETUP_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_WORKTREE_FAILED "$cc_csp_r"; return 1; }
+		git -C "$cc_csp_abs" worktree add -b "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_base_tip" >/dev/null 2>&1 || { cc_change_set_record_status "$cc_csp_dir" blocked WORKTREE_SETUP_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_WORKTREE_FAILED "$cc_csp_r"; return 1; }
 		if ! git -C "$cc_csp_wt" merge --no-ff -m "cc: integration tip $cc_csp_id ($cc_csp_r)" $cc_csp_br >/dev/null 2>&1; then
 			cc_change_set_record_status "$cc_csp_dir" blocked BASE_UNBUILDABLE
 			rm -f "$cc_csp_repblock"
@@ -2339,10 +2438,10 @@ cc_change_set_prepare() {
 		cc_csp_tip=$(git -C "$cc_csp_wt" rev-parse HEAD)
 		printf '%s' "$cc_csp_tip" | cc_atomic_write "$cc_csp_dir/tips/$cc_csp_r" \
 			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
-		printf '%s' "$cc_csp_atip" | cc_atomic_write "$cc_csp_dir/anchors/$cc_csp_r" \
+		printf '%s' "$cc_csp_base_tip" | cc_atomic_write "$cc_csp_dir/bases/$cc_csp_r" \
 			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
-		printf '  - repository: %s\n    branch: %s\n    worktree: %s\n    integration_tip: %s\n    anchor_tip: %s\n' \
-			"$cc_csp_r" "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_tip" "$cc_csp_atip" >>"$cc_csp_repblock"
+		printf '  - repository: %s\n    branch: %s\n    worktree: %s\n    integration_tip: %s\n    base_tip: %s\n' \
+			"$cc_csp_r" "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_tip" "$cc_csp_base_tip" >>"$cc_csp_repblock"
 	done
 	cc_csp_cand_out=$(cc_change_set_candidate_from_record "$cc_csp_root" "$cc_csp_id") || { cc_change_set_record_status "$cc_csp_dir" blocked CANDIDATE_UNAVAILABLE; rm -f "$cc_csp_repblock"; return 1; }
 	cc_csp_cand=$(printf '%s\n' "$cc_csp_cand_out" | sed -n 's/^change_set_candidate: //p')
@@ -3136,7 +3235,7 @@ cc_delivery_targets() {
 		[ -f "$cc_dt_rf" ] || continue
 		cc_dt_id=$(cc_scalar "$cc_dt_rf" repository)
 		cc_dt_src=$(cc_scalar "$cc_dt_rf" branch)
-		cc_dt_tgt=$(cc_scalar "$cc_dt_rf" anchor_branch)
+		cc_dt_tgt=$(cc_record_base_branch "$cc_dt_rf") || cc_dt_tgt=""
 		cc_dt_abs=$(cc_repo_resolve "$cc_dt_root" "$cc_dt_id" 2>/dev/null | sed -n 's/^path: //p')
 		cc_dt_present=unknown
 		if [ -n "$cc_dt_abs" ]; then
@@ -3155,8 +3254,8 @@ cc_delivery_targets() {
 }
 
 # cc_delivery_drift ROOT PLAN -> read-only report: for each repository of the
-# latest execution, whether the recorded base has drifted from the current anchor
-# tip (a sibling merged and advanced the anchor). Drift = the current anchor tip
+# latest execution, whether the recorded base has drifted from the current base
+# tip (a sibling merged and advanced the base). Drift = the current base tip
 # is not already reachable from the execution branch (INV-DELIVER-01 drift guard).
 cc_delivery_drift() {
 	cc_dd_root="$1"; cc_dd_plan="$2"
@@ -3168,11 +3267,11 @@ cc_delivery_drift() {
 	for cc_dd_rf in "$cc_dd_edir"/repositories/*.yaml; do
 		[ -f "$cc_dd_rf" ] || continue
 		cc_dd_id=$(cc_scalar "$cc_dd_rf" repository)
-		cc_dd_anchor=$(cc_scalar "$cc_dd_rf" anchor_branch)
+		cc_dd_base_branch=$(cc_record_base_branch "$cc_dd_rf") || cc_dd_base_branch=""
 		cc_dd_base=$(cc_scalar "$cc_dd_rf" base_commit)
 		cc_dd_latest=$(cc_scalar "$cc_dd_rf" latest_commit)
 		cc_dd_abs=$(cc_repo_resolve "$cc_dd_root" "$cc_dd_id" 2>/dev/null | sed -n 's/^path: //p')
-		cc_dd_tip=$(git -C "$cc_dd_abs" rev-parse --verify "refs/heads/$cc_dd_anchor" 2>/dev/null) || cc_dd_tip=""
+		cc_dd_tip=$(git -C "$cc_dd_abs" rev-parse --verify "refs/heads/$cc_dd_base_branch" 2>/dev/null) || cc_dd_tip=""
 		cc_dd_drift=unknown
 		if [ -n "$cc_dd_abs" ] && [ -n "$cc_dd_tip" ]; then
 			if git -C "$cc_dd_abs" merge-base --is-ancestor "$cc_dd_tip" "$cc_dd_latest" 2>/dev/null; then
@@ -3182,7 +3281,7 @@ cc_delivery_drift() {
 			fi
 		fi
 		cc_emit "repository" "$cc_dd_id"
-		cc_emit "  anchor_tip" "${cc_dd_tip:-unknown}"
+		cc_emit "  base_tip" "${cc_dd_tip:-unknown}"
 		cc_emit "  recorded_base" "$cc_dd_base"
 		cc_emit "  drifted" "$cc_dd_drift"
 	done
@@ -3191,7 +3290,7 @@ cc_delivery_drift() {
 }
 
 # cc_delivery_rebase ROOT PLAN -> rebase every drifted repository's execution
-# branch onto the current anchor tip, update base_commit/latest_commit, and flag
+# branch onto the current base tip, update base_commit/latest_commit, and flag
 # a required re-verification. A rebase conflict is DELIVERY_REBASE_CONFLICT (the
 # runtime performs no delivery merge). Preserves work on abort.
 cc_delivery_rebase() {
@@ -3204,12 +3303,12 @@ cc_delivery_rebase() {
 	for cc_dr_rf in "$cc_dr_edir"/repositories/*.yaml; do
 		[ -f "$cc_dr_rf" ] || continue
 		cc_dr_id=$(cc_scalar "$cc_dr_rf" repository)
-		cc_dr_anchor=$(cc_scalar "$cc_dr_rf" anchor_branch)
+		cc_dr_base_branch=$(cc_record_base_branch "$cc_dr_rf") || cc_dr_base_branch=""
 		cc_dr_wt=$(cc_scalar "$cc_dr_rf" worktree)
 		cc_dr_latest=$(cc_scalar "$cc_dr_rf" latest_commit)
 		cc_dr_abs=$(cc_repo_resolve "$cc_dr_root" "$cc_dr_id" 2>/dev/null | sed -n 's/^path: //p')
 		[ -n "$cc_dr_abs" ] || continue
-		cc_dr_tip=$(git -C "$cc_dr_abs" rev-parse --verify "refs/heads/$cc_dr_anchor" 2>/dev/null) || continue
+		cc_dr_tip=$(git -C "$cc_dr_abs" rev-parse --verify "refs/heads/$cc_dr_base_branch" 2>/dev/null) || continue
 		# already contained: nothing to rebase for this repository
 		if git -C "$cc_dr_abs" merge-base --is-ancestor "$cc_dr_tip" "$cc_dr_latest" 2>/dev/null; then
 			cc_emit "repository" "$cc_dr_id"
@@ -3306,6 +3405,7 @@ cc_main() {
 		workspace-validate)      cc_workspace_validate "$@" ;;
 		workspace-init)          cc_workspace_init "$@" ;;
 		repository-register)     cc_repository_register "$@" ;;
+		repository-binding-migrate) cc_repository_binding_migrate "$@" ;;
 		repository-resolve)      cc_repo_resolve "$@" ;;
 		repository-preflight)    cc_repository_preflight "$@" ;;
 		delivery-targets)        cc_delivery_targets "$@" ;;

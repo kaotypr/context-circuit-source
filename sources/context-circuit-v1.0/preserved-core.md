@@ -41,7 +41,7 @@ does not modify them.
   Held from execution start until **delivery**, not merely verification. This is
   the race arbiter; it is easy to get subtly wrong.
 - **Base selection with integration merge and stale-base rebuild**
-  (`cc_base_prepare`, INV-CONCURRENCY-02). Anchor tip when no same-repo
+  (`cc_base_prepare`, INV-CONCURRENCY-02). Base tip when no same-repo
   predecessor; the single predecessor branch when one; a **runtime-authored
   integration merge** when two or more — with abort-and-rollback on conflict
   (`BASE_UNBUILDABLE`, a blocked execution, never a worker failure). A recorded
@@ -67,14 +67,14 @@ does not modify them.
   functions that *roll the move back* if the index update fails). Partial records
   cannot grant ownership, resume a worker, prove verification, or authorize
   completion (INV-RUNTIME-02).
-- **Worktree isolation from the anchor tip** (`cc_worktree_prepare`,
+- **Worktree isolation from the base tip** (`cc_worktree_prepare`,
   INV-EXEC-03). One deterministic branch `cc/<plan>/<repo>` and one worktree per
-  repository; the anchor checkout is never written during execution.
+  repository; the base checkout is never written during execution.
 - **Delivery separateness + drift guard** (`cc_delivery_drift`,
   `cc_delivery_rebase`, INV-DELIVER-01/02). Pull request, merge, push, deploy are
   separate human actions; a plan whose recorded base drifted is rebased and
   re-verified before its pull request opens; the target is the recorded
-  `anchor_branch`, never a moving remote. **v1.0 keeps delivery as the second
+  `base_branch`, never a moving remote. **v1.0 keeps delivery as the second
   gate, untouched.**
 
 ## Identity, security, and host neutrality — untouched
@@ -83,7 +83,7 @@ does not modify them.
   `workspace.yaml` holds credential-free logical identity; `repositories.local.yaml`
   holds machine paths; binding resolution fails closed on missing/ambiguous/
   non-Git/traversal/unsafe-symlink/identity-mismatch without scanning the
-  filesystem. The `anchor_branch` (execution base + PR target) vs. `default_branch`
+  filesystem. The `base_branch` (execution base + PR target) vs. `default_branch`
   (portable clone guidance) distinction is preserved exactly.
 - **Credentials never enter workspace or runtime state** (INV-SEC-01); `sources/`
   is passive raw evidence read only by exact request-named files (INV-SEC-02).

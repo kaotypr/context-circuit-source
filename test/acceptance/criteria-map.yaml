@@ -84,13 +84,13 @@ criteria:
     statement: An archived plan's execution continues from its immutable snapshot.
     suite: test/archive/test-archive.sh
   - id: AC-26
-    statement: default_branch stays portable guidance; execution validates anchor_branch and its captured tip.
+    statement: default_branch stays portable guidance; execution validates base_branch and its captured tip.
     suite: test/repositories/test-repositories.sh
   - id: AC-27
     statement: The workspace root may bind as `workspace`; new repos default to gitignored repositories/ with clone/init.
     suite: test/repositories/test-repositories.sh
   - id: AC-28
-    statement: A pull request uses execution branch as source and anchor_branch as default target; delivery blocks when unavailable.
+    statement: A pull request uses execution branch as source and base_branch as default target; delivery blocks when unavailable.
     suite: test/delivery/test-delivery.sh
   - id: AC-29
     statement: Direct collaboration isolates one repository in its own branch and working copy, keeps only a resumable pointer, remains human-supervised rather than verified, preserves work on close, and blocks delivery drift.

@@ -21,8 +21,8 @@ repositories, with portable identity and fail-closed, host-local bindings.
 - **Portable identity** (`workspace.yaml`): logical repo key, optional
   credential-free URL, optional `default_branch`. No paths, no credentials.
 - **Local binding** (`repositories.local.yaml`, gitignored): host path plus the
-  required `anchor_branch` (the execution base and default PR target).
-- `default_branch` is clone/setup guidance only — never silently the anchor.
+  required `base_branch` (the execution base and default PR target).
+- `default_branch` is clone/setup guidance only — never silently the base branch.
 - The workspace root, when a Git repo, binds as reserved id `workspace` at `.`;
   cloned/initialized repos land under the gitignored `repositories/`.
 - Binding resolution is explicit and bounded; anything missing, ambiguous,
@@ -32,7 +32,7 @@ repositories, with portable identity and fail-closed, host-local bindings.
 
 - Schemas: `workspace.yaml`, `repositories-local.yaml`.
 - Runtime: binding resolution/preflight, clone/`git init` bootstrap into
-  `repositories/`, deterministic worktree preparation from the anchor tip.
+  `repositories/`, deterministic worktree preparation from the base tip.
 - Skill: `.agents/skills/cc-workspace/SKILL.md` (orient, register, clone, init).
 
 ## Non-goals
@@ -53,8 +53,8 @@ repositories, with portable identity and fail-closed, host-local bindings.
 
 ## Acceptance & verification
 
-- No path/credential in portable identity; anchor required; fail-closed binding;
-  anchor checkout never written.
+- No path/credential in portable identity; base branch required; fail-closed binding;
+  base checkout never written.
 - `sh test/contracts/test-contracts.sh`, `sh test/repositories/test-repositories.sh`.
 
 ## Assumptions / risks

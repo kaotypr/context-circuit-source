@@ -47,7 +47,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Path lease | A `(repository, path region)` reservation extending the one-worker lock, so plans touching overlapping paths serialize while disjoint ones run together. |
 | Fan-out width | How many provably-independent ready plans a plan stack runs at once — a coordinator policy bounded by the host, not a gate; width 1 is plain serial order, and the path lease arbitrates any race. |
 | Role tiering | The per-role `(model, effort)` the coordinator runs the worker and verifier at, from a host-local config with adapter defaults; bounded host evidence that changes cost and speed, never meaning, and never independence or the failure limit. |
-| Execution base | The commit a plan's work is built on: the anchor tip, a predecessor's branch (stack), or a runtime-authored integration merge of several predecessors. |
+| Execution base | The commit a plan's work is built on: the base tip, a predecessor's branch (stack), or a runtime-authored integration merge of several predecessors. |
 | Drift guard | Rebasing a plan onto the current branch tip and re-checking it before a pull request, when a sibling already merged. |
 | Repository grounding | The worker reading and honoring the target repository's own agent guidance, discovered from the working copy. |
 | Grounding manifest | The discovered record of a repository's agent guidance (files, skills, prepared environment) for one execution. |
@@ -74,7 +74,7 @@ explicitly asks for diagnostics.
 | Connected repository | "repository connected" / "repository binding" | "your `<name>` project is ready to work on" |
 | Runtime, skill, tool, or command failure | "the planning command/template failed" / the tool or skill name | "Here is a draft plan; nothing has been saved" |
 | Worktree | "worktree" | describe the effect ("a separate working copy of your project"), or say nothing about the mechanism |
-| Anchor branch | "anchor branch" | the branch's plain name — "I'll work from `develop`" |
+| Base branch | "base branch" | the branch's plain name — "I'll work from `develop`" |
 | Local binding / binding | "binding" | "I've connected your `<name>` project" |
 | Execution branch (`cc/<plan>/<repo>`) | the `cc/...` branch name | "the changes for `<plan title>`" |
 | Default branch (as jargon) | "default branch" | the branch name in plain terms |

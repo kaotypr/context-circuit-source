@@ -27,8 +27,8 @@ retrievable.
 | Plan stack | A named set of intent-authorized plans executed in one run; ordered and overlapped safely with no new authority. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's `depends_on`. A v1.0 plan is `schema_version: 3`. |
 | Path lease | A `(repository, path-region)` reservation extending the one-worker lock; overlapping plans serialize, disjoint ones run together. |
-| Execution base / integration base | The commit a plan builds on: anchor tip, a predecessor branch (stack), or a runtime-authored integration merge (≥2 predecessors). |
-| Drift guard | Rebase-onto-current-anchor-tip + re-verify before a pull request when the recorded base has diverged. |
+| Execution base / integration base | The commit a plan builds on: base tip, a predecessor branch (stack), or a runtime-authored integration merge (≥2 predecessors). |
+| Drift guard | Rebase-onto-current-base-tip + re-verify before a pull request when the recorded base has diverged. |
 | Repository grounding | The worker honoring the target repository's own agent guidance, discovered live from the worktree. |
 | Grounding manifest / worker brief | The discovered guidance (files, skills, environment) for one execution; the assembled instructions handed to the worker. |
 | System design | A structured source describing the shape of a change, authored via `cc-system-design`; a source, not a lifecycle stage. |
@@ -42,7 +42,7 @@ retrievable.
 The coordinator reports actions by their effect and never exposes internal
 mechanism unless a user asks for diagnostics. The canonical internal → plain
 mapping is the "say the effect, not the mechanism" table in `docs/terminology.md`
-(worktree, anchor branch, binding, execution branch, verifier, worker,
+(worktree, base branch, binding, execution branch, verifier, worker,
 host-blocked, delivery, archive/restore, and internal file names), whose
 authority is settled by the runtime contracts under `wrapper/contracts/`.
 

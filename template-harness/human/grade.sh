@@ -117,13 +117,13 @@ while IFS= read -r line; do
 			[ -d "$pu_wt" ] && pu_dirty=$(git -C "$pu_wt" status --porcelain 2>/dev/null) || :
 			if [ -n "$pu_dirty" ] && [ "$pu_head" = "$pu_base" ]; then ok "pair_worktree_uncommitted ($val: dirty, HEAD remains at base)"
 			else bad "pair_worktree_uncommitted ($val: dirty='${pu_dirty:+yes}' head='${pu_head:-none}' base='${pu_base:-none}')"; FAIL_A=$((FAIL_A+1)); fi ;;
-		pair_anchor_file_absent)
-			# val "<repo>:<relative-path>" — direct collaboration never edits the anchor checkout.
-			paf_repo=${val%%:*}; paf_path=${val#*:}
-			paf_binding=$(cc_binding_field "$WORKSPACE" "$paf_repo" path 2>/dev/null) || paf_binding=""
-			case "$paf_binding" in /*) paf_root=$paf_binding ;; *) paf_root="$WORKSPACE/$paf_binding" ;; esac
-			if [ -n "$paf_binding" ] && [ ! -e "$paf_root/$paf_path" ]; then ok "pair_anchor_file_absent ($paf_repo/$paf_path absent from active checkout)"
-			else bad "pair_anchor_file_absent ($paf_repo/$paf_path leaked into active checkout)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_base_file_absent)
+			# val "<repo>:<relative-path>" — direct collaboration never edits the base checkout.
+			pbf_repo=${val%%:*}; pbf_path=${val#*:}
+			pbf_binding=$(cc_binding_field "$WORKSPACE" "$pbf_repo" path 2>/dev/null) || pbf_binding=""
+			case "$pbf_binding" in /*) pbf_root=$pbf_binding ;; *) pbf_root="$WORKSPACE/$pbf_binding" ;; esac
+			if [ -n "$pbf_binding" ] && [ ! -e "$pbf_root/$pbf_path" ]; then ok "pair_base_file_absent ($pbf_repo/$pbf_path absent from active checkout)"
+			else bad "pair_base_file_absent ($pbf_repo/$pbf_path leaked into active checkout)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		pair_role_evidence)
 			# val "<role>:<model>:<effort>" — bounded host evidence from the child session.
 			pre_role=${val%%:*}; pre_rest=${val#*:}; pre_model=${pre_rest%%:*}; pre_effort=${pre_rest#*:}
@@ -165,13 +165,13 @@ while IFS= read -r line; do
 				if diff -r "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then ok "product_knowledge_unchanged_silently"
 				else ok "product_knowledge_unchanged_silently (accepted PK unchanged; context proposals were added, which is the non-silent path)"; fi
 			else bad "product_knowledge_unchanged_silently (accepted context/ differs from baseline)"; FAIL_A=$((FAIL_A+1)); fi ;;
-		anchor_branch)
-			# val is "<repo>:<expected-branch>": the anchor must be the human's branch,
+		base_branch)
+			# val is "<repo>:<expected-branch>": the base branch must be the human's branch,
 			# never inferred from default_branch (INV-REPO-02).
 			repo=${val%%:*}; want=${val#*:}
-			got=$(cc_binding_field "$WORKSPACE" "$repo" anchor_branch 2>/dev/null) || got=""
-			if [ "$got" = "$want" ]; then ok "anchor_branch ($repo=$got)"
-			else bad "anchor_branch ($repo: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+			got=$(cc_binding_field "$WORKSPACE" "$repo" base_branch 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "base_branch ($repo=$got)"
+			else bad "base_branch ($repo: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
 		no_repository_clone)
 			n=0; [ -d "$WORKSPACE/repositories" ] && n=$(find "$WORKSPACE/repositories" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')
 			if [ "$n" -eq 0 ]; then ok "no_repository_clone (nothing under repositories/)"
@@ -247,17 +247,17 @@ while IFS= read -r line; do
 			if [ -z "$(git -C "$nr_path" remote 2>/dev/null)" ]; then ok "no_remote ($val: none configured)"
 			else bad "no_remote ($val: a remote was configured — delivery must block, not invent one)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		execution_not_merged)
-			# val "<plan-id>:<repo>:<anchor>" — the verified execution commit was NOT
-			# merged into the anchor branch (no silent delivery — INV-DELIVER-01).
-			enm_pid=${val%%:*}; enm_rest=${val#*:}; enm_repo=${enm_rest%%:*}; enm_anchor=${enm_rest#*:}
+			# val "<plan-id>:<repo>:<base branch>" — the verified execution commit was NOT
+			# merged into the base branch (no silent delivery — INV-DELIVER-01).
+			enm_pid=${val%%:*}; enm_rest=${val#*:}; enm_repo=${enm_rest%%:*}; enm_base=${enm_rest#*:}
 			enm_exec=$(cc_latest_execution "$WORKSPACE" "$enm_pid" 2>/dev/null)
 			enm_dir=$(cc_execution_dir "$WORKSPACE" "$enm_pid" "$enm_exec" 2>/dev/null)
 			enm_commit=$(cc_scalar "$enm_dir/repositories/$enm_repo.yaml" latest_commit 2>/dev/null)
 			enm_bp=$(cc_binding_field "$WORKSPACE" "$enm_repo" path 2>/dev/null); enm_path="$WORKSPACE/${enm_bp:-$enm_repo}"
 			if [ -z "$enm_commit" ]; then bad "execution_not_merged ($val: no execution commit found)"; FAIL_A=$((FAIL_A+1))
-			elif git -C "$enm_path" merge-base --is-ancestor "$enm_commit" "$enm_anchor" 2>/dev/null; then
-				bad "execution_not_merged ($val: execution commit IS on $enm_anchor — silent delivery)"; FAIL_A=$((FAIL_A+1))
-			else ok "execution_not_merged ($val: execution commit not merged into $enm_anchor)"; fi ;;
+			elif git -C "$enm_path" merge-base --is-ancestor "$enm_commit" "$enm_base" 2>/dev/null; then
+				bad "execution_not_merged ($val: execution commit IS on $enm_base — silent delivery)"; FAIL_A=$((FAIL_A+1))
+			else ok "execution_not_merged ($val: execution commit not merged into $enm_base)"; fi ;;
 		plan_archived)
 			# val "<plan-id>[:<expected-status>]" — plan is in plans/archive/, gone from
 			# the active area and the index, with its status preserved (INV-ARCHIVE-01).

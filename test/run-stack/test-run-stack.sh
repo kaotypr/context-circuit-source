@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run-stack semantics (v0.6): base selection (anchor / stack / integration),
+# Run-stack semantics (v0.6): base selection (base branch / stack / integration),
 # clean integration merge, BASE_UNBUILDABLE, stale-base rebuild, readiness
 # AND-join, failure containment (held descendant), the run-stack partition, and
 # the delivery drift guard (drift / rebase / rebase-conflict). These edge cases
@@ -41,10 +41,10 @@ cc_fx_run_ok "$ws" 0002-stack api src/sp
 cc_fx_run_ok "$ws" 0003-side api src/op
 cc_fx_run_ok "$ws" 0004-integ api src/ip
 
-# anchor base: no based_on recorded for the root plan
+# base branch: no based_on recorded for the root plan
 r1="$(edir_of 0001-root)/repositories/api.yaml"
 not_contains "$r1" "based_on:"
-anchortip=$(git -C "$apidir" rev-parse --verify refs/heads/development)
+basetip=$(git -C "$apidir" rev-parse --verify refs/heads/development)
 
 # stack base: single predecessor, based_on names it, base == predecessor tip
 r2="$(edir_of 0002-stack)/repositories/api.yaml"
@@ -178,25 +178,25 @@ cc_fx_plan_ex "$ws" 0019-dv "DV" api src/dv ""
 cc_fx_run_ok "$ws" 0019-dv api src/dv
 # no drift yet
 cc_delivery_drift "$ws" 0019-dv | grep -q '^drift_detected: false' || fail "no drift expected before a sibling merges"
-# a sibling merged: advance the anchor on a DIFFERENT path (clean rebase)
+# a sibling merged: advance the base branch on a DIFFERENT path (clean rebase)
 git -C "$apidir" checkout -q development
 mkdir -p "$apidir/src/sibling"; printf 'sib\n' >"$apidir/src/sibling/f.txt"
 git -C "$apidir" add -A; git -C "$apidir" commit -q -m "feat(api): sibling merged"
 newtip=$(git -C "$apidir" rev-parse --verify refs/heads/development)
-cc_delivery_drift "$ws" 0019-dv | grep -q '^drift_detected: true' || fail "drift should be detected after the anchor advanced"
+cc_delivery_drift "$ws" 0019-dv | grep -q '^drift_detected: true' || fail "drift should be detected after the base branch advanced"
 reb=$(cc_delivery_rebase "$ws" 0019-dv)
 printf '%s\n' "$reb" | grep -q '^reverify_required: true' || fail "rebase must flag re-verification"
 dvbase=$(cc_scalar "$(edir_of 0019-dv)/repositories/api.yaml" base_commit)
 assert_eq "$newtip" "$dvbase"
 git -C "$apidir" merge-base --is-ancestor "$newtip" "$(cc_scalar "$(edir_of 0019-dv)/repositories/api.yaml" latest_commit)" \
-	|| fail "rebased branch does not contain the new anchor tip"
+	|| fail "rebased branch does not contain the new base tip"
 
-# rebase conflict: the anchor advances on the SAME file the plan added -> conflict
+# rebase conflict: the base branch advances on the SAME file the plan added -> conflict
 cc_fx_plan_ex "$ws" 0020-cf "CF" api src/cf ""
 cc_fx_run_ok "$ws" 0020-cf api src/cf
 git -C "$apidir" checkout -q development
-mkdir -p "$apidir/src/cf"; printf 'anchor-side\n' >"$apidir/src/cf/mod.txt"
-git -C "$apidir" add -A; git -C "$apidir" commit -q -m "feat(api): anchor touches src/cf/mod.txt"
+mkdir -p "$apidir/src/cf"; printf 'base-side\n' >"$apidir/src/cf/mod.txt"
+git -C "$apidir" add -A; git -C "$apidir" commit -q -m "feat(api): base touches src/cf/mod.txt"
 expect_failure cc_delivery_rebase "$ws" 0020-cf
 # the plan's work is preserved after the aborted rebase
 require_dir "$ws/.runtime/worktrees/0020-cf/api"
@@ -219,13 +219,13 @@ printf '%s' "$xr_before" | grep -q '^readiness: waiting' || fail "0022 must wait
 cc_fx_run_ok "$ws" 0021-xrapi api src/xr
 xr_after=$(cc_plan_ready "$ws" 0022-xrweb || :)
 printf '%s' "$xr_after" | grep -q '^readiness: ready' || fail "0022 must be ready once the cross-repo dep verified"
-# execute 0022: base is web's anchor tip and NO based_on is recorded (gate, not base)
+# execute 0022: base is web's base tip and NO based_on is recorded (gate, not base)
 cc_fx_run_ok "$ws" 0022-xrweb web src/xr
 xr_rf="$(edir_of 0022-xrweb)/repositories/web.yaml"
 not_contains "$xr_rf" "based_on:"
 web_tip=$(git -C "$webdir" rev-parse --verify refs/heads/development)
 git -C "$webdir" merge-base --is-ancestor "$web_tip" "$(cc_scalar "$xr_rf" base_commit)" \
-	|| fail "cross-repo dependent must be based on its own anchor tip"
+	|| fail "cross-repo dependent must be based on its own base tip"
 # a SAME-repo dependent in web still stacks on its predecessor's branch
 cc_fx_run_ok "$ws" 0023-xrweb2 web src/xr2
 xr2_rf="$(edir_of 0023-xrweb2)/repositories/web.yaml"

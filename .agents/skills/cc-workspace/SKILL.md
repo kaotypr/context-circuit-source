@@ -33,26 +33,26 @@ a repository is a separate, explicitly requested action (doc 02 §2).
 Registration has two parts: record the portable logical identity in
 `workspace.yaml` (id, optional credential-free `canonical_url`, optional
 `default_branch`), and add a host-local binding in `repositories.local.yaml`
-with the local `path` and the user-selected `anchor_branch`. Connecting binds an
+with the local `path` and the user-selected `base_branch`. Connecting binds an
 existing checkout; it does not clone or initialize. Validate the binding with the
 runtime `repository-resolve`.
 
 When you confirm a connection to the user, describe it in plain language by its
 effect — "I've connected your <name> project; I'll work from the <branch> branch"
-— and never name `workspace.yaml`/`repositories.local.yaml` or say "anchor
+— and never name `workspace.yaml`/`repositories.local.yaml` or say "base
 branch"/"binding".
 
 The workspace root, when it is a Git repository, binds as the reserved id
-`workspace` at path `.` with its own anchor branch. New project repositories
+`workspace` at path `.` with its own base branch. New project repositories
 default to the git-ignored `repositories/<repository-id>/` path.
 
 ## Clone or initialize
 
 Clone and `git init` are explicit, separately requested external Git actions.
 For a clone, report source URL, destination (`repositories/<id>/` by default),
-and branch before acting, then record `path` and `anchor_branch`. For an empty
-repository, `git init` there, set the anchor branch, and create the initial
-anchor commit required before execution can build a worktree. `default_branch`
-may suggest the first branch but never becomes the anchor branch automatically.
+and branch before acting, then record `path` and `base_branch`. For an empty
+repository, `git init` there, set the base branch, and create the initial
+base commit required before execution can build a worktree. `default_branch`
+may suggest the first branch but never becomes the base branch automatically.
 
 Creating a remote, pushing, or publishing is a separate delivery action.

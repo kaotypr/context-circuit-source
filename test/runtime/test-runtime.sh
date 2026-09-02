@@ -39,7 +39,7 @@ require_file "$edir/repositories/api.yaml"
 contains "$edir/repositories/api.yaml" "branch: cc/0001-alpha/api"
 require_file "$edir/snapshot/plan.yaml"
 
-# --- dirty anchor checkout blocks a fresh execution ---
+# --- dirty base checkout blocks a fresh execution ---
 printf 'dirty\n' >"$ws/repositories/api/src/dirty.txt"
 git -C "$ws/repositories/api" add -A
 # leave uncommitted -> dirty

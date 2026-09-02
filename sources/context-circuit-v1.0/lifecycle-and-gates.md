@@ -53,7 +53,7 @@ RECONCILE (M4): completion/delivery emits reconciliation debt;
   it is first-class and it counts. Approval freezes `contract_digest`.
 - **Gate 2 — Delivery.** The human authorizes *the irreversible act*. Unchanged
   from today (INV-DELIVER-01): separate from verification and completion, target is
-  the recorded `anchor_branch`, blocks on missing remote/branch.
+  the recorded `base_branch`, blocks on missing remote/branch.
 
 Everything between the gates is mechanical: envelope check, execution, candidate,
 tiered verification, acceptance binding, drift rebase, reconciliation debt.

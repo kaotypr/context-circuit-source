@@ -36,7 +36,7 @@ repair, and resume/recovery requests here. Owned by the `cc-execute` skill and t
 
 ## Scope
 
-Inside: execution begin from the anchor tip, isolated worktrees and branches,
+Inside: execution begin from the base tip, isolated worktrees and branches,
 per-repository worker commits, the worker handoff (a claim), the exclusive-create
 ownership lock, the three-failure repair counter, and preserved, resumable
 runtime records.
@@ -54,14 +54,14 @@ One worker executes every task of one intent-authorized plan in one bounded
 execution, in dependency order, across all mapped repositories (INV-EXEC-02).
 Execution creates exactly one deterministic
 branch `cc/<plan-id>/<repo-id>` and one isolated worktree per affected
-repository, from the captured anchor-branch tip; the anchor checkout is never
+repository, from the captured base-branch tip; the base checkout is never
 written (INV-EXEC-03).
 
 A plan with **same-repo predecessors** (see
 [run-stack](../run-stack/README.md)) begins base-aware: its worktree is prepared
 on the predecessor branch (stack) or a runtime-authored integration merge, and the
 repository record gains `based_on`. A plan with **no** dependency is unchanged — it
-still branches from the captured anchor tip (INV-EXEC-03). Execution also discovers
+still branches from the captured base tip (INV-EXEC-03). Execution also discovers
 the target repository's own agent guidance and delivers a grounded, runtime-
 assembled brief rather than a free-composed one (see
 [repository-grounding](../repository-grounding/README.md)). The plan contract uses
@@ -86,7 +86,7 @@ ownership, resume a worker, prove verification, or authorize completion
 ## Execution brief, snapshot, and repair discipline
 
 Before the worker runs, execution preflights the affected repositories (the
-intent-envelope check, dependency order, clean anchor checkouts, bounded scope) and
+intent-envelope check, dependency order, clean base checkouts, bounded scope) and
 generates a bounded
 execution brief plus an immutable plan-snapshot — a serialized copy of `PLAN.md`,
 `plan.yaml`, and all task files that the worker and verifier prompts read.
@@ -96,8 +96,8 @@ the same execution only when the intended scope and acceptance are unchanged; if
 repair requires new scope, execution stops and the human is asked to change the
 plan, and the old-execution → new-revision relationship is recorded.
 
-Resume is allowed only when the plan revision, the configured anchor branches and
-captured anchor commits, the worktree paths, and ownership all still match.
+Resume is allowed only when the plan revision, the configured base branches and
+captured base commits, the worktree paths, and ownership all still match.
 
 ## Workflows
 
@@ -122,7 +122,7 @@ verification proof.
 
 ## Constraints and edge cases
 
-The worker never edits the anchor checkout, changes completion status,
+The worker never edits the base checkout, changes completion status,
 marks its own work verified, claims independent verification, rewrites or accepts
 Product Knowledge, expands scope silently, or merges/pushes/publishes.
 

@@ -28,7 +28,7 @@ objective, repositories/branches, task count, worker and verifier roles, failure
 limit), then:
 
 1. Run `execution-begin`: it re-checks the intent envelope and repository bindings,
-   validates and captures each `anchor_branch` tip, rejects dirty anchors,
+   validates and captures each `base_branch` tip, rejects dirty base checkouts,
    acquires the one-worker lock, snapshots the plan, creates one branch and
    worktree per affected repository, and discovers each repository's own agent
    guidance from the prepared worktree (recorded as a grounding manifest).

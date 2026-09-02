@@ -230,7 +230,7 @@ if ! setup_empty repositories; then
 		if [ -n "$conn" ]; then
 			sh "$ENGINE_CLI" repository-register "$WORKSPACE" "$id" "$dest" "$conn" >/dev/null \
 				|| { printf 'FAIL: could not pre-connect fixture %s\n' "$id" >&2; exit 1; }
-			printf '[setup] seeded + connected repo %s at %s (anchor %s)\n' "$id" "$dest" "$conn"
+			printf '[setup] seeded + connected repo %s at %s (base %s)\n' "$id" "$dest" "$conn"
 		else
 			printf '[setup] seeded fixture repo %s at %s (default %s; branches %s)\n' "$id" "$dest" "$defb" "${branches:-$defb}"
 		fi

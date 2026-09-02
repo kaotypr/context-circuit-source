@@ -4,7 +4,7 @@ mode: conversation-only
 setup:
   # Seeded INSIDE the workspace at prep time (before the coordinator runs), so it
   # is pre-existing code the coordinator only has to CONNECT. Default branch is
-  # master, but the human works on develop — proving the anchor is user-selected,
+  # master, but the human works on develop — proving the base branch is user-selected,
   # never inferred from default_branch (INV-REPO-02).
   repositories:
     - id: my-notes
@@ -18,7 +18,7 @@ human:
   persona: >
     A solo maker who already has a small notes project in a folder. Has never
     heard of Context Circuit and does not know what a workspace, binding, or
-    anchor branch is. Knows their own code lives in a folder called "my-notes"
+    base branch is. Knows their own code lives in a folder called "my-notes"
     and that they do their work on the "develop" branch. Speaks in plain terms.
   turns:
     - say: "I've already got a little notes project — the code's in a folder called my-notes right here."
@@ -44,7 +44,7 @@ grader:
   # A. state post-conditions (hard gate)
   post_conditions:
     - repositories_registered: 1              # the named repo is connected...
-    - anchor_branch: my-notes:develop         # ...on the human's branch, not default 'master'
+    - base_branch: my-notes:develop         # ...on the human's branch, not default 'master'
     - no_repository_clone: true               # connected in place; nothing under repositories/
     - plans_created: 0                        # connecting is not planning
     - no_execution_records: true              # nothing ran

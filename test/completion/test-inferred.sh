@@ -139,17 +139,17 @@ printf 'x\n' >>"$wta/src/a/mod.txt"; git -C "$wta" add -A; git -C "$wta" commit 
 cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0020-csa "$(cc_latest_execution "$ws" 0020-csa)")" api repair >/dev/null
 expect_failure eng change-set-ready "$ws" "$csid"                   # stale: a member moved
 
-# anchor drift after preparation also voids the integrated candidate, even when
+# base drift after preparation also voids the integrated candidate, even when
 # no member branch moved (the pull request target changed underneath it).
-cc_fx_plan_ex "$ws" 0024-anchor "Anchor" api src/anchor ""
-run_worker_only "$ws" 0024-anchor api src/anchor
-anchor_set=$(eng change-set-prepare "$ws" 0024-anchor)
-anchor_csid=$(printf '%s\n' "$anchor_set" | sed -n 's/^change_set: //p')
+cc_fx_plan_ex "$ws" 0024-base "Base" api src/base ""
+run_worker_only "$ws" 0024-base api src/base
+base_set=$(eng change-set-prepare "$ws" 0024-base)
+base_csid=$(printf '%s\n' "$base_set" | sed -n 's/^change_set: //p')
 api_repo="$ws/repositories/api"
-printf 'anchor moved\n' >"$api_repo/anchor.txt"
-git -C "$api_repo" add anchor.txt
-git -C "$api_repo" commit -q -m "chore(api): advance anchor"
-expect_failure eng change-set-ready "$ws" "$anchor_csid"
+printf 'base moved\n' >"$api_repo/base.txt"
+git -C "$api_repo" add base.txt
+git -C "$api_repo" commit -q -m "chore(api): advance base"
+expect_failure eng change-set-ready "$ws" "$base_csid"
 
 # --- change-set integration that will not build is BASE_UNBUILDABLE, not a failure ---
 cc_fx_plan_ex "$ws" 0022-cx "CX" api src/shared ""

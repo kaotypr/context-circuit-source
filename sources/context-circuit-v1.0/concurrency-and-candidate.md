@@ -9,7 +9,7 @@ wrong, so it is specified separately, and its unresolved edges are named honestl
 
 M2 says "several stacked plans that converge to one pull request become one candidate
 → one verification." But the engine today works per **plan/execution**: each plan gets
-its own lease, its own base (anchor / predecessor / integration merge), its own
+its own lease, its own base (base branch / predecessor / integration merge), its own
 worktree, and its own verifier. So "one candidate for N plans" needs a defined
 **delivery unit** and a defined **verification point**, or it contradicts the
 per-plan machinery.

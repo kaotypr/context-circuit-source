@@ -155,7 +155,7 @@ invariants:
     rule: >
       Execution creates exactly one deterministic branch (cc/<plan-id>/<repo-id>)
       and one isolated worktree per affected repository, from the captured
-      anchor-branch tip. The anchor checkout is never written during execution.
+      base-branch tip. The base checkout is never written during execution.
   - id: INV-EXEC-04
     rule: >
       The worker commits each changed repository before verification. Every
@@ -239,15 +239,15 @@ invariants:
       It never contains a machine-specific path or credentials.
   - id: INV-REPO-02
     rule: >
-      anchor_branch is the required user-local execution base and the default
+      base_branch is the required user-local execution base and the default
       pull-request target. default_branch is only portable clone/setup guidance
-      and is never inferred as the anchor branch or execution base.
+      and is never inferred as the base branch or execution base.
   - id: INV-REPO-03
     rule: >
       repositories/ is the gitignored default destination for cloned or
       initialized project repositories. The workspace root, when it is a Git
       repository, binds as the reserved logical id workspace at path "." with its
-      own anchor branch, and is never placed under repositories/.
+      own base branch, and is never placed under repositories/.
   - id: INV-REPO-04
     rule: >
       Binding resolution is explicit and bounded. Missing, ambiguous, non-Git,
@@ -257,10 +257,10 @@ invariants:
     rule: >
       Pull-request creation, merge, push, deployment, archive, and
       cleanup are separate human-requested actions. A pull request uses each
-      execution branch as source and the repository's recorded anchor_branch as
+      execution branch as source and the repository's recorded base_branch as
       the default target; it never substitutes default_branch or silently follows
       a moving remote. Drift guard: when a plan is delivered and its
-      recorded base has diverged from the current anchor_branch tip (because a
+      recorded base has diverged from the current base_branch tip (because a
       sibling plan already merged), the plan is rebased onto the current tip and
       re-verified before its pull request opens. A plan is never merged from a
       base that no longer reflects the branch it will land on.
@@ -313,7 +313,7 @@ invariants:
   - id: INV-CONCURRENCY-02
     rule: >
       When a plan becomes runnable the runtime selects its base in each
-      repository it touches, before the worker starts: the anchor tip when there
+      repository it touches, before the worker starts: the base tip when there
       are no same-repo predecessors, the single predecessor branch when there is
       exactly one, or a runtime-authored integration merge of the predecessor
       branches when there are two or more, recorded as base_commit. The
@@ -384,7 +384,7 @@ invariants:
       checkout or a plan execution branch in place, and never auto-completes or
       delivers. Worker commits occur only on explicit human request and follow
       INV-COMMIT-01. Closing a clean session preserves its branch and worktree;
-      cleanup remains separate and explicit. If the current anchor tip is not in
+      cleanup remains separate and explicit. If the current base tip is not in
       the pairing branch at delivery time, delivery blocks and the work must be
       brought forward in a new human-supervised session rather than silently
       rebased. If the host cannot create the worker child or the isolated
