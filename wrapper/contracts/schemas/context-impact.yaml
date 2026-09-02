@@ -11,7 +11,7 @@ purpose: >
   Knowledge on the runtime's behalf (INV-KNOWLEDGE-02).
 
 fields:
-  schema_version: { type: integer, required: true }
+  schema_version: { type: integer, required: true, values: [1] }
   execution_id: { type: string, required: true }
   plan: { type: string, required: true }
   status:

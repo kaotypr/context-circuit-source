@@ -34,6 +34,7 @@ edir="$ws/.runtime/executions/0001-widget/$exec"
 # 1. discovery recorded the manifest as execution evidence
 mf="$edir/grounding/widgets.yaml"
 require_file "$mf"
+contains "$mf" "schema_version: 1"
 contains "$mf" "- AGENTS.md"
 contains "$mf" "- CLAUDE.md"
 contains "$mf" "- .cursor/rules/"

@@ -20,6 +20,8 @@ accepted_schema_versions:
   plan: [3]
   task: [1]
   execution: [1, 2]
+  lease: [1]
+  grounding-manifest: [1]
   worker-handoff: [1]
   verifier-result: [1]
   candidate: [1]

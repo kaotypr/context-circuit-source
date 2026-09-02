@@ -9,7 +9,7 @@ purpose: >
   paths and base branches live in the ignored repositories.local.yaml.
 
 fields:
-  schema_version: { type: integer, required: true }
+  schema_version: { type: integer, required: true, values: [1] }
   workspace: { type: string, required: true, description: portable workspace key }
   title: { type: string, required: false }
   purpose: { type: string, required: false }
