@@ -5,7 +5,7 @@ operation: change
 statement: >-
   A closed pairing branch may be delivered only by a separate explicit action and
   must be labeled human-supervised, not independently verified. Its target is the
-  connected repository's recorded anchor branch; if the current anchor tip is not
+  connected repository's recorded base branch; if the current base tip is not
   contained in the pairing branch, delivery blocks rather than silently rebasing.
 evidence_refs:
   - sources/system-design/context-circuit/v0.7.0/direct-collaboration/session-and-isolation.md

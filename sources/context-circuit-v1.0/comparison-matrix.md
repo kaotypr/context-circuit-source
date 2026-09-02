@@ -60,14 +60,14 @@ future addition, not part of the core evolution.
 | --- | --- | --- |
 | Writer ≠ checker; never self-verify | INV-VERIFY-02 | 🟩 |
 | Model-blind, opaque runtime | INV-RUNTIME-01/02 | 🟩 |
-| Worktree isolation from anchor tip | INV-EXEC-03 | 🟩 |
+| Worktree isolation from base tip | INV-EXEC-03 | 🟩 |
 | Commit-before-verify, new-commit repairs | INV-EXEC-04 | 🟩 |
 | Three-failure counter, waived≠passed | INV-REPAIR-01 | 🟩 |
 | Preserve-on-failure | INV-PRESERVE-01 | 🟩 |
 | Path leases + region overlap + descendant exemption | INV-CONCURRENCY-01 | 🟩 |
 | Base selection + integration merge + stale rebuild | INV-CONCURRENCY-02 | 🟩 |
 | Delivery separateness + drift guard (Gate 2) | INV-DELIVER-01/02 | 🟩 |
-| Portable identity vs. local binding; anchor vs default | INV-REPO-01..04 | 🟩 |
+| Portable identity vs. local binding; base branch vs default | INV-REPO-01..04 | 🟩 |
 | Credentials out; passive sources | INV-SEC-01/02 | 🟩 |
 | Repository grounding + brief assembly | INV-GROUND-01/02/03 | 🟩 |
 | Host neutrality; per-role model/effort tiering | INV-HOST-01 | 🟩 |

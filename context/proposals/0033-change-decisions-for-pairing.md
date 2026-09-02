@@ -22,5 +22,5 @@ status: review-needed
 ## Proposed knowledge
 
 Record the fixed direct-collaboration decisions and the implementation-specific
-choices confirmed by the maintainer: one repository per session, block on anchor
+choices confirmed by the maintainer: one repository per session, block on base branch
 drift, and close only clean state while preserving the branch and working copy.

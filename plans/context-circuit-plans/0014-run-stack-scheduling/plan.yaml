@@ -32,7 +32,7 @@ context_grounding:
   constraints:
     - The runtime detects readiness; the coordinator decides launch (INV-RUNTIME-01).
     - Each plan is still separately approved, verified, completed, and delivered.
-    - A plan is never merged from a base that no longer reflects the anchor (INV-DELIVER-01).
+    - A plan is never merged from a base that no longer reflects the base branch (INV-DELIVER-01).
   decisions:
     - Failure containment holds descendants of a failed plan without touching siblings.
 knowledge_impact:
@@ -81,7 +81,7 @@ tasks:
     depends_on: [RSC-002]
     changes:
       - Detect base divergence when a sibling has already merged.
-      - Rebase onto the current anchor tip and re-verify before opening the PR.
+      - Rebase onto the current base tip and re-verify before opening the PR.
     acceptance:
       - id: RSC-AC-04
         statement: A drifted plan is rebased and re-verified before its pull request opens.

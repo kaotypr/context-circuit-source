@@ -26,11 +26,11 @@ product_knowledge:
 context_grounding:
   summary: >-
     Approval is a conversational gate with no confirmation card; execution
-    creates one branch and worktree per repo from the captured anchor tip, holds
+    creates one branch and worktree per repo from the captured base tip, holds
     one writer lock, snapshots the plan, and commits before verifying.
   constraints:
     - Only an approved plan may execute (INV-EXEC-01).
-    - Branch cc/<plan-id>/<repo-id>; the anchor checkout is never written (INV-EXEC-03).
+    - Branch cc/<plan-id>/<repo-id>; the base checkout is never written (INV-EXEC-03).
     - Commit before verify; repairs are new commits, never amendments (INV-EXEC-04).
     - Failed or interrupted work is preserved, never silently cleaned (INV-PRESERVE-01).
   decisions:
@@ -66,12 +66,12 @@ tasks:
       - agents/writer.md
     depends_on: [EXE-001]
     changes:
-      - Capture anchor tips (reject dirty), snapshot the plan, acquire the lock.
-      - Create one branch and worktree per affected repository from the anchor tip.
+      - Capture base tips (reject dirty), snapshot the plan, acquire the lock.
+      - Create one branch and worktree per affected repository from the base tip.
       - Have the single worker implement tasks in order and commit each repository.
     acceptance:
       - id: EXE-AC-03
-        statement: All work occurs in isolated worktrees; the anchor checkout is untouched.
+        statement: All work occurs in isolated worktrees; the base checkout is untouched.
       - id: EXE-AC-04
         statement: Every changed repository is committed before verification.
     verification:

@@ -15,7 +15,7 @@ When several stacked plans converge to a single pull request, they form one
 **change set**, verified once against an integration tip (not once per plan):
 
 1. `change-set-prepare . <plan> <plan> ...` builds the integration tip — every
-   member branch merged onto the anchor, per repository — and records one change-set
+   member branch merged onto the base branch, per repository — and records one change-set
    candidate. If the combined result will not build it reports `BASE_UNBUILDABLE`;
    report that as blocked, not a worker failure, for the human to split or reorder.
 2. Spawn ONE independent verifier over the integration tip, prepare its read-only
@@ -54,7 +54,7 @@ yields a new candidate and re-gates rather than completing stale work.
 On an explicit request to open a pull request for an implemented plan:
 
 - the source is each repository's execution branch `cc/<plan-id>/<repository-id>`;
-- the default target is that repository's recorded `anchor_branch`;
+- the default target is that repository's recorded `base_branch`;
 - an alternative target must be named explicitly;
 - never substitute `default_branch` and never silently follow a moving or
   renamed remote branch;
@@ -64,19 +64,19 @@ Before opening, confirm the execution branch and its commits are available to
 the configured repository remote or provider and that the requested target
 branch exists. Do not discover an unrelated remote, silently push, or silently
 substitute a target. If the source branch is unpublished, the provider/remote is
-unavailable, or the recorded anchor branch is missing or renamed, report the
+unavailable, or the recorded base branch is missing or renamed, report the
 delivery as blocked and ask for an explicit human decision.
 
 ## Direct-collaboration branch
 
 On an explicit request to open a pull request for a finished pairing session,
 invoke `pair-delivery-targets . <session>`. The reported pairing branch is the
-source and the connected repository's recorded `anchor_branch` is the target.
+source and the connected repository's recorded `base_branch` is the target.
 Describe the work as human-supervised and not independently verified.
 
-If the session is still active, its worktree is dirty, or the anchor tip has
+If the session is still active, its worktree is dirty, or the base tip has
 moved outside the pairing branch, delivery is blocked. Do not run the plan drift
-rebase path: start a new direct-collaboration session from the current anchor and
+rebase path: start a new direct-collaboration session from the current base branch and
 have the worker bring the change forward under live human supervision. Opening
 the pull request, pushing its source branch, and cleanup remain separate explicit
 actions (INV-PAIR-01).
@@ -84,9 +84,9 @@ actions (INV-PAIR-01).
 ## Drift guard (v0.6)
 
 Before opening a pull request, check `delivery-drift`: when a sibling plan has
-already merged and advanced the recorded `anchor_branch`, the plan's base has
+already merged and advanced the recorded `base_branch`, the plan's base has
 diverged from the tip it will land on. If drift is detected, run `delivery-rebase`
-to rebase the execution branch onto the current anchor tip, then re-verify (one
+to rebase the execution branch onto the current base tip, then re-verify (one
 fresh independent verifier pass) before the pull request opens — a plan is never
 merged from a base that no longer reflects its target branch. A rebase conflict
 (`DELIVERY_REBASE_CONFLICT`) is reported as blocked, with the work preserved, for

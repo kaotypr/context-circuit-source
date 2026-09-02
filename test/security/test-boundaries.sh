@@ -27,7 +27,7 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 ln -s "$ws/repositories/api" "$ws/repositories/linky"
 cc_fx_bindings_header "$ws"
-printf '  linky:\n    path: repositories/linky\n    anchor_branch: development\n' >>"$ws/repositories.local.yaml"
+printf '  linky:\n    path: repositories/linky\n    base_branch: development\n' >>"$ws/repositories.local.yaml"
 expect_failure cc_repo_resolve "$ws" linky
 
 # --- credentials never appear in shipped or workspace-owned files ---

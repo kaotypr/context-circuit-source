@@ -21,7 +21,7 @@ empty repo. Source design:
   one request explicitly asks for both.
 - One worker runs every task of one approved plan in dependency order across all
   mapped repositories, each in its own branch `cc/<plan-id>/<repo-id>` and
-  worktree from the captured anchor tip; the anchor checkout is never written.
+  worktree from the captured base tip; the base checkout is never written.
 - The worker commits each changed repository before verification; repairs are
   new commits, never amendments.
 - At most one active writer (atomic lock); failure or interruption preserves all
@@ -52,7 +52,7 @@ empty repo. Source design:
 
 ## Assumptions, open questions, risks
 
-- Risk: a dirty anchor corrupting the base — mitigated by rejecting dirty anchors
+- Risk: a dirty base checkout corrupting the base — mitigated by rejecting dirty base checkouts
   at execution-begin.
 
 ## Expected commits and delivery notes

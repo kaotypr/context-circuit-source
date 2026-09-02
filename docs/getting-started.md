@@ -23,10 +23,10 @@ structure. It does not invent Product Knowledge or create plans.
 > Connect the api repository at ../commerce-api on branch development.
 
 Registration records portable logical identity in `workspace.yaml` and a
-host-local binding (path + `anchor_branch`) in `repositories.local.yaml`. New
+host-local binding (path + `base_branch`) in `repositories.local.yaml`. New
 project repositories can be cloned or initialized under the git-ignored
 `repositories/<id>/`. The workspace root itself may be bound as the reserved
-`workspace` repository. `anchor_branch` — not `default_branch` — is the
+`workspace` repository. `base_branch` — not `default_branch` — is the
 execution base and default pull-request target.
 
 ## 3. Gather context (optional)
@@ -72,7 +72,7 @@ the coordinator pauses and asks — it never widens what you approved on its own
 
 Delivery is the second and final decision — pull request, merge, push, deployment —
 always separate and explicit. A pull request uses each change's branch as source
-and the recorded `anchor_branch` as the default target. For lower-risk work,
+and the recorded `base_branch` as the default target. For lower-risk work,
 "done" then follows from your acceptance plus delivery; a Critical change asks you
 to confirm completion explicitly. Before your next change in the same area, the
 coordinator makes sure the merged work is folded into what the project knows.

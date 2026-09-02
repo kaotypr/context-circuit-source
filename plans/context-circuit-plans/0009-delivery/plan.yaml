@@ -5,7 +5,7 @@ status: done
 objective: >-
   Keep pull-request creation, merge, push, and deployment as separate
   human-requested actions that use each execution branch as source and the
-  repository's recorded anchor branch as target, blocking rather than inferring a
+  repository's recorded base branch as target, blocking rather than inferring a
   remote.
 repositories:
   - id: context-circuit-source
@@ -23,10 +23,10 @@ product_knowledge:
 context_grounding:
   summary: >-
     A pull request sources each execution branch and targets the recorded
-    anchor_branch; it never substitutes default_branch or follows a moving remote.
+    base_branch; it never substitutes default_branch or follows a moving remote.
   constraints:
     - PR/merge/push/deploy are separate human-requested actions (INV-DELIVER-01).
-    - Target is the recorded anchor_branch, never default_branch (INV-DELIVER-01).
+    - Target is the recorded base_branch, never default_branch (INV-DELIVER-01).
     - Delivery blocks when source/provider/target is unavailable (INV-DELIVER-02).
   decisions:
     - The runtime never performs automatic push/merge/publish (INV-RUNTIME-01).
@@ -35,7 +35,7 @@ knowledge_impact:
   review_on_completion: false
 tasks:
   - id: DEL-001
-    title: Delivery boundary and anchor-targeted pull request
+    title: Delivery boundary and base-targeted pull request
     repositories: [context-circuit-source]
     paths:
       - wrapper/adapters/WORKFLOW.md
@@ -43,11 +43,11 @@ tasks:
     depends_on: []
     changes:
       - Define delivery as a separate explicit action in the workflow contract.
-      - Compute source (execution branch) and target (anchor_branch) for a PR.
+      - Compute source (execution branch) and target (base_branch) for a PR.
       - Block and report when a source, provider, or target is unavailable.
     acceptance:
       - id: DEL-AC-01
-        statement: A pull request targets the recorded anchor branch, never default_branch.
+        statement: A pull request targets the recorded base branch, never default_branch.
       - id: DEL-AC-02
         statement: Missing source/provider/target blocks delivery instead of inferring a remote.
     verification:

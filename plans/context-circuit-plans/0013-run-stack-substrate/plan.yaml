@@ -26,7 +26,7 @@ context_grounding:
   summary: >-
     plan.yaml gains optional plan_dependencies (requires schema_version 2); path
     leases generalize the one-writer lock to path regions; the runtime selects a
-    base per repository (anchor, single predecessor, or integration merge).
+    base per repository (base branch, single predecessor, or integration merge).
   constraints:
     - Declaring plan_dependencies requires schema_version 2; the graph is acyclic (INV-PLAN-05).
     - A lease is held from execution start until delivery, not merely verification (INV-CONCURRENCY-01).
@@ -83,7 +83,7 @@ tasks:
       - wrapper/runtime/engine.sh
     depends_on: [RSS-002]
     changes:
-      - Select the base per repository (anchor, single predecessor, or merge).
+      - Select the base per repository (base branch, single predecessor, or merge).
       - Record based_on/base_commit and keep base refs at refs/cc-base/<plan>/<repo>.
       - Rebuild a stale base when a predecessor is repaired.
     acceptance:

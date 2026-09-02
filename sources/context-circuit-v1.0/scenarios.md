@@ -24,7 +24,7 @@ Request: "Retry failed checkout charges up to 3 times before failing the order."
    contract digest. The independent verifier (Standard) runs `ac-1..3` against the
    candidate → `passed`, bound to `cand-…`.
 6. **Accept.** The human accepts the candidate (`human-acceptance.yaml`).
-7. **Deliver (Gate 2).** The human authorizes the pull request onto `anchor_branch`.
+7. **Deliver (Gate 2).** The human authorizes the pull request onto `base_branch`.
 8. **Reconcile.** Delivery emits a knowledge-debt marker; before the next plan
    grounds, `cc-plan` blocks until the human accepts/defers the reconciliation
    proposals. Done is inferred from accepted + delivered.

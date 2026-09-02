@@ -117,7 +117,7 @@ verified plans are unaffected. Accepted from proposal `0021-change-decisions`.
 
 ## 2026-08-27 — delivery drift guard
 
-Decision: a plan whose recorded base has diverged from the current anchor tip is
+Decision: a plan whose recorded base has diverged from the current base tip is
 rebased onto the tip and re-verified before its pull request (INV-DELIVER-01,
 extended).
 

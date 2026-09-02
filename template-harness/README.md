@@ -25,8 +25,8 @@ The minimum scenario set covers context gathering, detailed plan creation,
 worker repair, the three-failure limit, explicit human completion, archive or
 restore without plan-status validation, optional workspace-root repository
 binding, clone and `git init` setup under the ignored `repositories/`
-directory, personal or team anchor branches, and the separate pull-request
-action using execution branches as sources and anchor branches as default
+directory, personal or team base branches, and the separate pull-request
+action using execution branches as sources and base branches as default
 targets.
 
 This directory belongs to `context-circuit-source` and is excluded from

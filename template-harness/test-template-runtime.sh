@@ -35,7 +35,7 @@ printf 'schema_version: 1\nworkspace: lab-commerce\ntitle: Lab Commerce\nreposit
 cc_workspace_init "$ws" >/dev/null
 cc_workspace_validate "$ws" >/dev/null
 
-# 5. Connect two fixture repositories with team anchor branches.
+# 5. Connect two fixture repositories with team base branches.
 for r in api web; do
 	mkdir -p "$ws/repositories/$r/src"
 	git -C "$ws/repositories/$r" init -q -b development
@@ -45,7 +45,7 @@ for r in api web; do
 	git -C "$ws/repositories/$r" add -A
 	git -C "$ws/repositories/$r" commit -q -m seed
 done
-printf 'schema_version: 1\nbindings:\n  api:\n    path: repositories/api\n    anchor_branch: development\n  web:\n    path: repositories/web\n    anchor_branch: development\n' >"$ws/repositories.local.yaml"
+printf 'schema_version: 2\nbindings:\n  api:\n    path: repositories/api\n    base_branch: development\n  web:\n    path: repositories/web\n    base_branch: development\n' >"$ws/repositories.local.yaml"
 
 # 6. Create, approve, and execute a multi-repository plan.
 pid=$(cc_plan_allocate_id "$ws" checkout-v2)

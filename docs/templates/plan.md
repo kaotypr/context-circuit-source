@@ -47,7 +47,7 @@ Status: draft
 ## Expected commits and delivery notes
 
 - One commit per affected repository. Delivery (pull request, merge) is a
-  separate explicit action targeting each repository's anchor branch.
+  separate explicit action targeting each repository's base branch.
 
 ## Expected Product Knowledge impact
 

@@ -4,7 +4,7 @@ title: Workspace and repository model
 status: done
 objective: >-
   Give the workspace a portable identity and fail-closed local bindings, so it
-  can coordinate one or more Git repositories with explicit anchor branches and
+  can coordinate one or more Git repositories with explicit base branches and
   isolated worktrees, never a scanned or inferred path.
 repositories:
   - id: context-circuit-source
@@ -18,14 +18,14 @@ product_knowledge:
     reason: Places the workspace above one or more repositories.
   - id: conventions
     path: context/CONVENTIONS.md
-    reason: Binding, anchor-branch, and worktree conventions.
+    reason: Binding, base-branch, and worktree conventions.
   - id: invariants
     path: wrapper/contracts/invariants.yaml
     reason: INV-REPO-01..04 are owned here.
 context_grounding:
   summary: >-
     Portable identity holds only a logical key, optional credential-free URL, and
-    optional default_branch; the host-local binding holds path and anchor_branch.
+    optional default_branch; the host-local binding holds path and base_branch.
   constraints:
     - default_branch is clone guidance only, never the execution base (INV-REPO-02).
     - Binding is explicit and fails closed; no filesystem scan (INV-REPO-04).
@@ -46,12 +46,12 @@ tasks:
     depends_on: []
     changes:
       - Author the portable workspace.yaml identity shape (no paths, no secrets).
-      - Author the gitignored repositories.local.yaml binding shape (path + anchor).
+      - Author the gitignored repositories.local.yaml binding shape (path + base branch).
     acceptance:
       - id: WRK-AC-01
         statement: Portable identity contains no machine path or credential.
       - id: WRK-AC-02
-        statement: anchor_branch is required per bound repo and owns the execution base.
+        statement: base_branch is required per bound repo and owns the execution base.
     verification:
       - id: WRK-VT-01
         command: sh test/contracts/test-contracts.sh
@@ -64,12 +64,12 @@ tasks:
     changes:
       - Resolve and preflight bindings fail-closed (missing/ambiguous/non-Git reject).
       - Clone or git-init into repositories/ only on explicit request.
-      - Prepare a deterministic worktree from the captured anchor tip.
+      - Prepare a deterministic worktree from the captured base tip.
     acceptance:
       - id: WRK-AC-03
         statement: A missing, ambiguous, or mismatched binding fails without scanning.
       - id: WRK-AC-04
-        statement: The anchor checkout is never written; work happens in a worktree.
+        statement: The base checkout is never written; work happens in a worktree.
     verification:
       - id: WRK-VT-02
         command: sh test/repositories/test-repositories.sh

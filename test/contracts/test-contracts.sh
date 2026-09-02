@@ -37,6 +37,8 @@ man="$W/manifest.yaml"
 require_file "$man"
 contains "$man" "runtime_version: 1.0.0"
 contains "$man" "plan: [3]"
+contains "$man" "repositories-local: [1, 2]"
+contains "$man" "execution: [1, 2]"
 contains "$man" "intent-contract: [1]"
 contains "$man" "candidate: [1]"
 contains "$man" "human-acceptance: [1]"
@@ -44,6 +46,9 @@ contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
 contains "$man" "pairing-session: [1]"
+contains "$W/contracts/schemas/repositories-local.yaml" "base_branch"
+contains "$W/contracts/schemas/repositories-local.yaml" "anchor_branch"
+contains "$W/contracts/schemas/execution.yaml" "base_branch"
 
 # --- shipped schemas present; old-design schemas absent ---
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \

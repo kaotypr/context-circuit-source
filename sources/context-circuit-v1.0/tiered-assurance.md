@@ -71,7 +71,7 @@ What is preserved from today's `cc-pair` (INV-PAIR-01) unchanged:
 - Git isolation: a fresh `cc-pair/<session>` branch and worktree from a chosen
   base; the active checkout is never touched — **topological safety, not policy**.
 - Output is human-supervised, never "verified"; worker commits only on explicit
-  request; delivery blocks on anchor drift rather than silently rebasing.
+  request; delivery blocks on base drift rather than silently rebasing.
 - The light resumable pointer as the only runtime state.
 
 What changes — the cliff becomes a ramp:

@@ -38,7 +38,7 @@ Pending context proposals:
   `context/domains/host-adapters/README.md` (change; worker-child mapping and
   host-blocked pairing; repository: `context-circuit-source`; review needed).
 - `0031-change-delivery-for-pairing` → `context/domains/delivery/README.md`
-  (change; pairing delivery and anchor-drift block; repository:
+  (change; pairing delivery and base-drift block; repository:
   `context-circuit-source`; review needed).
 - `0032-change-architecture-for-pairing` → `context/ARCHITECTURE.md` (change;
   orthogonal repository-changing modes; repository: `context-circuit-source`;

@@ -43,7 +43,7 @@ Everything the human decides is one of two gates; everything between is mechanic
 | Accept the result / mark X complete. | Accept the candidate; Standard completion is inferred from acceptance + delivery, and Critical completion is an explicit human act. Explore is planless. |
 | Review / accept context updates for X. | Discuss / accept a knowledge proposal. |
 | Archive / restore intent or plan X. | Move out of / into the active area; no status change. |
-| Open a pull request for X / deliver X. | **Gate 2**: separate delivery; source = execution branch (or change-set integration tip), target = anchor branch. |
+| Open a pull request for X / deliver X. | **Gate 2**: separate delivery; source = execution branch (or change-set integration tip), target = base branch. |
 
 ## Rules
 
@@ -61,6 +61,6 @@ Everything the human decides is one of two gates; everything between is mechanic
   inferred from candidate acceptance + delivery at Standard, and explicit at Critical;
   Explore is planless and verification alone never completes anything.
 - Delivery (pull request, merge, push, deploy) and cleanup are separate explicit
-  actions (Gate 2); a pull request targets the recorded `anchor_branch`, never
+  actions (Gate 2); a pull request targets the recorded `base_branch`, never
   `default_branch`.
 - Failed or interrupted work is preserved, never silently cleaned up.

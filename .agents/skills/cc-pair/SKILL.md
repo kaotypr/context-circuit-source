@@ -31,7 +31,7 @@ never perform the worker's edits itself.
 
 Choose a safe lowercase session slug and a base commit:
 
-- fresh work defaults to the connected repository's recorded anchor tip;
+- fresh work defaults to the connected repository's recorded base tip;
 - when offered after a completed plan or stack execution, use that repository's
   completed execution tip;
 - use another commit only when the user names it explicitly.

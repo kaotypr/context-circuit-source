@@ -24,7 +24,7 @@ decision made **before** a worker runs, not a merge collision found after.
 - Path leases generalize the one-writer lock to `(repository, path-region)`
   scope under `.runtime/locks/paths/`; a non-descendant plan cannot acquire an
   overlapping region; a lease is held from execution start until delivery.
-- The runtime selects a base per repository — anchor tip, a single predecessor
+- The runtime selects a base per repository — base tip, a single predecessor
   branch, or a runtime-authored integration merge — recorded as `base_commit`,
   with base refs at `refs/cc-base/<plan>/<repo>`; a stale base is rebuilt.
 

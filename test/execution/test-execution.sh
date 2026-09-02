@@ -9,7 +9,7 @@ cc_fx_repo "$ws" contracts development
 cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
-# base commits before execution (to prove the anchor checkout is untouched)
+# base commits before execution (to prove the base checkout is untouched)
 api_base=$(git -C "$ws/repositories/api" rev-parse HEAD)
 
 cc_fx_plan "$ws" 0001-checkout "Checkout v2" "contracts api web"
@@ -23,7 +23,7 @@ for r in contracts api web; do
 	contains "$edir/repositories/$r.yaml" "allowed_paths: [src]"
 done
 
-# --- the anchor checkout is not written during execution ---
+# --- the base checkout is not written during execution ---
 assert_eq "$api_base" "$(git -C "$ws/repositories/api" rev-parse HEAD)"
 
 # --- commit-before-verification is enforced: no worker commit -> verifier prepare fails ---
@@ -41,7 +41,7 @@ cc_verifier_prepare "$edir" >/dev/null
 cc_verifier_result_record "$edir" 1 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir")"
 
-# --- worktree isolation: each repo has its own branch tip, distinct from anchor ---
+# --- worktree isolation: each repo has its own branch tip, distinct from base ---
 web_tip=$(git -C "$ws/.runtime/worktrees/0001-checkout/web" rev-parse HEAD)
 web_base=$(cc_scalar "$edir/repositories/web.yaml" base_commit)
 test "$web_tip" != "$web_base" || fail "web worktree tip equals base"

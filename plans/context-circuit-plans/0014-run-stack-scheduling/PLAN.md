@@ -25,7 +25,7 @@ if from an empty repo. Source design:
   the `cc-run-stack` skill.
 - Delivery drift guard: when a plan is delivered and its recorded base has
   diverged (a sibling already merged), the plan is rebased onto the current
-  anchor tip and re-verified before its pull request opens.
+  base tip and re-verified before its pull request opens.
 
 ## Constraints and non-goals
 
