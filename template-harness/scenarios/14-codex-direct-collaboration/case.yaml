@@ -2,13 +2,7 @@ id: 14-codex-direct-collaboration
 title: Codex direct collaboration uses the configured Luna worker, changes only its isolated working copy, and remains human-supervised
 mode: full-execution
 setup:
-  role_tiering:
-    worker:
-      model: gpt-5.6-luna
-      effort: high
-    verifier:
-      model: gpt-5.6-luna
-      effort: medium
+  # Role tiering is supplied by the shared template-harness/fixtures fixture.
   repositories:
     - id: widgets
       dest: widgets
@@ -47,7 +41,7 @@ grader:
     - pair_file_exists: "widgets:src/pair-marker.txt:paired by Codex"
     - pair_worktree_uncommitted: widgets
     - pair_base_file_absent: widgets:src/pair-marker.txt
-    - pair_role_evidence: worker:gpt-5.6-luna:high
+    - pair_role_evidence_configured: worker
     - pair_role_absent: verifier
     - product_knowledge_unchanged_silently: true
   transcript_checks:

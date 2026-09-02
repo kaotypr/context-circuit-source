@@ -50,6 +50,7 @@ case "$HOST" in codex|claude-code|cursor-agent) : ;; *) printf 'FAIL: unknown ho
 HERE=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 ROOT=$(git -C "$HERE" rev-parse --show-toplevel 2>/dev/null) || { printf 'FAIL: not a git source checkout\n' >&2; exit 1; }
 SCENARIOS="$HERE/../scenarios"
+ROLE_TIERING_SOURCE=${CC_ROLE_TIERING_SOURCE:-$HERE/../fixtures/role-tiering.yaml}
 
 # --live selects the built-in per-host driver unless --driver overrode it.
 if [ "$LIVE" -eq 1 ] && [ -z "$DRIVER" ]; then
@@ -64,6 +65,20 @@ elif [ -d "$SCENARIOS/$CASE_ARG" ]; then CASE_DIR="$SCENARIOS/$CASE_ARG"
 else printf 'FAIL: case not found: %s\n' "$CASE_ARG" >&2; exit 1; fi
 CASE_FILE="$CASE_DIR/case.yaml"
 [ -f "$CASE_FILE" ] || { printf 'FAIL: missing case.yaml in %s\n' "$CASE_DIR" >&2; exit 1; }
+[ -f "$ROLE_TIERING_SOURCE" ] || { printf 'FAIL: missing harness role-tiering fixture: %s\n' "$ROLE_TIERING_SOURCE" >&2; exit 1; }
+
+# The fixture is grouped by host. The generated workspace receives the complete
+# file so every host run has the same input; the coordinator selects its own
+# hosts.<host> group. This is intentionally a small structural check rather than
+# a second YAML parser.
+role_tiering_has_host() {
+	awk -v want="$1" '
+		/^hosts:[[:space:]]*$/{in_hosts=1; next}
+		in_hosts && /^  [^[:space:]][^:]*:[[:space:]]*$/{h=$0; sub(/^  /,"",h); sub(/:.*/,"",h); if(h==want){found=1; exit}}
+		END{exit found?0:1}
+	' "$ROLE_TIERING_SOURCE"
+}
+role_tiering_has_host "$HOST" || { printf 'FAIL: role-tiering fixture has no host group: %s\n' "$HOST" >&2; exit 1; }
 
 # Minimal top-level scalar reader (controlled subset; same discipline as engine.sh).
 yscalar() { awk -v k="$2" '$0 ~ "^" k ":[[:space:]]" { sub("^" k ":[[:space:]]*",""); sub(/[[:space:]]*#.*$/,""); sub(/[[:space:]]+$/,""); print; exit }' "$1"; }
@@ -93,6 +108,9 @@ ARTIFACT="$OUT/context-circuit-v0.5.0"
 
 # 2. Instantiate an isolated workspace from the artifact only.
 cp -R "$ARTIFACT" "$WORKSPACE"
+# Keep the shipped workspace clean while giving the host adapter the same
+# host-local role configuration for every scenario.
+cp "$ROLE_TIERING_SOURCE" "$WORKSPACE/role-tiering.local.yaml"
 # Safety: the seed must not carry any source-side state.
 for leak in .runtime plans/context-circuit-plans repositories.local.yaml repositories; do
 	[ ! -e "$WORKSPACE/$leak" ] || { printf 'FAIL: source state leaked into workspace: %s\n' "$leak" >&2; exit 1; }
@@ -198,9 +216,9 @@ seed_plan_state() {
 	) || return 1
 }
 
-FIXTURE_NOTE=none
+FIXTURE_NOTE=role-tiering
 if ! setup_empty repositories; then
-	FIXTURE_NOTE=repos
+	FIXTURE_NOTE="${FIXTURE_NOTE},repos"
 	repo_fixtures | while IFS="$US" read -r id dest defb branches seeds conn agentsmd; do
 		[ -n "$id" ] || continue
 		dest=${dest:-$id}; defb=${defb:-main}
@@ -301,31 +319,7 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	done
 fi
 
-# setup.role_tiering: seed a host-local role-tiering.local.yaml at the workspace
-# root — the per-user, gitignored, opt-in file that names a concrete (model,
-# effort) per role, grouped by host. The case block gives a flat worker/verifier;
-# we wrap it under `hosts.<this-run's-host>` so the coordinator on that host reads
-# its own group. Seeded here so a case can prove the coordinator reads and honors
-# it; a real user writes it by hand and nothing auto-creates it.
-rt_read() { # role field -> value from setup.role_tiering
-	awk -v role="$1" -v field="$2" '
-		/^  role_tiering:/{inrt=1; next}
-		inrt && /^  [A-Za-z]/ && $0 !~ /^    / {inrt=0}
-		inrt && /^    [A-Za-z]/ {cur=$0; sub(/^    /,"",cur); sub(/:.*/,"",cur)}
-		inrt && cur==role && $0 ~ ("^      " field ":") {v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); sub(/[[:space:]]+$/,"",v); print v; exit}
-	' "$CASE_FILE"
-}
-if grep -q '^  role_tiering:' "$CASE_FILE" 2>/dev/null; then
-	rt_wm=$(rt_read worker model);   rt_we=$(rt_read worker effort)
-	rt_vm=$(rt_read verifier model); rt_ve=$(rt_read verifier effort)
-	{
-		printf 'hosts:\n  %s:\n' "$HOST"
-		if [ -n "$rt_wm" ]; then printf '    worker:\n      model: %s\n' "$rt_wm"; [ -n "$rt_we" ] && printf '      effort: %s\n' "$rt_we" || :; printf '      escalate_on_repair: false\n'; fi
-		if [ -n "$rt_vm" ]; then printf '    verifier:\n      model: %s\n' "$rt_vm"; [ -n "$rt_ve" ] && printf '      effort: %s\n' "$rt_ve" || :; printf '      escalate_on_repair: false\n'; fi
-	} > "$WORKSPACE/role-tiering.local.yaml"
-	FIXTURE_NOTE="${FIXTURE_NOTE},role-tiering"
-	printf '[setup] seeded host-local role-tiering.local.yaml under hosts.%s (worker=%s/%s, verifier=%s/%s)\n' "$HOST" "${rt_wm:-default}" "${rt_we:-default}" "${rt_vm:-default}" "${rt_ve:-default}"
-fi
+printf '[setup] copied shared host role-tiering fixture for hosts.codex, hosts.claude-code, and hosts.cursor-agent\n'
 
 setup_empty sources || grep -q '^  sources:[[:space:]]*\[\]' "$CASE_FILE" || { FIXTURE_NOTE="${FIXTURE_NOTE},sources-todo"; printf 'WARN: setup.sources fixtures are not applied by this scaffold (case %s)\n' "$CASE_ID" >&2; }
 

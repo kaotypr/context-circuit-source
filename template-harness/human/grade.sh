@@ -63,6 +63,27 @@ ws_identity() { # print workspace identity from a workspace.yaml (scalar or nest
 	[ -n "$id" ] || id=$(awk '/^workspace:$/{f=1;next} f&&/^[[:space:]]+name:/{sub("^[[:space:]]+name:[[:space:]]*","");print;exit} /^[A-Za-z]/{f=0}' "$1")
 	printf '%s' "$id"
 }
+role_tier_value() {
+	# Read one value from the selected host's role group in the generated local
+	# config. The harness owns the fixture; this is deliberately not a general
+	# YAML parser.
+	rtv_role=$1; rtv_field=$2
+	[ -f "$WORKSPACE/role-tiering.local.yaml" ] || return 1
+	awk -v want_host="$HOST" -v want_role="$rtv_role" -v want_field="$rtv_field" '
+		/^hosts:[[:space:]]*$/{in_hosts=1; next}
+		in_hosts && /^  [^[:space:]][^:]*:[[:space:]]*$/{
+			h=$0; sub(/^  /,"",h); sub(/:.*/,"",h)
+			in_host=(h==want_host); in_role=0; next
+		}
+		in_host && /^    [^[:space:]][^:]*:[[:space:]]*$/{
+			r=$0; sub(/^    /,"",r); sub(/:.*/,"",r)
+			in_role=(r==want_role); next
+		}
+		in_role && $0 ~ ("^      " want_field ":") {
+			v=$0; sub(/^[^:]*:[[:space:]]*/,"",v); sub(/[[:space:]]+$/,"",v); print v; exit
+		}
+	' "$WORKSPACE/role-tiering.local.yaml"
+}
 plan_dirs() { for d in "$WORKSPACE"/plans/*/; do b=$(basename -- "$d"); [ "$b" = "archive" ] && continue; [ -f "$d/plan.yaml" ] && printf '%s\n' "$b"; done; }
 pair_pointer_for_repo() {
 	pp_repo=$1; pp_root="$WORKSPACE/.runtime/pairing"
@@ -130,6 +151,15 @@ while IFS= read -r line; do
 			if [ -f "$ROLE_EVIDENCE" ] && awk -F'\t' -v r="$pre_role" -v m="$pre_model" -v e="$pre_effort" '$1==r && $2==m && $3==e{found=1} END{exit found?0:1}' "$ROLE_EVIDENCE"; then
 				ok "pair_role_evidence ($pre_role ran at $pre_model/$pre_effort)"
 			else bad "pair_role_evidence ($pre_role did not run at $pre_model/$pre_effort)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		pair_role_evidence_configured)
+			# val is the role. The expected model is resolved from the selected host's
+			# shared fixture, so the same case grades on every host.
+			pre_role=$val
+			pre_model=$(role_tier_value "$pre_role" model 2>/dev/null) || pre_model=""
+			pre_effort=$(role_tier_value "$pre_role" effort 2>/dev/null) || pre_effort=""
+			if [ -n "$pre_model" ] && [ -f "$ROLE_EVIDENCE" ] && awk -F'\t' -v r="$pre_role" -v m="$pre_model" '$1==r && $2==m{found=1} END{exit found?0:1}' "$ROLE_EVIDENCE"; then
+				ok "pair_role_evidence_configured ($pre_role ran at $pre_model/${pre_effort:-host-default})"
+			else bad "pair_role_evidence_configured ($pre_role did not honor $pre_model/${pre_effort:-host-default})"; FAIL_A=$((FAIL_A+1)); fi ;;
 		pair_role_absent)
 			if [ ! -f "$ROLE_EVIDENCE" ] || ! awk -F'\t' -v r="$val" '$1==r{found=1} END{exit found?0:1}' "$ROLE_EVIDENCE"; then ok "pair_role_absent ($val not spawned)"
 			else bad "pair_role_absent ($val child evidence exists)"; FAIL_A=$((FAIL_A+1)); fi ;;
@@ -370,6 +400,18 @@ while IFS= read -r line; do
 			re_got=$(cc_scalar "$re_f" "${re_role}_model" 2>/dev/null) || re_got=""
 			if [ "$re_got" = "$re_model" ]; then ok "role_evidence ($re_pid: $re_role ran at '$re_model' as configured)"
 			else bad "role_evidence ($re_pid: $re_role model '${re_got:-<none>}' != seeded '$re_model' — tiering not honored)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		role_evidence_configured)
+			# val "<plan-id>:<role>" — resolve the expected model from the shared
+			# host-grouped fixture, allowing one case to run across the matrix.
+			re_pid=${val%%:*}; re_role=${val#*:}
+			re_model=$(role_tier_value "$re_role" model 2>/dev/null) || re_model=""
+			re_effort=$(role_tier_value "$re_role" effort 2>/dev/null) || re_effort=""
+			re_exec=$(cc_latest_execution "$WORKSPACE" "$re_pid" 2>/dev/null) || re_exec=""
+			re_dir=$(cc_execution_dir "$WORKSPACE" "$re_pid" "$re_exec" 2>/dev/null)
+			re_f=$(find "$re_dir/attempts" -name host-evidence.yaml 2>/dev/null | sort | tail -1)
+			re_got=$(cc_scalar "$re_f" "${re_role}_model" 2>/dev/null) || re_got=""
+			if [ -n "$re_model" ] && [ "$re_got" = "$re_model" ]; then ok "role_evidence_configured ($re_pid: $re_role ran at $re_model/${re_effort:-host-default})"
+			else bad "role_evidence_configured ($re_pid: $re_role model '${re_got:-<none>}' != configured '${re_model:-<none>}')"; FAIL_A=$((FAIL_A+1)); fi ;;
 		*) warn "post_condition not evaluated by scaffold: $key" ;;
 	esac
 done < "$GBLOCK.pc"

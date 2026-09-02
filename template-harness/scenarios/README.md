@@ -22,7 +22,9 @@ scenarios/
 ├── 09-verifier-unavailable-host-blocked/  full-exec + fault  (in-session, host-can't-spawn)
 ├── 10-run-approved-stack/               full-exec    (claude -p driver; run-stack, v0.6)
 ├── 11-repo-grounding/                   full-exec    (claude -p driver; repository grounding, v0.6)
-└── 12-run-multi-repo-stack/             full-exec    (claude -p driver; multi-repo run-stack, v0.6)
+├── 12-run-multi-repo-stack/             full-exec    (claude -p driver; multi-repo run-stack, v0.6)
+├── 13-execution-latency/                full-exec    (shared host-matrix role tiering)
+└── 14-codex-direct-collaboration/      full-exec    (direct collaboration; Explore)
 ```
 
 Case 10 exercises the v0.6 run-stack: ten intent-authorized, inter-dependent plans of a
@@ -49,12 +51,21 @@ Case 07 (design "archive-and-restore") is split into `07-archive-plan` +
 from final state (active == never-archived); split, each half's outcome is
 deterministic.
 
-## Driver choice
+## Role tiering and driver choice
+
+Role tiering is defined once in `../fixtures/role-tiering.yaml`, grouped under
+`hosts.codex`, `hosts.claude-code`, and `hosts.cursor-agent`. The runner copies
+the complete fixture into each generated workspace as the ignored
+`role-tiering.local.yaml`; cases do not carry model or effort settings.
+
 - **Conversation-only** cases run via `../human/run-scenario.sh --live` (the
   `claude -p` driver), which captures a file-access trace so dimension C is a hard
   gate.
 - **Full-execution** cases that need nested worker/verifier sub-agents run via the
   `/cc-test-case` skill (in-session Task driver); C degrades to warning-only there.
+- Built-in live bindings cover Claude Code, Codex, and Cursor Agent. The complete
+  matrix is launched with `../human/run-matrix.sh`; it runs one isolated case per
+  host lane at a time.
 
 ## Case-file shape
 `case.yaml` has a `human:` block (persona, turns, reactions, visible_expectations —

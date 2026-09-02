@@ -60,7 +60,7 @@ case "$mode" in
 		mkdir -p "$FAKE_CODEX_STATE_DIR/sessions/test"
 		cat > "$FAKE_CODEX_STATE_DIR/sessions/test/worker.jsonl" <<'JSON'
 {"type":"session_meta","payload":{"source":{"subagent":{"thread_spawn":{"parent_thread_id":"11111111-1111-4111-8111-111111111111","agent_path":"/root/contract_worker"}}}}}
-{"type":"turn_context","payload":{"model":"gpt-5.6-luna","effort":"high"}}
+{"type":"turn_context","payload":{"model":"gpt-5.6-luna","effort":"medium"}}
 JSON
 		printf '%s\n' 'I can outline a plan and get you started.' > "$out"
 		printf '%s\n' '{"type":"thread.started","thread_id":"11111111-1111-4111-8111-111111111111"}'
@@ -109,7 +109,7 @@ contains "$lab/run/conversational-verdict.txt" 'verdict: pass'
 require_file "$lab/run/role-evidence.tsv"
 contains "$lab/run/role-evidence.tsv" 'worker'
 contains "$lab/run/role-evidence.tsv" 'gpt-5.6-luna'
-contains "$lab/run/role-evidence.tsv" 'high'
+contains "$lab/run/role-evidence.tsv" 'medium'
 test ! -e "$lab/run/file-access-trace.tsv" || fail 'Codex driver must not claim a file-access trace'
 
 contains "$fake_log" '[--approve-for-me]'

@@ -12,13 +12,17 @@ This suite is **opt-in and source-only**. It is NOT part of `sh test/acceptance.
 all of `test/`, so nothing here ships in `context-circuit-template`.
 
 Design set:
-`sources/system-design/context-circuit/v0.5/template-harness/`.
+`sources/system-design/context-circuit/v1.0.0/template-harness/`.
 
 ## Files
 
 - `run-scenario.sh` — assemble → isolate → apply setup → snapshot baseline →
   (optionally) drive → grade. The deterministic prep runs anywhere; the
   conversation itself is delegated to a per-host driver.
+- `run-matrix.sh` — run every scenario across the Codex, Claude Code, and Cursor
+  host lanes, with one isolated workspace per `(scenario, host)` pair.
+- `../fixtures/role-tiering.yaml` — the tracked host matrix input copied into
+  each run as the workspace-local `role-tiering.local.yaml`.
 - `grade.sh` — deterministic grader over ground-truth artifacts (dimensions A–D).
 - `.out/` — disposable per-run results (git-ignored).
 
@@ -90,8 +94,8 @@ must, for the chosen host:
 | `CC_TELEMETRY` | optional TSV `action<TAB>turns<TAB>tokens` |
 | `CC_ROLE_EVIDENCE` | optional bounded TSV `role<TAB>model<TAB>effort` |
 
-Built-in drivers are available for Claude Code and Codex; Cursor remains
-deferred. Run a Codex conversation with:
+Built-in drivers are available for Claude Code, Codex, and Cursor Agent. Run a
+Codex conversation with:
 
 ```
 sh template-harness/human/run-scenario.sh --host codex --live 01-new-project-simple-idea
@@ -101,6 +105,18 @@ The Codex driver keeps one resumable coordinator thread for all human turns and
 uses a separate ephemeral session for the human-simulator verdict. It also
 extracts only bounded child role/model/effort evidence from Codex's local session
 metadata; prompts, replies, provider payloads, and credentials are never copied.
+
+To prepare the same selected cases on all three hosts without invoking a live
+model:
+
+```
+sh template-harness/human/run-matrix.sh --prepare-only
+```
+
+For the live matrix, omit `--prepare-only`. This starts three host lanes in
+parallel, leaves each run under `human/.out/`, and returns non-zero after all
+lanes finish if any scenario fails. Use `--case <id>` more than once to limit
+the matrix while developing a case.
 
 ### Grading
 
