@@ -18,21 +18,24 @@ When several stacked plans converge to a single pull request, they form one
    member branch merged onto the anchor, per repository — and records one change-set
    candidate. If the combined result will not build it reports `BASE_UNBUILDABLE`;
    report that as blocked, not a worker failure, for the human to split or reorder.
-2. Spawn ONE independent verifier over the integration tip and record it with
+2. Spawn ONE independent verifier over the integration tip, prepare its read-only
+   scope with `change-set-verifier-prepare . <change-set-id>`, and record it with
    `change-set-verifier-record . <change-set-id> <passed|failed|blocked|waived>`
-   (read-only; a tip that moved since prepare voids it). At Explore there is none.
+   (read-only; a tip that moved since prepare voids it). Change sets are for
+   plan-bearing Standard/Critical work; planless Explore work uses `cc-pair`.
 3. The human accepts once: `change-set-accept . <change-set-id> <who>`.
 4. `change-set-ready . <change-set-id>` enforces the tier floor for the whole set
    (the max tier across members): a candidate-bound acceptance, plus a candidate-bound
    independent pass at Standard/Critical. A member that moves after prepare makes the
    candidate stale and re-gates.
 5. After you open the one pull request (Gate 2), `change-set-complete . <change-set-id>`
-   marks **every member** done and emits each member's reconciliation-debt marker, from
-   the single change-set acceptance — accept once, and the whole set completes.
+   marks **every member** done and emits one change-set-bound reconciliation-debt
+   marker, from the single change-set acceptance — accept once, and the whole set completes.
 
-A single plan delivered alone is a change set of one, identical to
-`change-set-candidate . <plan>` and `candidate-current . <plan>`; it may complete
-through this same path, or the single-plan path below.
+A single Standard/Critical plan delivered alone is a change set of one, identical
+to `change-set-candidate . <plan>` and `candidate-current . <plan>`; it may complete
+through this same path, or the single-plan path below. Explore work is planless
+and has no delivery record in the plan lifecycle.
 
 ## Single-plan delivery and inferred completion
 
@@ -40,7 +43,7 @@ Acceptance is keyed to the candidate: a single plan uses its own execution candi
 a change set uses the integration candidate (above). For a single plan delivered on
 its own, after the human authorizes and you open the pull request (Gate 2), record the
 delivery with `delivery-record . <plan-id>` — the delivery signal, bound to the
-current candidate; it performs no git action itself. At Explore/Standard, this lets
+current candidate; it performs no git action itself. At Standard, this lets
 completion be **inferred** from candidate acceptance + delivery
 (`completion-infer . <plan-id>`), rather than a manual "mark done"; at Critical,
 completion stays an explicit human act (`plan-complete`). A post-delivery change

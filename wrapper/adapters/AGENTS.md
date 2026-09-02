@@ -14,8 +14,9 @@ A planned request flows as a normal conversation: the coordinator reads the rele
 Product Knowledge and plan material, drafts or reviews a readable plan, you
 approve it in conversation, the workspace prepares isolated repository worktrees,
 one worker implements the whole plan and commits each repository, an independent
-verifier checks the latest commits, the worker repairs failures with new commits,
-and you decide when the plan is complete.
+verifier checks the latest commits, and the worker repairs failures with new
+commits. Standard completion follows candidate acceptance plus delivery; Critical
+completion is explicit. Explore is planless and human-supervised.
 
 Branches, worktrees, runtime records, and verifier setup are hidden. The plan,
 the worker's handoff, the verifier's result, and your authority over completion
@@ -42,8 +43,10 @@ verifier, and is always described as human-supervised rather than verified.
 - `sources/` is passive: read only exact request-named files; never scan all
   sources or sibling workspaces to fill a context gap.
 - `plans/archive/` is outside normal context; read it only via explicit restore.
-- Completion, pull requests, merge, push, deployment, archive, and
-  cleanup are separate explicit human actions. Verification never implies any.
+- Pull requests, merge, push, deployment, archive, and cleanup are separate
+  explicit human actions. Standard completion is inferred from candidate
+  acceptance plus delivery; Critical completion is explicit. Verification never
+  implies completion or delivery.
 - Credentials stay in host Git config or the host agent; never in workspace files
   or runtime records.
 

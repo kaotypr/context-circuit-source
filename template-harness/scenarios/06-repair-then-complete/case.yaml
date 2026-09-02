@@ -4,7 +4,7 @@ mode: full-execution
 setup:
   # Seeded pre-state: the plan was executed, the first verify FAILED, the worker
   # repaired with a new commit, and the re-verify PASSED (worker_failures=1,
-  # execution verified, plan still approved). The repair MECHANISM is covered by
+  # execution verified, plan still draft). The repair MECHANISM is covered by
   # the deterministic lab; here the live conversation tests human completion after
   # a repair — completion succeeds only because a verified execution exists, and
   # reports the repair / knowledge follow-up in plain words (AC-15/22, INV-COMPLETE).

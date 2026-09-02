@@ -11,8 +11,8 @@ preserving no user data.
 
 ## 2026-08-21 — separate lifecycle gates
 
-Decision: review, approval, execution, completion, delivery, archive, takeover,
-and cleanup remain separate human actions.
+Decision: review, intent approval, execution, completion, delivery, archive,
+takeover, and cleanup remain separate human actions.
 
 Rationale: eligibility is not authorization and runtime evidence is not Done.
 Consequence: the router emits an exact gate or read-only recommendation.
@@ -59,7 +59,7 @@ wrapper is the authoritative present-day evidence.
 
 Consequence: the domain set is now the nine domains that mirror the shipped
 lifecycle — repository-binding (broadened with orientation), plan-review
-(broadened to planning), plan-approval, plan-execution, verification,
+(broadened to planning), plan-authorization, plan-execution, verification,
 completion, plan-organization, delivery, and host-adapters — plus the refreshed
 maintainer role, INDEX owner pointers, and terminology authority pointer.
 `context/sources.yaml` provenance was retired (the wrapper is not a `sources/`
@@ -103,12 +103,12 @@ and read identically on both engines. Accepted from proposal
 
 ## 2026-08-27 — concurrency is orchestration, not authority (run-stack)
 
-Decision: executing a set of approved plans in one run changes only order and
-overlap; conflicts are prevented (dependencies order waves, path leases serialize
-file overlaps, a dependent's base already contains its prerequisites), not
-resolved afterward.
+Decision: executing a set of intent-authorized plans in one run changes only order
+and overlap; conflicts are prevented (dependencies order waves, path leases
+serialize file overlaps, a dependent's base already contains its prerequisites),
+not resolved afterward.
 
-Rationale: approval, verification, completion, and delivery gates must be
+Rationale: intent approval, verification, completion, and delivery gates must be
 untouched; the runtime detects readiness/leases/bases deterministically and the
 coordinator decides how many ready plans to launch — no scheduler heuristic in the
 runtime (INV-RUNTIME-01, INV-CONCURRENCY-01/02).
@@ -186,7 +186,7 @@ idempotent on re-run, and self-contained (no workspace file, path, id, or intern
 mechanism leaks; a plan id in a title is the one allowed cross-reference);
 `plan.yaml` stays canonical and nothing is written under `plans/`.
 
-Rationale: import would bypass the human plan-authoring and approval gates; a leaked
+Rationale: import would bypass the human intent-authoring and approval gate; a leaked
 internal makes the external copy unreadable to a lay reader.
 Consequence: INV-EXTERNAL-02, INV-EXTERNAL-03; any future import must pass through the
 normal authoring gate (INV-APPROVE-01). Records live under a user-owned `publication/`

@@ -74,29 +74,19 @@ expect_failure eng intent-approve "$ws" i0001-auth
 # an Explore-eligible intent approves at Explore
 awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i0004-widget/contract.yaml" >"$ws/intent/i0004-widget/c.new"
 mv "$ws/intent/i0004-widget/c.new" "$ws/intent/i0004-widget/contract.yaml"
+widget_digest=$(cc_intent_contract_digest "$ws/intent/i0004-widget/contract.yaml")
+printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$widget_digest" \
+	>"$ws/intent/i0004-widget/adversary.md"
 eng intent-approve "$ws" i0004-widget >/dev/null
 
 # --- per-tier verifier floor at completion ---
 cc_fx_repo "$ws" api development
 
-# Explore: human-supervised, no verifier — eligible on a candidate-bound acceptance,
-# and completion-ready reports assurance human-supervised, never "verified".
+# Explore is human-supervised and planless in v1.0. Promotion to Standard/Critical
+# is the first point at which execution creates a plan of record.
 cc_fx_plan_intent "$ws" 0001-widget "Widget" api src/widget i0004-widget
-exec=$(eng execution-begin "$ws" 0001-widget sess-e | sed -n 's/^execution_id: //p')
-edir=$(cc_fx_exec_dir "$ws" 0001-widget "$exec")
-contains "$edir/execution.yaml" "tier: explore"
-cc_attempt_begin "$edir" >/dev/null
-wt="$ws/.runtime/worktrees/0001-widget/api"
-mkdir -p "$wt/src/widget"; printf 'x\n' >"$wt/src/widget/mod.txt"
-git -C "$wt" add -A; git -C "$wt" commit -q -m "feat(api): widget"
-cc_worker_commit_record "$edir" api implementation >/dev/null
-# no verifier runs at Explore; completion is blocked until a human accepts
-expect_failure eng completion-ready "$ws" 0001-widget
-eng human-acceptance-record "$edir" alice >/dev/null
-out=$(eng completion-ready "$ws" 0001-widget)
-printf '%s\n' "$out" | grep -q 'assurance: human-supervised' || fail "Explore completion must report human-supervised"
-printf '%s\n' "$out" | grep -q 'verified' && fail "Explore output must never be labeled verified" || :
-
+expect_failure eng plan-validate "$ws/plans/0001-widget"
+expect_failure eng execution-begin "$ws" 0001-widget sess-e
 # Standard: the independent verifier floor is required (acceptance alone is not enough).
 cc_fx_intent "$ws" i0007-std "Std" api "src/std"
 eng intent-approve "$ws" i0007-std >/dev/null

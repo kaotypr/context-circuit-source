@@ -20,6 +20,14 @@ env_reason() { sh "$ROOT/wrapper/runtime/engine.sh" intent-envelope-check "$ws" 
 cc_fx_plan_intent "$ws" 0001-child "Child" checkout-service src/checkout/retry "$iid"
 env_check 0001-child | grep -q '^envelope: within' || fail "strict child should be WITHIN"
 
+# An approved status and frozen digest without the digest-bound adversary record
+# cannot authorize execution; authorization fails upward.
+mv "$ws/intent/$iid/adversary.md" "$ws/intent/$iid/adversary.md.bak"
+expect_failure env_check 0001-child
+assert_eq "ADVERSARY_INVALID" "$(env_reason 0001-child)"
+mv "$ws/intent/$iid/adversary.md.bak" "$ws/intent/$iid/adversary.md"
+env_check 0001-child | grep -q '^envelope: within' || fail "restored adversary should authorize"
+
 # --- WITHIN: a plan region equal to a scope path ---
 cc_fx_plan_intent "$ws" 0002-equal "Equal" checkout-service test/checkout "$iid"
 env_check 0002-equal | grep -q '^envelope: within' || fail "equal region should be WITHIN"
@@ -98,6 +106,6 @@ expect_failure sh "$ROOT/wrapper/runtime/engine.sh" execution-begin "$ws" 0004-b
 assert_eq "draft" "$(cc_plan_status "$ws" 0007-ok)"
 exec=$(sh "$ROOT/wrapper/runtime/engine.sh" execution-begin "$ws" 0007-ok sess-ok | sed -n 's/^execution_id: //p')
 test -n "$exec" || fail "WITHIN intent-authorized plan should begin execution without plan approval"
-assert_eq "approved" "$(cc_plan_status "$ws" 0007-ok)"   # derived, not a separate human gate
+assert_eq "draft" "$(cc_plan_status "$ws" 0007-ok)"   # no intermediate "approved" status; stays draft
 
 pass 'intent envelope (crown jewel 1)'

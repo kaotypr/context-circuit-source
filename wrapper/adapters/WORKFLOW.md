@@ -40,7 +40,7 @@ Everything the human decides is one of two gates; everything between is mechanic
 | Execute plans X…Z / run the ready stack. | Run a set of intent-authorized plans in dependency order: the runtime detects which are ready (dependencies verified, paths free) and selects each base; the coordinator may overlap provably-independent ready plans up to a fan-out width (the lease arbitrates races), each still one worker and one independent verifier. Adds no authority; marks nothing done or delivered. |
 | What happened with X? | Summarize execution evidence. |
 | Repair the failed X verification. | Another worker attempt if allowed. |
-| Accept the result / mark X complete. | Accept the candidate; completion is inferred from acceptance + delivery at Explore/Standard, and is an explicit human act at Critical. |
+| Accept the result / mark X complete. | Accept the candidate; Standard completion is inferred from acceptance + delivery, and Critical completion is an explicit human act. Explore is planless. |
 | Review / accept context updates for X. | Discuss / accept a knowledge proposal. |
 | Archive / restore intent or plan X. | Move out of / into the active area; no status change. |
 | Open a pull request for X / deliver X. | **Gate 2**: separate delivery; source = execution branch (or change-set integration tip), target = anchor branch. |
@@ -58,8 +58,8 @@ Everything the human decides is one of two gates; everything between is mechanic
   (direct collaboration) has one worker and the human as live oracle and is never
   verified (INV-PAIR-01 / INV-ASSURE-01).
 - Verification produces `verified` evidence bound to the candidate. Completion is
-  inferred from candidate acceptance + delivery at Explore/Standard, and explicit at
-  Critical; verification alone never completes anything.
+  inferred from candidate acceptance + delivery at Standard, and explicit at Critical;
+  Explore is planless and verification alone never completes anything.
 - Delivery (pull request, merge, push, deploy) and cleanup are separate explicit
   actions (Gate 2); a pull request targets the recorded `anchor_branch`, never
   `default_branch`.

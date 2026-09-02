@@ -2,7 +2,7 @@ id: 07b-restore-archived-plan
 title: Restore an archived plan by name — returns it active, status preserved, nothing lost
 mode: conversation-only
 setup:
-  # The plan STARTS archived (approved, then archived at prep). Because the run
+  # The plan STARTS archived (draft, then archived at prep). Because the run
   # begins archived and must end active, the round-trip is detectable from final
   # state — unlike an archive+restore in one case (INV-ARCHIVE-02).
   repositories:
@@ -43,7 +43,7 @@ grader:
   # A. state post-conditions (hard gate) — started archived, must end ACTIVE
   post_conditions:
     - repositories_registered: 1
-    - plan_status: 0001-md-export:approved     # restored active with status preserved
+    - plan_status: 0001-md-export:draft     # restored active with status preserved
     - plan_not_archived: 0001-md-export          # moved back out of plans/archive/
     - plan_indexed: 0001-md-export               # active index row restored
     - no_execution_records: true

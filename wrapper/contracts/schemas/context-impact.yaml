@@ -28,9 +28,9 @@ reconciliation_debt_marker:
   purpose: >
     Completion or delivery of a candidate emits a pending reconciliation-debt
     marker keyed to the candidate id (INV-COMPLETE-02). The next plan's grounding
-    preflight blocks (Standard/Critical) or loudly warns (Explore) while a marker
-    whose knowledge scope overlaps the new plan remains pending, so forgetting to
-    reconcile becomes structurally hard (INV-KNOWLEDGE-02). Keyed to the candidate,
+    preflight blocks a Standard/Critical plan while a marker whose knowledge scope
+    overlaps the new plan remains pending, so forgetting to reconcile becomes
+    structurally hard (INV-KNOWLEDGE-02). Explore is planless. Keyed to the candidate,
     it inherits candidate honesty: a new candidate carries its own debt, a voided
     candidate's debt is voided with it.
   fields:

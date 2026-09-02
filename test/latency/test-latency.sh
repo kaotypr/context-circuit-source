@@ -24,7 +24,6 @@ edir_of() { printf '%s/.runtime/executions/%s/%s' "$ws" "$1" "$(cc_latest_execut
 #    with no coordinator step.
 # ============================================================================
 cc_fx_plan "$ws" 0001-meas "Measure" "api"
-cc_plan_approve "$ws" 0001-meas >/dev/null
 exec=$(cc_execution_begin "$ws" 0001-meas sess1 | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/0001-meas/$exec"
 ey="$edir/execution.yaml"
@@ -73,13 +72,13 @@ not_contains "$hy" "bogus_key:"
 #    the block.
 # ============================================================================
 cc_fx_plan "$ws" 0002-blk "Blocked" "api"
-cc_plan_approve "$ws" 0002-blk >/dev/null
 bexec=$(cc_execution_begin "$ws" 0002-blk sess2 | sed -n 's/^execution_id: //p')
 bedir="$ws/.runtime/executions/0002-blk/$bexec"
 cc_attempt_begin "$bedir" >/dev/null
 cc_fx_commit "$ws" 0002-blk api impl
 cc_worker_commit_record "$bedir" api implementation >/dev/null
 cc_attempt_evidence_record "$bedir" 1 worker_model=model-hi worker_effort=high >/dev/null
+cc_verifier_prepare "$bedir" >/dev/null
 cc_verifier_result_record "$bedir" 1 blocked >/dev/null
 assert_eq "blocked" "$(cc_execution_status "$bedir")"
 bhy="$bedir/attempts/001/host-evidence.yaml"
@@ -102,11 +101,8 @@ run_content() { # pid repo path content
 cc_fx_plan_ex "$ws" 0003-ca "CA" api src/shared ""
 cc_fx_plan_ex "$ws" 0004-cb "CB" api src/shared ""
 cc_fx_plan_ex "$ws" 0005-cc "CC" api src/cc "0003-ca 0004-cb"
-cc_plan_approve "$ws" 0003-ca >/dev/null
-cc_plan_approve "$ws" 0004-cb >/dev/null
 run_content 0003-ca api src/shared "AAA"
 run_content 0004-cb api src/shared "BBB"
-cc_plan_approve "$ws" 0005-cc >/dev/null
 expect_failure cc_execution_begin "$ws" 0005-cc 0005-cc-w
 ce="$(edir_of 0005-cc)"
 assert_eq "blocked" "$(cc_execution_status "$ce")"
@@ -117,7 +113,6 @@ contains "$ce/execution.yaml" "blocked_reason: BASE_UNBUILDABLE"
 #    (model, effort) but never the worker-failure counter (INV-REPAIR-01).
 # ============================================================================
 cc_fx_plan "$ws" 0006-esc "Escalate" "api"
-cc_plan_approve "$ws" 0006-esc >/dev/null
 eex=$(cc_execution_begin "$ws" 0006-esc sess6 | sed -n 's/^execution_id: //p')
 eed="$ws/.runtime/executions/0006-esc/$eex"
 # attempt 1 at the configured start -> rejected
@@ -125,6 +120,7 @@ cc_attempt_begin "$eed" >/dev/null
 cc_fx_commit "$ws" 0006-esc api a1
 cc_worker_commit_record "$eed" api implementation >/dev/null
 cc_attempt_evidence_record "$eed" 1 worker_model=model-lo worker_effort=high >/dev/null
+cc_verifier_prepare "$eed" >/dev/null
 cc_verifier_result_record "$eed" 1 failed >/dev/null
 assert_eq "1" "$(cc_scalar "$eed/execution.yaml" worker_failures)"
 # attempt 2 escalated above the start -> passes; escalation did NOT buy an attempt
@@ -132,6 +128,7 @@ cc_attempt_begin "$eed" >/dev/null
 cc_fx_commit "$ws" 0006-esc api a2
 cc_worker_commit_record "$eed" api repair >/dev/null
 cc_attempt_evidence_record "$eed" 2 worker_model=model-hi worker_effort=max >/dev/null
+cc_verifier_prepare "$eed" >/dev/null
 cc_verifier_result_record "$eed" 2 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$eed")"
 # the counter is exactly the one rejection — escalation changed the model, not the accounting
@@ -148,16 +145,12 @@ assert_eq "2" "$(cc_scalar "$eed/execution.yaml" current_attempt)"   # escalatio
 # ============================================================================
 cc_fx_plan_ex "$ws" 0009-ia "IndepA" api src/ia ""
 cc_fx_plan_ex "$ws" 0010-ib "IndepB" api src/ib ""
-cc_plan_approve "$ws" 0009-ia >/dev/null
-cc_plan_approve "$ws" 0010-ib >/dev/null
 part=$(cc_run_stack_ready "$ws" 0009-ia 0010-ib)
 printf '%s\n' "$part" | grep -q '^0009-ia: ready' || fail "independent 0009 not ready (overlap must be permitted)"
 printf '%s\n' "$part" | grep -q '^0010-ib: ready' || fail "independent 0010 not ready (overlap must be permitted)"
 # a held lease on a shared region makes a conflicting peer wait — the arbiter
 cc_fx_plan_ex "$ws" 0011-la "LeaseA" api src/lz ""
 cc_fx_plan_ex "$ws" 0012-lb "LeaseB" api src/lz ""
-cc_plan_approve "$ws" 0011-la >/dev/null
-cc_plan_approve "$ws" 0012-lb >/dev/null
 cc_lease_acquire "$ws" api 0011-la "src/lz" >/dev/null
 # the loser of the race gets LEASE_CONFLICT and stays waiting
 expect_failure cc_lease_acquire "$ws" api 0012-lb "src/lz"

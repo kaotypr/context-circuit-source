@@ -61,7 +61,7 @@ completion. The engine's delivery function is report-only: it produces the
 per-repository pull-request source and default target and never pushes, merges,
 or opens pull requests itself.
 
-**Drift guard (v0.6, INV-DELIVER-01 extended).** When a plan is delivered and its
+**Drift guard (INV-DELIVER-01 extended).** When a plan is delivered and its
 recorded base has diverged from the current `anchor_branch` tip (because a sibling
 plan already merged), the plan is rebased onto the current tip and re-verified
 before its pull request opens — a plan is never merged from a base that no longer
@@ -92,7 +92,7 @@ requested; a failed execution is never cleaned up as a side effect.
 
 - `.agents/skills/cc-deliver/SKILL.md`
 - `wrapper/runtime/engine.sh`: `cc_delivery_targets` (read-only report),
-  `cc_delivery_drift`, `cc_delivery_rebase` (v0.6 drift guard)
+`cc_delivery_drift`, `cc_delivery_rebase` (delivery drift guard)
 - `.agents/skills/cc-deliver/SKILL.md` (Drift guard section)
 - `wrapper/adapters/WORKFLOW.md` (delivery-boundary owner per `invariants.yaml`)
 - `wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (with the drift-guard

@@ -110,8 +110,8 @@ emit the fenced mermaid.
 
 ## How it feeds the rest — the existing flow, unchanged
 
-A system design feeds Product Knowledge and plans through the **normal v0.5 path**,
-with nothing new: the coordinator gathers context from the named design source,
+A system design feeds Product Knowledge and plans through the **normal workspace
+flow**, with nothing new: the coordinator gathers context from the named design source,
 proposes context units through the existing context-proposal path, a human accepts
 those proposals, and plans ground in the resulting Product Knowledge via the
 existing `product_knowledge` references. "Accepting the design's ideas" *is*

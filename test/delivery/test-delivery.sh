@@ -9,7 +9,6 @@ cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
 cc_fx_plan "$ws" 0001-deliver "Deliver" "api web"
-cc_plan_approve "$ws" 0001-deliver >/dev/null
 exec=$(cc_execution_begin "$ws" 0001-deliver sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0001-deliver "$exec")
 

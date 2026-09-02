@@ -96,7 +96,7 @@ done
 [ ! -e "$stage_tree/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
 find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
 
-# Only v0.5 skills may ship.
+# Only the allowlisted product skills may ship.
 for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
   [ -d "$skill_dir" ] || continue
   skill_name=${skill_dir##*/}

@@ -30,20 +30,23 @@ workflows:
 ## Summary
 
 Authoring a grounded plan from a request, and conversationally reviewing a draft
-plan without approving or executing it. Both are owned by the `cc-plan` skill.
-Route "create a plan for …" and "review plan `<id>`" here.
+plan without executing it. Both are owned by the `cc-plan` skill. Route "create a
+plan for …" and "review plan `<id>`" here.
 
 ## Scope
 
 Inside: grounded plan creation, stable plan-id allocation, plan/task structure,
 the readable `PLAN.md` and canonical `plan.yaml`, and non-executing review.
 
-Outside: approval (see [plan-approval](../plan-approval/README.md)), execution
-(see [plan-execution](../plan-execution/README.md)), and any status change.
+Outside: authorization (see
+[plan-authorization](../plan-authorization/README.md), derived from the parent
+approved intent), execution (see [plan-execution](../plan-execution/README.md)),
+and any status change.
 
 ## Behavior
 
-Creating a plan does not approve or execute it. `cc-plan` drafts against
+Creating a plan does not execute it; it is authorized by its parent approved
+intent within the scope envelope. `cc-plan` drafts against
 route-selected Product Knowledge (`context/INDEX.md`), grounding the plan in
 available evidence; missing or contradictory information becomes an explicit
 open question, assumption, or risk rather than an invented decision
@@ -53,15 +56,15 @@ bounded paths or an explicit repository-wide scope, with explicit dependencies
 sequence is the next after the highest ever allocated and is never reused
 (INV-PLAN-03).
 
-`plan.yaml` owns human plan status (`draft`, `approved`, `done`); task status is
-a synchronized projection and never a second lifecycle authority (INV-PLAN-01).
+`plan.yaml` owns human plan status (`draft`, `done`); task status is a
+synchronized projection and never a second lifecycle authority (INV-PLAN-01).
 
 Reviewing a named plan is a read-only discussion: it walks the original request,
 objective/constraints/non-goals, grounding evidence, repository and task
 mapping, task order and dependencies, acceptance and verification ids,
 assumptions/open questions/risks, and delivery effects. It never changes plan
-status, approves, or executes. Resolving questions may update the draft;
-approval stays a separate explicit request. When the host exposes a native
+status or executes. Resolving questions may update the draft; authorization comes
+from the approved intent, not a separate plan-approval step. When the host exposes a native
 question prompt (`AskUserQuestion`, `AskQuestion`, `request_user_input`), focused
 choices may be offered there, but a missing or failed prompt is not
 `host-blocked` and question transcripts are not recorded.

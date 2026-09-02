@@ -9,7 +9,7 @@ domains:
   - context/domains/repository-binding/README.md
   - context/domains/host-adapters/README.md
   - context/domains/plan-review/README.md
-  - context/domains/plan-approval/README.md
+  - context/domains/plan-authorization/README.md
   - context/domains/plan-execution/README.md
   - context/domains/verification/README.md
   - context/domains/completion/README.md
@@ -65,7 +65,8 @@ adapters, skills, docs, and tests, and keeps `template/` as the blank seed.
 Repository binding keeps registered product repos portable; this source checkout
 is already identified. Host adapters are how Codex, Claude Code, and Cursor enter
 the same lifecycle as evidence-only transports. Planning and review are
-non-mutating; approval is an explicit conversational gate; execution, independent
+non-mutating; intent approval is the explicit conversational gate (Gate 1) that
+authorizes derived plans within its scope envelope; execution, independent
 verification, completion, archive/restore, and delivery are each separate
 explicit actions.
 
@@ -74,7 +75,7 @@ explicit actions.
 - [Workspace orientation and repository binding](../domains/repository-binding/README.md)
 - [Host adapters](../domains/host-adapters/README.md)
 - [Planning and plan review](../domains/plan-review/README.md)
-- [Plan approval](../domains/plan-approval/README.md)
+- [Plan authorization](../domains/plan-authorization/README.md)
 - [Plan execution](../domains/plan-execution/README.md)
 - [Verification](../domains/verification/README.md)
 - [Completion](../domains/completion/README.md)

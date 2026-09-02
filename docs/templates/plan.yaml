@@ -1,5 +1,6 @@
-schema_version: 1
+schema_version: 3
 plan: 0001-example
+intent: i0001-example
 title: Example plan
 status: draft
 objective: One-sentence description of the outcome.

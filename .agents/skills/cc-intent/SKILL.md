@@ -48,12 +48,14 @@ with only the contract as input — never the implementation, which does not exi
 yet. It tries to (a) satisfy every criterion and still be wrong and (b) name the
 missing edge / error / security / concurrency / data-loss paths. Record its
 findings in `intent/<id>/adversary.md` as `{severity, statement, suggested
-criterion}` plus a verdict `criteria_sound: yes | needs-work`. Fold surviving
-findings into new or revised criteria, or log them as explicit open questions,
+criterion}` plus a verdict `criteria_sound: yes | needs-work`; the record also
+includes the exact `contract_digest` of the criteria it challenged. Fold surviving
+findings into new or revised criteria, or log them as explicit open questions
 *before* the human approves. The adversary's depth scales with tier: light or a
 single inline pass at Explore, a full battery at Critical. If the host cannot
 create the adversary child, report `host-blocked` and present the criteria to the
-human as unchallenged — never fake the pass.
+human as unchallenged — never fake the pass. The runtime refuses approval when
+`adversary.md` is absent, stale, or not sound.
 
 ## Take the approval (Gate 1)
 

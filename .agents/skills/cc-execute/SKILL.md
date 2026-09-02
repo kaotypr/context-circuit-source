@@ -58,7 +58,7 @@ limit), then:
    changes a verdict or the failure counter.
 
 Do not require confirmation for individual tasks, branches, worktrees, commits,
-verifier steps, or repairs. The approved plan is the scope.
+verifier steps, or repairs. The plan — authorized by its intent's envelope — is the scope.
 
 ## Runtime actions — invoke, never read the engine
 

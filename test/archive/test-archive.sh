@@ -7,21 +7,24 @@ ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 
-# --- archive without any status validation: works for draft, approved, done ---
+# --- archive without any status validation: works for draft and done ---
 cc_fx_plan "$ws" 0001-draft "Draft plan" "api"
 cc_plan_archive "$ws" 0001-draft >/dev/null
 require_dir "$ws/plans/archive/0001-draft"
 assert_eq "draft" "$(cc_scalar "$ws/plans/archive/0001-draft/plan.yaml" status)"
 not_contains "$ws/plans/INDEX.md" "| 0001-draft |"
 
-cc_fx_plan "$ws" 0002-appr "Approved plan" "api"
-cc_plan_approve "$ws" 0002-appr >/dev/null
-cc_plan_archive "$ws" 0002-appr >/dev/null
-assert_eq "approved" "$(cc_scalar "$ws/plans/archive/0002-appr/plan.yaml" status)"
+cc_fx_plan "$ws" 0002-done "Done plan" "api"
+cc_fx_run_ok "$ws" 0002-done api src
+edir_done=$(cc_fx_exec_dir "$ws" 0002-done "$(cc_latest_execution "$ws" 0002-done)")
+cc_human_acceptance_record "$edir_done" alice >/dev/null
+cc_delivery_record "$ws" 0002-done >/dev/null
+cc_completion_infer "$ws" 0002-done >/dev/null
+cc_plan_archive "$ws" 0002-done >/dev/null
+assert_eq "done" "$(cc_scalar "$ws/plans/archive/0002-done/plan.yaml" status)"
 
 # --- archiving does not stop or rename an active execution ---
 cc_fx_plan "$ws" 0003-live "Live" "api"
-cc_plan_approve "$ws" 0003-live >/dev/null
 exec=$(cc_execution_begin "$ws" 0003-live sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0003-live "$exec")
 cc_attempt_begin "$edir" >/dev/null

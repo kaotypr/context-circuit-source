@@ -187,7 +187,7 @@ while IFS= read -r line; do
 			if [ -z "$hit" ]; then ok "no_machine_path_in_identity"
 			else bad "no_machine_path_in_identity (found: $hit)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		plan_status)
-			# val "<plan-id>:<expected-status>" — the explicit approve must flip status
+			# val "<plan-id>:<expected-status>" — completion is the only plan status transition
 			pid=${val%%:*}; want=${val#*:}
 			got=$(cc_plan_status "$WORKSPACE" "$pid" 2>/dev/null) || got=""
 			if [ "$got" = "$want" ]; then ok "plan_status ($pid=$got)"
@@ -409,9 +409,12 @@ action_occurred() {
 		connect-repo) [ -f "$WORKSPACE/repositories.local.yaml" ] && \
 			grep -q '^    path:' "$WORKSPACE/repositories.local.yaml" 2>/dev/null ;;  # a binding exists
 		review) return 0 ;;                                   # a review conversation always occurs
-		approve)                                              # a plan reached status approved or done
+		approve)                                              # an intent was approved or a plan completed
+			for f in $(find "$WORKSPACE/intent" -mindepth 2 -maxdepth 2 -name contract.yaml 2>/dev/null); do
+				grep -qE '^status:[[:space:]]*approved' "$f" 2>/dev/null && return 0
+			done
 			for f in $(find "$WORKSPACE/plans" -mindepth 2 -maxdepth 2 -name plan.yaml -not -path '*/archive/*' 2>/dev/null); do
-				grep -qE '^status:[[:space:]]*(approved|done)' "$f" 2>/dev/null && return 0
+				grep -qE '^status:[[:space:]]*done' "$f" 2>/dev/null && return 0
 			done; return 1 ;;
 		execute|execute-plan)                                 # an execution record exists
 			[ -d "$WORKSPACE/.runtime/executions" ] && \

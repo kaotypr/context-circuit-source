@@ -45,7 +45,7 @@ assert_eq "$cand" "$cur"
 cc_verifier_result_record "$edir" 1 passed >/dev/null
 contains "$edir/attempts/001/verifier.yaml" "candidate_id: $cand"
 contains "$edir/execution.yaml" "verified_candidate: $cand"
-eng completion-ready "$ws" 0001-retries >/dev/null
+expect_failure eng completion-ready "$ws" 0001-retries
 
 # --- human acceptance is first-class and candidate-bound ---
 eng human-acceptance-record "$edir" alice >/dev/null
@@ -55,6 +55,7 @@ contains "$edir/human-acceptance.yaml" "accepted_by: alice"
 eng human-acceptance-current "$edir" >/dev/null
 
 # --- a NEW commit yields a new candidate and VOIDS prior evidence + acceptance ---
+cc_attempt_begin "$edir" >/dev/null
 printf 'b\n' >>"$wt/src/mod.txt"; git -C "$wt" add -A; git -C "$wt" commit -q -m "feat(api): more"
 cc_worker_commit_record "$edir" api repair >/dev/null
 cand2=$(eng candidate-current "$ws" 0001-retries | sed -n 's/^candidate_id: //p')
@@ -63,15 +64,19 @@ expect_failure eng completion-ready "$ws" 0001-retries      # verified evidence 
 expect_failure eng human-acceptance-current "$edir"          # acceptance no longer matches
 
 # re-verify + re-accept against the new candidate restores eligibility
+cc_verifier_prepare "$edir" >/dev/null
 cc_verifier_result_record "$edir" 2 passed >/dev/null
 contains "$edir/execution.yaml" "verified_candidate: $cand2"
-eng completion-ready "$ws" 0001-retries >/dev/null
 eng human-acceptance-record "$edir" alice >/dev/null
+eng completion-ready "$ws" 0001-retries >/dev/null
 eng human-acceptance-current "$edir" >/dev/null
 
 # --- a CRITERIA change (re-approved on the intent) also voids the candidate ---
 sed 's/Retries works/Retries works within budget/' "$ws/intent/$iid/contract.yaml" >"$ws/intent/$iid/contract.yaml.new"
 mv "$ws/intent/$iid/contract.yaml.new" "$ws/intent/$iid/contract.yaml"
+new_digest=$(cc_intent_contract_digest "$ws/intent/$iid/contract.yaml")
+printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$new_digest" \
+	>"$ws/intent/$iid/adversary.md"
 eng intent-approve "$ws" "$iid" >/dev/null                   # re-freeze the changed criteria
 cand3=$(eng candidate-current "$ws" 0001-retries | sed -n 's/^candidate_id: //p')
 test "$cand3" != "$cand2" || fail "a criteria change must change the candidate"

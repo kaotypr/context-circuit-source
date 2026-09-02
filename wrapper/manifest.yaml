@@ -17,7 +17,7 @@ accepted_schema_versions:
   workspace: [1]
   repositories-local: [1]
   intent-contract: [1]
-  plan: [1, 2, 3]
+  plan: [3]
   task: [1]
   execution: [1]
   worker-handoff: [1]

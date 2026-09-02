@@ -23,8 +23,10 @@ within that scope (no separate plan approval); the workspace prepares isolated
 repository worktrees; one worker
 implements the whole plan and commits each repository; an independent read-only
 verifier checks the latest commits; the worker repairs failures with new
-commits; and you decide when the plan is complete. Approval, execution,
-completion, archive, restore, and delivery are separate explicit human actions.
+commits; and completion follows the tier: Standard after candidate acceptance
+plus delivery, Critical after explicit human completion. Explore is planless and
+human-supervised. Intent approval and delivery are the two explicit human gates;
+archive and restore remain separate organization actions.
 
 ## Source layout
 

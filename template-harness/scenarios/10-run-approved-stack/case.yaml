@@ -1,8 +1,8 @@
 id: 10-run-approved-stack
-title: Run a batch of ten approved, inter-dependent plans in one go; all built and independently checked in dependency order, nothing marked done
+title: Run a batch of ten intent-authorized, inter-dependent plans in one go; all built and independently checked in dependency order, nothing marked done
 mode: full-execution
 setup:
-  # One connected repo and TEN real approved plans of a small task-tracker CLI.
+  # One connected repo and TEN real intent-authorized plans of a small task-tracker CLI.
   # The plans build on each other (scaffold -> config/storage/model -> store ->
   # add/list/done -> cli -> help), so the runtime must run them in dependency
   # order, stack dependents on their predecessors, and build integration bases
@@ -20,87 +20,87 @@ setup:
       repository: taskkit
       objective: Create the project entry point and package layout.
       path: src/app
-      seed_state: approved
+      seed_state: draft
     - id: 0002-config
       title: Config loader
       repository: taskkit
       objective: Load settings from a config file with sensible defaults.
       path: src/config
       deps: [0001-scaffold]
-      seed_state: approved
+      seed_state: draft
     - id: 0003-storage
       title: JSON storage helper
       repository: taskkit
       objective: Read and write the task list as JSON on disk.
       path: src/storage
       deps: [0001-scaffold]
-      seed_state: approved
+      seed_state: draft
     - id: 0004-model
       title: Task data model
       repository: taskkit
       objective: Define the Task record and its fields.
       path: src/model
       deps: [0001-scaffold]
-      seed_state: approved
+      seed_state: draft
     - id: 0005-store
       title: Task persistence
       repository: taskkit
       objective: Persist tasks through the storage helper and the model.
       path: src/store
       deps: [0003-storage, 0004-model]
-      seed_state: approved
+      seed_state: draft
     - id: 0006-add
       title: add command
       repository: taskkit
       objective: Implement the add command to create a task.
       path: src/commands/add
       deps: [0005-store]
-      seed_state: approved
+      seed_state: draft
     - id: 0007-list
       title: list command
       repository: taskkit
       objective: Implement the list command to show tasks.
       path: src/commands/list
       deps: [0005-store]
-      seed_state: approved
+      seed_state: draft
     - id: 0008-done
       title: done command
       repository: taskkit
       objective: Implement the done command to complete a task.
       path: src/commands/done
       deps: [0005-store]
-      seed_state: approved
+      seed_state: draft
     - id: 0009-cli
       title: CLI router
       repository: taskkit
       objective: Route command-line arguments to the right command.
       path: src/cli
       deps: [0006-add, 0007-list, 0008-done]
-      seed_state: approved
+      seed_state: draft
     - id: 0010-help
       title: Help/version and wiring
       repository: taskkit
       objective: Wire help and version output and the config into the CLI.
       path: src/help
       deps: [0002-config, 0009-cli]
-      seed_state: approved
+      seed_state: draft
   sources: []
 
 human:
   persona: >
-    A maker with a batch of plans they already approved, each building on the
+    A maker with a batch of plans whose intents they already approved, each building on the
     last. Wants the whole batch built in one go and then a plain-language
     confirmation that everything is done and checked. Has never heard of Context
     Circuit and knows none of its internals.
   turns:
-    - say: "Please build the approved plans 0001 through 0010 — run them all in one go."
+    - say: "Please build plans 0001 through 0010 — run them all in one go."
     - say: "How did that go — is everything built and checked?"
   reactions:
-    approves: true             # the plans are already approved; this is an execute request
+    approves: true             # the plans are already authorized; this is an execute request
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It builds all ten approved plans in one run, in plain terms, without asking to re-approve them.
+    - It builds all ten authorized plans in one run, in plain terms, without asking to re-approve them.
     - It reports that every plan was implemented and independently checked/verified.
     - When asked, it says the work is built and verified but leaves marking each plan
       done/complete as a separate step for the human.

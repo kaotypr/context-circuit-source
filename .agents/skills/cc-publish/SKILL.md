@@ -1,6 +1,6 @@
 ---
 name: cc-publish
-description: Publish Context Circuit data to an external system (ClickUp, Jira, GitHub, Notion, Slack, …) as self-contained, one-way, idempotent records. A manually-triggered publication, orthogonal to the core workflow — never a plan/approve/execute/verify/deliver step, and it never changes plan status. It publishes either a plan and its tasks (kind plan), or a plan's open questions as a chat discussion thread (kind thread).
+description: Publish Context Circuit data to an external system (ClickUp, Jira, GitHub, Notion, Slack, …) as self-contained, one-way, idempotent records. A manually-triggered publication, orthogonal to the core workflow — never an intent/plan/execute/verify/deliver step, and it never changes plan status. It publishes either a plan and its tasks (kind plan), or a plan's open questions as a chat discussion thread (kind thread).
 ---
 
 ## When to use
@@ -13,9 +13,9 @@ according to its `kind`: **`plan`** (a plan and its tasks → a tracker) or **`t
 (a plan's open questions → a chat discussion).
 
 Publishing is **orthogonal to the core workflow**. It is not a phase and is not
-triggered by one: approving, executing, verifying, delivering, or completing a plan
-neither runs this nor is affected by it. You may publish a plan in any state —
-`draft`, `approved`, `done`, or never. Run it only when the human asks, every time;
+triggered by one: approving an intent, executing, verifying, delivering, or
+completing a plan neither runs this nor is affected by it. You may publish a plan in
+any state — `draft`, `done`, or never. Run it only when the human asks, every time;
 there is no automatic, scheduled, or event trigger.
 
 Note the vocabulary: in this product "publish" means sending data to an external
@@ -165,7 +165,7 @@ action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
 values and add a third column — `desired … | we sent … | tracker now …`. This read is
 strictly bounded: **display only** (nothing read is written to `field-intent/`, the record,
 `plan.yaml`, or any workspace file), **never authority** (a publish still pushes the
-desired value; tracker drift stays cosmetic as in v0.6), read-only through the same
+desired value; tracker drift stays cosmetic), read-only through the same
 host/MCP tools, and **off by default**. If the config does not opt in, never read the
 provider in preview.
 
@@ -226,7 +226,7 @@ On re-publish, compare against the record on **both** axes — content and field
 
 Update the **same** external item in place, and skip a task only when it is unchanged
 on **both** — so a task whose content is unchanged but whose desired estimate moved
-from 60→90 is still a **field-only update**, not a skip. This closes the v0.6 blind
+from 60→90 is still a **field-only update**, not a skip. This closes the prior blind
 spot where a date/estimate change was invisible because only content was hashed. Never
 create a second item for a plan or task that already has a mapped id. Leave provider
 fields neither the intent nor the record owns (a human's manual edits) untouched.

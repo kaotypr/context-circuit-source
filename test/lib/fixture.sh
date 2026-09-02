@@ -55,6 +55,9 @@ cc_fx_plan() {
 		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
 	} >"$cc_fxp_ws/intent/$cc_fxp_iid/contract.yaml"
 	printf '# %s\n' "$cc_fxp_title" >"$cc_fxp_ws/intent/$cc_fxp_iid/INTENT.md"
+	cc_fxp_digest=$(cc_intent_contract_digest "$cc_fxp_ws/intent/$cc_fxp_iid/contract.yaml")
+	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$cc_fxp_digest" \
+		>"$cc_fxp_ws/intent/$cc_fxp_iid/adversary.md"
 	cc_intent_index_upsert "$cc_fxp_ws" "$cc_fxp_iid" >/dev/null
 	cc_intent_approve "$cc_fxp_ws" "$cc_fxp_iid" >/dev/null
 	mkdir -p "$cc_fxp_dir/tasks"
@@ -108,6 +111,9 @@ cc_fx_plan_ex() {
 		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
 	} >"$cc_fxe_ws/intent/$cc_fxe_iid/contract.yaml"
 	printf '# %s\n' "$cc_fxe_title" >"$cc_fxe_ws/intent/$cc_fxe_iid/INTENT.md"
+	cc_fxe_digest=$(cc_intent_contract_digest "$cc_fxe_ws/intent/$cc_fxe_iid/contract.yaml")
+	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$cc_fxe_digest" \
+		>"$cc_fxe_ws/intent/$cc_fxe_iid/adversary.md"
 	cc_intent_index_upsert "$cc_fxe_ws" "$cc_fxe_iid" >/dev/null
 	cc_intent_approve "$cc_fxe_ws" "$cc_fxe_iid" >/dev/null
 	mkdir -p "$cc_fxe_dir/tasks"
@@ -136,12 +142,11 @@ cc_fx_plan_ex() {
 	cc_plan_index_upsert "$cc_fxe_ws" "$cc_fxe_pid" >/dev/null
 }
 
-# cc_fx_run_ok WS PID REPO PATH -> approve/execute/worker-commit (PATH/mod.txt)/verify
-# passed. Leaves the plan verified. Uses OWNER=<pid>-w.
+# cc_fx_run_ok WS PID REPO PATH -> execute/worker-commit (PATH/mod.txt)/verify passed.
+# Leaves the plan verified. Uses OWNER=<pid>-w. A plan is authorized by its approved
+# intent within the scope envelope; execution needs no separate plan-approval step.
 cc_fx_run_ok() {
 	cc_fxo_ws=$1; cc_fxo_pid=$2; cc_fxo_repo=$3; cc_fxo_path=$4
-	[ "$(cc_plan_status "$cc_fxo_ws" "$cc_fxo_pid" 2>/dev/null)" = draft ] \
-		&& { cc_plan_approve "$cc_fxo_ws" "$cc_fxo_pid" >/dev/null || return 1; } || :
 	cc_fxo_exec=$(cc_execution_begin "$cc_fxo_ws" "$cc_fxo_pid" "$cc_fxo_pid-w" | sed -n 's/^execution_id: //p') || return 1
 	cc_fxo_edir="$cc_fxo_ws/.runtime/executions/$cc_fxo_pid/$cc_fxo_exec"
 	cc_fxo_wt="$cc_fxo_ws/.runtime/worktrees/$cc_fxo_pid/$cc_fxo_repo"
@@ -185,6 +190,9 @@ cc_fx_intent() {
 		printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$cc_fxi_tier"
 	} >"$cc_fxi_dir/contract.yaml"
 	printf '# %s\n\nGoal: %s.\n' "$cc_fxi_title" "$cc_fxi_title" >"$cc_fxi_dir/INTENT.md"
+	cc_fxi_digest=$(cc_intent_contract_digest "$cc_fxi_dir/contract.yaml")
+	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$cc_fxi_digest" \
+		>"$cc_fxi_dir/adversary.md"
 	cc_intent_index_upsert "$cc_fxi_ws" "$cc_fxi_id" >/dev/null
 }
 

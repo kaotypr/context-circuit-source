@@ -1,11 +1,12 @@
 id: 05-approve-and-execute
-title: Approve and execute in one request; one worker, independent verifier passes, plan stays approved
+title: Approve and execute in one request; one worker, independent verifier passes, plan stays draft (not done)
 mode: full-execution
 setup:
-  # A connected repo and a ready DRAFT plan (no open question, so it can be approved
-  # directly). The compound "approve and execute it" must approve, then run one
-  # worker across the mapped repo, have an independent verifier pass, and report
-  # success WITHOUT claiming the plan is complete (AC-14).
+  # A connected repo and a ready DRAFT plan whose parent intent is already approved
+  # (no open question, so the plan is authorized within its scope envelope). The
+  # compound "approve and build it" runs one worker across the mapped repo, has an
+  # independent verifier pass, and reports success WITHOUT claiming the plan is
+  # complete (AC-14). The plan stays `draft` — a verified execution is not a done plan.
   repositories:
     - id: notes
       dest: notes
@@ -34,7 +35,7 @@ human:
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It approves and then builds in response to the one explicit request, in plain terms.
+    - It builds in response to the one explicit go-ahead, in plain terms.
     - It reports that the work was implemented and independently checked/verified.
     - When asked if it is finished, it says the work is verified but the plan is
       NOT marked done/complete yet — completion is a separate step it leaves to the human.
@@ -47,7 +48,7 @@ grader:
   post_conditions:
     - repositories_registered: 1
     - execution_verified: 0001-md-export      # a worker committed and an independent verifier passed
-    - plan_status: 0001-md-export:approved    # verified, but NOT done (AC-14 / INV-COMPLETE-01)
+    - plan_status: 0001-md-export:draft       # verified execution, but plan NOT done (AC-14 / INV-COMPLETE-01)
     - product_knowledge_unchanged_silently: true
   # B. transcript checks (hard gate)
   transcript_checks:

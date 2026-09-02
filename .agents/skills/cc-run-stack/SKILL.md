@@ -55,9 +55,10 @@ Repeat until no plan in the set is runnable:
 
 1. Ask the runtime to partition the whole set with `run-stack-ready`. It buckets
    each plan as **verified** (already built and checked — not runnable again),
-   **ready** (approved, never run, dependencies verified, paths free),
+   **ready** (intent-authorized, never run, dependencies verified, paths free),
    **waiting** (dependencies not yet verified, or a needed path is leased),
-   **failed**, **blocked**, or **refused** (not approved). A plan whose latest
+   **failed**, **blocked**, or **refused** (not authorized by its intent's
+   envelope). A plan whose latest
    execution is terminal or in progress is never runnable.
 
 2. If nothing is **ready**, stop the loop.
@@ -142,7 +143,8 @@ Repeat until no plan in the set is runnable:
 When nothing is runnable, report in plain project language, by effect: which plans
 were built and independently checked, which need attention and why (failed after
 its checks, or blocked because a prerequisite did not pass), and which were skipped
-because they were not approved. Never expose internal mechanism — no runtime file
+because their intent does not authorize them (no approved intent, or scope drift).
+Never expose internal mechanism — no runtime file
 names, no `cc/...` branches, no worktrees, no fan-out width, and no `(model,
 effort)` values. Do not use a worker's own claim as verifier evidence.
 

@@ -9,7 +9,6 @@ cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
 cc_fx_plan "$ws" 0001-billing "Billing" "api web"
-cc_plan_approve "$ws" 0001-billing >/dev/null
 exec=$(cc_execution_begin "$ws" 0001-billing sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0001-billing "$exec")
 cc_attempt_begin "$edir" >/dev/null
@@ -22,18 +21,22 @@ cc_verifier_prepare "$edir" >/dev/null
 # --- completion is blocked before a verifier pass ---
 expect_failure cc_completion_ready "$ws" 0001-billing
 expect_failure cc_plan_complete "$ws" 0001-billing
-assert_eq "approved" "$(cc_plan_status "$ws" 0001-billing)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-billing)"
 
 # --- a verifier pass produces verified evidence but not completion ---
 cc_verifier_result_record "$edir" 1 passed >/dev/null
+expect_failure cc_completion_ready "$ws" 0001-billing
+cc_human_acceptance_record "$edir" alice >/dev/null
 cc_completion_ready "$ws" 0001-billing >/dev/null
-assert_eq "approved" "$(cc_plan_status "$ws" 0001-billing)"   # still approved
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-billing)"   # verified execution, not yet done
 
-# --- explicit human completion records the accepted commits ---
-cc_plan_complete "$ws" 0001-billing >/dev/null
+# --- Standard completion is inferred from the accepted candidate plus delivery ---
+expect_failure cc_plan_complete "$ws" 0001-billing
+cc_delivery_record "$ws" 0001-billing >/dev/null
+cc_completion_infer "$ws" 0001-billing >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" 0001-billing)"
 require_file "$edir/completion.yaml"
-contains "$edir/completion.yaml" "human_completion: accepted"
+contains "$edir/completion.yaml" "human_completion: inferred"
 api_latest=$(cc_scalar "$edir/repositories/api.yaml" latest_commit)
 contains "$edir/completion.yaml" "api: $api_latest"
 
@@ -54,7 +57,6 @@ assert_eq "$project_before" "$(cc_digest "$ws/context/PROJECT.md")"
 
 # --- a failed execution can never complete ---
 cc_fx_plan "$ws" 0002-fail "Fail" "api"
-cc_plan_approve "$ws" 0002-fail >/dev/null
 exec2=$(cc_execution_begin "$ws" 0002-fail sess2 | sed -n 's/^execution_id: //p')
 edir2=$(cc_fx_exec_dir "$ws" 0002-fail "$exec2")
 i=1
@@ -62,6 +64,7 @@ while [ "$i" -le 3 ]; do
 	cc_attempt_begin "$edir2" >/dev/null
 	cc_fx_commit "$ws" 0002-fail api "try$i"
 	cc_worker_commit_record "$edir2" api implementation >/dev/null
+	cc_verifier_prepare "$edir2" >/dev/null
 	cc_verifier_result_record "$edir2" "$i" failed >/dev/null || true
 	i=$((i + 1))
 done

@@ -28,22 +28,22 @@ importantly, how the coordinator translates them into plain language for a user.
 | Tier | The consequence level of a change: **Explore** (human-supervised, no independent verifier), **Standard**, or **Critical** (independent verifier required; Critical adds explicit completion). |
 | Candidate | The exact proposed result — a digest over the commit map, bases, and frozen criteria. Evidence and acceptance bind to it; any new commit or criteria change voids the old evidence. |
 | Human acceptance | A first-class record that a human accepted a specific candidate ("looks right, ship it"). |
-| Reconciliation debt | A marker that delivered work has not yet updated Product Knowledge; it blocks (or, at Explore, warns) the next plan's grounding until resolved. |
+| Reconciliation debt | A marker that delivered work has not yet updated Product Knowledge; it blocks the next Standard/Critical plan's grounding until resolved. Explore is planless and has no plan grounding preflight. |
 | Promote | Turn an Explore (direct-collaboration) session into a candidate-bearing change by attaching an intent and raising the tier. |
 | Change set | The set of plans delivered as one pull request; a single candidate is computed over it, so it is checked and accepted once. |
 | Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives within the intent's envelope. |
-| Plan status | The `draft`, `approved`, or `done` state of a plan. For a v1.0 plan it is a projection (approved follows the intent within its envelope; done is inferred from acceptance + delivery, explicit at Critical); a legacy plan keeps it human-controlled. |
-| Execution | One runtime attempt to implement an approved plan, with one worker and one independent verifier. |
-| Worker | The single role that implements an approved plan and commits its changes for one execution. |
+| Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent within its envelope; Standard completion is inferred from acceptance + delivery, while Critical completion is explicit. |
+| Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
+| Worker | The single role that implements an intent-authorized plan and commits its changes for one execution. |
 | Verifier | The independent, read-only role that checks the worker's latest commits. |
 | Repair attempt | A new worker commit plus a new independent check after a failed verification. |
-| Completion | The human decision to mark a plan done after a verified execution. |
+| Completion | The implementation-completion record for a plan: inferred from accepted delivery at Standard, and an explicit human decision after verification at Critical. Explore is planless. |
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
 | Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
 | Host-blocked | A state where the environment cannot run a required step (for example, an independent check), so the coordinator reports it and preserves the work rather than faking the step. |
-| Plan stack | A named set of approved plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
-| Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`; declaring it makes the plan `schema_version: 2`. |
+| Plan stack | A named set of intent-authorized plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
+| Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`. A v1.0 plan is `schema_version: 3`. |
 | Path lease | A `(repository, path region)` reservation extending the one-worker lock, so plans touching overlapping paths serialize while disjoint ones run together. |
 | Fan-out width | How many provably-independent ready plans a plan stack runs at once — a coordinator policy bounded by the host, not a gate; width 1 is plain serial order, and the path lease arbitrates any race. |
 | Role tiering | The per-role `(model, effort)` the coordinator runs the worker and verifier at, from a host-local config with adapter defaults; bounded host evidence that changes cost and speed, never meaning, and never independence or the failure limit. |

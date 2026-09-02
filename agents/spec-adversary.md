@@ -21,8 +21,9 @@ Its task, recorded in the intent's `adversary.md`:
   data-loss cases the criteria do not cover.
 
 Its output is a list of findings, each `{severity, statement, suggested
-criterion}`, plus a verdict `criteria_sound: yes | needs-work`. Findings become
-new or revised criteria, or explicit open questions, **before** the human
+criterion}`, plus a verdict `criteria_sound: yes | needs-work` and the exact
+`contract_digest` of the contract it challenged. Findings become new or revised
+criteria, or explicit open questions, **before** the human
 approves. Criteria that cannot survive the attack are rewritten or logged, so the
 downstream verification rigor certifies the right thing rather than faithfully
 certifying the wrong one.

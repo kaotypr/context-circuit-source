@@ -2,7 +2,7 @@ id: 07-archive-plan
 title: Archive a plan by name — moves it aside, deindexes it, preserves status, no validation
 mode: conversation-only
 setup:
-  # An APPROVED plan is seeded so the run shows archiving works WITHOUT validating
+  # A draft plan is seeded so the run shows archiving works WITHOUT validating
   # status (INV-ARCHIVE-01) and that the status is preserved in the archive.
   repositories:
     - id: notes
@@ -16,12 +16,12 @@ setup:
       title: Add a Markdown export command
       objective: Add an export.py command that exports the notes to a chosen output file.
       repository: notes
-      seed_state: approved
+      seed_state: draft
   sources: []
 
 human:
   persona: >
-    A solo maker who wants an approved plan moved off the active list for now. Has
+    A solo maker who wants a plan moved off the active list for now. Has
     never heard of Context Circuit and does not know its internals.
   turns:
     - say: "Archive the export plan for now — move it off my active list; I'm not ready to work on it."
@@ -42,7 +42,7 @@ grader:
   # A. state post-conditions (hard gate)
   post_conditions:
     - repositories_registered: 1
-    - plan_archived: 0001-md-export:approved   # in archive, deindexed, status preserved (no validation)
+    - plan_archived: 0001-md-export:draft   # in archive, deindexed, status preserved (no validation)
     - no_execution_records: true
     - product_knowledge_unchanged_silently: true
   # B. transcript checks (hard gate)

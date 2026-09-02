@@ -15,7 +15,7 @@ directory and archive to the ignored `dist/` folder:
 
 ```text
 sh scripts/build-dist.sh
-find dist/context-circuit-v0.5.0 -type f | sort
+find dist/context-circuit-v1.0.0 -type f | sort
 ```
 
 Pass a version explicitly when building another release, for example

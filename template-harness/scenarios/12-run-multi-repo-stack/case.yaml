@@ -1,8 +1,8 @@
 id: 12-run-multi-repo-stack
-title: Run an approved stack across TWO repositories; cross-repo deps gate order without a shared base, same-repo deps stack/integrate, all verified in order
+title: Run an intent-authorized stack across TWO repositories; cross-repo deps gate order without a shared base, same-repo deps stack/integrate, all verified in order
 mode: full-execution
 setup:
-  # Two connected repos and seven approved plans forming a cross-repo graph:
+  # Two connected repos and seven intent-authorized plans forming a cross-repo graph:
   #   api:  0001-api-core -> 0003-api-feature -> 0006-api-integrate
   #   web:  0002-web-core -> 0005-web-feature \
   #         0004-web-client (gated by api 0001) -> 0007-web-final (integrates 0004+0005)
@@ -30,64 +30,64 @@ setup:
       repository: api
       objective: Create the backend service entry point.
       path: src/core
-      seed_state: approved
+      seed_state: draft
     - id: 0002-web-core
       title: Web app shell
       repository: web
       objective: Create the web application shell.
       path: src/core
-      seed_state: approved
+      seed_state: draft
     - id: 0003-api-feature
       title: API feature endpoint
       repository: api
       objective: Add a feature endpoint to the backend.
       path: src/feature
       deps: [0001-api-core]
-      seed_state: approved
+      seed_state: draft
     - id: 0004-web-client
       title: Web API client
       repository: web
       objective: Add the web client that talks to the backend API.
       path: src/client
       deps: [0001-api-core]
-      seed_state: approved
+      seed_state: draft
     - id: 0005-web-feature
       title: Web feature view
       repository: web
       objective: Add the feature view to the web app.
       path: src/feature
       deps: [0002-web-core]
-      seed_state: approved
+      seed_state: draft
     - id: 0006-api-integrate
       title: API integration wiring
       repository: api
       objective: Wire the core and feature together in the backend.
       path: src/integrate
       deps: [0001-api-core, 0003-api-feature]
-      seed_state: approved
+      seed_state: draft
     - id: 0007-web-final
       title: Web final wiring
       repository: web
       objective: Wire the client and feature view into the web app.
       path: src/final
       deps: [0004-web-client, 0005-web-feature]
-      seed_state: approved
+      seed_state: draft
   sources: []
 
 human:
   persona: >
-    A maker with a backend and a web app, holding a batch of approved plans that
+    A maker with a backend and a web app, holding a batch of authorized plans that
     span both. Wants the whole batch built in one go and a plain-language
     confirmation. Has never heard of Context Circuit or its internals.
   turns:
-    - say: "Please build all the approved plans across both projects — run them together."
+    - say: "Please build all the plans across both projects — run them together."
     - say: "How did that go — is everything built and checked?"
   reactions:
     approves: true
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It builds all seven approved plans across both projects in one run, in plain terms.
+    - It builds all seven intent-authorized plans across both projects in one run, in plain terms.
     - It reports every plan was implemented and independently checked/verified.
     - When asked, it says the work is built and verified but leaves marking each plan
       done/complete as a separate step for the human.

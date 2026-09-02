@@ -77,6 +77,9 @@ status: draft
 contract_digest:
 EOF
 printf '# Checkout v2\n' >"$ws/intent/i$pid/INTENT.md"
+digest=$(cc_intent_contract_digest "$ws/intent/i$pid/contract.yaml")
+printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$digest" \
+	>"$ws/intent/i$pid/adversary.md"
 cc_intent_index_upsert "$ws" "i$pid" >/dev/null
 cc_intent_approve "$ws" "i$pid" >/dev/null
 mkdir -p "$ws/plans/$pid/tasks"
@@ -134,7 +137,6 @@ EOF
 printf '# Checkout v2\n' >"$ws/plans/$pid/PLAN.md"
 cc_plan_validate "$ws/plans/$pid" >/dev/null
 cc_plan_index_upsert "$ws" "$pid" >/dev/null
-cc_plan_approve "$ws" "$pid" >/dev/null
 exec=$(cc_execution_begin "$ws" "$pid" lab-session | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/$pid/$exec"
 
@@ -151,7 +153,10 @@ cc_verifier_result_record "$edir" 1 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir")"
 
 # 8. Human completion, then archive and restore.
-cc_plan_complete "$ws" "$pid" >/dev/null
+completion_edir="$ws/.runtime/executions/$pid/$(cc_latest_execution "$ws" "$pid")"
+cc_human_acceptance_record "$completion_edir" alice >/dev/null
+cc_delivery_record "$ws" "$pid" >/dev/null
+cc_completion_infer "$ws" "$pid" >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" "$pid")"
 cc_plan_archive "$ws" "$pid" >/dev/null
 require_dir "$ws/plans/archive/$pid"
@@ -162,7 +167,7 @@ require_dir "$ws/plans/$pid"
 test "$ws/.runtime" != "$ROOT/.runtime" || fail 'lab runtime collided with source runtime'
 require_dir "$ws/.runtime/executions/$pid"
 
-# 10. Run-stack (v0.6): the SHIPPED template carries base selection + path leases.
+# 10. Run-stack: the SHIPPED template carries base selection + path leases.
 #     Two roots and one integration dependent, all in api; plus one lease check.
 mkplan() { # pid title repo path "deps"
 	mp_dir="$ws/plans/$1"; mkdir -p "$mp_dir/tasks"
@@ -176,6 +181,9 @@ mkplan() { # pid title repo path "deps"
 		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
 	} >"$ws/intent/$mp_iid/contract.yaml"
 	printf '# %s\n' "$2" >"$ws/intent/$mp_iid/INTENT.md"
+	mp_digest=$(cc_intent_contract_digest "$ws/intent/$mp_iid/contract.yaml")
+	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$mp_digest" \
+		>"$ws/intent/$mp_iid/adversary.md"
 	cc_intent_index_upsert "$ws" "$mp_iid" >/dev/null
 	cc_intent_approve "$ws" "$mp_iid" >/dev/null
 	{
@@ -193,7 +201,6 @@ mkplan() { # pid title repo path "deps"
 	cc_plan_index_upsert "$ws" "$1" >/dev/null
 }
 runok() { # pid repo path
-	cc_plan_approve "$ws" "$1" >/dev/null
 	ro_ex=$(cc_execution_begin "$ws" "$1" "$1-w" | sed -n 's/^execution_id: //p')
 	ro_ed="$ws/.runtime/executions/$1/$ro_ex"; ro_wt="$ws/.runtime/worktrees/$1/$2"
 	cc_attempt_begin "$ro_ed" >/dev/null
@@ -208,7 +215,6 @@ mkplan 0003-sb  "Stack B"   api src/b ""
 mkplan 0004-int "Integrate" api src/c "0002-sa 0003-sb"
 runok 0002-sa api src/a
 runok 0003-sb api src/b
-cc_plan_approve "$ws" 0004-int >/dev/null
 bp=$(cc_base_prepare "$ws" 0004-int api)
 printf '%s' "$bp" | grep -q 'based_on: \[0002-sa, 0003-sb\]' || fail 'shipped integration base is missing based_on'
 intbase=$(printf '%s' "$bp" | sed -n 's/^base_commit: //p')
@@ -228,7 +234,6 @@ git -C "$ws/repositories/api" checkout -q development
 printf '# API agent guide\n\nStart every new source file with `// @grounded`.\n' >"$ws/repositories/api/AGENTS.md"
 git -C "$ws/repositories/api" add -A; git -C "$ws/repositories/api" commit -q -m 'chore(api): add agent guidance'
 mkplan 0005-grounded "Grounded" api src/g ""
-cc_plan_approve "$ws" 0005-grounded >/dev/null
 gex=$(cc_execution_begin "$ws" 0005-grounded sess-g | sed -n 's/^execution_id: //p')
 gedir="$ws/.runtime/executions/0005-grounded/$gex"
 require_file "$gedir/grounding/api.yaml"
@@ -245,7 +250,6 @@ cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 contains "$ws/wrapper/manifest.yaml" "runtime_version: 1.0.0"
 require_file "$ws/docs/role-tiering.md"                  # per-role tiering guidance ships (docs/)
 mkplan 0006-latency "Latency" api src/lat ""
-cc_plan_approve "$ws" 0006-latency >/dev/null
 lex=$(cc_execution_begin "$ws" 0006-latency sess-l | sed -n 's/^execution_id: //p')
 ledir="$ws/.runtime/executions/0006-latency/$lex"
 cc_attempt_begin "$ledir" >/dev/null

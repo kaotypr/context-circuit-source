@@ -7,7 +7,7 @@
 #
 # This runtime OWNS: safe path/identifier checks, atomic writes and digests,
 # workspace and repository-binding validation, anchor branch/commit validation,
-# branch/worktree preparation, plan structure and approval-state validation,
+# branch/worktree preparation, plan structure and intent-derived authorization validation,
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
 # the three-failure counter, one-worker locking, completion eligibility,
@@ -366,6 +366,24 @@ cc_intent_criteria_methods() {
 	' "$1"
 }
 
+# cc_intent_adversary_validate INTENT_DIR [EXPECTED_DIGEST] -> require a current,
+# passing independent spec-adversary record before Gate 1. The adversary owns no
+# approval authority; this only proves that the criteria were challenged and that
+# the recorded verdict still describes the exact contract being approved.
+cc_intent_adversary_validate() {
+	cc_iav_dir="$1"; cc_iav_file="$cc_iav_dir/adversary.md"
+	[ -f "$cc_iav_file" ] || { cc_fail INTENT_ADVERSARY_MISSING; return 1; }
+	cc_iav_verdict=$(cc_scalar "$cc_iav_file" "criteria_sound" 2>/dev/null) || cc_iav_verdict=""
+	[ "$cc_iav_verdict" = "yes" ] || { cc_fail INTENT_ADVERSARY_NOT_SOUND "$cc_iav_verdict"; return 1; }
+	cc_iav_expected="${2:-}"
+	[ -n "$cc_iav_expected" ] || cc_iav_expected=$(cc_intent_contract_digest "$cc_iav_dir/contract.yaml") \
+		|| { cc_fail INTENT_ADVERSARY_DIGEST_FAILED; return 1; }
+	cc_iav_bound=$(cc_scalar "$cc_iav_file" "contract_digest" 2>/dev/null) || cc_iav_bound=""
+	[ -n "$cc_iav_bound" ] || { cc_fail INTENT_ADVERSARY_DIGEST_MISSING; return 1; }
+	[ "$cc_iav_bound" = "$cc_iav_expected" ] || { cc_fail INTENT_ADVERSARY_STALE; return 1; }
+	return 0
+}
+
 # cc_intent_validate DIR -> confirm intent/<id>/ structure and contract.yaml fields
 cc_intent_validate() {
 	cc_iv_dir="$1"
@@ -473,6 +491,8 @@ cc_intent_approve() {
 	fi
 	cc_iap_status=$(cc_scalar "$cc_iap_yaml" "status")
 	cc_iap_digest=$(cc_intent_contract_digest "$cc_iap_yaml") || { cc_fail INTENT_DIGEST_FAILED; return 1; }
+	cc_intent_adversary_validate "$cc_iap_dir" "$cc_iap_digest" >/dev/null \
+		|| { cc_fail INTENT_APPROVE_ADVERSARY "$cc_iap_id"; return 1; }
 	# A draft approves normally; an already-approved intent may be RE-approved only
 	# when its criteria changed (its content digest no longer matches the frozen one)
 	# — the "changing the criteria re-enters the gate" rule (INV-INTENT-01). A
@@ -489,7 +509,8 @@ cc_intent_approve() {
 		/^contract_digest:/ { next }
 		{ print }
 		END { print "contract_digest: " d }
-	' "$cc_iap_yaml" | cc_atomic_write "$cc_iap_yaml"
+	' "$cc_iap_yaml" | cc_atomic_write "$cc_iap_yaml" \
+		|| { cc_fail INTENT_APPROVAL_RECORD_WRITE_FAILED "$cc_iap_id"; return 1; }
 	cc_intent_index_upsert "$cc_iap_root" "$cc_iap_id" >/dev/null
 	cc_emit intent "$cc_iap_id"
 	cc_emit status approved
@@ -553,6 +574,10 @@ cc_intent_envelope_check() {
 	cc_ec_root="$1"; cc_ec_plan="$2"
 	cc_ec_pdir="$cc_ec_root/plans/$cc_ec_plan"
 	[ -f "$cc_ec_pdir/plan.yaml" ] || { cc_fail ENVELOPE_PLAN_MISSING "$cc_ec_plan"; return 1; }
+	# Validate the complete declared plan before comparing its envelope. This keeps
+	# malformed or incomplete plans from being authorized by a partial repository
+	# scan (fail upward, INV-INTENT-02).
+	cc_plan_validate "$cc_ec_pdir" >/dev/null || { cc_emit envelope exceeds; cc_emit reason INVALID_PLAN; cc_fail ENVELOPE_PLAN_INVALID "$cc_ec_plan"; return 1; }
 	cc_ec_intent=$(cc_scalar "$cc_ec_pdir/plan.yaml" "intent") || cc_ec_intent=""
 	[ -n "$cc_ec_intent" ] || { cc_emit envelope exceeds; cc_emit reason NO_INTENT; cc_fail ENVELOPE_PLAN_NO_INTENT "$cc_ec_plan"; return 1; }
 	cc_ec_idir=$(cc_intent_dir "$cc_ec_root" "$cc_ec_intent")
@@ -567,6 +592,11 @@ cc_intent_envelope_check() {
 		cc_emit envelope exceeds; cc_emit reason CRITERIA_CHANGED
 		cc_fail ENVELOPE_EXCEEDS "criteria-changed"; return 1
 	fi
+	# An approved status and digest are not enough to authorize a route: the
+	# digest-bound adversary record is part of the Gate 1 evidence. This also makes
+	# hand-authored or partially migrated approved intents fail upward.
+	cc_intent_adversary_validate "$cc_ec_idir" "$cc_ec_frozen" >/dev/null \
+		|| { cc_emit envelope exceeds; cc_emit reason ADVERSARY_INVALID; cc_fail ENVELOPE_ADVERSARY_INVALID "$cc_ec_intent"; return 1; }
 	cc_ec_srepos=$(cc_intent_scope_repos "$cc_ec_contract")
 	for cc_ec_r in $(cc_plan_affected_repositories "$cc_ec_pdir/plan.yaml"); do
 		if ! printf '%s\n' "$cc_ec_srepos" | grep -Fxq "$cc_ec_r"; then
@@ -1107,10 +1137,9 @@ cc_base_prepare() {
 		if ! git -C "$cc_bp_tree" merge --no-ff \
 				-m "cc: integration base $cc_bp_plan (merge $cc_bp_deplist)" \
 				$cc_bp_mbr >/dev/null 2>&1; then
-			git -C "$cc_bp_tree" merge --abort >/dev/null 2>&1 || :
-			git -C "$cc_bp_abs" worktree remove --force "$cc_bp_tree" >/dev/null 2>&1 || rm -rf "$cc_bp_tree"
-			git -C "$cc_bp_abs" branch -D "$cc_bp_branch" >/dev/null 2>&1 || :
-			git -C "$cc_bp_abs" worktree prune >/dev/null 2>&1 || :
+			# Preserve the conflicted integration worktree and branch. The caller records
+			# BASE_UNBUILDABLE as blocked; retry/recovery must be able to inspect the
+			# conflict instead of losing the failed setup state (INV-PRESERVE-01).
 			cc_fail BASE_UNBUILDABLE "$cc_bp_repo:integration-conflict"; return 1
 		fi
 		cc_bp_base=$(git -C "$cc_bp_tree" rev-parse HEAD)
@@ -1296,7 +1325,7 @@ cc_plan_validate() {
 	[ "$(basename -- "$cc_pv_dir")" = "$cc_pv_id" ] || { cc_fail PLAN_ID_DIR_MISMATCH "$cc_pv_id"; return 1; }
 	cc_pv_status=$(cc_scalar "$cc_pv_dir/plan.yaml" "status") || cc_pv_status=""
 	case "$cc_pv_status" in
-		draft|approved|done) : ;;
+		draft|done) : ;;
 		*) cc_fail PLAN_STATUS_INVALID "$cc_pv_status"; return 1 ;;
 	esac
 	# schema version and inter-plan dependencies (INV-PLAN-05)
@@ -1312,6 +1341,13 @@ cc_plan_validate() {
 	cc_pv_intent=$(cc_scalar "$cc_pv_dir/plan.yaml" "intent") || cc_pv_intent=""
 	[ -n "$cc_pv_intent" ] || { cc_fail PLAN_INTENT_REQUIRED "$cc_pv_id"; return 1; }
 	cc_intent_id_valid "$cc_pv_intent" || { cc_fail PLAN_INTENT_INVALID "$cc_pv_intent"; return 1; }
+	# Explore is the planless, human-supervised route in v1.0. A plan of record
+	# begins only after promotion to Standard/Critical; accepting an Explore plan
+	# here would create a second execution lifecycle with no independent verifier.
+	cc_pv_root=$(cd -- "$cc_pv_dir/../.." 2>/dev/null && pwd) || cc_pv_root=""
+	cc_pv_intent_dir=$(cc_intent_dir "$cc_pv_root" "$cc_pv_intent")
+	cc_pv_tier=$(cc_scalar "$cc_pv_intent_dir/contract.yaml" "tier" 2>/dev/null) || cc_pv_tier=""
+	[ "$cc_pv_tier" != explore ] || { cc_fail PLAN_EXPLORE_PLANLESS "$cc_pv_id"; return 1; }
 	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
 	if [ -n "$cc_pv_deps" ]; then
 		cc_pv_plansdir=$(dirname -- "$cc_pv_dir")
@@ -1338,6 +1374,13 @@ cc_plan_validate() {
 			printf '%s\n' "$cc_pv_tasks" | grep -Fxq "$cc_pv_dep" \
 				|| { cc_fail TASK_UNKNOWN_DEPENDENCY "$cc_pv_t:$cc_pv_dep"; return 1; }
 		done
+	done
+	# Every declared repository must be represented by a task. Otherwise a plan can
+	# declare an extra repository whose scope is never checked as part of execution.
+	cc_pv_affected=$(cc_plan_affected_repositories "$cc_pv_dir/plan.yaml")
+	for cc_pv_r in $cc_pv_repos; do
+		printf '%s\n' "$cc_pv_affected" | grep -Fxq "$cc_pv_r" \
+			|| { cc_fail PLAN_REPOSITORY_UNUSED "$cc_pv_r"; return 1; }
 	done
 	cc_emit plan "$cc_pv_id"
 	cc_emit status "$cc_pv_status"
@@ -1408,24 +1451,6 @@ cc_plan_set_status() {
 		!done && /^status:[[:space:]]/ { print "status: " s; done=1; next }
 		{ print }
 	' "$cc_ss_file" | cc_atomic_write "$cc_ss_file"
-}
-
-# cc_plan_approve ROOT PLAN -> draft->approved after readiness checks
-cc_plan_approve() {
-	cc_ap_root="$1"; cc_ap_plan="$2"
-	cc_ap_dir="$cc_ap_root/plans/$cc_ap_plan"
-	cc_plan_validate "$cc_ap_dir" >/dev/null || { cc_fail APPROVAL_PLAN_INVALID "$cc_ap_plan"; return 1; }
-	cc_ap_status=$(cc_scalar "$cc_ap_dir/plan.yaml" "status")
-	[ "$cc_ap_status" = "draft" ] || { cc_fail APPROVAL_NOT_DRAFT "$cc_ap_status"; return 1; }
-	# A plan is authorized by its approved intent within the scope envelope
-	# (INV-INTENT-02 / INV-APPROVE-01): the human gate is on the intent, and a plan
-	# that exceeds the envelope is re-gated, never approved.
-	cc_intent_envelope_check "$cc_ap_root" "$cc_ap_plan" >/dev/null || { cc_fail APPROVAL_ENVELOPE_EXCEEDS "$cc_ap_plan"; return 1; }
-	cc_plan_set_status "$cc_ap_dir/plan.yaml" "approved" || { cc_fail APPROVAL_WRITE_FAILED; return 1; }
-	cc_plan_index_upsert "$cc_ap_root" "$cc_ap_plan" >/dev/null
-	cc_emit plan "$cc_ap_plan"
-	cc_emit status approved
-	return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -1502,7 +1527,8 @@ cc_lock_acquire() {
 	mkdir -p "$cc_la_root/.runtime/locks"
 	if mkdir "$cc_la_dir" 2>/dev/null; then
 		printf 'owner: %s\nplan: %s\nacquired_at: %s\n' "$cc_la_owner" "$cc_la_plan" "$(cc_now)" \
-			| cc_atomic_write "$cc_la_dir/owner.yaml"
+			| cc_atomic_write "$cc_la_dir/owner.yaml" \
+			|| { rmdir "$cc_la_dir" 2>/dev/null || :; cc_fail LOCK_RECORD_WRITE_FAILED "$cc_la_plan"; return 1; }
 		cc_emit lock acquired
 		cc_emit owner "$cc_la_owner"
 		return 0
@@ -1661,18 +1687,14 @@ cc_execution_begin() {
 	cc_plan_validate "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PLAN_INVALID; return 1; }
 	# An intent-bearing (v1.0) plan re-runs the envelope check at execution start
 	# (INV-INTENT-02, crown jewel 1): scope drift discovered after planning re-gates
-	# rather than proceeding on the original approval. Its approval is derived from
-	# the approved intent within the envelope, so a still-draft plan is authorized
-	# here (INV-EXEC-01 reworked) instead of requiring a separate plan-approval gate.
+	# rather than proceeding. Authorization is derived from the approved intent within
+	# the scope envelope — there is no separate plan-approval gate and no intermediate
+	# plan status. A plan stays `draft` until it completes (INV-EXEC-01 reworked); an
+	# already-completed plan is not re-executed.
 	cc_eb_intent=$(cc_scalar "$cc_eb_dir/plan.yaml" "intent") || cc_eb_intent=""
 	cc_eb_status=$(cc_scalar "$cc_eb_dir/plan.yaml" "status")
+	[ "$cc_eb_status" != "done" ] || { cc_fail EXECUTION_PLAN_DONE "$cc_eb_plan"; return 1; }
 	cc_intent_envelope_check "$cc_eb_root" "$cc_eb_plan" >/dev/null || { cc_fail EXECUTION_ENVELOPE_EXCEEDS "$cc_eb_plan"; return 1; }
-	if [ "$cc_eb_status" = "draft" ]; then
-		cc_plan_set_status "$cc_eb_dir/plan.yaml" "approved"
-		cc_plan_index_upsert "$cc_eb_root" "$cc_eb_plan" >/dev/null
-		cc_eb_status="approved"
-	fi
-	[ "$cc_eb_status" = "approved" ] || { cc_fail EXECUTION_NOT_APPROVED "$cc_eb_status"; return 1; }
 	# Capture the intent's frozen contract digest for this execution's candidate
 	# identity (INV-CANDIDATE-01). Recorded once, immutably, so candidate computation
 	# never has to chase the live intent file.
@@ -1685,26 +1707,37 @@ cc_execution_begin() {
 	cc_lock_acquire "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null || { cc_fail EXECUTION_LOCK_FAILED; return 1; }
 	cc_eb_exec=$(cc_execution_next_id "$cc_eb_root" "$cc_eb_plan")
 	cc_eb_edir=$(cc_execution_dir "$cc_eb_root" "$cc_eb_plan" "$cc_eb_exec")
-	mkdir -p "$cc_eb_edir/attempts" "$cc_eb_edir/repositories" "$cc_eb_edir/snapshot"
-	# immutable plan snapshot
-	cp "$cc_eb_dir/plan.yaml" "$cc_eb_edir/snapshot/plan.yaml"
-	cp "$cc_eb_dir/PLAN.md" "$cc_eb_edir/snapshot/PLAN.md"
-	[ -d "$cc_eb_dir/tasks" ] && cp -R "$cc_eb_dir/tasks" "$cc_eb_edir/snapshot/tasks"
 	cc_eb_rev=$(cc_digest "$cc_eb_dir/plan.yaml")
+	mkdir -p "$cc_eb_edir/attempts" "$cc_eb_edir/repositories" "$cc_eb_edir/snapshot"
+	# Persist the execution record before creating any branch/worktree. If setup is
+	# interrupted, recovery can see the owner and the execution remains an honest,
+	# blocked/running record instead of an orphaned lock with no evidence.
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nblocked_reason:\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
+		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
+		|| { cc_lock_release "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null 2>&1 || :; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
+	# immutable plan snapshot
+	cp "$cc_eb_dir/plan.yaml" "$cc_eb_edir/snapshot/plan.yaml" \
+		|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason SNAPSHOT_PLAN_FAILED; cc_fail EXECUTION_SNAPSHOT_FAILED; return 1; }
+	cp "$cc_eb_dir/PLAN.md" "$cc_eb_edir/snapshot/PLAN.md" \
+		|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason SNAPSHOT_PLAN_MD_FAILED; cc_fail EXECUTION_SNAPSHOT_FAILED; return 1; }
+	if [ -d "$cc_eb_dir/tasks" ]; then
+		cp -R "$cc_eb_dir/tasks" "$cc_eb_edir/snapshot/tasks" \
+			|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason SNAPSHOT_TASKS_FAILED; cc_fail EXECUTION_SNAPSHOT_FAILED; return 1; }
+	fi
 	# per-repository branch + worktree. A plan with same-repo predecessors is
 	# base-aware (INV-CONCURRENCY-02): its base is the predecessor branch (stack)
 	# or a runtime-authored integration merge. A plan with no dependency keeps the
 	# v0.5 anchor-tip worktree unchanged. Leases are NOT acquired here; the
-	# run-stack loop manages them (v0.5 fixtures run overlapping-path plans).
+	# run-stack loop manages them for stacked executions and overlapping paths.
 	for cc_eb_id in $(cc_plan_affected_repositories "$cc_eb_dir/plan.yaml"); do
 		cc_eb_based=""
 		if cc_plan_has_same_repo_pred "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"; then
 			if ! cc_eb_out=$(cc_base_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"); then
 				# a base that cannot be built cleanly is a blocked execution, not a
 				# worker failure (INV-CONCURRENCY-02); preserve evidence, no worker runs.
-				printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nplan_revision: %s\nowner: %s\nstatus: blocked\nblocked_reason: BASE_UNBUILDABLE\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
-					"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
-					| cc_atomic_write "$cc_eb_edir/execution.yaml"
+				cc_exec_set "$cc_eb_edir" status blocked
+				cc_exec_set "$cc_eb_edir" blocked_reason BASE_UNBUILDABLE
 				cc_emit execution_id "$cc_eb_exec"
 				cc_emit status blocked
 				cc_emit blocked_reason BASE_UNBUILDABLE
@@ -1713,26 +1746,29 @@ cc_execution_begin() {
 			cc_eb_based=$(printf '%s' "$cc_eb_out" | sed -n 's/^based_on: //p')
 		else
 			cc_eb_out=$(cc_worktree_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id") \
-				|| { cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
+				|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_SETUP_FAILED; cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
 		fi
 		cc_eb_wt=$(printf '%s' "$cc_eb_out" | sed -n 's/^worktree: //p')
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
 		cc_eb_bc=$(printf '%s' "$cc_eb_out" | sed -n 's/^base_commit: //p')
 		cc_eb_an=$(cc_binding_field "$cc_eb_root" "$cc_eb_id" "anchor_branch")
 		cc_eb_paths=$(cc_plan_repo_paths "$cc_eb_dir/plan.yaml" "$cc_eb_id" | tr '\n' ',' | sed 's/,$//; s/,/, /g')
-		{
-			printf 'repository: %s\nworktree: %s\nbranch: %s\nanchor_branch: %s\nbase_commit: %s\nlatest_commit: %s\nallowed_paths: [%s]\n' \
-				"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
-			[ -n "$cc_eb_based" ] && printf 'based_on: %s\n' "$cc_eb_based" || :
-		} | cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml"
+			{
+				printf 'repository: %s\nworktree: %s\nbranch: %s\nanchor_branch: %s\nbase_commit: %s\nlatest_commit: %s\nallowed_paths: [%s]\n' \
+					"$cc_eb_id" "$cc_eb_wt" "$cc_eb_br" "$cc_eb_an" "$cc_eb_bc" "$cc_eb_bc" "$cc_eb_paths"
+				[ -n "$cc_eb_based" ] && printf 'based_on: %s\n' "$cc_eb_based" || :
+			} | cc_atomic_write "$cc_eb_edir/repositories/$cc_eb_id.yaml" \
+				|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason REPOSITORY_RECORD_WRITE_FAILED; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_id"; return 1; }
 		# repository grounding (INV-GROUND-01): discover the target repo's own agent
 		# guidance from the prepared worktree and record it as execution evidence.
 		mkdir -p "$cc_eb_edir/grounding"
-		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml"
+		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml" \
+			|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
 	done
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
-		| cc_atomic_write "$cc_eb_edir/execution.yaml"
+		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
+		|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason EXECUTION_RECORD_WRITE_FAILED; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
 	cc_emit execution_id "$cc_eb_exec"
 	cc_emit status running
 	return 0
@@ -1746,7 +1782,8 @@ cc_exec_set() {
 		/^updated_at:[[:space:]]/ { print "updated_at: " ts; next }
 		{ print }
 		END { if (!seen) print k ": " v }
-	' "$cc_es_dir/execution.yaml" | cc_atomic_write "$cc_es_dir/execution.yaml"
+	' "$cc_es_dir/execution.yaml" | cc_atomic_write "$cc_es_dir/execution.yaml" \
+		|| { cc_fail EXECUTION_RECORD_UPDATE_FAILED "$cc_es_k"; return 1; }
 }
 
 # cc_attempt_begin EXEC_DIR -> increment current_attempt, create attempt dir
@@ -1757,10 +1794,11 @@ cc_attempt_begin() {
 	cc_ab_next=$((cc_ab_cur + 1))
 	cc_ab_pad=$(printf '%03d' "$cc_ab_next")
 	mkdir -p "$cc_ab_dir/attempts/$cc_ab_pad"
-	cc_exec_set "$cc_ab_dir" current_attempt "$cc_ab_next"
-	cc_exec_set "$cc_ab_dir" status running
+	cc_exec_set "$cc_ab_dir" current_attempt "$cc_ab_next" || return 1
+	cc_exec_set "$cc_ab_dir" status running || return 1
 	printf 'attempt: %s\nstatus: started\nstarted_at: %s\n' "$cc_ab_next" "$(cc_now)" \
-		| cc_atomic_write "$cc_ab_dir/attempts/$cc_ab_pad/worker.yaml"
+		| cc_atomic_write "$cc_ab_dir/attempts/$cc_ab_pad/worker.yaml" \
+		|| { cc_fail ATTEMPT_RECORD_WRITE_FAILED "$cc_ab_next"; return 1; }
 	cc_emit attempt "$cc_ab_next"
 	return 0
 }
@@ -1782,7 +1820,8 @@ cc_worker_commit_record() {
 	[ "$cc_wc_cur" != "$cc_wc_prev" ] || { cc_fail COMMIT_NO_CHANGE "$cc_wc_repo"; return 1; }
 	# update latest_commit in the repository record
 	awk -v c="$cc_wc_cur" '/^latest_commit:[[:space:]]/{print "latest_commit: " c; next}{print}' "$cc_wc_rf" \
-		| cc_atomic_write "$cc_wc_rf"
+		| cc_atomic_write "$cc_wc_rf" \
+		|| { cc_fail EXECUTION_REPOSITORY_RECORD_UPDATE_FAILED "$cc_wc_repo"; return 1; }
 	cc_wc_att=$(cc_scalar "$cc_wc_dir/execution.yaml" "current_attempt")
 	cc_wc_pad=$(printf '%03d' "$cc_wc_att")
 	cc_wc_wf="$cc_wc_dir/attempts/$cc_wc_pad/worker.yaml"
@@ -1790,8 +1829,9 @@ cc_worker_commit_record() {
 		[ -f "$cc_wc_wf" ] && cat "$cc_wc_wf" || :
 		printf 'commit repository=%s revision=%s kind=%s at=%s\n' \
 			"$cc_wc_repo" "$cc_wc_cur" "$cc_wc_kind" "$(cc_now)"
-	} | cc_atomic_write "$cc_wc_wf"
-	cc_exec_set "$cc_wc_dir" status verifying
+	} | cc_atomic_write "$cc_wc_wf" \
+		|| { cc_fail ATTEMPT_RECORD_WRITE_FAILED "$cc_wc_repo"; return 1; }
+	cc_exec_set "$cc_wc_dir" status verifying || return 1
 	cc_emit repository "$cc_wc_repo"
 	cc_emit commit "$cc_wc_cur"
 	cc_emit kind "$cc_wc_kind"
@@ -1801,7 +1841,7 @@ cc_worker_commit_record() {
 # cc_worker_handoff_record EXEC_DIR FILE -> store the worker handoff
 cc_worker_handoff_record() {
 	[ -f "$2" ] || { cc_fail HANDOFF_FILE_MISSING; return 1; }
-	cp "$2" "$1/handoff.md"
+	cat "$2" | cc_atomic_write "$1/handoff.md" || { cc_fail HANDOFF_WRITE_FAILED; return 1; }
 	cc_emit handoff recorded
 	return 0
 }
@@ -1809,19 +1849,36 @@ cc_worker_handoff_record() {
 # cc_verifier_prepare EXEC_DIR -> validate latest revisions and read-only scope
 cc_verifier_prepare() {
 	cc_vp_dir="$1"
+	[ -f "$cc_vp_dir/execution.yaml" ] || { cc_fail VERIFIER_EXECUTION_MISSING; return 1; }
+	cc_vp_att=$(cc_scalar "$cc_vp_dir/execution.yaml" current_attempt 2>/dev/null) || cc_vp_att=0
+	[ "$cc_vp_att" -gt 0 ] || { cc_fail VERIFIER_NO_ATTEMPT; return 1; }
+	cc_vp_pad=$(printf '%03d' "$cc_vp_att")
+	[ -f "$cc_vp_dir/attempts/$cc_vp_pad/worker.yaml" ] || { cc_fail VERIFIER_WORKER_RECORD_MISSING; return 1; }
 	for cc_vp_rf in "$cc_vp_dir"/repositories/*.yaml; do
-		[ -f "$cc_vp_rf" ] || continue
+		[ -f "$cc_vp_rf" ] || { cc_fail VERIFIER_REPOSITORY_RECORD_MISSING; return 1; }
 		cc_vp_latest=$(cc_scalar "$cc_vp_rf" "latest_commit")
 		cc_vp_base=$(cc_scalar "$cc_vp_rf" "base_commit")
 		[ "$cc_vp_latest" != "$cc_vp_base" ] || { cc_fail VERIFIER_NO_WORKER_COMMIT "$(basename "$cc_vp_rf" .yaml)"; return 1; }
 	done
+	cc_vp_candidate=$(cc_candidate_id "$cc_vp_dir") || return 1
+	printf 'attempt: %s\ncandidate_id: %s\nread_only: true\nprepared_at: %s\n' \
+		"$cc_vp_att" "$cc_vp_candidate" "$(cc_now)" \
+		| cc_atomic_write "$cc_vp_dir/attempts/$cc_vp_pad/verifier-scope.yaml" \
+		|| { cc_fail VERIFIER_SCOPE_WRITE_FAILED; return 1; }
 	cc_emit verifier_scope read-only
+	cc_emit candidate_id "$cc_vp_candidate"
 	return 0
 }
 
 # cc_verifier_result_record EXEC_DIR ATTEMPT OUTCOME [--wrote-products] -> record + count
 cc_verifier_result_record() {
 	cc_vr_dir="$1"; cc_vr_att="$2"; cc_vr_out="$3"; cc_vr_flag="${4:-}"
+	[ -f "$cc_vr_dir/execution.yaml" ] || { cc_fail VERIFIER_EXECUTION_MISSING; return 1; }
+	cc_vr_current=$(cc_scalar "$cc_vr_dir/execution.yaml" current_attempt 2>/dev/null) || cc_vr_current=0
+	[ "$cc_vr_att" = "$cc_vr_current" ] || { cc_fail VERIFIER_ATTEMPT_NOT_CURRENT "$cc_vr_att"; return 1; }
+	cc_vr_pad=$(printf '%03d' "$cc_vr_att")
+	[ -f "$cc_vr_dir/attempts/$cc_vr_pad/verifier-scope.yaml" ] \
+		|| { cc_fail VERIFIER_SCOPE_NOT_PREPARED "$cc_vr_att"; return 1; }
 	case "$cc_vr_out" in
 		passed|failed|blocked|waived) : ;;
 		*) cc_fail VERIFIER_OUTCOME_INVALID "$cc_vr_out"; return 1 ;;
@@ -1832,33 +1889,36 @@ cc_verifier_result_record() {
 	fi
 	# structural read-only enforcement: branch tips must be unchanged since worker commit
 	for cc_vr_rf in "$cc_vr_dir"/repositories/*.yaml; do
-		[ -f "$cc_vr_rf" ] || continue
+		[ -f "$cc_vr_rf" ] || { cc_fail VERIFIER_REPOSITORY_RECORD_MISSING; return 1; }
 		cc_vr_wt=$(cc_scalar "$cc_vr_rf" "worktree")
 		cc_vr_rec=$(cc_scalar "$cc_vr_rf" "latest_commit")
-		[ -d "$cc_vr_wt" ] || continue
+		[ -d "$cc_vr_wt" ] || { cc_fail VERIFIER_WORKTREE_MISSING "$(basename "$cc_vr_rf" .yaml)"; return 1; }
 		cc_vr_head=$(git -C "$cc_vr_wt" rev-parse HEAD 2>/dev/null)
-		if [ -n "$cc_vr_head" ] && [ "$cc_vr_head" != "$cc_vr_rec" ]; then
+		if [ -z "$cc_vr_head" ] || [ "$cc_vr_head" != "$cc_vr_rec" ]; then
 			cc_fail VERIFIER_MODIFIED_PRODUCT "$(basename "$cc_vr_rf" .yaml)"; return 1
 		fi
 	done
 	# candidate binding (INV-CANDIDATE-01): the result names the candidate it
 	# observed, so any later commit or criteria change voids it by construction.
-	cc_vr_cand=$(cc_candidate_id "$cc_vr_dir" 2>/dev/null) || cc_vr_cand=""
-	cc_vr_pad=$(printf '%03d' "$cc_vr_att")
+	cc_vr_cand=$(cc_candidate_id "$cc_vr_dir") || return 1
+	cc_vr_scope_cand=$(cc_scalar "$cc_vr_dir/attempts/$cc_vr_pad/verifier-scope.yaml" candidate_id 2>/dev/null) || cc_vr_scope_cand=""
+	[ -n "$cc_vr_scope_cand" ] && [ "$cc_vr_scope_cand" = "$cc_vr_cand" ] \
+		|| { cc_fail VERIFIER_SCOPE_STALE; return 1; }
 	mkdir -p "$cc_vr_dir/attempts/$cc_vr_pad"
 	printf 'attempt: %s\noutcome: %s\nread_only: true\ncandidate_id: %s\nchecked_at: %s\n' \
 		"$cc_vr_att" "$cc_vr_out" "$cc_vr_cand" "$(cc_now)" \
-		| cc_atomic_write "$cc_vr_dir/attempts/$cc_vr_pad/verifier.yaml"
+		| cc_atomic_write "$cc_vr_dir/attempts/$cc_vr_pad/verifier.yaml" \
+		|| { cc_fail VERIFIER_RESULT_WRITE_FAILED; return 1; }
 	if [ "$cc_vr_out" = "passed" ]; then
-		cc_exec_set "$cc_vr_dir" status verified
-		cc_exec_set "$cc_vr_dir" verified_candidate "$cc_vr_cand"
+		cc_exec_set "$cc_vr_dir" status verified || return 1
+		cc_exec_set "$cc_vr_dir" verified_candidate "$cc_vr_cand" || return 1
 		cc_emit outcome passed
 		cc_emit status verified
 		cc_emit candidate_id "$cc_vr_cand"
 		return 0
 	fi
 	if [ "$cc_vr_out" = "blocked" ]; then
-		cc_exec_set "$cc_vr_dir" status blocked
+		cc_exec_set "$cc_vr_dir" status blocked || return 1
 		cc_emit outcome blocked
 		cc_emit status blocked
 		return 0
@@ -1866,7 +1926,7 @@ cc_verifier_result_record() {
 	if [ "$cc_vr_out" = "waived" ]; then
 		# A human limitation decision: non-passing, but not a worker fault.
 		# It never satisfies verification and never increments the failure counter.
-		cc_exec_set "$cc_vr_dir" status blocked
+		cc_exec_set "$cc_vr_dir" status blocked || return 1
 		cc_emit outcome waived
 		cc_emit status blocked
 		return 0
@@ -1874,16 +1934,16 @@ cc_verifier_result_record() {
 	# failed: the independent verifier rejected the worker result
 	cc_vr_wf=$(cc_scalar "$cc_vr_dir/execution.yaml" "worker_failures")
 	cc_vr_wf=$((cc_vr_wf + 1))
-	cc_exec_set "$cc_vr_dir" worker_failures "$cc_vr_wf"
+	cc_exec_set "$cc_vr_dir" worker_failures "$cc_vr_wf" || return 1
 	if [ "$cc_vr_wf" -ge 3 ]; then
-		cc_exec_set "$cc_vr_dir" status failed
+		cc_exec_set "$cc_vr_dir" status failed || return 1
 		cc_emit outcome "$cc_vr_out"
 		cc_emit worker_failures "$cc_vr_wf"
 		cc_emit status failed
 		cc_emit stop FAILURE_LIMIT_REACHED
 		return 0
 	fi
-	cc_exec_set "$cc_vr_dir" status repairing
+	cc_exec_set "$cc_vr_dir" status repairing || return 1
 	cc_emit outcome "$cc_vr_out"
 	cc_emit worker_failures "$cc_vr_wf"
 	cc_emit status repairing
@@ -1913,7 +1973,10 @@ cc_attempt_evidence_record() {
 	[ -d "$cc_ae_dir/attempts/$cc_ae_pad" ] || { cc_fail ATTEMPT_UNKNOWN "$cc_ae_att"; return 1; }
 	[ "$#" -gt 0 ] || { cc_fail ATTEMPT_EVIDENCE_EMPTY; return 1; }
 	cc_ae_f="$cc_ae_dir/attempts/$cc_ae_pad/host-evidence.yaml"
-	[ -f "$cc_ae_f" ] || printf 'attempt: %s\n' "$cc_ae_att" | cc_atomic_write "$cc_ae_f"
+	if [ ! -f "$cc_ae_f" ]; then
+		printf 'attempt: %s\n' "$cc_ae_att" | cc_atomic_write "$cc_ae_f" \
+			|| { cc_fail ATTEMPT_EVIDENCE_WRITE_FAILED "$cc_ae_att"; return 1; }
+	fi
 	for cc_ae_kv in "$@"; do
 		case "$cc_ae_kv" in *=*) : ;; *) cc_fail ATTEMPT_EVIDENCE_MALFORMED "$cc_ae_kv"; return 1 ;; esac
 		cc_ae_k=${cc_ae_kv%%=*}; cc_ae_v=${cc_ae_kv#*=}
@@ -1928,7 +1991,8 @@ cc_attempt_evidence_record() {
 			$0 ~ ("^" k ":[[:space:]]") { next }
 			{ print }
 			END { print k ": " v }
-		' "$cc_ae_f" | cc_atomic_write "$cc_ae_f"
+		' "$cc_ae_f" | cc_atomic_write "$cc_ae_f" \
+			|| { cc_fail ATTEMPT_EVIDENCE_WRITE_FAILED "$cc_ae_k"; return 1; }
 		cc_emit "$cc_ae_k" "$cc_ae_v"
 	done
 	return 0
@@ -1968,31 +2032,46 @@ cc_execution_status() { cc_scalar "$1/execution.yaml" "status"; }
 cc_candidate_id() {
 	cc_cid_dir="$1"
 	[ -f "$cc_cid_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
-	# Resolve the contract digest the candidate folds in. Prefer the intent's CURRENT
-	# frozen contract_digest (so a criteria change re-approved on the intent voids
-	# evidence, INV-CANDIDATE-01); fall back to the value captured at execution-begin
-	# when the intent is unreachable (e.g. archived). Every plan has an intent, so a
-	# missing digest is a corrupt state, never a legacy plan. Only the frozen digest is read.
+	# Resolve the contract digest the candidate folds in. An active intent must still
+	# have the exact frozen digest it was approved with; a changed-but-unapproved
+	# contract is stale and cannot retain the old candidate. Archived intents are no
+	# longer editable through the active path, so the execution snapshot is the
+	# portable fallback for those records.
 	cc_cid_cdig=""
 	cc_cid_intent=$(cc_scalar "$cc_cid_dir/execution.yaml" "intent" 2>/dev/null) || cc_cid_intent=""
 	if [ -n "$cc_cid_intent" ]; then
 		cc_cid_root=$(cd -- "$cc_cid_dir/../../../.." 2>/dev/null && pwd) || cc_cid_root=""
 		if [ -n "$cc_cid_root" ] && [ -f "$cc_cid_root/intent/$cc_cid_intent/contract.yaml" ]; then
-			cc_cid_cdig=$(cc_scalar "$cc_cid_root/intent/$cc_cid_intent/contract.yaml" "contract_digest" 2>/dev/null) || cc_cid_cdig=""
+			cc_cid_contract="$cc_cid_root/intent/$cc_cid_intent/contract.yaml"
+			cc_cid_cdig=$(cc_scalar "$cc_cid_contract" "contract_digest" 2>/dev/null) || cc_cid_cdig=""
+			cc_cid_now=$(cc_intent_contract_digest "$cc_cid_contract" 2>/dev/null) || cc_cid_now=""
+			[ -n "$cc_cid_cdig" ] && [ "$cc_cid_cdig" = "$cc_cid_now" ] \
+				|| { cc_fail CANDIDATE_CONTRACT_STALE; return 1; }
 		fi
 	fi
 	[ -n "$cc_cid_cdig" ] || cc_cid_cdig=$(cc_scalar "$cc_cid_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cid_cdig=""
 	[ -n "$cc_cid_cdig" ] || { cc_fail CANDIDATE_NO_CONTRACT_DIGEST; return 1; }
-	cc_cid_canon=$(
-		for cc_cid_rf in "$cc_cid_dir"/repositories/*.yaml; do
-			[ -f "$cc_cid_rf" ] || continue
-			printf '%s\t%s\t%s\n' \
-				"$(cc_scalar "$cc_cid_rf" repository)" \
-				"$(cc_scalar "$cc_cid_rf" latest_commit)" \
-				"$(cc_scalar "$cc_cid_rf" base_commit)"
-		done | LC_ALL=C sort
-		printf 'contract\t%s\n' "$cc_cid_cdig"
-	)
+	cc_cid_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-candidate.XXXXXX") || return 1
+	: >"$cc_cid_tmp"
+	cc_cid_found=no
+	for cc_cid_rf in "$cc_cid_dir"/repositories/*.yaml; do
+		[ -f "$cc_cid_rf" ] || continue
+		cc_cid_found=yes
+		cc_cid_wt=$(cc_scalar "$cc_cid_rf" worktree 2>/dev/null) || cc_cid_wt=""
+		cc_cid_latest=$(cc_scalar "$cc_cid_rf" latest_commit 2>/dev/null) || cc_cid_latest=""
+		[ -n "$cc_cid_wt" ] && [ -d "$cc_cid_wt" ] \
+			|| { rm -f "$cc_cid_tmp"; cc_fail CANDIDATE_WORKTREE_MISSING; return 1; }
+		cc_cid_head=$(git -C "$cc_cid_wt" rev-parse HEAD 2>/dev/null) || { rm -f "$cc_cid_tmp"; cc_fail CANDIDATE_WORKTREE_UNREADABLE; return 1; }
+		[ "$cc_cid_head" = "$cc_cid_latest" ] || { rm -f "$cc_cid_tmp"; cc_fail CANDIDATE_COMMIT_DRIFT; return 1; }
+		printf '%s\t%s\t%s\n' \
+			"$(cc_scalar "$cc_cid_rf" repository)" \
+			"$(cc_scalar "$cc_cid_rf" latest_commit)" \
+			"$(cc_scalar "$cc_cid_rf" base_commit)" >>"$cc_cid_tmp"
+	done
+	[ "$cc_cid_found" = yes ] || { rm -f "$cc_cid_tmp"; cc_fail CANDIDATE_REPOSITORIES_MISSING; return 1; }
+	printf 'contract\t%s\n' "$cc_cid_cdig" >>"$cc_cid_tmp"
+	cc_cid_canon=$(LC_ALL=C sort "$cc_cid_tmp")
+	rm -f "$cc_cid_tmp"
 	cc_cid_hash=$(cc_digest_text "$cc_cid_canon")
 	cc_cid_hash=${cc_cid_hash#sha256:}; cc_cid_hash=${cc_cid_hash#cksum:}
 	printf 'cand-%s' "$cc_cid_hash"
@@ -2006,6 +2085,11 @@ cc_candidate_digest() {
 	[ -f "$cc_cd_dir/execution.yaml" ] || { cc_fail CANDIDATE_NO_EXECUTION "$2/$3"; return 1; }
 	cc_cd_id=$(cc_candidate_id "$cc_cd_dir") || return 1
 	cc_cd_cdig=$(cc_scalar "$cc_cd_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cd_cdig=""
+	cc_cd_intent=$(cc_scalar "$cc_cd_dir/execution.yaml" "intent" 2>/dev/null) || cc_cd_intent=""
+	cc_cd_root=$(cd -- "$cc_cd_dir/../../../.." 2>/dev/null && pwd) || cc_cd_root=""
+	if [ -n "$cc_cd_root" ] && [ -n "$cc_cd_intent" ] && [ -f "$cc_cd_root/intent/$cc_cd_intent/contract.yaml" ]; then
+		cc_cd_cdig=$(cc_scalar "$cc_cd_root/intent/$cc_cd_intent/contract.yaml" "contract_digest" 2>/dev/null) || cc_cd_cdig=""
+	fi
 	[ -n "$cc_cd_cdig" ] || { cc_fail CANDIDATE_NO_CONTRACT_DIGEST; return 1; }
 	{
 		printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ncontract_digest: %s\nrepositories:\n' \
@@ -2052,6 +2136,12 @@ cc_candidate_current() {
 cc_change_set_candidate() {
 	cc_cs_root="$1"; shift
 	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cs_id=$(cc_change_set_id "$cc_cs_root" "$@")
+	cc_cs_existing=$(cc_change_set_dir "$cc_cs_root" "$cc_cs_id")
+	if [ "$#" -gt 1 ] && [ -f "$cc_cs_existing/change-set.yaml" ]; then
+		cc_change_set_candidate_from_record "$cc_cs_root" "$cc_cs_id"
+		return $?
+	fi
 	# a change set of one is exactly that plan's candidate; delegate so the two
 	# never diverge (candidate-current == change-set-candidate for one plan).
 	if [ "$#" -eq 1 ]; then
@@ -2061,23 +2151,31 @@ cc_change_set_candidate() {
 		cc_emit change_set_candidate "$cc_cs_one"
 		return 0
 	fi
-	cc_cs_canon=$(
-		for cc_cs_plan in "$@"; do
-			cc_cs_exec=$(cc_latest_execution "$cc_cs_root" "$cc_cs_plan") || continue
-			[ -n "$cc_cs_exec" ] || continue
-			cc_cs_edir=$(cc_execution_dir "$cc_cs_root" "$cc_cs_plan" "$cc_cs_exec")
-			[ -f "$cc_cs_edir/execution.yaml" ] || continue
-			cc_cs_cdig=$(cc_scalar "$cc_cs_edir/execution.yaml" contract_digest 2>/dev/null) || cc_cs_cdig=""
-			for cc_cs_rf in "$cc_cs_edir"/repositories/*.yaml; do
-				[ -f "$cc_cs_rf" ] || continue
-				printf '%s\t%s\t%s\t%s\n' \
-					"$(cc_scalar "$cc_cs_rf" repository)" \
-					"$(cc_scalar "$cc_cs_rf" latest_commit)" \
-					"$(cc_scalar "$cc_cs_rf" base_commit)" \
-					"$cc_cs_cdig"
-			done
-		done | LC_ALL=C sort -u
-	)
+	cc_cs_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-candidate.XXXXXX") || return 1
+	: >"$cc_cs_tmp"
+	for cc_cs_plan in "$@"; do
+		cc_cs_pdir="$cc_cs_root/plans/$cc_cs_plan"
+		cc_plan_validate "$cc_cs_pdir" >/dev/null || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_PLAN_INVALID "$cc_cs_plan"; return 1; }
+		cc_cs_exec=$(cc_latest_execution "$cc_cs_root" "$cc_cs_plan") || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cs_plan"; return 1; }
+		[ -n "$cc_cs_exec" ] || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cs_plan"; return 1; }
+		cc_cs_edir=$(cc_execution_dir "$cc_cs_root" "$cc_cs_plan" "$cc_cs_exec")
+		[ -f "$cc_cs_edir/execution.yaml" ] || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cs_plan"; return 1; }
+		cc_cs_plan_cand=$(cc_candidate_id "$cc_cs_edir") || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_MEMBER_CANDIDATE_INVALID "$cc_cs_plan"; return 1; }
+		printf 'plan\t%s\t%s\n' "$cc_cs_plan" "$cc_cs_plan_cand" >>"$cc_cs_tmp"
+		cc_cs_found=no
+		for cc_cs_rf in "$cc_cs_edir"/repositories/*.yaml; do
+			[ -f "$cc_cs_rf" ] || continue
+			cc_cs_found=yes
+			printf '%s\t%s\t%s\t%s\n' \
+				"$(cc_scalar "$cc_cs_rf" repository)" \
+				"$(cc_scalar "$cc_cs_rf" latest_commit)" \
+				"$(cc_scalar "$cc_cs_rf" base_commit)" \
+				"$cc_cs_plan_cand" >>"$cc_cs_tmp"
+		done
+		[ "$cc_cs_found" = yes ] || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_REPOSITORIES_MISSING "$cc_cs_plan"; return 1; }
+	done
+	cc_cs_canon=$(LC_ALL=C sort -u "$cc_cs_tmp")
+	rm -f "$cc_cs_tmp"
 	[ -n "$cc_cs_canon" ] || { cc_fail CHANGE_SET_NO_EXECUTIONS; return 1; }
 	cc_cs_hash=$(cc_digest_text "$cc_cs_canon")
 	cc_cs_hash=${cc_cs_hash#sha256:}; cc_cs_hash=${cc_cs_hash#cksum:}
@@ -2094,6 +2192,70 @@ cc_change_set_candidate() {
 # ---------------------------------------------------------------------------
 
 cc_change_set_dir() { printf '%s/.runtime/change-sets/%s' "$1" "$2"; }
+
+# cc_change_set_record_status DIR STATUS REASON -> update a preserved preparation
+# record after setup fails. Failed/interrupted integration is state, not disposable
+# scratch, so callers never remove the change-set directory to hide the failure.
+cc_change_set_record_status() {
+	cc_csrst_dir="$1"; cc_csrst_status="$2"; cc_csrst_reason="${3:-}"
+	[ -f "$cc_csrst_dir/change-set.yaml" ] || return 1
+	awk -v s="$cc_csrst_status" -v r="$cc_csrst_reason" '
+		$0 ~ /^status:[[:space:]]/ { print "status: " s; seen=1; next }
+		$0 ~ /^blocked_reason:[[:space:]]/ { print "blocked_reason: " r; brec=1; next }
+		{ print }
+		END { if (!seen) print "status: " s; if (r != "" && !brec) print "blocked_reason: " r }
+	' "$cc_csrst_dir/change-set.yaml" | cc_atomic_write "$cc_csrst_dir/change-set.yaml"
+}
+
+# cc_change_set_candidate_from_record ROOT CS_ID -> recompute the integrated
+# candidate from every member candidate, every recorded integration tip, and every
+# anchor tip. It is the only identity accepted after integration is prepared.
+cc_change_set_candidate_from_record() {
+	cc_cscr_root="$1"; cc_cscr_id="$2"; cc_cscr_dir=$(cc_change_set_dir "$cc_cscr_root" "$cc_cscr_id")
+	[ -f "$cc_cscr_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$cc_cscr_id"; return 1; }
+	cc_cscr_members=$(cc_inline_list "$(cc_scalar "$cc_cscr_dir/change-set.yaml" members)")
+	[ -n "$cc_cscr_members" ] || { cc_fail CHANGE_SET_MEMBERS_MISSING "$cc_cscr_id"; return 1; }
+	cc_cscr_canon=$(
+		for cc_cscr_m in $cc_cscr_members; do
+			cc_cscr_exec=$(cc_latest_execution "$cc_cscr_root" "$cc_cscr_m") || { exit 1; }
+			[ -n "$cc_cscr_exec" ] || { exit 1; }
+				cc_cscr_edir=$(cc_execution_dir "$cc_cscr_root" "$cc_cscr_m" "$cc_cscr_exec")
+				[ -f "$cc_cscr_edir/execution.yaml" ] || { exit 1; }
+				cc_cscr_cand=$(cc_candidate_id "$cc_cscr_edir") || { exit 1; }
+				cc_cscr_has_commit=no
+				for cc_cscr_rf in "$cc_cscr_edir"/repositories/*.yaml; do
+					[ -f "$cc_cscr_rf" ] || { exit 1; }
+					cc_cscr_latest=$(cc_scalar "$cc_cscr_rf" latest_commit 2>/dev/null) || { exit 1; }
+					cc_cscr_base=$(cc_scalar "$cc_cscr_rf" base_commit 2>/dev/null) || { exit 1; }
+					if [ "$cc_cscr_latest" != "$cc_cscr_base" ]; then cc_cscr_has_commit=yes; fi
+				 done
+				[ "$cc_cscr_has_commit" = yes ] || { cc_fail CHANGE_SET_MEMBER_NO_COMMIT "$cc_cscr_m"; exit 1; }
+				printf 'member\t%s\t%s\n' "$cc_cscr_m" "$cc_cscr_cand"
+		done
+		for cc_cscr_tf in "$cc_cscr_dir"/tips/*; do
+			[ -f "$cc_cscr_tf" ] || { exit 1; }
+			cc_cscr_r=$(basename -- "$cc_cscr_tf")
+			cc_cscr_tip=$(sed -n '1p' "$cc_cscr_tf")
+			[ -n "$cc_cscr_tip" ] || { exit 1; }
+			cc_cscr_w="$cc_cscr_dir/integration/$cc_cscr_r"
+			[ -d "$cc_cscr_w" ] || { exit 1; }
+			cc_cscr_head=$(git -C "$cc_cscr_w" rev-parse HEAD 2>/dev/null) || { exit 1; }
+			[ "$cc_cscr_head" = "$cc_cscr_tip" ] || { cc_fail CHANGE_SET_INTEGRATION_DRIFT "$cc_cscr_r"; exit 1; }
+			cc_cscr_af="$cc_cscr_dir/anchors/$cc_cscr_r"
+			[ -f "$cc_cscr_af" ] || { cc_fail CHANGE_SET_ANCHOR_RECORD_MISSING "$cc_cscr_r"; exit 1; }
+			cc_cscr_anchor=$(sed -n '1p' "$cc_cscr_af")
+			cc_cscr_abs=$(cc_repo_resolve "$cc_cscr_root" "$cc_cscr_r" | sed -n 's/^path: //p') || { exit 1; }
+			cc_cscr_branch=$(cc_binding_field "$cc_cscr_root" "$cc_cscr_r" anchor_branch)
+			cc_cscr_live_anchor=$(git -C "$cc_cscr_abs" rev-parse --verify "refs/heads/$cc_cscr_branch" 2>/dev/null) || { exit 1; }
+			[ "$cc_cscr_live_anchor" = "$cc_cscr_anchor" ] || { cc_fail CHANGE_SET_ANCHOR_DRIFT "$cc_cscr_r"; exit 1; }
+			printf 'integration\t%s\t%s\t%s\n' "$cc_cscr_r" "$cc_cscr_tip" "$cc_cscr_anchor"
+		done
+	) || { cc_fail CHANGE_SET_CANDIDATE_UNAVAILABLE "$cc_cscr_id"; return 1; }
+	[ -n "$cc_cscr_canon" ] || { cc_fail CHANGE_SET_CANDIDATE_UNAVAILABLE "$cc_cscr_id"; return 1; }
+	cc_cscr_hash=$(cc_digest_text "$(printf '%s\n' "$cc_cscr_canon" | LC_ALL=C sort -u)")
+	cc_cscr_hash=${cc_cscr_hash#sha256:}; cc_cscr_hash=${cc_cscr_hash#cksum:}
+	cc_emit change_set_candidate "cand-$cc_cscr_hash"
+}
 
 # cc_change_set_id ROOT PLAN... -> deterministic id over the sorted member set.
 cc_change_set_id() {
@@ -2130,51 +2292,67 @@ cc_change_set_prepare() {
 	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
 	cc_csp_members=$(printf '%s\n' "$@" | LC_ALL=C sort -u | sed '/^$/d')
 	cc_csp_id=$(cc_change_set_id "$cc_csp_root" $cc_csp_members)
-	cc_csp_cand=$(cc_change_set_candidate "$cc_csp_root" $cc_csp_members | sed -n 's/^change_set_candidate: //p') || return 1
 	cc_csp_dir=$(cc_change_set_dir "$cc_csp_root" "$cc_csp_id")
-	rm -rf "$cc_csp_dir/tips"; mkdir -p "$cc_csp_dir/integration" "$cc_csp_dir/tips"
-	cc_csp_repos=$(for cc_csp_m in $cc_csp_members; do cc_plan_affected_repositories "$cc_csp_root/plans/$cc_csp_m/plan.yaml" 2>/dev/null; done | LC_ALL=C sort -u | sed '/^$/d')
+	[ ! -e "$cc_csp_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_EXISTS "$cc_csp_id"; return 1; }
+	for cc_csp_m in $cc_csp_members; do
+		cc_plan_validate "$cc_csp_root/plans/$cc_csp_m" >/dev/null \
+			|| { cc_fail CHANGE_SET_MEMBER_INVALID "$cc_csp_m"; return 1; }
+		cc_intent_envelope_check "$cc_csp_root" "$cc_csp_m" >/dev/null \
+			|| { cc_fail CHANGE_SET_MEMBER_OUTSIDE_ENVELOPE "$cc_csp_m"; return 1; }
+		cc_csp_exec=$(cc_latest_execution "$cc_csp_root" "$cc_csp_m") || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csp_m"; return 1; }
+		[ -n "$cc_csp_exec" ] || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csp_m"; return 1; }
+		cc_csp_edir=$(cc_execution_dir "$cc_csp_root" "$cc_csp_m" "$cc_csp_exec")
+		[ -f "$cc_csp_edir/execution.yaml" ] || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csp_m"; return 1; }
+	done
+	cc_csp_repos=$(for cc_csp_m in $cc_csp_members; do cc_plan_affected_repositories "$cc_csp_root/plans/$cc_csp_m/plan.yaml"; done | LC_ALL=C sort -u | sed '/^$/d')
 	[ -n "$cc_csp_repos" ] || { cc_fail CHANGE_SET_NO_REPOSITORIES; return 1; }
+	cc_csp_memblock=$(printf '%s' "$cc_csp_members" | tr '\n' ' ' | sed 's/ *$//; s/ /, /g')
+	cc_csp_tierv=$(cc_change_set_tier "$cc_csp_root" $cc_csp_members)
+	mkdir -p "$cc_csp_dir/integration" "$cc_csp_dir/tips" "$cc_csp_dir/anchors"
+	{
+		printf 'schema_version: 1\nchange_set: %s\ncandidate_id: pending\ntier: %s\nstatus: preparing\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
+			"$cc_csp_id" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
+		} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
+			|| { cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
 	cc_csp_repblock=$(mktemp "${TMPDIR:-/tmp}/cc-cs.XXXXXX") || return 1
 	: >"$cc_csp_repblock"
 	for cc_csp_r in $cc_csp_repos; do
-		cc_csp_abs=$(cc_repo_resolve "$cc_csp_root" "$cc_csp_r" | sed -n 's/^path: //p') || { rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_csp_r"; return 1; }
+		cc_csp_abs=$(cc_repo_resolve "$cc_csp_root" "$cc_csp_r" | sed -n 's/^path: //p') || { cc_change_set_record_status "$cc_csp_dir" blocked REPOSITORY_UNRESOLVED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_csp_r"; return 1; }
 		cc_csp_anchor=$(cc_binding_field "$cc_csp_root" "$cc_csp_r" anchor_branch)
-		cc_csp_atip=$(git -C "$cc_csp_abs" rev-parse --verify "refs/heads/$cc_csp_anchor" 2>/dev/null) || { rm -f "$cc_csp_repblock"; cc_fail ANCHOR_BRANCH_MISSING "$cc_csp_r"; return 1; }
+		cc_csp_atip=$(git -C "$cc_csp_abs" rev-parse --verify "refs/heads/$cc_csp_anchor" 2>/dev/null) || { cc_change_set_record_status "$cc_csp_dir" blocked ANCHOR_BRANCH_MISSING; rm -f "$cc_csp_repblock"; cc_fail ANCHOR_BRANCH_MISSING "$cc_csp_r"; return 1; }
 		cc_csp_br=""
 		for cc_csp_m in $cc_csp_members; do
 			if cc_plan_affected_repositories "$cc_csp_root/plans/$cc_csp_m/plan.yaml" 2>/dev/null | grep -Fxq "$cc_csp_r"; then
-				git -C "$cc_csp_abs" show-ref --verify --quiet "refs/heads/cc/$cc_csp_m/$cc_csp_r" || { rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_BRANCH_MISSING "$cc_csp_m:$cc_csp_r"; return 1; }
+				git -C "$cc_csp_abs" show-ref --verify --quiet "refs/heads/cc/$cc_csp_m/$cc_csp_r" || { cc_change_set_record_status "$cc_csp_dir" blocked BRANCH_MISSING; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_BRANCH_MISSING "$cc_csp_m:$cc_csp_r"; return 1; }
 				cc_csp_br="${cc_csp_br:+$cc_csp_br }cc/$cc_csp_m/$cc_csp_r"
 			fi
 		done
 		cc_csp_wt="$cc_csp_dir/integration/$cc_csp_r"
 		cc_csp_csbr="cs/$cc_csp_id/$cc_csp_r"
-		git -C "$cc_csp_abs" worktree remove --force "$cc_csp_wt" >/dev/null 2>&1 || rm -rf "$cc_csp_wt"
-		git -C "$cc_csp_abs" branch -D "$cc_csp_csbr" >/dev/null 2>&1 || :
-		git -C "$cc_csp_abs" worktree prune >/dev/null 2>&1 || :
 		mkdir -p "$(dirname -- "$cc_csp_wt")"
-		git -C "$cc_csp_abs" worktree add -b "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_atip" >/dev/null 2>&1 || { rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_WORKTREE_FAILED "$cc_csp_r"; return 1; }
+		git -C "$cc_csp_abs" worktree add -b "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_atip" >/dev/null 2>&1 || { cc_change_set_record_status "$cc_csp_dir" blocked WORKTREE_SETUP_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_WORKTREE_FAILED "$cc_csp_r"; return 1; }
 		if ! git -C "$cc_csp_wt" merge --no-ff -m "cc: integration tip $cc_csp_id ($cc_csp_r)" $cc_csp_br >/dev/null 2>&1; then
-			git -C "$cc_csp_wt" merge --abort >/dev/null 2>&1 || :
-			git -C "$cc_csp_abs" worktree remove --force "$cc_csp_wt" >/dev/null 2>&1 || rm -rf "$cc_csp_wt"
-			git -C "$cc_csp_abs" branch -D "$cc_csp_csbr" >/dev/null 2>&1 || :
-			git -C "$cc_csp_abs" worktree prune >/dev/null 2>&1 || :
+			cc_change_set_record_status "$cc_csp_dir" blocked BASE_UNBUILDABLE
 			rm -f "$cc_csp_repblock"
 			cc_fail BASE_UNBUILDABLE "$cc_csp_id:$cc_csp_r:integration-conflict"; return 1
 		fi
 		cc_csp_tip=$(git -C "$cc_csp_wt" rev-parse HEAD)
-		printf '%s' "$cc_csp_tip" >"$cc_csp_dir/tips/$cc_csp_r"
+		printf '%s' "$cc_csp_tip" | cc_atomic_write "$cc_csp_dir/tips/$cc_csp_r" \
+			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
+		printf '%s' "$cc_csp_atip" | cc_atomic_write "$cc_csp_dir/anchors/$cc_csp_r" \
+			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
 		printf '  - repository: %s\n    branch: %s\n    worktree: %s\n    integration_tip: %s\n    anchor_tip: %s\n' \
 			"$cc_csp_r" "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_tip" "$cc_csp_atip" >>"$cc_csp_repblock"
 	done
-	cc_csp_memblock=$(printf '%s' "$cc_csp_members" | tr '\n' ' ' | sed 's/ *$//; s/ /, /g')
-	cc_csp_tierv=$(cc_change_set_tier "$cc_csp_root" $cc_csp_members)
+	cc_csp_cand_out=$(cc_change_set_candidate_from_record "$cc_csp_root" "$cc_csp_id") || { cc_change_set_record_status "$cc_csp_dir" blocked CANDIDATE_UNAVAILABLE; rm -f "$cc_csp_repblock"; return 1; }
+	cc_csp_cand=$(printf '%s\n' "$cc_csp_cand_out" | sed -n 's/^change_set_candidate: //p')
+	[ -n "$cc_csp_cand" ] || { cc_change_set_record_status "$cc_csp_dir" blocked CANDIDATE_UNAVAILABLE; rm -f "$cc_csp_repblock"; return 1; }
 	{
 		printf 'schema_version: 1\nchange_set: %s\ncandidate_id: %s\ntier: %s\nstatus: prepared\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
 			"$cc_csp_id" "$cc_csp_cand" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
 		cat "$cc_csp_repblock"
-	} | cc_atomic_write "$cc_csp_dir/change-set.yaml"
+		} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
+			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
 	rm -f "$cc_csp_repblock"
 	cc_emit change_set "$cc_csp_id"
 	cc_emit candidate_id "$cc_csp_cand"
@@ -2187,25 +2365,49 @@ cc_change_set_prepare() {
 # ONE independent verifier result for the integration tip, bound to the change-set
 # candidate. Read-only: an explicit product write is rejected, and any composite tip
 # that moved since prepare voids the check (VERIFIER_MODIFIED_PRODUCT).
+cc_change_set_verifier_prepare() {
+	cc_csvp_dir=$(cc_change_set_dir "$1" "$2")
+	[ -f "$cc_csvp_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
+	[ "$(cc_scalar "$cc_csvp_dir/change-set.yaml" status 2>/dev/null)" = prepared ] \
+		|| { cc_fail CHANGE_SET_NOT_PREPARED "$2"; return 1; }
+	cc_csvp_out=$(cc_change_set_candidate_from_record "$1" "$2") || return 1
+	cc_csvp_cand=$(printf '%s\n' "$cc_csvp_out" | sed -n 's/^change_set_candidate: //p')
+	cc_csvp_recorded=$(cc_scalar "$cc_csvp_dir/change-set.yaml" candidate_id)
+	[ "$cc_csvp_cand" = "$cc_csvp_recorded" ] || { cc_fail CHANGE_SET_STALE "$2"; return 1; }
+	printf 'candidate_id: %s\nread_only: true\nprepared_at: %s\n' "$cc_csvp_cand" "$(cc_now)" \
+		| cc_atomic_write "$cc_csvp_dir/verifier-scope.yaml" \
+		|| { cc_fail VERIFIER_SCOPE_WRITE_FAILED; return 1; }
+	cc_emit verifier_scope read-only
+	cc_emit candidate_id "$cc_csvp_cand"
+}
+
 cc_change_set_verifier_record() {
 	cc_csv_dir=$(cc_change_set_dir "$1" "$2")
 	cc_csv_out="$3"; cc_csv_flag="${4:-}"
 	[ -f "$cc_csv_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
+	cc_csv_status=$(cc_scalar "$cc_csv_dir/change-set.yaml" status 2>/dev/null) || cc_csv_status=""
+	[ "$cc_csv_status" = prepared ] || { cc_fail CHANGE_SET_NOT_PREPARED "$2"; return 1; }
+	[ -f "$cc_csv_dir/verifier-scope.yaml" ] || { cc_fail VERIFIER_SCOPE_NOT_PREPARED "$2"; return 1; }
 	case "$cc_csv_out" in passed|failed|blocked|waived) : ;; *) cc_fail VERIFIER_OUTCOME_INVALID "$cc_csv_out"; return 1 ;; esac
 	[ "$cc_csv_flag" != "--wrote-products" ] || { cc_fail VERIFIER_WRITE_REJECTED; return 1; }
+	cc_csv_live_out=$(cc_change_set_candidate_from_record "$1" "$2") || return 1
+	cc_csv_live=$(printf '%s\n' "$cc_csv_live_out" | sed -n 's/^change_set_candidate: //p')
+	cc_csv_cand=$(cc_scalar "$cc_csv_dir/change-set.yaml" candidate_id)
+	[ -n "$cc_csv_cand" ] && [ "$cc_csv_cand" != pending ] && [ "$cc_csv_live" = "$cc_csv_cand" ] \
+		|| { cc_fail CHANGE_SET_STALE "$2"; return 1; }
 	for cc_csv_tf in "$cc_csv_dir"/tips/*; do
-		[ -f "$cc_csv_tf" ] || continue
+		[ -f "$cc_csv_tf" ] || { cc_fail CHANGE_SET_TIP_MISSING "$2"; return 1; }
 		cc_csv_r=$(basename -- "$cc_csv_tf")
 		cc_csv_w="$cc_csv_dir/integration/$cc_csv_r"
-		[ -d "$cc_csv_w" ] || continue
-		cc_csv_head=$(git -C "$cc_csv_w" rev-parse HEAD 2>/dev/null)
-		if [ -n "$cc_csv_head" ] && [ "$cc_csv_head" != "$(cat "$cc_csv_tf")" ]; then
+		[ -d "$cc_csv_w" ] || { cc_fail CHANGE_SET_INTEGRATION_MISSING "$2:$cc_csv_r"; return 1; }
+		cc_csv_head=$(git -C "$cc_csv_w" rev-parse HEAD 2>/dev/null) || { cc_fail CHANGE_SET_INTEGRATION_UNREADABLE "$2:$cc_csv_r"; return 1; }
+		if [ "$cc_csv_head" != "$(sed -n '1p' "$cc_csv_tf")" ]; then
 			cc_fail VERIFIER_MODIFIED_PRODUCT "$2:$cc_csv_r"; return 1
 		fi
 	done
-	cc_csv_cand=$(cc_scalar "$cc_csv_dir/change-set.yaml" candidate_id)
 	printf 'schema_version: 1\ncandidate_id: %s\noutcome: %s\nread_only: true\nchecked_at: %s\n' \
-		"$cc_csv_cand" "$cc_csv_out" "$(cc_now)" | cc_atomic_write "$cc_csv_dir/verifier.yaml"
+		"$cc_csv_cand" "$cc_csv_out" "$(cc_now)" | cc_atomic_write "$cc_csv_dir/verifier.yaml" \
+		|| { cc_fail VERIFIER_RESULT_WRITE_FAILED; return 1; }
 	cc_emit change_set "$2"
 	cc_emit outcome "$cc_csv_out"
 	cc_emit candidate_id "$cc_csv_cand"
@@ -2218,9 +2420,11 @@ cc_change_set_accept() {
 	cc_csa_dir=$(cc_change_set_dir "$1" "$2")
 	[ -f "$cc_csa_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
 	[ -n "${3:-}" ] || { cc_fail ACCEPTANCE_NO_HUMAN; return 1; }
+	case "$3" in *[!A-Za-z0-9._@-]*) cc_fail ACCEPTANCE_HUMAN_INVALID "$3"; return 1 ;; esac
 	cc_csa_cand=$(cc_scalar "$cc_csa_dir/change-set.yaml" candidate_id)
 	printf 'schema_version: 1\ncandidate_id: %s\naccepted_by: %s\naccepted_at: %s\n' \
-		"$cc_csa_cand" "$3" "$(cc_now)" | cc_atomic_write "$cc_csa_dir/human-acceptance.yaml"
+		"$cc_csa_cand" "$3" "$(cc_now)" | cc_atomic_write "$cc_csa_dir/human-acceptance.yaml" \
+		|| { cc_fail ACCEPTANCE_RECORD_WRITE_FAILED; return 1; }
 	cc_emit change_set "$2"
 	cc_emit accepted_by "$3"
 	cc_emit candidate_id "$cc_csa_cand"
@@ -2229,14 +2433,17 @@ cc_change_set_accept() {
 
 # cc_change_set_ready ROOT CS_ID -> the tier floor for delivering a change set as one
 # PR: the recorded candidate must still describe the live member set (no member moved
-# since prepare), a human acceptance must bind to it, and at Standard/Critical an
-# independent pass must bind to it. Explore is human-supervised (acceptance only).
+# since prepare), a human acceptance must bind to it, and a Standard/Critical
+# independent pass must bind to it. Explore is planless and cannot form a change set.
 cc_change_set_ready() {
 	cc_csr_root="$1"; cc_csr_dir=$(cc_change_set_dir "$1" "$2")
 	[ -f "$cc_csr_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
+	cc_csr_status=$(cc_scalar "$cc_csr_dir/change-set.yaml" status 2>/dev/null) || cc_csr_status=""
+	[ "$cc_csr_status" = prepared ] || { cc_fail CHANGE_SET_NOT_PREPARED "$2"; return 1; }
 	cc_csr_recorded=$(cc_scalar "$cc_csr_dir/change-set.yaml" candidate_id)
 	cc_csr_mlist=$(cc_inline_list "$(cc_scalar "$cc_csr_dir/change-set.yaml" members)")
-	cc_csr_live=$(cc_change_set_candidate "$cc_csr_root" $cc_csr_mlist | sed -n 's/^change_set_candidate: //p') || return 1
+	cc_csr_live_out=$(cc_change_set_candidate_from_record "$cc_csr_root" "$2") || return 1
+	cc_csr_live=$(printf '%s\n' "$cc_csr_live_out" | sed -n 's/^change_set_candidate: //p')
 	if [ "$cc_csr_live" != "$cc_csr_recorded" ]; then
 		cc_emit change_set_ready stale
 		cc_fail CHANGE_SET_STALE "$2"; return 1
@@ -2256,7 +2463,7 @@ cc_change_set_ready() {
 		fi
 		cc_emit assurance independent
 	else
-		cc_emit assurance human-supervised
+		cc_fail CHANGE_SET_EXPLORE_PLANLESS "$2"; return 1
 	fi
 	cc_emit change_set_ready eligible
 	cc_emit candidate_id "$cc_csr_recorded"
@@ -2265,27 +2472,61 @@ cc_change_set_ready() {
 }
 
 # cc_change_set_complete ROOT CS_ID -> complete every member of a delivered change set
-# from the ONE change-set acceptance (pain 6: accept once, complete the set). Requires
-# change-set-ready (integration tip verified + change-set accepted, not stale). Records
-# the change-set delivery, then marks each member plan done and emits its
-# reconciliation-debt marker (INV-COMPLETE-01/02). Each member is individually verified
-# by its own execution, so its tier floor is re-checked; the change-set acceptance is
-# the human acceptance for the whole set (members carry no separate per-plan acceptance).
+# from the ONE change-set acceptance (pain 6: accept once, complete the set). The
+# integrated verifier is the assurance record for the set; member execution records
+# contribute worker commits but are not re-run through per-plan completion gates.
 cc_change_set_complete() {
 	cc_csc_root="$1"; cc_csc_dir=$(cc_change_set_dir "$1" "$2")
 	[ -f "$cc_csc_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
 	cc_change_set_ready "$cc_csc_root" "$2" >/dev/null || { cc_fail CHANGE_SET_NOT_READY "$2"; return 1; }
 	cc_csc_members=$(cc_inline_list "$(cc_scalar "$cc_csc_dir/change-set.yaml" members)")
+	cc_csc_candidate=$(cc_scalar "$cc_csc_dir/change-set.yaml" candidate_id)
+	cc_csc_acceptor=$(cc_scalar "$cc_csc_dir/human-acceptance.yaml" accepted_by)
+	cc_csc_tier=$(cc_scalar "$cc_csc_dir/change-set.yaml" tier)
+	cc_csc_verifier_outcome=$(cc_scalar "$cc_csc_dir/verifier.yaml" outcome 2>/dev/null) || cc_csc_verifier_outcome=not-run
+	cc_csc_kind=inferred
+	[ "$cc_csc_tier" = critical ] && cc_csc_kind=accepted
+	# Preflight every member before changing any member status. A set is complete only
+	# when all members still have a current execution, current candidate, and open plan.
+	for cc_csc_m in $cc_csc_members; do
+		cc_csc_yaml="$cc_csc_root/plans/$cc_csc_m/plan.yaml"
+		[ "$(cc_scalar "$cc_csc_yaml" status 2>/dev/null)" = draft ] \
+			|| { cc_fail CHANGE_SET_MEMBER_NOT_OPEN "$cc_csc_m"; return 1; }
+		cc_csc_exec=$(cc_latest_execution "$cc_csc_root" "$cc_csc_m") || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csc_m"; return 1; }
+		cc_csc_edir=$(cc_execution_dir "$cc_csc_root" "$cc_csc_m" "$cc_csc_exec")
+		cc_candidate_id "$cc_csc_edir" >/dev/null || { cc_fail CHANGE_SET_MEMBER_CANDIDATE_INVALID "$cc_csc_m"; return 1; }
+		cc_csc_revision=$(cc_scalar "$cc_csc_edir/execution.yaml" plan_revision 2>/dev/null) || cc_csc_revision=""
+		[ -n "$cc_csc_revision" ] || { cc_fail CHANGE_SET_MEMBER_REVISION_MISSING "$cc_csc_m"; return 1; }
+		cc_csc_commit_count=$(for cc_csc_rf in "$cc_csc_edir"/repositories/*.yaml; do [ -f "$cc_csc_rf" ] || continue; cc_scalar "$cc_csc_rf" latest_commit; done | sed '/^$/d' | wc -l | tr -d ' ')
+		[ "$cc_csc_commit_count" -gt 0 ] || { cc_fail CHANGE_SET_MEMBER_NO_COMMIT "$cc_csc_m"; return 1; }
+	done
 	# Gate 2 happened for the whole set: record the change-set delivery once.
 	printf 'schema_version: 1\ncandidate_id: %s\ndelivered_at: %s\n' \
-		"$(cc_scalar "$cc_csc_dir/change-set.yaml" candidate_id)" "$(cc_now)" \
-		| cc_atomic_write "$cc_csc_dir/delivered.yaml"
+		"$cc_csc_candidate" "$(cc_now)" \
+		| cc_atomic_write "$cc_csc_dir/delivered.yaml" \
+			|| { cc_fail CHANGE_SET_DELIVERY_RECORD_FAILED "$2"; return 1; }
+	cc_knowledge_debt_emit_change_set "$cc_csc_root" "$2" >/dev/null \
+		|| { cc_fail CHANGE_SET_DEBT_FAILED "$2"; return 1; }
 	cc_csc_done=0
 	for cc_csc_m in $cc_csc_members; do
-		cc_completion_ready "$cc_csc_root" "$cc_csc_m" >/dev/null || { cc_fail CHANGE_SET_MEMBER_NOT_READY "$cc_csc_m"; return 1; }
-		cc_completion_finalize "$cc_csc_root" "$cc_csc_m" accepted >/dev/null || { cc_fail CHANGE_SET_MEMBER_COMPLETE_FAILED "$cc_csc_m"; return 1; }
+		cc_csc_exec=$(cc_latest_execution "$cc_csc_root" "$cc_csc_m")
+		cc_csc_edir=$(cc_execution_dir "$cc_csc_root" "$cc_csc_m" "$cc_csc_exec")
+		cc_csc_revision=$(cc_scalar "$cc_csc_edir/execution.yaml" plan_revision)
+		{
+			printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nchange_set: %s\nchange_set_verifier_candidate: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
+				"$CC_SCHEMA_VERSION" "$cc_csc_exec" "$cc_csc_m" "$cc_csc_candidate" "$cc_csc_revision" "$cc_csc_acceptor" "$cc_csc_verifier_outcome" "$2" "$cc_csc_candidate" "$cc_csc_kind" "$(cc_now)"
+			for cc_csc_rf in "$cc_csc_edir"/repositories/*.yaml; do
+				[ -f "$cc_csc_rf" ] || continue
+				printf '  %s: %s\n' "$(cc_scalar "$cc_csc_rf" repository)" "$(cc_scalar "$cc_csc_rf" latest_commit)"
+			done
+		} | cc_atomic_write "$cc_csc_edir/completion.yaml" \
+			|| { cc_fail CHANGE_SET_MEMBER_RECORD_FAILED "$cc_csc_m"; return 1; }
+		cc_plan_set_status "$cc_csc_root/plans/$cc_csc_m/plan.yaml" done \
+			|| { cc_fail CHANGE_SET_MEMBER_STATUS_FAILED "$cc_csc_m"; return 1; }
+		cc_plan_index_upsert "$cc_csc_root" "$cc_csc_m" >/dev/null
 		cc_csc_done=$((cc_csc_done + 1))
 	done
+	cc_change_set_record_status "$cc_csc_dir" delivered-and-completed >/dev/null || return 1
 	cc_emit change_set "$2"
 	cc_emit completed "$cc_csc_done"
 	cc_emit status delivered-and-completed
@@ -2313,7 +2554,8 @@ cc_human_acceptance_record() {
 				printf '  - %s\n' "$cc_ha_line"
 			done <"$cc_ha_file"
 		fi
-	} | cc_atomic_write "$cc_ha_dir/human-acceptance.yaml"
+	} | cc_atomic_write "$cc_ha_dir/human-acceptance.yaml" \
+		|| { cc_fail ACCEPTANCE_RECORD_WRITE_FAILED; return 1; }
 	cc_emit acceptance recorded
 	cc_emit candidate_id "$cc_ha_cand"
 	cc_emit accepted_by "$cc_ha_by"
@@ -2452,6 +2694,12 @@ cc_plan_ready() {
 	fi
 	cc_pr_pf="$cc_pr_root/plans/$cc_pr_plan/plan.yaml"
 	[ -f "$cc_pr_pf" ] || { cc_fail PLAN_YAML_MISSING "$cc_pr_plan"; return 1; }
+	cc_plan_validate "$cc_pr_root/plans/$cc_pr_plan" >/dev/null || {
+		cc_emit readiness blocked; cc_emit reason PLAN_INVALID; return 1;
+	}
+	cc_intent_envelope_check "$cc_pr_root" "$cc_pr_plan" >/dev/null || {
+		cc_emit readiness blocked; cc_emit reason INTENT_ENVELOPE; return 1;
+	}
 	# 1. dependency AND-join
 	for cc_pr_dep in $(cc_plan_dependencies "$cc_pr_pf"); do
 		cc_pr_ds=$(cc_plan_latest_status "$cc_pr_root" "$cc_pr_dep")
@@ -2484,7 +2732,7 @@ cc_plan_ready() {
 # cc_run_stack_ready ROOT PLAN... -> partition a set of plans into
 # verified / ready / waiting / failed / blocked / refused. A plan whose latest
 # execution is terminal (verified/failed/blocked) or in-progress
-# (running/verifying/repairing) is NOT runnable; only an approved, never-run plan
+# (running/verifying/repairing) is NOT runnable; only an authorized, never-run plan
 # that passes readiness is `ready`. Emits one "<plan>: <bucket>" line per plan.
 cc_run_stack_ready() {
 	# tolerate invocation from within the workspace: the root defaults to "." when
@@ -2506,13 +2754,11 @@ cc_run_stack_ready() {
 					done ;;
 			esac
 		fi
-		cc_rsr_status=$(cc_plan_status "$cc_rsr_root" "$cc_rsr_plan" 2>/dev/null) || cc_rsr_status=""
-		# v1.0 authorization: a plan is authorized to run when it is already approved,
-		# or its parent intent is approved and it stays within the scope envelope
-		# (execution auto-approves within the envelope, INV-EXEC-01). A plan that
-		# cannot be authorized — no approved intent or scope drift — is refused.
-		if [ "$cc_rsr_status" != "approved" ] \
-			&& ! cc_intent_envelope_check "$cc_rsr_root" "$cc_rsr_plan" >/dev/null 2>&1; then
+		# v1.0 authorization: a plan is authorized to run when it stays within its
+		# approved intent's scope envelope (INV-INTENT-02 / INV-EXEC-01). There is no
+		# separate plan-approval status; a plan that cannot be authorized — because its
+		# intent is not approved or its scope drifted — is refused.
+		if ! cc_intent_envelope_check "$cc_rsr_root" "$cc_rsr_plan" >/dev/null 2>&1; then
 			cc_emit "$cc_rsr_plan" refused
 			continue
 		fi
@@ -2551,16 +2797,19 @@ cc_latest_execution() {
 # change after the pass voids the evidence, so completion is refused until re-verified.
 # The tier floor (INV-ASSURE-01) decides what evidence is required.
 cc_completion_ready() {
-	cc_cr_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
+	cc_cr_root="$1"; cc_cr_plan="$2"
+	cc_intent_envelope_check "$cc_cr_root" "$cc_cr_plan" >/dev/null \
+		|| { cc_fail COMPLETION_ENVELOPE_STALE "$cc_cr_plan"; return 1; }
+	cc_cr_exec=$(cc_latest_execution "$cc_cr_root" "$cc_cr_plan") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	[ -n "$cc_cr_exec" ] || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
-	cc_cr_dir=$(cc_execution_dir "$1" "$2" "$cc_cr_exec")
+	cc_cr_dir=$(cc_execution_dir "$cc_cr_root" "$cc_cr_plan" "$cc_cr_exec")
 	cc_cr_tier=$(cc_scalar "$cc_cr_dir/execution.yaml" "tier" 2>/dev/null) || cc_cr_tier=""
 	[ -n "$cc_cr_tier" ] || cc_cr_tier=standard
 	if [ "$cc_cr_tier" = "explore" ]; then
 		# Explore is human-supervised (INV-ASSURE-01): no independent verifier, and
 		# the result is NEVER labeled "verified". Eligibility rests on a current
 		# candidate-bound human acceptance, not a verifier pass.
-		cc_human_acceptance_current "$cc_cr_dir" >/dev/null || { cc_fail COMPLETION_NO_ACCEPTANCE "$2"; return 1; }
+		cc_human_acceptance_current "$cc_cr_dir" >/dev/null || { cc_fail COMPLETION_NO_ACCEPTANCE "$cc_cr_plan"; return 1; }
 		cc_emit completion eligible
 		cc_emit execution_id "$cc_cr_exec"
 		cc_emit assurance human-supervised
@@ -2571,10 +2820,11 @@ cc_completion_ready() {
 	cc_cr_st=$(cc_execution_status "$cc_cr_dir")
 	[ "$cc_cr_st" = "verified" ] || { cc_fail COMPLETION_NOT_VERIFIED "$cc_cr_st"; return 1; }
 	cc_cr_vc=$(cc_scalar "$cc_cr_dir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cr_vc=""
-	if [ -n "$cc_cr_vc" ]; then
-		cc_cr_now=$(cc_candidate_id "$cc_cr_dir" 2>/dev/null) || cc_cr_now=""
-		[ "$cc_cr_vc" = "$cc_cr_now" ] || { cc_fail COMPLETION_CANDIDATE_STALE "$cc_cr_vc"; return 1; }
-	fi
+	[ -n "$cc_cr_vc" ] || { cc_fail COMPLETION_VERIFIER_CANDIDATE_MISSING "$cc_cr_plan"; return 1; }
+	cc_cr_now=$(cc_candidate_id "$cc_cr_dir" 2>/dev/null) || cc_cr_now=""
+	[ "$cc_cr_vc" = "$cc_cr_now" ] || { cc_fail COMPLETION_CANDIDATE_STALE "$cc_cr_vc"; return 1; }
+	cc_human_acceptance_current "$cc_cr_dir" >/dev/null \
+		|| { cc_fail COMPLETION_NO_ACCEPTANCE "$cc_cr_plan"; return 1; }
 	cc_emit completion eligible
 	cc_emit execution_id "$cc_cr_exec"
 	cc_emit assurance independent
@@ -2592,18 +2842,31 @@ cc_completion_finalize() {
 	cc_cf_edir=$(cc_execution_dir "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec")
 	cc_cf_yaml="$cc_cf_root/plans/$cc_cf_plan/plan.yaml"
 	cc_cf_status=$(cc_scalar "$cc_cf_yaml" "status")
-	[ "$cc_cf_status" = "approved" ] || { cc_fail COMPLETION_PLAN_NOT_APPROVED "$cc_cf_status"; return 1; }
+	[ "$cc_cf_status" = "draft" ] || { cc_fail COMPLETION_PLAN_NOT_OPEN "$cc_cf_status"; return 1; }
+	cc_cf_candidate=$(cc_candidate_id "$cc_cf_edir") || return 1
+	cc_cf_revision=$(cc_scalar "$cc_cf_edir/execution.yaml" "plan_revision" 2>/dev/null) || cc_cf_revision=""
+	[ -n "$cc_cf_revision" ] || { cc_fail COMPLETION_PLAN_REVISION_MISSING "$cc_cf_plan"; return 1; }
+	cc_cf_acceptor=$(cc_scalar "$cc_cf_edir/human-acceptance.yaml" "accepted_by" 2>/dev/null) || cc_cf_acceptor=""
+	[ -n "$cc_cf_acceptor" ] || { cc_fail COMPLETION_ACCEPTOR_MISSING "$cc_cf_plan"; return 1; }
+	cc_cf_verified=$(cc_scalar "$cc_cf_edir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cf_verified=""
+	cc_cf_verdict=not-run
+	[ -n "$cc_cf_verified" ] && cc_cf_verdict=passed
+	# Emit reconciliation debt before changing the plan status. A debt write failure
+	# therefore leaves the plan draft and retryable, rather than silently completing
+	# while losing the knowledge-loop marker (INV-COMPLETE-02).
+	cc_knowledge_debt_emit "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec" >/dev/null \
+		|| { cc_fail COMPLETION_DEBT_FAILED "$cc_cf_plan"; return 1; }
 	{
-		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
-			"$CC_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_kind" "$(cc_now)"
+		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
+			"$CC_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_candidate" "$cc_cf_revision" "$cc_cf_acceptor" "$cc_cf_verdict" "$cc_cf_kind" "$(cc_now)"
 		for cc_cf_rf in "$cc_cf_edir"/repositories/*.yaml; do
 			[ -f "$cc_cf_rf" ] || continue
 			printf '  %s: %s\n' "$(cc_scalar "$cc_cf_rf" repository)" "$(cc_scalar "$cc_cf_rf" latest_commit)"
 		done
-	} | cc_atomic_write "$cc_cf_edir/completion.yaml"
-	cc_plan_set_status "$cc_cf_yaml" "done"
+		} | cc_atomic_write "$cc_cf_edir/completion.yaml" \
+			|| { cc_fail COMPLETION_RECORD_WRITE_FAILED; return 1; }
+	cc_plan_set_status "$cc_cf_yaml" "done" || { cc_fail COMPLETION_STATUS_UPDATE_FAILED "$cc_cf_plan"; return 1; }
 	cc_plan_index_upsert "$cc_cf_root" "$cc_cf_plan" >/dev/null
-	cc_knowledge_debt_emit "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec" >/dev/null || :
 	cc_emit plan "$cc_cf_plan"
 	cc_emit status done
 	cc_emit human_completion "$cc_cf_kind"
@@ -2613,10 +2876,14 @@ cc_completion_finalize() {
 	return 0
 }
 
-# cc_plan_complete ROOT PLAN -> the EXPLICIT human completion path. Required at the
-# Critical tier; also usable at Explore/Standard when a human asks explicitly.
-# Refuses unless completion-ready passes (tier floor + candidate).
+# cc_plan_complete ROOT PLAN -> the EXPLICIT human completion path. Critical is the
+# only tier that uses it; Explore/Standard complete by the delivery + acceptance
+# inference path (INV-COMPLETE-01).
 cc_plan_complete() {
+	cc_pc_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
+	cc_pc_edir=$(cc_execution_dir "$1" "$2" "$cc_pc_exec")
+	cc_pc_tier=$(cc_scalar "$cc_pc_edir/execution.yaml" tier 2>/dev/null) || cc_pc_tier=standard
+	[ "$cc_pc_tier" = critical ] || { cc_fail COMPLETION_EXPLICIT_CRITICAL_ONLY "$2"; return 1; }
 	cc_completion_ready "$1" "$2" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
 	cc_completion_finalize "$1" "$2" accepted
 }
@@ -2634,15 +2901,18 @@ cc_delivery_record() {
 	cc_del_cand=$(cc_candidate_id "$cc_del_edir") || return 1
 	printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ndelivered_at: %s\n' \
 		"$cc_del_cand" "$cc_del_plan" "$cc_del_exec" "$(cc_now)" \
-		| cc_atomic_write "$cc_del_edir/delivered.yaml"
+		| cc_atomic_write "$cc_del_edir/delivered.yaml" \
+		|| { cc_fail DELIVERY_RECORD_WRITE_FAILED; return 1; }
+	cc_knowledge_debt_emit "$cc_del_root" "$cc_del_plan" "$cc_del_exec" >/dev/null \
+		|| { cc_fail DELIVERY_DEBT_FAILED "$cc_del_plan"; return 1; }
 	cc_emit delivery recorded
 	cc_emit candidate_id "$cc_del_cand"
 	return 0
 }
 
 # cc_completion_infer ROOT PLAN -> INFERRED completion (Context Circuit v1.0). At
-# Explore and Standard, completion is a projection of "candidate accepted +
-# delivered": it requires completion-ready AND a delivery record that still binds to
+# Standard, completion is a projection of "candidate accepted + delivered": it
+# requires completion-ready AND a delivery record that still binds to
 # the current candidate. At Critical it is refused — an explicit human completion is
 # required (INV-COMPLETE-01). Idempotent: an already-done plan reports done.
 cc_completion_infer() {
@@ -2671,7 +2941,7 @@ cc_completion_infer() {
 # cc_context_impact_record EXEC_DIR FILE -> store reconciliation refs (no PK interpretation)
 cc_context_impact_record() {
 	[ -f "$2" ] || { cc_fail CONTEXT_IMPACT_FILE_MISSING; return 1; }
-	cp "$2" "$1/context-impact.yaml"
+	cat "$2" | cc_atomic_write "$1/context-impact.yaml" || { cc_fail CONTEXT_IMPACT_WRITE_FAILED; return 1; }
 	cc_emit context_impact recorded
 	return 0
 }
@@ -2679,9 +2949,9 @@ cc_context_impact_record() {
 # ---------------------------------------------------------------------------
 # Closed knowledge loop (Context Circuit v1.0, Mechanism 4, INV-COMPLETE-02 /
 # INV-KNOWLEDGE-02). Completion or delivery of a candidate emits a
-# reconciliation-debt marker; the next plan's grounding preflight blocks
-# (Standard/Critical) or loudly warns (Explore) while delivered work in its
-# knowledge scope remains unreconciled. The human still ACCEPTS knowledge (the gate
+# reconciliation-debt marker; the next Standard/Critical plan's grounding preflight
+# blocks while delivered work in its knowledge scope remains unreconciled. Explore
+# is planless and has no plan grounding preflight. The human still ACCEPTS knowledge (the gate
 # never auto-accepts); the loop only refuses to let the debt be FORGOTTEN. The debt
 # marker is keyed to the candidate, so it inherits candidate honesty.
 # ---------------------------------------------------------------------------
@@ -2711,9 +2981,41 @@ cc_knowledge_debt_emit() {
 	fi
 	printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
 		"$cc_kde_cand" "$cc_kde_plan" "$cc_kde_exec" "$cc_kde_repos" "$cc_kde_units" "$(cc_now)" \
-		| cc_atomic_write "$cc_kde_file"
+		| cc_atomic_write "$cc_kde_file" \
+		|| { cc_fail KNOWLEDGE_DEBT_WRITE_FAILED "$cc_kde_cand"; return 1; }
 	cc_emit debt recorded
 	cc_emit candidate_id "$cc_kde_cand"
+	return 0
+}
+
+# cc_knowledge_debt_emit_change_set ROOT CS_ID -> emit one reconciliation marker for
+# the integrated candidate. The marker is deliberately set-bound: one delivered
+# change set creates one candidate and therefore one knowledge-loop obligation.
+cc_knowledge_debt_emit_change_set() {
+	cc_kdcs_root="$1"; cc_kdcs_id="$2"; cc_kdcs_dir=$(cc_change_set_dir "$cc_kdcs_root" "$cc_kdcs_id")
+	[ -f "$cc_kdcs_dir/change-set.yaml" ] || { cc_fail KNOWLEDGE_DEBT_CHANGE_SET_MISSING "$cc_kdcs_id"; return 1; }
+	cc_kdcs_cand=$(cc_scalar "$cc_kdcs_dir/change-set.yaml" candidate_id)
+	[ -n "$cc_kdcs_cand" ] && [ "$cc_kdcs_cand" != pending ] || { cc_fail KNOWLEDGE_DEBT_CANDIDATE_MISSING "$cc_kdcs_id"; return 1; }
+	cc_kdcs_members=$(cc_inline_list "$(cc_scalar "$cc_kdcs_dir/change-set.yaml" members)")
+	cc_kdcs_repos=$(for cc_kdcs_m in $cc_kdcs_members; do cc_plan_affected_repositories "$cc_kdcs_root/plans/$cc_kdcs_m/plan.yaml"; done | LC_ALL=C sort -u | tr '\n' ',' | sed 's/,$//; s/,/, /g')
+	cc_kdcs_units=$(for cc_kdcs_m in $cc_kdcs_members; do
+		cc_kdcs_e=$(cc_latest_execution "$cc_kdcs_root" "$cc_kdcs_m") || exit 1
+		cc_kdcs_s="$cc_kdcs_root/.runtime/executions/$cc_kdcs_m/$cc_kdcs_e/snapshot/plan.yaml"
+		[ -f "$cc_kdcs_s" ] || cc_kdcs_s="$cc_kdcs_root/plans/$cc_kdcs_m/plan.yaml"
+		cc_list_ids "$cc_kdcs_s" product_knowledge
+	done | LC_ALL=C sort -u | tr '\n' ',' | sed 's/,$//; s/,/, /g') || { cc_fail KNOWLEDGE_DEBT_CHANGE_SET_SCOPE_FAILED "$cc_kdcs_id"; return 1; }
+	mkdir -p "$(cc_knowledge_debt_dir "$cc_kdcs_root")"
+	cc_kdcs_file="$(cc_knowledge_debt_dir "$cc_kdcs_root")/$cc_kdcs_cand.yaml"
+	if [ -f "$cc_kdcs_file" ]; then
+		cc_kdcs_prev=$(cc_scalar "$cc_kdcs_file" resolved 2>/dev/null) || cc_kdcs_prev=""
+		[ "$cc_kdcs_prev" = reconciled ] || [ "$cc_kdcs_prev" = deferred ] && { cc_emit debt already-resolved; cc_emit candidate_id "$cc_kdcs_cand"; return 0; }
+	fi
+	printf 'schema_version: 1\ncandidate_id: %s\nplan: change-set:%s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
+		"$cc_kdcs_cand" "$cc_kdcs_id" "$cc_kdcs_id" "$cc_kdcs_repos" "$cc_kdcs_units" "$(cc_now)" \
+		| cc_atomic_write "$cc_kdcs_file" \
+		|| { cc_fail KNOWLEDGE_DEBT_WRITE_FAILED "$cc_kdcs_cand"; return 1; }
+	cc_emit debt recorded
+	cc_emit candidate_id "$cc_kdcs_cand"
 	return 0
 }
 
@@ -2751,7 +3053,8 @@ cc_knowledge_reconciled() {
 		/^resolved:[[:space:]]/ { print "resolved: " r; next }
 		{ print }
 		END { print "resolved_at: " ts }
-	' "$cc_kr_file" | cc_atomic_write "$cc_kr_file"
+	' "$cc_kr_file" | cc_atomic_write "$cc_kr_file" \
+		|| { cc_fail KNOWLEDGE_RECONCILE_WRITE_FAILED "$cc_kr_cand"; return 1; }
 	cc_emit reconciled "$cc_kr_cand"
 	cc_emit resolution "$cc_kr_res"
 	return 0
@@ -2766,6 +3069,7 @@ cc_knowledge_debt_check() {
 	cc_kc_pfile="$cc_kc_root/plans/$cc_kc_plan/plan.yaml"
 	[ -f "$cc_kc_pfile" ] || { cc_fail KNOWLEDGE_CHECK_PLAN_MISSING "$cc_kc_plan"; return 1; }
 	cc_kc_newrepos=$(cc_plan_affected_repositories "$cc_kc_pfile")
+	cc_kc_newunits=$(cc_list_ids "$cc_kc_pfile" product_knowledge)
 	# resolve the new plan's tier from its intent
 	cc_kc_intent=$(cc_scalar "$cc_kc_pfile" "intent" 2>/dev/null) || cc_kc_intent=""
 	cc_kc_tier=standard
@@ -2773,6 +3077,7 @@ cc_knowledge_debt_check() {
 		cc_kc_tier=$(cc_scalar "$(cc_intent_dir "$cc_kc_root" "$cc_kc_intent")/contract.yaml" "tier" 2>/dev/null) || cc_kc_tier=standard
 		[ -n "$cc_kc_tier" ] || cc_kc_tier=standard
 	fi
+	[ "$cc_kc_tier" != explore ] || { cc_fail KNOWLEDGE_EXPLORE_PLANLESS "$cc_kc_plan"; return 1; }
 	cc_kc_dir=$(cc_knowledge_debt_dir "$cc_kc_root")
 	cc_kc_hit=no
 	if [ -d "$cc_kc_dir" ]; then
@@ -2782,15 +3087,28 @@ cc_knowledge_debt_check() {
 			# skip a marker for the plan's own prior candidate (self-debt does not block)
 			[ "$(cc_scalar "$cc_kc_f" plan 2>/dev/null)" = "$cc_kc_plan" ] && continue
 			cc_kc_mrepos=$(cc_inline_list "$(cc_scalar "$cc_kc_f" repositories 2>/dev/null)")
+			cc_kc_munits=$(cc_inline_list "$(cc_scalar "$cc_kc_f" knowledge_units 2>/dev/null)")
+			cc_kc_marker_hit=no
 			for cc_kc_mr in $cc_kc_mrepos; do
 				if printf '%s\n' "$cc_kc_newrepos" | grep -Fxq "$cc_kc_mr"; then
-					cc_kc_hit=yes
+					cc_kc_hit=yes; cc_kc_marker_hit=yes
 					cc_emit debtor "$(cc_scalar "$cc_kc_f" candidate_id)"
 					cc_emit "  plan" "$(cc_scalar "$cc_kc_f" plan)"
 					cc_emit "  repository" "$cc_kc_mr"
 					break
 				fi
 			done
+			if [ "$cc_kc_marker_hit" = no ]; then
+				for cc_kc_mu in $cc_kc_munits; do
+					if printf '%s\n' "$cc_kc_newunits" | grep -Fxq "$cc_kc_mu"; then
+						cc_kc_hit=yes
+						cc_emit debtor "$(cc_scalar "$cc_kc_f" candidate_id)"
+						cc_emit "  plan" "$(cc_scalar "$cc_kc_f" plan)"
+						cc_emit "  knowledge_unit" "$cc_kc_mu"
+						break
+					fi
+				done
+			fi
 		done
 	fi
 	if [ "$cc_kc_hit" = "no" ]; then
@@ -2917,7 +3235,7 @@ cc_delivery_rebase() {
 	done
 	if [ "$cc_dr_rebased" -gt 0 ]; then
 		# a rebased base must be re-verified before its pull request opens
-		cc_exec_set "$cc_dr_edir" status verifying
+		cc_exec_set "$cc_dr_edir" status verifying || return 1
 		cc_emit reverify_required true
 	else
 		cc_emit reverify_required false
@@ -3036,6 +3354,7 @@ cc_main() {
 		candidate-current)       cc_candidate_current "$@" ;;
 		change-set-candidate)    cc_change_set_candidate "$@" ;;
 		change-set-prepare)      cc_change_set_prepare "$@" ;;
+		change-set-verifier-prepare) cc_change_set_verifier_prepare "$@" ;;
 		change-set-verifier-record) cc_change_set_verifier_record "$@" ;;
 		change-set-accept)       cc_change_set_accept "$@" ;;
 		change-set-ready)        cc_change_set_ready "$@" ;;
