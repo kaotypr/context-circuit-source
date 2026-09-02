@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 owner: wrapper/contracts/schemas/execution.yaml
 describes: .runtime/executions/<plan-id>/<execution-id>/execution.yaml
 concern: execution_records

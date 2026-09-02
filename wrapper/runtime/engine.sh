@@ -31,6 +31,7 @@ CC_RUNTIME_VERSION="1.0.0"
 # Each persisted runtime record owns its schema version independently. These
 # constants are record-format versions, not runtime or template versions.
 CC_REPOSITORIES_LOCAL_SCHEMA_VERSION="2"
+CC_PLAN_SCHEMA_VERSION="3"
 CC_PAIRING_SESSION_SCHEMA_VERSION="1"
 CC_GROUNDING_MANIFEST_SCHEMA_VERSION="1"
 CC_LEASE_SCHEMA_VERSION="1"
@@ -754,7 +755,7 @@ cc_record_base_branch() {
 }
 
 # cc_repository_binding_migrate ROOT -> rewrite legacy anchor_branch bindings
-# to base_branch and mark repositories.local.yaml as schema 2. This is explicit
+	# to base_branch and mark repositories.local.yaml as the current schema. This is explicit
 # because repositories.local.yaml is workspace-owned host state; normal runtime
 # reads remain non-mutating. Conflicting dual spellings are refused.
 cc_repository_binding_migrate() {
@@ -763,7 +764,7 @@ cc_repository_binding_migrate() {
 	[ -f "$cc_rbm_file" ] || { cc_fail REPOSITORY_BINDING_MISSING; return 1; }
 	cc_rbm_schema=$(cc_scalar "$cc_rbm_file" schema_version) || cc_rbm_schema=""
 	case "$cc_rbm_schema" in
-		1|2) : ;;
+		1|"$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION") : ;;
 		*) cc_fail REPOSITORY_BINDING_SCHEMA_UNSUPPORTED "$cc_rbm_schema"; return 1 ;;
 	esac
 	cc_rbm_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-binding-migrate.XXXXXX") || return 1
@@ -848,7 +849,7 @@ cc_repository_register() {
 		cc_reg_schema=$(cc_scalar "$cc_reg_local" schema_version 2>/dev/null) || cc_reg_schema=""
 		case "$cc_reg_schema" in
 			1) cc_repository_binding_migrate "$cc_reg_root" >/dev/null || return 1 ;;
-			2) : ;;
+			"$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION") : ;;
 			*) cc_fail REPOSITORY_BINDING_SCHEMA_UNSUPPORTED "$cc_reg_schema"; return 1 ;;
 		esac
 	fi
@@ -977,7 +978,7 @@ cc_pair_pointer_validate() {
 	cc_pv_root="$1"; cc_pv_session="$2"; cc_pv_file="$3"
 	[ -f "$cc_pv_file" ] || { cc_fail PAIR_POINTER_MISSING "$cc_pv_session"; return 1; }
 	cc_pv_schema=$(cc_scalar "$cc_pv_file" schema_version) || cc_pv_schema=""
-	[ "$cc_pv_schema" = "1" ] || { cc_fail PAIR_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1; }
+	[ "$cc_pv_schema" = "$CC_PAIRING_SESSION_SCHEMA_VERSION" ] || { cc_fail PAIR_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1; }
 	cc_pv_repo=$(cc_scalar "$cc_pv_file" repo) || cc_pv_repo=""
 	cc_pv_wt=$(cc_scalar "$cc_pv_file" worktree) || cc_pv_wt=""
 	cc_pv_branch=$(cc_scalar "$cc_pv_file" branch) || cc_pv_branch=""
@@ -1442,7 +1443,7 @@ cc_plan_validate() {
 	# schema version and inter-plan dependencies (INV-PLAN-05)
 	cc_pv_schema=$(cc_scalar "$cc_pv_dir/plan.yaml" "schema_version") || cc_pv_schema=""
 	case "$cc_pv_schema" in
-		3) : ;;
+		"$CC_PLAN_SCHEMA_VERSION") : ;;
 		*) cc_fail PLAN_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1 ;;
 	esac
 	# parent intent (INV-INTENT-02 / INV-PLAN-01). Every plan names its parent intent

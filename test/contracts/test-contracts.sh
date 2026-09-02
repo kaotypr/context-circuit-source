@@ -54,6 +54,9 @@ contains "$W/contracts/schemas/execution.yaml" "base_branch"
 contains "$W/contracts/schemas/workspace.yaml" "values: [1]"
 contains "$W/contracts/schemas/verifier-result.yaml" "schema_version: { type: integer, required: true, values: [1] }"
 contains "$W/contracts/schemas/context-impact.yaml" "schema_version: { type: integer, required: true, values: [1] }"
+assert_eq "schema_version: 2" "$(sed -n '1p' "$W/contracts/schemas/repositories-local.yaml")"
+assert_eq "schema_version: 2" "$(sed -n '1p' "$W/contracts/schemas/execution.yaml")"
+assert_eq "schema_version: 3" "$(sed -n '1p' "$W/contracts/schemas/plan.yaml")"
 
 # --- shipped schemas present; old-design schemas absent ---
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \

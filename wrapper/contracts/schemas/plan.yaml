@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 3
 owner: wrapper/contracts/schemas/plan.yaml
 describes: plans/<plan-id>/plan.yaml
 concern: plan_lifecycle
