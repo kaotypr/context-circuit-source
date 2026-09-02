@@ -26,9 +26,11 @@ assert_eq "critical" "$(tier_of "$ws" i0002-pay)"
 cc_fx_intent "$ws" i0003-mig "Migrate" api "db/migrations"
 assert_eq "critical" "$(tier_of "$ws" i0003-mig)"
 
-# --- a single-repo, bounded, no-signal change -> Explore eligible, no verifier ---
+# --- a single-repo, bounded, no-signal change -> Standard by default (fail upward);
+# the engine cannot see reversibility/coverage/novelty, so no-signal is NOT auto-
+# Explore. Explore stays available only as an explicit human lowering (explore_ok=yes) ---
 cc_fx_intent "$ws" i0004-widget "Widget" api "src/widget"
-assert_eq "explore" "$(tier_of "$ws" i0004-widget)"
+assert_eq "standard" "$(tier_of "$ws" i0004-widget)"
 assert_eq "yes" "$(explore_ok "$ws" i0004-widget)"
 
 # --- an unrecognized / uncontained shape (repo-wide scope) -> Standard, not Explore ---
