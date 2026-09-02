@@ -8,8 +8,8 @@ purpose: >
   execution-latency scope adds no new invariant: its concurrency safety is the
   existing INV-CONCURRENCY-01/02 and its per-role model/effort tiering safety is
   the existing INV-HOST-01 / INV-RUNTIME-01. It contributes only additive host
-  evidence (per-role model/effort), an optional plan `complexity` field, and
-  coordinator/host policy (run-stack fan-out width, the per-role tier ladder).
+  evidence (per-role model/effort) and coordinator/host policy (run-stack fan-out
+  width, the per-role tier ladder).
   The v1.0 evolution moves the human gate upstream to the intent (what "correct"
   means and what scope is in bounds) and makes everything between intent and
   delivery mechanical, consequence-tiered, and self-invalidating. It adds

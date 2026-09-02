@@ -1312,13 +1312,6 @@ cc_plan_validate() {
 	cc_pv_intent=$(cc_scalar "$cc_pv_dir/plan.yaml" "intent") || cc_pv_intent=""
 	[ -n "$cc_pv_intent" ] || { cc_fail PLAN_INTENT_REQUIRED "$cc_pv_id"; return 1; }
 	cc_intent_id_valid "$cc_pv_intent" || { cc_fail PLAN_INTENT_INVALID "$cc_pv_intent"; return 1; }
-	# optional complexity hint (additive; absent by default). A coordinator
-	# tiering hint only (INV-HOST-01) — never a gate; the runtime stays model-blind.
-	cc_pv_cx=$(cc_scalar "$cc_pv_dir/plan.yaml" "complexity") || cc_pv_cx=""
-	case "$cc_pv_cx" in
-		''|standard|high) : ;;
-		*) cc_fail PLAN_COMPLEXITY_INVALID "$cc_pv_cx"; return 1 ;;
-	esac
 	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
 	if [ -n "$cc_pv_deps" ]; then
 		cc_pv_plansdir=$(dirname -- "$cc_pv_dir")
@@ -1925,7 +1918,7 @@ cc_attempt_evidence_record() {
 		case "$cc_ae_kv" in *=*) : ;; *) cc_fail ATTEMPT_EVIDENCE_MALFORMED "$cc_ae_kv"; return 1 ;; esac
 		cc_ae_k=${cc_ae_kv%%=*}; cc_ae_v=${cc_ae_kv#*=}
 		case "$cc_ae_k" in
-			worker_model|worker_effort|verifier_model|verifier_effort|complexity|escalated) : ;;
+			worker_model|worker_effort|verifier_model|verifier_effort) : ;;
 			*) cc_fail ATTEMPT_EVIDENCE_KEY_UNKNOWN "$cc_ae_k"; return 1 ;;
 		esac
 		case "$cc_ae_v" in

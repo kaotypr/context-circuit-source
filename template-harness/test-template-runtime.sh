@@ -240,9 +240,8 @@ contains "$gedir/brief-api.md" "AGENTS.md — read and honor it"
 cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 
 # 12. Execution latency: the SHIPPED template records bounded per-attempt
-#     host evidence (per-role model/effort), refuses an unknown evidence key,
-#     validates the optional plan complexity hint, and ships the per-role tiering
-#     guidance and the 0.7.0 runtime version.
+#     host evidence (per-role model/effort), refuses an unknown evidence key, and
+#     ships the per-role tiering guidance and the 1.0.0 runtime version.
 contains "$ws/wrapper/manifest.yaml" "runtime_version: 1.0.0"
 require_file "$ws/docs/role-tiering.md"                  # per-role tiering guidance ships (docs/)
 mkplan 0006-latency "Latency" api src/lat ""
@@ -263,8 +262,5 @@ contains "$ledir/attempts/001/host-evidence.yaml" "worker_model: model-hi"
 contains "$ledir/attempts/001/host-evidence.yaml" "verifier_model: model-lo"
 expect_failure cc_attempt_evidence_record "$ledir" 1 bogus_key=1   # bounded surface: unknown key refused
 cc_verifier_result_record "$ledir" 1 passed >/dev/null
-# the optional per-plan complexity hint validates in the shipped engine
-printf 'complexity: high\n' >>"$ws/plans/0006-latency/plan.yaml"
-cc_plan_validate "$ws/plans/0006-latency" >/dev/null || fail 'shipped engine rejects a valid complexity hint'
 
 pass 'template-runtime laboratory'

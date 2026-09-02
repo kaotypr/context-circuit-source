@@ -82,9 +82,9 @@ and the execution brief carry everything needed to drive it. Invoke each action 
   after they try the change. A new candidate voids a prior acceptance.
 - `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record
   bounded per-attempt host evidence: the `(model, effort)` each role ran at
-  (`worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`,
-  `complexity`, `escalated`). The runtime stores it and never interprets it; it
-  records no wall-clock (timing is engine-stamped).
+  (`worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`). The
+  runtime stores it and never interprets it; it records no wall-clock (timing is
+  engine-stamped).
 - `repair-allowed <execution-dir>`.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
@@ -102,7 +102,7 @@ When the worker's role has `escalate_on_repair: true`, launch the repair attempt
 at a `(model, effort)` **raised above** the configured start (see below);
 escalation changes only which model runs the attempt, never what a rejection
 costs — the failure counter and the three-failure limit are untouched. Record the
-raised `(model, effort)` and `escalated=true` with `attempt-evidence-record`.
+raised `(model, effort)` with `attempt-evidence-record`.
 
 ## Model & effort per role
 
@@ -113,9 +113,7 @@ escalation ladder). This is a coordinator/host decision — the runtime is
 model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning.
 
-- Attempt 1 runs each role at its configured start. If the plan carries
-  `complexity: high`, nudge the worker's attempt-1 start one step above the
-  configured `(model, effort)`; a hard-pinned role ignores the hint.
+- Attempt 1 runs each role at its configured start.
 - On repair, raise a role above its start only when its `escalate_on_repair` is
   true; a hard pin (`false`) holds the same setting at every attempt, even the
   third, and you report that pin's cost honestly rather than silently escalating.

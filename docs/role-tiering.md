@@ -111,16 +111,6 @@ plan was pinned to a fixed setting, so no extra capability was added on repair."
 The system respects the pin and tells the truth about its cost; it never silently
 escalates past a pin to rescue the run.
 
-## Optional per-plan complexity hint
-
-Escalate-on-repair reacts *after* one failed attempt. When a plan is known hard
-up front, `cc-plan` may record an optional `complexity: high` on the plan
-(`plan.yaml`, additive, default absent) that nudges the worker's start **one step
-above** the configured `(model, effort)` for attempt 1, then escalates as usual.
-It is a hint, not a gate: absent, behavior is exactly the config above; present,
-it only shifts the starting point up. A hard pin (`escalate_on_repair: false`)
-ignores the hint.
-
 ## Verifier independence is preserved
 
 Independence is defined by role and access, not model (INV-VERIFY-01/02): one
