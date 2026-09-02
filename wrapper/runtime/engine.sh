@@ -27,9 +27,21 @@
 # ---------------------------------------------------------------------------
 
 CC_RUNTIME_VERSION="1.0.0"
-CC_SCHEMA_VERSION="1"
+
+# Each persisted runtime record owns its schema version independently. These
+# constants are record-format versions, not runtime or template versions.
 CC_REPOSITORIES_LOCAL_SCHEMA_VERSION="2"
+CC_PAIRING_SESSION_SCHEMA_VERSION="1"
+CC_GROUNDING_MANIFEST_SCHEMA_VERSION="1"
+CC_LEASE_SCHEMA_VERSION="1"
 CC_EXECUTION_SCHEMA_VERSION="2"
+CC_CANDIDATE_SCHEMA_VERSION="1"
+CC_CHANGE_SET_SCHEMA_VERSION="1"
+CC_VERIFIER_RESULT_SCHEMA_VERSION="1"
+CC_HUMAN_ACCEPTANCE_SCHEMA_VERSION="1"
+CC_COMPLETION_SCHEMA_VERSION="1"
+CC_DELIVERY_SCHEMA_VERSION="1"
+CC_KNOWLEDGE_DEBT_SCHEMA_VERSION="1"
 
 # ---------------------------------------------------------------------------
 # Diagnostics
@@ -755,9 +767,9 @@ cc_repository_binding_migrate() {
 		*) cc_fail REPOSITORY_BINDING_SCHEMA_UNSUPPORTED "$cc_rbm_schema"; return 1 ;;
 	esac
 	cc_rbm_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-binding-migrate.XXXXXX") || return 1
-	if awk '
+	if awk -v target_schema="$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION" '
 		BEGIN { in_bindings=0; in_binding=0; has_base=0; has_legacy=0; conflict=0 }
-		/^schema_version:[[:space:]]*/ { print "schema_version: 2"; next }
+		/^schema_version:[[:space:]]*/ { print "schema_version: " target_schema; next }
 		/^bindings:/ {
 			if (in_binding && has_base && has_legacy) conflict=1
 			in_bindings=1; in_binding=0; has_base=0; has_legacy=0; print; next
@@ -1014,7 +1026,7 @@ cc_pair_begin() {
 	git -C "$cc_pb_abs" worktree add -b "$cc_pb_branch" "$cc_pb_wt" "$cc_pb_base" >/dev/null 2>&1 \
 		|| { cc_fail PAIR_WORKTREE_CREATE_FAILED "$cc_pb_repo"; return 1; }
 	{
-		printf 'schema_version: 1\n'
+		printf 'schema_version: %s\n' "$CC_PAIRING_SESSION_SCHEMA_VERSION"
 		printf 'repo: %s\n' "$cc_pb_repo"
 		printf 'worktree: %s\n' "$cc_pb_wt"
 		printf 'branch: %s\n' "$cc_pb_branch"
@@ -1304,7 +1316,7 @@ cc_discover_repo_grounding() {
 	cc_dg_wt="$1"; cc_dg_repo="${2:-}"
 	[ -d "$cc_dg_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_dg_wt"; return 1; }
 	cc_dg_env=$(cc_harden_worktree "$cc_dg_wt" | sed -n 's/^environment: //p'); [ -n "$cc_dg_env" ] || cc_dg_env=no-toolchain
-	printf 'schema_version: 1\n'
+	printf 'schema_version: %s\n' "$CC_GROUNDING_MANIFEST_SCHEMA_VERSION"
 	[ -n "$cc_dg_repo" ] && printf 'repository: %s\n' "$cc_dg_repo" || :
 	printf 'worktree: %s\n' "$cc_dg_wt"
 	# files — accumulate to a temp so the result is independent of shell word-splitting
@@ -1733,8 +1745,8 @@ cc_lease_acquire() {
 	cc_la2_file=$(cc_lease_file "$cc_la2_root" "$cc_la2_repo" "$cc_la2_plan")
 	cc_la2_inline=$(printf '%s' "$cc_la2_regions" | tr ' ' '\n' | sed '/^$/d' | paste -sd',' - 2>/dev/null | sed 's/,/, /g')
 	[ -n "$cc_la2_inline" ] || cc_la2_inline=$(printf '%s' "$cc_la2_regions" | tr ' ' ',' | sed 's/,/, /g')
-	printf 'schema_version: 1\nplan: %s\nrepository: %s\nregions: [%s]\nacquired_at: %s\nreleased_at:\n' \
-		"$cc_la2_plan" "$cc_la2_repo" "$cc_la2_inline" "$(cc_now)" \
+	printf 'schema_version: %s\nplan: %s\nrepository: %s\nregions: [%s]\nacquired_at: %s\nreleased_at:\n' \
+		"$CC_LEASE_SCHEMA_VERSION" "$cc_la2_plan" "$cc_la2_repo" "$cc_la2_inline" "$(cc_now)" \
 		| cc_atomic_write "$cc_la2_file"
 	cc_emit lease acquired
 	cc_emit repository "$cc_la2_repo"
@@ -2191,8 +2203,8 @@ cc_candidate_digest() {
 	fi
 	[ -n "$cc_cd_cdig" ] || { cc_fail CANDIDATE_NO_CONTRACT_DIGEST; return 1; }
 	{
-		printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ncontract_digest: %s\nrepositories:\n' \
-			"$cc_cd_id" "$2" "$3" "$cc_cd_cdig"
+		printf 'schema_version: %s\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ncontract_digest: %s\nrepositories:\n' \
+			"$CC_CANDIDATE_SCHEMA_VERSION" "$cc_cd_id" "$2" "$3" "$cc_cd_cdig"
 		for cc_cd_rf in "$cc_cd_dir"/repositories/*.yaml; do
 			[ -f "$cc_cd_rf" ] || continue
 			printf '  %s: %s\n' "$(cc_scalar "$cc_cd_rf" repository)" "$(cc_scalar "$cc_cd_rf" latest_commit)"
@@ -2409,8 +2421,8 @@ cc_change_set_prepare() {
 	cc_csp_tierv=$(cc_change_set_tier "$cc_csp_root" $cc_csp_members)
 	mkdir -p "$cc_csp_dir/integration" "$cc_csp_dir/tips" "$cc_csp_dir/bases"
 	{
-		printf 'schema_version: 1\nchange_set: %s\ncandidate_id: pending\ntier: %s\nstatus: preparing\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
-			"$cc_csp_id" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
+		printf 'schema_version: %s\nchange_set: %s\ncandidate_id: pending\ntier: %s\nstatus: preparing\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
+			"$CC_CHANGE_SET_SCHEMA_VERSION" "$cc_csp_id" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
 		} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
 			|| { cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
 	cc_csp_repblock=$(mktemp "${TMPDIR:-/tmp}/cc-cs.XXXXXX") || return 1
@@ -2447,8 +2459,8 @@ cc_change_set_prepare() {
 	cc_csp_cand=$(printf '%s\n' "$cc_csp_cand_out" | sed -n 's/^change_set_candidate: //p')
 	[ -n "$cc_csp_cand" ] || { cc_change_set_record_status "$cc_csp_dir" blocked CANDIDATE_UNAVAILABLE; rm -f "$cc_csp_repblock"; return 1; }
 	{
-		printf 'schema_version: 1\nchange_set: %s\ncandidate_id: %s\ntier: %s\nstatus: prepared\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
-			"$cc_csp_id" "$cc_csp_cand" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
+		printf 'schema_version: %s\nchange_set: %s\ncandidate_id: %s\ntier: %s\nstatus: prepared\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
+			"$CC_CHANGE_SET_SCHEMA_VERSION" "$cc_csp_id" "$cc_csp_cand" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
 		cat "$cc_csp_repblock"
 		} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
 			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
@@ -2504,8 +2516,8 @@ cc_change_set_verifier_record() {
 			cc_fail VERIFIER_MODIFIED_PRODUCT "$2:$cc_csv_r"; return 1
 		fi
 	done
-	printf 'schema_version: 1\ncandidate_id: %s\noutcome: %s\nread_only: true\nchecked_at: %s\n' \
-		"$cc_csv_cand" "$cc_csv_out" "$(cc_now)" | cc_atomic_write "$cc_csv_dir/verifier.yaml" \
+	printf 'schema_version: %s\ncandidate_id: %s\noutcome: %s\nread_only: true\nchecked_at: %s\n' \
+		"$CC_VERIFIER_RESULT_SCHEMA_VERSION" "$cc_csv_cand" "$cc_csv_out" "$(cc_now)" | cc_atomic_write "$cc_csv_dir/verifier.yaml" \
 		|| { cc_fail VERIFIER_RESULT_WRITE_FAILED; return 1; }
 	cc_emit change_set "$2"
 	cc_emit outcome "$cc_csv_out"
@@ -2521,8 +2533,8 @@ cc_change_set_accept() {
 	[ -n "${3:-}" ] || { cc_fail ACCEPTANCE_NO_HUMAN; return 1; }
 	case "$3" in *[!A-Za-z0-9._@-]*) cc_fail ACCEPTANCE_HUMAN_INVALID "$3"; return 1 ;; esac
 	cc_csa_cand=$(cc_scalar "$cc_csa_dir/change-set.yaml" candidate_id)
-	printf 'schema_version: 1\ncandidate_id: %s\naccepted_by: %s\naccepted_at: %s\n' \
-		"$cc_csa_cand" "$3" "$(cc_now)" | cc_atomic_write "$cc_csa_dir/human-acceptance.yaml" \
+	printf 'schema_version: %s\ncandidate_id: %s\naccepted_by: %s\naccepted_at: %s\n' \
+		"$CC_HUMAN_ACCEPTANCE_SCHEMA_VERSION" "$cc_csa_cand" "$3" "$(cc_now)" | cc_atomic_write "$cc_csa_dir/human-acceptance.yaml" \
 		|| { cc_fail ACCEPTANCE_RECORD_WRITE_FAILED; return 1; }
 	cc_emit change_set "$2"
 	cc_emit accepted_by "$3"
@@ -2600,8 +2612,8 @@ cc_change_set_complete() {
 		[ "$cc_csc_commit_count" -gt 0 ] || { cc_fail CHANGE_SET_MEMBER_NO_COMMIT "$cc_csc_m"; return 1; }
 	done
 	# Gate 2 happened for the whole set: record the change-set delivery once.
-	printf 'schema_version: 1\ncandidate_id: %s\ndelivered_at: %s\n' \
-		"$cc_csc_candidate" "$(cc_now)" \
+	printf 'schema_version: %s\ncandidate_id: %s\ndelivered_at: %s\n' \
+		"$CC_DELIVERY_SCHEMA_VERSION" "$cc_csc_candidate" "$(cc_now)" \
 		| cc_atomic_write "$cc_csc_dir/delivered.yaml" \
 			|| { cc_fail CHANGE_SET_DELIVERY_RECORD_FAILED "$2"; return 1; }
 	cc_knowledge_debt_emit_change_set "$cc_csc_root" "$2" >/dev/null \
@@ -2613,7 +2625,7 @@ cc_change_set_complete() {
 		cc_csc_revision=$(cc_scalar "$cc_csc_edir/execution.yaml" plan_revision)
 		{
 			printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nchange_set: %s\nchange_set_verifier_candidate: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
-				"$CC_SCHEMA_VERSION" "$cc_csc_exec" "$cc_csc_m" "$cc_csc_candidate" "$cc_csc_revision" "$cc_csc_acceptor" "$cc_csc_verifier_outcome" "$2" "$cc_csc_candidate" "$cc_csc_kind" "$(cc_now)"
+				"$CC_COMPLETION_SCHEMA_VERSION" "$cc_csc_exec" "$cc_csc_m" "$cc_csc_candidate" "$cc_csc_revision" "$cc_csc_acceptor" "$cc_csc_verifier_outcome" "$2" "$cc_csc_candidate" "$cc_csc_kind" "$(cc_now)"
 			for cc_csc_rf in "$cc_csc_edir"/repositories/*.yaml; do
 				[ -f "$cc_csc_rf" ] || continue
 				printf '  %s: %s\n' "$(cc_scalar "$cc_csc_rf" repository)" "$(cc_scalar "$cc_csc_rf" latest_commit)"
@@ -2645,8 +2657,8 @@ cc_human_acceptance_record() {
 	case "$cc_ha_by" in *[!A-Za-z0-9._@-]*) cc_fail ACCEPTANCE_ACCEPTER_INVALID "$cc_ha_by"; return 1 ;; esac
 	cc_ha_cand=$(cc_candidate_id "$cc_ha_dir") || return 1
 	{
-		printf 'schema_version: 1\ncandidate_id: %s\naccepted_by: %s\naccepted_at: %s\nchecklist:\n' \
-			"$cc_ha_cand" "$cc_ha_by" "$(cc_now)"
+		printf 'schema_version: %s\ncandidate_id: %s\naccepted_by: %s\naccepted_at: %s\nchecklist:\n' \
+			"$CC_HUMAN_ACCEPTANCE_SCHEMA_VERSION" "$cc_ha_cand" "$cc_ha_by" "$(cc_now)"
 		if [ -n "$cc_ha_file" ] && [ -f "$cc_ha_file" ]; then
 			while IFS= read -r cc_ha_line; do
 				[ -n "$cc_ha_line" ] || continue
@@ -2957,7 +2969,7 @@ cc_completion_finalize() {
 		|| { cc_fail COMPLETION_DEBT_FAILED "$cc_cf_plan"; return 1; }
 	{
 		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
-			"$CC_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_candidate" "$cc_cf_revision" "$cc_cf_acceptor" "$cc_cf_verdict" "$cc_cf_kind" "$(cc_now)"
+			"$CC_COMPLETION_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_candidate" "$cc_cf_revision" "$cc_cf_acceptor" "$cc_cf_verdict" "$cc_cf_kind" "$(cc_now)"
 		for cc_cf_rf in "$cc_cf_edir"/repositories/*.yaml; do
 			[ -f "$cc_cf_rf" ] || continue
 			printf '  %s: %s\n' "$(cc_scalar "$cc_cf_rf" repository)" "$(cc_scalar "$cc_cf_rf" latest_commit)"
@@ -2998,8 +3010,8 @@ cc_delivery_record() {
 	cc_del_edir=$(cc_execution_dir "$cc_del_root" "$cc_del_plan" "$cc_del_exec")
 	[ -f "$cc_del_edir/execution.yaml" ] || { cc_fail DELIVERY_NO_EXECUTION "$cc_del_plan"; return 1; }
 	cc_del_cand=$(cc_candidate_id "$cc_del_edir") || return 1
-	printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ndelivered_at: %s\n' \
-		"$cc_del_cand" "$cc_del_plan" "$cc_del_exec" "$(cc_now)" \
+	printf 'schema_version: %s\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ndelivered_at: %s\n' \
+		"$CC_DELIVERY_SCHEMA_VERSION" "$cc_del_cand" "$cc_del_plan" "$cc_del_exec" "$(cc_now)" \
 		| cc_atomic_write "$cc_del_edir/delivered.yaml" \
 		|| { cc_fail DELIVERY_RECORD_WRITE_FAILED; return 1; }
 	cc_knowledge_debt_emit "$cc_del_root" "$cc_del_plan" "$cc_del_exec" >/dev/null \
@@ -3078,8 +3090,8 @@ cc_knowledge_debt_emit() {
 		cc_kde_prev=$(cc_scalar "$cc_kde_file" "resolved" 2>/dev/null) || cc_kde_prev=""
 		[ "$cc_kde_prev" = "reconciled" ] || [ "$cc_kde_prev" = "deferred" ] && { cc_emit debt already-resolved; cc_emit candidate_id "$cc_kde_cand"; return 0; }
 	fi
-	printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
-		"$cc_kde_cand" "$cc_kde_plan" "$cc_kde_exec" "$cc_kde_repos" "$cc_kde_units" "$(cc_now)" \
+	printf 'schema_version: %s\ncandidate_id: %s\nplan: %s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
+		"$CC_KNOWLEDGE_DEBT_SCHEMA_VERSION" "$cc_kde_cand" "$cc_kde_plan" "$cc_kde_exec" "$cc_kde_repos" "$cc_kde_units" "$(cc_now)" \
 		| cc_atomic_write "$cc_kde_file" \
 		|| { cc_fail KNOWLEDGE_DEBT_WRITE_FAILED "$cc_kde_cand"; return 1; }
 	cc_emit debt recorded
@@ -3109,8 +3121,8 @@ cc_knowledge_debt_emit_change_set() {
 		cc_kdcs_prev=$(cc_scalar "$cc_kdcs_file" resolved 2>/dev/null) || cc_kdcs_prev=""
 		[ "$cc_kdcs_prev" = reconciled ] || [ "$cc_kdcs_prev" = deferred ] && { cc_emit debt already-resolved; cc_emit candidate_id "$cc_kdcs_cand"; return 0; }
 	fi
-	printf 'schema_version: 1\ncandidate_id: %s\nplan: change-set:%s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
-		"$cc_kdcs_cand" "$cc_kdcs_id" "$cc_kdcs_id" "$cc_kdcs_repos" "$cc_kdcs_units" "$(cc_now)" \
+	printf 'schema_version: %s\ncandidate_id: %s\nplan: change-set:%s\nexecution_id: %s\nrepositories: [%s]\nknowledge_units: [%s]\nresolved: pending\ncreated_at: %s\n' \
+		"$CC_KNOWLEDGE_DEBT_SCHEMA_VERSION" "$cc_kdcs_cand" "$cc_kdcs_id" "$cc_kdcs_id" "$cc_kdcs_repos" "$cc_kdcs_units" "$(cc_now)" \
 		| cc_atomic_write "$cc_kdcs_file" \
 		|| { cc_fail KNOWLEDGE_DEBT_WRITE_FAILED "$cc_kdcs_cand"; return 1; }
 	cc_emit debt recorded

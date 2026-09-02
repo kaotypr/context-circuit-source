@@ -70,6 +70,18 @@ require_file "$W/runtime/engine.sh"
 not_contains "$W/runtime/engine.sh" "cc_probe"
 not_contains "$W/runtime/engine.sh" "cc_route"
 not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
+# persisted record formats have independent schema-version owners; there is no
+# generic runtime schema version that can be mistaken for a record schema.
+not_contains "$W/runtime/engine.sh" "CC_SCHEMA_VERSION"
+for record_schema in \
+	CC_REPOSITORIES_LOCAL_SCHEMA_VERSION CC_PAIRING_SESSION_SCHEMA_VERSION \
+	CC_GROUNDING_MANIFEST_SCHEMA_VERSION CC_LEASE_SCHEMA_VERSION \
+	CC_EXECUTION_SCHEMA_VERSION CC_CANDIDATE_SCHEMA_VERSION \
+	CC_CHANGE_SET_SCHEMA_VERSION CC_VERIFIER_RESULT_SCHEMA_VERSION \
+	CC_HUMAN_ACCEPTANCE_SCHEMA_VERSION CC_COMPLETION_SCHEMA_VERSION \
+	CC_DELIVERY_SCHEMA_VERSION CC_KNOWLEDGE_DEBT_SCHEMA_VERSION; do
+	contains "$W/runtime/engine.sh" "$record_schema"
+done
 
 # --- shipped skills present; old-design skills absent ---
 for sk in cc-workspace cc-intent cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
