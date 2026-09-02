@@ -11,8 +11,8 @@ This suite is **opt-in and source-only**. It is NOT part of `sh test/acceptance.
 (it needs a live model and sub-agent spawning), and the release manifest excludes
 all of `test/`, so nothing here ships in `context-circuit-template`.
 
-Design set:
-`sources/system-design/context-circuit/v1.0.0/template-harness/`.
+The shipped product contract is authoritative for behavior; this source-only
+harness supplies the conversational fixtures and host adapters around it.
 
 ## Files
 
@@ -162,6 +162,6 @@ passes.
 
 Every generated workspace, fixture, worktree, transcript, and result is
 disposable test state under `.out/` and never touches the source `.runtime/`.
-Only `01-new-project-simple-idea` is scaffolded; cases 02–09 and the
-non-empty-fixture setup path (`setup.repositories`/`setup.sources`) are follow-on
-work.
+All listed cases use the shared v1.0.0 fixture vocabulary; the live drivers
+remain opt-in because they require a host model and, for full-execution cases,
+child-agent support.

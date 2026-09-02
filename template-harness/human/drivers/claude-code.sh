@@ -105,13 +105,19 @@ STARTED_FLAG="$CC_RUN_DIR/.coord-started"
 rm -f "$STARTED_FLAG"
 coordinator_turn() {
 	msg=$1; action=$2; turn_raw="$CC_RUN_DIR/.turn.$$.jsonl"
+	effective_msg=$msg
+	case "${CC_FAULT:-}" in
+		verifier-unavailable)
+			effective_msg="[Harness condition: the independent verifier child is unavailable for this run. Do not attempt to create or imitate that child; report the result as host-blocked and preserve the existing work.]\n\n$msg"
+			;;
+	esac
 	if [ ! -f "$STARTED_FLAG" ]; then
-		run_claude "$CC_WORKSPACE" -p "$msg" \
+		run_claude "$CC_WORKSPACE" -p "$effective_msg" \
 			--session-id "$CID" --output-format stream-json --verbose \
 			--permission-mode bypassPermissions > "$turn_raw" 2>>"$CC_RUN_DIR/driver.err" || true
 		: > "$STARTED_FLAG"
 	else
-		run_claude "$CC_WORKSPACE" -p "$msg" \
+		run_claude "$CC_WORKSPACE" -p "$effective_msg" \
 			--resume "$CID" --output-format stream-json --verbose \
 			--permission-mode bypassPermissions > "$turn_raw" 2>>"$CC_RUN_DIR/driver.err" || true
 	fi
@@ -128,7 +134,7 @@ coordinator_turn() {
 	# efficiency telemetry (dimension D): this turn's usage from the runner's own
 	# result event — agent-loop turns, generated output tokens, context peak
 	# (cache-read), and cost. One raw row per turn, tagged by action; aggregated
-	# per action after the loop (v0.6 template-harness/telemetry.md).
+	# per action after the loop.
 	usage=$(jq -rs 'map(select(.type=="result")) | last
 		| [ (.num_turns // 0), (.usage.output_tokens // 0), (.usage.cache_read_input_tokens // 0), (.total_cost_usd // 0) ]
 		| @tsv' "$turn_raw" 2>/dev/null || printf '')
@@ -161,7 +167,8 @@ turns_tsv | while IFS='	' read -r kind payload; do
 	# advance the (informational) action label by the kind of request. Execution
 	# intent (build/run/execute, incl. compound "approve and build") is checked
 	# first so the trace + telemetry tag as execute-plan.
-	case "$send" in
+	send_lc=$(printf '%s' "$send" | tr '[:upper:]' '[:lower:]')
+	case "$send_lc" in
 		*"work with me directly"*|*collaborate*directly*) ACTION=direct-collaboration ;;
 		*approve*build*|*approve*execute*|*approve*run*) ACTION=execute-plan ;;
 		*"build the"*|*"build all"*|*execute*|*"run them"*|*"run all"*|*"run the"*|*"go ahead and build"*) ACTION=execute-plan ;;
@@ -177,7 +184,7 @@ turns_tsv | while IFS='	' read -r kind payload; do
 done
 
 # Aggregate the per-turn telemetry into the per-action ledger the grader reads
-# (v0.6 template-harness/telemetry.md): action, conversational turns, agent-loop
+# action, conversational turns, agent-loop
 # turns, generated output tokens, context peak (max cache-read), cost.
 if [ -s "$TELRAW" ]; then
 	awk -F'\t' '

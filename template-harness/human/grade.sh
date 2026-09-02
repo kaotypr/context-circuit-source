@@ -175,6 +175,127 @@ while IFS= read -r line; do
 			n=$(plan_dirs | wc -l | tr -d ' ')
 			if num_compare "$n" "$val"; then ok "plans_created ($n matches $val)"
 			else bad "plans_created ($n vs expected $val)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		intent_status)
+			iid=${val%%:*}; want=${val#*:}
+			got=$(cc_scalar "$WORKSPACE/intent/$iid/contract.yaml" status 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "intent_status ($iid=$got)"
+			else bad "intent_status ($iid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		plan_schema)
+			pid=${val%%:*}; want=${val#*:}
+			got=$(cc_scalar "$WORKSPACE/plans/$pid/plan.yaml" schema_version 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "plan_schema ($pid=$got)"
+			else bad "plan_schema ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		intent_envelope)
+			pid=$val
+			if cc_intent_envelope_check "$WORKSPACE" "$pid" >/dev/null 2>&1; then
+				ok "intent_envelope ($pid: within approved scope)"
+			else
+				bad "intent_envelope ($pid: not within approved scope)"; FAIL_A=$((FAIL_A+1))
+			fi ;;
+		envelope_status)
+			pid=${val%%:*}; want=${val#*:}; env_out=""
+			env_out=$(cc_intent_envelope_check "$WORKSPACE" "$pid" 2>/dev/null) || :
+			got=$(printf '%s\n' "$env_out" | sed -n 's/^envelope:[[:space:]]*//p' | tail -1)
+			if [ "$got" = "$want" ]; then ok "envelope_status ($pid=$got)"
+			else bad "envelope_status ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		adversary_status)
+			iid=${val%%:*}; want=${val#*:}
+			got=$(cc_scalar "$WORKSPACE/intent/$iid/adversary.md" criteria_sound 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "adversary_status ($iid=$got)"
+			else bad "adversary_status ($iid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		classified_tier)
+			iid=${val%%:*}; want=${val#*:}; tier_out=""
+			tier_out=$(cc_tier_classify "$WORKSPACE" "$iid" 2>/dev/null) || :
+			got=$(printf '%s\n' "$tier_out" | sed -n 's/^classified_tier:[[:space:]]*//p' | tail -1)
+			if [ "$got" = "$want" ]; then ok "classified_tier ($iid=$got)"
+			else bad "classified_tier ($iid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		execution_tier)
+			pid=${val%%:*}; want=${val#*:}
+			exec=$(cc_latest_execution "$WORKSPACE" "$pid" 2>/dev/null) || exec=""
+			got=$(cc_scalar "$(cc_execution_dir "$WORKSPACE" "$pid" "$exec")/execution.yaml" tier 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "execution_tier ($pid=$got)"
+			else bad "execution_tier ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		candidate_bound)
+			pid=$val
+			exec=$(cc_latest_execution "$WORKSPACE" "$pid" 2>/dev/null) || exec=""
+			edir=$(cc_execution_dir "$WORKSPACE" "$pid" "$exec" 2>/dev/null)
+			cand=$(cc_scalar "$edir/candidate.yaml" candidate_id 2>/dev/null) || cand=""
+			verified=$(cc_scalar "$edir/execution.yaml" verified_candidate 2>/dev/null) || verified=""
+			verifier=$(find "$edir/attempts" -name verifier.yaml -exec grep '^candidate_id:' {} \; 2>/dev/null | tail -n1 | sed 's/^candidate_id:[[:space:]]*//')
+			if [ -n "$cand" ] && [ "$cand" = "$verified" ] && [ "$cand" = "$verifier" ]; then
+				ok "candidate_bound ($pid: verifier evidence names the current candidate)"
+			else
+				bad "candidate_bound ($pid: candidate='${cand:-<none>}' verified='${verified:-<none>}' verifier='${verifier:-<none>}')"; FAIL_A=$((FAIL_A+1))
+			fi ;;
+		candidate_stale)
+			pid=$val
+			exec=$(cc_latest_execution "$WORKSPACE" "$pid" 2>/dev/null) || exec=""
+			edir=$(cc_execution_dir "$WORKSPACE" "$pid" "$exec" 2>/dev/null)
+			current=$(cc_candidate_id "$edir" 2>/dev/null) || current=""
+			verified=$(cc_scalar "$edir/execution.yaml" verified_candidate 2>/dev/null) || verified=""
+			state=$(cc_execution_status "$edir" 2>/dev/null) || state=""
+			if [ -n "$current" ] && [ -n "$verified" ] && [ "$current" != "$verified" ] && [ "$state" != verified ]; then
+				ok "candidate_stale ($pid: current candidate differs from verified evidence)"
+			else
+				bad "candidate_stale ($pid: current='${current:-<none>}' verified='${verified:-<none>}' status='${state:-<none>}')"; FAIL_A=$((FAIL_A+1))
+			fi ;;
+		human_acceptance_recorded)
+			pid=$val
+			exec=$(cc_latest_execution "$WORKSPACE" "$pid" 2>/dev/null) || exec=""
+			edir=$(cc_execution_dir "$WORKSPACE" "$pid" "$exec" 2>/dev/null)
+			if [ -n "$exec" ] && cc_human_acceptance_current "$edir" >/dev/null 2>&1; then
+				ok "human_acceptance_recorded ($pid: current candidate accepted)"
+			else
+				bad "human_acceptance_recorded ($pid: no current candidate acceptance)"; FAIL_A=$((FAIL_A+1))
+			fi ;;
+		completion_kind)
+			pid=${val%%:*}; want=${val#*:}
+			exec=$(cc_latest_execution "$WORKSPACE" "$pid" 2>/dev/null) || exec=""
+			edir=$(cc_execution_dir "$WORKSPACE" "$pid" "$exec" 2>/dev/null)
+			got=$(cc_scalar "$edir/completion.yaml" human_completion 2>/dev/null) || got=""
+			if [ "$got" = "$want" ]; then ok "completion_kind ($pid=$got)"
+			else bad "completion_kind ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		delivery_recorded)
+			pid=$val
+			exec=$(cc_latest_execution "$WORKSPACE" "$pid" 2>/dev/null) || exec=""
+			edir=$(cc_execution_dir "$WORKSPACE" "$pid" "$exec" 2>/dev/null)
+			if [ -f "$edir/delivered.yaml" ]; then ok "delivery_recorded ($pid: Gate 2 signal recorded)"
+			else bad "delivery_recorded ($pid: no Gate 2 delivery record)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		knowledge_debt_pending)
+			pending=0
+			if [ -d "$WORKSPACE/.runtime/knowledge-debt" ]; then
+				pending=$(grep -rl '^resolved:[[:space:]]*pending' "$WORKSPACE/.runtime/knowledge-debt" 2>/dev/null | wc -l | tr -d ' ')
+			fi
+			if num_compare "${pending:-0}" "$val"; then ok "knowledge_debt_pending (${pending:-0} matches $val)"
+			else bad "knowledge_debt_pending (${pending:-0} vs expected $val)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		no_execution_for)
+			latest=$(cc_latest_execution "$WORKSPACE" "$val" 2>/dev/null) || latest=""
+			if [ -z "$latest" ]; then ok "no_execution_for ($val: no execution started)"
+			else bad "no_execution_for ($val: found execution $latest)"; FAIL_A=$((FAIL_A+1)); fi ;;
+		change_set_completed)
+			want=$val; sets=0; members_total=0; cs_bad=""
+			for cs_yaml in "$WORKSPACE"/.runtime/change-sets/*/change-set.yaml; do
+				[ -f "$cs_yaml" ] || continue
+				[ "$(cc_scalar "$cs_yaml" status 2>/dev/null)" = delivered-and-completed ] || continue
+				sets=$((sets + 1))
+				cs_dir=$(dirname -- "$cs_yaml")
+				cs_members=$(cc_inline_list "$(cc_scalar "$cs_yaml" members 2>/dev/null)" 2>/dev/null) || cs_members=""
+				cs_n=$(printf '%s\n' "$cs_members" | sed '/^$/d' | wc -l | tr -d ' ')
+				members_total=$((members_total + cs_n))
+				[ -f "$cs_dir/verifier.yaml" ] && [ "$(cc_scalar "$cs_dir/verifier.yaml" outcome 2>/dev/null)" = passed ] || cs_bad="$cs_bad verifier"
+				[ -f "$cs_dir/human-acceptance.yaml" ] || cs_bad="$cs_bad acceptance"
+				[ -f "$cs_dir/delivered.yaml" ] || cs_bad="$cs_bad delivery"
+				for cs_member in $cs_members; do
+					cs_exec=$(cc_latest_execution "$WORKSPACE" "$cs_member" 2>/dev/null) || cs_exec=""
+					cs_edir=$(cc_execution_dir "$WORKSPACE" "$cs_member" "$cs_exec" 2>/dev/null)
+					[ -f "$cs_edir/completion.yaml" ] || cs_bad="$cs_bad $cs_member-completion"
+					done
+			done
+			if [ "$sets" -eq 1 ] && num_compare "$members_total" "$want" && [ -z "$cs_bad" ]; then
+				ok "change_set_completed ($members_total members in one verified, accepted set)"
+			else
+				bad "change_set_completed (sets=$sets members=$members_total want=$want issues='${cs_bad# }')"; FAIL_A=$((FAIL_A+1))
+			fi ;;
 		no_plan_status)
 			forbidden=$(inline_list "$val"); hit=""
 			for p in $(plan_dirs); do
@@ -517,7 +638,7 @@ else
 fi
 
 # --- D. efficiency ledger (soft, warning-only) ---------------------------------
-# Per-action ledger (v0.6 template-harness): action, conversational turns,
+# Per-action ledger: action, conversational turns,
 # agent-loop turns, generated output tokens, context peak, cost — compared to the
 # case `budgets` and reported WITHIN/OVER. NEVER changes the verdict (soft).
 printf '\n--- D. efficiency ledger (soft) ---\n'

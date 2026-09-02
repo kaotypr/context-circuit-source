@@ -68,11 +68,17 @@ chat_from_stream() {
 
 coordinator_turn() {
 	msg=$1; action=$2
+	effective_msg=$msg
+	case "${CC_FAULT:-}" in
+		verifier-unavailable)
+			effective_msg="[Harness condition: the independent verifier child is unavailable for this run. Do not attempt to create or imitate that child; report the result as host-blocked and preserve the existing work.]\n\n$msg"
+			;;
+	esac
 	turn_raw="$CC_RUN_DIR/.cursor-turn.$$.jsonl"
 	rm -f "$turn_raw"
 	if [ ! -f "$CHAT_FILE" ]; then
 		if ! run_cursor "$CC_WORKSPACE" --workspace "$CC_WORKSPACE" --print \
-			--output-format stream-json --sandbox enabled --force --trust "$msg" \
+			--output-format stream-json --sandbox enabled --force --trust "$effective_msg" \
 			> "$turn_raw" 2>>"$CC_RUN_DIR/driver.err"; then
 			cat "$turn_raw" >> "$RAW" 2>/dev/null || :
 			printf 'FAIL: Cursor coordinator turn failed; see %s/driver.err\n' "$CC_RUN_DIR" >&2
@@ -83,7 +89,7 @@ coordinator_turn() {
 	else
 		chat=$(sed -n '1p' "$CHAT_FILE")
 		if ! run_cursor "$CC_WORKSPACE" --workspace "$CC_WORKSPACE" --resume "$chat" \
-			--print --output-format stream-json --sandbox enabled --force --trust "$msg" \
+			--print --output-format stream-json --sandbox enabled --force --trust "$effective_msg" \
 			> "$turn_raw" 2>>"$CC_RUN_DIR/driver.err"; then
 			cat "$turn_raw" >> "$RAW" 2>/dev/null || :
 			printf 'FAIL: Cursor coordinator resume failed; see %s/driver.err\n' "$CC_RUN_DIR" >&2

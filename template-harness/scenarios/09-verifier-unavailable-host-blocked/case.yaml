@@ -1,6 +1,7 @@
 id: 09-verifier-unavailable-host-blocked
 title: Verifier child unavailable — coordinator reports host-blocked, never self-verifies, preserves evidence
 mode: full-execution
+fault: verifier-unavailable
 setup:
   # Seeded MID-FLIGHT: the worker has committed (status verifying), verification has
   # NOT run. The run forces the independent verifier child to be unavailable (the
