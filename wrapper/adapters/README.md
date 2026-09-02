@@ -18,10 +18,9 @@ To set up a project:
 To do work:
 
 > Work with me directly on <small change> in <repository>.
-> Create a plan for <feature>.
-> Review plan <plan-id>.
-> Approve plan <plan-id> and execute it.
-> Mark <plan-id> complete.
+> I want to build <feature> — <what "correct" means>.
+> Approve this intent.
+> Execute it, then ship it.
 
 ## What you control
 

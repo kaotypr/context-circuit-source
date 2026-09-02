@@ -1,19 +1,20 @@
 ---
 name: cc-run-stack
-description: Execute a named set of already-approved plans in one run (a plan stack), in dependency order, with one worker and one independent verifier per plan; adds no authority and marks nothing done or delivered.
+description: Execute a named set of intent-authorized plans in one run (a plan stack), in dependency order, with one worker and one independent verifier per plan; adds no authority and marks nothing done or delivered.
 ---
 
 ## When to use
 
-On a request to run a *set* of approved plans — "execute plans 0001 through 0010",
-"run the ready stack", "build all the approved plans in one go". This adds no new
-authority over the single-plan `cc-execute`: every plan in the set is separately
-approved, executed by one worker, checked by one independent verifier, and left for
-the human to complete and deliver. Concurrency only decides order and overlap among
-plans the human already approved (INV-CONCURRENCY-01/02).
+On a request to run a *set* of plans — "execute plans 0001 through 0010",
+"run the ready stack", "build all the ready plans in one go". This adds no new
+authority over the single-plan `cc-execute`: every plan in the set is authorized by
+its parent intent's envelope, executed by one worker, checked by one independent
+verifier, and left for the human to complete and deliver. Concurrency only decides
+order and overlap among plans already authorized by their intents
+(INV-CONCURRENCY-01/02).
 
-Refuse to run any plan in the set that is not approved, and say so plainly, without
-blocking the rest.
+Refuse to run any plan the runtime does not authorize — no approved intent, or scope
+drift — and say so plainly, without blocking the rest.
 
 ## Resolving the set
 
