@@ -21,8 +21,8 @@ criteria:
     statement: Plans preserve request detail as requirements, constraints, non-goals, assumptions, questions, risks.
     suite: test/plans/test-plans.sh
   - id: AC-05
-    statement: An unapproved plan cannot execute.
-    suite: test/runtime/test-runtime.sh
+    statement: A plan outside its approved intent's scope envelope cannot execute; it is re-gated.
+    suite: test/intent/test-envelope.sh
   - id: AC-06
     statement: Approve-and-execute performs both explicit actions without a confirmation card.
     suite: test/plans/test-plans.sh

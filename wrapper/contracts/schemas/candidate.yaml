@@ -20,7 +20,7 @@ candidate_id:
   inputs:
     - repository -> latest_commit   # the per-repo commit map (recorded per execution)
     - repository -> base_commit     # the selected base commits (recorded per execution)
-    - contract_digest               # the intent's frozen criteria, or `legacy` pre-intent
+    - contract_digest               # the intent's frozen criteria
   rules:
     - deterministic: identical inputs produce an identical candidate_id
     - any change to a commit, a base, or the contract digest changes the id
@@ -34,7 +34,7 @@ fields:
   contract_digest:
     type: string
     required: true
-    description: the intent's frozen criteria digest, or `legacy` for a pre-intent execution
+    description: the intent's frozen criteria digest
   repositories:
     type: map
     required: true
