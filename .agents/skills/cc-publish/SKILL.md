@@ -31,7 +31,7 @@ system. Git delivery is "push" / "open a pull request" (`cc-deliver`) and never
   provider tools** — never through the runtime engine, which has no provider action
   (INV-RUNTIME-01).
 - **Write** its own files under its own `publication/<name>/` folder: the
-  `intent/<plan-id>.yaml` field intent (below) and the authoritative record under
+  `field-intent/<plan-id>.yaml` field intent (below) and the authoritative record under
   `publication/<name>/published/<plan-id>.yaml`.
 - **Read the provider's current field values — display only, and only when the
   config opts in** (`preview.drift_read: true`). This is used solely to show a
@@ -82,33 +82,33 @@ text), for every kind:
 - **Schedule policy** — workday hours, weekends skipped, a start date. This is
   *policy* and stays in `instructions:`. The concrete resolved per-plan values it
   implies (this plan starts here, is estimated at that) do **not** stay in the prose;
-  they live in the structured `intent/` layer below.
+  they live in the structured `field-intent/` layer below.
 
 Instructions guide wording and *policy* only: they never make you leak internals
 (INV-EXTERNAL-03), read beyond `reads`, write back to the workspace, change the
 mapping, or relax a boundary.
 
-## Field intent and estimates (the `intent/` layer)
+## Field intent and estimates (the `field-intent/` layer)
 
 Publishable provider fields that are **not derivable from the plan itself** — the
 schedule dates and the time estimate, pushed one-way as **best-effort estimates** —
 live in a user-owned, structured, diffable file per plan, per
-`wrapper/contracts/schemas/publication-intent.yaml`:
+`wrapper/contracts/schemas/publication-field-intent.yaml`:
 
 ```
-publication/<name>/intent/<plan-id>.yaml
+publication/<name>/field-intent/<plan-id>.yaml
 ```
 
 - **Derived once, then owned.** On first publish or preview with no
-  `intent/<plan-id>.yaml`, derive a **first draft** from the `instructions:` schedule
+  `field-intent/<plan-id>.yaml`, derive a **first draft** from the `instructions:` schedule
   policy (workday hours, weekends skipped, start date) and the plan set, and write it
   here — the only workspace write the preview makes, and only under the publication's
-  own `intent/`, never under `plans/`. From then on this file is authoritative for
+  own `field-intent/`, never under `plans/`. From then on this file is authoritative for
   intent; the derivation **never silently overwrites a human edit**.
 - **What it holds, and never restates.** Only the field intent — plan-level and
   optional per-task `start_date`, `due_date`, `estimate_minutes`. Everything the plan
   already owns (title, tasks, `depends_on`, status) stays read from the plan as-found;
-  `intent/` never restates it, holds no external id or url (those live in the record),
+  `field-intent/` never restates it, holds no external id or url (those live in the record),
   and holds no credential (INV-SEC-01).
 
 **The estimate unit.** Canonical on disk is `estimate_minutes`, an **integer** —
@@ -137,9 +137,9 @@ new skill, route, or authority (INV-SKILL-01), and it is manual like every publi
 action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
 
 1. **Load the three local layers** — the plan as-found (`plans/<plan>/`), the intent
-   (`intent/<plan-id>.yaml`), and the last snapshot (`published/<plan-id>.yaml`
-   `fields:`). If no `intent/` file exists, derive a first draft and write it (the
-   only write the preview makes, only under the publication's own `intent/`).
+   (`field-intent/<plan-id>.yaml`), and the last snapshot (`published/<plan-id>.yaml`
+   `fields:`). If no `field-intent/` file exists, derive a first draft and write it (the
+   only write the preview makes, only under the publication's own `field-intent/`).
 2. **Render a plain-language diff.** For each plan and task, show intended vs
    last-pushed values in the human format, marking added / changed / unchanged:
 
@@ -154,7 +154,7 @@ action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
    The default diff is **intent vs last-published snapshot** — entirely local data, so
    the common "let me review the dates before I re-publish" case touches the provider
    **zero times**.
-3. **Converse and edit.** Discuss; edits land in `intent/<plan-id>.yaml`; re-preview
+3. **Converse and edit.** Discuss; edits land in `field-intent/<plan-id>.yaml`; re-preview
    until it reads right. No provider call has happened yet.
 4. **Publish on an explicit go.** Only "publish" pushes through the host/MCP tools and
    then refreshes the `fields:` snapshot in the record.
@@ -163,7 +163,7 @@ action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
 "did a human change it in the tracker since." When the config opts in
 (`preview.drift_read: true`), the preview may read the provider's *current* field
 values and add a third column — `desired … | we sent … | tracker now …`. This read is
-strictly bounded: **display only** (nothing read is written to `intent/`, the record,
+strictly bounded: **display only** (nothing read is written to `field-intent/`, the record,
 `plan.yaml`, or any workspace file), **never authority** (a publish still pushes the
 desired value; tracker drift stays cosmetic as in v0.6), read-only through the same
 host/MCP tools, and **off by default**. If the config does not opt in, never read the
@@ -171,7 +171,7 @@ provider in preview.
 
 ## Publish (the `plan` kind)
 
-Read the plan and its tasks, the intent (`intent/<plan-id>.yaml`), and the existing
+Read the plan and its tasks, the intent (`field-intent/<plan-id>.yaml`), and the existing
 record if one exists. Then realize the fixed mapping through the host/MCP tools, and
 push the intent field values (dates, estimate — converted from `estimate_minutes` per
 the provider table above):
@@ -279,7 +279,7 @@ mutate `plan.yaml` or plan status, never trigger or be triggered by a workflow p
 never put a credential or provider payload in a workspace file, and never invoke a
 runtime provider action (there is none), and never write under `plans/`. The
 publication writes only within its own `publication/<name>/` folder (config,
-`intent/`, `published/`).
+`field-intent/`, `published/`).
 The only permitted provider read is the **display-only** drift read in preview when
 the config opts in: nothing read is ever persisted to a workspace file, and it never
 becomes intent or authority. If the host cannot reach the provider, report

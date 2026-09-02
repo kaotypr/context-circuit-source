@@ -17,11 +17,11 @@ contains "$inv" "orthogonal to the core"
 contains "$inv" "export-only"
 contains "$inv" "self-contained"
 contains "$inv" "no access to the workspace"
-for concern in external_surface publication_config publication_intent publication_record; do
+for concern in external_surface publication_config publication_field_intent publication_record; do
 	contains "$inv" "$concern:"
 done
 # INV-EXTERNAL-02 clarified: a display-only preview read is not inbound flow, and a
-# publication writes within its own publication/<name>/ folder (config, intent/, published/).
+# publication writes within its own publication/<name>/ folder (config, field-intent/, published/).
 contains "$inv" "is not an inbound flow"
 contains "$inv" "publication/<name>/ folder"
 contains "$inv" "a read that ends at the screen"
@@ -40,13 +40,13 @@ contains "$cfg" "instructions:"
 contains "$cfg" "preview:"
 contains "$cfg" "drift_read"
 contains "$cfg" "display-only"
-contains "$cfg" "intent/<plan-id>.yaml"
+contains "$cfg" "field-intent/<plan-id>.yaml"
 
 # --- intent schema: user-owned field layer, canonical minutes, no d/w ---
-intent="$W/contracts/schemas/publication-intent.yaml"
+intent="$W/contracts/schemas/publication-field-intent.yaml"
 require_file "$intent"
-contains "$intent" "concern: publication_intent"
-contains "$intent" "publication/<name>/intent/<plan-id>.yaml"
+contains "$intent" "concern: publication_field_intent"
+contains "$intent" "publication/<name>/field-intent/<plan-id>.yaml"
 contains "$intent" "estimate_minutes"
 contains "$intent" "then human-owned"
 contains "$intent" "silently overwrites a human edit"
@@ -99,7 +99,7 @@ contains "$sk" "Authoring: instructions"
 contains "$sk" "best-effort estimates"
 # intent layer + estimate unit/format
 contains "$sk" "Field intent and estimates"
-contains "$sk" "publication/<name>/intent/<plan-id>.yaml"
+contains "$sk" "publication/<name>/field-intent/<plan-id>.yaml"
 contains "$sk" "estimate_minutes"
 contains "$sk" "never silently overwrites a human edit"
 contains "$sk" "input and display only"
@@ -124,7 +124,7 @@ contains "$sk" "never delete a"
 # --- manifest registers the schemas and the workspace-owned folder ---
 man="$W/manifest.yaml"
 contains "$man" "publication-config: [1]"
-contains "$man" "publication-intent: [1]"
+contains "$man" "publication-field-intent: [1]"
 contains "$man" "publication-record: [1]"
 contains "$man" "- publication/"
 

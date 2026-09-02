@@ -36,10 +36,9 @@ fields:
         required: false
         description: >
           Last-published snapshot of the plan-level provider field values
-          actually pushed (from the intent layer; see
-          publication-intent.yaml). Additive and backward-compatible: a v0.6
-          record with no fields: block is valid and simply carries no snapshot
-          until its next publish. It records *what we sent*, not *what the
+          actually pushed (from the field-intent layer; see
+          publication-field-intent.yaml). A record with no fields: block is valid
+          and simply carries no snapshot until its next publish. It records *what we sent*, not *what the
           provider now holds* — a human edit in the tracker is drift and never
           updates this snapshot except through the next publish.
         fields:

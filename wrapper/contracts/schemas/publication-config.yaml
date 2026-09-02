@@ -20,11 +20,11 @@ layout:
   files:
     config.yaml: this declaration (committed with the workspace or not, a workspace choice)
     .local.yaml: optional, gitignored — non-secret instance ids only, never credentials
-    intent/<plan-id>.yaml: user-owned per-plan field intent (publication-intent.yaml)
+    field-intent/<plan-id>.yaml: user-owned per-plan field intent (publication-field-intent.yaml)
     published/<plan-id>.yaml: authoritative per-plan records (publication-record.yaml)
   note: >
     Everything about a publication lives under publication/<name>/ — this
-    configuration, the intent/ field-intent files, and the published/ records.
+    configuration, the field-intent/ field-intent files, and the published/ records.
     Nothing is written under plans/.
 
 fields:
