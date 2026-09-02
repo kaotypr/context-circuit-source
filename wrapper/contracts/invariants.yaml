@@ -404,7 +404,7 @@ invariants:
     rule: >
       A publication reads only the workspace artifact types its config.yaml names
       and writes only its own files under its own publication/<name>/ folder — its
-      config, its intent/ field-intent files, and its published/ records. Nothing
+      config, its field-intent/ files, and its published/ records. Nothing
       is written under plans/, so no planning, execution, verification, or delivery
       step encounters a publication file and none updates external state or status.
       It is export-only, and export-only governs authority and persistence: data
@@ -477,6 +477,6 @@ owners:
   pairing_session: wrapper/contracts/schemas/pairing-session.yaml
   external_surface: wrapper/contracts/invariants.yaml
   publication_config: wrapper/contracts/schemas/publication-config.yaml
-  publication_intent: wrapper/contracts/schemas/publication-intent.yaml
+  publication_field_intent: wrapper/contracts/schemas/publication-field-intent.yaml
   publication_record: wrapper/contracts/schemas/publication-record.yaml
   publication_thread_record: wrapper/contracts/schemas/publication-thread-record.yaml

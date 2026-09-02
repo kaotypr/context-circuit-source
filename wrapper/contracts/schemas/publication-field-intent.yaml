@@ -1,7 +1,7 @@
 schema_version: 1
-owner: wrapper/contracts/schemas/publication-intent.yaml
-describes: publication/<name>/intent/<plan-id>.yaml
-concern: publication_intent
+owner: wrapper/contracts/schemas/publication-field-intent.yaml
+describes: publication/<name>/field-intent/<plan-id>.yaml
+concern: publication_field_intent
 
 purpose: >
   The user-owned, structured, diffable home for the publishable provider field
@@ -21,7 +21,7 @@ purpose: >
   (INV-EXTERNAL-01/02).
 
 layout:
-  intent_dir: publication/<name>/intent/
+  intent_dir: publication/<name>/field-intent/
   file: <plan-id>.yaml   # one intent file per published plan (e.g. 0021-context-references.yaml)
 
 fields:
@@ -80,7 +80,7 @@ authority:
     human edit in the tracker is drift and never flows back into this file.
   policy_vs_values: >
     config.yaml instructions owns language, tone, term handling, and the schedule
-    POLICY; intent/<plan-id>.yaml owns the resolved per-plan VALUES. No fact is
+    POLICY; field-intent/<plan-id>.yaml owns the resolved per-plan VALUES. No fact is
     written twice.
   not_an_execution_input: >
     Lives under publication/, never under plans/. No planning, execution,

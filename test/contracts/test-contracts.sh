@@ -21,7 +21,7 @@ for concern in intent_contract intent_gate scope_envelope spec_adversary_role \
 	execution_records verifier_result completion_record context_proposals \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
 	base_selection run_stack_action repository_grounding grounding_manifest \
-	worker_brief external_surface publication_config publication_intent \
+	worker_brief external_surface publication_config publication_field_intent \
 	publication_record publication_thread_record pairing_mode pairing_session; do
 	contains "$inv" "$concern:"
 done
@@ -48,7 +48,7 @@ contains "$man" "pairing-session: [1]"
 # --- v0.5 schemas present; old-design schemas absent ---
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \
 	verifier-result candidate human-acceptance completion context-impact context-proposal context-index lease \
-	grounding-manifest pairing-session publication-config publication-intent \
+	grounding-manifest pairing-session publication-config publication-field-intent \
 	publication-record \
 	publication-thread-record; do
 	require_file "$W/contracts/schemas/$s.yaml"

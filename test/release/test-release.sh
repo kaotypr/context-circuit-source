@@ -24,7 +24,7 @@ require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \
   verifier-result candidate human-acceptance completion context-impact context-proposal context-index \
-  lease grounding-manifest pairing-session publication-config publication-intent \
+  lease grounding-manifest pairing-session publication-config publication-field-intent \
   publication-record \
   publication-thread-record; do
   require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
