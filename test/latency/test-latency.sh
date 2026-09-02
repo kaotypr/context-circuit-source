@@ -2,10 +2,11 @@
 # Execution-latency semantics: the coordinator-recorded per-role
 # (model, effort) as bounded host evidence (the attempt's own started_at /
 # checked_at give its duration, so no wall-clock is recorded), per-role tiering
-# that never touches the failure counter, the optional plan complexity hint, and
-# concurrent-run-stack overlap arbitrated by the lease.
-# These prove the additive fields exist and are monotonic, that escalation is
-# evidence-only, and that independent plans may overlap while conflicting ones
+# that never touches the failure counter, and concurrent-run-stack overlap
+# arbitrated by the lease.
+# These prove the additive fields exist and are monotonic, that escalation shows
+# only in the recorded (model, effort), and that independent plans may overlap
+# while conflicting ones
 # serialize — deterministically, because a live model cannot be timed on command.
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
@@ -123,14 +124,14 @@ eed="$ws/.runtime/executions/0006-esc/$eex"
 cc_attempt_begin "$eed" >/dev/null
 cc_fx_commit "$ws" 0006-esc api a1
 cc_worker_commit_record "$eed" api implementation >/dev/null
-cc_attempt_evidence_record "$eed" 1 worker_model=model-lo worker_effort=high escalated=false >/dev/null
+cc_attempt_evidence_record "$eed" 1 worker_model=model-lo worker_effort=high >/dev/null
 cc_verifier_result_record "$eed" 1 failed >/dev/null
 assert_eq "1" "$(cc_scalar "$eed/execution.yaml" worker_failures)"
 # attempt 2 escalated above the start -> passes; escalation did NOT buy an attempt
 cc_attempt_begin "$eed" >/dev/null
 cc_fx_commit "$ws" 0006-esc api a2
 cc_worker_commit_record "$eed" api repair >/dev/null
-cc_attempt_evidence_record "$eed" 2 worker_model=model-hi worker_effort=max escalated=true >/dev/null
+cc_attempt_evidence_record "$eed" 2 worker_model=model-hi worker_effort=max >/dev/null
 cc_verifier_result_record "$eed" 2 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$eed")"
 # the counter is exactly the one rejection — escalation changed the model, not the accounting
@@ -138,20 +139,7 @@ assert_eq "1" "$(cc_scalar "$eed/execution.yaml" worker_failures)"
 assert_eq "2" "$(cc_scalar "$eed/execution.yaml" current_attempt)"
 contains "$eed/attempts/001/host-evidence.yaml" "worker_model: model-lo"
 contains "$eed/attempts/002/host-evidence.yaml" "worker_model: model-hi"
-contains "$eed/attempts/002/host-evidence.yaml" "escalated: true"
-
-# ============================================================================
-# 5. Optional per-plan complexity hint: additive, validated, absent by default.
-# ============================================================================
-cc_fx_plan "$ws" 0007-cx "Complex" "api"
-cc_plan_validate "$ws/plans/0007-cx" >/dev/null   # no complexity -> valid (default absent)
-# inject a valid hint -> still valid
-printf 'complexity: high\n' >>"$ws/plans/0007-cx/plan.yaml"
-cc_plan_validate "$ws/plans/0007-cx" >/dev/null || fail "complexity: high must validate"
-# an invalid value is refused
-cc_fx_plan "$ws" 0008-cxbad "ComplexBad" "api"
-printf 'complexity: enormous\n' >>"$ws/plans/0008-cxbad/plan.yaml"
-expect_failure cc_plan_validate "$ws/plans/0008-cxbad"
+assert_eq "2" "$(cc_scalar "$eed/execution.yaml" current_attempt)"   # escalation via worker_model, not a boolean flag
 
 # ============================================================================
 # 6. Concurrent run-stack: the safety is already built — two independent plans are

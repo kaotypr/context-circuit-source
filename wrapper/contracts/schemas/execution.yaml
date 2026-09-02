@@ -54,8 +54,6 @@ host_evidence_fields:
     - worker_effort
     - verifier_model      # (model, effort) the verifier ran at — host evidence
     - verifier_effort
-    - complexity          # per-plan hint applied this attempt, if any
-    - escalated           # whether a repair raised the role above its start
   notes: >
     No wall-clock is recorded here: an attempt already carries started_at
     (worker.yaml) and checked_at (verifier.yaml), whose span is its duration, so

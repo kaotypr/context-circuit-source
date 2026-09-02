@@ -98,19 +98,6 @@ fields:
       changes: { type: list, required: true }
       acceptance: { type: list, required: true, item: [id, statement] }
       verification: { type: list, required: true, item: [id, command] }
-  complexity:
-    type: enum
-    required: false
-    values: [standard, high]
-    description: >
-      Optional hint that this plan is known hard up front. Absent (the
-      default) means behavior is exactly the configured per-role (model, effort)
-      in the host-local role-tiering config (docs/role-tiering.md).
-      When `high`, the coordinator nudges the worker's attempt-1 (model, effort)
-      one step above the configured start, then escalates on repair as usual. It
-      is a hint, never a gate (INV-HOST-01): it authorizes nothing, a hard pin
-      ignores it, and it never changes the worker-failure counter (INV-REPAIR-01).
-      A v0.6 reader ignores it; execution stays schema_version-compatible.
   execution:
     type: object
     required: true
