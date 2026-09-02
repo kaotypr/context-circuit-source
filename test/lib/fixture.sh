@@ -39,10 +39,28 @@ cc_fx_repo() {
 cc_fx_plan() {
 	cc_fxp_ws=$1; cc_fxp_pid=$2; cc_fxp_title=$3; cc_fxp_repos=$4
 	cc_fxp_dir="$cc_fxp_ws/plans/$cc_fxp_pid"
+	# v1.0: every plan derives from an approved parent intent within a scope envelope.
+	# Author + approve an intent i<pid> scoped to each repo's src, then bind the plan.
+	cc_fxp_iid="i$cc_fxp_pid"
+	mkdir -p "$cc_fxp_ws/intent/$cc_fxp_iid"
+	{
+		printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxp_iid" "$cc_fxp_title" "$cc_fxp_title"
+		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n' "$cc_fxp_title"
+		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'scope:\n  repositories:\n'
+		for cc_fxp_r in $cc_fxp_repos; do
+			printf '    - id: %s\n      paths: [src]\n' "$cc_fxp_r"
+		done
+		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
+	} >"$cc_fxp_ws/intent/$cc_fxp_iid/contract.yaml"
+	printf '# %s\n' "$cc_fxp_title" >"$cc_fxp_ws/intent/$cc_fxp_iid/INTENT.md"
+	cc_intent_index_upsert "$cc_fxp_ws" "$cc_fxp_iid" >/dev/null
+	cc_intent_approve "$cc_fxp_ws" "$cc_fxp_iid" >/dev/null
 	mkdir -p "$cc_fxp_dir/tasks"
 	{
-		printf 'schema_version: 1\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\n' \
-			"$cc_fxp_pid" "$cc_fxp_title" "$cc_fxp_title objective"
+		printf 'schema_version: 3\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\nintent: %s\n' \
+			"$cc_fxp_pid" "$cc_fxp_title" "$cc_fxp_title objective" "$cc_fxp_iid"
 		printf 'repositories:\n'
 		for cc_fxp_r in $cc_fxp_repos; do
 			printf '  - id: %s\n    purpose: %s scope\n' "$cc_fxp_r" "$cc_fxp_r"
@@ -71,20 +89,32 @@ cc_fx_plan() {
 	cc_plan_index_upsert "$cc_fxp_ws" "$cc_fxp_pid" >/dev/null
 }
 
-# cc_fx_plan_ex WS PID TITLE REPO PATH "dep1 dep2..." -> write a valid draft plan
-# with ONE task scoped to PATH in REPO, whose acceptance is trivially achievable
-# (a file PATH/mod.txt). When deps are given the plan is schema_version 2 with a
-# plan_dependencies block; otherwise schema_version 1 (v0.5 shape). Used by the
-# run-stack and lease gates to build inter-plan dependency graphs.
+# cc_fx_plan_ex WS PID TITLE REPO PATH "dep1 dep2..." -> write a valid draft v1.0
+# plan (schema 3) with ONE task scoped to PATH in REPO, whose acceptance is trivially
+# achievable (a file PATH/mod.txt), deriving from an approved parent intent i<pid>
+# scoped to REPO:PATH. When deps are given a plan_dependencies block is added. Used by
+# the run-stack and lease gates to build inter-plan dependency graphs.
 cc_fx_plan_ex() {
 	cc_fxe_ws=$1; cc_fxe_pid=$2; cc_fxe_title=$3; cc_fxe_repo=$4; cc_fxe_path=$5; cc_fxe_deps=${6:-}
 	cc_fxe_dir="$cc_fxe_ws/plans/$cc_fxe_pid"
+	cc_fxe_iid="i$cc_fxe_pid"
+	mkdir -p "$cc_fxe_ws/intent/$cc_fxe_iid"
+	{
+		printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxe_iid" "$cc_fxe_title" "$cc_fxe_title"
+		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n' "$cc_fxe_title"
+		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$cc_fxe_repo" "$cc_fxe_path"
+		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
+	} >"$cc_fxe_ws/intent/$cc_fxe_iid/contract.yaml"
+	printf '# %s\n' "$cc_fxe_title" >"$cc_fxe_ws/intent/$cc_fxe_iid/INTENT.md"
+	cc_intent_index_upsert "$cc_fxe_ws" "$cc_fxe_iid" >/dev/null
+	cc_intent_approve "$cc_fxe_ws" "$cc_fxe_iid" >/dev/null
 	mkdir -p "$cc_fxe_dir/tasks"
-	cc_fxe_schema=1; [ -n "$cc_fxe_deps" ] && cc_fxe_schema=2
 	cc_fxe_tid=$(printf '%s' "$cc_fxe_repo" | tr '[:lower:]' '[:upper:]')-001
 	{
-		printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective\n' \
-			"$cc_fxe_schema" "$cc_fxe_pid" "$cc_fxe_title" "$cc_fxe_title"
+		printf 'schema_version: 3\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective\nintent: %s\n' \
+			"$cc_fxe_pid" "$cc_fxe_title" "$cc_fxe_title" "$cc_fxe_iid"
 		printf 'repositories:\n  - id: %s\n    purpose: %s scope\n' "$cc_fxe_repo" "$cc_fxe_repo"
 		if [ -n "$cc_fxe_deps" ]; then
 			printf 'plan_dependencies:\n'

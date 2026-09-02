@@ -78,14 +78,4 @@ test "$cand3" != "$cand2" || fail "a criteria change must change the candidate"
 expect_failure eng completion-ready "$ws" 0001-retries       # old green cannot survive the goalpost move
 expect_failure eng human-acceptance-current "$edir"
 
-# --- a legacy (no-intent) execution still computes a candidate over commits alone ---
-cc_fx_plan "$ws" 0002-legacy "Legacy" api
-cc_fx_run_ok "$ws" 0002-legacy api src
-lexec=$(cc_latest_execution "$ws" 0002-legacy)
-ledir=$(cc_fx_exec_dir "$ws" 0002-legacy "$lexec")
-contains "$ledir/execution.yaml" "contract_digest: legacy"
-lcand=$(eng candidate-current "$ws" 0002-legacy | sed -n 's/^candidate_id: //p')
-case "$lcand" in cand-*) : ;; *) fail "legacy candidate id invalid: $lcand" ;; esac
-eng completion-ready "$ws" 0002-legacy >/dev/null            # legacy completion path unchanged
-
 pass 'candidate identity'

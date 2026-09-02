@@ -9,18 +9,15 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 cc_fx_plan "$ws" 0001-alpha "Alpha" "api"
 
-# --- unapproved plan cannot start ---
-expect_failure cc_execution_begin "$ws" 0001-alpha sess1
-assert_eq "draft" "$(cc_plan_status "$ws" 0001-alpha)"
-
 # --- plan-validate rejects an undeclared task repository ---
 mkdir -p "$ws/plans/9999-bad/tasks"
 cat >"$ws/plans/9999-bad/plan.yaml" <<'EOF'
-schema_version: 1
+schema_version: 3
 plan: 9999-bad
 title: Bad
 status: draft
 objective: bad
+intent: i9999-bad
 repositories:
   - id: api
 tasks:

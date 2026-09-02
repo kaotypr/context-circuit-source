@@ -8,9 +8,9 @@ purpose: >
   commits were accepted as done. Under Context Circuit v1.0 the way it is reached
   depends on the intent's consequence tier (INV-COMPLETE-01): at Explore and
   Standard it is INFERRED from a current candidate-bound human acceptance plus a
-  recorded delivery (`human_completion: inferred`); at Critical, and for a legacy
-  plan, it is written only by an EXPLICIT human completion request after independent
-  verification (`human_completion: accepted`). It never changes Product Knowledge.
+  recorded delivery (`human_completion: inferred`); at Critical it is written only
+  by an EXPLICIT human completion request after independent verification
+  (`human_completion: accepted`). It never changes Product Knowledge.
 
 preconditions:
   - completion-ready passes for the plan's tier (Explore: candidate-bound
@@ -28,7 +28,7 @@ fields:
     required: true
     values: [accepted, inferred]
     description: >
-      accepted = an explicit human completion (Critical, or legacy); inferred = a
+      accepted = an explicit human completion (Critical); inferred = a
       projection of candidate acceptance + delivery (Explore/Standard).
   completed_at: { type: string, required: true }
   commits:

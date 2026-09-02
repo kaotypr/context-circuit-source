@@ -171,10 +171,14 @@ printf '%s\n' "$fpart" | grep -q '^0015-fa: failed'  || fail "containment: 0015 
 printf '%s\n' "$fpart" | grep -q '^0016-fb: blocked' || fail "containment: 0016 (descendant) not held/blocked"
 printf '%s\n' "$fpart" | grep -q '^0017-fc: ready'   || fail "containment: unrelated 0017 not ready"
 
-# refused: a draft (unapproved) plan in the set is refused without blocking the rest
+# refused: a plan whose parent intent is NOT approved cannot be authorized within an
+# envelope, so it is refused without blocking the rest (v1.0: authorization is the
+# approved intent + envelope, not a separate plan-approval status)
 cc_fx_plan_ex "$ws" 0018-draft "Draft" api src/dr ""
+awk '/^status:/{print "status: draft"; next}{print}' "$ws/intent/i0018-draft/contract.yaml" >"$ws/intent/i0018-draft/c.new"
+mv "$ws/intent/i0018-draft/c.new" "$ws/intent/i0018-draft/contract.yaml"
 dpart=$(cc_run_stack_ready "$ws" 0017-fc 0018-draft)
-printf '%s\n' "$dpart" | grep -q '^0018-draft: refused' || fail "partition: unapproved plan not refused"
+printf '%s\n' "$dpart" | grep -q '^0018-draft: refused' || fail "partition: unauthorized plan not refused"
 printf '%s\n' "$dpart" | grep -q '^0017-fc: ready'      || fail "partition: refusal blocked the rest"
 
 # ============================================================================

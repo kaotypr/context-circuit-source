@@ -19,8 +19,8 @@ purpose: >
   INV-VERIFY-01, INV-COMPLETE-01/02, and INV-KNOWLEDGE-02; and it keeps the whole
   mechanics spine (leases, base selection, verifier read-only enforcement,
   preserve-on-failure, delivery drift guard, atomic records, host neutrality)
-  verbatim. All schema changes are additive; a pre-v1.0 (legacy) plan without a
-  parent intent keeps the earlier approval/execution/completion behavior.
+  verbatim. Every plan derives from an approved intent; there is no intent-less
+  plan and no backward-compatibility path for one.
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -70,8 +70,8 @@ invariants:
   - id: INV-CANDIDATE-01
     rule: >
       A candidate is a deterministic digest over the per-repository commit map, the
-      selected base commits, and the intent's frozen contract_digest (legacy for a
-      pre-intent execution). Independent-check results and human acceptance bind to
+      selected base commits, and the intent's frozen contract_digest.
+      Independent-check results and human acceptance bind to
       a candidate; any new commit OR a criteria change (re-approved on the intent)
       yields a new candidate and voids all prior evidence and acceptance for the old
       one. No role decides whether old evidence is "close enough"; the void is by
@@ -101,14 +101,12 @@ invariants:
       into a candidate-bearing change without restart.
   - id: INV-PLAN-01
     rule: >
-      plan.yaml carries the plan's status (draft, approved, done) and, for a v1.0
-      plan (schema_version 3), names its parent intent. Under v1.0 the status is a
-      projection, not a second human gate: approved follows automatically from the
-      approved intent within its scope envelope (INV-INTENT-02), and done is
-      inferred from candidate acceptance plus delivery, explicit only at the
-      Critical tier (INV-COMPLETE-01). A legacy plan (schema_version 1 or 2) has no
-      parent intent and keeps human-controlled draft→approved→done. Task status is
-      a synchronized projection and never a second lifecycle authority.
+      plan.yaml carries the plan's status (draft, approved, done) and names its
+      parent intent (schema_version 3). The status is a projection, not a second
+      human gate: approved follows automatically from the approved intent within its
+      scope envelope (INV-INTENT-02), and done is inferred from candidate acceptance
+      plus delivery, explicit only at the Critical tier (INV-COMPLETE-01). Task status
+      is a synchronized projection and never a second lifecycle authority.
   - id: INV-PLAN-02
     rule: >
       Every task names the repository or repositories it may change and bounded
@@ -127,11 +125,10 @@ invariants:
   - id: INV-PLAN-05
     rule: >
       A plan may declare optional inter-plan plan_dependencies (a list of
-      {id, reason}), distinct from a task's intra-plan depends_on. A plan that
-      declares plan_dependencies must set schema_version 2; a plan without the
-      field stays schema_version 1. Every dependency entry references an
-      existing, non-self plan id in the same workspace, and the inter-plan
-      dependency graph is acyclic. schema_version outside [1, 2] is unsupported.
+      {id, reason}), distinct from a task's intra-plan depends_on. Every dependency
+      entry references an existing, non-self plan id in the same workspace, and the
+      inter-plan dependency graph is acyclic. A plan is schema_version 3; any other
+      value is unsupported.
   - id: INV-APPROVE-01
     rule: >
       Approval is the explicit conversational human gate on the INTENT (Gate 1):
@@ -140,17 +137,14 @@ invariants:
       confirmation card and no hidden confirmation token. A plan derived from an
       approved intent carries no second human approval — plan readiness within the
       approved scope envelope is automatic (INV-INTENT-02), and a plan that exceeds
-      the envelope is re-gated to a human, never rubber-stamped. (Legacy plans with
-      no parent intent keep the earlier explicit draft→approved plan gate after
-      deterministic readiness checks.)
+      the envelope is re-gated to a human, never rubber-stamped.
   - id: INV-EXEC-01
     rule: >
       A plan derived from an approved intent and confirmed within its scope
       envelope may execute; execution authorization comes from the intent's
       approval, not a separate per-plan approval. A request that approves an intent
       and asks to build in one turn is honored; a human who wants to lock an intent
-      without building yet may still separate the two. (A legacy plan with no parent
-      intent still requires its own explicit approval before execution.)
+      without building yet may still separate the two.
   - id: INV-EXEC-02
     rule: >
       One worker executes every task of one approved plan in one bounded
@@ -189,8 +183,7 @@ invariants:
       respect to product files, and its result binds to that candidate
       (INV-CANDIDATE-01). At Explore there is no independent verifier and the result
       is never labeled "verified". The verifier never repairs, modifies product
-      files, changes plan status, or self-verifies. (A legacy plan with no parent
-      intent is treated as Standard: one independent verifier, always.)
+      files, changes plan status, or self-verifies.
   - id: INV-VERIFY-02
     rule: >
       If the host cannot create an independent verifier with read-only
@@ -217,8 +210,7 @@ invariants:
       which does not exist there and is never labeled verified), and a
       Standard/Critical plan requires a candidate-bound independent pass that still
       describes the current candidate. Verification alone never completes anything,
-      at any tier. (A legacy plan with no parent intent keeps the earlier rule:
-      explicit human completion only after independent verification.)
+      at any tier.
   - id: INV-COMPLETE-02
     rule: >
       Completion (or delivery) of a candidate records an implementation completion

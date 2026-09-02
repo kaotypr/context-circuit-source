@@ -50,10 +50,40 @@ printf 'schema_version: 1\nbindings:\n  api:\n    path: repositories/api\n    an
 # 6. Create, approve, and execute a multi-repository plan.
 pid=$(cc_plan_allocate_id "$ws" checkout-v2)
 assert_eq "0001-checkout-v2" "$pid"
+# v1.0: author + approve a parent intent scoped to the plan's repos before the plan.
+mkdir -p "$ws/intent/i$pid"
+cat >"$ws/intent/i$pid/contract.yaml" <<EOF
+schema_version: 1
+intent: i$pid
+title: Checkout v2
+goal: Add saved checkout sessions.
+non_goals:
+  - none
+constraints:
+  - none
+acceptance_criteria:
+  - id: ac-1
+    statement: Saved checkout works.
+    method: test
+done_when: ac-1 passes and a human accepts the candidate.
+scope:
+  repositories:
+    - id: api
+      paths: [src]
+    - id: web
+      paths: [src]
+tier: standard
+status: draft
+contract_digest:
+EOF
+printf '# Checkout v2\n' >"$ws/intent/i$pid/INTENT.md"
+cc_intent_index_upsert "$ws" "i$pid" >/dev/null
+cc_intent_approve "$ws" "i$pid" >/dev/null
 mkdir -p "$ws/plans/$pid/tasks"
 cat >"$ws/plans/$pid/plan.yaml" <<EOF
-schema_version: 1
+schema_version: 3
 plan: $pid
+intent: i$pid
 title: Checkout v2
 status: draft
 objective: Add saved checkout sessions.
@@ -136,9 +166,20 @@ require_dir "$ws/.runtime/executions/$pid"
 #     Two roots and one integration dependent, all in api; plus one lease check.
 mkplan() { # pid title repo path "deps"
 	mp_dir="$ws/plans/$1"; mkdir -p "$mp_dir/tasks"
-	mp_schema=1; [ -n "$5" ] && mp_schema=2
+	mp_iid="i$1"; mkdir -p "$ws/intent/$mp_iid"
 	{
-		printf 'schema_version: %s\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective.\n' "$mp_schema" "$1" "$2" "$2"
+		printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$mp_iid" "$2" "$2"
+		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n' "$2"
+		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$3" "$4"
+		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
+	} >"$ws/intent/$mp_iid/contract.yaml"
+	printf '# %s\n' "$2" >"$ws/intent/$mp_iid/INTENT.md"
+	cc_intent_index_upsert "$ws" "$mp_iid" >/dev/null
+	cc_intent_approve "$ws" "$mp_iid" >/dev/null
+	{
+		printf 'schema_version: 3\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s objective.\nintent: %s\n' "$1" "$2" "$2" "$mp_iid"
 		printf 'repositories:\n  - id: %s\n' "$3"
 		if [ -n "$5" ]; then printf 'plan_dependencies:\n'; for d in $5; do printf '  - id: %s\n    reason: builds on %s\n' "$d" "$d"; done; fi
 		printf 'product_knowledge:\n  - id: project.core\n    path: context/PROJECT.md\n    reason: Grounds it.\n'

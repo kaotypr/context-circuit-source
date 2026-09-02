@@ -30,7 +30,7 @@ expect_failure cc_plan_id_valid "0001-Bad"
 
 # --- validation catches missing tasks ---
 mkdir -p "$ws/plans/0009-empty/tasks"
-printf 'schema_version: 1\nplan: 0009-empty\ntitle: E\nstatus: draft\nobjective: e\nrepositories:\n  - id: api\ntasks:\n' >"$ws/plans/0009-empty/plan.yaml"
+printf 'schema_version: 3\nplan: 0009-empty\ntitle: E\nstatus: draft\nobjective: e\nintent: i0009-empty\nrepositories:\n  - id: api\ntasks:\n' >"$ws/plans/0009-empty/plan.yaml"
 printf '# E\n' >"$ws/plans/0009-empty/PLAN.md"
 expect_failure cc_plan_validate "$ws/plans/0009-empty"
 rm -rf "$ws/plans/0009-empty"
@@ -46,8 +46,8 @@ not_contains "$ws/plans/INDEX.md" "| $id1 |"
 cc_plan_index_upsert "$ws" "$id1" >/dev/null
 contains "$ws/plans/INDEX.md" "| $id1 |"
 
-# --- approval gate ---
-expect_failure cc_execution_begin "$ws" "$id1" s1   # draft cannot execute
+# --- approval: cc_plan_approve materializes the intent's envelope authorization
+#     (draft -> approved); it cannot re-approve a non-draft plan ---
 cc_plan_approve "$ws" "$id1" >/dev/null
 assert_eq "approved" "$(cc_plan_status "$ws" "$id1")"
 contains "$ws/plans/INDEX.md" "approved"
@@ -56,11 +56,12 @@ expect_failure cc_plan_approve "$ws" "$id1"          # cannot approve non-draft
 # --- a plan authored with block-list task fields also validates ---
 mkdir -p "$ws/plans/0011-block/tasks"
 cat >"$ws/plans/0011-block/plan.yaml" <<'EOF'
-schema_version: 1
+schema_version: 3
 plan: 0011-block
 title: Block form
 status: draft
 objective: block
+intent: i0011-block
 repositories:
   - id: api
   - id: web

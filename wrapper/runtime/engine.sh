@@ -1302,20 +1302,16 @@ cc_plan_validate() {
 	# schema version and inter-plan dependencies (INV-PLAN-05)
 	cc_pv_schema=$(cc_scalar "$cc_pv_dir/plan.yaml" "schema_version") || cc_pv_schema=""
 	case "$cc_pv_schema" in
-		1|2|3) : ;;
+		3) : ;;
 		*) cc_fail PLAN_SCHEMA_UNSUPPORTED "$cc_pv_schema"; return 1 ;;
 	esac
-	# parent intent (INV-INTENT-02 / INV-PLAN-01 reworked). A v1.0 plan (schema 3)
-	# names its parent intent; schema 1/2 are legacy pre-intent plans that carry
-	# none. When present at any version the id form is validated; the envelope check
-	# (cc_intent_envelope_check) enforces the scope linkage as a preflight.
+	# parent intent (INV-INTENT-02 / INV-PLAN-01). Every plan names its parent intent
+	# — the decision it derives from. There is no pre-intent plan. The id form is
+	# validated here; the envelope check (cc_intent_envelope_check) enforces the scope
+	# linkage as a preflight.
 	cc_pv_intent=$(cc_scalar "$cc_pv_dir/plan.yaml" "intent") || cc_pv_intent=""
-	if [ "$cc_pv_schema" = "3" ]; then
-		[ -n "$cc_pv_intent" ] || { cc_fail PLAN_INTENT_REQUIRED "$cc_pv_id"; return 1; }
-	fi
-	if [ -n "$cc_pv_intent" ]; then
-		cc_intent_id_valid "$cc_pv_intent" || { cc_fail PLAN_INTENT_INVALID "$cc_pv_intent"; return 1; }
-	fi
+	[ -n "$cc_pv_intent" ] || { cc_fail PLAN_INTENT_REQUIRED "$cc_pv_id"; return 1; }
+	cc_intent_id_valid "$cc_pv_intent" || { cc_fail PLAN_INTENT_INVALID "$cc_pv_intent"; return 1; }
 	# optional complexity hint (additive; absent by default). A coordinator
 	# tiering hint only (INV-HOST-01) — never a gate; the runtime stays model-blind.
 	cc_pv_cx=$(cc_scalar "$cc_pv_dir/plan.yaml" "complexity") || cc_pv_cx=""
@@ -1325,7 +1321,6 @@ cc_plan_validate() {
 	esac
 	cc_pv_deps=$(cc_plan_dependencies "$cc_pv_dir/plan.yaml")
 	if [ -n "$cc_pv_deps" ]; then
-		case "$cc_pv_schema" in 2|3) : ;; *) cc_fail PLAN_DEPS_REQUIRE_SCHEMA_2 "$cc_pv_id"; return 1 ;; esac
 		cc_pv_plansdir=$(dirname -- "$cc_pv_dir")
 		for cc_pv_dep in $cc_pv_deps; do
 			[ "$cc_pv_dep" != "$cc_pv_id" ] || { cc_fail PLAN_DEP_SELF "$cc_pv_dep"; return 1; }
@@ -1429,13 +1424,10 @@ cc_plan_approve() {
 	cc_plan_validate "$cc_ap_dir" >/dev/null || { cc_fail APPROVAL_PLAN_INVALID "$cc_ap_plan"; return 1; }
 	cc_ap_status=$(cc_scalar "$cc_ap_dir/plan.yaml" "status")
 	[ "$cc_ap_status" = "draft" ] || { cc_fail APPROVAL_NOT_DRAFT "$cc_ap_status"; return 1; }
-	# An intent-bearing (v1.0) plan is authorized by its approved intent within the
-	# scope envelope (INV-INTENT-02 / INV-APPROVE-01 reworked): the human gate is on
-	# the intent, and a plan that exceeds the envelope is re-gated, never approved.
-	cc_ap_intent=$(cc_scalar "$cc_ap_dir/plan.yaml" "intent") || cc_ap_intent=""
-	if [ -n "$cc_ap_intent" ]; then
-		cc_intent_envelope_check "$cc_ap_root" "$cc_ap_plan" >/dev/null || { cc_fail APPROVAL_ENVELOPE_EXCEEDS "$cc_ap_plan"; return 1; }
-	fi
+	# A plan is authorized by its approved intent within the scope envelope
+	# (INV-INTENT-02 / INV-APPROVE-01): the human gate is on the intent, and a plan
+	# that exceeds the envelope is re-gated, never approved.
+	cc_intent_envelope_check "$cc_ap_root" "$cc_ap_plan" >/dev/null || { cc_fail APPROVAL_ENVELOPE_EXCEEDS "$cc_ap_plan"; return 1; }
 	cc_plan_set_status "$cc_ap_dir/plan.yaml" "approved" || { cc_fail APPROVAL_WRITE_FAILED; return 1; }
 	cc_plan_index_upsert "$cc_ap_root" "$cc_ap_plan" >/dev/null
 	cc_emit plan "$cc_ap_plan"
@@ -1681,28 +1673,21 @@ cc_execution_begin() {
 	# here (INV-EXEC-01 reworked) instead of requiring a separate plan-approval gate.
 	cc_eb_intent=$(cc_scalar "$cc_eb_dir/plan.yaml" "intent") || cc_eb_intent=""
 	cc_eb_status=$(cc_scalar "$cc_eb_dir/plan.yaml" "status")
-	if [ -n "$cc_eb_intent" ]; then
-		cc_intent_envelope_check "$cc_eb_root" "$cc_eb_plan" >/dev/null || { cc_fail EXECUTION_ENVELOPE_EXCEEDS "$cc_eb_plan"; return 1; }
-		if [ "$cc_eb_status" = "draft" ]; then
-			cc_plan_set_status "$cc_eb_dir/plan.yaml" "approved"
-			cc_plan_index_upsert "$cc_eb_root" "$cc_eb_plan" >/dev/null
-			cc_eb_status="approved"
-		fi
+	cc_intent_envelope_check "$cc_eb_root" "$cc_eb_plan" >/dev/null || { cc_fail EXECUTION_ENVELOPE_EXCEEDS "$cc_eb_plan"; return 1; }
+	if [ "$cc_eb_status" = "draft" ]; then
+		cc_plan_set_status "$cc_eb_dir/plan.yaml" "approved"
+		cc_plan_index_upsert "$cc_eb_root" "$cc_eb_plan" >/dev/null
+		cc_eb_status="approved"
 	fi
 	[ "$cc_eb_status" = "approved" ] || { cc_fail EXECUTION_NOT_APPROVED "$cc_eb_status"; return 1; }
 	# Capture the intent's frozen contract digest for this execution's candidate
-	# identity (INV-CANDIDATE-01). A legacy plan (no intent) records `legacy`; the
-	# candidate then folds only the commit map and bases. Recorded once, immutably,
-	# so candidate computation never has to chase the live intent file.
-	cc_eb_cdigest=legacy
-	cc_eb_tier=standard
-	if [ -n "$cc_eb_intent" ]; then
-		cc_eb_icontract="$(cc_intent_dir "$cc_eb_root" "$cc_eb_intent")/contract.yaml"
-		cc_eb_cdigest=$(cc_scalar "$cc_eb_icontract" "contract_digest" 2>/dev/null) || cc_eb_cdigest=""
-		[ -n "$cc_eb_cdigest" ] || cc_eb_cdigest=legacy
-		cc_eb_tier=$(cc_scalar "$cc_eb_icontract" "tier" 2>/dev/null) || cc_eb_tier=standard
-		[ -n "$cc_eb_tier" ] || cc_eb_tier=standard
-	fi
+	# identity (INV-CANDIDATE-01). Recorded once, immutably, so candidate computation
+	# never has to chase the live intent file.
+	cc_eb_icontract="$(cc_intent_dir "$cc_eb_root" "$cc_eb_intent")/contract.yaml"
+	cc_eb_cdigest=$(cc_scalar "$cc_eb_icontract" "contract_digest" 2>/dev/null) || cc_eb_cdigest=""
+	[ -n "$cc_eb_cdigest" ] || { cc_fail EXECUTION_INTENT_NOT_FROZEN "$cc_eb_intent"; return 1; }
+	cc_eb_tier=$(cc_scalar "$cc_eb_icontract" "tier" 2>/dev/null) || cc_eb_tier=standard
+	[ -n "$cc_eb_tier" ] || cc_eb_tier=standard
 	cc_repository_preflight "$cc_eb_root" "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PREFLIGHT_FAILED; return 1; }
 	cc_lock_acquire "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null || { cc_fail EXECUTION_LOCK_FAILED; return 1; }
 	cc_eb_exec=$(cc_execution_next_id "$cc_eb_root" "$cc_eb_plan")
@@ -1993,8 +1978,8 @@ cc_candidate_id() {
 	# Resolve the contract digest the candidate folds in. Prefer the intent's CURRENT
 	# frozen contract_digest (so a criteria change re-approved on the intent voids
 	# evidence, INV-CANDIDATE-01); fall back to the value captured at execution-begin
-	# when the intent is unreachable (e.g. archived), and to `legacy` for a plan with
-	# no intent. This never chases an un-frozen file: only the frozen digest is read.
+	# when the intent is unreachable (e.g. archived). Every plan has an intent, so a
+	# missing digest is a corrupt state, never a legacy plan. Only the frozen digest is read.
 	cc_cid_cdig=""
 	cc_cid_intent=$(cc_scalar "$cc_cid_dir/execution.yaml" "intent" 2>/dev/null) || cc_cid_intent=""
 	if [ -n "$cc_cid_intent" ]; then
@@ -2004,7 +1989,7 @@ cc_candidate_id() {
 		fi
 	fi
 	[ -n "$cc_cid_cdig" ] || cc_cid_cdig=$(cc_scalar "$cc_cid_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cid_cdig=""
-	[ -n "$cc_cid_cdig" ] || cc_cid_cdig=legacy
+	[ -n "$cc_cid_cdig" ] || { cc_fail CANDIDATE_NO_CONTRACT_DIGEST; return 1; }
 	cc_cid_canon=$(
 		for cc_cid_rf in "$cc_cid_dir"/repositories/*.yaml; do
 			[ -f "$cc_cid_rf" ] || continue
@@ -2027,8 +2012,8 @@ cc_candidate_digest() {
 	cc_cd_dir=$(cc_execution_dir "$1" "$2" "$3")
 	[ -f "$cc_cd_dir/execution.yaml" ] || { cc_fail CANDIDATE_NO_EXECUTION "$2/$3"; return 1; }
 	cc_cd_id=$(cc_candidate_id "$cc_cd_dir") || return 1
-	cc_cd_cdig=$(cc_scalar "$cc_cd_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cd_cdig=legacy
-	[ -n "$cc_cd_cdig" ] || cc_cd_cdig=legacy
+	cc_cd_cdig=$(cc_scalar "$cc_cd_dir/execution.yaml" "contract_digest" 2>/dev/null) || cc_cd_cdig=""
+	[ -n "$cc_cd_cdig" ] || { cc_fail CANDIDATE_NO_CONTRACT_DIGEST; return 1; }
 	{
 		printf 'schema_version: 1\ncandidate_id: %s\nplan: %s\nexecution_id: %s\ncontract_digest: %s\nrepositories:\n' \
 			"$cc_cd_id" "$2" "$3" "$cc_cd_cdig"
@@ -2091,8 +2076,7 @@ cc_change_set_candidate() {
 			[ -n "$cc_cs_exec" ] || continue
 			cc_cs_edir=$(cc_execution_dir "$cc_cs_root" "$cc_cs_plan" "$cc_cs_exec")
 			[ -f "$cc_cs_edir/execution.yaml" ] || continue
-			cc_cs_cdig=$(cc_scalar "$cc_cs_edir/execution.yaml" contract_digest 2>/dev/null) || cc_cs_cdig=legacy
-			[ -n "$cc_cs_cdig" ] || cc_cs_cdig=legacy
+			cc_cs_cdig=$(cc_scalar "$cc_cs_edir/execution.yaml" contract_digest 2>/dev/null) || cc_cs_cdig=""
 			for cc_cs_rf in "$cc_cs_edir"/repositories/*.yaml; do
 				[ -f "$cc_cs_rf" ] || continue
 				printf '%s\t%s\t%s\t%s\n' \
@@ -2325,7 +2309,12 @@ cc_run_stack_ready() {
 			esac
 		fi
 		cc_rsr_status=$(cc_plan_status "$cc_rsr_root" "$cc_rsr_plan" 2>/dev/null) || cc_rsr_status=""
-		if [ "$cc_rsr_status" != "approved" ]; then
+		# v1.0 authorization: a plan is authorized to run when it is already approved,
+		# or its parent intent is approved and it stays within the scope envelope
+		# (execution auto-approves within the envelope, INV-EXEC-01). A plan that
+		# cannot be authorized — no approved intent or scope drift — is refused.
+		if [ "$cc_rsr_status" != "approved" ] \
+			&& ! cc_intent_envelope_check "$cc_rsr_root" "$cc_rsr_plan" >/dev/null 2>&1; then
 			cc_emit "$cc_rsr_plan" refused
 			continue
 		fi
@@ -2359,11 +2348,10 @@ cc_latest_execution() {
 	ls -1 "$cc_le_base" 2>/dev/null | grep '^exec-' | sort | tail -n1
 }
 
-# cc_completion_ready ROOT PLAN -> eligible only if latest execution is verified
-# AND (for a candidate-bound execution) that verified evidence still describes the
-# current candidate (INV-CANDIDATE-01): a new commit or criteria change after the
-# pass voids the evidence, so completion is refused until re-verified. Legacy
-# executions with no recorded verified candidate keep the plain verified check.
+# cc_completion_ready ROOT PLAN -> eligible only if the latest execution's evidence
+# still describes the current candidate (INV-CANDIDATE-01): a new commit or criteria
+# change after the pass voids the evidence, so completion is refused until re-verified.
+# The tier floor (INV-ASSURE-01) decides what evidence is required.
 cc_completion_ready() {
 	cc_cr_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	[ -n "$cc_cr_exec" ] || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
@@ -2428,8 +2416,8 @@ cc_completion_finalize() {
 }
 
 # cc_plan_complete ROOT PLAN -> the EXPLICIT human completion path. Required at the
-# Critical tier and for a legacy plan; also usable at Explore/Standard when a human
-# asks explicitly. Refuses unless completion-ready passes (tier floor + candidate).
+# Critical tier; also usable at Explore/Standard when a human asks explicitly.
+# Refuses unless completion-ready passes (tier floor + candidate).
 cc_plan_complete() {
 	cc_completion_ready "$1" "$2" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
 	cc_completion_finalize "$1" "$2" accepted
@@ -2574,8 +2562,7 @@ cc_knowledge_reconciled() {
 # cc_knowledge_debt_check ROOT PLAN -> the cc-plan grounding preflight. If any
 # pending debt marker's knowledge scope (repositories) overlaps the new plan's
 # affected repositories, block at Standard/Critical (non-zero) or loudly warn at
-# Explore (zero). No overlap is clear. The new plan's tier comes from its intent
-# (a legacy plan with no intent blocks, treated as Standard).
+# Explore (zero). No overlap is clear. The new plan's tier comes from its intent.
 cc_knowledge_debt_check() {
 	cc_kc_root="$1"; cc_kc_plan="$2"
 	cc_kc_pfile="$cc_kc_root/plans/$cc_kc_plan/plan.yaml"
