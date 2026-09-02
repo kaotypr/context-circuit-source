@@ -85,4 +85,46 @@ assert_eq "$cc_cur" "$cs_one"
 cs_rev=$(eng change-set-candidate "$ws" 0002-crit 0001-std | sed -n 's/^change_set_candidate: //p')
 assert_eq "$cs1" "$cs_rev"
 
+# --- change-set integration verification: one PR, one integration tip, verified and
+#     accepted ONCE against the change-set candidate (pain 6) ---
+cc_fx_plan_ex "$ws" 0020-csa "CS A" api src/a ""
+cc_fx_plan_ex "$ws" 0021-csb "CS B" api src/b ""
+cc_fx_run_ok "$ws" 0020-csa api src/a
+cc_fx_run_ok "$ws" 0021-csb api src/b
+csp=$(eng change-set-prepare "$ws" 0020-csa 0021-csb)
+csid=$(printf '%s\n' "$csp" | sed -n 's/^change_set: //p')
+printf '%s\n' "$csp" | grep -q 'status: prepared' || fail "change-set prepare should succeed"
+printf '%s\n' "$csp" | grep -q 'tier: standard' || fail "change-set tier should be max(members)=standard"
+require_dir "$ws/.runtime/change-sets/$csid/integration/api"        # the integration tip worktree
+# the integration tip contains BOTH members' files (verified once, together)
+require_file "$ws/.runtime/change-sets/$csid/integration/api/src/a/mod.txt"
+require_file "$ws/.runtime/change-sets/$csid/integration/api/src/b/mod.txt"
+# not ready until the ONE verifier pass AND the ONE acceptance bind to the candidate
+expect_failure eng change-set-ready "$ws" "$csid"
+expect_failure eng change-set-verifier-record "$ws" "$csid" passed --wrote-products   # read-only
+eng change-set-verifier-record "$ws" "$csid" passed >/dev/null
+eng change-set-accept "$ws" "$csid" alice >/dev/null
+csr=$(eng change-set-ready "$ws" "$csid")
+printf '%s\n' "$csr" | grep -q 'change_set_ready: eligible' || fail "change set should be eligible"
+printf '%s\n' "$csr" | grep -q 'assurance: independent' || fail "standard change set needs an independent pass"
+# a member commit after prepare moves the candidate and voids the prepared evidence
+wta="$ws/.runtime/worktrees/0020-csa/api"
+printf 'x\n' >>"$wta/src/a/mod.txt"; git -C "$wta" add -A; git -C "$wta" commit -q -m "feat(api): more a"
+cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0020-csa "$(cc_latest_execution "$ws" 0020-csa)")" api repair >/dev/null
+expect_failure eng change-set-ready "$ws" "$csid"                   # stale: a member moved
+
+# --- change-set integration that will not build is BASE_UNBUILDABLE, not a failure ---
+cc_fx_plan_ex "$ws" 0022-cx "CX" api src/shared ""
+cc_fx_plan_ex "$ws" 0023-cy "CY" api src/shared ""
+cc_fx_run_ok "$ws" 0022-cx api src/shared
+cc_plan_approve "$ws" 0023-cy >/dev/null
+excy=$(eng execution-begin "$ws" 0023-cy 0023-cy-w | sed -n 's/^execution_id: //p')
+cc_attempt_begin "$(cc_fx_exec_dir "$ws" 0023-cy "$excy")" >/dev/null
+wtcy="$ws/.runtime/worktrees/0023-cy/api"
+mkdir -p "$wtcy/src/shared"; printf 'DIFFERENT\n' >"$wtcy/src/shared/mod.txt"
+git -C "$wtcy" add -A; git -C "$wtcy" commit -q -m "feat(api): cy"
+cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0023-cy "$excy")" api implementation >/dev/null
+uo=$(eng change-set-prepare "$ws" 0022-cx 0023-cy 2>&1 || :)
+printf '%s\n' "$uo" | grep -q 'BASE_UNBUILDABLE' || fail "conflicting change set must be BASE_UNBUILDABLE"
+
 pass 'inferred completion and change-set delivery'
