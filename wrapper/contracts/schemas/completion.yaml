@@ -22,7 +22,7 @@ preconditions:
     binding to the current candidate; Critical requires an explicit human request
 
 fields:
-    schema_version: { type: integer, required: true, values: [1] }
+  schema_version: { type: integer, required: true, values: [1] }
   execution_id: { type: string, required: true }
   plan: { type: string, required: true }
   candidate_id: { type: string, required: true }

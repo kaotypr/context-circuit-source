@@ -802,7 +802,7 @@ cc_repository_binding_migrate() {
 	cc_atomic_write "$cc_rbm_file" <"$cc_rbm_tmp" || { rm -f "$cc_rbm_tmp"; cc_fail REPOSITORY_BINDING_MIGRATION_FAILED; return 1; }
 	rm -f "$cc_rbm_tmp"
 	cc_emit migrated repositories.local.yaml
-	cc_emit schema_version 2
+	cc_emit schema_version "$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION"
 	return 0
 }
 
@@ -2016,8 +2016,8 @@ cc_verifier_result_record() {
 	[ -n "$cc_vr_scope_cand" ] && [ "$cc_vr_scope_cand" = "$cc_vr_cand" ] \
 		|| { cc_fail VERIFIER_SCOPE_STALE; return 1; }
 	mkdir -p "$cc_vr_dir/attempts/$cc_vr_pad"
-	printf 'attempt: %s\noutcome: %s\nread_only: true\ncandidate_id: %s\nchecked_at: %s\n' \
-		"$cc_vr_att" "$cc_vr_out" "$cc_vr_cand" "$(cc_now)" \
+	printf 'schema_version: %s\nattempt: %s\noutcome: %s\nread_only: true\ncandidate_id: %s\nchecked_at: %s\n' \
+		"$CC_VERIFIER_RESULT_SCHEMA_VERSION" "$cc_vr_att" "$cc_vr_out" "$cc_vr_cand" "$(cc_now)" \
 		| cc_atomic_write "$cc_vr_dir/attempts/$cc_vr_pad/verifier.yaml" \
 		|| { cc_fail VERIFIER_RESULT_WRITE_FAILED; return 1; }
 	if [ "$cc_vr_out" = "passed" ]; then

@@ -9,6 +9,7 @@ purpose: >
   read-only with respect to product files.
 
 fields:
+  schema_version: { type: integer, required: true, values: [1] }
   attempt: { type: integer, required: true }
   outcome:
     type: enum

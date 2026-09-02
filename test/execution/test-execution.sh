@@ -40,6 +40,7 @@ cc_verifier_prepare "$edir" >/dev/null
 # --- independent verifier passes over the latest commits ---
 cc_verifier_result_record "$edir" 1 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir")"
+contains "$edir/attempts/001/verifier.yaml" "schema_version: 1"
 
 # --- worktree isolation: each repo has its own branch tip, distinct from base ---
 web_tip=$(git -C "$ws/.runtime/worktrees/0001-checkout/web" rev-parse HEAD)
