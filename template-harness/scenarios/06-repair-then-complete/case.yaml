@@ -1,12 +1,12 @@
 id: 06-repair-then-complete
-title: A verified-after-repair execution; human marks it done, completion succeeds only after the pass
+title: A verified-after-repair Critical execution; explicit completion succeeds only after the pass
 mode: full-execution
 setup:
   # Seeded pre-state: the plan was executed, the first verify FAILED, the worker
   # repaired with a new commit, and the re-verify PASSED (worker_failures=1,
-  # execution verified, plan still draft). The repair MECHANISM is covered by
-  # the deterministic lab; here the live conversation tests human completion after
-  # a repair — completion succeeds only because a verified execution exists, and
+  # execution verified, plan still draft). The repair mechanism is covered by
+  # the deterministic lab; here the live conversation tests explicit Critical
+  # completion after a repair — completion succeeds only because a verified execution exists, and
   # reports the repair / knowledge follow-up in plain words (AC-15/22, INV-COMPLETE).
   repositories:
     - id: notes
@@ -20,15 +20,17 @@ setup:
       title: Add a Markdown export command
       repository: notes
       objective: Add an export.py command that exports the notes to a chosen output file.
+      tier: critical
       seed_state: verified-after-repair
   sources: []
 
 human:
   persona: >
     A solo maker whose plan was built — it needed one fix but the check passes now.
-    Ready to close it out. Has never heard of Context Circuit or its internals.
+    The result looks right and they are ready to explicitly complete it. Has never
+    heard of Context Circuit or its internals.
   turns:
-    - say: "Looks like it needed a fix but it's passing now — go ahead and mark it done."
+    - say: "It needed a fix, but it passes now and looks right to me — please explicitly complete it."
     - say: "Anything I should know or follow up on?"
     - say: "Okay, thanks."
   reactions:
@@ -50,8 +52,11 @@ grader:
     - repositories_registered: 1
     - repair_occurred: 0001-md-export           # one verify failed then a repair commit (preserved)
     - execution_verified: 0001-md-export         # the latest execution passed after the repair
+    - candidate_bound: 0001-md-export            # the repaired candidate is the one verified
+    - execution_tier: 0001-md-export:critical
     - plan_status: 0001-md-export:done           # human completion succeeded (only after the pass)
     - completion_recorded: 0001-md-export         # implementation completion record written (INV-COMPLETE-02)
+    - knowledge_debt_pending: ">=1"              # completion starts visible reconciliation debt
     - product_knowledge_unchanged_silently: true  # reconciliation may add proposals; accepted PK unchanged
   # B. transcript checks (hard gate)
   transcript_checks:

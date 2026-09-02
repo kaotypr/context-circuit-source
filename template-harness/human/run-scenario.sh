@@ -84,6 +84,7 @@ role_tiering_has_host "$HOST" || { printf 'FAIL: role-tiering fixture has no hos
 yscalar() { awk -v k="$2" '$0 ~ "^" k ":[[:space:]]" { sub("^" k ":[[:space:]]*",""); sub(/[[:space:]]*#.*$/,""); sub(/[[:space:]]+$/,""); print; exit }' "$1"; }
 CASE_ID=$(yscalar "$CASE_FILE" id); [ -n "$CASE_ID" ] || CASE_ID=$(basename -- "$CASE_DIR")
 CASE_MODE=$(yscalar "$CASE_FILE" mode); [ -n "$CASE_MODE" ] || CASE_MODE=conversation-only
+CASE_FAULT=$(yscalar "$CASE_FILE" fault)
 
 RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)-$$-${CASE_ID}-${HOST}"
 OUT_ROOT="$HERE/.out"
@@ -102,8 +103,8 @@ OUT=$(mktemp -d "${TMPDIR:-/tmp}/cc-hs-out.XXXXXX")
 trap 'rm -rf "$STAGE" "$OUT"' EXIT HUP INT TERM
 
 # 1. Assemble the released template (the same artifact a user receives).
-sh "$ROOT/scripts/release-artifact.sh" "$STAGE" "$OUT" v0.5.0 >/dev/null
-ARTIFACT="$OUT/context-circuit-v0.5.0"
+sh "$ROOT/scripts/release-artifact.sh" "$STAGE" "$OUT" v1.0.0 >/dev/null
+ARTIFACT="$OUT/context-circuit-v1.0.0"
 [ -d "$ARTIFACT" ] || { printf 'FAIL: assembly produced no artifact\n' >&2; exit 1; }
 
 # 2. Instantiate an isolated workspace from the artifact only.
@@ -148,20 +149,46 @@ repo_fixtures() {
 	' "$CASE_FILE"
 }
 
+# Emit one TSV row per setup.intents entry:
+#   id title repository objective open_question tier state path adversary_result finding
+# Intents are the v1.0 Gate-1 fixture. A draft intent has no derived plan; an
+# approved intent is ready for the coordinator to derive a plan automatically.
+intent_fixtures() {
+	awk 'BEGIN{S=sprintf("%c",31)}
+		/^  intents:/{ini=1; next}
+		ini && /^  [A-Za-z]/ && $0 !~ /^    /{ini=0}
+		ini && /^    -[[:space:]]*id:[[:space:]]*/{
+			if(id!="") print id S title S repo S obj S oq S tier S state S path S adv S finding;
+			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
+			title="";repo="";obj="";oq="";tier="";state="";path="";adv="";finding=""; next
+		}
+		ini && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
+		ini && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
+		ini && id!="" && /^      objective:/{v=$0;sub(/^      objective:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);obj=v;next}
+		ini && id!="" && /^      open_question:/{v=$0;sub(/^      open_question:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);oq=v;next}
+		ini && id!="" && /^      tier:/{v=$0;sub(/^      tier:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);tier=v;next}
+		ini && id!="" && /^      state:/{v=$0;sub(/^      state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);state=v;next}
+		ini && id!="" && /^      path:/{v=$0;sub(/^      path:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);path=v;next}
+		ini && id!="" && /^      adversary_result:/{v=$0;sub(/^      adversary_result:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);adv=v;next}
+		ini && id!="" && /^      finding:/{v=$0;sub(/^      finding:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);finding=v;next}
+		END{if(id!="") print id S title S repo S obj S oq S tier S state S path S adv S finding}
+	' "$CASE_FILE"
+}
+
 # Emit one TSV row per setup.plans entry:
-#   id title repository objective open_question seed_state path deps
+#   id title repository objective open_question seed_state path deps tier intent_state intent_path
 # `path` scopes the task and its verifiable target (a live worker creates
 # <path>/mod.txt; verification is `test -f <path>/mod.txt`). `deps` (an inline
-# list) makes the plan schema_version 2 with a plan_dependencies block. Both are
+# list) adds the schema-3 plan_dependencies block. Both are
 # optional: a plan with neither behaves exactly as before (case 05/06).
 plan_fixtures() {
 	awk 'BEGIN{S=sprintf("%c",31)}
 		/^  plans:/{inp=1; next}
 		inp && /^  [A-Za-z]/ && $0 !~ /^    /{inp=0}
 		inp && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id S title S repo S obj S oq S ss S path S deps;
+			if(id!="") print id S title S repo S obj S oq S ss S path S deps S tier S istate S ipath;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			title="";repo="";obj="";oq="";ss="";path="";deps=""; next
+			title="";repo="";obj="";oq="";ss="";path="";deps="";tier="";istate="";ipath=""; next
 		}
 		inp && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
 		inp && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
@@ -170,7 +197,10 @@ plan_fixtures() {
 		inp && id!="" && /^      seed_state:/{v=$0;sub(/^      seed_state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);ss=v;next}
 		inp && id!="" && /^      path:/{v=$0;sub(/^      path:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);path=v;next}
 		inp && id!="" && /^      deps:/{v=$0;sub(/^      deps:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/^\[|\]$/,"",v);gsub(/[[:space:]]/,"",v);deps=v;next}
-		END{ if(id!="") print id S title S repo S obj S oq S ss S path S deps }
+		inp && id!="" && /^      tier:/{v=$0;sub(/^      tier:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);tier=v;next}
+		inp && id!="" && /^      intent_state:/{v=$0;sub(/^      intent_state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);istate=v;next}
+		inp && id!="" && /^      intent_path:/{v=$0;sub(/^      intent_path:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);ipath=v;next}
+		END{ if(id!="") print id S title S repo S obj S oq S ss S path S deps S tier S istate S ipath }
 	' "$CASE_FILE"
 }
 
@@ -179,6 +209,9 @@ plan_fixtures() {
 # plan-approval step — so a plan is `draft` until it completes.
 # seed_state=draft: leave the authorized draft as-is. seed_state=verified-after-repair:
 # execute, one FAILED verify + a repair commit, then a PASSED verify (worker_failures=1).
+# verified-stale adds a new worker commit after the pass, leaving the prior evidence
+# stale. verified-accepted records current-candidate acceptance; completed-standard
+# additionally records Gate 2 and inferred Standard completion.
 seed_plan_state() {
 	sps_pid="$1"; sps_repo="$2"; sps_state="$3"
 	( . "$ENGINE_CLI"
@@ -187,7 +220,7 @@ seed_plan_state() {
 		# archived: archive the authorized draft, so a restore case starts from a plan
 		# sitting in plans/archive/ (status must survive the restore).
 		[ "$sps_state" = "archived" ] && { cc_plan_archive "$WORKSPACE" "$sps_pid" >/dev/null; exit $?; }
-		case "$sps_state" in verified|verified-after-repair|worker-committed) : ;; *) exit 0 ;; esac
+		case "$sps_state" in verified|verified-after-repair|verified-stale|verified-accepted|completed-standard|worker-committed) : ;; *) exit 0 ;; esac
 		sps_exec=$(cc_execution_begin "$WORKSPACE" "$sps_pid" seed-worker | sed -n 's/^execution_id: //p')
 		sps_edir="$WORKSPACE/.runtime/executions/$sps_pid/$sps_exec"
 		sps_wt=$(cc_scalar "$sps_edir/repositories/$sps_repo.yaml" worktree)
@@ -213,6 +246,23 @@ seed_plan_state() {
 		[ "$sps_state" = "worker-committed" ] && exit 0
 		cc_verifier_prepare "$sps_edir" >/dev/null
 		cc_verifier_result_record "$sps_edir" "$sps_att" passed >/dev/null
+		cc_candidate_digest "$WORKSPACE" "$sps_pid" "$sps_exec" >/dev/null
+		if [ "$sps_state" = "verified-stale" ]; then
+			# A later worker commit moves the candidate after verification. The old
+			# verifier result remains preserved, but no longer authorizes completion.
+			cc_attempt_begin "$sps_edir" >/dev/null
+			printf 'post-verification change\n' > "$sps_wt/post-verification.txt"
+			git -C "$sps_wt" add -A; git -C "$sps_wt" commit -q -m 'post-verification change'
+			cc_worker_commit_record "$sps_edir" "$sps_repo" repair >/dev/null
+			exit 0
+		fi
+		if [ "$sps_state" = "verified-accepted" ] || [ "$sps_state" = "completed-standard" ]; then
+			cc_human_acceptance_record "$sps_edir" harness-human >/dev/null
+		fi
+		if [ "$sps_state" = "completed-standard" ]; then
+			cc_delivery_record "$WORKSPACE" "$sps_pid" "$sps_exec" >/dev/null
+			cc_completion_infer "$WORKSPACE" "$sps_pid" >/dev/null
+		fi
 	) || return 1
 }
 
@@ -255,16 +305,55 @@ if ! setup_empty repositories; then
 	done
 fi
 
-# setup.plans: seed a DRAFT plan (plan.yaml + PLAN.md + INDEX row) via the engine,
-# so review/approve cases start from an existing plan with an open question.
+# setup.intents: seed a first-class draft or approved intent. This is separate
+# from setup.plans because v1.0 plans are derivations of approved intents; a
+# draft intent must not be smuggled into the normal plan lifecycle.
+if grep -q '^  intents:' "$CASE_FILE" 2>/dev/null; then
+	FIXTURE_NOTE="${FIXTURE_NOTE},intents"
+	intent_fixtures | while IFS="$US" read -r iid title irepo iobj iquestion itier istate ipath iadversary ifinding; do
+		[ -n "$iid" ] || continue
+		itier=${itier:-standard}; istate=${istate:-draft}; ipath=${ipath:-.}
+		iadversary=${iadversary:-yes}
+		idir="$WORKSPACE/intent/$iid"; mkdir -p "$idir"
+		{
+			printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$iobj"
+			printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
+			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n    method: test\n    surface: %s\n' "$iobj" "$irepo"
+			printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+			printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$irepo" "$ipath"
+			printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$itier"
+		} > "$idir/contract.yaml"
+		{
+			printf '# %s\n\nGoal: %s\n' "$title" "$iobj"
+			[ -n "$iquestion" ] && printf '\n## Open question\n\n- %s\n' "$iquestion"
+		} > "$idir/INTENT.md"
+		digest=$( ( . "$ENGINE_CLI"; cc_intent_contract_digest "$idir/contract.yaml" ) )
+		{
+			printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: %s\n' "$digest" "$iadversary"
+			[ -n "$ifinding" ] && printf 'finding: %s\n' "$ifinding" || :
+		} > "$idir/adversary.md"
+		sh "$ENGINE_CLI" intent-index-upsert "$WORKSPACE" "$iid" >/dev/null || :
+		if [ "$istate" = approved ]; then
+			sh "$ENGINE_CLI" intent-approve "$WORKSPACE" "$iid" >/dev/null \
+				|| { printf 'FAIL: could not approve seeded intent %s\n' "$iid" >&2; exit 1; }
+		fi
+		printf '[setup] seeded intent %s (%s, tier %s)\n' "$iid" "$istate" "$itier"
+	done
+fi
+
+# setup.plans: seed a schema-3 DRAFT plan (plan.yaml + PLAN.md + INDEX row) via the
+# engine. These are post-Gate-1 fixtures for execution, organization, and delivery
+# cases; pre-Gate-1 cases use setup.intents instead.
 if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 	FIXTURE_NOTE="${FIXTURE_NOTE},plans"
-	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate path deps; do
+	plan_fixtures | while IFS="$US" read -r pid title prepo obj oq seedstate path deps ptier istate intentpath; do
 		[ -n "$pid" ] || continue
+		ptier=${ptier:-standard}; istate=${istate:-}
 		pdir="$WORKSPACE/plans/$pid"; mkdir -p "$pdir"
 		# path scopes the task; without it the task is repo-wide.
 		# The verifiable target is <path>/mod.txt when a path is given, else export.py.
 		if [ -n "$path" ]; then taskpath="$path"; target="$path/mod.txt"; else taskpath="."; target="export.py"; fi
+		iscopepath=${intentpath:-$taskpath}
 		# v1.0: every plan derives from a parent intent within a scope envelope. Author
 		# an intent i<pid> scoped to the plan's repo+path, then bind the schema-3 plan to
 		# it. A plan with an unresolved open question keeps its intent DRAFT (so review /
@@ -276,16 +365,19 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 			printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
 			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n    method: test\n    surface: %s\n' "$obj" "$prepo"
 			printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
-			printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$prepo" "$taskpath"
-			printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
+			printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$prepo" "$iscopepath"
+			printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$ptier"
 		} > "$idir/contract.yaml"
 		printf '# %s\n\nGoal: %s\n' "$title" "$obj" > "$idir/INTENT.md"
 		digest=$( ( . "$ENGINE_CLI"; cc_intent_contract_digest "$idir/contract.yaml" ) )
 		printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$digest" > "$idir/adversary.md"
 		sh "$ENGINE_CLI" intent-index-upsert "$WORKSPACE" "$iid" >/dev/null || :
-		# no open question => the intent is settled and approved (plan authorized)
-		[ -n "$oq" ] || sh "$ENGINE_CLI" intent-approve "$WORKSPACE" "$iid" >/dev/null \
-			|| { printf 'FAIL: could not approve seeded intent %s\n' "$iid" >&2; exit 1; }
+		# A clean fixture intent is approved by default. Explicit intent_state: draft
+		# keeps the pre-Gate-1 negative fixture genuinely unauthorized.
+		if [ "$istate" != draft ] && [ -z "$oq" ]; then
+			sh "$ENGINE_CLI" intent-approve "$WORKSPACE" "$iid" >/dev/null \
+				|| { printf 'FAIL: could not approve seeded intent %s\n' "$iid" >&2; exit 1; }
+		fi
 		{
 			printf 'schema_version: 3\nplan: %s\ntitle: %s\nstatus: draft\nobjective: %s\nintent: %s\n' "$pid" "$title" "$obj" "$iid"
 			printf 'repositories:\n  - id: %s\n' "$prepo"
@@ -335,6 +427,7 @@ cp "$WORKSPACE/workspace.yaml" "$BASELINE/workspace.yaml"
 	printf 'case_file: %s\n' "$CASE_FILE"
 	printf 'host: %s\n' "$HOST"
 	printf 'mode: %s\n' "$CASE_MODE"
+	[ -n "$CASE_FAULT" ] && printf 'fault: %s\n' "$CASE_FAULT" || :
 	printf 'workspace: %s\n' "$WORKSPACE"
 	printf 'baseline: %s\n' "$BASELINE"
 	printf 'transcript: %s\n' "$TRANSCRIPT"
@@ -355,6 +448,7 @@ if [ -n "$DRIVER" ]; then
 	printf 'driving via: %s\n' "$DRIVER"
 	CC_RUN_DIR="$RUN_DIR" CC_WORKSPACE="$WORKSPACE" CC_BASELINE="$BASELINE" \
 	CC_CASE_FILE="$CASE_FILE" CC_CASE_ID="$CASE_ID" CC_HOST="$HOST" CC_MODE="$CASE_MODE" \
+	CC_FAULT="$CASE_FAULT" \
 	CC_HUMAN_SIM="$ROOT/.claude/agents/cc-human-simulator.md" \
 	CC_TRANSCRIPT="$TRANSCRIPT" CC_TRACE="$TRACE" CC_TELEMETRY="$TELEMETRY" \
 	CC_ROLE_EVIDENCE="$ROLE_EVIDENCE" \

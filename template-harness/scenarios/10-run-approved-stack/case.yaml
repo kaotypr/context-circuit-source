@@ -1,5 +1,5 @@
 id: 10-run-approved-stack
-title: Run a batch of ten intent-authorized, inter-dependent plans in one go; all built and independently checked in dependency order, nothing marked done
+title: Run a batch of ten intent-authorized, inter-dependent plans; all verified, nothing completed or delivered
 mode: full-execution
 setup:
   # One connected repo and TEN real intent-authorized plans of a small task-tracker CLI.
@@ -146,6 +146,6 @@ grader:
       forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only) — recalibrated from measured runs.
   # max_tokens = generated output tokens; max_turns = conversational turns;
-  # max_agent_turns = agent-loop turns; max_cost_usd = dollars. (v0.6 template-harness)
+  # max_agent_turns = agent-loop turns; max_cost_usd = dollars.
   budgets:
     execute-plan: { max_turns: 3, max_tokens: 80000, max_agent_turns: 140, max_cost_usd: 18 }

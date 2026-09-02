@@ -23,9 +23,9 @@ trap '
 	rm -rf "$matrix_dir"
 ' EXIT HUP INT TERM
 
-assert_eq 45 "$(awk 'NR > 1 && NF {n++} END {print n+0}' "$summary")"
+assert_eq 66 "$(awk 'NR > 1 && NF {n++} END {print n+0}' "$summary")"
 for host in codex claude-code cursor-agent; do
-	assert_eq 15 "$(awk -F '\t' -v h="$host" 'NR > 1 && $2 == h {n++} END {print n+0}' "$summary")"
+	assert_eq 22 "$(awk -F '\t' -v h="$host" 'NR > 1 && $2 == h {n++} END {print n+0}' "$summary")"
 	if awk -F '\t' 'NR > 1 && $3 != "prepared" {bad=1} END {exit bad ? 0 : 1}' "$summary"; then
 		fail "matrix runner did not prepare every selected case for $host"
 	fi

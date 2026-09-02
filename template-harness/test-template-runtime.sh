@@ -14,9 +14,9 @@ lab=$(mktemp -d "${TMPDIR:-/tmp}/cc-tr-lab.XXXXXX")
 trap 'rm -rf "$stage" "$out" "$lab"' EXIT HUP INT TERM
 
 # 1. Assemble the template and instantiate an isolated workspace from it.
-sh "$ROOT/scripts/release-artifact.sh" "$stage" "$out" v0.5.0 >/dev/null
+sh "$ROOT/scripts/release-artifact.sh" "$stage" "$out" v1.0.0 >/dev/null
 ws="$lab/project"
-cp -R "$out/context-circuit-v0.5.0" "$ws"
+cp -R "$out/context-circuit-v1.0.0" "$ws"
 
 # 2. Use the ARTIFACT's shipped engine, not the source engine under test.
 ENGINE="$ws/wrapper/runtime/engine.sh"
@@ -227,7 +227,7 @@ cc_lease_acquire "$ws" api 0002-sa "src/a" >/dev/null
 expect_failure cc_lease_check "$ws" api 0003-sb "src/a"
 cc_lease_check "$ws" api 0004-int "src/a" >/dev/null || fail 'shipped lease must exempt a descendant'
 
-# 11. Repository grounding (v0.6): the SHIPPED template discovers the repo's own
+# 11. Repository grounding (v1.0.0): the SHIPPED template discovers the repo's own
 #     agent guidance and assembles a worker brief with the required grounding slot.
 require_file "$ws/wrapper/runtime/worker-brief.md"    # runtime-only brief, promoted beside the runtime
 git -C "$ws/repositories/api" checkout -q development
@@ -244,7 +244,7 @@ contains "$gedir/brief-api.md" "## Repository grounding"
 contains "$gedir/brief-api.md" "AGENTS.md — read and honor it"
 cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 
-# 12. Execution latency: the SHIPPED template records bounded per-attempt
+# 12. Execution latency (v1.0.0): the SHIPPED template records bounded per-attempt
 #     host evidence (per-role model/effort), refuses an unknown evidence key, and
 #     ships the per-role tiering guidance and the 1.0.0 runtime version.
 contains "$ws/wrapper/manifest.yaml" "runtime_version: 1.0.0"

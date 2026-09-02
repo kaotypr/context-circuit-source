@@ -76,9 +76,15 @@ coordinator_turn() {
 	turn_raw="$CC_RUN_DIR/.codex-turn.$$.jsonl"
 	turn_reply="$CC_RUN_DIR/.codex-reply.$$"
 	rm -f "$turn_raw" "$turn_reply"
+	effective_msg=$msg
+	case "${CC_FAULT:-}" in
+		verifier-unavailable)
+			effective_msg="[Harness condition: the independent verifier child is unavailable for this run. Do not attempt to create or imitate that child; report the result as host-blocked and preserve the existing work.]\n\n$msg"
+			;;
+	esac
 
 	if [ ! -f "$THREAD_FILE" ]; then
-		if ! printf '%s\n' "$msg" | run_codex "$CC_WORKSPACE" exec \
+		if ! printf '%b\n' "$effective_msg" | run_codex "$CC_WORKSPACE" exec \
 			--cd "$CC_WORKSPACE" --approve-for-me \
 			--json --output-last-message "$turn_reply" - \
 			>"$turn_raw" 2>>"$CC_RUN_DIR/driver.err"; then
@@ -91,7 +97,7 @@ coordinator_turn() {
 		printf '%s\n' "$thread_id" > "$THREAD_FILE"
 	else
 		thread_id=$(sed -n '1p' "$THREAD_FILE")
-		if ! printf '%s\n' "$msg" | run_codex "$CC_WORKSPACE" exec resume \
+		if ! printf '%b\n' "$effective_msg" | run_codex "$CC_WORKSPACE" exec resume \
 			-c 'sandbox_mode="workspace-write"' --json \
 			--output-last-message "$turn_reply" "$thread_id" - \
 			>"$turn_raw" 2>>"$CC_RUN_DIR/driver.err"; then
