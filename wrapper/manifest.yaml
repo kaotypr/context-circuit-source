@@ -2,9 +2,11 @@ schema_version: 1
 owner: wrapper/manifest.yaml
 product: context-circuit
 runtime_version: 1.0.0
-# Published template release version (see 10-template-publication.md). Stamped
-# at publish time; the context-circuit-template git tag is authoritative.
-template_version: 0.0.1-alpha.2
+# Template release version (see 10-template-publication.md): the current/pending
+# release this source builds as. The dev dist build names its artifact from it, and
+# publish-template.sh re-stamps it at publish time; the context-circuit-template git
+# tag remains authoritative for what has actually been published.
+template_version: 0.0.1-beta.1
 artifact_kind: universal-project-workspace-template
 release_contract: template-owned-files-only
 
