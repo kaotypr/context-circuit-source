@@ -1,0 +1,77 @@
+# generated from plots/run-stack-multi-repo.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 12
+# (same seed + budget; expectations sourced from the plot). Would live at
+# scenarios/12-run-multi-repo-stack/.
+id: run-stack-multi-repo
+title: Run an intent-authorized stack across two repositories; cross-repo deps gate order without a shared base, same-repo deps stack/integrate
+mode: full-execution
+
+setup:
+  repositories:
+    - { id: api, dest: api, default_branch: main, branches: [main], seed_files: [README.md], connect: main }
+    - { id: web, dest: web, default_branch: main, branches: [main], seed_files: [README.md], connect: main }
+  plans:
+    - { id: 0001-api-core, title: API core service, repository: api, objective: Create the backend service entry point., path: src/core, seed_state: draft }
+    - { id: 0002-web-core, title: Web app shell, repository: web, objective: Create the web application shell., path: src/core, seed_state: draft }
+    - { id: 0003-api-feature, title: API feature endpoint, repository: api, objective: Add a feature endpoint to the backend., path: src/feature, deps: [0001-api-core], seed_state: draft }
+    - { id: 0004-web-client, title: Web API client, repository: web, objective: Add the web client that talks to the backend API., path: src/client, deps: [0001-api-core], seed_state: draft }
+    - { id: 0005-web-feature, title: Web feature view, repository: web, objective: Add the feature view to the web app., path: src/feature, deps: [0002-web-core], seed_state: draft }
+    - { id: 0006-api-integrate, title: API integration wiring, repository: api, objective: Wire the core and feature together in the backend., path: src/integrate, deps: [0001-api-core, 0003-api-feature], seed_state: draft }
+    - { id: 0007-web-final, title: Web final wiring, repository: web, objective: Wire the client and feature view into the web app., path: src/final, deps: [0004-web-client, 0005-web-feature], seed_state: draft }
+  sources: []
+
+human:
+  persona: >
+    A maker with a backend and a web app, holding a batch of authorized plans that span
+    both. Wants the whole batch built in one go and a plain-language confirmation. Has
+    never heard of Context Circuit or its internals.
+  turns:
+    - say: "Please build all the plans across both projects — run them together."
+    - say: "How did that go — is everything built and checked?"
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It builds all seven intent-authorized plans across both projects in one run, in plain terms.
+    - It reports every plan was implemented and independently checked/verified.
+    - When asked, it says the work is built and verified but leaves marking each plan
+      done/complete as a separate step for the human.
+    - It never exposes internal mechanism (runtime files, execution branches like cc/…,
+      worktrees). Naming the projects and their working branches plainly is fine.
+
+grader:
+  acceptance_criteria: [AC-06, AC-07, AC-08, AC-14]
+  invariants: [INV-EXEC-02, INV-VERIFY-01, INV-CONCURRENCY-02, INV-COMPLETE-01]
+  post_conditions:
+    - repositories_registered: 2
+    - execution_verified: 0001-api-core
+    - execution_verified: 0002-web-core
+    - execution_verified: 0003-api-feature
+    - execution_verified: 0004-web-client
+    - execution_verified: 0005-web-feature
+    - execution_verified: 0006-api-integrate
+    - execution_verified: 0007-web-final
+    - based_on: 0003-api-feature:api:0001-api-core
+    - based_on: 0005-web-feature:web:0002-web-core
+    - based_on: 0006-api-integrate:api:0001-api-core,0003-api-feature
+    - based_on: 0007-web-final:web:0004-web-client,0005-web-feature
+    - based_on_absent: 0004-web-client:web
+    - built_on: 0006-api-integrate:api:0003-api-feature
+    - built_on: 0007-web-final:web:0005-web-feature
+    - no_plan_status: [done]
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|refs/cc-|cc/[0-9])"
+      reason: The coordinator must not expose internals (runtime files, branches) to a lay user.
+    - requires_any: ["verified", "checked", "built", "not.*done", "complete"]
+      reason: It should report a verified build across both projects and leave completion to the human.
+  access_policy:
+    execute-plan:
+      required: []
+      allowed:  ["plans/**", ".runtime/**", "context/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 12
+  budgets:
+    execute-plan: { max_turns: 3, max_tokens: 70000, max_agent_turns: 120, max_cost_usd: 16 }
