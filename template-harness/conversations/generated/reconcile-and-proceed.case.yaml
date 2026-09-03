@@ -1,0 +1,78 @@
+# generated from plots/reconcile-and-proceed.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case (positive
+# complement of case 19). Conversation-only. `knowledge_debt_resolved`,
+# `knowledge_unit_accepted`, and `grounding_unblocked` are NEW predicates (harness
+# gaps) — see coverage/phase-6a.md.
+id: reconcile-and-proceed
+title: Reconcile the pending knowledge decision, clear the debt, and unblock the next plan
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-foundation
+      title: Add notes storage
+      repository: notes
+      objective: Add a small storage foundation for the notes tool.
+      path: src/storage
+      seed_state: completed-standard
+    - id: 0002-follow-up
+      title: Add note search
+      repository: notes
+      objective: Add search on top of the notes storage foundation.
+      path: src/search
+      seed_state: draft
+  sources: []
+
+human:
+  persona: >
+    A maker whose finished storage change left a knowledge decision pending, who is
+    happy to make that decision so the follow-up search work can go ahead. Has never
+    heard of Context Circuit; does not know what a reconciliation marker is.
+  turns:
+    - say: "You said the storage change needs a decision before the search work. What is it?"
+    - say: "Yes — record that storage detail as how the project works, then the search work is clear to go."
+    - say: "Thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It states the pending knowledge decision in plain language without pre-deciding it.
+    - It records the knowledge update only on the explicit decision, never silently, and
+      confirms what was recorded.
+    - It confirms the loose end is closed and the follow-up is clear to go — the block
+      lifted because the debt is resolved, not bypassed.
+
+grader:
+  acceptance_criteria: [AC-34]
+  invariants: [INV-KNOWLEDGE-02, INV-COMPLETE-02]
+  post_conditions:
+    - repositories_registered: 1
+    - plan_status: 0001-foundation:done
+    - knowledge_debt_resolved: 0001-foundation
+    - knowledge_unit_accepted: ">=1"
+    - grounding_unblocked: 0002-follow-up
+    - plan_status: 0002-follow-up:draft
+    - no_execution_for: 0002-follow-up
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-|reconciliation debt|grounding preflight)"
+      reason: The reconciliation must be explained in plain language, not by internal mechanism.
+    - requires_any: ["record", "recorded", "how the project works", "clear to go", "closed", "no longer", "nothing.*blocking", "unblock"]
+      reason: It should present the decision, record on the explicit yes, and confirm the follow-up is unblocked.
+  access_policy:
+    reconcile:
+      required: []
+      allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
+      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", "wrapper/contracts/**"]
+  # environmental overlay (NOT from the plot) — conversation-only tuning
+  budgets:
+    reconcile: { max_turns: 3, max_tokens: 20000 }

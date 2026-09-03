@@ -1,0 +1,66 @@
+# generated from plots/archive-plan.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 07
+# (same seed + budget; expectations sourced from the plot). Would live at
+# scenarios/07-archive-plan/.
+id: archive-plan
+title: Archive a plan by name — moves it aside, deindexes it, preserves status, no validation
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      objective: Add an export.py command that exports the notes to a chosen output file.
+      repository: notes
+      seed_state: draft
+  sources: []
+
+human:
+  persona: >
+    A solo maker who wants a plan moved off the active list for now. Has never heard of
+    Context Circuit and does not know its internals.
+  turns:
+    - say: "Archive the export plan for now — move it off my active list; I'm not ready to work on it."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It archives the named plan when asked, confirming in plain terms.
+    - It does not warn about or change the plan's status, and does not require it to be complete first.
+    - It does not claim to have deleted, completed, delivered, or run anything.
+    - It never exposes internal jargon or file names to a lay user.
+
+grader:
+  acceptance_criteria: [AC-24]
+  invariants: [INV-ARCHIVE-01, INV-ARCHIVE-02]
+  post_conditions:
+    - repositories_registered: 1
+    - plan_archived: 0001-md-export:draft
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["archived", "archive", "set aside", "aside", "off your active", "moved"]
+      reason: It should archive the named plan.
+  access_policy:
+    archive:
+      required: []
+      allowed:  ["plans/**"]
+      forbidden:
+        - "plans/archive/**"
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+  # environmental overlay (NOT from the plot) — preserved from case 07
+  budgets:
+    archive: { max_turns: 1, max_tokens: 6000 }
