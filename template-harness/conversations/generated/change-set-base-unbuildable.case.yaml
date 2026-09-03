@@ -1,0 +1,71 @@
+# generated from plots/change-set-base-unbuildable.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case (no
+# existing scenario counterpart). Full-execution with a NEW fault
+# `change-set-base-unbuildable` (mirrors case 09's verifier-unavailable fault). The
+# fault and the change_set_* predicates are harness gaps — see coverage/phase-5.md.
+id: change-set-base-unbuildable
+title: A change set whose combined base will not build is reported blocked, not completed
+mode: full-execution
+fault: change-set-base-unbuildable
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - { id: 0001-export-core, title: Export core, repository: notes, objective: Add the core export implementation., path: src/export, seed_state: verified }
+    - { id: 0002-export-rewrite, title: Export rewrite, repository: notes, objective: Rework the same export surface a second, incompatible way., path: src/export, seed_state: verified }
+  sources: []
+
+human:
+  persona: >
+    A maker with two checked changes they assume ship together. They're fine to split
+    or reorder once told the combination doesn't work. Has never heard of Context
+    Circuit or its internals.
+  turns:
+    - say: "Both of those are checked — combine them and ship them as one, and complete them."
+    - say: "Ah — okay, I'll split them then. Good that you didn't force it."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It says plainly the two changes don't combine cleanly and it stopped, rather than
+      forcing them together or dressing it up as a failure of either change on its own.
+    - It merges nothing, ships nothing partial, and completes neither change; both remain
+      individually checked and preserved.
+    - It offers a real path — split them into separate deliveries, or reorder so they combine.
+
+grader:
+  acceptance_criteria: [AC-35]
+  invariants: [INV-DELIVER-01, INV-CONCURRENCY-02, INV-PRESERVE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-export-core
+    - execution_verified: 0002-export-rewrite
+    - change_set_base_unbuildable: true
+    - change_set_blocked_not_worker_failure: true
+    - plan_status: 0001-export-core:draft
+    - plan_status: 0002-export-rewrite:draft
+    - no_change_set_completed: true
+    - members_preserved: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|BASE_UNBUILDABLE|contract_digest|refs/cc-)"
+      reason: The block must be explained in plain language, not by internal mechanism or error codes.
+    - requires_any: ["don't combine", "doesn't combine", "combined", "doesn't build", "won't build", "stopped", "split", "reorder", "on its own"]
+      reason: It should report the honest block, complete nothing, and offer to split or reorder.
+  access_policy:
+    deliver:
+      required: []
+      allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
+      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh"]
+  # environmental overlay (NOT from the plot) — aligned to case 21's deliver budget
+  budgets:
+    deliver: { max_turns: 3, max_tokens: 50000 }
