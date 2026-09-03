@@ -1,0 +1,76 @@
+schema_version: 1
+intent: i0001-conversation-spec-library
+title: Author the whole-surface specification-by-example conversation library
+goal: >
+  Author, under template-harness/conversations/, a versioned specification-by-example
+  ("conversation-spec-first") library of expected human<->coordinator dialogues
+  ("plots") intended to be the generative source for the human-simulated test harness.
+  Cover the WHOLE Context Circuit template conversational surface — every lay-user
+  interaction across the lifecycle — as one plot per conversation (a machine-readable
+  `## Spec` plus a human-readable `## Dialogue`) with a generated worked case per plot,
+  a coverage cross-check per phase, and a flow-order reading guide. The library is
+  descriptive only: it references INV-*/AC-* and defines no rule.
+
+non_goals:
+  - Wiring the library to a generator or any suite, or regenerating the live scenario
+    cases (that is i0002).
+  - Changing any product behavior, runtime, contract, or invariant.
+  - Recreating the existing scenario cases from scratch, or modifying the deterministic
+    five-family suite (AC-36).
+  - Applying the acceptance-criteria corrections it surfaces to the live cases (i0002).
+
+constraints:
+  - Source-only under template-harness/ (the release manifest excludes test/ and the
+    harness; nothing here ships in context-circuit-template).
+  - Descriptive only — reference INV-*/AC-*, never define a rule (one rule, one owner).
+  - Avoid the noun "contract" in the library (it collides with the intent contract.yaml).
+  - Conventional Commits (INV-COMMIT-01); no AI attribution.
+
+acceptance_criteria:
+  - id: AC-WHOLE-SURFACE
+    statement: >
+      Every entry in the plot catalog has a plot file (`## Spec` YAML + `## Dialogue`)
+      under plots/ and a generated case under generated/; the count of plots equals the
+      count of generated cases.
+    method: command
+    surface: template-harness/conversations/{plots,generated}
+  - id: AC-DESCRIPTIVE-ONLY
+    statement: >
+      Every plot references invariant and/or acceptance-criterion ids and defines no
+      rule or parallel policy of its own.
+    method: static
+    surface: the plot files
+  - id: AC-COVERAGE-CROSSCHECK
+    statement: >
+      A coverage cross-check exists per lifecycle phase mapping the relevant existing
+      scenario cases onto plots and recording the harness-capability gaps surfaced.
+    method: manual
+    surface: template-harness/conversations/coverage/
+  - id: AC-REPORTING-RULES
+    statement: >
+      Lay-user-facing dialogue in every plot obeys the reporting rules: plain language;
+      no internal file names, paths, ids, digests, branch names, or model names surfaced
+      to the user; assurance is never overstated and failures are reported faithfully.
+    method: manual
+    surface: the plot dialogues
+  - id: AC-DRIFTS-SURFACED
+    statement: >
+      The acceptance-criteria mapping drifts in the existing scenario cases are
+      surfaced and documented in the coverage docs (their application to the live cases
+      is deferred to i0002).
+    method: manual
+    surface: the coverage docs
+
+done_when: >
+  The whole-surface plot library, its generated worked cases, the per-phase coverage
+  cross-checks, and the flow guide are authored and committed source-only.
+
+scope:
+  repositories:
+    - id: workspace
+      paths:
+        - template-harness/conversations/
+
+tier: standard
+
+status: draft
