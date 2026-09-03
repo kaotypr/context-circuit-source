@@ -1,0 +1,66 @@
+# generated from plots/execute-standard-verify-not-complete.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 05
+# (same seed + budget; expectations sourced from the plot). Would live at
+# scenarios/05-approve-and-execute/.
+id: execute-standard-verify-not-complete
+title: Execute an approved Standard intent; verify it independently, but do not complete or deliver it
+mode: full-execution
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add an export.py command that exports the notes to a chosen output file.
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose notes project is already connected and who has a ready plan on
+    file. Wants it built now and is comfortable giving an explicit go-ahead. Has never
+    heard of Context Circuit and does not know its internals.
+  turns:
+    - say: "The approved change looks good — go ahead and build it."
+    - say: "Great. Is it finished / all done now?"
+    - say: "Okay, thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It builds in response to the one explicit go-ahead, in plain terms.
+    - It reports that the work was implemented and independently checked/verified.
+    - When asked if it is finished, it says the work is verified but not yet complete,
+      since the human still needs to accept the result and authorize delivery.
+    - It never exposes internal jargon or file names to a lay user.
+
+grader:
+  acceptance_criteria: [AC-06, AC-07, AC-08, AC-09, AC-10, AC-14]
+  invariants: [INV-EXEC-01, INV-EXEC-02, INV-EXEC-03, INV-EXEC-04, INV-VERIFY-01, INV-COMPLETE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-md-export
+    - candidate_bound: 0001-md-export
+    - plan_status: 0001-md-export:draft
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["verified", "checked", "approved", "built", "not.*done", "complete"]
+      reason: It should report a verified build and leave completion to the human.
+  access_policy:
+    execute-plan:
+      required: []
+      allowed:  ["plans/**", ".runtime/**", "context/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 05
+  budgets:
+    execute-plan: { max_turns: 4, max_tokens: 60000 }
