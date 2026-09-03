@@ -1,0 +1,71 @@
+# generated from plots/publish-plan-to-external.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case (no
+# existing scenario counterpart). Conversation-only, preview-first (no real provider
+# needed). `plans_untouched` / `no_provider_push` are NEW predicates (harness gaps) —
+# see coverage/phase-6b.md.
+id: publish-plan-to-external
+title: Publish a plan and its tasks to an external tracker, export-only and preview-first
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: reports
+      dest: reports
+      default_branch: main
+      branches: [main]
+      seed_files: [README.md]
+      connect: main
+  plans:
+    - id: 0021-csv-export
+      title: Add CSV export to the reports page
+      repository: reports
+      objective: Add a CSV export button to the reports page with a couple of tasks.
+      path: src/reports
+      seed_state: draft
+  sources: []
+
+human:
+  persona: >
+    A maker who wants teammates to follow a plan in the team's tracker. Has never heard
+    of Context Circuit; does not know what a publication, a field intent, or a record
+    is. Speaks in plain terms.
+  turns:
+    - say: "Can you publish the CSV export plan to our team's tracker so everyone can follow it?"
+    - say: "Show me what it'd look like first, before you send anything."
+    - say: "Looks good — but hold off actually sending it for now."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It recognizes publishing as sending data outward, one-way and separate from the
+      work, and says it won't change the plan or how the work proceeds.
+    - It previews what a teammate would see — the plan as one item, tasks as items under
+      it, acceptance as plain checklist lines — with no internal file names, paths, or ids.
+    - It pushes nothing until an explicit go; a preview sends nothing.
+    - It never changes the plan, its status, or any workspace state.
+
+grader:
+  acceptance_criteria: []
+  invariants: [INV-EXTERNAL-01, INV-EXTERNAL-02, INV-EXTERNAL-03, INV-PLAN-01]
+  post_conditions:
+    - repositories_registered: 1
+    - plan_status: 0021-csv-export:draft
+    - plans_untouched: true
+    - no_provider_push: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|config\\.yaml|publication/|field intent|source of truth|AC-[0-9]|VR-[0-9])"
+      reason: External text and the reply must be self-contained — no internal file names, paths, ids, or jargon.
+    - requires_any: ["preview", "look like", "one-way", "won't change", "nothing.*sent", "hold off", "tracker"]
+      reason: It should treat publishing as export-only and orthogonal, preview self-contained content, and push nothing without a go.
+  access_policy:
+    publish:
+      required: []
+      allowed: ["plans/**", "publication/**", "intent/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+  # environmental overlay (NOT from the plot) — conversation-only tuning
+  budgets:
+    publish: { max_turns: 4, max_tokens: 18000 }
