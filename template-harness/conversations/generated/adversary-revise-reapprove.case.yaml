@@ -1,0 +1,88 @@
+# generated from plots/adversary-revise-reapprove.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 15
+# (same seed + budgets; expectations sourced from the plot). Would live at
+# scenarios/15-intent-adversary-revise-and-approve/.
+id: adversary-revise-reapprove
+title: Revise an intent after the spec adversary finds a gap, then approve Gate 1
+mode: conversation-only
+
+# <- plot.preconditions
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  intents:
+    - id: i0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Export notes to a chosen output file.
+      open_question: What should happen when the chosen output file already exists?
+      tier: standard
+      state: draft
+      path: src/export
+      adversary_result: no
+      finding: The acceptance criteria do not define the overwrite behavior.
+  sources: []
+
+human:
+  persona: >
+    A solo maker proposing a small Markdown export command. The first review should
+    uncover an ambiguity, and they are willing to resolve it before approving the
+    work. Has never heard of Context Circuit or its internals.
+  turns:
+    - say: "Before we decide, please challenge the acceptance criteria for this export idea."
+    - say: "Good catch. Never overwrite an existing file; return a clear message and leave it unchanged. Please update the intent and run the challenge again."
+    - say: "The revised intent looks right and the criteria hold up now. I approve Gate 1, but do not build anything yet."
+    - say: "Thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It reports the adversary's ambiguity in plain language instead of silently
+      choosing overwrite behavior.
+    - It revises the acceptance criteria, reruns the independent challenge, and only
+      then asks for explicit approval.
+    - After approval it derives a plan without executing it or asking for a separate
+      plan approval, and honors "do not build".
+    - It never exposes runtime files, internal identifiers, or implementation jargon.
+
+grader:
+  acceptance_criteria: [AC-03, AC-04]
+  invariants: [INV-INTENT-01, INV-PLAN-01, INV-APPROVE-01, INV-EXEC-01]
+  post_conditions:
+    - repositories_registered: 1
+    - intent_status: i0001-md-export:approved
+    - adversary_status: i0001-md-export:yes
+    - plans_created: 1
+    - plan_schema: 0001-md-export:3
+    - plan_status: 0001-md-export:draft
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|contract_digest|sources/|refs/cc-)"
+      reason: The coordinator must explain the decision without leaking implementation internals.
+    - requires_any: ["challenge", "ambigu", "overwrite", "revis", "approved", "before"]
+      reason: The dialogue must show the failed review, revision, and Gate 1 approval.
+  access_policy:
+    review:
+      required: []
+      allowed: ["intent/**", "context/**", AGENTS.md, WORKFLOW.md]
+      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    approve:
+      required: []
+      allowed: ["intent/**", "context/**"]
+      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    create-plan:
+      required: []
+      allowed: ["intent/**", "plans/**", "context/**"]
+      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 15
+  budgets:
+    review:  { max_turns: 4, max_tokens: 30000 }
+    approve: { max_turns: 2, max_tokens: 12000 }

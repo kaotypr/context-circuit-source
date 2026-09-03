@@ -1,0 +1,80 @@
+# generated from plots/approve-and-build-one-turn.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case (no
+# existing scenario counterpart). Isolates the compound-gate moment; full execution
+# is owned by 05 / standard-feature-whole-flow. `no_second_approval_prompt` is a NEW
+# behavioral post-condition (harness gap) — see coverage/phase-2.md.
+id: approve-and-build-one-turn
+title: Approve an intent and build in one turn, with no confirmation card
+mode: conversation-only
+
+# <- plot.preconditions
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  intents:
+    - id: i0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add a command that exports the notes to a chosen Markdown file; never overwrite an existing output file.
+      tier: standard
+      state: draft
+      path: src
+      adversary_result: yes
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose notes project is connected and who has looked the change over
+    and is ready to go. Wants it approved and built now, in one step. Has never heard
+    of Context Circuit; does not know what a plan approval or a confirmation card is.
+  turns:
+    - say: "This looks right — approve it and build it, all in one go."
+    - say: "Great, thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It treats the approve-and-build request as one decision that authorizes both,
+      rather than splitting it into two asks.
+    - It does not interpose a confirmation card or a separate "approve the plan" step
+      between approving the goal and building it.
+    - It says plainly it is building, in the same turn, without overstating — nothing
+      is verified, accepted, or delivered yet.
+    - It never exposes internal file names or lifecycle jargon.
+
+grader:
+  acceptance_criteria: [AC-06]
+  invariants: [INV-EXEC-01, INV-APPROVE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - intent_status: i0001-md-export:approved
+    - plans_created: 1
+    - plan_schema: 0001-md-export:3
+    - no_second_approval_prompt: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|confirmation card|approve the plan)"
+      reason: >
+        The coordinator must not expose internals, and must not utter a
+        confirmation-card / second plan-approval prompt.
+    - requires_any: ["approved", "building", "on it", "build it", "no extra", "one go"]
+      reason: It should honor the compound request and acknowledge building in the same turn.
+  access_policy:
+    approve-and-build:
+      required: []
+      allowed:  ["intent/**", "plans/**", "context/**", AGENTS.md, WORKFLOW.md]
+      forbidden:
+        - "plans/archive/**"
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+        - "wrapper/contracts/**"
+  # environmental overlay (NOT from the plot) — aligned to case 03's approve budget
+  budgets:
+    approve-and-build: { max_turns: 2, max_tokens: 12000 }
