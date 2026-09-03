@@ -169,6 +169,7 @@ enhancement, not a hole (the mechanic is covered deterministically elsewhere).
 ### Orientation & context foundation
 | plot | proves | case |
 | --- | --- | --- |
+| onboarding-what-is-this | first contact on a blank workspace: explain what it is, what it can do, and how to start, in plain terms | **NEW** |
 | orient-new-project | no project/plan exists yet; orient, don't fabricate | 01 |
 | connect-existing-repo | bind in place on the user's branch | 02 |
 | clone-or-init-new-repo | clone/init a new repo under `repositories/` (AC-27, INV-REPO-03) | **NEW** |

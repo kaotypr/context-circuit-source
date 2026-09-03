@@ -71,3 +71,28 @@ generator/harness workstream.
    trace already supports `forbidden` globs, so this is expected to work as-is —
    noted here only because it forbids files that *exist* in the seed (a stronger
    assertion than the usual "don't touch archive/engine/sources").
+
+## Addendum — `onboarding-what-is-this` (added after initial phase 1)
+
+A seventh Orientation plot was added later: `onboarding-what-is-this`, the true
+first-contact conversation on a freshly-instantiated (uninitialized) template
+workspace — the user asks what this is, what it can do, and how to start. It fills a
+gap the original phase-1 set missed: every existing orientation plot is goal-first
+(`orient-new-project`) or action-first (connect/clone), so none covered a user who
+doesn't yet have a goal and just wants to understand the tool.
+
+- **Slots ahead of `orient-new-project`** in the catalog (it is the earliest possible
+  conversation). No existing `scenarios/` case maps to it — a real gap.
+- **Proves a discipline unique to it:** explaining capability *and* the safety property
+  in plain, lay terms while exposing none of the lifecycle machinery, and fabricating no
+  project/plan/capability on a blank workspace. Framing choice locked in: capability +
+  a light plain-language "why it's safe" (independent check; nothing ships or is called
+  done without the human's say-so) — **not** naming the mechanism.
+- **Mapping:** `[AC-01]` (zero repositories, demonstrated trivially) plus the
+  fail-closed/anti-fabrication invariants `INV-EXEC-01`, `INV-SEC-02`, `INV-REPO-04`,
+  `INV-PLAN-04`; the substance is invariant/discipline-borne, so the AC is thin — an
+  honest reflection that the v0.5-rooted map has no "explain capability" criterion.
+- **No new harness gap:** it reuses the empty-workspace seed shape (like
+  `orient-new-project`), and its transcript check deliberately *allows* "independent"/
+  "independent check" (the product surfaces that to users by design, per case 01) while
+  forbidding the internal lifecycle vocabulary.
