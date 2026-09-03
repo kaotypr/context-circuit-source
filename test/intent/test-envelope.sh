@@ -96,6 +96,44 @@ cc_fx_plan_intent "$ws" 0009-missing "Missing" api src i0099-nope
 expect_failure env_check 0009-missing
 assert_eq "INTENT_MISSING" "$(env_reason 0009-missing)"
 
+# --- DEEP BOUNDARY FIXTURES (the path-comparison edges the design warns are the ---
+# --- likeliest place to be "subtly wrong"; each pins one containment corner). ---
+
+# Sibling-prefix must NOT pass: scope "src/checkout" does not contain "src/checkout-v2".
+# A naive string-prefix check would wrongly report WITHIN; segment-aware containment
+# (the trailing-slash normalization in cc_region_covers) must EXCEEDS. This is the
+# single most important envelope regression guard.
+cc_fx_plan_intent "$ws" 0011-sibling "Sibling prefix" checkout-service src/checkout-v2 "$iid"
+expect_failure env_check 0011-sibling
+assert_eq "PATH_OUTSIDE_SCOPE" "$(env_reason 0011-sibling)"
+
+# Trailing-slash spelling of a scope path is the same region: WITHIN.
+cc_fx_plan_intent "$ws" 0012-slash "Trailing slash" checkout-service src/checkout/ "$iid"
+env_check 0012-slash | grep -q '^envelope: within' || fail "trailing-slash spelling should be WITHIN"
+
+# A deep grandchild of a scope path is contained: WITHIN.
+cc_fx_plan_intent "$ws" 0013-deep "Grandchild" checkout-service src/checkout/retry/backoff "$iid"
+env_check 0013-deep | grep -q '^envelope: within' || fail "grandchild region should be WITHIN"
+
+# A repository-wide scope "." contains any bounded plan region: WITHIN (the inverse of
+# the bounded-scope-vs-"." EXCEEDS case above).
+iid_wide=i0003-wide
+cc_fx_intent "$ws" "$iid_wide" "Wide" web .
+sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid_wide" >/dev/null
+cc_fx_plan_intent "$ws" 0014-inwide "In wide" web src/deep/thing "$iid_wide"
+env_check 0014-inwide | grep -q '^envelope: within' || fail "bounded region under scope '.' should be WITHIN"
+
+# Multi-path scope: a plan region that is the PARENT of every scope path is broader
+# than any single one and EXCEEDS; a region strictly inside one scope path is WITHIN.
+iid_multi=i0004-multi
+cc_fx_intent "$ws" "$iid_multi" "Multi" svc "src/a src/b"
+sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid_multi" >/dev/null
+cc_fx_plan_intent "$ws" 0015-parent "Parent of scope" svc src "$iid_multi"
+expect_failure env_check 0015-parent
+assert_eq "PATH_OUTSIDE_SCOPE" "$(env_reason 0015-parent)"
+cc_fx_plan_intent "$ws" 0016-inone "Inside one" svc src/b/x "$iid_multi"
+env_check 0016-inone | grep -q '^envelope: within' || fail "region inside one scope path should be WITHIN"
+
 # --- the envelope gates execution as a preflight ---
 # an EXCEEDS plan cannot begin execution (re-gate, not proceed)
 cc_fx_repo "$ws" checkout-service development
