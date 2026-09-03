@@ -1,8 +1,8 @@
 # Spec adversary — i0001-conversation-spec-library
 
-- contract_digest: (unset — draft; the runtime was not run, so no digest is frozen)
-- criteria_sound: yes
-- note: retroactive record.
+criteria_sound: yes
+contract_digest: sha256:aa1cc14d8428b1a4fbff44cdd2b79799cb0c8665f5a9e902b989df7b83764839
+note: retroactive record — verdict bound to the committed criteria at Gate 1.
 
 The spec adversary's role is to attack acceptance criteria **before any code exists**,
 so the plausible-implementation attack does not apply to a retroactive intent whose

@@ -73,4 +73,5 @@ scope:
 
 tier: standard
 
-status: draft
+status: approved
+contract_digest: sha256:aa1cc14d8428b1a4fbff44cdd2b79799cb0c8665f5a9e902b989df7b83764839
