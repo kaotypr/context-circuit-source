@@ -1,0 +1,145 @@
+schema_version: 1
+intent: i0002-conversation-spec-live
+title: Make the conversation-spec library the live generative source for the harness
+goal: >
+  Turn the specification-by-example conversation library
+  (template-harness/conversations/), authored under i0001, into the live generative
+  source of truth for the human-simulated test harness: each scenario case is
+  generated from a plot rather than hand-authored, so editing a plot forces the
+  harness to revalidate and neither a stale hand-edited case nor an un-regenerated
+  plot can linger. This builds the deterministic plot->case generator, closes the
+  harness-capability gaps the library surfaced (id-agnostic post-conditions first),
+  regenerates the existing scenario cases from their plots while preserving their
+  calibrated seeds and budgets, applies the acceptance-criteria mapping corrections
+  the library caught, runs the net-new plots' cases against the live coordinator, and
+  locks the edit-plot-first maintenance loop.
+
+non_goals:
+  - Changing any product behavior, runtime, contract, invariant, or acceptance
+    criterion. The library and this work stay descriptive; one-rule-one-owner intact.
+  - Displacing the deterministic five-family suite (test/scenarios/test-scenarios.sh,
+    AC-36) as the owner of the end-to-end families.
+  - Recreating the existing scenario cases from scratch; they are evolved (regenerated
+    from plots) with their calibration preserved.
+  - The file-rename, diagram-format, and flow-metadata organization enhancements
+    (explicitly deferred).
+  - Merging, pushing, publishing, or otherwise delivering this work (separate Gate 2).
+  - Porting the runtime to a typed language.
+
+constraints:
+  - Source-only. Writes stay under template-harness/ (the plots, the generator, the
+    runner/grader, and the regenerated scenarios/*/case.yaml). No writes under
+    wrapper/contracts/, the template/ seed, or sources/ product design.
+  - The five acceptance-criteria corrections are case-file changes, not
+    test/acceptance/criteria-map.yaml edits (the criteria map is owned elsewhere).
+  - Regeneration preserves each case's calibrated seeds and per-host budgets exactly.
+  - The environmental overlay is a FIXED, enumerated field set (per-host budgets and
+    the host lane, and nothing else); every case field not in that set is plot-derived
+    and drift-guarded.
+  - The net-new plot set is enumerated and frozen when the plan of record is authored —
+    every plot the coverage docs mark as new (a plot with no rewired existing case),
+    not a rewire.
+  - On any plot/case disagreement, the plot is authoritative.
+  - Conventional Commits (INV-COMMIT-01); no AI attribution.
+  - Run the semantic acceptance suite after meaningful phases.
+
+# Criteria strengthened after the spec adversary's pass (see adversary.md): each is
+# now falsifiable and non-gameable — no criterion is satisfiable by a generator that
+# echoes a committed case, by a vacuously-true post-condition, or by weakening the suite.
+acceptance_criteria:
+  - id: AC-GEN-DERIVES
+    statement: >
+      The generator reads NO committed generated/*.case.yaml as input, and derives
+      every case from its plot's Spec: regenerating ALL plots reproduces every
+      committed case except the enumerated overlay; for at least three named plots a
+      mutation to a named plot field produces the corresponding change in the
+      regenerated case (and no plot change produces no case change); and two
+      consecutive generations on a clean checkout are byte-identical outside the
+      overlay (no wall-clock, host, or unordered-iteration inputs in the generated region).
+    method: command
+    surface: the generator + all plots/generated pairs
+  - id: AC-ID-AGNOSTIC
+    statement: >
+      Id-agnostic post-conditions are insensitive to the specific generated id string
+      but remain bound to the correct entity kind, count, and terminal state; the
+      grader evaluates them for standard-feature-whole-flow and
+      explore-promote-to-standard, and a negative fixture producing a plausible
+      wrong-entity, wrong-kind, or wrong-count outcome FAILS the predicate.
+    method: test
+    surface: grader + the two fresh whole-arc cases + their negative fixtures
+  - id: AC-FALSIFIABLE-GRADES
+    statement: >
+      Every generated post-condition is falsifiable: for each case, a negative fixture
+      (wrong or absent coordinator behavior) flips its grade to FAIL. A case whose
+      grade cannot be made to fail does not count as reaching a grade.
+    method: test
+    surface: every generated case + its negative fixture
+  - id: AC-NEW-FIXTURES-EXERCISED
+    statement: >
+      Every new seed state, fault, and state predicate the coverage docs enumerate is
+      not merely parsed but EXERCISED by at least one case, and each carries a negative
+      fixture proving it can fail when the bad behavior it names actually occurs
+      (a predicate implemented as always-true does not satisfy this).
+    method: test
+    surface: template-harness runner + grader + the exercising cases
+  - id: AC-REGEN-EQUIV
+    statement: >
+      Every existing scenario case is regenerated from its plot; a mechanical
+      pre/post diff asserts the seed and per-host budget fields are byte-unchanged
+      (zero diff) outside explicitly itemized intended edits; case count is unchanged
+      (or every removal is itemized and justified); every retired inline expectation
+      maps 1:1 to an equivalent-or-stronger generated post-condition (its negative
+      fixture still fails); and the semantic acceptance suite stays green.
+    method: test
+    surface: template-harness/scenarios/ + test/acceptance.sh
+  - id: AC-CORRECTIONS-MECHANICAL
+    statement: >
+      A mechanical check asserts zero references to each retired acceptance-criterion
+      tag across all coverage artifacts, and that cases 01, 16, 17, 19, 20 map to
+      their corrected acceptance-criterion ids.
+    method: command
+    surface: the five scenario case files + coverage artifacts
+  - id: AC-DRIFT-BIDIRECTIONAL
+    statement: >
+      A drift guard runs INSIDE the semantic acceptance suite (gating) and covers the
+      FULL case including seed and budget fields (compared against their committed
+      calibration): it fails when a generated case is hand-edited away from its plot,
+      AND when any plot is newer than or inconsistent with its generated case (a plot
+      edited without regeneration is a red suite).
+    method: test
+    surface: the drift check + CI wiring
+  - id: AC-NEW-CASES-RUN
+    statement: >
+      Every plot in the frozen net-new set produces a running case that reaches a
+      recorded grade against the live coordinator through the human-sim harness
+      (never a silent skip). A "preserved, triaged failure" is acceptable ONLY for a
+      plot whose Spec explicitly expects failure; an expected-PASS plot resolving as a
+      triaged failure does not satisfy this.
+    method: test
+    surface: the frozen net-new generated cases
+
+done_when: >
+  All acceptance criteria pass: the generator derives cases from plots (fidelity,
+  mutation-sensitivity, determinism), the harness supports and exercises id-agnostic
+  post-conditions and the new fixtures with negative fixtures, the existing cases are
+  regenerated with seeds/budgets provably unchanged and assertion power non-regressed,
+  the five corrections are mechanically confirmed, the bidirectional drift guard gates
+  the suite, and every frozen net-new case runs to a recorded grade against the live
+  coordinator.
+
+scope:
+  repositories:
+    - id: workspace
+      paths:
+        - template-harness/
+
+tier: standard
+
+intent_dependencies:
+  - id: i0001-conversation-spec-library
+    reason: >
+      The conversation-spec library (plots, generated worked example, coverage) must
+      exist before it can be made the live generative source; i0002 wires in what
+      i0001 authored.
+
+status: draft
