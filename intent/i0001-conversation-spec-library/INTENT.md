@@ -1,14 +1,14 @@
 # Intent i0001 — author the conversation-spec library
 
 _Status: draft (retroactive record, awaiting Gate 1 ratification). Tier: standard.
-Scope: `template-harness/conversations/`._
+Scope: `agent-harness/conversations/`._
 
 ## The bigger picture
 
-Context Circuit's template test harness needed a single, versioned source of truth for
+Context Circuit's agent test harness needed a single, versioned source of truth for
 how the product is *expected to converse* with a lay user — authored whole for the
 current version, not reconstructed from the v0.x→v1.0 deltas. This intent records the
-decision to author that source: `template-harness/conversations/` as a
+decision to author that source: `agent-harness/conversations/` as a
 **specification-by-example** library where each plot is a concrete expected dialogue
 that *is* the specification, intended to generate the human-simulated harness cases.
 

@@ -1,4 +1,4 @@
-# Human-simulated template test harness (maintainer-only)
+# Human-simulated agent test harness (maintainer-only)
 
 A **semantic, conversational** test at the human/product boundary: a driver
 spawns the product coordinator inside a fresh workspace assembled from the
@@ -35,7 +35,7 @@ allowlist and the `test/`/`.claude/` exclusions keep it out of the template).
 Prepare a run (no live model needed):
 
 ```
-sh template-harness/human/run-scenario.sh --host claude-code 01-new-project-simple-idea
+sh agent-harness/human/run-scenario.sh --host claude-code 01-new-project-simple-idea
 ```
 
 This prints a run directory under `.out/` containing the isolated `workspace/`,
@@ -98,7 +98,7 @@ Built-in drivers are available for Claude Code, Codex, and Cursor Agent. Run a
 Codex conversation with:
 
 ```
-sh template-harness/human/run-scenario.sh --host codex --live 01-new-project-simple-idea
+sh agent-harness/human/run-scenario.sh --host codex --live 01-new-project-simple-idea
 ```
 
 The Codex driver keeps one resumable coordinator thread for all human turns and
@@ -110,7 +110,7 @@ To prepare the same selected cases on all three hosts without invoking a live
 model:
 
 ```
-sh template-harness/human/run-matrix.sh --prepare-only
+sh agent-harness/human/run-matrix.sh --prepare-only
 ```
 
 For the live matrix, omit `--prepare-only`. This starts three host lanes in
@@ -124,7 +124,7 @@ Automatic after a driver run, or manually against any run directory that has a
 transcript:
 
 ```
-sh template-harness/human/grade.sh .out/<run-id>
+sh agent-harness/human/grade.sh .out/<run-id>
 ```
 
 ## Grader dimensions

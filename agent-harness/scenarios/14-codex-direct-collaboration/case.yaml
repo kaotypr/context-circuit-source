@@ -2,7 +2,7 @@ id: 14-codex-direct-collaboration
 title: Codex direct collaboration uses the configured Luna worker, changes only its isolated working copy, and remains human-supervised
 mode: full-execution
 setup:
-  # Role tiering is supplied by the shared template-harness/fixtures fixture.
+  # Role tiering is supplied by the shared agent-harness/fixtures fixture.
   repositories:
     - id: widgets
       dest: widgets

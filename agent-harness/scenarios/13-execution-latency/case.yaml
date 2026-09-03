@@ -2,7 +2,7 @@ id: 13-execution-latency
 title: Run a small intent-authorized stack with the shared host-matrix tiering fixture; the batch overlaps independent plans, builds a fan-in integration base, and records the per-role model/effort each role ran at — all without exposing any of it to the user
 mode: full-execution
 setup:
-  # Role tiering is supplied by the shared template-harness/fixtures fixture.
+  # Role tiering is supplied by the shared agent-harness/fixtures fixture.
   # One connected repo and THREE intent-authorized plans: two independent roots (alpha,
   # beta) that can overlap, and a fan-in (gamma) that depends on both — so the
   # runtime authors an integration base by merging the two predecessors.

@@ -43,8 +43,8 @@ archive and restore remain separate organization actions.
   set (core plus scoped increments in versioned subfolders); maintainer material
   only, never shipped.
 - `test/` — semantic acceptance suites (the deterministic engine-level laboratory
-  is run from here via `template-harness/test-template-runtime.sh`).
-- `template-harness/` — the built-template behavior laboratory: the deterministic
+  is run from here via `agent-harness/test-template-runtime.sh`).
+- `agent-harness/` — the built-template behavior laboratory: the deterministic
   engine-level suite plus the human-simulated harness (`human/`, `scenarios/`).
   Source-only; never shipped in `context-circuit-template`.
 - `scripts/` — maintainer-only release assembly.

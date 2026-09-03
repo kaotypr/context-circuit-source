@@ -1,5 +1,5 @@
 #!/bin/sh
-# Cursor Agent live driver for the human-simulated template harness.
+# Cursor Agent live driver for the human-simulated agent harness.
 #
 # Cursor is a thin transport here. It runs the coordinator in the disposable
 # workspace and records the same transcript shape as the other host drivers.

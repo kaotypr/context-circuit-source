@@ -250,3 +250,22 @@ never auto-rebases), and ARCHITECTURE.md (the ladder replaces the
 "two orthogonal modes" framing). INV-PAIR-01, INV-ASSURE-01, and INV-HOST-01 are
 unchanged. The `0034-add-conversation-spec-library` proposal was left pending by
 explicit request.
+
+## 2026-09-03 — agent-harness rename
+
+Decision: the source-only built-template behavior laboratory, previously at
+`template-harness/`, is renamed to `agent-harness/`; its two-word prose form
+becomes "agent harness". This supersedes the location/name half of the
+2026-08-24 "built-template harness location" decision above; that entry stays as
+the historical record.
+
+Rationale: the harness assembles and drives the released product through the
+host agents (coordinator, worker, verifier) and the human simulator, so "agent
+harness" names what it exercises rather than that it is seeded from the template.
+
+Scope of the rename: the directory and all live references (its own files,
+`README.md`, `.gitignore`, `scripts/release-manifest.txt`, `test/`, `.claude/`,
+the live intents and context pages). The immutable proposal/decision id
+`0002-template-harness-and-terminology-decision` is preserved verbatim (ids are
+never rewritten), and historical `sources/` design docs and archived `plans/`
+are left as they were.

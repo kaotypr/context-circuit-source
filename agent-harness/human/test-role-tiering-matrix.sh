@@ -2,16 +2,16 @@
 set -eu
 . "$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel)/test/lib/assert.sh"
 
-fixture="$ROOT/template-harness/fixtures/role-tiering.yaml"
+fixture="$ROOT/agent-harness/fixtures/role-tiering.yaml"
 require_file "$fixture"
 for host in codex claude-code cursor-agent; do
 	contains "$fixture" "  $host:"
 done
 assert_eq 6 "$(grep -c '^      effort: medium$' "$fixture")"
-not_contains "$ROOT/template-harness/scenarios/13-execution-latency/case.yaml" 'role_tiering:'
-not_contains "$ROOT/template-harness/scenarios/14-codex-direct-collaboration/case.yaml" 'role_tiering:'
+not_contains "$ROOT/agent-harness/scenarios/13-execution-latency/case.yaml" 'role_tiering:'
+not_contains "$ROOT/agent-harness/scenarios/14-codex-direct-collaboration/case.yaml" 'role_tiering:'
 
-matrix_output=$(sh "$ROOT/template-harness/human/run-matrix.sh" --prepare-only)
+matrix_output=$(sh "$ROOT/agent-harness/human/run-matrix.sh" --prepare-only)
 matrix_dir=$(printf '%s\n' "$matrix_output" | sed -n 's/^matrix: //p' | sed -n '1p')
 [ -n "$matrix_dir" ] || fail 'matrix runner did not report its output directory'
 summary="$matrix_dir/summary.tsv"

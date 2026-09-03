@@ -115,7 +115,7 @@ predecessor fails — keep such a plan late and thin.
 ## Verification
 
 `sh test/acceptance.sh` (path leases + run-stack suites); live scenario
-`template-harness/scenarios/10-run-approved-stack` (grade.sh PASS + human-simulator
+`agent-harness/scenarios/10-run-approved-stack` (grade.sh PASS + human-simulator
 pass; ten plans built and verified in dependency order with integration bases for
 the fan-ins).
 

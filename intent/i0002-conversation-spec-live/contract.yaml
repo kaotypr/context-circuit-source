@@ -3,7 +3,7 @@ intent: i0002-conversation-spec-live
 title: Make the conversation-spec library the live generative source for the harness
 goal: >
   Turn the specification-by-example conversation library
-  (template-harness/conversations/), authored under i0001, into the live generative
+  (agent-harness/conversations/), authored under i0001, into the live generative
   source of truth for the human-simulated test harness: each scenario case is
   generated from a plot rather than hand-authored, so editing a plot forces the
   harness to revalidate and neither a stale hand-edited case nor an un-regenerated
@@ -27,7 +27,7 @@ non_goals:
   - Porting the runtime to a typed language.
 
 constraints:
-  - Source-only. Writes stay under template-harness/ (the plots, the generator, the
+  - Source-only. Writes stay under agent-harness/ (the plots, the generator, the
     runner/grader, and the regenerated scenarios/*/case.yaml). No writes under
     wrapper/contracts/, the template/ seed, or sources/ product design.
   - The five acceptance-criteria corrections are case-file changes, not
@@ -81,7 +81,7 @@ acceptance_criteria:
       fixture proving it can fail when the bad behavior it names actually occurs
       (a predicate implemented as always-true does not satisfy this).
     method: test
-    surface: template-harness runner + grader + the exercising cases
+    surface: agent-harness runner + grader + the exercising cases
   - id: AC-REGEN-EQUIV
     statement: >
       Every existing scenario case is regenerated from its plot; a mechanical
@@ -91,7 +91,7 @@ acceptance_criteria:
       maps 1:1 to an equivalent-or-stronger generated post-condition (its negative
       fixture still fails); and the semantic acceptance suite stays green.
     method: test
-    surface: template-harness/scenarios/ + test/acceptance.sh
+    surface: agent-harness/scenarios/ + test/acceptance.sh
   - id: AC-CORRECTIONS-MECHANICAL
     statement: >
       A mechanical check asserts zero references to each retired acceptance-criterion
@@ -131,7 +131,7 @@ scope:
   repositories:
     - id: workspace
       paths:
-        - template-harness/
+        - agent-harness/
 
 tier: standard
 

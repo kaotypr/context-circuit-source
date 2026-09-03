@@ -1,5 +1,5 @@
 #!/bin/sh
-# Human-simulated template test harness — prepare and (optionally) drive one case.
+# Human-simulated agent test harness — prepare and (optionally) drive one case.
 #
 # Deterministic responsibilities (done here, no live model needed):
 #   1. assemble context-circuit-template with scripts/release-artifact.sh;

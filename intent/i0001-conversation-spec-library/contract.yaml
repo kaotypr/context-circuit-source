@@ -2,7 +2,7 @@ schema_version: 1
 intent: i0001-conversation-spec-library
 title: Author the whole-surface specification-by-example conversation library
 goal: >
-  Author, under template-harness/conversations/, a versioned specification-by-example
+  Author, under agent-harness/conversations/, a versioned specification-by-example
   ("conversation-spec-first") library of expected human<->coordinator dialogues
   ("plots") intended to be the generative source for the human-simulated test harness.
   Cover the WHOLE Context Circuit template conversational surface — every lay-user
@@ -20,7 +20,7 @@ non_goals:
   - Applying the acceptance-criteria corrections it surfaces to the live cases (i0002).
 
 constraints:
-  - Source-only under template-harness/ (the release manifest excludes test/ and the
+  - Source-only under agent-harness/ (the release manifest excludes test/ and the
     harness; nothing here ships in context-circuit-template).
   - Descriptive only — reference INV-*/AC-*, never define a rule (one rule, one owner).
   - Avoid the noun "contract" in the library (it collides with the intent contract.yaml).
@@ -33,7 +33,7 @@ acceptance_criteria:
       under plots/ and a generated case under generated/; the count of plots equals the
       count of generated cases.
     method: command
-    surface: template-harness/conversations/{plots,generated}
+    surface: agent-harness/conversations/{plots,generated}
   - id: AC-DESCRIPTIVE-ONLY
     statement: >
       Every plot references invariant and/or acceptance-criterion ids and defines no
@@ -45,7 +45,7 @@ acceptance_criteria:
       A coverage cross-check exists per lifecycle phase mapping the relevant existing
       scenario cases onto plots and recording the harness-capability gaps surfaced.
     method: manual
-    surface: template-harness/conversations/coverage/
+    surface: agent-harness/conversations/coverage/
   - id: AC-REPORTING-RULES
     statement: >
       Lay-user-facing dialogue in every plot obeys the reporting rules: plain language;
@@ -69,7 +69,7 @@ scope:
   repositories:
     - id: workspace
       paths:
-        - template-harness/conversations/
+        - agent-harness/conversations/
 
 tier: standard
 

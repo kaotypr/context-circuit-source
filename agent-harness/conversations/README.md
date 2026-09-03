@@ -19,7 +19,7 @@ delta-shaped places:
   written to make the **v1.0 changes** concrete.
 - `sources/context-circuit-v1.0/human-experience.md` — the **changed** surface
   (the two gates, re-gating, transparency questions).
-- `template-harness/scenarios/*/case.yaml` — 22 cases whose expectations are
+- `agent-harness/scenarios/*/case.yaml` — 22 cases whose expectations are
   **hand-encoded inline** (`visible_expectations`, `transcript_checks`).
 
 Two problems follow from that shape:
@@ -52,7 +52,7 @@ in one word, is **conversation-spec-first**.
 expected conversation (the specification, by example)
         │  derives + validates
         ▼
-harness scenario  (template-harness/scenarios/*/case.yaml — the executable check)
+harness scenario  (agent-harness/scenarios/*/case.yaml — the executable check)
         │  runs against
         ▼
 coordinator + skills + engine  (the implementation)
