@@ -1,0 +1,87 @@
+# generated from plots/review-intent-approve-derive.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 03
+# (same seed + budgets; expectations sourced from the plot). Would live at
+# scenarios/03-plan-review-and-approve/.
+id: review-intent-approve-derive
+title: Review a draft intent, resolve an open question, approve Gate 1, and derive a plan
+mode: conversation-only
+
+# <- plot.preconditions
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  intents:
+    - id: i0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add a command that exports the notes to a chosen output file.
+      open_question: Should exporting overwrite an existing output file, or refuse and ask?
+      path: src
+      tier: standard
+      state: draft
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose notes project is already connected. Has never heard of
+    Context Circuit. Wants to look over the proposed change before anything happens
+    and will answer a plain question about how it should behave. Knows nothing about
+    workspaces, plan files, or how the goal is approved.
+  turns:
+    - say: "Can you show me what you understand before we do anything?"
+    - say: "For that overwrite question — just don't overwrite; treat a missing input file as an error instead."
+    - say: "Okay, that looks good — I approve that intent, but don't build anything yet."
+    - say: "Thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - When asked, it explains the goal, boundaries, and open question in plain terms.
+    - When the human answers the open question, it reflects the decision and does
+      NOT approve or start work yet.
+    - It treats approval as a separate explicit step, settling the goal only when the
+      human explicitly says so, and never asks for a second plan approval.
+    - After approval it derives a plan automatically and honors "don't build yet" —
+      nothing is built or run.
+    - It never exposes internal file names or lifecycle jargon.
+
+grader:
+  acceptance_criteria: [AC-03, AC-04]
+  invariants: [INV-INTENT-01, INV-PLAN-04, INV-PLAN-01, INV-APPROVE-01, INV-EXEC-01]
+  post_conditions:
+    - repositories_registered: 1
+    - intent_status: i0001-md-export:approved
+    - plans_created: 1
+    - plan_schema: 0001-md-export:3
+    - plan_status: 0001-md-export:draft
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["approved", "approve", "open question", "overwrite", "before", "scope"]
+      reason: It should discuss the intent/open question and settle Gate 1 explicitly.
+  access_policy:
+    review:
+      required: []
+      allowed:  ["plans/**", "intent/**", "context/**", AGENTS.md, WORKFLOW.md]
+      forbidden:
+        - "plans/archive/**"
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+        - "wrapper/contracts/**"
+    approve:
+      required: []
+      allowed:  ["plans/**", "intent/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 03
+  budgets:
+    review:  { max_turns: 2, max_tokens: 12000 }
+    approve: { max_turns: 1, max_tokens: 6000 }
