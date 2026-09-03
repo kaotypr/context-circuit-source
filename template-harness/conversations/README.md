@@ -5,6 +5,11 @@ behavior, owns no rule, and is not wired into any suite yet. It is source-only
 (the release manifest excludes `test/` and the harness; nothing here ships in
 `context-circuit-template`).
 
+> **Two ways in.** This README is the **coverage** view (plots grouped by phase,
+> with gap analysis). To read the library **in lifecycle order** — the golden path
+> top-to-bottom, with each branch and guardrail shown where it hangs off — see
+> **[FLOW.md](FLOW.md)**.
+
 ## Why this exists
 
 Today the human-facing behavior of the template is specified in three
