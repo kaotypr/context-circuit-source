@@ -45,7 +45,8 @@ printf '%s\n' "$dt" | grep -Fq "source_present: true" || fail "execution branch 
 
 # Legacy schema-1 execution repository records remain readable after the field
 # rename; delivery still resolves their recorded base branch.
-sed -i 's/^base_branch:/anchor_branch:/' "$edir/repositories/api.yaml"
+awk '{sub(/^base_branch:/, "anchor_branch:"); print}' "$edir/repositories/api.yaml" >"$edir/repositories/api.yaml.new"
+mv "$edir/repositories/api.yaml.new" "$edir/repositories/api.yaml"
 legacy_dt=$(cc_delivery_targets "$ws" 0001-deliver)
 printf '%s\n' "$legacy_dt" | grep -Fq "target_branch: development" || fail "legacy base branch record not readable"
 
