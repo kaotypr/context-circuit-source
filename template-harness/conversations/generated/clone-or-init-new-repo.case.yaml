@@ -1,0 +1,87 @@
+# generated from plots/clone-or-init-new-repo.md — do not edit
+#
+# Every field below is derived from the plot's `## Spec`, except the `budgets`
+# overlay. This is a NEW case with no existing scenario counterpart. Some
+# post_conditions need id-agnostic / path-shape assertions the current grader does
+# not yet support — see coverage/phase-1.md (gaps).
+id: clone-or-init-new-repo
+title: Initialize a new project repository from scratch
+mode: conversation-only                      # <- plot.mode
+
+# <- plot.preconditions.repositories (none; the repository is created live)
+setup:
+  repositories: []
+  sources: []
+
+human:
+  # <- plot.persona
+  persona: >
+    A solo maker with a project idea and no code yet, who wants to start a
+    brand-new repository for it. Has never heard of Context Circuit; does not know
+    what a base branch, a default branch, or a remote is. Names the project
+    themselves.
+  # <- plot.human_turns
+  turns:
+    - say: "I don't have any code yet — can you start a fresh repo for this project? Call it inkwell."
+    - say: "Yeah, create it new, don't clone anything from anywhere."
+    - say: "I'll work on main, use that."
+    - say: "Great, that's all for now."
+  # <- plot.reactions
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  # <- rendered from plot.decision_points[*].coordinator_must
+  visible_expectations:
+    - It offers to create a new repository (not connect, not clone) and says plainly
+      where it will live and what branch it will use before creating it.
+    - It keeps the new repository in the project area, separate from the workspace's
+      own files, rather than loose in the workspace root.
+    - It uses the main branch the human named as the working branch, never silently
+      adopting a suggested default.
+    - It creates the repository locally with its first commit and stops there — no
+      remote, no push, no publish unless separately asked.
+
+grader:
+  # <- plot.demonstrates
+  acceptance_criteria: [AC-01, AC-27]
+  invariants: [INV-REPO-01, INV-REPO-02, INV-REPO-03, INV-REPO-04, INV-DELIVER-01]
+  # <- plot.expected_end_state
+  # NOTE: repository_under_project_area, initial_commit_present, and no_remote_created
+  # are NEW post-condition predicates (harness gaps) — see coverage/phase-1.md.
+  post_conditions:
+    - repositories_registered: 1
+    - repository_under_project_area: true
+    - base_branch: inkwell:main
+    - initial_commit_present: true
+    - no_remote_created: true
+    - plans_created: 0
+    - no_execution_records: true
+    - no_credentials_in_workspace: true
+    - no_machine_path_in_identity: true
+  # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|base branch|default branch)"
+      reason: >
+        The coordinator must not expose internals or repo-plumbing jargon; it
+        describes creating the project and the branch to work on in plain terms.
+    - requires_any: ["create", "new", "start", "which branch", "work on", "local"]
+      reason: It should create a fresh repository, settle the working branch, and stay local.
+  # <- plot.access_discipline
+  access_policy:
+    orient:
+      required: [workspace.yaml, context/INDEX.md]
+      allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md"]
+      forbidden:
+        - "plans/archive/**"
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+        - "wrapper/contracts/**"
+    create-repo:
+      required: [workspace.yaml]
+      allowed:  ["context/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — aligned to case 02's setup budgets
+  budgets:
+    orient:      { max_turns: 2, max_tokens: 8000 }
+    create-repo: { max_turns: 3, max_tokens: 12000 }

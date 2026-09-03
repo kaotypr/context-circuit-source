@@ -201,6 +201,15 @@ enhancement, not a hole (the mechanic is covered deterministically elsewhere).
 | run-stack-single-repo | dependency-ordered single-repo batch | 10 |
 | run-stack-multi-repo | cross-repo ordering gate, same-repo stacking | 12 |
 | execution-tiering-hidden | per-role model/effort recorded, hidden from user | 13 |
+| three-failure-stop | third failed attempt → stop and report honestly, everything preserved (AC-13, INV-REPAIR-01) | **NEW (conv. probe)** |
+| interrupted-recovery | an interrupted run resumes or stops read-only, nothing lost (AC-19, INV-PRESERVE-01) | **NEW (conv. probe)** |
+| lease-ownership-conflict | work another execution holds → read-only/blocked, never a silent steal (INV-CONCURRENCY-01, INV-OWN-01) | **NEW (conv. probe)** |
+
+The three **conv. probe** entries above exercise how a deterministically-owned
+mechanic (owned by `test/runtime/test-runtime.sh` and the engine tests) is
+*explained to a lay user in plain language* — the live conversational surface that
+has no case today. They add no mechanic coverage; they cross-reference the
+deterministic owner.
 
 ### Candidate, completion, delivery
 | plot | proves | case |
@@ -216,6 +225,7 @@ enhancement, not a hole (the mechanic is covered deterministically elsewhere).
 | plot | proves | case |
 | --- | --- | --- |
 | knowledge-debt-blocks-next-plan | reconciliation debt gates the next plan | 19 |
+| reconcile-and-proceed | the happy path: human reconciles the debt, it clears, the next plan proceeds (AC-34, INV-KNOWLEDGE-02) | **NEW** (positive complement of 19) |
 
 ### Organization
 | plot | proves | case |

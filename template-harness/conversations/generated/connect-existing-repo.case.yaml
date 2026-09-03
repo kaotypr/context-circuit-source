@@ -1,0 +1,88 @@
+# generated from plots/connect-existing-repo.md — do not edit
+#
+# Every field below is derived from the plot's `## Spec`, except the `budgets`
+# overlay (environmental tuning, not part of the conversation spec). In the adopted
+# design this file would live at scenarios/02-connect-existing-repo/ (it EVOLVES
+# case 02 — same seeds/budgets, expectations now sourced from the plot).
+id: connect-existing-repo
+title: Connect an existing local repository, on the branch the human works from
+mode: conversation-only                      # <- plot.mode
+
+# <- plot.preconditions.repositories
+setup:
+  repositories:
+    - id: my-notes
+      dest: my-notes
+      default_branch: master
+      branches: [master, develop]
+      seed_files: [notes.md]
+  sources: []
+
+human:
+  # <- plot.persona
+  persona: >
+    A solo maker who already has a small notes project in a folder. Has never
+    heard of Context Circuit and does not know what a workspace, binding, or
+    base branch is. Knows their code lives in a folder called "my-notes" and that
+    they do their work on the "develop" branch. Speaks in plain terms.
+  # <- plot.human_turns
+  turns:
+    - say: "I've already got a little notes project — the code's in a folder called my-notes right here."
+    - say: "Can you hook it up so we can work on it together?"
+    - say: "I do all my work on the develop branch, so use that one."
+    - say: "Great, thanks."
+  # <- plot.reactions
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  # <- rendered from plot.decision_points[*].coordinator_must
+  visible_expectations:
+    - It offers to connect the existing folder in place rather than recreating or
+      cloning it.
+    - It asks which branch to work from, or clearly confirms the develop branch the
+      human named, without silently adopting the default.
+    - It uses the develop branch the human named, not a default it picked.
+    - It confirms the connection by its effect in plain language, without exposing
+      internal file names, paths, or the phrase "base branch".
+    - It does not claim to have built, run, planned, or approved anything.
+
+grader:
+  # <- plot.demonstrates
+  acceptance_criteria: [AC-01, AC-26, AC-27]
+  invariants: [INV-REPO-01, INV-REPO-02, INV-REPO-04, INV-SEC-01]
+  # <- plot.expected_end_state
+  post_conditions:
+    - repositories_registered: 1
+    - base_branch: my-notes:develop
+    - no_repository_clone: true
+    - plans_created: 0
+    - no_execution_records: true
+    - no_credentials_in_workspace: true
+    - no_machine_path_in_identity: true
+  # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: >
+        The coordinator must not expose internals — including the binding file
+        name — to a lay user.
+    - requires_any: ["which branch", "work from", "work on", "connect", "hook it up", "branch"]
+      reason: It should offer to connect and settle the branch to work from.
+  # <- plot.access_discipline
+  access_policy:
+    orient:
+      required: [workspace.yaml]
+      allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md", context/INDEX.md]
+      forbidden:
+        - "plans/archive/**"
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+        - "wrapper/contracts/**"
+    connect-repo:
+      required: [workspace.yaml]
+      allowed:  ["context/**"]
+      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 02
+  budgets:
+    orient:       { max_turns: 2, max_tokens: 8000 }
+    connect-repo: { max_turns: 3, max_tokens: 12000 }
