@@ -19,3 +19,17 @@ failures. Workers are isolated by an atomic exclusive-create ownership lock
 (`locks/<plan-id>/owner.yaml`) and per-repository worktrees; a live lock is never
 silently stolen. Runtime records are filesystem evidence, not a database or
 scheduler.
+
+Assurance is a single consequence-tier ladder — Explore, Standard, Critical
+(`wrapper/contracts/invariants.yaml`, INV-ASSURE-01) — declared on the intent from
+transparent risk signals and raisable by the human. `cc-pair` (direct
+collaboration) is the **Explore tier** of that ladder, not a separate mode: live
+human-supervised work in one connected repository with a coordinator and one
+worker, no independent verifier, and output never labeled "verified". Standard and
+Critical run the execution model above with an independent read-only verifier
+bound to the candidate. Explore is planless until an explicit **promote** step
+attaches an intent and raises the tier, at which point the verifier appears and
+the session becomes a candidate-bearing change without restart. The runtime is
+model-blind: it never selects a tier, only classifies risk signals and enforces
+the tier floor. Direct collaboration therefore does not alter or bypass any plan
+lifecycle gate — it is the ladder's bottom rung, with a ramp upward.

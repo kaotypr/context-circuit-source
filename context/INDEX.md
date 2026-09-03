@@ -31,18 +31,12 @@ sources are passive and request-scoped; ordinary entry never scans them.
 
 Pending context proposals:
 
-- `0029-add-direct-collaboration` → `context/domains/direct-collaboration/README.md`
-  (add; direct collaboration, pairing, human supervision; repository:
-  `context-circuit-source`; review needed).
-- `0030-change-host-adapters-for-pairing` →
-  `context/domains/host-adapters/README.md` (change; worker-child mapping and
-  host-blocked pairing; repository: `context-circuit-source`; review needed).
-- `0031-change-delivery-for-pairing` → `context/domains/delivery/README.md`
-  (change; pairing delivery and base-drift block; repository:
-  `context-circuit-source`; review needed).
-- `0032-change-architecture-for-pairing` → `context/ARCHITECTURE.md` (change;
-  orthogonal repository-changing modes; repository: `context-circuit-source`;
-  review needed).
-- `0033-change-decisions-for-pairing` → `context/DECISIONS.md` (change; fixed
-  direct-collaboration decisions; repository: `context-circuit-source`; review
-  needed).
+- `0034-add-conversation-spec-library` →
+  `context/domains/conversation-spec-library/README.md` (add; specification-by-example
+  test-harness library; repository: `context-circuit-source`; review needed).
+
+The direct-collaboration proposals `0029`–`0033` were accepted on 2026-09-03,
+rewritten to the v1.0 assurance-ladder framing (`cc-pair` is the Explore tier, not
+a separate mode): a new [direct-collaboration](domains/direct-collaboration/README.md)
+domain plus extensions to host-adapters, delivery, ARCHITECTURE.md, and
+DECISIONS.md. See the 2026-09-03 decision in `context/DECISIONS.md`.
