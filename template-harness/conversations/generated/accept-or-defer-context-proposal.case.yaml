@@ -1,0 +1,90 @@
+# generated from plots/accept-or-defer-context-proposal.md — do not edit
+#
+# Every field below is derived from the plot's `## Spec`, except the `budgets`
+# overlay. NEW case. The `setup.proposals` seed is a PROPOSED runner extension: the
+# current runner does not seed pending proposals — see coverage/phase-1.md (gaps).
+id: accept-or-defer-context-proposal
+title: Accept or defer a pending Product Knowledge proposal
+mode: conversation-only                      # <- plot.mode
+
+# <- plot.preconditions.repositories + plot.preconditions.proposal_seed
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  sources: []
+  # PROPOSED overlay (harness gap): a pending proposal awaiting a human decision.
+  proposals:
+    units:
+      - id: u1
+        topic: storage
+        would_record: "Notes are stored as JSON files on disk, one file per note."
+      - id: u2
+        topic: naming
+        would_record: "Note titles follow a fixed slug convention."
+
+human:
+  # <- plot.persona
+  persona: >
+    A solo maker who was told something about the project is waiting for their
+    review. Has never heard of Context Circuit; does not know what a context
+    proposal or a knowledge unit is. Decides plainly: accepts what they are sure
+    of, holds what they are not.
+  # <- plot.human_turns
+  turns:
+    - say: "You said there was something waiting for me to look at about the project — what is it?"
+    - say: "The storage summary is right, accept that one. Hold the naming-convention one, I'm not sure about it yet."
+    - say: "That's fine for now."
+  # <- plot.reactions
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  # <- rendered from plot.decision_points[*].coordinator_must
+  visible_expectations:
+    - It surfaces the pending items in plain language, one readable summary each,
+      saying what each would add — without pre-accepting any by describing it.
+    - It records only the item the human explicitly accepts and confirms what was
+      recorded in plain terms.
+    - It leaves the deferred item still pending and unchanged, never accepting it
+      silently to tidy up.
+
+grader:
+  # <- plot.demonstrates
+  acceptance_criteria: [AC-34]
+  invariants: [INV-KNOWLEDGE-02, INV-COMPLETE-02]
+  # <- plot.expected_end_state
+  # NOTE: knowledge_units_accepted / knowledge_units_pending are NEW id-agnostic
+  # post-condition predicates (harness gaps) — see coverage/phase-1.md.
+  post_conditions:
+    - repositories_registered: 1
+    - knowledge_units_accepted: 1
+    - knowledge_units_pending: ">=1"
+    - product_knowledge_unchanged_silently: true
+    - plans_created: 0
+    - no_execution_records: true
+  # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|context/proposals|INDEX\\.md|PROJECT\\.md|context proposal|knowledge unit|reconciliation debt|candidate)"
+      reason: >
+        The knowledge-consent machinery and its internal names must not surface; the
+        coordinator talks about items "waiting for your say-so" in plain terms.
+    - requires_any: ["waiting", "your say", "record", "recorded", "accept", "left", "still", "pending"]
+      reason: It should present pending items, record only on explicit yes, and leave the deferral unchanged.
+  # <- plot.access_discipline
+  access_policy:
+    review-proposal:
+      required: [workspace.yaml, context/INDEX.md, "context/proposals/**"]
+      allowed:  [AGENTS.md, WORKFLOW.md, "context/**"]
+      forbidden:
+        - "plans/archive/**"
+        - "wrapper/runtime/engine.sh"
+        - "sources/**"
+        - "wrapper/contracts/**"
+  # environmental overlay (NOT from the plot) — per-host tuning
+  budgets:
+    review-proposal: { max_turns: 3, max_tokens: 15000 }
