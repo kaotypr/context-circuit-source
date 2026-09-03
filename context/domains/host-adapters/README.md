@@ -62,6 +62,16 @@ verifier packet. If a required child is unavailable, the route stays read-only
 and reports `host-blocked`; the host must never self-verify or downgrade a
 verifier into a worker.
 
+The worker packet also carries [direct collaboration](../direct-collaboration/README.md)
+(`cc-pair`, the Explore tier): a native child maps to the same worker role for a
+live pairing turn just as for plan execution. Pairing never launches a verifier
+(the Explore tier has none, INV-ASSURE-01), so the only child it needs is the
+worker. If the host cannot create that worker child (or its isolated worktree),
+the outcome is `host-blocked` and read-only — there is no coordinator write
+fallback, because the coordinator never performs the worker's edits itself
+(INV-PAIR-01). This stays within INV-HOST-01: child capability is bounded
+evidence and a missing required capability fails closed.
+
 `host_evidence` records only bounded host, version, capability, role,
 permission-mode, and provider-status fields. It never stores credentials,
 provider payloads, transcripts, or auth state.
@@ -100,7 +110,8 @@ unavailable.
 - `wrapper/adapters/AGENTS.md`, `wrapper/adapters/CLAUDE.md`,
   `wrapper/adapters/WORKFLOW.md`, `wrapper/adapters/README.md`
 - `agents/coordinator.md` (routing owner; there is no `routes.yaml`)
-- `wrapper/contracts/invariants.yaml`: INV-HOST-01
+- `.agents/skills/cc-pair/SKILL.md` (the worker-child mapping for direct collaboration)
+- `wrapper/contracts/invariants.yaml`: INV-HOST-01, INV-PAIR-01
 
 ## Provenance
 
@@ -116,3 +127,8 @@ separate invariant id; `wrapper/contracts/routes.yaml`,
 `docs/host-capabilities.md`, and `docs/agent-workspace-workflow.md` no longer
 exist. The seven shipped skills are `cc-workspace`, `cc-plan`, `cc-execute`,
 `cc-verify`, `cc-complete`, `cc-archive`, `cc-deliver`.
+
+Extended 2026-09-03 from proposal `0030-change-host-adapters-for-pairing`: the
+worker packet also serves direct collaboration ([cc-pair](../direct-collaboration/README.md),
+the Explore tier), which launches no verifier and fails closed to `host-blocked`
+with no coordinator write fallback. INV-HOST-01 is unchanged.

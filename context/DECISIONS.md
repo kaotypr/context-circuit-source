@@ -219,3 +219,34 @@ Consequence: a workspace that configures no publication is a v0.5-shaped workspa
 the availability of `cc-publish`; kinds (`plan`, `thread`, future `docs`) are new
 `cc-publish` behavior plus a `config.yaml`, never new authority. Accepted from proposal
 `0026-change-decisions`.
+
+## 2026-09-03 — direct collaboration is the Explore tier, not a separate mode
+
+Decision: adopt `cc-pair` as the **Explore tier** of the single assurance ladder
+(Explore / Standard / Critical, INV-ASSURE-01), not an orthogonal working mode.
+One connected repository per session; user plus coordinator plus one worker; no
+verifier, lease, execution record, failure counter, plan status, or completion
+gate; a fresh isolated `cc-pair/<session>` branch and worktree from a chosen base;
+a light resumable pointer; output labeled human-supervised, never verified;
+explicit commits only; closure preserves the branch and worktree; separate
+delivery that blocks on base drift rather than silently rebasing. An explicit
+**promote** step (attach an intent via `cc-intent`, raise the tier so the verifier
+appears, author a lightweight plan of record via `cc-plan` bound to the existing
+pairing commits) turns a session into a candidate-bearing change in place.
+
+Rationale: the v0.7.0 work shipped `cc-pair` and its context proposals
+(`0029`–`0033`) framed it as a standalone mode "outside the plan lifecycle." v1.0
+reworked INV-PAIR-01 and added INV-ASSURE-01 so the same mechanics became the
+bottom rung of one ladder with a ramp upward; Product Knowledge must describe the
+shipped v1.0 system, so the standalone-mode framing is superseded rather than
+recorded.
+
+Consequence: accepted proposals `0029`–`0033`, **rewritten to the v1.0
+assurance-ladder framing** — a new [direct-collaboration](domains/direct-collaboration/README.md)
+domain, and extensions to [host-adapters](domains/host-adapters/README.md)
+(worker child serves pairing; no verifier; host-blocked fails closed),
+[delivery](domains/delivery/README.md) (pairing delivery blocks on base drift,
+never auto-rebases), and ARCHITECTURE.md (the ladder replaces the
+"two orthogonal modes" framing). INV-PAIR-01, INV-ASSURE-01, and INV-HOST-01 are
+unchanged. The `0034-add-conversation-spec-library` proposal was left pending by
+explicit request.

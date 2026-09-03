@@ -72,6 +72,19 @@ flags re-verification, and a rebase conflict is reported as blocked
 authors anywhere is the integration *base* on a plan's own branch (run-stack,
 INV-CONCURRENCY-02) — never a delivery merge.
 
+**Pairing delivery blocks; it never rebases (INV-PAIR-01).** A closed
+[direct-collaboration](../direct-collaboration/README.md) branch
+(`cc-pair/<session>`, the Explore tier) may be delivered only by a separate
+explicit action and is labeled **human-supervised, not independently verified** —
+there is no verifier evidence to carry. Its target is the connected repository's
+recorded `base_branch`. If the current base tip is not contained in the pairing
+branch at delivery time, delivery **blocks**: the work must be brought forward in
+a new human-supervised pairing session, not silently rebased. This is the
+deliberate opposite of the plan drift guard above — the plan path rebases and
+*re-verifies* because it has a verifier; a pairing branch has none, so
+auto-rebasing would ship unreviewed drift. The plan delivery drift guard remains
+the only path that rebases and re-verifies automatically.
+
 ## Workflows
 
 - Open a pull request as a separate step: `docs/getting-started.md`
@@ -96,7 +109,9 @@ requested; a failed execution is never cleaned up as a side effect.
 - `.agents/skills/cc-deliver/SKILL.md` (Drift guard section)
 - `wrapper/adapters/WORKFLOW.md` (delivery-boundary owner per `invariants.yaml`)
 - `wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (with the drift-guard
-  clause), INV-DELIVER-02
+  clause), INV-DELIVER-02, INV-PAIR-01 (pairing delivery blocks on base drift)
+- `.agents/skills/cc-pair/SKILL.md` (pairing delivery is a separate `cc-deliver`
+  action, human-supervised)
 
 ## Verification
 
@@ -113,4 +128,7 @@ Accepted 2026-08-24 from proposal `0015-domain-delivery`. Extended 2026-08-27 fr
 proposal `0019-change-delivery` (the v0.6 drift guard), and 2026-08-28 from proposal
 `0024-change-delivery` (vacate "publish"/"publication" from git delivery; the word is
 reserved for the [external surface](../external-surface/README.md), matching
-INV-DELIVER-01 and AC-16).
+INV-DELIVER-01 and AC-16). Extended 2026-09-03 from proposal
+`0031-change-delivery-for-pairing`: pairing-branch delivery is a separate,
+human-supervised action that blocks on base drift rather than rebasing (the plan
+drift guard is unchanged and remains the only auto-rebase path).
