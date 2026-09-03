@@ -86,8 +86,8 @@ coordinator + skills + engine  (the implementation)
   five end-to-end families (AC-36), engine-driven. This library is the **live,
   lay-user, whole-surface** complement — it is not a duplicate of that suite.
 - This library **supersedes the inline expectations** in `scenarios/*/case.yaml`:
-  a case references a plot id instead of re-encoding what the coordinator should
-  say.
+  a case is **generated from** a plot instead of re-encoding what the coordinator
+  should say. The plot is the source; the case is a build artifact.
 
 ## Plot file format
 
@@ -96,53 +96,69 @@ machine-readable `## Spec` (YAML) the grader can consume, and a human-readable
 `## Dialogue`. The `## Spec` shape:
 
 ```yaml
-id: <kebab-id>                 # stable; the case.yaml references this
+id: <kebab-id>                 # stable; the generated case derives from this
 title: <plain title>
 status: proposed | adopted
 runtime_version: ">=1.0.0"     # the version range this dialogue describes
 mode: conversation-only | full-execution
+driver: claude-p | cc-test-case           # which harness driver the generated case wires
 surface: [<skill or operation>, ...]      # what template area this exercises
 preconditions:
-  repositories: [...]          # workspace seed (same vocabulary as case.yaml setup)
+  repositories: [...]          # workspace seed -> case.yaml setup.repositories
   state: fresh | seeded:<what>
 persona: >
   A lay user with a goal, who has never heard of Context Circuit.
-demonstrates:
-  acceptance_criteria: [AC-..] # the precise ACs this plot proves
+human_turns:                   # the turns the driver plays -> case.yaml human.turns
+  - "<what the human says, turn 1>"
+  - "<turn 2>"
+reactions:                     # -> case.yaml human.reactions
+  approves: true | false
+  invents_repository: never
+  uses_internal_terms: never
+demonstrates:                  # -> grader.acceptance_criteria / invariants
+  acceptance_criteria: [AC-..]
   invariants: [INV-..]
-hidden:                        # must NEVER surface to the lay user
+hidden:                        # -> grader.transcript_checks.forbids_regex (never surface these)
   - internal file names, paths, digests, branch names, model names, tier labels
-decision_points:               # the ordered beats the coordinator MUST land
-  - id: <beat-id>
+decision_points:               # ordered beats the coordinator MUST land
+  - id: <beat-id>              #   -> human.visible_expectations + transcript_checks.requires_any
     when: <what the human just did / asked>
     coordinator_must: <the plain-language behavior that must occur>
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
+expected_end_state:            # -> grader.post_conditions (only what the harness can assert)
+  - <post-condition>: <value>
+access_discipline:             # -> grader.access_policy (right files, only necessary files)
+  <phase>: { required: [...], allowed: [...], forbidden: [...] }
 ```
 
 The `## Dialogue` is the turn-by-turn expected exchange, each coordinator beat
-annotated `[decision_point: <beat-id>]` so a grader (or a reader) can line the
-prose up with the checkable spec.
+annotated `[decision_point: <beat-id>]` so a reader — and a lint that keeps the
+`**H:**` lines in sync with `human_turns` — can line the prose up with the spec.
 
-## How a `case.yaml` references a plot (proposed shape)
+## How a plot generates a case (proposed shape)
 
-Instead of re-encoding expectations, a case points at a plot and supplies only
-what the driver needs (seed + budgets); the grader validates the live transcript
-against the plot's `decision_points`, `hidden`, and `reporting_rules`:
+The plot is the source; the `case.yaml` is a **generated artifact**, not a
+hand-authored file that references the plot. A small deterministic generator maps
+plot fields to case fields:
 
-```yaml
-id: 05-approve-and-execute
-conversation: execute-standard-verify-not-complete   # -> plots/<id>.md
-mode: full-execution
-setup: { ... }          # workspace seed (unchanged)
-grader:
-  from_plot: true       # acceptance_criteria / invariants / transcript rules come from the plot
-  post_conditions: [ ... ]   # state assertions stay in the case (engine-level, per-seed)
-  budgets: { ... }
-```
+| plot field | generated case field |
+| --- | --- |
+| `preconditions.repositories` | `setup.repositories` |
+| `human_turns` | `human.turns` (each `say:`) |
+| `persona`, `reactions` | `human.persona`, `human.reactions` |
+| `decision_points` | `human.visible_expectations` + `transcript_checks.requires_any` |
+| `hidden` | `transcript_checks.forbids_regex` |
+| `demonstrates` | `grader.acceptance_criteria`, `grader.invariants` |
+| `expected_end_state` | `grader.post_conditions` |
+| `access_discipline` | `grader.access_policy` |
 
-State post-conditions (engine-level, seed-specific) remain in the case; the
-*conversational* expectations move to the plot. One canonical surface to audit,
-one place to edit when the flow changes.
+The generated case carries a `# generated from plots/<id>.md — do not edit`
+header. The **only** thing not sourced from the plot is environmental tuning that
+is not part of the conversation spec: per-host `budgets` and the host lane, which
+live in a small overlay beside the generated file. Everything semantic has one
+source of truth, so a case cannot drift from its spec — change the plot,
+regenerate, and the harness reflects the new expected conversation. A worked
+example lives in `generated/` (one plot, its generated case).
 
 ## The whole-surface plot catalog (proposed)
 
@@ -228,12 +244,16 @@ adopted.
 
 ## If adopted — suggested build order
 
-1. Author the plots that map to existing cases (transcribe the inline
-   expectations into the plot format; no behavior change) — establishes the
-   canonical surface.
-2. Switch `case.yaml` to `conversation:` references + `from_plot: true`; delete
-   the inline `visible_expectations`/`transcript_checks` duplication.
-3. Author the **NEW** plots and add their cases (real coverage gaps).
+1. Author the plot library **fresh from the whole surface** — one lifecycle phase
+   at a time — using the existing 22 cases and the v1.0 delta docs as *inputs and
+   a coverage cross-check* (every existing case must map to a plot), not as a
+   1:1 transcription source. The spec is authored as intent, not reverse-engineered
+   from whatever cases happen to exist.
+2. Stand up the generator and regenerate `scenarios/*/case.yaml` from the plots;
+   retire the inline `visible_expectations`/`transcript_checks` duplication. The
+   calibrated executable layer (seed states, budgets) is preserved as the per-case
+   environmental overlay — evolve the cases, do not recreate them.
+3. Author the **NEW** plots and generate their cases (the real coverage gaps).
 4. Add the *(opt)* whole-flow and intent-archive plots if the maintainer wants
    the library to carry the lay-user's whole-conversation experience, not only
    discrete probes.

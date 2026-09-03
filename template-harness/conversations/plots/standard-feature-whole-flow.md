@@ -12,6 +12,7 @@ title: Standard feature, whole flow, one conversation
 status: proposed
 runtime_version: ">=1.0.0"
 mode: full-execution
+driver: cc-test-case
 surface: [cc-intent, cc-plan, cc-execute, cc-verify, cc-deliver, cc-complete]
 preconditions:
   repositories:
@@ -25,6 +26,16 @@ preconditions:
 persona: >
   A solo maker whose notes project is connected. Has never heard of Context
   Circuit. Speaks in plain goals; makes real decisions but never rubber-stamps.
+human_turns:
+  - "I want a command that exports my notes to a Markdown file."
+  - "That's right — approve it."
+  - "Looks right to me."
+  - "Go ahead and open it onto main."
+  - "Reconcile it."
+reactions:
+  approves: true
+  invents_repository: never
+  uses_internal_terms: never
 demonstrates:
   acceptance_criteria: [AC-03, AC-04, AC-06, AC-07, AC-08, AC-14, AC-16, AC-22, AC-35]
   invariants: [INV-INTENT-01, INV-APPROVE-01, INV-EXEC-01, INV-VERIFY-01, INV-CANDIDATE-01, INV-DELIVER-01, INV-COMPLETE-01, INV-COMPLETE-02, INV-KNOWLEDGE-02]
@@ -70,6 +81,27 @@ decision_points:
       the project knows, and ask to reconcile now or mark no-update-needed —
       never accept knowledge silently.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
+expected_end_state:
+  # A FRESH whole-flow case authors its own intent/plan ids live, so it cannot use
+  # the id-keyed post-conditions the seeded cases use (e.g. plan_status: 0001-…:done).
+  # It needs id-agnostic assertions — a harness capability this *(opt)* plot requires.
+  - repositories_registered: 1
+  - intents_approved: 1
+  - plans_created: 1
+  - all_plans_done: true            # the single derived plan completes (inferred, Standard)
+  - deliveries_recorded: 1
+  - completion_kind: inferred
+  - knowledge_debt_pending: ">=1"
+  - product_knowledge_unchanged_silently: true
+access_discipline:
+  intent:
+    required: []
+    allowed: ["intent/**", "context/**", AGENTS.md, WORKFLOW.md]
+    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+  execute-deliver:
+    required: []
+    allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
+    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
 ```
 
 ## Dialogue
