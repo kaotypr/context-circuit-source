@@ -12,6 +12,7 @@ title: Build product knowledge for a connected project
 status: proposed
 runtime_version: ">=1.0.0"
 mode: conversation-only
+driver: claude-p
 surface: [init-project-context, cc-plan, context]
 preconditions:
   repositories:
@@ -26,6 +27,14 @@ persona: >
   A solo maker who just connected a project and asks the assistant to "get up to
   speed" on it. Has never heard of Context Circuit; does not know what Product
   Knowledge, a retrieval index, or a context proposal is.
+human_turns:
+  - "It's connected now — can you get up to speed on this project before we plan anything?"
+  - "Local-only is right. Titles don't have to be unique. Save that."
+  - "Wait — actually I'm not sure about the storage detail, don't lock that in."
+reactions:
+  approves: false
+  invents_repository: never
+  uses_internal_terms: never
 demonstrates:
   acceptance_criteria: [AC-01, AC-02]
   invariants: [INV-KNOWLEDGE-01, INV-KNOWLEDGE-02, INV-PLAN-04, INV-SEC-02]
@@ -55,6 +64,18 @@ decision_points:
       surface it as an open question for the human, never silently invent a
       decision to fill the gap.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
+expected_end_state:
+  # Only what the harness can assert as state. "Recorded only on explicit yes" is
+  # enforced via decision_points + transcript, not a state post-condition.
+  - repositories_registered: 1
+  - plans_created: 0
+  - no_execution_records: true
+  - product_knowledge_unchanged_silently: true   # accepted units are consented, never silent
+access_discipline:
+  learn:
+    required: [workspace.yaml, context/INDEX.md]
+    allowed: [AGENTS.md, WORKFLOW.md, "context/**", "notes/**"]
+    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
 ```
 
 ## Dialogue
