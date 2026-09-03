@@ -90,7 +90,7 @@ CC_TRANSCRIPT="$lab/run/transcript.txt" \
 CC_TRACE="$lab/run/file-access-trace.tsv" \
 CC_TELEMETRY="$lab/run/telemetry.tsv" \
 CC_ROLE_EVIDENCE="$lab/run/role-evidence.tsv" \
-	sh "$ROOT/template-harness/human/drivers/codex.sh" >/dev/null
+	sh "$ROOT/agent-harness/human/drivers/codex.sh" >/dev/null
 
 require_file "$lab/run/transcript.txt"
 contains "$lab/run/transcript.txt" '# transcript: codex-driver-contract (host=codex)'

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run the template-harness scenario library across the configured host matrix.
+# Run the agent-harness scenario library across the configured host matrix.
 #
 # By default this starts one lane per host. Each lane runs every case in its own
 # disposable workspace, so Codex, Claude Code, and Cursor Agent can progress at

@@ -107,8 +107,8 @@ may author the repo's agent docs, which later stacked plans then discover).
 ## Verification
 
 `sh test/acceptance.sh` (repository-grounding suite); a section in
-`template-harness/test-template-runtime.sh` proves the shipped template carries it;
-live scenario `template-harness/scenarios/11-repo-grounding` (grade.sh PASS incl.
+`agent-harness/test-template-runtime.sh` proves the shipped template carries it;
+live scenario `agent-harness/scenarios/11-repo-grounding` (grade.sh PASS incl.
 `file_grounded` + `grounding_manifest_recorded`, human-simulator pass).
 
 ## Provenance

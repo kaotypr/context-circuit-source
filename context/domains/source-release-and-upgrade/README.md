@@ -37,7 +37,7 @@ runtime `delivery` domain (a user's pull request/merge/push for their own repos)
 
 Inside: the three named identities; template assembly and its exclusion
 boundary; the mandatory template `.gitignore`; the upgrade preservation set and
-migration-needed reporting; release-as-gate; the template-harness isolation
+migration-needed reporting; release-as-gate; the agent-harness isolation
 contract.
 
 Outside: the runtime lifecycle (plan/execute/verify/complete) and a user's
@@ -52,7 +52,7 @@ workspace.
 
 Assembly ships the template-owned files plus the blank `template/` seed and
 never ships: the source design, maintainer plans and logs, source-only tests and
-evidence, source `.runtime/`, `template-harness/`, credentials, local bindings,
+evidence, source `.runtime/`, `agent-harness/`, credentials, local bindings,
 connected repositories, project Product Knowledge, customer plans, or
 archived-plan contents.
 
@@ -80,7 +80,7 @@ guard.
 Release is a gate: a source change is not a product-template change until release
 assembly includes it and the template acceptance checks pass.
 
-The `template-harness/` assembles or selects the same `context-circuit-template`
+The `agent-harness/` assembles or selects the same `context-circuit-template`
 artifact that would be distributed and must not import the source repository's
 Product Knowledge, plans, `.runtime/`, or implementation state.
 

@@ -94,7 +94,7 @@ required agents/spec-adversary.md
 
 # Removed from the staged tree and verified absent.
 exclude test
-exclude template-harness
+exclude agent-harness
 exclude .github
 exclude scripts
 exclude release

@@ -3,7 +3,7 @@ id: 0034-add-conversation-spec-library
 target_context_unit: context/domains/conversation-spec-library/README.md
 operation: add
 statement: >-
-  The template test harness is specified by example: template-harness/conversations/
+  The agent test harness is specified by example: agent-harness/conversations/
   is a versioned, whole-surface library of expected human↔coordinator dialogues
   ("plots", each a `## Spec` YAML plus a `## Dialogue`) that is the intended
   generative source for the human-simulated harness — each scenarios/*/case.yaml is a
@@ -15,11 +15,11 @@ statement: >-
   (38 plots / 38 generated cases / 7 coverage docs) but PROPOSAL-STAGE: no generator or
   suite is wired yet and the 22 live scenarios/*/case.yaml remain untouched.
 evidence_refs:
-  - template-harness/conversations/README.md
-  - template-harness/conversations/plots/
-  - template-harness/conversations/generated/
-  - template-harness/conversations/coverage/
-  - template-harness/scenarios/README.md
+  - agent-harness/conversations/README.md
+  - agent-harness/conversations/plots/
+  - agent-harness/conversations/generated/
+  - agent-harness/conversations/coverage/
+  - agent-harness/scenarios/README.md
   - test/scenarios/test-scenarios.sh
   - test/acceptance/criteria-map.yaml
   - wrapper/contracts/invariants.yaml
@@ -32,12 +32,12 @@ status: review-needed
 ## Proposed knowledge
 
 Add a bounded `conversation-spec-library` domain describing the specification-by-example
-("conversation-spec-first") approach for the template test harness, without duplicating
+("conversation-spec-first") approach for the agent test harness, without duplicating
 any rule it merely demonstrates.
 
 The accepted page should record:
 
-- **What it is.** `template-harness/conversations/` holds one plot per expected
+- **What it is.** `agent-harness/conversations/` holds one plot per expected
   conversation under `plots/<id>.md` (a machine-readable `## Spec` the grader can
   consume plus a human-readable `## Dialogue` annotated with `[decision_point: …]`),
   and a generated `generated/<id>.case.yaml` per plot in the existing conversation-case
@@ -69,7 +69,7 @@ The accepted page should record:
   cases (01, 16, 17, 19, 20) and a consolidated set of harness-capability gaps — chiefly
   id-agnostic post-conditions for fresh whole-arc cases, a few new seed states/faults,
   and new state predicates — recorded per phase under
-  `template-harness/conversations/coverage/`.
+  `agent-harness/conversations/coverage/`.
 
 The page should reference the invariants and acceptance criteria the plots demonstrate
 rather than restating them, and should not be treated as a lifecycle stage: the library

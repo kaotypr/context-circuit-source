@@ -15,8 +15,8 @@ dist/
 /role-tiering.local.yaml
 /template/role-tiering.local.yaml
 
-# Disposable output from the human-simulated template test harness.
-/template-harness/human/.out/
-/template-harness/human/.live.log
+# Disposable output from the human-simulated agent test harness.
+/agent-harness/human/.out/
+/agent-harness/human/.live.log
 # Local, this-machine-only opt-in to run the coordinator UNSANDBOXED (never shipped).
-/template-harness/human/drivers/.allow-unsandboxed
+/agent-harness/human/drivers/.allow-unsandboxed

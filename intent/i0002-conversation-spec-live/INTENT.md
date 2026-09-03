@@ -1,11 +1,11 @@
 # Intent i0002 — make the conversation-spec library live
 
-_Status: draft (awaiting Gate 1). Tier: standard. Scope: `template-harness/`.
+_Status: draft (awaiting Gate 1). Tier: standard. Scope: `agent-harness/`.
 Depends on: i0001-conversation-spec-library._
 
 ## The bigger picture
 
-The conversation library under `template-harness/conversations/` — authored under
+The conversation library under `agent-harness/conversations/` — authored under
 **i0001** (39 plots, 39 generated cases, a coverage doc per phase, a flow guide) — is
 still a **proposal that sits parallel to** the 22 live scenario cases. Until each
 scenario case is *generated from* a plot, the plots are documentation that can drift
@@ -42,7 +42,7 @@ separate Gate 2 action. No typed-language runtime port.
 ## Shape of the work (one intent, several plans)
 
 One decision realized as a small stack of plans, each naming this intent and staying
-inside `template-harness/`: (1) the generator + fidelity/mutation/determinism checks;
+inside `agent-harness/`: (1) the generator + fidelity/mutation/determinism checks;
 (2) the harness-capability gaps, id-agnostic post-conditions first, with negative
 fixtures; (3) regenerate the 22 cases + mechanically confirm the five corrections;
 (4) run the frozen net-new cases + add the bidirectional drift guard. The exact plan
