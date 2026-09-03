@@ -63,6 +63,26 @@ printf '# m\n' >"$ws/intent/i0006-multi/INTENT.md"
 assert_eq "standard" "$(tier_of "$ws" i0006-multi)"
 assert_eq "no" "$(explore_ok "$ws" i0006-multi)"
 
+# --- DEEP BOUNDARY FIXTURES (fail-upward corners; each pins one under-tiering trap). ---
+
+# Hidden critical among benign paths: a Critical surface sharing scope with an
+# otherwise Explore-eligible path must still tier Critical and forbid Explore. The
+# highest signal across all scope paths wins; a benign-first classifier that stopped
+# at src/widget would ship an auth change unverified. This is the headline tier guard.
+cc_fx_intent "$ws" i0008-hidden "Hidden critical" api "src/widget src/auth"
+assert_eq "critical" "$(tier_of "$ws" i0008-hidden)"
+assert_eq "no" "$(explore_ok "$ws" i0008-hidden)"
+
+# Keyword-coverage guards: the Critical surface set is more than "auth". Pin a few
+# distinct high-consequence surfaces so narrowing the signal set is caught. Each is a
+# single scope path; a regression that drops one silently under-tiers that whole class.
+for cc_ti_case in secrets:i0009-sec src/payments:i0010-pay deploy:i0011-dep src/credentials:i0012-cred config/production:i0013-prod; do
+	cc_ti_path=${cc_ti_case%%:*}; cc_ti_id=${cc_ti_case#*:}
+	cc_fx_intent "$ws" "$cc_ti_id" "Critical surface" api "$cc_ti_path"
+	assert_eq "critical" "$(tier_of "$ws" "$cc_ti_id")"
+	assert_eq "no" "$(explore_ok "$ws" "$cc_ti_id")"
+done
+
 # --- lowering guard: Explore on a risk surface is refused; Standard is allowed ---
 expect_failure eng tier-lower-check "$ws" i0001-auth explore     # Critical->Explore for security: refused
 eng tier-lower-check "$ws" i0001-auth standard >/dev/null        # Critical->Standard: allowed (verifier kept)
