@@ -18,10 +18,18 @@ intent; `sources/` stays passive — INV-SEC-02). Allocate a stable intent id wi
 the runtime `intent-allocate-id` (form `i<NNNN>-slug`, its own never-reused
 sequence, distinct from plan ids).
 
-Write `intent/<id>/INTENT.md` (the human-facing bigger picture — goal, shape,
-what is deliberately out of scope, reviewable as one thing) and
-`intent/<id>/contract.yaml` (the machine record, schema
-`wrapper/contracts/schemas/intent-contract.yaml`) with:
+Write two files with a strict division of audience. `intent/<id>/INTENT.md` is
+**what the human reads** — plain, short, no jargon; it reassures them that the
+blurry thing they asked for was understood and shows what they get. Author it from
+`docs/templates/intent.md`, which fixes the five human-facing sections (Intention,
+Expectations, The plans, How carefully this is checked, Open questions) and the
+plain-language rules; `docs/templates/intent.example.md` shows the voice. Do not
+restate the product's mechanics or add out-of-scope, history, or
+assurance-rationale sections there.
+
+`intent/<id>/contract.yaml` is **what the agent reads** — the detailed,
+machine-checkable record; the human is not expected to open it. It (schema
+`wrapper/contracts/schemas/intent-contract.yaml`) carries:
 
 - `goal` — one paragraph of what a correct change achieves;
 - `non_goals` and `constraints` — explicit exclusions and limits;

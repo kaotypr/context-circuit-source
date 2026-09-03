@@ -1,76 +1,78 @@
-# Intent i0001 — specification-by-example as the living spec of the agent harness
+# Intention — i0001
 
-_Status: draft (re-gated — awaiting Gate 1). Tier: standard. Scope: `agent-harness/`._
+_Status: draft, waiting for your approval._
 
-## The bigger picture — one decision
+## Intention
 
-The real decision is a single thing: **make specification-by-example the living
-specification of the agent harness.** The plots under `agent-harness/conversations/`
-are the expected human↔coordinator conversations, authored whole for the current
-version. This intent takes them the whole distance — author, make them *generate* the
-scenario cases, make the harness able to *run* them, run them against the live
-coordinator, and let them *grow* without drifting. Authoring, wiring, and the grow-loop
-are not separate decisions you would review and ship independently; the authoring only
-has value because the plots become the live, self-revalidating source. So it is one
-intent with several plans, where the completed authoring is simply plan #1.
+What you want: **a library of conversations that is the one source of how an AI
+agent should act inside a context-circuit workspace.**
 
-## What a correct change achieves
+The conversation and the real product stay in agreement, and work can start from
+either side:
 
-- **The library exists, whole-surface** (done): one plot per lay-user conversation
-  across the lifecycle, each with a `## Spec` the grader consumes and a readable
-  `## Dialogue`, a generated worked case per plot, a coverage cross-check per phase, and
-  a flow-order reading guide. Descriptive only — references INV-*/AC-*, defines no rule.
-- **The plots generate the cases:** a deterministic generator that provably *derives*
-  each case from its plot (fidelity for all plots, mutation-sensitive, byte-deterministic),
-  never echoes a committed case.
-- **The harness can run them:** the capability gaps the library surfaced are closed —
-  first id-agnostic post-conditions (without which the flagship whole-arc cases cannot
-  run at all), plus the new seed states, faults, and predicates — each *exercised* and
-  *falsifiable*, never a no-op that always passes.
-- **The existing cases are evolved:** the 22 are regenerated from their plots with seeds
-  and budgets provably unchanged, assertion power non-regressed, the five caught
-  acceptance-criteria corrections mechanically confirmed, and the suite green.
-- **It runs live:** every frozen net-new case reaches a recorded grade against the live
-  coordinator.
-- **It grows safely:** a bidirectional drift guard gates the suite — a hand-edited case
-  fails, and a plot edited without regeneration fails. Editing the plot first is the only
-  way to change a case.
+- **Conversation first:** write (or have an agent write) the conversation showing
+  how the agent should act, then change context-circuit-source until the real
+  agent matches it and its test passes.
+- **Source first:** change context-circuit-source — a new feature or behavior —
+  then update the conversation to match the new expectation.
 
-## The plans (one intent, several plans)
+Either way, each conversation syncs into a test that runs against a real AI agent.
+So how the agent should act never lives only in your head or only in a test — it
+lives in the conversations, and the test proves the real agent agrees.
 
-Authored under `cc-plan` after approval, each naming this intent, all inside `agent-harness/`:
+```mermaid
+flowchart LR
+  C["Conversation<br/>how the agent should act"]
+  S["context-circuit-source<br/>the real product"]
+  C -->|"change source to match"| S
+  S -->|"update conversation to match"| C
+  C --> T["Each conversation<br/>syncs into a test"]
+  T --> R["Test runs against<br/>a real AI agent"]
+```
 
-1. **Author the whole-surface library** — *already done and committed* (plan #1).
-2. Build the generator + fidelity/mutation/determinism checks.
-3. Close the harness-capability gaps (id-agnostic post-conditions first) with negative fixtures.
-4. Regenerate the 22 cases + mechanically confirm the five corrections.
-5. Run the frozen net-new cases + add the bidirectional drift guard (the grow-loop).
+## Expectations
 
-## Deliberately out of scope
+- One written conversation for every kind of thing a person does with
+  context-circuit, all in one place.
+- A tool that turns each conversation into a test automatically — no test is
+  hand-written.
+- Those tests actually running against the real agent, and passing.
+- A safety catch: if someone edits a test by hand, or updates a conversation but
+  forgets to rebuild its test, the suite fails and says so.
+- The 22 tests you already have, rebuilt from their conversations, with nothing
+  about them quietly changed.
 
-No product behavior, runtime, contract, or invariant change (the library stays
-descriptive). The deterministic five-family suite (AC-36) stays the owner of the
-end-to-end families. The 22 cases are evolved, not recreated. The file-rename / diagram
-/ flow-metadata polish is deferred. Delivery (merge/push/publish) is a separate Gate 2
-action. No typed-language runtime port.
+## The plans
 
-## Assurance
+Done in steps. The first is already finished.
 
-Standard tier: a single repository, reversible, test-infrastructure change with real
-novelty (a new generator and grader capabilities) — not Explore-eligible, so it gets an
-independent verifier, but it carries no security, money, migration, production, or
-irreversibility signal, so it is not Critical.
+1. **Write all the conversations** — _done._
+   _After this:_ the full library exists and is committed.
+2. **Build the tool that turns a conversation into a test.**
+   _After this:_ every test is generated from its conversation, not hand-written.
+3. **Teach the test harness the things these conversations need** (mainly: not
+   caring about the exact generated id, plus a few new starting situations).
+   _After this:_ the flagship whole-conversation tests can actually run.
+4. **Rebuild the 22 existing tests from their conversations.**
+   _After this:_ every existing test comes from a conversation, with its tuning
+   untouched.
+5. **Run the new conversations for real and add the safety catch.**
+   _After this:_ the new tests pass against the real agent, and nothing can drift
+   out of sync.
 
-## History and dogfooding
+## How carefully this is checked
 
-This intent previously existed split as i0001 (authoring, retroactive) and i0002
-(go-live). They were merged into this single decision because the seam was chronology
-(part of it was already done), not decision structure — and the whole point is one
-living specification, not two shipments. i0002 is removed as subsumed. This is itself
-dogfooding: we use Context Circuit's own intent mechanism to find the best decision
-shape for what will ship to the template.
+**`Standard`**
 
-Because merging changed the criteria of a previously-approved intent, i0001 is re-gated
-to `draft`, its `contract_digest` cleared; a fresh spec-adversary pass runs on the
-merged criteria (see `adversary.md`), and Gate 1 re-approval is yours to give. The
-runtime was not run, so no id was machine-allocated and no digest is frozen.
+Explanations:
+- **Explore:** you check it yourself as you work alongside the agent — no separate
+  verification. Meant for trying things out.
+- **Standard:** a second, independent agent verifies the finished work against your
+  definition of done before it's called done.
+- **Critical:** the strictest — independent verification plus a repair-and-recheck
+  loop. For anything risky or impossible to undo (money, security, production, data
+  you can't get back).
+
+## Open questions
+
+None.

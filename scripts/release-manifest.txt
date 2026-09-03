@@ -69,6 +69,8 @@ required docs/publishing.md
 required docs/plan-review.md
 required docs/product-knowledge.md
 required docs/terminology.md
+required docs/templates/intent.md
+required docs/templates/intent.example.md
 required docs/templates/plan.md
 required docs/templates/plan.yaml
 required docs/templates/task.md
