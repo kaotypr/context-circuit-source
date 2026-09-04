@@ -13,17 +13,23 @@ faithfully. "C" is the coordinator; "H" is the human.
 >
 > **C:** Here's what I understand you want: **retry a failed card charge up to 3 times
 > with backoff before marking the order failed.** Out of scope: the payment provider
-> and refunds. It touches the checkout service only.
->
-> I had this checked adversarially first. One thing came back: "retry up to 3 times"
-> didn't bound the added latency — an implementation could pass every check and still
-> blow your checkout latency budget. I've added a criterion that the added latency
-> stays within budget.
->
-> This is **Standard** risk — one service, reversible, well-covered — so it gets an
-> independent check. Approve this and I'll build it, or tell me what to change.
+> and refunds. It touches the checkout service only, and I'd call this **Standard**
+> risk — one service, reversible, well-covered — so it'll get an independent check.
+> Approve this and I'll get it grounded in the real code, or tell me what to change.
 >
 > **H:** Approve.
+>
+> **C:** Approved. Let me read the real checkout service against this before I plan
+> anything.
+>
+> *(…discovery reads the checkout-service code…)*
+>
+> **C:** One thing came back: "retry up to 3 times" didn't bound the added latency —
+> an implementation could pass every check and still blow your checkout latency
+> budget. I've added a criterion that the added latency stays within budget, and
+> broken the work into tasks from what it found. Ready for me to build it?
+>
+> **H:** Go ahead.
 >
 > **C:** Building it now.
 >
@@ -44,8 +50,8 @@ faithfully. "C" is the coordinator; "H" is the human.
 >
 > **H:** Reconcile it.
 
-Human decisions: approve the intent, accept the result, authorize delivery, resolve
-reconciliation — each a real decision, none a rubber stamp.
+Human decisions: approve the intent, trigger the build, accept the result, authorize
+delivery, resolve reconciliation — each a real decision, none a rubber stamp.
 
 ## B — Explore, then promote
 
@@ -60,16 +66,23 @@ reconciliation — each a real decision, none a rubber stamp.
 >
 > **C:** That's real logic, not a quick tweak. I'd rather promote this to a proper
 > change so it gets checked and remembered. I'll write up what we're doing — fix the
-> banner copy and correct the retry count — check the criteria adversarially, and treat
-> it as Standard so it gets an independent check. Sound good?
+> banner copy and correct the retry count — and treat it as Standard so it gets an
+> independent check. Sound good?
 >
 > **H:** Go.
 >
-> **C:** Promoted. The work so far is captured, and I've spun up the independent check
-> on it. …Checked and passing. Try it and tell me if it ships.
+> **C:** Promoted and approved. Let me read the real code in that path before anything
+> else.
+>
+> *(…discovery reads the pairing-branch code…)*
+>
+> **C:** The work so far is captured, and I've turned what discovery found into a plan.
+> Spinning up the independent check now. …Checked and passing. Try it and tell me if
+> it ships.
 
-The promotion is the moment an intent and a plan first exist; before it, nothing was
-recorded beyond the working copy.
+The promotion is the moment an intent is approved; discovery then reads the code and
+the first plan comes out of what it finds — before it, nothing was recorded beyond the
+working copy.
 
 ## C — two stacked plans, one pull request
 
@@ -78,7 +91,7 @@ recorded beyond the working copy.
 > **C:** Right — that's two pieces that land as one change: the API change first, then
 > the consumer that depends on it. I'll plan both under the one intent.
 >
-> *(…both are built…)*
+> *(…intent approved; discovery reads both repositories; both are built…)*
 >
 > **C:** Both pieces are built. Because they ship as one pull request, I ran **one**
 > independent check over the combined result, not one per piece — it passed. Accept and
@@ -107,8 +120,10 @@ Shows the change-set candidate (one check for one pull request) and the honest
 > **H:** Include it.
 >
 > **C:** Widening the intent to cover the payments library. That's a change to what you
-> approved, so I re-ran the adversarial check on the criteria — nothing new came back.
-> Re-approve the wider scope and I'll continue.
+> approved — want me to re-check the widened criteria against the real payments-lib
+> code first, or just re-approve and continue?
+>
+> **H:** Just re-approve.
 
 The re-gate reads as the system protecting the human's approval, not as an error or a
 nag.

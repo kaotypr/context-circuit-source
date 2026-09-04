@@ -10,6 +10,11 @@ when the check cannot conclude "safe," it escalates rather than proceeds.
 **Purpose.** Let per-plan approval collapse safely by guaranteeing that a plan
 derived from an approved intent cannot exceed what the human approved.
 
+**Checked at two points.** First, against **discovery's findings** — before any plan
+is written, when discovery reports a manifest that reaches outside the approved
+scope, the change is **held and re-gated** to the human, right there
+(`discovery-and-grounding.md`). Second, against **each plan**, specified below.
+
 **Verb.** `intent-envelope-check <plan>`, run as a `cc-plan` preflight and again as
 an execution preflight (`execution-begin`).
 
@@ -41,14 +46,15 @@ not merely touch it) — a plan region broader than any scope path EXCEEDS.
 **Outcomes.**
 - `WITHIN` → the plan is authorized by the intent's approval; no human step.
 - `EXCEEDS` → **held and re-gated**: the human either widens the intent (a new
-  decision → re-freeze `contract_digest` → re-run the adversary on any changed
-  criteria) or narrows the plan.
+  decision, re-frozen digest — discovery re-runs for the widened scope) or narrows
+  the plan.
 - `RE-GATE` (indeterminate) → treated as EXCEEDS. Ambiguity never passes.
 
 **What it does NOT catch (stated honestly).** The envelope guards *where* work
 happens (repos/paths), not *what* it does. A plan that stays inside the paths yet
 implements something the criteria did not anticipate is not caught here — that is the
-job of the acceptance criteria and the spec adversary. Envelope + criteria together
+job of the acceptance criteria themselves, sharpened by what discovery finds when it
+reads the real code (`discovery-and-grounding.md`). Envelope + criteria together
 cover where and what; neither alone is sufficient.
 
 **Test fixtures (must-pass).**

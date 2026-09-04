@@ -8,7 +8,7 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 
 | Verb | Purpose | Mechanism |
 | --- | --- | --- |
-| `intent-validate <dir>` | validate `intent/<id>/` structure + `contract.yaml` | M1 |
+| `intent-validate <dir>` | structural/schema check only: does `intent/<id>/` have the required files, does `contract.yaml` parse and match its schema — not a feasibility or risk check | M1 |
 | `intent-allocate-id <slug>` | next `i<NNNN>-slug` for intents (own sequence, mirrors plan id allocation) | M1 |
 | `intent-approve <id>` | draft→approved; freeze `contract_digest`; the one upstream gate | M1 |
 | `intent-archive <id>` | move `intent/<id>/` to `intent/archive/<id>/`; status-blind (INV-ARCHIVE-01/02) | M1 |
@@ -24,7 +24,7 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 
 | Verb | Change |
 | --- | --- |
-| `plan-validate` | require `intent:`; call `intent-envelope-check` |
+| `plan-validate` | require `intent:`; call `intent-envelope-check` (checked again here, having already been checked once against discovery's findings before the plan was written) |
 | `plan-approve` | narrowed: automatic within an approved envelope, not a human gate (INV-APPROVE-01 reworked) |
 | `verifier-result-record` | bind the result to the current candidate (INV-CANDIDATE-01); keep the exact read-only tip-check |
 | `completion-ready` | read the intent `tier`; enforce the verifier floor (Critical needs a candidate-bound `passed`); support inferred completion at lower tiers |
@@ -54,11 +54,12 @@ From the skill/engine coupling read:
 | `cc-archive` | 2 simple verbs | **unchanged** (`plan-archive`, `plan-restore`) |
 | `cc-pair` | 3 `pair-*` verbs | **reframed** as Explore tier; verbs unchanged, adds promote |
 | `cc-execute` / `cc-run-stack` | deep (≈11 verbs + `.runtime/executions/`) | **additive changes** — record candidate, tier-gate the verifier |
-| *new* `cc-intent` | — | authors intent, runs adversary, `intent-approve` |
-| `cc-plan` | plan authoring | requires parent intent; envelope + knowledge-debt preflights |
+| *new* `cc-intent` | — | authors `INTENT.md` + `contract.yaml` (the plain human decision) and takes the single upstream approval, `intent-approve` (freezes `contract_digest`); does not read the codebase and runs no validation step — there is none any more |
+| *new* `cc-discover` | — | spawned on `intent-approve`; fans out one read-only discovery child per repository, in parallel; collects manifests; checks the envelope against discovery findings; hands the coordinator the grounded basis for planning |
+| `cc-plan` | plan authoring | creates plan(s) from the discovery manifest (not a blind read of `context/`); requires parent intent; sets `plan.intent`; envelope + knowledge-debt preflights |
 
 Roughly two-thirds of the periphery ports unchanged; only the execution drivers
-and `cc-plan` take real (additive) work, plus one new skill.
+and `cc-plan` take real (additive) work, plus two new skills.
 
 ## The later typed-language port (optional, separate track)
 

@@ -21,11 +21,11 @@ continuous consequence ladder**.
 `tier` is declared on the intent's `contract.yaml` (M1) and may be raised by the
 human. It composes assurance from parts, rather than switching between two worlds:
 
-| Tier | Independent verifier | Spec adversary | Completion | Typical use |
+| Tier | Independent verifier | Discovery depth | Completion | Typical use |
 | --- | --- | --- | --- | --- |
-| **Explore** | none — human-supervised | skipped/light | inferred from acceptance | small, live, reversible, solo |
-| **Standard** | required, candidate-bound | on the criteria | inferred from acceptance + delivery | ordinary feature work |
-| **Critical** | required + explicit re-check | full battery | **explicit human** completion | many repos, security, migration, production, breaking change |
+| **Explore** | none — human-supervised | none — the pairing itself is discovery (human reads alongside the agent, live) | inferred from acceptance | small, live, reversible, solo |
+| **Standard** | required, candidate-bound | proportionate — a triage pass sizes the change, then a scoped read | inferred from acceptance + delivery | ordinary feature work |
+| **Critical** | required + explicit re-check | exhaustive — full call-site/dependency mapping, completeness proofs required for every "change every X" obligation | **explicit human** completion | many repos, security, migration, production, breaking change |
 
 Rules:
 
@@ -78,9 +78,10 @@ What changes — the cliff becomes a ramp:
 
 - **Recordless by default, but promotable.** An Explore session works fluidly with
   no candidate and no ceremony (the whole point of pairing). If it turns out to be
-  real work, the human **promotes it in place**: attach an intent + criteria (the
-  adversary can now challenge them), raise the tier to Standard/Critical, and spawn
-  the independent verifier — **without stopping and restarting as a separate
+  real work, the human **promotes it in place**: attach an intent + criteria, let
+  discovery ground them against the real code (its tier signal raising the
+  provisional tier further if warranted), raise the tier to Standard/Critical, and
+  spawn the independent verifier — **without stopping and restarting as a separate
   plan**. Promotion is the moment the work enters the trust system and gets a
   candidate.
 - **Its output stops being invisible.** Once promoted, the work has a candidate, so

@@ -109,7 +109,9 @@ does not modify them.
   that emits a data manifest (never prompt text); the worker brief is a fixed
   template filled by slot substitution with a required, preflighted grounding
   section. v1.0 keeps this whole subsystem; it composes with M1 (the intent's
-  criteria) rather than replacing it.
+  outcome-level criteria and discovery's grounded findings) rather than replacing
+  it — the worker's execution-time read now confirms what discovery already found,
+  rather than being the code's first contact.
 
 ## The principle
 

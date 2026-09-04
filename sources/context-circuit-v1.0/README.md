@@ -64,8 +64,10 @@ Every mechanism below maps to one or more of these.
   from a ground-up rewrite.
 
 **The four mechanisms**
-- `intent-and-criteria.md` — Mechanism 1: the intent front door + spec adversary +
+- `intent-and-criteria.md` — Mechanism 1: the intent front door, discovery, and
   the envelope check. (Pains 1, 3, 4.)
+- `discovery-and-grounding.md` — how discovery turns an approved intent into a
+  detailed, grounded plan; part of Mechanism 1.
 - `candidate-and-evidence.md` — Mechanism 2: candidate identity + mechanical
   evidence staleness. (Pains 6, 7.)
 - `tiered-assurance.md` — Mechanism 3: consequence-tiered verification, with

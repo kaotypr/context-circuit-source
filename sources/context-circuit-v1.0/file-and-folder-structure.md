@@ -24,8 +24,7 @@ renames nothing and keeps every existing convention.
   intent/                        # NEW — the decision for each change           [committed]
     i0007-checkout-retries/
       INTENT.md                  #   human-facing: the bigger picture
-      contract.yaml              #   frozen criteria + scope + tier (M1)
-      adversary.md               #   spec-adversary findings
+      contract.yaml              #   frozen criteria + scope + tier (M1), schema_version 2
     INDEX.md                     #   active intents catalog
     archive/                     #   archived intents (status-blind move)
 
@@ -57,6 +56,8 @@ renames nothing and keeps every existing convention.
       context-impact.yaml        #   + reconciliation-debt marker (M4)
     worktrees/                   #   isolated worktrees (incl. cc-pair/)
     pairing/<session>/           #   Explore session pointers
+    discovery/<intent>/          #   NEW — per-repo discovery manifests, recorded
+                                  #     grounding evidence, freshness-checked (M1)
     knowledge-debt/              #   NEW — delivered-but-unreconciled markers (M4)
     locks/                       #   worker locks + path leases
 ```

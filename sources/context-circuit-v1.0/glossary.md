@@ -11,9 +11,9 @@ carries.
 | --- | --- | --- |
 | **Intent** | The first-class decision for one change: goal, non-goals, constraints, acceptance criteria, scope, tier. Approved once, frozen. | new front door; the thing you approve instead of the plan |
 | **Contract** | The machine record of an intent (`contract.yaml`); its `contract_digest` is frozen at approval. | — |
-| **Acceptance criterion** | One executable-or-manual condition that defines "correct." | sharpens today's implicit plan acceptance |
-| **Spec adversary** | An independent role that attacks the criteria *before* code. | new; applies "writer ≠ checker" to the spec |
-| **Scope envelope** | The repositories and path regions an intent authorizes; plans must stay inside it. | new; what lets plan approval collapse safely |
+| **Acceptance criterion** | An **outcome-level** statement in the intent's contract — what must be true, in terms a human can approve. The **executable check** that proves it (a grep, a test id) is a **discovery** output, carried in the plan, not the contract. | sharpens today's implicit plan acceptance |
+| **Discovery** | A read-only child, one per repository, spawned automatically when an intent is approved. Reads the real code and reports back a manifest — file/call-site map, concrete risks, a task partition, executable done-checks, a tier signal, open questions — to the coordinator. Never talks to the human. | new; the step that reads real product context, now automatic and after approval — see `discovery-and-grounding.md` |
+| **Scope envelope** | The repositories and rough boundary an intent authorizes; discovery findings and plans must both stay inside it. | new; what lets plan approval collapse safely |
 | **Candidate** | The exact proposed result — a digest over the commit map, bases, and contract digest. Evidence binds to it. | replaces "the attempt/latest" as the unit of trust |
 | **Tier** | Consequence level: **Explore / Standard / Critical**. Decides how much assurance, incl. whether a verifier spawns. | replaces the plan-vs-pairing binary |
 | **Human acceptance** | A first-class record: this human accepted this candidate. | replaces the "mark done" flip |
@@ -55,7 +55,7 @@ count should not rise:
 | Added (must learn) | Removed (no longer juggled) |
 | --- | --- |
 | intent, tier, candidate | per-plan approval as a step |
-| spec adversary | the "mark done" flip |
+| discovery (reads the code, reports a manifest) | the "mark done" flip |
 | reconciliation debt | remembering to "gather context" |
 | promote (replaces a cliff) | "pairing vs plan" as two separate modes |
 
