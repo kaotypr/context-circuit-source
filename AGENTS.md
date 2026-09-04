@@ -9,6 +9,17 @@ under `sources/system-design/context-circuit/`; do not turn it into a canonical
 workspace plan or restore an obsolete Context Circuit lifecycle, routing model,
 or legacy skill behavior.
 
+Source implementation workflow
+
+This checkout follows the root `WORKFLOW.md`, not the product lifecycle used by
+an instantiated workspace. Maintainer implementation is performed directly in
+the current active branch. Do not create an execution or pairing branch,
+worktree, lease, execution record, or product candidate for source maintenance.
+The source-only plans under `plans/context-circuit-plans/` are implementation
+guides and ordering records; they are not runtime workspace plans. The product
+workflow remains applicable when this repository is acting as a registered
+product repository for another workspace.
+
 The shipped product contract is under `wrapper/`; the mutable blank seed is
 under `template/`. Product behavior has one owner per rule: use the owner map
 in `wrapper/contracts/invariants.yaml` and do not add parallel policy to a

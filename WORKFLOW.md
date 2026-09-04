@@ -1,14 +1,20 @@
 # context-circuit-source workflow
 
-Implementation proceeds directly from the maintainer design set under
-`sources/system-design/context-circuit/` in its implementation order. The source
-is not bound to a version; it tracks the current design and may lead the version
-last published to context-circuit-template.
-This source workflow is not the product lifecycle and does not require plan
-approval, run-plan, run-stack, finish-plan, or cleanup ceremonies.
+This checkout is `context-circuit-source`, the maintainer source repository for
+Context Circuit. Implementation proceeds directly from the maintainer design set
+under `sources/system-design/context-circuit/` and the source-only ordering
+guides under `plans/context-circuit-plans/`. The source is not bound to a
+version; it tracks the current design and may lead the version last published to
+`context-circuit-template`.
 
-Each phase owns its files, updates `test/baselines/implementation-log.md`, and
-runs the semantic tests that exist at that point. Preserve the dependency order:
+Source changes are made directly in the current active branch. Do not create an
+execution or pairing branch, worktree, lease, execution record, or product
+candidate for maintainer implementation. The source-only plan files describe
+scope and implementation order; they do not invoke the product workspace
+lifecycle.
+
+Each phase owns its files and runs the semantic tests that exist at that point.
+Preserve the dependency order:
 workspace/plan contract → Product Knowledge → runtime reduction → conversational
 adapter → multi-repository execution → independent verification → repair loop →
 recovery/delivery → semantic verification. Scoped increments layer on that core
