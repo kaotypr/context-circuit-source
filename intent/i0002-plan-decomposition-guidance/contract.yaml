@@ -1,0 +1,80 @@
+schema_version: 2
+intent: i0002-plan-decomposition-guidance
+title: Make trace-to-plan decomposition explicit
+goal: >
+  Make the trace-to-plan boundary explicitly choose between one plan with embedded
+  tasks and multiple stacked plans based on execution boundedness, independent
+  verification boundaries, and meaningful dependencies or failure surfaces. Preserve
+  one-plan behavior for simple bounded Standard work, allow larger work to be split
+  into independently executable and verifiable plans, keep assurance tier separate
+  from plan count, and preserve the existing single upstream approval gate and
+  authority model.
+
+non_goals:
+  - Adding a second human approval gate for plans.
+  - Changing Explore's planless behavior or the meaning of the assurance tiers.
+  - Changing delivery, candidate, verification, or scope-safety ownership.
+  - Directly redesigning or executing the separate i0001 conversation-library work.
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - One plan remains valid when one worker lifecycle, one independent verifier
+    lifecycle, and one bounded change surface are the right execution boundary.
+  - Multiple plans must have explicit dependencies and bounded repository/path
+    mappings, with one worker and one independent verifier per plan where the tier
+    requires verification.
+  - Plan decomposition is derived from the approved intent and trace; it is not a
+    new human authorization decision.
+  - The decomposition rationale must be durable and reviewable by the coordinator
+    and verifier.
+  - Product behavior has one owner per rule; guidance and tests must not create
+    parallel policy.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite after
+    meaningful phases.
+
+acceptance_criteria:
+  - id: AC-DECOMPOSITION-RULE
+    statement: >
+      The tracing and planning guidance defines an explicit, human-readable rule
+      for choosing one plan with embedded tasks versus multiple stacked plans,
+      using bounded execution and verification boundaries plus meaningful
+      dependency or failure surfaces as the deciding factors.
+  - id: AC-SINGLE-PLAN-PRESERVED
+    statement: >
+      A simple bounded Standard-tier change remains representable and executable
+      as one intent-authorized plan containing multiple tasks, and the guidance
+      does not use plan count as a substitute for assurance tier.
+  - id: AC-STACKED-PLANS-REPRESENTED
+    statement: >
+      When tracing identifies independently executable or independently verifiable
+      partitions, the derived plan set can represent multiple plans with explicit
+      dependencies, bounded repository/path mappings, and a distinct worker and
+      verifier lifecycle for each plan; the coordinator records why the split was
+      chosen.
+  - id: AC-AUTHORITY-PRESERVED
+    statement: >
+      The decomposition change preserves the approved intent as the authorization
+      source, adds no second plan-approval gate, and leaves delivery, candidate,
+      verification, and scope-safety ownership unchanged.
+  - id: AC-BOTH-PATHS-CHECKED
+    statement: >
+      The semantic acceptance coverage exercises at least one case that correctly
+      yields one plan with embedded tasks and one case that correctly yields
+      multiple dependent plans, and fails when either case is incorrectly combined
+      or split; the existing suite remains green.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+      paths:
+        - .agents/skills/cc-trace/
+        - .agents/skills/cc-plan/
+        - agents/tracer.md
+        - context/domains/tracing/
+        - context/domains/plan-authorization/
+        - docs/
+        - wrapper/contracts/schemas/trace-manifest.yaml
+        - test/
+
+tier: standard
+status: draft
