@@ -2,11 +2,13 @@
 
 @AGENTS.md
 
-Follow the shared `AGENTS.md` and `WORKFLOW.md` contract. Enter or resume work
-through the same Context Circuit root or child session, including the same
-receipt, lease, worktree, and handoff checks. A Claude Task/subagent maps only
-to the bounded worker or independent read-only verifier packet and records
-provider-neutral `host_evidence`.
+Follow the shared `AGENTS.md` and root `WORKFLOW.md` contract. This checkout is
+the maintainer source repository, so source implementation is performed
+directly in the current active branch. Do not enter the product workspace
+execution or pairing flow, and do not create an execution branch or worktree
+for maintainer changes. The product worker, verifier, receipt, lease, handoff,
+and candidate mechanics apply when working on a registered product repository,
+not to this source checkout.
 
 Claude permission prompts, print mode, authentication, memory, MCP settings,
 and transcripts remain host-local. They do not replace a human gate or enter
