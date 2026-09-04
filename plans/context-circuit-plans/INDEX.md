@@ -13,3 +13,4 @@ tooling (0019–0020) · **E** v0.6.1 refinements (0021–0025).
 | Plan ID | Title | Status | Depends on | Path |
 | --- | --- | --- | --- | --- |
 | 0001-conversation-spec-library | Establish the conversation-spec library as the living harness specification | draft | — | 0001-conversation-spec-library/ |
+| 0002-intent-id-width-migration | Change intent identifiers to three digits | draft | — | 0002-intent-id-width-migration/ |

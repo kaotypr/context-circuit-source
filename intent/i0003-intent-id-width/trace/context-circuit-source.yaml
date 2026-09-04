@@ -7,9 +7,9 @@ file_map:
     sites:
       - "310-318: cc_intent_id_valid accepts i[0-9][0-9][0-9][0-9]-*, strips the prefix with i????-, and delegates slug validation."
       - "321: cc_intent_dir constructs intent/<id> paths for all lifecycle consumers."
-      - "323-337: cc_intent_contract_digest hashes every contract line except status and contract_digest, therefore the canonical intent field participates in approved digests."
-      - "390-420: cc_intent_validate reads the canonical contract id, validates its grammar, and requires directory basename equality."
-      - "426-445: cc_intent_allocate_id scans active and archived directory names using the four-digit glob and emits printf i%04d-."
+      - "323-334: cc_intent_contract_digest hashes every contract line except status and contract_digest, so the canonical intent field participates in approved digests."
+      - "390-424: cc_intent_validate reads the canonical contract id, validates its grammar, and requires directory basename equality."
+      - "426-444: cc_intent_allocate_id scans active and archived directory names using the four-digit glob and emits printf i%04d-."
       - "452-474: index initialization/upsert writes canonical ids and intent/<id>/INTENT.md paths."
       - "478-516: cc_intent_approve validates the id, freezes the digest, and updates the active index."
       - "519-541: cc_intent_archive moves intent/<id> to intent/archive/<id> and removes the index row; it currently checks only cc_safe_id."
@@ -30,6 +30,11 @@ file_map:
   - path: wrapper/contracts/invariants.yaml
     sites:
       - "51-63: INV-INTENT-01/02 describe intent anchoring and the old four-digit intent form."
+  - path: intent/i0003-intent-id-width/contract.yaml
+    sites:
+      - "2: approved canonical id remains i0003-intent-id-width until the migration is executed."
+      - "83-94: approved scope explicitly includes agent-harness/ and template/ along with runtime, contracts, context, docs, agents, skills, intent, plans, and test."
+      - "95-96: approved status and frozen digest record the identity-only migration policy."
   - path: intent/
     sites:
       - "Directories: i0001-conversation-spec-library, i0002-plan-decomposition-guidance, and i0003-intent-id-width; no intent/archive child directories currently exist."
@@ -118,13 +123,17 @@ risks:
   - >-
     The current approved intents are i0001, i0002, and i0003; there are three active
     intent directories and zero archived intent directories. Existing i0001 also has
-    an active plan and trace manifest that must move with the record.
+    an active plan and trace manifest that must move with the record. The approved
+    contract now includes agent-harness/ and template/, so their references are in
+    the migration boundary rather than an out-of-scope reach.
   - >-
     cc_intent_contract_digest excludes only status and contract_digest, so changing
     the canonical intent field necessarily changes the digest for approved records.
-    If the frozen digest is not migrated atomically, cc_intent_authorized will reject
-    plans whose parent intent still appears approved. If the digest algorithm is
-    changed instead, that changes a lifecycle identity rule and needs explicit review.
+    The approved contract requires recomputing that frozen digest with the existing
+    algorithm after the identity-only rename. If it is not migrated atomically,
+    cc_intent_authorized will reject plans whose parent intent still appears approved.
+    Changing the digest algorithm would change a lifecycle identity rule and is not
+    authorized by this intent.
   - >-
     The allocator currently recognizes only four-digit directories and emits %04d;
     the three-digit grammar introduces a representational ceiling at i999 while the
@@ -197,29 +206,19 @@ tier_signal: >-
 
 feasible: true
 
-out_of_scope_reach:
-  - >-
-    agent-harness/ is omitted from the approved scope but must be modified to migrate
-    current conversation/scenario references and dynamic plan-to-intent fixture logic
-    (run-scenario.sh, test-template-runtime.sh, conversations/, and scenarios/).
-  - >-
-    template/ is omitted from the approved scope but template/intent/README.md is a
-    shipped naming contract and must be updated for the new canonical form.
+out_of_scope_reach: []
 
 open_questions:
   - >-
-    Include agent-harness/ and template/ in the approved scope so AC-REFERENCES-CONSISTENT
-    can be satisfied, or intentionally leave those shipped fixtures/guidance outside
-    this migration? The code read shows they are required for a complete workspace-wide
-    migration.
+    [already-answered] The approved contract and human request include agent-harness/
+    and template/; no scope expansion is required.
   - >-
-    For approved records, should the migration atomically recompute contract_digest
-    after changing only the identity spelling while preserving status and criteria,
-    or should the digest algorithm be changed to exclude the identity field? The first
-    preserves the current digest algorithm; the second changes lifecycle semantics.
+    [already-answered] Approved intent digests are recomputed after identity-only
+    renames using the existing digest algorithm; the algorithm itself is unchanged.
   - >-
-    What should allocation do after i999? The requested exact-three-digit grammar has
-    no representable i1000 form, while the current allocator has no ceiling behavior.
+    [already-answered] Old or unrelated intents may be archived or deleted only by
+    explicit human request or manual human action; identifiers are never silently
+    recycled. The concrete exhaustion failure belongs in the implementation plan.
 
 completeness_proof:
   command: >-
@@ -230,13 +229,17 @@ completeness_proof:
     rg -l --hidden --pcre2 -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml'
     'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' . | wc -l
   count: 148
+  matching_lines: 130
+  files: 46
   notes: >-
-    Before this manifest was written, the complete repository search found 148 old-form
-    token matches on 130 matching lines across 46 files. The three current intent
-    directories were i0001-conversation-spec-library, i0002-plan-decomposition-guidance,
-    and i0003-intent-id-width; archived intent directory count was zero. The command
-    excludes sources/ per repository safety and excludes only this manifest because it
-    intentionally preserves the old-form inventory as grounding evidence; other trace
-    manifests remain part of the current-reference set.
+    The refreshed complete repository search found 148 old-form token matches on 130
+    matching lines across 46 files. The three current intent directories are
+    i0001-conversation-spec-library, i0002-plan-decomposition-guidance, and
+    i0003-intent-id-width; archived intent directory count is zero. The command
+    excludes sources/ per repository safety and excludes only this manifest because
+    it intentionally preserves the old-form evidence inventory; the existing i0001
+    trace remains part of the current-reference set. The approved scope includes
+    agent-harness/ and template/, so their references are included in the count.
 
-recorded_at: 2026-09-04T17:37:23Z
+freshness_checked_at: 2026-09-04T18:29:54Z
+recorded_at: 2026-09-04T18:25:47Z

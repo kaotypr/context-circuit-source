@@ -1,0 +1,185 @@
+schema_version: 3
+plan: 0002-intent-id-width-migration
+intent: i0003-intent-id-width
+title: Change intent identifiers to three digits
+status: draft
+objective: >-
+  Change canonical intent identifiers from i<NNNN>-slug to i<NNN>-slug, migrate
+  every current intent record and reference including agent-harness/ and template/,
+  recompute approved digests with the existing algorithm, preserve lifecycle
+  semantics, and fail clearly at the exact three-digit ceiling without automatic
+  archive, deletion, or identifier recycling.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the Context Circuit runtime, contracts, intent records, maintainer plans, tests, harness, and shipped template.
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: Owns intent anchoring, approval, feasibility, and lifecycle authority.
+  - id: intent-contract
+    path: wrapper/contracts/schemas/intent-contract.yaml
+    reason: Owns the canonical intent identifier grammar and contract shape.
+  - id: plan-contract
+    path: wrapper/contracts/schemas/plan.yaml
+    reason: Owns parent-intent references in schema-3 plans.
+  - id: trace-manifest
+    path: wrapper/contracts/schemas/trace-manifest.yaml
+    reason: Owns durable post-approval tracing records and intent-scoped paths.
+  - id: intent-domain
+    path: context/domains/intent/README.md
+    reason: Grounds Gate 1, intent identity, and re-approval behavior.
+  - id: tracing-domain
+    path: context/domains/tracing/README.md
+    reason: Grounds trace freshness, question disposition, and feasibility before planning.
+  - id: planning
+    path: docs/planning.md
+    reason: Grounds plan derivation and unresolved-question handling.
+  - id: trace
+    path: intent/i0003-intent-id-width/trace/context-circuit-source.yaml
+    reason: Supplies exact call sites, complete old-form reference count, risks, and done checks.
+context_grounding:
+  summary: >-
+    The refreshed Standard trace found three active intent directories, no archived
+    intent directories, and 148 old-form token matches across 46 files. The change
+    reaches runtime/contracts, intent and plan records, tests, agent-harness, and
+    template. The existing digest helper includes the canonical intent field, so
+    approved identity-only renames require recomputation with the unchanged algorithm.
+  constraints:
+    - Exactly three digits after i; plan identifiers remain four-digit.
+    - Migrate current records and every current reference, including agent-harness and template.
+    - Preserve lifecycle semantics, statuses, criteria, relationships, and history except identity spelling and required digest recomputation.
+    - Archive/delete remains explicit human action; no automatic cleanup or silent identifier recycling.
+    - Do not modify sources/ or historical Git objects.
+  decisions:
+    - Recompute approved frozen digests with the existing algorithm after identity-only renames.
+    - Treat explicit all-current-references wording as already-authorized scope.
+    - Fail clearly at i999 rather than inventing a fourth digit.
+knowledge_impact:
+  expected_context_units:
+    - context/domains/intent/README.md
+    - context/domains/tracing/README.md
+    - docs/planning.md
+  review_on_completion: true
+plan_dependencies: []
+tasks:
+  - id: IDW-001
+    title: Update the owned identity contract and runtime mechanics
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+      - wrapper/contracts/invariants.yaml
+      - wrapper/contracts/schemas/intent-contract.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/contracts/schemas/trace-manifest.yaml
+      - context/domains/intent/README.md
+      - context/domains/tracing/README.md
+      - docs/planning.md
+      - docs/templates/intent.md
+      - agents/coordinator.md
+      - agents/tracer.md
+      - .agents/skills/cc-intent/
+      - .agents/skills/cc-trace/
+      - .agents/skills/cc-plan/
+    depends_on: []
+    changes:
+      - Change intent grammar, validation, allocation, and shared lifecycle references to exactly three digits.
+      - Add clear i999 exhaustion behavior without automatic archive, deletion, or recycling.
+      - Keep plan identifiers and all lifecycle authority unchanged.
+    acceptance:
+      - id: IDW-AC-001
+        statement: The owned contract and runtime accept i001-style intent ids, reject i0001-style ids, and preserve four-digit plan ids.
+      - id: IDW-AC-002
+        statement: Allocation and validation agree on the three-digit grammar and allocation fails clearly when no exact three-digit id is representable.
+    verification:
+      - id: IDW-VT-001
+        command: sh -c '. wrapper/runtime/engine.sh; cc_intent_id_valid i001-checkout-retries && ! cc_intent_id_valid i0001-checkout-retries'
+        expect: exit 0; the new form is accepted and the old form is rejected
+      - id: IDW-VT-002
+        command: sh test/contracts/test-contracts.sh
+        expect: exit 0; contract owners and guidance agree on the new identity behavior
+  - id: IDW-002
+    title: Migrate current intent records and relationships
+    repositories: [context-circuit-source]
+    paths:
+      - intent/
+      - plans/context-circuit-plans/
+    depends_on: [IDW-001]
+    changes:
+      - Rename i0001-conversation-spec-library to i001-conversation-spec-library, i0002-plan-decomposition-guidance to i002-plan-decomposition-guidance, and i0003-intent-id-width to i003-intent-id-width.
+      - Move traces, update contract fields, indexes, plan parent links, and current relationships together.
+      - Recompute approved frozen digests with the unchanged digest algorithm and preserve status and criteria.
+    acceptance:
+      - id: IDW-AC-003
+        statement: Every active or archived intent directory equals its canonical three-digit contract field, and current traces, indexes, relationships, and plan parents resolve to the migrated ids.
+      - id: IDW-AC-004
+        statement: Approved renamed intents have recomputed frozen digests using the existing algorithm, and affected plan authorization remains valid.
+    verification:
+      - id: IDW-VT-003
+        command: find intent -type d -print | rg '/i[0-9]{4}-[^/]+$'; test $? -eq 1
+        expect: no active or archived intent directory uses the old four-digit form
+      - id: IDW-VT-004
+        command: sh wrapper/runtime/engine.sh intent-validate intent/i001-conversation-spec-library && sh wrapper/runtime/engine.sh intent-validate intent/i002-plan-decomposition-guidance && sh wrapper/runtime/engine.sh intent-validate intent/i003-intent-id-width
+        expect: all migrated active intents validate with the new grammar
+      - id: IDW-VT-005
+        command: sh wrapper/runtime/engine.sh intent-authorized . 0001-conversation-spec-library
+        expect: the existing affected plan remains authorized after its parent intent is renamed
+  - id: IDW-003
+    title: Migrate shipped fixtures, templates, and current references
+    repositories: [context-circuit-source]
+    paths:
+      - test/
+      - agent-harness/
+      - template/
+      - docs/
+      - context/
+      - .agents/skills/
+    depends_on: [IDW-001]
+    changes:
+      - Update fixture helpers and dynamic plan-to-intent derivation to emit three-digit intent ids while leaving plan ids four-digit.
+      - Migrate current conversation plots, generated cases, scenarios, documentation, and template references.
+      - Add stale-reference and completeness checks that distinguish live references from historical trace evidence.
+    acceptance:
+      - id: IDW-AC-005
+        statement: Every current workspace reference to the existing intents resolves to the new ids, including agent-harness and template, while plan ids remain unchanged.
+      - id: IDW-AC-006
+        statement: Dynamic fixtures and scenario setup produce valid three-digit intent ids and no active four-digit derivation remains.
+    verification:
+      - id: IDW-VT-006
+        command: rg -n --hidden --pcre2 -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml' 'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' .
+        expect: no output outside the historical trace evidence
+      - id: IDW-VT-007
+        command: sh test/scenarios/test-scenarios.sh && sh agent-harness/test-template-runtime.sh
+        expect: scenario and template-runtime fixtures pass with three-digit intent ids
+  - id: IDW-004
+    title: Prove lifecycle preservation and manual cleanup boundaries
+    repositories: [context-circuit-source]
+    paths:
+      - test/intent/
+      - test/candidate/
+      - test/completion/
+      - test/knowledge/
+      - test/assurance/
+      - test/plans/
+      - test/runtime/
+      - wrapper/runtime/engine.sh
+    depends_on: [IDW-002, IDW-003]
+    changes:
+      - Exercise allocation, validation, approval, archive/restore, authorization, digest recomputation, old-form rejection, and i999 exhaustion.
+      - Prove no automatic archive, deletion, or identifier recycling was introduced.
+      - Run the full semantic acceptance suite and retain unrelated dirty changes.
+    acceptance:
+      - id: IDW-AC-007
+        statement: The semantic acceptance suite remains green and identifier width adds no gate or change to intent approval, plan authorization, execution, verification, completion, delivery, or tier behavior.
+      - id: IDW-AC-008
+        statement: Archive/delete remains an explicit human action and no lifecycle path silently recycles an identifier.
+    verification:
+      - id: IDW-VT-008
+        command: sh test/intent/test-intent.sh && sh test/intent/test-feasibility.sh
+        expect: intent allocation, archive/restore, approval, and authorization behavior pass
+      - id: IDW-VT-009
+        command: sh test/acceptance.sh
+        expect: exit 0; the complete Context Circuit semantic acceptance suite passes
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
