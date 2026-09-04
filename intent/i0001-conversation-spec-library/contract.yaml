@@ -258,4 +258,5 @@ scope:
 
 tier: standard
 
-status: draft
+status: approved
+contract_digest: sha256:16869de53df2f9bfb062dbe8a37a74154d5690e46747bc0a2c8a8e58b1f61484
