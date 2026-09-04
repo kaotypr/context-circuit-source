@@ -45,7 +45,7 @@ constraints:
   - Conventional Commits (INV-COMMIT-01); no AI attribution. Run the semantic
     acceptance suite after meaningful phases.
 
-# Criteria hardened across three spec-adversary passes (see adversary.md): each is
+# Criteria hardened across several review passes: each is
 # falsifiable and non-gameable — no criterion is satisfiable by a generator that echoes
 # or table-embeds committed cases, by a parallel generated tree beside untouched live
 # cases, by vacuous post-conditions, by dumping nondeterminism into the overlay, or by
@@ -54,6 +54,20 @@ constraints:
 # plot citations must resolve to live invariants, drift is gated across all three layers
 # (inventory↔plot↔case), the Dialogue must stay faithful to the Spec, and the
 # live-execution floor cannot be dodged.
+#
+# Accepted residuals (a final confirming pass surfaced five reachable
+# satisfy-and-still-wrong loopholes; the human accepted all five as known risks —
+# none folded into the criteria, the contract was not edited):
+#   1. AC-SURFACE-COVERAGE's "justified gap" hatch has no cap or closed reason enum —
+#      one real plot plus everything-else-"deferred" passes.
+#   2. AC-DESCRIPTIVE-ONLY only checks that cited ids resolve; a plot can still state
+#      its own uncited rule ("retries 3 times") and pass (one-rule-one-owner leak).
+#   3. AC-REGEN-EQUIV's pre-change live-execution floor is self-attested — the same
+#      author can under-declare the "before" baseline.
+#   4. The "avoid the noun 'contract' in the library" constraint has no enforcing
+#      criterion; it lives in prose only.
+#   5. AC-REGEN-EQUIV's seed/budget "intended edit" exception is unbounded — drift
+#      can be waved through as intended.
 acceptance_criteria:
   - id: AC-WHOLE-SURFACE
     statement: >
