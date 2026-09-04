@@ -50,7 +50,7 @@ every X" obligation. Write `PLAN.md` (readable) and `plan.yaml` (canonical,
 `schema_version: 3`) with:
 
 - a stable plan id `NNNN-<kebab-slug>` allocated by the runtime `plan-allocate-id`;
-- `intent: i<NNNN>-slug` — the required parent intent (INV-INTENT-02);
+- `intent: i<NNN>-slug` — the required parent intent (INV-INTENT-02);
 - original request and request coverage;
 - objective, desired behavior, constraints, non-goals;
 - Product Knowledge grounding (each reference: stable id, path, reason);

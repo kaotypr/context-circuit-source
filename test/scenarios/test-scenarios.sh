@@ -21,7 +21,7 @@ cc_fx_repo "$ws" payments-lib development
 # ============================ Scenario A ============================
 # Intent (Gate 1) -> derived plan WITHIN -> execute+verify -> accept -> deliver ->
 # inferred completion -> reconciliation debt pending.
-iidA=i0001-checkout-retries
+iidA=i001-checkout-retries
 cc_fx_intent "$ws" "$iidA" "Checkout retries" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidA" >/dev/null                       # Gate 1
 assert_eq "approved" "$(cc_scalar "$ws/intent/$iidA/contract.yaml" status)"
@@ -37,7 +37,7 @@ eng knowledge-debt "$ws" | grep -q 'pending_count: 1' || fail "A: completion mus
 
 # ============================ Scenario E ============================
 # The next plan in the same knowledge scope is BLOCKED at grounding until reconciled.
-iidE=i0002-coupon
+iidE=i002-coupon
 cc_fx_intent "$ws" "$iidE" "Coupon field" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidE" >/dev/null
 cc_fx_plan_intent "$ws" 0002-coupon "Coupon" checkout-service src/checkout "$iidE"
@@ -52,7 +52,7 @@ eng knowledge-debt-check "$ws" 0002-coupon | grep -q 'debt: clear' || fail "E: g
 # Gate 1) and its execution is held; re-approving the changed criteria re-authorizes.
 # (There is NO automated scope gate in v1.0 — a reach beyond the coarse scope is a
 # feasibility question the coordinator surfaces, and scope-safety is at Gate 2.)
-iidD=i0003-drift
+iidD=i003-drift
 cc_fx_intent "$ws" "$iidD" "Drift" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidD" >/dev/null
 cc_fx_plan_intent "$ws" 0003-drift "Drift" checkout-service src/checkout "$iidD"
@@ -67,7 +67,7 @@ eng intent-authorized "$ws" 0003-drift | grep -q '^authorized: yes' || fail "D: 
 
 # ============================ Scenario C ============================
 # Two stacked plans delivered as one pull request -> one change-set candidate.
-iidC=i0004-ratelimit
+iidC=i004-ratelimit
 cc_fx_intent "$ws" "$iidC" "Rate limit" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidC" >/dev/null
 cc_fx_plan_intent "$ws" 0012-api "API" checkout-service src/checkout "$iidC"
@@ -87,7 +87,7 @@ require_file "$ws/.runtime/pairing/explore-b/pointer.yaml"
 test ! -d "$ws/plans/0099-explore" || fail "B: un-promoted Explore must not create a plan file"
 # promote: attach an intent (Explore-eligible: single repo, bounded, no signal) and
 # a plan of record; the tier can then rise to Standard and gain a verifier.
-iidB=i0005-banner
+iidB=i005-banner
 cc_fx_intent "$ws" "$iidB" "Banner copy" checkout-service "src/banner" explore
 eng intent-approve "$ws" "$iidB" >/dev/null                      # Explore approves (no risk signal)
 assert_eq "explore" "$(cc_scalar "$ws/intent/$iidB/contract.yaml" tier)"
@@ -98,7 +98,7 @@ require_file "$ws/plans/0005-banner/plan.yaml"                   # promotion aut
 conv="$here/conversations.md"
 # only inspect the dialogue lines (quoted, starting with "> ")
 dlg=$(grep '^>' "$conv" || true)
-for bad in 'cc_' 'engine.sh' 'worktree' 'plan.yaml' 'contract.yaml' '.runtime' 'cand-' 'contract_digest' 'INV-' 'i0001' '0012-'; do
+for bad in 'cc_' 'engine.sh' 'worktree' 'plan.yaml' 'contract.yaml' '.runtime' 'cand-' 'contract_digest' 'INV-' 'i001' '0012-'; do
 	printf '%s\n' "$dlg" | grep -F "$bad" >/dev/null 2>&1 && fail "conversation leaks internal term: $bad" || :
 done
 # the honest assurance wording and both gates are present

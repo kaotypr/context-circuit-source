@@ -16,7 +16,7 @@ Retrieve relevant Product Knowledge by the request's concepts via
 `context/INDEX.md`, read only the selected units, and read only request-named
 source files (a `sources/` doc or a `sources/system-design/` design may ground the
 intent; `sources/` stays passive — INV-SEC-02). Allocate a stable intent id with
-the runtime `intent-allocate-id` (form `i<NNNN>-slug`, its own never-reused
+the runtime `intent-allocate-id` (form `i<NNN>-slug`, its own never-reused
 sequence, distinct from plan ids).
 
 Write two files with a strict division of audience. `intent/<id>/INTENT.md` is
@@ -117,7 +117,7 @@ concern.
 Invoke from the workspace directory (`wrapper/adapters/AGENTS.md` → Runtime owns
 the invoke-not-read boundary):
 
-- `sh wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNNN>-slug`.
+- `sh wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNN>-slug`.
 - `sh wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
 - `sh wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.
 - `sh wrapper/runtime/engine.sh intent-archive . <id>` / `intent-restore . <id>` —

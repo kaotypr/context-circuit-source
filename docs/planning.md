@@ -11,7 +11,7 @@ not the thing the human approves. Before planning a writing change there must be
 approved parent intent, which holds the goal, outcome-level acceptance criteria, a
 coarse optional scope, and tier. On approval a read-only tracer reads the real code
 and reports a manifest; the plan is derived from that manifest and names the intent
-(`intent: i<NNNN>-slug`, `schema_version: 3`). The derives-from-an-approved-intent
+(`intent: i<NNN>-slug`, `schema_version: 3`). The derives-from-an-approved-intent
 authorization runs as a preflight and again at execution start — a criteria change
 after approval re-enters Gate 1 — but there is no automated scope gate: scope-safety
 is settled at delivery (Gate 2), and a required change beyond a bound scope is

@@ -18,7 +18,7 @@ require_file "$ROOT/wrapper/contracts/schemas/trace-manifest.yaml"
 contains "$ROOT/wrapper/contracts/schemas/trace-manifest.yaml" "done_checks"
 contains "$ROOT/wrapper/contracts/schemas/trace-manifest.yaml" "out_of_scope_reach"
 
-iid=i0001-checkout
+iid=i001-checkout
 cc_fx_intent "$ws" "$iid" "Checkout" checkout-service "src/checkout test/checkout"
 sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
 
@@ -53,14 +53,14 @@ auth 0007-ok | grep -q '^authorized: yes' || fail "re-approval on changed criter
 rm -f "$ws/intent/$iid/contract.yaml.bak"
 
 # --- UNAUTHORIZED: an intent that is not approved yet ---
-iid2=i0002-draft
+iid2=i002-draft
 cc_fx_intent "$ws" "$iid2" "Draft" api src
 cc_fx_plan_intent "$ws" 0008-draft "On draft" api src "$iid2"
 expect_failure auth 0008-draft
 assert_eq "INTENT_NOT_APPROVED" "$(auth_reason 0008-draft)"
 
 # --- UNAUTHORIZED: a plan naming a missing intent ---
-cc_fx_plan_intent "$ws" 0009-missing "Missing" api src i0099-nope
+cc_fx_plan_intent "$ws" 0009-missing "Missing" api src i099-nope
 expect_failure auth 0009-missing
 assert_eq "INTENT_MISSING" "$(auth_reason 0009-missing)"
 

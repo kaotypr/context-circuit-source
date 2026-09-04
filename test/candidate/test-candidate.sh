@@ -12,7 +12,7 @@ eng() { sh "$ROOT/wrapper/runtime/engine.sh" "$@"; }
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
-iid=i0001-retries
+iid=i001-retries
 cc_fx_intent "$ws" "$iid" "Retries" api "src"
 eng intent-approve "$ws" "$iid" >/dev/null
 cc_fx_plan_intent "$ws" 0001-retries "Retries" api src "$iid"

@@ -1,5 +1,5 @@
 schema_version: 1
-intent: i0001-conversation-spec-library
+intent: i001-conversation-spec-library
 repository: workspace
 
 file_map:

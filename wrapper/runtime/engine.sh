@@ -307,14 +307,14 @@ cc_plan_is_descendant() {
 # not engine verbs, and scope-safety is settled at delivery (Gate 2).
 # ---------------------------------------------------------------------------
 
-# cc_intent_id_valid ID -> i<NNNN>-<kebab-slug>
+# cc_intent_id_valid ID -> i<NNN>-<kebab-slug>
 cc_intent_id_valid() {
 	cc_iiv_id="$1"
 	case "$cc_iiv_id" in
-		i[0-9][0-9][0-9][0-9]-* ) : ;;
+		i[0-9][0-9][0-9]-* ) : ;;
 		* ) return 1 ;;
 	esac
-	cc_iiv_slug=${cc_iiv_id#i????-}
+	cc_iiv_slug=${cc_iiv_id#i???-}
 	cc_safe_slug "$cc_iiv_slug"
 }
 
@@ -423,7 +423,7 @@ cc_intent_validate() {
 	return 0
 }
 
-# cc_intent_allocate_id ROOT SLUG -> next i<NNNN>-slug after the highest ever
+# cc_intent_allocate_id ROOT SLUG -> next i<NNN>-slug after the highest ever
 # allocated (active + archived), the intent tree's own never-reused sequence.
 cc_intent_allocate_id() {
 	cc_ia_root="$1"; cc_ia_slug="$2"
@@ -433,14 +433,15 @@ cc_intent_allocate_id() {
 		[ -d "$cc_ia_d" ] || continue
 		cc_ia_base=$(basename -- "$cc_ia_d")
 		case "$cc_ia_base" in
-			i[0-9][0-9][0-9][0-9]-*)
+			i[0-9][0-9][0-9]-*)
 				cc_ia_seq=${cc_ia_base#i}; cc_ia_seq=${cc_ia_seq%%-*}
 				cc_ia_seq=$(printf '%s' "$cc_ia_seq" | sed 's/^0*//'); [ -n "$cc_ia_seq" ] || cc_ia_seq=0
 				[ "$cc_ia_seq" -gt "$cc_ia_max" ] && cc_ia_max=$cc_ia_seq ;;
 		esac
 	done
+	[ "$cc_ia_max" -lt 999 ] || { cc_fail INTENT_ID_EXHAUSTED; return 1; }
 	cc_ia_next=$((cc_ia_max + 1))
-	printf 'i%04d-%s\n' "$cc_ia_next" "$cc_ia_slug"
+	printf 'i%03d-%s\n' "$cc_ia_next" "$cc_ia_slug"
 }
 
 cc_intent_index_init() {
@@ -519,7 +520,7 @@ cc_intent_approve() {
 # cc_intent_archive ROOT INTENT -> move intent/ID -> intent/archive/ID; status-blind
 cc_intent_archive() {
 	cc_iar_root="$1"; cc_iar_id="$2"
-	cc_safe_id "$cc_iar_id" || { cc_fail INTENT_ID_UNSAFE "$cc_iar_id"; return 1; }
+	cc_intent_id_valid "$cc_iar_id" || { cc_fail INTENT_ID_INVALID "$cc_iar_id"; return 1; }
 	cc_iar_src="$cc_iar_root/intent/$cc_iar_id"
 	cc_iar_dst="$cc_iar_root/intent/archive/$cc_iar_id"
 	[ -d "$cc_iar_src" ] || { cc_fail INTENT_ARCHIVE_SOURCE_MISSING "$cc_iar_id"; return 1; }
@@ -543,7 +544,7 @@ cc_intent_archive() {
 # cc_intent_restore ROOT INTENT -> move intent/archive/ID -> intent/ID; re-add index
 cc_intent_restore() {
 	cc_ire_root="$1"; cc_ire_id="$2"
-	cc_safe_id "$cc_ire_id" || { cc_fail INTENT_ID_UNSAFE "$cc_ire_id"; return 1; }
+	cc_intent_id_valid "$cc_ire_id" || { cc_fail INTENT_ID_INVALID "$cc_ire_id"; return 1; }
 	cc_ire_src="$cc_ire_root/intent/archive/$cc_ire_id"
 	cc_ire_dst="$cc_ire_root/intent/$cc_ire_id"
 	[ -d "$cc_ire_src" ] || { cc_fail INTENT_RESTORE_SOURCE_MISSING "$cc_ire_id"; return 1; }

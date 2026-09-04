@@ -350,7 +350,8 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 		# an unresolved open question keeps its intent DRAFT (so review / approve and
 		# refuse-before-approval scenarios have a real Gate 1 to settle); a clean plan
 		# approves the intent, so it is authorized and ready to run.
-		iid="i$pid"; idir="$WORKSPACE/intent/$iid"; mkdir -p "$idir"
+		intent_seq=${pid%%-*}; intent_seq=${intent_seq#0}; intent_seq=${intent_seq#0}; intent_seq=${intent_seq#0}; intent_seq=${intent_seq#0}; [ -n "$intent_seq" ] || intent_seq=0
+		intent_slug=${pid#*-}; iid=$(printf 'i%03d-%s' "$intent_seq" "$intent_slug"); idir="$WORKSPACE/intent/$iid"; mkdir -p "$idir"
 		{
 			printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$obj"
 			printf 'non_goals:\n  - none\nconstraints:\n  - none\n'

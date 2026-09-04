@@ -18,7 +18,7 @@ cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
 # --- a completed Standard plan emits a pending reconciliation-debt marker ---
-iid=i0001-retry
+iid=i001-retry
 cc_fx_intent "$ws" "$iid" "Retry" api "src"
 eng intent-approve "$ws" "$iid" >/dev/null
 cc_fx_plan_intent "$ws" 0001-retry "Retry" api src "$iid"
@@ -39,7 +39,7 @@ printf '%s\n' "$list" | grep -q "debt: $cand" || fail "knowledge-debt must list 
 printf '%s\n' "$list" | grep -q 'pending_count: 1' || fail "expected exactly one pending debt"
 
 # --- a new Standard plan on the overlapping repo is BLOCKED at grounding ---
-iid2=i0002-coupon
+iid2=i002-coupon
 cc_fx_intent "$ws" "$iid2" "Coupon" api "src"
 eng intent-approve "$ws" "$iid2" >/dev/null
 cc_fx_plan_intent "$ws" 0002-coupon "Coupon" api src "$iid2"
@@ -48,7 +48,7 @@ eng knowledge-debt-check "$ws" 0002-coupon 2>/dev/null | grep -q 'debt: blocking
 	|| eng knowledge-debt-check "$ws" 0002-coupon 2>&1 | grep -q 'debt: blocking' || fail "expected blocking"
 
 # --- a new Standard plan on a DIFFERENT repo (no overlap) is CLEAR ---
-iid3=i0003-web
+iid3=i003-web
 cc_fx_intent "$ws" "$iid3" "Web" web "src"
 eng intent-approve "$ws" "$iid3" >/dev/null
 cc_fx_plan_intent "$ws" 0003-web "Web" web src "$iid3"
@@ -59,7 +59,7 @@ mv "$ws/plans/0003-web/plan.yaml.new" "$ws/plans/0003-web/plan.yaml"
 eng knowledge-debt-check "$ws" 0003-web | grep -q 'debt: clear' || fail "non-overlapping plan must be clear"
 
 # --- Explore is planless; a plan-shaped Explore record is invalid ---
-iid4=i0004-explore
+iid4=i004-explore
 cc_fx_intent "$ws" "$iid4" "Explore" api "src/widget" explore
 eng intent-approve "$ws" "$iid4" >/dev/null
 cc_fx_plan_intent "$ws" 0004-explore "Explore" api src/widget "$iid4"

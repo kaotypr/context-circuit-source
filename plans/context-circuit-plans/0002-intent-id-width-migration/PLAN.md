@@ -1,7 +1,7 @@
 # 0002 — Change intent identifiers to three digits
 
 - **Plan ID:** `0002-intent-id-width-migration`
-- **Intent:** `i0003-intent-id-width`
+- **Intent:** `i003-intent-id-width`
 - **Status:** draft
 - **Repository:** `context-circuit-source`
 - **Assurance:** Standard — one worker and one independent verifier
@@ -16,8 +16,8 @@ explicit human request or manual human action.
 ## Objective and desired behavior
 
 - The canonical form is `i<NNN>-slug`, with exactly three zero-padded digits.
-- The current intents move together: `i0001` → `i001`, `i0002` → `i002`, and
-  `i0003` → `i003`, including directories, canonical fields, indexes, traces,
+- The three existing intent records move together to their canonical three-digit
+  names, including directories, canonical fields, indexes, traces,
   plan parent links, and all current references.
 - Runtime validation, allocation, approval, authorization, archive, restore,
   tracing, planning, and related lifecycle consumers agree on the new form.
@@ -48,9 +48,10 @@ explicit human request or manual human action.
 
 The refreshed trace found one repository in scope, three active intent directories,
 zero archived intent directories, and 148 old-form token matches across 130 lines
-and 46 files. The change is feasible at Standard. The existing i0001 intent has an
+and 46 files. The change is feasible at Standard. The existing conversation-library
+intent has an
 active plan and trace manifest; the plan and trace must move with the renamed intent.
-The approved i0003 contract now includes `agent-harness/` and `template/`.
+The approved i003 contract now includes `agent-harness/` and `template/`.
 
 The existing digest helper hashes the canonical `intent` field, so each approved
 intent whose identity changes receives a new digest using the unchanged algorithm.
@@ -73,7 +74,7 @@ checked after the migration before any plan proceeds.
   intent-record guidance.
 - `agents/coordinator.md`, `agents/tracer.md`, and `.agents/skills/` — host-facing
   lifecycle guidance and current intent references.
-- `intent/i0003-intent-id-width/trace/context-circuit-source.yaml` — exact traced
+- `intent/i003-intent-id-width/trace/context-circuit-source.yaml` — exact traced
   call sites, reference inventory, risks, and executable done checks.
 
 ## Tasks
@@ -96,7 +97,7 @@ all lifecycle paths continue to use the shared intent helpers.
 ### 2. Migrate current intent records and relationships
 
 Rename the three current intent directories and update their canonical `intent`
-fields and index rows: `i0001` → `i001`, `i0002` → `i002`, `i0003` → `i003`.
+fields and index rows for all three existing intent records.
 Move trace directories and preserve their evidence. Update every current plan
 parent link, including this plan's parent link after the migration. Recompute the
 frozen digest for the renamed approved records with the existing algorithm while
@@ -119,8 +120,8 @@ the shipped template. Replace only intent identifiers and intent derivation logi
 leave four-digit plan ids unchanged. Include a completeness check that finds no
 old-form active reference outside explicitly historical grounding evidence.
 
-**Acceptance:** every current workspace reference to `i0001`, `i0002`, or `i0003`
-resolves to `i001`, `i002`, or `i003`; dynamic fixture derivation emits the
+**Acceptance:** every current workspace reference to the three existing intents
+resolves to their canonical three-digit identifiers; dynamic fixture derivation emits the
 three-digit form; plan ids remain four-digit; `agent-harness/` and `template/` are
 covered.
 
@@ -133,7 +134,7 @@ Add or update tests for allocation across active and archived intents, old-form
 rejection, archive/restore with three-digit ids, approved digest behavior,
 authorization, and explicit overflow at `i999`. Prove that no lifecycle operation
 automatically archives, deletes, or recycles an intent, and run the full semantic
-acceptance suite. Preserve the existing i0001 trace as evidence while excluding
+acceptance suite. Preserve the existing migration trace as evidence while excluding
 historical evidence from active-reference checks where necessary.
 
 **Acceptance:** the complete suite remains green; the migration adds no gate and

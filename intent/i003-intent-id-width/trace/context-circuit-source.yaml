@@ -1,5 +1,5 @@
 schema_version: 1
-intent: i0003-intent-id-width
+intent: i003-intent-id-width
 repository: context-circuit-source
 
 file_map:
@@ -30,7 +30,7 @@ file_map:
   - path: wrapper/contracts/invariants.yaml
     sites:
       - "51-63: INV-INTENT-01/02 describe intent anchoring and the old four-digit intent form."
-  - path: intent/i0003-intent-id-width/contract.yaml
+  - path: intent/i003-intent-id-width/contract.yaml
     sites:
       - "2: approved canonical id remains i0003-intent-id-width until the migration is executed."
       - "83-94: approved scope explicitly includes agent-harness/ and template/ along with runtime, contracts, context, docs, agents, skills, intent, plans, and test."

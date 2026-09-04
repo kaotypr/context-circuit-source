@@ -165,8 +165,8 @@ printf '%s\n' "$fpart" | grep -q '^0017-fc: ready'   || fail "containment: unrel
 # refused without blocking the rest (v1.0: authorization is the approved intent with
 # unchanged criteria, not a separate plan-approval status and not a scope gate)
 cc_fx_plan_ex "$ws" 0018-draft "Draft" api src/dr ""
-awk '/^status:/{print "status: draft"; next}{print}' "$ws/intent/i0018-draft/contract.yaml" >"$ws/intent/i0018-draft/c.new"
-mv "$ws/intent/i0018-draft/c.new" "$ws/intent/i0018-draft/contract.yaml"
+awk '/^status:/{print "status: draft"; next}{print}' "$ws/intent/i018-draft/contract.yaml" >"$ws/intent/i018-draft/c.new"
+mv "$ws/intent/i018-draft/c.new" "$ws/intent/i018-draft/contract.yaml"
 dpart=$(cc_run_stack_ready "$ws" 0017-fc 0018-draft)
 printf '%s\n' "$dpart" | grep -q '^0018-draft: refused' || fail "partition: unauthorized plan not refused"
 printf '%s\n' "$dpart" | grep -q '^0017-fc: ready'      || fail "partition: refusal blocked the rest"

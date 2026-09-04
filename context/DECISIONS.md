@@ -294,7 +294,7 @@ routes work, not only in `wrapper/`.
 Consequence: the three new pages were accepted by the maintainer on 2026-09-04.
 Edits to existing accepted pages are corrections toward shipped truth and preserve
 their accepted decisions, each noted in its acceptance notes. The retired
-spec-adversary artifact `intent/i0001-conversation-spec-library/adversary.md` was
+spec-adversary artifact `intent/i001-conversation-spec-library/adversary.md` was
 removed and its human-accepted criteria residuals preserved in that intent's
 `contract.yaml` machine record. The stale `release/requests/0.0.1-beta.1.md` — which
 still described the earlier spec-adversary + scope-envelope design — was dropped

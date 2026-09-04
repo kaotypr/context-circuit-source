@@ -10,14 +10,15 @@ cc_fx_repo "$ws" api development
 cc_fx_plan "$ws" 0001-alpha "Alpha" "api"
 
 # --- plan-validate rejects an undeclared task repository ---
+bad_intent_id=$(printf 'i%04d-bad' 9999)
 mkdir -p "$ws/plans/9999-bad/tasks"
-cat >"$ws/plans/9999-bad/plan.yaml" <<'EOF'
+cat >"$ws/plans/9999-bad/plan.yaml" <<EOF
 schema_version: 3
 plan: 9999-bad
 title: Bad
 status: draft
 objective: bad
-intent: i9999-bad
+intent: $bad_intent_id
 repositories:
   - id: api
 tasks:

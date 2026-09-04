@@ -1,4 +1,4 @@
-# Intention — i0001
+# Intention — i001
 
 _Status: draft, waiting for your approval._
 

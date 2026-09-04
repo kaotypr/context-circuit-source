@@ -17,7 +17,7 @@ setup:
       seed_files: [notes.md]
       connect: main
   intents:
-    - id: i0001-md-export
+    - id: i001-md-export
       title: Add a Markdown export command
       repository: notes
       objective: Add a command that exports the notes to a chosen output file.
@@ -53,7 +53,7 @@ grader:
   invariants: [INV-EXEC-01, INV-APPROVE-01]
   post_conditions:
     - repositories_registered: 1
-    - intent_status: i0001-md-export:draft
+    - intent_status: i001-md-export:draft
     - plans_created: 0
     - no_execution_records: true
     - product_knowledge_unchanged_silently: true

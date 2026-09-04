@@ -52,7 +52,7 @@ Flagged inline in the affected `generated/*.case.yaml`. None blocks authoring.
    no post-condition predicate today.
 2. **Live-authored intent/plan ids.** `explore-promote-to-standard` runs the whole
    arc in-session, so the intent/plan ids are allocated live; the id-keyed
-   assertions assume the first-allocated `i0001-…` / `0001-…`. Same id-agnostic
+   assertions assume the first-allocated `i001-…` / `0001-…`. Same id-agnostic
    concern raised by `standard-feature-whole-flow` and phase 1 — a fresh whole-arc
    case wants id-agnostic assertions.
 3. **No seed shape for a mid-pairing session.** Rather than seed pairing-branch

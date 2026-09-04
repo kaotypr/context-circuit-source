@@ -20,7 +20,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit | One Product Knowledge unit with a stable ID, summary, scope, facts, decisions, and provenance. |
 | Context index | The retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to context units. |
-| Intent | The first-class decision for one change (Context Circuit v1.0): goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, and consequence tier. Approving it is the single upstream human gate (Gate 1); approval freezes its contract and confirms the coordinator understood the ask. Ids take the form `i<NNNN>-slug`. |
+| Intent | The first-class decision for one change (Context Circuit v1.0): goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, and consequence tier. Approving it is the single upstream human gate (Gate 1); approval freezes its contract and confirms the coordinator understood the ask. Ids take the form `i<NNN>-slug`. |
 | Contract | The machine record of an intent (`contract.yaml`); its frozen digest identifies the criteria the change is proven against. |
 | Acceptance criterion | One condition that defines "correct" at the outcome level; the runnable check that proves it is earned against the real code by the tracer, carried in the plan. |
 | Tracer | An independent read-only role that reads the real code after approval (one child per repository, in parallel) and reports a manifest — file map, risks, executable done-checks, tier signal, feasibility — for the coordinator to plan from. |

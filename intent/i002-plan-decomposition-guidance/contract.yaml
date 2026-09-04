@@ -1,5 +1,5 @@
 schema_version: 2
-intent: i0002-plan-decomposition-guidance
+intent: i002-plan-decomposition-guidance
 title: Make trace-to-plan decomposition explicit
 goal: >
   Make the trace-to-plan boundary explicitly choose between one plan with embedded
@@ -14,7 +14,7 @@ non_goals:
   - Adding a second human approval gate for plans.
   - Changing Explore's planless behavior or the meaning of the assurance tiers.
   - Changing delivery, candidate, verification, or scope-safety ownership.
-  - Directly redesigning or executing the separate i0001 conversation-library work.
+  - Directly redesigning or executing the separate i001 conversation-library work.
   - Delivering, publishing, merging, or committing the implementation implicitly.
 
 constraints:

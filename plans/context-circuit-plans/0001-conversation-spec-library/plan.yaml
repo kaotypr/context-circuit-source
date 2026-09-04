@@ -1,6 +1,6 @@
 schema_version: 3
 plan: 0001-conversation-spec-library
-intent: i0001-conversation-spec-library
+intent: i001-conversation-spec-library
 title: Establish the conversation-spec library as the living harness specification
 status: draft
 objective: >-

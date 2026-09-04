@@ -25,7 +25,7 @@ preconditions:
       seed_files: [notes.md]
       connect: main
   intents:
-    - id: i0001-md-export
+    - id: i001-md-export
       title: Add a Markdown export command
       repository: notes
       objective: Add a command that exports the notes to a chosen Markdown file; never overwrite an existing output file.
@@ -73,7 +73,7 @@ expected_end_state:
   # scope here (owned by 05 / standard-feature-whole-flow). `no_second_approval_prompt`
   # is a behavioral assertion the harness would need to support — see coverage/phase-2.md.
   - repositories_registered: 1
-  - intent_status: i0001-md-export:approved
+  - intent_status: i001-md-export:approved
   - plans_created: 1
   - plan_schema: 0001-md-export:3
   - no_second_approval_prompt: true

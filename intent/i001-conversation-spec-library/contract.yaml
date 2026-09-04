@@ -1,5 +1,5 @@
 schema_version: 1
-intent: i0001-conversation-spec-library
+intent: i001-conversation-spec-library
 title: Establish specification-by-example as the living specification of the agent harness
 goal: >
   Make the specification-by-example ("conversation-spec-first") expected-conversation
@@ -259,4 +259,4 @@ scope:
 tier: standard
 
 status: approved
-contract_digest: sha256:16869de53df2f9bfb062dbe8a37a74154d5690e46747bc0a2c8a8e58b1f61484
+contract_digest: sha256:a184fa1cc8cd9021a64b792e0955f2fb179010511b5c85e0a975c10e1a113047

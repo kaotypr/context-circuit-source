@@ -76,7 +76,7 @@ decision_points:
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
   - repositories_registered: 1
-  - intent_status: i0001-scope-expansion:approved
+  - intent_status: i001-scope-expansion:approved
   - plans_created: 1
   - authorized_status: 0001-scope-expansion:yes    # the plan is authorized for what was approved; the reach is surfaced, not silently included
   - plan_status: 0001-scope-expansion:draft
