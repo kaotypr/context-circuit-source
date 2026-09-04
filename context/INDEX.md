@@ -35,6 +35,12 @@ Pending context proposals:
   `context/domains/conversation-spec-library/README.md` (add; specification-by-example
   test-harness library; repository: `context-circuit-source`; review needed).
 
+Domain pages added and accepted in the 2026-09-04 v1.0 re-ground, closing the gap
+where v1.0's core additions had no owning domain page:
+[intent](domains/intent/README.md) (Gate 1 front door),
+[tracing](domains/tracing/README.md) (post-approval tracer + feasibility check), and
+[assurance](domains/assurance/README.md) (consequence-tier ladder).
+
 The direct-collaboration proposals `0029`–`0033` were accepted on 2026-09-03,
 rewritten to the v1.0 assurance-ladder framing (`cc-pair` is the Explore tier, not
 a separate mode): a new [direct-collaboration](domains/direct-collaboration/README.md)

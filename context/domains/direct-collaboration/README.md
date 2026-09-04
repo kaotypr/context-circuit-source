@@ -87,8 +87,8 @@ INV-ASSURE-01.
   action. The result is described as **human-supervised, not independently
   verified**.
 - **Promote — the ramp into the trust system.** When the work is real, promote in
-  place rather than restart: attach an intent (`cc-intent`, so the spec adversary
-  can challenge the criteria and the human approves it at Gate 1), raise the tier
+  place rather than restart: attach an intent (`cc-intent`, so the human approves
+  it at Gate 1 and tracers ground it against the real code on approval), raise the tier
   to Standard/Critical (the independent verifier appears — a risk surface refuses
   to stay Explore), and author a lightweight plan of record (`cc-plan`) whose
   execution binds to the existing pairing-branch commits and so produces the

@@ -28,12 +28,20 @@ workflows:
 
 ## Summary
 
-Grounding the worker in the *target repository's own* agent guidance — discovered
+Grounding the worker in the *target repository's own* agent guidance — scanned
 live from the execution worktree and delivered through a generated brief, never
-hand-authored into each worker prompt. Part of execution setup; owned by the
-runtime discovery/hardening/brief functions and the shipped `worker-brief.md`
+hand-authored into each worker prompt. Part of **execution setup**; owned by the
+runtime grounding/hardening/brief functions and the shipped `worker-brief.md`
 template, applied by the `cc-execute` and `cc-run-stack` skills and honored by the
 `agents/worker.md` worker.
+
+This is **not** the post-approval **tracer**
+([tracing and feasibility](../tracing/README.md)). Both phases read the repository,
+but they differ: tracing runs *after approval, before planning* to judge *whether
+the change is buildable* (file map, risks, done-checks, tier signal) and produces
+the **trace manifest**; repository grounding runs *at execution setup, inside the
+worktree* to establish *how to write code in this repository* and produces the
+**worker brief**. Different timing, subject, and output.
 
 ## Scope
 
