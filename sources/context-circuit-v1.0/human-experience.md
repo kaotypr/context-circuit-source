@@ -9,10 +9,10 @@ disclosure principle Context Circuit already holds.
 ## What stays hidden vs. shown
 
 Hidden (as today): branches, worktrees, leases, base selection, candidate digests,
-runtime records, and now discovery's machinery too — the per-repository children it
+runtime records, and now the tracer's machinery too — the per-repository children it
 spawns and the manifest's internals. Shown (as today, plus the new decisions): the
-intent and its criteria, the grounded plan discovery's report produces (real file
-paths, named risks, executable done-checks — not discovery itself), the worker's
+intent and its criteria, the grounded plan the tracer's report produces (real file
+paths, named risks, executable done-checks — not the tracer itself), the worker's
 handoff, the verifier's result, and the two gates. The reader never sees a workspace
 file name, internal path, or internal id in normal conversation — internal terms are
 translated (see `glossary.md`), the same rule publications already follow
@@ -36,11 +36,11 @@ the human confirming the coordinator understood them:
 
 Approval here is the real decision. No confirmation card, no token — a conversational
 yes (INV-APPROVE-01 reworked). Approval is also what sends the coordinator into the
-code: it spawns discovery, which the human never sees directly.
+code: it spawns the tracers, which the human never sees directly.
 
 ## Plan review — the grounded result (new)
 
-Once discovery has reported back, the coordinator returns with a plan, not a re-ask.
+Once the tracer has reported back, the coordinator returns with a plan, not a re-ask.
 This is where the sharpened, code-grounded result reaches the human — real file
 paths, risks named against the real code, and executable done-checks — in place of a
 guessed one:
@@ -79,18 +79,20 @@ Unchanged from today (INV-DELIVER-01), and still the second real decision:
 > Ready to open the pull request onto `main` for the checkout service. This merges the
 > retry change. Go ahead?
 
-## When it re-gates (the envelope check speaking)
+## When it pauses (the feasibility check speaking)
 
-The one place the human is pulled back in mid-flow is scope drift — and the coordinator
-says *why*, in plain language:
+The one place the human is pulled back in before planning is when the code turns out to
+need a change beyond the scope they named — and the coordinator says *why*, in plain
+language:
 
-> Heads up: building this, it turns out the change also needs to touch **payments-lib**,
-> which wasn't part of what you approved. I've paused rather than widen the scope on my
-> own. Want to include payments-lib (I'll re-check the criteria), or should I keep the
-> change to the checkout service?
+> Before I plan this — reading the checkout code, the change also needs to **change
+> payments-lib**, which wasn't part of what you approved. I've stopped rather than widen
+> the scope on my own. Want to include payments-lib (I'll read it and fold it in), or
+> should I keep the change to the checkout service?
 
-This is the crown-jewel envelope check surfacing as a question, not an error. It should
-feel like the system protecting the human's approval, not nagging.
+This is the feasibility check surfacing an out-of-scope reach as a question, not an
+error — and it happens before any code is written, because the tracer reads the code
+first. It should feel like the system protecting the human's approval, not nagging.
 
 ## Transparency — the questions a human can ask
 
@@ -99,7 +101,7 @@ interrogate the machinery in words. The coordinator answers these from runtime f
 (no new gate, just reporting):
 
 - **"Why is this Critical?"** → lists the risk signals that set the tier
-  (`crown-jewels.md`), so tiering is never a black box.
+  (`intent-tier.md`), so tiering is never a black box.
 - **"What's blocking the next plan?"** → names the unreconciled delivered work
   (knowledge debt, M4) in plain terms.
 - **"What did the check actually run?"** → the acceptance criteria and their results

@@ -35,7 +35,7 @@ future addition, not part of the core evolution.
 | What is gated | every plan **state transition** | the **claim of correct** (intent) + **delivery** | 🟧 |
 | Human gates | 4 (approve, execute, complete, deliver) | 2 (intent, delivery) | 🟧 |
 | Unit of trust | the execution/attempt | the **candidate** | 🟧 |
-| Definition of "correct" | one human glance in plan approval | explicit intent gate + **post-approval discovery grounding** | 🟦 |
+| Definition of "correct" | one human glance in plan approval | explicit intent gate + **post-approval tracing** | 🟦 |
 | Ceremony | fixed full lifecycle (+ separate pairing mode) | **one consequence ladder** Explore→Critical | 🟧 |
 
 ## Mechanisms
@@ -43,10 +43,10 @@ future addition, not part of the core evolution.
 | Capability | Today | v1.0 | |
 | --- | --- | --- | --- |
 | Intent / bigger-picture object | none (sources → proposals → plan) | first-class `intent/` + frozen contract | 🟦 |
-| Feasibility/risk checked against real code, before any plan or code change | no | **discovery**, spawned automatically right after Gate 1 | 🟦 |
-| Plan approval | explicit human, every plan | automatic within approved envelope | 🟧 |
-| Scope envelope enforcement | task scope per plan (INV-PLAN-02) | **envelope check** re-gates on drift, against discovery findings and each plan | 🟦 |
-| Acceptance criteria precision | vague until plan, or fixed upfront by guesswork | **outcome-level** in the intent; the **executable** check is a discovery output, carried in the plan | 🟦 |
+| Feasibility/risk checked against real code, before any plan or code change | no | **the tracer**, spawned automatically right after Gate 1 | 🟦 |
+| Plan approval | explicit human, every plan | automatic once the intent is approved | 🟧 |
+| Scope safety | task scope per plan (INV-PLAN-02) | settled at **delivery** (Gate 2); the **feasibility check** surfaces a required change beyond a bound scope | 🟧 |
+| Acceptance criteria precision | vague until plan, or fixed upfront by guesswork | **outcome-level** in the intent; the **executable** check is a tracing output, carried in the plan | 🟦 |
 | Evidence freshness | per-attempt, conversational | **candidate digest**, auto-void on change | 🟦 |
 | One-PR / stacked plans | verifier per plan | one candidate → one verification | 🟧 |
 | Human acceptance record | not first-class | **candidate-bound acceptance record** | 🟦 |
@@ -83,7 +83,7 @@ future addition, not part of the core evolution.
 
 | Removed | Replaced by | |
 | --- | --- | --- |
-| Per-plan approval gate as a human step | intent gate + envelope check | 🟥 |
+| Per-plan approval gate as a human step | intent gate; scope settled at delivery (Gate 2) | 🟥 |
 | Unconditional verifier per execution | tiered verification | 🟥 |
 | Explicit mark-done at low tier | inferred completion | 🟥 |
 | `cc-pair` as a **separate** mode | Explore tier of the one ladder | 🟥 |

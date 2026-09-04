@@ -17,9 +17,9 @@ Lives at `intent/<id>/contract.yaml`.
 | `goal` | text | one paragraph |
 | `non_goals` | list<text> | explicit exclusions |
 | `constraints` | list<text> | e.g. no new deps, latency budget |
-| `acceptance_criteria` | list<text> | **OUTCOME level** — what must be true, in terms a human can approve; not executable and not frozen upfront. The runnable check that proves each one (a grep, a test id) is a **discovery** output, carried in the plan, never authored here (`discovery-and-grounding.md`) |
-| `scope` | object | the **envelope** — COARSE on purpose: candidate repositories + a rough boundary, `repositories: [{id, paths[]}]`. Checked against discovery's findings and against each plan |
-| `tier` | enum | `explore \| standard \| critical` — **provisional**; discovery may raise it, and the raise surfaces at plan review |
+| `acceptance_criteria` | list<text> | **OUTCOME level** — what must be true, in terms a human can approve; not executable and not frozen upfront. The runnable check that proves each one (a grep, a test id) is a **tracing** output, carried in the plan, never authored here (`tracing-and-grounding.md`) |
+| `scope` | object | COARSE and OPTIONAL: bound repositories + a rough boundary, `repositories: [{id, paths[]}]`; may be empty. Not an enforced gate — the tracer reports where the change lands, the feasibility check surfaces a required change beyond a bound scope, and scope-safety is settled at delivery (Gate 2) |
+| `tier` | enum | `explore \| standard \| critical` — **provisional**; the tracer may raise it, and the raise surfaces at plan review |
 | `status` | enum | `draft \| approved` |
 | `intent_dependencies` | list | optional; `{id, reason}` entries naming other intents this one depends on (mirrors `plan_dependencies`, INV-PLAN-05) |
 | `contract_digest` | digest | set on approval; the frozen identity of the decision |
@@ -27,11 +27,11 @@ Lives at `intent/<id>/contract.yaml`.
 `INTENT.md` (human-facing) sits beside it — the plain-language view of the same
 decision, reviewable as one thing.
 
-## New: `discovery-manifest.yaml` (grounding evidence)
+## New: `trace-manifest.yaml` (grounding evidence)
 
-Recorded per intent, one per repository in the envelope — discovery's report,
+Recorded per intent, one per repository in scope — the tracer's report,
 captured as **durable grounding evidence** rather than lost in a context window
-(`discovery-and-grounding.md`). Lives at `intent/<id>/discovery/<repo>.yaml`.
+(`tracing-and-grounding.md`). Lives at `intent/<id>/trace/<repo>.yaml`.
 
 | Field | Type | Notes |
 | --- | --- | --- |
@@ -43,13 +43,15 @@ captured as **durable grounding evidence** rather than lost in a context window
 | `risks` | list<text> | concrete risks named against the real code (data, security, irreversibility, coupling) |
 | `done_checks` | list<check> | executable commands/tests that prove the intent's outcome criteria hold; carried into the plan and re-run by the verifier |
 | `tier_signal` | text | evidence that may raise the intent's provisional `tier` |
+| `feasible` | bool | whether the approved intent is buildable given the real code; `false` carries the blocker in `open_questions` for the coordinator to relay |
+| `out_of_scope_reach` | list | repositories/areas the change must **modify** that fall outside a bound scope (empty when none, or when no scope is bound); the coordinator surfaces these in the feasibility check |
 | `open_questions` | list<text> | anything the human must settle, for the coordinator to relay |
 | `completeness_proof` | object | present only for a "change every X" obligation — the command and count showing the found set is the whole set |
 | `recorded_at` | timestamp | |
 | `freshness_checked_at` | timestamp | last bounded freshness check against current code; re-reads only what drifted |
 
 Reused across sessions exactly as other grounding evidence is (INV-GROUND-*): a later
-session loads the recorded manifest instead of re-discovering from zero.
+session loads the recorded manifest instead of re-traceing from zero.
 
 ## New: `candidate.yaml` (owner of INV-CANDIDATE-01)
 
@@ -100,7 +102,7 @@ intent/                          # NEW — parallel to plans/
   i0007-checkout-retries/
     INTENT.md
     contract.yaml
-    discovery/                   # NEW — durable manifests, one per repository
+    trace/                   # NEW — durable manifests, one per repository
       checkout-service.yaml
   INDEX.md                       # active intents (mirrors plans/INDEX.md)
   archive/                       # archived intents (status-blind move, like plans)

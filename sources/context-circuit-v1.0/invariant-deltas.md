@@ -8,20 +8,22 @@ real current ids where a rule is reworked.
 
 - **INV-INTENT-01 — the correctness gate.** Every writing request is anchored to a
   first-class `intent/<id>/` whose `contract.yaml` holds goal, non-goals,
-  constraints, outcome-level acceptance criteria, a coarse scope envelope, and a
+  constraints, outcome-level acceptance criteria, a coarse and optional scope, and a
   provisional tier — drafted by the coordinator without reading the codebase.
   Approval is the single upstream human gate — it also confirms the coordinator
   understood the plain ask — and freezes `contract_digest`. Owner:
   `wrapper/contracts/schemas/intent-contract.yaml` (new) + this file.
-- **INV-INTENT-02 — the scope envelope.** A plan declares its parent intent and may
-  touch only repositories and path regions within that intent's declared `scope`.
-  The same check runs at two points: against **discovery's findings**, before any
-  plan is written (a change that reaches outside the envelope is held and
-  re-gated), and against **each plan** (a plan, or candidate, that exceeds the
-  envelope, or relies on a changed `contract_digest`, is held and re-gated to a
-  human; it never proceeds on the original approval). The envelope check fails
-  upward on any ambiguity. Owner: this file + `wrapper/contracts/schemas/plan.yaml`
-  (adds required `intent`).
+- **INV-INTENT-02 — feasibility before planning.** A plan declares its parent
+  intent. Before any plan is written, the coordinator runs a **feasibility check** on
+  the tracer's findings: an infeasible intent is held and returned to the human with the
+  blocker, and a required change that would *modify* a repository or area beyond a bound
+  scope is surfaced to the human for a decision (include it, or find another way). The
+  feasibility check **fails upward** — when it cannot conclude the change is buildable,
+  it stops rather than proceed. Scope-safety itself is **not** enforced here: the concrete
+  scope is settled at delivery (Gate 2, INV-DELIVER-01), where the human sees and
+  authorizes the exact diff and repositories, and all pre-delivery work is sandboxed in
+  isolated worktrees. Owner: this file + `wrapper/contracts/schemas/plan.yaml` (adds
+  required `intent`).
 - **INV-CANDIDATE-01 — candidate-bound evidence.** A candidate is a deterministic
   digest over the per-repository commit map, the selected base commits, and the
   intent's `contract_digest`. Independent-check results and human acceptance bind
@@ -42,16 +44,15 @@ real current ids where a rule is reworked.
 
 - **INV-APPROVE-01** — Approval is the explicit conversational human gate on the
   **intent** (draft→approved on the contract), not on each plan, and freezes
-  `contract_digest`. No confirmation card, no hidden token. Plan readiness within
-  an approved envelope is automatic (INV-INTENT-02), not a second human gate.
-- **INV-EXEC-01** — A plan derived from an approved intent and confirmed within its
-  envelope may execute once the human asks for execution; the intent's approval
-  authorizes execution within the envelope but does not itself trigger it —
-  execution stays a separate human-triggered action, not a second approval.
+  `contract_digest`. No confirmation card, no hidden token. Plan readiness once the
+  intent is approved is automatic (INV-INTENT-02), not a second human gate.
+- **INV-EXEC-01** — A plan derived from an approved intent may execute once the human
+  asks for execution; the intent's approval authorizes execution but does not itself
+  trigger it — execution stays a separate human-triggered action, not a second approval.
   (Combining a request that approves intent and asks to execute in one turn
   remains allowed.)
 - **INV-PLAN-01** — `plan.yaml` names its parent `intent` and carries a status that
-  is a **projection**: `approved` follows automatically from envelope confirmation,
+  is a **projection**: `approved` follows automatically from intent approval,
   `done` is inferred from candidate acceptance + delivery (explicit at Critical).
   Task status remains a synchronized projection, never a second authority.
 - **INV-VERIFY-01** — At Standard and Critical, one independent verifier checks the
@@ -105,7 +106,7 @@ New rows for `owners:` in `invariants.yaml`:
 ```
 intent_contract:     wrapper/contracts/schemas/intent-contract.yaml
 intent_gate:         wrapper/contracts/invariants.yaml
-scope_envelope:      wrapper/contracts/invariants.yaml
+feasibility_check:   wrapper/contracts/invariants.yaml
 candidate_identity:  wrapper/contracts/schemas/candidate.yaml
 assurance_tiering:   wrapper/contracts/invariants.yaml
 human_acceptance:    wrapper/contracts/schemas/candidate.yaml

@@ -56,7 +56,7 @@ renames nothing and keeps every existing convention.
       context-impact.yaml        #   + reconciliation-debt marker (M4)
     worktrees/                   #   isolated worktrees (incl. cc-pair/)
     pairing/<session>/           #   Explore session pointers
-    discovery/<intent>/          #   NEW — per-repo discovery manifests, recorded
+    trace/<intent>/          #   NEW — per-repo trace manifests, recorded
                                   #     grounding evidence, freshness-checked (M1)
     knowledge-debt/              #   NEW — delivered-but-unreconciled markers (M4)
     locks/                       #   worker locks + path leases

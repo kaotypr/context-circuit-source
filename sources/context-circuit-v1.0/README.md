@@ -64,9 +64,9 @@ Every mechanism below maps to one or more of these.
   from a ground-up rewrite.
 
 **The four mechanisms**
-- `intent-and-criteria.md` — Mechanism 1: the intent front door, discovery, and
-  the envelope check. (Pains 1, 3, 4.)
-- `discovery-and-grounding.md` — how discovery turns an approved intent into a
+- `intent-and-criteria.md` — Mechanism 1: the intent front door, tracing, and
+  the feasibility check. (Pains 1, 3, 4.)
+- `tracing-and-grounding.md` — how the tracer turns an approved intent into a
   detailed, grounded plan; part of Mechanism 1.
 - `candidate-and-evidence.md` — Mechanism 2: candidate identity + mechanical
   evidence staleness. (Pains 6, 7.)
@@ -80,8 +80,10 @@ Every mechanism below maps to one or more of these.
   (and whether Explore spawns an agent).
 - `lifecycle-and-gates.md` — the resulting gate model: two human gates, inferred
   completion.
-- `crown-jewels.md` — the two safety-critical checks specified: the envelope check
-  and tier classification.
+- `intent-feasibility.md` — the feasibility check specified: is the approved intent
+  buildable, and what does it take? A quality gate, not a safety gate.
+- `intent-tier.md` — consequence tier classification specified: the one safety-critical
+  automated check, deciding how much assurance a change gets.
 - `concurrency-and-candidate.md` — how the candidate composes with leases, base
   selection, and integration merge; the change-set delivery unit.
 - `human-experience.md` — the conversational surface: the two gates in plain
@@ -104,7 +106,8 @@ Every mechanism below maps to one or more of these.
 **Adoption**
 - `migration-and-build-order.md` — the strangler-fig sequence, grounded in the
   coupling map.
-- `risks-and-open-questions.md` — the two crown-jewel checks and honest tradeoffs.
+- `risks-and-open-questions.md` — the safety-critical tier check, where scope-safety
+  lives, and honest tradeoffs.
 - `glossary.md` — the new vocabulary, internal→human translations, and the concept
   budget.
 - `comparison-matrix.md` — v1.0 vs. current Context Circuit, and the ideas it

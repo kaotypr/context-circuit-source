@@ -11,9 +11,10 @@ carries.
 | --- | --- | --- |
 | **Intent** | The first-class decision for one change: goal, non-goals, constraints, acceptance criteria, scope, tier. Approved once, frozen. | new front door; the thing you approve instead of the plan |
 | **Contract** | The machine record of an intent (`contract.yaml`); its `contract_digest` is frozen at approval. | — |
-| **Acceptance criterion** | An **outcome-level** statement in the intent's contract — what must be true, in terms a human can approve. The **executable check** that proves it (a grep, a test id) is a **discovery** output, carried in the plan, not the contract. | sharpens today's implicit plan acceptance |
-| **Discovery** | A read-only child, one per repository, spawned automatically when an intent is approved. Reads the real code and reports back a manifest — file/call-site map, concrete risks, a task partition, executable done-checks, a tier signal, open questions — to the coordinator. Never talks to the human. | new; the step that reads real product context, now automatic and after approval — see `discovery-and-grounding.md` |
-| **Scope envelope** | The repositories and rough boundary an intent authorizes; discovery findings and plans must both stay inside it. | new; what lets plan approval collapse safely |
+| **Acceptance criterion** | An **outcome-level** statement in the intent's contract — what must be true, in terms a human can approve. The **executable check** that proves it (a grep, a test id) is a **tracing** output, carried in the plan, not the contract. | sharpens today's implicit plan acceptance |
+| **Tracer** | A read-only child, one per repository, spawned automatically when an intent is approved. Reads the real code and reports back a manifest — file/call-site map, concrete risks, a task partition, executable done-checks, a tier signal, open questions — to the coordinator. Never talks to the human. Its phase is **tracing**. | new; the step that reads real product context, now automatic and after approval — see `tracing-and-grounding.md` |
+| **Scope** | A coarse, optional boundary an intent names — a bound repository/folder, if the human names one. Not an enforced gate; the concrete scope is settled at delivery (Gate 2). | reframes today's per-plan task scope |
+| **Feasibility check** | A coordinator judgment after tracing: is the approved intent buildable, and what does it take? Surfaces an infeasible intent or a required change beyond a bound scope. | new; a quality gate (not a safety gate — scope-safety lives at delivery) |
 | **Candidate** | The exact proposed result — a digest over the commit map, bases, and contract digest. Evidence binds to it. | replaces "the attempt/latest" as the unit of trust |
 | **Tier** | Consequence level: **Explore / Standard / Critical**. Decides how much assurance, incl. whether a verifier spawns. | replaces the plan-vs-pairing binary |
 | **Human acceptance** | A first-class record: this human accepted this candidate. | replaces the "mark done" flip |
@@ -28,7 +29,7 @@ The human never hears the left column.
 | Internal | Said to the human |
 | --- | --- |
 | worktree / branch `cc/<plan>/<repo>` | "a separate working copy" |
-| `intent-envelope-check` EXCEEDS | "this needs to go outside what you approved" |
+| feasibility: out-of-scope reach | "this also needs to change something outside what you approved" |
 | `candidate` void | "the code changed, so the earlier check no longer applies" |
 | tier = critical | "higher-risk, so it gets an independent check and an explicit sign-off" |
 | tier = explore | "quick and human-supervised — no independent check" |
@@ -55,7 +56,7 @@ count should not rise:
 | Added (must learn) | Removed (no longer juggled) |
 | --- | --- |
 | intent, tier, candidate | per-plan approval as a step |
-| discovery (reads the code, reports a manifest) | the "mark done" flip |
+| tracer (reads the code, reports a manifest) | the "mark done" flip |
 | reconciliation debt | remembering to "gather context" |
 | promote (replaces a cliff) | "pairing vs plan" as two separate modes |
 
