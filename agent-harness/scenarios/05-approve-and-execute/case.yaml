@@ -56,7 +56,8 @@ grader:
     - requires_any: ["verified", "checked", "approved", "built", "not.*done", "complete"]
       reason: It should report a verified build and leave completion to the human.
   # C. access-discipline audit (session-level; forbidden = hard gate)
-  #    (in-session Task driver: no file-access trace, so C is warning-only here)
+  #    (in-session native child-agent driver: no file-access trace, so C is
+  #    warning-only here)
   access_policy:
     execute-plan:
       required: []

@@ -94,3 +94,13 @@ forked conversation context. End the Codex `task_name` with `_worker` or
 `_verifier` so bounded host evidence can identify the role without retaining a
 provider prompt. For direct collaboration, apply the `worker` tier to its one
 worker and never launch a verifier.
+
+The coordinator on any host may keep one resumable root session, represented by
+a session or thread id, for the human conversation. That root is not a worker,
+verifier, or tracer. Every required child role must use the host's native
+child-agent primitive and be attached to that coordinator: Codex uses
+`spawn_agent`, Claude Code uses `Task`/subagent, and Cursor Agent uses its native
+child feature when available. A separate top-level task, peer thread, or resumed
+root session does not satisfy the child requirement. If the native child cannot
+be created, the route is `host-blocked` and remains read-only — do not replace
+the child with another conversation session or self-verification.

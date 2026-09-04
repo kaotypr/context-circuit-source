@@ -62,6 +62,11 @@ case "$mode" in
 {"type":"session_meta","payload":{"source":{"subagent":{"thread_spawn":{"parent_thread_id":"11111111-1111-4111-8111-111111111111","agent_path":"/root/contract_worker"}}}}}
 {"type":"turn_context","payload":{"model":"gpt-5.6-luna","effort":"medium"}}
 JSON
+		mkdir -p "$FAKE_CODEX_STATE_DIR/sessions/peer"
+		cat > "$FAKE_CODEX_STATE_DIR/sessions/peer/thread.jsonl" <<'JSON'
+{"type":"session_meta","payload":{"source":{"thread_spawn":{"parent_thread_id":"11111111-1111-4111-8111-111111111111","agent_path":"/root/peer_worker"}}}}
+{"type":"turn_context","payload":{"model":"peer-model","effort":"low"}}
+JSON
 		printf '%s\n' 'I can outline a plan and get you started.' > "$out"
 		printf '%s\n' '{"type":"thread.started","thread_id":"11111111-1111-4111-8111-111111111111"}'
 		printf '%s\n' '{"type":"turn.completed","usage":{"input_tokens":120,"cached_input_tokens":20,"output_tokens":30}}' ;;
@@ -110,6 +115,8 @@ require_file "$lab/run/role-evidence.tsv"
 contains "$lab/run/role-evidence.tsv" 'worker'
 contains "$lab/run/role-evidence.tsv" 'gpt-5.6-luna'
 contains "$lab/run/role-evidence.tsv" 'medium'
+not_contains "$lab/run/role-evidence.tsv" 'peer-model'
+not_contains "$lab/run/role-evidence.tsv" 'peer_worker'
 test ! -e "$lab/run/file-access-trace.tsv" || fail 'Codex driver must not claim a file-access trace'
 
 contains "$fake_log" '[--approve-for-me]'
