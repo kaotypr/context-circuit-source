@@ -476,6 +476,19 @@ cc_intent_index_upsert() {
 	return 0
 }
 
+# cc_intent_human_status_sync DIR STATUS -> keep the human-facing status mirror
+# aligned with the canonical contract status after a lifecycle transition.
+cc_intent_human_status_sync() {
+	cc_ihs_file="$1/INTENT.md"; cc_ihs_status="$2"
+	[ -f "$cc_ihs_file" ] || { cc_fail INTENT_MD_MISSING; return 1; }
+	awk -v s="$cc_ihs_status" '
+		!done && /^_Status:[[:space:]]/ { print "_Status: " s "."; done=1; next }
+		!done && NR == 1 && /^#[[:space:]]/ { print; print ""; print "_Status: " s "."; done=1; next }
+		{ print }
+		END { if (!done) print "_Status: " s "." }
+	' "$cc_ihs_file" | cc_atomic_write "$cc_ihs_file"
+}
+
 # cc_intent_approve ROOT INTENT -> draft->approved (Gate 1); freeze contract_digest
 cc_intent_approve() {
 	cc_iap_root="$1"; cc_iap_id="$2"
@@ -510,6 +523,8 @@ cc_intent_approve() {
 		END { print "contract_digest: " d }
 	' "$cc_iap_yaml" | cc_atomic_write "$cc_iap_yaml" \
 		|| { cc_fail INTENT_APPROVAL_RECORD_WRITE_FAILED "$cc_iap_id"; return 1; }
+	cc_intent_human_status_sync "$cc_iap_dir" approved \
+		|| { cc_fail INTENT_APPROVAL_HUMAN_STATUS_WRITE_FAILED "$cc_iap_id"; return 1; }
 	cc_intent_index_upsert "$cc_iap_root" "$cc_iap_id" >/dev/null
 	cc_emit intent "$cc_iap_id"
 	cc_emit status approved

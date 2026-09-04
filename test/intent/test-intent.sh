@@ -59,6 +59,7 @@ assert_eq "" "$before"
 # only AFTER approval, so approval depends on the contract alone (no adversary).
 sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
+assert_eq "approved" "$(sed -n 's/^_Status:[[:space:]]*\([^,._]*\).*$/\1/p' "$ws/intent/$id1/INTENT.md")"
 frozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 test -n "$frozen" || fail "approval did not freeze a contract_digest"
 case "$frozen" in sha256:*|cksum:*) : ;; *) fail "contract_digest not a digest: $frozen" ;; esac
