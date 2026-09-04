@@ -95,7 +95,8 @@ invariants:
   - the manifest is durable grounding evidence, reused with a bounded freshness check
     rather than re-traced from zero (INV-GROUND-*)
   - it is not part of contract_digest — earned post-approval, it never re-enters Gate 1
-    (a known-open design question F1/F4 in risks-and-open-questions; current behavior preserved)
+    (whether post-approval done-checks should bind into the frozen contract is an open
+    question in risks-and-open-questions; current behavior keeps them out)
 
 rules:
   - INV-INTENT-01
