@@ -7,13 +7,16 @@ goal: >
   trace or plan reference, documentation reference, fixture, and test reference
   in the workspace consistently, and update allocation and validation so future
   active and archived intents use the three-digit form without changing intent
-  lifecycle semantics or losing existing status, approval, or history.
+  lifecycle semantics or losing existing status, approval, or history. For approved
+  intents, recompute the frozen contract digest with the existing digest algorithm
+  after changing only the identity spelling.
 
 non_goals:
   - Changing intent lifecycle semantics, approval gates, authorization, or tiering.
   - Changing plan identifiers or unrelated identifier formats.
   - Rewriting historical Git objects or commit messages outside current workspace files.
   - Changing the meaning or acceptance criteria of existing intents.
+  - Automatically archiving, deleting, or recycling intent identifiers.
   - Delivering, publishing, merging, or pushing implicitly.
 
 constraints:
@@ -24,8 +27,11 @@ constraints:
   - Allocation, validation, approval, archive, restore, authorization, tracing,
     planning, and any other lifecycle operation must agree on the same identifier
     grammar.
-  - Existing intent status, approval digest semantics, relationships, trace data,
-    and plan parent links must be preserved except for the identifier spelling.
+  - Existing intent status, relationships, trace data, and plan parent links must
+    be preserved except for the identifier spelling. For approved intents, recompute
+    the frozen digest with the existing algorithm after the identity-only change.
+  - Old or unrelated intents may be archived or deleted only through an explicit
+    human request or manual human action; cleanup never silently recycles an id.
   - Product behavior has one owner per rule; update the owning contract/runtime
     surfaces rather than adding parallel compatibility policy.
   - Preserve unrelated and dirty work, and run the semantic acceptance suite after
@@ -55,7 +61,14 @@ acceptance_criteria:
       Allocation chooses the next unused three-digit intent number across active
       and archived intents, and validation, approval, archive, restore,
       authorization, tracing, and planning continue to operate correctly with the
-      migrated identifiers.
+      migrated identifiers. Archiving or deleting an old or unrelated intent is
+      never automatic and never silently makes its identifier reusable.
+  - id: AC-APPROVED-DIGEST
+    statement: >
+      For every approved intent renamed by the migration, the frozen contract digest
+      is recomputed with the existing algorithm after only the identity spelling
+      changes; the approved criteria, status, authorization meaning, and lifecycle
+      behavior remain unchanged.
   - id: AC-LIFECYCLE-PRESERVED
     statement: >
       The semantic acceptance suite remains green and demonstrates that changing
@@ -75,8 +88,9 @@ scope:
         - .agents/skills/
         - intent/
         - plans/
+        - agent-harness/
+        - template/
         - test/
 
 tier: standard
-status: approved
-contract_digest: sha256:e8396326bd47c91160defe8c02e1b5ac5841b26939c2c6abad78643097725017
+status: draft
