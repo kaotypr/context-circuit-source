@@ -23,9 +23,9 @@ mechanical.
 **Two human gates, and only two:**
 
 1. **Intent** — the human approves *what "correct" means*: the goal, the
-   non-goals, the constraints, the outcome-level acceptance criteria, and the
-   scope envelope. This is approved once, up front; the approval also confirms the
-   coordinator understood the plain ask, since discovery — the read of the real
+   non-goals, the constraints, the outcome-level acceptance criteria, and a coarse,
+   optional scope. This is approved once, up front; the approval also confirms the
+   coordinator understood the plain ask, since the tracer — the read of the real
    code — only spawns once that target is confirmed.
 2. **Delivery** — the human authorizes *the irreversible act* (pull request,
    merge, push, deploy). Never implied by verification or completion.
@@ -33,14 +33,15 @@ mechanical.
 Everything between those two gates is **mechanical, consequence-tiered, and
 self-invalidating**, realized by four mechanisms:
 
-- **M1 · Intent + discovery + envelope (front door).** A first-class `intent/`
+- **M1 · Intent + tracing + feasibility (front door).** A first-class `intent/`
   object holds the bigger picture and a frozen acceptance contract. Approval spawns
-  **discovery** — one read-only child per repository, in parallel — which reads the
+  **the tracer** — one read-only child per repository, in parallel — which reads the
   real code and reports back a manifest (files, call-sites, risks, executable
-  done-checks, a tier signal) that the coordinator plans from. Plans become a
-  derivation of that manifest and carry no second gate — unless discovery's
-  findings, or a plan, drift beyond the approved scope envelope, which re-gates to
-  a human before any plan is written, or before the plan proceeds.
+  done-checks, a tier signal) that the coordinator plans from. The coordinator then
+  runs a **feasibility check** on the findings: buildable → plans are derived with no
+  second gate; not buildable → held and returned to the human; buildable but reaching
+  beyond a bound scope → surfaced as a question before any plan is written. Scope-safety
+  itself is settled at delivery (Gate 2), not by an automated gate here.
 - **M2 · Candidate + evidence.** Evidence (independent check, human acceptance)
   binds to a **candidate** — a digest over the exact per-repository commit map,
   the selected bases, and the frozen contract revision. Any new commit or criteria
@@ -80,29 +81,32 @@ this evolution delivers without discarding the mechanics.
 
 | Decision | Context Circuit today | v1.0 |
 | --- | --- | --- |
-| What "correct" means | one unassisted human glance folded into plan approval | **explicit intent gate + post-approval discovery grounding** |
-| Plan is ready | explicit human approval (INV-APPROVE-01) | automatic derivation within the approved envelope; re-gates only on drift |
-| Execution may start | separate authorization (INV-EXEC-01) | authorized by the approved intent's envelope |
+| What "correct" means | one unassisted human glance folded into plan approval | **explicit intent gate + post-approval tracing** |
+| Plan is ready | explicit human approval (INV-APPROVE-01) | automatic derivation once the intent is approved; scope settled at delivery |
+| Execution may start | separate authorization (INV-EXEC-01) | authorized by the approved intent |
 | Work is checked | one independent verifier, always (INV-VERIFY-01) | independent verifier at Standard/Critical; human-supervised at Explore |
 | Plan is done | explicit human flip (INV-COMPLETE-01) | inferred from candidate acceptance + delivery at low tier; explicit at Critical |
 | Knowledge is current | manual reconciliation, forgettable | reconciliation debt blocks the next grounding |
 | It ships | separate human action (INV-DELIVER-01) | **unchanged — the second and final gate** |
 
-## The two things that must be right
+## The one thing that must be right (and where scope-safety lives)
 
-v1.0 moves safety from "gate every transition" to "gate the two that matter,"
-which concentrates the entire safety property into two deterministic checks. Both
-must **fail upward** (when unsure, treat as riskier / re-gate):
+v1.0 moves safety from "gate every transition" to a lighter model, which concentrates
+the safety property into **one** automated check:
 
-1. **Intent-envelope drift detection** — a plan or candidate that exceeds the
-   approved scope must reliably re-gate to a human. Weak detection means scope
-   creep ships unreviewed.
-2. **Consequence tiering** — skipping the independent verifier at Explore is safe
-   only if the tier is classified deterministically and errs high.
+- **Consequence tiering (`intent-tier.md`)** — skipping the independent verifier at
+  Explore is safe only if the tier is classified deterministically and **fails upward**
+  (when unsure, tier higher). A mis-low tier ships an unverified risky change — the
+  single worst failure the system can have — so tiering is the smallest, most-tested
+  component in the system.
 
-These are the crown jewels: the smallest, most-tested components in the whole
-system. Everything else is now concentrated in a few auditable verbs rather than
-smeared across a large script — which is the point of having read the core first.
+Two supporting pieces carry the rest. The **feasibility check** (`intent-feasibility.md`)
+is a quality gate — don't build the impossible, don't guess — not a safety gate.
+**Scope-safety** is carried by **Gate 2 (delivery)**, a human gate that already exists:
+the human sees and authorizes the exact diff and repositories, and everything before
+delivery is sandboxed in isolated worktrees, so pre-delivery drift is wasted effort, not
+irreversible harm. This is the deliberate trade — v1.0 does not add an automated scope
+gate; it leans on the delivery gate.
 
 ## What v1.0 deliberately does NOT adopt
 

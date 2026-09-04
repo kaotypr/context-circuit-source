@@ -1,49 +1,53 @@
 # Risks and open questions
 
-Reported honestly. v1.0 moves safety from "gate every transition" to "gate the two
-that matter," which concentrates the entire safety property into two deterministic
-checks. If either is wrong, the design is worse than what it replaces. Everything
-else here is secondary.
+Reported honestly. v1.0 moves safety from "gate every transition" to a lighter model,
+which concentrates the safety property into **one** automated check — consequence
+tiering — supported by the delivery gate and the feasibility check. If tiering is wrong,
+the design is worse than what it replaces. Everything else here is secondary.
 
-## The two crown-jewel risks
+## The safety-critical risk (and where scope-safety actually lives)
 
-### 1. Intent-envelope drift detection (M1)
-
-Moving the gate to intent is safe only if a plan or candidate that exceeds the
-approved `scope` reliably re-gates to a human. If the envelope check is too loose
-(or a path region comparison is subtly wrong), scope creep ships under an approval
-the human never gave for that scope — exactly the accident the system exists to
-prevent.
-
-- **Mitigation:** the check is small, deterministic, and **fails upward** — any
-  ambiguity (unrecognized path, repository not named, contract digest mismatch)
-  re-gates rather than passes. It must be the most-tested component in the system.
-- **Residual uncertainty:** "within scope" is a path/repo comparison, which is
-  mechanical, but *intent* drift (the work technically stays in the paths yet does
-  something the criteria did not anticipate) is not caught by a path check — that is
-  what the acceptance criteria themselves are for. Discovery sharpens them into
-  executable checks after approval, but it cannot rewrite the frozen contract's
-  wording — it grounds what was already agreed, it does not reopen it. The
-  envelope guards *where*; the criteria guard *what*. A weak criteria set plus
-  in-scope paths can still ship the wrong thing.
-  This residual is inherent — no acceptance contract fully anticipates intent.
-
-### 2. Consequence tiering (M3)
+### 1. Consequence tiering (M3) — the one safety-critical check
 
 Skipping the independent verifier at Explore is safe only if the tier is classified
 deterministically and errs high. A Critical change mislabeled Explore ships with no
-independent check.
+independent check — the single worst failure the system can have.
 
-- **Mitigation:** tier is set at intent time from transparent, auditable risk
-  signals and is raisable by the human; the human's one residual duty is to glance
-  at the chosen tier and bump it up. Tiering **fails upward**. The engine only
-  enforces the floor, never lowers it.
+- **Mitigation:** tier is set at intent time from transparent, auditable risk signals,
+  re-checked with the tracer's findings, and raisable by the human; the human's one
+  residual duty is to glance at the chosen tier and bump it up. Tiering **fails upward**.
+  The engine only enforces the floor, never lowers it. It must be the most-tested
+  component in the system.
 - **Residual uncertainty:** the risk-signal → tier mapping is a judgment encoded as
-  rules; a novel risk not covered by a signal could under-tier. The default for
-  anything uncertain must be Standard (independent verifier on), not Explore.
+  rules; a novel risk not covered by a signal could under-tier. The default for anything
+  uncertain must be Standard (independent verifier on), not Explore.
 
-Both crown jewels share a discipline: **when unsure, do more, not less.** That is
-the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
+### 2. Scope-safety rests on the delivery gate, not an automated check
+
+v1.0 deliberately does **not** enforce scope with an automated gate. A lay human names
+little or no scope, so there is rarely a tight boundary to enforce before delivery; the
+concrete scope is authorized by the human at **Gate 2**, where they see the exact diff
+and repositories, and all pre-delivery work is sandboxed in isolated worktrees.
+
+- **Mitigation:** Gate 2 is an explicit human act that already exists and is unchanged
+  (INV-DELIVER-01); nothing reaches the outside world without the human seeing its actual
+  scope. The feasibility check additionally surfaces, before planning, any required
+  change that would *modify* a repository beyond a bound scope.
+- **Residual uncertainty:** scope-safety now depends on the human actually reading the
+  delivery — the same way it depends on them reading any pull request. A human who
+  rubber-stamps delivery gets weaker scope protection, but that is already true of the
+  delivery gate, and pre-delivery drift is wasted effort, not irreversible harm.
+- **Feasibility is a judgment, not a proof.** The feasibility check is a reasoned read of
+  the tracer's findings, so its reliability comes from the tracer's quality; a shallow
+  the tracer could call something buildable that is not. That is a *quality* risk (wasted
+  effort, a surprise at plan review), not a safety risk. And *intent* drift — work that
+  stays in-scope yet does something the criteria did not anticipate — is caught by the
+  acceptance criteria, not by feasibility; a weak criteria set can still ship the wrong
+  thing, an inherent limit no acceptance contract fully removes.
+
+The discipline that carries all of this: **when unsure, do more, not less.** Tiering
+errs high, feasibility stops rather than guesses, and delivery is always an explicit
+human act. That must be enforced, not hoped.
 
 ## Secondary risks
 
@@ -52,26 +56,26 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
   context-free role that read only the intent contract and tried to find ways to
   *satisfy every criterion and still be wrong*. That is a real defense against
   gameable or under-specified criteria, and removing it means v1.0 no longer has a
-  dedicated pre-build check for that specific failure mode. **Discovery is not a
-  replacement for it** — discovery is a different, context-*full* check (what does
+  dedicated pre-build check for that specific failure mode. **The tracer is not a
+  replacement for it** — the tracer is a different, context-*full* check (what does
   the real code actually do, and what does it risk?), not an adversarial attack on
   the human's wording, and it runs only *after* the human has already committed to
   the goal at Gate 1, not before. The two catch different things: an adversary
   would have caught a criterion that is technically satisfiable while missing the
-  point; discovery catches a criterion that collides with the real codebase. This
+  point; the tracer catches a criterion that collides with the real codebase. This
   was a deliberate choice to cut cost (a mandatory extra role and pass on every
   Standard/Critical intent) and shift the saved effort toward grounding the plan
   itself in real code. If gameable criteria turn out to be a live problem in
   practice, reintroducing a criteria-adversary step remains the honest fallback —
-  not something discovery quietly covers for.
-- **Discovery compute is spent after the human has already committed.** Because
-  discovery only spawns on approval, its cost lands on an intent the human has
+  not something the tracer quietly covers for.
+- **Tracing compute is spent after the human has already committed.** Because
+  the tracer only spawns on approval, its cost lands on an intent the human has
   already agreed to plainly. So a deep surprise (the localStorage
-  encode-vs-encrypt example in `discovery-and-grounding.md`) reaches the human only
+  encode-vs-encrypt example in `tracing-and-grounding.md`) reaches the human only
   at **plan review**, potentially re-opening an intent they thought was settled at
   Gate 1. The cost of moving the gate upstream is that some rework now happens
   after a "yes," not before it.
-- **Discovery's completeness is fallible.** A grep-based file/call-site map can
+- **The tracer's completeness is fallible.** A grep-based file/call-site map can
   miss a dynamically-constructed key, a reflectively-called method, or a string
   built at runtime. This is mitigated by the executable completeness check (a
   command that proves the found set is the whole set, for a "change every X"
@@ -104,9 +108,10 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
 
 ## Open questions
 
-- **Where does the envelope check draw the line on path regions** — exact prefix
-  match (like the lease overlap rule) or something looser? Recommendation: reuse the
-  existing `cc_region_overlap` semantics so envelope and lease share one definition.
+- **How does the tracer decide a change "modifies a repo beyond a bound scope"** — the
+  feasibility check's one deterministic sub-test? Recommendation: keep it a plain flag in
+  the manifest (a required write to a repository/area not in the bound scope), surfaced by
+  the coordinator — not a path-region algorithm, since scope-safety is settled at delivery.
 - **Should Explore work ever auto-produce a candidate** (for knowledge feedback)
   without promotion, or only on promotion? Recommendation: only on promotion, to
   keep the fast path truly recordless.
@@ -130,11 +135,11 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
 ## What would falsify the design
 
 v1.0 is worth adopting only if, in real use: (a) moving the gate to intent
-*reduces* felt ceremony without a scope-drift regression; (b) discovery, spawned
+*reduces* felt ceremony without a scope-safety regression at delivery; (b) the tracer, spawned
 automatically on every approval, catches real feasibility/risk problems often
 enough — surfaced at plan review or kicked back to the intent — to justify its
 post-approval cost, without plan review becoming a rubber stamp that gets skimmed
 past out of habit; and (c) tiering removes verifier spawns on low-risk work without
-a mislabeled-Critical escaping unverified. If the envelope or tiering checks prove hard to make reliable,
+a mislabeled-Critical escaping unverified. If tier classification proves hard to make reliable,
 the honest fallback is to keep more gates — the current gate-every-transition model
 is the safe default this design is betting against.

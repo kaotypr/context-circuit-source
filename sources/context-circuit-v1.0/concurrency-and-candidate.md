@@ -63,8 +63,8 @@ The candidate is a *view for evidence*, not a new lock. It grants no ownership
 ## Tiering interacts cleanly
 
 - The change set's tier is the **max** tier among its member intents, as each intent's
-  tier stands *at the time discovery or plan review last set it* — not necessarily the
-  human's original provisional guess, since discovery can raise a tier after approval
+  tier stands *at the time tracing or plan review last set it* — not necessarily the
+  human's original provisional guess, since the tracer can raise a tier after approval
   (M1) — fail upward: a change set containing one Critical intent is Critical.
 - Explore work does not join a multi-plan change set (Explore is single-repo,
   recordless, human-supervised); it produces a candidate only on promotion, at which

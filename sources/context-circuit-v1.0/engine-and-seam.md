@@ -13,7 +13,6 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 | `intent-approve <id>` | draft→approved; freeze `contract_digest`; the one upstream gate | M1 |
 | `intent-archive <id>` | move `intent/<id>/` to `intent/archive/<id>/`; status-blind (INV-ARCHIVE-01/02) | M1 |
 | `intent-restore <id>` | move an archived intent back to the active area | M1 |
-| `intent-envelope-check <plan>` | plan repos/paths ⊆ intent scope; fail-upward re-gate | M1 (crown jewel 1) |
 | `candidate-digest <plan> <exec>` | deterministic digest over commit map + bases + `contract_digest` | M2 |
 | `candidate-current <plan>` | report the current candidate id | M2 |
 | `human-acceptance-record <candidate> <file>` | first-class acceptance bound to a candidate | M2 |
@@ -24,8 +23,8 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 
 | Verb | Change |
 | --- | --- |
-| `plan-validate` | require `intent:`; call `intent-envelope-check` (checked again here, having already been checked once against discovery's findings before the plan was written) |
-| `plan-approve` | narrowed: automatic within an approved envelope, not a human gate (INV-APPROVE-01 reworked) |
+| `plan-validate` | require `intent:` and a structural/schema check; there is no scope-containment verb — feasibility is a coordinator judgment run once on the tracer's findings (`intent-feasibility.md`), and scope-safety is settled at delivery (Gate 2) |
+| `plan-approve` | narrowed: automatic once the intent is approved, not a human gate (INV-APPROVE-01 reworked) |
 | `verifier-result-record` | bind the result to the current candidate (INV-CANDIDATE-01); keep the exact read-only tip-check |
 | `completion-ready` | read the intent `tier`; enforce the verifier floor (Critical needs a candidate-bound `passed`); support inferred completion at lower tiers |
 | `plan-complete` | at Critical, explicit; otherwise a projection of accepted + delivered; emit the reconciliation-debt marker |
@@ -55,8 +54,8 @@ From the skill/engine coupling read:
 | `cc-pair` | 3 `pair-*` verbs | **reframed** as Explore tier; verbs unchanged, adds promote |
 | `cc-execute` / `cc-run-stack` | deep (≈11 verbs + `.runtime/executions/`) | **additive changes** — record candidate, tier-gate the verifier |
 | *new* `cc-intent` | — | authors `INTENT.md` + `contract.yaml` (the plain human decision) and takes the single upstream approval, `intent-approve` (freezes `contract_digest`); does not read the codebase and runs no validation step — there is none any more |
-| *new* `cc-discover` | — | spawned on `intent-approve`; fans out one read-only discovery child per repository, in parallel; collects manifests; checks the envelope against discovery findings; hands the coordinator the grounded basis for planning |
-| `cc-plan` | plan authoring | creates plan(s) from the discovery manifest (not a blind read of `context/`); requires parent intent; sets `plan.intent`; envelope + knowledge-debt preflights |
+| *new* `cc-trace` | — | spawned on `intent-approve`; fans out one read-only tracer child per repository, in parallel; collects manifests; runs the feasibility check on the tracer's findings (surfacing an infeasible intent or a required change beyond a bound scope); hands the coordinator the grounded basis for planning |
+| `cc-plan` | plan authoring | creates plan(s) from the trace manifest (not a blind read of `context/`); requires parent intent; sets `plan.intent`; knowledge-debt preflight |
 
 Roughly two-thirds of the periphery ports unchanged; only the execution drivers
 and `cc-plan` take real (additive) work, plus two new skills.
