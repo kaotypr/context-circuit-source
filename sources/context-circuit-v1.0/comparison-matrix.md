@@ -35,7 +35,7 @@ future addition, not part of the core evolution.
 | What is gated | every plan **state transition** | the **claim of correct** (intent) + **delivery** | 🟧 |
 | Human gates | 4 (approve, execute, complete, deliver) | 2 (intent, delivery) | 🟧 |
 | Unit of trust | the execution/attempt | the **candidate** | 🟧 |
-| Definition of "correct" | one human glance in plan approval | explicit intent gate + **spec adversary** | 🟦 |
+| Definition of "correct" | one human glance in plan approval | explicit intent gate + **post-approval discovery grounding** | 🟦 |
 | Ceremony | fixed full lifecycle (+ separate pairing mode) | **one consequence ladder** Explore→Critical | 🟧 |
 
 ## Mechanisms
@@ -43,9 +43,10 @@ future addition, not part of the core evolution.
 | Capability | Today | v1.0 | |
 | --- | --- | --- | --- |
 | Intent / bigger-picture object | none (sources → proposals → plan) | first-class `intent/` + frozen contract | 🟦 |
-| Criteria challenged before code | no | **spec adversary** | 🟦 |
+| Feasibility/risk checked against real code, before any plan or code change | no | **discovery**, spawned automatically right after Gate 1 | 🟦 |
 | Plan approval | explicit human, every plan | automatic within approved envelope | 🟧 |
-| Scope envelope enforcement | task scope per plan (INV-PLAN-02) | **envelope check** re-gates on drift | 🟦 |
+| Scope envelope enforcement | task scope per plan (INV-PLAN-02) | **envelope check** re-gates on drift, against discovery findings and each plan | 🟦 |
+| Acceptance criteria precision | vague until plan, or fixed upfront by guesswork | **outcome-level** in the intent; the **executable** check is a discovery output, carried in the plan | 🟦 |
 | Evidence freshness | per-attempt, conversational | **candidate digest**, auto-void on change | 🟦 |
 | One-PR / stacked plans | verifier per plan | one candidate → one verification | 🟧 |
 | Human acceptance record | not first-class | **candidate-bound acceptance record** | 🟦 |

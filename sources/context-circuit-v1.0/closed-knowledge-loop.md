@@ -62,6 +62,16 @@ voided candidate's debt is voided with it. Reconciliation is thus always tied to
 the exact delivered result, never to a floating "the plan" whose code has since
 moved.
 
+## Relationship to discovery (M1)
+
+Discovery's manifest (`discovery-and-grounding.md`) is the same pattern applied one
+phase earlier: a code-level read is captured durably, recorded as grounding evidence,
+and reused across sessions instead of being re-derived from zero each time — with a
+bounded freshness check standing in for `knowledge-debt`'s role of catching what has
+silently gone stale since it was recorded. Product Knowledge closes the loop on
+*design* knowledge; discovery closes it on *code-level* knowledge. Both refuse to let
+a recorded fact quietly outlive the code it described.
+
 ## Optional: the production feedback edge
 
 A "closed production loop" — where a shipped change keeps a live link to its

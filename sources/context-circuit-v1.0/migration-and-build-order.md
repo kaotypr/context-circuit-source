@@ -6,10 +6,15 @@ port.
 
 ## Build order
 
-1. **Intent + adversary + envelope check** (M1). Purely additive — a new `cc-intent`
-   skill, the `intent-*` verbs, a `plan.intent` field, and `intent-envelope-check`.
-   Touches **no** execution mechanics. Delivers pains 1, 3, 4 and adds the single
-   highest-leverage safety mechanism (the spec adversary). Lowest risk; do first.
+1. **Intent + discovery + envelope check** (M1). Purely additive — a new
+   `cc-intent` skill (drafts `INTENT.md` + `contract.yaml`, takes Gate-1
+   approval), a new `cc-discover` skill (spawned on approval, fans out one
+   read-only discovery child per repository, collects manifests, checks findings
+   against the envelope), the `intent-*` verbs, a `plan.intent` field, and
+   `intent-envelope-check` (`cc-plan` creates the plan(s) from the discovery
+   manifest). Touches **no** execution mechanics. Delivers pains 1, 3, 4 and adds
+   the single highest-leverage safety mechanism (the envelope check, now run
+   against both discovery findings and plans). Lowest risk; do first.
    *Interim state:* plan approval can remain as-is until the envelope check is
    trusted, then flip INV-APPROVE-01 to auto-within-envelope.
 2. **Candidate identity** (M2). Add `candidate-digest`, `candidate-current`,

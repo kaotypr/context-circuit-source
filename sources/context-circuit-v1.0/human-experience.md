@@ -9,33 +9,56 @@ disclosure principle Context Circuit already holds.
 ## What stays hidden vs. shown
 
 Hidden (as today): branches, worktrees, leases, base selection, candidate digests,
-runtime records. Shown (as today, plus the new decisions): the intent and its
-criteria, the adversary's findings, the worker's handoff, the verifier's result, and
-the two gates. The reader never sees a workspace file name, internal path, or internal
-id in normal conversation — internal terms are translated (see `glossary.md`), the
-same rule publications already follow (INV-EXTERNAL-03 spirit).
+runtime records, and now discovery's machinery too — the per-repository children it
+spawns and the manifest's internals. Shown (as today, plus the new decisions): the
+intent and its criteria, the grounded plan discovery's report produces (real file
+paths, named risks, executable done-checks — not discovery itself), the worker's
+handoff, the verifier's result, and the two gates. The reader never sees a workspace
+file name, internal path, or internal id in normal conversation — internal terms are
+translated (see `glossary.md`), the same rule publications already follow
+(INV-EXTERNAL-03 spirit).
 
 ## Gate 1 — approving an intent (new)
 
-The coordinator presents the intent as one readable thing, folds in the adversary's
-findings, and asks for a single decision:
+The coordinator presents the intent as one readable thing — the plain ask reflected
+back — and asks for a single decision. Nothing has read the code yet; this gate is
+the human confirming the coordinator understood them:
 
 > Here's what I understand you want to build: **retry failed checkout charges up to 3
 > times before failing the order.** Out of scope: the payment provider, refunds.
 > It'll touch the checkout service only.
 >
-> I had this checked adversarially first. One thing came back: the criteria said
-> "retry up to 3 times" but didn't bound the added latency — an implementation could
-> pass and still blow your latency budget. I've added a criterion for that.
+> This looks like **Standard** risk (single service, likely reversible) — I'll firm
+> that up once I've looked at the real code.
+>
+> Approve this and I'll dig into the checkout service and come back with a plan — or
+> tell me what to change.
+
+Approval here is the real decision. No confirmation card, no token — a conversational
+yes (INV-APPROVE-01 reworked). Approval is also what sends the coordinator into the
+code: it spawns discovery, which the human never sees directly.
+
+## Plan review — the grounded result (new)
+
+Once discovery has reported back, the coordinator returns with a plan, not a re-ask.
+This is where the sharpened, code-grounded result reaches the human — real file
+paths, risks named against the real code, and executable done-checks — in place of a
+guessed one:
+
+> I looked at the checkout service. The retry touches `charge_service.py` and
+> `order_state.py` — three call sites, nothing else found. One thing came back that I
+> hadn't flagged before: the criteria said "retry up to 3 times" but didn't bound the
+> added latency — an implementation could pass and still blow your latency budget.
+> I've added a check for that, and it'll re-run against the exact change.
 >
 > This is **Standard** risk (single service, reversible, well-covered), so it gets an
 > independent check.
 >
-> Approve this and I'll build it — or tell me what to change.
+> Take a look at the plan, or just say go and I'll start.
 
-Approval here is the real decision. No confirmation card, no token — a conversational
-yes (INV-APPROVE-01 reworked). After approval the human is not asked to approve the
-plan; the plan derives from what they just approved.
+A plan has no approval status — the human can read it and course-correct, but the
+natural checkpoint is that **execution is a separate, human-triggered action**:
+nothing runs until the human asks for it, so review always has its moment.
 
 ## Between the gates — mostly silent, by design
 

@@ -10,17 +10,30 @@ request
   │
   ▼
 INTENT                     cc-intent
-  ├─ author INTENT.md + contract.yaml (goal, non-goals, constraints,
+  ├─ draft INTENT.md + contract.yaml, no code read (goal, non-goals, constraints,
   │                                    acceptance_criteria, scope, tier)
-  ├─ spec adversary attacks the criteria           → adversary.md
   └─ ★ GATE 1: human approves the intent           → freezes contract_digest
   │
   ▼
+DISCOVERY                  cc-discover                (spawned automatically on approval)
+  ├─ one read-only child per repository in the envelope, in parallel — no lease/worktree
+  ├─ reports a manifest: file/call-site map, risks, task partition, executable
+  │                       done-checks, tier signal, open questions, completeness proof
+  ├─ kick-back: intent itself is wrong → re-opens the intent, nothing planned
+  └─ envelope check against findings: within scope → continues
+                                       exceeds scope → re-gate to human
+  │
+  ▼
 PLAN(S)                    cc-plan
-  ├─ derive tasks from approved contract + knowledge + grounding
+  ├─ create tasks from the discovery manifest
   ├─ plan.intent = <id>
-  └─ envelope check: within scope → authorized (no gate)
+  └─ envelope check against the plan: within scope → authorized (no gate)
                      exceeds scope → re-gate to human (widen intent or narrow plan)
+  │
+  ▼
+REVIEW                     informal, no gate
+  ├─ human may read the plan(s) and course-correct — a plan has no approval status
+  └─ execution is a separate, human-triggered action
   │
   ▼
 EXECUTE                    cc-execute / cc-run-stack   (kept mechanics)
@@ -48,15 +61,18 @@ RECONCILE (M4): completion/delivery emits reconciliation debt;
 ## The two gates, precisely
 
 - **Gate 1 — Intent.** The human decides *what "correct" means* and *what scope is
-  in bounds*, after an independent adversary has tried to break the criteria. This
-  is the decision they are already making today when they agree to a design — now
-  it is first-class and it counts. Approval freezes `contract_digest`.
+  in bounds*, from the plain intent alone — no code has been read yet. Approving
+  also confirms the coordinator understood the ask correctly, which is what lets
+  discovery spawn immediately after, aimed at a confirmed target. This is the
+  decision they are already making today when they agree to a design — now it is
+  first-class and it counts. Approval freezes `contract_digest`.
 - **Gate 2 — Delivery.** The human authorizes *the irreversible act*. Unchanged
   from today (INV-DELIVER-01): separate from verification and completion, target is
   the recorded `base_branch`, blocks on missing remote/branch.
 
-Everything between the gates is mechanical: envelope check, execution, candidate,
-tiered verification, acceptance binding, drift rebase, reconciliation debt.
+Everything between the gates is mechanical: discovery, envelope check, execution,
+candidate, tiered verification, acceptance binding, drift rebase, reconciliation
+debt.
 
 ## What happened to today's four gates
 
@@ -79,7 +95,8 @@ request → Explore session (cc-pair as tier)      no intent, no candidate, no v
   ├─ done here → human-supervised output, never "verified"   (INV-PAIR-01 preserved)
   │
   └─ "this is real" → PROMOTE in place:
-         attach intent + criteria (adversary runs) → raise tier → spawn verifier
+         attach intent + criteria → raise tier → discovery spawns and reads the code
+         → plan created from the manifest → spawn verifier
          → now a candidate exists → normal flow from EXECUTE onward
 ```
 
@@ -92,16 +109,17 @@ already-approved intent. So artifacts appear in this order:
 
 | Stage | Artifact created |
 | --- | --- |
-| Request → intent (`cc-intent`) | `intent/<id>/` — `INTENT.md`, `contract.yaml`, `adversary.md`. **No plan yet.** |
-| Gate 1 — approve intent | `contract_digest` frozen. Still no plan. |
-| `cc-plan` derives the plan | `plans/<id>/` — `PLAN.md`, `plan.yaml` (with `intent: <id>`), `tasks/`. **This is when a plan file is created**, only after the envelope check passes. |
+| Request → intent (`cc-intent`) | `intent/<id>/` — `INTENT.md`, `contract.yaml`. **No plan yet.** |
+| Gate 1 — approve intent | `contract_digest` frozen. Discovery spawns. Still no plan. |
+| Discovery (`cc-discover`) reports | a durable manifest recorded as grounding evidence — file/call-site map, risks, executable done-checks, tier signal. **Still no plan** until the envelope check against these findings passes. |
+| `cc-plan` creates the plan | `plans/<id>/` — `PLAN.md`, `plan.yaml` (with `intent: <id>`), `tasks/`. **This is when a plan file is created**, only after the envelope check against the plan passes. |
 | Execute → candidate → accept → deliver | runtime records under `.runtime/…` (candidate, acceptance, debt marker). |
 
-**A plan file is created only at Standard/Critical, after intent approval.** It is the
-mechanical elaboration of the approved intent, grounded in the contract + Product
-Knowledge + repository, and it must stay within the intent's scope envelope. Derivation
-is **automatic** — the coordinator's next action, not a gate — and one intent may yield
-**one or more** stacked plans (`intent-and-criteria.md`).
+**A plan file is created only at Standard/Critical, after intent approval and
+discovery.** It is the mechanical elaboration of the approved intent, grounded in the
+discovery manifest + Product Knowledge, and it must stay within the intent's scope
+envelope. Creation is **automatic** — the coordinator's next action, not a gate — and
+one intent may yield **one or more** stacked plans (`intent-and-criteria.md`).
 
 ## Explore creates no plan — and the promotion decision
 
@@ -136,13 +154,16 @@ Explore work.**
 The safety property is no longer "a human approved every transition." It is:
 
 1. a human approved the **definition of correct** and the **scope envelope**
-   (Gate 1), after adversarial challenge;
-2. no plan or candidate may exceed that envelope without re-gating (the envelope
-   check — crown jewel 1);
+   (Gate 1) — and that approval doubles as confirmation the coordinator understood
+   the ask;
+2. discovery then reads the real code and no plan or candidate may exceed that
+   envelope without re-gating (the envelope check, run against both discovery's
+   findings and each plan — crown jewel 1);
 3. the appropriate independent check ran and is bound to the exact candidate (tier
    + M2), with tiering that fails upward (crown jewel 2);
 4. a human authorized the irreversible act (Gate 2).
 
 If both crown-jewel checks are correct, this is *stronger* on correctness than
-today (because the criteria are now challenged and evidence cannot float free of
-the code) and *lighter* on ceremony (because the derivative gates are gone).
+today (because the criteria are now first-class and reviewable, discovery grounds
+the plan in the real code before anything executes, and evidence cannot float free
+of the code) and *lighter* on ceremony (because the derivative gates are gone).

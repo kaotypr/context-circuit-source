@@ -23,20 +23,24 @@ mechanical.
 **Two human gates, and only two:**
 
 1. **Intent** — the human approves *what "correct" means*: the goal, the
-   non-goals, the constraints, the acceptance criteria, and the scope envelope.
-   This is approved once, up front, and it is challenged by an independent
-   adversary before approval.
+   non-goals, the constraints, the outcome-level acceptance criteria, and the
+   scope envelope. This is approved once, up front; the approval also confirms the
+   coordinator understood the plain ask, since discovery — the read of the real
+   code — only spawns once that target is confirmed.
 2. **Delivery** — the human authorizes *the irreversible act* (pull request,
    merge, push, deploy). Never implied by verification or completion.
 
 Everything between those two gates is **mechanical, consequence-tiered, and
 self-invalidating**, realized by four mechanisms:
 
-- **M1 · Intent + criteria (front door).** A first-class `intent/` object holds
-  the bigger picture and a frozen acceptance contract. A spec adversary attacks
-  the *criteria* before any code. Plans become a derivation of approved intent and
-  carry no second gate — unless a plan or candidate drifts beyond the approved
-  scope envelope, which re-gates to a human.
+- **M1 · Intent + discovery + envelope (front door).** A first-class `intent/`
+  object holds the bigger picture and a frozen acceptance contract. Approval spawns
+  **discovery** — one read-only child per repository, in parallel — which reads the
+  real code and reports back a manifest (files, call-sites, risks, executable
+  done-checks, a tier signal) that the coordinator plans from. Plans become a
+  derivation of that manifest and carry no second gate — unless discovery's
+  findings, or a plan, drift beyond the approved scope envelope, which re-gates to
+  a human before any plan is written, or before the plan proceeds.
 - **M2 · Candidate + evidence.** Evidence (independent check, human acceptance)
   binds to a **candidate** — a digest over the exact per-repository commit map,
   the selected bases, and the frozen contract revision. Any new commit or criteria
@@ -76,7 +80,7 @@ this evolution delivers without discarding the mechanics.
 
 | Decision | Context Circuit today | v1.0 |
 | --- | --- | --- |
-| What "correct" means | one unassisted human glance folded into plan approval | **explicit intent gate + independent adversary** |
+| What "correct" means | one unassisted human glance folded into plan approval | **explicit intent gate + post-approval discovery grounding** |
 | Plan is ready | explicit human approval (INV-APPROVE-01) | automatic derivation within the approved envelope; re-gates only on drift |
 | Execution may start | separate authorization (INV-EXEC-01) | authorized by the approved intent's envelope |
 | Work is checked | one independent verifier, always (INV-VERIFY-01) | independent verifier at Standard/Critical; human-supervised at Explore |

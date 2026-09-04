@@ -21,10 +21,12 @@ prevent.
 - **Residual uncertainty:** "within scope" is a path/repo comparison, which is
   mechanical, but *intent* drift (the work technically stays in the paths yet does
   something the criteria did not anticipate) is not caught by a path check — that is
-  what the spec adversary and the acceptance criteria are for. The envelope guards
-  *where*; the criteria guard *what*. A weak criteria set plus in-scope paths can
-  still ship the wrong thing. This residual is inherent — no acceptance contract
-  fully anticipates intent.
+  what the acceptance criteria themselves are for. Discovery sharpens them into
+  executable checks after approval, but it cannot rewrite the frozen contract's
+  wording — it grounds what was already agreed, it does not reopen it. The
+  envelope guards *where*; the criteria guard *what*. A weak criteria set plus
+  in-scope paths can still ship the wrong thing.
+  This residual is inherent — no acceptance contract fully anticipates intent.
 
 ### 2. Consequence tiering (M3)
 
@@ -45,11 +47,42 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
 
 ## Secondary risks
 
-- **The spec adversary can become theatre.** A noisy adversary that fabricates
-  implausible edge cases trains people to ignore it — and then it is the new
-  rubber stamp. It must be calibrated to *real, reachable* failure, and its depth
-  tiered (light at Explore, full at Critical). Measure how often its findings change
-  a criterion; if that rate is low, it is miscalibrated.
+- **Dropping the spec adversary is a deliberate tradeoff, stated honestly.** An
+  earlier version of this design included an independent spec adversary — a
+  context-free role that read only the intent contract and tried to find ways to
+  *satisfy every criterion and still be wrong*. That is a real defense against
+  gameable or under-specified criteria, and removing it means v1.0 no longer has a
+  dedicated pre-build check for that specific failure mode. **Discovery is not a
+  replacement for it** — discovery is a different, context-*full* check (what does
+  the real code actually do, and what does it risk?), not an adversarial attack on
+  the human's wording, and it runs only *after* the human has already committed to
+  the goal at Gate 1, not before. The two catch different things: an adversary
+  would have caught a criterion that is technically satisfiable while missing the
+  point; discovery catches a criterion that collides with the real codebase. This
+  was a deliberate choice to cut cost (a mandatory extra role and pass on every
+  Standard/Critical intent) and shift the saved effort toward grounding the plan
+  itself in real code. If gameable criteria turn out to be a live problem in
+  practice, reintroducing a criteria-adversary step remains the honest fallback —
+  not something discovery quietly covers for.
+- **Discovery compute is spent after the human has already committed.** Because
+  discovery only spawns on approval, its cost lands on an intent the human has
+  already agreed to plainly. So a deep surprise (the localStorage
+  encode-vs-encrypt example in `discovery-and-grounding.md`) reaches the human only
+  at **plan review**, potentially re-opening an intent they thought was settled at
+  Gate 1. The cost of moving the gate upstream is that some rework now happens
+  after a "yes," not before it.
+- **Discovery's completeness is fallible.** A grep-based file/call-site map can
+  miss a dynamically-constructed key, a reflectively-called method, or a string
+  built at runtime. This is mitigated by the executable completeness check (a
+  command that proves the found set is the whole set, for a "change every X"
+  obligation) and by the worker's execution-time confirmation read
+  (INV-GROUND-01) — but neither is a formal guarantee, just two independent nets
+  under a fallible first pass.
+- **Plan review is informal, not a gate.** A plan carries no approval status, so
+  nothing structurally forces a human to look at it before triggering execution.
+  The natural backstop is that execution is itself a separate human-triggered
+  action, so nothing runs unreviewed — but a human who skims past the plan and
+  immediately asks for execution gets no forced pause the way Gate 1 forces one.
 - **Inferred completion can ship something a human would have paused on.** Removing
   the explicit done-flip at Explore/Standard moves a decision onto the acceptance +
   delivery signals. Mitigation: delivery (Gate 2) is still an explicit human act, so
@@ -97,9 +130,11 @@ the whole safety argument for gate-outcomes, and it must be enforced, not hoped.
 ## What would falsify the design
 
 v1.0 is worth adopting only if, in real use: (a) moving the gate to intent
-*reduces* felt ceremony without a scope-drift regression; (b) the spec adversary
-changes criteria often enough to be worth its cost; and (c) tiering removes verifier
-spawns on low-risk work without a mislabeled-Critical escaping unverified. If the
-envelope or tiering checks prove hard to make reliable, the honest fallback is to
-keep more gates — the current gate-every-transition model is the safe default this
-design is betting against.
+*reduces* felt ceremony without a scope-drift regression; (b) discovery, spawned
+automatically on every approval, catches real feasibility/risk problems often
+enough — surfaced at plan review or kicked back to the intent — to justify its
+post-approval cost, without plan review becoming a rubber stamp that gets skimmed
+past out of habit; and (c) tiering removes verifier spawns on low-risk work without
+a mislabeled-Critical escaping unverified. If the envelope or tiering checks prove hard to make reliable,
+the honest fallback is to keep more gates — the current gate-every-transition model
+is the safe default this design is betting against.
