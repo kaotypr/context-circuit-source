@@ -48,12 +48,19 @@ Explanations:
 
 ## Open questions
 
-None.
+_At draft time: no known unresolved human decisions._
 
 <!--
-  When there is a genuine undecided question the human must settle, replace "None."
-  with the question in bold. Once it is answered, keep the question and add an
-  italic answer line beneath it; never delete an answered question:
+  This section is phase-aware. At draft time, record every known unresolved human
+  decision from the request and Product Knowledge. The line above does not claim
+  that tracing cannot reveal a question. After tracing, revisit this section:
+  - an intent-level question changes the goal, non-goals, constraints, acceptance,
+    scope, tier, authority, or lifecycle; update the intent and re-enter Gate 1;
+  - a plan-level implementation question belongs in the trace and plan instead;
+  - a question already answered by the request is applied without asking again.
+  When there is a genuine undecided question the human must settle, write it in bold.
+  Once it is answered, keep the question and add an italic answer line beneath it;
+  never delete an answered question:
 
   **<the question>**
   _Answer: <the decision>._

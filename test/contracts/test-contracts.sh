@@ -102,6 +102,9 @@ contains "$ci" "tracer"
 contains "$ci" "intent-approve"
 contains "$ci" "contract_digest"
 contains "$ci" "feasibility"
+contains "$ci" "phase-aware"
+contains "$ci" "intent-level"
+contains "$ci" "plan-level"
 # --- tracing/feasibility replaced the spec adversary + envelope check ---
 not_contains "$ci" "spec adversary"
 not_contains "$ci" "scope envelope"
@@ -114,9 +117,12 @@ contains "$W/contracts/schemas/intent-contract.yaml" "i<NNNN>-<kebab-slug>"
 tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
 contains "$tr" "one read-only tracer child per repository"
 contains "$tr" "feasibility check"
+contains "$tr" "Classify every question before feasibility"
+contains "$tr" "already-answered"
 contains "$tr" "done"
 ce="$ROOT/.agents/skills/cc-plan/SKILL.md"
 contains "$ce" "intent-authorized"
+contains "$ce" "unresolved intent-level question"
 not_contains "$ce" "intent-envelope-check"
 # the envelope verb is gone from the runtime; the authorization verb replaces it
 not_contains "$W/runtime/engine.sh" "intent-envelope-check"
@@ -142,6 +148,8 @@ contains "$W/adapters/AGENTS.md" "reads and follows \`agents/coordinator.md\`"
 contains "$ROOT/agents/coordinator.md" "Start at the user's vocabulary level"
 contains "$ROOT/docs/terminology.md" '| Workspace | "workspace" when the user has not introduced that term |'
 contains "$ROOT/docs/terminology.md" '| Runtime, skill, tool, or command failure |'
+contains "$ROOT/agents/coordinator.md" "classify every trace question"
+contains "$ROOT/docs/templates/intent.md" "At draft time"
 for old in cc-entry cc-gates cc-next cc-upgrade; do
 	test ! -e "$ROOT/.agents/skills/$old" || fail "old skill remains: $old"
 done

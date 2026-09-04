@@ -85,7 +85,15 @@ human who wants to lock an intent without building yet may separate the two.
 
 Approval does **not** trigger execution and carries **no** second gate for the
 plans that derive from it — plan readiness after approval is automatic
-(INV-INTENT-02), not a second human approval.
+(INV-INTENT-02), not a second human approval. That automatic derivation assumes
+the post-approval feasibility check found no unresolved intent-level question.
+
+The human-facing **Open questions** section is phase-aware. At draft time it records
+known unresolved decisions; after tracing, newly discovered questions are classified
+as intent-level, plan-level, or already answered. An intent-level question sends the
+work back through Gate 1 when the approved decision changes. A plan-level question
+is carried into planning, and an answer already present in the plain request is
+applied without asking again.
 
 ## Interfaces
 
@@ -107,9 +115,11 @@ schema 2.
 The `INTENT.md` "Open questions" section is only for a genuine undecided question
 the human must settle (a bold question, plus an italic answer once decided); it is
 not a place for assurance rationale or accepted-risk notes — those belong in the
-machine record. A criteria change after approval is an explicit edit to the
-contract that re-freezes the digest and **re-enters Gate 1** (INV-CANDIDATE-01),
-voiding any candidate proven against the old criteria.
+machine record. `None` means no known unresolved human decision **at the current
+phase**, not that tracing cannot reveal one. A criteria, scope, tier, authority, or
+lifecycle change after approval is an explicit edit to the contract that re-freezes
+the digest and **re-enters Gate 1** (INV-CANDIDATE-01), voiding any candidate proven
+against the old criteria. Implementation-only questions stay in the trace and plan.
 
 ## Implementation references
 

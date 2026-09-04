@@ -70,11 +70,16 @@ invariants:
       reach). Before any plan is written the coordinator runs a FEASIBILITY CHECK on the
       findings: feasible → it sets the tier and derives the plan(s) with no second gate;
       not feasible → it stops, explains the blocker, and hands the decision to the human;
-      a required change that must MODIFY a repository or area beyond a bound scope → it
-      surfaces that to the human for a decision before planning. The feasibility check
-      fails upward — when it cannot conclude the change is buildable, it stops rather than
-      proceed — and is a QUALITY gate, not a safety gate: it is coordinator judgment over
-      the tracer's findings, not an engine verb. Scope-safety is NOT enforced here — the
+      every tracer question is dispositioned before planning: an intent-level question
+      that changes the goal, constraints, outcome criteria, scope, tier, authority, or
+      lifecycle semantics stops planning and re-enters Gate 1; a plan-level question is
+      carried into the plan; a question already answered by the plain request is applied
+      without asking again. A required change that must MODIFY a repository or area beyond
+      a bound scope is surfaced only when the plain request does not already authorize it.
+      The feasibility check fails upward — when it cannot conclude the change is buildable,
+      or when an intent-level question remains unresolved, it stops rather than proceed —
+      and is a QUALITY gate, not a safety gate: it is coordinator judgment over the
+      tracer's findings, not an engine verb. Scope-safety is NOT enforced here — the
       concrete scope is settled at delivery (Gate 2, INV-DELIVER-01), where the human sees
       and authorizes the exact diff and repositories, and all pre-delivery work is
       sandboxed in isolated worktrees. The runtime's only intent check at planning and

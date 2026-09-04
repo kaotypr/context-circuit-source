@@ -73,7 +73,12 @@ fields:
   open_questions:
     type: list
     required: false
-    description: anything the human must settle, for the coordinator to relay (never the tracer directly)
+    description: >
+      anything the human must settle, for the coordinator to relay (never the tracer
+      directly). Each entry carries a provisional disposition: intent-revision when
+      it changes the approved decision and blocks planning, plan-resolution when it
+      is an implementation detail to carry into the plan, or already-answered when
+      the plain request or approved intent already resolves it.
   completeness_proof:
     type: object
     required: false

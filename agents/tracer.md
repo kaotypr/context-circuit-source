@@ -38,16 +38,19 @@ Knowledge. Its task is to read the repository first-hand and report back a durab
   the provisional tier;
 - **feasibility** and any **out-of-scope reach** — whether the approved intent is
   buildable, and any repository or area the change must *modify* beyond a bound scope;
-- **open questions** — anything the human must settle, for the coordinator to relay;
+- **open questions** — anything the human must settle, for the coordinator to relay,
+  with a provisional disposition of intent-revision, plan-resolution, or
+  already-answered;
 - a **completeness proof** for any "change every X" obligation — the command and count
   showing the found set is the *whole* set, so completeness is a check that passes or
   fails rather than a file count hand-maintained.
 
 What it does **not** do: it does not write plans, does not edit the frozen contract,
 and does not talk to the human. It can **kick back to the intent** (when the intent
-itself is wrong — infeasible, or larger than approved) or surface an **out-of-scope
-reach** via the coordinator's feasibility check, both routed through the coordinator,
-never direct to the human. The coordinator stays the sole planner and runs the gates;
+itself is wrong, incomplete, infeasible, or larger than approved) or surface an
+**out-of-scope reach** via the coordinator's feasibility check, both routed through
+the coordinator, never direct to the human. The coordinator must resolve every
+question disposition before planning and stays the sole planner and gate runner;
 the fidelity a direct-writer would gain is preserved instead by making the manifest
 rich enough to plan from.
 

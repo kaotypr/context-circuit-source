@@ -58,6 +58,27 @@ gap is an explicit open question, never a silently chosen decision. You draft th
 intent from the plain ask and existing Product Knowledge only — you do **not** read
 the codebase here; that is the tracer's job after approval.
 
+### Keep questions across phases
+
+The `Open questions` section is **phase-aware**, not a one-time draft field:
+
+- At draft time, record every known unresolved human decision from the plain ask
+  and Product Knowledge. `No known unresolved human decisions at draft time` is
+  precise; it must not be used to claim that later code reading cannot surface a
+  question.
+- If the plain ask already answers a question (for example, it says to update
+  every current reference), apply that decision and do not ask the human to repeat
+  it or narrow the scope.
+- After tracing, revisit the section and classify every newly surfaced question.
+  A question that changes the goal, non-goals, constraints, acceptance criteria,
+  scope, tier, authority, or lifecycle semantics is **intent-level**: update the
+  intent and contract, re-enter Gate 1, and preserve the question and its answer
+  in the human record. A question about implementation shape only is **plan-level**:
+  carry it into the trace and plan without inventing a second human gate.
+- A plan must never silently answer an intent-level question. If one remains open,
+  stop before planning and return to the intent route. The approval gate is repeated
+  only when the approved decision changes; plan-level resolution remains mechanical.
+
 ## Take the approval (Gate 1)
 
 Present the intent as one readable thing: the goal in plain language, the non-goals,
@@ -76,6 +97,10 @@ Changing any criteria-bearing field after approval is a new decision: it breaks
 the frozen digest, so the plan's authorization fails until re-approved, and it voids
 prior candidate evidence (INV-CANDIDATE-01). Take approval again on the changed
 criteria.
+
+Questions discovered after approval follow the same boundary: do not edit around an
+intent-level decision or hide it in a plan; update the intent, re-enter Gate 1, and
+only then derive a plan. A plan-level question does not reopen approval.
 
 ## One intent, one or more plans
 
@@ -113,5 +138,6 @@ stamp.
 
 Authoring or approving an intent never creates a plan, executes, verifies,
 completes, or delivers, and never reads the codebase. It writes only under
-`intent/<id>/`. The tracer that reads the code runs only after approval (`cc-trace`).
-Approval is conversational, never a confirmation card or hidden token.
+`intent/<id>/`. The tracer that reads the code runs only after approval (`cc-trace`)
+and may send an intent-level question back here before planning. Approval is
+conversational, never a confirmation card or hidden token.

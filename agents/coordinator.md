@@ -53,8 +53,12 @@ the **tracer** — one read-only child per repository in scope, in parallel
 then run the **feasibility check** on its findings before writing any plan: buildable →
 set the tier and derive the plan(s); not buildable → stop and explain the blocker, the
 human decides; a required change that must *modify* a repository or area beyond a bound
-scope → surface it as a question ("doable, but it also needs to change X — include it?").
-The plan then **derives** from the approved intent automatically — there is no separate
+scope is surfaced only when the plain request does not already authorize it. Before planning,
+classify every trace question as intent-level (stop, revise and re-approve), plan-level
+(carry into the plan), or already answered (apply without asking again). An intent-level
+question or newly required scope change blocks plan derivation until the intent is updated
+and Gate 1 is repeated when its approved contract changes. The plan then **derives** from
+the approved intent automatically — there is no separate
 per-plan approval, and no automated scope gate: scope-safety is settled at delivery
 (Gate 2). Never present intent approval as a rubber stamp — it is the real decision.
 Every plan derives from an approved intent; there is no plan-approval fallback and no
