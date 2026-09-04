@@ -1,0 +1,141 @@
+---
+kind: domain
+status: accepted
+title: Intent and Gate 1
+slug: intent
+owners: []
+sources: []
+source_revisions:
+  - wrapper: HEAD
+    commit: current
+    basis: current-wrapper
+generated_at: 2026-09-04T00:00:00Z
+review_date: 2026-12-04
+freshness: accepted-from-current-wrapper
+assumptions:
+  - Intent approval is the single upstream human gate (Gate 1); delivery is the only other gate (Gate 2).
+unknowns: []
+contradictions: []
+acceptance:
+  state: accepted
+  accepted_at: 2026-09-04
+  accepted_by: maintainer
+workflows:
+  - docs/planning.md
+---
+
+# Intent and Gate 1
+
+## Summary
+
+Every writing request is anchored to a first-class **intent** before any plan is
+written, and the human approves that intent once — **Gate 1**, the single upstream
+human gate (INV-APPROVE-01). The intent is what the human reads and approves; it
+holds the goal, non-goals, constraints, **outcome-level** acceptance criteria, a
+coarse and **optional** scope, and a provisional consequence tier (INV-INTENT-01).
+Route "I want to build/change …", intent drafting, and intent approval here. Owned
+by the `cc-intent` skill and the intent contract schema.
+
+## Scope
+
+Inside: the two-file intent (`INTENT.md` for the human, `contract.yaml` for the
+machine record), what belongs in each, the outcome-criteria and coarse-scope
+shape, the provisional tier, and the approval act that freezes the contract.
+
+Outside: what happens *after* approval — reading the real code and judging
+buildability ([tracing and feasibility](../tracing/README.md)), how a plan then
+becomes authorized ([plan authorization](../plan-authorization/README.md)), the
+tier ladder itself ([assurance](../assurance/README.md)), and delivery/Gate 2
+([delivery](../delivery/README.md)).
+
+## Behavior
+
+An intent is drafted by the coordinator **without reading the codebase** — it
+grounds only in existing `context/` Product Knowledge, reflecting back the plain
+ask (INV-INTENT-01). Two artifacts hold it:
+
+- **`INTENT.md`** is human-facing: plain, short, jargon-free — no ids, file names,
+  digests, branch/model names, or runtime commands. It uses exactly five sections
+  (Intention, Expectations, The plans, How carefully this is checked, Open
+  questions) per `docs/templates/intent.md`. The human is not expected to open the
+  machine record.
+- **`contract.yaml`** is the machine record: goal, non-goals, constraints,
+  outcome-level `acceptance_criteria`, a coarse optional `scope`, a provisional
+  `tier`, and (after approval) a frozen `contract_digest`.
+
+Acceptance criteria are stated at the **outcome** level — what must be true, not
+how to test it. They are **not** frozen as executable checks here; the runnable
+check that proves each criterion against the real code is *earned after approval*
+by the tracer ([tracing and feasibility](../tracing/README.md), INV-INTENT-02),
+never authored on the intent.
+
+Scope is **coarse and optional**. It is a hint, not a fence: there is no
+automated scope gate anywhere in the pre-delivery path. Concrete scope-safety is
+settled at **delivery (Gate 2)**, where the human sees and authorizes the exact
+diff and repositories ([delivery](../delivery/README.md), INV-DELIVER-01).
+
+**Approval is Gate 1** (INV-APPROVE-01): an explicit conversational human act that
+moves the contract `draft → approved`, **freezes `contract_digest`** — the frozen
+identity of the criteria the change is later proven against (INV-CANDIDATE-01) —
+and confirms the coordinator understood the plain ask, which is what lets the
+tracer read the real code next (INV-INTENT-02). There is no confirmation card and
+no hidden confirmation token; a vague "yes" is not an approval. Approving an intent
+and asking to build in one turn is honored as two sequential explicit actions; a
+human who wants to lock an intent without building yet may separate the two.
+
+Approval does **not** trigger execution and carries **no** second gate for the
+plans that derive from it — plan readiness after approval is automatic
+(INV-INTENT-02), not a second human approval.
+
+## Interfaces
+
+- Human request: "I want to build/change …" → a drafted intent; "approve intent `<id>`" → Gate 1
+- Human-facing file: `intent/<id>/INTENT.md` (five sections, plain language)
+- Machine record: `intent/<id>/contract.yaml` (`schema_version` 2; `status` `draft`/`approved`; frozen `contract_digest`)
+- Intent ids: the distinct form `i<NNNN>-slug`, their own never-reused sequence
+
+## Data
+
+The intent contract: `goal`, `non_goals`, `constraints`, `acceptance_criteria`
+(outcome-level `{id, statement}`), optional coarse `scope`, provisional `tier`,
+`status`, and the post-approval `contract_digest`. Legacy schema-1 intents (with
+per-criterion `method`/`done_when`) are preserved as authored; new intents use
+schema 2.
+
+## Constraints and edge cases
+
+The `INTENT.md` "Open questions" section is only for a genuine undecided question
+the human must settle (a bold question, plus an italic answer once decided); it is
+not a place for assurance rationale or accepted-risk notes — those belong in the
+machine record. A criteria change after approval is an explicit edit to the
+contract that re-freezes the digest and **re-enters Gate 1** (INV-CANDIDATE-01),
+voiding any candidate proven against the old criteria.
+
+## Implementation references
+
+- `.agents/skills/cc-intent/SKILL.md`
+- `docs/templates/intent.md`, `docs/templates/intent.example.md`
+- `wrapper/runtime/engine.sh`: `cc_intent_validate`, `cc_intent_approve`, `cc_intent_criteria_count`, `cc_intent_authorized`
+- `wrapper/contracts/schemas/intent-contract.yaml`
+- `wrapper/contracts/invariants.yaml`: INV-INTENT-01, INV-APPROVE-01 (owner map: `intent_gate`, `intent_contract`)
+
+## Verification
+
+`sh test/acceptance.sh` (intent suite; the feasibility suite pins the deliberate
+absence of an automated scope gate).
+
+## Provenance
+
+Authored from the current wrapper for Context Circuit v1.0 (the two-gate,
+tiered-assurance layer: INV-INTENT-01/02, INV-APPROVE-01, INV-ASSURE-01). Grounds
+on the shipped contract; raw `sources/` was not scanned.
+
+## Acceptance notes
+
+Accepted 2026-09-04 (maintainer) to close a knowledge gap: v1.0 introduced the
+intent front door and Gate 1 but no domain page owned it (authorization referenced
+it only in passing). Supersedes nothing; complements
+[plan authorization](../plan-authorization/README.md) (which owns how a plan
+derives authorization from an approved intent) and
+[tracing and feasibility](../tracing/README.md) (which owns what happens after
+approval).

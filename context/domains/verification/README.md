@@ -44,10 +44,15 @@ Outside: repairing the implementation, changing plan status, and the worker loop
 
 ## Behavior
 
-One independent verifier checks the latest commit of every affected repository,
-strictly read-only with respect to product files. It never repairs, modifies
-product files, changes plan status, or self-verifies (INV-VERIFY-01). If the
-host cannot create an independent verifier with read-only capability, the
+Independent verification applies at **Standard and Critical** only
+(INV-ASSURE-01): at those tiers one independent verifier checks the current
+**candidate** of every affected repository, strictly read-only with respect to
+product files, and its result **binds to that candidate** (INV-CANDIDATE-01) — a
+new commit or a criteria change yields a new candidate and voids the prior pass. At
+**Explore** there is no independent verifier and the result is never labeled
+"verified" (see [assurance](../assurance/README.md)). The verifier never repairs,
+modifies product files, changes plan status, or self-verifies (INV-VERIFY-01). If
+the host cannot create an independent verifier with read-only capability, the
 execution is blocked; the worker or coordinator must not self-verify as a
 substitute (INV-VERIFY-02).
 
@@ -111,4 +116,7 @@ describes only the verifier mechanism that ships today.
 
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0012-domain-verification`.
+Accepted 2026-08-24 from proposal `0012-domain-verification`. Re-grounded
+2026-09-04 for Context Circuit v1.0: the verifier floor is tier-conditional
+(Standard/Critical only; Explore has none) and results bind to the candidate
+(INV-ASSURE-01, INV-CANDIDATE-01). The verifier mechanism itself is unchanged.

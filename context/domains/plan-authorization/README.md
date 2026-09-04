@@ -30,16 +30,18 @@ workflows:
 
 A plan is not separately approved. Its authorization is derived from its parent
 **intent**: the human approves the intent once (Gate 1, `draft → approved`,
-INV-APPROVE-01), and every plan that derives from that intent and stays within its
-approved **scope envelope** is authorized to execute with no second gate
-(INV-INTENT-02). Plan status is only `draft` or `done` — there is no intermediate
-`approved` plan status. Route "run plan `<id>`" through the envelope check, with
-no separate plan approval step.
+INV-APPROVE-01), and every plan that derives from that intent, whose approved
+criteria are unchanged, is authorized to execute with no second gate
+(INV-INTENT-02). The authorization check is **scope-free** — it does not compare
+repositories or paths; scope-safety is settled at delivery (Gate 2). Plan status
+is only `draft` or `done` — there is no intermediate `approved` plan status. Route
+"run plan `<id>`" through the `intent-authorized` check, with no separate plan
+approval step.
 
 ## Scope
 
-Inside: how a plan becomes authorized to run (the intent-envelope check), the
-`draft → done` plan status, and the synchronized task-status projection.
+Inside: how a plan becomes authorized to run (the scope-free `intent-authorized`
+check), the `draft → done` plan status, and the synchronized task-status projection.
 
 Outside: the intent gate itself (Gate 1, see the intent skill), execution and the
 worker loop (see [plan-execution](../plan-execution/README.md)), plan
@@ -48,12 +50,15 @@ authoring/review (see [plan-review](../plan-review/README.md)), and completion.
 ## Behavior
 
 Authorization is a property of the intent, not an act on the plan. A plan derived
-from an approved intent, whose repositories and paths stay within the intent's
-approved scope envelope, may execute; the runtime re-runs the envelope check at
-execution start (crown jewel 1) so scope drift discovered after planning re-gates
-to a human rather than proceeding (INV-EXEC-01, INV-INTENT-02). A plan that exceeds
-the envelope — a repository or path the intent never approved — is refused, never
-rubber-stamped.
+from an approved intent, whose frozen acceptance criteria are unchanged since
+approval, may execute; the runtime re-runs the `intent-authorized` check at
+execution start so that a criteria change after planning (the intent's
+`contract_digest` no longer matches) re-gates to a human rather than proceeding
+(INV-EXEC-01, INV-INTENT-02). A plan whose intent is unapproved, missing, or whose
+criteria have moved is refused, never rubber-stamped. This check makes no
+scope/path comparison — that safety is settled at delivery (Gate 2); the one
+safety-critical automated check on the path here is consequence-tier
+classification (INV-ASSURE-01).
 
 `plan.yaml` owns the human status; it is `draft` from creation until the plan
 completes, then `done`. Included task projections move in sync and are never a
@@ -74,21 +79,21 @@ publication gates.
 
 ## Interfaces
 
-- Human request: "Run plan `<id>`" (authorized via the intent envelope, no separate approval)
+- Human request: "Run plan `<id>`" (authorized via its approved intent, no separate approval)
 - Canonical status: `plan.yaml` `status` (`draft`, `done`)
-- Authorization preflight: `intent-envelope-check` (crown jewel 1)
+- Authorization preflight: `intent-authorized` (scope-free)
 
 ## Constraints and edge cases
 
-The envelope check fails upward: any indeterminate comparison (unresolvable path,
-missing scope entry, unapproved or missing intent) re-gates rather than authorizing.
-A plan whose intent is not approved cannot execute. An already-`done` plan is not
-re-executed. Unrelated dirty working-tree files are preserved.
+The authorization check fails upward: an unapproved or missing intent, or
+acceptance criteria changed since approval (digest mismatch), re-gates rather than
+authorizing. A plan whose intent is not approved cannot execute. An already-`done`
+plan is not re-executed. Unrelated dirty working-tree files are preserved.
 
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`, `.agents/skills/cc-execute/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_intent_envelope_check`, `cc_execution_begin`, `cc_plan_set_status`
+- `wrapper/runtime/engine.sh`: `cc_intent_authorized`, `cc_execution_begin`, `cc_plan_set_status`
 - `wrapper/contracts/schemas/plan.yaml`, `wrapper/contracts/schemas/intent-contract.yaml`
 - `wrapper/contracts/invariants.yaml`: INV-APPROVE-01, INV-INTENT-02, INV-PLAN-01, INV-EXEC-01
 
@@ -97,7 +102,9 @@ re-executed. Unrelated dirty working-tree files are preserved.
 Re-grounded on the current wrapper for Context Circuit v1.0. Supersedes the earlier
 `plan-approval` domain: v1.0 removed the plan-level approval gate and the
 intermediate `approved` plan status, folding authorization into the intent gate
-(Gate 1) plus the scope-envelope check. Raw `sources/` was not scanned.
+(Gate 1). Authorization is scope-free (approved intent + unchanged criteria);
+scope-safety is settled at delivery (Gate 2), not by an authorization-time scope
+check. Raw `sources/` was not scanned.
 
 ## Acceptance notes
 

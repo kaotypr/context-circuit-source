@@ -29,8 +29,9 @@ workflows:
 ## Summary
 
 Implementing an intent-authorized plan with one bounded worker. Execution's
-authorization derives from the approved intent's scope envelope (re-checked at
-execution start), not a separate plan-approval step. Route "execute plan `<id>`",
+authorization derives from the approved intent (re-checked at execution start via
+the scope-free `intent-authorized` check), not a separate plan-approval step. Route
+"execute plan `<id>`",
 repair, and resume/recovery requests here. Owned by the `cc-execute` skill and the
 `agents/worker.md` worker role.
 
@@ -42,14 +43,15 @@ ownership lock, the three-failure repair counter, and preserved, resumable
 runtime records.
 
 Outside: authorization itself ([plan-authorization](../plan-authorization/README.md),
-derived from the intent's approved envelope), the read-only check
+derived from the approved intent), the read-only check
 ([verification](../verification/README.md)), completion
 ([completion](../completion/README.md)), and any pull request/merge/push
 ([delivery](../delivery/README.md)).
 
 ## Behavior
 
-Only a plan within its approved intent's scope envelope may execute (INV-EXEC-01).
+Only a plan derived from its approved intent, with criteria unchanged since
+approval, may execute (INV-EXEC-01).
 One worker executes every task of one intent-authorized plan in one bounded
 execution, in dependency order, across all mapped repositories (INV-EXEC-02).
 Execution creates exactly one deterministic
@@ -86,7 +88,7 @@ ownership, resume a worker, prove verification, or authorize completion
 ## Execution brief, snapshot, and repair discipline
 
 Before the worker runs, execution preflights the affected repositories (the
-intent-envelope check, dependency order, clean base checkouts, bounded scope) and
+`intent-authorized` check, dependency order, clean base checkouts) and
 generates a bounded
 execution brief plus an immutable plan-snapshot — a serialized copy of `PLAN.md`,
 `plan.yaml`, and all task files that the worker and verifier prompts read.

@@ -29,9 +29,14 @@ workflows:
 ## Summary
 
 Opening a pull request, merging, or pushing — each a separate, explicit human
-action never implied by a prior success. Route "open a pull request for `<id>`",
-merge, and push requests here. Owned by the `cc-deliver` skill; the delivery
-boundary is owned by `wrapper/adapters/WORKFLOW.md`.
+action never implied by a prior success. Delivery is **Gate 2**, the second (and
+only other) human gate after intent approval: because v1.0 has **no automated
+scope gate** upstream (the scope-envelope check was removed), delivery is where
+**scope-safety is actually settled** — the human sees and authorizes the exact
+diff and repositories before anything lands, while all pre-delivery work stays
+sandboxed in isolated worktrees (INV-INTENT-02, INV-DELIVER-01). Route "open a pull
+request for `<id>`", merge, and push requests here. Owned by the `cc-deliver`
+skill; the delivery boundary is owned by `wrapper/adapters/WORKFLOW.md`.
 
 In this product "publish"/"publication" names sending data to an external system
 ([external-surface](../external-surface/README.md)); git delivery is "push" / "open
@@ -131,4 +136,7 @@ reserved for the [external surface](../external-surface/README.md), matching
 INV-DELIVER-01 and AC-16). Extended 2026-09-03 from proposal
 `0031-change-delivery-for-pairing`: pairing-branch delivery is a separate,
 human-supervised action that blocks on base drift rather than rebasing (the plan
-drift guard is unchanged and remains the only auto-rebase path).
+drift guard is unchanged and remains the only auto-rebase path). Re-grounded
+2026-09-04 for Context Circuit v1.0: delivery is named as Gate 2, the point where
+scope-safety is settled now that there is no automated scope gate upstream
+(mechanics unchanged).

@@ -46,7 +46,7 @@ and any status change.
 ## Behavior
 
 Creating a plan does not execute it; it is authorized by its parent approved
-intent within the scope envelope. `cc-plan` drafts against
+intent, scope-free (approved intent + unchanged criteria). `cc-plan` drafts against
 route-selected Product Knowledge (`context/INDEX.md`), grounding the plan in
 available evidence; missing or contradictory information becomes an explicit
 open question, assumption, or risk rather than an invented decision

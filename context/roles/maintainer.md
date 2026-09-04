@@ -66,7 +66,7 @@ Repository binding keeps registered product repos portable; this source checkout
 is already identified. Host adapters are how Codex, Claude Code, and Cursor enter
 the same lifecycle as evidence-only transports. Planning and review are
 non-mutating; intent approval is the explicit conversational gate (Gate 1) that
-authorizes derived plans within its scope envelope; execution, independent
+authorizes derived plans (scope-free, while its criteria are unchanged); execution, independent
 verification, completion, archive/restore, and delivery are each separate
 explicit actions.
 
