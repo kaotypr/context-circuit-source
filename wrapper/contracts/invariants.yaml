@@ -58,8 +58,10 @@ invariants:
       (Gate 1, INV-APPROVE-01); it freezes contract_digest — the frozen identity of the
       criteria the change is later proven against (INV-CANDIDATE-01) — and also confirms
       the coordinator understood the plain ask, which is what lets the tracer read the
-      real code next. Intent ids use the distinct form i<NNNN>-slug, their own
-      never-reused sequence.
+      real code next. Intent ids use the distinct form i<NNN>-slug, their own
+      never-reused sequence with a hard ceiling at i999; allocation fails clearly
+      when no exact three-digit id is representable and never archives, deletes, or
+      recycles an identifier automatically.
   - id: INV-INTENT-02
     rule: >
       A v1.0 plan declares its parent intent. On intent approval the coordinator spawns

@@ -30,7 +30,7 @@ expect_failure cc_plan_id_valid "0001-Bad"
 
 # --- validation catches missing tasks ---
 mkdir -p "$ws/plans/0009-empty/tasks"
-printf 'schema_version: 3\nplan: 0009-empty\ntitle: E\nstatus: draft\nobjective: e\nintent: i0009-empty\nrepositories:\n  - id: api\ntasks:\n' >"$ws/plans/0009-empty/plan.yaml"
+printf 'schema_version: 3\nplan: 0009-empty\ntitle: E\nstatus: draft\nobjective: e\nintent: i009-empty\nrepositories:\n  - id: api\ntasks:\n' >"$ws/plans/0009-empty/plan.yaml"
 printf '# E\n' >"$ws/plans/0009-empty/PLAN.md"
 expect_failure cc_plan_validate "$ws/plans/0009-empty"
 rm -rf "$ws/plans/0009-empty"
@@ -61,7 +61,7 @@ plan: 0011-block
 title: Block form
 status: draft
 objective: block
-intent: i0011-block
+intent: i011-block
 repositories:
   - id: api
   - id: web

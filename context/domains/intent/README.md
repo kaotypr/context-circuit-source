@@ -100,7 +100,8 @@ applied without asking again.
 - Human request: "I want to build/change …" → a drafted intent; "approve intent `<id>`" → Gate 1
 - Human-facing file: `intent/<id>/INTENT.md` (five sections, plain language)
 - Machine record: `intent/<id>/contract.yaml` (`schema_version` 2; `status` `draft`/`approved`; frozen `contract_digest`)
-- Intent ids: the distinct form `i<NNNN>-slug`, their own never-reused sequence
+- Intent ids: the distinct form `i<NNN>-slug`, their own never-reused sequence
+  with a hard `i999` ceiling; allocation fails rather than inventing a fourth digit
 
 ## Data
 

@@ -48,7 +48,7 @@ fields:
     type: string
     required: true
     description: >
-      The parent intent id (form i<NNNN>-slug) this plan derives from. Every plan
+      The parent intent id (form i<NNN>-slug) this plan derives from. Every plan
       names one. The derives-from-an-approved-intent authorization (cc_intent_authorized,
       INV-INTENT-02) confirms the intent is approved with unchanged criteria and re-gates
       on a criteria drift; there is no automated scope gate (scope-safety is settled at

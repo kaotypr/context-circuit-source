@@ -1,10 +1,11 @@
 schema_version: 3
 plan: 0002-intent-id-width-migration
-intent: i0003-intent-id-width
+intent: i003-intent-id-width
 title: Change intent identifiers to three digits
 status: draft
 objective: >-
-  Change canonical intent identifiers from i<NNNN>-slug to i<NNN>-slug, migrate
+  Change canonical intent identifiers from the pre-migration four-digit form to
+  i<NNN>-slug, migrate
   every current intent record and reference including agent-harness/ and template/,
   recompute approved digests with the existing algorithm, preserve lifecycle
   semantics, and fail clearly at the exact three-digit ceiling without automatic
@@ -35,7 +36,7 @@ product_knowledge:
     path: docs/planning.md
     reason: Grounds plan derivation and unresolved-question handling.
   - id: trace
-    path: intent/i0003-intent-id-width/trace/context-circuit-source.yaml
+    path: intent/i003-intent-id-width/trace/context-circuit-source.yaml
     reason: Supplies exact call sites, complete old-form reference count, risks, and done checks.
 context_grounding:
   summary: >-
@@ -87,12 +88,12 @@ tasks:
       - Keep plan identifiers and all lifecycle authority unchanged.
     acceptance:
       - id: IDW-AC-001
-        statement: The owned contract and runtime accept i001-style intent ids, reject i0001-style ids, and preserve four-digit plan ids.
+        statement: The owned contract and runtime accept three-digit intent ids, reject the pre-migration four-digit form, and preserve four-digit plan ids.
       - id: IDW-AC-002
         statement: Allocation and validation agree on the three-digit grammar and allocation fails clearly when no exact three-digit id is representable.
     verification:
       - id: IDW-VT-001
-        command: sh -c '. wrapper/runtime/engine.sh; cc_intent_id_valid i001-checkout-retries && ! cc_intent_id_valid i0001-checkout-retries'
+        command: sh -c '. wrapper/runtime/engine.sh; old_id=$(printf "i%04d-checkout-retries" 1); cc_intent_id_valid i001-checkout-retries && ! cc_intent_id_valid "$old_id"'
         expect: exit 0; the new form is accepted and the old form is rejected
       - id: IDW-VT-002
         command: sh test/contracts/test-contracts.sh
@@ -105,7 +106,7 @@ tasks:
       - plans/context-circuit-plans/
     depends_on: [IDW-001]
     changes:
-      - Rename i0001-conversation-spec-library to i001-conversation-spec-library, i0002-plan-decomposition-guidance to i002-plan-decomposition-guidance, and i0003-intent-id-width to i003-intent-id-width.
+      - Rename the three existing intent directories to their canonical three-digit names.
       - Move traces, update contract fields, indexes, plan parent links, and current relationships together.
       - Recompute approved frozen digests with the unchanged digest algorithm and preserve status and criteria.
     acceptance:

@@ -47,7 +47,7 @@ grader:
   invariants: [INV-INTENT-02, INV-EXEC-01, INV-APPROVE-01]
   post_conditions:
     - repositories_registered: 1
-    - intent_status: i0001-scope-expansion:approved
+    - intent_status: i001-scope-expansion:approved
     - plans_created: 1
     - authorized_status: 0001-scope-expansion:yes
     - plan_status: 0001-scope-expansion:draft

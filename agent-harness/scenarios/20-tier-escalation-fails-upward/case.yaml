@@ -13,7 +13,7 @@ setup:
       seed_files: [README.md]
       connect: main
   intents:
-    - id: i0001-token-check
+    - id: i001-token-check
       title: Adjust the login token check
       repository: accounts
       objective: Adjust the login token check.
@@ -46,7 +46,7 @@ grader:
   invariants: [INV-ASSURE-01, INV-HOST-01, INV-EXEC-01]
   post_conditions:
     - repositories_registered: 1
-    - classified_tier: i0001-token-check:critical
+    - classified_tier: i001-token-check:critical
     - no_execution_records: true
     - product_knowledge_unchanged_silently: true
   transcript_checks:

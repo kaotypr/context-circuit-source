@@ -15,35 +15,35 @@ ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
 # --- a scope path under an auth/secrets surface -> Critical, verifier required ---
-cc_fx_intent "$ws" i0001-auth "Auth" api "src/auth"
-assert_eq "critical" "$(tier_of "$ws" i0001-auth)"
-assert_eq "no" "$(explore_ok "$ws" i0001-auth)"
+cc_fx_intent "$ws" i001-auth "Auth" api "src/auth"
+assert_eq "critical" "$(tier_of "$ws" i001-auth)"
+assert_eq "no" "$(explore_ok "$ws" i001-auth)"
 
 # --- a money / payments surface -> Critical ---
-cc_fx_intent "$ws" i0002-pay "Billing" api "src/billing"
-assert_eq "critical" "$(tier_of "$ws" i0002-pay)"
+cc_fx_intent "$ws" i002-pay "Billing" api "src/billing"
+assert_eq "critical" "$(tier_of "$ws" i002-pay)"
 
 # --- a data migration surface -> Critical ---
-cc_fx_intent "$ws" i0003-mig "Migrate" api "db/migrations"
-assert_eq "critical" "$(tier_of "$ws" i0003-mig)"
+cc_fx_intent "$ws" i003-mig "Migrate" api "db/migrations"
+assert_eq "critical" "$(tier_of "$ws" i003-mig)"
 
 # --- a single-repo, bounded, no-signal change -> Standard by default (fail upward);
 # the engine cannot see reversibility/coverage/novelty, so no-signal is NOT auto-
 # Explore. Explore stays available only as an explicit human lowering (explore_ok=yes) ---
-cc_fx_intent "$ws" i0004-widget "Widget" api "src/widget"
-assert_eq "standard" "$(tier_of "$ws" i0004-widget)"
-assert_eq "yes" "$(explore_ok "$ws" i0004-widget)"
+cc_fx_intent "$ws" i004-widget "Widget" api "src/widget"
+assert_eq "standard" "$(tier_of "$ws" i004-widget)"
+assert_eq "yes" "$(explore_ok "$ws" i004-widget)"
 
 # --- an unrecognized / uncontained shape (repo-wide scope) -> Standard, not Explore ---
-cc_fx_intent "$ws" i0005-wide "Wide" api "."
-assert_eq "standard" "$(tier_of "$ws" i0005-wide)"
-assert_eq "no" "$(explore_ok "$ws" i0005-wide)"
+cc_fx_intent "$ws" i005-wide "Wide" api "."
+assert_eq "standard" "$(tier_of "$ws" i005-wide)"
+assert_eq "no" "$(explore_ok "$ws" i005-wide)"
 
 # --- more than one repository -> Standard, not Explore ---
-mkdir -p "$ws/intent/i0006-multi"
-cat >"$ws/intent/i0006-multi/contract.yaml" <<Y
+mkdir -p "$ws/intent/i006-multi"
+cat >"$ws/intent/i006-multi/contract.yaml" <<Y
 schema_version: 1
-intent: i0006-multi
+intent: i006-multi
 title: Multi
 goal: g
 acceptance_criteria:
@@ -60,9 +60,9 @@ tier: standard
 status: draft
 contract_digest:
 Y
-printf '# m\n' >"$ws/intent/i0006-multi/INTENT.md"
-assert_eq "standard" "$(tier_of "$ws" i0006-multi)"
-assert_eq "no" "$(explore_ok "$ws" i0006-multi)"
+printf '# m\n' >"$ws/intent/i006-multi/INTENT.md"
+assert_eq "standard" "$(tier_of "$ws" i006-multi)"
+assert_eq "no" "$(explore_ok "$ws" i006-multi)"
 
 # --- DEEP BOUNDARY FIXTURES (fail-upward corners; each pins one under-tiering trap). ---
 
@@ -70,14 +70,14 @@ assert_eq "no" "$(explore_ok "$ws" i0006-multi)"
 # otherwise Explore-eligible path must still tier Critical and forbid Explore. The
 # highest signal across all scope paths wins; a benign-first classifier that stopped
 # at src/widget would ship an auth change unverified. This is the headline tier guard.
-cc_fx_intent "$ws" i0008-hidden "Hidden critical" api "src/widget src/auth"
-assert_eq "critical" "$(tier_of "$ws" i0008-hidden)"
-assert_eq "no" "$(explore_ok "$ws" i0008-hidden)"
+cc_fx_intent "$ws" i008-hidden "Hidden critical" api "src/widget src/auth"
+assert_eq "critical" "$(tier_of "$ws" i008-hidden)"
+assert_eq "no" "$(explore_ok "$ws" i008-hidden)"
 
 # Keyword-coverage guards: the Critical surface set is more than "auth". Pin a few
 # distinct high-consequence surfaces so narrowing the signal set is caught. Each is a
 # single scope path; a regression that drops one silently under-tiers that whole class.
-for cc_ti_case in secrets:i0009-sec src/payments:i0010-pay deploy:i0011-dep src/credentials:i0012-cred config/production:i0013-prod; do
+for cc_ti_case in secrets:i009-sec src/payments:i010-pay deploy:i011-dep src/credentials:i012-cred config/production:i013-prod; do
 	cc_ti_path=${cc_ti_case%%:*}; cc_ti_id=${cc_ti_case#*:}
 	cc_fx_intent "$ws" "$cc_ti_id" "Critical surface" api "$cc_ti_path"
 	assert_eq "critical" "$(tier_of "$ws" "$cc_ti_id")"
@@ -85,30 +85,30 @@ for cc_ti_case in secrets:i0009-sec src/payments:i0010-pay deploy:i0011-dep src/
 done
 
 # --- lowering guard: Explore on a risk surface is refused; Standard is allowed ---
-expect_failure eng tier-lower-check "$ws" i0001-auth explore     # Critical->Explore for security: refused
-eng tier-lower-check "$ws" i0001-auth standard >/dev/null        # Critical->Standard: allowed (verifier kept)
+expect_failure eng tier-lower-check "$ws" i001-auth explore     # Critical->Explore for security: refused
+eng tier-lower-check "$ws" i001-auth standard >/dev/null        # Critical->Standard: allowed (verifier kept)
 
 # --- the floor is enforced at the gate: approving Explore on a risk surface is refused ---
-awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i0001-auth/contract.yaml" >"$ws/intent/i0001-auth/c.new"
-mv "$ws/intent/i0001-auth/c.new" "$ws/intent/i0001-auth/contract.yaml"
-expect_failure eng intent-approve "$ws" i0001-auth
+awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i001-auth/contract.yaml" >"$ws/intent/i001-auth/c.new"
+mv "$ws/intent/i001-auth/c.new" "$ws/intent/i001-auth/contract.yaml"
+expect_failure eng intent-approve "$ws" i001-auth
 # an Explore-eligible intent approves at Explore
-awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i0004-widget/contract.yaml" >"$ws/intent/i0004-widget/c.new"
-mv "$ws/intent/i0004-widget/c.new" "$ws/intent/i0004-widget/contract.yaml"
-eng intent-approve "$ws" i0004-widget >/dev/null
+awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i004-widget/contract.yaml" >"$ws/intent/i004-widget/c.new"
+mv "$ws/intent/i004-widget/c.new" "$ws/intent/i004-widget/contract.yaml"
+eng intent-approve "$ws" i004-widget >/dev/null
 
 # --- per-tier verifier floor at completion ---
 cc_fx_repo "$ws" api development
 
 # Explore is human-supervised and planless in v1.0. Promotion to Standard/Critical
 # is the first point at which execution creates a plan of record.
-cc_fx_plan_intent "$ws" 0001-widget "Widget" api src/widget i0004-widget
+cc_fx_plan_intent "$ws" 0001-widget "Widget" api src/widget i004-widget
 expect_failure eng plan-validate "$ws/plans/0001-widget"
 expect_failure eng execution-begin "$ws" 0001-widget sess-e
 # Standard: the independent verifier floor is required (acceptance alone is not enough).
-cc_fx_intent "$ws" i0007-std "Std" api "src/std"
-eng intent-approve "$ws" i0007-std >/dev/null
-cc_fx_plan_intent "$ws" 0002-std "Std" api src/std i0007-std
+cc_fx_intent "$ws" i007-std "Std" api "src/std"
+eng intent-approve "$ws" i007-std >/dev/null
+cc_fx_plan_intent "$ws" 0002-std "Std" api src/std i007-std
 exec2=$(eng execution-begin "$ws" 0002-std sess-s | sed -n 's/^execution_id: //p')
 edir2=$(cc_fx_exec_dir "$ws" 0002-std "$exec2")
 contains "$edir2/execution.yaml" "tier: standard"

@@ -51,10 +51,12 @@ printf 'schema_version: 2\nbindings:\n  api:\n    path: repositories/api\n    ba
 pid=$(cc_plan_allocate_id "$ws" checkout-v2)
 assert_eq "0001-checkout-v2" "$pid"
 # v1.0: author + approve a parent intent scoped to the plan's repos before the plan.
-mkdir -p "$ws/intent/i$pid"
-cat >"$ws/intent/i$pid/contract.yaml" <<EOF
+intent_seq=${pid%%-*}; intent_seq=${intent_seq#0}; intent_seq=${intent_seq#0}; intent_seq=${intent_seq#0}; intent_seq=${intent_seq#0}; [ -n "$intent_seq" ] || intent_seq=0
+intent_slug=${pid#*-}; iid=$(printf 'i%03d-%s' "$intent_seq" "$intent_slug")
+mkdir -p "$ws/intent/$iid"
+cat >"$ws/intent/$iid/contract.yaml" <<EOF
 schema_version: 2
-intent: i$pid
+intent: $iid
 title: Checkout v2
 goal: Add saved checkout sessions.
 non_goals:
@@ -74,14 +76,14 @@ tier: standard
 status: draft
 contract_digest:
 EOF
-printf '# Checkout v2\n' >"$ws/intent/i$pid/INTENT.md"
-cc_intent_index_upsert "$ws" "i$pid" >/dev/null
-cc_intent_approve "$ws" "i$pid" >/dev/null
+printf '# Checkout v2\n' >"$ws/intent/$iid/INTENT.md"
+cc_intent_index_upsert "$ws" "$iid" >/dev/null
+cc_intent_approve "$ws" "$iid" >/dev/null
 mkdir -p "$ws/plans/$pid/tasks"
 cat >"$ws/plans/$pid/plan.yaml" <<EOF
 schema_version: 3
 plan: $pid
-intent: i$pid
+intent: $iid
 title: Checkout v2
 status: draft
 objective: Add saved checkout sessions.
@@ -166,7 +168,8 @@ require_dir "$ws/.runtime/executions/$pid"
 #     Two roots and one integration dependent, all in api; plus one lease check.
 mkplan() { # pid title repo path "deps"
 	mp_dir="$ws/plans/$1"; mkdir -p "$mp_dir/tasks"
-	mp_iid="i$1"; mkdir -p "$ws/intent/$mp_iid"
+	mp_seq=${1%%-*}; mp_seq=${mp_seq#0}; mp_seq=${mp_seq#0}; mp_seq=${mp_seq#0}; mp_seq=${mp_seq#0}; [ -n "$mp_seq" ] || mp_seq=0
+	mp_slug=${1#*-}; mp_iid=$(printf 'i%03d-%s' "$mp_seq" "$mp_slug"); mkdir -p "$ws/intent/$mp_iid"
 	{
 		printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$mp_iid" "$2" "$2"
 		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'

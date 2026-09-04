@@ -76,13 +76,13 @@ decision_points:
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
   # Fresh whole-arc case: the intent/plan ids are authored live, so id-keyed
-  # assertions assume the first-allocated ids (i0001-.../0001-...). Same id-agnostic
+  # assertions assume the first-allocated ids (i001-.../0001-...). Same id-agnostic
   # concern the whole-flow plot raises; `promoted_in_place` is a NEW assertion that
   # the plan of record binds to the pairing commits rather than a fresh redo — a
   # harness gap (see coverage/phase-3.md).
   - repositories_registered: 1
-  - intent_status: i0001-util-helper:approved
-  - classified_tier: i0001-util-helper:standard      # raised from Explore; the independent check appears
+  - intent_status: i001-util-helper:approved
+  - classified_tier: i001-util-helper:standard      # raised from Explore; the independent check appears
   - plans_created: 1
   - plan_schema: 0001-util-helper:3
   - promoted_in_place: true                           # plan of record binds to the existing pairing commits

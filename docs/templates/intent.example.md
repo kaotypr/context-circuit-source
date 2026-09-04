@@ -5,7 +5,7 @@
   shape and the tone, not this feature. The scenario is generic on purpose.
 -->
 
-# Intention — i0007
+# Intention — i007
 
 _Status: draft, waiting for your approval._
 

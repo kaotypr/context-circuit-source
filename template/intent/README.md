@@ -18,8 +18,8 @@ intent/
 └── archive/<intent-id>/    # archived intents; never normal agent context
 ```
 
-- Intent IDs are stable and take the form `i<NNNN>-<kebab-slug>` (for example
-  `i0001-checkout-retries`) — distinct from plan ids so an id reads as an intent
+- Intent IDs are stable and take the form `i<NNN>-<kebab-slug>` (for example
+  `i001-checkout-retries`) — distinct from plan ids so an id reads as an intent
   on sight. The sequence is never reused.
 - Intent status is human-controlled: `draft → approved`. Approval freezes
   `contract_digest`, the identity of the criteria the change is later proven

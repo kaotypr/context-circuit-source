@@ -1,7 +1,7 @@
 # 0001 — Establish the conversation-spec library as the living harness specification
 
 - **Plan ID:** `0001-conversation-spec-library`
-- **Intent:** `i0001-conversation-spec-library`
+- **Intent:** `i001-conversation-spec-library`
 - **Status:** draft
 - **Repository:** `context-circuit-source`
 - **Assurance:** Standard — one worker and one independent verifier

@@ -36,12 +36,21 @@ cc_fx_repo() {
 
 # cc_fx_plan WS PID TITLE "repo1 repo2..." -> write a minimal valid draft plan
 # One task per repository, named <REPO>-001, dependencies chained in order.
+cc_fx_intent_id_from_plan() {
+	cc_fx_ip_pid=$1
+	cc_fx_ip_seq=${cc_fx_ip_pid%%-*}
+	cc_fx_ip_slug=${cc_fx_ip_pid#*-}
+	cc_fx_ip_seq=$(printf '%s' "$cc_fx_ip_seq" | sed 's/^0*//')
+	[ -n "$cc_fx_ip_seq" ] || cc_fx_ip_seq=0
+	printf 'i%03d-%s' "$cc_fx_ip_seq" "$cc_fx_ip_slug"
+}
+
 cc_fx_plan() {
 	cc_fxp_ws=$1; cc_fxp_pid=$2; cc_fxp_title=$3; cc_fxp_repos=$4
 	cc_fxp_dir="$cc_fxp_ws/plans/$cc_fxp_pid"
 	# v1.0: every plan derives from an approved parent intent (outcome-level criteria,
 	# coarse optional scope). Author + approve an intent i<pid>, then bind the plan.
-	cc_fxp_iid="i$cc_fxp_pid"
+	cc_fxp_iid=$(cc_fx_intent_id_from_plan "$cc_fxp_pid")
 	mkdir -p "$cc_fxp_ws/intent/$cc_fxp_iid"
 	{
 		printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxp_iid" "$cc_fxp_title" "$cc_fxp_title"
@@ -96,7 +105,7 @@ cc_fx_plan() {
 cc_fx_plan_ex() {
 	cc_fxe_ws=$1; cc_fxe_pid=$2; cc_fxe_title=$3; cc_fxe_repo=$4; cc_fxe_path=$5; cc_fxe_deps=${6:-}
 	cc_fxe_dir="$cc_fxe_ws/plans/$cc_fxe_pid"
-	cc_fxe_iid="i$cc_fxe_pid"
+	cc_fxe_iid=$(cc_fx_intent_id_from_plan "$cc_fxe_pid")
 	mkdir -p "$cc_fxe_ws/intent/$cc_fxe_iid"
 	{
 		printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxe_iid" "$cc_fxe_title" "$cc_fxe_title"

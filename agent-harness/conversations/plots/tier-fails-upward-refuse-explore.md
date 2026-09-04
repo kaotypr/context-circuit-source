@@ -25,7 +25,7 @@ preconditions:
       seed_files: [README.md]
       connect: main
   intents:
-    - id: i0001-token-check
+    - id: i001-token-check
       title: Adjust the login token check
       repository: accounts
       objective: Adjust the login token check.
@@ -74,7 +74,7 @@ decision_points:
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
   - repositories_registered: 1
-  - classified_tier: i0001-token-check:critical   # the deterministic signal classifies Critical
+  - classified_tier: i001-token-check:critical   # the deterministic signal classifies Critical
   - no_execution_records: true
   - product_knowledge_unchanged_silently: true
 access_discipline:

@@ -16,7 +16,7 @@ cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
 # --- Standard: completion inferred from candidate acceptance + delivery ---
-iid=i0001-std
+iid=i001-std
 cc_fx_intent "$ws" "$iid" "Std" api "src"
 eng intent-approve "$ws" "$iid" >/dev/null
 cc_fx_plan_intent "$ws" 0001-std "Std" api src "$iid"
@@ -41,9 +41,9 @@ eng completion-infer "$ws" 0001-std >/dev/null
 
 # a post-delivery change (new candidate) makes the delivery signal stale
 # (guards against completing a candidate that moved after delivery was recorded)
-cc_fx_intent "$ws" i0009-drift "Drift" web "src"
-eng intent-approve "$ws" i0009-drift >/dev/null
-cc_fx_plan_intent "$ws" 0009-drift "Drift" web src i0009-drift
+cc_fx_intent "$ws" i009-drift "Drift" web "src"
+eng intent-approve "$ws" i009-drift >/dev/null
+cc_fx_plan_intent "$ws" 0009-drift "Drift" web src i009-drift
 cc_fx_run_ok "$ws" 0009-drift web src
 edir9=$(cc_fx_exec_dir "$ws" 0009-drift "$(cc_latest_execution "$ws" 0009-drift)")
 eng human-acceptance-record "$edir9" alice >/dev/null
@@ -54,7 +54,7 @@ cc_worker_commit_record "$edir9" web repair >/dev/null
 expect_failure eng completion-infer "$ws" 0009-drift    # delivery signal is now stale
 
 # --- Critical: inferred completion is refused; explicit is required ---
-iid2=i0002-crit
+iid2=i002-crit
 cc_fx_intent "$ws" "$iid2" "Crit" api "src/crit"
 awk '/^tier:/{print "tier: critical"; next}{print}' "$ws/intent/$iid2/contract.yaml" >"$ws/intent/$iid2/c.new"
 mv "$ws/intent/$iid2/c.new" "$ws/intent/$iid2/contract.yaml"
