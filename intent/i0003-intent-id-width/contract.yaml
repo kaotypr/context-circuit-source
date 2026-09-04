@@ -1,0 +1,81 @@
+schema_version: 2
+intent: i0003-intent-id-width
+title: Change intent identifiers to three digits
+goal: >
+  Change the canonical intent identifier form from i<NNNN>-slug to i<NNN>-slug,
+  migrate every current intent directory, contract field, relationship, index,
+  trace or plan reference, documentation reference, fixture, and test reference
+  in the workspace consistently, and update allocation and validation so future
+  active and archived intents use the three-digit form without changing intent
+  lifecycle semantics or losing existing status, approval, or history.
+
+non_goals:
+  - Changing intent lifecycle semantics, approval gates, authorization, or tiering.
+  - Changing plan identifiers or unrelated identifier formats.
+  - Rewriting historical Git objects or commit messages outside current workspace files.
+  - Changing the meaning or acceptance criteria of existing intents.
+  - Delivering, publishing, merging, or pushing implicitly.
+
+constraints:
+  - Existing active and archived intent directories and their canonical `intent`
+    fields must be renamed as one consistent migration.
+  - Every current workspace reference to an existing intent must resolve to the
+    new three-digit identifier; no stale four-digit reference may remain active.
+  - Allocation, validation, approval, archive, restore, authorization, tracing,
+    planning, and any other lifecycle operation must agree on the same identifier
+    grammar.
+  - Existing intent status, approval digest semantics, relationships, trace data,
+    and plan parent links must be preserved except for the identifier spelling.
+  - Product behavior has one owner per rule; update the owning contract/runtime
+    surfaces rather than adding parallel compatibility policy.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite after
+    meaningful phases.
+
+acceptance_criteria:
+  - id: AC-INTENT-ID-FORM
+    statement: >
+      The canonical intent identifier rule is consistently defined as i followed
+      by exactly three zero-padded decimal digits, a hyphen, and a lowercase
+      kebab-case slug; validators accept the new form and reject the old four-digit
+      form.
+  - id: AC-EXISTING-INTENTS-MIGRATED
+    statement: >
+      Every active and archived intent in the workspace has its directory name,
+      canonical contract field, index entry, and all current relationships migrated
+      to the corresponding three-digit identifier, with status, approval state,
+      digest semantics, and intent content otherwise preserved.
+  - id: AC-REFERENCES-CONSISTENT
+    statement: >
+      Every current workspace file that refers to an existing intent—including
+      plans, trace records, runtime fixtures, documentation, and tests—resolves to
+      the new identifier, and a mechanical stale-reference check finds no active
+      four-digit intent reference.
+  - id: AC-FUTURE-LIFECYCLE
+    statement: >
+      Allocation chooses the next unused three-digit intent number across active
+      and archived intents, and validation, approval, archive, restore,
+      authorization, tracing, and planning continue to operate correctly with the
+      migrated identifiers.
+  - id: AC-LIFECYCLE-PRESERVED
+    statement: >
+      The semantic acceptance suite remains green and demonstrates that changing
+      identifier width does not add a gate or alter intent approval, plan
+      authorization, execution, verification, completion, delivery, or tier
+      behavior.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+      paths:
+        - wrapper/runtime/
+        - wrapper/contracts/
+        - context/
+        - docs/
+        - agents/
+        - .agents/skills/
+        - intent/
+        - plans/
+        - test/
+
+tier: standard
+status: draft
