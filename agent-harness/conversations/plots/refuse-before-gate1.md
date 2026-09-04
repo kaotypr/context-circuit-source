@@ -51,7 +51,7 @@ demonstrates:
   invariants: [INV-EXEC-01, INV-APPROVE-01]
 hidden:
   - internal file names/paths (intent id, contract.yaml, plan.yaml, engine.sh)
-  - lifecycle jargon ("Gate 1", "approved intent", "envelope") as jargon
+  - lifecycle jargon ("Gate 1", "approved intent", "feasibility check") as jargon
 decision_points:
   - id: refuse-plainly
     when: the human asks to build/run a change whose goal is not approved

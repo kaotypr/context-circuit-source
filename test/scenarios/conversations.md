@@ -76,20 +76,20 @@ these lines carry no internal vocabulary.
 >
 > **H:** Accept.
 
-## D — envelope drift re-gates
+## D — a reach beyond scope is surfaced (feasibility)
 
-> **C:** Heads up: building this, it turns out the change also needs to touch the
-> payments library, which wasn't part of what you approved — you'd scoped this to
-> the checkout service only. I've paused rather than widen the scope on my own.
+> **C:** Heads up: looking at the real code for this, it turns out the change also
+> needs to touch the payments library, which wasn't part of what you approved —
+> you'd scoped this to the checkout service only. I've paused rather than widen the
+> scope on my own.
 >
-> Do you want to include the payments library — I'll re-check the criteria against
-> the wider scope — or should I keep the change to the checkout service?
+> Do you want to include the payments library, or should I keep the change to the
+> checkout service and find another way?
 >
 > **H:** Include it.
 >
-> **C:** Widening what you approved to cover the payments library. That's a change
-> to the criteria, so I re-ran the adversarial check — nothing new came back.
-> Re-approve the wider scope and I'll continue.
+> **C:** Including the payments library. That widens what you approved, so it's a new
+> decision — approve the updated goal and I'll continue.
 >
 > **H:** Approved.
 

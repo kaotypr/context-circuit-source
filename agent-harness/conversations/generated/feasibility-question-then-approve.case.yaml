@@ -1,10 +1,10 @@
-# generated from plots/adversary-revise-reapprove.md — do not edit
+# generated from plots/feasibility-question-then-approve.md — do not edit
 #
 # Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 15
 # (same seed + budgets; expectations sourced from the plot). Would live at
 # scenarios/15-intent-adversary-revise-and-approve/.
-id: adversary-revise-reapprove
-title: Revise an intent after the spec adversary finds a gap, then approve Gate 1
+id: feasibility-question-then-approve
+title: Approve an intent, surface a feasibility question from the real code, resolve it, derive the plan
 mode: conversation-only
 
 # <- plot.preconditions
@@ -25,31 +25,29 @@ setup:
       tier: standard
       state: draft
       path: src/export
-      adversary_result: no
-      finding: The acceptance criteria do not define the overwrite behavior.
   sources: []
 
 human:
   persona: >
-    A solo maker proposing a small Markdown export command. The first review should
-    uncover an ambiguity, and they are willing to resolve it before approving the
-    work. Has never heard of Context Circuit or its internals.
+    A solo maker proposing a small Markdown export command. Approving it should send
+    the coordinator to read the real code, which turns up a decision the goal never
+    settled; they are willing to make that call before any plan is written. Has never
+    heard of Context Circuit or its internals.
   turns:
-    - say: "Before we decide, please challenge the acceptance criteria for this export idea."
-    - say: "Good catch. Never overwrite an existing file; return a clear message and leave it unchanged. Please update the intent and run the challenge again."
-    - say: "The revised intent looks right and the criteria hold up now. I approve Gate 1, but do not build anything yet."
+    - say: "This export idea looks right to me. Approve it — but don't build anything yet."
+    - say: "Good question. Never overwrite: if the file's already there, stop and leave it alone with a clear message."
     - say: "Thanks."
   reactions:
     approves: true
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It reports the adversary's ambiguity in plain language instead of silently
-      choosing overwrite behavior.
-    - It revises the acceptance criteria, reruns the independent challenge, and only
-      then asks for explicit approval.
-    - After approval it derives a plan without executing it or asking for a separate
-      plan approval, and honors "do not build".
+    - It takes the approval, then reads the real code before planning and reports that
+      nothing is being built.
+    - It surfaces the overwrite decision the goal doesn't settle as a plain-language
+      question instead of silently choosing a behavior.
+    - After the human resolves it, it derives a plan without executing it or asking for a
+      separate plan approval, and honors "do not build".
     - It never exposes runtime files, internal identifiers, or implementation jargon.
 
 grader:
@@ -58,7 +56,7 @@ grader:
   post_conditions:
     - repositories_registered: 1
     - intent_status: i0001-md-export:approved
-    - adversary_status: i0001-md-export:yes
+    - intent_authorized: 0001-md-export
     - plans_created: 1
     - plan_schema: 0001-md-export:3
     - plan_status: 0001-md-export:draft
@@ -67,16 +65,16 @@ grader:
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|contract_digest|sources/|refs/cc-)"
       reason: The coordinator must explain the decision without leaking implementation internals.
-    - requires_any: ["challenge", "ambigu", "overwrite", "revis", "approved", "before"]
-      reason: The dialogue must show the failed review, revision, and Gate 1 approval.
+    - requires_any: ["real code", "overwrite", "decision", "approved", "untouched"]
+      reason: The dialogue must show approval, the code-grounded feasibility question, and the resolution.
   access_policy:
-    review:
+    approve:
       required: []
       allowed: ["intent/**", "context/**", AGENTS.md, WORKFLOW.md]
       forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
-    approve:
+    trace:
       required: []
-      allowed: ["intent/**", "context/**"]
+      allowed: ["intent/**", "context/**", "notes/**"]
       forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
     create-plan:
       required: []
@@ -84,5 +82,5 @@ grader:
       forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
   # environmental overlay (NOT from the plot) — preserved from case 15
   budgets:
-    review:  { max_turns: 4, max_tokens: 30000 }
-    approve: { max_turns: 2, max_tokens: 12000 }
+    approve: { max_turns: 4, max_tokens: 30000 }
+    trace:   { max_turns: 2, max_tokens: 12000 }

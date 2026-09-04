@@ -26,7 +26,7 @@ cc_fx_intent "$ws" "$iidA" "Checkout retries" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidA" >/dev/null                       # Gate 1
 assert_eq "approved" "$(cc_scalar "$ws/intent/$iidA/contract.yaml" status)"
 cc_fx_plan_intent "$ws" 0001-retry "Retry" checkout-service src/checkout "$iidA"
-eng intent-envelope-check "$ws" 0001-retry | grep -q '^envelope: within' || fail "A: plan should be WITHIN"
+eng intent-authorized "$ws" 0001-retry | grep -q '^authorized: yes' || fail "A: plan should be authorized"
 cc_fx_run_ok "$ws" 0001-retry checkout-service src/checkout       # worker + independent verifier pass
 edirA=$(cc_fx_exec_dir "$ws" 0001-retry "$(cc_latest_execution "$ws" 0001-retry)")
 eng human-acceptance-record "$edirA" maker >/dev/null             # accept the candidate
@@ -47,68 +47,23 @@ eng knowledge-reconciled "$ws" "$candA" reconciled >/dev/null     # human reconc
 eng knowledge-debt-check "$ws" 0002-coupon | grep -q 'debt: clear' || fail "E: grounding must clear after reconcile"
 
 # ============================ Scenario D ============================
-# Envelope drift: a plan that reaches into payments-lib (outside scope) re-gates;
-# widening the intent (re-approval) lets it proceed.
+# Criteria drift self-invalidates: editing an approved intent's criteria breaks the
+# frozen digest, so the derived plan's authorization fails (the change re-enters
+# Gate 1) and its execution is held; re-approving the changed criteria re-authorizes.
+# (There is NO automated scope gate in v1.0 — a reach beyond the coarse scope is a
+# feasibility question the coordinator surfaces, and scope-safety is at Gate 2.)
 iidD=i0003-drift
 cc_fx_intent "$ws" "$iidD" "Drift" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidD" >/dev/null
-# a plan that ALSO touches payments-lib exceeds the approved scope
-mkdir -p "$ws/plans/0003-drift/tasks"
-cat >"$ws/plans/0003-drift/plan.yaml" <<PEOF
-schema_version: 3
-plan: 0003-drift
-title: Drift
-status: draft
-objective: o
-intent: $iidD
-repositories:
-  - id: checkout-service
-  - id: payments-lib
-product_knowledge:
-  - id: p
-    path: context/PROJECT.md
-    reason: r
-context_grounding:
-  summary: s
-  constraints: []
-  decisions: []
-knowledge_impact:
-  expected_context_units: []
-  review_on_completion: true
-tasks:
-  - id: CS-001
-    title: t
-    repositories: [checkout-service]
-    paths: [src/checkout]
-    depends_on: []
-    changes: [c]
-    acceptance: [{id: CS-001-AC, statement: s}]
-    verification: [{id: CS-001-VT, command: "true"}]
-  - id: PL-001
-    title: t
-    repositories: [payments-lib]
-    paths: [src/pay]
-    depends_on: []
-    changes: [c]
-    acceptance: [{id: PL-001-AC, statement: s}]
-    verification: [{id: PL-001-VT, command: "true"}]
-execution:
-  worker: one
-  independent_verifier: required
-  max_worker_failures: 3
-PEOF
-printf '# Drift\n' >"$ws/plans/0003-drift/PLAN.md"
-eng intent-envelope-check "$ws" 0003-drift 2>/dev/null | grep -q 'reason: NEW_REPOSITORY' || fail "D: must re-gate on the new repository"
-expect_failure eng execution-begin "$ws" 0003-drift sess-d       # held, not proceeding on the old approval
-# widen the intent scope to include payments-lib (a new decision -> re-approval)
-awk '/^      paths: \[src\/checkout\]/{print; print "    - id: payments-lib"; print "      paths: [src/pay]"; next}{print}' \
-	"$ws/intent/$iidD/contract.yaml" >"$ws/intent/$iidD/c.new"
+cc_fx_plan_intent "$ws" 0003-drift "Drift" checkout-service src/checkout "$iidD"
+eng intent-authorized "$ws" 0003-drift | grep -q '^authorized: yes' || fail "D: plan should be authorized before the edit"
+# edit the approved criteria without re-approval -> the frozen digest no longer matches
+sed 's/Drift works\./Drift works within budget./' "$ws/intent/$iidD/contract.yaml" >"$ws/intent/$iidD/c.new"
 mv "$ws/intent/$iidD/c.new" "$ws/intent/$iidD/contract.yaml"
-drift_digest=$(cc_intent_contract_digest "$ws/intent/$iidD/contract.yaml")
-printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$drift_digest" \
-	>"$ws/intent/$iidD/adversary.md"
-eng intent-approve "$ws" "$iidD" >/dev/null                      # re-approve the wider scope
-eng intent-envelope-check "$ws" 0003-drift | grep -q '^envelope: within' || fail "D: widened intent should be WITHIN"
+eng intent-authorized "$ws" 0003-drift 2>/dev/null | grep -q 'reason: CRITERIA_CHANGED' || fail "D: a criteria change must re-gate"
+expect_failure eng execution-begin "$ws" 0003-drift sess-d       # held, not proceeding on the stale approval
+eng intent-approve "$ws" "$iidD" >/dev/null                      # re-approve the changed criteria (Gate 1 again)
+eng intent-authorized "$ws" 0003-drift | grep -q '^authorized: yes' || fail "D: re-approval should re-authorize"
 
 # ============================ Scenario C ============================
 # Two stacked plans delivered as one pull request -> one change-set candidate.

@@ -7,11 +7,12 @@ mechanism the driver exercises.
 
 ## Scenario A — a Standard feature, one repository
 
-1. Intent (Gate 1): `cc-intent` drafts goal, non-goals, criteria, scope
-   `checkout-service:[src/checkout]`, tier `standard`. The spec adversary adds a
-   latency criterion. Approval freezes the contract digest.
-2. Plan: `cc-plan` derives one plan; the envelope check returns WITHIN — no second
-   approval.
+1. Intent (Gate 1): `cc-intent` drafts goal, non-goals, outcome criteria, a coarse
+   scope `checkout-service:[src/checkout]`, tier `standard`. Approval freezes the
+   contract digest and confirms the ask; a read-only tracer then reads the real code
+   and the coordinator runs the feasibility check.
+2. Plan: `cc-plan` derives one plan from the trace manifest; it is authorized by the
+   approved intent — no second approval and no automated scope gate.
 3. Execute: one worker commits; the independent verifier passes, bound to the
    candidate.
 4. Accept: the human accepts the candidate (first-class, candidate-bound).
@@ -25,10 +26,11 @@ resolve reconciliation.
 ## Scenario B — Explore then promote
 
 1. Explore: no intent, no plan, no candidate — coordinator + one worker in an
-   isolated working copy; the human watches live. No verifier, no adversary.
-2. The work turns out to be real. Promote in place: attach an intent, the adversary
-   runs, raise the tier to Standard, author a plan of record. A candidate now
-   exists and the independent verifier spawns. From here it is Scenario A.
+   isolated working copy; the human watches live. No verifier, no tracer.
+2. The work turns out to be real. Promote in place: attach an intent, raise the tier
+   to Standard so a tracer reads the code, author a plan of record from its manifest.
+   A candidate now exists and the independent verifier spawns. From here it is
+   Scenario A.
 
 Invariant: no plan file exists for the un-promoted Explore work.
 
@@ -40,13 +42,16 @@ Invariant: no plan file exists for the un-promoted Explore work.
 3. The change-set candidate is computed once over the combined tip set; the
    independent verifier runs once against it. One acceptance, one delivery.
 
-## Scenario D — envelope drift re-gates
+## Scenario D — a criteria change re-gates
 
-1. Mid-build, the plan turns out to also need `payments-lib`, a repository not in
-   the approved scope. The envelope check returns EXCEEDS (new repository).
-2. Execution is held and re-gated to the human.
-3. The human widens the intent (a new decision), which re-freezes the contract
-   digest and re-runs the adversary; only then does the plan proceed WITHIN.
+1. After approval, the human edits the intent's criteria. The frozen contract digest
+   no longer matches, so the derived plan's authorization fails (CRITERIA_CHANGED) —
+   the change re-enters Gate 1.
+2. Execution is held; it never proceeds on the stale approval.
+3. The human re-approves the changed criteria (a new decision that re-freezes the
+   digest); only then is the plan authorized again. (A reach beyond the coarse scope
+   is not gated here — it is a feasibility question the coordinator surfaces, and
+   scope-safety is settled at delivery, Gate 2.)
 
 ## Scenario E — knowledge debt blocks the next change
 

@@ -186,17 +186,17 @@ enhancement, not a hole (the mechanic is covered deterministically elsewhere).
 | plot | proves | case |
 | --- | --- | --- |
 | review-intent-approve-derive | review intent, settle open question, approve, auto-derive plan | 03 |
-| adversary-revise-reapprove | adversary finds a gap → revise → re-challenge → approve | 15 |
+| feasibility-question-then-approve | approve → reading the real code surfaces a decision the goal didn't settle → resolve → derive plan | 15 |
 | refuse-before-gate1 | fail closed: no build before intent approval | 04 |
-| tier-fails-upward-refuse-explore | decline Explore on a security surface (crown jewel 2) | 20 |
-| scope-envelope-regate | plan exceeds approved scope → held, re-gated (crown jewel 1) | 16 |
+| tier-fails-upward-refuse-explore | decline Explore on a security surface (the one safety-critical automated check) | 20 |
+| scope-reach-feasibility-question | delivering would reach outside the approved scope → surfaced as a feasibility question, human decides | 16 |
 | approve-and-build-one-turn | approve intent AND build in one turn (INV-EXEC-01 compound) | **NEW** |
 
 ### Explore tier & promotion
 | plot | proves | case |
 | --- | --- | --- |
 | direct-collaboration-explore | human-supervised, uncommitted, no verifier | 14 (host-neutralize) |
-| explore-promote-to-standard | promote in place → intent+adversary+verifier+candidate | **NEW** |
+| explore-promote-to-standard | promote in place → intent+trace+verifier+candidate | **NEW** |
 
 ### Execute & verify
 | plot | proves | case |

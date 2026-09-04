@@ -33,11 +33,11 @@ human:
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It presents the goal, non-goals, and scope as one readable thing, folds in the
-      adversary finding in plain language, states the risk plainly, and asks for a single
-      approval — not a plan approval.
-    - On approval it freezes the decision, derives the plan automatically, and does not ask
-      for a second plan approval.
+    - It presents the goal, non-goals, and scope as one readable thing, raises the one
+      thing the ask doesn't settle (overwrite behavior) in plain language, states the risk
+      plainly, and asks for a single approval — not a plan approval.
+    - On approval it freezes the decision, reads the real code to plan, derives the plan
+      automatically, and does not ask for a second plan approval.
     - It reports the work was built and independently checked against the exact change, and
       never calls it done or shipped yet.
     - On "looks right" it records acceptance of that exact result; still not delivered or complete.

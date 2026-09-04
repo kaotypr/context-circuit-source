@@ -55,7 +55,7 @@ demonstrates:
   invariants: [INV-INTENT-01, INV-PLAN-04, INV-PLAN-01, INV-APPROVE-01, INV-EXEC-01]
 hidden:
   - internal file names/paths (intent id, contract.yaml, plan.yaml, contract_digest)
-  - lifecycle jargon ("Gate 1", "scope envelope", "schema-3 plan") as jargon
+  - lifecycle jargon ("Gate 1", "feasibility check", "schema-3 plan") as jargon
 decision_points:
   - id: explain-in-plain-terms
     when: the human asks to see what the coordinator understands

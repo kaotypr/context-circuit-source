@@ -150,7 +150,7 @@ repo_fixtures() {
 }
 
 # Emit one TSV row per setup.intents entry:
-#   id title repository objective open_question tier state path adversary_result finding
+#   id title repository objective open_question tier state path
 # Intents are the v1.0 Gate-1 fixture. A draft intent has no derived plan; an
 # approved intent is ready for the coordinator to derive a plan automatically.
 intent_fixtures() {
@@ -158,9 +158,9 @@ intent_fixtures() {
 		/^  intents:/{ini=1; next}
 		ini && /^  [A-Za-z]/ && $0 !~ /^    /{ini=0}
 		ini && /^    -[[:space:]]*id:[[:space:]]*/{
-			if(id!="") print id S title S repo S obj S oq S tier S state S path S adv S finding;
+			if(id!="") print id S title S repo S obj S oq S tier S state S path;
 			id=$0; sub(/^    -[[:space:]]*id:[[:space:]]*/,"",id); gsub(/[[:space:]]+$/,"",id);
-			title="";repo="";obj="";oq="";tier="";state="";path="";adv="";finding=""; next
+			title="";repo="";obj="";oq="";tier="";state="";path=""; next
 		}
 		ini && id!="" && /^      title:/{v=$0;sub(/^      title:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);title=v;next}
 		ini && id!="" && /^      repository:/{v=$0;sub(/^      repository:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);repo=v;next}
@@ -169,9 +169,7 @@ intent_fixtures() {
 		ini && id!="" && /^      tier:/{v=$0;sub(/^      tier:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);tier=v;next}
 		ini && id!="" && /^      state:/{v=$0;sub(/^      state:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);state=v;next}
 		ini && id!="" && /^      path:/{v=$0;sub(/^      path:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);path=v;next}
-		ini && id!="" && /^      adversary_result:/{v=$0;sub(/^      adversary_result:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);adv=v;next}
-		ini && id!="" && /^      finding:/{v=$0;sub(/^      finding:[[:space:]]*/,"",v);sub(/[[:space:]]+#.*$/,"",v);gsub(/[[:space:]]+$/,"",v);finding=v;next}
-		END{if(id!="") print id S title S repo S obj S oq S tier S state S path S adv S finding}
+		END{if(id!="") print id S title S repo S obj S oq S tier S state S path}
 	' "$CASE_FILE"
 }
 
@@ -205,8 +203,8 @@ plan_fixtures() {
 }
 
 # Drive the shipped engine to bring a seeded plan to a pre-execution state. A plan is
-# authorized by its approved intent within the scope envelope — there is no separate
-# plan-approval step — so a plan is `draft` until it completes.
+# authorized by its approved intent — there is no separate plan-approval step and no
+# automated scope gate — so a plan is `draft` until it completes.
 # seed_state=draft: leave the authorized draft as-is. seed_state=verified-after-repair:
 # execute, one FAILED verify + a repair commit, then a PASSED verify (worker_failures=1).
 # verified-stale adds a new worker commit after the pass, leaving the prior evidence
@@ -215,7 +213,7 @@ plan_fixtures() {
 seed_plan_state() {
 	sps_pid="$1"; sps_repo="$2"; sps_state="$3"
 	( . "$ENGINE_CLI"
-		# a draft plan is already authorized by its intent envelope; nothing to seed
+		# a draft plan is already authorized by its approved intent; nothing to seed
 		[ "$sps_state" = "draft" ] && exit 0
 		# archived: archive the authorized draft, so a restore case starts from a plan
 		# sitting in plans/archive/ (status must survive the restore).
@@ -310,16 +308,14 @@ fi
 # draft intent must not be smuggled into the normal plan lifecycle.
 if grep -q '^  intents:' "$CASE_FILE" 2>/dev/null; then
 	FIXTURE_NOTE="${FIXTURE_NOTE},intents"
-	intent_fixtures | while IFS="$US" read -r iid title irepo iobj iquestion itier istate ipath iadversary ifinding; do
+	intent_fixtures | while IFS="$US" read -r iid title irepo iobj iquestion itier istate ipath; do
 		[ -n "$iid" ] || continue
 		itier=${itier:-standard}; istate=${istate:-draft}; ipath=${ipath:-.}
-		iadversary=${iadversary:-yes}
 		idir="$WORKSPACE/intent/$iid"; mkdir -p "$idir"
 		{
-			printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$iobj"
+			printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$iobj"
 			printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
-			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n    method: test\n    surface: %s\n' "$iobj" "$irepo"
-			printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n' "$iobj"
 			printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$irepo" "$ipath"
 			printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$itier"
 		} > "$idir/contract.yaml"
@@ -327,11 +323,6 @@ if grep -q '^  intents:' "$CASE_FILE" 2>/dev/null; then
 			printf '# %s\n\nGoal: %s\n' "$title" "$iobj"
 			[ -n "$iquestion" ] && printf '\n## Open question\n\n- %s\n' "$iquestion"
 		} > "$idir/INTENT.md"
-		digest=$( ( . "$ENGINE_CLI"; cc_intent_contract_digest "$idir/contract.yaml" ) )
-		{
-			printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: %s\n' "$digest" "$iadversary"
-			[ -n "$ifinding" ] && printf 'finding: %s\n' "$ifinding" || :
-		} > "$idir/adversary.md"
 		sh "$ENGINE_CLI" intent-index-upsert "$WORKSPACE" "$iid" >/dev/null || :
 		if [ "$istate" = approved ]; then
 			sh "$ENGINE_CLI" intent-approve "$WORKSPACE" "$iid" >/dev/null \
@@ -354,23 +345,20 @@ if grep -q '^  plans:' "$CASE_FILE" 2>/dev/null; then
 		# The verifiable target is <path>/mod.txt when a path is given, else export.py.
 		if [ -n "$path" ]; then taskpath="$path"; target="$path/mod.txt"; else taskpath="."; target="export.py"; fi
 		iscopepath=${intentpath:-$taskpath}
-		# v1.0: every plan derives from a parent intent within a scope envelope. Author
-		# an intent i<pid> scoped to the plan's repo+path, then bind the schema-3 plan to
-		# it. A plan with an unresolved open question keeps its intent DRAFT (so review /
-		# approve and refuse-before-approval scenarios have a real Gate 1 to settle); a
-		# clean plan approves the intent, so it is authorized and ready to run.
+		# v1.0: every plan derives from an approved parent intent (no automated scope
+		# gate). Author an intent i<pid>, then bind the schema-3 plan to it. A plan with
+		# an unresolved open question keeps its intent DRAFT (so review / approve and
+		# refuse-before-approval scenarios have a real Gate 1 to settle); a clean plan
+		# approves the intent, so it is authorized and ready to run.
 		iid="i$pid"; idir="$WORKSPACE/intent/$iid"; mkdir -p "$idir"
 		{
-			printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$obj"
+			printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s\n' "$iid" "$title" "$obj"
 			printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
-			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n    method: test\n    surface: %s\n' "$obj" "$prepo"
-			printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+			printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s\n' "$obj"
 			printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$prepo" "$iscopepath"
 			printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$ptier"
 		} > "$idir/contract.yaml"
 		printf '# %s\n\nGoal: %s\n' "$title" "$obj" > "$idir/INTENT.md"
-		digest=$( ( . "$ENGINE_CLI"; cc_intent_contract_digest "$idir/contract.yaml" ) )
-		printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$digest" > "$idir/adversary.md"
 		sh "$ENGINE_CLI" intent-index-upsert "$WORKSPACE" "$iid" >/dev/null || :
 		# A clean fixture intent is approved by default. Explicit intent_state: draft
 		# keeps the pre-Gate-1 negative fixture genuinely unauthorized.

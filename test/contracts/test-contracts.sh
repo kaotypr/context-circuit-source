@@ -15,7 +15,7 @@ for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-ASSURE-01 INV-PLAN-01
 	INV-EXTERNAL-03 INV-PAIR-01; do
 	contains "$inv" "$id"
 done
-for concern in intent_contract intent_gate scope_envelope spec_adversary_role \
+for concern in intent_contract intent_gate feasibility_check tracer_role trace_manifest \
 	candidate_identity human_acceptance assurance_tiering reconciliation_debt \
 	plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record context_proposals \
@@ -39,7 +39,8 @@ contains "$man" "runtime_version: 1.0.0"
 contains "$man" "plan: [3]"
 contains "$man" "repositories-local: [1, 2]"
 contains "$man" "execution: [1, 2]"
-contains "$man" "intent-contract: [1]"
+contains "$man" "intent-contract: [1, 2]"
+contains "$man" "trace-manifest: [1]"
 contains "$man" "candidate: [1]"
 contains "$man" "human-acceptance: [1]"
 contains "$man" "lease: [1]"
@@ -92,19 +93,35 @@ for record_schema in \
 done
 
 # --- shipped skills present; old-design skills absent ---
-for sk in cc-workspace cc-intent cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
+for sk in cc-workspace cc-intent cc-trace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
 	require_file "$ROOT/.agents/skills/$sk/SKILL.md"
 done
 # --- v1.0 intent front door: skill, schema, role, and gate wording present ---
 ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
-contains "$ci" "spec adversary"
+contains "$ci" "tracer"
 contains "$ci" "intent-approve"
 contains "$ci" "contract_digest"
-contains "$ci" "envelope"
-require_file "$ROOT/agents/spec-adversary.md"
-contains "$ROOT/agents/spec-adversary.md" "before any code"
+contains "$ci" "feasibility"
+# --- tracing/feasibility replaced the spec adversary + envelope check ---
+not_contains "$ci" "spec adversary"
+not_contains "$ci" "scope envelope"
+test ! -e "$ROOT/agents/spec-adversary.md" || fail "spec-adversary role must be removed"
+require_file "$ROOT/agents/tracer.md"
+contains "$ROOT/agents/tracer.md" "real code"
+contains "$ROOT/agents/tracer.md" "child per repository"
+require_file "$W/contracts/schemas/trace-manifest.yaml"
 contains "$W/contracts/schemas/intent-contract.yaml" "i<NNNN>-<kebab-slug>"
-contains "$ROOT/.agents/skills/cc-plan/SKILL.md" "intent-envelope-check"
+tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
+contains "$tr" "one read-only tracer child per repository"
+contains "$tr" "feasibility check"
+contains "$tr" "done"
+ce="$ROOT/.agents/skills/cc-plan/SKILL.md"
+contains "$ce" "intent-authorized"
+not_contains "$ce" "intent-envelope-check"
+# the envelope verb is gone from the runtime; the authorization verb replaces it
+not_contains "$W/runtime/engine.sh" "intent-envelope-check"
+not_contains "$W/runtime/engine.sh" "cc_intent_envelope_check"
+contains "$W/runtime/engine.sh" "cc_intent_authorized"
 
 # --- direct collaboration is outside the plan lifecycle ---
 pair="$ROOT/.agents/skills/cc-pair/SKILL.md"

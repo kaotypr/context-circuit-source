@@ -19,28 +19,30 @@ assert_eq "i0002-coupon-field" "$id2"
 # --- validate: structure + fields ---
 sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
 
-# a criterion with an invalid method is refused (executable or explicitly manual only)
-cp "$ws/intent/$id1/contract.yaml" "$ws/intent/$id1/contract.yaml.bak"
-sed 's/method: test/method: vibes/' "$ws/intent/$id1/contract.yaml.bak" >"$ws/intent/$id1/contract.yaml"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1"
-mv "$ws/intent/$id1/contract.yaml.bak" "$ws/intent/$id1/contract.yaml"
+# an intent with no acceptance criterion is refused (at least one outcome criterion).
+# Built in a scratch dir so it does not consume an intent id number.
+mkdir -p "$ws/scratch-intent"
+cc_fx_intent "$ws" i0002-nocrit "No criteria" api "src"
+mv "$ws/intent/i0002-nocrit" "$ws/scratch-intent/i0002-nocrit"
+awk '/^acceptance_criteria:/{print "acceptance_criteria: []"; skip=1; next} skip && /^  -/{next} skip && /^    /{next} skip && /^[A-Za-z]/{skip=0; print; next} {print}' \
+	"$ws/scratch-intent/i0002-nocrit/contract.yaml" >"$ws/scratch-intent/i0002-nocrit/contract.yaml.new"
+mv "$ws/scratch-intent/i0002-nocrit/contract.yaml.new" "$ws/scratch-intent/i0002-nocrit/contract.yaml"
+expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/scratch-intent/i0002-nocrit"
 
-# an empty scope envelope is refused
+# an empty (or absent) scope is now VALID — scope is coarse and optional in v1.0;
+# a lay human often draws no paths, and scope-safety is settled at delivery (Gate 2).
 cc_fx_intent "$ws" i0003-noscope "No scope" api "src"
 awk '/^scope:/{print "scope:"; print "  repositories: []"; skip=1; next} skip && /^  repositories:/{next} skip && /^    /{next} skip && /^[A-Za-z]/{skip=0; print; next} {print}' \
 	"$ws/intent/i0003-noscope/contract.yaml" >"$ws/intent/i0003-noscope/contract.yaml.new"
 mv "$ws/intent/i0003-noscope/contract.yaml.new" "$ws/intent/i0003-noscope/contract.yaml"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/i0003-noscope"
+sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/i0003-noscope" >/dev/null
 
 # --- approval is the single upstream gate; it freezes contract_digest ---
 assert_eq "draft" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
 before=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 assert_eq "" "$before"
-# Gate 1 cannot be reached without an independent, digest-bound spec-adversary
-# result; an absent result is not silently treated as a pass.
-mv "$ws/intent/$id1/adversary.md" "$ws/intent/$id1/adversary.md.bak"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
-mv "$ws/intent/$id1/adversary.md.bak" "$ws/intent/$id1/adversary.md"
+# Gate 1 needs no pre-approval challenge record: the tracer reads the real code
+# only AFTER approval, so approval depends on the contract alone (no adversary).
 sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
 frozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
@@ -55,12 +57,15 @@ assert_eq "$frozen" "$recompute"
 expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
 
 # a criteria change after approval breaks the frozen digest (basis of INV-CANDIDATE-01)
-cp "$ws/intent/$id1/contract.yaml" "$ws/intent/$id1/contract.yaml.bak"
-sed 's/method: test/method: manual/' "$ws/intent/$id1/contract.yaml.bak" >"$ws/intent/$id1/contract.yaml"
+# and re-enters Gate 1: a re-approval on the changed criteria is allowed and re-freezes
+# the digest, while an unchanged re-approval stays refused (above).
+sed -i.bak 's/Checkout retries works./Checkout retries works differently./' "$ws/intent/$id1/contract.yaml"
 changed=$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")
 test "$changed" != "$frozen" || fail "criteria change did not change the digest"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
-mv "$ws/intent/$id1/contract.yaml.bak" "$ws/intent/$id1/contract.yaml"
+sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
+refrozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
+assert_eq "$changed" "$refrozen"
+rm -f "$ws/intent/$id1/contract.yaml.bak"
 
 # the index carries the approved row
 contains "$ws/intent/INDEX.md" "| $id1 |"

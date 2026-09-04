@@ -31,8 +31,7 @@ preconditions:
       objective: Add a command that exports the notes to a chosen Markdown file; never overwrite an existing output file.
       tier: standard
       state: draft
-      path: src
-      adversary_result: yes         # criteria already sound; no open question remains
+      path: src                     # goal already sound; no open question remains
   state: seeded:draft-intent-ready-to-approve
 persona: >
   A solo maker whose notes project is connected and who has looked the change over

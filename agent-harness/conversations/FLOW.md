@@ -28,8 +28,8 @@ flowchart TD
   B -.->|start fresh| B3[clone-or-init-new-repo]
 
   D -.->|build before approval| R1[refuse-before-gate1]
-  D -.->|criteria gap| R2[adversary-revise-reapprove]
-  D -.->|plan exceeds scope| R3[scope-envelope-regate]
+  D -.->|feasibility question| R2[feasibility-question-then-approve]
+  D -.->|reaches out of scope| R3[scope-reach-feasibility-question]
   D -.->|security surface| R4[tier-fails-upward-refuse-explore]
   D -.->|approve + build at once| R5[approve-and-build-one-turn]
 
@@ -75,9 +75,9 @@ Read these top to bottom; each is one beat of a project's life.
 
 ### The intent gate (beat 4)
 - [refuse-before-gate1](plots/refuse-before-gate1.md) — fail closed: no build before approval
-- [adversary-revise-reapprove](plots/adversary-revise-reapprove.md) — criteria gap → revise → re-challenge → approve
-- [scope-envelope-regate](plots/scope-envelope-regate.md) — a plan exceeding scope is held & re-gated *(crown jewel 1)*
-- [tier-fails-upward-refuse-explore](plots/tier-fails-upward-refuse-explore.md) — refuse to drop the check on a risk surface *(crown jewel 2)*
+- [feasibility-question-then-approve](plots/feasibility-question-then-approve.md) — approve → reading the real code surfaces a decision the goal didn't settle → resolve → derive plan
+- [scope-reach-feasibility-question](plots/scope-reach-feasibility-question.md) — delivering would reach outside the approved scope → surfaced as a feasibility question, human decides
+- [tier-fails-upward-refuse-explore](plots/tier-fails-upward-refuse-explore.md) — refuse to drop the check on a risk surface *(the one safety-critical automated check)*
 - [approve-and-build-one-turn](plots/approve-and-build-one-turn.md) — approve + build in one turn, no confirmation card
 
 ### The Explore lane (a lighter path off beat 4)

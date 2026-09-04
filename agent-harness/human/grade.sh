@@ -185,24 +185,19 @@ while IFS= read -r line; do
 			got=$(cc_scalar "$WORKSPACE/plans/$pid/plan.yaml" schema_version 2>/dev/null) || got=""
 			if [ "$got" = "$want" ]; then ok "plan_schema ($pid=$got)"
 			else bad "plan_schema ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
-		intent_envelope)
+		intent_authorized)
 			pid=$val
-			if cc_intent_envelope_check "$WORKSPACE" "$pid" >/dev/null 2>&1; then
-				ok "intent_envelope ($pid: within approved scope)"
+			if cc_intent_authorized "$WORKSPACE" "$pid" >/dev/null 2>&1; then
+				ok "intent_authorized ($pid: derives from an approved intent)"
 			else
-				bad "intent_envelope ($pid: not within approved scope)"; FAIL_A=$((FAIL_A+1))
+				bad "intent_authorized ($pid: not authorized by an approved intent)"; FAIL_A=$((FAIL_A+1))
 			fi ;;
-		envelope_status)
-			pid=${val%%:*}; want=${val#*:}; env_out=""
-			env_out=$(cc_intent_envelope_check "$WORKSPACE" "$pid" 2>/dev/null) || :
-			got=$(printf '%s\n' "$env_out" | sed -n 's/^envelope:[[:space:]]*//p' | tail -1)
-			if [ "$got" = "$want" ]; then ok "envelope_status ($pid=$got)"
-			else bad "envelope_status ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
-		adversary_status)
-			iid=${val%%:*}; want=${val#*:}
-			got=$(cc_scalar "$WORKSPACE/intent/$iid/adversary.md" criteria_sound 2>/dev/null) || got=""
-			if [ "$got" = "$want" ]; then ok "adversary_status ($iid=$got)"
-			else bad "adversary_status ($iid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
+		authorized_status)
+			pid=${val%%:*}; want=${val#*:}; auth_out=""
+			auth_out=$(cc_intent_authorized "$WORKSPACE" "$pid" 2>/dev/null) || :
+			got=$(printf '%s\n' "$auth_out" | sed -n 's/^authorized:[[:space:]]*//p' | tail -1)
+			if [ "$got" = "$want" ]; then ok "authorized_status ($pid=$got)"
+			else bad "authorized_status ($pid: got '${got:-<none>}' want '$want')"; FAIL_A=$((FAIL_A+1)); fi ;;
 		classified_tier)
 			iid=${val%%:*}; want=${val#*:}; tier_out=""
 			tier_out=$(cc_tier_classify "$WORKSPACE" "$iid" 2>/dev/null) || :
