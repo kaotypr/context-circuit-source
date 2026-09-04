@@ -26,13 +26,13 @@ for all future work too.
 
 ## The plans
 
-1. **Change the naming rule**\
+1. **Change the naming rule**
    _After this:_ the workspace consistently defines and validates the three-digit
    intent form.
-2. **Migrate the existing records**\
+2. **Migrate the existing records**
    _After this:_ current intent folders, records, indexes, relationships, and
    references use the new identifiers together.
-3. **Check the whole workspace**\
+3. **Check the whole workspace**
    _After this:_ allocation, lifecycle operations, authorization, and repository
    acceptance checks prove the migration is complete without changing lifecycle
    behavior.
@@ -47,18 +47,18 @@ behavior.
 
 ## Open questions
 
-**Should the migration include the harness and template areas that contain current
-references to the existing intent identifiers?**\
-_Answer: Yes. Every current workspace file that mentions an existing intent must
-move to the new identifier._
+1. **Should the migration include the harness and template areas that contain
+   current references to the existing intent identifiers?**
+   _Answer: Yes. Every current workspace file that mentions an existing intent
+   must move to the new identifier._
 
-**How should approved intent records keep their frozen identity when only their
-identifier spelling changes?**\
-_Answer: Recompute the frozen digest after renaming approved intents, using the
-existing digest algorithm and preserving the approved criteria and lifecycle
-semantics._
+2. **How should approved intent records keep their frozen identity when only
+   their identifier spelling changes?**
+   _Answer: Recompute the frozen digest after renaming approved intents, using
+   the existing digest algorithm and preserving the approved criteria and
+   lifecycle semantics._
 
-**What should happen after the three-digit sequence reaches `i999`?**\
-_Answer: Old or unrelated intents may be moved to the archive or deleted, but
-only through a direct human request or manual human action. This cleanup must not
-silently recycle identifiers._
+3. **What should happen after the three-digit sequence reaches `i999`?**
+   _Answer: Old or unrelated intents may be moved to the archive or deleted,
+   but only through a direct human request or manual human action. This cleanup
+   must not silently recycle identifiers._

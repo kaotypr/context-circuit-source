@@ -1,6 +1,6 @@
 # Intention — i002
 
-_Status: draft, waiting for your approval._
+_Status: approved._
 
 ## Intention
 
@@ -53,6 +53,6 @@ trace, that both paths work, and that no extra approval or authority is added.
 
 ## Open questions
 
-None at the human-intent level. The exact representation of the decomposition
+No known unresolved human decisions at draft time. The exact representation of the decomposition
 rationale can be chosen during tracing and planning, provided the rationale is
 durable and reviewable.

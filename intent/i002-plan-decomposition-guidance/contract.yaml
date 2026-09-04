@@ -77,4 +77,5 @@ scope:
         - test/
 
 tier: standard
-status: draft
+status: approved
+contract_digest: sha256:7cc46e6364627e0a791bc696728109e09abcb3964607b09363ae57b86f2271fb
