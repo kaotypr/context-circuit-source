@@ -17,9 +17,10 @@ In a released workspace you talk to the agent in ordinary language:
 > Approve this intent.
 > Execute it, then ship it.
 
-You approve the **intent** — what "correct" means and what scope is in bounds, after
-an independent adversary has challenged the criteria. The coordinator derives a plan
-within that scope (no separate plan approval); the workspace prepares isolated
+You approve the **intent** — what "correct" means — from the plain ask. On approval a
+read-only tracer reads the real code and the coordinator runs a feasibility check, then
+derives a plan from what it found (no separate plan approval and no automated scope
+gate; scope-safety is settled at delivery). The workspace prepares isolated
 repository worktrees; one worker
 implements the whole plan and commits each repository; an independent read-only
 verifier checks the latest commits; the worker repairs failures with new

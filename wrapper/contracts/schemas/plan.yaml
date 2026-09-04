@@ -18,8 +18,8 @@ plan_status:
                           # (Critical: explicit human)
   notes: >
     A plan has no intermediate "approved" status: authorization is upstream on the
-    intent (Gate 1), and a plan derived within its approved scope envelope executes
-    with no separate plan gate (INV-INTENT-02). A plan is `draft` from creation until
+    intent (Gate 1), and a plan that derives from that approved intent executes with
+    no separate plan gate and no automated scope gate (INV-INTENT-02). A plan is `draft` from creation until
     it completes, then `done`. Execution status (running, verifying, repairing,
     verified, failed, blocked) is runtime evidence and never replaces plan status.
     Plan status is a projection, not a second human gate (INV-APPROVE-01 / INV-PLAN-01).
@@ -40,17 +40,20 @@ fields:
     values: [3]
     description: >
       A v1.0 plan is schema_version 3: it requires the `intent` field and derives
-      from an approved intent within its scope envelope (INV-INTENT-02), and may
-      also carry plan_dependencies. Any other value is unsupported.
+      from an approved intent, grounded in that intent's trace manifest
+      (INV-INTENT-02), and may also carry plan_dependencies. Any other value is
+      unsupported.
   plan: { type: string, required: true, description: canonical plan id }
   intent:
     type: string
     required: true
     description: >
       The parent intent id (form i<NNNN>-slug) this plan derives from. Every plan
-      names one. The intent-envelope check (INV-INTENT-02) authorizes the plan within
-      the intent's approved scope and re-gates it on drift. The frozen contract_digest
-      of this intent is folded into the plan's execution candidate (INV-CANDIDATE-01).
+      names one. The derives-from-an-approved-intent authorization (cc_intent_authorized,
+      INV-INTENT-02) confirms the intent is approved with unchanged criteria and re-gates
+      on a criteria drift; there is no automated scope gate (scope-safety is settled at
+      delivery, Gate 2). The frozen contract_digest of this intent is folded into the
+      plan's execution candidate (INV-CANDIDATE-01).
   title: { type: string, required: true }
   status: { type: enum, required: true, values: [draft, done] }
   objective: { type: string, required: true }
@@ -113,7 +116,7 @@ invariants:
   - acceptance and verification use distinct identifiers
   - each product_knowledge reference has a stable id, path, and reason (INV-PLAN-04)
   - plan status is a projection of intent approval + candidate acceptance (INV-PLAN-01)
-  - a v1.0 plan (schema_version 3) names its parent intent and stays within the intent scope envelope (INV-INTENT-02)
+  - a v1.0 plan (schema_version 3) names its parent intent and derives from it once approved (INV-INTENT-02)
   - schema_version is 3; any other value is unsupported (INV-PLAN-05, INV-INTENT-02)
   - every plan_dependencies entry references an existing, non-self plan id and the
     inter-plan dependency graph is acyclic (INV-PLAN-05)

@@ -20,19 +20,20 @@ importantly, how the coordinator translates them into plain language for a user.
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit | One Product Knowledge unit with a stable ID, summary, scope, facts, decisions, and provenance. |
 | Context index | The retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to context units. |
-| Intent | The first-class decision for one change (Context Circuit v1.0): goal, non-goals, constraints, acceptance criteria, scope envelope, and consequence tier. Approving it is the single upstream human gate (Gate 1); approval freezes its contract. Ids take the form `i<NNNN>-slug`. |
+| Intent | The first-class decision for one change (Context Circuit v1.0): goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, and consequence tier. Approving it is the single upstream human gate (Gate 1); approval freezes its contract and confirms the coordinator understood the ask. Ids take the form `i<NNNN>-slug`. |
 | Contract | The machine record of an intent (`contract.yaml`); its frozen digest identifies the criteria the change is proven against. |
-| Acceptance criterion | One condition that defines "correct", each executable or explicitly manual. |
-| Spec adversary | An independent role that attacks the acceptance criteria *before* any code, applying "author ≠ checker" to the spec. |
-| Scope envelope | The repositories and path regions an intent authorizes; a plan may not exceed it, and a plan that does is re-gated. |
+| Acceptance criterion | One condition that defines "correct" at the outcome level; the runnable check that proves it is earned against the real code by the tracer, carried in the plan. |
+| Tracer | An independent read-only role that reads the real code after approval (one child per repository, in parallel) and reports a manifest — file map, risks, executable done-checks, tier signal, feasibility — for the coordinator to plan from. |
+| Trace manifest | The tracer's recorded report per repository (`intent/<id>/trace/<repo>.yaml`), durable grounding evidence reused with a bounded freshness check. |
+| Feasibility check | The coordinator's judgment over the tracer's findings before any plan: buildable → plan; not buildable → stop and ask; a required change beyond a bound scope → surface it. A quality gate, not a scope gate. |
 | Tier | The consequence level of a change: **Explore** (human-supervised, no independent verifier), **Standard**, or **Critical** (independent verifier required; Critical adds explicit completion). |
 | Candidate | The exact proposed result — a digest over the commit map, bases, and frozen criteria. Evidence and acceptance bind to it; any new commit or criteria change voids the old evidence. |
 | Human acceptance | A first-class record that a human accepted a specific candidate ("looks right, ship it"). |
 | Reconciliation debt | A marker that delivered work has not yet updated Product Knowledge; it blocks the next Standard/Critical plan's grounding until resolved. Explore is planless and has no plan grounding preflight. |
 | Promote | Turn an Explore (direct-collaboration) session into a candidate-bearing change by attaching an intent and raising the tier. |
 | Change set | The set of plans delivered as one pull request; a single candidate is computed over it, so it is checked and accepted once. |
-| Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives within the intent's envelope. |
-| Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent within its envelope; Standard completion is inferred from acceptance + delivery, while Critical completion is explicit. |
+| Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives from the approved intent and its trace manifest. |
+| Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent (criteria unchanged since approval); Standard completion is inferred from acceptance + delivery, while Critical completion is explicit. |
 | Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
 | Worker | The single role that implements an intent-authorized plan and commits its changes for one execution. |
 | Verifier | The independent, read-only role that checks the worker's latest commits. |
@@ -92,10 +93,10 @@ explicitly asks for diagnostics.
 | Fan-out width / concurrent pipelines | "fan-out", "width N", "leases" | "I'm working on several at once" / a waiting plan is "waiting on another plan's area" |
 | Role tiering / `(model, effort)` | the model id or effort level | say nothing about the model; describe only the effect, "I ran the harder step with more effort" |
 | Intent id / `contract.yaml` / contract digest | the id, file name, or digest | "what you approved" / "the change we agreed on" |
-| Envelope check EXCEEDS | "envelope", "exceeds", the check name | "this needs to go outside what you approved" |
+| Feasibility check / out-of-scope reach | "feasibility check", "out-of-scope reach", the check name | "this is doable, but it also needs to change X — want me to include it?" / "I can't build this as asked because…" |
+| Tracer / trace manifest | "the tracer", "manifest", `trace/` | "I looked at the real code first" — describe what it found, never the mechanism |
 | Candidate / `cand-...` / candidate void | "candidate", the digest | "the exact change"; a void reads as "the code changed, so the earlier check no longer applies" |
 | Tier = critical / explore | "tier", "Critical", "Explore" as jargon | "higher-risk, so it gets an independent check and an explicit sign-off" / "quick and human-supervised — no independent check" |
-| Spec adversary / `adversary.md` | "the adversary", the file | "I had the criteria checked adversarially first" |
 | Reconciliation debt marker | "debt marker", "knowledge-debt" | "there's merged work I haven't folded into what the project knows yet" |
 | Change-set candidate / integration tip | "change set", "integration tip" | "the combined change" / "one check over both pieces" |
 

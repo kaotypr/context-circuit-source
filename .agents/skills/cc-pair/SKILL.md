@@ -10,7 +10,7 @@ Direct collaboration is the **Explore tier** of the one assurance ladder
 reversible change is worked with the user directly, with no independent verifier.
 It answers "do I even need a verifier for this?" — at Explore the answer is "no,"
 structurally: coordinator (root) + **one worker child**, and no verifier and no
-adversary. Use it whenever one repository is connected, by ordinary intent or
+tracer (the human reads the code alongside the agent live). Use it whenever one repository is connected, by ordinary intent or
 `/cc-pair`, and it may be offered as an optional next step after a plan or stack
 execution. Never enter it automatically.
 
@@ -85,11 +85,10 @@ restart. Promotion is the moment an intent and a plan first exist for the work a
 it enters the trust pipeline (candidate → verifier → delivery → reconciliation):
 
 1. **Attach an intent.** Run `cc-intent` to author the goal, criteria, scope, and
-   tier for what the session is actually doing; the spec adversary can now
-   challenge the criteria, and the human approves it (Gate 1).
-2. **Raise the tier.** Standard/Critical, per the risk signals — this is the moment
-   the independent verifier appears (INV-ASSURE-01). A risk surface refuses to stay
-   Explore.
+   tier for what the session is actually doing, and the human approves it (Gate 1).
+2. **Raise the tier.** Standard/Critical, per the risk signals — this is the moment a
+   tracer reads the code (`cc-trace`) and the independent verifier appears
+   (INV-ASSURE-01). A risk surface refuses to stay Explore.
 3. **Author a lightweight plan of record.** `cc-plan` creates a `plans/<id>/` whose
    tasks describe the change already made; its execution binds to the existing
    pairing-branch commits, which produces the candidate. Everything downstream then

@@ -1,13 +1,14 @@
 ---
 name: cc-intent
-description: Author an intent — the first-class decision for one change (goal, non-goals, constraints, acceptance criteria, scope envelope, tier) — have an independent spec adversary attack the criteria, and take the single upstream human approval that freezes it.
+description: Author an intent — the first-class decision for one change (goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, tier) — from the plain ask without reading the code, and take the single upstream human approval that freezes it and spawns the tracer.
 ---
 
 An intent is the one thing a human actually decides before code exists: **what
-"correct" means** and **what scope is in bounds** (Context Circuit v1.0,
-Mechanism 1). Approving an intent is Gate 1 — the single upstream human gate.
-Plans then derive from it automatically within its scope envelope; there is no
-separate per-plan approval (INV-INTENT-01, INV-INTENT-02, INV-APPROVE-01).
+"correct" means** (Context Circuit v1.0, Mechanism 1). Approving an intent is Gate 1
+— the single upstream human gate. Approval also confirms you understood the plain
+ask, which is what lets the tracer read the real code next (`cc-trace`); plans then
+derive from the approved intent automatically, with no separate per-plan approval and
+no automated scope gate (INV-INTENT-01, INV-INTENT-02, INV-APPROVE-01).
 
 ## Author the intent
 
@@ -33,61 +34,54 @@ machine-checkable record; the human is not expected to open it. It (schema
 
 - `goal` — one paragraph of what a correct change achieves;
 - `non_goals` and `constraints` — explicit exclusions and limits;
-- `acceptance_criteria` — each `{id, statement, method, surface}` where `method`
-  is `test | command | build | static | manual`. **Every criterion is executable
-  or explicitly `manual` — no third option.** These are the definition of correct;
-  "done" is computed against them, never asserted.
-- `scope` — the **envelope**: `repositories: [{id, paths[]}]`. This is the
-  machine-checkable boundary a derived plan may not exceed. Keep it as tight as the
-  change honestly needs.
+- `acceptance_criteria` — each `{id, statement}` at the **outcome level**: what must
+  be true, in terms a human can approve ("no direct localStorage access remains").
+  These are the definition of correct. Do **not** try to make them executable here —
+  the runnable check that proves each one is earned against the real code by the
+  tracer after approval and carried into the plan (`cc-trace`). You cannot read the
+  code yet, so you cannot author a machine-precise criterion; state the honest
+  human-level target.
+- `scope` — **coarse and optional**: `repositories: [{id, paths[]}]`, and it may be
+  empty. It is not an enforced boundary — the tracer reports where the change actually
+  lands, the feasibility check surfaces a required change beyond it, and scope-safety
+  is settled at delivery (Gate 2). Its one deterministic use is as a transparent input
+  to tier signals. Note a rough boundary if the human gave one; do not invent paths.
 - `tier` — `explore | standard | critical`, proposed from transparent risk signals
-  (`crown-jewels.md` / `docs/tiered-assurance.md`): more than one repository,
-  security/secrets, money, data migration, production/deploy, irreversibility, or
-  novelty push higher; a single reversible well-covered change is Explore-eligible.
-  Default anything uncertain to **standard**; a human may raise it. Fail upward.
+  (INV-ASSURE-01; the runtime `tier-classify` reports them): more than one repository, security/secrets, money,
+  data migration, production/deploy, irreversibility, or novelty push higher; a single
+  reversible well-covered change is Explore-eligible. Default anything uncertain to
+  **standard**; a human may raise it. Fail upward. It is provisional — the tracer's
+  findings may raise it before plans are written.
 
 Grounding, missing detail, and contradictions follow INV-PLAN-04: an unresolved
-gap is an explicit open question, never a silently chosen decision.
-
-## Run the spec adversary
-
-Before approval, spawn an independent **spec adversary** child (`agents/spec-adversary.md`)
-with only the contract as input — never the implementation, which does not exist
-yet. It tries to (a) satisfy every criterion and still be wrong and (b) name the
-missing edge / error / security / concurrency / data-loss paths. Record its
-findings in `intent/<id>/adversary.md` as `{severity, statement, suggested
-criterion}` plus a verdict `criteria_sound: yes | needs-work`; the record also
-includes the exact `contract_digest` of the criteria it challenged. Fold surviving
-findings into new or revised criteria, or log them as explicit open questions
-*before* the human approves. The adversary's depth scales with tier: light or a
-single inline pass at Explore, a full battery at Critical. If the host cannot
-create the adversary child, report `host-blocked` and present the criteria to the
-human as unchallenged — never fake the pass. The runtime refuses approval when
-`adversary.md` is absent, stale, or not sound.
+gap is an explicit open question, never a silently chosen decision. You draft the
+intent from the plain ask and existing Product Knowledge only — you do **not** read
+the codebase here; that is the tracer's job after approval.
 
 ## Take the approval (Gate 1)
 
 Present the intent as one readable thing: the goal in plain language, the non-goals,
-the repositories it will touch, any open questions the human must settle, and the
-tier with a one-line "why this tier". The spec adversary runs before this and its
-findings are folded into the criteria or surfaced as open questions — never
-narrated to the human as "an adversary" or a findings list; the human sees the
-sharpened result, not the mechanism. Ask for a single conversational decision
-— no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
+the repositories it will likely touch, any open questions the human must settle, and
+the tier with a one-line "why this tier". Ask for a single conversational decision —
+no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
 `intent-approve`, which flips `draft → approved` and **freezes** `contract_digest`
-(the frozen identity of the criteria). After approval the human is not asked to
-approve a plan; `cc-plan` derives it.
+(the frozen identity of the criteria). Approval is also your confirmation that you
+understood the ask: it is what lets the tracer read the real code next. Immediately
+after approval, hand off to `cc-trace` — spawn one read-only tracer child per
+repository in scope, collect the manifests, and run the feasibility check on the
+findings — before any plan is written. After approval the human is not asked to
+approve a plan; `cc-plan` derives it from the trace manifest.
 
 Changing any criteria-bearing field after approval is a new decision: it breaks
-the frozen digest, re-gates the envelope, and voids prior candidate evidence
-(INV-CANDIDATE-01). Re-run the adversary on the changed criteria and take approval
-again.
+the frozen digest, so the plan's authorization fails until re-approved, and it voids
+prior candidate evidence (INV-CANDIDATE-01). Take approval again on the changed
+criteria.
 
 ## One intent, one or more plans
 
 An intent is one *decision*; a plan is one *execution*. The relationship is 1:N — a
 small change is one plan, a larger change several stacked plans that each name the
-intent and stay inside its envelope. Genuinely separate decisions the human would
+intent. Genuinely separate decisions the human would
 review and ship independently are **separate intents** (which may declare
 `intent_dependencies` to be ordered), not one giant intent. A large multi-topic
 picture lives one level up in `sources/system-design/` and spawns one intent per
@@ -108,15 +102,16 @@ the invoke-not-read boundary):
 
 Say the effect, never the mechanism (`docs/terminology.md`). "Here's what I
 understand you want to build… here's what you'll have when it's done… this is
-Standard risk, so it gets an independent check. Approve this and I'll build it, or
-tell me what to change." Never expose the intent id, contract file, digest, runtime
-commands, or the spec adversary in normal conversation — the human hears the
-sharpened criteria and any open questions, not the check that produced them.
-Approving an intent is a real decision; present it as one, not a rubber stamp.
+Standard risk, so it gets an independent check. Approve this and I'll look at the
+real code and build it, or tell me what to change." Never expose the intent id,
+contract file, digest, runtime commands, the tracer, or the feasibility check in
+normal conversation — the human hears the goal and any open questions, not the
+machinery. Approving an intent is a real decision; present it as one, not a rubber
+stamp.
 
 ## Boundaries
 
 Authoring or approving an intent never creates a plan, executes, verifies,
-completes, or delivers. It writes only under `intent/<id>/`. The spec adversary is
-read-only over the contract and never edits it. Approval is conversational, never a
-confirmation card or hidden token.
+completes, or delivers, and never reads the codebase. It writes only under
+`intent/<id>/`. The tracer that reads the code runs only after approval (`cc-trace`).
+Approval is conversational, never a confirmation card or hidden token.

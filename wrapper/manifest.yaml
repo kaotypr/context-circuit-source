@@ -18,7 +18,8 @@ purpose: >
 accepted_schema_versions:
   workspace: [1]
   repositories-local: [1, 2]
-  intent-contract: [1]
+  intent-contract: [1, 2]
+  trace-manifest: [1]
   plan: [3]
   task: [1]
   execution: [1, 2]

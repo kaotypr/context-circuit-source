@@ -8,7 +8,7 @@ description: Execute a named set of intent-authorized plans in one run (a plan s
 On a request to run a *set* of plans — "execute plans 0001 through 0010",
 "run the ready stack", "build all the ready plans in one go". This adds no new
 authority over the single-plan `cc-execute`: every plan in the set is authorized by
-its parent intent's envelope, executed by one worker, checked by one independent
+its approved parent intent, executed by one worker, checked by one independent
 verifier, and left for the human to complete and deliver. Concurrency only decides
 order and overlap among plans already authorized by their intents
 (INV-CONCURRENCY-01/02).
@@ -57,8 +57,8 @@ Repeat until no plan in the set is runnable:
    each plan as **verified** (already built and checked — not runnable again),
    **ready** (intent-authorized, never run, dependencies verified, paths free),
    **waiting** (dependencies not yet verified, or a needed path is leased),
-   **failed**, **blocked**, or **refused** (not authorized by its intent's
-   envelope). A plan whose latest
+   **failed**, **blocked**, or **refused** (not authorized — its intent is not
+   approved or its criteria drifted since approval). A plan whose latest
    execution is terminal or in progress is never runnable.
 
 2. If nothing is **ready**, stop the loop.

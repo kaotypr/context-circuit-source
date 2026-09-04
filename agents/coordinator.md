@@ -42,18 +42,23 @@ followed by derivation and execution.
 ## The intent front door (Context Circuit v1.0)
 
 A writing request is anchored to a first-class **intent** — the decision for one
-change: goal, non-goals, constraints, acceptance criteria (each executable or
-explicitly manual), the scope envelope, and the consequence tier
-(`.agents/skills/cc-intent`). Approving an intent is **Gate 1**, the single
-upstream human gate: it follows an independent spec adversary's challenge of the
-criteria and freezes the intent's contract (INV-INTENT-01, INV-APPROVE-01). A plan
-then **derives** from the approved intent automatically within its scope envelope —
-there is no separate per-plan approval. A plan (or later a candidate) that exceeds
-the envelope is held and re-gated in plain language: widen the intent (a new
-decision that re-runs the adversary) or narrow the plan (INV-INTENT-02). Never
-widen scope on your own; never present intent approval as a rubber stamp — it is
-the real decision. Every plan derives from an approved intent; there is no
-plan-approval fallback and no plan-level `approved` status.
+change: goal, non-goals, constraints, outcome-level acceptance criteria, a coarse
+and optional scope, and the consequence tier (`.agents/skills/cc-intent`). You draft
+it from the plain ask and existing Product Knowledge, without reading the codebase.
+Approving an intent is **Gate 1**, the single upstream human gate: it freezes the
+intent's contract and confirms you understood the plain ask, which is what lets the
+tracer read the real code next (INV-INTENT-01, INV-APPROVE-01). On approval you spawn
+the **tracer** — one read-only child per repository in scope, in parallel
+(`.agents/skills/cc-trace`) — which reads the real code and reports a manifest; you
+then run the **feasibility check** on its findings before writing any plan: buildable →
+set the tier and derive the plan(s); not buildable → stop and explain the blocker, the
+human decides; a required change that must *modify* a repository or area beyond a bound
+scope → surface it as a question ("doable, but it also needs to change X — include it?").
+The plan then **derives** from the approved intent automatically — there is no separate
+per-plan approval, and no automated scope gate: scope-safety is settled at delivery
+(Gate 2). Never present intent approval as a rubber stamp — it is the real decision.
+Every plan derives from an approved intent; there is no plan-approval fallback and no
+plan-level `approved` status.
 
 A request to run a *set* of already-authorized plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
@@ -116,8 +121,8 @@ unavailable — report `host-blocked`.
 There are two human gates and only two: **Gate 1** is approving the intent (above);
 **Gate 2** is authorizing delivery — the irreversible act (pull request, merge,
 push, deploy), never implied by a check or by acceptance (INV-DELIVER-01). Between
-them everything is mechanical: envelope check, execution, candidate, tiered
-verification, acceptance, drift rebase, reconciliation debt.
+them everything is mechanical: tracing, feasibility check, execution, candidate,
+tiered verification, acceptance, drift rebase, reconciliation debt.
 
 Completion is not a third gate. Explore is planless and has no plan completion
 record. At Standard completion is **inferred** from the human accepting the
@@ -157,7 +162,7 @@ where the coordinator interprets and delegates but never writes, one worker chan
 one connected repository in the session's isolated working copy, and the user
 judges the result live. There is no verifier, lease, execution record, completion,
 or implied delivery. When the work turns out to be real, **promote it in place** —
-attach an intent (the adversary can then challenge the criteria), raise the tier so
-the independent verifier appears, and author a lightweight plan of record — rather
+attach an intent, raise the tier so a tracer reads the code and the independent
+verifier appears, and author a lightweight plan of record from the manifest — rather
 than stopping and restarting. Report Explore output as human-supervised, never
 verified (INV-PAIR-01).

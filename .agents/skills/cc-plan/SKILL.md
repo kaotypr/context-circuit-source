@@ -16,16 +16,28 @@ If the approved intent is **Explore**, do not create a plan of record. Explore i
 the planless `cc-pair` path: the user supervises the work live, and there is no
 independent verifier or completion record to derive.
 
+A plan is derived from the **trace manifest** the tracer produced after approval
+(`cc-trace`, `intent/<id>/trace/<repo>.yaml`), not from a blind read of `context/`:
+the tracer has already read the real code and reported the file/call-site map, a
+proposed task partition, concrete risks, and the runnable "done" checks that prove
+each outcome criterion. The feasibility check ran on those findings before you got
+here — so you are planning a change already judged buildable. If no trace manifest
+exists yet (the tracer has not run), run `cc-trace` first rather than improvising a
+code read inline.
+
 Retrieve relevant Product Knowledge by the request's concepts, domains,
 repositories, decisions, and constraints using `context/INDEX.md`; read only the
 selected units, not the whole directory. Read repository instructions and only
 request-named source files. Ground the plan in the approved `contract.yaml` (the
-criteria and scope), Product Knowledge, and repository grounding.
+outcome criteria), the trace manifest (the grounded map and done-checks), Product
+Knowledge, and repository grounding.
 
-Expand the approved intent into a detailed readable plan. Preserve the intent's
-goal, criteria, constraints, non-goals, assumptions, open questions, and risks —
-remove repetition, not meaning. Write `PLAN.md` (readable) and `plan.yaml`
-(canonical, `schema_version: 3`) with:
+Expand the approved intent into a detailed readable plan grounded in the manifest.
+Preserve the intent's goal, criteria, constraints, non-goals, assumptions, open
+questions, and risks — remove repetition, not meaning. Carry the tracer's executable
+done-checks into the plan's verification, and its completeness proof for any "change
+every X" obligation. Write `PLAN.md` (readable) and `plan.yaml` (canonical,
+`schema_version: 3`) with:
 
 - a stable plan id `NNNN-<kebab-slug>` allocated by the runtime `plan-allocate-id`;
 - `intent: i<NNNN>-slug` — the required parent intent (INV-INTENT-02);
@@ -43,20 +55,22 @@ contradiction or missing detail becomes an explicit open question, assumption,
 or risk — never a silently chosen implementation. Add the plan to `plans/INDEX.md`
 and validate it with the runtime `plan-validate`.
 
-## Envelope preflight (INV-INTENT-02, crown jewel 1)
+## Authorization preflight (INV-INTENT-02)
 
-Run `intent-envelope-check . <plan-id>` as a preflight. If it reports
-`within`, the plan is authorized by the approved intent — no separate plan
-approval, and execution may follow (INV-EXEC-01). If it reports `exceeds` (a new
-repository, a path region outside the intent's scope, or a criteria change), the
-plan is **held and re-gated to a human** in plain language: offer to widen the
-intent (a new decision — re-freeze the digest and re-run the adversary on any
-changed criteria via `cc-intent`) or to narrow the plan back inside scope. Never
-proceed on the original approval, and never widen scope on your own. The check
-also runs again at execution start.
+Run `intent-authorized . <plan-id>` as a preflight. If it reports `authorized: yes`,
+the plan derives from an approved intent whose criteria are unchanged — no separate
+plan approval, and execution may follow (INV-EXEC-01). If it reports `authorized: no`
+with `reason: CRITERIA_CHANGED`, the intent's criteria were edited after approval:
+the change re-enters Gate 1 — take approval again on the changed criteria via
+`cc-intent`. A missing or unapproved intent is likewise unauthorized; author or
+approve the intent first. There is **no** automated scope gate: scope-safety is
+settled at delivery (Gate 2), the tracer reports where the change actually lands, and
+a required change beyond a bound scope was surfaced as a question by the feasibility
+check in `cc-trace` before you planned. The authorization check also runs again at
+execution start.
 
-One intent may yield **one or more** stacked plans, each naming the same intent
-and each staying inside the envelope. Deriving a plan does not execute it.
+One intent may yield **one or more** stacked plans, each naming the same intent.
+Deriving a plan does not execute it.
 
 ## Grounding-debt preflight (INV-KNOWLEDGE-02, closed loop)
 
@@ -83,6 +97,5 @@ request coverage, task detail, repository/path mapping, dependencies, context
 references, acceptance, verification, assumptions, open questions, and risks.
 When the human resolves a question, corrects a requirement, changes scope, or
 asks for more detail, update the draft plan content and continue. Review never
-changes plan status or executes. Authorization comes from the approved intent's
-scope envelope (re-checked at execution start); there is no separate plan-approval
-request.
+changes plan status or executes. Authorization comes from the approved intent
+(re-checked at execution start); there is no separate plan-approval request.
