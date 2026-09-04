@@ -180,8 +180,10 @@ fi
 rm -f "$TELRAW"
 
 # Codex persists bounded child metadata separately from `exec --json`. Record
-# only role/model/effort for immediate children whose task names follow the
-# adapter's *_worker / *_verifier convention. Never copy prompts or payloads.
+# only role/model/effort for immediate native sub-agent children whose task
+# names follow the adapter's *_worker / *_verifier convention. The coordinator
+# itself may use a resumable thread, but a generic peer thread is not a child
+# role and must never be counted as one. Never copy prompts or payloads.
 record_role_evidence() {
 	[ -f "$THREAD_FILE" ] || return 0
 	parent_id=$(sed -n '1p' "$THREAD_FILE")
@@ -189,10 +191,10 @@ record_role_evidence() {
 	[ -d "$sessions" ] || return 0
 	find "$sessions" -type f -name '*.jsonl' 2>/dev/null \
 	| while IFS= read -r session_file; do
-		grep -Fq "\"parent_thread_id\":\"$parent_id\"" "$session_file" 2>/dev/null || continue
-		agent_path=$(jq -r 'select(.type == "session_meta")
-			| if (.payload.source | type) == "object"
-			  then (.payload.source.subagent.thread_spawn.agent_path // .payload.source.thread_spawn.agent_path // "")
+		agent_path=$(jq -r --arg parent "$parent_id" 'select(.type == "session_meta")
+			| if ((.payload.source | type) == "object")
+			     and (.payload.source.subagent.thread_spawn.parent_thread_id == $parent)
+			  then (.payload.source.subagent.thread_spawn.agent_path // "")
 			  else ""
 			  end' \
 			"$session_file" 2>/dev/null | sed -n '1p')

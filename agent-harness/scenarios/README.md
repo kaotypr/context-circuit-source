@@ -104,7 +104,8 @@ the complete fixture into each generated workspace as the ignored
   `claude -p` driver), which captures a file-access trace so dimension C is a hard
   gate.
 - **Full-execution** cases that need nested worker/verifier sub-agents run via the
-  `/cc-test-case` skill (in-session Task driver); C degrades to warning-only there.
+  `/cc-test-case` skill (in-session native child-agent driver); C degrades to
+  warning-only there.
 - Built-in live bindings cover Claude Code, Codex, and Cursor Agent. The complete
   matrix is launched with `../human/run-matrix.sh`; it runs one isolated case per
   host lane at a time.

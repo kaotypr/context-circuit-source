@@ -102,9 +102,12 @@ sh agent-harness/human/run-scenario.sh --host codex --live 01-new-project-simple
 ```
 
 The Codex driver keeps one resumable coordinator thread for all human turns and
-uses a separate ephemeral session for the human-simulator verdict. It also
-extracts only bounded child role/model/effort evidence from Codex's local session
-metadata; prompts, replies, provider payloads, and credentials are never copied.
+uses a separate ephemeral session for the human-simulator verdict. That thread
+is only the coordinator transport: worker, verifier, and tracer evidence counts
+only when Codex records a native `subagent.thread_spawn` child attached to the
+coordinator, never a peer or top-level thread. The driver extracts only bounded
+child role/model/effort evidence from Codex's local session metadata; prompts,
+replies, provider payloads, and credentials are never copied.
 
 To prepare the same selected cases on all three hosts without invoking a live
 model:
