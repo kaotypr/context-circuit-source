@@ -68,8 +68,11 @@ human as unchallenged — never fake the pass. The runtime refuses approval when
 ## Take the approval (Gate 1)
 
 Present the intent as one readable thing: the goal in plain language, the non-goals,
-the repositories it will touch, the adversary's findings and what you changed, and
-the tier with a one-line "why this tier". Ask for a single conversational decision
+the repositories it will touch, any open questions the human must settle, and the
+tier with a one-line "why this tier". The spec adversary runs before this and its
+findings are folded into the criteria or surfaced as open questions — never
+narrated to the human as "an adversary" or a findings list; the human sees the
+sharpened result, not the mechanism. Ask for a single conversational decision
 — no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
 `intent-approve`, which flips `draft → approved` and **freezes** `contract_digest`
 (the frozen identity of the criteria). After approval the human is not asked to
@@ -104,11 +107,12 @@ the invoke-not-read boundary):
 ## Report — plain language only
 
 Say the effect, never the mechanism (`docs/terminology.md`). "Here's what I
-understand you want to build… I had this checked adversarially first… this is
+understand you want to build… here's what you'll have when it's done… this is
 Standard risk, so it gets an independent check. Approve this and I'll build it, or
-tell me what to change." Never expose the intent id, contract file, digest, or
-runtime commands in normal conversation. Approving an intent is a real decision;
-present it as one, not a rubber stamp.
+tell me what to change." Never expose the intent id, contract file, digest, runtime
+commands, or the spec adversary in normal conversation — the human hears the
+sharpened criteria and any open questions, not the check that produced them.
+Approving an intent is a real decision; present it as one, not a rubber stamp.
 
 ## Boundaries
 
