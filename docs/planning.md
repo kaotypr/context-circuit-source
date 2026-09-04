@@ -28,6 +28,12 @@ request-fidelity check: any contradiction or unresolved detail becomes an
 explicit open question, assumption, or risk — never a silently chosen
 implementation.
 
+Questions are dispositioned by phase before planning. A trace finding that changes
+the approved goal, scope, criteria, tier, authority, or lifecycle is an intent-level
+question and sends the work back through Gate 1; an implementation-only question is
+carried into the plan; a question already answered by the user's request is applied
+without asking again. No plan may hide an unresolved intent-level question.
+
 ## Detail
 
 Plans are as detailed as necessary to preserve the request and make execution

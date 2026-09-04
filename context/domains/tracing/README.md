@@ -66,7 +66,9 @@ Each tracer reads the real code and reports a `trace-manifest.yaml`:
   [assurance](../assurance/README.md));
 - a **feasibility** finding, and any **out-of-scope reach** (a change that would
   have to modify a repository or area outside the intent's coarse scope);
-- **open questions** for the human, which the coordinator relays.
+- **open questions** for the human, which the coordinator relays with a disposition:
+  intent-level (stop and revisit Gate 1), plan-level (carry into the plan), or
+  already answered (apply without asking again).
 
 The manifest is durable grounding evidence at `intent/<id>/trace/<repo>.yaml`,
 reused later with a **bounded freshness check** against current code rather than
@@ -78,14 +80,18 @@ verb**, and a **quality gate, not a safety gate**:
 
 - **Feasible** → it sets the consequence tier and derives the plan(s), with no
   second human gate.
+- **Intent revision required** → it does not write a plan; it updates the intent's
+  human-facing questions and re-enters Gate 1 when the approved decision changes.
 - **Not feasible** → it **stops**, explains the blocker, and hands the decision to
   the human.
 - **Out-of-scope reach** → a required change that must modify a repository or area
-  beyond the intent's coarse scope is **surfaced to the human** for a decision
-  before planning.
+  beyond the intent's coarse scope is **surfaced to the human** only when the plain
+  request did not already authorize that area; a changed approved scope is an
+  intent revision before planning.
 
 The feasibility check **fails upward**: when it cannot conclude the change is
-buildable, it stops rather than proceed. Because it is a quality gate, it never
+buildable or an intent-level question remains unresolved, it stops rather than
+proceed. Because it is a quality gate, it never
 substitutes for delivery: concrete **scope-safety is settled at Gate 2**
 ([delivery](../delivery/README.md)), not here.
 

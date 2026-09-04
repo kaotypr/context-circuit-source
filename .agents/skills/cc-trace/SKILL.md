@@ -44,12 +44,35 @@ Each child reports a manifest, recorded at `intent/<id>/trace/<repo>.yaml` (sche
 - a **tier signal** — evidence (auth, secrets, data, irreversibility) that may raise
   the provisional tier;
 - **feasibility** and any **out-of-scope reach**;
-- **open questions** for you to relay;
+- **open questions** for you to relay, each with a provisional disposition:
+  `intent-revision`, `plan-resolution`, or `already-answered`;
 - a **completeness proof** for any "change every X" obligation — the command and count
   showing the found set is the whole set.
 
 The tracer never writes plans, never edits the frozen contract, and never talks to the
 human — it finds, records, and reports to you.
+
+### Classify every question before feasibility
+
+The coordinator must disposition every trace question before planning:
+
+- **Intent revision:** the finding changes the approved goal, non-goals,
+  constraints, outcome criteria, scope, tier, authority, or lifecycle semantics.
+  Stop planning, update the intent and its human-facing Open questions section,
+  re-enter Gate 1, and trace again only as needed after approval.
+- **Plan resolution:** the finding is an implementation choice that does not
+  change the approved decision. Carry it into the derived plan's assumptions,
+  risks, or verification; no additional human gate is introduced.
+- **Already answered:** the plain request or approved intent already resolves the
+  question. Apply that answer, record the rationale, and do not ask the human to
+  repeat it.
+
+An approved intent with an unresolved intent-level question is not ready for plan
+derivation. This is a feasibility outcome, not a plan review detail. A scope reach
+that the user's plain request already includes (such as an explicit "every current
+reference" requirement) is `already-answered`; if the approved contract's coarse
+scope must be widened to reflect it, update the contract and re-enter Gate 1 rather
+than asking the user to restate the requirement.
 
 ## Freshness — pay for tracing once
 
@@ -68,21 +91,25 @@ the change is buildable, stop and ask a human rather than proceed:
 
 - **Feasible** → set the tier (re-check with the tracer's `tier_signal`; a raise
   surfaces at plan review) and hand `cc-plan` the grounded basis. No human step.
+- **Intent revision required** → do not write a plan. Relay the specific finding,
+  update the intent and its Open questions, and take Gate 1 again if the approved
+  decision changes.
 - **Not feasible** → **stop.** Explain the specific blocker the tracer found, suggest
   what would make it work, and hand the decision to the human. Cheap — nothing executed.
 - **A required change that must *modify* a repository or area beyond a bound scope** →
-  surface it as a question: "doable, but it also needs to change `payments-lib`, which
-  you scoped out — include it, or find another way?" Merely reading or calling an
-  out-of-scope area does not trigger this. When no scope was bound, there is nothing to
-  reach past — just report where the change lands.
+  surface it as a question only when the plain request does not already authorize
+  that area. If it changes the approved scope, treat the answer as an intent
+  revision and re-enter Gate 1; merely reading or calling an out-of-scope area does
+  not trigger this. When no scope was bound, there is nothing to reach past — just
+  report where the change lands.
 
 Feasibility is a reasoned judgment over the tracer's findings, not an engine verb; there
 is **no** automated scope-containment check. Scope-safety is settled at delivery (Gate 2).
 
 ## Feedback edges
 
-- **Kick back to the intent.** If the *intent itself* is wrong (infeasible, or larger
-  than approved), re-open it via `cc-intent` rather than planning the wrong goal in
+- **Kick back to the intent.** If the *intent itself* is wrong, incomplete, or larger
+  than approved, re-open it via `cc-intent` rather than planning the wrong goal in
   detail. Nothing has executed, so this is cheap.
 - **Tier raise.** A tier signal raises the provisional tier; the raise surfaces at plan
   review, never silently.

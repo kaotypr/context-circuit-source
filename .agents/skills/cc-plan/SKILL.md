@@ -25,6 +25,16 @@ here — so you are planning a change already judged buildable. If no trace mani
 exists yet (the tracer has not run), run `cc-trace` first rather than improvising a
 code read inline.
 
+Before writing a plan, inspect the manifest's `open_questions` and
+`out_of_scope_reach` and record a disposition for each finding. An
+`intent-revision` question, or a required scope change not already authorized by
+the plain request, blocks planning: return to `cc-intent`, update the approved
+decision, and take Gate 1 again when the contract changes. A `plan-resolution`
+question is carried into the plan's assumptions, risks, or verification. An
+`already-answered` finding is applied and recorded without asking the human to
+repeat it. No unresolved intent-level question may be hidden in a plan's open
+questions.
+
 Retrieve relevant Product Knowledge by the request's concepts, domains,
 repositories, decisions, and constraints using `context/INDEX.md`; read only the
 selected units, not the whole directory. Read repository instructions and only
