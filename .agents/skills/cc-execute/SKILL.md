@@ -6,11 +6,12 @@ description: Execute a plan derived from an approved intent, with one worker and
 ## Authorization
 
 There is no separate plan-approval step. The human gate is upstream on the intent
-(Gate 1); a plan derived from an approved intent is authorized to execute as long
-as it stays within the intent's scope envelope (INV-EXEC-01). `execution-begin`
-re-checks the envelope and, when the plan is within it, proceeds — no confirmation
-card, no "approve the plan" act. A plan that exceeds the envelope is held and
-re-gated to the human, never rubber-stamped.
+(Gate 1); a plan derived from an approved intent is authorized to execute once the
+human asks to build (INV-EXEC-01). `execution-begin` re-confirms the plan derives
+from an approved intent whose criteria are unchanged since approval, and proceeds —
+no confirmation card, no "approve the plan" act. There is no automated scope gate:
+scope-safety is settled at delivery (Gate 2). A criteria drift after approval
+re-enters Gate 1; the plan is held and re-gated to the human, never rubber-stamped.
 
 ## Tier
 
@@ -23,11 +24,11 @@ runtime enforces the floor (`completion-ready`).
 
 ## Execute
 
-Execute a plan authorized by its intent's envelope. Give a short summary (plan,
+Execute a plan authorized by its approved intent. Give a short summary (plan,
 objective, repositories/branches, task count, worker and verifier roles, failure
 limit), then:
 
-1. Run `execution-begin`: it re-checks the intent envelope and repository bindings,
+1. Run `execution-begin`: it re-confirms the plan's intent authorization and repository bindings,
    validates and captures each `base_branch` tip, rejects dirty base checkouts,
    acquires the one-worker lock, snapshots the plan, creates one branch and
    worktree per affected repository, and discovers each repository's own agent
@@ -58,7 +59,7 @@ limit), then:
    changes a verdict or the failure counter.
 
 Do not require confirmation for individual tasks, branches, worktrees, commits,
-verifier steps, or repairs. The plan — authorized by its intent's envelope — is the scope.
+verifier steps, or repairs. The plan — authorized by its approved intent — is the scope.
 
 ## Runtime actions — invoke, never read the engine
 

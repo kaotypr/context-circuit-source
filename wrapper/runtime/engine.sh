@@ -297,10 +297,14 @@ cc_plan_is_descendant() {
 # change. The intent tree mirrors plans/ conventions (stable ids never reused,
 # a status-blind archive move, an INDEX catalog) so it reuses the same id, index,
 # and archive machinery. contract.yaml is the frozen definition of correct;
-# approval freezes contract_digest (INV-INTENT-01). The runtime owns only the
-# deterministic mechanics — id allocation, structure validation, digest freezing,
-# archive/restore, and the envelope check (INV-INTENT-02). It never authors the
-# criteria, runs the adversary, or decides a tier (INV-RUNTIME-01).
+# approval freezes contract_digest (INV-INTENT-01) and also confirms the coordinator
+# understood the plain ask, which is what lets the tracer read the real code next.
+# The runtime owns only the deterministic mechanics — id allocation, structure
+# validation, digest freezing, archive/restore, and the plan's derives-from-an-
+# approved-intent authorization (INV-INTENT-02). It never authors the criteria,
+# reads the code, runs the feasibility check, or decides a tier (INV-RUNTIME-01):
+# tracing and the feasibility check are coordinator judgment (intent-feasibility),
+# not engine verbs, and scope-safety is settled at delivery (Gate 2).
 # ---------------------------------------------------------------------------
 
 # cc_intent_id_valid ID -> i<NNNN>-<kebab-slug>
@@ -320,7 +324,7 @@ cc_intent_dir() { printf '%s/intent/%s' "$1" "$2"; }
 # every line except the top-level status and contract_digest lines (which change on
 # approval and would otherwise make the digest self-referential). Deterministic:
 # identical criteria -> identical digest; any criteria change -> a new digest, which
-# is what re-gates the envelope and voids candidate evidence.
+# is what re-enters Gate 1 (re-approval) and voids candidate evidence.
 cc_intent_contract_digest() {
 	[ -f "$1" ] || return 1
 	cc_icd_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-icd.XXXXXX") || return 1
@@ -370,33 +374,17 @@ cc_intent_scope_paths() {
 	' "$1"
 }
 
-# cc_intent_criteria_methods FILE -> the method of every acceptance criterion
-cc_intent_criteria_methods() {
+# cc_intent_criteria_count FILE -> number of acceptance criteria items. Criteria are
+# OUTCOME level (id + statement, in terms a human can approve); the runnable check
+# that proves each one is a tracing output carried in the plan, never authored here
+# (tracing-and-grounding). Counts one item per criterion `- id:` entry.
+cc_intent_criteria_count() {
 	[ -f "$1" ] || return 1
 	awk '
 		/^[A-Za-z_]/ { in_ac = ($0 ~ /^acceptance_criteria:/) ; next }
-		in_ac && /^[[:space:]]+method:[[:space:]]*/ {
-			sub(/^[[:space:]]+method:[[:space:]]*/, ""); gsub(/[[:space:]]+$/, ""); print
-		}
+		in_ac && /^[[:space:]]+-[[:space:]]*id:[[:space:]]*/ { n++ }
+		END { print n+0 }
 	' "$1"
-}
-
-# cc_intent_adversary_validate INTENT_DIR [EXPECTED_DIGEST] -> require a current,
-# passing independent spec-adversary record before Gate 1. The adversary owns no
-# approval authority; this only proves that the criteria were challenged and that
-# the recorded verdict still describes the exact contract being approved.
-cc_intent_adversary_validate() {
-	cc_iav_dir="$1"; cc_iav_file="$cc_iav_dir/adversary.md"
-	[ -f "$cc_iav_file" ] || { cc_fail INTENT_ADVERSARY_MISSING; return 1; }
-	cc_iav_verdict=$(cc_scalar "$cc_iav_file" "criteria_sound" 2>/dev/null) || cc_iav_verdict=""
-	[ "$cc_iav_verdict" = "yes" ] || { cc_fail INTENT_ADVERSARY_NOT_SOUND "$cc_iav_verdict"; return 1; }
-	cc_iav_expected="${2:-}"
-	[ -n "$cc_iav_expected" ] || cc_iav_expected=$(cc_intent_contract_digest "$cc_iav_dir/contract.yaml") \
-		|| { cc_fail INTENT_ADVERSARY_DIGEST_FAILED; return 1; }
-	cc_iav_bound=$(cc_scalar "$cc_iav_file" "contract_digest" 2>/dev/null) || cc_iav_bound=""
-	[ -n "$cc_iav_bound" ] || { cc_fail INTENT_ADVERSARY_DIGEST_MISSING; return 1; }
-	[ "$cc_iav_bound" = "$cc_iav_expected" ] || { cc_fail INTENT_ADVERSARY_STALE; return 1; }
-	return 0
 }
 
 # cc_intent_validate DIR -> confirm intent/<id>/ structure and contract.yaml fields
@@ -419,20 +407,16 @@ cc_intent_validate() {
 		explore|standard|critical) : ;;
 		*) cc_fail INTENT_TIER_INVALID "$cc_iv_tier"; return 1 ;;
 	esac
-	# goal and at least one acceptance criterion, each executable or explicitly manual
+	# goal and at least one outcome-level acceptance criterion. Criteria are NOT
+	# frozen as executable here — the tracer earns the runnable check against the real
+	# code after approval (tracing-and-grounding). scope is COARSE and OPTIONAL: it may
+	# name no repository at all (a lay human draws almost no paths), so an empty scope
+	# is valid — the tracer reports where the change lands and scope-safety is settled
+	# at delivery (Gate 2), not by an automated gate here (intent-feasibility).
 	cc_iv_goal=$(cc_scalar "$cc_iv_yaml" "goal") || cc_iv_goal=""
 	[ -n "$cc_iv_goal" ] || { cc_fail INTENT_GOAL_MISSING; return 1; }
-	cc_iv_methods=$(cc_intent_criteria_methods "$cc_iv_yaml")
-	[ -n "$cc_iv_methods" ] || { cc_fail INTENT_NO_CRITERIA; return 1; }
-	for cc_iv_m in $cc_iv_methods; do
-		case "$cc_iv_m" in
-			test|command|build|static|manual) : ;;
-			*) cc_fail INTENT_CRITERION_METHOD_INVALID "$cc_iv_m"; return 1 ;;
-		esac
-	done
-	# scope envelope must name at least one repository
-	cc_iv_repos=$(cc_intent_scope_repos "$cc_iv_yaml")
-	[ -n "$cc_iv_repos" ] || { cc_fail INTENT_SCOPE_EMPTY; return 1; }
+	cc_iv_ncrit=$(cc_intent_criteria_count "$cc_iv_yaml")
+	[ "${cc_iv_ncrit:-0}" -ge 1 ] || { cc_fail INTENT_NO_CRITERIA; return 1; }
 	cc_emit intent "$cc_iv_id"
 	cc_emit status "$cc_iv_status"
 	cc_emit tier "$cc_iv_tier"
@@ -497,17 +481,16 @@ cc_intent_approve() {
 	cc_iap_dir=$(cc_intent_dir "$cc_iap_root" "$cc_iap_id")
 	cc_intent_validate "$cc_iap_dir" >/dev/null || { cc_fail INTENT_APPROVE_INVALID "$cc_iap_id"; return 1; }
 	cc_iap_yaml="$cc_iap_dir/contract.yaml"
-	# Tier floor (crown jewel 2, INV-ASSURE-01, fail upward): approving an intent at
-	# the Explore tier — which drops the independent verifier — is refused when any
-	# risk signal is present in scope. Standard/Critical always keep the verifier.
+	# Tier floor (the one safety-critical automated check, INV-ASSURE-01, fail upward):
+	# approving an intent at the Explore tier — which drops the independent verifier —
+	# is refused when any risk signal is present in scope. Standard/Critical always
+	# keep the verifier.
 	cc_iap_tier=$(cc_scalar "$cc_iap_yaml" "tier")
 	if [ "$cc_iap_tier" = "explore" ]; then
 		cc_tier_lower_check "$cc_iap_root" "$cc_iap_id" explore >/dev/null || { cc_fail INTENT_TIER_UNSAFE "$cc_iap_id"; return 1; }
 	fi
 	cc_iap_status=$(cc_scalar "$cc_iap_yaml" "status")
 	cc_iap_digest=$(cc_intent_contract_digest "$cc_iap_yaml") || { cc_fail INTENT_DIGEST_FAILED; return 1; }
-	cc_intent_adversary_validate "$cc_iap_dir" "$cc_iap_digest" >/dev/null \
-		|| { cc_fail INTENT_APPROVE_ADVERSARY "$cc_iap_id"; return 1; }
 	# A draft approves normally; an already-approved intent may be RE-approved only
 	# when its criteria changed (its content digest no longer matches the frozen one)
 	# — the "changing the criteria re-enters the gate" rule (INV-INTENT-01). A
@@ -580,73 +563,38 @@ cc_intent_restore() {
 	cc_fail INTENT_RESTORE_MOVE_FAILED "$cc_ire_id"; return 1
 }
 
-# cc_intent_envelope_check ROOT PLAN -> crown jewel 1 (INV-INTENT-02). Compare the
-# plan's declared repositories and path regions against its parent intent's scope,
-# and its contract digest against the frozen one. Fails UPWARD: any indeterminate
-# comparison re-gates. Emits `envelope: within` (return 0) or `envelope: exceeds`
-# with a reason (return 1) so a caller re-gates rather than proceeds.
-cc_intent_envelope_check() {
-	cc_ec_root="$1"; cc_ec_plan="$2"
-	cc_ec_pdir="$cc_ec_root/plans/$cc_ec_plan"
-	[ -f "$cc_ec_pdir/plan.yaml" ] || { cc_fail ENVELOPE_PLAN_MISSING "$cc_ec_plan"; return 1; }
-	# Validate the complete declared plan before comparing its envelope. This keeps
-	# malformed or incomplete plans from being authorized by a partial repository
-	# scan (fail upward, INV-INTENT-02).
-	cc_plan_validate "$cc_ec_pdir" >/dev/null || { cc_emit envelope exceeds; cc_emit reason INVALID_PLAN; cc_fail ENVELOPE_PLAN_INVALID "$cc_ec_plan"; return 1; }
-	cc_ec_intent=$(cc_scalar "$cc_ec_pdir/plan.yaml" "intent") || cc_ec_intent=""
-	[ -n "$cc_ec_intent" ] || { cc_emit envelope exceeds; cc_emit reason NO_INTENT; cc_fail ENVELOPE_PLAN_NO_INTENT "$cc_ec_plan"; return 1; }
-	cc_ec_idir=$(cc_intent_dir "$cc_ec_root" "$cc_ec_intent")
-	cc_ec_contract="$cc_ec_idir/contract.yaml"
-	[ -f "$cc_ec_contract" ] || { cc_emit envelope exceeds; cc_emit reason INTENT_MISSING; cc_fail ENVELOPE_INTENT_MISSING "$cc_ec_intent"; return 1; }
-	cc_ec_istatus=$(cc_scalar "$cc_ec_contract" "status")
-	[ "$cc_ec_istatus" = "approved" ] || { cc_emit envelope exceeds; cc_emit reason INTENT_NOT_APPROVED; cc_fail ENVELOPE_INTENT_NOT_APPROVED "$cc_ec_intent"; return 1; }
-	# criteria change: current digest must equal the frozen one
-	cc_ec_frozen=$(cc_scalar "$cc_ec_contract" "contract_digest") || cc_ec_frozen=""
-	cc_ec_now=$(cc_intent_contract_digest "$cc_ec_contract") || cc_ec_now=""
-	if [ -z "$cc_ec_frozen" ] || [ "$cc_ec_now" != "$cc_ec_frozen" ]; then
-		cc_emit envelope exceeds; cc_emit reason CRITERIA_CHANGED
-		cc_fail ENVELOPE_EXCEEDS "criteria-changed"; return 1
+# cc_intent_authorized ROOT PLAN -> the plan's derives-from-an-approved-intent
+# authorization (INV-INTENT-02 reworked, INV-EXEC-01). It confirms the plan validates,
+# names a parent intent, and that intent is APPROVED with its criteria unchanged since
+# approval (current contract digest == frozen contract_digest). It does NOT compare
+# scope or path regions against the intent: v1.0 has no automated scope gate — the
+# tracer reports where the change lands, the coordinator's feasibility check surfaces a
+# required change beyond a bound scope, and scope-safety is settled at delivery
+# (Gate 2, INV-DELIVER-01). A criteria change after approval re-enters Gate 1 (the
+# frozen digest no longer matches) and also voids candidate evidence (INV-CANDIDATE-01).
+# Fails upward: an invalid plan, a missing/unapproved intent, or a criteria drift is
+# unauthorized. Emits `authorized: yes` (return 0) or `authorized: no` + a reason
+# (return 1) so a caller re-gates rather than proceeds.
+cc_intent_authorized() {
+	cc_au_root="$1"; cc_au_plan="$2"
+	cc_au_pdir="$cc_au_root/plans/$cc_au_plan"
+	[ -f "$cc_au_pdir/plan.yaml" ] || { cc_fail AUTH_PLAN_MISSING "$cc_au_plan"; return 1; }
+	cc_plan_validate "$cc_au_pdir" >/dev/null || { cc_emit authorized no; cc_emit reason INVALID_PLAN; cc_fail AUTH_PLAN_INVALID "$cc_au_plan"; return 1; }
+	cc_au_intent=$(cc_scalar "$cc_au_pdir/plan.yaml" "intent") || cc_au_intent=""
+	[ -n "$cc_au_intent" ] || { cc_emit authorized no; cc_emit reason NO_INTENT; cc_fail AUTH_PLAN_NO_INTENT "$cc_au_plan"; return 1; }
+	cc_au_contract="$(cc_intent_dir "$cc_au_root" "$cc_au_intent")/contract.yaml"
+	[ -f "$cc_au_contract" ] || { cc_emit authorized no; cc_emit reason INTENT_MISSING; cc_fail AUTH_INTENT_MISSING "$cc_au_intent"; return 1; }
+	cc_au_istatus=$(cc_scalar "$cc_au_contract" "status")
+	[ "$cc_au_istatus" = "approved" ] || { cc_emit authorized no; cc_emit reason INTENT_NOT_APPROVED; cc_fail AUTH_INTENT_NOT_APPROVED "$cc_au_intent"; return 1; }
+	# criteria change: current digest must equal the frozen one, else re-gate to Gate 1
+	cc_au_frozen=$(cc_scalar "$cc_au_contract" "contract_digest") || cc_au_frozen=""
+	cc_au_now=$(cc_intent_contract_digest "$cc_au_contract") || cc_au_now=""
+	if [ -z "$cc_au_frozen" ] || [ "$cc_au_now" != "$cc_au_frozen" ]; then
+		cc_emit authorized no; cc_emit reason CRITERIA_CHANGED
+		cc_fail AUTH_CRITERIA_CHANGED "$cc_au_intent"; return 1
 	fi
-	# An approved status and digest are not enough to authorize a route: the
-	# digest-bound adversary record is part of the Gate 1 evidence. This also makes
-	# hand-authored or partially migrated approved intents fail upward.
-	cc_intent_adversary_validate "$cc_ec_idir" "$cc_ec_frozen" >/dev/null \
-		|| { cc_emit envelope exceeds; cc_emit reason ADVERSARY_INVALID; cc_fail ENVELOPE_ADVERSARY_INVALID "$cc_ec_intent"; return 1; }
-	cc_ec_srepos=$(cc_intent_scope_repos "$cc_ec_contract")
-	for cc_ec_r in $(cc_plan_affected_repositories "$cc_ec_pdir/plan.yaml"); do
-		if ! printf '%s\n' "$cc_ec_srepos" | grep -Fxq "$cc_ec_r"; then
-			cc_emit envelope exceeds; cc_emit reason NEW_REPOSITORY; cc_emit repository "$cc_ec_r"
-			cc_fail ENVELOPE_EXCEEDS "new-repository:$cc_ec_r"; return 1
-		fi
-		cc_ec_spaths=$(cc_intent_scope_paths "$cc_ec_contract" "$cc_ec_r")
-		if [ -z "$cc_ec_spaths" ]; then
-			# indeterminate: a scoped repo with no resolvable paths -> re-gate
-			cc_emit envelope exceeds; cc_emit reason INDETERMINATE; cc_emit repository "$cc_ec_r"
-			cc_fail ENVELOPE_EXCEEDS "indeterminate:$cc_ec_r"; return 1
-		fi
-		# a task that names this repo with no bounded paths is repo-wide work;
-		# default it to "." (as the lease layer does) so it is checked for
-		# containment against the bounded scope instead of silently passing.
-		cc_ec_ppaths=$(cc_plan_repo_paths "$cc_ec_pdir/plan.yaml" "$cc_ec_r")
-		[ -n "$cc_ec_ppaths" ] || cc_ec_ppaths="."
-		for cc_ec_p in $cc_ec_ppaths; do
-			# an unresolvable/relative plan region fails upward
-			if [ "$cc_ec_p" != "." ] && ! cc_safe_relative "$cc_ec_p"; then
-				cc_emit envelope exceeds; cc_emit reason INDETERMINATE; cc_emit repository "$cc_ec_r"
-				cc_fail ENVELOPE_EXCEEDS "indeterminate-path:$cc_ec_r:$cc_ec_p"; return 1
-			fi
-			cc_ec_ok=no
-			for cc_ec_s in $cc_ec_spaths; do
-				if cc_region_covers "$cc_ec_s" "$cc_ec_p"; then cc_ec_ok=yes; break; fi
-			done
-			if [ "$cc_ec_ok" = "no" ]; then
-				cc_emit envelope exceeds; cc_emit reason PATH_OUTSIDE_SCOPE; cc_emit repository "$cc_ec_r"; cc_emit region "$cc_ec_p"
-				cc_fail ENVELOPE_EXCEEDS "path-outside-scope:$cc_ec_r:$cc_ec_p"; return 1
-			fi
-		done
-	done
-	cc_emit envelope within
-	cc_emit intent "$cc_ec_intent"
+	cc_emit authorized yes
+	cc_emit intent "$cc_au_intent"
 	return 0
 }
 
@@ -1448,8 +1396,8 @@ cc_plan_validate() {
 	esac
 	# parent intent (INV-INTENT-02 / INV-PLAN-01). Every plan names its parent intent
 	# — the decision it derives from. There is no pre-intent plan. The id form is
-	# validated here; the envelope check (cc_intent_envelope_check) enforces the scope
-	# linkage as a preflight.
+	# validated here; cc_intent_authorized confirms the intent is approved (the
+	# derives-from-an-approved-intent authorization) as an execution preflight.
 	cc_pv_intent=$(cc_scalar "$cc_pv_dir/plan.yaml" "intent") || cc_pv_intent=""
 	[ -n "$cc_pv_intent" ] || { cc_fail PLAN_INTENT_REQUIRED "$cc_pv_id"; return 1; }
 	cc_intent_id_valid "$cc_pv_intent" || { cc_fail PLAN_INTENT_INVALID "$cc_pv_intent"; return 1; }
@@ -1683,23 +1631,6 @@ cc_region_overlap() {
 	return 1
 }
 
-# cc_region_covers SCOPE REGION -> ok when SCOPE contains REGION (SCOPE is an
-# ancestor-or-equal of REGION), the directional form the intent envelope needs
-# (INV-INTENT-02): the scope must CONTAIN the plan region, not merely touch it, so
-# a plan region broader than every scope path is NOT covered. A repository-wide
-# scope "." covers anything; a bounded scope never covers a repository-wide "."
-# region. Trailing slashes are normalized so "src/checkout/" and "src/checkout"
-# compare equal. Reuses cc_region_overlap's prefix definition, one-directionally.
-cc_region_covers() {
-	cc_rc_s="$1"; cc_rc_p="$2"
-	cc_rc_s=${cc_rc_s%/}; cc_rc_p=${cc_rc_p%/}
-	[ "$cc_rc_s" = "." ] && return 0
-	[ "$cc_rc_p" = "." ] && return 1
-	[ "$cc_rc_s" = "$cc_rc_p" ] && return 0
-	case "$cc_rc_p/" in "$cc_rc_s/"*) return 0 ;; esac
-	return 1
-}
-
 cc_lease_dir() { printf '%s/.runtime/locks/paths/%s' "$1" "$2"; }
 cc_lease_file() { printf '%s/.runtime/locks/paths/%s/%s.yaml' "$1" "$2" "$3"; }
 
@@ -1797,16 +1728,17 @@ cc_execution_begin() {
 	cc_eb_root=$(CDPATH= cd -- "$cc_eb_root" 2>/dev/null && pwd) || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$1"; return 1; }
 	cc_eb_dir="$cc_eb_root/plans/$cc_eb_plan"
 	cc_plan_validate "$cc_eb_dir" >/dev/null || { cc_fail EXECUTION_PLAN_INVALID; return 1; }
-	# An intent-bearing (v1.0) plan re-runs the envelope check at execution start
-	# (INV-INTENT-02, crown jewel 1): scope drift discovered after planning re-gates
-	# rather than proceeding. Authorization is derived from the approved intent within
-	# the scope envelope — there is no separate plan-approval gate and no intermediate
-	# plan status. A plan stays `draft` until it completes (INV-EXEC-01 reworked); an
+	# An intent-bearing (v1.0) plan re-confirms its authorization at execution start
+	# (INV-INTENT-02 reworked, INV-EXEC-01): the plan derives from an approved intent
+	# whose criteria are unchanged since approval. Authorization is derived from the
+	# approved intent — there is no separate plan-approval gate and no intermediate
+	# plan status, and no automated scope gate (scope-safety is settled at delivery,
+	# Gate 2). A plan stays `draft` until it completes (INV-EXEC-01 reworked); an
 	# already-completed plan is not re-executed.
 	cc_eb_intent=$(cc_scalar "$cc_eb_dir/plan.yaml" "intent") || cc_eb_intent=""
 	cc_eb_status=$(cc_scalar "$cc_eb_dir/plan.yaml" "status")
 	[ "$cc_eb_status" != "done" ] || { cc_fail EXECUTION_PLAN_DONE "$cc_eb_plan"; return 1; }
-	cc_intent_envelope_check "$cc_eb_root" "$cc_eb_plan" >/dev/null || { cc_fail EXECUTION_ENVELOPE_EXCEEDS "$cc_eb_plan"; return 1; }
+	cc_intent_authorized "$cc_eb_root" "$cc_eb_plan" >/dev/null || { cc_fail EXECUTION_UNAUTHORIZED "$cc_eb_plan"; return 1; }
 	# Capture the intent's frozen contract digest for this execution's candidate
 	# identity (INV-CANDIDATE-01). Recorded once, immutably, so candidate computation
 	# never has to chase the live intent file.
@@ -2409,8 +2341,8 @@ cc_change_set_prepare() {
 	for cc_csp_m in $cc_csp_members; do
 		cc_plan_validate "$cc_csp_root/plans/$cc_csp_m" >/dev/null \
 			|| { cc_fail CHANGE_SET_MEMBER_INVALID "$cc_csp_m"; return 1; }
-		cc_intent_envelope_check "$cc_csp_root" "$cc_csp_m" >/dev/null \
-			|| { cc_fail CHANGE_SET_MEMBER_OUTSIDE_ENVELOPE "$cc_csp_m"; return 1; }
+		cc_intent_authorized "$cc_csp_root" "$cc_csp_m" >/dev/null \
+			|| { cc_fail CHANGE_SET_MEMBER_UNAUTHORIZED "$cc_csp_m"; return 1; }
 		cc_csp_exec=$(cc_latest_execution "$cc_csp_root" "$cc_csp_m") || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csp_m"; return 1; }
 		[ -n "$cc_csp_exec" ] || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csp_m"; return 1; }
 		cc_csp_edir=$(cc_execution_dir "$cc_csp_root" "$cc_csp_m" "$cc_csp_exec")
@@ -2689,8 +2621,8 @@ cc_human_acceptance_current() {
 }
 
 # ---------------------------------------------------------------------------
-# Consequence tiering (Context Circuit v1.0, Mechanism 3, crown jewel 2,
-# INV-ASSURE-01). Tier is DECLARED on the intent by the coordinator; the runtime
+# Consequence tiering (Context Circuit v1.0, Mechanism 3, the one safety-critical
+# automated check, INV-ASSURE-01). Tier is DECLARED on the intent by the coordinator; the runtime
 # NEVER selects a tier (INV-RUNTIME-01). What the runtime provides is a
 # deterministic, fail-upward SIGNAL classifier over declared facts (scope paths and
 # repository count) — the same kind of deterministic data extraction as the
@@ -2809,8 +2741,8 @@ cc_plan_ready() {
 	cc_plan_validate "$cc_pr_root/plans/$cc_pr_plan" >/dev/null || {
 		cc_emit readiness blocked; cc_emit reason PLAN_INVALID; return 1;
 	}
-	cc_intent_envelope_check "$cc_pr_root" "$cc_pr_plan" >/dev/null || {
-		cc_emit readiness blocked; cc_emit reason INTENT_ENVELOPE; return 1;
+	cc_intent_authorized "$cc_pr_root" "$cc_pr_plan" >/dev/null || {
+		cc_emit readiness blocked; cc_emit reason INTENT_UNAUTHORIZED; return 1;
 	}
 	# 1. dependency AND-join
 	for cc_pr_dep in $(cc_plan_dependencies "$cc_pr_pf"); do
@@ -2866,11 +2798,12 @@ cc_run_stack_ready() {
 					done ;;
 			esac
 		fi
-		# v1.0 authorization: a plan is authorized to run when it stays within its
-		# approved intent's scope envelope (INV-INTENT-02 / INV-EXEC-01). There is no
-		# separate plan-approval status; a plan that cannot be authorized — because its
-		# intent is not approved or its scope drifted — is refused.
-		if ! cc_intent_envelope_check "$cc_rsr_root" "$cc_rsr_plan" >/dev/null 2>&1; then
+		# v1.0 authorization: a plan is authorized to run when it derives from an
+		# approved intent whose criteria are unchanged (INV-INTENT-02 / INV-EXEC-01).
+		# There is no separate plan-approval status and no automated scope gate; a plan
+		# that cannot be authorized — because its intent is not approved or its criteria
+		# drifted since approval — is refused.
+		if ! cc_intent_authorized "$cc_rsr_root" "$cc_rsr_plan" >/dev/null 2>&1; then
 			cc_emit "$cc_rsr_plan" refused
 			continue
 		fi
@@ -2910,8 +2843,8 @@ cc_latest_execution() {
 # The tier floor (INV-ASSURE-01) decides what evidence is required.
 cc_completion_ready() {
 	cc_cr_root="$1"; cc_cr_plan="$2"
-	cc_intent_envelope_check "$cc_cr_root" "$cc_cr_plan" >/dev/null \
-		|| { cc_fail COMPLETION_ENVELOPE_STALE "$cc_cr_plan"; return 1; }
+	cc_intent_authorized "$cc_cr_root" "$cc_cr_plan" >/dev/null \
+		|| { cc_fail COMPLETION_INTENT_UNAUTHORIZED "$cc_cr_plan"; return 1; }
 	cc_cr_exec=$(cc_latest_execution "$cc_cr_root" "$cc_cr_plan") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	[ -n "$cc_cr_exec" ] || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	cc_cr_dir=$(cc_execution_dir "$cc_cr_root" "$cc_cr_plan" "$cc_cr_exec")
@@ -3447,7 +3380,7 @@ cc_main() {
 		intent-validate)         cc_intent_validate "$@" ;;
 		intent-allocate-id)      cc_intent_allocate_id "$@" ;;
 		intent-approve)          cc_intent_approve "$@" ;;
-		intent-envelope-check)   cc_intent_envelope_check "$@" ;;
+		intent-authorized)       cc_intent_authorized "$@" ;;
 		intent-archive)          cc_intent_archive "$@" ;;
 		intent-restore)          cc_intent_restore "$@" ;;
 		intent-index-upsert)     cc_intent_index_upsert "$@" ;;

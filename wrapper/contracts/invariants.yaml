@@ -11,16 +11,20 @@ purpose: >
   evidence (per-role model/effort) and coordinator/host policy (run-stack fan-out
   width, the per-role tier ladder).
   The v1.0 evolution moves the human gate upstream to the intent (what "correct"
-  means and what scope is in bounds) and makes everything between intent and
-  delivery mechanical, consequence-tiered, and self-invalidating. It adds
-  INV-INTENT-01/02 (intent gate + scope envelope), INV-CANDIDATE-01 (candidate-
-  bound evidence), and INV-ASSURE-01 (tiered assurance, with pairing folded in as
-  the Explore tier); it reworks INV-APPROVE-01, INV-EXEC-01, INV-PLAN-01,
-  INV-VERIFY-01, INV-COMPLETE-01/02, and INV-KNOWLEDGE-02; and it keeps the whole
-  mechanics spine (leases, base selection, verifier read-only enforcement,
-  preserve-on-failure, delivery drift guard, atomic records, host neutrality)
-  verbatim. Every plan derives from an approved intent; there is no intent-less
-  plan and no backward-compatibility path for one.
+  means, from the plain ask alone) and makes everything between intent and delivery
+  mechanical, consequence-tiered, and self-invalidating. On approval the coordinator
+  spawns the tracer — one read-only child per repository — which reads the real code
+  and reports a manifest; the coordinator then runs a feasibility check on the findings
+  before any plan is written. It adds INV-INTENT-01/02 (intent gate + post-approval
+  tracing and feasibility), INV-CANDIDATE-01 (candidate-bound evidence), and
+  INV-ASSURE-01 (tiered assurance, with pairing folded in as the Explore tier); it
+  reworks INV-APPROVE-01, INV-EXEC-01, INV-PLAN-01, INV-VERIFY-01, INV-COMPLETE-01/02,
+  and INV-KNOWLEDGE-02; and it keeps the whole mechanics spine (leases, base selection,
+  verifier read-only enforcement, preserve-on-failure, delivery drift guard, atomic
+  records, host neutrality) verbatim. The one safety-critical automated check is
+  consequence tiering, which fails upward; scope-safety is settled at delivery (Gate 2),
+  not by any automated scope gate. Every plan derives from an approved intent; there is
+  no intent-less plan and no backward-compatibility path for one.
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -45,29 +49,38 @@ invariants:
   - id: INV-INTENT-01
     rule: >
       Every writing request is anchored to a first-class intent/<id>/ whose
-      contract.yaml holds the goal, non-goals, constraints, acceptance criteria
-      (each executable or explicitly manual — no third option), the scope
-      envelope, and the consequence tier. An independent spec adversary challenges
-      the acceptance criteria before approval, recording findings in adversary.md;
-      criteria that cannot survive are revised or logged as explicit open questions
-      first. Approval is the single upstream human gate (Gate 1, INV-APPROVE-01)
-      and freezes contract_digest, the frozen identity of the criteria the change
-      is later proven against (INV-CANDIDATE-01). Intent ids use the distinct form
-      i<NNNN>-slug, their own never-reused sequence.
+      contract.yaml holds the goal, non-goals, constraints, OUTCOME-level acceptance
+      criteria, a coarse and OPTIONAL scope, and a provisional consequence tier —
+      drafted by the coordinator without reading the codebase (it grounds only in
+      existing context/ Product Knowledge). Criteria are not frozen as executable
+      here; the tracer earns the runnable check that proves each one against the real
+      code after approval (INV-INTENT-02). Approval is the single upstream human gate
+      (Gate 1, INV-APPROVE-01); it freezes contract_digest — the frozen identity of the
+      criteria the change is later proven against (INV-CANDIDATE-01) — and also confirms
+      the coordinator understood the plain ask, which is what lets the tracer read the
+      real code next. Intent ids use the distinct form i<NNNN>-slug, their own
+      never-reused sequence.
   - id: INV-INTENT-02
     rule: >
-      A v1.0 plan declares its parent intent and may touch only repositories and
-      path regions within that intent's declared scope. The intent-envelope check
-      compares the plan's declared repositories and path regions against the
-      scope, reusing the lease region-overlap definition one-directionally (a scope
-      path must contain the plan region), and compares the plan's intent digest
-      against the frozen contract_digest. A plan (or candidate) that exceeds the
-      envelope — a new repository, a path region outside scope, or a changed
-      contract_digest — is held and re-gated to a human; it never proceeds on the
-      original approval. The check fails upward: any indeterminate comparison
-      (unresolvable path, missing scope entry, unapproved or missing intent)
-      re-gates rather than passes. It runs as a cc-plan preflight and again at
-      execution start.
+      A v1.0 plan declares its parent intent. On intent approval the coordinator spawns
+      the tracer — one read-only child per repository in the intent's scope, in parallel
+      (no lease, no worktree) — which reads the real code and reports a manifest
+      (trace-manifest.yaml: file/call-site map, concrete risks, the runnable done-checks
+      that prove each outcome criterion, a tier signal, feasibility, and any out-of-scope
+      reach). Before any plan is written the coordinator runs a FEASIBILITY CHECK on the
+      findings: feasible → it sets the tier and derives the plan(s) with no second gate;
+      not feasible → it stops, explains the blocker, and hands the decision to the human;
+      a required change that must MODIFY a repository or area beyond a bound scope → it
+      surfaces that to the human for a decision before planning. The feasibility check
+      fails upward — when it cannot conclude the change is buildable, it stops rather than
+      proceed — and is a QUALITY gate, not a safety gate: it is coordinator judgment over
+      the tracer's findings, not an engine verb. Scope-safety is NOT enforced here — the
+      concrete scope is settled at delivery (Gate 2, INV-DELIVER-01), where the human sees
+      and authorizes the exact diff and repositories, and all pre-delivery work is
+      sandboxed in isolated worktrees. The runtime's only intent check at planning and
+      execution is the derives-from-an-approved-intent authorization: the plan names an
+      approved intent whose criteria are unchanged since approval; a criteria drift
+      re-enters Gate 1.
   - id: INV-CANDIDATE-01
     rule: >
       A candidate is a deterministic digest over the per-repository commit map, the
@@ -104,7 +117,7 @@ invariants:
     rule: >
       plan.yaml carries the plan's status (draft, done) and names its parent intent
       (schema_version 3). There is no intermediate "approved" status: authorization
-      follows from the approved intent within its scope envelope (INV-INTENT-02), so a
+      follows from the approved intent (INV-INTENT-02), so a
       plan is `draft` from creation until it completes. The status is a projection, not
       a second human gate: done is inferred from candidate acceptance plus delivery,
       explicit only at the Critical tier (INV-COMPLETE-01). Task status is a
@@ -134,19 +147,21 @@ invariants:
   - id: INV-APPROVE-01
     rule: >
       Approval is the explicit conversational human gate on the INTENT (Gate 1):
-      it changes the intent contract draft→approved after the spec adversary has
-      challenged the criteria, and it freezes contract_digest. There is no
-      confirmation card and no hidden confirmation token. A plan derived from an
-      approved intent carries no second human approval — plan readiness within the
-      approved scope envelope is automatic (INV-INTENT-02), and a plan that exceeds
-      the envelope is re-gated to a human, never rubber-stamped.
+      it changes the intent contract draft→approved, freezes contract_digest, and
+      confirms the coordinator understood the plain ask (which is what lets the tracer
+      read the real code next, INV-INTENT-02). There is no confirmation card and no
+      hidden confirmation token. A plan derived from an approved intent carries no
+      second human approval — plan readiness once the intent is approved is automatic
+      (INV-INTENT-02), not a second human gate. Scope-safety is settled at delivery
+      (Gate 2), not by an automated scope gate here.
   - id: INV-EXEC-01
     rule: >
-      A plan derived from an approved intent and confirmed within its scope
-      envelope may execute; execution authorization comes from the intent's
-      approval, not a separate per-plan approval. A request that approves an intent
-      and asks to build in one turn is honored; a human who wants to lock an intent
-      without building yet may still separate the two.
+      A plan derived from an approved intent (criteria unchanged since approval) may
+      execute once the human asks for execution; execution authorization comes from the
+      intent's approval, not a separate per-plan approval, but the intent's approval
+      does not itself trigger execution — it stays a separate human-triggered action.
+      A request that approves an intent and asks to build in one turn is honored; a
+      human who wants to lock an intent without building yet may still separate the two.
   - id: INV-EXEC-02
     rule: >
       One worker executes every task of one authorized plan in one bounded
@@ -369,9 +384,9 @@ invariants:
       Direct collaboration (`cc-pair`) is the Explore tier of the assurance ladder
       (INV-ASSURE-01), not a separate mode. All of its mechanics stand in full, plus
       an explicit PROMOTE step: attaching an intent and raising the tier to
-      Standard/Critical turns a session into a candidate-bearing change — the
-      adversary can then challenge the criteria and the independent verifier spawns —
-      without stopping and restarting as a separate plan. Before promotion it is an
+      Standard/Critical turns a session into a candidate-bearing change — a tracer then
+      spawns and reads the code, a plan is derived from its manifest, and the independent
+      verifier spawns on the candidate — without stopping and restarting as a separate plan. Before promotion it is an
       interactive working mode outside the plan lifecycle, limited to one connected
       repository per session. Its actors
       are the user, the coordinator, and one worker: the coordinator interprets
@@ -441,8 +456,9 @@ owners:
   context_proposals: wrapper/contracts/schemas/context-proposal.yaml
   intent_contract: wrapper/contracts/schemas/intent-contract.yaml
   intent_gate: wrapper/contracts/invariants.yaml
-  scope_envelope: wrapper/contracts/invariants.yaml
-  spec_adversary_role: agents/spec-adversary.md
+  feasibility_check: wrapper/contracts/invariants.yaml
+  trace_manifest: wrapper/contracts/schemas/trace-manifest.yaml
+  tracer_role: agents/tracer.md
   candidate_identity: wrapper/contracts/schemas/candidate.yaml
   human_acceptance: wrapper/contracts/schemas/candidate.yaml
   assurance_tiering: wrapper/contracts/invariants.yaml

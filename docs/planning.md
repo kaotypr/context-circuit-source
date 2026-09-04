@@ -8,13 +8,16 @@ repository mappings, dependencies, and verification ids.
 
 A v1.0 plan is the **derivation of an approved intent** (`.agents/skills/cc-intent`),
 not the thing the human approves. Before planning a writing change there must be an
-approved parent intent, which holds the goal, acceptance criteria, scope envelope,
-and tier. The plan names it (`intent: i<NNNN>-slug`, `schema_version: 3`) and stays
-inside its scope envelope; the envelope check runs as a preflight and again at
-execution start, and a plan that exceeds the approved scope is re-gated to a human
-rather than proceeding. Because the human already approved the intent, the plan
-carries no second approval gate — every plan derives from an approved intent, and
-there is no plan-level `approved` status.
+approved parent intent, which holds the goal, outcome-level acceptance criteria, a
+coarse optional scope, and tier. On approval a read-only tracer reads the real code
+and reports a manifest; the plan is derived from that manifest and names the intent
+(`intent: i<NNNN>-slug`, `schema_version: 3`). The derives-from-an-approved-intent
+authorization runs as a preflight and again at execution start — a criteria change
+after approval re-enters Gate 1 — but there is no automated scope gate: scope-safety
+is settled at delivery (Gate 2), and a required change beyond a bound scope is
+surfaced by the feasibility check before planning. Because the human already approved
+the intent, the plan carries no second approval gate — every plan derives from an
+approved intent, and there is no plan-level `approved` status.
 
 ## Grounding
 
@@ -45,8 +48,8 @@ and runtime records.
 
 Plan status is a **projection**, not a second gate. A plan is `draft` from creation
 until it completes, then `done` — there is no intermediate `approved` status.
-Authorization follows automatically from the approved intent within its scope
-envelope. Standard `done` is inferred from candidate acceptance + delivery;
+Authorization follows automatically from the approved intent (criteria unchanged
+since approval). Standard `done` is inferred from candidate acceptance + delivery;
 Critical `done` is explicit. Execution status (running, verifying, repairing, verified,
 failed, blocked) is runtime evidence and never replaces plan status.
 

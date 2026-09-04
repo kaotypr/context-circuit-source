@@ -2,16 +2,19 @@
 
 An **intent** is the first-class decision for one change — the bigger picture a
 human approves *before* it fragments into plans and tasks (Context Circuit v1.0).
-Approving an intent is the single upstream human gate (Gate 1); plans then derive
-from it automatically within its scope envelope.
+Approving an intent is the single upstream human gate (Gate 1); it also confirms the
+coordinator understood the ask, which is what lets the tracer read the real code next.
+Plans then derive from the approved intent automatically, with no separate plan gate
+and no automated scope gate (scope-safety is settled at delivery, Gate 2).
 
 ```
 intent/
 ├── INDEX.md                # active intent index (this workspace)
 ├── <intent-id>/
 │   ├── INTENT.md           # readable: goal, shape, what's out of scope
-│   ├── contract.yaml       # canonical: criteria, scope envelope, tier, frozen digest
-│   └── adversary.md        # the spec adversary's findings on the criteria
+│   ├── contract.yaml       # canonical: outcome criteria, coarse optional scope, tier, frozen digest
+│   └── trace/              # the tracer's per-repository manifests (recorded on approval)
+│       └── <repository>.yaml
 └── archive/<intent-id>/    # archived intents; never normal agent context
 ```
 

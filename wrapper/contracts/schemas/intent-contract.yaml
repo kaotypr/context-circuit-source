@@ -1,28 +1,33 @@
-schema_version: 1
+schema_version: 2
 owner: wrapper/contracts/schemas/intent-contract.yaml
 describes: intent/<intent-id>/contract.yaml
 concern: intent_contract
 
 purpose: >
   Machine-readable half of an intent — the first-class decision for one change
-  (Context Circuit v1.0, Mechanism 1). It owns the frozen definition of correct:
-  goal, non-goals, constraints, acceptance criteria, the scope envelope, and the
-  consequence tier. INTENT.md is the readable half describing the same intent;
-  adversary.md holds the spec adversary's findings on the criteria. contract.yaml
-  is canonical for identifiers, status, scope, tier, and the frozen
+  (Context Circuit v1.0, Mechanism 1). It owns the human-level definition of
+  correct: goal, non-goals, constraints, OUTCOME-level acceptance criteria, a
+  coarse and optional scope, and the consequence tier — drafted by the coordinator
+  without reading the codebase (it grounds only in existing context/ Product
+  Knowledge). INTENT.md is the readable half describing the same intent.
+  contract.yaml is canonical for identifiers, status, scope, tier, and the frozen
   contract_digest. Approval is the single upstream human gate (Gate 1); it freezes
-  contract_digest, the identity of the criteria the candidate (candidate.yaml) is
-  later proven against.
+  contract_digest — the identity of the criteria the candidate (candidate.yaml) is
+  later proven against — and also confirms the coordinator understood the plain ask,
+  which is what lets the tracer read the real code next (tracing-and-grounding).
+  The runnable check that proves each outcome criterion is a TRACING output carried
+  in the plan (trace-manifest.yaml), never authored here.
 
 intent_status:
   authority: this file
   values: [draft, approved]
   transitions:
-    - draft -> approved   # explicit human approval (Gate 1) after the spec adversary
+    - draft -> approved   # explicit human approval (Gate 1)
   notes: >
     Approval freezes contract_digest. Changing any criteria-bearing field after
-    approval is a new decision: the digest no longer matches, the envelope check
-    reports EXCEEDS until re-approved, and prior candidate evidence voids
+    approval is a new decision: the digest no longer matches, so the plan's
+    derives-from-an-approved-intent authorization (cc_intent_authorized) fails
+    until the intent is re-approved, and prior candidate evidence voids
     (INV-CANDIDATE-01). There is no draft<-approved transition; a change re-enters
     the gate.
 
@@ -37,7 +42,7 @@ intent_id:
     - stable after creation even if title or status changes; never reused
 
 fields:
-  schema_version: { type: integer, required: true, values: [1] }
+  schema_version: { type: integer, required: true, values: [2] }
   intent: { type: string, required: true, description: canonical intent id, matches the directory name }
   title: { type: string, required: true }
   goal: { type: string, required: true, description: one paragraph }
@@ -47,30 +52,33 @@ fields:
     type: list
     required: true
     description: >
-      Each criterion defines one part of correct. Every criterion is executable or
-      explicitly manual — no third option. done_when is computed against these; the
-      spec adversary attacks them before approval.
+      Each criterion defines one part of correct at the OUTCOME level — what must be
+      true, in terms a human can approve (for example "no direct localStorage access
+      remains"). Criteria are not executable and not frozen as runnable here: the
+      tracer earns the runnable check that proves each one against the real code
+      after approval, carried into the plan (trace-manifest.yaml). At least one is
+      required.
     item:
       id: { type: string, required: true }
-      statement: { type: string, required: true }
-      method: { type: enum, required: true, values: [test, command, build, static, manual] }
-      surface: { type: string, required: false, description: the code surface the criterion targets }
-  done_when: { type: string, required: false, description: the completion condition in words }
+      statement: { type: string, required: true, description: the outcome, human-approvable }
   scope:
     type: object
-    required: true
+    required: false
     description: >
-      The ENVELOPE — the repositories and path regions any plan derived from this
-      intent may touch. The intent-envelope-check verb compares a plan's declared
-      repositories and path regions against this, reusing lease-overlap semantics,
-      and re-gates to a human on EXCEEDS or any indeterminate comparison
-      (INV-INTENT-02, crown jewel 1).
+      COARSE and OPTIONAL — a rough boundary the human may draw, not an enforced
+      gate. A lay human usually states a goal, not paths, so this is often empty. It
+      is NOT compared against a plan by any automated gate: the tracer reports where
+      the change lands, the coordinator's feasibility check surfaces a required change
+      that must MODIFY a repository or area beyond a bound scope (intent-feasibility),
+      and scope-safety itself is settled at delivery (Gate 2, INV-DELIVER-01). Its one
+      deterministic use is as a transparent input to tier signal classification
+      (INV-ASSURE-01).
     fields:
       repositories:
         type: list
         item:
           id: { type: string, required: true }
-          paths: { type: list, required: true, description: bounded path regions or repository-wide "." }
+          paths: { type: list, required: false, description: rough path regions or repository-wide "." }
   tier:
     type: enum
     required: true
@@ -80,8 +88,10 @@ fields:
       independent verifier and is never labeled verified; Standard and Critical
       require an independent read-only verifier bound to the current candidate.
       Proposed at intent time from transparent risk signals and raisable by the
-      human; the runtime enforces the verifier floor but never selects a tier
-      (INV-ASSURE-01). A v1.0 M1 reader may treat an absent tier as standard.
+      human, and re-checked with the tracer's findings before plans are written
+      (a tier signal may raise it). The runtime enforces the verifier floor but
+      never selects a tier (INV-ASSURE-01). A reader may treat an absent tier as
+      standard.
   status: { type: enum, required: true, values: [draft, approved] }
   intent_dependencies:
     type: list
@@ -101,26 +111,27 @@ fields:
       candidate digest (candidate.yaml), so a criteria change yields a new
       candidate and voids prior evidence (INV-CANDIDATE-01). Empty while draft.
 
-adversary_record:
-  file: intent/<intent-id>/adversary.md
-  required_before_approval: true
-  fields:
-    contract_digest: { type: string, required: true, description: exact contract challenged }
-    criteria_sound: { type: enum, required: true, values: [yes, needs-work] }
-    findings: { type: list, required: false, description: severity, statement, and suggested criterion }
-  rules:
-    - the record must bind to the digest about to be frozen
-    - criteria_sound must be yes for intent-approve to proceed
-    - criteria changes invalidate the record and require a new adversary run
+trace_manifest:
+  file: intent/<intent-id>/trace/<repository>.yaml
+  produced_by: cc-trace (the tracer), spawned on approval — one per repository in scope
+  owner: wrapper/contracts/schemas/trace-manifest.yaml
+  note: >
+    The tracer reads the real code AFTER approval and reports a durable manifest —
+    file/call-site map, concrete risks, the runnable "done" checks that prove each
+    outcome criterion, a tier signal, feasibility, and any out-of-scope reach. The
+    contract above holds the stable human-level target; the manifest holds the
+    machine-precise measure. The manifest is NOT part of contract_digest (it is
+    earned post-approval, so it never re-enters Gate 1).
 
 invariants:
   - every writing request is anchored to an intent whose contract.yaml holds goal,
-    scope, and acceptance criteria (INV-INTENT-01)
-  - each acceptance criterion is executable or explicitly manual (INV-INTENT-01)
-  - an independent spec adversary challenges the criteria before approval; findings
-    land in adversary.md (INV-INTENT-01)
-  - approval is the single upstream human gate and freezes contract_digest (INV-INTENT-01, INV-APPROVE-01)
-  - scope is the envelope a derived plan may not exceed (INV-INTENT-02)
+    outcome-level acceptance criteria, and an optional coarse scope (INV-INTENT-01)
+  - acceptance criteria are OUTCOME level; the runnable check is a tracing output
+    carried in the plan, never authored here (INV-INTENT-01, tracing-and-grounding)
+  - approval is the single upstream human gate, freezes contract_digest, and confirms
+    the coordinator understood the ask so the tracer can read the code (INV-INTENT-01, INV-APPROVE-01)
+  - scope is coarse and optional; it is not an enforced gate — scope-safety is settled
+    at delivery (Gate 2), and the feasibility check surfaces an out-of-scope reach (INV-INTENT-02)
   - tier is declared here and enforced as a floor by the runtime, never selected by it (INV-ASSURE-01)
 
 rules:
