@@ -62,7 +62,7 @@ Done in steps. The first is already finished.
 
 ## How carefully this is checked
 
-**`Standard`**
+**Standard**
 
 Explanations:
 - **Explore:** you check it yourself as you work alongside the agent — no separate
@@ -75,4 +75,4 @@ Explanations:
 
 ## Open questions
 
-None.
+No known unresolved human decisions at draft time.
