@@ -47,4 +47,18 @@ behavior.
 
 ## Open questions
 
-None.
+**Should the migration include the harness and template areas that contain current
+references to the existing intent identifiers?**
+_Answer: Yes. Every current workspace file that mentions an existing intent must
+move to the new identifier._
+
+**How should approved intent records keep their frozen identity when only their
+identifier spelling changes?**
+_Answer: Recompute the frozen digest after renaming approved intents, using the
+existing digest algorithm and preserving the approved criteria and lifecycle
+semantics._
+
+**What should happen after the three-digit sequence reaches `i999`?**
+_Answer: Old or unrelated intents may be moved to the archive or deleted, but
+only through a direct human request or manual human action. This cleanup must not
+silently recycle identifiers._
