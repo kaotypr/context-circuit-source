@@ -85,7 +85,8 @@ Present the intent as one readable thing: the goal in plain language, the non-go
 the repositories it will likely touch, any open questions the human must settle, and
 the tier with a one-line "why this tier". Ask for a single conversational decision —
 no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
-`intent-approve`, which flips `draft → approved` and **freezes** `contract_digest`
+`intent-approve`, which flips `draft → approved`, synchronizes the human-facing
+`INTENT.md` status line, and **freezes** `contract_digest`
 (the frozen identity of the criteria). Approval is also your confirmation that you
 understood the ask: it is what lets the tracer read the real code next. Immediately
 after approval, hand off to `cc-trace` — spawn one read-only tracer child per
