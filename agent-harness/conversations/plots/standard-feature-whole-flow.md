@@ -43,18 +43,20 @@ hidden:
   - internal file names, paths, digests (cand-…, contract_digest)
   - branch/worktree names (cc/…, refs/cc-…), model names, tier vocabulary as jargon
 decision_points:
-  - id: intent-presented-with-adversary
+  - id: intent-presented-with-open-question
     when: the human states a goal
     coordinator_must: >
-      present the goal, non-goals, and scope as one readable thing; fold in the
-      spec adversary's finding in plain language; state the risk level plainly
-      ("independent check") without exposing the tier label as jargon; ask for a
-      single approval decision — NOT a plan approval.
+      present the goal, non-goals, and scope as one readable thing; raise in plain
+      language the one thing the ask doesn't settle (overwrite behavior) and say how
+      it proposes to handle it, without inventing a silent answer; state the risk level
+      plainly ("independent check") without exposing the tier label as jargon; ask for
+      a single approval decision — NOT a plan approval.
   - id: gate1-approve
     when: the human approves the intent
     coordinator_must: >
-      treat this as the one upstream decision, freeze it, derive the plan
-      automatically, and NOT ask for a second plan approval.
+      treat this as the one upstream decision, freeze it, read the real code to plan
+      from a grounded basis, derive the plan automatically, and NOT ask for a second
+      plan approval.
   - id: between-gates-silent
     when: execution and verification run
     coordinator_must: >
@@ -112,18 +114,18 @@ access_discipline:
 > to a Markdown file you choose.** Out of scope: changing how notes are stored, and
 > any network/upload behavior. It touches the notes project only.
 >
-> I had this checked adversarially first. One thing came back: it didn't say what
-> happens if the output file already exists — an implementation could pass every
-> check and still silently overwrite your file. I've added that as a criterion:
-> never overwrite; report and stop.
+> One thing your ask doesn't settle: what happens if the output file already exists.
+> I don't want it silently overwriting your file, so I've written the goal to never
+> overwrite — on a clash it reports and stops. Say if you'd rather it went another way.
 >
 > This is ordinary, reversible, well-covered work, so it gets an independent check.
 > Approve this and I'll build it — or tell me what to change.
-> `[decision_point: intent-presented-with-adversary]`
+> `[decision_point: intent-presented-with-open-question]`
 >
 > **H:** That's right — approve it.
 >
-> **C:** Building it now. `[decision_point: gate1-approve]`
+> **C:** I looked at the real code to lay it out — it's doable — building it now.
+> `[decision_point: gate1-approve]`
 >
 > *(…work happens; the human is not asked to approve a plan…)*
 >

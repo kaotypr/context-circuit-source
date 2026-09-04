@@ -25,7 +25,6 @@ setup:
       tier: standard
       state: draft
       path: src
-      adversary_result: yes
   sources: []
 
 human:

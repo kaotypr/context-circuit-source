@@ -26,8 +26,8 @@ scenarios/
 ├── 12-run-multi-repo-stack/            full-exec    (multi-repo run-stack)
 ├── 13-execution-latency/               full-exec    (host evidence, hidden from user)
 ├── 14-codex-direct-collaboration/      full-exec    (Explore/direct collaboration)
-├── 15-intent-adversary-revise-and-approve/ conv     (adversary rejection + re-gate)
-├── 16-scope-expansion-regate/          conv         (envelope re-gating)
+├── 15-intent-adversary-revise-and-approve/ conv     (feasibility question from the real code)
+├── 16-scope-expansion-regate/          conv         (out-of-scope reach → feasibility question)
 ├── 17-stale-candidate-requires-reverification/ full-exec (candidate staleness)
 ├── 18-standard-delivery-inferred-completion/ full-exec (Standard inference)
 ├── 19-knowledge-debt-blocks-next-plan/ full-exec    (closed knowledge loop)
@@ -39,9 +39,10 @@ The v1 flow represented by the library is:
 
 ```text
 ordinary request
-  -> intent proposal + adversary
+  -> intent proposal
   -> explicit Gate 1 approval
-  -> automatic schema-3 plan derivation inside the envelope
+  -> post-approval tracing + feasibility check over the real code
+  -> automatic schema-3 plan derivation
   -> one worker + independent verifier (Standard/Critical)
   -> candidate-bound human acceptance
   -> explicit Gate 2 delivery
@@ -49,8 +50,9 @@ ordinary request
 ```
 
 Cases 01 and 02 cover safe orientation and repository binding. Cases 03–04 and
-15 cover the real intent gate, including refusal, adversarial rejection, revision,
-and re-approval. Case 16 covers scope-envelope re-gating. Cases 05–06 and 17
+15 cover the real intent gate, including refusal and a post-approval feasibility
+question resolved before the plan is written. Case 16 covers an out-of-scope reach
+surfaced as a feasibility question rather than an automated re-gate. Cases 05–06 and 17
 cover Standard/Critical assurance, repair, explicit completion, and stale
 candidates. Cases 07 and 07b cover status-preserving organization. Cases 08,
 18, and 21 cover separate delivery, inferred Standard completion, and one

@@ -34,9 +34,10 @@ reactions:
 demonstrates:
   # Narrowed from case 01's historical [AC-01, AC-04, AC-05] to what THIS dialogue
   # actually demonstrates: registering zero repositories, and the fail-closed
-  # invariants. AC-04 (a plan preserves request detail) and AC-05 (envelope
-  # re-gate) are not exercised here — nothing is planned or executed — and are
-  # owned by the intent/plan plots (03, 04, 16, 20). See coverage/phase-1.md.
+  # invariants. AC-04 (a plan preserves request detail) and AC-05 (a plan can't
+  # quietly execute past what was approved) are not exercised here — nothing is
+  # planned or executed — and are owned by the intent/plan plots (03, 04, 16, 20).
+  # See coverage/phase-1.md.
   acceptance_criteria: [AC-01]
   invariants: [INV-REPO-04, INV-PLAN-04, INV-EXEC-01, INV-SEC-02]
 hidden:

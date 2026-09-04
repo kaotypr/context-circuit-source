@@ -31,7 +31,7 @@ printf '# Bad\n' >"$ws/plans/9999-bad/PLAN.md"
 expect_failure cc_plan_validate "$ws/plans/9999-bad"
 rm -rf "$ws/plans/9999-bad"
 
-# --- execute within the intent envelope: one branch + worktree per repo ---
+# --- execute on the approved intent authorization: one branch + worktree per repo ---
 exec=$(cc_execution_begin "$ws" 0001-alpha sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0001-alpha "$exec")
 require_dir "$ws/.runtime/worktrees/0001-alpha/api"

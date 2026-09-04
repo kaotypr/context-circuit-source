@@ -21,8 +21,8 @@ criteria:
     statement: Plans preserve request detail as requirements, constraints, non-goals, assumptions, questions, risks.
     suite: test/plans/test-plans.sh
   - id: AC-05
-    statement: A plan outside its approved intent's scope envelope cannot execute; it is re-gated.
-    suite: test/intent/test-envelope.sh
+    statement: A plan derives from an approved intent and executes on that authorization; there is no automated scope gate (scope-safety is settled at delivery, Gate 2), and a criteria change after approval re-enters Gate 1.
+    suite: test/intent/test-feasibility.sh
   - id: AC-06
     statement: Approve-and-execute performs both explicit actions without a confirmation card.
     suite: test/plans/test-plans.sh
@@ -96,11 +96,11 @@ criteria:
     statement: Direct collaboration isolates one repository in its own branch and working copy, keeps only a resumable pointer, remains human-supervised rather than verified, preserves work on close, and blocks delivery drift.
     suite: test/pairing/test-pairing.sh
   - id: AC-30
-    statement: An intent is a first-class decision — goal, criteria (executable or manual), scope envelope, tier — with an i-prefixed never-reused id; approval freezes its contract digest and is the single upstream human gate; archive/restore are status-blind moves.
+    statement: An intent is a first-class decision — goal, outcome-level criteria, a coarse optional scope, tier — with an i-prefixed never-reused id; approval freezes its contract digest, confirms the ask was understood, and is the single upstream human gate; archive/restore are status-blind moves.
     suite: test/intent/test-intent.sh
   - id: AC-31
-    statement: The intent-envelope check re-gates a plan that exceeds the approved scope (new repository, path outside scope, criteria change) and fails upward on any indeterminate comparison, while authorizing a within-scope plan without a separate plan approval.
-    suite: test/intent/test-envelope.sh
+    statement: On approval a read-only tracer reads the real code (one child per repository) and the coordinator runs a feasibility check before any plan; the runtime keeps only a scope-free authorization (a plan derives from an approved intent, criteria unchanged) with no automated scope gate, and a criteria change re-enters Gate 1 while failing upward on a missing or unapproved intent.
+    suite: test/intent/test-feasibility.sh
   - id: AC-32
     statement: A candidate is a deterministic digest over the commit map, bases, and frozen contract digest; verifier results and human acceptance bind to it, and any new commit or criteria change yields a new candidate that voids prior evidence and acceptance (completion refuses stale evidence).
     suite: test/candidate/test-candidate.sh
@@ -114,5 +114,5 @@ criteria:
     statement: Completion is inferred from candidate acceptance plus recorded delivery at Explore/Standard and refused (explicit human completion required) at Critical; a change set of plans delivered as one pull request has one deterministic, order-independent candidate so it is verified and accepted once.
     suite: test/completion/test-inferred.sh
   - id: AC-36
-    statement: The v1.0 human-simulated scenarios (Standard feature with two gates and inferred completion, Explore-then-promote, change-set-as-one-PR, envelope-drift re-gate, knowledge-debt block) play end-to-end, and the expected conversations carry the two gates and honest assurance wording with no internal vocabulary.
+    statement: The v1.0 human-simulated scenarios (Standard feature with two gates and inferred completion, Explore-then-promote, change-set-as-one-PR, criteria-drift re-gate, knowledge-debt block) play end-to-end, and the expected conversations carry the two gates and honest assurance wording with no internal vocabulary.
     suite: test/scenarios/test-scenarios.sh

@@ -66,7 +66,7 @@ Flagged inline in the affected `generated/*.case.yaml`. None blocks authoring.
 ## Note on driver
 
 Both phase-3 plots are `full-execution` (`cc-test-case` driver): `cc-pair` spawns a
-real worker child, and promotion additionally exercises intent/adversary/plan. This is
+real worker child, and promotion additionally exercises intent/trace/plan. This is
 the first phase whose plots are not conversation-only; dimension C (access discipline)
 degrades to warning-only under the in-session driver, as documented in
 `scenarios/README.md`.

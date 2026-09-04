@@ -46,10 +46,11 @@ not_contains "$ws/plans/INDEX.md" "| $id1 |"
 cc_plan_index_upsert "$ws" "$id1" >/dev/null
 contains "$ws/plans/INDEX.md" "| $id1 |"
 
-# --- authorization: a plan is authorized by its approved intent within the scope
-#     envelope (INV-INTENT-02). There is no separate plan-approval status — the plan
-#     stays `draft`, and the envelope check is the preflight that execution re-runs. ---
-cc_intent_envelope_check "$ws" "$id1" >/dev/null
+# --- authorization: a plan derives from its approved intent (INV-INTENT-02). There is
+#     no separate plan-approval status and no automated scope gate — the plan stays
+#     `draft`, and the derives-from-an-approved-intent authorization is the preflight
+#     that execution re-runs. ---
+cc_intent_authorized "$ws" "$id1" >/dev/null
 assert_eq "draft" "$(cc_plan_status "$ws" "$id1")"   # no intermediate "approved" status
 
 # --- a plan authored with block-list task fields also validates ---
@@ -86,7 +87,7 @@ cc_plan_validate "$ws/plans/0011-block" >/dev/null
 assert_eq "api
 web" "$(cc_plan_affected_repositories "$ws/plans/0011-block/plan.yaml")"
 
-# --- execute within the intent envelope (no separate plan-approval step) ---
+# --- execute on the approved intent's authorization (no separate plan-approval step) ---
 cc_fx_plan "$ws" 0010-compound "Compound" "api"
 cc_execution_begin "$ws" 0010-compound s2 >/dev/null
 require_dir "$ws/.runtime/executions/0010-compound"

@@ -74,9 +74,6 @@ eng human-acceptance-current "$edir" >/dev/null
 # --- a CRITERIA change (re-approved on the intent) also voids the candidate ---
 sed 's/Retries works/Retries works within budget/' "$ws/intent/$iid/contract.yaml" >"$ws/intent/$iid/contract.yaml.new"
 mv "$ws/intent/$iid/contract.yaml.new" "$ws/intent/$iid/contract.yaml"
-new_digest=$(cc_intent_contract_digest "$ws/intent/$iid/contract.yaml")
-printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$new_digest" \
-	>"$ws/intent/$iid/adversary.md"
 eng intent-approve "$ws" "$iid" >/dev/null                   # re-freeze the changed criteria
 cand3=$(eng candidate-current "$ws" 0001-retries | sed -n 's/^candidate_id: //p')
 test "$cand3" != "$cand2" || fail "a criteria change must change the candidate"

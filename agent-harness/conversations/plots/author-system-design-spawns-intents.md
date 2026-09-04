@@ -40,7 +40,7 @@ demonstrates:
   invariants: [INV-INTENT-01, INV-SEC-02, INV-SKILL-01, INV-PLAN-04]
 hidden:
   - internal file names/paths (sources/system-design/…, design.md, intent id, contract.yaml)
-  - the words "system design source", "three-tier layout", "scope envelope" as jargon
+  - the words "system design source", "three-tier layout", "feasibility check" as jargon
 decision_points:
   - id: structure-not-build
     when: the human asks to structure the design first

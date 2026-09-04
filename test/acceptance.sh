@@ -13,7 +13,7 @@ run_suite test/runtime/test-runtime.sh
 run_suite test/repositories/test-repositories.sh
 run_suite test/plans/test-plans.sh
 run_suite test/intent/test-intent.sh
-run_suite test/intent/test-envelope.sh
+run_suite test/intent/test-feasibility.sh
 run_suite test/candidate/test-candidate.sh
 run_suite test/assurance/test-tier.sh
 run_suite test/execution/test-execution.sh

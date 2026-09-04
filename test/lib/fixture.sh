@@ -39,15 +39,14 @@ cc_fx_repo() {
 cc_fx_plan() {
 	cc_fxp_ws=$1; cc_fxp_pid=$2; cc_fxp_title=$3; cc_fxp_repos=$4
 	cc_fxp_dir="$cc_fxp_ws/plans/$cc_fxp_pid"
-	# v1.0: every plan derives from an approved parent intent within a scope envelope.
-	# Author + approve an intent i<pid> scoped to each repo's src, then bind the plan.
+	# v1.0: every plan derives from an approved parent intent (outcome-level criteria,
+	# coarse optional scope). Author + approve an intent i<pid>, then bind the plan.
 	cc_fxp_iid="i$cc_fxp_pid"
 	mkdir -p "$cc_fxp_ws/intent/$cc_fxp_iid"
 	{
-		printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxp_iid" "$cc_fxp_title" "$cc_fxp_title"
+		printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxp_iid" "$cc_fxp_title" "$cc_fxp_title"
 		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
-		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n' "$cc_fxp_title"
-		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n' "$cc_fxp_title"
 		printf 'scope:\n  repositories:\n'
 		for cc_fxp_r in $cc_fxp_repos; do
 			printf '    - id: %s\n      paths: [src]\n' "$cc_fxp_r"
@@ -55,9 +54,6 @@ cc_fx_plan() {
 		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
 	} >"$cc_fxp_ws/intent/$cc_fxp_iid/contract.yaml"
 	printf '# %s\n' "$cc_fxp_title" >"$cc_fxp_ws/intent/$cc_fxp_iid/INTENT.md"
-	cc_fxp_digest=$(cc_intent_contract_digest "$cc_fxp_ws/intent/$cc_fxp_iid/contract.yaml")
-	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$cc_fxp_digest" \
-		>"$cc_fxp_ws/intent/$cc_fxp_iid/adversary.md"
 	cc_intent_index_upsert "$cc_fxp_ws" "$cc_fxp_iid" >/dev/null
 	cc_intent_approve "$cc_fxp_ws" "$cc_fxp_iid" >/dev/null
 	mkdir -p "$cc_fxp_dir/tasks"
@@ -103,17 +99,13 @@ cc_fx_plan_ex() {
 	cc_fxe_iid="i$cc_fxe_pid"
 	mkdir -p "$cc_fxe_ws/intent/$cc_fxe_iid"
 	{
-		printf 'schema_version: 1\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxe_iid" "$cc_fxe_title" "$cc_fxe_title"
+		printf 'schema_version: 2\nintent: %s\ntitle: %s\ngoal: %s goal.\n' "$cc_fxe_iid" "$cc_fxe_title" "$cc_fxe_title"
 		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
-		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n' "$cc_fxe_title"
-		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n' "$cc_fxe_title"
 		printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$cc_fxe_repo" "$cc_fxe_path"
 		printf 'tier: standard\nstatus: draft\ncontract_digest:\n'
 	} >"$cc_fxe_ws/intent/$cc_fxe_iid/contract.yaml"
 	printf '# %s\n' "$cc_fxe_title" >"$cc_fxe_ws/intent/$cc_fxe_iid/INTENT.md"
-	cc_fxe_digest=$(cc_intent_contract_digest "$cc_fxe_ws/intent/$cc_fxe_iid/contract.yaml")
-	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$cc_fxe_digest" \
-		>"$cc_fxe_ws/intent/$cc_fxe_iid/adversary.md"
 	cc_intent_index_upsert "$cc_fxe_ws" "$cc_fxe_iid" >/dev/null
 	cc_intent_approve "$cc_fxe_ws" "$cc_fxe_iid" >/dev/null
 	mkdir -p "$cc_fxe_dir/tasks"
@@ -144,7 +136,7 @@ cc_fx_plan_ex() {
 
 # cc_fx_run_ok WS PID REPO PATH -> execute/worker-commit (PATH/mod.txt)/verify passed.
 # Leaves the plan verified. Uses OWNER=<pid>-w. A plan is authorized by its approved
-# intent within the scope envelope; execution needs no separate plan-approval step.
+# intent; execution needs no separate plan-approval step and no scope gate.
 cc_fx_run_ok() {
 	cc_fxo_ws=$1; cc_fxo_pid=$2; cc_fxo_repo=$3; cc_fxo_path=$4
 	cc_fxo_exec=$(cc_execution_begin "$cc_fxo_ws" "$cc_fxo_pid" "$cc_fxo_pid-w" | sed -n 's/^execution_id: //p') || return 1
@@ -173,7 +165,7 @@ cc_fx_commit() {
 cc_fx_exec_dir() { printf '%s/.runtime/executions/%s/%s' "$1" "$2" "$3"; }
 
 # cc_fx_intent WS IID TITLE REPO "path1 path2..." [TIER] -> author a draft intent
-# contract (goal + one test criterion + scope envelope) and its INTENT.md. Does
+# contract (goal + one outcome criterion + a coarse scope) and its INTENT.md. Does
 # NOT approve. Prints nothing. TIER defaults to standard.
 cc_fx_intent() {
 	cc_fxi_ws=$1; cc_fxi_id=$2; cc_fxi_title=$3; cc_fxi_repo=$4; cc_fxi_paths=$5; cc_fxi_tier=${6:-standard}
@@ -181,18 +173,14 @@ cc_fx_intent() {
 	mkdir -p "$cc_fxi_dir"
 	cc_fxi_inline=$(printf '%s' "$cc_fxi_paths" | tr ' ' ',' | sed 's/,/, /g')
 	{
-		printf 'schema_version: 1\nintent: %s\ntitle: %s\n' "$cc_fxi_id" "$cc_fxi_title"
+		printf 'schema_version: 2\nintent: %s\ntitle: %s\n' "$cc_fxi_id" "$cc_fxi_title"
 		printf 'goal: %s goal.\n' "$cc_fxi_title"
 		printf 'non_goals:\n  - none\nconstraints:\n  - none\n'
-		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n    method: test\n    surface: %s\n' "$cc_fxi_title" "$cc_fxi_repo"
-		printf 'done_when: ac-1 passes and a human accepts the candidate.\n'
+		printf 'acceptance_criteria:\n  - id: ac-1\n    statement: %s works.\n' "$cc_fxi_title"
 		printf 'scope:\n  repositories:\n    - id: %s\n      paths: [%s]\n' "$cc_fxi_repo" "$cc_fxi_inline"
 		printf 'tier: %s\nstatus: draft\ncontract_digest:\n' "$cc_fxi_tier"
 	} >"$cc_fxi_dir/contract.yaml"
 	printf '# %s\n\nGoal: %s.\n' "$cc_fxi_title" "$cc_fxi_title" >"$cc_fxi_dir/INTENT.md"
-	cc_fxi_digest=$(cc_intent_contract_digest "$cc_fxi_dir/contract.yaml")
-	printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$cc_fxi_digest" \
-		>"$cc_fxi_dir/adversary.md"
 	cc_intent_index_upsert "$cc_fxi_ws" "$cc_fxi_id" >/dev/null
 }
 

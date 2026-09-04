@@ -58,9 +58,6 @@ iid2=i0002-crit
 cc_fx_intent "$ws" "$iid2" "Crit" api "src/crit"
 awk '/^tier:/{print "tier: critical"; next}{print}' "$ws/intent/$iid2/contract.yaml" >"$ws/intent/$iid2/c.new"
 mv "$ws/intent/$iid2/c.new" "$ws/intent/$iid2/contract.yaml"
-crit_digest=$(cc_intent_contract_digest "$ws/intent/$iid2/contract.yaml")
-printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$crit_digest" \
-	>"$ws/intent/$iid2/adversary.md"
 eng intent-approve "$ws" "$iid2" >/dev/null
 cc_fx_plan_intent "$ws" 0002-crit "Crit" api src/crit "$iid2"
 cc_fx_run_ok "$ws" 0002-crit api src/crit

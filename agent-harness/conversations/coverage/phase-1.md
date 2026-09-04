@@ -22,10 +22,10 @@ coverage and what its dialogue actually demonstrates.
 
 - **`01` historically tags `[AC-01, AC-04, AC-05]`; the plot narrows to `[AC-01]`.**
   Case 01 is pure orientation: nothing is planned or executed. AC-04 (a plan
-  preserves request detail) and AC-05 (a plan outside its scope envelope is
-  re-gated) require a plan to exist, so this dialogue does not demonstrate them —
+  preserves request detail) and AC-05 (a plan can't quietly execute past what was
+  approved) require a plan to exist, so this dialogue does not demonstrate them —
   they are demonstrated by the intent/plan plots (`refuse-before-gate1` (04),
-  `scope-envelope-regate` (16), `tier-fails-upward-refuse-explore` (20)). The
+  `scope-reach-feasibility-question` (16), `tier-fails-upward-refuse-explore` (20)). The
   plot keeps `AC-01` (register zero repositories — here, zero) plus the fail-closed
   invariants the dialogue really exercises (`INV-REPO-04`, `INV-PLAN-04`,
   `INV-EXEC-01`, `INV-SEC-02`). **Recommendation:** when case 01 is regenerated,

@@ -23,8 +23,9 @@ template. It must not import the source repository's Product Knowledge, plans,
 worktrees, commits, and runtime records are disposable test artifacts.
 
 The v1.0.0 scenario set covers safe orientation, repository connection on the
-human's selected base branch, the intent front door, adversarial intent
-revision, refusal before Gate 1, scope-envelope re-gating, schema-3 plan
+human's selected base branch, the intent front door, post-approval tracing with
+feasibility questions from the real code, refusal before Gate 1, an out-of-scope
+reach surfaced as a feasibility question, schema-3 plan
 derivation, Standard and Critical assurance, independent verification, worker
 repair, candidate staleness, host blocking, run-stack ordering, repository
 grounding, Explore/direct collaboration, archive/restore, Standard inferred

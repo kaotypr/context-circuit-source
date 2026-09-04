@@ -50,7 +50,7 @@ grader:
     - no_execution_records: true
     - product_knowledge_unchanged_silently: true
   transcript_checks:
-    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|sources/system-design|design\\.md|three-tier|scope envelope)"
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|sources/system-design|design\\.md|three-tier|feasibility check)"
       reason: The design and the spawned work must be described in plain terms, not internal file names or jargon.
     - requires_any: ["design", "structure", "concern", "separate", "each", "draft", "approve", "open question", "haven't"]
       reason: It should author a structured design as a draft and spawn one approvable piece per concern.

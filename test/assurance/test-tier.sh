@@ -1,7 +1,8 @@
 #!/bin/sh
-# Context Circuit v1.0 — crown jewel 2: consequence tier classification and the
-# per-tier verifier floor (INV-ASSURE-01). The second safety-critical check; it
-# carries the deepest fixtures and must FAIL UPWARD (when unsure, tier higher).
+# Context Circuit v1.0 — the one safety-critical automated check: consequence tier classification and the
+# per-tier verifier floor (INV-ASSURE-01). This is now the ONLY safety-critical
+# automated check (v1.0 removed the scope-envelope check; scope-safety is at Gate 2);
+# it carries the deepest fixtures and must FAIL UPWARD (when unsure, tier higher).
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
@@ -94,9 +95,6 @@ expect_failure eng intent-approve "$ws" i0001-auth
 # an Explore-eligible intent approves at Explore
 awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i0004-widget/contract.yaml" >"$ws/intent/i0004-widget/c.new"
 mv "$ws/intent/i0004-widget/c.new" "$ws/intent/i0004-widget/contract.yaml"
-widget_digest=$(cc_intent_contract_digest "$ws/intent/i0004-widget/contract.yaml")
-printf '# Spec adversary\n\ncontract_digest: %s\ncriteria_sound: yes\n' "$widget_digest" \
-	>"$ws/intent/i0004-widget/adversary.md"
 eng intent-approve "$ws" i0004-widget >/dev/null
 
 # --- per-tier verifier floor at completion ---
@@ -128,4 +126,4 @@ cc_verifier_result_record "$edir2" 1 passed >/dev/null
 out2=$(eng completion-ready "$ws" 0002-std)
 printf '%s\n' "$out2" | grep -q 'assurance: independent' || fail "Standard completion must report independent assurance"
 
-pass 'consequence tiering (crown jewel 2)'
+pass 'consequence tiering (the one safety-critical automated check)'
