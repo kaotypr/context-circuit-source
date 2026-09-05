@@ -57,7 +57,7 @@ connected repositories, project Product Knowledge, customer plans, or
 archived-plan contents.
 
 The template's root `.gitignore` must exclude at least `/repositories/`,
-`/repositories.local.yaml`, and `/.runtime/`.
+`/repositories.local.yaml`, `/.runtime/`, and `.code-review-graph/`.
 
 An upgrade may replace template-owned files, runtime code, contracts, and role
 guidance, but must preserve workspace-owned files: project identity, accepted

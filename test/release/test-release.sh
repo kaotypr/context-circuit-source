@@ -60,9 +60,10 @@ printf '%s\n' "$result" | grep -F "runtime_version: 1.0.0" >/dev/null || fail 'r
 for leaked in .runtime test .github scripts template repositories repositories.local.yaml \
   wrapper/adapters plans/context-circuit-plans sources/system-design sources/reports \
   docs/release.md wrapper/contracts/routes.yaml wrapper/contracts/context-sets.yaml \
-  wrapper/contracts/schemas/delegation.yaml .agents/skills/cc-entry; do
+  wrapper/contracts/schemas/delegation.yaml .agents/skills/cc-entry .code-review-graph; do
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"
 done
+contains "$artifact/.gitignore" ".code-review-graph"
 
 # --- only the shipped skills ship ---
 count=0

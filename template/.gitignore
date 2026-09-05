@@ -9,3 +9,6 @@
 
 # Private execution evidence.
 /.runtime/
+
+# Tool-generated local graph cache; never project material.
+.code-review-graph/

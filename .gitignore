@@ -20,5 +20,5 @@ dist/
 /agent-harness/human/.live.log
 # Local, this-machine-only opt-in to run the coordinator UNSANDBOXED (never shipped).
 /agent-harness/human/drivers/.allow-unsandboxed
-# Added by code-review-graph
+# Tool-generated local graph cache; never project material.
 .code-review-graph/

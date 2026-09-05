@@ -41,6 +41,15 @@ done
 contains "$ROOT/template/.gitignore" "repositories.local.yaml"
 contains "$ROOT/template/.gitignore" "/repositories/"
 contains "$ROOT/template/.gitignore" "/.runtime/"
+contains "$ROOT/template/.gitignore" ".code-review-graph"
+
+# --- leftover .code-review-graph is dropped on workspace-init ---
+ws_crg=$(cc_fx_ws)
+mkdir -p "$ws_crg/.code-review-graph"
+printf 'junk\n' >"$ws_crg/.code-review-graph/graph.db"
+cc_workspace_init "$ws_crg" >/dev/null
+test ! -e "$ws_crg/.code-review-graph" || fail "workspace-init kept leftover .code-review-graph"
+rm -rf "$ws_crg"
 
 # --- negative fixtures document forbidden record fields ---
 require_file "$ROOT/test/security/fixtures/negatives/forbidden-fields.yaml"
