@@ -72,9 +72,12 @@ INV-ASSURE-01.
   coordinator interprets and delegates but never writes, and one worker (the
   existing `agents/worker.md` role) makes the concrete change for each turn.
 - **Isolation.** The worker writes only in a fresh `cc-pair/<session>` branch and
-  isolated worktree created from a chosen base commit (the recorded base tip for
+  isolated worktree under `.runtime/explore/<human-name>/`, created from a chosen
+  base commit (the recorded base tip for
   fresh work, or a completed execution tip when offered after a plan/stack, or a
-  commit the user names). It never reuses the active checkout or edits a plan
+  commit the user names). The human chooses the short name; the agent does not
+  invent it. Explore worktrees are not mixed with plan-execution worktrees under
+  `.runtime/worktrees/`. It never reuses the active checkout or edits a plan
   execution branch in place.
 - **No trust scaffolding.** There is no verifier, lease, execution record, failure
   counter, plan status, or completion gate; the only runtime state is a light
@@ -84,7 +87,10 @@ INV-ASSURE-01.
   (INV-COMMIT-01). The session converges only when the user says the result is
   finished; a dirty worktree is never committed automatically. Closing a clean
   session preserves its branch and worktree — cleanup is a separate explicit
-  action. The result is described as **human-supervised, not independently
+  action (`runtime-cleanup`) that also removes Explore worktrees under
+  `.runtime/explore/`. Closing does not delete the worktree by itself, and a
+  still-live session is not removed unless cleanup was explicitly asked. The
+  result is described as **human-supervised, not independently
   verified**.
 - **Promote — the ramp into the trust system.** When the work is real, promote in
   place rather than restart: attach an intent (`cc-intent`, so the human approves
@@ -100,7 +106,7 @@ INV-ASSURE-01.
 - Human request: "let's work on this together" / `/cc-pair` / "try it and I'll tell
   you" — or an offer after a completed plan or stack execution.
 - Runtime (invoke, never read the engine): `pair-begin . <repo> <session> [base]`,
-  `pair-inspect . <session>`, `pair-close . <session>`.
+  `pair-inspect . <session>`, `pair-close . <session>`, `runtime-cleanup .`.
 - Promotion path: `cc-intent` → tier raise → `cc-plan` → the ordinary
   candidate/verify/deliver/reconcile pipeline.
 
