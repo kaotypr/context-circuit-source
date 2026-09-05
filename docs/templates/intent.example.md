@@ -1,6 +1,6 @@
 <!--
   Illustrative example, not a rule. This is a filled-in INTENT.md that shows the
-  plain, reassuring, no-jargon voice the blank template (docs/templates/intent.md)
+  plain, reassuring voice the blank template (docs/templates/intent.md)
   asks for, including a small mermaid graph where the intention is a flow. Copy the
   shape and the tone, not this feature. The scenario is generic on purpose.
 -->
