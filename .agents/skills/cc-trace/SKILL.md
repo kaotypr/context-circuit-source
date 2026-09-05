@@ -70,7 +70,11 @@ why it kept or split the partition after feasibility, then explains that choice 
 the human; the tracer only supplies the grounded evidence.
 
 The tracer never writes plans, never edits the frozen contract, and never talks to the
-human — it finds, records, and reports to you.
+human — it finds, records, and reports to you. Intent detail (`intent/<id>/detail/`),
+when present, was authored before approval without reading the code. Tracing remains
+the first code read. Do not author or edit detail here, and do not fold it into
+`contract_digest`. A later plan may consume it as confirmed topic shape when it
+exists.
 
 ### Classify every question before feasibility
 

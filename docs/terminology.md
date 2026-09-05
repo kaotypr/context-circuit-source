@@ -53,7 +53,8 @@ importantly, how the coordinator translates them into plain language for a user.
 | Repository grounding | The worker reading and honoring the target repository's own agent guidance, discovered from the working copy. |
 | Grounding manifest | The discovered record of a repository's agent guidance (files, skills, prepared environment) for one execution. |
 | Worker brief | The instructions handed to the worker for one execution, assembled from the grounding manifest and the plan. |
-| System design | A structured write-up of the shape of a larger change, authored as source material; a source, not a lifecycle stage. |
+| System design | A structured write-up of the shape of a larger change, authored as source material under `sources/system-design/`; a source, not a lifecycle stage. |
+| Intent detail | A fuller by-concern write-up of **one** intent, kept with that change at `intent/<id>/detail/`, using the same three-tier authoring as a system design. Optional; not required; not a second approval; not Product Knowledge. |
 | Direct collaboration / `cc-pair` | A live user–coordinator–worker loop for changing one connected repository without a plan or verifier. The user judges the result as it changes. |
 | Human-supervised | Work the user judged live during direct collaboration. It is never equivalent to independently verified execution evidence. |
 | Publication | A pipeline you declare once and trigger by hand (`cc-publish`) to publish workspace data to an external system — a tracker, chat, or docs space; separate from the core workflow, one folder per publication under `publication/`. |
@@ -99,5 +100,6 @@ explicitly asks for diagnostics.
 | Tier = critical / explore | "tier", "Critical", "Explore" as jargon | "higher-risk, so it gets an independent check and an explicit sign-off" / "quick and human-supervised — no independent check" |
 | Reconciliation debt marker | "debt marker", "knowledge-debt" | "there's merged work I haven't folded into what the project knows yet" |
 | Change-set candidate / integration tip | "change set", "integration tip" | "the combined change" / "one check over both pieces" |
+| Intent detail / `intent/<id>/detail/` | the folder name or "intent detail" as jargon | "a fuller write-up of this change, split by topic" |
 
 Reveal these mechanics only when the user explicitly asks for diagnostics.

@@ -119,3 +119,6 @@ criteria:
   - id: AC-37
     statement: A grounded task partition remains one bounded plan with ordered embedded tasks when it shares one execution and verification boundary, and becomes stacked dependent plans when execution, verification, dependency, or failure boundaries are independent; wrong combine/split shapes fail without adding an approval gate.
     suite: test/plans/test-decomposition.sh
+  - id: AC-38
+    statement: The system-design skill authors both a product-level design and an optional intent detail write-up; skipping detail does not block Gate 1; there is no second approval; planning uses detail when present without replacing the post-approval code read; the short five-section intent page stays short.
+    suite: test/intent/test-intent-detail.sh

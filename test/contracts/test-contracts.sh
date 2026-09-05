@@ -157,11 +157,17 @@ done
 # --- cc-system-design carries the authoring rubric and adds no runtime surface ---
 sd="$ROOT/.agents/skills/cc-system-design/SKILL.md"
 contains "$sd" "sources/system-design/"
+contains "$sd" "intent/<id>/detail/"
 contains "$sd" "three-tier"
 contains "$sd" "design.md"
 contains "$sd" "by concern"
 contains "$sd" "never by repository"
 contains "$sd" "Never approve"
+# dual-root: product-level path preserved; intent detail is a second home, not a new skill
+contains "$ROOT/context/domains/system-design-authoring/README.md" "intent/<id>/detail/"
+contains "$ROOT/context/domains/system-design-authoring/README.md" "sources/system-design/"
+test ! -e "$ROOT/.agents/skills/cc-intent-detail" || fail "cc-intent-detail must not exist"
+test ! -e "$ROOT/sources/system-design/context-circuit/v1.1.0" || fail "unsolicited v1.1.0 design tree must be absent"
 # system-design is authoring-only: no runtime schema, no invariant, no WORKFLOW action
 test ! -e "$W/contracts/schemas/system-design.yaml" || fail "system-design must add no runtime schema"
 test ! -e "$W/contracts/schemas/design-acceptance.yaml" || fail "system-design must add no acceptance schema"

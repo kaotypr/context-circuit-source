@@ -34,6 +34,10 @@ question and sends the work back through Gate 1; an implementation-only question
 carried into the plan; a question already answered by the user's request is applied
 without asking again. No plan may hide an unresolved intent-level question.
 
+When `intent/<id>/detail/` exists, planning uses it as the confirmed shape of what
+to build so plans and tasks follow those topics. It does not replace the
+post-approval read of the real code or the trace manifest.
+
 ## Choosing one plan or a stack
 
 The trace's `task_partition` is a proposal. After feasibility, the coordinator

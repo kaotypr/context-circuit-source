@@ -25,6 +25,10 @@ here — so you are planning a change already judged buildable. If no trace mani
 exists yet (the tracer has not run), run `cc-trace` first rather than improvising a
 code read inline.
 
+When `intent/<id>/detail/` exists, use it as the **confirmed shape** of what to
+build so plans and tasks follow those topics. It does this without replacing the
+trace manifest or the post-approval read of the real code, is not a second approval, and is not part of `contract_digest`.
+
 ## Ratify the task partition
 
 Treat the trace's `task_partition` as grounded evidence, then make one explicit
@@ -62,8 +66,9 @@ Retrieve relevant Product Knowledge by the request's concepts, domains,
 repositories, decisions, and constraints using `context/INDEX.md`; read only the
 selected units, not the whole directory. Read repository instructions and only
 request-named source files. Ground the plan in the approved `contract.yaml` (the
-outcome criteria), the trace manifest (the grounded map and done-checks), Product
-Knowledge, and repository grounding.
+outcome criteria), the trace manifest (the grounded map and done-checks), the
+intent detail when it exists (the confirmed topic shape), Product Knowledge, and
+repository grounding.
 
 Expand the approved intent into a detailed readable plan grounded in the manifest.
 Preserve the intent's goal, criteria, constraints, non-goals, assumptions, open

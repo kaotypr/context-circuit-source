@@ -72,7 +72,8 @@ the reason for each edge; it does not add a human decision. Every Standard/Criti
 plan still has its own bounded worker and independent verifier lifecycle. Combining
 the delivered plans into one change-set candidate is a separate delivery concern
 and does not erase those per-plan execution records. Plan count is not a proxy for
-assurance tier.
+assurance tier. Optional intent detail has no approval status of its own; plan
+derivation remains automatic after Gate 1 and feasibility.
 
 There is no confirmation card and no hidden confirmation token. A vague "yes" is
 not an intent approval; the decision is an explicit conversational act bound to the

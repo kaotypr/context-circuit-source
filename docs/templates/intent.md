@@ -12,6 +12,8 @@ _Status: draft, waiting for your approval._
 
   For a filled-in example of the voice and level of detail, see
   docs/templates/intent.example.md.
+  A fuller by-concern write-up, when present, lives as separate files beside this
+  page — not as another heading on this page.
 -->
 
 ## Intention

@@ -58,6 +58,23 @@ gap is an explicit open question, never a silently chosen decision. You draft th
 intent from the plain ask and existing Product Knowledge only — you do **not** read
 the codebase here; that is the tracer's job after approval.
 
+### Optional fuller write-up
+
+A human may **request** a fuller by-concern write-up of this one change, or you
+**recommend** it when the draft has several concerns — several numbered plans,
+several independent outcomes, or the human already described several parts of one
+change. A small single-outcome intent stays short. Skipping the write-up does not block approval and is never required.
+
+Do **not** duplicate the three-tier rubric here. Honor the request or recommendation
+by invoking `cc-system-design` to author `intent/<id>/detail/` (never `design/`).
+That write-up is extra files beside the intent, not a sixth `INTENT.md` section and
+not internal filenames on the short page. Draft it without reading the codebase.
+It is not part of `contract_digest` and has **no separate approval**.
+
+A large multi-topic picture the human would review and ship as genuinely separate
+decisions still lives one level up in `sources/system-design/` and spawns one
+intent per concern. Intent detail is the shape of *this* one decision.
+
 ### Keep questions across phases
 
 The `Open questions` section is **phase-aware**, not a one-time draft field:
@@ -111,7 +128,9 @@ intent. Genuinely separate decisions the human would
 review and ship independently are **separate intents** (which may declare
 `intent_dependencies` to be ordered), not one giant intent. A large multi-topic
 picture lives one level up in `sources/system-design/` and spawns one intent per
-concern.
+concern. Several concerns of **one** decision may instead be written out as
+optional intent detail (`intent/<id>/detail/`) so the human sees the shape before
+they approve — that is not a second product-level design and not a second gate.
 
 ## Runtime actions — invoke, never read the engine
 
@@ -139,6 +158,7 @@ stamp.
 
 Authoring or approving an intent never creates a plan, executes, verifies,
 completes, or delivers, and never reads the codebase. It writes only under
-`intent/<id>/`. The tracer that reads the code runs only after approval (`cc-trace`)
-and may send an intent-level question back here before planning. Approval is
-conversational, never a confirmation card or hidden token.
+`intent/<id>/` (the short page, the contract, and optional `detail/`). The tracer
+that reads the code runs only after approval (`cc-trace`) and may send an
+intent-level question back here before planning. Approval is conversational, never
+a confirmation card or hidden token, and there is no second approval of the detail.
