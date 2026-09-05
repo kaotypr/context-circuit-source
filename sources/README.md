@@ -15,6 +15,7 @@ This maintainer checkout organizes its own sources with the suggested layout
 
 ```
 sources/
+├── ideas/till/                     # sample product (Till) + prompts for every case
 ├── system-design/
 │   ├── context-circuit/v0.5/       # authoritative product design
 │   └── template-harness/v0.5/      # test-harness design
