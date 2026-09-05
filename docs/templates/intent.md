@@ -3,17 +3,17 @@
 _Status: draft, waiting for your approval._
 
 <!--
-  This file is what the HUMAN reads. Keep it plain, short, and free of jargon:
-  no internal ids, file names, digests, branch/model names, or runtime commands,
-  and no fancy terms. The detailed, machine-checkable record lives in
-  contract.yaml, which the human is not expected to open. Use exactly the five
+  This file is what the HUMAN reads. Keep it plain and short. Use exactly the five
   sections below — do not add out-of-scope, history, or assurance-rationale
-  sections here.
+  sections here. Keep technical terms as they are; do not rename them. Do not
+  dump runtime commands, digest hashes, or engine invocations. The detailed,
+  machine-checkable record lives in contract.yaml, which the human is not
+  expected to open.
 
   For a filled-in example of the voice and level of detail, see
   docs/templates/intent.example.md.
   A fuller by-concern write-up, when present, lives as separate files beside this
-  page — not as another heading on this page.
+  file — not as another heading here.
 -->
 
 ## Intention

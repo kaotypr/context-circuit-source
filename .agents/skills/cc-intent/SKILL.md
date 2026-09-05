@@ -20,11 +20,12 @@ the runtime `intent-allocate-id` (form `i<NNN>-slug`, its own never-reused
 sequence, distinct from plan ids).
 
 Write two files with a strict division of audience. `intent/<id>/INTENT.md` is
-**what the human reads** — plain, short, no jargon; it reassures them that the
-blurry thing they asked for was understood and shows what they get. Author it from
+**what the human reads** — plain, short; it reassures them that the blurry thing
+they asked for was understood and shows what they get. Author it from
 `docs/templates/intent.md`, which fixes the five human-facing sections (Intention,
-Expectations, The plans, How carefully this is checked, Open questions) and the
-plain-language rules; `docs/templates/intent.example.md` shows the voice. Do not
+Expectations, The plans, How carefully this is checked, Open questions);
+`docs/templates/intent.example.md` shows the voice. Keep technical terms as they
+are; do not rename them into something that does not mean the same thing. Do not
 restate the product's mechanics or add out-of-scope, history, or
 assurance-rationale sections there.
 
@@ -68,7 +69,7 @@ change. A small single-outcome intent stays short. Skipping the write-up does no
 Do **not** duplicate the three-tier rubric here. Honor the request or recommendation
 by invoking `cc-system-design` to author `intent/<id>/detail/` (never `design/`).
 That write-up is extra files beside the intent, not a sixth `INTENT.md` section and
-not internal filenames on the short page. Draft it without reading the codebase.
+not internal filenames on `INTENT.md`. Draft it without reading the codebase.
 It is not part of `contract_digest` and has **no separate approval**.
 
 A large multi-topic picture the human would review and ship as genuinely separate
@@ -145,20 +146,18 @@ the invoke-not-read boundary):
 
 ## Report — plain language only
 
-Say the effect, never the mechanism (`docs/terminology.md`). "Here's what I
-understand you want to build… here's what you'll have when it's done… this is
-Standard risk, so it gets an independent check. Approve this and I'll look at the
-real code and build it, or tell me what to change." Never expose the intent id,
-contract file, digest, runtime commands, the tracer, or the feasibility check in
-normal conversation — the human hears the goal and any open questions, not the
-machinery. Approving an intent is a real decision; present it as one, not a rubber
-stamp.
+Keep technical terms as they are; do not rename them into something that does
+not mean the same thing. Do not dump runtime commands, digest hashes, or engine
+invocations. "Here's what I understand you want to build… here's what you'll
+have when it's done… this is Standard risk, so it gets an independent check.
+Approve this and I'll spawn the tracer, or tell me what to change." Approving an
+intent is a real decision; present it as one, not a rubber stamp.
 
 ## Boundaries
 
 Authoring or approving an intent never creates a plan, executes, verifies,
 completes, or delivers, and never reads the codebase. It writes only under
-`intent/<id>/` (the short page, the contract, and optional `detail/`). The tracer
+`intent/<id>/` (`INTENT.md`, `contract.yaml`, and optional `detail/`). The tracer
 that reads the code runs only after approval (`cc-trace`) and may send an
 intent-level question back here before planning. Approval is conversational, never
 a confirmation card or hidden token, and there is no second approval of the detail.
