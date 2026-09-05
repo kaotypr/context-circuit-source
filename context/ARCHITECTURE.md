@@ -12,10 +12,12 @@ plans, runtime, and registered repositories distinct.
 The invariant catalog (`wrapper/contracts/invariants.yaml`) is the
 one-owner-per-rule authority; skills and the coordinator are thin
 natural-language adapters. The core execution model: one worker executes all
-tasks of one intent-authorized plan in dependency order across mapped repositories,
-committing each repository before an independent read-only verifier checks the
+tasks of one intent-authorized plan in dependency order in that plan's single
+repository (exactly one repository per plan),
+committing that repository before an independent read-only verifier checks the
 latest commits; repairs add new commits and execution stops after three worker
-failures. Workers are isolated by an atomic exclusive-create ownership lock
+failures. An intent whose scope covers two repositories derives at least two
+plans. Workers are isolated by an atomic exclusive-create ownership lock
 (`locks/<plan-id>/owner.yaml`) and per-repository worktrees; a live lock is never
 silently stolen. Runtime records are filesystem evidence, not a database or
 scheduler.

@@ -44,13 +44,15 @@ The trace's `task_partition` is a proposal. After feasibility, the coordinator
 ratifies it using the real execution and verification boundaries:
 
 - Keep a bounded Standard change in **one plan with embedded tasks** when it has one
-  worker lifecycle, one independent verification boundary, and one change surface.
+  worker lifecycle, one independent verification boundary, and one change surface
+  in **one repository**.
   Use task `depends_on` to order those tasks. Several tasks are not, by themselves,
   a reason to create several plans.
 - Use **multiple stacked plans** when partitions can be independently executed or
-  independently verified, have meaningful dependency edges, or have distinct
-  failure surfaces that should be isolated. Each plan gets bounded repository/path
-  mappings, an acyclic `plan_dependencies` list with edge reasons, and its own
+  independently verified, have meaningful dependency edges, have distinct
+  failure surfaces that should be isolated, **or when the intent covers two
+  repositories**. Each plan names exactly one repository, an acyclic
+  `plan_dependencies` list with edge reasons, and its own
   worker/verifier lifecycle at the applicable tier.
 
 The coordinator records the overall decomposition rationale in
@@ -66,7 +68,7 @@ plan or several stacked plans.
 ## Detail
 
 Plans are as detailed as necessary to preserve the request and make execution
-unambiguous. Every task names the repository or repositories it may change,
+unambiguous. Every task names the plan's single repository,
 bounded paths or an explicit repository-wide scope, dependencies, the concrete
 change, acceptance (desired result), verification (evidence), and stop
 conditions. Detail means concrete behavior, not repeating the same explanation

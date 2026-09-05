@@ -9,7 +9,8 @@ a distinct child" discipline the product trusts for the verifier, moved earlier 
 the lifecycle.
 
 It is spawned **automatically on intent approval, one child per repository in the
-intent's scope, in parallel**, at Standard and Critical. Because it writes nothing,
+intent's scope, in parallel**, at Standard and Critical, at the `(model, effort)`
+configured for the tracer role when present. Because it writes nothing,
 it needs no lease and no worktree — the machinery that protects writers is simply
 not needed here, so it can fan out widely and cheaply. At Explore (`cc-pair`) no
 tracer spawns: the human reads the real code alongside the agent live, so a separate
@@ -26,8 +27,10 @@ Knowledge. Its task is to read the repository first-hand and report back a durab
   relevant signatures and integration points;
 - a **proposed task partition** — how the work naturally splits, for the coordinator
   to ratify or adjust. Describe whether the evidence supports one bounded execution
-  and verification boundary with embedded tasks, or independent execution,
-  verification, dependency, or failure boundaries that justify stacked plans. Keep
+  and verification boundary with embedded tasks in **one repository**, or independent
+  execution, verification, dependency, or failure boundaries that justify stacked
+  plans. When the intent's scope covers two repositories, propose at least two plans,
+  one per repository. Keep
   intra-plan task `depends_on` distinct from inter-plan `plan_dependencies`;
 - **concrete risks** named against the real code — data, security, irreversibility,
   coupling — including risks only a code read reveals (base64 is not encryption at

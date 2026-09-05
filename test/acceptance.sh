@@ -13,6 +13,7 @@ run_suite test/runtime/test-runtime.sh
 run_suite test/repositories/test-repositories.sh
 run_suite test/plans/test-plans.sh
 run_suite test/plans/test-decomposition.sh
+run_suite test/plans/test-one-repo-per-plan.sh
 run_suite test/intent/test-intent.sh
 run_suite test/intent/test-intent-detail.sh
 run_suite test/intent/test-feasibility.sh

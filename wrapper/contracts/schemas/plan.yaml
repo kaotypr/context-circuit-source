@@ -60,6 +60,10 @@ fields:
   repositories:
     type: list
     required: true
+    description: >
+      Exactly one repository. A plan that lists two or more repositories is
+      invalid (INV-EXEC-02). An intent whose scope covers two repositories
+      derives at least two plans, one per repository.
     item:
       id: { type: string, required: true }
       purpose: { type: string, required: false }
@@ -100,7 +104,7 @@ fields:
     item:
       id: { type: string, required: true }
       title: { type: string, required: true }
-      repositories: { type: list, required: true, description: repositories this task may change }
+      repositories: { type: list, required: true, description: the plan's single repository this task may change }
       paths: { type: list, required: true, description: bounded paths or explicit repo-wide scope }
       depends_on: { type: list, required: true }
       changes: { type: list, required: true }
@@ -119,7 +123,8 @@ fields:
       max_worker_failures: { const: 3 }
 
 invariants:
-  - every task names at least one declared repository (INV-PLAN-02)
+  - every plan names exactly one repository (INV-EXEC-02)
+  - every task names that plan's single declared repository (INV-PLAN-02)
   - every task names bounded paths or an explicit repository-wide scope (INV-PLAN-02)
   - task dependencies reference existing task ids (INV-PLAN-02)
   - acceptance and verification use distinct identifiers

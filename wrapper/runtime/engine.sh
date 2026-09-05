@@ -1456,17 +1456,25 @@ cc_plan_validate() {
 			cc_fail PLAN_DEP_CYCLE "$cc_pv_id"; return 1
 		fi
 	fi
-	# every task maps to at least one declared repository; deps reference tasks
+	# every task maps to the plan's single declared repository; deps reference tasks
 	cc_pv_repos=$(cc_plan_repositories "$cc_pv_dir/plan.yaml")
+	cc_pv_repo_n=0
+	for cc_pv_rcount in $cc_pv_repos; do
+		cc_pv_repo_n=$((cc_pv_repo_n + 1))
+	done
+	[ "$cc_pv_repo_n" -eq 1 ] || { cc_fail PLAN_MULTIPLE_REPOSITORIES "$cc_pv_id"; return 1; }
 	cc_pv_tasks=$(cc_task_ids "$cc_pv_dir/plan.yaml")
 	[ -n "$cc_pv_tasks" ] || { cc_fail PLAN_NO_TASKS; return 1; }
 	for cc_pv_t in $cc_pv_tasks; do
 		cc_pv_treps=$(cc_task_list "$cc_pv_dir/plan.yaml" "$cc_pv_t" "repositories")
 		[ -n "$cc_pv_treps" ] || { cc_fail TASK_NO_REPOSITORY "$cc_pv_t"; return 1; }
+		cc_pv_tcount=0
 		for cc_pv_tr in $cc_pv_treps; do
+			cc_pv_tcount=$((cc_pv_tcount + 1))
 			printf '%s\n' "$cc_pv_repos" | grep -Fxq "$cc_pv_tr" \
 				|| { cc_fail TASK_UNDECLARED_REPOSITORY "$cc_pv_t:$cc_pv_tr"; return 1; }
 		done
+		[ "$cc_pv_tcount" -eq 1 ] || { cc_fail TASK_MULTIPLE_REPOSITORIES "$cc_pv_t"; return 1; }
 		for cc_pv_dep in $(cc_task_list "$cc_pv_dir/plan.yaml" "$cc_pv_t" "depends_on"); do
 			printf '%s\n' "$cc_pv_tasks" | grep -Fxq "$cc_pv_dep" \
 				|| { cc_fail TASK_UNKNOWN_DEPENDENCY "$cc_pv_t:$cc_pv_dep"; return 1; }

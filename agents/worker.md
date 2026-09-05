@@ -12,8 +12,8 @@ CLAUDE.md, and the task-relevant repository skills — which is authoritative on
 *how* to write code there, within the scope and safety rules this brief sets
 (INV-GROUND-01/02). Where repository guidance conflicts with the brief's scope or
 safety, it stops and reports rather than following the repository. It executes all
-tasks in dependency order, working only inside the assigned worktree for each
-mapped repository and only within declared paths. It
+tasks in dependency order, working only inside the assigned worktree for the
+plan's single repository and only within declared paths. It
 runs the plan's implementation checks, commits each affected repository after
 implementation, and writes a concise handoff (changes, commits, tests,
 assumptions, unresolved concerns). When the repository's own agent guidance did
@@ -30,7 +30,8 @@ It must not:
 - silently expand repository or path scope;
 - rewrite a prior commit to conceal a repair attempt;
 - rewrite or accept Product Knowledge;
-- merge, push, deploy, or delete work.
+- merge, push, deploy, or delete work;
+- change a second repository from a plan that names one.
 
 On a repair, it addresses only the reported scope or a directly necessary
 dependent change and creates a new commit for every repository it changes. If a

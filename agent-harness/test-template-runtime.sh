@@ -47,7 +47,7 @@ for r in api web; do
 done
 printf 'schema_version: 2\nbindings:\n  api:\n    path: repositories/api\n    base_branch: development\n  web:\n    path: repositories/web\n    base_branch: development\n' >"$ws/repositories.local.yaml"
 
-# 6. Create, approve, and execute a multi-repository plan.
+# 6. Create, approve, and execute a one-repository plan.
 pid=$(cc_plan_allocate_id "$ws" checkout-v2)
 assert_eq "0001-checkout-v2" "$pid"
 # v1.0: author + approve a parent intent scoped to the plan's repos before the plan.
@@ -70,8 +70,6 @@ scope:
   repositories:
     - id: api
       paths: [src]
-    - id: web
-      paths: [src]
 tier: standard
 status: draft
 contract_digest:
@@ -89,13 +87,12 @@ status: draft
 objective: Add saved checkout sessions.
 repositories:
   - id: api
-  - id: web
 product_knowledge:
   - id: project.core
     path: context/PROJECT.md
     reason: Grounds the objective.
 context_grounding:
-  summary: API owns state; web renders it.
+  summary: API owns state.
   constraints: []
   decisions: []
 knowledge_impact:
@@ -114,18 +111,6 @@ tasks:
     verification:
       - id: API-VT
         command: test/api.sh
-  - id: WEB-001
-    title: Web
-    repositories: [web]
-    paths: [src]
-    depends_on: [API-001]
-    changes: [Add UI.]
-    acceptance:
-      - id: WEB-AC
-        statement: UI works.
-    verification:
-      - id: WEB-VT
-        command: test/web.sh
 execution:
   worker: one
   independent_verifier: required
@@ -137,14 +122,12 @@ cc_plan_index_upsert "$ws" "$pid" >/dev/null
 exec=$(cc_execution_begin "$ws" "$pid" lab-session | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/$pid/$exec"
 
-# 7. One worker commits both repositories; independent verifier passes.
+# 7. One worker commits the plan's repository; independent verifier passes.
 cc_attempt_begin "$edir" >/dev/null
-for r in api web; do
-	printf 'work\n' >>"$ws/.runtime/worktrees/$pid/$r/src/change.txt"
-	git -C "$ws/.runtime/worktrees/$pid/$r" add -A
-	git -C "$ws/.runtime/worktrees/$pid/$r" commit -q -m impl
-	cc_worker_commit_record "$edir" "$r" implementation >/dev/null
-done
+printf 'work\n' >>"$ws/.runtime/worktrees/$pid/api/src/change.txt"
+git -C "$ws/.runtime/worktrees/$pid/api" add -A
+git -C "$ws/.runtime/worktrees/$pid/api" commit -q -m impl
+cc_worker_commit_record "$edir" api implementation >/dev/null
 cc_verifier_prepare "$edir" >/dev/null
 cc_verifier_result_record "$edir" 1 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir")"

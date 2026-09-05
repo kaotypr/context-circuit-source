@@ -22,7 +22,7 @@ read-only tracer reads the real code and the coordinator runs a feasibility chec
 derives a plan from what it found (no separate plan approval and no automated scope
 gate; scope-safety is settled at delivery). The workspace prepares isolated
 repository worktrees; one worker
-implements the whole plan and commits each repository; an independent read-only
+implements the whole plan in that plan's single repository and commits it; an independent read-only
 verifier checks the latest commits; the worker repairs failures with new
 commits; and completion follows the tier: Standard after candidate acceptance
 plus delivery, Critical after explicit human completion. Explore is planless and

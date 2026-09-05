@@ -53,7 +53,9 @@ derived from the approved intent), the read-only check
 Only a plan derived from its approved intent, with criteria unchanged since
 approval, may execute (INV-EXEC-01).
 One worker executes every task of one intent-authorized plan in one bounded
-execution, in dependency order, across all mapped repositories (INV-EXEC-02).
+execution, in dependency order, in that plan's single repository (INV-EXEC-02).
+Every plan names exactly one repository; one worker changes only that repository.
+A plan that lists two or more repositories is invalid.
 Execution creates exactly one deterministic
 branch `cc/<plan-id>/<repo-id>` and one isolated worktree per affected
 repository, from the captured base-branch tip; the base checkout is never

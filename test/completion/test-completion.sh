@@ -8,14 +8,12 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
-cc_fx_plan "$ws" 0001-billing "Billing" "api web"
+cc_fx_plan "$ws" 0001-billing "Billing" "api"
 exec=$(cc_execution_begin "$ws" 0001-billing sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0001-billing "$exec")
 cc_attempt_begin "$edir" >/dev/null
 cc_fx_commit "$ws" 0001-billing api impl
 cc_worker_commit_record "$edir" api implementation >/dev/null
-cc_fx_commit "$ws" 0001-billing web impl
-cc_worker_commit_record "$edir" web implementation >/dev/null
 cc_verifier_prepare "$edir" >/dev/null
 
 # --- completion is blocked before a verifier pass ---

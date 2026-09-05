@@ -64,6 +64,30 @@ objective: block
 intent: i011-block
 repositories:
   - id: api
+tasks:
+  - id: T-001
+    title: t1
+    repositories:
+      - api
+    paths:
+      - src
+    depends_on: []
+EOF
+printf '# Block\n' >"$ws/plans/0011-block/PLAN.md"
+cc_plan_validate "$ws/plans/0011-block" >/dev/null
+assert_eq "api" "$(cc_plan_affected_repositories "$ws/plans/0011-block/plan.yaml")"
+
+# --- a plan that lists two repositories is invalid ---
+mkdir -p "$ws/plans/0013-tworepo/tasks"
+cat >"$ws/plans/0013-tworepo/plan.yaml" <<'EOF'
+schema_version: 3
+plan: 0013-tworepo
+title: Two repos
+status: draft
+objective: invalid
+intent: i013-tworepo
+repositories:
+  - id: api
   - id: web
 tasks:
   - id: T-001
@@ -82,10 +106,8 @@ tasks:
     depends_on:
       - T-001
 EOF
-printf '# Block\n' >"$ws/plans/0011-block/PLAN.md"
-cc_plan_validate "$ws/plans/0011-block" >/dev/null
-assert_eq "api
-web" "$(cc_plan_affected_repositories "$ws/plans/0011-block/plan.yaml")"
+printf '# Two\n' >"$ws/plans/0013-tworepo/PLAN.md"
+expect_failure cc_plan_validate "$ws/plans/0013-tworepo"
 
 # --- execute on the approved intent's authorization (no separate plan-approval step) ---
 cc_fx_plan "$ws" 0010-compound "Compound" "api"

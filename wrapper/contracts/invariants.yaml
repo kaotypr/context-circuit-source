@@ -131,8 +131,8 @@ invariants:
       synchronized projection and never a second lifecycle authority.
   - id: INV-PLAN-02
     rule: >
-      Every task names the repository or repositories it may change and bounded
-      paths or an explicit repository-wide scope. Dependencies are explicit.
+      Every task names the plan's single repository and bounded paths or an
+      explicit repository-wide scope. Dependencies are explicit.
   - id: INV-PLAN-03
     rule: >
       New plans use stable IDs of the form NNNN-<kebab-slug>. The four-digit
@@ -172,7 +172,8 @@ invariants:
   - id: INV-EXEC-02
     rule: >
       One worker executes every task of one authorized plan in one bounded
-      execution, in dependency order, across all mapped repositories.
+      execution, in dependency order, in that plan's single repository. A plan
+      names exactly one repository; a plan that lists two or more is invalid.
   - id: INV-EXEC-03
     rule: >
       Execution creates exactly one deterministic branch (cc/<plan-id>/<repo-id>)
