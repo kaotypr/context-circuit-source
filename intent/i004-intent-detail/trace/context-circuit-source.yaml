@@ -1,0 +1,265 @@
+schema_version: 1
+intent: i004-intent-detail
+repository: context-circuit-source
+file_map:
+  - path: .agents/skills/cc-system-design/SKILL.md
+    sites:
+      - "description frontmatter (line 3): currently single-root under sources/system-design/ only."
+      - "When to use (lines 6-11): product/version/cross-cutting only; no intent-detail path."
+      - "Where it goes (lines 17-44): hardcodes sources/system-design/<product>/<grouping>/<scope>/."
+      - "The three-tier layout (lines 46-61): README / design.md / concern split-when-earned."
+      - "Split only when earned (lines 83-90); Separate scopes by concern (lines 92-102)."
+      - "How it feeds the rest (lines 111-118): product-design → context proposals only."
+      - "Boundaries (lines 120-128): authoring-only; no gate/runtime; dogfood sources/system-design/."
+    integration: "Owns the authoring rubric for both roots after refactor; must accept intent/<id>/detail/ as a second home without a second skill or product-level design scope."
+  - path: .agents/skills/cc-intent/SKILL.md
+    sites:
+      - "Author the intent (lines 13-59): drafts INTENT.md + contract.yaml only; no codebase read; five-section surface via docs/templates/intent.md."
+      - "One intent, one or more plans (lines 106-114): multi-topic picture lives in sources/system-design/; needs contrast with optional per-intent detail/."
+      - "Take the approval / Gate 1 (lines 82-104): single conversational decision; freezes contract_digest; hands off to cc-trace."
+      - "Boundaries (lines 138-144): writes only under intent/<id>/; never reads codebase."
+    integration: "Must recommend or honor a fuller write-up request, invoke cc-system-design for intent/<id>/detail/, keep detail optional, and never duplicate the three-tier rubric or add a sixth INTENT.md section."
+  - path: .agents/skills/cc-plan/SKILL.md
+    sites:
+      - "Derive a plan from an approved intent (lines 6-26): grounds on approved contract + trace manifest; no mention of intent detail files."
+      - "Ratify the task partition (lines 28-59): one-plan vs stacked-plan rule; question disposition."
+      - "Grounding expansion (lines 61-89): contract.yaml + trace + Product Knowledge; must add detail/ as confirmed shape when present without replacing the post-approval code read."
+    integration: "Primary consumer of an existing detail/ write-up for topic-aligned plans/tasks after Gate 1."
+  - path: .agents/skills/cc-trace/SKILL.md
+    sites:
+      - "Post-Gate-1 tracing (lines 6-16, 32-50): reads real code; writes only intent/<id>/trace/."
+      - "Plan-boundary surface (lines 52-70): one-plan vs stacked; coordinator ratifies."
+      - "Feasibility (lines 105-127): quality gate; no second human approval."
+    integration: "Light guidance only: tracing remains code-first; detail/ is not authored here and must not enter contract_digest. May note that a later plan may consume detail/ when present."
+  - path: agents/coordinator.md
+    sites:
+      - "Intent front door (lines 42-65): draft without code read; Gate 1; tracer; feasibility; automatic plan derivation; no plan-approval gate."
+      - "Conversation to action (lines 32-40): maps language to author/approve intent; no system-design or intent-detail route wording today."
+      - "Two gates only (lines 123-129): Gate 1 intent, Gate 2 delivery."
+    integration: "Route optional fuller write-up / recommendation through cc-intent → cc-system-design without inventing a second gate or a new skill."
+  - path: agents/tracer.md
+    sites:
+      - "Role and inputs (lines 18-23): approved INTENT.md + contract.yaml; first codebase read."
+      - "Manifest contents (lines 25-48): file_map, task_partition, done_checks, feasibility."
+    integration: "No structural change required for detail/; tracer still does not author detail or edit the frozen contract."
+  - path: docs/templates/intent.md
+    sites:
+      - "Comment block (lines 5-15): exactly five human-facing sections; no out-of-scope/history sections."
+      - "Section headings (lines 17-67): Intention, Expectations, The plans, How carefully this is checked, Open questions."
+    integration: "Keep five-section surface; optional HTML comment may note that a fuller by-concern write-up lives beside the intent as separate files, not as a sixth section."
+  - path: docs/templates/intent.example.md
+    sites:
+      - "Whole file: voice/shape example for short INTENT.md; no detail/ path."
+    integration: "Leave as short-surface example; do not turn the example into a longer approval page."
+  - path: docs/planning.md
+    sites:
+      - "Plan derives from approved intent (lines 7-20): contract + tracer; no second plan gate."
+      - "Grounding (lines 22-35): Product Knowledge + request fidelity; no intent detail mention."
+      - "Choosing one plan or a stack (lines 37-60)."
+    integration: "Document that when intent/<id>/detail/ exists, planning uses it as the confirmed topic shape alongside the trace, without replacing the code read."
+  - path: docs/terminology.md
+    sites:
+      - "Intent / Contract / Trace manifest rows (lines 23-27)."
+      - "System design row (line 56): product-level source only today."
+    integration: "Add a plain-language Intent detail term distinct from System design; keep Gate 1 wording unchanged."
+  - path: context/domains/system-design-authoring/README.md
+    sites:
+      - "Summary/Scope/Behavior (lines 28-73): single home under sources/system-design/; three-tier rubric; no runtime surface."
+      - "Interfaces (lines 75-78): output path only sources/system-design/..."
+      - "Implementation refs / Verification (lines 86-96): skill + test/contracts no-runtime checks."
+    integration: "Extend accepted Product Knowledge to dual roots (product design + intent/<id>/detail/) while preserving authoring-only boundary and INV-SKILL-01."
+  - path: context/domains/intent/README.md
+    sites:
+      - "Behavior two-file model (lines 51-64): INTENT.md five sections + contract.yaml."
+      - "Approval is Gate 1 / no second gate for plans (lines 77-89)."
+      - "Interfaces (lines 98-104): lists INTENT.md, contract.yaml; no detail/."
+    integration: "Record optional recommended detail/ beside the intent; keep approval surface short; ownership stays with cc-intent for recommend/request, cc-system-design for rubric."
+  - path: context/domains/tracing/README.md
+    sites:
+      - "Tracing after Gate 1 (lines 55-75): code read → manifest; done-checks not in digest."
+      - "Feasibility outcomes (lines 77-96): feasible / revision / stop / scope question."
+      - "One plan or stacked plans (lines 98-114)."
+    integration: "Clarify detail/ is pre-approval authoring evidence for later planning, not a tracing output and not a second gate."
+  - path: context/domains/plan-authorization/README.md
+    sites:
+      - "No separate plan approval (lines 29-39, 52-75): intent-derived authorization; plan status draft|done."
+    integration: "Preserve authority boundary: detail has no approval status; plan derivation remains automatic after Gate 1 + feasibility."
+  - path: context/INDEX.md
+    sites:
+      - "Domain routing for intent/tracing (lines 38-42)."
+    integration: "Read-only catalog touch only if dual-root wording needs a retrieval hint; prefer updating domain pages. MODIFY of context/INDEX.md is outside bound scope paths (context/domains/ only)."
+  - path: template/intent/README.md
+    sites:
+      - "Layout tree (lines 10-19): INDEX, INTENT.md, contract.yaml, trace/; no detail/."
+    integration: "Blank-seed orientation omits detail/. Updating it would improve parity but is outside bound scope (template/); skill guidance can own the path without it."
+  - path: test/contracts/test-contracts.sh
+    sites:
+      - "Skill allowlist includes cc-system-design (lines 96-98)."
+      - "cc-system-design rubric + no-runtime-surface assertions (lines 157-169): requires sources/system-design/, three-tier, design.md, by concern, Never approve; forbids system-design schemas and INV-DESIGN."
+    integration: "Extend assertions for dual-root wording (intent/<id>/detail/ + sources/system-design/) while keeping no new schema/invariant/WORKFLOW action."
+  - path: test/intent/test-intent.sh
+    sites:
+      - "Validate requires INTENT.md + contract.yaml (via engine); digest over contract only (lines 54-69)."
+      - "Approval Gate 1 freeze behavior (lines 54-83)."
+    integration: "May add optional checks that extra detail/ files do not affect validate/approve/digest; engine already permits extra dirs."
+  - path: test/intent/test-feasibility.sh
+    sites:
+      - "Feasibility/authorization remain scope-free; no second gate."
+    integration: "Preserve AC-NO-SECOND-GATE: detail must not introduce authorization or approval verbs."
+  - path: test/acceptance.sh
+    sites:
+      - "Suite runner (lines 11-39) and criteria-map cross-check (lines 41-58)."
+    integration: "Invoke any new intent-detail suite if added; keep credential-free map intact."
+  - path: test/acceptance/criteria-map.yaml
+    sites:
+      - "AC-01..AC-37 ownership map; AC-30/31 intent+feasibility; no intent-detail ACs yet."
+    integration: "Map new executable coverage without weakening existing credential-free/provider-neutral checks."
+  - path: sources/system-design/context-circuit/v0.6/system-design-authoring/
+    sites:
+      - "README.md reading order + contracts.md: skill-owned rubric, no engine/schema/invariant."
+      - "authoring-rubric.md / design.md: three-tier altitude and concern split (reference model to reuse)."
+    integration: "Evidence of the existing product-level three-tier convention to reuse under intent/<id>/detail/; do not invent a new rubric."
+  - path: sources/system-design/context-circuit/v1.1.0/
+    sites:
+      - "Empty directory tree: v1.1.0/ and v1.1.0/intent-detail/ exist with zero files (content previously untracked; now absent)."
+    integration: "Unsolicited draft location named by the approved intent. Discard the tree as part of landing; never treat it as specification."
+  - path: wrapper/contracts/invariants.yaml
+    sites:
+      - "INV-INTENT-01 (lines 49-64): draft without codebase read; outcome criteria; Gate 1 freezes digest."
+      - "INV-INTENT-02 (lines 65-90): tracer + feasibility; no second gate; done-checks not in digest."
+      - "INV-APPROVE-01 (lines 154-163): single upstream intent gate."
+      - "INV-SKILL-01 (lines 381-388): skills are read-as-procedure packets."
+      - "owners map (lines 458-468): intent_contract, intent_gate, feasibility_check, trace_manifest, tracer_role."
+    integration: "Read-only owner map. Existing invariants already cover no-second-gate, no-code-read-before-approval, and skill packaging. No new invariant required unless implementation invents runtime policy."
+  - path: wrapper/contracts/schemas/intent-contract.yaml
+    sites:
+      - "purpose / INTENT.md half (lines 6-19); contract_digest fields (lines 106-113)."
+      - "trace_manifest reference (lines 115-125): not part of contract_digest."
+    integration: "Read-only. Detail is analogous to trace: beside the intent, not digested. No schema field required."
+  - path: wrapper/runtime/engine.sh
+    sites:
+      - "cc_intent_contract_digest (lines 323-331): hashes contract.yaml excluding status/digest lines only."
+      - "cc_intent_validate (lines 390-424): requires directory + contract.yaml + INTENT.md; does not forbid extra sibling dirs/files."
+      - "cc_intent_approve (lines 492+): freezes digest from contract.yaml."
+    integration: "Read-only evidence that detail/ can exist without an engine verb. Prefer no MODIFY."
+  - path: intent/i001-conversation-spec-library/
+    sites:
+      - "Layout: INTENT.md, contract.yaml, trace/ only — no detail/."
+    integration: "Current intent layout baseline."
+  - path: intent/i002-plan-decomposition-guidance/
+    sites:
+      - "Layout: INTENT.md, contract.yaml, trace/ only — no detail/."
+    integration: "Current intent layout baseline."
+  - path: intent/i003-intent-id-width/
+    sites:
+      - "Layout: INTENT.md, contract.yaml, trace/ only — no detail/."
+    integration: "Current intent layout baseline."
+  - path: intent/INDEX.md
+    sites:
+      - "Active row for i004-intent-detail (and sibling intents)."
+    integration: "Preserve dirty/unrelated index edits; do not normalize as part of this change."
+  - path: agent-harness/conversations/plots/author-system-design-spawns-intents.md
+    sites:
+      - "Product-level system-design → spawn intents path (whole plot); allowed writes under sources/system-design/**."
+    integration: "Existing conversation coverage for product-level root only. A new intent-detail conversation plot would live under agent-harness/ (out of bound scope); prefer deterministic skill/guidance greps in test/ unless coordinator widens scope."
+  - path: plans/context-circuit-plans/archive/0019-system-design-authoring-skill/
+    sites:
+      - "PLAN.md: skill owns rubric; no engine/schema/invariant/WORKFLOW action (archive evidence)."
+    integration: "Historical ownership of cc-system-design; treat as evidence, not active spec."
+task_partition:
+  - id: dual-root-authoring
+    title: "Teach the design helper both homes"
+    repositories:
+      - context-circuit-source
+    paths:
+      - .agents/skills/cc-system-design/
+      - context/domains/system-design-authoring/
+      - docs/terminology.md
+      - sources/system-design/context-circuit/v1.1.0/
+    depends_on: []
+    outcome: "cc-system-design authors either sources/system-design/... or intent/<id>/detail/ with the same three-tier/split-when-earned rubric; product-level path preserved; empty/unsolicited v1.1.0 tree discarded; no new skill and no new sources/system-design scope used as spec."
+  - id: intent-offer-and-plan-consume
+    title: "Offer detail while preparing a change; use it when planning"
+    repositories:
+      - context-circuit-source
+    paths:
+      - .agents/skills/cc-intent/
+      - .agents/skills/cc-plan/
+      - .agents/skills/cc-trace/
+      - agents/coordinator.md
+      - context/domains/intent/
+      - context/domains/tracing/
+      - context/domains/plan-authorization/
+      - docs/templates/intent.md
+      - docs/planning.md
+    depends_on:
+      - dual-root-authoring
+    outcome: "cc-intent can request or recommend detail for multi-concern intents without blocking approval or lengthening INTENT.md; Gate 1 stays the only conversational approval; when detail/ exists, cc-plan uses it as confirmed topic shape without replacing the post-approval code read; ownership stays one-rule-one-owner."
+  - id: prove-two-paths
+    title: "Prove the two paths"
+    repositories:
+      - context-circuit-source
+    paths:
+      - test/contracts/
+      - test/intent/
+      - test/acceptance.sh
+      - test/acceptance/criteria-map.yaml
+    depends_on:
+      - intent-offer-and-plan-consume
+    outcome: "Deterministic checks prove dual-root authoring, optional/recommended detail, no second gate, short five-section surface, planning-consumes-detail guidance, and absence of the v1.1.0 draft as specification; acceptance suite still passes."
+risks:
+  - "cc-system-design currently teaches a single root and a product-design→context-proposal feed path. A careless dual-root edit could imply intent detail is Product Knowledge, a lifecycle object, or a design-acceptance gate."
+  - "cc-intent already points multi-topic pictures at sources/system-design/. Without a clear contrast, agents may spawn product-level designs (or a new skill) instead of intent/<id>/detail/, or duplicate the three-tier rubric inside cc-intent."
+  - "cc-plan today grounds only on contract.yaml + trace + Product Knowledge. Ignoring an existing detail/ would violate AC-PLANNING-USES-DETAIL; treating detail as replacing the tracer would violate INV-INTENT-02."
+  - "INTENT.md templates and domain pages stress exactly five sections. Adding detail content into INTENT.md (sixth section or internal filenames) would violate AC-SHORT-SURFACE and the approved constraints."
+  - "Empty sources/system-design/context-circuit/v1.1.0/ (+ intent-detail/) shells remain. Leaving them invites treating the discarded draft location as live design space (AC-SKILL-NOT-SOURCE-DESIGN)."
+  - "test/contracts/test-contracts.sh asserts sources/system-design/ presence in the skill. Dual-root changes must extend, not drop, that product-level assertion."
+  - "agent-harness conversation plot author-system-design-spawns-intents covers only the product-level root. Expanding conversation coverage requires agent-harness/ MODIFY (out of bound scope); relying solely on greps is fine if ACs are still executable."
+  - "Dirty/unrelated work exists (intent/INDEX.md and sibling intents/traces). Implementation must not normalize unrelated intent files or revive deleted draft content as specification."
+  - "wrapper/ is readable evidence only in this scope. Adding an engine verb, schema field, or invariant without necessity would conflict with the approved prefer-skill-and-guidance constraint and INV-SKILL-01/owner map."
+done_checks:
+  - criterion: AC-BOTH-ROOTS
+    command: "rg -n 'sources/system-design/|intent/<id>/detail/|intent/\\*/detail/|three-tier|split when|by concern' .agents/skills/cc-system-design/SKILL.md context/domains/system-design-authoring/README.md && rg -n 'sources/system-design/' .agents/skills/cc-system-design/SKILL.md && rg -n 'intent/.*/detail|intent/<id>/detail' .agents/skills/cc-system-design/SKILL.md"
+    expect: "Skill and domain page document both roots and the shared three-tier/split-when-earned/by-concern rubric; product-level path is still present."
+  - criterion: AC-OPTIONAL-RECOMMENDED
+    command: "rg -n -i 'recommend|request|optional|several concerns|does not block|not required|skip' .agents/skills/cc-intent/SKILL.md context/domains/intent/README.md agents/coordinator.md"
+    expect: "Guidance states a human may request or be recommended detail; skipping does not block Gate 1; small single-outcome intents may stay short."
+  - criterion: AC-NO-SECOND-GATE
+    command: "rg -n -i 'no separate approval|no second.*(gate|approval)|Gate 1|single.*(upstream|conversational)|detail.*(not|never).*approv' .agents/skills/cc-intent/SKILL.md .agents/skills/cc-plan/SKILL.md context/domains/intent/README.md context/domains/plan-authorization/README.md docs/planning.md && sh test/intent/test-feasibility.sh"
+    expect: "Guidance keeps a single intent approval; no detail-approval gate; feasibility suite still passes."
+  - criterion: AC-SKILL-NOT-SOURCE-DESIGN
+    command: "test ! -e sources/system-design/context-circuit/v1.1.0 && test ! -e .agents/skills/cc-intent-detail && rg -n 'intent/<id>/detail|intent/.*/detail' .agents/skills/cc-system-design/SKILL.md .agents/skills/cc-intent/SKILL.md && ! rg -n 'v1.1.0/intent-detail' .agents/skills/cc-system-design/SKILL.md .agents/skills/cc-intent/SKILL.md .agents/skills/cc-plan/SKILL.md context/domains/system-design-authoring/README.md context/domains/intent/README.md"
+    expect: "v1.1.0 draft tree is gone; no cc-intent-detail skill; capability is specified in skill/guidance, not via a new sources/system-design scope."
+  - criterion: AC-PLANNING-USES-DETAIL
+    command: "rg -n -i 'detail/|confirmed shape|topic|when.*detail.*exist|without replacing|trace manifest' .agents/skills/cc-plan/SKILL.md docs/planning.md context/domains/tracing/README.md"
+    expect: "Planning guidance consumes intent detail when present as confirmed shape/topics, and still requires the post-approval real-code/trace path."
+  - criterion: AC-SHORT-SURFACE
+    command: "rg -n 'five sections|exactly five|Intention|Expectations|The plans|How carefully this is checked|Open questions' docs/templates/intent.md .agents/skills/cc-intent/SKILL.md context/domains/intent/README.md && ! rg -n '## Detail|sixth section|detail/design.md' docs/templates/intent.md docs/templates/intent.example.md"
+    expect: "Human-facing intent page remains the five-section template; detail is not folded into INTENT.md."
+  - criterion: AC-BOTH-ROOTS
+    command: "sh test/contracts/test-contracts.sh"
+    expect: "Contracts suite passes with extended dual-root rubric assertions and continued no-runtime-surface checks for system-design."
+  - criterion: AC-OPTIONAL-RECOMMENDED
+    command: "sh test/acceptance.sh"
+    expect: "Full semantic acceptance suite passes after meaningful phase(s), including any new intent-detail coverage wired into acceptance.sh / criteria-map.yaml."
+tier_signal: "No tier raise. Inspected surfaces are skills, agents guidance, docs, Product Knowledge domain pages, and tests. No auth, secrets, money, migration, production/deploy, or irreversible data operation is introduced. Standard remains appropriate."
+feasible: true
+out_of_scope_reach: []
+open_questions:
+  - question: "Should the fuller write-up sit in a folder named design/ or detail/?"
+    disposition: already-answered
+    rationale: "Approved INTENT.md Open questions and contract constraints fix the name as detail/ under intent/<id>/."
+  - question: "Should this be a new helper (cc-intent-detail), or the existing design helper?"
+    disposition: already-answered
+    rationale: "Approved intent requires extending cc-system-design; non-goals forbid a new skill and forbid a new sources/system-design specification scope."
+  - question: "What exact heuristic should trigger recommending detail (for example: number of concerns, numbered plans, or human ask only)?"
+    disposition: plan-resolution
+    rationale: "Contract says recommend when one intent has several concerns and allow request/skip. Exact wording/threshold is implementation guidance inside cc-intent, not an intent-level criteria change."
+  - question: "Must template/intent/README.md and/or agent-harness conversation plots be updated in this change?"
+    disposition: plan-resolution
+    rationale: "Bound scope omits template/ and agent-harness/. Skill+domain+test greps can prove ACs. Updating blank-seed layout docs or adding a conversation plot is optional packaging/coverage; if the coordinator decides they are required MODIFYs, reclassify as out_of_scope_reach and widen scope via Gate 1."
+  - question: "Is an engine verb, schema field, or new invariant required for correctness?"
+    disposition: already-answered
+    rationale: "Engine validate already allows extra files under intent/<id>/; contract_digest hashes only contract.yaml; existing INV-INTENT-01/02, INV-APPROVE-01, and INV-SKILL-01 cover the gates and skill packaging. Prefer skill and guidance changes only."
+recorded_at: 2026-09-05T18:56:30+07:00
+freshness_checked_at: 2026-09-05T18:56:30+07:00

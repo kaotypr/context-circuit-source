@@ -17,3 +17,4 @@ tooling (0019–0020) · **E** v0.6.1 refinements (0021–0025).
 | 0003-decomposition-rule | Define the trace-to-plan decomposition rule | draft | — | 0003-decomposition-rule/ |
 | 0004-handoff-representation | Carry decomposition through the plan handoff | draft | 0003-decomposition-rule | 0004-handoff-representation/ |
 | 0005-decomposition-acceptance | Prove one-plan and stacked-plan derivation | draft | 0004-handoff-representation | 0005-decomposition-acceptance/ |
+| 0006-intent-detail | Intent detail via the system-design skill | draft | — | 0006-intent-detail/ |
