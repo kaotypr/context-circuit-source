@@ -1,0 +1,56 @@
+schema_version: 2
+intent: i008-plans-after-trace
+title: Write plans as soon as the tracer is feasible
+goal: >
+  After an intent is approved and the tracer finishes with no follow-up
+  questions and a feasible finding, the coordinator must derive and write the
+  plan or plans in that same turn. The human must not have to ask again to
+  create the plans. Execution remains a separate explicit ask.
+
+non_goals:
+  - Starting execution, verification, completion, or delivery from this
+    handoff.
+  - Adding a second human approval of the derived plans.
+  - Writing plans when the feasibility check is not feasible or an
+    intent-level question remains open.
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - Plan derivation remains automatic after Gate 1 and a feasible tracer
+    (INV-INTENT-02); this change makes that derivation actually happen in the
+    same turn.
+  - Execution remains a separate explicit action; approving and asking to
+    execute in one turn stay two sequential actions.
+  - This intent depends on i006-approval-then-trace so the tracer and
+    feasibility check actually run before plans are written.
+  - Product behavior has one owner per rule.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+intent_dependencies:
+  - id: i006-approval-then-trace
+    reason: >
+      Plans must be written only after the tracer and feasibility check
+      actually run; fixing that sequence is a prior decision.
+
+acceptance_criteria:
+  - id: AC-PLANS-SAME-TURN
+    statement: >
+      After approval and a tracer result with no follow-up questions and a
+      feasible finding, the coordinator writes the derived plan or plans in
+      that same turn, without a further human request to create them.
+  - id: AC-NO-PLANS-WHEN-BLOCKED
+    statement: >
+      If the feasibility check is not feasible, or an intent-level question
+      remains, no plan is written.
+  - id: AC-NO-EXECUTE
+    statement: >
+      Writing the plans does not start execution, verification, completion, or
+      delivery.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: draft
