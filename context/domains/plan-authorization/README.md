@@ -67,9 +67,11 @@ verified, failed, blocked) is runtime evidence and never replaces plan status: a
 verified execution is evidence, not a `done` plan.
 
 One approved intent may authorize one plan with multiple embedded tasks or a stack
-of plans. In the stacked case, `plan_dependencies` controls ordering and carries
+of plans. An intent whose scope covers two repositories derives at least two
+plans, one per repository. In the stacked case, `plan_dependencies` controls ordering and carries
 the reason for each edge; it does not add a human decision. Every Standard/Critical
-plan still has its own bounded worker and independent verifier lifecycle. Combining
+plan still has its own bounded worker and independent verifier lifecycle in that
+plan's single repository. Combining
 the delivered plans into one change-set candidate is a separate delivery concern
 and does not erase those per-plan execution records. Plan count is not a proxy for
 assurance tier. Optional intent detail has no approval status of its own; plan

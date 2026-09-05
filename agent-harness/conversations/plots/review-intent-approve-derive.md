@@ -14,7 +14,7 @@ status: proposed
 runtime_version: ">=1.0.0"
 mode: conversation-only
 driver: claude-p
-surface: [cc-intent, cc-plan]
+surface: [cc-intent, cc-trace, cc-plan]
 preconditions:
   repositories:
     - id: notes
@@ -75,8 +75,9 @@ decision_points:
   - id: derive-honor-hold
     when: approval is given with "don't build yet"
     coordinator_must: >
-      derive the plan automatically from the approved goal, and honor the hold —
-      nothing is built, run, or delivered, and it says so plainly.
+      look at the real code next, then derive the plan automatically from that
+      grounded look, and honor the hold — nothing is built, run, or delivered,
+      and it says so plainly. Do not write the plan before looking.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
   - repositories_registered: 1
@@ -117,9 +118,10 @@ access_discipline:
 >
 > **H:** Okay, that looks good — I approve that intent, but don't build anything yet.
 >
-> **C:** Approved — that's the one decision that settles what this change is. I've
-> turned it into a ready plan, but I'm not building anything: it's on hold exactly
-> as you asked, and I won't need a second sign-off to start when you're ready.
+> **C:** Approved — that's the one decision that settles what this change is. I
+> looked at the notes code so the breakdown is grounded, then wrote the plan.
+> I'm not building anything: it's on hold exactly as you asked, and I won't need
+> a second sign-off to start when you're ready.
 > `[decision_point: gate1-explicit]` `[decision_point: derive-honor-hold]`
 >
 > **H:** Thanks.

@@ -58,18 +58,21 @@ tracer read the real code next (INV-INTENT-01, INV-APPROVE-01). On approval you 
 the **tracer** — one read-only child per repository in scope, in parallel
 (`.agents/skills/cc-trace`) — which reads the real code and reports a manifest; you
 then run the **feasibility check** on its findings before writing any plan: buildable →
-set the tier and derive the plan(s); not buildable → stop and explain the blocker, the
+set the tier, update `INTENT.md` so its status matches a completed feasible look,
+and derive the plan(s) **in that same turn**; not buildable → stop and explain the blocker, the
 human decides; a required change that must *modify* a repository or area beyond a bound
 scope is surfaced only when the plain request does not already authorize it. Before planning,
 classify every trace question as intent-level (stop, revise and re-approve), plan-level
 (carry into the plan), or already answered (apply without asking again). An intent-level
 question or newly required scope change blocks plan derivation until the intent is updated
-and Gate 1 is repeated when its approved contract changes. The plan then **derives** from
+and Gate 1 is repeated when its approved contract changes. Every derived plan names
+exactly one repository; an intent whose scope covers two repositories yields at least
+two plans. The plan then **derives** from
 the approved intent automatically — there is no separate
 per-plan approval, and no automated scope gate: scope-safety is settled at delivery
 (Gate 2). Never present intent approval as a rubber stamp — it is the real decision.
 Every plan derives from an approved intent; there is no plan-approval fallback and no
-plan-level `approved` status.
+plan-level `approved` status. `contract.yaml` approved does not skip the tracer.
 
 A request to run a *set* of already-authorized plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
@@ -147,13 +150,15 @@ change (INV-KNOWLEDGE-02).
 
 Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,
-or completion. The per-role `(model, effort)` the coordinator spawns worker and
-verifier at (from the host-local role-tiering config with adapter defaults,
-`docs/role-tiering.md`) is the same kind of bounded host evidence: it
+or completion. The per-role `(model, effort)` the coordinator spawns worker,
+verifier, and tracer at (from the host-local role-tiering config with adapter
+defaults, `docs/role-tiering.md`) is the same kind of bounded host evidence: it
 changes cost and speed, never meaning, is recorded per attempt with
-`attempt-evidence-record`, and is never surfaced to a lay user except under
-explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01), and a hard
-pin is respected even at the third failure with its cost reported honestly.
+`attempt-evidence-record` for worker/verifier, and is never surfaced to a lay user
+except under explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01),
+and a hard pin is respected even at the third failure with its cost reported
+honestly. When `role-tiering.local.yaml` includes a tracer entry for this host,
+spawn the tracer at that pair; do not report tracer tiering as unsupported.
 
 ## Assurance tiers and direct collaboration
 
@@ -170,9 +175,14 @@ black box.
 Direct collaboration (`.agents/skills/cc-pair/SKILL.md`) is the **Explore tier** of
 this ladder, not a separate mode: an orthogonal user ↔ coordinator ↔ worker loop
 where the coordinator interprets and delegates but never writes, one worker changes
-one connected repository in the session's isolated working copy, and the user
+one connected repository in the session's isolated working copy under
+`.runtime/explore/<human-name>/` (the human names it; never invent the folder),
+and the user
 judges the result live. There is no verifier, lease, execution record, completion,
-or implied delivery. When the work turns out to be real, **promote it in place** —
+or implied delivery. Closing a clean session preserves the worktree; an explicit
+`runtime-cleanup` request removes closed Explore worktrees as well as idle
+plan-execution leftovers, and never deletes a still-live session. When the work
+turns out to be real, **promote it in place** —
 attach an intent, raise the tier so a tracer reads the code and the independent
 verifier appears, and author a lightweight plan of record from the manifest — rather
 than stopping and restarting. Report Explore output as human-supervised, never

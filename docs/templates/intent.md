@@ -10,6 +10,13 @@ _Status: draft, waiting for your approval._
   machine-checkable record lives in contract.yaml, which the human is not
   expected to open.
 
+  `_Status:` is the human mirror. Keep the line; do not remove it.
+  Draft: `draft, waiting for your approval.`
+  After Gate 1: `approved.`
+  After a feasible tracer with no intent-level questions:
+  `approved, look complete, feasible.`
+  contract.yaml remains the authority for approval identity (draft|approved).
+
   For a filled-in example of the voice and level of detail, see
   docs/templates/intent.example.md.
   A fuller by-concern write-up, when present, lives as separate files beside this

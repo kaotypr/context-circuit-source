@@ -48,7 +48,7 @@ human:
       NOT approve or start work yet.
     - It treats approval as a separate explicit step, settling the goal only when the
       human explicitly says so, and never asks for a second plan approval.
-    - After approval it derives a plan automatically and honors "don't build yet" —
+    - After approval it looks at the real code, then derives a plan automatically and honors "don't build yet" —
       nothing is built or run.
     - It never exposes internal file names or lifecycle jargon.
 

@@ -9,8 +9,11 @@ A v1.0 plan is the **derivation of an approved intent**, not the thing the human
 approves (Context Circuit v1.0, Mechanism 1). Before planning a writing change,
 there must be an approved parent intent (`cc-intent`, Gate 1). If none exists,
 author the intent first — do not create a plan that invents its own goal or scope.
-Plan derivation is then automatic — the coordinator's next action, not a gate — so
-the human hears "here's the breakdown, building now," never "approve this plan."
+Plan derivation is then automatic — the coordinator's next action **in the same
+turn** after a feasible tracer with no intent-level questions, not a gate — so
+the human hears "here's the breakdown," never "approve this plan." Writing the
+plans does not start execution. If the look is not feasible or an intent-level
+question remains, write no plan.
 
 If the approved intent is **Explore**, do not create a plan of record. Explore is
 the planless `cc-pair` path: the user supervises the work live, and there is no
@@ -32,17 +35,20 @@ trace manifest or the post-approval read of the real code, is not a second appro
 ## Ratify the task partition
 
 Treat the trace's `task_partition` as grounded evidence, then make one explicit
-plan-boundary decision. Keep a **one-plan** derivation when all tasks share one
-bounded execution/change surface, one worker lifecycle, and one independent
-verification boundary. Put the tasks in that plan and use task `depends_on` for
-their intra-plan order; several tasks do not require several plans.
+plan-boundary decision. Every derived plan names **exactly one repository**; a
+plan that lists two or more is invalid. Keep a **one-plan** derivation when all
+tasks share one bounded execution/change surface in that one repository, one
+worker lifecycle, and one independent verification boundary. Put the tasks in that
+plan and use task `depends_on` for their intra-plan order; several tasks do not
+require several plans.
 
 Derive **stacked plans** when the partitions are independently executable or
-independently verifiable, when there are meaningful dependencies between them, or
-when their failure surfaces need to be isolated. Give each plan bounded
-repository/path mappings, record an acyclic `plan_dependencies` edge with a reason,
-and preserve one worker plus one independent verifier lifecycle for every
-Standard/Critical plan.
+independently verifiable, when there are meaningful dependencies between them,
+when their failure surfaces need to be isolated, **or when the intent's scope
+covers two or more repositories**. Give each plan that one repository and bounded
+paths, record an acyclic `plan_dependencies` edge with a reason, and preserve one
+worker plus one independent verifier lifecycle for every Standard/Critical plan.
+Refuse collapsing two repositories into one plan.
 
 Record the overall rationale in `context_grounding.decisions` and mirror it in the
 readable `PLAN.md`; use each `plan_dependencies.reason` for the specific edge. Do
@@ -107,8 +113,8 @@ a required change beyond a bound scope was surfaced as a question by the feasibi
 check in `cc-trace` before you planned. The authorization check also runs again at
 execution start.
 
-One intent may yield **one or more** stacked plans, each naming the same intent.
-Deriving a plan does not execute it.
+One intent may yield **one or more** stacked plans, each naming the same intent
+and exactly one repository. Deriving a plan does not execute it.
 
 ## Grounding-debt preflight (INV-KNOWLEDGE-02, closed loop)
 
