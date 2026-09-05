@@ -66,6 +66,14 @@ second authority (INV-PLAN-01). Execution status (running, verifying, repairing,
 verified, failed, blocked) is runtime evidence and never replaces plan status: a
 verified execution is evidence, not a `done` plan.
 
+One approved intent may authorize one plan with multiple embedded tasks or a stack
+of plans. In the stacked case, `plan_dependencies` controls ordering and carries
+the reason for each edge; it does not add a human decision. Every Standard/Critical
+plan still has its own bounded worker and independent verifier lifecycle. Combining
+the delivered plans into one change-set candidate is a separate delivery concern
+and does not erase those per-plan execution records. Plan count is not a proxy for
+assurance tier.
+
 There is no confirmation card and no hidden confirmation token. A vague "yes" is
 not an intent approval; the decision is an explicit conversational act bound to the
 named intent, handled upstream (Gate 1). Approving an intent and asking to build in

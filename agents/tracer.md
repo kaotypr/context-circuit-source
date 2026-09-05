@@ -25,7 +25,10 @@ Knowledge. Its task is to read the repository first-hand and report back a durab
 - the **file and call-site map** — exact paths, the specific sites that change,
   relevant signatures and integration points;
 - a **proposed task partition** — how the work naturally splits, for the coordinator
-  to ratify or adjust;
+  to ratify or adjust. Describe whether the evidence supports one bounded execution
+  and verification boundary with embedded tasks, or independent execution,
+  verification, dependency, or failure boundaries that justify stacked plans. Keep
+  intra-plan task `depends_on` distinct from inter-plan `plan_dependencies`;
 - **concrete risks** named against the real code — data, security, irreversibility,
   coupling — including risks only a code read reveals (base64 is not encryption at
   rest; the value is really an auth token);

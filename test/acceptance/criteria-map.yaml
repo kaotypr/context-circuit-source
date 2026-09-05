@@ -116,3 +116,6 @@ criteria:
   - id: AC-36
     statement: The v1.0 human-simulated scenarios (Standard feature with two gates and inferred completion, Explore-then-promote, change-set-as-one-PR, criteria-drift re-gate, knowledge-debt block) play end-to-end, and the expected conversations carry the two gates and honest assurance wording with no internal vocabulary.
     suite: test/scenarios/test-scenarios.sh
+  - id: AC-37
+    statement: A grounded task partition remains one bounded plan with ordered embedded tasks when it shares one execution and verification boundary, and becomes stacked dependent plans when execution, verification, dependency, or failure boundaries are independent; wrong combine/split shapes fail without adding an approval gate.
+    suite: test/plans/test-decomposition.sh

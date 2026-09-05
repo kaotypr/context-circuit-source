@@ -11,8 +11,10 @@ mechanism the driver exercises.
    scope `checkout-service:[src/checkout]`, tier `standard`. Approval freezes the
    contract digest and confirms the ask; a read-only tracer then reads the real code
    and the coordinator runs the feasibility check.
-2. Plan: `cc-plan` derives one plan from the trace manifest; it is authorized by the
-   approved intent — no second approval and no automated scope gate.
+2. Plan: `cc-plan` derives one plan from the trace manifest with two ordered embedded
+   tasks sharing the same bounded execution and verification boundary. It is
+   authorized by the approved intent — no second approval and no automated scope
+   gate.
 3. Execute: one worker commits; the independent verifier passes, bound to the
    candidate.
 4. Accept: the human accepts the candidate (first-class, candidate-bound).
@@ -36,11 +38,13 @@ Invariant: no plan file exists for the un-promoted Explore work.
 
 ## Scenario C — two stacked plans, one pull request
 
-1. Two dependent plans (`0012` API, `0013` consumer), both in `checkout-service`,
-   execute independently.
+1. Two dependent plans (API first, consumer second), both in `checkout-service` and
+   under one intent, execute independently. The dependency is recorded between the
+   plans, not as a second approval decision.
 2. At delivery the human groups them into one change set (one pull request).
-3. The change-set candidate is computed once over the combined tip set; the
-   independent verifier runs once against it. One acceptance, one delivery.
+3. Each plan keeps its own worker/verifier lifecycle. The change-set candidate is
+   computed once over the combined tip set; the independent verifier runs once
+   against it. One acceptance, one delivery.
 
 ## Scenario D — a criteria change re-gates
 
@@ -58,3 +62,10 @@ Invariant: no plan file exists for the un-promoted Explore work.
 1. A delivered/completed plan left a pending reconciliation-debt marker.
 2. The next plan in the same knowledge scope is blocked at grounding
    (Standard/Critical) until the human reconciles or explicitly defers.
+
+## Decomposition rejection cases
+
+The one-plan fixture is invalid if it is split solely to match the assurance tier;
+the bounded tasks belong together. The stacked fixture is invalid if its independent
+partitions are combined into one lifecycle or if the dependency edge and its reason
+are omitted. These are decomposition failures, not new approval or runtime gates.

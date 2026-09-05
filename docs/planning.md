@@ -34,6 +34,31 @@ question and sends the work back through Gate 1; an implementation-only question
 carried into the plan; a question already answered by the user's request is applied
 without asking again. No plan may hide an unresolved intent-level question.
 
+## Choosing one plan or a stack
+
+The trace's `task_partition` is a proposal. After feasibility, the coordinator
+ratifies it using the real execution and verification boundaries:
+
+- Keep a bounded Standard change in **one plan with embedded tasks** when it has one
+  worker lifecycle, one independent verification boundary, and one change surface.
+  Use task `depends_on` to order those tasks. Several tasks are not, by themselves,
+  a reason to create several plans.
+- Use **multiple stacked plans** when partitions can be independently executed or
+  independently verified, have meaningful dependency edges, or have distinct
+  failure surfaces that should be isolated. Each plan gets bounded repository/path
+  mappings, an acyclic `plan_dependencies` list with edge reasons, and its own
+  worker/verifier lifecycle at the applicable tier.
+
+The coordinator records the overall decomposition rationale in
+`context_grounding.decisions` and the readable `PLAN.md`, while
+`plan_dependencies.reason` explains each inter-plan edge. Task `depends_on` and
+`plan_dependencies` are different: the first orders tasks inside one plan; the
+second orders separate plans. Do not split solely to match an assurance tier, and
+do not combine genuinely independent execution, verification, dependency, or
+failure boundaries. Plan count is not an assurance tier, and this decision never
+introduces a separate plan-approval gate: one approved intent may authorize one
+plan or several stacked plans.
+
 ## Detail
 
 Plans are as detailed as necessary to preserve the request and make execution
