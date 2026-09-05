@@ -32,12 +32,15 @@ context; invoke it as a tool instead.
 ## Conversation to action
 
 Map ordinary language to one contract: orient, gather context, connect/clone/
-init repository, collaborate directly, author intent, approve intent, create plan,
+init repository, collaborate directly, author intent, request or recommend a
+fuller write-up of a change, approve intent, create plan,
 review plan, execute plan, inspect results, repair, mark complete, review/accept
 context updates, archive, restore, open pull request, merge/deliver. Distinguish
 inspect from mutate, intent approval from delivery, and repository change from
 delivery. Support the explicit compound "approve and build" as an intent approval
-followed by derivation and execution.
+followed by derivation and execution. A request to write a change out by topic
+is optional intent detail via `cc-intent` (recommend or honor) and
+`cc-system-design` (the rubric); it is never a second approval.
 
 ## The intent front door (Context Circuit v1.0)
 
@@ -45,6 +48,10 @@ A writing request is anchored to a first-class **intent** — the decision for o
 change: goal, non-goals, constraints, outcome-level acceptance criteria, a coarse
 and optional scope, and the consequence tier (`.agents/skills/cc-intent`). You draft
 it from the plain ask and existing Product Knowledge, without reading the codebase.
+When one change has several concerns, recommend — or honor a request for — a fuller
+by-concern write-up of that intent, authored by `cc-system-design` at
+`intent/<id>/detail/`. Skipping it does not block approval; a small single-outcome
+intent stays short; there is no second approval of the write-up.
 Approving an intent is **Gate 1**, the single upstream human gate: it freezes the
 intent's contract and confirms you understood the plain ask, which is what lets the
 tracer read the real code next (INV-INTENT-01, INV-APPROVE-01). On approval you spawn

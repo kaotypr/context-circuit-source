@@ -1,20 +1,32 @@
 ---
 name: cc-system-design
-description: Author and structure a system design as source material under sources/system-design/ — the three-tier layout, how much detail per file, and scope separation by concern. Drafts structured source files only; never approves, accepts, plans, executes, or writes Product Knowledge.
+description: Author and structure a system design as source material under sources/system-design/ or an intent's fuller by-concern write-up under intent/<id>/detail/ — the three-tier layout, how much detail per file, and scope separation by concern. Drafts structured source files only; never approves, accepts, plans, executes, or writes Product Knowledge.
 ---
 
 ## When to use
 
 On a request to design or structure the shape of a larger change — "design the
-system for X", "write up the architecture", "structure the system design" — for a
-new product, a new version, or a cross-cutting feature. A bounded change needs no
-system design; go straight from Product Knowledge to a plan.
+system for X", "write up the architecture", "structure the system design" — or to
+write out **one intent** in full by topic so a human can see what they are
+agreeing to. This skill owns the authoring rubric for **both homes**. It never
+approves, accepts, plans, executes, or writes Product Knowledge.
 
-A system design is **one kind of source**, not a lifecycle stage. It has no
-status, no acceptance gate, and no runtime record. This skill only shapes the
-files; it never approves, accepts, plans, executes, or writes Product Knowledge.
+Choose the home from the request:
+
+- A **product, version, or cross-cutting picture** that will spawn several
+  intents → `sources/system-design/`. A bounded change needs no product-level
+  design; go straight from Product Knowledge to a plan (or to an intent).
+- **One intent's several concerns**, requested by the human or recommended by
+  `cc-intent` → `intent/<id>/detail/`. A small single-outcome intent stays short
+  and needs no detail write-up.
+
+A system design and an intent detail write-up are **sources, not lifecycle
+stages**. They have no status, no acceptance gate, and no runtime record. Intent
+detail is not Product Knowledge and is not a second approval of the intent.
 
 ## Where it goes
+
+### Product-level design
 
 Author under `sources/`, which is passive source material:
 
@@ -43,10 +55,37 @@ sources/system-design/<product-or-project>/<grouping>/<scope>/
 Writing these files is a normal authoring write; `sources/` stays passive for
 later reads (read only when a request names a file).
 
+### Intent detail
+
+Author the fuller write-up of **one intent** at:
+
+```
+intent/<id>/detail/
+```
+
+Use `detail/`, never `design/`. The inner layout is the same three-tier rubric as
+a product-level design. Draft it **without reading the codebase** (INV-INTENT-01),
+the same as the short intent page. Do not put this write-up under
+`sources/system-design/` — that home is for a product-level picture, not for
+specifying a single intent.
+
 ## The three-tier layout
 
 Every folder has a `README.md` index; each scope's normative content is
-`design.md`; detail splits into files or sub-folders **as it grows**:
+`design.md`; detail splits into files or sub-folders **as it grows**. The inner
+layout is the same in both homes:
+
+```text
+<home>/
+  README.md                 # index (landing + reading order)
+  design.md                 # overview — NORMATIVE, readable end to end
+  <concern>.md              # one concern each, split when it outgrows a section
+  <concern>/                # a concern that itself has parts (README + a file per part)
+```
+
+For a product-level design, `<home>` is
+`sources/system-design/<product-or-project>/<grouping>/<scope>/`, and the product
+and grouping folders above it keep their own `README.md` indexes:
 
 ```text
 sources/system-design/<product-or-project>/
@@ -54,11 +93,14 @@ sources/system-design/<product-or-project>/
   <grouping>/
     README.md               # grouping index: the scopes + the reading order
     <scope>/
-      README.md             # scope landing/index
-      design.md             # scope overview — NORMATIVE, readable end to end
-      <concern>.md          # one concern each, split when it outgrows a section
-      <concern>/            # a concern that itself has parts (README + a file per part)
+      README.md
+      design.md
+      <concern>.md
+      <concern>/
 ```
+
+For intent detail, `<home>` is `intent/<id>/detail/` — there is no extra product
+or grouping prefix. Split by **concern**, never by repository.
 
 ## How much detail per file (altitude)
 
@@ -93,7 +135,8 @@ it. If a reviewer must open five detail files to grasp the design, too much left
 
 A system design's value is describing how the pieces fit across the system, so
 scopes cut by **concern** — a backend topology, a domain, a SPA, a cross-cutting
-flow — matching the product, not the git layout.
+flow — matching the product, not the git layout. The same rule applies to intent
+detail: split by concern, never by repository.
 
 - **Never one scope folder per git repository**; that fragments the cross-repo
   coherence the design exists to capture.
@@ -108,21 +151,31 @@ the durable form that renders on GitHub and most editors. You may preview via a
 host mermaid plugin if one exists, but never depend on it: with no plugin, still
 emit the fenced mermaid.
 
-## How it feeds the rest — the existing flow, unchanged
+## How it feeds the rest
 
-A system design feeds Product Knowledge and plans through the **normal workspace
-flow**, with nothing new: the coordinator gathers context from the named design source,
-proposes context units through the existing context-proposal path, a human accepts
-those proposals, and plans ground in the resulting Product Knowledge via the
-existing `product_knowledge` references. "Accepting the design's ideas" *is*
-accepting those context proposals — there is no separate design-acceptance gate.
+A **product-level** system design feeds Product Knowledge and plans through the
+**normal workspace flow**, with nothing new: the coordinator gathers context from
+the named design source, proposes context units through the existing
+context-proposal path, a human accepts those proposals, and plans ground in the
+resulting Product Knowledge via the existing `product_knowledge` references.
+"Accepting the design's ideas" *is* accepting those context proposals — there is
+no separate design-acceptance gate.
+
+**Intent detail** is different. It is the confirmed shape of *one* intent. After
+the human approves that intent, `cc-plan` uses `intent/<id>/detail/` (when it
+exists) so plans and tasks follow those topics. It does **not** replace the
+post-approval read of the real code, is **not** folded into `contract_digest`, and
+is **not** Product Knowledge. There is no second approval of the detail.
 
 ## Boundaries
 
 - **Draft structured source files only.** Never approve, accept, plan, execute,
   merge, or write Product Knowledge. This skill grants no route, role, or authority
   (INV-SKILL-01); it is read-as-procedure guidance resolved by path.
-- **No status, no gate, no runtime record** — a system design is a source.
+- **No status, no gate, no runtime record** — a system design is a source; so is
+  intent detail.
+- **Two homes, one rubric.** Do not add a second skill. Do not specify a product
+  capability by writing a new `sources/system-design/` scope for it.
 - **Reference model:** this repository's own `sources/system-design/` is the
   dogfooded example of the layout, altitude, and scope separation above; follow
-  the same convention.
+  the same convention in both homes.

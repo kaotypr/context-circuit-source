@@ -147,7 +147,9 @@ The trace manifest per repository: `intent`, `repository`, `file_map`,
 The tracer is strictly read-only — no lease, no worktree, no product write. Its
 done-checks and any criterion it surfaces live in the manifest and the derived
 plan; they are **never** folded into the frozen `contract_digest` (they are earned
-post-approval and must not silently re-enter Gate 1). Whether post-approval
+post-approval and must not silently re-enter Gate 1). Intent detail
+(`intent/<id>/detail/`) is pre-approval authoring evidence for later planning, not a tracing output and not a second gate; tracing remains the first code read.
+Whether post-approval
 done-checks should ever bind into the frozen contract is an open question recorded
 in the design's `risks-and-open-questions`; current behavior keeps them out. If a
 required child cannot be created read-only, the route stays `host-blocked` and

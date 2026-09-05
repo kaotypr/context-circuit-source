@@ -58,10 +58,15 @@ ask (INV-INTENT-01). Two artifacts hold it:
   digests, branch/model names, or runtime commands. It uses exactly five sections
   (Intention, Expectations, The plans, How carefully this is checked, Open
   questions) per `docs/templates/intent.md`. The human is not expected to open the
-  machine record.
+  machine record. A fuller by-concern write-up, when present, lives as extra files
+  under `intent/<id>/detail/` — not as a sixth section.
 - **`contract.yaml`** is the machine record: goal, non-goals, constraints,
   outcome-level `acceptance_criteria`, a coarse optional `scope`, a provisional
   `tier`, and (after approval) a frozen `contract_digest`.
+- **Optional `intent/<id>/detail/`** is a fuller by-concern write-up of this one
+  intent, authored by `cc-system-design` when the human requests it or when
+  `cc-intent` recommends it (several concerns). Skipping it does not block Gate 1.
+  It is not part of `contract_digest`, has no status, and has no separate approval.
 
 Acceptance criteria are stated at the **outcome** level — what must be true, not
 how to test it. They are **not** frozen as executable checks here; the runnable
@@ -85,7 +90,8 @@ human who wants to lock an intent without building yet may separate the two.
 
 Approval does **not** trigger execution and carries **no** second gate for the
 plans that derive from it — plan readiness after approval is automatic
-(INV-INTENT-02), not a second human approval. That automatic derivation assumes
+(INV-INTENT-02), not a second human approval. Optional intent detail likewise has
+**no separate approval**. That automatic derivation assumes
 the post-approval feasibility check found no unresolved intent-level question.
 
 The human-facing **Open questions** section is phase-aware. At draft time it records
@@ -97,9 +103,10 @@ applied without asking again.
 
 ## Interfaces
 
-- Human request: "I want to build/change …" → a drafted intent; "approve intent `<id>`" → Gate 1
+- Human request: "I want to build/change …" → a drafted intent; "write this change out by topic" → optional detail; "approve intent `<id>`" → Gate 1
 - Human-facing file: `intent/<id>/INTENT.md` (five sections, plain language)
 - Machine record: `intent/<id>/contract.yaml` (`schema_version` 2; `status` `draft`/`approved`; frozen `contract_digest`)
+- Optional detail: `intent/<id>/detail/` (three-tier write-up; not digested; not a second gate)
 - Intent ids: the distinct form `i<NNN>-slug`, their own never-reused sequence
   with a hard `i999` ceiling; allocation fails rather than inventing a fourth digit
 

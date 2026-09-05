@@ -64,6 +64,13 @@ frozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 test -n "$frozen" || fail "approval did not freeze a contract_digest"
 case "$frozen" in sha256:*|cksum:*) : ;; *) fail "contract_digest not a digest: $frozen" ;; esac
 
+# extra detail/ files do not participate in contract_digest and do not block validate
+mkdir -p "$ws/intent/$id1/detail"
+printf '# overview\n' >"$ws/intent/$id1/detail/README.md"
+printf '# design\n' >"$ws/intent/$id1/detail/design.md"
+sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
+assert_eq "$frozen" "$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")"
+
 # the frozen digest is stable and equals a recompute over criteria-bearing content
 recompute=$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")
 assert_eq "$frozen" "$recompute"
