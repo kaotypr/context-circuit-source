@@ -1,0 +1,71 @@
+schema_version: 3
+plan: 0004-handoff-representation
+intent: i002-plan-decomposition-guidance
+title: Carry decomposition through the plan handoff
+status: draft
+objective: >-
+  Represent the trace-ratified choice as one task-bearing plan or an acyclic set
+  of bounded, intent-authorized stacked plans using existing contracts.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns trace and plan contracts plus planner handoff guidance.
+plan_dependencies:
+  - id: 0003-decomposition-rule
+    reason: Uses the explicit decomposition rule defined by the preceding plan.
+product_knowledge:
+  - id: trace-manifest
+    path: wrapper/contracts/schemas/trace-manifest.yaml
+    reason: Owns task partition, feasibility, questions, and done checks.
+  - id: plan
+    path: wrapper/contracts/schemas/plan.yaml
+    reason: Owns plan dependencies, bounded mappings, task dependencies, and execution policy.
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Grounds manifest consumption and feasibility.
+  - id: planning
+    path: docs/planning.md
+    reason: Grounds schema-3 derived plans and no plan-level approval.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Preserves intent-derived authorization.
+context_grounding:
+  summary: >-
+    The trace says existing task_partition, plan_dependencies, bounded paths, and
+    plan reasons are sufficient; no schema expansion is required.
+  constraints:
+    - Keep task depends_on distinct from plan_dependencies.
+    - Preserve one worker and one independent verifier per Standard plan.
+    - Do not add plan approval or alter delivery ownership.
+  decisions:
+    - Use existing schema fields and readable plan rationale; do not add a new canonical trace field.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: true
+tasks:
+  - id: HPR-001
+    title: Carry decomposition into plan records
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/schemas/trace-manifest.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - .agents/skills/cc-plan/
+      - docs/planning.md
+    depends_on: []
+    changes:
+      - Ratify task_partition into one plan with task dependencies or multiple plans with explicit plan_dependencies.
+      - Record bounded mappings, per-plan lifecycle, and decomposition rationale.
+    acceptance:
+      - id: HPR-AC-001
+        statement: One-plan derivation retains multiple ordered tasks, while stacked derivation records explicit acyclic plan_dependencies and bounded repository/path mappings.
+      - id: HPR-AC-002
+        statement: Each stacked plan retains a distinct worker/verifier lifecycle and explains its independent execution or verification boundary.
+    verification:
+      - id: HPR-VT-001
+        command: sh test/plans/test-plans.sh
+      - id: HPR-VT-002
+        command: sh test/run-stack/test-run-stack.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
+

@@ -1,0 +1,69 @@
+schema_version: 3
+plan: 0003-decomposition-rule
+intent: i002-plan-decomposition-guidance
+title: Define the trace-to-plan decomposition rule
+status: draft
+objective: >-
+  Make the one-plan versus stacked-plan decision explicit in tracing and planning
+  guidance, grounded in bounded execution and verification boundaries, meaningful
+  dependencies, and distinct failure surfaces.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns maintainer guidance for tracing, planning, and authorization.
+plan_dependencies: []
+product_knowledge:
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Owns the trace manifest, feasibility check, and plan handoff.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Preserves intent-derived authorization and no plan approval.
+  - id: planning
+    path: docs/planning.md
+    reason: Grounds plan derivation and lifecycle semantics.
+  - id: intent
+    path: context/domains/intent/README.md
+    reason: Grounds Gate 1 and the approved intent as the upstream decision.
+context_grounding:
+  summary: >-
+    The i002 trace identifies the guidance as the first bounded partition and
+    reports no out-of-scope reach or unresolved intent-level question.
+  constraints:
+    - Preserve the single intent approval gate and existing authority ownership.
+    - Keep plan count independent from assurance tier.
+    - Do not modify sources or redesign runtime execution.
+  decisions:
+    - Record rationale in the readable plan and coordinator handoff rather than requiring a new trace field.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: true
+tasks:
+  - id: DCR-001
+    title: Define and align the decomposition rule
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-trace/
+      - .agents/skills/cc-plan/
+      - agents/tracer.md
+      - context/domains/tracing/
+      - context/domains/plan-authorization/
+      - docs/planning.md
+    depends_on: []
+    changes:
+      - Define when several tasks remain in one plan and when independent partitions become stacked plans.
+      - Explain the decision in human terms and preserve the single upstream intent gate.
+    acceptance:
+      - id: DCR-AC-001
+        statement: Guidance names bounded execution and verification boundaries, meaningful dependencies, and distinct failure surfaces as the decomposition signals.
+      - id: DCR-AC-002
+        statement: Guidance preserves one Standard plan with embedded tasks and does not use plan count as an assurance-tier proxy or approval gate.
+    verification:
+      - id: DCR-VT-001
+        command: rg -n -i 'one plan|multiple plans|stacked plans|bounded (execution|change|repository/path)|independent (execution|verification)|failure surface|dependency' .agents/skills/cc-trace/SKILL.md .agents/skills/cc-plan/SKILL.md agents/tracer.md context/domains/tracing/README.md docs/planning.md
+      - id: DCR-VT-002
+        command: rg -n -i 'one worker|embedded tasks|no separate plan.*approval|assurance tier|human.*explain|rationale' .agents/skills/cc-plan/SKILL.md docs/planning.md context/domains/plan-authorization/README.md
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
+

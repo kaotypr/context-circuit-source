@@ -14,3 +14,6 @@ tooling (0019–0020) · **E** v0.6.1 refinements (0021–0025).
 | --- | --- | --- | --- | --- |
 | 0001-conversation-spec-library | Establish the conversation-spec library as the living harness specification | draft | — | 0001-conversation-spec-library/ |
 | 0002-intent-id-width-migration | Change intent identifiers to three digits | draft | — | 0002-intent-id-width-migration/ |
+| 0003-decomposition-rule | Define the trace-to-plan decomposition rule | draft | — | 0003-decomposition-rule/ |
+| 0004-handoff-representation | Carry decomposition through the plan handoff | draft | 0003-decomposition-rule | 0004-handoff-representation/ |
+| 0005-decomposition-acceptance | Prove one-plan and stacked-plan derivation | draft | 0004-handoff-representation | 0005-decomposition-acceptance/ |
