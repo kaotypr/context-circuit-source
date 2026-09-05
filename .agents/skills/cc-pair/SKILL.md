@@ -29,7 +29,12 @@ Before any write, confirm that the host can create a worker child. If it cannot,
 report `host-blocked` in plain language and remain read-only. The coordinator must
 never perform the worker's edits itself.
 
-Choose a safe lowercase session slug and a base commit:
+Ask the human for a short session name and use that name. Map it to a safe
+lowercase kebab slug (`cc_safe_slug` rules: lowercase kebab, at most 80
+characters). If the name is missing or unsafe, ask again — **never invent** the
+folder name.
+
+Choose a base commit:
 
 - fresh work defaults to the connected repository's recorded base tip;
 - when offered after a completed plan or stack execution, use that repository's
@@ -37,14 +42,33 @@ Choose a safe lowercase session slug and a base commit:
 - use another commit only when the user names it explicitly.
 
 Invoke `pair-begin . <repo> <session> [base]`. It creates a fresh
-`cc-pair/<session>` branch and isolated worktree; it never reuses the active
-checkout or edits a plan branch in place. To resume, invoke
-`pair-inspect . <session>` and attach a worker to the reported worktree only when
-`resumable: true`.
+`cc-pair/<session>` branch and isolated worktree at
+`.runtime/explore/<session>/<repo>`, not under `.runtime/worktrees/cc-pair/`. It
+never reuses the active checkout or edits a plan branch in place. To resume,
+invoke `pair-inspect . <session>` and attach a worker to the reported worktree
+only when `resumable: true`.
+
+## Model & effort per role
+
+Spawn the Explore worker at the concrete `(model, effort)` configured for the
+`worker` role in the host-local role-tiering config, with adapter-shipped defaults
+for an unset role (`docs/role-tiering.md` owns the shape, defaults, and
+escalation ladder). This is a coordinator/host decision — the runtime is
+model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
+(INV-HOST-01). It changes cost and speed, never meaning. Explore still has no
+verifier; do not launch one because a yaml file exists.
+
+- Read `role-tiering.local.yaml` when present and apply the current host's
+  `worker` entry before spawning.
+- Adapter defaults still apply when no local file, host group, or worker role is
+  present.
+- Applying the setting does not change Explore's meaning, drop or add a verifier,
+  or alter independence or the failure limit.
 
 ## The interactive loop
 
-Launch one worker using the existing `agents/worker.md` role and give it the
+Launch one worker using the existing `agents/worker.md` role at that configured
+`(model, effort)` and give it the
 reported repository, worktree, branch, base, and the user's current intent. Tell
 the worker to:
 
@@ -74,7 +98,8 @@ close: report the uncommitted work and ask whether the worker should commit it o
 the session should remain open. Once clean, invoke `pair-close . <session>`.
 
 Closing preserves the branch and worktree. Cleanup is a separate explicit human
-action. Describe the result as **human-supervised, not independently verified**.
+action (`runtime-cleanup`); closing a clean session does not delete its worktree,
+and a still-live session is not removed unless cleanup was explicitly asked. Describe the result as **human-supervised, not independently verified**.
 Offer delivery only as a separate action through `cc-deliver`.
 
 ## Promote — the ramp into the trust system
@@ -105,6 +130,9 @@ Invoke from the workspace directory:
 - `sh wrapper/runtime/engine.sh pair-begin . <repo> <session> [base]`
 - `sh wrapper/runtime/engine.sh pair-inspect . <session>`
 - `sh wrapper/runtime/engine.sh pair-close . <session>`
+- `sh wrapper/runtime/engine.sh runtime-cleanup .` — explicit leftover cleanup;
+  removes closed Explore worktrees under `.runtime/explore/` as well as idle
+  plan-execution worktrees. Never run this from `pair-close`.
 
 The runtime is an opaque deterministic library (`wrapper/adapters/AGENTS.md` →
 Runtime). The skill owns the conversation; the runtime owns only Git isolation
@@ -124,4 +152,5 @@ absolute clickable target that reveals the hidden working-copy path.
 Never create a plan, approve, independently verify, mark complete, rebase on
 delivery drift, push, merge, open a pull request, or clean up as part of pairing.
 If the worktree cannot be created, preserve any reported state and report
-`host-blocked`; the coordinator remains read-only.
+`host-blocked`; the coordinator remains read-only. Do not invent the Explore
+folder name.

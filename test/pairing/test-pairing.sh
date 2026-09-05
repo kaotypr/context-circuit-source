@@ -21,9 +21,10 @@ assert_eq "$base_before" "$(git -C "$repo" rev-parse HEAD)"
 
 pdir="$ws/.runtime/pairing/tighten-checkout"
 pointer="$pdir/pointer.yaml"
-wt="$ws/.runtime/worktrees/cc-pair/tighten-checkout/api"
+wt="$ws/.runtime/explore/tighten-checkout/api"
 require_file "$pointer"
 require_dir "$wt"
+test ! -d "$ws/.runtime/worktrees/cc-pair/tighten-checkout" || fail 'Explore mixed into plan-execution worktrees'
 contains "$pointer" 'schema_version: 1'
 contains "$pointer" 'repo: api'
 contains "$pointer" "worktree: $wt"
@@ -95,16 +96,35 @@ rm -f "$drift_out" "$drift_err"
 cc_pair_begin "$ws" api from-explicit-base "$base_before" >/dev/null
 explicit="$ws/.runtime/pairing/from-explicit-base/pointer.yaml"
 contains "$explicit" "base: $base_before"
-assert_eq "$base_before" "$(git -C "$ws/.runtime/worktrees/cc-pair/from-explicit-base/api" rev-parse HEAD)"
+assert_eq "$base_before" "$(git -C "$ws/.runtime/explore/from-explicit-base/api" rev-parse HEAD)"
 
 # Host adapters invoke the engine from the workspace with `.`. Pairing state
 # and Git must agree on one absolute worktree path in that mode.
 (cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-begin . api relative-root >/dev/null)
 relative_pointer="$ws/.runtime/pairing/relative-root/pointer.yaml"
-relative_wt="$ws/.runtime/worktrees/cc-pair/relative-root/api"
+relative_wt="$ws/.runtime/explore/relative-root/api"
 require_dir "$relative_wt"
 contains "$relative_pointer" "worktree: $relative_wt"
 (cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
 	| grep -Fq 'resumable: true' || fail 'relative-root pair is not resumable'
+
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "Model & effort per role"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "role-tiering"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "runtime/explore"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "never invent"
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "Model & effort per role"
+
+# Live Explore sessions survive cleanup; closed ones are removed.
+cc_runtime_cleanup "$ws" >/dev/null
+require_dir "$relative_wt"
+require_dir "$ws/.runtime/explore/from-explicit-base/api"
+cc_pair_close "$ws" relative-root >/dev/null
+require_dir "$relative_wt"
+mkdir -p "$ws/.code-review-graph"
+printf 'junk\n' >"$ws/.code-review-graph/graph.db"
+cc_runtime_cleanup "$ws" >/dev/null
+test ! -d "$relative_wt" || fail 'cleanup left closed Explore worktree'
+require_dir "$ws/.runtime/explore/from-explicit-base/api"
+test ! -e "$ws/.code-review-graph" || fail 'cleanup kept leftover .code-review-graph'
 
 pass 'direct collaboration'

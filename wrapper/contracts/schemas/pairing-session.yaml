@@ -12,7 +12,7 @@ purpose: >
 layout:
   active: .runtime/pairing/<session>/pointer.yaml
   closed: .runtime/pairing/<session>/closed.yaml
-  worktree: .runtime/worktrees/cc-pair/<session>/<repository-id>/
+  worktree: .runtime/explore/<session>/<repository-id>/
 
 fields:
   schema_version: { type: integer, required: true, values: [1] }

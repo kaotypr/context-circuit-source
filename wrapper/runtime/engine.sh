@@ -12,7 +12,8 @@
 # attempt records, commit capture, verifier-result and read-only enforcement,
 # the three-failure counter, one-worker locking, completion eligibility,
 # implementation completion records, context-impact handoff references, light
-# direct-collaboration session pointers, and recovery inspection.
+# direct-collaboration session pointers, explicit leftover cleanup, and recovery
+# inspection.
 #
 # This runtime does NOT own: provider-specific child launch, model prompts,
 # Product Knowledge interpretation, plan-writing intelligence, conversational
@@ -659,6 +660,7 @@ cc_workspace_init() {
 		"$cc_wi_root/intent/archive" \
 		"$cc_wi_root/plans/archive" "$cc_wi_root/.runtime/executions" \
 		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/pairing" \
+		"$cc_wi_root/.runtime/explore" \
 		"$cc_wi_root/.runtime/locks" "$cc_wi_root/.runtime/knowledge-debt" \
 		"$cc_wi_root/repositories" || return 1
 	# Leftover tool cache is never project material; drop it on init so an
@@ -969,9 +971,11 @@ cc_pair_pointer_validate() {
 	cc_pv_branch=$(cc_scalar "$cc_pv_file" branch) || cc_pv_branch=""
 	cc_pv_base=$(cc_scalar "$cc_pv_file" base) || cc_pv_base=""
 	cc_safe_id "$cc_pv_repo" || { cc_fail PAIR_REPOSITORY_INVALID "$cc_pv_repo"; return 1; }
-	cc_pv_expected_wt="$cc_pv_root/.runtime/worktrees/cc-pair/$cc_pv_session/$cc_pv_repo"
+	cc_pv_expected_wt="$cc_pv_root/.runtime/explore/$cc_pv_session/$cc_pv_repo"
+	cc_pv_legacy_wt="$cc_pv_root/.runtime/worktrees/cc-pair/$cc_pv_session/$cc_pv_repo"
 	cc_pv_expected_branch="cc-pair/$cc_pv_session"
-	[ "$cc_pv_wt" = "$cc_pv_expected_wt" ] || { cc_fail PAIR_WORKTREE_MISMATCH "$cc_pv_session"; return 1; }
+	[ "$cc_pv_wt" = "$cc_pv_expected_wt" ] || [ "$cc_pv_wt" = "$cc_pv_legacy_wt" ] \
+		|| { cc_fail PAIR_WORKTREE_MISMATCH "$cc_pv_session"; return 1; }
 	[ "$cc_pv_branch" = "$cc_pv_expected_branch" ] || { cc_fail PAIR_BRANCH_MISMATCH "$cc_pv_session"; return 1; }
 	[ -n "$cc_pv_base" ] || { cc_fail PAIR_BASE_MISSING "$cc_pv_session"; return 1; }
 	return 0
@@ -1004,7 +1008,7 @@ cc_pair_begin() {
 			|| { cc_fail BASE_BRANCH_MISSING "$cc_pb_repo:$cc_pb_base_branch"; return 1; }
 	fi
 	cc_pb_branch="cc-pair/$cc_pb_session"
-	cc_pb_wt="$cc_pb_root/.runtime/worktrees/cc-pair/$cc_pb_session/$cc_pb_repo"
+	cc_pb_wt="$cc_pb_root/.runtime/explore/$cc_pb_session/$cc_pb_repo"
 	git -C "$cc_pb_abs" show-ref --verify --quiet "refs/heads/$cc_pb_branch" \
 		&& { cc_fail PAIR_BRANCH_EXISTS "$cc_pb_branch"; return 1; }
 	[ ! -e "$cc_pb_wt" ] || { cc_fail PAIR_WORKTREE_EXISTS "$cc_pb_wt"; return 1; }
@@ -1134,6 +1138,86 @@ cc_pair_delivery_targets() {
 	cc_emit drift_detected "$cc_pd_drift"
 	cc_emit result_label human-supervised
 	if [ "$cc_pd_drift" = true ]; then cc_fail PAIR_BASE_DRIFT "$cc_pd_session"; return 1; fi
+	return 0
+}
+
+# cc_worktree_drop PATH -> remove a git worktree directory, or rm -rf if it is
+# already unregistered. Never called on a live Explore session or live execution.
+cc_worktree_drop() {
+	cc_wd_wt="$1"
+	[ -e "$cc_wd_wt" ] || return 0
+	if [ -d "$cc_wd_wt" ] && git -C "$cc_wd_wt" rev-parse --git-dir >/dev/null 2>&1; then
+		git -C "$cc_wd_wt" worktree remove --force "$cc_wd_wt" >/dev/null 2>&1 \
+			|| rm -rf "$cc_wd_wt"
+	else
+		rm -rf "$cc_wd_wt"
+	fi
+}
+
+# cc_runtime_plan_live ROOT PLAN_ID -> 0 when an execution is still in flight
+cc_runtime_plan_live() {
+	cc_rpl_root="$1"; cc_rpl_plan="$2"
+	cc_rpl_dir="$cc_rpl_root/.runtime/executions/$cc_rpl_plan"
+	[ -d "$cc_rpl_dir" ] || return 1
+	for cc_rpl_ex in "$cc_rpl_dir"/*; do
+		[ -f "$cc_rpl_ex/execution.yaml" ] || continue
+		cc_rpl_st=$(cc_scalar "$cc_rpl_ex/execution.yaml" status) || continue
+		case "$cc_rpl_st" in
+			running|verifying|repairing) return 0 ;;
+		esac
+	done
+	return 1
+}
+
+# cc_runtime_cleanup ROOT -> explicit leftover cleanup. Removes closed Explore
+# worktrees under .runtime/explore/ (and leftover .runtime/worktrees/cc-pair/),
+# idle plan-execution worktrees, and the leftover .code-review-graph cache.
+# Never deletes a still-live Explore session or an in-flight execution.
+# Never runs from pair-close.
+cc_runtime_cleanup() {
+	cc_rc_root="$1"
+	cc_workspace_validate "$cc_rc_root" >/dev/null || return 1
+	cc_rc_root=$(cc_root_abs "$cc_rc_root") || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$cc_rc_root"; return 1; }
+	if [ -e "$cc_rc_root/.code-review-graph" ]; then
+		rm -rf "$cc_rc_root/.code-review-graph" \
+			|| { cc_fail LEFTOVER_DROP_FAILED .code-review-graph; return 1; }
+		cc_emit leftover_removed .code-review-graph
+	fi
+	for cc_rc_base in "$cc_rc_root/.runtime/explore" "$cc_rc_root/.runtime/worktrees/cc-pair"; do
+		[ -d "$cc_rc_base" ] || continue
+		for cc_rc_sess in "$cc_rc_base"/*; do
+			[ -d "$cc_rc_sess" ] || continue
+			cc_rc_name=$(basename -- "$cc_rc_sess")
+			if [ -f "$cc_rc_root/.runtime/pairing/$cc_rc_name/pointer.yaml" ]; then
+				cc_emit explore_skipped_live "$cc_rc_name"
+				continue
+			fi
+			for cc_rc_wt in "$cc_rc_sess"/*; do
+				[ -e "$cc_rc_wt" ] || continue
+				cc_worktree_drop "$cc_rc_wt"
+			done
+			rmdir "$cc_rc_sess" 2>/dev/null || rm -rf "$cc_rc_sess"
+			cc_emit explore_removed "$cc_rc_name"
+		done
+	done
+	if [ -d "$cc_rc_root/.runtime/worktrees" ]; then
+		for cc_rc_plan in "$cc_rc_root/.runtime/worktrees"/*; do
+			[ -d "$cc_rc_plan" ] || continue
+			cc_rc_pid=$(basename -- "$cc_rc_plan")
+			[ "$cc_rc_pid" != "cc-pair" ] || continue
+			if cc_runtime_plan_live "$cc_rc_root" "$cc_rc_pid"; then
+				cc_emit execution_skipped_live "$cc_rc_pid"
+				continue
+			fi
+			for cc_rc_wt in "$cc_rc_plan"/*; do
+				[ -e "$cc_rc_wt" ] || continue
+				cc_worktree_drop "$cc_rc_wt"
+			done
+			rmdir "$cc_rc_plan" 2>/dev/null || rm -rf "$cc_rc_plan"
+			cc_emit execution_removed "$cc_rc_pid"
+		done
+	fi
+	cc_emit runtime_cleanup ok
 	return 0
 }
 
@@ -3405,6 +3489,7 @@ cc_main() {
 		pair-inspect)            cc_pair_inspect "$@" ;;
 		pair-close)              cc_pair_close "$@" ;;
 		pair-delivery-targets)   cc_pair_delivery_targets "$@" ;;
+		runtime-cleanup)         cc_runtime_cleanup "$@" ;;
 		base-prepare)            cc_base_prepare "$@" ;;
 		discover-repo-grounding) cc_discover_repo_grounding "$@" ;;
 		harden-worktree)         cc_harden_worktree "$@" ;;
