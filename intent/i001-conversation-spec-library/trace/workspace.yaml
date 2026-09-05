@@ -36,7 +36,7 @@ file_map:
     call_sites: "Drives scripted case turns, records transcript/file-access/telemetry, and grades the human-facing conversation."
   - path: agent-harness/human/drivers/codex.sh
     role: "Codex live coordinator and human-simulator adapter"
-    call_sites: "Uses resumable Codex turns and bounded role evidence; deliberately does not claim a dependable file-access trace."
+    call_sites: "Uses resumable Codex turns and bounded role evidence; counts only immediate native subagent.thread_spawn children attached to the coordinator whose task names match the adapter's *_worker / *_verifier convention, excludes generic peer threads, and deliberately does not claim a dependable file-access trace."
   - path: agent-harness/human/drivers/cursor-agent.sh
     role: "Cursor Agent live coordinator and human-simulator adapter"
     call_sites: "Uses resumable Cursor turns and degrades access auditing because the host does not expose a dependable read trace."
@@ -156,6 +156,7 @@ risks:
   - "At least one current mapping overclaims AC-06: execute-standard-verify-not-complete does not itself demonstrate approve-and-execute in one turn."
   - "The proposal says 38 plots/cases and phase-1 says six plots before an addendum; the actual surface is 39 plots/cases. Counts must be generated, not hand-maintained."
   - "Claude Code exposes a file-access trace, while Codex and Cursor intentionally degrade access auditing; live execution and access assertions must preserve that host distinction."
+  - "The Codex driver now distinguishes immediate native subagent.thread_spawn children attached to the coordinator from generic peer threads; live role evidence must preserve that distinction and never promote peer metadata to worker/verifier evidence."
   - "The live matrix depends on external host CLIs and nested-agent support; deterministic library, drift, and grader checks must remain runnable without credentials or provider payloads."
 
 done_checks:
@@ -216,9 +217,15 @@ feasible: true
 out_of_scope_reach: []
 
 open_questions:
-  - "Choose and document one canonical relationship between conversations/generated/*.case.yaml and scenarios/*/case.yaml so AC-WIRED-SOURCE is unambiguous while the 22 scenario directories remain preserved."
-  - "Confirm that the intended artifact expectation is expressed in each plot's coordinator_must description and machine-checked through generated post-conditions/state checks, without adding a new product contract field or exposing internal filenames in Dialogue."
-  - "When refitting the feasibility plots, decide whether the post-approval question is newly discovered by tracing or whether the decision must be settled before Gate 1; the current fixtures mix both interpretations."
+  - question: "Choose and document one canonical relationship between conversations/generated/*.case.yaml and scenarios/*/case.yaml so AC-WIRED-SOURCE is unambiguous while the 22 scenario directories remain preserved."
+    disposition: plan-resolution
+    rationale: "This is an implementation-topology choice within the approved library scope."
+  - question: "Confirm that the intended artifact expectation is expressed in each plot's coordinator_must description and machine-checked through generated post-conditions/state checks, without adding a new product contract field or exposing internal filenames in Dialogue."
+    disposition: plan-resolution
+    rationale: "This is a harness representation and verification choice; the approved product contract remains unchanged."
+  - question: "When refitting the feasibility plots, decide whether the post-approval question is newly discovered by tracing or whether the decision must be settled before Gate 1; the current fixtures mix both interpretations."
+    disposition: plan-resolution
+    rationale: "The approved intent fixes the lifecycle: initial approval precedes code inspection and feasibility; inspection questions are shown afterward; any answer that changes the intent returns through approval before planning."
 
 completeness_proof:
   command: "test \"$(find agent-harness/conversations/plots -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')\" -eq 39 && test \"$(find agent-harness/conversations/generated -maxdepth 1 -type f -name '*.case.yaml' | wc -l | tr -d ' ')\" -eq 39 && test \"$(find agent-harness/scenarios -mindepth 2 -maxdepth 2 -type f -name 'case.yaml' | wc -l | tr -d ' ')\" -eq 22"
@@ -228,8 +235,8 @@ completeness_proof:
     generated_cases: 39
     live_scenario_cases: 22
     plot_generated_id_bijection: true
-    external_acceptance_ids: AC-01 through AC-36
+    external_acceptance_ids: AC-01 through AC-37
     skill_surface: 13 current .agents/skills entries
 
 recorded_at: 2026-09-04T16:06:08Z
-freshness_checked_at: 2026-09-04T16:06:08Z
+freshness_checked_at: 2026-09-05T04:16:36Z

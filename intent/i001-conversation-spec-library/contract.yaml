@@ -42,6 +42,9 @@ constraints:
   - The net-new plot set is enumerated and frozen when the plan of record is authored —
     every plot the coverage docs mark as new (a plot with no rewired existing case).
   - On any plot/case disagreement, the plot is authoritative.
+  - Lifecycle examples follow the v1.0 sequence: initial approval comes before code
+    inspection and feasibility; a question discovered during that inspection is shown
+    afterward, and any intent-changing answer returns through approval before planning.
   - Conventional Commits (INV-COMMIT-01); no AI attribution. Run the semantic
     acceptance suite after meaningful phases.
 
@@ -259,4 +262,4 @@ scope:
 tier: standard
 
 status: approved
-contract_digest: sha256:a184fa1cc8cd9021a64b792e0955f2fb179010511b5c85e0a975c10e1a113047
+contract_digest: sha256:398c1434f8110d2b67cf47f2a37db774250fbc87922d27d9c7bab4e3a292e3f8

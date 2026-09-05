@@ -75,4 +75,10 @@ Explanations:
 
 ## Open questions
 
-No known unresolved human decisions at draft time.
+**If a feasibility question appears only after the real code is inspected, when
+does the conversation show it?**
+
+_Answer: The library follows that sequence; it does not make the person settle
+a code-discovered question before the initial approval. If the answer changes
+what we agreed to build, it comes back for approval before the detailed plan is
+written._
