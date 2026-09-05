@@ -1,6 +1,6 @@
 # Intention — i007
 
-_Status: draft, waiting for your approval._
+_Status: approved._
 
 ## Intention
 
@@ -10,15 +10,14 @@ After you approve an intent, the tracer runs. When it finds no follow-up questio
 
 ## Expectations
 
-- After a feasible tracer result with no follow-up questions, `INTENT.md` does not keep a misleading status.
-- You pick one rule: keep the `INTENT.md` status line and make it match, or remove the status line from `INTENT.md`.
+- After a feasible tracer result with no follow-up questions, `INTENT.md` status is updated to match that fact.
 - `contract.yaml` remains the machine authority for approval; the `INTENT.md` status line does not replace it.
 - Plans still follow approval plus a feasible tracer; this does not add a second approval.
 
 ## The plans
 
-1. **Apply the status rule you pick.**
-   _After this:_ `INTENT.md` either shows a status that matches a completed feasible tracer, or it no longer has a status line.
+1. **Keep `INTENT.md` status in sync.**
+   _After this:_ `INTENT.md` shows a status that matches a completed feasible tracer.
 2. **Prove `INTENT.md` cannot lie.**
    _After this:_ checks fail if `INTENT.md` still shows a stale status after a feasible tracer with no follow-up questions.
 
@@ -40,3 +39,4 @@ Explanations:
 ## Open questions
 
 **Should `INTENT.md` keep a status line that updates after the tracer finishes with a feasible finding and no follow-up questions, or should the status line be removed from `INTENT.md`?**
+_Answer: Keep the `INTENT.md` status line and update it after the tracer finishes with a feasible finding and no follow-up questions._

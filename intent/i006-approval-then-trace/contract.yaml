@@ -11,9 +11,9 @@ goal: >
 
 non_goals:
   - Adding a second human approval of plans.
-  - Changing what approval means as the single upstream human gate, except as
-    the open question on this intent settles whether contract.yaml status
-    waits for the tracer and feasibility check.
+  - Changing what approval means as Gate 1: contract.yaml still becomes
+    approved immediately; the tracer and feasibility check remain the required
+    next steps before plans.
   - Completing, delivering, publishing, merging, or committing the
     implementation implicitly.
   - Authoring the plans themselves (that is the following intent).
@@ -53,4 +53,5 @@ scope:
     - id: context-circuit-source
 
 tier: standard
-status: draft
+status: approved
+contract_digest: sha256:6b557af93956f7a5700be55fc1f58b9a79a46af9c77e7ce95de0a098c89cd110

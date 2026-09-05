@@ -1,6 +1,6 @@
 # Intention — i006
 
-_Status: draft, waiting for your approval._
+_Status: approved._
 
 ## Intention
 
@@ -50,3 +50,4 @@ Explanations:
 ## Open questions
 
 **Should intent approval still set `contract.yaml` to approved immediately, with the tracer required as the next step? Or should `contract.yaml` stay draft until the tracer and feasibility check have finished and found the intent feasible?**
+_Answer: Approval still sets `contract.yaml` to approved immediately (Gate 1). The tracer must spawn next, and the feasibility check must run before any plan is written. The defect is skipping the tracer, not the approved stamp itself._

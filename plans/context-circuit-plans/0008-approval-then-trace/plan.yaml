@@ -1,0 +1,86 @@
+schema_version: 3
+plan: 0008-approval-then-trace
+intent: i006-approval-then-trace
+title: Spawn the tracer immediately after intent approval
+status: draft
+objective: >-
+  After a human approves an intent, the coordinator must spawn the tracer and
+  run the feasibility check next, before any plan is written. contract.yaml
+  still becomes approved immediately; that stamp must not skip the tracer.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns intent approval, tracer spawn, and coordinator sequencing.
+plan_dependencies: []
+product_knowledge:
+  - id: intent
+    path: context/domains/intent/README.md
+    reason: Owns Gate 1 and draft to approved.
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Owns tracer spawn and the feasibility check before planning.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Plans derive after a feasible look, with no second gate.
+context_grounding:
+  summary: >-
+    Derived from the approved i006 contract without a tracer, at explicit
+    human request. Settled decision: contract.yaml still flips to approved
+    on Gate 1; the defect is skipping the tracer and feasibility check.
+  constraints:
+    - Tracing remains read-only, one child per repository, no lease, no worktree.
+    - Feasibility check remains coordinator judgment, not an engine verb.
+    - No second human approval of plans.
+  decisions:
+    - Keep one plan with two sequential tasks. Approval stays immediate; tracer is required next.
+knowledge_impact:
+  expected_context_units:
+    - intent
+    - tracing
+  review_on_completion: true
+tasks:
+  - id: ATT-001
+    title: Put approval, tracer, and feasibility in the required order
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-intent/
+      - .agents/skills/cc-trace/
+      - .agents/skills/cc-plan/
+      - agents/coordinator.md
+      - context/domains/intent/
+      - context/domains/tracing/
+    depends_on: []
+    changes:
+      - Make the coordinator spawn the tracer immediately after intent-approve and run the feasibility check before writing any plan.
+      - Keep contract.yaml approved on Gate 1; that status must not skip or stand in for the tracer.
+    acceptance:
+      - id: ATT-AC-001
+        statement: After intent approval, the tracer starts next for every repository in scope, before any plan file is written.
+      - id: ATT-AC-002
+        statement: The feasibility check always happens after the tracer and before any plan is written.
+      - id: ATT-AC-003
+        statement: contract.yaml status cannot make the tracer or feasibility check look finished while the tracer has not started.
+      - id: ATT-AC-004
+        statement: Plans still derive from the approved intent with no second human approval.
+    verification:
+      - id: ATT-VT-001
+        command: rg -n 'intent-approve|cc-trace|feasibility|before any plan' .agents/skills/cc-intent/SKILL.md .agents/skills/cc-trace/SKILL.md agents/coordinator.md
+  - id: ATT-002
+    title: Prove the sequence cannot be skipped
+    repositories: [context-circuit-source]
+    paths:
+      - test/intent/
+      - test/acceptance.sh
+    depends_on:
+      - ATT-001
+    changes:
+      - Add coverage that fails if approval writes plans or treats the intent as ready to plan without the tracer and feasibility check.
+    acceptance:
+      - id: ATT-AC-001
+        statement: Sequence coverage is proven, not only stated in skills.
+    verification:
+      - id: ATT-VT-002
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
