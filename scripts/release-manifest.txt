@@ -104,6 +104,7 @@ exclude scripts
 exclude release
 exclude docs/release.md
 exclude .runtime
+exclude .code-review-graph
 exclude wrapper/adapters
 exclude template
 exclude plans/context-circuit-plans

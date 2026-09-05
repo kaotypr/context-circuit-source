@@ -75,6 +75,7 @@ release_boundary:
     - repositories.local.yaml
     - role-tiering.local.yaml
     - node_modules/
+    - .code-review-graph/
 
 upgrade_boundary:
   wrapper_only:

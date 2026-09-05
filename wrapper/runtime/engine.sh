@@ -646,6 +646,12 @@ cc_workspace_init() {
 		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/pairing" \
 		"$cc_wi_root/.runtime/locks" "$cc_wi_root/.runtime/knowledge-debt" \
 		"$cc_wi_root/repositories" || return 1
+	# Leftover tool cache is never project material; drop it on init so an
+	# existing workspace that still has it no longer keeps it.
+	if [ -e "$cc_wi_root/.code-review-graph" ]; then
+		rm -rf "$cc_wi_root/.code-review-graph" \
+			|| { cc_fail LEFTOVER_DROP_FAILED .code-review-graph; return 1; }
+	fi
 	[ -f "$cc_wi_root/plans/INDEX.md" ] || cc_plan_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/intent/INDEX.md" ] || cc_intent_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/context/INDEX.md" ] || printf '# Context index\n\nNo accepted context units yet.\n' | cc_atomic_write "$cc_wi_root/context/INDEX.md"
