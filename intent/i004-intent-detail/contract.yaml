@@ -91,4 +91,5 @@ scope:
         - sources/system-design/context-circuit/v1.1.0/
 
 tier: standard
-status: draft
+status: approved
+contract_digest: sha256:ae67791e650fef728d21d247c2e169105fe708ef5f57c816e8f1b8edfb644c38
