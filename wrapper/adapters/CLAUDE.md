@@ -9,8 +9,9 @@ approval interpretation, direct collaboration, completion, archive/restore, and
 delivery discussion.
 
 A Claude Task/subagent maps only to the single bounded worker (`agents/worker.md`)
-for an execution or direct-collaboration session, or the independent read-only
-verifier (`agents/verifier.md`) for one execution.
+for an execution or direct-collaboration session, the independent read-only
+verifier (`agents/verifier.md`) for one execution, or the read-only tracer
+(`agents/tracer.md`) after intent approval.
 Record provider-neutral `host_evidence` for the child; a host permission flag is
 an observation, not authorization.
 
@@ -25,7 +26,8 @@ recording it**. Concretely:
   worker's or verifier's `Task`/subagent spawn as its `model` parameter. A child
   launched without a `model` inherits the coordinator's session model, so an unset
   spawn is the whole tier being silently ignored. Set the worker's `model` from the
-  `worker` entry and the verifier's from the `verifier` entry before launching.
+  `worker` entry, the verifier's from the `verifier` entry, and the tracer's from
+  the `tracer` entry before launching.
 - **Effort — session-level on this host; not per-child.** The `Task`/subagent
   spawn exposes no per-child effort control, so a worker and a verifier launched
   in the same session cannot run at different efforts here. Record the configured

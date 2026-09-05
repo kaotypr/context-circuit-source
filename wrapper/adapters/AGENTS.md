@@ -13,7 +13,7 @@ conversation routing and reporting language for every host.
 A planned request flows as a normal conversation: the coordinator reads the relevant
 Product Knowledge and plan material, drafts or reviews a readable plan, you
 approve it in conversation, the workspace prepares isolated repository worktrees,
-one worker implements the whole plan and commits each repository, an independent
+one worker implements the whole plan in that plan's single repository and commits it, an independent
 verifier checks the latest commits, and the worker repairs failures with new
 commits. Standard completion follows candidate acceptance plus delivery; Critical
 completion is explicit. Explore is planless and human-supervised.
@@ -75,7 +75,7 @@ collaboration) or the independent verifier (for execution only).
 
 ## Per-role model & effort
 
-The coordinator may run the worker and verifier at a per-role `(model, effort)`
+The coordinator may run the worker, verifier, and tracer at a per-role `(model, effort)`
 from an optional host-local, per-user, gitignored `role-tiering.local.yaml`,
 grouped by host so each host names the models available on it. This is bounded
 host evidence (`host_evidence`): it changes cost and speed, never a route, role,
@@ -90,10 +90,11 @@ When this host is Codex and a role has a configured model or effort, launch the
 child with `spawn_agent` using that exact `model` and `reasoning_effort`. A model
 or effort override requires `fork_turns: "none"`; provide the complete role,
 scope, working-copy path, and task in the spawn prompt instead of relying on
-forked conversation context. End the Codex `task_name` with `_worker` or
-`_verifier` so bounded host evidence can identify the role without retaining a
-provider prompt. For direct collaboration, apply the `worker` tier to its one
-worker and never launch a verifier.
+forked conversation context. End the Codex `task_name` with `_worker`,
+`_verifier`, or `_tracer` so bounded host evidence can identify the role without
+retaining a provider prompt. For direct collaboration, apply the `worker` tier to
+its one worker and never launch a verifier. For tracing, apply the `tracer` tier
+when that host group has a tracer entry.
 
 The coordinator on any host may keep one resumable root session, represented by
 a session or thread id, for the human conversation. That root is not a worker,

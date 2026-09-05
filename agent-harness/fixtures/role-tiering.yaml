@@ -12,6 +12,10 @@ hosts:
       model: gpt-5.6-luna
       effort: medium
       escalate_on_repair: false
+    tracer:
+      model: gpt-5.6-luna
+      effort: medium
+      escalate_on_repair: false
 
   claude-code:
     worker:
@@ -22,6 +26,10 @@ hosts:
       model: haiku
       effort: medium
       escalate_on_repair: false
+    tracer:
+      model: haiku
+      effort: medium
+      escalate_on_repair: false
 
   cursor-agent:
     worker:
@@ -29,6 +37,10 @@ hosts:
       effort: medium
       escalate_on_repair: false
     verifier:
+      model: gpt-5
+      effort: medium
+      escalate_on_repair: false
+    tracer:
       model: gpt-5
       effort: medium
       escalate_on_repair: false
