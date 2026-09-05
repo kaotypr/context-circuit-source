@@ -17,7 +17,7 @@ Two kinds of plot:
 flowchart TD
   A[onboarding-what-is-this<br/>first contact, blank workspace] --> B[get a project home]
   B --> C[build-product-knowledge<br/>get up to speed  · optional]
-  C --> D[review-intent-approve-derive<br/>Gate 1 · plan file created here]
+  C --> D[review-intent-approve-derive<br/>Gate 1 · look at code, then plan]
   D --> E[execute-standard-verify-not-complete<br/>build + independent check]
   E --> F[accept the result<br/>candidate-bound]
   F --> G[standard-inferred-completion<br/>Gate 2 delivery → inferred done]
@@ -57,7 +57,7 @@ Read these top to bottom; each is one beat of a project's life.
 | 1 | [onboarding-what-is-this](plots/onboarding-what-is-this.md) | first contact — what is this, what can it do, how to start |
 | 2 | [orient-new-project](plots/orient-new-project.md) | a goal but no project yet — orient, don't fabricate |
 | 3 | [build-product-knowledge](plots/build-product-knowledge.md) | get up to speed on a connected project *(optional)* |
-| 4 | [review-intent-approve-derive](plots/review-intent-approve-derive.md) | **Gate 1** — review, settle the open question, approve → **the plan file is created here** |
+| 4 | [review-intent-approve-derive](plots/review-intent-approve-derive.md) | **Gate 1** — review, settle the open question, approve → look at the real code → **the plan file is created here** |
 | 5 | [execute-standard-verify-not-complete](plots/execute-standard-verify-not-complete.md) | build it, check it independently — verified ≠ complete |
 | 6 | [standard-inferred-completion](plots/standard-inferred-completion.md) | accept the result, then **Gate 2** delivery → completion is inferred |
 | 7 | [reconcile-and-proceed](plots/reconcile-and-proceed.md) | fold the delivered work into what the project knows |
@@ -119,7 +119,8 @@ happen at any point and change no workflow state.
 If you read nothing else in order, read these three, which carry the whole v1.0 shape:
 
 1. **Gate 1 is the only upstream decision.** `review-intent-approve-derive` — approving
-   the *intent* is where a plan file is born; there is no separate plan approval.
+   the *intent* is what lets the coordinator look at the real code and then write
+   the plan; there is no separate plan approval.
 2. **The middle is mechanical and honest.** `execute-standard-verify-not-complete` —
    built and independently checked, but *verified is not complete*.
 3. **Gate 2 is delivery, and completion follows.** `standard-inferred-completion` —

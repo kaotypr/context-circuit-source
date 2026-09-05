@@ -42,7 +42,7 @@ human:
     - When asked to show what it understands, it explains the goal, boundaries, and open question in plain terms.
     - When the human answers the open question, it reflects that decision and does NOT approve or start work yet.
     - It treats approval as a separate explicit Gate 1 step, only settling the goal when the human explicitly says so.
-    - After approval, it derives a plan automatically, without asking for a second plan approval, and nothing has been built or run yet.
+    - After approval, it looks at the real code, then derives a plan automatically, without asking for a second plan approval, and nothing has been built or run yet.
     - It never exposes internal file names or lifecycle jargon while explaining the change.
 
 grader:

@@ -89,10 +89,13 @@ and asking to build in one turn is honored as two sequential explicit actions; a
 human who wants to lock an intent without building yet may separate the two.
 
 Approval does **not** trigger execution and carries **no** second gate for the
-plans that derive from it — plan readiness after approval is automatic
+plans that derive from it — plan readiness after a feasible tracer is automatic
 (INV-INTENT-02), not a second human approval. Optional intent detail likewise has
-**no separate approval**. That automatic derivation assumes
-the post-approval feasibility check found no unresolved intent-level question.
+**no separate approval**. That automatic derivation happens **in the same turn**
+after a feasible look with no unresolved intent-level question; `contract.yaml`
+status `approved` does not skip the tracer. After a feasible tracer the
+human-facing `INTENT.md` status line is updated so it cannot stay stale;
+`contract.yaml` remains the approval authority.
 
 The human-facing **Open questions** section is phase-aware. At draft time it records
 known unresolved decisions; after tracing, newly discovered questions are classified

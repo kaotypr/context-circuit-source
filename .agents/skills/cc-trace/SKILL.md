@@ -17,6 +17,12 @@ redundant. At **Standard** and **Critical** it is mandatory.
 
 ## Spawn the tracer — one read-only child per repository
 
+Spawn each tracer at the concrete `(model, effort)` configured for the `tracer`
+role in the host-local role-tiering config (`docs/role-tiering.md`), with adapter
+defaults when that host has no tracer entry. `(model, effort)` changes cost and
+speed only; it never changes the tracer's read-only role, spawn rules, or the
+feasibility check.
+
 For each repository in the intent's scope, spawn a **tracer child** (`agents/tracer.md`)
 in parallel. Each reads *its* repository first-hand for this change. Because the tracer
 writes nothing, it needs **no lease and no worktree** — the machinery that protects
@@ -55,17 +61,21 @@ Each child reports a manifest, recorded at `intent/<id>/trace/<repo>.yaml` (sche
 the tracer to turn into plans. The partition report should make the execution
 boundary visible in human terms:
 
-- Keep the work in **one plan with embedded tasks** when the tasks share one bounded
-  execution/change surface, one worker lifecycle, and one independent verification
-  boundary. Order those tasks with their intra-plan `depends_on` relationships.
+- Keep the work in **one plan with embedded tasks** when the tasks share one
+  bounded execution/change surface in **one repository**, one worker lifecycle, and
+  one independent verification boundary. Order those tasks with their intra-plan
+  `depends_on` relationships.
 - Use **multiple stacked plans** when partitions can be independently executed or
   independently verified, have meaningful dependencies between them, or expose
-  distinct failure surfaces. Each partition must retain a bounded repository/path
-  mapping and an acyclic inter-plan dependency reason.
+  distinct failure surfaces, **and whenever the intent's scope covers two or more
+  repositories**. Each plan names exactly one repository. Each partition must
+  retain a bounded path mapping and an acyclic inter-plan dependency reason.
 
-Task count, repository count, and assurance tier are not substitutes for this
-judgment. A Standard change may still be one plan with several tasks, and a larger
-change may be several plans under the same approved intent. The coordinator records
+A two-repository intent produces at least two plans, one per repository, with
+`plan_dependencies` when one depends on the other. Assurance tier is not a
+substitute for this judgment. A Standard change in one repository may still be one
+plan with several tasks, and a larger change may be several plans under the same
+approved intent. The coordinator records
 why it kept or split the partition after feasibility, then explains that choice to
 the human; the tracer only supplies the grounded evidence.
 
@@ -114,7 +124,10 @@ The **feasibility check** (`sources/context-circuit-v1.0/intent-feasibility.md`)
 the change is buildable, stop and ask a human rather than proceed:
 
 - **Feasible** → set the tier (re-check with the tracer's `tier_signal`; a raise
-  surfaces at plan review) and hand `cc-plan` the grounded basis. No human step.
+  surfaces at plan review), update `INTENT.md` with
+  `intent-human-status . <id> "approved, look complete, feasible"`, and hand
+  `cc-plan` the grounded basis **in the same turn**. No human step. Do not write
+  plans when an intent-level question remains.
 - **Intent revision required** → do not write a plan. Relay the specific finding,
   update the intent and its Open questions, and take Gate 1 again if the approved
   decision changes.

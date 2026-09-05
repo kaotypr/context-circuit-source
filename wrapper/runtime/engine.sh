@@ -489,6 +489,21 @@ cc_intent_human_status_sync() {
 	' "$cc_ihs_file" | cc_atomic_write "$cc_ihs_file"
 }
 
+# cc_intent_human_status ROOT INTENT PHRASE -> rewrite INTENT.md _Status without
+# changing contract.yaml. Used after a feasible tracer so the human file cannot
+# stay stale while approval identity remains on the contract.
+cc_intent_human_status() {
+	cc_ihsr_root="$1"; cc_ihsr_id="$2"; cc_ihsr_phrase="$3"
+	[ -n "$cc_ihsr_phrase" ] || { cc_fail INTENT_HUMAN_STATUS_MISSING; return 1; }
+	cc_ihsr_flat=$(printf '%s' "$cc_ihsr_phrase" | tr -d '\n\r')
+	[ "$cc_ihsr_flat" = "$cc_ihsr_phrase" ] || { cc_fail INTENT_HUMAN_STATUS_INVALID; return 1; }
+	cc_ihsr_dir=$(cc_intent_dir "$cc_ihsr_root" "$cc_ihsr_id") || return 1
+	cc_intent_human_status_sync "$cc_ihsr_dir" "$cc_ihsr_phrase" || return 1
+	cc_emit intent "$cc_ihsr_id"
+	cc_emit human_status "$cc_ihsr_phrase"
+	return 0
+}
+
 # cc_intent_approve ROOT INTENT -> draft->approved (Gate 1); freeze contract_digest
 cc_intent_approve() {
 	cc_iap_root="$1"; cc_iap_id="$2"
@@ -3402,6 +3417,7 @@ cc_main() {
 		intent-validate)         cc_intent_validate "$@" ;;
 		intent-allocate-id)      cc_intent_allocate_id "$@" ;;
 		intent-approve)          cc_intent_approve "$@" ;;
+		intent-human-status)     cc_intent_human_status "$@" ;;
 		intent-authorized)       cc_intent_authorized "$@" ;;
 		intent-archive)          cc_intent_archive "$@" ;;
 		intent-restore)          cc_intent_restore "$@" ;;

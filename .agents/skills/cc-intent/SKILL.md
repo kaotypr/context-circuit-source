@@ -109,8 +109,12 @@ no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
 understood the ask: it is what lets the tracer read the real code next. Immediately
 after approval, hand off to `cc-trace` — spawn one read-only tracer child per
 repository in scope, collect the manifests, and run the feasibility check on the
-findings — before any plan is written. After approval the human is not asked to
-approve a plan; `cc-plan` derives it from the trace manifest.
+findings — **before any plan is written**. `contract.yaml` status `approved` is
+Gate 1 only; it cannot skip or stand in for the tracer. After a feasible tracer
+with no intent-level questions, update the `INTENT.md` status line with
+`intent-human-status . <id> "approved, look complete, feasible"` so it cannot stay
+stale, then `cc-plan` derives the plan or plans **in that same turn**. After
+approval the human is not asked to approve a plan.
 
 Changing any criteria-bearing field after approval is a new decision: it breaks
 the frozen digest, so the plan's authorization fails until re-approved, and it voids
@@ -123,9 +127,11 @@ only then derive a plan. A plan-level question does not reopen approval.
 
 ## One intent, one or more plans
 
-An intent is one *decision*; a plan is one *execution*. The relationship is 1:N — a
-small change is one plan, a larger change several stacked plans that each name the
-intent. Genuinely separate decisions the human would
+An intent is one *decision*; a plan is one *execution* in **one repository**. The
+relationship is 1:N — a small change is one plan, a larger change several stacked
+plans that each name the intent. An intent whose scope covers two repositories
+derives at least two plans, one per repository, with `plan_dependencies` when one
+depends on the other. Genuinely separate decisions the human would
 review and ship independently are **separate intents** (which may declare
 `intent_dependencies` to be ordered), not one giant intent. A large multi-topic
 picture lives one level up in `sources/system-design/` and spawns one intent per
@@ -141,6 +147,9 @@ the invoke-not-read boundary):
 - `sh wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNN>-slug`.
 - `sh wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
 - `sh wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.
+- `sh wrapper/runtime/engine.sh intent-human-status . <id> "<phrase>"` — rewrite
+  the `INTENT.md` `_Status` line after a feasible tracer; never changes
+  `contract.yaml`.
 - `sh wrapper/runtime/engine.sh intent-archive . <id>` / `intent-restore . <id>` —
   status-blind organization (INV-ARCHIVE-01/02), the same as plans.
 
@@ -155,9 +164,11 @@ intent is a real decision; present it as one, not a rubber stamp.
 
 ## Boundaries
 
-Authoring or approving an intent never creates a plan, executes, verifies,
+Authoring or the Gate 1 approve act never creates a plan, executes, verifies,
 completes, or delivers, and never reads the codebase. It writes only under
 `intent/<id>/` (`INTENT.md`, `contract.yaml`, and optional `detail/`). The tracer
 that reads the code runs only after approval (`cc-trace`) and may send an
-intent-level question back here before planning. Approval is conversational, never
+intent-level question back here before planning. After a feasible tracer with no
+intent-level questions, `cc-plan` writes the derived plans in that same turn;
+writing those plans does not start execution. Approval is conversational, never
 a confirmation card or hidden token, and there is no second approval of the detail.
