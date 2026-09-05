@@ -49,6 +49,26 @@ Each child reports a manifest, recorded at `intent/<id>/trace/<repo>.yaml` (sche
 - a **completeness proof** for any "change every X" obligation — the command and count
   showing the found set is the whole set.
 
+### Surface the plan boundary for the coordinator
+
+`task_partition` is evidence for the coordinator to ratify, not an instruction for
+the tracer to turn into plans. The partition report should make the execution
+boundary visible in human terms:
+
+- Keep the work in **one plan with embedded tasks** when the tasks share one bounded
+  execution/change surface, one worker lifecycle, and one independent verification
+  boundary. Order those tasks with their intra-plan `depends_on` relationships.
+- Use **multiple stacked plans** when partitions can be independently executed or
+  independently verified, have meaningful dependencies between them, or expose
+  distinct failure surfaces. Each partition must retain a bounded repository/path
+  mapping and an acyclic inter-plan dependency reason.
+
+Task count, repository count, and assurance tier are not substitutes for this
+judgment. A Standard change may still be one plan with several tasks, and a larger
+change may be several plans under the same approved intent. The coordinator records
+why it kept or split the partition after feasibility, then explains that choice to
+the human; the tracer only supplies the grounded evidence.
+
 The tracer never writes plans, never edits the frozen contract, and never talks to the
 human — it finds, records, and reports to you.
 

@@ -95,6 +95,24 @@ proceed. Because it is a quality gate, it never
 substitutes for delivery: concrete **scope-safety is settled at Gate 2**
 ([delivery](../delivery/README.md)), not here.
 
+### Ratifying one plan or stacked plans
+
+After feasibility, the coordinator ratifies the manifest's `task_partition` by
+looking at the actual execution boundary. A bounded change with one worker
+lifecycle and one independent verification boundary stays **one plan with
+embedded tasks**, even when the tasks are ordered. Independent execution or
+verification boundaries, meaningful dependencies between partitions, or distinct
+failure surfaces justify **multiple stacked plans**. Each stacked plan keeps a
+bounded repository/path mapping and its own worker/verifier lifecycle.
+
+The partition is not chosen from plan count or assurance tier. Standard work may
+remain one plan, and several plans may share the same approved intent. Task
+`depends_on` expresses order inside one plan; `plan_dependencies` expresses the
+acyclic ordering between stacked plans. The coordinator records the human-readable
+decomposition rationale in the derived plan's `context_grounding.decisions` and
+readable `PLAN.md`, while each inter-plan edge carries its own reason. This uses the
+existing contracts and does not add a second plan-approval gate.
+
 ## Tracing is not the execution-time grounding scan
 
 Two different phases both "read the repository"; keep them distinct:

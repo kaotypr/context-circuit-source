@@ -33,7 +33,14 @@ fields:
   task_partition:
     type: list
     required: false
-    description: proposed split of the work (by feature area or layer) for the coordinator to ratify or adjust
+    description: >
+      proposed split of the work (by feature area or layer) for the coordinator to
+      ratify or adjust. The report should expose whether one bounded execution and
+      verification boundary supports one plan with embedded tasks, or whether
+      independent execution/verification boundaries, meaningful dependencies, or
+      distinct failure surfaces justify stacked plans. Task depends_on and inter-plan
+      plan_dependencies remain separate; the rationale is recorded on the derived
+      plan rather than by adding a new manifest field.
   risks:
     type: list
     required: false

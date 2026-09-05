@@ -93,4 +93,33 @@ cc_execution_begin "$ws" 0010-compound s2 >/dev/null
 require_dir "$ws/.runtime/executions/0010-compound"
 assert_eq "draft" "$(cc_plan_status "$ws" 0010-compound)"   # stays draft through execution
 
+# --- one bounded Standard change remains one plan with ordered embedded tasks ---
+cc_fx_plan "$ws" 0012-bounded "Bounded" "api"
+multi="$ws/plans/0012-bounded/plan.yaml"
+awk '
+/^execution:/ && !added {
+    print "  - id: API-002"
+    print "    title: Work in src/billing/receipt"
+    print "    repositories: [api]"
+    print "    paths: [src/billing/receipt]"
+    print "    depends_on: [API-001]"
+    print "    changes:" 
+    print "      - Change the receipt path after the bounded billing task."
+    print "    acceptance:"
+    print "      - id: API-002-AC"
+    print "        statement: The receipt path is changed."
+    print "    verification:"
+    print "      - id: API-002-VT"
+    print "        command: test -f src/billing/receipt/mod.txt"
+    added=1
+}
+{print}
+' "$multi" >"$multi.new"
+mv "$multi.new" "$multi"
+cc_plan_validate "$ws/plans/0012-bounded" >/dev/null
+contains "$multi" "depends_on: [API-001]"
+not_contains "$multi" "plan_dependencies:"
+contains "$multi" "worker: one"
+contains "$multi" "independent_verifier: required"
+
 pass 'plans'

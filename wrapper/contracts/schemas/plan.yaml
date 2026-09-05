@@ -70,7 +70,9 @@ fields:
       Inter-plan ordering, distinct from a task's intra-plan depends_on. Each
       entry names another plan this plan builds on, with a reason. Its effect
       (same-repo git base vs cross-repo ordering gate) is derived per repository,
-      never declared.
+      never declared. Use this only when independent execution, verification,
+      dependency, or failure boundaries justify stacked plans; a bounded one-plan
+      change keeps its ordered work in tasks instead.
     item:
       id: { type: string, required: true, description: an existing, non-self plan id }
       reason: { type: string, required: true }
@@ -85,6 +87,9 @@ fields:
     type: object
     required: true
     fields: [summary, constraints, decisions]
+    description: >
+      decisions carries the durable, human-readable rationale for the chosen
+      one-plan or stacked-plan decomposition; PLAN.md mirrors it for review.
   knowledge_impact:
     type: object
     required: true
@@ -104,6 +109,10 @@ fields:
   execution:
     type: object
     required: true
+    description: >
+      Each plan has one bounded worker lifecycle and, for Standard/Critical work,
+      one independent verifier lifecycle. Stacking plans does not merge these
+      per-plan boundaries.
     fields:
       worker: { const: one }
       independent_verifier: { const: required }

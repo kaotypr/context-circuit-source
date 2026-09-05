@@ -13,6 +13,45 @@ here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 require_file "$here/scenarios.md"
 require_file "$here/conversations.md"
 
+add_embedded_task() {
+	file=$1
+	awk '
+    /^execution:/ && !added {
+        print "  - id: CHECKOUT-SERVICE-002"
+        print "    title: Bound the checkout latency task"
+        print "    repositories: [checkout-service]"
+        print "    paths: [src/checkout/latency]"
+        print "    depends_on: [CHECKOUT-SERVICE-001]"
+        print "    changes:"
+        print "      - Keep the latency check after the retry behavior."
+        print "    acceptance:"
+        print "      - id: CHECKOUT-SERVICE-002-AC"
+        print "        statement: The latency task is represented."
+        print "    verification:"
+        print "      - id: CHECKOUT-SERVICE-002-VT"
+        print "        command: test -f src/checkout/latency/mod.txt"
+        added=1
+    }
+    {print}
+    ' "$file" >"$file.new"
+	mv "$file.new" "$file"
+}
+
+add_plan_dependency() {
+	file=$1
+	dependency=$2
+	awk -v dependency="$dependency" '
+    /^product_knowledge:/ && !added {
+        print "plan_dependencies:"
+        print "  - id: " dependency
+        print "    reason: Consumer depends on the API plan"
+        added=1
+    }
+    {print}
+    ' "$file" >"$file.new"
+	mv "$file.new" "$file"
+}
+
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" checkout-service development
@@ -26,6 +65,10 @@ cc_fx_intent "$ws" "$iidA" "Checkout retries" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidA" >/dev/null                       # Gate 1
 assert_eq "approved" "$(cc_scalar "$ws/intent/$iidA/contract.yaml" status)"
 cc_fx_plan_intent "$ws" 0001-retry "Retry" checkout-service src/checkout "$iidA"
+add_embedded_task "$ws/plans/0001-retry/plan.yaml"
+cc_plan_validate "$ws/plans/0001-retry" >/dev/null
+contains "$ws/plans/0001-retry/plan.yaml" "depends_on: [CHECKOUT-SERVICE-001]"
+not_contains "$ws/plans/0001-retry/plan.yaml" "plan_dependencies:"
 eng intent-authorized "$ws" 0001-retry | grep -q '^authorized: yes' || fail "A: plan should be authorized"
 cc_fx_run_ok "$ws" 0001-retry checkout-service src/checkout       # worker + independent verifier pass
 edirA=$(cc_fx_exec_dir "$ws" 0001-retry "$(cc_latest_execution "$ws" 0001-retry)")
@@ -70,10 +113,21 @@ eng intent-authorized "$ws" 0003-drift | grep -q '^authorized: yes' || fail "D: 
 iidC=i004-ratelimit
 cc_fx_intent "$ws" "$iidC" "Rate limit" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidC" >/dev/null
-cc_fx_plan_intent "$ws" 0012-api "API" checkout-service src/checkout "$iidC"
-cc_fx_plan_intent "$ws" 0013-consumer "Consumer" checkout-service src/checkout "$iidC"
-cc_fx_run_ok "$ws" 0012-api checkout-service src/checkout
-cc_fx_run_ok "$ws" 0013-consumer checkout-service src/checkout
+cc_fx_plan_intent "$ws" 0012-api "API" checkout-service src/checkout/api "$iidC"
+cc_fx_plan_intent "$ws" 0013-consumer "Consumer" checkout-service src/checkout/consumer "$iidC"
+add_plan_dependency "$ws/plans/0013-consumer/plan.yaml" 0012-api
+cc_plan_validate "$ws/plans/0012-api" >/dev/null
+cc_plan_validate "$ws/plans/0013-consumer" >/dev/null
+assert_eq "draft" "$(cc_plan_status "$ws" 0012-api)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0013-consumer)"
+beforeC=$(cc_plan_ready "$ws" 0013-consumer || :)
+printf '%s' "$beforeC" | grep -q '^readiness: waiting' || fail "C: consumer should wait for API"
+cc_fx_run_ok "$ws" 0012-api checkout-service src/checkout/api
+afterC=$(cc_plan_ready "$ws" 0013-consumer || :)
+printf '%s' "$afterC" | grep -q '^readiness: ready' || fail "C: consumer should become ready"
+cc_fx_run_ok "$ws" 0013-consumer checkout-service src/checkout/consumer
+assert_eq "verified" "$(cc_execution_status "$(cc_fx_exec_dir "$ws" 0012-api "$(cc_latest_execution "$ws" 0012-api)")")"
+assert_eq "verified" "$(cc_execution_status "$(cc_fx_exec_dir "$ws" 0013-consumer "$(cc_latest_execution "$ws" 0013-consumer)")")"
 cs=$(eng change-set-candidate "$ws" 0012-api 0013-consumer | sed -n 's/^change_set_candidate: //p')
 case "$cs" in cand-*) : ;; *) fail "C: change-set candidate invalid" ;; esac
 # one candidate for the pair, order-independent (one verification, one acceptance)
@@ -108,5 +162,7 @@ contains "$conv" "Approve this and I'll build it"
 contains "$conv" "open the pull request"
 contains "$conv" "combined result"
 contains "$conv" "haven't"
+contains "$here/scenarios.md" "split solely to match the assurance tier"
+contains "$here/scenarios.md" "partitions are combined into one lifecycle"
 
 pass 'v1.0 human-simulated scenarios'

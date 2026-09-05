@@ -29,6 +29,12 @@ auth_reason() { sh "$ROOT/wrapper/runtime/engine.sh" intent-authorized "$ws" "$1
 cc_fx_plan_intent "$ws" 0001-child "Child" checkout-service src/checkout/retry "$iid"
 auth 0001-child | grep -q '^authorized: yes' || fail "in-scope plan should be authorized"
 
+# One approved intent can authorize more than one stacked plan; the second plan
+# does not introduce another approval state or gate.
+cc_fx_plan_intent "$ws" 0002-sibling "Sibling" checkout-service src/checkout/summary "$iid"
+auth 0002-sibling | grep -q '^authorized: yes' || fail "stacked sibling should be authorized"
+assert_eq "draft" "$(cc_plan_status "$ws" 0002-sibling)"
+
 # --- NO SCOPE GATE (the deliberate v1.0 change): a plan that reaches a repository or
 # path OUTSIDE the intent's coarse scope is STILL authorized — scope-safety is at
 # delivery (Gate 2), not an automated gate here. Under the old envelope check these

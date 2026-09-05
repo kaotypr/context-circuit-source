@@ -25,6 +25,29 @@ here — so you are planning a change already judged buildable. If no trace mani
 exists yet (the tracer has not run), run `cc-trace` first rather than improvising a
 code read inline.
 
+## Ratify the task partition
+
+Treat the trace's `task_partition` as grounded evidence, then make one explicit
+plan-boundary decision. Keep a **one-plan** derivation when all tasks share one
+bounded execution/change surface, one worker lifecycle, and one independent
+verification boundary. Put the tasks in that plan and use task `depends_on` for
+their intra-plan order; several tasks do not require several plans.
+
+Derive **stacked plans** when the partitions are independently executable or
+independently verifiable, when there are meaningful dependencies between them, or
+when their failure surfaces need to be isolated. Give each plan bounded
+repository/path mappings, record an acyclic `plan_dependencies` edge with a reason,
+and preserve one worker plus one independent verifier lifecycle for every
+Standard/Critical plan.
+
+Record the overall rationale in `context_grounding.decisions` and mirror it in the
+readable `PLAN.md`; use each `plan_dependencies.reason` for the specific edge. Do
+not split work solely because it is Standard or Critical, and do not combine
+partitions merely to make one plan when their execution, verification, dependency,
+or failure boundaries are genuinely independent. Plan count is not an assurance
+tier and does not create a separate plan-approval gate. One approved intent may
+authorize one plan or a stack of plans.
+
 Before writing a plan, inspect the manifest's `open_questions` and
 `out_of_scope_reach` and record a disposition for each finding. An
 `intent-revision` question, or a required scope change not already authorized by

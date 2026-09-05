@@ -67,12 +67,13 @@ these lines carry no internal vocabulary.
 
 > **H:** The rate-limit change needs the API update and the consumer update together.
 >
-> **C:** Right — that's two pieces that land as one change: the API change first,
-> then the consumer that depends on it. I'll plan both under the one intent.
+> **C:** Right — that's two pieces with separate boundaries that land as one change:
+> the API change first, then the consumer that depends on it. I'll plan both under
+> the one intent, with that dependency made explicit.
 >
-> **C:** Both pieces are built. Because they ship as one pull request, I ran one
-> independent check over the combined result, not one per piece — it passed. Accept
-> and I'll open a single pull request for both.
+> **C:** Both pieces are built and each has its own independent check. Because they
+> ship as one pull request, I also ran one check over the combined result — it
+> passed. Accept and I'll open a single pull request for both.
 >
 > **H:** Accept.
 

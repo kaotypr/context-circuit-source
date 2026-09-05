@@ -125,6 +125,42 @@ printf '%s' "$ready12b" | grep -q '^readiness: ready' || fail "0012 should be re
 part2=$(cc_run_stack_ready "$ws" 0011-ra 0012-rb)
 printf '%s\n' "$part2" | grep -q '^0011-ra: verified' || fail "partition: verified plan is not runnable"
 printf '%s\n' "$part2" | grep -q '^0012-rb: ready'    || fail "partition: 0012 not ready after dep"
+
+# One approved intent can yield a real stack: the dependency is inter-plan order,
+# while each plan keeps its own bounded task and verifier lifecycle.
+shared_iid=i025-shared-decomposition
+cc_fx_intent "$ws" "$shared_iid" "Shared decomposition" api "src/shared-stack"
+cc_intent_approve "$ws" "$shared_iid" >/dev/null
+cc_fx_plan_intent "$ws" 0024-api "Shared API" api src/shared-stack/api "$shared_iid"
+cc_fx_plan_intent "$ws" 0025-consumer "Shared consumer" api src/shared-stack/consumer "$shared_iid"
+shared_consumer="$ws/plans/0025-consumer/plan.yaml"
+awk '
+/^product_knowledge:/ && !added {
+	print "plan_dependencies:"
+	print "  - id: 0024-api"
+	print "    reason: Consumer depends on the API plan"
+	added=1
+}
+{print}
+' "$shared_consumer" >"$shared_consumer.new"
+mv "$shared_consumer.new" "$shared_consumer"
+cc_plan_validate "$ws/plans/0024-api" >/dev/null
+cc_plan_validate "$ws/plans/0025-consumer" >/dev/null
+contains "$shared_consumer" "plan_dependencies:"
+contains "$shared_consumer" "reason: Consumer depends on the API plan"
+contains "$shared_consumer" "worker: one"
+contains "$shared_consumer" "independent_verifier: required"
+shared_before=$(cc_run_stack_ready "$ws" 0024-api 0025-consumer)
+printf '%s\n' "$shared_before" | grep -q '^0024-api: ready' || fail "shared API should be ready"
+printf '%s\n' "$shared_before" | grep -q '^0025-consumer: waiting' || fail "shared consumer should wait"
+cc_fx_run_ok "$ws" 0024-api api src/shared-stack/api
+shared_after=$(cc_run_stack_ready "$ws" 0024-api 0025-consumer)
+printf '%s\n' "$shared_after" | grep -q '^0024-api: verified' || fail "shared API should be verified"
+printf '%s\n' "$shared_after" | grep -q '^0025-consumer: ready' || fail "shared consumer should become ready"
+cc_fx_run_ok "$ws" 0025-consumer api src/shared-stack/consumer
+assert_eq "verified" "$(cc_execution_status "$(edir_of 0024-api)")"
+assert_eq "verified" "$(cc_execution_status "$(edir_of 0025-consumer)")"
+
 # lease gate: an unrelated held lease on the same region makes a plan wait
 cc_fx_plan_ex "$ws" 0013-l1 "L1" api src/lease ""
 cc_fx_plan_ex "$ws" 0014-l2 "L2" api src/lease ""
