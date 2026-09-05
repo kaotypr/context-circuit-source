@@ -1,0 +1,56 @@
+schema_version: 2
+intent: i006-approval-then-trace
+title: Spawn the tracer immediately after intent approval
+goal: >
+  After a human approves an intent, the coordinator must spawn the tracer and
+  run the feasibility check next, before any plan is written. contract.yaml
+  status must not flip in a way that skips that sequence or treats the intent
+  as ready to plan while the tracer has not started. The observed real-life
+  failure — contract.yaml moving to approved before a tracer is spawned, with
+  no feasibility check — is the defect this change closes.
+
+non_goals:
+  - Adding a second human approval of plans.
+  - Changing what approval means as the single upstream human gate, except as
+    the open question on this intent settles whether contract.yaml status
+    waits for the tracer and feasibility check.
+  - Completing, delivering, publishing, merging, or committing the
+    implementation implicitly.
+  - Authoring the plans themselves (that is the following intent).
+
+constraints:
+  - Tracing remains read-only, one child per repository in scope, with no
+    lease and no worktree.
+  - The feasibility check remains coordinator judgment, not an engine verb,
+    and remains a quality gate, not a scope gate.
+  - Scope-safety stays at delivery.
+  - Product behavior has one owner per rule; do not add parallel sequencing
+    policy in a skill if the owning contract already covers the order.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-TRACER-NEXT
+    statement: >
+      After intent approval, the tracer starts next for every repository in
+      scope, before any plan file is written.
+  - id: AC-FEASIBILITY-BEFORE-PLANS
+    statement: >
+      The feasibility check always happens after the tracer and before any
+      plan is written; a missing tracer cannot be treated as a successful
+      feasibility check.
+  - id: AC-STATUS-CANNOT-SKIP
+    statement: >
+      contract.yaml status cannot make the tracer or feasibility check look
+      finished, or the intent ready to plan, while the tracer has not started.
+  - id: AC-NO-SECOND-GATE
+    statement: >
+      Plans still derive from the approved intent with no second human
+      approval.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: draft

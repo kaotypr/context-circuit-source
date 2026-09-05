@@ -1,0 +1,51 @@
+schema_version: 2
+intent: i007-intent-page-status
+title: Keep INTENT.md status truthful, or drop it
+goal: >
+  After the tracer finishes with no follow-up questions and the coordinator
+  marks the intent feasible, the INTENT.md status line must not stay behind
+  that fact. Either the INTENT.md status is updated to match a completed
+  feasible tracer, or the status line is removed from INTENT.md so it cannot
+  go stale. contract.yaml remains the authority for identifiers and approval.
+
+non_goals:
+  - Replacing contract.yaml as the machine authority for approval and digest.
+  - Adding a second human approval of plans.
+  - Changing what intent approval means, except as needed to keep or drop the
+    INTENT.md status line.
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - INTENT.md stays the short five-section human file; do not add a sixth
+    section to explain status.
+  - The chosen rule must be one owner, not a skill-only note that INTENT.md
+    then ignores.
+  - If the status line is kept, it must stay in sync after a feasible tracer
+    with no follow-up questions; if it is removed, no other human-facing
+    status line may replace it on INTENT.md.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-NO-STALE-STATUS
+    statement: >
+      After a tracer completes with no follow-up questions and the feasibility
+      check marks the intent feasible, INTENT.md does not keep a status that
+      still looks like waiting, incomplete, or otherwise behind that fact.
+  - id: AC-ONE-RULE
+    statement: >
+      Exactly one rule is in force: either the INTENT.md status line is
+      updated to match a completed feasible tracer, or the status line is
+      removed from INTENT.md.
+  - id: AC-CONTRACT-REMAINS
+    statement: >
+      contract.yaml remains the authority for approval identity and frozen
+      criteria; dropping or updating the INTENT.md status line does not
+      create a second source of approval.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: draft
