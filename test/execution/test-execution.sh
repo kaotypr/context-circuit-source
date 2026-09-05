@@ -12,12 +12,12 @@ cc_fx_repo "$ws" web development
 # base commits before execution (to prove the base checkout is untouched)
 api_base=$(git -C "$ws/repositories/api" rev-parse HEAD)
 
-cc_fx_plan "$ws" 0001-checkout "Checkout v2" "contracts api web"
+cc_fx_plan "$ws" 0001-checkout "Checkout v2" "api"
 exec=$(cc_execution_begin "$ws" 0001-checkout sess1 | sed -n 's/^execution_id: //p')
 edir=$(cc_fx_exec_dir "$ws" 0001-checkout "$exec")
 
 # --- one isolated branch + worktree per affected repository ---
-for r in contracts api web; do
+for r in api; do
 	require_dir "$ws/.runtime/worktrees/0001-checkout/$r"
 	contains "$edir/repositories/$r.yaml" "branch: cc/0001-checkout/$r"
 	contains "$edir/repositories/$r.yaml" "allowed_paths: [src]"
@@ -29,9 +29,9 @@ assert_eq "$api_base" "$(git -C "$ws/repositories/api" rev-parse HEAD)"
 # --- commit-before-verification is enforced: no worker commit -> verifier prepare fails ---
 expect_failure cc_verifier_prepare "$edir"
 
-# --- one worker commits every repository in dependency order ---
+# --- one worker commits the plan's single repository ---
 cc_attempt_begin "$edir" >/dev/null
-for r in contracts api web; do
+for r in api; do
 	cc_fx_commit "$ws" 0001-checkout "$r" "impl-$r"
 	cc_worker_commit_record "$edir" "$r" implementation >/dev/null
 done
@@ -42,10 +42,10 @@ cc_verifier_result_record "$edir" 1 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir")"
 contains "$edir/attempts/001/verifier.yaml" "schema_version: 1"
 
-# --- worktree isolation: each repo has its own branch tip, distinct from base ---
-web_tip=$(git -C "$ws/.runtime/worktrees/0001-checkout/web" rev-parse HEAD)
-web_base=$(cc_scalar "$edir/repositories/web.yaml" base_commit)
-test "$web_tip" != "$web_base" || fail "web worktree tip equals base"
+# --- worktree isolation: the repo has its own branch tip, distinct from base ---
+api_tip=$(git -C "$ws/.runtime/worktrees/0001-checkout/api" rev-parse HEAD)
+api_exec_base=$(cc_scalar "$edir/repositories/api.yaml" base_commit)
+test "$api_tip" != "$api_exec_base" || fail "api worktree tip equals base"
 
 # --- blocked verifier is not a worker failure ---
 cc_fx_plan "$ws" 0002-blocked "Blocked" "api"

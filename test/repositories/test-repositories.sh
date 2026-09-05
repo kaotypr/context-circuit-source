@@ -89,18 +89,18 @@ expect_failure cc_repo_resolve "$conflict" svc
 expect_failure cc_repository_binding_migrate "$conflict"
 rm -rf "$conflict"
 
-# --- multi-repository preflight over three repositories ---
+# --- one-repository preflight ---
 cc_fx_repo "$ws" web development
 cc_fx_repo "$ws" contracts development
-cc_fx_plan "$ws" 0001-multi "Multi" "contracts api web"
+cc_fx_plan "$ws" 0001-multi "Multi" "api"
 # fix api base branch for the plan (api was bound to a personal branch already)
 pf=$(cc_repository_preflight "$ws" "$ws/plans/0001-multi")
-printf '%s\n' "$pf" | grep -Fq "repositories_ready: 3" || fail "expected 3 repos ready"
+printf '%s\n' "$pf" | grep -Fq "repositories_ready: 1" || fail "expected 1 repo ready"
 
 # --- dirty base checkout is rejected by preflight ---
-printf 'dirty\n' >"$ws/repositories/web/src/x.txt"
+printf 'dirty\n' >"$ws/repositories/api/src/x.txt"
 expect_failure cc_repository_preflight "$ws" "$ws/plans/0001-multi"
-git -C "$ws/repositories/web" checkout -q -- . 2>/dev/null || rm -f "$ws/repositories/web/src/x.txt"
+git -C "$ws/repositories/api" checkout -q -- . 2>/dev/null || rm -f "$ws/repositories/api/src/x.txt"
 
 # --- deterministic registration records identity + binding, then resolves ---
 ws2=$(mktemp -d "${TMPDIR:-/tmp}/cc-reg.XXXXXX")

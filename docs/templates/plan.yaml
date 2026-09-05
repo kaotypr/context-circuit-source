@@ -6,7 +6,7 @@ status: draft
 objective: One-sentence description of the outcome.
 repositories:
   - id: api
-    purpose: What this repository owns for the plan.
+    purpose: What this repository owns for the plan. Exactly one repository per plan.
 product_knowledge:
   - id: domain.example
     path: context/domains/example/README.md
