@@ -14,7 +14,7 @@ contains "$ws/role-tiering.local.yaml" '  claude-code:'
 contains "$ws/role-tiering.local.yaml" '  cursor-agent:'
 contains "$ws/role-tiering.local.yaml" 'model: gpt-5.6-luna'
 contains "$ws/role-tiering.local.yaml" 'effort: medium'
-assert_eq 6 "$(grep -c '^      effort: medium$' "$ws/role-tiering.local.yaml")"
+assert_eq 9 "$(grep -c '^      effort: medium$' "$ws/role-tiering.local.yaml")"
 not_contains "$ROOT/agent-harness/scenarios/14-codex-direct-collaboration/case.yaml" 'role_tiering:'
 
 # Seed the exact ground-truth state a successful live coordinator + worker must

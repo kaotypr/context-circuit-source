@@ -7,7 +7,7 @@ require_file "$fixture"
 for host in codex claude-code cursor-agent; do
 	contains "$fixture" "  $host:"
 done
-assert_eq 6 "$(grep -c '^      effort: medium$' "$fixture")"
+assert_eq 9 "$(grep -c '^      effort: medium$' "$fixture")"
 not_contains "$ROOT/agent-harness/scenarios/13-execution-latency/case.yaml" 'role_tiering:'
 not_contains "$ROOT/agent-harness/scenarios/14-codex-direct-collaboration/case.yaml" 'role_tiering:'
 

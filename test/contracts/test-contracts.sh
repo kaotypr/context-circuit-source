@@ -187,6 +187,13 @@ done
 # not in the source-only wrapper/adapters/ staging directory.
 require_file "$ROOT/docs/role-tiering.md"
 contains "$inv" "role_tiering: docs/role-tiering.md"
+contains "$ROOT/docs/role-tiering.md" "tracer"
+contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "role-tiering"
+not_contains "$ROOT/docs/role-tiering.md" "Tracer tiering isn’t supported"
+not_contains "$ROOT/docs/role-tiering.md" "Tracer tiering isn't supported"
+not_contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "Tracer tiering isn’t supported"
+not_contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "Tracer tiering isn’t supported"
+not_contains "$W/adapters/AGENTS.md" "Tracer tiering isn’t supported"
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
 contains "$man" "runtime_version: 1.0.0"

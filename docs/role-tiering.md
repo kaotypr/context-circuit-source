@@ -42,17 +42,24 @@ hosts:
       model: <a-cheaper-model-on-this-host>
       effort: medium
       escalate_on_repair: false   # hard pin — same (model, effort) every attempt
+    tracer:
+      model: <a-model-on-this-host>
+      effort: medium
+      escalate_on_repair: false
   <another-host-id>:
     worker:   { model: <a-model-on-that-host>, effort: high }
     verifier: { model: <a-model-on-that-host>, effort: medium }
+    tracer:   { model: <a-model-on-that-host>, effort: medium }
 ```
 
 - **Grouped by host.** `hosts.<id>` names the models for that host; the same
   workspace run from a different host reads that host's own group. A host with no
   group uses the adapter defaults.
-- **Only `worker` and `verifier`** appear in a group. The coordinator is the root
-  session the user already controls at the host level (its own model/effort
-  controls), so it needs no entry and is never auto-retiered.
+- **Only `worker`, `verifier`, and `tracer`** appear in a group. The coordinator
+  is the root session the user already controls at the host level (its own
+  model/effort controls), so it needs no entry and is never auto-retiered.
+  Explore (`cc-pair`) uses the `worker` entry for its one worker and never
+  launches a verifier.
 - **`escalate_on_repair` is per role.** `false` is a hard pin; `true` makes the
   configured `(model, effort)` a start-and-floor a repair may raise, never lower.
 - An unset role — or an unlisted host — falls back to the **adapter default**.
@@ -68,6 +75,7 @@ model.
 | --- | --- | --- | --- |
 | worker | the session's current model | high | true |
 | verifier | the session's current model | medium | false |
+| tracer | the session's current model | medium | false |
 
 "The session's current model" means: absent an explicit choice, spawn the child at
 whatever model the coordinator session is already running, so the default is
