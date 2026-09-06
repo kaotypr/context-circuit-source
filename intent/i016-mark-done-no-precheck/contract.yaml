@@ -1,0 +1,54 @@
+schema_version: 2
+intent: i016-mark-done-no-precheck
+title: Mark a plan done without inspecting work or evidence first
+goal: >
+  When a human asks to mark a plan done, or several plans done, the agent
+  marks each named plan done. It does not first inspect whether that plan's
+  work and evidence exist. Readiness remains a runtime refusal: if a plan is
+  not ready to be done, mark-done refuses and that outcome is reported
+  plainly. There is no separate agent pre-check step before the flip.
+
+non_goals:
+  - Weakening the runtime readiness gate so an unverified or otherwise
+    not-ready plan becomes done.
+  - Marking a plan done without an explicit human ask.
+  - Changing verification, candidate acceptance, or delivery so any of
+    them mark a plan done.
+  - Changing in-place Product Knowledge reconcile after a successful
+    mark-done.
+  - Giving Explore a plan or an intent; Explore stays planless.
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - Standard and Critical become done only on an explicit mark-done when
+    completion-ready still holds (INV-COMPLETE-01).
+  - Product behavior has one owner per rule; update the owning completion
+    contract rather than a skill-only exception.
+  - The same mark-done path applies to one named plan and to several named
+    plans in one ask.
+  - Preserve unrelated and dirty work, and run the semantic acceptance
+    suite after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-NO-PRECHECK
+    statement: >
+      Asking to mark a plan done, or several plans done, marks each named
+      plan done without an agent step that inspects whether that plan's
+      work or evidence exist.
+  - id: AC-RUNTIME-REFUSES
+    statement: >
+      If a named plan is not ready to be done, mark-done refuses and that
+      is reported plainly. The agent does not invent a separate look at
+      work or evidence in order to decide.
+  - id: AC-STILL-EXPLICIT
+    statement: >
+      A plan still becomes done only when a human asks to mark it done.
+      Verification, candidate acceptance, and delivery do not mark it done.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: draft
