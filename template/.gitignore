@@ -5,6 +5,9 @@
 /repositories.local.yaml
 
 # Per-user, host-local role tiering (model/effort) — differs per person and host.
+# Gitignore is not a read block: coordinators MUST still Read this file from the
+# workspace root before spawning a worker, verifier, or tracer. A search that
+# skips ignored files is not "file absent" — open the path directly.
 /role-tiering.local.yaml
 
 # Private execution evidence.

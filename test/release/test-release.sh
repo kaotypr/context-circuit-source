@@ -13,6 +13,7 @@ artifact="$out/context-circuit-v0.5.0"
 # --- artifact identity and required files ---
 require_file "$artifact/AGENTS.md"
 require_file "$artifact/CLAUDE.md"
+require_file "$artifact/CURSOR.md"
 require_file "$artifact/WORKFLOW.md"
 require_file "$artifact/README.md"
 require_file "$artifact/wrapper/runtime/worker-brief.md"
@@ -44,7 +45,9 @@ test ! -e "$artifact/agents/spec-adversary.md" || fail "spec-adversary role leak
 # --- uninitialized identity and thin adapter ---
 contains "$artifact/workspace.yaml" 'workspace: uninitialized-workspace'
 contains "$artifact/CLAUDE.md" '@AGENTS.md'
+contains "$artifact/CURSOR.md" '@AGENTS.md'
 not_contains "$artifact/CLAUDE.md" 'transcript:'
+not_contains "$artifact/CURSOR.md" 'transcript:'
 
 # --- porcelain source state recorded for rollback safety ---
 if git -C "$ROOT" status --porcelain --untracked-files=all | grep . >/dev/null 2>&1; then

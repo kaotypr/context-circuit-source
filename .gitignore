@@ -12,6 +12,9 @@ dist/
 
 # Per-user, host-local role tiering (model/effort). Preferences differ per person
 # and per host, so it is never shipped and never portable (role-tiering.md).
+# Gitignore is not a read block: coordinators MUST still Read this file from the
+# workspace root before spawning a worker, verifier, or tracer. A search that
+# skips ignored files is not "file absent" — open the path directly.
 /role-tiering.local.yaml
 /template/role-tiering.local.yaml
 
