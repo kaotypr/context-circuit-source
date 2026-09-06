@@ -76,6 +76,9 @@ and the execution brief carry everything needed to drive it. Invoke each action 
 - `attempt-begin <execution-dir>` · `worker-commit-record <execution-dir> <repo> implementation|repair`
   · `worker-handoff-record <execution-dir> <handoff-file>`.
 - `verifier-prepare <execution-dir>` · `verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
+  `<attempt>` is `current_attempt` (`3` and `003` are the same attempt; a
+  different number is refused). Do not treat the folder name `attempts/003/` as
+  a different attempt.
 - `candidate-digest . <plan-id> <execution-id>` — record the current candidate
   identity (commit map + bases + frozen contract digest); `candidate-current .
   <plan-id>` reports it. Evidence binds to the candidate (INV-CANDIDATE-01).

@@ -39,7 +39,8 @@ read_only_enforcement:
   - an explicit product write is rejected (VERIFIER_WRITE_REJECTED)
   - a modified branch tip is rejected (VERIFIER_MODIFIED_PRODUCT)
   - verifier-result-record requires the current attempt's verifier-scope.yaml,
-    created by verifier-prepare after worker commits are recorded
+    created by verifier-prepare after worker commits are recorded. The attempt
+    argument is current_attempt; 003 and 3 are the same attempt.
 
 rules:
   - INV-VERIFY-01

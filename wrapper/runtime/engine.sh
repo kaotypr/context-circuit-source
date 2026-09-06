@@ -1959,6 +1959,20 @@ cc_exec_set() {
 		|| { cc_fail EXECUTION_RECORD_UPDATE_FAILED "$cc_es_k"; return 1; }
 }
 
+# cc_attempt_norm VALUE -> decimal attempt with leading zeros stripped.
+# Folder names are padded (attempts/003/); current_attempt is not (3). Callers
+# that take an attempt argument must normalize so 003 and 3 compare equal.
+# Leading zeros are stripped before any arithmetic or %d formatting (octal).
+cc_attempt_norm() {
+	cc_an_raw="$1"
+	case "$cc_an_raw" in
+		''|*[!0-9]*) cc_fail ATTEMPT_INVALID "$cc_an_raw"; return 1 ;;
+	esac
+	cc_an_n=$(printf '%s' "$cc_an_raw" | sed 's/^0*//')
+	[ -n "$cc_an_n" ] || cc_an_n=0
+	printf '%s\n' "$cc_an_n"
+}
+
 # cc_attempt_begin EXEC_DIR -> increment current_attempt, create attempt dir
 cc_attempt_begin() {
 	cc_ab_dir="$1"
@@ -2047,7 +2061,9 @@ cc_verifier_prepare() {
 cc_verifier_result_record() {
 	cc_vr_dir="$1"; cc_vr_att="$2"; cc_vr_out="$3"; cc_vr_flag="${4:-}"
 	[ -f "$cc_vr_dir/execution.yaml" ] || { cc_fail VERIFIER_EXECUTION_MISSING; return 1; }
+	cc_vr_att=$(cc_attempt_norm "$cc_vr_att") || return 1
 	cc_vr_current=$(cc_scalar "$cc_vr_dir/execution.yaml" current_attempt 2>/dev/null) || cc_vr_current=0
+	cc_vr_current=$(cc_attempt_norm "$cc_vr_current") || return 1
 	[ "$cc_vr_att" = "$cc_vr_current" ] || { cc_fail VERIFIER_ATTEMPT_NOT_CURRENT "$cc_vr_att"; return 1; }
 	cc_vr_pad=$(printf '%03d' "$cc_vr_att")
 	[ -f "$cc_vr_dir/attempts/$cc_vr_pad/verifier-scope.yaml" ] \
@@ -2141,7 +2157,7 @@ cc_attempt_evidence_record() {
 	[ -n "$cc_ae_dir" ] && [ -n "$cc_ae_att" ] || { cc_fail ATTEMPT_EVIDENCE_ARGS; return 1; }
 	shift 2
 	[ -f "$cc_ae_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
-	case "$cc_ae_att" in ''|*[!0-9]*) cc_fail ATTEMPT_INVALID "$cc_ae_att"; return 1 ;; esac
+	cc_ae_att=$(cc_attempt_norm "$cc_ae_att") || return 1
 	cc_ae_pad=$(printf '%03d' "$cc_ae_att")
 	[ -d "$cc_ae_dir/attempts/$cc_ae_pad" ] || { cc_fail ATTEMPT_UNKNOWN "$cc_ae_att"; return 1; }
 	[ "$#" -gt 0 ] || { cc_fail ATTEMPT_EVIDENCE_EMPTY; return 1; }
