@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0002-mark-done-no-precheck
 intent: i016-mark-done-no-precheck
 title: Flip plan status on ask, with no check
-status: draft
+status: done
 objective: When a human asks to mark a plan done, or several plans done, each named plan's status becomes done with no look at work or evidence and no unreadiness refusal.
 repositories:
   - id: context-circuit-source
