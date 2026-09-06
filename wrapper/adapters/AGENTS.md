@@ -77,7 +77,10 @@ collaboration) or the independent verifier (for execution only).
 
 The coordinator may run the worker, verifier, and tracer at a per-role `(model, effort)`
 from an optional host-local, per-user, gitignored `role-tiering.local.yaml`,
-grouped by host so each host names the models available on it. This is bounded
+grouped by host so each host names the models available on it. Read that file
+from the workspace root (next to `repositories.local.yaml`) before spawning;
+never look for it inside the child's working copy. A missing file in an
+isolated working copy is not an absent config. This is bounded
 host evidence (`host_evidence`): it changes cost and speed, never a route, role,
 lease, verification, completion, verifier independence, or the failure limit, and
 the runtime never learns it (INV-RUNTIME-01). Reading the config does not apply
@@ -87,7 +90,10 @@ adapter defaults apply. Full rules: `docs/role-tiering.md`.
 ### Applying a configured tier on Codex
 
 When this host is Codex and a role has a configured model or effort, launch the
-child with `spawn_agent` using that exact `model` and `reasoning_effort`. A model
+child with `spawn_agent` using that exact `model` and `reasoning_effort`. Read
+`role-tiering.local.yaml` from the workspace root in the coordinator session
+first; keep that session at the workspace root. Only the child's working
+directory is the isolated copy. A model
 or effort override requires `fork_turns: "none"`; provide the complete role,
 scope, working-copy path, and task in the spawn prompt instead of relying on
 forked conversation context. End the Codex `task_name` with `_worker`,

@@ -23,6 +23,15 @@ present, from **`role-tiering.local.yaml`** at the workspace root. The
 `*.local.yaml` suffix is this workspace's convention for a gitignored, per-user,
 host-local file (the same convention as `repositories.local.yaml`).
 
+The coordinator reads `role-tiering.local.yaml` from the workspace root itself,
+before spawning a child, and applies the current host's role on the spawn. The
+workspace root is the directory that contains `repositories.local.yaml` and from
+which `sh wrapper/runtime/engine.sh` is invoked. Never look for the file inside a
+repository checkout, Explore copy, or execution worktree. It is gitignored, so it
+is not copied there. A missing file in an isolated working copy is not an absent config.
+Do not copy the file into a working copy. The worker, verifier, and tracer must
+not resolve it; their working directory is the isolated copy.
+
 Because a model id only means something on a host that offers it, the config is
 **grouped by host**. Each host group names the models available on that host. One
 user who runs different plans on different hosts (or works across several hosts)

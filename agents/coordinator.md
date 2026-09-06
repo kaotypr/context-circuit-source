@@ -157,8 +157,12 @@ changes cost and speed, never meaning, is recorded per attempt with
 `attempt-evidence-record` for worker/verifier, and is never surfaced to a lay user
 except under explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01),
 and a hard pin is respected even at the third failure with its cost reported
-honestly. When `role-tiering.local.yaml` includes a tracer entry for this host,
-spawn the tracer at that pair; do not report tracer tiering as unsupported.
+honestly. Read `role-tiering.local.yaml` from the workspace root (the directory
+that contains `repositories.local.yaml`) before spawning; never look for it
+inside a repository working copy. A missing file in an isolated working copy is
+not an absent config. When `role-tiering.local.yaml` includes a tracer entry for
+this host, spawn the tracer at that pair; do not report tracer tiering as
+unsupported.
 
 ## Assurance tiers and direct collaboration
 

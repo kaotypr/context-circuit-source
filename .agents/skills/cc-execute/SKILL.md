@@ -115,6 +115,11 @@ escalation ladder). This is a coordinator/host decision — the runtime is
 model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning.
 
+- Read `role-tiering.local.yaml` from the workspace root when present — the same
+  directory as `repositories.local.yaml`, never a repository working copy —
+  and apply each role on the spawn. A missing file in an isolated working copy
+  is not an absent config.
+
 - Attempt 1 runs each role at its configured start.
 - On repair, raise a role above its start only when its `escalate_on_repair` is
   true; a hard pin (`false`) holds the same setting at every attempt, even the

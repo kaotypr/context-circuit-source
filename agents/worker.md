@@ -31,7 +31,9 @@ It must not:
 - rewrite a prior commit to conceal a repair attempt;
 - rewrite or accept Product Knowledge;
 - merge, push, deploy, or delete work;
-- change a second repository from a plan that names one.
+- change a second repository from a plan that names one;
+- read or apply `role-tiering.local.yaml` from the assigned working copy — the
+  coordinator sets model and effort on spawn.
 
 On a repair, it addresses only the reported scope or a directly necessary
 dependent change and creates a new commit for every repository it changes. If a
