@@ -1,6 +1,6 @@
 # Intention — i016
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible._
 
 ## Intention
 
@@ -22,7 +22,7 @@ flowchart TD
 
 ## The plans
 
-1. **Flip plan status on ask, with no check.**
+1. **Flip plan status on ask, with no check.** (`0002-mark-done-no-precheck`)
    _After this:_ asking to mark a plan or several plans done changes each named plan's status to done. There is no look and no unreadiness refusal.
 
 ## How carefully this is checked

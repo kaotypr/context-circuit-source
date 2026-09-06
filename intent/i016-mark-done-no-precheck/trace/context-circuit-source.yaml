@@ -1,0 +1,297 @@
+schema_version: 1
+intent: i016-mark-done-no-precheck
+repository: context-circuit-source
+file_map:
+  - path: wrapper/contracts/invariants.yaml
+    sites:
+      - "227-236 INV-COMPLETE-01: MUST CHANGE. Owner of the mark-done rule. Today Standard/Critical become done only on explicit mark-done (keep that), AND 'Completion-ready enforces the tier floor: a Standard/Critical plan requires a candidate-bound independent pass that still describes the current candidate before mark-done can succeed.' Drop the completion-ready / unreadiness floor so asking flips status with no look. Keep: Explore planless; verification, candidate acceptance, and delivery never mark done."
+      - "237-245 INV-COMPLETE-02: MUST CHANGE the record-as-precondition, KEEP the reconcile. Today mark-done 'writes the implementation completion record (plan revision, candidate, execution, per-repository commits, verifier result, acceptor) and changes plan status draft → done.' Those required fields are a second unreadiness gate (never-built / no acceptor cannot finalize). Status flip must succeed without them. Keep: when the plan affected Product Knowledge, mark-done still starts in-place reconcile; delivery does not start reconcile and does not mark done; runtime never writes PK."
+      - "90-102 INV-CANDIDATE-01: MUST CHANGE the complete-coupling only. Keep candidate-bound void of evidence/acceptance. Drop 'completion-ready refuses to complete when the verified evidence no longer describes the current candidate' — stale evidence must not block mark-done (AC-NO-CHECK). Voiding evidence for verify/deliver stays."
+      - "103-121 INV-ASSURE-01: MUST CHANGE the mark-done coupling. Keep the verifier floor for Standard/Critical execution and 'refuses to treat an Explore result as verified'. Drop/reword 'completion-ready refuses a Standard/Critical candidate without a candidate-bound independent pass' so that floor is not a mark-done gate."
+      - "122-130 INV-PLAN-01: KEEP. 'Standard and Critical become done only on an explicit mark-done (INV-COMPLETE-01)' is AC-STILL-EXPLICIT."
+      - "36-47 INV-KNOWLEDGE-02: KEEP. After mark-done, coordinator in-place reconcile when PK was affected; later plans may start anyway. Non-goal."
+      - "467-509 owners map: KEEP. completion_record -> wrapper/contracts/schemas/completion.yaml; runtime -> wrapper/runtime/engine.sh; skill_packets -> .agents/skills/; coordinator_role -> agents/coordinator.md. Constraint: change these owners, not a skill-only exception."
+    integration: "Single owner index. INV-COMPLETE-01 is the completion contract the constraint names; leaving it with a readiness floor would keep the refusal even if the skill is rewritten."
+  - path: wrapper/contracts/schemas/completion.yaml
+    sites:
+      - "6-20 purpose + preconditions: MUST CHANGE. Preconditions currently require 'completion-ready passes for the plan's tier', draft status, candidate-bound completion, and explicit mark-done. Drop completion-ready / candidate-bound evidence as preconditions of the status flip. Keep explicit human mark-done (AC-STILL-EXPLICIT). Draft-at-flip may stay as a status-machine guard (already-done), which is not unreadiness of work."
+      - "23-46 fields: PLAN-RESOLUTION. execution_id, candidate_id, plan_revision, accepted_by, verifier_outcome, commits are all required. A never-built plan cannot populate them. Either make evidence fields optional, skip writing this record when no execution exists, or write a sparse record — but none of those may block draft → done."
+      - "48-58 effects/non_effects: KEEP non_effects (verify/accept/delivery never perform this transition; no PK write). Effects today couple 'implementation completion record is written' with status change — uncouple so status still flips when the record cannot be fully populated. KEEP the INV-COMPLETE-02 reconcile-when-PK sentence."
+    integration: "Schema of .runtime/executions/<plan>/<exec>/completion.yaml. Owner map key completion_record. Engine finalize writes this file today; required fields are a hidden unreadiness gate."
+  - path: wrapper/contracts/schemas/plan.yaml
+    sites:
+      - "13-25 plan_status.transitions: MUST CHANGE. Still documents 'draft -> done # inferred from candidate acceptance + delivery (Critical: explicit human)' — stale vs current INV-COMPLETE-01 and would reintroduce a check if left. Rewrite to: draft → done only on explicit mark-done; no readiness/evidence precondition."
+    integration: "Canonical plan lifecycle. Status values stay [draft, done]; only the done trigger and its (absent) gate change."
+  - path: wrapper/contracts/schemas/human-acceptance.yaml
+    sites:
+      - "14-16: KEEP. 'Candidate acceptance is a distinct act from plan-done: Standard and Critical become done only on an explicit mark-done.' AC-STILL-EXPLICIT."
+    integration: "Acceptance record is not mark-done. Do not start calling plan-complete from human-acceptance-record."
+  - path: wrapper/runtime/engine.sh
+    sites:
+      - "1636-1643 cc_plan_set_status: KEEP as the status writer. Mark-done must still use this (plus cc_plan_index_upsert at 3134) so plans/INDEX.md stays consistent."
+      - "2765-2802 cc_change_set_complete: KEEP. Records Gate 2 delivery only; comments and body do not call cc_plan_set_status done. AC-STILL-EXPLICIT."
+      - "2805-2841 cc_human_acceptance_record / cc_human_acceptance_current: KEEP. Acceptance is not mark-done. Today finalize requires accepted_by from human-acceptance.yaml (3120) — that requirement MUST drop from the mark-done path."
+      - "2848-2856 comment: MUST CHANGE. Names 'enforcement of the tier floor (completion-ready)' as if it were the completion gate. Keep floor at intent-approve / verifier spawn; stop tying it to mark-done."
+      - "3065-3103 cc_completion_ready: PLAN-RESOLUTION keep-as-query vs delete. Today it is the unreadiness oracle: COMPLETION_INTENT_UNAUTHORIZED, COMPLETION_NO_EXECUTION, Explore COMPLETION_NO_ACCEPTANCE, Standard/Critical COMPLETION_NOT_VERIFIED / COMPLETION_VERIFIER_CANDIDATE_MISSING / COMPLETION_CANDIDATE_STALE / COMPLETION_NO_ACCEPTANCE. It MUST NOT be called from cc_plan_complete. It MAY remain a read-only eligibility query for tests/diagnostics (test/assurance, test/candidate)."
+      - "3105-3139 cc_completion_finalize: MUST CHANGE. After ready, it still refuses COMPLETION_PLAN_NOT_OPEN (non-draft), missing candidate_id, COMPLETION_PLAN_REVISION_MISSING, COMPLETION_ACCEPTOR_MISSING, then writes a full completion.yaml before cc_plan_set_status done. For AC-NO-CHECK the status (and index upsert) must succeed with no execution/acceptor/verified evidence. Opportunistic record write when files exist is allowed; missing files must not refuse."
+      - "3142-3153 cc_plan_complete: MUST CHANGE. Current body: latest execution or COMPLETION_NO_EXECUTION; COMPLETION_EXPLORE_PLANLESS if execution.tier=explore; cc_completion_ready or COMPLETION_BLOCKED; then finalize. This is the mark-done verb (dispatch 3562). Drop NO_EXECUTION, completion-ready, and any evidence look. KEEP COMPLETION_EXPLORE_PLANLESS (non-goal: Explore stays planless) — but if there is no execution, there is no explore tier to read; a never-built Standard/Critical draft must flip. One PLAN argument: several named plans are the same verb looped (constraint)."
+      - "3155-3173 cc_delivery_record: KEEP. Writes delivered.yaml only; does not set plan status. AC-STILL-EXPLICIT."
+      - "3176-3180 cc_completion_infer: KEEP. Always COMPLETION_INFER_REQUIRES_EXPLICIT. Prevents delivery/acceptance from inferring done. AC-STILL-EXPLICIT."
+      - "3183-3188 cc_context_impact_record: KEEP. Optional post-mark-done PK refs. Non-goal."
+      - "3561-3562 dispatch: KEEP verbs completion-ready and plan-complete. plan-complete must stop calling completion-ready."
+    integration: "Host-neutral implementation of mark-done. Skill invokes `plan-complete . <plan-id>`. A skill-only rewrite that still calls this verb will still refuse."
+  - path: .agents/skills/cc-complete/SKILL.md
+    sites:
+      - "1-3 description: MUST CHANGE. 'Mark a verified plan done' encodes the readiness look."
+      - "6-15 procedure: MUST CHANGE. 'It refuses unless the tier floor is met: a candidate-bound independent pass that still describes the current candidate (completion-ready).' Replace with: on explicit mark-done (one named plan or several in one ask), run plan-complete per named plan with no look at work or evidence and no unreadiness refusal. KEEP: delivery, candidate acceptance, and verification do not mark done; Explore is planless."
+      - "17-21 success + refusal: MUST CHANGE. 'If the current result is failed or blocked, or the candidate is stale, report that plainly and do not change status' is the skill-level unreadiness refusal the constraint forbids leaving in place."
+      - "23-34 post-flip PK reconcile: KEEP. In-place context/ edits when the plan affected Product Knowledge; runtime does not write PK; later plans may start. Non-goal."
+    integration: "Coordinator packet for mark-done. Canonical skill path; must not be the only place the gate is removed."
+  - path: .agents/skills/cc-execute/SKILL.md
+    sites:
+      - "21-23: MUST CHANGE the completion-ready coupling. 'At Critical, completion additionally requires an explicit human act... the runtime enforces the floor (completion-ready).' Keep: plans are not auto-completed; verifier still required at Standard/Critical execute. Stop naming completion-ready as a mark-done gate. Line 157 KEEP: verification never marks the plan done."
+    integration: "Execute packet. If left, coordinators will still treat completion-ready as a precheck before offering or running mark-done."
+  - path: .agents/skills/cc-deliver/SKILL.md
+    sites:
+      - "59-62 and 75-79: KEEP. change-set-complete / delivery-record do not mark members done; mark-done stays cc-complete. AC-STILL-EXPLICIT."
+    integration: "Delivery packet. Do not add plan-complete here."
+  - path: .agents/skills/cc-verify/SKILL.md
+    sites:
+      - "20-24: KEEP. Verifier must not change plan status. AC-STILL-EXPLICIT."
+    integration: "Independent check. Produces verified evidence only."
+  - path: .agents/skills/cc-pair/SKILL.md
+    sites:
+      - "154: KEEP. Pairing never marks complete. Explore stays planless."
+    integration: "Explore tier. Out of mark-done by non-goal."
+  - path: agents/coordinator.md
+    sites:
+      - "37: KEEP routing 'mark complete' to the completion skill; ADD that several named plans in one ask use the same path (loop plan-complete) with no unreadiness look."
+      - "85: KEEP. Run-stack marks nothing done. AC-STILL-EXPLICIT."
+      - "145-154: KEEP AC-STILL-EXPLICIT (mark-done is the only draft→done trigger; verify/accept/delivery never mark done; PK reconcile after mark-done). ADD: asking flips status with no look at work or evidence and no unreadiness refusal, including never-built / failed / no-evidence plans."
+      - "174-177: optional consistency. 'Critical adds an explicit human completion' is slightly stale (Standard is also explicit) but is not the readiness gate."
+    integration: "Role routing. Does not currently restate the unreadiness refusal; still must carry no-precheck so the role does not invent a look after the contract drops it."
+  - path: agents/worker.md
+    sites:
+      - "28: KEEP. Worker must not change plan status. AC-STILL-EXPLICIT."
+    integration: "Worker role. Not a mark-done path."
+  - path: agents/verifier.md
+    sites:
+      - "20: KEEP. Verifier must not change plan status. AC-STILL-EXPLICIT."
+    integration: "Verifier role. Not a mark-done path."
+  - path: wrapper/adapters/WORKFLOW.md
+    sites:
+      - "45 table row 'Accept the result / mark X complete': KEEP the split (accept candidate if asked; mark done only on explicit mark-done). Do not collapse accept into done."
+      - "62-64: KEEP. Explicit mark-done at Standard/Critical; Explore planless; verify/accept/delivery never complete."
+    integration: "authority_order owner. Already matches AC-STILL-EXPLICIT; no unreadiness sentence to delete."
+  - path: wrapper/adapters/AGENTS.md
+    sites:
+      - "18-19 and 49-51: KEEP. Done only on explicit mark-done; verify/accept/delivery never imply completion."
+    integration: "Shipped host adapter. Already explicit; do not reintroduce inferred done."
+  - path: wrapper/adapters/README.md
+    sites:
+      - "30-33: KEEP. Explicit mark-done; verification never implies completion."
+    integration: "Adapter overview. AC-STILL-EXPLICIT restatement."
+  - path: context/domains/completion/README.md
+    sites:
+      - "32-37 Summary: MUST CHANGE 'candidate-bound transition from a verified implementation' and KEEP explicit mark-done / Explore planless / verify-accept-delivery never complete / PK reconcile after mark-done."
+      - "41-43 Scope 'draft → done transition gated on a verified latest execution': MUST CHANGE. Ungate."
+      - "51-56 Behavior: MUST CHANGE. Today plan-complete flips only after independent verification, human acceptance, and completion-ready. Asking must flip with no look."
+      - "58-63: KEEP PK reconcile-after-mark-done."
+      - "80-82 Constraints: MUST CHANGE. 'Completion refuses unless the latest execution is verified; a failed or blocked result is reported plainly' is the unreadiness refusal."
+      - "86-88: MUST CHANGE 'pending completion evidence before ... explicit mark-done' if it implies a gate."
+      - "104-111 Implementation refs: update to match the ungated plan-complete (completion-ready no longer on the mark-done path)."
+    integration: "Accepted Product Knowledge for completion. Agents read this; leaving the refusal here would restore a look even after engine/skill change."
+  - path: context/domains/assurance/README.md
+    sites:
+      - "67: KEEP 'verification alone never completes it' (AC-STILL-EXPLICIT)."
+      - "77-79 and 90-111: MUST CHANGE. 'completion-ready refuses a Standard/Critical candidate without a candidate-bound independent pass' and 'floor enforced inside intent-approve and completion-ready' currently make mark-done the floor. Keep intent-approve / verifier-spawn floor; stop using completion-ready as a complete gate."
+    integration: "Assurance domain PK. Must not keep teaching the unreadiness refusal."
+  - path: context/domains/delivery/README.md
+    sites:
+      - "64-67: KEEP. Delivery does not mark a plan done and does not start PK reconcile."
+    integration: "Delivery domain. AC-STILL-EXPLICIT."
+  - path: context/domains/verification/README.md
+    sites:
+      - "42 and 54: KEEP. Verification does not change plan status."
+    integration: "Verification domain. AC-STILL-EXPLICIT."
+  - path: context/TERMINOLOGY.md
+    sites:
+      - "22: KEEP. Completion is explicit mark-done; delivery does not complete; PK reconcile after mark-done."
+    integration: "PK glossary. No unreadiness sentence."
+  - path: docs/terminology.md
+    sites:
+      - "29, 35, 40: KEEP. Explicit mark-done; delivery does not complete. No readiness gate to delete."
+    integration: "Internal glossary. AC-STILL-EXPLICIT."
+  - path: docs/planning.md
+    sites:
+      - "86-91: KEEP. Explicit mark-done; execution status never replaces plan status."
+    integration: "Planning docs. No unreadiness gate."
+  - path: docs/getting-started.md
+    sites:
+      - "70-79: KEEP. Asking for PR/merge/sync does not mark done; mark-done then updates live context if PK was affected."
+    integration: "Human getting-started. Reconcile-after-mark-done is the non-goal; keep it."
+  - path: template/context/PROJECT.md
+    sites:
+      - "10: KEEP. Blank-seed mention of mark-done reconcile. Not a readiness gate."
+    integration: "Mutable blank seed. Out of the unreadiness set."
+  - path: test/completion/test-completion.sh
+    sites:
+      - "19-22: MUST CHANGE. expect_failure cc_completion_ready AND cc_plan_complete before a verifier pass; asserts status stays draft. After this intent, plan-complete on that unverified execution must succeed (no evidence look). completion-ready may still fail if kept as a query."
+      - "31-37: KEEP the happy path: explicit plan-complete after ready still sets done and may still write completion.yaml when evidence exists."
+      - "54-68: MUST CHANGE. 'a failed execution can never complete' + expect_failure cc_plan_complete on failed. AC-NO-CHECK: failed still becomes done. Add never-built (cc_fx_plan, no execution) and no-acceptance cases that expect status done."
+    integration: "Primary semantic suite for the mark-done verb. Today encodes the unreadiness refusals that must invert."
+  - path: test/completion/test-inferred.sh
+    sites:
+      - "21-47: KEEP. Acceptance alone, delivery-record, and completion-infer must not mark done; explicit plan-complete does. AC-STILL-EXPLICIT plus current happy path."
+      - "49-60: MUST CHANGE. Post-verify extra commit + expect_failure plan-complete (stale candidate). AC-NO-CHECK: stale still becomes done."
+      - "62-77: KEEP. Critical still requires explicit plan-complete; infer refused."
+      - "115-122: KEEP. change-set-complete must not mark members done or write completion.yaml. AC-STILL-EXPLICIT."
+    integration: "v1.0 explicit-done + delivery suite. Invert only the stale mark-done refusal; keep every 'delivery/infer/change-set do not mark done' assertion."
+  - path: test/runtime/test-runtime.sh
+    sites:
+      - "86-88: MUST CHANGE. 'completion requires passed evidence (failed execution cannot complete)' expect_failure cc_plan_complete. Invert: failed execution still flips to done."
+      - "90-106: KEEP happy path after verifier+acceptance; still proves verify ≠ done until plan-complete."
+    integration: "Runtime smoke. Failed-cannot-complete is an unreadiness assertion."
+  - path: test/assurance/test-tier.sh
+    sites:
+      - "100-127: KEEP as a completion-ready query test IF that verb remains, but MUST reword comments that say acceptance-without-verifier 'does NOT satisfy a Standard completion'. After this intent, completion-ready failure must not mean plan-complete failure. Do not add expect_failure plan-complete here."
+    integration: "Tier floor suite. Tests completion-ready, not plan-complete today. Safe to keep only if uncoupled from mark-done."
+  - path: test/candidate/test-candidate.sh
+    sites:
+      - "48, 63, 71, 80: KEEP expect_failure/success of completion-ready as candidate-honesty of evidence, IF the query remains. Do not treat those failures as mark-done refusals. Optionally add plan-complete succeeding on the stale candidate (cand2 / cand3)."
+    integration: "INV-CANDIDATE-01 suite. Evidence void stays; complete-refusal goes."
+  - path: test/knowledge/test-debt.sh
+    sites:
+      - "17-32: KEEP. plan-complete must not emit a reconcile-starting debt marker. Non-goal / INV-COMPLETE-02 runtime side."
+    integration: "Knowledge-debt suite. Uses mark-done but does not gate it on unreadiness."
+  - path: test/scenarios/test-scenarios.sh
+    sites:
+      - "60-82 Scenario A: KEEP. delivery-record leaves draft; completion-infer fails; explicit plan-complete sets done. AC-STILL-EXPLICIT."
+    integration: "End-to-end semantic scenario. Happy-path mark-done after verify+accept+deliver."
+  - path: test/archive/test-archive.sh
+    sites:
+      - "21: KEEP caller of cc_plan_complete on a ready plan. Will keep passing if ungated complete still succeeds with evidence present."
+    integration: "Archive suite fixture setup, not a readiness assertion."
+  - path: agent-harness/conversations/plots/stale-candidate-refuse-complete.md
+    sites:
+      - "1-77 plot + 73-77 expected_end_state plan_status draft: MUST CHANGE. Human turn 1 asks to mark complete on stale evidence; coordinator_must refuse. After AC-NO-CHECK turn 1 must flip to done. Rewrite (new plot id or invert post_condition to done). Turn 2 currently asks to leave it pending — that conflicts with a successful flip and must be rewritten."
+    integration: "Conversation plot that exists to prove unreadiness refusal. Leaving it would grade a correct ungated mark-done as a fail."
+  - path: agent-harness/scenarios/17-stale-candidate-requires-reverification/case.yaml
+    sites:
+      - "1-2 title 'Refuse completion...'; 29-39 visible_expectations refuse to complete; 49 plan_status draft: MUST CHANGE in lockstep with the plot."
+    integration: "Executable harness case for the stale-refuse plot."
+  - path: agent-harness/conversations/generated/stale-candidate-refuse-complete.case.yaml
+    sites:
+      - "generated from the plot: MUST REGENERATE after the plot rewrite. Same refuse/draft assertions."
+    integration: "Generated harness input. Do not hand-edit as source of truth; regenerate from the plot."
+  - path: agent-harness/conversations/plots/execute-standard-verify-not-complete.md
+    sites:
+      - "plan_status draft after verify: KEEP. Verification must not mark done. AC-STILL-EXPLICIT."
+    integration: "Positive proof that verify ≠ done."
+  - path: agent-harness/conversations/plots/standard-inferred-completion.md
+    sites:
+      - "delivery does not mark done: KEEP. AC-STILL-EXPLICIT."
+    integration: "Gate 2 ≠ done."
+  - path: agent-harness/human/run-scenario.sh
+    sites:
+      - "211-213 and completed-standard seed (~262 cc_plan_complete): KEEP. Seeding a completed plan still goes through plan-complete; after ungate it will also succeed for never-built/failed seeds if those are added. Do not have the seed driver inspect unreadiness."
+    integration: "Harness engine seeder. completed-standard already requires explicit mark-done."
+task_partition:
+  - id: ungate-mark-done
+    title: Flip plan status on ask, with no check
+    rationale: >
+      One repository, one mark-done verb (plan-complete), one owner chain
+      (INV-COMPLETE-01 → completion.yaml → engine → cc-complete), and one
+      independent verification surface (completion semantic tests plus the
+      unreadiness-vocab grep). Contract, runtime, skill/PK, and tests cannot
+      be executed or verified independently: a skill-only change leaves
+      COMPLETION_BLOCKED in the engine; an engine-only change leaves the
+      contract and cc-complete teaching a refusal; tests that still expect
+      failure would fail the suite. Stacked plans would invent false
+      independence. Embedded task order: (1) rewrite INV-COMPLETE-01/02 and
+      decouple INV-CANDIDATE-01 / INV-ASSURE-01 complete-coupling, plus
+      completion.yaml / plan.yaml preconditions; (2) ungate cc_plan_complete /
+      cc_completion_finalize without calling cc_completion_ready, keeping
+      Explore planless, completion-infer, delivery-record, and
+      change-set-complete; (3) rewrite cc-complete (and cc-execute's
+      completion-ready sentence), coordinator no-precheck + multi-plan loop,
+      completion/assurance PK; (4) invert unreadiness tests and the stale
+      harness plot; keep delivery/infer/verify-not-done tests. Same
+      plan-complete per named plan, looped for several in one ask.
+    paths:
+      - wrapper/contracts/invariants.yaml
+      - wrapper/contracts/schemas/completion.yaml
+      - wrapper/contracts/schemas/plan.yaml
+      - wrapper/runtime/engine.sh
+      - .agents/skills/cc-complete/SKILL.md
+      - .agents/skills/cc-execute/SKILL.md
+      - agents/coordinator.md
+      - context/domains/completion/README.md
+      - context/domains/assurance/README.md
+      - test/completion/test-completion.sh
+      - test/completion/test-inferred.sh
+      - test/runtime/test-runtime.sh
+      - agent-harness/conversations/plots/stale-candidate-refuse-complete.md
+      - agent-harness/scenarios/17-stale-candidate-requires-reverification/case.yaml
+    plan_boundary: one-plan-embedded-tasks
+    depends_on: []
+risks:
+  - "Skill-only exception: rewriting .agents/skills/cc-complete/SKILL.md while cc_plan_complete still calls cc_completion_ready (3151) or still fails COMPLETION_NO_EXECUTION (3147) leaves the runtime refusal in place — the exact failure the constraint names."
+  - "Finalize-as-second-gate: dropping completion-ready but leaving cc_completion_finalize's COMPLETION_ACCEPTOR_MISSING / COMPLETION_PLAN_REVISION_MISSING / required candidate_id (3116-3120) still blocks never-built, failed, and no-acceptance plans."
+  - "Required completion.yaml fields (schema 23-46) become a schema-level unreadiness gate if finalize still must write a full record before status flip."
+  - "Accidentally letting verify/accept/deliver mark done: cc_completion_infer, cc_delivery_record, cc_change_set_complete, cc-verify, worker, and verifier must keep not calling cc_plan_set_status done."
+  - "INV-CANDIDATE-01 / INV-ASSURE-01 left saying completion-ready refuses to complete would restore the gate in the owner index even if the engine is ungated."
+  - "Keeping completion-ready as a query is safe only if no skill/coordinator still calls it before plan-complete (cc-complete lines 10-12, cc-execute lines 21-23, assurance PK lines 77-90)."
+  - "Explore leak: COMPLETION_EXPLORE_PLANLESS (3150) must stay; cc-pair must still never mark complete. If plan-complete stops reading execution.tier when there is no execution, do not start completing Explore pairing sessions."
+  - "Stale harness plot stale-candidate-refuse-complete / case 17 currently requires refuse + plan_status draft; leaving it grades a correct ungated flip as failure. Turn 2 ('leave it pending') conflicts with turn 1 succeeding."
+  - "WORKFLOW.md row 'Accept the result / mark X complete' could collapse accept into done once unreadiness is gone; keep candidate acceptance distinct (AC-STILL-EXPLICIT)."
+  - "PK reconcile-after-mark-done (cc-complete 23-34, INV-COMPLETE-02, INV-KNOWLEDGE-02) must not be rewritten; also must not be used as a new precheck before the status flip."
+  - "Several named plans: engine takes one PLAN; if the skill does not loop, a multi-plan ask will only flip the first."
+done_checks:
+  - criterion: AC-NO-CHECK
+    command: "sh test/completion/test-completion.sh"
+    expect: "pass. Suite includes: (a) plan-complete on a never-built draft (cc_fx_plan, no execution) sets status done; (b) plan-complete on a failed execution sets status done; (c) plan-complete with no human-acceptance and no verifier pass sets status done; (d) two named drafts each become done via the same plan-complete path. expect_failure cc_plan_complete for unreadiness is gone."
+  - criterion: AC-NO-CHECK
+    command: "awk '/^cc_plan_complete\\(\\)/,/^}/' wrapper/runtime/engine.sh | grep -E 'cc_completion_ready|COMPLETION_BLOCKED|COMPLETION_NO_EXECUTION|COMPLETION_NOT_VERIFIED|COMPLETION_CANDIDATE_STALE|COMPLETION_NO_ACCEPTANCE' ; test $? -ne 0"
+    expect: "no match. cc_plan_complete does not call completion-ready or fail those unreadiness codes. COMPLETION_EXPLORE_PLANLESS may still appear."
+  - criterion: AC-NO-CHECK
+    command: "rg -n 'refuses unless|do not change status|completion-ready' .agents/skills/cc-complete/SKILL.md"
+    expect: "no unreadiness refusal and no completion-ready precheck. Skill still says delivery/acceptance/verification do not mark done, Explore is planless, and PK reconcile happens after a successful flip."
+  - criterion: AC-NO-CHECK
+    command: "sh test/completion/test-inferred.sh"
+    expect: "pass after the stale-candidate block (0009-drift) is inverted: extra post-verify commit must not prevent plan-complete from setting status done."
+  - criterion: AC-STILL-EXPLICIT
+    command: "sh test/completion/test-inferred.sh"
+    expect: "pass on the unchanged assertions: human-acceptance-record leaves draft; delivery-record leaves draft and writes no completion.yaml; completion-infer fails; change-set-complete leaves members draft and writes no member completion.yaml; explicit plan-complete is what sets done when asked."
+  - criterion: AC-STILL-EXPLICIT
+    command: "awk '/^cc_delivery_record\\(\\)/,/^}/' wrapper/runtime/engine.sh | grep -q cc_plan_set_status; test $? -ne 0; awk '/^cc_change_set_complete\\(\\)/,/^}/' wrapper/runtime/engine.sh | grep -q cc_plan_set_status; test $? -ne 0; awk '/^cc_completion_infer\\(\\)/,/^}/' wrapper/runtime/engine.sh | grep -q COMPLETION_INFER_REQUIRES_EXPLICIT"
+    expect: "delivery-record and change-set-complete do not set plan status; completion-infer still refuses. Verifier/worker skills still forbid changing plan status."
+tier_signal: >
+  Keep Standard. This is a lifecycle bookkeeping rule (draft→done on ask),
+  not auth, secrets, money, data migration, production/deploy, or an
+  irreversible ship. Gate 2 delivery, verifier independence, and Explore
+  planless stay. Mark-done does not merge, push, or write credentials.
+  Status flip without evidence is organizational, not a production side
+  effect; INV-ASSURE-01 irreversibility signals are absent. No raise.
+feasible: true
+out_of_scope_reach: []
+open_questions:
+  - question: "If a plan was never built, failed its check, or has no evidence, should asking to mark it done still flip it to done?"
+    disposition: already-answered
+    note: "Yes. No check. Asking changes plan status. No look, no unreadiness refusal. Frozen on the intent."
+  - question: "When there is no execution (or no acceptor / candidate / revision), does mark-done still write completion.yaml, and with which fields?"
+    disposition: plan-resolution
+    note: "AC-NO-CHECK requires the status flip. INV-COMPLETE-02 today also requires a full implementation record; those required fields currently refuse never-built plans (finalize 3116-3120, schema 23-46). Choose opportunistic/sparse/skip-record so the record never blocks done. PK reconcile-after-mark-done stays as it is."
+  - question: "Does completion-ready remain as a read-only eligibility query (verifier floor / candidate honesty), just disconnected from plan-complete?"
+    disposition: plan-resolution
+    note: "test/assurance/test-tier.sh and test/candidate/test-candidate.sh call completion-ready, not plan-complete. Keeping the query is compatible with AC-NO-CHECK only if no mark-done path calls it and INV-CANDIDATE-01 / INV-ASSURE-01 no longer say it refuses to complete."
+  - question: "Several named plans in one ask: loop existing plan-complete per id, or add a multi-plan engine verb?"
+    disposition: plan-resolution
+    note: "Constraint requires the same path. Engine already takes one ROOT PLAN (3146, 3562). Looping plan-complete is the same path; a new verb is unnecessary unless tests want a single argv list."
+  - question: "Should plan-complete still refuse non-draft status (COMPLETION_PLAN_NOT_OPEN) or Explore-tier executions (COMPLETION_EXPLORE_PLANLESS)?"
+    disposition: plan-resolution
+    note: "Explore planless is already-answered by the non-goal — keep COMPLETION_EXPLORE_PLANLESS. Already-done vs idempotent re-mark is not unreadiness of work; either fail closed on non-draft or treat done as success. Do not reopen Explore-gets-a-plan."
+completeness_proof:
+  command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/plans/context-circuit-plans/**' 'completion-ready|cc_completion_ready|COMPLETION_BLOCKED|COMPLETION_NO_EXECUTION|COMPLETION_NOT_VERIFIED|COMPLETION_CANDIDATE_STALE|COMPLETION_NO_ACCEPTANCE|COMPLETION_ACCEPTOR_MISSING|COMPLETION_VERIFIER_CANDIDATE_MISSING|COMPLETION_PLAN_REVISION_MISSING|refuses unless|do not change status|can never complete|completion is blocked before|failed execution can never|when `completion-ready`|Refuse completion when|refuses mark-done|refuses to complete|inferred from candidate acceptance' wrapper .agents agents docs context template test agent-harness"
+  count: 50
+recorded_at: "2026-09-06T16:06:29Z"
