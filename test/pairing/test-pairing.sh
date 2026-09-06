@@ -110,9 +110,12 @@ contains "$relative_pointer" "worktree: $relative_wt"
 
 contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "Model & effort per role"
 contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "role-tiering"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "workspace root"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "isolated working copy"
 contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "runtime/explore"
 contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "never invent"
 contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "Model & effort per role"
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "workspace root"
 
 # Live Explore sessions survive cleanup; closed ones are removed.
 cc_runtime_cleanup "$ws" >/dev/null

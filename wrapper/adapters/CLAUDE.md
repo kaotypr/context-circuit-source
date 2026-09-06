@@ -18,9 +18,11 @@ an observation, not authorization.
 ## Applying per-role model & effort
 
 When `role-tiering.local.yaml` configures a `(model, effort)` for a role (see
-`docs/role-tiering.md`), read the group for this host from `hosts.claude-code`
-and apply it — which on Claude Code means **setting it on the spawn, not just
-recording it**. Concretely:
+`docs/role-tiering.md`), read the file from the workspace root (next to
+`repositories.local.yaml`), never from a Task working directory, then read the
+group for this host from `hosts.claude-code` and apply it — which on Claude Code
+means **setting it on the spawn, not just recording it**. A missing file in an
+isolated working copy is not an absent config. Concretely:
 
 - **Model — set it on the spawn.** Pass the role's configured model id to the
   worker's or verifier's `Task`/subagent spawn as its `model` parameter. A child

@@ -21,7 +21,10 @@ Spawn each tracer at the concrete `(model, effort)` configured for the `tracer`
 role in the host-local role-tiering config (`docs/role-tiering.md`), with adapter
 defaults when that host has no tracer entry. `(model, effort)` changes cost and
 speed only; it never changes the tracer's read-only role, spawn rules, or the
-feasibility check.
+feasibility check. Read `role-tiering.local.yaml` from the workspace root when
+present — the same directory as `repositories.local.yaml`, never a repository
+working copy — and apply the `tracer` entry on the spawn. A missing file in an
+isolated working copy is not an absent config.
 
 For each repository in the intent's scope, spawn a **tracer child** (`agents/tracer.md`)
 in parallel. Each reads *its* repository first-hand for this change. Because the tracer

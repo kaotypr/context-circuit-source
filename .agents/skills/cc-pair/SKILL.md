@@ -58,8 +58,10 @@ model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning. Explore still has no
 verifier; do not launch one because a yaml file exists.
 
-- Read `role-tiering.local.yaml` when present and apply the current host's
-  `worker` entry before spawning.
+- Read `role-tiering.local.yaml` from the workspace root when present — the same
+  directory as `repositories.local.yaml`, never a repository working copy —
+  and apply the current host's `worker` entry on the spawn. A missing file in
+  an isolated working copy is not an absent config.
 - Adapter defaults still apply when no local file, host group, or worker role is
   present.
 - Applying the setting does not change Explore's meaning, drop or add a verifier,
