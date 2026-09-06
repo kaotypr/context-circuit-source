@@ -200,7 +200,7 @@ not_contains "$inv" "INV-DESIGN"
 not_contains "$W/adapters/WORKFLOW.md" "design the system"
 
 # --- adapters and roles present; role aliases removed ---
-for a in AGENTS.md WORKFLOW.md CLAUDE.md README.md worker-brief.md; do
+for a in AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md worker-brief.md; do
 	require_file "$W/adapters/$a"
 done
 # execution-latency: additive-only, no new invariant id. Per-role tiering
@@ -216,6 +216,9 @@ contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "workspace root"
 contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "role-tiering"
 contains "$W/adapters/AGENTS.md" "workspace root"
 contains "$W/adapters/CLAUDE.md" "workspace root"
+contains "$W/adapters/CURSOR.md" "workspace root"
+contains "$W/adapters/AGENTS.md" "Applying a configured tier on Cursor"
+contains "$W/adapters/CURSOR.md" "Do not default to inherit"
 not_contains "$ROOT/docs/role-tiering.md" "Tracer tiering isn’t supported"
 not_contains "$ROOT/docs/role-tiering.md" "Tracer tiering isn't supported"
 not_contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "Tracer tiering isn’t supported"

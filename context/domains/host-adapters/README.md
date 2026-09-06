@@ -37,8 +37,9 @@ here.
 ## Scope
 
 Inside: provider-neutral `host_evidence`, the shared `AGENTS.md` instruction
-surface, the `CLAUDE.md` Claude Code adapter, native-child mapping to the worker
-or verifier packet, and `host-blocked` missing-child behavior.
+surface, the `CLAUDE.md` Claude Code adapter, the `CURSOR.md` Cursor Agent
+adapter, native-child mapping to the worker or verifier packet, and
+`host-blocked` missing-child behavior.
 
 Outside: embedding a host CLI or SDK, storing credentials/transcripts/auth
 state, treating permission mode or child features as authorization, and adding a
@@ -55,7 +56,7 @@ gate, verification, or completion (INV-HOST-01).
 | --- | --- | --- |
 | Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | subagent → worker or verifier packet |
 | Claude Code | `wrapper/adapters/CLAUDE.md` imports `AGENTS.md` | Task/subagent → same packet |
-| Cursor Agent CLI | root `AGENTS.md` (`CLAUDE.md` also readable) | Task/subagent if available; otherwise host-blocked |
+| Cursor Agent CLI | root `AGENTS.md`; thin `CURSOR.md` import (`CLAUDE.md` also readable) | Task/subagent if available; otherwise host-blocked |
 
 A native child maps only to the bounded worker or independent read-only
 verifier packet. If a required child is unavailable, the route stays read-only
@@ -87,11 +88,13 @@ provider payloads, transcripts, or auth state.
 
 - Shared host contract and safety spine: `wrapper/adapters/AGENTS.md`
 - Claude Code adapter: `wrapper/adapters/CLAUDE.md`
+- Cursor Agent adapter: `wrapper/adapters/CURSOR.md`
 
 ## Interfaces
 
 - Shared instructions: root `AGENTS.md` / `WORKFLOW.md`
 - Claude adapter: `wrapper/adapters/CLAUDE.md`
+- Cursor adapter: `wrapper/adapters/CURSOR.md`
 - Coordinator role: `agents/coordinator.md`
 - `host_evidence` shape owned by `wrapper/contracts/schemas/`
 
@@ -99,7 +102,8 @@ provider payloads, transcripts, or auth state.
 
 Optional live host probes are explicitly pass, unavailable, or blocked; never a
 false success. Cursor does not require `.cursor/rules` for this behavior; a
-future scoped Cursor rule must remain a thin adapter.
+scoped Cursor rule must remain a thin pointer at `CURSOR.md`, not a second copy
+of the spawn rule.
 
 ## Adapter duties and limits
 
@@ -115,7 +119,8 @@ unavailable.
 ## Implementation references
 
 - `wrapper/adapters/AGENTS.md`, `wrapper/adapters/CLAUDE.md`,
-  `wrapper/adapters/WORKFLOW.md`, `wrapper/adapters/README.md`
+  `wrapper/adapters/CURSOR.md`, `wrapper/adapters/WORKFLOW.md`,
+  `wrapper/adapters/README.md`
 - `agents/coordinator.md` (routing owner; there is no `routes.yaml`)
 - `.agents/skills/cc-pair/SKILL.md` (the worker-child mapping for direct collaboration)
 - `wrapper/contracts/invariants.yaml`: INV-HOST-01, INV-PAIR-01

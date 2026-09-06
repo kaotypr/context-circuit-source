@@ -102,6 +102,11 @@ retaining a provider prompt. For direct collaboration, apply the `worker` tier t
 its one worker and never launch a verifier. For tracing, apply the `tracer` tier
 when that host group has a tracer entry.
 
+### Applying a configured tier on Cursor
+
+When this host is Cursor Agent, follow `CURSOR.md`. That file owns how `Task`
+gets its `model`; do not restate it here.
+
 The coordinator on any host may keep one resumable root session, represented by
 a session or thread id, for the human conversation. That root is not a worker,
 verifier, or tracer. Every required child role must use the host's native

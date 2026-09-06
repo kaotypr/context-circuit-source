@@ -35,9 +35,9 @@ The artifact is not published, merged, deployed, or pushed by this command.
 Rollback replaces wrapper-owned files only and preserves workspace identity,
 accepted context, sources, plans, runtime, dirty worktrees, and repositories.
 
-The artifact root includes AGENTS.md, CLAUDE.md, WORKFLOW.md, and README.md from
-wrapper/adapters/. CLAUDE.md is a thin Claude Code import bridge; it contains
-no host authentication, MCP configuration, memory, or transcript state.
-Cursor-local permission files and all provider state remain outside the release
-inventory. Upgrade and rollback preserve local host configuration, user
-workspace data, registered repositories, and runtime evidence.
+The artifact root includes AGENTS.md, CLAUDE.md, CURSOR.md, WORKFLOW.md, and
+README.md from wrapper/adapters/. CLAUDE.md and CURSOR.md are thin host import
+bridges; they contain no host authentication, MCP configuration, memory, or
+transcript state. Cursor-local permission files and all provider state remain
+outside the release inventory. Upgrade and rollback preserve local host
+configuration, user workspace data, registered repositories, and runtime evidence.

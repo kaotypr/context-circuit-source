@@ -35,6 +35,7 @@ mkdir -p "$stage_tree"
 # Root adapters become the workspace entry files.
 cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
 cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
+cp "$source_root/wrapper/adapters/CURSOR.md" "$stage_tree/CURSOR.md"
 cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
 cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
 # The worker-brief template is a runtime-only artifact; promote it beside the
