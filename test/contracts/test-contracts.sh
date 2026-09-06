@@ -128,6 +128,11 @@ not_contains "$ce" "intent-envelope-check"
 not_contains "$W/runtime/engine.sh" "intent-envelope-check"
 not_contains "$W/runtime/engine.sh" "cc_intent_envelope_check"
 contains "$W/runtime/engine.sh" "cc_intent_authorized"
+contains "$W/runtime/engine.sh" "cc_attempt_norm"
+cv="$ROOT/.agents/skills/cc-verify/SKILL.md"
+contains "$cv" "current_attempt"
+contains "$cv" "003"
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "003"
 
 # --- direct collaboration is outside the plan lifecycle ---
 pair="$ROOT/.agents/skills/cc-pair/SKILL.md"

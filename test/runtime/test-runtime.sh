@@ -70,12 +70,15 @@ require_file "$edir/attempts/002/worker.yaml"
 cc_verifier_prepare "$edir" >/dev/null
 
 # --- third worker failure stops execution ---
-cc_verifier_result_record "$edir" 2 failed >/dev/null
+# Folder names are padded (attempts/002/); current_attempt is not. 002 == 2.
+expect_failure cc_verifier_result_record "$edir" 001 failed
+cc_verifier_result_record "$edir" 002 failed >/dev/null
+assert_eq "2" "$(cc_scalar "$edir/attempts/002/verifier.yaml" attempt)"
 cc_attempt_begin "$edir" >/dev/null
 cc_fx_commit "$ws" 0001-alpha api repair2
 cc_worker_commit_record "$edir" api repair >/dev/null
 cc_verifier_prepare "$edir" >/dev/null
-out=$(cc_verifier_result_record "$edir" 3 failed)
+out=$(cc_verifier_result_record "$edir" 003 failed)
 printf '%s\n' "$out" | grep -Fq "stop: FAILURE_LIMIT_REACHED" || fail "expected FAILURE_LIMIT_REACHED"
 assert_eq "failed" "$(cc_execution_status "$edir")"
 expect_failure cc_repair_allowed "$edir"
@@ -93,7 +96,7 @@ cc_attempt_begin "$edir3" >/dev/null
 cc_fx_commit "$ws" 0003-gamma web impl
 cc_worker_commit_record "$edir3" web implementation >/dev/null
 cc_verifier_prepare "$edir3" >/dev/null
-cc_verifier_result_record "$edir3" 1 passed >/dev/null
+cc_verifier_result_record "$edir3" 001 passed >/dev/null
 assert_eq "verified" "$(cc_execution_status "$edir3")"
 assert_eq "draft" "$(cc_plan_status "$ws" 0003-gamma)"   # verified execution != done plan
 expect_failure cc_completion_ready "$ws" 0003-gamma

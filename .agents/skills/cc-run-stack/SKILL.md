@@ -42,7 +42,7 @@ actions as a tool.
 - `worker-commit-record <execution-dir> <repo> implementation|repair` — capture the worker's commit.
 - `worker-handoff-record <execution-dir> <handoff-file>` — store the worker handoff.
 - `verifier-prepare <execution-dir>` — confirm a worker commit exists to verify.
-- `verifier-result-record <execution-dir> <attempt> passed|failed|blocked` — record the independent verifier's outcome.
+- `verifier-result-record <execution-dir> <attempt> passed|failed|blocked` — record the independent verifier's outcome. `<attempt>` is `current_attempt` (`3` and `003` are the same attempt).
 - `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record bounded per-attempt host evidence: the `(model, effort)` each role ran at (no wall-clock; timing is engine-stamped). Evidence only; never a gate.
 - `repair-allowed <execution-dir>` — whether another repair attempt remains.
 
