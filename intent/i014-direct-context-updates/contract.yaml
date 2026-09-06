@@ -1,0 +1,64 @@
+schema_version: 2
+intent: i014-direct-context-updates
+title: Update Product Knowledge in place; do not auto-reconcile on delivery
+goal: >
+  Gathering context and reconciling Product Knowledge update the live context
+  files directly. They no longer create proposal documents under
+  context/proposals/, and a Product Knowledge change no longer waits for a
+  separate human accept. A human request to open a pull request, merge, or
+  sync the local repository after merge performs delivery only and does not
+  start reconciliation — including the completion-inferred auto-reconcile
+  that is designed to run after delivery today, even though that auto-run
+  currently fails to fire.
+
+non_goals:
+  - Changing Gate 1 (intent approval) or Gate 2 (delivery as a separate
+    explicit action).
+  - Restoring or repairing the current “auto-reconcile after delivery”
+    path; that path is removed, not fixed.
+  - Writing Product Knowledge as a side-effect of worker implementation or
+    verifier evidence without a gathering-context or reconcile act.
+  - Changing how sources/ is read (still passive and request-scoped).
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - Product Knowledge remains agent-oriented indexed units under context/;
+    the retrieval catalog stays a catalog, not a second copy of page
+    content (INV-KNOWLEDGE-01).
+  - New context units, when needed, are authored as real files under
+    context/, not as sidecar proposal documents.
+  - Product behavior has one owner per rule; update the owning knowledge
+    and completion contracts rather than a skill-only exception.
+  - Preserve unrelated and dirty work, and run the semantic acceptance
+    suite after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-IN-PLACE-WRITES
+    statement: >
+      Gathering context and reconciling Product Knowledge change the live
+      context files (and keep the retrieval catalog consistent with those
+      files). They do not create a proposal document under
+      context/proposals/.
+  - id: AC-NO-KNOWLEDGE-GATE
+    statement: >
+      A Product Knowledge update does not wait for a separate human
+      “accept the context update” decision. Intent approval and delivery
+      remain the two human gates.
+  - id: AC-NO-DELIVERY-RECONCILE
+    statement: >
+      Asking to open a pull request, merge, or sync the local repository
+      after merge does not start Product Knowledge reconciliation, including
+      via inferred completion after delivery.
+  - id: AC-RECONCILE-IS-ITS-OWN-ACT
+    statement: >
+      Reconciliation still happens when the ask is gathering context or
+      reconciling Product Knowledge; those acts write context in place
+      rather than staging a proposal.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: draft
