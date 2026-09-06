@@ -1,12 +1,12 @@
 #!/bin/sh
-# Context Circuit v1.0 — inferred completion + change-set delivery (Phase 5).
-# Completion is inferred from candidate acceptance + delivery at Standard, and
-# explicit at Critical (INV-COMPLETE-01). Explore is planless. A change set —
-# same-repository plans delivered as one pull request — has one tip-map
-# candidate, accepted once, with no delivery-time verifier. Plans in different
-# repositories never form a change set (INV-DELIVER-01). Named plans partition
-# by repository covering tip: a stack in one repository plus a plan in another
-# are two pull requests, not one per plan.
+# Context Circuit v1.0 — explicit mark-done + change-set delivery.
+# A plan becomes done only on an explicit mark-done at Standard and Critical
+# (INV-COMPLETE-01). Delivery does not mark done and does not start reconcile
+# (INV-COMPLETE-02). Explore is planless. A change set — same-repository plans
+# delivered as one pull request — has one tip-map candidate, accepted once, with
+# no delivery-time verifier. Change-set complete records delivery only and does
+# not mark members done. Plans in different repositories never form a change
+# set (INV-DELIVER-01). Named plans partition by repository covering tip.
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
@@ -18,7 +18,7 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 cc_fx_repo "$ws" web development
 
-# --- Standard: completion inferred from candidate acceptance + delivery ---
+# --- Standard: delivery and inferred completion must not mark done ---
 iid=i001-std
 cc_fx_intent "$ws" "$iid" "Std" api "src"
 eng intent-approve "$ws" "$iid" >/dev/null
@@ -26,35 +26,38 @@ cc_fx_plan_intent "$ws" 0001-std "Std" api src "$iid"
 cc_fx_run_ok "$ws" 0001-std api src
 edir=$(cc_fx_exec_dir "$ws" 0001-std "$(cc_latest_execution "$ws" 0001-std)")
 
-# acceptance alone does not complete — delivery has not happened
+# acceptance alone does not complete
 eng human-acceptance-record "$edir" alice >/dev/null
-expect_failure eng completion-infer "$ws" 0001-std
 assert_eq "draft" "$(cc_plan_status "$ws" 0001-std)"
 
-# record delivery (Gate 2 happened); completion is then inferred, not a manual flip
+# record delivery (Gate 2); it must not mark done or start reconcile
 eng delivery-record "$ws" 0001-std >/dev/null
-out=$(eng completion-infer "$ws" 0001-std)
-printf '%s\n' "$out" | grep -q 'human_completion: inferred' || fail "Standard completion must be inferred"
-assert_eq "done" "$(cc_plan_status "$ws" 0001-std)"
-contains "$edir/completion.yaml" "human_completion: inferred"
-# inferred completion still emits the reconciliation-debt marker (M4)
-printf '%s\n' "$out" | grep -q 'reconciliation_debt: pending' || fail "inferred completion must emit debt"
-# idempotent: inferring again reports done, does not error
-eng completion-infer "$ws" 0001-std >/dev/null
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-std)"
+expect_failure eng completion-infer "$ws" 0001-std
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-std)"
+test ! -f "$edir/completion.yaml" || fail "delivery must not write a completion record"
+test ! -d "$ws/.runtime/knowledge-debt" || [ "$(find "$ws/.runtime/knowledge-debt" -name '*.yaml' 2>/dev/null | wc -l | tr -d ' ')" = "0" ] \
+	|| fail "delivery must not emit a reconcile-starting debt marker"
 
-# a post-delivery change (new candidate) makes the delivery signal stale
-# (guards against completing a candidate that moved after delivery was recorded)
+# explicit mark-done is the Standard done path
+out=$(eng plan-complete "$ws" 0001-std)
+printf '%s\n' "$out" | grep -q 'human_completion: accepted' || fail "Standard completion must be explicit mark-done"
+assert_eq "done" "$(cc_plan_status "$ws" 0001-std)"
+contains "$edir/completion.yaml" "human_completion: accepted"
+printf '%s\n' "$out" | grep -q 'reconciliation_debt:' && fail "mark-done must not emit a reconcile-starting debt marker" || :
+
+# a post-verify change (new candidate) refuses mark-done
 cc_fx_intent "$ws" i009-drift "Drift" web "src"
 eng intent-approve "$ws" i009-drift >/dev/null
 cc_fx_plan_intent "$ws" 0009-drift "Drift" web src i009-drift
 cc_fx_run_ok "$ws" 0009-drift web src
 edir9=$(cc_fx_exec_dir "$ws" 0009-drift "$(cc_latest_execution "$ws" 0009-drift)")
 eng human-acceptance-record "$edir9" alice >/dev/null
-eng delivery-record "$ws" 0009-drift >/dev/null
 wt9="$ws/.runtime/worktrees/0009-drift/web"
 printf 'z\n' >>"$wt9/src/mod.txt"; git -C "$wt9" add -A; git -C "$wt9" commit -q -m "feat(web): more"
 cc_worker_commit_record "$edir9" web repair >/dev/null
-expect_failure eng completion-infer "$ws" 0009-drift    # delivery signal is now stale
+expect_failure eng plan-complete "$ws" 0009-drift
+assert_eq "draft" "$(cc_plan_status "$ws" 0009-drift)"
 
 # --- Critical: inferred completion is refused; explicit is required ---
 iid2=i002-crit
@@ -68,9 +71,9 @@ edir2=$(cc_fx_exec_dir "$ws" 0002-crit "$(cc_latest_execution "$ws" 0002-crit)")
 contains "$edir2/execution.yaml" "tier: critical"
 eng human-acceptance-record "$edir2" alice >/dev/null
 eng delivery-record "$ws" 0002-crit >/dev/null
-expect_failure eng completion-infer "$ws" 0002-crit           # Critical must be explicit
+expect_failure eng completion-infer "$ws" 0002-crit
 assert_eq "draft" "$(cc_plan_status "$ws" 0002-crit)"
-eng plan-complete "$ws" 0002-crit >/dev/null                  # explicit human completion
+eng plan-complete "$ws" 0002-crit >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" 0002-crit)"
 contains "$edir2/completion.yaml" "human_completion: accepted"
 
@@ -78,19 +81,17 @@ contains "$edir2/completion.yaml" "human_completion: accepted"
 cs1=$(eng change-set-candidate "$ws" 0001-std 0002-crit | sed -n 's/^change_set_candidate: //p')
 case "$cs1" in cand-*) : ;; *) fail "change-set candidate not cand-<hash>: $cs1" ;; esac
 cs2=$(eng change-set-candidate "$ws" 0001-std 0002-crit | sed -n 's/^change_set_candidate: //p')
-assert_eq "$cs1" "$cs2"                                        # deterministic
-# a change set of one equals that plan's own candidate identity space (cand-*)
+assert_eq "$cs1" "$cs2"
 cs_one=$(eng change-set-candidate "$ws" 0001-std | sed -n 's/^change_set_candidate: //p')
 case "$cs_one" in cand-*) : ;; *) fail "single-plan change set invalid: $cs_one" ;; esac
-# a change set of one IS that plan's own candidate identity (candidate-current), exactly
 cc_cur=$(eng candidate-current "$ws" 0001-std | sed -n 's/^candidate_id: //p')
 assert_eq "$cc_cur" "$cs_one"
-# order independence: the set is a set, not a sequence
 cs_rev=$(eng change-set-candidate "$ws" 0002-crit 0001-std | sed -n 's/^change_set_candidate: //p')
 assert_eq "$cs1" "$cs_rev"
 
 # --- change-set delivery: one PR from the covering execution tip; no delivery
-#     verifier. Members keep their own candidate-bound passes (INV-DELIVER-01). ---
+#     verifier. Members keep their own candidate-bound passes (INV-DELIVER-01).
+#     change-set-complete records Gate 2 only — it must not mark members done. ---
 cc_fx_plan_ex "$ws" 0020-csa "CS A" api src/a ""
 cc_fx_plan_ex "$ws" 0021-csb "CS B" api src/b "0020-csa"
 cc_fx_run_ok "$ws" 0020-csa api src/a
@@ -102,27 +103,28 @@ printf '%s\n' "$csp" | grep -q 'tier: standard' || fail "change-set tier should 
 printf '%s\n' "$csp" | grep -q 'source_plan: 0021-csb' || fail "covering tip should be the stacked dependent"
 printf '%s\n' "$csp" | grep -q 'source_branch: cc/0021-csb/api' || fail "PR source should be the covering execution branch"
 test ! -d "$ws/.runtime/change-sets/$csid/integration" || fail "delivery must not author an integration worktree"
-# delivery never records a change-set verifier
 vprep=$(eng change-set-verifier-prepare "$ws" "$csid" 2>&1 || :)
 printf '%s\n' "$vprep" | grep -q 'CHANGE_SET_DELIVERY_HAS_NO_VERIFIER' || fail "change-set-verifier-prepare must fail: $vprep"
 vrec=$(eng change-set-verifier-record "$ws" "$csid" passed 2>&1 || :)
 printf '%s\n' "$vrec" | grep -q 'CHANGE_SET_DELIVERY_HAS_NO_VERIFIER' || fail "change-set-verifier-record must fail: $vrec"
-# not ready until the ONE acceptance binds to the tip-map candidate
 expect_failure eng change-set-ready "$ws" "$csid"
 eng change-set-accept "$ws" "$csid" alice >/dev/null
 csr=$(eng change-set-ready "$ws" "$csid")
 printf '%s\n' "$csr" | grep -q 'change_set_ready: eligible' || fail "change set should be eligible"
 printf '%s\n' "$csr" | grep -q 'assurance: independent' || fail "standard change set reuses member independent passes"
 csc=$(eng change-set-complete "$ws" "$csid")
-printf '%s\n' "$csc" | grep -q 'completed: 2' || fail "change-set-complete must complete both members"
-assert_eq "done" "$(cc_plan_status "$ws" 0020-csa)"
-assert_eq "done" "$(cc_plan_status "$ws" 0021-csb)"
-require_file "$(cc_fx_exec_dir "$ws" 0021-csb "$(cc_latest_execution "$ws" 0021-csb)")/completion.yaml"
+printf '%s\n' "$csc" | grep -q 'status: delivered' || fail "change-set-complete must record delivery: $csc"
+printf '%s\n' "$csc" | grep -q 'delivered: 2' || fail "change-set-complete must count both members: $csc"
+printf '%s\n' "$csc" | grep -q 'delivered-and-completed' && fail "change-set-complete must not fuse delivered-and-completed" || :
+assert_eq "draft" "$(cc_plan_status "$ws" 0020-csa)"
+assert_eq "draft" "$(cc_plan_status "$ws" 0021-csb)"
+test ! -f "$(cc_fx_exec_dir "$ws" 0021-csb "$(cc_latest_execution "$ws" 0021-csb)")/completion.yaml" \
+	|| fail "change-set-complete must not write member completion records"
 # a member commit after prepare moves the candidate and voids the recorded set
 wta="$ws/.runtime/worktrees/0020-csa/api"
 printf 'x\n' >>"$wta/src/a/mod.txt"; git -C "$wta" add -A; git -C "$wta" commit -q -m "feat(api): more a"
 cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0020-csa "$(cc_latest_execution "$ws" 0020-csa)")" api repair >/dev/null
-expect_failure eng change-set-ready "$ws" "$csid"                   # stale: a member moved
+expect_failure eng change-set-ready "$ws" "$csid"
 
 # --- parallel tips cannot ship as one pull request (no delivery merge) ---
 cc_fx_plan_ex "$ws" 0022-cx "CX" api src/cx ""
@@ -193,4 +195,4 @@ printf '%s\n' "$fork" | grep -q 'members: 0040-root, 0042-right' || fail "right 
 fo=$(eng change-set-prepare "$ws" 0040-root 0041-left 0042-right 2>&1 || :)
 printf '%s\n' "$fo" | grep -q 'CHANGE_SET_NO_SINGLE_TIP' || fail "forcing sibling tips into one prepare must fail: $fo"
 
-pass 'inferred completion and change-set delivery'
+pass 'explicit mark-done and change-set delivery'

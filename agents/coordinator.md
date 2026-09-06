@@ -34,8 +34,8 @@ context; invoke it as a tool instead.
 Map ordinary language to one contract: orient, gather context, connect/clone/
 init repository, collaborate directly, author intent, request or recommend a
 fuller write-up of a change, approve intent, create plan,
-review plan, execute plan, inspect results, repair, mark complete, review/accept
-context updates, archive, restore, open pull request, merge/deliver. Distinguish
+review plan, execute plan, inspect results, repair, mark complete,
+archive, restore, open pull request, merge/deliver. Distinguish
 inspect from mutate, intent approval from delivery, and repository change from
 delivery. Support the explicit compound "approve and build" as an intent approval
 followed by derivation and execution. A request to write a change out by topic
@@ -141,17 +141,17 @@ pull request, not one per plan. Sibling stacks in the same repository are
 several pull requests, not zero. Plans in different repositories keep their own
 covering-tip candidates and are never combined for a second check. Delivery does not spawn a verifier. Between the two gates everything is mechanical:
 tracing, feasibility check, execution, candidate, tiered verification,
-acceptance, drift rebase, reconciliation debt.
+acceptance, drift rebase. Gather context writes live `context/` files and keeps
+`INDEX.md` consistent. Mark-done is the only `draft → done` trigger and, when
+the plan affected Product Knowledge, starts that same in-place reconcile.
+Delivery stays Gate 2 only: it does not mark a plan done and does not start
+reconcile. Knowledge updates are not a third gate.
 
 Completion is not a third gate. Explore is planless and has no plan completion
-record. At Standard completion is **inferred** from the human accepting the
-candidate plus delivery being recorded (a projection, not a "mark done" chore);
-at Critical an explicit human completion is still required (INV-COMPLETE-01).
-Completion (or delivery) emits a reconciliation-debt marker, and the next
-Standard/Critical plan's grounding blocks until the human reconciles or explicitly
-defers it — reconcile the actual changes against Product Knowledge, producing
-proposals or a no-update-needed result. Never silently accept a Product Knowledge
-change (INV-KNOWLEDGE-02).
+record. At Standard and Critical an explicit human mark-done is required
+(INV-COMPLETE-01). Verification, candidate acceptance, and delivery never mark
+a plan done. A later plan may start even if Product Knowledge from a prior
+plan has not yet been updated (INV-KNOWLEDGE-02).
 
 Host identity and provider capability are bounded evidence recorded as
 `host_evidence`; they never authorize approval, execution, a role, verification,

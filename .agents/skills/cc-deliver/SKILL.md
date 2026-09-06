@@ -56,26 +56,27 @@ independent pass is the floor.
    candidate-bound independent pass. A member that moves makes the candidate
    stale and re-gates.
 5. Open the one pull request from the reported covering execution branch
-   (Gate 2), then `change-set-complete . <change-set-id>` marks **every member**
-   done and emits one change-set-bound reconciliation-debt marker — accept once,
-   and the whole set completes.
+   (Gate 2), then `change-set-complete . <change-set-id>` records delivery for
+   the set. It does **not** mark any member done and does **not** start Product
+   Knowledge reconcile. Each member stays draft until an explicit mark-done
+   (`cc-complete`).
 
 A single Standard/Critical plan delivered alone is a change set of one, identical
-to `change-set-candidate . <plan>` and `candidate-current . <plan>`; it may complete
-through this same path, or the single-plan path below. Explore work is planless
-and has no delivery record in the plan lifecycle.
+to `change-set-candidate . <plan>` and `candidate-current . <plan>`; it may
+record delivery through this same path, or the single-plan path below. Explore
+work is planless and has no delivery record in the plan lifecycle.
 
-## Single-plan delivery and inferred completion
+## Single-plan delivery
 
 Acceptance is keyed to the candidate: a single plan uses its own execution candidate;
 a change set uses the member tip-map candidate (above). For a single plan delivered on
 its own, after the human authorizes and you open the pull request (Gate 2), record the
 delivery with `delivery-record . <plan-id>` — the delivery signal, bound to the
-current candidate; it performs no git action itself. At Standard, this lets
-completion be **inferred** from candidate acceptance + delivery
-(`completion-infer . <plan-id>`), rather than a manual "mark done"; at Critical,
-completion stays an explicit human act (`plan-complete`). A post-delivery change
-yields a new candidate and re-gates rather than completing stale work.
+current candidate; it performs no git action itself. Do **not** infer done
+from delivery. Do **not** mark the plan done. Do **not** start Product
+Knowledge reconcile. A post-delivery change yields a new candidate and re-gates
+rather than delivering stale work. Mark-done remains a separate explicit ask
+(`cc-complete`).
 
 ## Pull request
 

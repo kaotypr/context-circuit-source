@@ -20,8 +20,8 @@ flowchart TD
   C --> D[review-intent-approve-derive<br/>Gate 1 · look at code, then plan]
   D --> E[execute-standard-verify-not-complete<br/>build + independent check]
   E --> F[accept the result<br/>candidate-bound]
-  F --> G[standard-inferred-completion<br/>Gate 2 delivery → inferred done]
-  G --> H[reconcile-and-proceed<br/>close the knowledge loop]
+  F --> G[standard-inferred-completion<br/>Gate 2 delivery only]
+  G --> H[reconcile-and-proceed<br/>next plan can start]
 
   B -.->|no code yet, a goal| B1[orient-new-project]
   B -.->|existing folder| B2[connect-existing-repo]
@@ -41,7 +41,7 @@ flowchart TD
   G -.->|no remote| Y2[delivery-boundary-block-no-remote]
   G -.->|Critical tier| Y3[critical-repair-then-complete]
 
-  H -.->|debt still open| Z1[knowledge-debt-blocks-next-plan]
+  H -.->|unupdated notes do not block| Z1[knowledge-debt-blocks-next-plan]
 ```
 
 `standard-feature-whole-flow` walks this entire spine as **one** continuous lay-user
@@ -59,8 +59,8 @@ Read these top to bottom; each is one beat of a project's life.
 | 3 | [build-product-knowledge](plots/build-product-knowledge.md) | get up to speed on a connected project *(optional)* |
 | 4 | [review-intent-approve-derive](plots/review-intent-approve-derive.md) | **Gate 1** — review, settle the open question, approve → look at the real code → **the plan file is created here** |
 | 5 | [execute-standard-verify-not-complete](plots/execute-standard-verify-not-complete.md) | build it, check it independently — verified ≠ complete |
-| 6 | [standard-inferred-completion](plots/standard-inferred-completion.md) | accept the result, then **Gate 2** delivery → completion is inferred |
-| 7 | [reconcile-and-proceed](plots/reconcile-and-proceed.md) | fold the delivered work into what the project knows |
+| 6 | [standard-inferred-completion](plots/standard-inferred-completion.md) | accept the result, then **Gate 2** delivery — delivery does not mark done |
+| 7 | [reconcile-and-proceed](plots/reconcile-and-proceed.md) | the next plan can start without waiting for a knowledge update |
 | ★ | [standard-feature-whole-flow](plots/standard-feature-whole-flow.md) | all of 1→7 as one conversation |
 
 ## Branches & guardrails, by where they hang off the spine
@@ -71,7 +71,7 @@ Read these top to bottom; each is one beat of a project's life.
 
 ### Product Knowledge (beat 3)
 - [query-product-knowledge](plots/query-product-knowledge.md) — ask what the project already knows (retrieval, read-only)
-- [accept-or-defer-context-proposal](plots/accept-or-defer-context-proposal.md) — the consent gate on a pending proposal
+- [accept-or-defer-context-proposal](plots/accept-or-defer-context-proposal.md) — gathering writes live files; no extra knowledge-acceptance gate
 
 ### The intent gate (beat 4)
 - [refuse-before-gate1](plots/refuse-before-gate1.md) — fail closed: no build before approval
@@ -98,12 +98,11 @@ Read these top to bottom; each is one beat of a project's life.
 - [stale-candidate-refuse-complete](plots/stale-candidate-refuse-complete.md) — a change after the check voids the evidence
 - [critical-repair-then-complete](plots/critical-repair-then-complete.md) — Critical tier needs an explicit completion
 - [delivery-boundary-block-no-remote](plots/delivery-boundary-block-no-remote.md) — Gate 2 blocks with no remote, never a silent push
-- [change-set-one-verification](plots/change-set-one-verification.md) — two changes, one combined delivery, both complete
-- [change-set-base-unbuildable](plots/change-set-base-unbuildable.md) — they don't combine cleanly → honest block
+- [change-set-one-verification](plots/change-set-one-verification.md) — two changes, one combined delivery, neither marked done by delivery
 
-### Closing the knowledge loop (beat 7)
-- [knowledge-debt-blocks-next-plan](plots/knowledge-debt-blocks-next-plan.md) — an open follow-up blocks the next overlapping plan
-- (its happy complement is [reconcile-and-proceed](plots/reconcile-and-proceed.md), on the spine)
+### Next plan (beat 7)
+- [knowledge-debt-blocks-next-plan](plots/knowledge-debt-blocks-next-plan.md) — unupdated Product Knowledge does not block the next overlapping plan
+- (its complement is [reconcile-and-proceed](plots/reconcile-and-proceed.md), on the spine)
 
 ## Off to the side — anytime, not part of the spine
 
@@ -123,5 +122,5 @@ If you read nothing else in order, read these three, which carry the whole v1.0 
    the plan; there is no separate plan approval.
 2. **The middle is mechanical and honest.** `execute-standard-verify-not-complete` —
    built and independently checked, but *verified is not complete*.
-3. **Gate 2 is delivery, and completion follows.** `standard-inferred-completion` —
-   accept + deliver, and Standard completion is inferred, then the knowledge loop closes.
+3. **Gate 2 is delivery, and mark-done is separate.** `standard-inferred-completion` —
+   accept + deliver records Gate 2 only; a plan becomes done only on an explicit mark-done.

@@ -271,23 +271,21 @@ while IFS= read -r line; do
 			want=$val; sets=0; members_total=0; cs_bad=""
 			for cs_yaml in "$WORKSPACE"/.runtime/change-sets/*/change-set.yaml; do
 				[ -f "$cs_yaml" ] || continue
-				[ "$(cc_scalar "$cs_yaml" status 2>/dev/null)" = delivered-and-completed ] || continue
+				[ "$(cc_scalar "$cs_yaml" status 2>/dev/null)" = delivered ] || continue
 				sets=$((sets + 1))
 				cs_dir=$(dirname -- "$cs_yaml")
 				cs_members=$(cc_inline_list "$(cc_scalar "$cs_yaml" members 2>/dev/null)" 2>/dev/null) || cs_members=""
 				cs_n=$(printf '%s\n' "$cs_members" | sed '/^$/d' | wc -l | tr -d ' ')
 				members_total=$((members_total + cs_n))
-				[ -f "$cs_dir/verifier.yaml" ] && [ "$(cc_scalar "$cs_dir/verifier.yaml" outcome 2>/dev/null)" = passed ] || cs_bad="$cs_bad verifier"
 				[ -f "$cs_dir/human-acceptance.yaml" ] || cs_bad="$cs_bad acceptance"
 				[ -f "$cs_dir/delivered.yaml" ] || cs_bad="$cs_bad delivery"
 				for cs_member in $cs_members; do
-					cs_exec=$(cc_latest_execution "$WORKSPACE" "$cs_member" 2>/dev/null) || cs_exec=""
-					cs_edir=$(cc_execution_dir "$WORKSPACE" "$cs_member" "$cs_exec" 2>/dev/null)
-					[ -f "$cs_edir/completion.yaml" ] || cs_bad="$cs_bad $cs_member-completion"
-					done
+					cs_st=$(cc_plan_status "$WORKSPACE" "$cs_member" 2>/dev/null) || cs_st=""
+					[ "$cs_st" = done ] && cs_bad="$cs_bad $cs_member-marked-done"
+				done
 			done
 			if [ "$sets" -eq 1 ] && num_compare "$members_total" "$want" && [ -z "$cs_bad" ]; then
-				ok "change_set_completed ($members_total members in one verified, accepted set)"
+				ok "change_set_completed ($members_total members delivered, none marked done)"
 			else
 				bad "change_set_completed (sets=$sets members=$members_total want=$want issues='${cs_bad# }')"; FAIL_A=$((FAIL_A+1))
 			fi ;;
@@ -304,12 +302,12 @@ while IFS= read -r line; do
 			if [ "$recs" -eq 0 ]; then ok "no_execution_records (none)"
 			else bad "no_execution_records ($recs found)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		product_knowledge_unchanged_silently)
-			# Only ACCEPTED Product Knowledge counts. context/proposals/ is the sanctioned
-			# NON-silent path (a proposal is pending, not accepted — INV-KNOWLEDGE-02), so
-			# adding proposals is not a silent change; exclude it from the diff.
-			if diff -r -x proposals "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then
-				if diff -r "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then ok "product_knowledge_unchanged_silently"
-				else ok "product_knowledge_unchanged_silently (accepted PK unchanged; context proposals were added, which is the non-silent path)"; fi
+			# Live context/ is Product Knowledge. In-place gathering and mark-done
+			# reconcile write those files when asked — that is not silent. There is
+			# no sidecar to exclude. This predicate fails when live files differ
+			# from the baseline (plots that gather must not use it).
+			if diff -r "$BASELINE/context" "$WORKSPACE/context" >/dev/null 2>&1; then
+				ok "product_knowledge_unchanged_silently"
 			else bad "product_knowledge_unchanged_silently (accepted context/ differs from baseline)"; FAIL_A=$((FAIL_A+1)); fi ;;
 		base_branch)
 			# val is "<repo>:<expected-branch>": the base branch must be the human's branch,

@@ -26,19 +26,18 @@ importantly, how the coordinator translates them into plain language for a user.
 | Tracer | An independent read-only role that reads the real code after approval (one child per repository, in parallel) and reports a manifest — file map, risks, executable done-checks, tier signal, feasibility — for the coordinator to plan from. |
 | Trace manifest | The tracer's recorded report per repository (`intent/<id>/trace/<repo>.yaml`), durable grounding evidence reused with a bounded freshness check. |
 | Feasibility check | The coordinator's judgment over the tracer's findings before any plan: buildable → plan; not buildable → stop and ask; a required change beyond a bound scope → surface it. A quality gate, not a scope gate. |
-| Tier | The consequence level of a change: **Explore** (human-supervised, no independent verifier), **Standard**, or **Critical** (independent verifier required; Critical adds explicit completion). |
+| Tier | The consequence level of a change: **Explore** (human-supervised, no independent verifier), **Standard**, or **Critical** (independent verifier required; Standard and Critical become done only on an explicit mark-done). |
 | Candidate | The exact proposed result — a digest over the commit map, bases, and frozen criteria. Evidence and acceptance bind to it; any new commit or criteria change voids the old evidence. |
-| Human acceptance | A first-class record that a human accepted a specific candidate ("looks right, ship it"). |
-| Reconciliation debt | A marker that delivered work has not yet updated Product Knowledge; it blocks the next Standard/Critical plan's grounding until resolved. Explore is planless and has no plan grounding preflight. |
+| Human acceptance | A first-class record that a human accepted a specific candidate ("looks right, ship it"). Distinct from marking the plan done. |
 | Promote | Turn an Explore (direct-collaboration) session into a candidate-bearing change by attaching an intent and raising the tier. |
 | Change set | Same-repository plans delivered as one covering-tip pull request; the candidate is the member tip map, accepted once, with no delivery-time check. Named plans partition by covering tip; a repository may have several sibling stacks. |
 | Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives from the approved intent and its trace manifest. |
-| Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent (criteria unchanged since approval); Standard completion is inferred from acceptance + delivery, while Critical completion is explicit. |
+| Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent (criteria unchanged since approval); Standard and Critical become done only on an explicit mark-done. |
 | Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
 | Worker | The single role that implements an intent-authorized plan and commits its changes for one execution. |
 | Verifier | The independent, read-only role that checks the worker's latest commits. |
 | Repair attempt | A new worker commit plus a new independent check after a failed verification. |
-| Completion | The implementation-completion record for a plan: inferred from accepted delivery at Standard, and an explicit human decision after verification at Critical. Explore is planless. |
+| Completion | The implementation-completion record for a plan: an explicit human mark-done at Standard and Critical. Explore is planless. Delivery does not complete a plan. |
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
 | Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
@@ -98,7 +97,6 @@ explicitly asks for diagnostics.
 | Tracer / trace manifest | "the tracer", "manifest", `trace/` | "I looked at the real code first" — describe what it found, never the mechanism |
 | Candidate / `cand-...` / candidate void | "candidate", the digest | "the exact change"; a void reads as "the code changed, so the earlier check no longer applies" |
 | Tier = critical / explore | "tier", "Critical", "Explore" as jargon | "higher-risk, so it gets an independent check and an explicit sign-off" / "quick and human-supervised — no independent check" |
-| Reconciliation debt marker | "debt marker", "knowledge-debt" | "there's merged work I haven't folded into what the project knows yet" |
 | Change-set candidate / covering branch | "change set", "integration tip" | "the combined change" / "one pull request for the stacked work in that repository" |
 | Intent detail / `intent/<id>/detail/` | the folder name or "intent detail" as jargon | "a fuller write-up of this change, split by topic" |
 

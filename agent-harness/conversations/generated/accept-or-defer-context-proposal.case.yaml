@@ -62,23 +62,18 @@ grader:
   # post-condition predicates (harness gaps) — see coverage/phase-1.md.
   post_conditions:
     - repositories_registered: 1
-    - knowledge_units_accepted: 1
-    - knowledge_units_pending: ">=1"
-    - product_knowledge_unchanged_silently: true
     - plans_created: 0
     - no_execution_records: true
-  # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
   transcript_checks:
-    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|context/proposals|INDEX\\.md|PROJECT\\.md|context proposal|knowledge unit|reconciliation debt|candidate)"
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|INDEX\\.md|PROJECT\\.md|context proposal|knowledge unit|reconciliation debt|candidate)"
       reason: >
-        The knowledge-consent machinery and its internal names must not surface; the
-        coordinator talks about items "waiting for your say-so" in plain terms.
-    - requires_any: ["waiting", "your say", "record", "recorded", "accept", "left", "still", "pending"]
-      reason: It should present pending items, record only on explicit yes, and leave the deferral unchanged.
-  # <- plot.access_discipline
+        Internal names must not surface; the coordinator talks about what the
+        project knows in plain terms.
+    - requires_any: ["write", "saved", "knows"]
+      reason: Gathering writes live files without an extra knowledge-acceptance gate.
   access_policy:
-    review-proposal:
-      required: [workspace.yaml, context/INDEX.md, "context/proposals/**"]
+    learn:
+      required: [workspace.yaml, context/INDEX.md]
       allowed:  [AGENTS.md, WORKFLOW.md, "context/**"]
       forbidden:
         - "plans/archive/**"

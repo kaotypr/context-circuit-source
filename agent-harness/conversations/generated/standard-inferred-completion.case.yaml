@@ -54,10 +54,8 @@ grader:
     - candidate_bound: 0001-standard-export
     - human_acceptance_recorded: 0001-standard-export
     - delivery_recorded: 0001-standard-export
-    - completion_kind: 0001-standard-export:inferred
-    - completion_recorded: 0001-standard-export
-    - plan_status: 0001-standard-export:done
-    - knowledge_debt_pending: ">=1"
+    - plan_status: 0001-standard-export:draft
+    - knowledge_debt_pending: 0
     - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"

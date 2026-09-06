@@ -58,8 +58,9 @@ cc_fx_repo "$ws" checkout-service development
 cc_fx_repo "$ws" payments-lib development
 
 # ============================ Scenario A ============================
-# Intent (Gate 1) -> derived plan WITHIN -> execute+verify -> accept -> deliver ->
-# inferred completion -> reconciliation debt pending.
+# Intent (Gate 1) -> derived plan WITHIN -> execute+verify -> accept -> deliver.
+# Delivery does not mark done. Explicit mark-done does. No reconcile-starting
+# debt marker.
 iidA=i001-checkout-retries
 cc_fx_intent "$ws" "$iidA" "Checkout retries" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidA" >/dev/null                       # Gate 1
@@ -74,20 +75,19 @@ cc_fx_run_ok "$ws" 0001-retry checkout-service src/checkout       # worker + ind
 edirA=$(cc_fx_exec_dir "$ws" 0001-retry "$(cc_latest_execution "$ws" 0001-retry)")
 eng human-acceptance-record "$edirA" maker >/dev/null             # accept the candidate
 eng delivery-record "$ws" 0001-retry >/dev/null                  # Gate 2 happened
-eng completion-infer "$ws" 0001-retry >/dev/null                 # inferred (Standard)
+assert_eq "draft" "$(cc_plan_status "$ws" 0001-retry)"            # delivery does not complete
+expect_failure eng completion-infer "$ws" 0001-retry
+eng plan-complete "$ws" 0001-retry >/dev/null                    # explicit mark-done
 assert_eq "done" "$(cc_plan_status "$ws" 0001-retry)"
-eng knowledge-debt "$ws" | grep -q 'pending_count: 1' || fail "A: completion must leave reconciliation debt"
+eng knowledge-debt "$ws" | grep -q 'pending_count: 0' || fail "A: delivery/mark-done must not leave reconcile-starting debt"
 
 # ============================ Scenario E ============================
-# The next plan in the same knowledge scope is BLOCKED at grounding until reconciled.
+# The next plan in the same knowledge scope is NOT blocked.
 iidE=i002-coupon
 cc_fx_intent "$ws" "$iidE" "Coupon field" checkout-service "src/checkout"
 eng intent-approve "$ws" "$iidE" >/dev/null
 cc_fx_plan_intent "$ws" 0002-coupon "Coupon" checkout-service src/checkout "$iidE"
-expect_failure eng knowledge-debt-check "$ws" 0002-coupon         # blocked by A's debt
-candA=$(eng candidate-current "$ws" 0001-retry | sed -n 's/^candidate_id: //p')
-eng knowledge-reconciled "$ws" "$candA" reconciled >/dev/null     # human reconciles
-eng knowledge-debt-check "$ws" 0002-coupon | grep -q 'debt: clear' || fail "E: grounding must clear after reconcile"
+eng knowledge-debt-check "$ws" 0002-coupon | grep -q 'debt: clear' || fail "E: overlapping later plan must not be blocked"
 
 # ============================ Scenario D ============================
 # Criteria drift self-invalidates: editing an approved intent's criteria breaks the
@@ -161,7 +161,7 @@ contains "$conv" "independently checked"
 contains "$conv" "Approve this and I'll build it"
 contains "$conv" "open the pull request"
 contains "$conv" "combined result"
-contains "$conv" "haven't"
+contains "$conv" "coupon field"
 contains "$here/scenarios.md" "split solely to match the assurance tier"
 contains "$here/scenarios.md" "partitions are combined into one lifecycle"
 

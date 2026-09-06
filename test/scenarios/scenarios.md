@@ -1,9 +1,9 @@
 # v1.0 worked scenarios (fixture)
 
-Four end-to-end walkthroughs plus the knowledge-debt path, each a human-simulated
-fixture the driver (`test-scenarios.sh`) plays through the engine and asserts. The
-human sees plain language (`conversations.md`); the steps below name the internal
-mechanism the driver exercises.
+Four end-to-end walkthroughs plus the next-plan-not-blocked path, each a
+human-simulated fixture the driver (`test-scenarios.sh`) plays through the
+engine and asserts. The human sees plain language (`conversations.md`); the
+steps below name the internal mechanism the driver exercises.
 
 ## Scenario A — a Standard feature, one repository
 
@@ -19,11 +19,12 @@ mechanism the driver exercises.
    candidate.
 4. Accept: the human accepts the candidate (first-class, candidate-bound).
 5. Deliver (Gate 2): the human authorizes the pull request; delivery is recorded.
-6. Completion is inferred from acceptance + delivery (Standard); it emits a
-   reconciliation-debt marker.
+   Delivery does not mark the plan done and does not start a knowledge update.
+6. Mark-done: an explicit human ask flips `draft → done`. If the plan affected
+   Product Knowledge, live context files are then updated in place.
 
 Human touch points: approve the intent, accept the candidate, authorize delivery,
-resolve reconciliation.
+mark the plan done.
 
 ## Scenario B — Explore then promote
 
@@ -61,11 +62,11 @@ Invariant: no plan file exists for the un-promoted Explore work.
    is not gated here — it is a feasibility question the coordinator surfaces, and
    scope-safety is settled at delivery, Gate 2.)
 
-## Scenario E — knowledge debt blocks the next change
+## Scenario E — the next plan is not blocked
 
-1. A delivered/completed plan left a pending reconciliation-debt marker.
-2. The next plan in the same knowledge scope is blocked at grounding
-   (Standard/Critical) until the human reconciles or explicitly defers.
+1. A prior plan may be done while Product Knowledge has not yet been updated.
+2. The next plan in the same knowledge scope grounds normally — unupdated
+   Product Knowledge does not block.
 
 ## Decomposition rejection cases
 

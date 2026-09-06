@@ -18,8 +18,7 @@ cc_fx_plan "$ws" 0002-done "Done plan" "api"
 cc_fx_run_ok "$ws" 0002-done api src
 edir_done=$(cc_fx_exec_dir "$ws" 0002-done "$(cc_latest_execution "$ws" 0002-done)")
 cc_human_acceptance_record "$edir_done" alice >/dev/null
-cc_delivery_record "$ws" 0002-done >/dev/null
-cc_completion_infer "$ws" 0002-done >/dev/null
+cc_plan_complete "$ws" 0002-done >/dev/null
 cc_plan_archive "$ws" 0002-done >/dev/null
 assert_eq "done" "$(cc_scalar "$ws/plans/archive/0002-done/plan.yaml" status)"
 

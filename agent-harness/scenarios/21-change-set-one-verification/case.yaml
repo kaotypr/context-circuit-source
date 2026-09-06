@@ -55,9 +55,9 @@ grader:
     - execution_verified: 0001-export-core
     - execution_verified: 0002-export-cli
     - change_set_completed: 2
-    - plan_status: 0001-export-core:done
-    - plan_status: 0002-export-cli:done
-    - knowledge_debt_pending: ">=1"
+    - plan_status: 0001-export-core:draft
+    - plan_status: 0002-export-cli:draft
+    - knowledge_debt_pending: 0
     - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"

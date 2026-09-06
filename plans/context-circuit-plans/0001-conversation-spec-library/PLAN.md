@@ -108,10 +108,8 @@ partition dependencies are therefore intra-plan task dependencies; no
   the independent-verifier expectation.
 - `context/domains/plan-authorization/README.md` — intent-derived plan
   authorization and the absence of a second plan-approval gate.
-- `context/domains/plan-review/README.md` — plan derivation, grounding, task
+  - `context/domains/plan-review/README.md` — plan derivation, grounding, task
   dependencies, and plan-record responsibilities.
-- `context/proposals/0034-add-conversation-spec-library.md` — pending
-  source-only conversation-spec library proposal and coverage intent.
 
 ## Trace questions and dispositions
 

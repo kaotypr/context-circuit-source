@@ -8,8 +8,8 @@ There are **two decisions you make**, and only two: you approve an **intent** �
 what "correct" means and what scope is in bounds (Gate 1) — and you authorize
 **delivery** — the irreversible act of shipping (Gate 2). Everything between them
 is mechanical and scaled to risk: a plan derives from the approved intent, an
-independent check runs when the risk warrants it, you accept the result, and
-completion follows on its own for lower-risk work.
+independent check runs when the risk warrants it, you accept the result, and you
+mark the plan done when you ask to.
 
 ## 1. Initialize
 
@@ -33,7 +33,8 @@ execution base and default pull-request target.
 
 > Gather context about billing from sources/billing-requirements.md.
 
-Context proposals are staged and require explicit human acceptance.
+Context files are written in place and the retrieval catalog is kept consistent.
+There is no separate accept step.
 
 ## 4. Describe and approve an intent (Gate 1)
 
@@ -72,7 +73,7 @@ the coordinator pauses and asks — it never widens what you approved on its own
 
 Delivery is the second and final decision — pull request, merge, push, deployment —
 always separate and explicit. A pull request uses each change's branch as source
-and the recorded `base_branch` as the default target. For lower-risk work,
-"done" then follows from your acceptance plus delivery; a Critical change asks you
-to confirm completion explicitly. Before your next change in the same area, the
-coordinator makes sure the merged work is folded into what the project knows.
+and the recorded `base_branch` as the default target. Asking for a pull request,
+merge, or sync does not mark the plan done and does not start a knowledge
+update. When you ask to mark the plan done, live context files are updated only
+if that plan affected Product Knowledge. The next plan can start without waiting.

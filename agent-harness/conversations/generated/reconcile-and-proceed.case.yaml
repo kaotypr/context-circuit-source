@@ -57,12 +57,9 @@ grader:
   post_conditions:
     - repositories_registered: 1
     - plan_status: 0001-foundation:done
-    - knowledge_debt_resolved: 0001-foundation
-    - knowledge_unit_accepted: ">=1"
-    - grounding_unblocked: 0002-follow-up
+    - knowledge_debt_pending: 0
     - plan_status: 0002-follow-up:draft
     - no_execution_for: 0002-follow-up
-    - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-|reconciliation debt|grounding preflight)"
       reason: The reconciliation must be explained in plain language, not by internal mechanism.

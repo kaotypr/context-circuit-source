@@ -27,8 +27,8 @@ To do work:
 Intent approval and delivery (pull request, merge, push, deployment) are the two
 explicit human gates. Execution follows an approved intent (scope-safety is settled
 at delivery, Gate 2, not by an automated scope gate);
-Standard completion is inferred from candidate acceptance plus delivery, while
-Critical completion is explicit. Explore is planless and human-supervised.
+Standard and Critical completion are an explicit mark-done. Explore is planless
+and human-supervised.
 Archive and restore remain explicit organization actions. Creating or reviewing a
 plan never approves or executes it, and verification never implies completion.
 

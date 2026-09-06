@@ -209,7 +209,8 @@ plan_fixtures() {
 # execute, one FAILED verify + a repair commit, then a PASSED verify (worker_failures=1).
 # verified-stale adds a new worker commit after the pass, leaving the prior evidence
 # stale. verified-accepted records current-candidate acceptance; completed-standard
-# additionally records Gate 2 and inferred Standard completion.
+# records an explicit mark-done. Delivery is not required to mark done and
+# does not start Product Knowledge reconcile.
 seed_plan_state() {
 	sps_pid="$1"; sps_repo="$2"; sps_state="$3"
 	( . "$ENGINE_CLI"
@@ -258,8 +259,7 @@ seed_plan_state() {
 			cc_human_acceptance_record "$sps_edir" harness-human >/dev/null
 		fi
 		if [ "$sps_state" = "completed-standard" ]; then
-			cc_delivery_record "$WORKSPACE" "$sps_pid" "$sps_exec" >/dev/null
-			cc_completion_infer "$WORKSPACE" "$sps_pid" >/dev/null
+			cc_plan_complete "$WORKSPACE" "$sps_pid" >/dev/null
 		fi
 	) || return 1
 }

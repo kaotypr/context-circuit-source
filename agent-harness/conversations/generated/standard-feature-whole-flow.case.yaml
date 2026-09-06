@@ -55,10 +55,8 @@ grader:
     - repositories_registered: 1
     - intents_approved: 1
     - plans_created: 1
-    - all_plans_done: true
     - deliveries_recorded: 1
-    - completion_kind: inferred
-    - knowledge_debt_pending: ">=1"
+    - knowledge_debt_pending: 0
     - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|cand-|contract_digest|refs/cc-|cc/[0-9])"

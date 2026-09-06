@@ -55,20 +55,20 @@ decision_points:
     coordinator_must: >
       reuse the existing independent checks and record one human acceptance —
       not spawn a second verifier, and not one acceptance per change.
-  - id: complete-both-on-one-delivery
+  - id: deliver-without-mark-done
     when: the human opens the single pull request
     coordinator_must: >
-      after the one explicit delivery event, complete both changes consistently and
-      report any knowledge follow-up.
+      after the one explicit delivery event, record delivery for the covering
+      tip without marking members done and without starting a knowledge update.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
   - repositories_registered: 1
   - execution_verified: 0001-export-core
   - execution_verified: 0002-export-cli
-  - change_set_completed: 2                     # both members completed from one acceptance/delivery
-  - plan_status: 0001-export-core:done
-  - plan_status: 0002-export-cli:done
-  - knowledge_debt_pending: ">=1"
+  - change_set_completed: 2                     # both members delivered from one acceptance; not marked done
+  - plan_status: 0001-export-core:draft
+  - plan_status: 0002-export-cli:draft
+  - knowledge_debt_pending: 0
   - product_knowledge_unchanged_silently: true
 access_discipline:
   execute-plan:

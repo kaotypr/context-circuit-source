@@ -1,15 +1,14 @@
-# Standard completion is inferred — acceptance plus delivery, no second sign-off
+# Standard delivery records Gate 2 only — done requires an explicit mark-done
 
-Proves inferred completion at Standard: the checked result is accepted and its pull
-request is opened, so the change is finished from the human's side without a separate
-"mark it done" step. The coordinator records the delivery only because the human
-supplied it, infers completion, and surfaces the reconciliation follow-up rather than
-changing knowledge silently.
+Proves that recording delivery does not finish a Standard change. The checked
+result is accepted and its pull request is opened; the coordinator records that
+delivery and does not mark the plan done, start a knowledge update, or infer
+completion. Mark-done remains a separate explicit ask.
 
 ## Spec
 ```yaml
 id: standard-inferred-completion
-title: Infer Standard completion only after current acceptance and explicit Gate 2 delivery
+title: Record Gate 2 delivery without marking a Standard plan done
 status: proposed
 runtime_version: ">=1.0.0"
 mode: full-execution
@@ -29,18 +28,17 @@ preconditions:
       repository: notes
       objective: Add an export command for the notes.
       path: src/export
-      seed_state: verified-accepted        # current candidate verified AND accepted
+      seed_state: verified-accepted
   state: seeded:verified-accepted-standard
 persona: >
   A solo maker who reviewed the checked result and opened its pull request. They want
-  the coordinator to record that delivery and explain what happens next. Has never
-  heard of Context Circuit or its internals.
+  the coordinator to record that delivery. Has never heard of Context Circuit or its internals.
 human_turns:
-  - "I reviewed and accept the checked result, and I opened the pull request. Please record that delivery and finish the Standard change."
-  - "What follow-up remains after it is finished?"
+  - "I reviewed and accept the checked result, and I opened the pull request. Please record that delivery."
+  - "Is the change done?"
   - "Okay, thanks."
 reactions:
-  approves: true                   # supplies the explicit Gate 2 delivery event
+  approves: true
   invents_repository: never
   uses_internal_terms: never
 demonstrates:
@@ -55,16 +53,16 @@ decision_points:
     coordinator_must: >
       record delivery only because the human explicitly supplied that event — it does
       not open or infer a delivery on its own.
-  - id: infer-not-ask-again
-    when: acceptance and delivery both exist
+  - id: do-not-mark-done
+    when: delivery has been recorded
     coordinator_must: >
-      infer completion from the current acceptance plus the delivery, and NOT ask for
-      a separate plan-completion approval.
-  - id: surface-reconcile-followup
-    when: the human asks what follow-up remains
+      not mark the plan done and not infer completion from delivery. Done requires
+      an explicit mark-done ask.
+  - id: no-knowledge-update-from-delivery
+    when: the human asks whether the change is done
     coordinator_must: >
-      report the knowledge-reconciliation follow-up in plain terms without silently
-      changing what the project knows.
+      say the work is delivered but not marked done, and that recording delivery
+      did not update what the project knows.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
   - repositories_registered: 1
@@ -72,10 +70,8 @@ expected_end_state:
   - candidate_bound: 0001-standard-export
   - human_acceptance_recorded: 0001-standard-export
   - delivery_recorded: 0001-standard-export
-  - completion_kind: 0001-standard-export:inferred      # inferred, not a second approval
-  - completion_recorded: 0001-standard-export
-  - plan_status: 0001-standard-export:done
-  - knowledge_debt_pending: ">=1"
+  - plan_status: 0001-standard-export:draft
+  - knowledge_debt_pending: 0
   - product_knowledge_unchanged_silently: true
 access_discipline:
   complete:
@@ -87,20 +83,17 @@ access_discipline:
 ## Dialogue
 
 > **H:** I reviewed and accept the checked result, and I opened the pull request.
-> Please record that delivery and finish the Standard change.
+> Please record that delivery.
 >
 > **C:** Recorded — you've accepted this exact result and opened the pull request.
-> That's the change accepted and delivered, so it's finished from your side; I didn't
-> need a separate "mark it done" step. `[decision_point: record-delivery-only-on-event]` `[decision_point: infer-not-ask-again]`
+> Nothing has been marked done. `[decision_point: record-delivery-only-on-event]` `[decision_point: do-not-mark-done]`
 >
-> **H:** What follow-up remains after it is finished?
+> **H:** Is the change done?
 >
-> **C:** One thing: this delivered work hasn't been folded into what the project knows
-> yet. I won't change that on my own — say the word and I'll put together a proposed
-> update, or you can note that nothing needs changing. `[decision_point: surface-reconcile-followup]`
+> **C:** The pull request is recorded. The change is not marked done until you ask
+> me to mark it done. Recording delivery did not update what the project knows.
+> `[decision_point: no-knowledge-update-from-delivery]`
 >
 > **H:** Okay, thanks.
 
-Completion is inferred from the recorded acceptance plus the delivery the human
-supplied — no second sign-off — and the reconciliation follow-up is surfaced rather
-than applied silently.
+Delivery records Gate 2 only. A plan becomes done only on an explicit mark-done.

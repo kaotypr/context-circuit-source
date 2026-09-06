@@ -135,8 +135,7 @@ assert_eq "verified" "$(cc_execution_status "$edir")"
 # 8. Human completion, then archive and restore.
 completion_edir="$ws/.runtime/executions/$pid/$(cc_latest_execution "$ws" "$pid")"
 cc_human_acceptance_record "$completion_edir" alice >/dev/null
-cc_delivery_record "$ws" "$pid" >/dev/null
-cc_completion_infer "$ws" "$pid" >/dev/null
+cc_plan_complete "$ws" "$pid" >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" "$pid")"
 cc_plan_archive "$ws" "$pid" >/dev/null
 require_dir "$ws/plans/archive/$pid"

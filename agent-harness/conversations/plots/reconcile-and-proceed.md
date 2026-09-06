@@ -1,15 +1,14 @@
-# Reconcile the debt, and the loop clears — the next plan can proceed
+# Mark-done already happened — the next plan can proceed
 
-The positive complement of `knowledge-debt-blocks-next-plan`: the same held state, but
-the human makes the pending knowledge decision. The coordinator records it (by explicit
-consent), the debt clears, and the previously-blocked follow-up is unblocked. Proves
-the loop closes cleanly — reconcile, and work resumes — without knowledge ever being
-accepted silently.
+The complement of the inverted next-plan plot: a prior plan is marked done.
+The coordinator starts the follow-up when asked. In-place knowledge updates,
+when they happen, are the same gather-style edits — not a sidecar and not a
+block on the next plan.
 
 ## Spec
 ```yaml
 id: reconcile-and-proceed
-title: Reconcile the pending knowledge decision, clear the debt, and unblock the next plan
+title: Start the next plan after a prior plan was marked done
 status: proposed
 runtime_version: ">=1.0.0"
 mode: conversation-only
@@ -29,24 +28,23 @@ preconditions:
       repository: notes
       objective: Add a small storage foundation for the notes tool.
       path: src/storage
-      seed_state: completed-standard      # delivered + completed -> pending reconciliation marker
+      seed_state: completed-standard
     - id: 0002-follow-up
       title: Add note search
       repository: notes
       objective: Add search on top of the notes storage foundation.
       path: src/search
       seed_state: draft
-  state: seeded:completed-with-pending-debt
+  state: seeded:completed-standard-follow-up-draft
 persona: >
-  A maker whose finished storage change left a knowledge decision pending, who is
-  happy to make that decision so the follow-up search work can go ahead. Has never
-  heard of Context Circuit; does not know what a reconciliation marker is.
+  A maker whose storage change is marked done and who wants the search work to
+  go ahead. Has never heard of Context Circuit.
 human_turns:
-  - "You said the storage change needs a decision before the search work. What is it?"
-  - "Yes — record that storage detail as how the project works, then the search work is clear to go."
+  - "The storage change is done. Please start the search work."
+  - "If the project notes still need an update, don't wait — start the search plan."
   - "Thanks."
 reactions:
-  approves: true                   # explicitly reconciles (accepts) the pending knowledge unit
+  approves: true
   invents_repository: never
   uses_internal_terms: never
 demonstrates:
@@ -56,35 +54,21 @@ hidden:
   - runtime files, candidate ids, execution branches, digests
   - the words "reconciliation debt", "marker", "grounding preflight", "knowledge scope" as jargon
 decision_points:
-  - id: present-the-pending-decision
-    when: the human asks what decision is pending
+  - id: proceed
+    when: the human asks to start the follow-up
     coordinator_must: >
-      state, in plain language, the knowledge decision the finished change left open —
-      what would be recorded about how the project works — without pre-deciding it.
-  - id: reconcile-on-explicit-yes
-    when: the human makes the decision
+      start the follow-up plan rather than waiting for a Product Knowledge update.
+  - id: notes-can-wait
+    when: project notes may still be unupdated
     coordinator_must: >
-      record the knowledge update only on the explicit decision (accept or a clear
-      "nothing to record"), never silently — and confirm what was recorded.
-  - id: clear-and-unblock
-    when: the decision is made
-    coordinator_must: >
-      confirm the loose end is now closed and the follow-up work is clear to go —
-      the block is lifted because the debt is resolved, not bypassed.
+      not treat unupdated notes as a gate on the next plan.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
-  # The debt clears by an EXPLICIT decision, so knowledge changes WITH consent (never
-  # silently). `knowledge_debt_resolved` / `grounding_unblocked` are NEW predicates
-  # (harness gaps) — see coverage/phase-6a.md. The follow-up is unblocked but not yet
-  # executed here (execution is owned by the phase-4 plots).
   - repositories_registered: 1
   - plan_status: 0001-foundation:done
-  - knowledge_debt_resolved: 0001-foundation        # the pending marker is cleared by explicit decision
-  - knowledge_unit_accepted: ">=1"                   # the storage detail recorded on the explicit yes
-  - grounding_unblocked: 0002-follow-up              # the follow-up is no longer held
+  - knowledge_debt_pending: 0
   - plan_status: 0002-follow-up:draft
-  - no_execution_for: 0002-follow-up                 # unblocked and ready, not yet built here
-  - product_knowledge_unchanged_silently: true       # the change was consented, never silent
+  - no_execution_for: 0002-follow-up
 access_discipline:
   reconcile:
     required: []
@@ -94,23 +78,16 @@ access_discipline:
 
 ## Dialogue
 
-> **H:** You said the storage change needs a decision before the search work. What is
-> it?
+> **H:** The storage change is done. Please start the search work.
 >
-> **C:** Right — the storage change established how notes are kept on disk, and that
-> hasn't been written into what the project knows yet. The decision is simply: record
-> that as how the project works, or tell me it doesn't need recording. Either closes
-> it out; I won't pick for you. `[decision_point: present-the-pending-decision]`
+> **C:** Starting the search plan. `[decision_point: proceed]`
 >
-> **H:** Yes — record that storage detail as how the project works, then the search
-> work is clear to go.
+> **H:** If the project notes still need an update, don't wait — start the search
+> plan.
 >
-> **C:** Recorded: that's now part of what the project knows, on your say-so. That
-> loose end is closed, so the search work is clear to go whenever you want to start it —
-> nothing's blocking it now. `[decision_point: reconcile-on-explicit-yes]` `[decision_point: clear-and-unblock]`
+> **C:** Not waiting. Notes can be updated in place later; that doesn't block this.
+> `[decision_point: notes-can-wait]`
 >
 > **H:** Thanks.
 
-The human makes the pending decision, the coordinator records it by consent, the debt
-clears, and the previously-blocked follow-up is unblocked — the loop closes and work
-can resume, with knowledge changed only on an explicit yes.
+A later plan can start after mark-done without waiting for a knowledge update.

@@ -5,21 +5,19 @@ concern: completion_record
 
 purpose: >
   Durable implementation completion record proving which execution and repository
-  commits were accepted as done. Under Context Circuit v1.0 the way it is reached
-  depends on the intent's consequence tier (INV-COMPLETE-01): Standard is INFERRED
-  from a current candidate-bound human acceptance plus a recorded delivery
-  (`human_completion: inferred`); Critical is written only by an EXPLICIT human
-  completion request after independent verification (`human_completion: accepted`).
-  Explore is planless until promotion and therefore has no plan completion record.
-  It never changes Product Knowledge.
+  commits were accepted as done. Under Context Circuit v1.0 a Standard or
+  Critical plan becomes done only on an explicit human mark-done request
+  (`human_completion: accepted`, INV-COMPLETE-01). Explore is planless until
+  promotion and therefore has no plan completion record. Verification, candidate
+  acceptance, and delivery never write this record. It never changes Product
+  Knowledge.
 
 preconditions:
   - completion-ready passes for the plan's tier (Explore: candidate-bound
     acceptance; Standard/Critical: candidate-bound independent pass)
   - plan status is draft at the moment of completion
   - completion is candidate-bound to the current intent contract and execution
-  - inferred completion (Standard) additionally requires a recorded delivery still
-    binding to the current candidate; Critical requires an explicit human request
+  - an explicit human mark-done request (Standard and Critical)
 
 fields:
   schema_version: { type: integer, required: true, values: [1] }
@@ -37,10 +35,9 @@ fields:
   human_completion:
     type: enum
     required: true
-    values: [accepted, inferred]
+    values: [accepted]
     description: >
-      accepted = an explicit human completion (Critical); inferred = a
-      projection of candidate acceptance + delivery (Explore/Standard).
+      accepted = an explicit human mark-done (Standard and Critical).
   completed_at: { type: string, required: true }
   commits:
     type: map
@@ -51,12 +48,15 @@ fields:
 effects:
   - plan status changes draft -> done
   - implementation completion record is written
-  - knowledge reconciliation starts and produces proposals or a no-update-needed result
+  - when the plan affected Product Knowledge, the coordinator starts in-place
+    reconcile of live context/ files (INV-COMPLETE-02); the runtime does not
 
 non_effects:
-  - does not accept any Product Knowledge update
+  - does not write or accept any Product Knowledge update
   - does not merge, push, open a pull request, deploy, or clean up
-  - a verification pass alone never performs this transition
+  - a verification pass, candidate acceptance, or delivery alone never performs
+    this transition
+  - does not block a later plan waiting for Product Knowledge
 
 rules:
   - INV-COMPLETE-01

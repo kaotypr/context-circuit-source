@@ -15,9 +15,11 @@ repositories, domains, decisions, and constraints to knowledge units so an agent
 selects the relevant units without scanning the directory. Retrieval metadata
 and the entry shape are owned by `wrapper/contracts/schemas/context-index.yaml`.
 
-Knowledge changes only through explicit human acceptance. Gathering context,
-completion reconciliation, repository evidence, and worker claims can produce
-proposals under `context/proposals/`, but a proposal is never applied
-automatically. A plan may be `done` while a proposal is pending; relevant
-pending proposals surface during future plan creation. `sources/` is passive
-raw evidence and is read only when named.
+Knowledge changes by writing live `context/` files in place. Gathering context
+edits those files and keeps the catalog consistent. After a plan is marked done,
+the coordinator performs the same in-place reconcile when the plan affected
+Product Knowledge. There is no sidecar staging path and no extra
+knowledge-acceptance gate. Completion, verification, worker claims, and
+delivery never write Product Knowledge. A later plan may start even if a
+knowledge update has not landed. `sources/` is passive raw evidence and is read
+only when named.

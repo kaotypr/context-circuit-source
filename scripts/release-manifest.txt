@@ -26,7 +26,6 @@ required context/SOURCES.md
 required context/sources.yaml
 required context/domains/README.md
 required context/roles/README.md
-required context/proposals/README.md
 required sources/README.md
 required sources/archive/README.md
 required intent/INDEX.md
@@ -54,7 +53,6 @@ required wrapper/contracts/schemas/candidate.yaml
 required wrapper/contracts/schemas/human-acceptance.yaml
 required wrapper/contracts/schemas/completion.yaml
 required wrapper/contracts/schemas/context-impact.yaml
-required wrapper/contracts/schemas/context-proposal.yaml
 required wrapper/contracts/schemas/context-index.yaml
 required wrapper/contracts/schemas/lease.yaml
 required wrapper/contracts/schemas/grounding-manifest.yaml
