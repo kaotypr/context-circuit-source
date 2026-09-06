@@ -46,7 +46,7 @@ assert_eq "done" "$(cc_plan_status "$ws" 0001-std)"
 contains "$edir/completion.yaml" "human_completion: accepted"
 printf '%s\n' "$out" | grep -q 'reconciliation_debt:' && fail "mark-done must not emit a reconcile-starting debt marker" || :
 
-# a post-verify change (new candidate) refuses mark-done
+# a post-verify change (new candidate) still mark-done
 cc_fx_intent "$ws" i009-drift "Drift" web "src"
 eng intent-approve "$ws" i009-drift >/dev/null
 cc_fx_plan_intent "$ws" 0009-drift "Drift" web src i009-drift
@@ -56,8 +56,9 @@ eng human-acceptance-record "$edir9" alice >/dev/null
 wt9="$ws/.runtime/worktrees/0009-drift/web"
 printf 'z\n' >>"$wt9/src/mod.txt"; git -C "$wt9" add -A; git -C "$wt9" commit -q -m "feat(web): more"
 cc_worker_commit_record "$edir9" web repair >/dev/null
-expect_failure eng plan-complete "$ws" 0009-drift
-assert_eq "draft" "$(cc_plan_status "$ws" 0009-drift)"
+expect_failure eng completion-ready "$ws" 0009-drift
+eng plan-complete "$ws" 0009-drift >/dev/null
+assert_eq "done" "$(cc_plan_status "$ws" 0009-drift)"
 
 # --- Critical: inferred completion is refused; explicit is required ---
 iid2=i002-crit

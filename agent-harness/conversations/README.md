@@ -220,7 +220,7 @@ deterministic owner.
 ### Candidate, completion, delivery
 | plot | proves | case |
 | --- | --- | --- |
-| stale-candidate-refuse-complete | new commit voids evidence; refuse completion | 17 |
+| stale-candidate-refuse-complete | new commit voids evidence; mark-done still flips | 17 |
 | critical-repair-then-complete | Critical explicit completion after a repair | 06 |
 | delivery-boundary-block-no-remote | Gate 2 separate; no remote → block, no silent push | 08 |
 | standard-inferred-completion | delivery records Gate 2 only; done requires explicit mark-done | 18 |

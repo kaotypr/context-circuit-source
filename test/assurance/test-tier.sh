@@ -97,7 +97,7 @@ awk '/^tier:/{print "tier: explore"; next}{print}' "$ws/intent/i004-widget/contr
 mv "$ws/intent/i004-widget/c.new" "$ws/intent/i004-widget/contract.yaml"
 eng intent-approve "$ws" i004-widget >/dev/null
 
-# --- per-tier verifier floor at completion ---
+# --- per-tier verifier floor as an eligibility query ---
 cc_fx_repo "$ws" api development
 
 # Explore is human-supervised and planless in v1.0. Promotion to Standard/Critical
@@ -117,7 +117,8 @@ wt2="$ws/.runtime/worktrees/0002-std/api"
 mkdir -p "$wt2/src/std"; printf 'y\n' >"$wt2/src/std/mod.txt"
 git -C "$wt2" add -A; git -C "$wt2" commit -q -m "feat(api): std"
 cc_worker_commit_record "$edir2" api implementation >/dev/null
-# a human acceptance without the verifier does NOT satisfy a Standard completion
+# a human acceptance without the verifier does NOT satisfy the Standard
+# eligibility query (completion-ready); it is not a mark-done gate.
 eng human-acceptance-record "$edir2" alice >/dev/null
 expect_failure eng completion-ready "$ws" 0002-std
 # the independent verifier pass satisfies the floor

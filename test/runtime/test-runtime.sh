@@ -83,9 +83,9 @@ printf '%s\n' "$out" | grep -Fq "stop: FAILURE_LIMIT_REACHED" || fail "expected 
 assert_eq "failed" "$(cc_execution_status "$edir")"
 expect_failure cc_repair_allowed "$edir"
 
-# --- completion requires passed evidence (failed execution cannot complete) ---
-expect_failure cc_plan_complete "$ws" 0001-alpha
-assert_eq "draft" "$(cc_plan_status "$ws" 0001-alpha)"
+# --- failed execution can still be marked done ---
+cc_plan_complete "$ws" 0001-alpha >/dev/null
+assert_eq "done" "$(cc_plan_status "$ws" 0001-alpha)"
 
 # --- successful path: completion records commits + preserves PK boundary ---
 cc_fx_repo "$ws" web development

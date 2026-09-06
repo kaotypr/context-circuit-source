@@ -13,7 +13,7 @@ generated_at: 2026-08-24T00:00:00Z
 review_date: 2026-11-24
 freshness: accepted-from-current-wrapper
 assumptions:
-  - Standard and Critical become done only on an explicit mark-done; Explore is planless; verification, candidate acceptance, and delivery do not mark a plan done.
+  - Standard and Critical become done only on an explicit mark-done with no unreadiness look; Explore is planless; verification, candidate acceptance, and delivery do not mark a plan done.
 unknowns: []
 contradictions: []
 acceptance:
@@ -29,18 +29,18 @@ workflows:
 
 ## Summary
 
-Completion is the candidate-bound transition from a verified implementation to a
-done plan. Standard and Critical become done only on an explicit mark-done.
-Explore is planless. Verification, candidate acceptance, and delivery never
-complete a plan. When the plan affected Product Knowledge, mark-done then
-updates live context files in place — the same reconcile as gathering context.
-Route mark-done here. Owned by the `cc-complete` skill.
+Completion is the `draft → done` flip on an explicit mark-done ask. Standard and
+Critical become done only on that ask, with no look at work or evidence and no
+unreadiness refusal. Explore is planless. Verification, candidate acceptance,
+and delivery never complete a plan. When the plan affected Product Knowledge,
+mark-done then updates live context files in place — the same reconcile as
+gathering context. Route mark-done here. Owned by the `cc-complete` skill.
 
 ## Scope
 
-Inside: the `draft → done` transition gated on a verified latest execution,
-the durable completion record, and in-place Product Knowledge reconcile when
-the plan affected knowledge.
+Inside: the `draft → done` transition on ask, the optional completion record
+written when execution evidence files exist, and in-place Product Knowledge
+reconcile when the plan affected knowledge.
 
 Outside: verification itself ([verification](../verification/README.md)) and
 delivery ([delivery](../delivery/README.md)). Delivery does not start
@@ -48,12 +48,15 @@ reconcile and does not mark a plan done.
 
 ## Behavior
 
-After the latest execution passes independent verification and the human
-accepts its candidate, an explicit mark-done request (`plan-complete`) flips
-Standard or Critical `draft → done` when `completion-ready` still holds
-(INV-COMPLETE-01). Verification, candidate acceptance, and delivery never mark
-a plan complete. Completion records the plan revision, candidate, execution,
-per-repository commits, verifier result, and acceptor.
+An explicit mark-done request (`plan-complete`) flips Standard or Critical
+`draft → done` with no look at work or evidence (INV-COMPLETE-01). Asking for
+several named plans does that for each named plan on the same path. A plan
+that was never built, failed a check, or has no evidence still becomes done
+when the human asks. Verification, candidate acceptance, and delivery never
+mark a plan complete. When execution evidence files exist, mark-done may also
+write the implementation completion record (plan revision, candidate,
+execution, per-repository commits, verifier result, acceptor); missing files
+do not block the status change.
 
 When the plan affected Product Knowledge, that same mark-done starts in-place
 reconcile of live `context/` files and keeps `INDEX.md` consistent
@@ -77,15 +80,15 @@ index is a retrieval catalog, not a full copy of page content
 
 ## Constraints and edge cases
 
-Completion refuses unless the latest execution is `verified`; a `failed` or
-`blocked` result is reported plainly. The runtime preserves optional
-reconciliation references but never interprets Product Knowledge.
+Asking to mark a plan done is enough. There is no unreadiness refusal for a
+never-built, failed, blocked, or unevidenced plan. The runtime preserves
+optional reconciliation references but never interprets Product Knowledge.
 
 ## Reconciliation, impact status, and staleness
 
-A successful verifier creates pending completion evidence — execution status
-`verified`, plan status `draft` — before candidate acceptance and the explicit
-mark-done.
+A successful verifier leaves execution status `verified` and plan status
+`draft` until the explicit mark-done. That evidence is not a gate on the
+status flip.
 
 Reconcile reads the final plan and task files and revisions, the Product
 Knowledge references and grounding summary, the changed paths and commits per
@@ -102,8 +105,9 @@ reference and refreshes it before execution.
 ## Implementation references
 
 - `.agents/skills/cc-complete/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_completion_ready`, `cc_latest_execution`,
-  `cc_plan_complete`, `cc_context_impact_record`
+- `wrapper/runtime/engine.sh`: `cc_plan_complete`, `cc_completion_finalize`,
+  `cc_latest_execution`, `cc_context_impact_record`. `cc_completion_ready` is
+  an eligibility query, not a mark-done gate.
 - `wrapper/contracts/schemas/completion.yaml`,
   `wrapper/contracts/schemas/context-impact.yaml`,
   `wrapper/contracts/schemas/context-index.yaml`
@@ -122,5 +126,6 @@ scanned.
 ## Acceptance notes
 
 Accepted 2026-08-24 from proposal `0013-domain-completion`. Refreshed for
-in-place knowledge updates: mark-done is the only done trigger; reconcile
-writes live context files rather than a sidecar.
+in-place knowledge updates, then for ungated mark-done: asking flips status
+with no unreadiness look; reconcile still writes live context files rather
+than a sidecar.

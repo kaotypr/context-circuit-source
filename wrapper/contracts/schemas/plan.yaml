@@ -14,8 +14,8 @@ plan_status:
   authority: this file
   values: [draft, done]
   transitions:
-    - draft -> done       # inferred from candidate acceptance + delivery
-                          # (Critical: explicit human)
+    - draft -> done       # explicit human mark-done; no readiness or evidence
+                          # precondition (INV-COMPLETE-01)
   notes: >
     A plan has no intermediate "approved" status: authorization is upstream on the
     intent (Gate 1), and a plan that derives from that approved intent executes with
@@ -129,7 +129,8 @@ invariants:
   - task dependencies reference existing task ids (INV-PLAN-02)
   - acceptance and verification use distinct identifiers
   - each product_knowledge reference has a stable id, path, and reason (INV-PLAN-04)
-  - plan status is a projection of intent approval + candidate acceptance (INV-PLAN-01)
+  - plan status is a projection, not a second human gate: Standard and Critical
+    become done only on an explicit mark-done (INV-PLAN-01)
   - a v1.0 plan (schema_version 3) names its parent intent and derives from it once approved (INV-INTENT-02)
   - schema_version is 3; any other value is unsupported (INV-PLAN-05, INV-INTENT-02)
   - every plan_dependencies entry references an existing, non-self plan id and the

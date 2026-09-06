@@ -1,24 +1,24 @@
 ---
 name: cc-complete
-description: Mark a verified plan done at explicit human request and reconcile the implementation against Product Knowledge in place.
+description: Mark a plan done at explicit human request and reconcile the implementation against Product Knowledge in place.
 ---
 
-Completion is gated by the intent's consequence tier (INV-COMPLETE-01), and
-verification never marks a plan complete.
+A plan becomes done only when a human asks to mark it done. Verification,
+candidate acceptance, and delivery never mark a plan complete.
 
 - **Standard and Critical — explicit mark-done.** On "mark plan X complete" or
-  "mark X done", run `plan-complete . <plan-id>`. It refuses unless the tier
-  floor is met: a candidate-bound independent pass that still describes the
-  current candidate (`completion-ready`). Delivery, candidate acceptance, and
-  verification do not mark the plan done.
+  "mark X done", or the same ask naming several plans, run `plan-complete .
+  <plan-id>` for each named plan. There is no look at that plan's work or
+  evidence, and no unreadiness refusal. A plan that was never built, failed a
+  check, or has no evidence still becomes done when asked. Delivery, candidate
+  acceptance, and verification do not mark the plan done.
 - **Explore — planless.** Explore work is direct human-supervised collaboration;
   it has no plan-of-record completion path until the human promotes it.
 
-On success `plan-complete` changes plan status `draft → done`, writes the
-implementation completion record (execution, per-repository commits,
-`human_completion: accepted`), and keeps branches and worktrees intact (no
-merge or publication). If the current result is `failed` or `blocked`, or the
-candidate is stale, report that plainly and do not change status.
+On success `plan-complete` changes plan status `draft → done` and keeps
+branches and worktrees intact (no merge or publication). When execution
+evidence files exist it may also write the implementation completion record
+(`human_completion: accepted`); missing files do not block the status flip.
 
 Then, **if the plan affected Product Knowledge**, reconcile in place — the same
 act as gathering context. Compare the plan's knowledge references, changed
