@@ -180,7 +180,7 @@ enhancement, not a hole (the mechanic is covered deterministically elsewhere).
 | clone-or-init-new-repo | clone/init a new repo under `repositories/` (AC-27, INV-REPO-03) | **NEW** |
 | build-product-knowledge | first-time knowledge build (`init-project-context`) | **NEW** |
 | query-product-knowledge | "what does the project know about X" via retrieval | **NEW** |
-| accept-or-defer-context-proposal | knowledge acceptance is an explicit human decision (INV-KNOWLEDGE-02) | **NEW** |
+| accept-or-defer-context-proposal | gathering writes live files; no extra knowledge-acceptance gate | **NEW** |
 
 ### Intent gate (Gate 1)
 | plot | proves | case |
@@ -223,15 +223,15 @@ deterministic owner.
 | stale-candidate-refuse-complete | new commit voids evidence; refuse completion | 17 |
 | critical-repair-then-complete | Critical explicit completion after a repair | 06 |
 | delivery-boundary-block-no-remote | Gate 2 separate; no remote → block, no silent push | 08 |
-| standard-inferred-completion | inferred completion after acceptance + Gate 2 | 18 |
+| standard-inferred-completion | delivery records Gate 2 only; done requires explicit mark-done | 18 |
 | change-set-one-verification | one integrated candidate, one PR, complete both | 21 |
 | change-set-base-unbuildable | honest "these don't combine cleanly, I stopped" (conversation C tail) | **NEW** |
 
 ### Closed knowledge loop
 | plot | proves | case |
 | --- | --- | --- |
-| knowledge-debt-blocks-next-plan | reconciliation debt gates the next plan | 19 |
-| reconcile-and-proceed | the happy path: human reconciles the debt, it clears, the next plan proceeds (AC-34, INV-KNOWLEDGE-02) | **NEW** (positive complement of 19) |
+| knowledge-debt-blocks-next-plan | a later plan can start without waiting for Product Knowledge | 19 |
+| reconcile-and-proceed | mark-done already happened; the next plan proceeds (AC-34, INV-KNOWLEDGE-02) | **NEW** (positive complement of 19) |
 
 ### Organization
 | plot | proves | case |
@@ -250,7 +250,7 @@ deterministic owner.
 ### Whole-flow (the lay-user experience across phases)
 | plot | proves | case |
 | --- | --- | --- |
-| standard-feature-whole-flow | Scenario A end-to-end as one live conversation (two gates + inferred completion + reconcile) | *(opt)* |
+| standard-feature-whole-flow | Scenario A end-to-end as one live conversation (two gates + explicit mark-done) | *(opt)* |
 
 Two plots are fully worked as examples in `plots/`:
 `standard-feature-whole-flow.md` (the whole-flow the delta files never play live)

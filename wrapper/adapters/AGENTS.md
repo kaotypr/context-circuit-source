@@ -15,8 +15,8 @@ Product Knowledge and plan material, drafts or reviews a readable plan, you
 approve it in conversation, the workspace prepares isolated repository worktrees,
 one worker implements the whole plan in that plan's single repository and commits it, an independent
 verifier checks the latest commits, and the worker repairs failures with new
-commits. Standard completion follows candidate acceptance plus delivery; Critical
-completion is explicit. Explore is planless and human-supervised.
+commits. A plan becomes done only on an explicit mark-done at Standard and
+Critical. Explore is planless and human-supervised.
 
 Branches, worktrees, runtime records, and verifier setup are hidden. The plan,
 the worker's handoff, the verifier's result, and your authority over completion
@@ -46,9 +46,9 @@ verifier, and is always described as human-supervised rather than verified.
   sources or sibling workspaces to fill a context gap.
 - `plans/archive/` is outside normal context; read it only via explicit restore.
 - Pull requests, merge, push, deployment, archive, and cleanup are separate
-  explicit human actions. Standard completion is inferred from candidate
-  acceptance plus delivery; Critical completion is explicit. Verification never
-  implies completion or delivery.
+  explicit human actions. A plan becomes done only on an explicit mark-done at
+  Standard and Critical. Verification, candidate acceptance, and delivery never
+  imply completion.
 - Credentials stay in host Git config or the host agent; never in workspace files
   or runtime records.
 

@@ -54,7 +54,6 @@ grader:
     - repositories_registered: 1
     - plans_created: 0
     - no_execution_records: true
-    - product_knowledge_unchanged_silently: true
   # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|INDEX\\.md|PROJECT\\.md|context/proposals|retrieval index|context proposal|Product Knowledge)"

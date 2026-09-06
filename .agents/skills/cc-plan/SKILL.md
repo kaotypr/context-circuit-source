@@ -116,23 +116,12 @@ execution start.
 One intent may yield **one or more** stacked plans, each naming the same intent
 and exactly one repository. Deriving a plan does not execute it.
 
-## Grounding-debt preflight (INV-KNOWLEDGE-02, closed loop)
+## Grounding and unupdated Product Knowledge (INV-KNOWLEDGE-02)
 
-Before grounding a new plan, run `knowledge-debt-check . <plan-id>`. It consults
-the reconciliation-debt markers that completion/delivery emitted (INV-COMPLETE-02).
-If delivered work in this plan's knowledge scope (its repositories) is still
-unreconciled:
-
-- **Standard/Critical → it blocks.** Reconcile first — generate the impact
-  proposals and let the human accept or explicitly defer them
-  (`knowledge-reconciled . <candidate> reconciled|deferred`) — before grounding
-  proceeds. Say it in plain language: "there's merged work in this area I haven't
-  folded into what the project knows yet — reconcile it first, or mark it as no
-  update needed?" Never auto-accept knowledge (INV-KNOWLEDGE-02); the human decides.
-- **Explore has no plan preflight.** Use the planless `cc-pair` path instead of
-  creating a plan that would bypass the Explore assurance model.
-
-`clear` means no overlapping debt and grounding proceeds normally.
+A later plan may start even if Product Knowledge from a prior plan has not yet
+been updated. Do not wait on knowledge debt before grounding. Explore has no
+plan preflight — use the planless `cc-pair` path instead of creating a plan
+that would bypass the Explore assurance model.
 
 ## Review a plan
 

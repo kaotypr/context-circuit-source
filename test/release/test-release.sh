@@ -23,7 +23,7 @@ require_file "$artifact/wrapper/runtime/engine.sh"
 require_file "$artifact/wrapper/migrations/README.md"
 require_file "$artifact/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local intent-contract trace-manifest plan task execution worker-handoff \
-  verifier-result candidate human-acceptance completion context-impact context-proposal context-index \
+  verifier-result candidate human-acceptance completion context-impact context-index \
   lease grounding-manifest pairing-session publication-config publication-field-intent \
   publication-record \
   publication-thread-record; do
@@ -32,7 +32,6 @@ done
 require_file "$artifact/docs/getting-started.md"
 require_file "$artifact/docs/templates/plan.yaml"
 require_file "$artifact/context/PROJECT.md"
-require_file "$artifact/context/proposals/README.md"
 require_file "$artifact/sources/README.md"
 require_file "$artifact/intent/README.md"
 require_file "$artifact/intent/INDEX.md"

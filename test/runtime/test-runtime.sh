@@ -102,12 +102,10 @@ assert_eq "draft" "$(cc_plan_status "$ws" 0003-gamma)"   # verified execution !=
 expect_failure cc_completion_ready "$ws" 0003-gamma
 cc_human_acceptance_record "$edir3" alice >/dev/null
 cc_completion_ready "$ws" 0003-gamma >/dev/null
-expect_failure cc_plan_complete "$ws" 0003-gamma
-cc_delivery_record "$ws" 0003-gamma >/dev/null
-cc_completion_infer "$ws" 0003-gamma >/dev/null
+cc_plan_complete "$ws" 0003-gamma >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" 0003-gamma)"
 require_file "$edir3/completion.yaml"
-contains "$edir3/completion.yaml" "human_completion: inferred"
+contains "$edir3/completion.yaml" "human_completion: accepted"
 # runtime writes no Product Knowledge
 not_contains "$ws/context/PROJECT.md" "web"
 

@@ -62,7 +62,9 @@ when the source branch, configured provider or remote, or target branch is
 unavailable, rather than inferring a remote or pushing silently (INV-DELIVER-02).
 
 None of these is implied by worker success, verifier success, or plan
-completion. The engine's delivery function is report-only: it produces the
+completion. Delivery does not mark a plan done and does not start Product
+Knowledge reconcile (INV-COMPLETE-01, INV-COMPLETE-02). The engine's delivery
+function is report-only: it produces the
 per-repository pull-request source and default target and never pushes, merges,
 or opens pull requests itself.
 
@@ -161,4 +163,6 @@ delivery does not spawn a verifier; a same-repository change set is the member
 tip map and the covering execution branch. Extended 2026-09-06: named plans
 partition by repository covering tip, so a three-deep stack in one repository
 plus one plan in another is two pull requests, not four. Sibling stacks in
-one repository are several pull requests, not zero.
+one repository are several pull requests, not zero. Extended 2026-09-06:
+delivery records Gate 2 only — it does not mark members done and does not
+start in-place knowledge reconcile.

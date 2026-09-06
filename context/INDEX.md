@@ -2,11 +2,10 @@
 
 This is the agent retrieval catalog and a human navigation aid
 (INV-KNOWLEDGE-01). Per `wrapper/contracts/schemas/context-index.yaml` the
-catalog also carries per-unit retrieval metadata (context id, summary, topics,
+catalog carries per-unit retrieval metadata (context id, summary, topics,
 aliases, domains, repositories, decisions, constraints, status, freshness,
-provenance) and indexes pending context proposals and stale-context warnings by
-target context id, related plan, topic, repository, and impact status. The
-product source identity is in `workspace.yaml`;
+provenance) for live context files. The product source identity is in
+`workspace.yaml`;
 the one-rule-one-owner map is `wrapper/contracts/invariants.yaml`; conversational
 routing is owned by `agents/coordinator.md` and the `cc-*` skills; the retrieval
 catalog shape is owned by `wrapper/contracts/schemas/context-index.yaml`; runtime
@@ -28,12 +27,6 @@ Route-selected knowledge:
 
 The source inbox and instantiated workspace plans are separate layers. Raw
 sources are passive and request-scoped; ordinary entry never scans them.
-
-Pending context proposals:
-
-- `0034-add-conversation-spec-library` →
-  `context/domains/conversation-spec-library/README.md` (add; specification-by-example
-  test-harness library; repository: `context-circuit-source`; review needed).
 
 Domain pages added and accepted in the 2026-09-04 v1.0 re-ground, closing the gap
 where v1.0's core additions had no owning domain page:

@@ -8,6 +8,8 @@ purpose: >
   concepts, aliases, repositories, domains, decisions, and constraints to
   knowledge units so an agent locates the right knowledge without scanning the
   whole context directory. It is human-navigable but exists first for retrieval.
+  It catalogs live context files (INV-KNOWLEDGE-01); it does not index a
+  proposal staging path.
 
 per_unit_metadata:
   context_id: { type: string, required: true, description: stable topic or id }
@@ -18,7 +20,7 @@ per_unit_metadata:
   repositories: { type: list, required: false }
   decisions: { type: list, required: false }
   constraints: { type: list, required: false }
-  status: { type: enum, values: [accepted, proposed, needs-review, stale] }
+  status: { type: enum, values: [accepted, needs-review, stale] }
   owner: { type: string, required: false }
   freshness: { type: string, required: false }
   provenance: { type: list, required: false }
@@ -33,15 +35,9 @@ index_entries:
   - status, owner, freshness
   - primary related repositories and provenance
 
-pending_impacts:
-  description: >
-    Pending context proposals and stale-context warnings are also indexed by
-    target context id, related plan, topic, repository, and impact status so
-    future plan creation finds them without scanning all proposals.
-
 update_triggers:
   - a unit is added, renamed, archived, or materially changed
-  - a proposal is created, accepted, or deferred
+  - gathering or mark-done reconcile edits a live context file
 
 rules:
   - INV-KNOWLEDGE-01

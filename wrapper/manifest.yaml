@@ -31,7 +31,6 @@ accepted_schema_versions:
   human-acceptance: [1]
   completion: [1]
   context-impact: [1]
-  context-proposal: [1]
   context-index: [1]
   pairing-session: [1]
   publication-config: [1]

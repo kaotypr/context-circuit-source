@@ -2,7 +2,7 @@
 
 Proves the lay-user experience end-to-end at Standard tier: the two real gates
 (approve the intent, authorize delivery), silent mechanical middle, candidate
-acceptance, inferred completion, and the reconciliation follow-up — the flow the
+acceptance, and an explicit mark-done later if asked — the flow the
 delta files describe in pieces but never play as one live conversation.
 
 ## Spec
@@ -71,29 +71,17 @@ decision_points:
     coordinator_must: >
       treat delivery as the second real decision, target the recorded base
       branch, and open it only on the explicit yes.
-  - id: inferred-completion
-    when: acceptance + delivery both exist
+  - id: mark-done-separate
+    when: delivery has been recorded
     coordinator_must: >
-      infer completion (Standard) rather than asking for a separate
-      completion approval.
-  - id: reconcile-debt
-    when: completion/delivery emits reconciliation debt
-    coordinator_must: >
-      surface, in plain language, that merged work has not been folded into what
-      the project knows, and ask to reconcile now or mark no-update-needed —
-      never accept knowledge silently.
+      not mark the plan done from delivery. Done requires an explicit mark-done.
 reporting_rules: [plain-language, never-overstate-assurance, faithful-failure]
 expected_end_state:
-  # A FRESH whole-flow case authors its own intent/plan ids live, so it cannot use
-  # the id-keyed post-conditions the seeded cases use (e.g. plan_status: 0001-…:done).
-  # It needs id-agnostic assertions — a harness capability this *(opt)* plot requires.
   - repositories_registered: 1
   - intents_approved: 1
   - plans_created: 1
-  - all_plans_done: true            # the single derived plan completes (inferred, Standard)
   - deliveries_recorded: 1
-  - completion_kind: inferred
-  - knowledge_debt_pending: ">=1"
+  - knowledge_debt_pending: 0
   - product_knowledge_unchanged_silently: true
 access_discipline:
   intent:
@@ -143,15 +131,12 @@ access_discipline:
 > **C:** Opened the pull request onto `main` for the notes project.
 > `[decision_point: gate2-deliver]`
 >
-> That's the change accepted and delivered, so it's finished from your side — I
-> didn't need a separate "mark it done" step. `[decision_point: inferred-completion]`
+> Recording the pull request does not mark the work done. Say the word when you
+> want it marked done; that is also when live project notes would be updated if
+> this change affected them.
 >
-> One thing before your next change here: this merged work hasn't been folded into
-> what the project knows yet. Want me to reconcile that now, or note it as no
-> update needed? `[decision_point: reconcile-debt]`
->
-> **H:** Reconcile it.
+> **H:** Thanks.
 
 Human decisions: **approve the intent**, **accept the result**, **authorize
-delivery**, **resolve reconciliation** — four real decisions, none a rubber stamp,
-and no separate plan-approval or mark-done step.
+delivery**, and later **mark the plan done** — none a rubber stamp,
+and no separate plan-approval.

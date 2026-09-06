@@ -1,10 +1,10 @@
 id: 18-standard-delivery-inferred-completion
-title: Infer Standard completion only after current acceptance and explicit Gate 2 delivery
+title: Record Gate 2 delivery without marking a Standard plan done
 mode: full-execution
 setup:
   # The current candidate is already independently verified and accepted. The
-  # conversation supplies the explicit Gate 2 delivery event; completion must be
-  # inferred, not requested as a second completion approval.
+  # conversation supplies the explicit Gate 2 delivery event; completion must
+  # NOT be inferred from delivery.
   repositories:
     - id: notes
       dest: notes
@@ -27,8 +27,8 @@ human:
     They want the coordinator to record that delivery and explain what happens
     next. Has never heard of Context Circuit or its internals.
   turns:
-    - say: "I reviewed and accept the checked result, and I opened the pull request. Please record that delivery and finish the Standard change."
-    - say: "What follow-up remains after it is finished?"
+    - say: "I reviewed and accept the checked result, and I opened the pull request. Please record that delivery."
+    - say: "Is the change done?"
     - say: "Okay, thanks."
   reactions:
     approves: true
@@ -36,8 +36,8 @@ human:
     uses_internal_terms: never
   visible_expectations:
     - It records delivery only because the human explicitly supplied the Gate 2 event.
-    - It infers Standard completion from current acceptance plus delivery; it does not ask for a second plan-completion approval.
-    - It reports the resulting knowledge-reconciliation follow-up without silently changing project knowledge.
+    - It does not mark the plan done and does not infer completion from delivery.
+    - It reports that recording delivery did not update what the project knows.
     - It never exposes internal runtime details.
 
 grader:
@@ -49,16 +49,14 @@ grader:
     - candidate_bound: 0001-standard-export
     - human_acceptance_recorded: 0001-standard-export
     - delivery_recorded: 0001-standard-export
-    - completion_kind: 0001-standard-export:inferred
-    - completion_recorded: 0001-standard-export
-    - plan_status: 0001-standard-export:done
-    - knowledge_debt_pending: ">=1"
+    - plan_status: 0001-standard-export:draft
+    - knowledge_debt_pending: 0
     - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"
-      reason: Gate 2 and inferred completion must be explained in user language.
-    - requires_any: ["pull request", "delivered", "finished", "complete", "follow", "reconcil"]
-      reason: The conversation must show explicit delivery, inferred completion, and follow-up.
+      reason: Gate 2 delivery must be explained in user language without inferring done.
+    - requires_any: ["pull request", "delivered", "done"]
+      reason: The conversation must show explicit delivery without marking the plan done.
   access_policy:
     complete:
       required: []

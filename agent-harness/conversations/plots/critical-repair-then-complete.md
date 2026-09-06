@@ -74,7 +74,7 @@ expected_end_state:
   - execution_tier: 0001-md-export:critical
   - plan_status: 0001-md-export:done          # explicit completion succeeded (only after the pass)
   - completion_recorded: 0001-md-export        # implementation completion record written (INV-COMPLETE-02)
-  - knowledge_debt_pending: ">=1"             # completion starts visible reconciliation debt
+  - knowledge_debt_pending: 0
   - product_knowledge_unchanged_silently: true # reconciliation may add proposals; accepted PK unchanged
 access_discipline:
   complete:

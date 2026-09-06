@@ -40,9 +40,6 @@ product_knowledge:
   - id: plan-review
     path: context/domains/plan-review/README.md
     reason: Grounds plan derivation, task dependencies, and plan-record responsibilities.
-  - id: conversation-spec-library-proposal
-    path: context/proposals/0034-add-conversation-spec-library.md
-    reason: Records the pending source-only library proposal and its coverage intent.
 context_grounding:
   summary: >-
     The re-approved Standard intent is feasible and scoped to agent-harness/.

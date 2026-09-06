@@ -86,8 +86,8 @@ and runtime records.
 Plan status is a **projection**, not a second gate. A plan is `draft` from creation
 until it completes, then `done` — there is no intermediate `approved` status.
 Authorization follows automatically from the approved intent (criteria unchanged
-since approval). Standard `done` is inferred from candidate acceptance + delivery;
-Critical `done` is explicit. Execution status (running, verifying, repairing, verified,
+since approval). Standard and Critical `done` are an explicit mark-done;
+Explore is planless. Execution status (running, verifying, repairing, verified,
 failed, blocked) is runtime evidence and never replaces plan status.
 
 See `docs/templates/plan.yaml`, `docs/templates/plan.md`, and

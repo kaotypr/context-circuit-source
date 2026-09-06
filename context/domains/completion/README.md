@@ -13,7 +13,7 @@ generated_at: 2026-08-24T00:00:00Z
 review_date: 2026-11-24
 freshness: accepted-from-current-wrapper
 assumptions:
-  - Standard completion is inferred from candidate acceptance plus delivery; Critical completion is explicit after a verified execution.
+  - Standard and Critical become done only on an explicit mark-done; Explore is planless; verification, candidate acceptance, and delivery do not mark a plan done.
 unknowns: []
 contradictions: []
 acceptance:
@@ -30,67 +30,69 @@ workflows:
 ## Summary
 
 Completion is the candidate-bound transition from a verified implementation to a
-done plan, plus the Product Knowledge reconciliation it starts. Standard infers
-completion from acceptance plus delivery; Critical requires an explicit human
-completion request. Verification alone never completes a plan. Route completion
-and context-update review here. Owned by the `cc-complete` skill.
+done plan. Standard and Critical become done only on an explicit mark-done.
+Explore is planless. Verification, candidate acceptance, and delivery never
+complete a plan. When the plan affected Product Knowledge, mark-done then
+updates live context files in place — the same reconcile as gathering context.
+Route mark-done here. Owned by the `cc-complete` skill.
 
 ## Scope
 
 Inside: the `draft → done` transition gated on a verified latest execution,
-the durable completion record, and reconciliation that stages
-`context/proposals/` entries without applying them.
+the durable completion record, and in-place Product Knowledge reconcile when
+the plan affected knowledge.
 
 Outside: verification itself ([verification](../verification/README.md)) and
-delivery ([delivery](../delivery/README.md)).
+delivery ([delivery](../delivery/README.md)). Delivery does not start
+reconcile and does not mark a plan done.
 
 ## Behavior
 
-Standard completion is inferred after the latest execution passes independent
-verification, the human accepts its candidate, and delivery is recorded. Critical
-completion additionally requires the explicit human completion request; verification
-alone never marks a plan complete (INV-COMPLETE-01). Completion records the plan
-revision, candidate, execution, per-repository commits, verifier result, and
-acceptor, then starts Product Knowledge reconciliation
-(INV-COMPLETE-02).
+After the latest execution passes independent verification and the human
+accepts its candidate, an explicit mark-done request (`plan-complete`) flips
+Standard or Critical `draft → done` when `completion-ready` still holds
+(INV-COMPLETE-01). Verification, candidate acceptance, and delivery never mark
+a plan complete. Completion records the plan revision, candidate, execution,
+per-repository commits, verifier result, and acceptor.
 
-Reconciliation may produce context update proposals or a stale/conflict warning,
-but Product Knowledge changes only through explicit separate human acceptance; a
-plan may be `done` while a proposal is pending (INV-KNOWLEDGE-02). Product
-Knowledge is optimized first for agent retrieval and the context index is a
-retrieval catalog, not a full copy of page content (INV-KNOWLEDGE-01).
+When the plan affected Product Knowledge, that same mark-done starts in-place
+reconcile of live `context/` files and keeps `INDEX.md` consistent
+(INV-COMPLETE-02, INV-KNOWLEDGE-02). If the plan did not affect Product
+Knowledge, context files stay as they are. The runtime never writes or
+interprets Product Knowledge; in-place edits are a coordinator act after
+mark-done. A later plan may start even if that update has not landed.
+Product Knowledge is optimized first for agent retrieval and the context
+index is a retrieval catalog, not a full copy of page content
+(INV-KNOWLEDGE-01).
 
 ## Workflows
 
 - Mark complete: `docs/getting-started.md`
-- Knowledge reconciliation and proposals: `docs/product-knowledge.md`
+- In-place knowledge updates: `docs/product-knowledge.md`
 
 ## Interfaces
 
-- Human requests: "Mark `<id>` complete", "Accept the context update for `<id>`"
+- Human requests: "Mark `<id>` complete", "Mark `<id>` done"
 - Records: `completion.yaml`, `context-impact.yaml`
-- Proposal staging: `context/proposals/`
 
 ## Constraints and edge cases
 
 Completion refuses unless the latest execution is `verified`; a `failed` or
-`blocked` result is reported plainly. The runtime preserves reconciliation
-references but never interprets Product Knowledge.
+`blocked` result is reported plainly. The runtime preserves optional
+reconciliation references but never interprets Product Knowledge.
 
 ## Reconciliation, impact status, and staleness
 
 A successful verifier creates pending completion evidence — execution status
-`verified`, plan status `draft` — before candidate acceptance and, for Standard,
-delivery inference; Critical still needs the explicit human completion request.
+`verified`, plan status `draft` — before candidate acceptance and the explicit
+mark-done.
 
-Reconciliation reads the final plan and task files and revisions, the Product
+Reconcile reads the final plan and task files and revisions, the Product
 Knowledge references and grounding summary, the changed paths and commits per
-repository, the worker handoffs and verifier evidence, and the current revisions
-of relevant context units. Each impact moves through `not-assessed` ->
-`review-needed` -> `accepted` / `deferred` / `conflict`, plus `no-update-needed`;
-only `review-needed`, `deferred`, and `conflict` get a stored proposal file. A
-deferred proposal stays visible to future plan creation when its context is
-relevant.
+repository, the worker handoffs and verifier evidence, and the current
+revisions of relevant context units. The coordinator edits live context files
+only when there is a durable knowledge change, or records no-update-needed.
+There is no extra knowledge-acceptance gate.
 
 Staleness: a page is stale when its freshness rule expired, a cited repository
 revision materially changed, or a relevant decision changed. Stale context may
@@ -104,8 +106,7 @@ reference and refreshes it before execution.
   `cc_plan_complete`, `cc_context_impact_record`
 - `wrapper/contracts/schemas/completion.yaml`,
   `wrapper/contracts/schemas/context-impact.yaml`,
-  `wrapper/contracts/schemas/context-index.yaml`,
-  `wrapper/contracts/schemas/context-proposal.yaml`
+  `wrapper/contracts/schemas/context-index.yaml`
 - `wrapper/contracts/invariants.yaml`: INV-COMPLETE-01, INV-COMPLETE-02,
   INV-KNOWLEDGE-01, INV-KNOWLEDGE-02
 
@@ -120,5 +121,6 @@ scanned.
 
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0013-domain-completion`. This refresh is
-itself an instance of the reconciliation/acceptance flow this domain describes.
+Accepted 2026-08-24 from proposal `0013-domain-completion`. Refreshed for
+in-place knowledge updates: mark-done is the only done trigger; reconcile
+writes live context files rather than a sidecar.

@@ -95,17 +95,13 @@ these lines carry no internal vocabulary.
 >
 > **H:** Approved.
 
-## E — knowledge debt blocks the next change
+## E — the next plan is not blocked
 
 > **H:** New change: add a coupon field to checkout.
 >
-> **C:** Before I plan this — there's merged work in the checkout area I haven't
-> folded into what the project knows yet (the retry change from earlier). If I plan
-> on top of the old knowledge, this could be grounded on something already out of
-> date. Want me to reconcile that first — it's quick — or explicitly mark it as no
-> update needed?
+> **C:** Planning the coupon field now. The earlier retry work is done; I'll use
+> what the project already knows and we can update those notes later if needed.
 >
-> **H:** Reconcile first.
+> **H:** Go ahead.
 >
-> **C:** Done — the retry behavior is now part of what the project knows. Now, the
-> coupon field.
+> **C:** Drafting the coupon-field plan.

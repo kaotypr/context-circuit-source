@@ -155,11 +155,10 @@ emit the fenced mermaid.
 
 A **product-level** system design feeds Product Knowledge and plans through the
 **normal workspace flow**, with nothing new: the coordinator gathers context from
-the named design source, proposes context units through the existing
-context-proposal path, a human accepts those proposals, and plans ground in the
-resulting Product Knowledge via the existing `product_knowledge` references.
-"Accepting the design's ideas" *is* accepting those context proposals — there is
-no separate design-acceptance gate.
+the named design source and writes live `context/` files in place (keeping
+`INDEX.md` consistent). This skill still must not itself write Product
+Knowledge and must not feed PK through a proposal sidecar. There is no
+separate design-acceptance gate and no accept-the-context-update gate.
 
 **Intent detail** is different. It is the confirmed shape of *one* intent. After
 the human approves that intent, `cc-plan` uses `intent/<id>/detail/` (when it

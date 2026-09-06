@@ -28,28 +28,26 @@ cc_human_acceptance_record "$edir" alice >/dev/null
 cc_completion_ready "$ws" 0001-billing >/dev/null
 assert_eq "draft" "$(cc_plan_status "$ws" 0001-billing)"   # verified execution, not yet done
 
-# --- Standard completion is inferred from the accepted candidate plus delivery ---
-expect_failure cc_plan_complete "$ws" 0001-billing
-cc_delivery_record "$ws" 0001-billing >/dev/null
-cc_completion_infer "$ws" 0001-billing >/dev/null
+# --- Standard completion is an explicit mark-done (delivery is not required) ---
+cc_plan_complete "$ws" 0001-billing >/dev/null
 assert_eq "done" "$(cc_plan_status "$ws" 0001-billing)"
 require_file "$edir/completion.yaml"
-contains "$edir/completion.yaml" "human_completion: inferred"
+contains "$edir/completion.yaml" "human_completion: accepted"
 api_latest=$(cc_scalar "$edir/repositories/api.yaml" latest_commit)
 contains "$edir/completion.yaml" "api: $api_latest"
 
-# --- knowledge reconciliation references are recorded without touching PK ---
+# --- knowledge impact refs are recorded without touching PK ---
 project_before=$(cc_digest "$ws/context/PROJECT.md")
 cat >"$ws/.tmp-impact.yaml" <<EOF
 schema_version: 1
 execution_id: $exec
 plan: 0001-billing
-status: review-needed
-proposals: [context-impact-0001-billing-001]
+status: no-update-needed
+units: []
 EOF
 cc_context_impact_record "$edir" "$ws/.tmp-impact.yaml" >/dev/null
 require_file "$edir/context-impact.yaml"
-contains "$edir/context-impact.yaml" "status: review-needed"
+contains "$edir/context-impact.yaml" "status: no-update-needed"
 # Product Knowledge is unchanged by completion or impact recording
 assert_eq "$project_before" "$(cc_digest "$ws/context/PROJECT.md")"
 

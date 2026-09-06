@@ -1,9 +1,8 @@
 # Build product knowledge — the "gathering context" family
 
 Proves the interaction that both delta files omit entirely: a first-time user
-building what the project knows. The v0.x "gather context" chore moved off the
-human, but the interaction still exists — and knowledge is only ever accepted by
-an explicit human decision, never silently.
+building what the project knows. Gathering writes live context files in place.
+There is no sidecar and no extra knowledge-acceptance gate.
 
 ## Spec
 ```yaml
@@ -26,7 +25,7 @@ preconditions:
 persona: >
   A solo maker who just connected a project and asks the assistant to "get up to
   speed" on it. Has never heard of Context Circuit; does not know what Product
-  Knowledge, a retrieval index, or a context proposal is.
+  Knowledge or a retrieval index is.
 human_turns:
   - "It's connected now — can you get up to speed on this project before we plan anything?"
   - "Local-only is right. Titles don't have to be unique. Save that."
@@ -40,24 +39,23 @@ demonstrates:
   invariants: [INV-KNOWLEDGE-01, INV-KNOWLEDGE-02, INV-PLAN-04, INV-SEC-02]
 hidden:
   - internal file names/paths (context/INDEX.md, PROJECT.md, proposals/)
-  - the words "retrieval index", "context proposal", "Product Knowledge" as jargon
+  - the words "retrieval index", "Product Knowledge" as jargon
 decision_points:
   - id: offer-to-learn
     when: the human asks the assistant to get up to speed
     coordinator_must: >
       offer to read the project and summarize what it learned, in plain language;
       not claim it already knows the project, and not invent facts it cannot see.
-  - id: propose-not-assert
+  - id: write-in-place
     when: it has read the project
     coordinator_must: >
-      present what it found as a proposal for the human to confirm — plainly
-      distinguishing what it read from the code (facts) vs. what it is guessing;
-      it does not record any of it as settled project knowledge yet.
-  - id: explicit-acceptance
+      present what it found and, when the human asks to save it, write live
+      context files — not a sidecar for later acceptance.
+  - id: gather-is-the-ask
     when: the human confirms (or defers) the summary
     coordinator_must: >
-      record durable project knowledge ONLY on the explicit human yes; a deferral
-      or "not sure" leaves knowledge unchanged. Nothing is accepted silently.
+      write durable project knowledge in place when asked to save it; a "not sure"
+      leaves that fact out. Gathering is the write, not a third gate.
   - id: gap-becomes-question
     when: something is missing or contradictory in the project
     coordinator_must: >
@@ -70,7 +68,6 @@ expected_end_state:
   - repositories_registered: 1
   - plans_created: 0
   - no_execution_records: true
-  - product_knowledge_unchanged_silently: true   # accepted units are consented, never silent
 access_discipline:
   learn:
     required: [workspace.yaml, context/INDEX.md]

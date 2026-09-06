@@ -56,9 +56,8 @@ grader:
   post_conditions:
     - repositories_registered: 1
     - plan_status: 0001-foundation:done
-    - knowledge_debt_pending: ">=1"
+    - knowledge_debt_pending: 0
     - plan_status: 0002-follow-up:draft
-    - no_execution_for: 0002-follow-up
     - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"

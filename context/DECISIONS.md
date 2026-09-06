@@ -300,3 +300,18 @@ removed and its human-accepted criteria residuals preserved in that intent's
 still described the earlier spec-adversary + scope-envelope design — was dropped
 because the design has since shifted; the built `dist/…beta.1` artifact remains a
 stale build to be re-cut as a separate release concern.
+
+## 2026-09-06 — pending proposal 0034 dropped
+
+Decision: drop pending proposal `0034-add-conversation-spec-library`. Do not
+apply it as `context/domains/conversation-spec-library/`. Product Knowledge is
+now updated by writing live `context/` files in place; the staging path is
+removed rather than left empty. The 2026-09-03 note that 0034 was left pending
+stands as the historical record of that earlier request.
+
+Rationale: approved intent `i014-direct-context-updates` — gathering and
+mark-done reconcile write live files; there is no sidecar and no extra
+knowledge-acceptance gate.
+
+Consequence: the proposal file and its INDEX pending row are gone; plan
+`0001-conversation-spec-library` no longer cites that path.

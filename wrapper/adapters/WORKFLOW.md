@@ -31,7 +31,7 @@ Everything the human decides is one of two gates; everything between is mechanic
 | You say | Action |
 | --- | --- |
 | What is this workspace? | Read-only orientation. |
-| Gather context about X. | Propose a context update with provenance. |
+| Gather context about X. | Write live context files with provenance; keep INDEX.md consistent. |
 | Connect / clone / initialize the R repository. | Register and bind; clone/init only when explicitly asked. |
 | Work on / refine X with me, or `/cc-pair`. | Explore-tier direct collaboration in one connected repository; live human supervision, no intent, plan, tracer, or verifier — promotable in place. |
 | Shape what I want to build (X). | Author an **intent**: goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, tier — from the plain ask, without reading the code. |
@@ -42,10 +42,9 @@ Everything the human decides is one of two gates; everything between is mechanic
 | Execute plans X…Z / run the ready stack. | Run a set of intent-authorized plans in dependency order: the runtime detects which are ready (dependencies verified, paths free) and selects each base; the coordinator may overlap provably-independent ready plans up to a fan-out width (the lease arbitrates races), each still one worker and one independent verifier. Adds no authority; marks nothing done or delivered. |
 | What happened with X? | Summarize execution evidence. |
 | Repair the failed X verification. | Another worker attempt if allowed. |
-| Accept the result / mark X complete. | Accept the candidate; Standard completion is inferred from acceptance + delivery, and Critical completion is an explicit human act. Explore is planless. |
-| Review / accept context updates for X. | Discuss / accept a knowledge proposal. |
+| Accept the result / mark X complete. | Accept the candidate if asked; mark the plan done only on an explicit mark-done. Standard and Critical both use explicit mark-done. Explore is planless. When the plan affected Product Knowledge, mark-done then updates live context files. |
 | Archive / restore intent or plan X. | Move out of / into the active area; no status change. |
-| Open a pull request for X / deliver X. | **Gate 2**: separate delivery; one pull request per covering tip (a repository may have several sibling stacks); source = covering execution branch; target = base branch. Delivery does not spawn a verifier. |
+| Open a pull request for X / deliver X. | **Gate 2**: separate delivery; one pull request per covering tip (a repository may have several sibling stacks); source = covering execution branch; target = base branch. Delivery does not spawn a verifier, does not mark the plan done, and does not start a knowledge update. |
 
 ## Rules
 
@@ -61,8 +60,8 @@ Everything the human decides is one of two gates; everything between is mechanic
   (direct collaboration) has one worker and the human as live oracle and is never
   verified (INV-PAIR-01 / INV-ASSURE-01).
 - Verification produces `verified` evidence bound to the candidate. Completion is
-  inferred from candidate acceptance + delivery at Standard, and explicit at Critical;
-  Explore is planless and verification alone never completes anything.
+  an explicit mark-done at Standard and Critical; Explore is planless and
+  verification, candidate acceptance, and delivery never complete anything.
 - Delivery (pull request, merge, push, deploy) and cleanup are separate explicit
   actions (Gate 2); a pull request targets the recorded `base_branch`, never
   `default_branch`.

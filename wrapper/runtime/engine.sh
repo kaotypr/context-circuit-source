@@ -656,7 +656,7 @@ cc_workspace_init() {
 	cc_wi_root="$1"
 	[ -n "$cc_wi_root" ] || { cc_fail WORKSPACE_ROOT_MISSING; return 1; }
 	mkdir -p "$cc_wi_root/context/domains" "$cc_wi_root/context/roles" \
-		"$cc_wi_root/context/proposals" "$cc_wi_root/sources" \
+		"$cc_wi_root/sources" \
 		"$cc_wi_root/intent/archive" \
 		"$cc_wi_root/plans/archive" "$cc_wi_root/.runtime/executions" \
 		"$cc_wi_root/.runtime/worktrees" "$cc_wi_root/.runtime/pairing" \
@@ -2762,27 +2762,22 @@ cc_change_set_ready() {
 	return 0
 }
 
-# cc_change_set_complete ROOT CS_ID -> complete every member of a delivered change set
-# from the ONE change-set acceptance (pain 6: accept once, complete the set).
-# Assurance is each member's already-bound independent pass, not a delivery-time
-# verifier.
+# cc_change_set_complete ROOT CS_ID -> record Gate 2 for a delivered change set.
+# Delivery recording does not mark members done and does not start Product
+# Knowledge reconcile (INV-COMPLETE-01, INV-COMPLETE-02). Each member stays
+# draft until an explicit mark-done. Assurance is each member's already-bound
+# independent pass, not a delivery-time verifier.
 cc_change_set_complete() {
 	cc_csc_root="$1"; cc_csc_dir=$(cc_change_set_dir "$1" "$2")
 	[ -f "$cc_csc_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
 	cc_change_set_ready "$cc_csc_root" "$2" >/dev/null || { cc_fail CHANGE_SET_NOT_READY "$2"; return 1; }
 	cc_csc_members=$(cc_inline_list "$(cc_scalar "$cc_csc_dir/change-set.yaml" members)")
 	cc_csc_candidate=$(cc_scalar "$cc_csc_dir/change-set.yaml" candidate_id)
-	cc_csc_acceptor=$(cc_scalar "$cc_csc_dir/human-acceptance.yaml" accepted_by)
-	cc_csc_tier=$(cc_scalar "$cc_csc_dir/change-set.yaml" tier)
-	cc_csc_verifier_outcome=passed
-	cc_csc_kind=inferred
-	[ "$cc_csc_tier" = critical ] && cc_csc_kind=accepted
-	# Preflight every member before changing any member status. A set is complete only
-	# when all members still have a current execution, current candidate, and open plan.
+	# Preflight every member before recording delivery. A set is deliverable only
+	# when all members still have a current execution and current candidate.
 	for cc_csc_m in $cc_csc_members; do
 		cc_csc_yaml="$cc_csc_root/plans/$cc_csc_m/plan.yaml"
-		[ "$(cc_scalar "$cc_csc_yaml" status 2>/dev/null)" = draft ] \
-			|| { cc_fail CHANGE_SET_MEMBER_NOT_OPEN "$cc_csc_m"; return 1; }
+		[ -f "$cc_csc_yaml" ] || { cc_fail CHANGE_SET_MEMBER_NOT_OPEN "$cc_csc_m"; return 1; }
 		cc_csc_exec=$(cc_latest_execution "$cc_csc_root" "$cc_csc_m") || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csc_m"; return 1; }
 		cc_csc_edir=$(cc_execution_dir "$cc_csc_root" "$cc_csc_m" "$cc_csc_exec")
 		cc_candidate_id "$cc_csc_edir" >/dev/null || { cc_fail CHANGE_SET_MEMBER_CANDIDATE_INVALID "$cc_csc_m"; return 1; }
@@ -2796,31 +2791,14 @@ cc_change_set_complete() {
 		"$CC_DELIVERY_SCHEMA_VERSION" "$cc_csc_candidate" "$(cc_now)" \
 		| cc_atomic_write "$cc_csc_dir/delivered.yaml" \
 			|| { cc_fail CHANGE_SET_DELIVERY_RECORD_FAILED "$2"; return 1; }
-	cc_knowledge_debt_emit_change_set "$cc_csc_root" "$2" >/dev/null \
-		|| { cc_fail CHANGE_SET_DEBT_FAILED "$2"; return 1; }
-	cc_csc_done=0
+	cc_csc_n=0
 	for cc_csc_m in $cc_csc_members; do
-		cc_csc_exec=$(cc_latest_execution "$cc_csc_root" "$cc_csc_m")
-		cc_csc_edir=$(cc_execution_dir "$cc_csc_root" "$cc_csc_m" "$cc_csc_exec")
-		cc_csc_revision=$(cc_scalar "$cc_csc_edir/execution.yaml" plan_revision)
-		{
-			printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nchange_set: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
-				"$CC_COMPLETION_SCHEMA_VERSION" "$cc_csc_exec" "$cc_csc_m" "$cc_csc_candidate" "$cc_csc_revision" "$cc_csc_acceptor" "$cc_csc_verifier_outcome" "$2" "$cc_csc_kind" "$(cc_now)"
-			for cc_csc_rf in "$cc_csc_edir"/repositories/*.yaml; do
-				[ -f "$cc_csc_rf" ] || continue
-				printf '  %s: %s\n' "$(cc_scalar "$cc_csc_rf" repository)" "$(cc_scalar "$cc_csc_rf" latest_commit)"
-			done
-		} | cc_atomic_write "$cc_csc_edir/completion.yaml" \
-			|| { cc_fail CHANGE_SET_MEMBER_RECORD_FAILED "$cc_csc_m"; return 1; }
-		cc_plan_set_status "$cc_csc_root/plans/$cc_csc_m/plan.yaml" done \
-			|| { cc_fail CHANGE_SET_MEMBER_STATUS_FAILED "$cc_csc_m"; return 1; }
-		cc_plan_index_upsert "$cc_csc_root" "$cc_csc_m" >/dev/null
-		cc_csc_done=$((cc_csc_done + 1))
+		cc_csc_n=$((cc_csc_n + 1))
 	done
-	cc_change_set_record_status "$cc_csc_dir" delivered-and-completed >/dev/null || return 1
+	cc_change_set_record_status "$cc_csc_dir" delivered >/dev/null || return 1
 	cc_emit change_set "$2"
-	cc_emit completed "$cc_csc_done"
-	cc_emit status delivered-and-completed
+	cc_emit delivered "$cc_csc_n"
+	cc_emit status delivered
 	return 0
 }
 
@@ -3125,9 +3103,9 @@ cc_completion_ready() {
 }
 
 # cc_completion_finalize ROOT PLAN KIND -> shared completion writer (KIND is the
-# human_completion value: accepted for an explicit human completion, inferred for a
-# projection of candidate acceptance + delivery). Writes the completion record, sets
-# status done, and emits the reconciliation-debt marker (INV-COMPLETE-02).
+# human_completion value: accepted for an explicit human mark-done). Writes the
+# completion record and sets status done. Does not emit a reconcile-starting
+# debt marker and does not write context/ files (INV-COMPLETE-02, INV-RUNTIME-01).
 cc_completion_finalize() {
 	cc_cf_root="$1"; cc_cf_plan="$2"; cc_cf_kind="$3"
 	cc_cf_exec=$(cc_latest_execution "$cc_cf_root" "$cc_cf_plan")
@@ -3143,11 +3121,6 @@ cc_completion_finalize() {
 	cc_cf_verified=$(cc_scalar "$cc_cf_edir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cf_verified=""
 	cc_cf_verdict=not-run
 	[ -n "$cc_cf_verified" ] && cc_cf_verdict=passed
-	# Emit reconciliation debt before changing the plan status. A debt write failure
-	# therefore leaves the plan draft and retryable, rather than silently completing
-	# while losing the knowledge-loop marker (INV-COMPLETE-02).
-	cc_knowledge_debt_emit "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec" >/dev/null \
-		|| { cc_fail COMPLETION_DEBT_FAILED "$cc_cf_plan"; return 1; }
 	{
 		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
 			"$CC_COMPLETION_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_candidate" "$cc_cf_revision" "$cc_cf_acceptor" "$cc_cf_verdict" "$cc_cf_kind" "$(cc_now)"
@@ -3163,27 +3136,27 @@ cc_completion_finalize() {
 	cc_emit status done
 	cc_emit human_completion "$cc_cf_kind"
 	cc_emit implementation_completion recorded
-	cc_emit knowledge_impact review-pending
-	cc_emit reconciliation_debt pending
 	return 0
 }
 
-# cc_plan_complete ROOT PLAN -> the EXPLICIT human completion path. Critical is the
-# only tier that uses it; Explore/Standard complete by the delivery + acceptance
-# inference path (INV-COMPLETE-01).
+# cc_plan_complete ROOT PLAN -> the EXPLICIT human mark-done path for Standard
+# and Critical (INV-COMPLETE-01). Explore is planless. Still gated by
+# completion-ready. In-place Product Knowledge reconcile, when needed, is a
+# coordinator act after this flip — the engine does not write context/.
 cc_plan_complete() {
 	cc_pc_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
 	cc_pc_edir=$(cc_execution_dir "$1" "$2" "$cc_pc_exec")
 	cc_pc_tier=$(cc_scalar "$cc_pc_edir/execution.yaml" tier 2>/dev/null) || cc_pc_tier=standard
-	[ "$cc_pc_tier" = critical ] || { cc_fail COMPLETION_EXPLICIT_CRITICAL_ONLY "$2"; return 1; }
+	[ "$cc_pc_tier" != explore ] || { cc_fail COMPLETION_EXPLORE_PLANLESS "$2"; return 1; }
 	cc_completion_ready "$1" "$2" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
 	cc_completion_finalize "$1" "$2" accepted
 }
 
 # cc_delivery_record ROOT PLAN [EXEC] -> record that the plan's current candidate was
-# delivered (Gate 2 happened). It is the delivery signal inferred completion reads;
-# it performs no git action itself (delivery is a separate coordinator/host act,
-# INV-DELIVER-01). Bound to the candidate so a post-delivery change is visible.
+# delivered (Gate 2 happened). It performs no git action itself (delivery is a
+# separate coordinator/host act, INV-DELIVER-01), does not mark the plan done,
+# and does not start Product Knowledge reconcile (INV-COMPLETE-02). Bound to the
+# candidate so a post-delivery change is visible.
 cc_delivery_record() {
 	cc_del_root="$1"; cc_del_plan="$2"; cc_del_exec="${3:-}"
 	[ -n "$cc_del_exec" ] || cc_del_exec=$(cc_latest_execution "$cc_del_root" "$cc_del_plan") || { cc_fail DELIVERY_NO_EXECUTION "$cc_del_plan"; return 1; }
@@ -3195,39 +3168,16 @@ cc_delivery_record() {
 		"$CC_DELIVERY_SCHEMA_VERSION" "$cc_del_cand" "$cc_del_plan" "$cc_del_exec" "$(cc_now)" \
 		| cc_atomic_write "$cc_del_edir/delivered.yaml" \
 		|| { cc_fail DELIVERY_RECORD_WRITE_FAILED; return 1; }
-	cc_knowledge_debt_emit "$cc_del_root" "$cc_del_plan" "$cc_del_exec" >/dev/null \
-		|| { cc_fail DELIVERY_DEBT_FAILED "$cc_del_plan"; return 1; }
 	cc_emit delivery recorded
 	cc_emit candidate_id "$cc_del_cand"
 	return 0
 }
 
-# cc_completion_infer ROOT PLAN -> INFERRED completion (Context Circuit v1.0). At
-# Standard, completion is a projection of "candidate accepted + delivered": it
-# requires completion-ready AND a delivery record that still binds to
-# the current candidate. At Critical it is refused — an explicit human completion is
-# required (INV-COMPLETE-01). Idempotent: an already-done plan reports done.
+# cc_completion_infer ROOT PLAN -> refused at every tier. A plan becomes done
+# only on an explicit mark-done (INV-COMPLETE-01). Kept as a refusal so callers
+# fail closed instead of inferring done from delivery.
 cc_completion_infer() {
-	cc_ci_root="$1"; cc_ci_plan="$2"
-	cc_ci_yaml="$cc_ci_root/plans/$cc_ci_plan/plan.yaml"
-	[ -f "$cc_ci_yaml" ] || { cc_fail COMPLETION_INFER_PLAN_MISSING "$cc_ci_plan"; return 1; }
-	if [ "$(cc_scalar "$cc_ci_yaml" status)" = "done" ]; then
-		cc_emit plan "$cc_ci_plan"; cc_emit status done; return 0
-	fi
-	cc_ci_exec=$(cc_latest_execution "$cc_ci_root" "$cc_ci_plan") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
-	cc_ci_edir=$(cc_execution_dir "$cc_ci_root" "$cc_ci_plan" "$cc_ci_exec")
-	cc_ci_tier=$(cc_scalar "$cc_ci_edir/execution.yaml" "tier" 2>/dev/null) || cc_ci_tier=standard
-	[ -n "$cc_ci_tier" ] || cc_ci_tier=standard
-	if [ "$cc_ci_tier" = "critical" ]; then
-		cc_fail COMPLETION_INFER_REQUIRES_EXPLICIT "$cc_ci_plan"; return 1
-	fi
-	cc_completion_ready "$cc_ci_root" "$cc_ci_plan" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
-	# the delivery signal must exist and still describe the current candidate
-	[ -f "$cc_ci_edir/delivered.yaml" ] || { cc_fail COMPLETION_NOT_DELIVERED "$cc_ci_plan"; return 1; }
-	cc_ci_delc=$(cc_scalar "$cc_ci_edir/delivered.yaml" "candidate_id")
-	cc_ci_now=$(cc_candidate_id "$cc_ci_edir") || return 1
-	[ "$cc_ci_delc" = "$cc_ci_now" ] || { cc_fail COMPLETION_DELIVERY_STALE "$cc_ci_delc"; return 1; }
-	cc_completion_finalize "$cc_ci_root" "$cc_ci_plan" inferred
+	cc_fail COMPLETION_INFER_REQUIRES_EXPLICIT "$2"; return 1
 }
 
 # cc_context_impact_record EXEC_DIR FILE -> store reconciliation refs (no PK interpretation)
@@ -3239,13 +3189,9 @@ cc_context_impact_record() {
 }
 
 # ---------------------------------------------------------------------------
-# Closed knowledge loop (Context Circuit v1.0, Mechanism 4, INV-COMPLETE-02 /
-# INV-KNOWLEDGE-02). Completion or delivery of a candidate emits a
-# reconciliation-debt marker; the next Standard/Critical plan's grounding preflight
-# blocks while delivered work in its knowledge scope remains unreconciled. Explore
-# is planless and has no plan grounding preflight. The human still ACCEPTS knowledge (the gate
-# never auto-accepts); the loop only refuses to let the debt be FORGOTTEN. The debt
-# marker is keyed to the candidate, so it inherits candidate honesty.
+# Knowledge-debt bookkeeping. Delivery and mark-done do not emit a
+# reconcile-starting marker. knowledge-debt-check never blocks the next plan
+# (INV-KNOWLEDGE-02). The runtime still does not write context/ files.
 # ---------------------------------------------------------------------------
 
 cc_knowledge_debt_dir() { printf '%s/.runtime/knowledge-debt' "$1"; }
@@ -3331,11 +3277,9 @@ cc_knowledge_debt() {
 	return 0
 }
 
-# cc_knowledge_reconciled ROOT CANDIDATE [RESOLUTION] -> clear a debt marker once the
-# impact proposals have been generated and either accepted or explicitly deferred by
-# a human. RESOLUTION is reconciled (default) or deferred; "deferred" is a
-# first-class "no durable update needed" outcome (someone decided). It never
-# accepts knowledge itself (INV-KNOWLEDGE-02).
+# cc_knowledge_reconciled ROOT CANDIDATE [RESOLUTION] -> clear a leftover debt
+# marker. RESOLUTION is reconciled (default) or deferred. It never writes
+# Product Knowledge (INV-KNOWLEDGE-02) and never gated a later plan.
 cc_knowledge_reconciled() {
 	cc_kr_root="$1"; cc_kr_cand="$2"; cc_kr_res="${3:-reconciled}"
 	case "$cc_kr_res" in reconciled|deferred) : ;; *) cc_fail KNOWLEDGE_RESOLUTION_INVALID "$cc_kr_res"; return 1 ;; esac
@@ -3352,17 +3296,13 @@ cc_knowledge_reconciled() {
 	return 0
 }
 
-# cc_knowledge_debt_check ROOT PLAN -> the cc-plan grounding preflight. If any
-# pending debt marker's knowledge scope (repositories) overlaps the new plan's
-# affected repositories, block at Standard/Critical (non-zero) or loudly warn at
-# Explore (zero). No overlap is clear. The new plan's tier comes from its intent.
+# cc_knowledge_debt_check ROOT PLAN -> the cc-plan grounding preflight. Unupdated
+# Product Knowledge does not block a later plan (INV-KNOWLEDGE-02). Explore is
+# planless and has no plan grounding preflight.
 cc_knowledge_debt_check() {
 	cc_kc_root="$1"; cc_kc_plan="$2"
 	cc_kc_pfile="$cc_kc_root/plans/$cc_kc_plan/plan.yaml"
 	[ -f "$cc_kc_pfile" ] || { cc_fail KNOWLEDGE_CHECK_PLAN_MISSING "$cc_kc_plan"; return 1; }
-	cc_kc_newrepos=$(cc_plan_affected_repositories "$cc_kc_pfile")
-	cc_kc_newunits=$(cc_list_ids "$cc_kc_pfile" product_knowledge)
-	# resolve the new plan's tier from its intent
 	cc_kc_intent=$(cc_scalar "$cc_kc_pfile" "intent" 2>/dev/null) || cc_kc_intent=""
 	cc_kc_tier=standard
 	if [ -n "$cc_kc_intent" ]; then
@@ -3370,49 +3310,8 @@ cc_knowledge_debt_check() {
 		[ -n "$cc_kc_tier" ] || cc_kc_tier=standard
 	fi
 	[ "$cc_kc_tier" != explore ] || { cc_fail KNOWLEDGE_EXPLORE_PLANLESS "$cc_kc_plan"; return 1; }
-	cc_kc_dir=$(cc_knowledge_debt_dir "$cc_kc_root")
-	cc_kc_hit=no
-	if [ -d "$cc_kc_dir" ]; then
-		for cc_kc_f in "$cc_kc_dir"/*.yaml; do
-			[ -f "$cc_kc_f" ] || continue
-			[ "$(cc_scalar "$cc_kc_f" resolved 2>/dev/null)" = "pending" ] || continue
-			# skip a marker for the plan's own prior candidate (self-debt does not block)
-			[ "$(cc_scalar "$cc_kc_f" plan 2>/dev/null)" = "$cc_kc_plan" ] && continue
-			cc_kc_mrepos=$(cc_inline_list "$(cc_scalar "$cc_kc_f" repositories 2>/dev/null)")
-			cc_kc_munits=$(cc_inline_list "$(cc_scalar "$cc_kc_f" knowledge_units 2>/dev/null)")
-			cc_kc_marker_hit=no
-			for cc_kc_mr in $cc_kc_mrepos; do
-				if printf '%s\n' "$cc_kc_newrepos" | grep -Fxq "$cc_kc_mr"; then
-					cc_kc_hit=yes; cc_kc_marker_hit=yes
-					cc_emit debtor "$(cc_scalar "$cc_kc_f" candidate_id)"
-					cc_emit "  plan" "$(cc_scalar "$cc_kc_f" plan)"
-					cc_emit "  repository" "$cc_kc_mr"
-					break
-				fi
-			done
-			if [ "$cc_kc_marker_hit" = no ]; then
-				for cc_kc_mu in $cc_kc_munits; do
-					if printf '%s\n' "$cc_kc_newunits" | grep -Fxq "$cc_kc_mu"; then
-						cc_kc_hit=yes
-						cc_emit debtor "$(cc_scalar "$cc_kc_f" candidate_id)"
-						cc_emit "  plan" "$(cc_scalar "$cc_kc_f" plan)"
-						cc_emit "  knowledge_unit" "$cc_kc_mu"
-						break
-					fi
-				done
-			fi
-		done
-	fi
-	if [ "$cc_kc_hit" = "no" ]; then
-		cc_emit debt clear
-		return 0
-	fi
-	if [ "$cc_kc_tier" = "explore" ]; then
-		cc_emit debt warn
-		return 0
-	fi
-	cc_emit debt blocking
-	cc_fail KNOWLEDGE_DEBT_BLOCKING "$cc_kc_plan"; return 1
+	cc_emit debt clear
+	return 0
 }
 
 # cc_delivery_targets ROOT PLAN -> read-only report of pull-request source and

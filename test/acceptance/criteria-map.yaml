@@ -108,13 +108,13 @@ criteria:
     statement: Consequence tiering classifies deterministically and fails upward (risk surfaces are Critical; only a single-repo bounded no-signal change is Explore-eligible; anything uncertain is Standard); the runtime enforces the floor — Explore is human-supervised with no verifier and never labeled verified, Standard/Critical require a candidate-bound independent pass — and refuses dropping the verifier (Explore) on a risk surface.
     suite: test/assurance/test-tier.sh
   - id: AC-34
-    statement: Completion emits a candidate-keyed reconciliation-debt marker; the next plan's grounding blocks (Standard/Critical) or loudly warns (Explore) while delivered work in its knowledge scope is unreconciled, and an explicit human reconcile or defer clears it without auto-accepting Product Knowledge.
+    statement: Unupdated Product Knowledge does not block the next Standard/Critical plan; delivery and mark-done do not emit a reconcile-starting debt marker; the runtime never auto-writes Product Knowledge.
     suite: test/knowledge/test-debt.sh
   - id: AC-35
-    statement: Completion is inferred from candidate acceptance plus recorded delivery at Explore/Standard and refused (explicit human completion required) at Critical; a change set of same-repository plans delivered as one pull request has one deterministic tip-map candidate, is accepted once, and does not spawn a delivery-time verifier; named plans partition by covering tip (a three-deep stack in one repository plus one plan in another is two pull requests; sibling stacks in one repository are two pull requests, not zero).
+    statement: A plan becomes done only on an explicit mark-done at Standard and Critical (Explore is planless); delivery and inferred completion do not mark a plan done; a change set of same-repository plans delivered as one pull request has one deterministic tip-map candidate, is accepted once, records delivery without marking members done, and does not spawn a delivery-time verifier; named plans partition by covering tip (a three-deep stack in one repository plus one plan in another is two pull requests; sibling stacks in one repository are two pull requests, not zero).
     suite: test/completion/test-inferred.sh
   - id: AC-36
-    statement: The v1.0 human-simulated scenarios (Standard feature with two gates and inferred completion, Explore-then-promote, change-set-as-one-PR, criteria-drift re-gate, knowledge-debt block) play end-to-end, and the expected conversations carry the two gates and honest assurance wording with no internal vocabulary.
+    statement: The v1.0 human-simulated scenarios (Standard feature with two gates and explicit mark-done, Explore-then-promote, change-set-as-one-PR, criteria-drift re-gate, next plan not blocked by unupdated Product Knowledge) play end-to-end, and the expected conversations carry the two gates and honest assurance wording with no internal vocabulary.
     suite: test/scenarios/test-scenarios.sh
   - id: AC-37
     statement: A grounded task partition remains one bounded plan with ordered embedded tasks when it shares one execution and verification boundary, and becomes stacked dependent plans when execution, verification, dependency, or failure boundaries are independent; wrong combine/split shapes fail without adding an approval gate.
