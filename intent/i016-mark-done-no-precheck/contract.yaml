@@ -51,4 +51,5 @@ scope:
     - id: context-circuit-source
 
 tier: standard
-status: draft
+status: approved
+contract_digest: sha256:bc56c08e6cc6916376431a19644fb6231ac81eb547f06c328a0eb70aa06119dd
