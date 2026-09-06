@@ -155,16 +155,20 @@ waiting for a busy path region reads simply as "waiting on another plan's area";
 never mention leases or conflicts. `docs/terminology.md` is the internal→user
 mapping.
 
-## Change set — one candidate for a stack delivered as one pull request
+## Change set — one candidate for same-repository plans delivered as one pull request
 
-When the human delivers several of the stack's plans as a single pull request, they
-form one **change set**. Compute one identity over the combined result with
-`change-set-candidate . <plan> <plan> ...` and run the independent check once
-against it, rather than once per plan (Context Circuit v1.0, Mechanism 2, pain 6).
-Per-plan execution, leases, and bases are unchanged; only the unit evidence and
-acceptance bind to moves from the attempt to the change-set candidate. If the
-combined result will not build, that is a blocked change set (not a worker
-failure); the human splits or reorders.
+When the human delivers several of the stack's plans, partition by covering tip
+(`change-set-partition`). Same-repository stacked plans that share a covering
+tip form one **change set** — one identity over the member tip map
+(`change-set-candidate . <plan> <plan> ...`), one pull request. Do **not** run a
+fresh independent check at delivery — each member already has a candidate-bound
+pass. Plans in different repositories never form one change set
+(`CHANGE_SET_CROSS_REPO` if prepared together): each covering tip is its own
+pull request. Sibling stacks in one repository are several pull requests, not
+zero. Four plans with a three-deep stack in A and one plan in B are two pull
+requests; a fork (1→2 and 1→3) in A is two. Forcing sibling tips into one
+prepare fails `CHANGE_SET_NO_SINGLE_TIP`. Per-plan execution, leases, and bases
+are unchanged.
 
 ## Boundaries
 

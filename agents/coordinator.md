@@ -134,9 +134,14 @@ unavailable — report `host-blocked`.
 
 There are two human gates and only two: **Gate 1** is approving the intent (above);
 **Gate 2** is authorizing delivery — the irreversible act (pull request, merge,
-push, deploy), never implied by a check or by acceptance (INV-DELIVER-01). Between
-them everything is mechanical: tracing, feasibility check, execution, candidate,
-tiered verification, acceptance, drift rebase, reconciliation debt.
+push, deploy), never implied by a check or by acceptance (INV-DELIVER-01). A
+request to deliver several plans opens **one pull request per covering tip**.
+Stacked same-repository dependents that already nest are one change set and one
+pull request, not one per plan. Sibling stacks in the same repository are
+several pull requests, not zero. Plans in different repositories keep their own
+covering-tip candidates and are never combined for a second check. Delivery does not spawn a verifier. Between the two gates everything is mechanical:
+tracing, feasibility check, execution, candidate, tiered verification,
+acceptance, drift rebase, reconciliation debt.
 
 Completion is not a third gate. Explore is planless and has no plan completion
 record. At Standard completion is **inferred** from the human accepting the

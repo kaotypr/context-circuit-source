@@ -1,20 +1,19 @@
-# Two changes, one combined delivery — one check, one acceptance, both complete
+# Two changes, one combined delivery — existing checks, one acceptance, both complete
 
-Proves the change-set path: two verified changes that belong together are delivered as
-one. The coordinator prepares one integrated result, checks the combination once,
-records one acceptance, and after the single pull request completes both members
-together — one deterministic candidate, verified and accepted once, not two separate
-deliveries.
+Proves the change-set path: two verified stacked changes that belong together are
+delivered as one pull request from the covering execution branch. The coordinator
+does not spawn a second verifier. It records one acceptance, and after the single
+pull request completes both members together.
 
 ## Spec
 ```yaml
 id: change-set-one-verification
-title: Deliver two verified plan members as one change set with one integration check and one acceptance
+title: Deliver two verified plan members as one change set with one acceptance and no delivery-time check
 status: proposed
 runtime_version: ">=1.0.0"
 mode: full-execution
 driver: cc-test-case
-surface: [cc-deliver, cc-verify, cc-complete]
+surface: [cc-deliver, cc-complete]
 preconditions:
   repositories:
     - id: notes
@@ -25,14 +24,14 @@ preconditions:
       connect: main
   plans:
     - { id: 0001-export-core, title: Export core, repository: notes, objective: Add the core export implementation., path: src/export-core, seed_state: verified }
-    - { id: 0002-export-cli, title: Export command line interface, repository: notes, objective: Add the command line interface for the export implementation., path: src/export-cli, seed_state: verified }
+    - { id: 0002-export-cli, title: Export command line interface, repository: notes, objective: Add the command line interface for the export implementation., path: src/export-cli, deps: [0001-export-core], seed_state: verified }
   state: seeded:two-verified-members
 persona: >
   A maker with two checked changes that belong in one release. They want one combined
   delivery and one clear acceptance decision, not two separate pull requests. Has never
   heard of Context Circuit or its internals.
 human_turns:
-  - "These two checked changes belong together. Prepare them as one combined delivery, check the combined result once, and I accept it."
+  - "These two checked changes belong together. Deliver them as one pull request, and I accept it."
   - "I opened the one pull request for the combined result. Complete both changes together and tell me what follow-up remains."
   - "Thanks."
 reactions:
@@ -50,12 +49,12 @@ decision_points:
     when: the human asks to deliver two related changes together
     coordinator_must: >
       prepare one combined delivery of the two changes rather than opening two
-      separate deliveries.
-  - id: check-and-accept-once
-    when: the combined result is prepared
+      separate deliveries, using the covering branch that already contains both.
+  - id: reuse-existing-checks
+    when: the combined delivery is prepared
     coordinator_must: >
-      run one independent check against the combined result and record one human
-      acceptance of it — not one per change.
+      reuse the existing independent checks and record one human acceptance —
+      not spawn a second verifier, and not one acceptance per change.
   - id: complete-both-on-one-delivery
     when: the human opens the single pull request
     coordinator_must: >
@@ -84,12 +83,12 @@ access_discipline:
 
 ## Dialogue
 
-> **H:** These two checked changes belong together. Prepare them as one combined
-> delivery, check the combined result once, and I accept it.
+> **H:** These two checked changes belong together. Deliver them as one pull
+> request, and I accept it.
 >
-> **C:** Prepared them as one combined change and checked the two together as they'll
-> actually ship — that combined result passes its independent check. I've recorded
-> your acceptance of the combined result, once. `[decision_point: one-combined-delivery]` `[decision_point: check-and-accept-once]`
+> **C:** They already sit on one branch that contains both, and each already has
+> its independent check. I've recorded your acceptance of that combined result,
+> once — no second check. `[decision_point: one-combined-delivery]` `[decision_point: reuse-existing-checks]`
 >
 > **H:** I opened the one pull request for the combined result. Complete both changes
 > together and tell me what follow-up remains.
@@ -100,6 +99,6 @@ access_discipline:
 >
 > **H:** Thanks.
 
-Two related changes are delivered as one integrated result, checked and accepted once,
-and both complete together from the single delivery — one candidate, not two separate
-deliveries.
+Two related stacked changes are delivered as one pull request from the covering
+branch, accepted once without a delivery-time verifier, and both complete together
+from the single delivery.

@@ -23,14 +23,13 @@ not_contains "$ROOT/wrapper/runtime/engine.sh" "gh pr"
 not_contains "$ROOT/wrapper/runtime/engine.sh" "git -C \"\$cc_dt_abs\" push"
 # The runtime authors integration merges only into a dedicated integration worktree,
 # before the worker/verifier — never a delivery merge, a delivery target, or the base branch
-# checkout (INV-CONCURRENCY-02, INV-DELIVER-01). The two integration builders are the
-# per-plan base merge ($cc_bp_tree) and the change-set integration tip ($cc_csp_wt).
-# Every `git ... merge ` in the engine must be one of those. (merge-base and rebase are
-# not merges into a branch.)
+# checkout (INV-CONCURRENCY-02, INV-DELIVER-01). The only integration builder is the
+# per-plan base merge ($cc_bp_tree). Every `git ... merge ` in the engine must be
+# that one. (merge-base and rebase are not merges into a branch.)
 if grep -nE 'git[^\n]*merge( |$)' "$ROOT/wrapper/runtime/engine.sh" \
-	| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree|\$cc_csp_wt' >/dev/null 2>&1; then
+	| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree' >/dev/null 2>&1; then
 	grep -nE 'git[^\n]*merge( |$)' "$ROOT/wrapper/runtime/engine.sh" \
-		| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree|\$cc_csp_wt'
+		| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree'
 	fail 'engine performs a git merge outside an integration builder'
 fi
 
@@ -53,12 +52,22 @@ printf '%s\n' "$legacy_dt" | grep -Fq "target_branch: development" || fail "lega
 # it never performs delivery and needs an execution to report
 expect_failure cc_delivery_targets "$ws" 9999-none
 
-# --- the delivery skill fixes source, target, and the blocked boundary ---
+# --- the delivery skill fixes source, target, the blocked boundary, and
+#     same-repository change sets (INV-DELIVER-01) ---
 skill="$ROOT/.agents/skills/cc-deliver/SKILL.md"
 require_file "$skill"
 contains "$skill" "execution branch"
 contains "$skill" "base_branch"
 contains "$skill" "default_branch"
 contains "$skill" "blocked"
+contains "$skill" "different repositories"
+contains "$skill" "CHANGE_SET_CROSS_REPO"
+contains "$skill" "change-set-partition"
+contains "$skill" "two pull requests"
+contains "$skill" "CHANGE_SET_DELIVERY_HAS_NO_VERIFIER"
+contains "$skill" "CHANGE_SET_NO_SINGLE_TIP"
+not_contains "$skill" "Spawn ONE independent verifier"
+not_contains "$skill" "a multi-repository plan may produce"
+not_contains "$skill" "each plan produces one pull request"
 
 pass 'delivery'

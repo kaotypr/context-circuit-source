@@ -31,7 +31,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Human acceptance | A first-class record that a human accepted a specific candidate ("looks right, ship it"). |
 | Reconciliation debt | A marker that delivered work has not yet updated Product Knowledge; it blocks the next Standard/Critical plan's grounding until resolved. Explore is planless and has no plan grounding preflight. |
 | Promote | Turn an Explore (direct-collaboration) session into a candidate-bearing change by attaching an intent and raising the tier. |
-| Change set | The set of plans delivered as one pull request; a single candidate is computed over it, so it is checked and accepted once. |
+| Change set | Same-repository plans delivered as one covering-tip pull request; the candidate is the member tip map, accepted once, with no delivery-time check. Named plans partition by covering tip; a repository may have several sibling stacks. |
 | Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives from the approved intent and its trace manifest. |
 | Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent (criteria unchanged since approval); Standard completion is inferred from acceptance + delivery, while Critical completion is explicit. |
 | Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
@@ -99,7 +99,7 @@ explicitly asks for diagnostics.
 | Candidate / `cand-...` / candidate void | "candidate", the digest | "the exact change"; a void reads as "the code changed, so the earlier check no longer applies" |
 | Tier = critical / explore | "tier", "Critical", "Explore" as jargon | "higher-risk, so it gets an independent check and an explicit sign-off" / "quick and human-supervised — no independent check" |
 | Reconciliation debt marker | "debt marker", "knowledge-debt" | "there's merged work I haven't folded into what the project knows yet" |
-| Change-set candidate / integration tip | "change set", "integration tip" | "the combined change" / "one check over both pieces" |
+| Change-set candidate / covering branch | "change set", "integration tip" | "the combined change" / "one pull request for the stacked work in that repository" |
 | Intent detail / `intent/<id>/detail/` | the folder name or "intent detail" as jargon | "a fuller write-up of this change, split by topic" |
 
 Reveal these mechanics only when the user explicitly asks for diagnostics.

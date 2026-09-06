@@ -2312,16 +2312,228 @@ cc_candidate_current() {
 	return 0
 }
 
+# cc_plan_single_repository ROOT PLAN -> the plan's one repository id. A plan
+# that names zero or several repositories cannot be a covering-tip member
+# (INV-DELIVER-01 / one-repo-per-plan).
+cc_plan_single_repository() {
+	cc_psr_root="$1"; cc_psr_plan="$2"
+	cc_psr_repos=$(cc_plan_affected_repositories "$cc_psr_root/plans/$cc_psr_plan/plan.yaml")
+	cc_psr_n=0
+	cc_psr_one=""
+	for cc_psr_r in $cc_psr_repos; do
+		cc_psr_n=$((cc_psr_n + 1))
+		cc_psr_one="$cc_psr_r"
+	done
+	[ "$cc_psr_n" -eq 1 ] || { cc_fail CHANGE_SET_CROSS_REPO "$cc_psr_plan"; return 1; }
+	printf '%s' "$cc_psr_one"
+}
+
+# cc_change_set_require_same_repo ROOT PLAN... -> ok when the members are a
+# change set of one, or when every member names exactly the same single
+# repository. Two or more members that do not share one repository cannot
+# converge to one pull request (INV-DELIVER-01); partition them first.
+cc_change_set_require_same_repo() {
+	cc_cssr_root="$1"; shift
+	[ "$#" -le 1 ] && return 0
+	cc_cssr_expected=""
+	for cc_cssr_m in "$@"; do
+		cc_cssr_one=$(cc_plan_single_repository "$cc_cssr_root" "$cc_cssr_m") || return 1
+		if [ -z "$cc_cssr_expected" ]; then
+			cc_cssr_expected="$cc_cssr_one"
+		elif [ "$cc_cssr_one" != "$cc_cssr_expected" ]; then
+			cc_fail CHANGE_SET_CROSS_REPO "$cc_cssr_m:$cc_cssr_one"
+			return 1
+		fi
+	done
+	return 0
+}
+
+# cc_change_set_covering_plan ROOT REPO PLAN... -> the one member whose execution
+# branch contains every other member (the shippable tip for one pull request).
+# Parallel tips that do not contain each other fail CHANGE_SET_NO_SINGLE_TIP;
+# delivery never authors a merge to invent one (INV-DELIVER-01).
+cc_change_set_covering_plan() {
+	cc_cscv_root="$1"; cc_cscv_repo="$2"; shift 2
+	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cscv_abs=$(cc_repo_resolve "$cc_cscv_root" "$cc_cscv_repo" | sed -n 's/^path: //p') \
+		|| { cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_cscv_repo"; return 1; }
+	cc_cscv_cover=""
+	cc_cscv_cover_tip=""
+	for cc_cscv_m in "$@"; do
+		cc_cscv_br="refs/heads/cc/$cc_cscv_m/$cc_cscv_repo"
+		git -C "$cc_cscv_abs" show-ref --verify --quiet "$cc_cscv_br" \
+			|| { cc_fail CHANGE_SET_BRANCH_MISSING "$cc_cscv_m:$cc_cscv_repo"; return 1; }
+		cc_cscv_ok=yes
+		for cc_cscv_o in "$@"; do
+			[ "$cc_cscv_o" = "$cc_cscv_m" ] && continue
+			git -C "$cc_cscv_abs" merge-base --is-ancestor \
+				"refs/heads/cc/$cc_cscv_o/$cc_cscv_repo" "$cc_cscv_br" \
+				|| cc_cscv_ok=no
+		done
+		[ "$cc_cscv_ok" = yes ] || continue
+		cc_cscv_tip=$(git -C "$cc_cscv_abs" rev-parse "$cc_cscv_br")
+		if [ -z "$cc_cscv_cover" ]; then
+			cc_cscv_cover="$cc_cscv_m"
+			cc_cscv_cover_tip="$cc_cscv_tip"
+		elif [ "$cc_cscv_tip" != "$cc_cscv_cover_tip" ]; then
+			cc_fail CHANGE_SET_NO_SINGLE_TIP "$cc_cscv_cover,$cc_cscv_m"
+			return 1
+		fi
+	done
+	[ -n "$cc_cscv_cover" ] || { cc_fail CHANGE_SET_NO_SINGLE_TIP; return 1; }
+	printf '%s' "$cc_cscv_cover"
+}
+
+# cc_change_set_covering_tips ROOT REPO PLAN... -> maximal shippable heads among
+# the named members (space-separated plan ids, sorted). A member is a covering
+# tip when no other named member strictly contains it. Sibling stacks in one
+# repository are several tips and several pull requests; CHANGE_SET_NO_SINGLE_TIP
+# applies only when those tips are forced into one change-set-prepare.
+cc_change_set_covering_tips() {
+	cc_cstp_root="$1"; cc_cstp_repo="$2"; shift 2
+	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cstp_abs=$(cc_repo_resolve "$cc_cstp_root" "$cc_cstp_repo" | sed -n 's/^path: //p') \
+		|| { cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_cstp_repo"; return 1; }
+	cc_cstp_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-covers.XXXXXX") || return 1
+	: >"$cc_cstp_tmp"
+	for cc_cstp_m in "$@"; do
+		cc_cstp_br="refs/heads/cc/$cc_cstp_m/$cc_cstp_repo"
+		git -C "$cc_cstp_abs" show-ref --verify --quiet "$cc_cstp_br" \
+			|| { rm -f "$cc_cstp_tmp"; cc_fail CHANGE_SET_BRANCH_MISSING "$cc_cstp_m:$cc_cstp_repo"; return 1; }
+		cc_cstp_mtip=$(git -C "$cc_cstp_abs" rev-parse "$cc_cstp_br")
+		cc_cstp_dominated=no
+		for cc_cstp_o in "$@"; do
+			[ "$cc_cstp_o" = "$cc_cstp_m" ] && continue
+			git -C "$cc_cstp_abs" merge-base --is-ancestor \
+				"$cc_cstp_br" "refs/heads/cc/$cc_cstp_o/$cc_cstp_repo" 2>/dev/null || continue
+			cc_cstp_otip=$(git -C "$cc_cstp_abs" rev-parse "refs/heads/cc/$cc_cstp_o/$cc_cstp_repo")
+			[ "$cc_cstp_mtip" != "$cc_cstp_otip" ] && cc_cstp_dominated=yes
+		done
+		[ "$cc_cstp_dominated" = yes ] || printf '%s\t%s\n' "$cc_cstp_mtip" "$cc_cstp_m" >>"$cc_cstp_tmp"
+	done
+	cc_cstp_out=""
+	for cc_cstp_sha in $(cut -f1 "$cc_cstp_tmp" | LC_ALL=C sort -u); do
+		cc_cstp_cover=$(awk -F '\t' -v s="$cc_cstp_sha" '$1 == s { print $2 }' "$cc_cstp_tmp" | LC_ALL=C sort | sed -n '1p')
+		cc_cstp_out="${cc_cstp_out:+$cc_cstp_out }$cc_cstp_cover"
+	done
+	rm -f "$cc_cstp_tmp"
+	[ -n "$cc_cstp_out" ] || { cc_fail CHANGE_SET_NO_SINGLE_TIP; return 1; }
+	printf '%s' "$cc_cstp_out"
+}
+
+# cc_change_set_partition ROOT PLAN... -> one group per covering tip. Mixed
+# repositories and sibling stacks in one repository are both several pull
+# requests. A linear stack is one group. Forcing sibling tips into one
+# change-set-prepare still fails CHANGE_SET_NO_SINGLE_TIP.
+cc_change_set_partition() {
+	cc_cspp_root=$(cc_root_abs "$1" 2>/dev/null) || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$1"; return 1; }
+	shift
+	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cspp_members=$(printf '%s\n' "$@" | LC_ALL=C sort -u | sed '/^$/d')
+	[ -n "$cc_cspp_members" ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cspp_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-partition.XXXXXX") || return 1
+	: >"$cc_cspp_tmp"
+	for cc_cspp_m in $cc_cspp_members; do
+		cc_plan_validate "$cc_cspp_root/plans/$cc_cspp_m" >/dev/null \
+			|| { rm -f "$cc_cspp_tmp"; cc_fail CHANGE_SET_PLAN_INVALID "$cc_cspp_m"; return 1; }
+		cc_cspp_repo=$(cc_plan_single_repository "$cc_cspp_root" "$cc_cspp_m") \
+			|| { rm -f "$cc_cspp_tmp"; return 1; }
+		printf '%s\t%s\n' "$cc_cspp_repo" "$cc_cspp_m" >>"$cc_cspp_tmp"
+	done
+	cc_cspp_n=0
+	cc_cspp_ready=0
+	for cc_cspp_repo in $(cut -f1 "$cc_cspp_tmp" | LC_ALL=C sort -u); do
+		cc_cspp_group=$(awk -F '\t' -v r="$cc_cspp_repo" '$1 == r { print $2 }' "$cc_cspp_tmp" | LC_ALL=C sort)
+		cc_cspp_abs=$(cc_repo_resolve "$cc_cspp_root" "$cc_cspp_repo" | sed -n 's/^path: //p') \
+			|| { rm -f "$cc_cspp_tmp"; cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_cspp_repo"; return 1; }
+		cc_cspp_covers=$(cc_change_set_covering_tips "$cc_cspp_root" "$cc_cspp_repo" $cc_cspp_group) \
+			|| { rm -f "$cc_cspp_tmp"; return 1; }
+		for cc_cspp_cover in $(printf '%s' "$cc_cspp_covers" | tr ' ' '\n' | LC_ALL=C sort); do
+			cc_cspp_subset=""
+			for cc_cspp_m in $cc_cspp_group; do
+				git -C "$cc_cspp_abs" merge-base --is-ancestor \
+					"refs/heads/cc/$cc_cspp_m/$cc_cspp_repo" \
+					"refs/heads/cc/$cc_cspp_cover/$cc_cspp_repo" 2>/dev/null \
+					|| continue
+				cc_cspp_subset="${cc_cspp_subset:+$cc_cspp_subset }$cc_cspp_m"
+			done
+			cc_cspp_subset=$(printf '%s' "$cc_cspp_subset" | tr ' ' '\n' | LC_ALL=C sort | tr '\n' ' ' | sed 's/ *$//')
+			cc_cspp_memblock=$(printf '%s' "$cc_cspp_subset" | sed 's/ /, /g')
+			cc_cspp_gn=0
+			for cc_cspp_gm in $cc_cspp_subset; do cc_cspp_gn=$((cc_cspp_gn + 1)); done
+			if [ "$cc_cspp_gn" -eq 1 ]; then
+				cc_cspp_one=$(printf '%s\n' "$cc_cspp_subset" | tr ' ' '\n' | sed -n '1p')
+				cc_cspp_exec=$(cc_latest_execution "$cc_cspp_root" "$cc_cspp_one") \
+					|| { rm -f "$cc_cspp_tmp"; return 1; }
+				cc_cspp_cand=$(cc_candidate_id "$(cc_execution_dir "$cc_cspp_root" "$cc_cspp_one" "$cc_cspp_exec")") \
+					|| { rm -f "$cc_cspp_tmp"; return 1; }
+			else
+				cc_cspp_cand=$(cc_change_set_tips_digest "$cc_cspp_root" $cc_cspp_subset) \
+					|| { rm -f "$cc_cspp_tmp"; return 1; }
+			fi
+			cc_cspp_n=$((cc_cspp_n + 1))
+			cc_cspp_ready=$((cc_cspp_ready + 1))
+			cc_emit group "$cc_cspp_n"
+			cc_emit repository "$cc_cspp_repo"
+			cc_emit members "$cc_cspp_memblock"
+			cc_emit covering_plan "$cc_cspp_cover"
+			cc_emit source_branch "cc/$cc_cspp_cover/$cc_cspp_repo"
+			cc_emit candidate_id "$cc_cspp_cand"
+			cc_emit status ready
+		done
+	done
+	rm -f "$cc_cspp_tmp"
+	cc_emit groups "$cc_cspp_n"
+	cc_emit pull_requests "$cc_cspp_ready"
+	return 0
+}
+
+# cc_change_set_tips_digest ROOT PLAN... -> cand-<hash> over the live member tip
+# map (commits, bases, per-plan candidates). This IS the change-set candidate;
+# delivery does not replace it with a newly authored merge.
+cc_change_set_tips_digest() {
+	cc_cstd_root="$1"; shift
+	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
+	cc_cstd_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-candidate.XXXXXX") || return 1
+	: >"$cc_cstd_tmp"
+	for cc_cstd_plan in "$@"; do
+		cc_cstd_pdir="$cc_cstd_root/plans/$cc_cstd_plan"
+		cc_plan_validate "$cc_cstd_pdir" >/dev/null \
+			|| { rm -f "$cc_cstd_tmp"; cc_fail CHANGE_SET_PLAN_INVALID "$cc_cstd_plan"; return 1; }
+		cc_cstd_exec=$(cc_latest_execution "$cc_cstd_root" "$cc_cstd_plan") \
+			|| { rm -f "$cc_cstd_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cstd_plan"; return 1; }
+		[ -n "$cc_cstd_exec" ] || { rm -f "$cc_cstd_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cstd_plan"; return 1; }
+		cc_cstd_edir=$(cc_execution_dir "$cc_cstd_root" "$cc_cstd_plan" "$cc_cstd_exec")
+		[ -f "$cc_cstd_edir/execution.yaml" ] || { rm -f "$cc_cstd_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cstd_plan"; return 1; }
+		cc_cstd_plan_cand=$(cc_candidate_id "$cc_cstd_edir") \
+			|| { rm -f "$cc_cstd_tmp"; cc_fail CHANGE_SET_MEMBER_CANDIDATE_INVALID "$cc_cstd_plan"; return 1; }
+		printf 'plan\t%s\t%s\n' "$cc_cstd_plan" "$cc_cstd_plan_cand" >>"$cc_cstd_tmp"
+		cc_cstd_found=no
+		for cc_cstd_rf in "$cc_cstd_edir"/repositories/*.yaml; do
+			[ -f "$cc_cstd_rf" ] || continue
+			cc_cstd_found=yes
+			printf '%s\t%s\t%s\t%s\n' \
+				"$(cc_scalar "$cc_cstd_rf" repository)" \
+				"$(cc_scalar "$cc_cstd_rf" latest_commit)" \
+				"$(cc_scalar "$cc_cstd_rf" base_commit)" \
+				"$cc_cstd_plan_cand" >>"$cc_cstd_tmp"
+		done
+		[ "$cc_cstd_found" = yes ] || { rm -f "$cc_cstd_tmp"; cc_fail CHANGE_SET_REPOSITORIES_MISSING "$cc_cstd_plan"; return 1; }
+	done
+	cc_cstd_canon=$(LC_ALL=C sort -u "$cc_cstd_tmp")
+	rm -f "$cc_cstd_tmp"
+	[ -n "$cc_cstd_canon" ] || { cc_fail CHANGE_SET_NO_EXECUTIONS; return 1; }
+	cc_cstd_hash=$(cc_digest_text "$cc_cstd_canon")
+	cc_cstd_hash=${cc_cstd_hash#sha256:}; cc_cstd_hash=${cc_cstd_hash#cksum:}
+	printf 'cand-%s' "$cc_cstd_hash"
+}
+
 # cc_change_set_candidate ROOT PLAN... -> the identity of a change set: the set of
-# plans delivered together as one pull request (concurrency-and-candidate.md). A
-# change set of one is exactly that plan's candidate (delegates to cc_candidate_id,
-# so it equals candidate-current). For several plans it digests the COMBINED
-# per-repository tip set + bases + contract digests into one deterministic,
-# order-independent id.
-#
-# This is the change-set IDENTITY. The integration tip is built and verified once
-# via change-set-prepare / change-set-verifier-record / change-set-accept /
-# change-set-ready (below), all bound to this candidate.
+# same-repository plans delivered together as one pull request. A change set of
+# one is exactly that plan's candidate (delegates to cc_candidate_id, so it
+# equals candidate-current). For several same-repo plans it digests the live
+# member tip map. Members that do not share one repository fail
+# CHANGE_SET_CROSS_REPO. Delivery never authors an integration merge.
 cc_change_set_candidate() {
 	cc_cs_root="$1"; shift
 	[ "$#" -ge 1 ] || { cc_fail CHANGE_SET_EMPTY; return 1; }
@@ -2340,44 +2552,22 @@ cc_change_set_candidate() {
 		cc_emit change_set_candidate "$cc_cs_one"
 		return 0
 	fi
-	cc_cs_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-candidate.XXXXXX") || return 1
-	: >"$cc_cs_tmp"
 	for cc_cs_plan in "$@"; do
-		cc_cs_pdir="$cc_cs_root/plans/$cc_cs_plan"
-		cc_plan_validate "$cc_cs_pdir" >/dev/null || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_PLAN_INVALID "$cc_cs_plan"; return 1; }
-		cc_cs_exec=$(cc_latest_execution "$cc_cs_root" "$cc_cs_plan") || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cs_plan"; return 1; }
-		[ -n "$cc_cs_exec" ] || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cs_plan"; return 1; }
-		cc_cs_edir=$(cc_execution_dir "$cc_cs_root" "$cc_cs_plan" "$cc_cs_exec")
-		[ -f "$cc_cs_edir/execution.yaml" ] || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_NO_EXECUTION "$cc_cs_plan"; return 1; }
-		cc_cs_plan_cand=$(cc_candidate_id "$cc_cs_edir") || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_MEMBER_CANDIDATE_INVALID "$cc_cs_plan"; return 1; }
-		printf 'plan\t%s\t%s\n' "$cc_cs_plan" "$cc_cs_plan_cand" >>"$cc_cs_tmp"
-		cc_cs_found=no
-		for cc_cs_rf in "$cc_cs_edir"/repositories/*.yaml; do
-			[ -f "$cc_cs_rf" ] || continue
-			cc_cs_found=yes
-			printf '%s\t%s\t%s\t%s\n' \
-				"$(cc_scalar "$cc_cs_rf" repository)" \
-				"$(cc_scalar "$cc_cs_rf" latest_commit)" \
-				"$(cc_scalar "$cc_cs_rf" base_commit)" \
-				"$cc_cs_plan_cand" >>"$cc_cs_tmp"
-		done
-		[ "$cc_cs_found" = yes ] || { rm -f "$cc_cs_tmp"; cc_fail CHANGE_SET_REPOSITORIES_MISSING "$cc_cs_plan"; return 1; }
+		cc_plan_validate "$cc_cs_root/plans/$cc_cs_plan" >/dev/null \
+			|| { cc_fail CHANGE_SET_PLAN_INVALID "$cc_cs_plan"; return 1; }
 	done
-	cc_cs_canon=$(LC_ALL=C sort -u "$cc_cs_tmp")
-	rm -f "$cc_cs_tmp"
-	[ -n "$cc_cs_canon" ] || { cc_fail CHANGE_SET_NO_EXECUTIONS; return 1; }
-	cc_cs_hash=$(cc_digest_text "$cc_cs_canon")
-	cc_cs_hash=${cc_cs_hash#sha256:}; cc_cs_hash=${cc_cs_hash#cksum:}
-	cc_emit change_set_candidate "cand-$cc_cs_hash"
+	cc_change_set_require_same_repo "$cc_cs_root" "$@" || return 1
+	cc_cs_hash=$(cc_change_set_tips_digest "$cc_cs_root" "$@") || return 1
+	cc_emit change_set_candidate "$cc_cs_hash"
 	return 0
 }
 
 # ---------------------------------------------------------------------------
-# Change-set integration verification (concurrency-and-candidate.md): a change set
-# is delivered as ONE pull request, so it is verified ONCE against an integration
-# tip — the composite of every member branch merged onto the base — and accepted
-# once (pain 6). Reuses the integration-merge machinery (INV-CONCURRENCY-02) and the
-# read-only verifier discipline (INV-VERIFY-01). Per-plan execution is unchanged.
+# Change-set delivery (INV-DELIVER-01): same-repository plans shipped as one
+# pull request. The candidate is the live member tip map. Delivery records that
+# set, names the one covering execution branch, and reuses each member's
+# already-bound independent pass. It never authors a merge and never spawns a
+# verifier. Plans in different repositories never form a change set.
 # ---------------------------------------------------------------------------
 
 cc_change_set_dir() { printf '%s/.runtime/change-sets/%s' "$1" "$2"; }
@@ -2396,54 +2586,24 @@ cc_change_set_record_status() {
 	' "$cc_csrst_dir/change-set.yaml" | cc_atomic_write "$cc_csrst_dir/change-set.yaml"
 }
 
-# cc_change_set_candidate_from_record ROOT CS_ID -> recompute the integrated
-# candidate from every member candidate, every recorded integration tip, and every
-# base tip. It is the only identity accepted after integration is prepared.
+# cc_change_set_candidate_from_record ROOT CS_ID -> recompute the tip-map
+# candidate from the recorded members. A member that moved yields a new id.
 cc_change_set_candidate_from_record() {
 	cc_cscr_root="$1"; cc_cscr_id="$2"; cc_cscr_dir=$(cc_change_set_dir "$cc_cscr_root" "$cc_cscr_id")
 	[ -f "$cc_cscr_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$cc_cscr_id"; return 1; }
 	cc_cscr_members=$(cc_inline_list "$(cc_scalar "$cc_cscr_dir/change-set.yaml" members)")
 	[ -n "$cc_cscr_members" ] || { cc_fail CHANGE_SET_MEMBERS_MISSING "$cc_cscr_id"; return 1; }
-	cc_cscr_canon=$(
-		for cc_cscr_m in $cc_cscr_members; do
-			cc_cscr_exec=$(cc_latest_execution "$cc_cscr_root" "$cc_cscr_m") || { exit 1; }
-			[ -n "$cc_cscr_exec" ] || { exit 1; }
-				cc_cscr_edir=$(cc_execution_dir "$cc_cscr_root" "$cc_cscr_m" "$cc_cscr_exec")
-				[ -f "$cc_cscr_edir/execution.yaml" ] || { exit 1; }
-				cc_cscr_cand=$(cc_candidate_id "$cc_cscr_edir") || { exit 1; }
-				cc_cscr_has_commit=no
-				for cc_cscr_rf in "$cc_cscr_edir"/repositories/*.yaml; do
-					[ -f "$cc_cscr_rf" ] || { exit 1; }
-					cc_cscr_latest=$(cc_scalar "$cc_cscr_rf" latest_commit 2>/dev/null) || { exit 1; }
-					cc_cscr_base=$(cc_scalar "$cc_cscr_rf" base_commit 2>/dev/null) || { exit 1; }
-					if [ "$cc_cscr_latest" != "$cc_cscr_base" ]; then cc_cscr_has_commit=yes; fi
-				 done
-				[ "$cc_cscr_has_commit" = yes ] || { cc_fail CHANGE_SET_MEMBER_NO_COMMIT "$cc_cscr_m"; exit 1; }
-				printf 'member\t%s\t%s\n' "$cc_cscr_m" "$cc_cscr_cand"
-		done
-		for cc_cscr_tf in "$cc_cscr_dir"/tips/*; do
-			[ -f "$cc_cscr_tf" ] || { exit 1; }
-			cc_cscr_r=$(basename -- "$cc_cscr_tf")
-			cc_cscr_tip=$(sed -n '1p' "$cc_cscr_tf")
-			[ -n "$cc_cscr_tip" ] || { exit 1; }
-			cc_cscr_w="$cc_cscr_dir/integration/$cc_cscr_r"
-			[ -d "$cc_cscr_w" ] || { exit 1; }
-			cc_cscr_head=$(git -C "$cc_cscr_w" rev-parse HEAD 2>/dev/null) || { exit 1; }
-			[ "$cc_cscr_head" = "$cc_cscr_tip" ] || { cc_fail CHANGE_SET_INTEGRATION_DRIFT "$cc_cscr_r"; exit 1; }
-			cc_cscr_af="$cc_cscr_dir/bases/$cc_cscr_r"
-			[ -f "$cc_cscr_af" ] || { cc_fail CHANGE_SET_BASE_RECORD_MISSING "$cc_cscr_r"; exit 1; }
-			cc_cscr_base=$(sed -n '1p' "$cc_cscr_af")
-			cc_cscr_abs=$(cc_repo_resolve "$cc_cscr_root" "$cc_cscr_r" | sed -n 's/^path: //p') || { exit 1; }
-			cc_cscr_branch=$(cc_binding_branch "$cc_cscr_root" "$cc_cscr_r" base_branch)
-			cc_cscr_live_base=$(git -C "$cc_cscr_abs" rev-parse --verify "refs/heads/$cc_cscr_branch" 2>/dev/null) || { exit 1; }
-			[ "$cc_cscr_live_base" = "$cc_cscr_base" ] || { cc_fail CHANGE_SET_BASE_DRIFT "$cc_cscr_r"; exit 1; }
-			printf 'integration\t%s\t%s\t%s\n' "$cc_cscr_r" "$cc_cscr_tip" "$cc_cscr_base"
-		done
-	) || { cc_fail CHANGE_SET_CANDIDATE_UNAVAILABLE "$cc_cscr_id"; return 1; }
-	[ -n "$cc_cscr_canon" ] || { cc_fail CHANGE_SET_CANDIDATE_UNAVAILABLE "$cc_cscr_id"; return 1; }
-	cc_cscr_hash=$(cc_digest_text "$(printf '%s\n' "$cc_cscr_canon" | LC_ALL=C sort -u)")
-	cc_cscr_hash=${cc_cscr_hash#sha256:}; cc_cscr_hash=${cc_cscr_hash#cksum:}
-	cc_emit change_set_candidate "cand-$cc_cscr_hash"
+	set -- $cc_cscr_members
+	if [ "$#" -eq 1 ]; then
+		cc_cscr_exec=$(cc_latest_execution "$cc_cscr_root" "$1") \
+			|| { cc_fail CHANGE_SET_NO_EXECUTION "$1"; return 1; }
+		[ -n "$cc_cscr_exec" ] || { cc_fail CHANGE_SET_NO_EXECUTION "$1"; return 1; }
+		cc_cscr_one=$(cc_candidate_id "$(cc_execution_dir "$cc_cscr_root" "$1" "$cc_cscr_exec")") || return 1
+		cc_emit change_set_candidate "$cc_cscr_one"
+		return 0
+	fi
+	cc_cscr_hash=$(cc_change_set_tips_digest "$cc_cscr_root" "$@") || return 1
+	cc_emit change_set_candidate "$cc_cscr_hash"
 }
 
 # cc_change_set_id ROOT PLAN... -> deterministic id over the sorted member set.
@@ -2471,10 +2631,12 @@ cc_change_set_tier() {
 	printf '%s' "$cc_cst_tier"
 }
 
-# cc_change_set_prepare ROOT PLAN... -> build the integration tip per affected
-# repository (base tip + merge of every member branch that touches it), record the
-# change set, and print its id + candidate. A merge conflict is BASE_UNBUILDABLE
-# (blocked, not a worker failure); every member must have an executed branch.
+# cc_change_set_prepare ROOT PLAN... -> record the member tip-map candidate and
+# the one covering execution branch. Delivery never authors a merge and never
+# spawns a verifier. Members that do not share one repository fail
+# CHANGE_SET_CROSS_REPO — partition first (`change-set-partition`) and prepare
+# one group per covering tip. Tips that do not converge to one shippable branch
+# fail CHANGE_SET_NO_SINGLE_TIP.
 cc_change_set_prepare() {
 	cc_csp_root=$(cc_root_abs "$1" 2>/dev/null) || { cc_fail WORKSPACE_ROOT_NOT_FOUND "$1"; return 1; }
 	shift
@@ -2493,114 +2655,48 @@ cc_change_set_prepare() {
 		cc_csp_edir=$(cc_execution_dir "$cc_csp_root" "$cc_csp_m" "$cc_csp_exec")
 		[ -f "$cc_csp_edir/execution.yaml" ] || { cc_fail CHANGE_SET_NO_EXECUTION "$cc_csp_m"; return 1; }
 	done
+	cc_change_set_require_same_repo "$cc_csp_root" $cc_csp_members || return 1
 	cc_csp_repos=$(for cc_csp_m in $cc_csp_members; do cc_plan_affected_repositories "$cc_csp_root/plans/$cc_csp_m/plan.yaml"; done | LC_ALL=C sort -u | sed '/^$/d')
 	[ -n "$cc_csp_repos" ] || { cc_fail CHANGE_SET_NO_REPOSITORIES; return 1; }
+	cc_csp_repo=$(printf '%s\n' "$cc_csp_repos" | sed -n '1p')
+	cc_csp_cover=$(cc_change_set_covering_plan "$cc_csp_root" "$cc_csp_repo" $cc_csp_members) || return 1
+	cc_csp_src="cc/$cc_csp_cover/$cc_csp_repo"
 	cc_csp_memblock=$(printf '%s' "$cc_csp_members" | tr '\n' ' ' | sed 's/ *$//; s/ /, /g')
 	cc_csp_tierv=$(cc_change_set_tier "$cc_csp_root" $cc_csp_members)
-	mkdir -p "$cc_csp_dir/integration" "$cc_csp_dir/tips" "$cc_csp_dir/bases"
+	cc_csp_n=0
+	for cc_csp_m in $cc_csp_members; do cc_csp_n=$((cc_csp_n + 1)); done
+	if [ "$cc_csp_n" -eq 1 ]; then
+		cc_csp_one=$(printf '%s\n' "$cc_csp_members" | sed -n '1p')
+		cc_csp_exec=$(cc_latest_execution "$cc_csp_root" "$cc_csp_one") || return 1
+		cc_csp_cand=$(cc_candidate_id "$(cc_execution_dir "$cc_csp_root" "$cc_csp_one" "$cc_csp_exec")") || return 1
+	else
+		cc_csp_cand=$(cc_change_set_tips_digest "$cc_csp_root" $cc_csp_members) || return 1
+	fi
+	mkdir -p "$cc_csp_dir"
 	{
-		printf 'schema_version: %s\nchange_set: %s\ncandidate_id: pending\ntier: %s\nstatus: preparing\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
-			"$CC_CHANGE_SET_SCHEMA_VERSION" "$cc_csp_id" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
-		} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
-			|| { cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
-	cc_csp_repblock=$(mktemp "${TMPDIR:-/tmp}/cc-cs.XXXXXX") || return 1
-	: >"$cc_csp_repblock"
-	for cc_csp_r in $cc_csp_repos; do
-		cc_csp_abs=$(cc_repo_resolve "$cc_csp_root" "$cc_csp_r" | sed -n 's/^path: //p') || { cc_change_set_record_status "$cc_csp_dir" blocked REPOSITORY_UNRESOLVED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_REPO_UNRESOLVED "$cc_csp_r"; return 1; }
-		cc_csp_base_branch=$(cc_binding_branch "$cc_csp_root" "$cc_csp_r" base_branch)
-		cc_csp_base_tip=$(git -C "$cc_csp_abs" rev-parse --verify "refs/heads/$cc_csp_base_branch" 2>/dev/null) || { cc_change_set_record_status "$cc_csp_dir" blocked BASE_BRANCH_MISSING; rm -f "$cc_csp_repblock"; cc_fail BASE_BRANCH_MISSING "$cc_csp_r"; return 1; }
-		cc_csp_br=""
-		for cc_csp_m in $cc_csp_members; do
-			if cc_plan_affected_repositories "$cc_csp_root/plans/$cc_csp_m/plan.yaml" 2>/dev/null | grep -Fxq "$cc_csp_r"; then
-				git -C "$cc_csp_abs" show-ref --verify --quiet "refs/heads/cc/$cc_csp_m/$cc_csp_r" || { cc_change_set_record_status "$cc_csp_dir" blocked BRANCH_MISSING; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_BRANCH_MISSING "$cc_csp_m:$cc_csp_r"; return 1; }
-				cc_csp_br="${cc_csp_br:+$cc_csp_br }cc/$cc_csp_m/$cc_csp_r"
-			fi
-		done
-		cc_csp_wt="$cc_csp_dir/integration/$cc_csp_r"
-		cc_csp_csbr="cs/$cc_csp_id/$cc_csp_r"
-		mkdir -p "$(dirname -- "$cc_csp_wt")"
-		git -C "$cc_csp_abs" worktree add -b "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_base_tip" >/dev/null 2>&1 || { cc_change_set_record_status "$cc_csp_dir" blocked WORKTREE_SETUP_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_WORKTREE_FAILED "$cc_csp_r"; return 1; }
-		if ! git -C "$cc_csp_wt" merge --no-ff -m "cc: integration tip $cc_csp_id ($cc_csp_r)" $cc_csp_br >/dev/null 2>&1; then
-			cc_change_set_record_status "$cc_csp_dir" blocked BASE_UNBUILDABLE
-			rm -f "$cc_csp_repblock"
-			cc_fail BASE_UNBUILDABLE "$cc_csp_id:$cc_csp_r:integration-conflict"; return 1
-		fi
-		cc_csp_tip=$(git -C "$cc_csp_wt" rev-parse HEAD)
-		printf '%s' "$cc_csp_tip" | cc_atomic_write "$cc_csp_dir/tips/$cc_csp_r" \
-			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
-		printf '%s' "$cc_csp_base_tip" | cc_atomic_write "$cc_csp_dir/bases/$cc_csp_r" \
-			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
-		printf '  - repository: %s\n    branch: %s\n    worktree: %s\n    integration_tip: %s\n    base_tip: %s\n' \
-			"$cc_csp_r" "$cc_csp_csbr" "$cc_csp_wt" "$cc_csp_tip" "$cc_csp_base_tip" >>"$cc_csp_repblock"
-	done
-	cc_csp_cand_out=$(cc_change_set_candidate_from_record "$cc_csp_root" "$cc_csp_id") || { cc_change_set_record_status "$cc_csp_dir" blocked CANDIDATE_UNAVAILABLE; rm -f "$cc_csp_repblock"; return 1; }
-	cc_csp_cand=$(printf '%s\n' "$cc_csp_cand_out" | sed -n 's/^change_set_candidate: //p')
-	[ -n "$cc_csp_cand" ] || { cc_change_set_record_status "$cc_csp_dir" blocked CANDIDATE_UNAVAILABLE; rm -f "$cc_csp_repblock"; return 1; }
-	{
-		printf 'schema_version: %s\nchange_set: %s\ncandidate_id: %s\ntier: %s\nstatus: prepared\nmembers: [%s]\ncreated_at: %s\nrepositories:\n' \
-			"$CC_CHANGE_SET_SCHEMA_VERSION" "$cc_csp_id" "$cc_csp_cand" "$cc_csp_tierv" "$cc_csp_memblock" "$(cc_now)"
-		cat "$cc_csp_repblock"
-		} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
-			|| { cc_change_set_record_status "$cc_csp_dir" blocked RECORD_WRITE_FAILED; rm -f "$cc_csp_repblock"; cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
-	rm -f "$cc_csp_repblock"
+		printf 'schema_version: %s\nchange_set: %s\ncandidate_id: %s\ntier: %s\nstatus: prepared\nmembers: [%s]\nsource_plan: %s\nsource_branch: %s\ncreated_at: %s\nrepositories:\n  - repository: %s\n    branch: %s\n' \
+			"$CC_CHANGE_SET_SCHEMA_VERSION" "$cc_csp_id" "$cc_csp_cand" "$cc_csp_tierv" "$cc_csp_memblock" "$cc_csp_cover" "$cc_csp_src" "$(cc_now)" "$cc_csp_repo" "$cc_csp_src"
+	} | cc_atomic_write "$cc_csp_dir/change-set.yaml" \
+		|| { cc_fail CHANGE_SET_RECORD_WRITE_FAILED "$cc_csp_id"; return 1; }
 	cc_emit change_set "$cc_csp_id"
 	cc_emit candidate_id "$cc_csp_cand"
 	cc_emit tier "$cc_csp_tierv"
 	cc_emit status prepared
+	cc_emit source_plan "$cc_csp_cover"
+	cc_emit source_branch "$cc_csp_src"
 	return 0
 }
 
-# cc_change_set_verifier_record ROOT CS_ID OUTCOME [--wrote-products] -> record the
-# ONE independent verifier result for the integration tip, bound to the change-set
-# candidate. Read-only: an explicit product write is rejected, and any composite tip
-# that moved since prepare voids the check (VERIFIER_MODIFIED_PRODUCT).
+# Delivery never records a change-set verifier. Each member's existing
+# candidate-bound pass is the floor (INV-DELIVER-01).
 cc_change_set_verifier_prepare() {
-	cc_csvp_dir=$(cc_change_set_dir "$1" "$2")
-	[ -f "$cc_csvp_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
-	[ "$(cc_scalar "$cc_csvp_dir/change-set.yaml" status 2>/dev/null)" = prepared ] \
-		|| { cc_fail CHANGE_SET_NOT_PREPARED "$2"; return 1; }
-	cc_csvp_out=$(cc_change_set_candidate_from_record "$1" "$2") || return 1
-	cc_csvp_cand=$(printf '%s\n' "$cc_csvp_out" | sed -n 's/^change_set_candidate: //p')
-	cc_csvp_recorded=$(cc_scalar "$cc_csvp_dir/change-set.yaml" candidate_id)
-	[ "$cc_csvp_cand" = "$cc_csvp_recorded" ] || { cc_fail CHANGE_SET_STALE "$2"; return 1; }
-	printf 'candidate_id: %s\nread_only: true\nprepared_at: %s\n' "$cc_csvp_cand" "$(cc_now)" \
-		| cc_atomic_write "$cc_csvp_dir/verifier-scope.yaml" \
-		|| { cc_fail VERIFIER_SCOPE_WRITE_FAILED; return 1; }
-	cc_emit verifier_scope read-only
-	cc_emit candidate_id "$cc_csvp_cand"
+	cc_fail CHANGE_SET_DELIVERY_HAS_NO_VERIFIER "${2:-}"
+	return 1
 }
 
 cc_change_set_verifier_record() {
-	cc_csv_dir=$(cc_change_set_dir "$1" "$2")
-	cc_csv_out="$3"; cc_csv_flag="${4:-}"
-	[ -f "$cc_csv_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
-	cc_csv_status=$(cc_scalar "$cc_csv_dir/change-set.yaml" status 2>/dev/null) || cc_csv_status=""
-	[ "$cc_csv_status" = prepared ] || { cc_fail CHANGE_SET_NOT_PREPARED "$2"; return 1; }
-	[ -f "$cc_csv_dir/verifier-scope.yaml" ] || { cc_fail VERIFIER_SCOPE_NOT_PREPARED "$2"; return 1; }
-	case "$cc_csv_out" in passed|failed|blocked|waived) : ;; *) cc_fail VERIFIER_OUTCOME_INVALID "$cc_csv_out"; return 1 ;; esac
-	[ "$cc_csv_flag" != "--wrote-products" ] || { cc_fail VERIFIER_WRITE_REJECTED; return 1; }
-	cc_csv_live_out=$(cc_change_set_candidate_from_record "$1" "$2") || return 1
-	cc_csv_live=$(printf '%s\n' "$cc_csv_live_out" | sed -n 's/^change_set_candidate: //p')
-	cc_csv_cand=$(cc_scalar "$cc_csv_dir/change-set.yaml" candidate_id)
-	[ -n "$cc_csv_cand" ] && [ "$cc_csv_cand" != pending ] && [ "$cc_csv_live" = "$cc_csv_cand" ] \
-		|| { cc_fail CHANGE_SET_STALE "$2"; return 1; }
-	for cc_csv_tf in "$cc_csv_dir"/tips/*; do
-		[ -f "$cc_csv_tf" ] || { cc_fail CHANGE_SET_TIP_MISSING "$2"; return 1; }
-		cc_csv_r=$(basename -- "$cc_csv_tf")
-		cc_csv_w="$cc_csv_dir/integration/$cc_csv_r"
-		[ -d "$cc_csv_w" ] || { cc_fail CHANGE_SET_INTEGRATION_MISSING "$2:$cc_csv_r"; return 1; }
-		cc_csv_head=$(git -C "$cc_csv_w" rev-parse HEAD 2>/dev/null) || { cc_fail CHANGE_SET_INTEGRATION_UNREADABLE "$2:$cc_csv_r"; return 1; }
-		if [ "$cc_csv_head" != "$(sed -n '1p' "$cc_csv_tf")" ]; then
-			cc_fail VERIFIER_MODIFIED_PRODUCT "$2:$cc_csv_r"; return 1
-		fi
-	done
-	printf 'schema_version: %s\ncandidate_id: %s\noutcome: %s\nread_only: true\nchecked_at: %s\n' \
-		"$CC_VERIFIER_RESULT_SCHEMA_VERSION" "$cc_csv_cand" "$cc_csv_out" "$(cc_now)" | cc_atomic_write "$cc_csv_dir/verifier.yaml" \
-		|| { cc_fail VERIFIER_RESULT_WRITE_FAILED; return 1; }
-	cc_emit change_set "$2"
-	cc_emit outcome "$cc_csv_out"
-	cc_emit candidate_id "$cc_csv_cand"
-	return 0
+	cc_fail CHANGE_SET_DELIVERY_HAS_NO_VERIFIER "${2:-}"
+	return 1
 }
 
 # cc_change_set_accept ROOT CS_ID ACCEPTED_BY -> one human acceptance bound to the
@@ -2620,10 +2716,11 @@ cc_change_set_accept() {
 	return 0
 }
 
-# cc_change_set_ready ROOT CS_ID -> the tier floor for delivering a change set as one
-# PR: the recorded candidate must still describe the live member set (no member moved
-# since prepare), a human acceptance must bind to it, and a Standard/Critical
-# independent pass must bind to it. Explore is planless and cannot form a change set.
+# cc_change_set_ready ROOT CS_ID -> the floor for delivering a change set as one
+# PR: the recorded tip-map candidate must still describe the live members, a
+# human acceptance must bind to it, and each Standard/Critical member must still
+# have its own candidate-bound independent pass. Delivery does not add a
+# change-set verifier. Explore is planless and cannot form a change set.
 cc_change_set_ready() {
 	cc_csr_root="$1"; cc_csr_dir=$(cc_change_set_dir "$1" "$2")
 	[ -f "$cc_csr_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
@@ -2644,12 +2741,17 @@ cc_change_set_ready() {
 		cc_fail CHANGE_SET_NO_ACCEPTANCE "$2"; return 1
 	fi
 	if [ "$cc_csr_tier" = standard ] || [ "$cc_csr_tier" = critical ]; then
-		cc_csr_vc=$(cc_scalar "$cc_csr_dir/verifier.yaml" candidate_id 2>/dev/null) || cc_csr_vc=""
-		cc_csr_vo=$(cc_scalar "$cc_csr_dir/verifier.yaml" outcome 2>/dev/null) || cc_csr_vo=""
-		if [ "$cc_csr_vc" != "$cc_csr_recorded" ] || [ "$cc_csr_vo" != passed ]; then
-			cc_emit change_set_ready blocked
-			cc_fail CHANGE_SET_FLOOR_UNMET "$2"; return 1
-		fi
+		for cc_csr_m in $cc_csr_mlist; do
+			cc_csr_exec=$(cc_latest_execution "$cc_csr_root" "$cc_csr_m") \
+				|| { cc_emit change_set_ready blocked; cc_fail CHANGE_SET_FLOOR_UNMET "$cc_csr_m"; return 1; }
+			cc_csr_edir=$(cc_execution_dir "$cc_csr_root" "$cc_csr_m" "$cc_csr_exec")
+			[ "$(cc_execution_status "$cc_csr_edir")" = verified ] \
+				|| { cc_emit change_set_ready blocked; cc_fail CHANGE_SET_FLOOR_UNMET "$cc_csr_m"; return 1; }
+			cc_csr_vc=$(cc_scalar "$cc_csr_edir/execution.yaml" verified_candidate 2>/dev/null) || cc_csr_vc=""
+			cc_csr_now=$(cc_candidate_id "$cc_csr_edir") || { cc_emit change_set_ready blocked; cc_fail CHANGE_SET_FLOOR_UNMET "$cc_csr_m"; return 1; }
+			[ -n "$cc_csr_vc" ] && [ "$cc_csr_vc" = "$cc_csr_now" ] \
+				|| { cc_emit change_set_ready blocked; cc_fail CHANGE_SET_FLOOR_UNMET "$cc_csr_m"; return 1; }
+		done
 		cc_emit assurance independent
 	else
 		cc_fail CHANGE_SET_EXPLORE_PLANLESS "$2"; return 1
@@ -2661,9 +2763,9 @@ cc_change_set_ready() {
 }
 
 # cc_change_set_complete ROOT CS_ID -> complete every member of a delivered change set
-# from the ONE change-set acceptance (pain 6: accept once, complete the set). The
-# integrated verifier is the assurance record for the set; member execution records
-# contribute worker commits but are not re-run through per-plan completion gates.
+# from the ONE change-set acceptance (pain 6: accept once, complete the set).
+# Assurance is each member's already-bound independent pass, not a delivery-time
+# verifier.
 cc_change_set_complete() {
 	cc_csc_root="$1"; cc_csc_dir=$(cc_change_set_dir "$1" "$2")
 	[ -f "$cc_csc_dir/change-set.yaml" ] || { cc_fail CHANGE_SET_UNKNOWN "$2"; return 1; }
@@ -2672,7 +2774,7 @@ cc_change_set_complete() {
 	cc_csc_candidate=$(cc_scalar "$cc_csc_dir/change-set.yaml" candidate_id)
 	cc_csc_acceptor=$(cc_scalar "$cc_csc_dir/human-acceptance.yaml" accepted_by)
 	cc_csc_tier=$(cc_scalar "$cc_csc_dir/change-set.yaml" tier)
-	cc_csc_verifier_outcome=$(cc_scalar "$cc_csc_dir/verifier.yaml" outcome 2>/dev/null) || cc_csc_verifier_outcome=not-run
+	cc_csc_verifier_outcome=passed
 	cc_csc_kind=inferred
 	[ "$cc_csc_tier" = critical ] && cc_csc_kind=accepted
 	# Preflight every member before changing any member status. A set is complete only
@@ -2702,8 +2804,8 @@ cc_change_set_complete() {
 		cc_csc_edir=$(cc_execution_dir "$cc_csc_root" "$cc_csc_m" "$cc_csc_exec")
 		cc_csc_revision=$(cc_scalar "$cc_csc_edir/execution.yaml" plan_revision)
 		{
-			printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nchange_set: %s\nchange_set_verifier_candidate: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
-				"$CC_COMPLETION_SCHEMA_VERSION" "$cc_csc_exec" "$cc_csc_m" "$cc_csc_candidate" "$cc_csc_revision" "$cc_csc_acceptor" "$cc_csc_verifier_outcome" "$2" "$cc_csc_candidate" "$cc_csc_kind" "$(cc_now)"
+			printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nchange_set: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
+				"$CC_COMPLETION_SCHEMA_VERSION" "$cc_csc_exec" "$cc_csc_m" "$cc_csc_candidate" "$cc_csc_revision" "$cc_csc_acceptor" "$cc_csc_verifier_outcome" "$2" "$cc_csc_kind" "$(cc_now)"
 			for cc_csc_rf in "$cc_csc_edir"/repositories/*.yaml; do
 				[ -f "$cc_csc_rf" ] || continue
 				printf '  %s: %s\n' "$(cc_scalar "$cc_csc_rf" repository)" "$(cc_scalar "$cc_csc_rf" latest_commit)"
@@ -3547,6 +3649,7 @@ cc_main() {
 		candidate-current)       cc_candidate_current "$@" ;;
 		change-set-candidate)    cc_change_set_candidate "$@" ;;
 		change-set-prepare)      cc_change_set_prepare "$@" ;;
+		change-set-partition)    cc_change_set_partition "$@" ;;
 		change-set-verifier-prepare) cc_change_set_verifier_prepare "$@" ;;
 		change-set-verifier-record) cc_change_set_verifier_record "$@" ;;
 		change-set-accept)       cc_change_set_accept "$@" ;;

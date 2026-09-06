@@ -1,10 +1,10 @@
 id: 21-change-set-one-verification
-title: Deliver two verified plan members as one change set with one integration check and one acceptance
+title: Deliver two verified plan members as one change set with one acceptance and no delivery-time check
 mode: full-execution
 setup:
   # Both member plans are already verified. The conversation exercises the
-  # change-set delivery path: prepare one integrated candidate, verify it once,
-  # accept once, record one Gate 2 delivery, and complete both members together.
+  # change-set delivery path: record the tip-map candidate, reuse existing
+  # checks, accept once, record one Gate 2 delivery, and complete both members.
   repositories:
     - id: notes
       dest: notes
@@ -24,6 +24,7 @@ setup:
       repository: notes
       objective: Add the command line interface for the export implementation.
       path: src/export-cli
+      deps: [0001-export-core]
       seed_state: verified
   sources: []
 
@@ -33,7 +34,7 @@ human:
     combined delivery and one clear acceptance decision, not two separate pull
     requests. Has never heard of Context Circuit or its internals.
   turns:
-    - say: "These two checked changes belong together. Prepare them as one combined delivery, check the combined result once, and I accept it."
+    - say: "These two checked changes belong together. Deliver them as one pull request, and I accept it."
     - say: "I opened the one pull request for the combined result. Complete both changes together and tell me what follow-up remains."
     - say: "Thanks."
   reactions:
@@ -42,7 +43,7 @@ human:
     uses_internal_terms: never
   visible_expectations:
     - It prepares one combined delivery rather than opening separate deliveries for the two related changes.
-    - It runs one independent check against the combined result and records one human acceptance.
+    - It reuses the existing independent checks and records one human acceptance; it does not spawn a second verifier.
     - After the explicit single delivery event, it completes both members consistently and reports any knowledge follow-up.
     - It never exposes branch names, worktrees, candidate ids, or runtime file names.
 
@@ -62,7 +63,7 @@ grader:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"
       reason: One combined delivery must be communicated without exposing implementation machinery.
     - requires_any: ["combined", "one", "single", "pull request", "checked", "verified", "complete", "follow"]
-      reason: The conversation must show one integrated check, one delivery, and joint completion.
+      reason: The conversation must show one delivery and joint completion, reusing existing checks.
   access_policy:
     execute-plan:
       required: []

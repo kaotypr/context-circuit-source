@@ -72,8 +72,9 @@ these lines carry no internal vocabulary.
 > the one intent, with that dependency made explicit.
 >
 > **C:** Both pieces are built and each has its own independent check. Because they
-> ship as one pull request, I also ran one check over the combined result — it
-> passed. Accept and I'll open a single pull request for both.
+> ship as one pull request in the same repository, I'll open that from the branch
+> that already contains both — no second check. Accept and I'll open a single pull
+> request for the combined result.
 >
 > **H:** Accept.
 
