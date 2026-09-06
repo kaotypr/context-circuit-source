@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0016-in-place-knowledge-updates
 intent: i014-direct-context-updates
 title: Update Product Knowledge in place when a plan is marked done
-status: draft
+status: done
 objective: >-
   Gathering context and reconciling Product Knowledge write live context files
   with no proposal sidecar. A plan becomes done only when a human asks to mark
