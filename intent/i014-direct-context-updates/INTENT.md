@@ -4,39 +4,44 @@ _Status: draft, waiting for your approval._
 
 ## Intention
 
-What you want: **Product Knowledge is updated by changing the real `context/` files, not by writing a proposal to approve later.** Gathering context and reconciling product knowledge both do that in place. Asking for a pull request, merge, or “sync the local repo” is still delivery — and that delivery **starts** the same in-place knowledge update.
+What you want: **Product Knowledge is updated by changing the real `context/` files, not by writing a proposal to approve later.** Gathering context still does that in place. A plan becomes done only when you ask to mark it done. That ask closes the work and, when the plan affected Product Knowledge, writes those files from what the plan changed. Asking for a pull request, merge, or “sync the local repo” stays delivery only — it does not start a knowledge update, and it does not mark the plan done. The next plan can start without waiting for that knowledge update.
 
-Today those knowledge paths stage a document under `context/proposals/` and wait for a separate “accept the context update” decision. That sidecar goes away. Delivery is supposed to start reconciliation today (it currently often does not fire); that auto-run stays, and it writes the live files instead of a proposal.
+Today knowledge paths stage a document under `context/proposals/` and wait for a separate “accept the context update” decision. The proposal sidecar goes away, including dropping pending proposal `0034`. The auto-run lives on **mark the plan done**: read the plan, mark it done, then update live context files only if the plan affected Product Knowledge.
 
 ```mermaid
 flowchart TD
   G["Ask to gather context"] --> A["Gathering context, or reconciling product knowledge"]
-  D["Ask for a pull request, merge, or sync"] --> P["Delivery"]
-  P -->|"auto-starts"| A
+  M["Ask to mark the plan done"] --> Done["Mark the plan done"]
+  Done -->|"if the plan affects Product Knowledge"| A
   A --> W["Edit the existing context files"]
+  D["Ask for a pull request, merge, or sync"] --> P["Delivery only"]
 ```
 
 ## Expectations
 
 - Gathering context edits the real context files. It does not create a proposal document.
-- Reconciling product knowledge does the same: in-place edits, no proposal, no extra accept step.
-- Asking for a pull request, merge, or “MR merged, sync local repo” still delivers — and then starts that same in-place knowledge update.
+- A plan becomes done only when you ask to mark it done. Explore has no intent and no plan, so it is unchanged.
+- Asking to mark a plan done marks it done. If that plan affected Product Knowledge, the live context files are updated from what changed — in place, no proposal, no extra accept.
+- If the plan did not affect Product Knowledge, marking it done does not change context files.
+- Asking for a pull request, merge, or “MR merged, sync local repo” delivers only. It does not start a knowledge update and does not mark the plan done.
+- The next plan can start even if that knowledge update has not landed.
+- Pending proposal `0034` (conversation-spec-library) is dropped.
 - Intent approval and delivery stay the two human gates they already are. Knowledge updates are not a third gate.
 
 ## The plans
 
 1. **Write Product Knowledge in place.**
-   _After this:_ gathering context and reconciling product knowledge change `context/` files directly; `context/proposals/` is no longer a staging path, and there is no separate “accept the context update” step.
-2. **Start the in-place knowledge update from delivery.**
-   _After this:_ a delivery request records and performs delivery, then starts gathering context / reconciling product knowledge against the live files — including when completion is inferred after delivery.
+   _After this:_ gathering context and reconciling product knowledge change `context/` files directly; `context/proposals/` is no longer a staging path, pending proposal `0034` is dropped, and there is no separate “accept the context update” step.
+2. **Start the in-place knowledge update from marking a plan done.**
+   _After this:_ a plan becomes done only when you ask; that ask reads the plan, marks it done, then updates live context files when the plan affected Product Knowledge. Delivery does not mark it done and does not start that update. The next plan is not blocked waiting for the update.
 3. **Prove the old path is gone.**
-   _After this:_ checks fail if a proposal is staged, if a knowledge update waits for a separate accept, or if delivery finishes without starting the in-place knowledge update.
+   _After this:_ checks fail if a proposal is staged, if a knowledge update waits for a separate accept, if delivery starts reconciliation or marks a plan done, or if the next plan is blocked waiting for Product Knowledge.
 
 ## How carefully this is checked
 
 **`Standard`**
 
-This changes how accepted knowledge is written and whether delivery starts it, so an independent verifier should confirm the proposal path is gone and the delivery auto-update writes live files.
+This changes how accepted knowledge is written, when a plan becomes done, and which lifecycle step starts a knowledge update, so an independent verifier should confirm those outcomes.
 
 Explanations:
 - **Explore:** you check it yourself as you work alongside the agent — no separate
@@ -50,10 +55,16 @@ Explanations:
 ## Open questions
 
 **Should asking for a pull request, merge, or “sync the local repo” start a knowledge update?**
-_Answer: Yes. Delivery starts gathering context / reconciling Product Knowledge, and those acts write the live context files. No proposal, no extra accept._
+_Answer: No. Delivery stays delivery only._
+
+**When should the in-place knowledge update auto-run?**
+_Answer: When you ask to mark a plan done. The coordinator reads the plan, marks it done, then if the plan affected Product Knowledge, updates the live context files from what changed. No proposal, no extra accept._
+
+**Should a plan become done only when you ask to mark it done?**
+_Answer: Yes. Every plan becomes done only when a human asks to mark it done. Explore has no intent and no plan._
 
 **If that auto-update has not landed, should the next plan still wait until Product Knowledge has been updated?**
-Today that wait (“reconciliation debt”) exists so reconcile cannot be skipped. You now want delivery itself to start the update. If the wait stays, a missed auto-run still blocks the next plan. If the wait goes, the next plan can proceed even if the auto-update did not land.
+_Answer: No. The next plan can continue._
 
 **There is one pending proposal (`0034`, conversation-spec-library). What should happen to it when proposals go away?**
-Apply it as a real context page in this work, leave it for a later knowledge update, or drop it.
+_Answer: Drop it._
