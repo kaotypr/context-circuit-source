@@ -309,9 +309,8 @@ now updated by writing live `context/` files in place; the staging path is
 removed rather than left empty. The 2026-09-03 note that 0034 was left pending
 stands as the historical record of that earlier request.
 
-Rationale: approved intent `i014-direct-context-updates` — gathering and
-mark-done reconcile write live files; there is no sidecar and no extra
-knowledge-acceptance gate.
+Rationale: gathering and mark-done reconcile write live files; there is no
+sidecar and no extra knowledge-acceptance gate.
 
-Consequence: the proposal file and its INDEX pending row are gone; plan
-`0001-conversation-spec-library` no longer cites that path.
+Consequence: the pending conversation-spec-library knowledge was dropped, not
+applied as a domain page.
