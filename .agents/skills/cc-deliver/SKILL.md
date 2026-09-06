@@ -9,28 +9,56 @@ plan completion. The runtime never performs them and never interprets
 verification as merge authorization. Delivery is **Gate 2** — the second and final
 human gate (INV-DELIVER-01); it is never implied by the acceptance of a candidate.
 
-## Change set — one pull request, one candidate
+## One pull request per covering tip
 
-When several stacked plans converge to a single pull request, they form one
-**change set**, verified once against an integration tip (not once per plan):
+A pull request is per covering tip, not per plan and not per repository. When
+delivering several plans, `change-set-partition . <plan> ...` groups them by
+covering execution branch.
 
-1. `change-set-prepare . <plan> <plan> ...` builds the integration tip — every
-   member branch merged onto the base branch, per repository — and records one change-set
-   candidate. If the combined result will not build it reports `BASE_UNBUILDABLE`;
-   report that as blocked, not a worker failure, for the human to split or reorder.
-2. Spawn ONE independent verifier over the integration tip, prepare its read-only
-   scope with `change-set-verifier-prepare . <change-set-id>`, and record it with
-   `change-set-verifier-record . <change-set-id> <passed|failed|blocked|waived>`
-   (read-only; a tip that moved since prepare voids it). Change sets are for
-   plan-bearing Standard/Critical work; planless Explore work uses `cc-pair`.
+- Same-repository stacked plans that already nest (3 depends on 2 depends on 1)
+  are one change set, one candidate, and one pull request from the covering
+  branch (plan 3's `cc/<plan>/<repo>`).
+- Sibling stacks in the same repository are several covering tips. Plan 1 with
+  dependents 2 and 3 in repo A is two pull requests (`cc/2/A` and `cc/3/A`),
+  not one and not zero.
+- Each other repository is its own covering tip (or tips). Four plans of which
+  three stack in repo A and one lives in repo B are two candidates and two pull
+  requests, not four and not one.
+
+Do not pass members from different repositories to `change-set-prepare` or
+`change-set-candidate` (`CHANGE_SET_CROSS_REPO`). Partition first, then prepare
+one change set per ready group. Do not spawn a fresh combined verifier and do
+not invent a combined candidate across repositories. Cross-repo dependencies
+are ordering gates only (INV-CONCURRENCY-02).
+
+## Change set — one pull request, one repository
+
+When several stacked plans **in the same repository** converge to a single pull
+request, they form one **change set**. The candidate is the live member tip map
+(`change-set-candidate . <plan> <plan> ...`). Delivery does **not** spawn a
+verifier and does **not** author a merge. Each member's already-bound
+independent pass is the floor.
+
+1. `change-set-prepare . <plan> <plan> ...` records that tip-map candidate and
+   names the one **covering** execution branch (the tip that already contains
+   every other member). If the members do not share a repository it reports
+   `CHANGE_SET_CROSS_REPO` — partition and prepare per covering tip instead of
+   falling back to one pull request per plan. If no single execution branch
+   contains the others it reports `CHANGE_SET_NO_SINGLE_TIP`; partition already
+   splits those sibling tips into separate pull requests. Do not merge them at
+   delivery.
+2. Do not call `change-set-verifier-prepare` or `change-set-verifier-record`
+   (`CHANGE_SET_DELIVERY_HAS_NO_VERIFIER`). Change sets are for plan-bearing
+   Standard/Critical work; planless Explore work uses `cc-pair`.
 3. The human accepts once: `change-set-accept . <change-set-id> <who>`.
-4. `change-set-ready . <change-set-id>` enforces the tier floor for the whole set
-   (the max tier across members): a candidate-bound acceptance, plus a candidate-bound
-   independent pass at Standard/Critical. A member that moves after prepare makes the
-   candidate stale and re-gates.
-5. After you open the one pull request (Gate 2), `change-set-complete . <change-set-id>`
-   marks **every member** done and emits one change-set-bound reconciliation-debt
-   marker, from the single change-set acceptance — accept once, and the whole set completes.
+4. `change-set-ready . <change-set-id>` enforces the tier floor: the tip map is
+   unchanged, a candidate-bound acceptance, and each member still has its own
+   candidate-bound independent pass. A member that moves makes the candidate
+   stale and re-gates.
+5. Open the one pull request from the reported covering execution branch
+   (Gate 2), then `change-set-complete . <change-set-id>` marks **every member**
+   done and emits one change-set-bound reconciliation-debt marker — accept once,
+   and the whole set completes.
 
 A single Standard/Critical plan delivered alone is a change set of one, identical
 to `change-set-candidate . <plan>` and `candidate-current . <plan>`; it may complete
@@ -40,7 +68,7 @@ and has no delivery record in the plan lifecycle.
 ## Single-plan delivery and inferred completion
 
 Acceptance is keyed to the candidate: a single plan uses its own execution candidate;
-a change set uses the integration candidate (above). For a single plan delivered on
+a change set uses the member tip-map candidate (above). For a single plan delivered on
 its own, after the human authorizes and you open the pull request (Gate 2), record the
 delivery with `delivery-record . <plan-id>` — the delivery signal, bound to the
 current candidate; it performs no git action itself. At Standard, this lets
@@ -53,12 +81,17 @@ yields a new candidate and re-gates rather than completing stale work.
 
 On an explicit request to open a pull request for an implemented plan:
 
-- the source is each repository's execution branch `cc/<plan-id>/<repository-id>`;
+- for a change set, the source is the covering execution branch reported by
+  partition / prepare (`cc/<covering-plan>/<repository-id>`);
+- for a single plan delivered alone, the source is that plan's execution
+  branch `cc/<plan-id>/<repository-id>`;
 - the default target is that repository's recorded `base_branch`;
 - an alternative target must be named explicitly;
 - never substitute `default_branch` and never silently follow a moving or
   renamed remote branch;
-- a multi-repository plan may produce one pull request per affected repository.
+- one pull request per covering tip. Stacked same-repository plans share that
+  one pull request; sibling stacks in one repository are several pull requests;
+  two repositories are at least two pull requests.
 
 Before opening, confirm the execution branch and its commits are available to
 the configured repository remote or provider and that the requested target

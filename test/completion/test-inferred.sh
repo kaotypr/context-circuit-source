@@ -1,9 +1,12 @@
 #!/bin/sh
 # Context Circuit v1.0 — inferred completion + change-set delivery (Phase 5).
 # Completion is inferred from candidate acceptance + delivery at Standard, and
-# explicit at Critical (INV-COMPLETE-01). Explore is planless. A change set — plans
-# delivered as one
-# pull request — has one candidate, so it is verified and accepted once (pain 6).
+# explicit at Critical (INV-COMPLETE-01). Explore is planless. A change set —
+# same-repository plans delivered as one pull request — has one tip-map
+# candidate, accepted once, with no delivery-time verifier. Plans in different
+# repositories never form a change set (INV-DELIVER-01). Named plans partition
+# by repository covering tip: a stack in one repository plus a plan in another
+# are two pull requests, not one per plan.
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
@@ -86,79 +89,108 @@ assert_eq "$cc_cur" "$cs_one"
 cs_rev=$(eng change-set-candidate "$ws" 0002-crit 0001-std | sed -n 's/^change_set_candidate: //p')
 assert_eq "$cs1" "$cs_rev"
 
-# --- change-set integration verification: one PR, one integration tip, verified and
-#     accepted ONCE against the change-set candidate (pain 6). Member executions
-#     supply worker commits but do not require separate verifier results: the
-#     integration verifier is the one assurance record for the set. ---
+# --- change-set delivery: one PR from the covering execution tip; no delivery
+#     verifier. Members keep their own candidate-bound passes (INV-DELIVER-01). ---
 cc_fx_plan_ex "$ws" 0020-csa "CS A" api src/a ""
-cc_fx_plan_ex "$ws" 0021-csb "CS B" api src/b ""
-run_worker_only() {
-	ws_arg=$1; pid_arg=$2; repo_arg=$3; path_arg=$4
-	exec_arg=$(eng execution-begin "$ws_arg" "$pid_arg" "$pid_arg-w" | sed -n 's/^execution_id: //p')
-	edir_arg=$(cc_fx_exec_dir "$ws_arg" "$pid_arg" "$exec_arg")
-	cc_attempt_begin "$edir_arg" >/dev/null
-	wt_arg="$ws_arg/.runtime/worktrees/$pid_arg/$repo_arg"
-	mkdir -p "$wt_arg/$path_arg"
-	printf 'member\n' >"$wt_arg/$path_arg/mod.txt"
-	git -C "$wt_arg" add -A
-	git -C "$wt_arg" commit -q -m "feat($repo_arg): add $path_arg/mod.txt"
-	cc_worker_commit_record "$edir_arg" "$repo_arg" implementation >/dev/null
-}
-run_worker_only "$ws" 0020-csa api src/a
-run_worker_only "$ws" 0021-csb api src/b
+cc_fx_plan_ex "$ws" 0021-csb "CS B" api src/b "0020-csa"
+cc_fx_run_ok "$ws" 0020-csa api src/a
+cc_fx_run_ok "$ws" 0021-csb api src/b
 csp=$(eng change-set-prepare "$ws" 0020-csa 0021-csb)
 csid=$(printf '%s\n' "$csp" | sed -n 's/^change_set: //p')
 printf '%s\n' "$csp" | grep -q 'status: prepared' || fail "change-set prepare should succeed"
 printf '%s\n' "$csp" | grep -q 'tier: standard' || fail "change-set tier should be max(members)=standard"
-require_dir "$ws/.runtime/change-sets/$csid/integration/api"        # the integration tip worktree
-# the integration tip contains BOTH members' files (verified once, together)
-require_file "$ws/.runtime/change-sets/$csid/integration/api/src/a/mod.txt"
-require_file "$ws/.runtime/change-sets/$csid/integration/api/src/b/mod.txt"
-# not ready until the ONE verifier pass AND the ONE acceptance bind to the candidate
+printf '%s\n' "$csp" | grep -q 'source_plan: 0021-csb' || fail "covering tip should be the stacked dependent"
+printf '%s\n' "$csp" | grep -q 'source_branch: cc/0021-csb/api' || fail "PR source should be the covering execution branch"
+test ! -d "$ws/.runtime/change-sets/$csid/integration" || fail "delivery must not author an integration worktree"
+# delivery never records a change-set verifier
+vprep=$(eng change-set-verifier-prepare "$ws" "$csid" 2>&1 || :)
+printf '%s\n' "$vprep" | grep -q 'CHANGE_SET_DELIVERY_HAS_NO_VERIFIER' || fail "change-set-verifier-prepare must fail: $vprep"
+vrec=$(eng change-set-verifier-record "$ws" "$csid" passed 2>&1 || :)
+printf '%s\n' "$vrec" | grep -q 'CHANGE_SET_DELIVERY_HAS_NO_VERIFIER' || fail "change-set-verifier-record must fail: $vrec"
+# not ready until the ONE acceptance binds to the tip-map candidate
 expect_failure eng change-set-ready "$ws" "$csid"
-expect_failure eng change-set-verifier-record "$ws" "$csid" passed --wrote-products   # read-only
-eng change-set-verifier-prepare "$ws" "$csid" >/dev/null
-eng change-set-verifier-record "$ws" "$csid" passed >/dev/null
 eng change-set-accept "$ws" "$csid" alice >/dev/null
 csr=$(eng change-set-ready "$ws" "$csid")
 printf '%s\n' "$csr" | grep -q 'change_set_ready: eligible' || fail "change set should be eligible"
-printf '%s\n' "$csr" | grep -q 'assurance: independent' || fail "standard change set needs an independent pass"
-# complete the whole set from the ONE change-set acceptance — every member is marked
-# done (pain 6: accept once, complete the set), with a reconciliation-debt marker each
+printf '%s\n' "$csr" | grep -q 'assurance: independent' || fail "standard change set reuses member independent passes"
 csc=$(eng change-set-complete "$ws" "$csid")
 printf '%s\n' "$csc" | grep -q 'completed: 2' || fail "change-set-complete must complete both members"
 assert_eq "done" "$(cc_plan_status "$ws" 0020-csa)"
 assert_eq "done" "$(cc_plan_status "$ws" 0021-csb)"
 require_file "$(cc_fx_exec_dir "$ws" 0021-csb "$(cc_latest_execution "$ws" 0021-csb)")/completion.yaml"
-# a member commit after prepare moves the candidate and voids the prepared evidence
+# a member commit after prepare moves the candidate and voids the recorded set
 wta="$ws/.runtime/worktrees/0020-csa/api"
 printf 'x\n' >>"$wta/src/a/mod.txt"; git -C "$wta" add -A; git -C "$wta" commit -q -m "feat(api): more a"
 cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0020-csa "$(cc_latest_execution "$ws" 0020-csa)")" api repair >/dev/null
 expect_failure eng change-set-ready "$ws" "$csid"                   # stale: a member moved
 
-# base drift after preparation also voids the integrated candidate, even when
-# no member branch moved (the pull request target changed underneath it).
-cc_fx_plan_ex "$ws" 0024-base "Base" api src/base ""
-run_worker_only "$ws" 0024-base api src/base
-base_set=$(eng change-set-prepare "$ws" 0024-base)
-base_csid=$(printf '%s\n' "$base_set" | sed -n 's/^change_set: //p')
-api_repo="$ws/repositories/api"
-printf 'base moved\n' >"$api_repo/base.txt"
-git -C "$api_repo" add base.txt
-git -C "$api_repo" commit -q -m "chore(api): advance base"
-expect_failure eng change-set-ready "$ws" "$base_csid"
-
-# --- change-set integration that will not build is BASE_UNBUILDABLE, not a failure ---
-cc_fx_plan_ex "$ws" 0022-cx "CX" api src/shared ""
-cc_fx_plan_ex "$ws" 0023-cy "CY" api src/shared ""
-cc_fx_run_ok "$ws" 0022-cx api src/shared
-excy=$(eng execution-begin "$ws" 0023-cy 0023-cy-w | sed -n 's/^execution_id: //p')
-cc_attempt_begin "$(cc_fx_exec_dir "$ws" 0023-cy "$excy")" >/dev/null
-wtcy="$ws/.runtime/worktrees/0023-cy/api"
-mkdir -p "$wtcy/src/shared"; printf 'DIFFERENT\n' >"$wtcy/src/shared/mod.txt"
-git -C "$wtcy" add -A; git -C "$wtcy" commit -q -m "feat(api): cy"
-cc_worker_commit_record "$(cc_fx_exec_dir "$ws" 0023-cy "$excy")" api implementation >/dev/null
+# --- parallel tips cannot ship as one pull request (no delivery merge) ---
+cc_fx_plan_ex "$ws" 0022-cx "CX" api src/cx ""
+cc_fx_plan_ex "$ws" 0023-cy "CY" api src/cy ""
+cc_fx_run_ok "$ws" 0022-cx api src/cx
+cc_fx_run_ok "$ws" 0023-cy api src/cy
 uo=$(eng change-set-prepare "$ws" 0022-cx 0023-cy 2>&1 || :)
-printf '%s\n' "$uo" | grep -q 'BASE_UNBUILDABLE' || fail "conflicting change set must be BASE_UNBUILDABLE"
+printf '%s\n' "$uo" | grep -q 'CHANGE_SET_NO_SINGLE_TIP' || fail "parallel tips must fail CHANGE_SET_NO_SINGLE_TIP: $uo"
+po=$(eng change-set-partition "$ws" 0022-cx 0023-cy)
+printf '%s\n' "$po" | grep -q 'groups: 2' || fail "parallel same-repo tips are two covering groups: $po"
+printf '%s\n' "$po" | grep -q 'pull_requests: 2' || fail "parallel tips are two pull requests: $po"
+printf '%s\n' "$po" | grep -q 'covering_plan: 0022-cx' || fail "each parallel tip is a covering plan: $po"
+printf '%s\n' "$po" | grep -q 'covering_plan: 0023-cy' || fail "each parallel tip is a covering plan: $po"
+if printf '%s\n' "$po" | grep -q 'blocked_reason:'; then fail "partition must not block sibling tips: $po"; fi
+
+# --- cross-repo members never form a change set (INV-DELIVER-01) ---
+cc_fx_plan_ex "$ws" 0025-xapi "XAPI" api src/xapi ""
+cc_fx_plan_ex "$ws" 0026-xweb "XWEB" web src/xweb ""
+cc_fx_run_ok "$ws" 0025-xapi api src/xapi
+cc_fx_run_ok "$ws" 0026-xweb web src/xweb
+xo=$(eng change-set-candidate "$ws" 0025-xapi 0026-xweb 2>&1 || :)
+printf '%s\n' "$xo" | grep -q 'CHANGE_SET_CROSS_REPO' || fail "cross-repo change-set-candidate must fail CHANGE_SET_CROSS_REPO: $xo"
+printf '%s\n' "$xo" | grep -q 'change_set_candidate:' && fail "cross-repo change-set-candidate must not emit a candidate"
+xo2=$(eng change-set-prepare "$ws" 0025-xapi 0026-xweb 2>&1 || :)
+printf '%s\n' "$xo2" | grep -q 'CHANGE_SET_CROSS_REPO' || fail "cross-repo change-set-prepare must fail CHANGE_SET_CROSS_REPO: $xo2"
+printf '%s\n' "$xo2" | grep -q 'change_set:' && fail "cross-repo prepare must not emit a change set"
+
+# --- four plans, two repositories: partition to two covering-tip PRs ---
+cc_fx_plan_ex "$ws" 0030-a1 "A1" api src/a1 ""
+cc_fx_plan_ex "$ws" 0031-a2 "A2" api src/a2 "0030-a1"
+cc_fx_plan_ex "$ws" 0032-a3 "A3" api src/a3 "0031-a2"
+cc_fx_plan_ex "$ws" 0033-b1 "B1" web src/b1 ""
+cc_fx_run_ok "$ws" 0030-a1 api src/a1
+cc_fx_run_ok "$ws" 0031-a2 api src/a2
+cc_fx_run_ok "$ws" 0032-a3 api src/a3
+cc_fx_run_ok "$ws" 0033-b1 web src/b1
+part=$(eng change-set-partition "$ws" 0030-a1 0031-a2 0032-a3 0033-b1)
+printf '%s\n' "$part" | grep -q 'groups: 2' || fail "3 stacked in api + 1 in web must be two groups: $part"
+printf '%s\n' "$part" | grep -q 'pull_requests: 2' || fail "two covering tips are two pull requests: $part"
+printf '%s\n' "$part" | grep -q 'covering_plan: 0032-a3' || fail "api covering tip is the last stacked member: $part"
+printf '%s\n' "$part" | grep -q 'source_branch: cc/0032-a3/api' || fail "api PR source is the covering branch: $part"
+printf '%s\n' "$part" | grep -q 'covering_plan: 0033-b1' || fail "web covering tip is the lone plan: $part"
+printf '%s\n' "$part" | grep -q 'source_branch: cc/0033-b1/web' || fail "web PR source is the lone branch: $part"
+ncand=$(printf '%s\n' "$part" | grep -c '^candidate_id: ')
+[ "$ncand" -eq 2 ] || fail "two groups must emit two candidates: $part"
+xo4=$(eng change-set-prepare "$ws" 0030-a1 0031-a2 0032-a3 0033-b1 2>&1 || :)
+printf '%s\n' "$xo4" | grep -q 'CHANGE_SET_CROSS_REPO' || fail "mixed-repo prepare must still fail: $xo4"
+csp3=$(eng change-set-prepare "$ws" 0030-a1 0031-a2 0032-a3)
+printf '%s\n' "$csp3" | grep -q 'source_plan: 0032-a3' || fail "api stack prepare covering tip: $csp3"
+printf '%s\n' "$csp3" | grep -q 'source_branch: cc/0032-a3/api' || fail "api stack PR source: $csp3"
+
+# --- sibling stacks in one repository are two covering-tip PRs, not zero ---
+cc_fx_plan_ex "$ws" 0040-root "Root" api src/root ""
+cc_fx_plan_ex "$ws" 0041-left "Left" api src/left "0040-root"
+cc_fx_plan_ex "$ws" 0042-right "Right" api src/right "0040-root"
+cc_fx_run_ok "$ws" 0040-root api src/root
+cc_fx_run_ok "$ws" 0041-left api src/left
+cc_fx_run_ok "$ws" 0042-right api src/right
+fork=$(eng change-set-partition "$ws" 0040-root 0041-left 0042-right)
+printf '%s\n' "$fork" | grep -q 'groups: 2' || fail "1→2 and 1→3 must be two covering groups: $fork"
+printf '%s\n' "$fork" | grep -q 'pull_requests: 2' || fail "sibling stacks are two pull requests: $fork"
+printf '%s\n' "$fork" | grep -q 'covering_plan: 0041-left' || fail "left stack covering tip: $fork"
+printf '%s\n' "$fork" | grep -q 'covering_plan: 0042-right' || fail "right stack covering tip: $fork"
+printf '%s\n' "$fork" | grep -q 'source_branch: cc/0041-left/api' || fail "left PR source: $fork"
+printf '%s\n' "$fork" | grep -q 'source_branch: cc/0042-right/api' || fail "right PR source: $fork"
+printf '%s\n' "$fork" | grep -q 'members: 0040-root, 0041-left' || fail "left PR contains the shared root: $fork"
+printf '%s\n' "$fork" | grep -q 'members: 0040-root, 0042-right' || fail "right PR contains the shared root: $fork"
+fo=$(eng change-set-prepare "$ws" 0040-root 0041-left 0042-right 2>&1 || :)
+printf '%s\n' "$fo" | grep -q 'CHANGE_SET_NO_SINGLE_TIP' || fail "forcing sibling tips into one prepare must fail: $fo"
 
 pass 'inferred completion and change-set delivery'

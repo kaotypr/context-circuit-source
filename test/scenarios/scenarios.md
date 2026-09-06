@@ -41,10 +41,14 @@ Invariant: no plan file exists for the un-promoted Explore work.
 1. Two dependent plans (API first, consumer second), both in `checkout-service` and
    under one intent, execute independently. The dependency is recorded between the
    plans, not as a second approval decision.
-2. At delivery the human groups them into one change set (one pull request).
+2. At delivery the human groups them into one change set (one pull request from
+   the covering execution branch). They share one repository. Named plans
+   partition by repository covering tip: a three-deep stack in one repository
+   plus one plan in another is two pull requests, not four and not one.
+   Delivery does not spawn a verifier.
 3. Each plan keeps its own worker/verifier lifecycle. The change-set candidate is
-   computed once over the combined tip set; the independent verifier runs once
-   against it. One acceptance, one delivery.
+   the member tip map; the independent verifier is not re-run. One acceptance, one
+   delivery.
 
 ## Scenario D — a criteria change re-gates
 

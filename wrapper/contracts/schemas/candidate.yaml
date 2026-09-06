@@ -52,9 +52,14 @@ interaction:
     re-verification the drift guard (INV-DELIVER-01) already demands is the general
     candidate rule doing its job, not a special case.
   change_set: >
-    Several stacked plans that converge to one pull request form one change set; the
-    candidate is computed over the combined integration tip, so one candidate is
-    verified once and accepted once (concurrency-and-candidate.md).
+    Several stacked plans in the same repository that converge to one pull
+    request form one change set; the candidate is the live member tip map, so
+    it is accepted once and does not require a delivery-time verifier. The pull
+    request source is the covering execution branch (the tip that already
+    contains the other members). Named plans partition by covering tip: each
+    covering tip is one candidate and one pull request. A repository may have
+    several covering tips (sibling stacks). Plans in different repositories
+    never form one change set.
 
 rules:
   - INV-CANDIDATE-01

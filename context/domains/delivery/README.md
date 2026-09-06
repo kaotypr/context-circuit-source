@@ -66,6 +66,17 @@ completion. The engine's delivery function is report-only: it produces the
 per-repository pull-request source and default target and never pushes, merges,
 or opens pull requests itself.
 
+A pull request is per covering tip, not per plan and not per repository. Named
+plans partition by covering execution branch: stacked dependents that already
+nest are one change set and one pull request; sibling stacks in the same
+repository are several pull requests (`cc/2/A` and `cc/3/A` when 2 and 3 both
+depend on 1), not zero. Four plans of which three stack in A and one lives in
+B are two candidates and two pull requests. Plans in different repositories
+never form one change set and never require a fresh combined verifier
+(INV-DELIVER-01). A change set is only same-repository stacked plans that
+already share one covering execution branch; delivery records that tip map and
+does not spawn a verifier.
+
 **Drift guard (INV-DELIVER-01 extended).** When a plan is delivered and its
 recorded base has diverged from the current `base_branch` tip (because a sibling
 plan already merged), the plan is rebased onto the current tip and re-verified
@@ -110,11 +121,14 @@ requested; a failed execution is never cleaned up as a side effect.
 
 - `.agents/skills/cc-deliver/SKILL.md`
 - `wrapper/runtime/engine.sh`: `cc_delivery_targets` (read-only report),
-`cc_delivery_drift`, `cc_delivery_rebase` (delivery drift guard)
-- `.agents/skills/cc-deliver/SKILL.md` (Drift guard section)
+`cc_delivery_drift`, `cc_delivery_rebase` (delivery drift guard),
+`cc_change_set_partition` / `cc_change_set_prepare` / `cc_change_set_candidate`
+(`CHANGE_SET_CROSS_REPO`, `CHANGE_SET_NO_SINGLE_TIP`,
+`CHANGE_SET_DELIVERY_HAS_NO_VERIFIER`)
+- `.agents/skills/cc-deliver/SKILL.md` (one pull request per covering tip; Drift guard section)
 - `wrapper/adapters/WORKFLOW.md` (delivery-boundary owner per `invariants.yaml`)
-- `wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (with the drift-guard
-  clause), INV-DELIVER-02, INV-PAIR-01 (pairing delivery blocks on base drift)
+- `wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (same-repository change sets
+  and the drift-guard clause), INV-DELIVER-02, INV-PAIR-01 (pairing delivery blocks on base drift)
 - `.agents/skills/cc-pair/SKILL.md` (pairing delivery is a separate `cc-deliver`
   action, human-supervised)
 
@@ -139,4 +153,12 @@ human-supervised action that blocks on base drift rather than rebasing (the plan
 drift guard is unchanged and remains the only auto-rebase path). Re-grounded
 2026-09-04 for Context Circuit v1.0: delivery is named as Gate 2, the point where
 scope-safety is settled now that there is no automated scope gate upstream
-(mechanics unchanged).
+(mechanics unchanged). Extended 2026-09-06: a change set is only same-repository
+plans that will ship as one pull request; different repositories deliver
+independently as separate covering-tip pull requests and never share an
+integration candidate. Extended 2026-09-06:
+delivery does not spawn a verifier; a same-repository change set is the member
+tip map and the covering execution branch. Extended 2026-09-06: named plans
+partition by repository covering tip, so a three-deep stack in one repository
+plus one plan in another is two pull requests, not four. Sibling stacks in
+one repository are several pull requests, not zero.

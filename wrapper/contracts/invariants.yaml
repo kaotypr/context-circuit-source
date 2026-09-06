@@ -282,11 +282,20 @@ invariants:
       cleanup are separate human-requested actions. A pull request uses each
       execution branch as source and the repository's recorded base_branch as
       the default target; it never substitutes default_branch or silently follows
-      a moving remote. Drift guard: when a plan is delivered and its
-      recorded base has diverged from the current base_branch tip (because a
-      sibling plan already merged), the plan is rebased onto the current tip and
-      re-verified before its pull request opens. A plan is never merged from a
-      base that no longer reflects the branch it will land on.
+      a moving remote. Delivery partitions named plans by covering tip: each
+      covering execution tip is one candidate and one pull request. A repository
+      may have several covering tips (sibling stacks). Stacked dependents that
+      already nest on one tip are one change set, not one pull request per plan; plans in different repositories are delivered
+      independently as separate covering-tip pull requests and never combined
+      into an integration candidate or a fresh shared verifier. Delivery does not spawn a verifier:
+      a change set is the member tip map and reuses each member's candidate-bound
+      independent pass; the pull request source is the one covering execution branch.
+      Cross-repo predecessors remain ordering gates only (INV-CONCURRENCY-02). Drift guard:
+      when a plan is delivered and its recorded base has diverged from the
+      current base_branch tip (because a sibling plan already merged), the plan
+      is rebased onto the current tip and re-verified before its pull request
+      opens. A plan is never merged from a base that no longer reflects the
+      branch it will land on.
   - id: INV-DELIVER-02
     rule: >
       Delivery blocks and reports when the source branch, configured provider or
