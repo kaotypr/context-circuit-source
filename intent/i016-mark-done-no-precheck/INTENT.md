@@ -1,44 +1,35 @@
 # Intention — i016
 
-_Status: approved, look complete, feasible.
-
-_Status: approved.
-
 _Status: draft, waiting for your approval._
 
 ## Intention
 
-What you want: **when you ask to mark a plan done, the agent marks it done.** Same if you name several plans. It does not first inspect whether the work and evidence exist.
+What you want: **when you ask to mark a plan done, the agent changes that plan's status to done.** Same if you name several plans. There is no check.
 
-That extra look is wasted agent work. Readiness stays a runtime check: if the plan is not ready to be done, mark-done refuses and that is reported plainly. There is no separate “I’ll check the work first” step.
+No look at the work. No look at evidence. No refusal because the plan was never built, failed a check, or was not "ready". Asking is enough. The status flips.
 
 ```mermaid
 flowchart TD
-  A["Ask to mark a plan, or plans, done"] --> B["Mark them done"]
-  B -->|ready| C["Plan is done"]
-  B -->|not ready| D["Refuse and say so"]
+  A["Ask to mark a plan, or plans, done"] --> B["Each named plan's status becomes done"]
 ```
 
 ## Expectations
 
-- Asking to mark a plan done marks it done. Asking for several plans marks each of them done.
-- The agent does not inspect work or evidence before that flip.
-- If a plan is not ready to be done, mark-done refuses and that is reported plainly.
+- Asking to mark a plan done changes its status to done. Asking for several plans does that for each named plan.
+- Nothing inspects work or evidence first, and nothing refuses the flip for unreadiness.
 - A plan still becomes done only when you ask. Verification, candidate acceptance, and delivery do not mark it done.
 - Knowledge update after mark-done, when the plan affected Product Knowledge, stays as it is.
 
 ## The plans
 
-1. **Mark done without a pre-check.**
-   _After this:_ asking to mark a plan or plans done marks them done; the agent does not first inspect whether work and evidence exist.
-2. **Prove the pre-check is gone.**
-   _After this:_ checks fail if mark-done still inspects work or evidence before flipping status, or if a refused mark-done is not reported plainly.
+1. **Flip plan status on ask, with no check.**
+   _After this:_ asking to mark a plan or several plans done changes each named plan's status to done. There is no look and no unreadiness refusal.
 
 ## How carefully this is checked
 
 **`Standard`**
 
-This changes the completion path every workspace agent follows, so an independent verifier should confirm the extra look is gone and that a not-ready plan still refuses.
+This changes the completion path every workspace agent follows, including dropping the unreadiness refusal, so a second agent should confirm the status flips on ask with no check.
 
 Explanations:
 - **Explore:** you check it yourself as you work alongside the agent — no separate
@@ -51,4 +42,5 @@ Explanations:
 
 ## Open questions
 
-_At draft time: no known unresolved human decisions._
+**If a plan was never built, failed its check, or has no evidence, should asking to mark it done still flip it to done?**
+_Answer: Yes. No check. Asking to mark it done changes the plan status. The agent does not look, and nothing else refuses for unreadiness._
