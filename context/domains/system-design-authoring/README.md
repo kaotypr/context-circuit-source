@@ -74,8 +74,8 @@ is not Product Knowledge and has no approval of its own.
 - **Scope by concern, never by repository.** The top level keys the
   product/initiative; deep per-repo detail is a scope, not a separate design.
 - **Feeds the existing flow.** A product-level system design is read during
-  ordinary context gathering and motivates context proposals through the existing
-  path; plans ground in the resulting Product Knowledge via existing
+  ordinary context gathering and motivates in-place Product Knowledge updates
+  through that path; plans ground in the resulting Product Knowledge via existing
   `product_knowledge` references. There is no design-acceptance gate and no new
   plan field. Intent detail is the confirmed topic shape of one intent: after
   Gate 1, planning uses it when present, without replacing the post-approval
@@ -121,3 +121,5 @@ Updated 2026-08-29 from proposal `0027-system-design-grouping` (v0.6.1
 design-layout-grouping): the middle path segment is a grouping dimension
 (version-default, 3-number semver going forward; named groupings allowed) with an
 agent current/next default derivation. Implementation `c67dd23`.
+Refreshed 2026-09-06: gathering motivates in-place Product Knowledge updates,
+not a proposal sidecar.

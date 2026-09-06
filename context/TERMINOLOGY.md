@@ -19,7 +19,7 @@ retrievable.
 | Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
 | Worker / verifier | The single role that implements an intent-authorized plan and commits its changes for an execution; the independent read-only role that checks the worker's latest commits. |
 | Repair attempt | A new worker commit plus a new independent check after a failed verification. |
-| Completion | The implementation-completion record: Standard is inferred from accepted delivery, Critical is explicit after verification, and Explore is planless. |
+| Completion | The implementation-completion record: an explicit human mark-done at Standard and Critical. Explore is planless. Delivery does not complete a plan. When the plan affected Product Knowledge, mark-done then updates live context files in place. |
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
 | Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
@@ -63,3 +63,6 @@ Extended 2026-08-28 from proposal `0025-change-terminology`: the Delivery row dr
 "publishing" (git delivery no longer uses the word), and the external-surface terms
 (publication, publish/`cc-publish`, publication kind, publication `instructions`) are
 added and mirrored in `docs/terminology.md`.
+Extended 2026-09-06: Completion is explicit mark-done at Standard and Critical;
+delivery does not complete a plan; mark-done then updates live context files
+when Product Knowledge was affected.
