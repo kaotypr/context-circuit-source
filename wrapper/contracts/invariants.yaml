@@ -95,8 +95,8 @@ invariants:
       a candidate; any new commit OR a criteria change (re-approved on the intent)
       yields a new candidate and voids all prior evidence and acceptance for the old
       one. No role decides whether old evidence is "close enough"; the void is by
-      construction. completion-ready refuses to complete when the verified evidence
-      no longer describes the current candidate. This generalizes the verifier's
+      construction. Stale or missing evidence still voids verify and deliver;
+      it does not refuse mark-done (INV-COMPLETE-01). This generalizes the verifier's
       existing read-only tip check (VERIFIER_MODIFIED_PRODUCT) from "tips unchanged
       since the worker commit" to "candidate unchanged since the evidence was
       recorded", and extends it to human acceptance.
@@ -111,10 +111,12 @@ invariants:
       verifier bound to the current candidate (INV-VERIFY-01). The runtime is
       model-blind (INV-RUNTIME-01): it never selects a tier; it provides a
       deterministic fail-upward signal classifier over declared facts and enforces
-      the floor — completion-ready refuses a Standard/Critical candidate without a
-      candidate-bound independent pass and refuses to treat an Explore result as
-      verified, and approval refuses the Explore tier (which drops the verifier)
-      whenever a risk signal is present. Tiering fails upward: when unsure, tier
+      the floor at approval and verifier spawn — approval refuses the Explore tier
+      (which drops the verifier) whenever a risk signal is present, Standard and
+      Critical execution requires a candidate-bound independent pass
+      (INV-VERIFY-01), and it refuses to treat an Explore result as verified.
+      completion-ready reports that eligibility as a query; it does not refuse
+      mark-done (INV-COMPLETE-01). Tiering fails upward: when unsure, tier
       higher. Direct collaboration (cc-pair) is the Explore tier of this ladder,
       not a separate mode: INV-PAIR-01's mechanics stand in full, plus an explicit
       promote step that attaches an intent and raises the tier to turn a session
@@ -230,19 +232,21 @@ invariants:
       Standard and Critical plans become done only on an explicit human
       mark-done request. Explore is planless until promotion, so it has no plan
       completion record. Verification, candidate acceptance, and delivery never
-      mark a plan done. Completion-ready enforces the tier floor: a
-      Standard/Critical plan requires a candidate-bound independent pass that
-      still describes the current candidate before mark-done can succeed.
+      mark a plan done. Mark-done changes plan status with no look at work or
+      evidence and no unreadiness refusal: a plan that was never built, failed
+      a check, or has no evidence still becomes done when the human asks.
       Verification alone never completes anything.
   - id: INV-COMPLETE-02
     rule: >
-      An explicit mark-done writes the implementation completion record (plan
-      revision, candidate, execution, per-repository commits, verifier result,
-      acceptor) and changes plan status draft → done. When the plan affected
-      Product Knowledge, that same mark-done starts in-place reconcile of live
-      context/ files (INV-KNOWLEDGE-02). Delivery does not start reconcile and
-      does not mark the plan done. The runtime never writes or interprets
-      Product Knowledge; in-place edits are a coordinator act after mark-done.
+      An explicit mark-done changes plan status draft → done. When an
+      implementation completion record can be populated from existing execution
+      files (plan revision, candidate, execution, per-repository commits,
+      verifier result, acceptor), it is written; missing files do not block the
+      status change. When the plan affected Product Knowledge, that same
+      mark-done starts in-place reconcile of live context/ files
+      (INV-KNOWLEDGE-02). Delivery does not start reconcile and does not mark
+      the plan done. The runtime never writes or interprets Product Knowledge;
+      in-place edits are a coordinator act after mark-done.
   - id: INV-ARCHIVE-01
     rule: >
       Archiving moves plans/<id>/ to plans/archive/<id>/, removes the row from

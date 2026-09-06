@@ -18,9 +18,8 @@ re-enters Gate 1; the plan is held and re-gated to the human, never rubber-stamp
 A v1.0 plan exists only at **Standard or Critical** (INV-ASSURE-01): Explore work
 is direct collaboration (`cc-pair`) with no plan and no independent verifier. So a
 plan execution here always spawns the independent verifier bound to the candidate;
-never drop it. At Critical, completion additionally requires an explicit human act
-(the plan is not auto-completed). The tier is declared on the parent intent; the
-runtime enforces the floor (`completion-ready`).
+never drop it. Plans are not auto-completed; an explicit mark-done is a
+separate human ask (`cc-complete`). The tier is declared on the parent intent.
 
 ## Execute
 

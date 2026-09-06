@@ -2852,9 +2852,10 @@ cc_human_acceptance_current() {
 # deterministic, fail-upward SIGNAL classifier over declared facts (scope paths and
 # repository count) — the same kind of deterministic data extraction as the
 # grounding scan, not model intelligence — plus the enforcement of the tier floor
-# (completion-ready) and a guard that refuses dropping the independent verifier
-# (tier explore) when any risk signal is present. Skipping the verifier at Explore
-# is safe only if this fails upward: when unsure, tier higher, never lower.
+# at approval and verifier spawn. completion-ready reports that eligibility as a
+# query; it does not refuse mark-done. A guard refuses dropping the independent
+# verifier (tier explore) when any risk signal is present. Skipping the verifier
+# at Explore is safe only if this fails upward: when unsure, tier higher, never lower.
 # ---------------------------------------------------------------------------
 
 # cc_tier_signals CONTRACT_FILE -> emit each detected risk-signal category, one per
@@ -3062,10 +3063,11 @@ cc_latest_execution() {
 	ls -1 "$cc_le_base" 2>/dev/null | grep '^exec-' | sort | tail -n1
 }
 
-# cc_completion_ready ROOT PLAN -> eligible only if the latest execution's evidence
-# still describes the current candidate (INV-CANDIDATE-01): a new commit or criteria
-# change after the pass voids the evidence, so completion is refused until re-verified.
-# The tier floor (INV-ASSURE-01) decides what evidence is required.
+# cc_completion_ready ROOT PLAN -> eligibility query for the verifier floor and
+# candidate honesty (INV-ASSURE-01, INV-CANDIDATE-01). It does not refuse
+# mark-done (INV-COMPLETE-01). A new commit or criteria change after a pass
+# voids the evidence for verify and deliver until re-verified.
+# The tier floor decides what evidence the query reports.
 cc_completion_ready() {
 	cc_cr_root="$1"; cc_cr_plan="$2"
 	cc_intent_authorized "$cc_cr_root" "$cc_cr_plan" >/dev/null \
@@ -3103,52 +3105,59 @@ cc_completion_ready() {
 }
 
 # cc_completion_finalize ROOT PLAN KIND -> shared completion writer (KIND is the
-# human_completion value: accepted for an explicit human mark-done). Writes the
-# completion record and sets status done. Does not emit a reconcile-starting
-# debt marker and does not write context/ files (INV-COMPLETE-02, INV-RUNTIME-01).
+# human_completion value: accepted for an explicit human mark-done). Sets status
+# done. Writes the completion record only when execution evidence files exist;
+# missing files do not block the status change (INV-COMPLETE-01/02). Does not
+# emit a reconcile-starting debt marker and does not write context/ files
+# (INV-COMPLETE-02, INV-RUNTIME-01).
 cc_completion_finalize() {
 	cc_cf_root="$1"; cc_cf_plan="$2"; cc_cf_kind="$3"
-	cc_cf_exec=$(cc_latest_execution "$cc_cf_root" "$cc_cf_plan")
-	cc_cf_edir=$(cc_execution_dir "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec")
 	cc_cf_yaml="$cc_cf_root/plans/$cc_cf_plan/plan.yaml"
+	[ -f "$cc_cf_yaml" ] || { cc_fail PLAN_YAML_MISSING "$cc_cf_plan"; return 1; }
 	cc_cf_status=$(cc_scalar "$cc_cf_yaml" "status")
 	[ "$cc_cf_status" = "draft" ] || { cc_fail COMPLETION_PLAN_NOT_OPEN "$cc_cf_status"; return 1; }
-	cc_cf_candidate=$(cc_candidate_id "$cc_cf_edir") || return 1
-	cc_cf_revision=$(cc_scalar "$cc_cf_edir/execution.yaml" "plan_revision" 2>/dev/null) || cc_cf_revision=""
-	[ -n "$cc_cf_revision" ] || { cc_fail COMPLETION_PLAN_REVISION_MISSING "$cc_cf_plan"; return 1; }
-	cc_cf_acceptor=$(cc_scalar "$cc_cf_edir/human-acceptance.yaml" "accepted_by" 2>/dev/null) || cc_cf_acceptor=""
-	[ -n "$cc_cf_acceptor" ] || { cc_fail COMPLETION_ACCEPTOR_MISSING "$cc_cf_plan"; return 1; }
-	cc_cf_verified=$(cc_scalar "$cc_cf_edir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cf_verified=""
-	cc_cf_verdict=not-run
-	[ -n "$cc_cf_verified" ] && cc_cf_verdict=passed
-	{
-		printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
-			"$CC_COMPLETION_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_candidate" "$cc_cf_revision" "$cc_cf_acceptor" "$cc_cf_verdict" "$cc_cf_kind" "$(cc_now)"
-		for cc_cf_rf in "$cc_cf_edir"/repositories/*.yaml; do
-			[ -f "$cc_cf_rf" ] || continue
-			printf '  %s: %s\n' "$(cc_scalar "$cc_cf_rf" repository)" "$(cc_scalar "$cc_cf_rf" latest_commit)"
-		done
-		} | cc_atomic_write "$cc_cf_edir/completion.yaml" \
-			|| { cc_fail COMPLETION_RECORD_WRITE_FAILED; return 1; }
+	cc_cf_exec=$(cc_latest_execution "$cc_cf_root" "$cc_cf_plan" 2>/dev/null) || cc_cf_exec=""
+	if [ -n "$cc_cf_exec" ]; then
+		cc_cf_edir=$(cc_execution_dir "$cc_cf_root" "$cc_cf_plan" "$cc_cf_exec")
+		cc_cf_candidate=$(cc_candidate_id "$cc_cf_edir" 2>/dev/null) || cc_cf_candidate=""
+		cc_cf_revision=$(cc_scalar "$cc_cf_edir/execution.yaml" "plan_revision" 2>/dev/null) || cc_cf_revision=""
+		cc_cf_acceptor=$(cc_scalar "$cc_cf_edir/human-acceptance.yaml" "accepted_by" 2>/dev/null) || cc_cf_acceptor=""
+		if [ -n "$cc_cf_candidate" ] && [ -n "$cc_cf_revision" ] && [ -n "$cc_cf_acceptor" ]; then
+			cc_cf_verified=$(cc_scalar "$cc_cf_edir/execution.yaml" "verified_candidate" 2>/dev/null) || cc_cf_verified=""
+			cc_cf_verdict=not-run
+			[ -n "$cc_cf_verified" ] && cc_cf_verdict=passed
+			{
+				printf 'schema_version: %s\nexecution_id: %s\nplan: %s\ncandidate_id: %s\nplan_revision: %s\naccepted_by: %s\nverifier_outcome: %s\nhuman_completion: %s\ncompleted_at: %s\ncommits:\n' \
+					"$CC_COMPLETION_SCHEMA_VERSION" "$cc_cf_exec" "$cc_cf_plan" "$cc_cf_candidate" "$cc_cf_revision" "$cc_cf_acceptor" "$cc_cf_verdict" "$cc_cf_kind" "$(cc_now)"
+				for cc_cf_rf in "$cc_cf_edir"/repositories/*.yaml; do
+					[ -f "$cc_cf_rf" ] || continue
+					printf '  %s: %s\n' "$(cc_scalar "$cc_cf_rf" repository)" "$(cc_scalar "$cc_cf_rf" latest_commit)"
+				done
+			} | cc_atomic_write "$cc_cf_edir/completion.yaml" \
+				|| { cc_fail COMPLETION_RECORD_WRITE_FAILED; return 1; }
+			cc_emit implementation_completion recorded
+		fi
+	fi
 	cc_plan_set_status "$cc_cf_yaml" "done" || { cc_fail COMPLETION_STATUS_UPDATE_FAILED "$cc_cf_plan"; return 1; }
 	cc_plan_index_upsert "$cc_cf_root" "$cc_cf_plan" >/dev/null
 	cc_emit plan "$cc_cf_plan"
 	cc_emit status done
 	cc_emit human_completion "$cc_cf_kind"
-	cc_emit implementation_completion recorded
 	return 0
 }
 
 # cc_plan_complete ROOT PLAN -> the EXPLICIT human mark-done path for Standard
-# and Critical (INV-COMPLETE-01). Explore is planless. Still gated by
-# completion-ready. In-place Product Knowledge reconcile, when needed, is a
-# coordinator act after this flip — the engine does not write context/.
+# and Critical (INV-COMPLETE-01). Asking flips status with no look at work or
+# evidence and no unreadiness refusal. Explore is planless. In-place Product
+# Knowledge reconcile, when needed, is a coordinator act after this flip —
+# the engine does not write context/.
 cc_plan_complete() {
-	cc_pc_exec=$(cc_latest_execution "$1" "$2") || { cc_fail COMPLETION_NO_EXECUTION; return 1; }
-	cc_pc_edir=$(cc_execution_dir "$1" "$2" "$cc_pc_exec")
-	cc_pc_tier=$(cc_scalar "$cc_pc_edir/execution.yaml" tier 2>/dev/null) || cc_pc_tier=standard
-	[ "$cc_pc_tier" != explore ] || { cc_fail COMPLETION_EXPLORE_PLANLESS "$2"; return 1; }
-	cc_completion_ready "$1" "$2" >/dev/null || { cc_fail COMPLETION_BLOCKED; return 1; }
+	cc_pc_exec=$(cc_latest_execution "$1" "$2" 2>/dev/null) || cc_pc_exec=""
+	if [ -n "$cc_pc_exec" ]; then
+		cc_pc_edir=$(cc_execution_dir "$1" "$2" "$cc_pc_exec")
+		cc_pc_tier=$(cc_scalar "$cc_pc_edir/execution.yaml" tier 2>/dev/null) || cc_pc_tier=standard
+		[ "$cc_pc_tier" != explore ] || { cc_fail COMPLETION_EXPLORE_PLANLESS "$2"; return 1; }
+	fi
 	cc_completion_finalize "$1" "$2" accepted
 }
 

@@ -41,7 +41,7 @@ tiering rule in `invariants.yaml`.
 
 Inside: the three tiers and what each buys, the model-blind risk-signal
 classifier, fail-upward behavior, the lowering guard, and the floor enforced at
-approval and at completion.
+approval and verifier spawn.
 
 Outside: the intent that declares the tier ([intent and Gate 1](../intent/README.md)),
 the tier *signal* the tracer contributes ([tracing and feasibility](../tracing/README.md)),
@@ -74,9 +74,10 @@ and **enforces the floor**:
   plus whether Explore is still permissible;
 - **approval refuses the Explore tier** (which would drop the verifier) whenever a
   risk signal is present;
-- **completion-ready refuses** a Standard/Critical candidate without a
-  candidate-bound independent pass, and refuses to treat an Explore result as
-  verified.
+- **Standard and Critical execution** requires a candidate-bound independent pass,
+  and the runtime refuses to treat an Explore result as verified.
+  `completion-ready` reports that eligibility as a query; it does not refuse
+  mark-done.
 
 **Tiering fails upward: when unsure, tier higher.** A benign path that shares scope
 with a risk surface still tiers to the risk surface; the highest signal across all
@@ -87,7 +88,7 @@ Standard keeps the verifier and is allowed).
 ## Interfaces
 
 - Human-facing: the intent's "How carefully this is checked" line (`Explore` / `Standard` / `Critical`)
-- Engine (report/enforce only, never selects): `tier-classify`, `tier-lower-check`; floor enforced inside `intent-approve` and `completion-ready`
+- Engine (report/enforce only, never selects): `tier-classify`, `tier-lower-check`; floor enforced inside `intent-approve` and verifier spawn. `completion-ready` is an eligibility query, not a mark-done gate.
 - Signals: repository count, security/secrets, money, data migration, production/deploy, irreversibility, novelty
 
 ## Data
@@ -108,7 +109,7 @@ cannot create an independent verifier at Standard/Critical, the execution is
 
 ## Implementation references
 
-- `wrapper/runtime/engine.sh`: `cc_tier_classify`, `cc_tier_signals`, `cc_tier_lower_check`, `cc_intent_scope_repos`, `cc_intent_scope_paths`; floor in `cc_intent_approve`, `cc_completion_ready`
+- `wrapper/runtime/engine.sh`: `cc_tier_classify`, `cc_tier_signals`, `cc_tier_lower_check`, `cc_intent_scope_repos`, `cc_intent_scope_paths`; floor in `cc_intent_approve` and verifier spawn. `cc_completion_ready` remains an eligibility query.
 - `wrapper/contracts/invariants.yaml`: INV-ASSURE-01, INV-VERIFY-01, INV-VERIFY-02, INV-COMPLETE-01, INV-PAIR-01 (owner map: `assurance_tiering`)
 
 ## Verification

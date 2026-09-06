@@ -2,11 +2,9 @@
 #
 # Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 17
 # (same seed + budget; expectations sourced from the plot). Would live at
-# scenarios/17-stale-candidate-requires-reverification/. NOTE: acceptance_criteria
-# corrected from case 17's [AC-14, AC-15, AC-28] to [AC-14, AC-32] (candidate
-# staleness) — see coverage/phase-5.md.
+# scenarios/17-stale-candidate-requires-reverification/.
 id: stale-candidate-refuse-complete
-title: Refuse completion when a post-verification change makes the candidate stale
+title: Mark a plan done even when a post-verification change makes the candidate stale
 mode: full-execution
 
 setup:
@@ -29,20 +27,17 @@ setup:
 human:
   persona: >
     A solo maker who changed the already-checked export afterward and now wants to call
-    it finished. They accept that the new version needs another check. Has never heard
-    of Context Circuit or its internals.
+    it finished. Has never heard of Context Circuit or its internals.
   turns:
     - say: "I changed the checked export afterward. Can you mark it complete now?"
-    - say: "Please do not treat the earlier check as enough. Leave it pending until the changed version is checked again."
     - say: "Thanks."
   reactions:
     approves: false
     invents_repository: never
     uses_internal_terms: never
   visible_expectations:
-    - It says the earlier check no longer covers the changed result.
-    - It refuses to complete or deliver the changed result on stale evidence.
-    - It preserves the work and explains that a fresh independent check and acceptance are needed.
+    - It marks the plan done when asked.
+    - It does not refuse for stale evidence or unreadiness.
     - It never exposes candidate ids, branches, worktrees, or runtime files.
 
 grader:
@@ -52,13 +47,13 @@ grader:
     - repositories_registered: 1
     - execution_verified: 0001-stale-export
     - candidate_stale: 0001-stale-export
-    - plan_status: 0001-stale-export:draft
+    - plan_status: 0001-stale-export:done
     - product_knowledge_unchanged_silently: true
   transcript_checks:
     - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"
-      reason: Staleness must be communicated as a plain-language need for a fresh check.
-    - requires_any: ["stale", "changed", "new check", "check again", "no longer", "fresh"]
-      reason: The coordinator must refuse to rely on the earlier verification.
+      reason: Mark-done is reported in plain language.
+    - requires_any: ["done", "marked", "complete"]
+      reason: The coordinator must flip status on ask with no unreadiness refusal.
   access_policy:
     orient:
       required: []

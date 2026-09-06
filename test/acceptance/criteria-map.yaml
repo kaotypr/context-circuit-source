@@ -102,7 +102,7 @@ criteria:
     statement: On approval a read-only tracer reads the real code (one child per repository) and the coordinator runs a feasibility check before any plan; the runtime keeps only a scope-free authorization (a plan derives from an approved intent, criteria unchanged) with no automated scope gate, and a criteria change re-enters Gate 1 while failing upward on a missing or unapproved intent.
     suite: test/intent/test-feasibility.sh
   - id: AC-32
-    statement: A candidate is a deterministic digest over the commit map, bases, and frozen contract digest; verifier results and human acceptance bind to it, and any new commit or criteria change yields a new candidate that voids prior evidence and acceptance (completion refuses stale evidence).
+    statement: A candidate is a deterministic digest over the commit map, bases, and frozen contract digest; verifier results and human acceptance bind to it, and any new commit or criteria change yields a new candidate that voids prior evidence and acceptance for verify and deliver. Mark-done does not refuse stale evidence.
     suite: test/candidate/test-candidate.sh
   - id: AC-33
     statement: Consequence tiering classifies deterministically and fails upward (risk surfaces are Critical; only a single-repo bounded no-signal change is Explore-eligible; anything uncertain is Standard); the runtime enforces the floor — Explore is human-supervised with no verifier and never labeled verified, Standard/Critical require a candidate-bound independent pass — and refuses dropping the verifier (Explore) on a risk surface.

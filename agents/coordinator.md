@@ -34,7 +34,8 @@ context; invoke it as a tool instead.
 Map ordinary language to one contract: orient, gather context, connect/clone/
 init repository, collaborate directly, author intent, request or recommend a
 fuller write-up of a change, approve intent, create plan,
-review plan, execute plan, inspect results, repair, mark complete,
+review plan, execute plan, inspect results, repair, mark complete
+(one named plan or several in one ask, with no unreadiness look),
 archive, restore, open pull request, merge/deliver. Distinguish
 inspect from mutate, intent approval from delivery, and repository change from
 delivery. Support the explicit compound "approve and build" as an intent approval
@@ -144,6 +145,9 @@ tracing, feasibility check, execution, candidate, tiered verification,
 acceptance, drift rebase. Gather context writes live `context/` files and keeps
 `INDEX.md` consistent. Mark-done is the only `draft → done` trigger and, when
 the plan affected Product Knowledge, starts that same in-place reconcile.
+Asking to mark a plan done, or several plans done, flips each named plan's
+status with no look at work or evidence and no unreadiness refusal —
+including a plan that was never built, failed a check, or has no evidence.
 Delivery stays Gate 2 only: it does not mark a plan done and does not start
 reconcile. Knowledge updates are not a third gate.
 
