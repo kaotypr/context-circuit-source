@@ -2,7 +2,7 @@
 
 Plan ID: `0016-in-place-knowledge-updates`  
 Intent: `i014-direct-context-updates`  
-Status: `draft`
+Status: `done`
 
 ## Original request and coverage
 

@@ -27,4 +27,4 @@ tooling (0019–0020) · **E** v0.6.1 refinements (0021–0025).
 | 0013-cleanup-explore-worktrees | Runtime cleanup also removes Explore worktrees | draft | 0012-explore-session-path | 0013-cleanup-explore-worktrees/ |
 | 0014-pair-role-tiering | Honor role-tiering.local.yaml in Explore | draft | — | 0014-pair-role-tiering/ |
 | 0015-tracer-role-tiering | Support tracer in role-tiering.local.yaml | draft | — | 0015-tracer-role-tiering/ |
-| 0016-in-place-knowledge-updates | Update Product Knowledge in place when a plan is marked done | draft | — | 0016-in-place-knowledge-updates/ |
+| 0016-in-place-knowledge-updates | Update Product Knowledge in place when a plan is marked done | done | — | 0016-in-place-knowledge-updates/ |
