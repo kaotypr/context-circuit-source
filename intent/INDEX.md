@@ -15,3 +15,4 @@
 | i011-cleanup-explore-copies | Runtime cleanup also removes Explore worktrees | approved | standard | > | intent/i011-cleanup-explore-copies/INTENT.md |
 | i012-pair-role-tiering | Honor role-tiering.local.yaml in Explore | approved | standard | > | intent/i012-pair-role-tiering/INTENT.md |
 | i013-tracer-role-tiering | Support tracer in role-tiering.local.yaml | approved | standard | > | intent/i013-tracer-role-tiering/INTENT.md |
+| i014-direct-context-updates | Update Product Knowledge in place; start knowledge update when a plan is marked done | approved | standard | > | intent/i014-direct-context-updates/INTENT.md |
