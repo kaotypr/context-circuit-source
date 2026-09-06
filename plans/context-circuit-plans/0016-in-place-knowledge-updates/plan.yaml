@@ -1,0 +1,213 @@
+schema_version: 3
+plan: 0016-in-place-knowledge-updates
+intent: i014-direct-context-updates
+title: Update Product Knowledge in place when a plan is marked done
+status: draft
+objective: >-
+  Gathering context and reconciling Product Knowledge write live context files
+  with no proposal sidecar. A plan becomes done only when a human asks to mark
+  it done; that ask then updates live context files if the plan affected
+  Product Knowledge. Delivery does not mark done and does not start a
+  knowledge update. A later plan can start without waiting. Pending proposal
+  0034 is dropped.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns knowledge/completion contracts, runtime, skills, live context, tests, template, and harness.
+plan_dependencies: []
+product_knowledge:
+  - id: completion
+    path: context/domains/completion/README.md
+    reason: Owns the done-trigger and reconcile path that currently stages proposals and infers Standard done from delivery.
+  - id: delivery
+    path: context/domains/delivery/README.md
+    reason: Gate 2 must not start reconciliation or mark a plan done.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Next-plan start must not wait on unreconciled Product Knowledge.
+  - id: product-knowledge
+    path: docs/product-knowledge.md
+    reason: Currently teaches proposal staging and a separate accept gate.
+context_grounding:
+  summary: >-
+    Derived from the approved i014 contract and the post-approval look at
+    context-circuit-source. One lifecycle identity change spanning contracts,
+    runtime, skills, Product Knowledge, tests, template, and harness.
+  constraints:
+    - Gate 1 and Gate 2 stay the two human gates.
+    - The runtime must not write or interpret Product Knowledge.
+    - Explore stays planless.
+    - Do not apply pending proposal 0034 as a context page.
+    - Preserve unrelated and dirty work, including untracked intent/i015-lean-workspace-context/.
+  decisions:
+    - Keep one plan with five embedded tasks. One repository, one worker, one independent verification boundary. Stacking contracts vs runtime vs tests would leave contradictory owners mid-stack.
+    - After mark-done, the coordinator writes live context files when the plan affected Product Knowledge; the engine only flips plan status.
+    - Remove the context/proposals/ staging path from product and seed rather than leaving an empty or retired README.
+    - Stop shipping context-proposal.yaml as a live schema.
+    - knowledge-debt-check must not block the next plan; delivery must not emit a reconcile-starting marker.
+    - completion-infer must not mark a plan done (refuse or drop once tests stop calling it).
+    - template/ and agent-harness/ are in-scope paths inside this repository, not a second repository.
+knowledge_impact:
+  expected_context_units:
+    - completion
+    - delivery
+    - product-knowledge
+  review_on_completion: true
+tasks:
+  - id: DCU-001
+    title: Rework knowledge and completion contracts
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/invariants.yaml
+      - wrapper/contracts/schemas/completion.yaml
+      - wrapper/contracts/schemas/context-impact.yaml
+      - wrapper/contracts/schemas/context-index.yaml
+      - wrapper/contracts/schemas/context-proposal.yaml
+      - wrapper/contracts/schemas/human-acceptance.yaml
+      - wrapper/manifest.yaml
+    depends_on: []
+    changes:
+      - Rewrite INV-COMPLETE-01 so Standard and Critical become done only on explicit mark-done; Explore stays planless; verification, candidate acceptance, and delivery do not mark done.
+      - Rewrite INV-COMPLETE-02 so mark-done starts in-place reconcile only when the plan affected Product Knowledge; delivery does not start reconcile.
+      - Rewrite INV-KNOWLEDGE-02 so there is no separate accept-context-update gate and no next-plan debt-block.
+      - Stop owning a live context/proposals/ staging path and stop shipping context-proposal.yaml as a live schema.
+    acceptance:
+      - id: DCU-AC-002
+        statement: A Product Knowledge update does not wait for a separate human accept-the-context-update decision.
+      - id: DCU-AC-003
+        statement: Contract text no longer infers Standard done from acceptance plus delivery.
+      - id: DCU-AC-006
+        statement: Contract text no longer blocks the next plan until Product Knowledge is updated.
+    verification:
+      - id: DCU-VT-001
+        command: rg -n 'INV-COMPLETE-01|INV-COMPLETE-02|INV-KNOWLEDGE-02' wrapper/contracts/invariants.yaml
+  - id: DCU-002
+    title: Make mark-done the only done trigger in the runtime
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+    depends_on:
+      - DCU-001
+    changes:
+      - Make plan-complete the Standard and Critical draft-to-done writer, still gated by completion-ready.
+      - delivery-record and change-set-complete record delivery only — they must not set plan status done and must not emit a reconcile-starting debt marker.
+      - knowledge-debt-check must not block the next plan.
+      - completion-infer must not mark a plan done from delivery.
+      - Engine still does not write context/ files.
+    acceptance:
+      - id: DCU-AC-003
+        statement: A plan becomes done only when a human asks to mark it done.
+      - id: DCU-AC-004
+        statement: Delivery does not start Product Knowledge reconciliation and does not mark the plan done.
+      - id: DCU-AC-006
+        statement: A later plan can start even if Product Knowledge has not yet been updated from a prior plan.
+    verification:
+      - id: DCU-VT-003
+        command: sh test/completion/test-inferred.sh
+      - id: DCU-VT-004
+        command: rg -n 'cc_knowledge_debt_emit|completion-infer' .agents/skills/cc-deliver/SKILL.md
+      - id: DCU-VT-005
+        command: sh test/knowledge/test-debt.sh
+  - id: DCU-003
+    title: Teach coordinator, skills, and shipped docs the in-place path
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-complete/
+      - .agents/skills/cc-deliver/
+      - .agents/skills/cc-plan/
+      - .agents/skills/cc-system-design/
+      - agents/coordinator.md
+      - wrapper/adapters/WORKFLOW.md
+      - wrapper/adapters/AGENTS.md
+      - wrapper/adapters/README.md
+      - docs/product-knowledge.md
+      - docs/getting-started.md
+      - docs/planning.md
+      - docs/terminology.md
+    depends_on:
+      - DCU-001
+    changes:
+      - Gather context writes live context/ files and keeps INDEX.md consistent.
+      - Mark-done reads the plan, marks it done, then updates live files when Product Knowledge was affected.
+      - Delivery language stays Gate 2 only.
+      - cc-plan no longer waits on knowledge debt before grounding.
+      - Drop the accept-the-context-update route.
+    acceptance:
+      - id: DCU-AC-001
+        statement: Gathering context writes live context files and does not create a proposal document.
+      - id: DCU-AC-002
+        statement: There is no separate accept-the-context-update route.
+      - id: DCU-AC-005
+        statement: Mark-done is the trigger that then updates live context files when the plan affected Product Knowledge.
+      - id: DCU-AC-008
+        statement: Mark-done starts the same in-place reconcile as gathering, not a proposal sidecar.
+    verification:
+      - id: DCU-VT-001
+        command: rg -n 'context/proposals/|Propose a context update' wrapper/adapters/WORKFLOW.md .agents/skills/cc-complete/SKILL.md docs/product-knowledge.md docs/getting-started.md agents/coordinator.md
+      - id: DCU-VT-002
+        command: rg -n 'accept the context update|Accept the context update|Review / accept context updates' .agents/skills/ agents/coordinator.md wrapper/adapters/WORKFLOW.md docs/
+  - id: DCU-004
+    title: Drop pending proposal 0034 and rewrite live Product Knowledge
+    repositories: [context-circuit-source]
+    paths:
+      - context/INDEX.md
+      - context/proposals/
+      - context/domains/completion/
+      - context/domains/delivery/
+      - context/DECISIONS.md
+      - plans/context-circuit-plans/0001-conversation-spec-library/
+    depends_on:
+      - DCU-001
+    changes:
+      - Delete context/proposals/0034-add-conversation-spec-library.md without creating context/domains/conversation-spec-library/.
+      - Remove the INDEX.md pending row and the plan 0001 citation of that path.
+      - Rewrite the completion domain, and delivery as needed, to explicit mark-done and in-place reconcile.
+      - Record in DECISIONS.md that 0034 is dropped, not applied.
+      - Remove the proposals staging path from live context/.
+    acceptance:
+      - id: DCU-AC-007
+        statement: Pending proposal 0034 is dropped and is not applied as a context page.
+    verification:
+      - id: DCU-VT-006
+        command: test ! -e context/proposals/0034-add-conversation-spec-library.md && test ! -e context/domains/conversation-spec-library && ! rg -n '0034-add-conversation-spec-library' context/INDEX.md
+  - id: DCU-005
+    title: Prove the old path is gone
+    repositories: [context-circuit-source]
+    paths:
+      - test/completion/
+      - test/knowledge/
+      - test/scenarios/
+      - test/runtime/test-runtime.sh
+      - test/archive/test-archive.sh
+      - test/contracts/test-contracts.sh
+      - test/release/test-release.sh
+      - test/acceptance.sh
+      - test/acceptance/criteria-map.yaml
+      - template/context/
+      - scripts/release-manifest.txt
+      - scripts/release-artifact.sh
+      - agent-harness/
+    depends_on:
+      - DCU-002
+      - DCU-003
+      - DCU-004
+    changes:
+      - Invert suites that require inferred-from-delivery, proposal staging, accept-context-update, or next-plan debt-block.
+      - Keep covering-tip delivery and verifier-independence checks.
+      - Update the shipped seed and release manifest so context/proposals/ is no longer required.
+      - Rewrite harness plots, scenarios, grader, and seeder for the new outcomes; regenerate generated cases from plots.
+    acceptance:
+      - id: DCU-AC-001
+        statement: Checks fail if a proposal is staged as the knowledge-update path.
+      - id: DCU-AC-003
+        statement: Checks fail if delivery or inferred completion marks a plan done.
+      - id: DCU-AC-004
+        statement: Checks fail if delivery starts reconciliation.
+      - id: DCU-AC-006
+        statement: Checks fail if the next plan is blocked waiting for Product Knowledge.
+    verification:
+      - id: DCU-VT-007
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
