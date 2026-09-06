@@ -2,7 +2,7 @@
 
 Plan ID: 0002-mark-done-no-precheck
 Intent: i016-mark-done-no-precheck
-Status: draft
+Status: done
 
 ## Original request and coverage
 
