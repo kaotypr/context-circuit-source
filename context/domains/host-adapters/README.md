@@ -47,10 +47,14 @@ second router or lifecycle.
 
 ## Behavior
 
-All three hosts enter the same coordinator, lifecycle, and runtime library.
-Host identity, version, capability, permission mode, and provider status are
-bounded provider-neutral evidence; they never authorize a route, role, lease,
-gate, verification, or completion (INV-HOST-01).
+All three hosts enter the same coordinator, lifecycle, and runtime library
+through workspace-root discovery: `AGENTS.md` / `WORKFLOW.md` are thin pointers
+into `.context-circuit/` (not a second copy of the product), and `.agents/`
+stays at the workspace root. The product text lives under
+`.context-circuit/wrapper/adapters/`. Host identity, version, capability,
+permission mode, and provider status are bounded provider-neutral evidence;
+they never authorize a route, role, lease, gate, verification, or completion
+(INV-HOST-01).
 
 | Host | Instruction surface | Native child mapping |
 | --- | --- | --- |

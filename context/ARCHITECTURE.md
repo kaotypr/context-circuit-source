@@ -4,10 +4,14 @@ Context Circuit is a universal project workspace (the wrapper) with a compact
 conversational entry, human-facing plan artifacts, and private resumable runtime
 evidence. The coordinator interprets a request and selects one bounded action;
 there is no separately exposed router layer, and conversation keywords are not
-the source of lifecycle policy. The source repository separates the shipped
-product layer under `.context-circuit/wrapper/` from the blank mutable seed under `template/`. An
-instantiated workspace keeps the shipped layer, identity, context, sources,
-plans, runtime, and registered repositories distinct.
+the source of lifecycle policy. The source repository nests the shipped product under `.context-circuit/`
+(`.context-circuit/wrapper`, `.context-circuit/agents`, `.context-circuit/docs`)
+and keeps the blank mutable seed under `template/` at the source root. Hosts
+enter through workspace-root `AGENTS.md` / `WORKFLOW.md` (thin pointers into
+`.context-circuit`) and `.agents/` (skills), which stay at the workspace root.
+An instantiated workspace keeps the nested shipped layer, identity, context,
+sources, plans, runtime, and registered repositories distinct. Workspace-owned
+files are not moved into `.context-circuit/`.
 
 The invariant catalog (`.context-circuit/wrapper/contracts/invariants.yaml`) is the
 one-owner-per-rule authority; skills and the coordinator are thin
