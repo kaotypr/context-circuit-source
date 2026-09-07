@@ -1,6 +1,6 @@
 # Intention — i017
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible._
 
 ## Intention
 
@@ -35,6 +35,8 @@ A fuller write-up by topic sits beside this page. You still approve once.
 - Lifecycle, gates, one-owner-per-rule, and host-blocked fail-closed stay the same.
 
 ## The plans
+
+One plan, **0003-nest-system-home**, with four ordered tasks in this project:
 
 1. **Move wrapper, agents, and docs under `.context-circuit`.**
    _After this:_ those folders live at `.context-circuit/wrapper`, `.context-circuit/agents`, and `.context-circuit/docs`, and the runtime finds them there.

@@ -3,3 +3,4 @@
 | Plan ID | Title | Status | Objective | Repositories | Path |
 | --- | --- | --- | --- | --- | --- |
 | 0002-mark-done-no-precheck | Flip plan status on ask, with no check | done | When a human asks to mark a plan done, or several plans done, each named plan's status becomes done with no look at work or evidence and no unreadiness refusal. | context-circuit-source | plans/0002-mark-done-no-precheck/PLAN.md |
+| 0003-nest-system-home | Nest Context Circuit system files under `.context-circuit` | draft | Context Circuit's shipped wrapper, role files, and product docs live under `.context-circuit/` so the workspace root is the project's. Hosts still enter through thin root pointers and `.agents/`. New and upgraded workspaces match without moving the user's project files. | context-circuit-source | plans/0003-nest-system-home/PLAN.md |
