@@ -48,5 +48,6 @@ scope:
       paths:
         - .
 tier: standard
-status: draft
+status: approved
 intent_dependencies: []
+contract_digest: sha256:7c113a8263db4850608c53f200cd45b8bac83bbda853a5e531430eab93c786f9

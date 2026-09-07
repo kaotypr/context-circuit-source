@@ -1,0 +1,231 @@
+schema_version: 3
+plan: 0004-approval-plan-latency
+intent: i018-approval-plan-latency
+title: Reduce approval-to-plan latency
+status: draft
+objective: >
+  A feasible intent approval reaches a complete, grounded, authorized, and
+  validated plan stack within the warm and cold performance targets without
+  weakening independent tracing, feasibility judgment, plan authorization, or
+  repository-local worker adaptation.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns Context Circuit's host-neutral runtime, trace and plan contracts,
+      coordinator and role guidance, and the semantic and latency test suites.
+plan_dependencies: []
+product_knowledge:
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: >
+      Defines the mandatory post-approval independent trace, bounded freshness,
+      and coordinator-owned feasibility barrier that faster planning must retain.
+  - id: assurance
+    path: context/domains/assurance/README.md
+    reason: >
+      Keeps Standard assurance and the independent verifier floor intact while
+      changing the approval-to-plan path.
+context_grounding:
+  summary: >
+    Grounded in intent/i018-approval-plan-latency/trace/context-circuit-source.yaml
+    at the current repository state. engine.sh has only separate single-plan ID,
+    validation, and index primitives; trace manifests lack revision/cache and
+    plan-fragment fields; the worker role treats declared paths as restrictive.
+    The trace found one repository and one coupled approval/materialization
+    lifecycle, so three ordered tasks remain one plan with one independent
+    verification boundary.
+  constraints:
+    - Preserve approval as the only human decision and retain independent tracing,
+      coordinator-owned feasibility, authorization, and tier behavior.
+    - Bind reusable grounding to repository identity, revision, schema, and
+      discovery rules; fall back to a full trace whenever freshness is uncertain.
+    - Keep the runtime host-neutral and deterministic; do not move feasibility,
+      tier, cache-validity, or plan-boundary judgment into engine.sh.
+    - Treat trace anchors as advisory evidence, not a worker write allowlist.
+    - Publish a complete valid plan stack or no visible stack, with idempotent
+      retry by invocation identity and no sensitive cache or timing payloads.
+  decisions:
+    - One plan with three dependent tasks because grounding reuse, plan-ready
+      traces, and atomic materialization share one repository, execution surface,
+      failure boundary, and acceptance suite. Splitting would make intermediate
+      contracts unverifiable in isolation and undermine the same-turn outcome.
+    - Use the intent detail as approved topic shape and the trace manifest as
+      real-code evidence. Resolve cache location, schema compatibility, runtime
+      interface, and advisory-anchor field migration during implementation; these
+      are plan-level questions, not new human decisions.
+    - Preserve existing single-plan runtime verbs and fixtures while adding a
+      one-request materialization path; legacy manifests must explicitly retrace
+      or use a bounded fallback rather than silently claiming plan readiness.
+knowledge_impact:
+  expected_context_units:
+    - tracing
+    - assurance
+  review_on_completion: true
+tasks:
+  - id: LAT-001
+    title: Add revision-bound incremental repository grounding
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-trace/SKILL.md
+      - .context-circuit/agents/tracer.md
+      - .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
+      - .context-circuit/wrapper/contracts/invariants.yaml
+      - context/domains/tracing/README.md
+      - test/intent/test-feasibility.sh
+      - test/latency/test-approval-plan.sh
+    depends_on: []
+    changes:
+      - >
+        Define a local gitignored structural repository-map cache keyed by workspace
+        and repository identity, canonical binding/location, base revision, map
+        schema version, and discovery rules. Store structural inventory and command
+        metadata only; exclude secrets, ignored files, provider payloads, and source
+        copies. Publish complete maps atomically and make them safe to delete.
+      - >
+        Extend the trace contract and tracer/coordinator guidance to record observed
+        and current revisions, grounding mode (cold, exact, delta, fallback), reread
+        paths, and fallback reason. On exact hits read current intent sites; on
+        bounded drift reread affected sites/dependents; use cold trace on uncertainty.
+      - >
+        Add deterministic fixtures proving exact reuse, bounded delta refresh,
+        incompatible or broad-drift fallback, and preservation of all existing trace
+        evidence and Standard assurance depth.
+    acceptance:
+      - id: LAT-AC-005
+        statement: >
+          Reused repository knowledge cannot silently survive relevant code drift;
+          it is refreshed or the workflow falls back to a full trace.
+      - id: LAT-AC-002
+        statement: >
+          Representative warm approvals can reuse current grounding while retaining
+          enough first-hand reading to meet the normal two-minute target.
+    verification:
+      - id: LAT-VT-001
+        command: sh test/latency/test-approval-plan.sh --case exact-delta-fallback
+      - id: LAT-VT-002
+        command: sh test/intent/test-feasibility.sh
+  - id: LAT-002
+    title: Make trace output plan-ready and preserve repository-local adaptation
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
+      - .context-circuit/wrapper/contracts/schemas/plan.yaml
+      - .context-circuit/wrapper/contracts/schemas/worker-handoff.yaml
+      - .context-circuit/wrapper/contracts/schemas/verifier-result.yaml
+      - .context-circuit/wrapper/contracts/invariants.yaml
+      - .agents/skills/cc-trace/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - .context-circuit/agents/coordinator.md
+      - .context-circuit/agents/worker.md
+      - .context-circuit/agents/verifier.md
+      - test/intent/test-approval-trace-plan.sh
+      - test/latency/test-approval-plan.sh
+    depends_on: [LAT-001]
+    changes:
+      - >
+        Evolve trace manifests with explicit compatible migration or bounded legacy
+        fallback so each can provide revision-bound, typed evidence anchors,
+        investigation leads, normalized fragments/tasks/dependencies, criterion
+        coverage, checks, and feasible/question outcomes without allocating IDs,
+        approving, or publishing plans.
+      - >
+        Update coordinator and plan guidance so it ratifies fragments and records
+        boundary reasons without a second code-reading interpretation pass. Validate
+        criterion coverage, repository/task identity, dependency graphs, current
+        manifest evidence, tier floor, and all question dispositions before a
+        materialization request is allowed.
+      - >
+        Reconcile plan, worker-handoff, worker, verifier-result, and verifier
+        contracts: anchors guide work but do not exhaustively constrain paths; record
+        every necessary same-repository expansion and require verifier review of the
+        complete diff; stop and return a coordinator finding for another repository
+        or an approved-decision change.
+    acceptance:
+      - id: LAT-AC-004
+        statement: >
+          Faster approvals retain evidence-backed trace, feasibility, scope, risk,
+          check, tier, and question information sufficient for grounded planning.
+      - id: LAT-AC-008
+        statement: >
+          A worker may make necessary intent-consistent same-repository expansions
+          that are recorded and independently checked without a new human gate.
+      - id: LAT-AC-009
+        statement: >
+          A second-repository or approved-decision expansion stops for coordinator
+          escalation, while an ordinary same-repository discovery proceeds.
+    verification:
+      - id: LAT-VT-003
+        command: sh test/intent/test-approval-trace-plan.sh
+      - id: LAT-VT-004
+        command: sh test/latency/test-approval-plan.sh --case same-repository-expansion
+      - id: LAT-VT-005
+        command: sh test/latency/test-approval-plan.sh --case expansion-stop
+  - id: LAT-003
+    title: Materialize and measure each ratified plan stack atomically
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/wrapper/runtime/engine.sh
+      - .context-circuit/wrapper/contracts/schemas/plan.yaml
+      - .context-circuit/wrapper/contracts/schemas/intent-contract.yaml
+      - .context-circuit/wrapper/contracts/invariants.yaml
+      - .context-circuit/agents/coordinator.md
+      - .agents/skills/cc-intent/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - test/intent/test-approval-trace-plan.sh
+      - test/intent/test-feasibility.sh
+      - test/latency/test-approval-plan.sh
+      - test/acceptance.sh
+    depends_on: [LAT-002]
+    changes:
+      - >
+        Add one host-neutral materialization request boundary that validates a
+        coordinator-ratified complete stack before reserving IDs, allocates a
+        deterministic unique range keyed by invocation identity, stages readable
+        and canonical artifacts, validates dependencies/criterion coverage/current
+        authorization/index rows, and publishes every plan plus index/status update
+        atomically or publishes none. Preserve existing single-plan verbs.
+      - >
+        Make successful same-invocation retries return the original allocation and
+        recover or discard unpublished staging without inferring success from a
+        partial index. Return one stable stage/key/error diagnostic instead of retry
+        loops for malformed requests or validation failures.
+      - >
+        Record monotonic bounded phase timing for approval/freeze, trace dispatch and
+        each trace mode, feasibility/disposition, ratification, allocation/render,
+        validation, authorization/publication, fallback, and total. Add repeatable
+        warm, cold, multi-plan atomicity, invalid-input, and timing benchmarks that
+        retain trace/plan quality assertions.
+    acceptance:
+      - id: LAT-AC-001
+        statement: >
+          One explicit approval creates every feasible derived plan in a complete,
+          validated stack with no additional human action.
+      - id: LAT-AC-003
+        statement: >
+          Representative cold full-trace approvals meet the three-to-four-minute
+          target under normal harness conditions without weakening grounding.
+      - id: LAT-AC-006
+        statement: >
+          Multi-plan creation has unique stable IDs and mutually consistent files,
+          dependencies, authorization state, and indexes with no partial stack.
+      - id: LAT-AC-007
+        statement: >
+          Approval records phase-level timing that distinguishes trace, feasibility,
+          materialization, validation, and fallback work.
+    verification:
+      - id: LAT-VT-006
+        command: sh test/latency/test-approval-plan.sh --case warm-standard
+      - id: LAT-VT-007
+        command: sh test/latency/test-approval-plan.sh --case cold-multi-repository
+      - id: LAT-VT-008
+        command: sh test/latency/test-approval-plan.sh --case multi-plan-atomicity
+      - id: LAT-VT-009
+        command: sh test/latency/test-approval-plan.sh --case timing-evidence
+      - id: LAT-VT-010
+        command: sh test/latency/test-approval-plan.sh
+      - id: LAT-VT-011
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
