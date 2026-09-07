@@ -25,6 +25,11 @@ purpose: >
   consequence tiering, which fails upward; scope-safety is settled at delivery (Gate 2),
   not by any automated scope gate. Every plan derives from an approved intent; there is
   no intent-less plan and no backward-compatibility path for one.
+  The approval-to-plan latency increment adds no gate and no new authority. It
+  makes trace evidence revision-bound and plan-ready, treats anchors as advisory,
+  and adds one idempotent atomic stack-materialization boundary. Cache and timing
+  records are bounded runtime evidence only; feasibility, tier, plan boundaries,
+  and question dispositions remain coordinator judgments.
 
 invariants:
   - id: INV-KNOWLEDGE-01
@@ -87,6 +92,13 @@ invariants:
       execution is the derives-from-an-approved-intent authorization: the plan names an
       approved intent whose criteria are unchanged since approval; a criteria drift
       re-enters Gate 1.
+      Reused grounding is bound to workspace/repository identity, canonical binding
+      and location, revision, structural-map schema, and discovery rules. Exact reuse
+      rereads current intent sites; bounded drift rereads affected sites and dependents;
+      legacy, incompatible, broad, ancestry-uncertain, or otherwise uncertain evidence
+      falls back to a cold trace. A current manifest carries typed anchors, fragments,
+      dependencies, criterion coverage, checks, questions, and feasibility evidence
+      sufficient for coordinator ratification without a second code-reading pass.
   - id: INV-CANDIDATE-01
     rule: >
       A candidate is a deterministic digest over the per-repository commit map, the
@@ -133,12 +145,20 @@ invariants:
   - id: INV-PLAN-02
     rule: >
       Every task names the plan's single repository and bounded paths or an
-      explicit repository-wide scope. Dependencies are explicit.
+      explicit repository-wide scope. Dependencies are explicit. Those paths and
+      trace anchors are advisory grounding, not an exhaustive write allowlist: a
+      necessary intent-consistent same-repository expansion proceeds when recorded
+      in the worker handoff and independently checked over the complete diff. A
+      second-repository or approved-decision expansion stops for coordinator handling.
   - id: INV-PLAN-03
     rule: >
       New plans use stable IDs of the form NNNN-<kebab-slug>. The four-digit
       sequence is the next after the highest ever allocated and is never reused,
-      including after archive or restore.
+      including after archive or restore. A ratified plan stack reserves one unique
+      consecutive range keyed by invocation identity, renders and validates the
+      complete stack, then publishes every plan and index row or none. A successful
+      same-invocation retry returns the original allocation; a failed unpublished
+      stage never masquerades as success from a partial index.
   - id: INV-PLAN-04
     rule: >
       Plans are grounded against available Product Knowledge, source evidence,
@@ -185,6 +205,8 @@ invariants:
       The worker commits each changed repository before verification. Every
       repair creates a new commit; a prior commit is never amended to conceal a
       repair attempt.
+      Every necessary same-repository path expansion is explicit in the worker
+      handoff; the handoff remains a claim and the verifier reviews the complete diff.
   - id: INV-COMMIT-01
     rule: >
       Every commit an agent authors anywhere in the product, and every
@@ -210,6 +232,8 @@ invariants:
       (INV-CANDIDATE-01). At Explore there is no independent verifier and the result
       is never labeled "verified". The verifier never repairs, modifies product
       files, changes plan status, or self-verifies.
+      The verifier checks the complete candidate diff, including recorded and
+      unrecorded expansion beyond initial anchors; anchors never narrow its read.
   - id: INV-VERIFY-02
     rule: >
       If the host cannot create an independent verifier with read-only
@@ -320,7 +344,9 @@ invariants:
       It contains no provider launch code, model prompts, Product Knowledge
       interpretation, plan-writing intelligence, conversational routing policy,
       confirmation cards, product test-runner logic, or automatic
-      pull-request/merge/push/deploy/cleanup/completion.
+      pull-request/merge/push/deploy/cleanup/completion. Stack materialization only
+      validates coordinator-ratified assertions and artifacts; it never decides
+      feasibility, trace freshness, tier, plan boundaries, or question dispositions.
   - id: INV-RUNTIME-02
     rule: >
       Runtime records are written atomically. A partial or contradictory record

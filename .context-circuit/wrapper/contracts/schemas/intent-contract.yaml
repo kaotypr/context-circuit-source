@@ -124,6 +124,16 @@ trace_manifest:
     machine-precise measure. The manifest is NOT part of contract_digest (it is
     earned post-approval, so it never re-enters Gate 1).
 
+approval_plan_timing:
+  file: .runtime/materialization/<invocation-id>/timing.yaml
+  description: >
+    Bounded monotonic phase offsets for approval/freeze, trace dispatch and trace
+    mode, feasibility/disposition, ratification, allocation/render, validation,
+    authorization/publication, fallback, and total. Timing contains phase names,
+    integer offsets, and trace mode only; never source, secrets, prompts, provider
+    payloads, model data, or wall-clock identity. Timing is evidence and authorizes
+    no route or gate.
+
 invariants:
   - every writing request is anchored to an intent whose contract.yaml holds goal,
     outcome-level acceptance criteria, and an optional coarse scope (INV-INTENT-01)

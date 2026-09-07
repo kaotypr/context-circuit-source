@@ -17,6 +17,9 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 require_file "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml"
 contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "done_checks"
 contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "out_of_scope_reach"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "plan_ready_version"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "feasibility_outcome"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "criterion_coverage"
 
 iid=i001-checkout
 cc_fx_intent "$ws" "$iid" "Checkout" checkout-service "src/checkout test/checkout"
