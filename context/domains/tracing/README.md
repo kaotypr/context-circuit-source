@@ -70,9 +70,11 @@ Each tracer reads the real code and reports a `trace-manifest.yaml`:
   intent-level (stop and revisit Gate 1), plan-level (carry into the plan), or
   already answered (apply without asking again).
 
-The manifest is durable grounding evidence at `intent/<id>/trace/<repo>.yaml`,
-reused later with a **bounded freshness check** against current code rather than
-re-traced from zero.
+The manifest is durable grounding evidence at `intent/<id>/trace/<repo>.yaml`
+(workspace root; `intent/` does not move under `.context-circuit/`), reused later
+with a **bounded freshness check** against current code rather than re-traced
+from zero. Tracer role and schema files live with the nested product home
+(`.context-circuit/agents`, `.context-circuit/wrapper/contracts/schemas`).
 
 **Feasibility check (INV-INTENT-02).** Before any plan is written the coordinator
 judges the tracer's findings — this is **coordinator judgment, not an engine

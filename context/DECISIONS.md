@@ -1,5 +1,19 @@
 # Decisions
 
+## 2026-09-07 — nested product home under `.context-circuit/`
+
+Decision: nest the shipped wrapper, role files, and product docs under
+`.context-circuit/` (`.context-circuit/wrapper`, `.context-circuit/agents`,
+`.context-circuit/docs`). Keep workspace-root `AGENTS.md` / `WORKFLOW.md` as
+thin pointers into that home. Keep `.agents/` at the workspace root. Keep
+`template/` as the source-root seed. An upgrade moves template-owned product
+folders under `.context-circuit/` and preserves workspace-owned files.
+
+Rationale: the workspace root belongs to the project, not the product.
+Consequence: engine lookups, assembler staging, skills, tests, and Product
+Knowledge name `.context-circuit/...`; leftover root `wrapper/`, `agents/`,
+or `docs/` are gone.
+
 ## 2026-08-21 — wrapper/template split
 
 Decision: keep shipped wrapper ownership under `.context-circuit/wrapper/` and the blank mutable

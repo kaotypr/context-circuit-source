@@ -67,7 +67,8 @@ plan ([run-stack](../run-stack/README.md)).
   workarounds are eliminated rather than documented (full dependency provisioning
   is a later phase).
 - **Deliver, not author (INV-GROUND-03).** A fixed shipped template
-  (`.context-circuit/wrapper/runtime/worker-brief.md`, shipped beside the runtime) is filled by deterministic
+  (`.context-circuit/wrapper/runtime/worker-brief.md`, shipped beside the nested
+  runtime) is filled by deterministic
   slot substitution from the manifest and the plan; the coordinator adds only a
   one-line task focus and delivers it verbatim. A preflight refuses a brief that
   omits or leaves unfilled the required repository-grounding section.
