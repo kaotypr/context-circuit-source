@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0003-nest-system-home
 intent: i017-nest-system-home
 title: Nest Context Circuit system files under .context-circuit
-status: draft
+status: done
 objective: >
   Context Circuit's shipped wrapper, role files, and product docs live
   under .context-circuit/ so the workspace root is the project's. Hosts
