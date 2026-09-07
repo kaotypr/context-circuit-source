@@ -4,10 +4,13 @@
 
 Decision: nest the shipped wrapper, role files, and product docs under
 `.context-circuit/` (`.context-circuit/wrapper`, `.context-circuit/agents`,
-`.context-circuit/docs`). Keep workspace-root `AGENTS.md` / `WORKFLOW.md` as
-thin pointers into that home. Keep `.agents/` at the workspace root. Keep
-`template/` as the source-root seed. An upgrade moves template-owned product
-folders under `.context-circuit/` and preserves workspace-owned files.
+`.context-circuit/docs`). Keep `.agents/` at the workspace root. Keep
+`template/` as the source-root seed. Source-checkout `AGENTS.md` /
+`WORKFLOW.md` stay maintainer-specific; source `CLAUDE.md` / `CURSOR.md`
+import that root `AGENTS.md` and must not import nested adapters (that would
+replace maintainer instructions with the shipped product copy). Instantiated
+workspaces get adapter copies at the root. An upgrade moves template-owned
+product folders under `.context-circuit/` and preserves workspace-owned files.
 
 Rationale: the workspace root belongs to the project, not the product.
 Consequence: engine lookups, assembler staging, skills, tests, and Product

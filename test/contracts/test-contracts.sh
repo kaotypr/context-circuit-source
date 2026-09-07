@@ -170,6 +170,14 @@ contains "${W}/adapters/WORKFLOW.md" "/cc-pair"
 contains "$ROOT/.context-circuit/agents/coordinator.md" "INV-PAIR-01"
 contains "$ROOT/.context-circuit/agents/worker.md" "Direct-collaboration mode"
 contains "${W}/adapters/AGENTS.md" "reads and follows \`.context-circuit/agents/coordinator.md\`"
+# Source-checkout host files import workspace-root AGENTS.md. Pointing
+# CLAUDE.md/CURSOR.md at nested adapters would replace maintainer AGENTS.md
+# with the shipped product copy.
+contains "$ROOT/AGENTS.md" "context-circuit-source repository safety"
+contains "$ROOT/CLAUDE.md" "@AGENTS.md"
+contains "$ROOT/CURSOR.md" "@AGENTS.md"
+not_contains "$ROOT/CLAUDE.md" "@.context-circuit/wrapper/adapters/CLAUDE.md"
+not_contains "$ROOT/CURSOR.md" "@.context-circuit/wrapper/adapters/CURSOR.md"
 contains "$ROOT/.context-circuit/agents/coordinator.md" "Start at the user's vocabulary level"
 contains "$ROOT/.context-circuit/docs/terminology.md" '| Workspace | "workspace" when the user has not introduced that term |'
 contains "$ROOT/.context-circuit/docs/terminology.md" '| Runtime, skill, tool, or command failure |'
