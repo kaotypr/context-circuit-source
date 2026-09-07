@@ -2,7 +2,7 @@
 
 How the nine phase-4 plots cover the existing `scenarios/` cases and the harness gaps
 they surface. Descriptive only: every rule cited is owned by
-`wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`. This is
+`.context-circuit/wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`. This is
 the largest phase and the first with a mix of full-execution rewires and light
 conversational probes.
 

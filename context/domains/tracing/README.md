@@ -22,7 +22,7 @@ acceptance:
   accepted_at: 2026-09-04
   accepted_by: maintainer
 workflows:
-  - docs/planning.md
+  - .context-circuit/docs/planning.md
 ---
 
 # Tracing and feasibility
@@ -35,7 +35,7 @@ which reads the *real code* and reports a **trace manifest**. The coordinator th
 runs a **feasibility check** over those findings and decides whether to derive
 plans, stop, or ask the human a scope question (INV-INTENT-02). Route the
 post-approval "read the code and see if this is buildable" step here. Owned by the
-`cc-trace` skill, the `agents/tracer.md` role, and the feasibility-check rule in
+`cc-trace` skill, the `.context-circuit/agents/tracer.md` role, and the feasibility-check rule in
 `invariants.yaml`.
 
 ## Scope
@@ -70,9 +70,11 @@ Each tracer reads the real code and reports a `trace-manifest.yaml`:
   intent-level (stop and revisit Gate 1), plan-level (carry into the plan), or
   already answered (apply without asking again).
 
-The manifest is durable grounding evidence at `intent/<id>/trace/<repo>.yaml`,
-reused later with a **bounded freshness check** against current code rather than
-re-traced from zero.
+The manifest is durable grounding evidence at `intent/<id>/trace/<repo>.yaml`
+(workspace root; `intent/` does not move under `.context-circuit/`), reused later
+with a **bounded freshness check** against current code rather than re-traced
+from zero. Tracer role and schema files live with the nested product home
+(`.context-circuit/agents`, `.context-circuit/wrapper/contracts/schemas`).
 
 **Feasibility check (INV-INTENT-02).** Before any plan is written the coordinator
 judges the tracer's findings — this is **coordinator judgment, not an engine
@@ -136,7 +138,7 @@ replaces the other.
 ## Interfaces
 
 - Trigger: intent approval (Gate 1) automatically spawns the tracer
-- Role: `agents/tracer.md` (read-only, one child per repository, never talks to the human)
+- Role: `.context-circuit/agents/tracer.md` (read-only, one child per repository, never talks to the human)
 - Record: `intent/<id>/trace/<repo>.yaml` (`trace-manifest.yaml`, `schema_version` 1)
 - Coordinator outputs: set tier + derive plans · stop-and-explain · scope question to the human
 
@@ -162,10 +164,10 @@ read-only rather than self-tracing.
 
 ## Implementation references
 
-- `.agents/skills/cc-trace/SKILL.md`, `agents/tracer.md`
-- `wrapper/contracts/schemas/trace-manifest.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-INTENT-02 (owner map: `tracer_role`, `trace_manifest`, `feasibility_check`)
-- `wrapper/contracts/schemas/intent-contract.yaml` (the `trace_manifest` reference block)
+- `.agents/skills/cc-trace/SKILL.md`, `.context-circuit/agents/tracer.md`
+- `.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-INTENT-02 (owner map: `tracer_role`, `trace_manifest`, `feasibility_check`)
+- `.context-circuit/wrapper/contracts/schemas/intent-contract.yaml` (the `trace_manifest` reference block)
 
 ## Verification
 

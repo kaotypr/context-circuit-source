@@ -8,28 +8,28 @@ ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
 # --- id allocation: distinct i-prefixed sequence, never reused ---
-id1=$(sh "$ROOT/wrapper/runtime/engine.sh" intent-allocate-id "$ws" checkout-retries)
+id1=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" checkout-retries)
 assert_eq "i001-checkout-retries" "$id1"
 
 cc_fx_intent "$ws" "$id1" "Checkout retries" checkout-service "src/checkout test/checkout"
 # a second allocation is the next number even before the first is approved
-id2=$(sh "$ROOT/wrapper/runtime/engine.sh" intent-allocate-id "$ws" coupon-field)
+id2=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" coupon-field)
 assert_eq "i002-coupon-field" "$id2"
 
 # --- validate: structure + fields ---
-sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
 
 # --- old form is rejected and the exact three-digit ceiling is explicit ---
 old_id=$(printf 'i%04d-old-form' 1)
 expect_failure cc_intent_id_valid "$old_id"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-archive "$ws" "$old_id"
+expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-archive "$ws" "$old_id"
 mkdir -p "$ws/intent/i999-ceiling"
-overflow=$(sh "$ROOT/wrapper/runtime/engine.sh" intent-allocate-id "$ws" exhausted 2>&1 || true)
+overflow=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" exhausted 2>&1 || true)
 printf '%s\n' "$overflow" | grep -Fq 'INTENT_ID_EXHAUSTED' || fail 'intent overflow must fail clearly'
 require_dir "$ws/intent/i999-ceiling"
 rmdir "$ws/intent/i999-ceiling"
 mkdir -p "$ws/intent/archive/i999-ceiling"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-allocate-id "$ws" archived-exhausted
+expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" archived-exhausted
 require_dir "$ws/intent/archive/i999-ceiling"
 rmdir "$ws/intent/archive/i999-ceiling"
 
@@ -41,7 +41,7 @@ mv "$ws/intent/i002-nocrit" "$ws/scratch-intent/i002-nocrit"
 awk '/^acceptance_criteria:/{print "acceptance_criteria: []"; skip=1; next} skip && /^  -/{next} skip && /^    /{next} skip && /^[A-Za-z]/{skip=0; print; next} {print}' \
 	"$ws/scratch-intent/i002-nocrit/contract.yaml" >"$ws/scratch-intent/i002-nocrit/contract.yaml.new"
 mv "$ws/scratch-intent/i002-nocrit/contract.yaml.new" "$ws/scratch-intent/i002-nocrit/contract.yaml"
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/scratch-intent/i002-nocrit"
+expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/scratch-intent/i002-nocrit"
 
 # an empty (or absent) scope is now VALID — scope is coarse and optional in v1.0;
 # a lay human often draws no paths, and scope-safety is settled at delivery (Gate 2).
@@ -49,7 +49,7 @@ cc_fx_intent "$ws" i003-noscope "No scope" api "src"
 awk '/^scope:/{print "scope:"; print "  repositories: []"; skip=1; next} skip && /^  repositories:/{next} skip && /^    /{next} skip && /^[A-Za-z]/{skip=0; print; next} {print}' \
 	"$ws/intent/i003-noscope/contract.yaml" >"$ws/intent/i003-noscope/contract.yaml.new"
 mv "$ws/intent/i003-noscope/contract.yaml.new" "$ws/intent/i003-noscope/contract.yaml"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/i003-noscope" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/intent/i003-noscope" >/dev/null
 
 # --- approval is the single upstream gate; it freezes contract_digest ---
 assert_eq "draft" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
@@ -57,7 +57,7 @@ before=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 assert_eq "" "$before"
 # Gate 1 needs no pre-approval challenge record: the tracer reads the real code
 # only AFTER approval, so approval depends on the contract alone (no adversary).
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
 assert_eq "approved" "$(sed -n 's/^_Status:[[:space:]]*\([^,._]*\).*$/\1/p' "$ws/intent/$id1/INTENT.md")"
 frozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
@@ -68,7 +68,7 @@ case "$frozen" in sha256:*|cksum:*) : ;; *) fail "contract_digest not a digest: 
 mkdir -p "$ws/intent/$id1/detail"
 printf '# overview\n' >"$ws/intent/$id1/detail/README.md"
 printf '# design\n' >"$ws/intent/$id1/detail/design.md"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
 assert_eq "$frozen" "$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")"
 
 # the frozen digest is stable and equals a recompute over criteria-bearing content
@@ -76,7 +76,7 @@ recompute=$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")
 assert_eq "$frozen" "$recompute"
 
 # re-approving an already-approved intent is refused (no draft<-approved)
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
+expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
 
 # a criteria change after approval breaks the frozen digest (basis of INV-CANDIDATE-01)
 # and re-enters Gate 1: a re-approval on the changed criteria is allowed and re-freezes
@@ -84,7 +84,7 @@ expect_failure sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1"
 sed -i.bak 's/Checkout retries works./Checkout retries works differently./' "$ws/intent/$id1/contract.yaml"
 changed=$(cc_intent_contract_digest "$ws/intent/$id1/contract.yaml")
 test "$changed" != "$frozen" || fail "criteria change did not change the digest"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
 refrozen=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 assert_eq "$changed" "$refrozen"
 rm -f "$ws/intent/$id1/contract.yaml.bak"
@@ -94,15 +94,15 @@ contains "$ws/intent/INDEX.md" "| $id1 |"
 contains "$ws/intent/INDEX.md" "approved"
 
 # --- archive is a status-blind move; restore returns it; id is never reused ---
-sh "$ROOT/wrapper/runtime/engine.sh" intent-archive "$ws" "$id1" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-archive "$ws" "$id1" >/dev/null
 require_dir "$ws/intent/archive/$id1"
 test ! -d "$ws/intent/$id1" || fail "archived intent still in active area"
 not_contains "$ws/intent/INDEX.md" "| $id1 |"
 # next id still advances past the archived one
-id_next=$(sh "$ROOT/wrapper/runtime/engine.sh" intent-allocate-id "$ws" another)
+id_next=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" another)
 assert_eq "i004-another" "$id_next"
 
-sh "$ROOT/wrapper/runtime/engine.sh" intent-restore "$ws" "$id1" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-restore "$ws" "$id1" >/dev/null
 require_dir "$ws/intent/$id1"
 contains "$ws/intent/INDEX.md" "| $id1 |"
 

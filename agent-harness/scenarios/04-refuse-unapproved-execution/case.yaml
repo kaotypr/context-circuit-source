@@ -67,9 +67,9 @@ grader:
       allowed:  ["plans/**", "intent/**"]
       forbidden:
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
   # D. efficiency ledger (soft, warning-only)
   budgets:
     refuse-unapproved: { max_turns: 2, max_tokens: 8000 }

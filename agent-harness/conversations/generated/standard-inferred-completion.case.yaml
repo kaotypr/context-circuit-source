@@ -66,7 +66,7 @@ grader:
     complete:
       required: []
       allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh"]
   # environmental overlay (NOT from the plot) — preserved from case 18
   budgets:
     complete: { max_turns: 3, max_tokens: 36000 }

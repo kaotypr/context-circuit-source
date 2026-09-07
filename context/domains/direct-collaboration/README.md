@@ -35,7 +35,7 @@ one connected repository, with a coordinator and one worker and **no independent
 verifier**. Route "let's work on this together", `/cc-pair`, and "just try it"
 here, and offer it as an optional next step after a plan or stack execution.
 Never enter it automatically. Owned by the `cc-pair` skill; its mechanics are
-owned by `wrapper/contracts/invariants.yaml` (INV-PAIR-01), and its place in the
+owned by `.context-circuit/wrapper/contracts/invariants.yaml` (INV-PAIR-01), and its place in the
 ladder by INV-ASSURE-01.
 
 The defining move is **promote in place**: when the work turns out to be real,
@@ -70,7 +70,7 @@ INV-ASSURE-01.
   repository and cannot span repositories; ambiguity is one focused question
   before any state is created. The user is the live acceptance oracle, the
   coordinator interprets and delegates but never writes, and one worker (the
-  existing `agents/worker.md` role) makes the concrete change for each turn.
+  existing `.context-circuit/agents/worker.md` role) makes the concrete change for each turn.
 - **Isolation.** The worker writes only in a fresh `cc-pair/<session>` branch and
   isolated worktree under `.runtime/explore/<human-name>/`, created from a chosen
   base commit (the recorded base tip for
@@ -131,11 +131,11 @@ handoffs, failure counters, or plan state are created.
 
 ## Implementation references
 
-- `.agents/skills/cc-pair/SKILL.md`, `agents/worker.md`
-- `wrapper/runtime/engine.sh`: `pair-begin`, `pair-inspect`, `pair-close`
-- `wrapper/contracts/invariants.yaml`: INV-PAIR-01 (Explore-tier mechanics),
+- `.agents/skills/cc-pair/SKILL.md`, `.context-circuit/agents/worker.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `pair-begin`, `pair-inspect`, `pair-close`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PAIR-01 (Explore-tier mechanics),
   INV-ASSURE-01 (the tier ladder and promote step), INV-COMMIT-01
-- `wrapper/contracts/schemas/` (pairing-session shape)
+- `.context-circuit/wrapper/contracts/schemas/` (pairing-session shape)
 
 ## Verification
 

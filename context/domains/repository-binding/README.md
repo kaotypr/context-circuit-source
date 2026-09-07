@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Workspace orientation and repository binding
@@ -77,7 +77,7 @@ remain in host Git configuration or the host agent (INV-SEC-01).
 
 ## Workflows
 
-- Orient, connect, clone, or initialize a repository: `docs/getting-started.md`
+- Orient, connect, clone, or initialize a repository: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -116,13 +116,13 @@ different users may set different base branches for the same logical repository.
 
 ## Implementation references
 
-- `wrapper/runtime/engine.sh`: `cc_repository_register`, `cc_binding_field`,
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_repository_register`, `cc_binding_field`,
   `cc_repo_resolve`, `cc_repo_base_commit`, `cc_repo_clean`,
   `cc_repository_preflight`, `cc_worktree_prepare`, `cc_workspace_validate`,
   `cc_workspace_init`
-- `wrapper/contracts/schemas/workspace.yaml`,
-  `wrapper/contracts/schemas/repositories-local.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-REPO-01, INV-REPO-02, INV-REPO-03,
+- `.context-circuit/wrapper/contracts/schemas/workspace.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/repositories-local.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-REPO-01, INV-REPO-02, INV-REPO-03,
   INV-REPO-04, INV-SEC-01
 - `.agents/skills/cc-workspace/SKILL.md`
 

@@ -82,15 +82,15 @@ access_discipline:
   approve:
     required: []
     allowed: ["intent/**", "context/**", AGENTS.md, WORKFLOW.md]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
   trace:
     required: []
     allowed: ["intent/**", "context/**", "notes/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
   create-plan:
     required: []
     allowed: ["intent/**", "plans/**", "context/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
 ```
 
 ## Dialogue

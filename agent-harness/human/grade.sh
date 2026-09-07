@@ -32,7 +32,7 @@ if [ ! -f "$TRANSCRIPT" ]; then
 fi
 
 # Source the ARTIFACT's shipped engine for read-only inspection (never the source engine).
-ENGINE="$WORKSPACE/wrapper/runtime/engine.sh"
+ENGINE="$WORKSPACE/.context-circuit/wrapper/runtime/engine.sh"
 [ -f "$ENGINE" ] || { printf 'FAIL: workspace has no engine: %s\n' "$ENGINE" >&2; exit 2; }
 # shellcheck disable=SC1090
 . "$ENGINE"
@@ -584,7 +584,7 @@ if [ -f "$TRACE" ] && [ -s "$TRACE" ]; then
 	TRACED=$(cut -f3 "$TRACE" | sed '/^$/d' | sort -u)
 	# forbidden: INTERSECTION across the actions that OCCURRED — flag only paths
 	# forbidden REGARDLESS of action (e.g. engine.sh, sources/, plans/archive/).
-	# A path forbidden by only some actions (e.g. wrapper/contracts/** for orient but
+	# A path forbidden by only some actions (e.g. .context-circuit/wrapper/contracts/** for orient but
 	# permitted for create-plan) can't be attributed to a turn reliably, so it is not
 	# flagged; that per-action nuance is unenforceable at session level.
 	fbd_for_action() {

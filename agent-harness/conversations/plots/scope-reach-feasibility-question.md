@@ -86,11 +86,11 @@ access_discipline:
   orient:
     required: []
     allowed: ["plans/**", "intent/**", "context/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
   trace:
     required: []
     allowed: ["plans/**", "intent/**", "context/**", "notes/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
 ```
 
 ## Dialogue

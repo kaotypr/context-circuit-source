@@ -80,7 +80,7 @@ access_discipline:
   complete:
     required: []
     allowed: ["plans/**", ".runtime/**", "context/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
 ```
 
 ## Dialogue

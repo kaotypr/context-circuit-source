@@ -89,8 +89,8 @@ expect_failure stacked_plan_shape "$wrong_combined"
 
 # The coordinator guidance rejects tier-only splitting and combining independent
 # boundaries; these are review failures rather than new runtime gates.
-contains "$ROOT/docs/planning.md" "Do not split solely to match an assurance tier"
-contains "$ROOT/docs/planning.md" "do not combine genuinely independent execution"
+contains "$ROOT/.context-circuit/docs/planning.md" "Do not split solely to match an assurance tier"
+contains "$ROOT/.context-circuit/docs/planning.md" "do not combine genuinely independent execution"
 contains "$ROOT/.agents/skills/cc-plan/SKILL.md" "One approved intent may"
 
 # The stack is independently ready and verified one plan at a time, while retaining
@@ -108,8 +108,8 @@ assert_eq "verified" "$(cc_execution_status "$ws/.runtime/executions/0003-consum
 assert_eq "draft" "$(cc_plan_status "$ws" 0002-api)"
 assert_eq "draft" "$(cc_plan_status "$ws" 0003-consumer)"
 
-cs=$(sh "$ROOT/wrapper/runtime/engine.sh" change-set-candidate "$ws" 0002-api 0003-consumer | sed -n 's/^change_set_candidate: //p')
-cs_reversed=$(sh "$ROOT/wrapper/runtime/engine.sh" change-set-candidate "$ws" 0003-consumer 0002-api | sed -n 's/^change_set_candidate: //p')
+cs=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" change-set-candidate "$ws" 0002-api 0003-consumer | sed -n 's/^change_set_candidate: //p')
+cs_reversed=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" change-set-candidate "$ws" 0003-consumer 0002-api | sed -n 's/^change_set_candidate: //p')
 case "$cs" in cand-*) : ;; *) fail "stacked change-set candidate is invalid" ;; esac
 assert_eq "$cs" "$cs_reversed"
 

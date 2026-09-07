@@ -52,7 +52,7 @@ only when `resumable: true`.
 
 Spawn the Explore worker at the concrete `(model, effort)` configured for the
 `worker` role in the host-local role-tiering config, with adapter-shipped defaults
-for an unset role (`docs/role-tiering.md` owns the shape, defaults, and
+for an unset role (`.context-circuit/docs/role-tiering.md` owns the shape, defaults, and
 escalation ladder). This is a coordinator/host decision — the runtime is
 model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning. Explore still has no
@@ -69,7 +69,7 @@ verifier; do not launch one because a yaml file exists.
 
 ## The interactive loop
 
-Launch one worker using the existing `agents/worker.md` role at that configured
+Launch one worker using the existing `.context-circuit/agents/worker.md` role at that configured
 `(model, effort)` and give it the
 reported repository, worktree, branch, base, and the user's current intent. Tell
 the worker to:
@@ -129,14 +129,14 @@ is what keeps the fast path fast.
 
 Invoke from the workspace directory:
 
-- `sh wrapper/runtime/engine.sh pair-begin . <repo> <session> [base]`
-- `sh wrapper/runtime/engine.sh pair-inspect . <session>`
-- `sh wrapper/runtime/engine.sh pair-close . <session>`
-- `sh wrapper/runtime/engine.sh runtime-cleanup .` — explicit leftover cleanup;
+- `sh .context-circuit/wrapper/runtime/engine.sh pair-begin . <repo> <session> [base]`
+- `sh .context-circuit/wrapper/runtime/engine.sh pair-inspect . <session>`
+- `sh .context-circuit/wrapper/runtime/engine.sh pair-close . <session>`
+- `sh .context-circuit/wrapper/runtime/engine.sh runtime-cleanup .` — explicit leftover cleanup;
   removes closed Explore worktrees under `.runtime/explore/` as well as idle
   plan-execution worktrees. Never run this from `pair-close`.
 
-The runtime is an opaque deterministic library (`wrapper/adapters/AGENTS.md` →
+The runtime is an opaque deterministic library (`.context-circuit/wrapper/adapters/AGENTS.md` →
 Runtime). The skill owns the conversation; the runtime owns only Git isolation
 and the light pointer.
 
@@ -145,7 +145,7 @@ and the light pointer.
 Narrate what changed and what the user still needs to decide. Do not expose the
 pairing branch name, worktree path, base commit, pointer, or runtime commands
 unless the user explicitly asks for diagnostics. Say "a separate working copy"
-and "the changes we made together," following `docs/terminology.md`. Name changed
+and "the changes we made together," following `.context-circuit/docs/terminology.md`. Name changed
 files by repository-relative path (for example, `src/widget.ts`), never with an
 absolute clickable target that reveals the hidden working-copy path.
 

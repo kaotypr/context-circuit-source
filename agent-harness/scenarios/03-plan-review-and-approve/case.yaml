@@ -70,13 +70,13 @@ grader:
       allowed:  ["plans/**", "intent/**", "context/**", AGENTS.md, WORKFLOW.md]
       forbidden:
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
     approve:
       required: []
       allowed:  ["plans/**", "intent/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
   budgets:
     review:  { max_turns: 2, max_tokens: 12000 }

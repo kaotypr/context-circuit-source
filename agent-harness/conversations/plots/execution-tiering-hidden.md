@@ -85,8 +85,8 @@ expected_end_state:
 access_discipline:
   execute-plan:
     required: []
-    allowed: ["plans/**", ".runtime/**", "context/**", "role-tiering.local.yaml", "docs/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+    allowed: ["plans/**", ".runtime/**", "context/**", "role-tiering.local.yaml", ".context-circuit/docs/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
 ```
 
 ## Dialogue

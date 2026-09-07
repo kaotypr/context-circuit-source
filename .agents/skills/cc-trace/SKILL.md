@@ -18,7 +18,7 @@ redundant. At **Standard** and **Critical** it is mandatory.
 ## Spawn the tracer — one read-only child per repository
 
 Spawn each tracer at the concrete `(model, effort)` configured for the `tracer`
-role in the host-local role-tiering config (`docs/role-tiering.md`), with adapter
+role in the host-local role-tiering config (`.context-circuit/docs/role-tiering.md`), with adapter
 defaults when that host has no tracer entry. `(model, effort)` changes cost and
 speed only; it never changes the tracer's read-only role, spawn rules, or the
 feasibility check. Read `role-tiering.local.yaml` from the workspace root when
@@ -26,7 +26,7 @@ present — the same directory as `repositories.local.yaml`, never a repository
 working copy — and apply the `tracer` entry on the spawn. A missing file in an
 isolated working copy is not an absent config.
 
-For each repository in the intent's scope, spawn a **tracer child** (`agents/tracer.md`)
+For each repository in the intent's scope, spawn a **tracer child** (`.context-circuit/agents/tracer.md`)
 in parallel. Each reads *its* repository first-hand for this change. Because the tracer
 writes nothing, it needs **no lease and no worktree** — the machinery that protects
 writers is not needed, so the reads fan out widely and cheaply (this mirrors execution's
@@ -39,7 +39,7 @@ proportionate read at Standard, exhaustive call-site and dependency mapping with
 completeness proofs at Critical).
 
 Each child reports a manifest, recorded at `intent/<id>/trace/<repo>.yaml` (schema
-`wrapper/contracts/schemas/trace-manifest.yaml`) as durable grounding evidence:
+`.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml`) as durable grounding evidence:
 
 - the **file/call-site map** — exact paths, the sites that change, signatures,
   integration points;

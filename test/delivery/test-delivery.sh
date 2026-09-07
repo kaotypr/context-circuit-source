@@ -18,23 +18,23 @@ contains "$edir/repositories/api.yaml" "branch: cc/0001-deliver/api"
 contains "$edir/repositories/api.yaml" "base_branch: development"
 
 # --- the runtime performs no delivery action itself (report-only) ---
-not_contains "$ROOT/wrapper/runtime/engine.sh" "git push"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "gh pr"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "git -C \"\$cc_dt_abs\" push"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "git push"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "gh pr"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "git -C \"\$cc_dt_abs\" push"
 # The runtime authors integration merges only into a dedicated integration worktree,
 # before the worker/verifier — never a delivery merge, a delivery target, or the base branch
 # checkout (INV-CONCURRENCY-02, INV-DELIVER-01). The only integration builder is the
 # per-plan base merge ($cc_bp_tree). Every `git ... merge ` in the engine must be
 # that one. (merge-base and rebase are not merges into a branch.)
-if grep -nE 'git[^\n]*merge( |$)' "$ROOT/wrapper/runtime/engine.sh" \
+if grep -nE 'git[^\n]*merge( |$)' "$ROOT/.context-circuit/wrapper/runtime/engine.sh" \
 	| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree' >/dev/null 2>&1; then
-	grep -nE 'git[^\n]*merge( |$)' "$ROOT/wrapper/runtime/engine.sh" \
+	grep -nE 'git[^\n]*merge( |$)' "$ROOT/.context-circuit/wrapper/runtime/engine.sh" \
 		| grep -vE 'merge --abort' | grep -vE '\$cc_bp_tree'
 	fail 'engine performs a git merge outside an integration builder'
 fi
 
 # --- delivery is not a runtime command ---
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" open-pull-request "$ws" 0001-deliver
+expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" open-pull-request "$ws" 0001-deliver
 
 # --- the read-only delivery-targets helper reports source and target per repo ---
 dt=$(cc_delivery_targets "$ws" 0001-deliver)

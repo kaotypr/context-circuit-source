@@ -19,7 +19,7 @@ ws="$lab/project"
 cp -R "$out/context-circuit-v1.0.0" "$ws"
 
 # 2. Use the ARTIFACT's shipped engine, not the source engine under test.
-ENGINE="$ws/wrapper/runtime/engine.sh"
+ENGINE="$ws/.context-circuit/wrapper/runtime/engine.sh"
 require_file "$ENGINE"
 # shellcheck disable=SC1090
 . "$ENGINE"
@@ -205,7 +205,7 @@ cc_lease_check "$ws" api 0004-int "src/a" >/dev/null || fail 'shipped lease must
 
 # 11. Repository grounding (v1.0.0): the SHIPPED template discovers the repo's own
 #     agent guidance and assembles a worker brief with the required grounding slot.
-require_file "$ws/wrapper/runtime/worker-brief.md"    # runtime-only brief, promoted beside the runtime
+require_file "$ws/.context-circuit/wrapper/runtime/worker-brief.md"    # runtime-only brief, promoted beside the runtime
 git -C "$ws/repositories/api" checkout -q development
 printf '# API agent guide\n\nStart every new source file with `// @grounded`.\n' >"$ws/repositories/api/AGENTS.md"
 git -C "$ws/repositories/api" add -A; git -C "$ws/repositories/api" commit -q -m 'chore(api): add agent guidance'
@@ -223,8 +223,8 @@ cc_brief_preflight "$gedir/brief-api.md" >/dev/null
 # 12. Execution latency (v1.0.0): the SHIPPED template records bounded per-attempt
 #     host evidence (per-role model/effort), refuses an unknown evidence key, and
 #     ships the per-role tiering guidance and the 1.0.0 runtime version.
-contains "$ws/wrapper/manifest.yaml" "runtime_version: 1.0.0"
-require_file "$ws/docs/role-tiering.md"                  # per-role tiering guidance ships (docs/)
+contains "$ws/.context-circuit/wrapper/manifest.yaml" "runtime_version: 1.0.0"
+require_file "$ws/.context-circuit/docs/role-tiering.md"                  # per-role tiering guidance ships (.context-circuit/docs/)
 mkplan 0006-latency "Latency" api src/lat ""
 lex=$(cc_execution_begin "$ws" 0006-latency sess-l | sed -n 's/^execution_id: //p')
 ledir="$ws/.runtime/executions/0006-latency/$lex"

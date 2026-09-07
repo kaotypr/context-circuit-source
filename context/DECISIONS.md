@@ -1,8 +1,25 @@
 # Decisions
 
+## 2026-09-07 — nested product home under `.context-circuit/`
+
+Decision: nest the shipped wrapper, role files, and product docs under
+`.context-circuit/` (`.context-circuit/wrapper`, `.context-circuit/agents`,
+`.context-circuit/docs`). Keep `.agents/` at the workspace root. Keep
+`template/` as the source-root seed. Source-checkout `AGENTS.md` /
+`WORKFLOW.md` stay maintainer-specific; source `CLAUDE.md` / `CURSOR.md`
+import that root `AGENTS.md` and must not import nested adapters (that would
+replace maintainer instructions with the shipped product copy). Instantiated
+workspaces get adapter copies at the root. An upgrade moves template-owned
+product folders under `.context-circuit/` and preserves workspace-owned files.
+
+Rationale: the workspace root belongs to the project, not the product.
+Consequence: engine lookups, assembler staging, skills, tests, and Product
+Knowledge name `.context-circuit/...`; leftover root `wrapper/`, `agents/`,
+or `docs/` are gone.
+
 ## 2026-08-21 — wrapper/template split
 
-Decision: keep shipped wrapper ownership under `wrapper/` and the blank mutable
+Decision: keep shipped wrapper ownership under `.context-circuit/wrapper/` and the blank mutable
 seed under `template/`.
 
 Rationale: source identity must not be confused with an instantiated workspace.
@@ -33,15 +50,15 @@ nesting. Accepted from proposal `0002-template-harness-and-terminology-decision`
 
 Decision: Terminology is a standard context category. A per-project glossary
 seed lives at `context/TERMINOLOGY.md`; the canonical Context Circuit glossary
-and its internal → user-facing translation live in `docs/terminology.md`,
+and its internal → user-facing translation live in `.context-circuit/docs/terminology.md`,
 projected from design chapter 08, and the coordinator references that projection
 instead of hardcoding the term list.
 
 Rationale: one owner per rule — chapter 08 owns term meaning and translation,
-`docs/terminology.md` is the shipped projection, the coordinator role references
+`.context-circuit/docs/terminology.md` is the shipped projection, the coordinator role references
 it rather than duplicating policy.
 Consequence: the shipped template gains `context/TERMINOLOGY.md`,
-`docs/terminology.md`, and `docs/templates/terminology-context.md`. Accepted from
+`.context-circuit/docs/terminology.md`, and `.context-circuit/docs/templates/terminology-context.md`. Accepted from
 proposal `0002-template-harness-and-terminology-decision`.
 
 ## 2026-08-24 — current-state context refresh
@@ -49,11 +66,11 @@ proposal `0002-template-harness-and-terminology-decision`.
 Decision: after `plans/context-circuit-plans/` was deleted in commit `4b8ac0b`
 as obsolete previous-version plans, re-ground the entire `context/` Product
 Knowledge on the current wrapper (skills, `engine.sh`, schemas, `invariants.yaml`,
-docs/adapters) rather than on the deleted plans, and accept the result.
+.context-circuit/docs/adapters) rather than on the deleted plans, and accept the result.
 
 Rationale: the domain/role pages were reverse-engineered from previous-version
 plans and had drifted from the shipped contract (consolidated invariant ids,
-renamed skills, deleted `routes.yaml`/`context-sets.yaml`/`docs/gates.md`, and an
+renamed skills, deleted `routes.yaml`/`context-sets.yaml`/`.context-circuit/docs/gates.md`, and an
 approval card/token mechanism that contradicted `INV-APPROVE-01`). The current
 wrapper is the authoritative present-day evidence.
 
@@ -203,7 +220,7 @@ deliver.
 Rationale: one word, one meaning everywhere, so no per-mention qualifier is ever
 needed.
 Consequence: a wording-only edit to INV-DELIVER-01, INV-RUNTIME-01,
-`wrapper/manifest.yaml`, and AC-16 (no behavior, version, or authority change); the
+`.context-circuit/wrapper/manifest.yaml`, and AC-16 (no behavior, version, or authority change); the
 delivery page and glossaries follow (proposals `0024-change-delivery`,
 `0025-change-terminology`). Accepted from proposal `0026-change-decisions`.
 
@@ -274,7 +291,7 @@ are left as they were.
 
 Decision: reconcile the Product Knowledge base with the shipped v1.0 trust-core.
 The v1.0 layer (intent gate, post-approval tracing, feasibility check, consequence
-tiering, scope-free authorization) had landed in `wrapper/` without ever passing
+tiering, scope-free authorization) had landed in `.context-circuit/wrapper/` without ever passing
 through `context/` — no proposal, no domain pages. This re-ground (a) retires the
 earlier v1.0 design's spec-adversary and scope-envelope vocabulary from the domain
 pages and `roles/maintainer.md`, replacing it with the scope-free
@@ -289,7 +306,7 @@ and repository-grounding (disambiguated from the new tracer).
 Rationale: one rule, one owner, and "shipped is truth" — the knowledge base must
 describe the product that ships. v1.0 removed the automated scope gate, so
 scope-safety lives entirely at delivery; that shift must be visible where an agent
-routes work, not only in `wrapper/`.
+routes work, not only in `.context-circuit/wrapper/`.
 
 Consequence: the three new pages were accepted by the maintainer on 2026-09-04.
 Edits to existing accepted pages are corrections toward shipped truth and preserve

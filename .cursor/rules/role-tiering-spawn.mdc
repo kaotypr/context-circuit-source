@@ -1,10 +1,13 @@
 ---
-description: On Cursor Task spawn, follow wrapper/adapters/CURSOR.md
+description: On Cursor Task spawn, follow workspace-root CURSOR.md
 alwaysApply: true
 ---
 
 # Role-tiering on Cursor child spawn
 
-Before spawning a worker, verifier, or tracer, Read `wrapper/adapters/CURSOR.md`
-and follow it. That file owns how this host sets `Task.model`. Do not copy the
-rule elsewhere.
+Before spawning a worker, verifier, or tracer, Read `CURSOR.md` at the
+workspace root and follow it. That file owns how this host sets `Task.model`.
+Do not copy the rule elsewhere. Do not import
+`.context-circuit/wrapper/adapters/CURSOR.md` from this checkout — that nested
+file is the shipped product adapter; here `CURSOR.md` imports maintainer
+`AGENTS.md`.

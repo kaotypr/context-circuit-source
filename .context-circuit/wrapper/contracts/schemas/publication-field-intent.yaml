@@ -1,0 +1,100 @@
+schema_version: 1
+owner: .context-circuit/wrapper/contracts/schemas/publication-field-intent.yaml
+describes: publication/<name>/field-intent/<plan-id>.yaml
+concern: publication_field_intent
+
+purpose: >
+  The user-owned, structured, diffable home for the publishable provider field
+  values a publication contributes that are NOT derivable from the plan itself —
+  the schedule dates and the time estimate. It replaces the free-prose schedule
+  recipe in config.yaml instructions as the source of *intent* (the values we
+  want to push); config.yaml instructions keeps the schedule *policy* (workday
+  hours, weekends skipped, start date), while the concrete resolved per-plan
+  values move here. Everything the plan already owns (title, task list,
+  depends_on, status) stays read from the plan as-found; this file never restates
+  it. It is derived once — a first draft from the instructions schedule policy on
+  first publish or preview when absent — then human-owned; the derivation never
+  silently overwrites a human edit. It is credential-free (INV-SEC-01), holds only
+  values (no provider payload, token, or external id — those live in the record),
+  and is not a core-workflow input: it lives under publication/, and no
+  plan/approve/execute/verify/deliver step reads or writes it
+  (INV-EXTERNAL-01/02).
+
+layout:
+  intent_dir: publication/<name>/field-intent/
+  file: <plan-id>.yaml   # one intent file per published plan (e.g. 0021-context-references.yaml)
+
+fields:
+  schema_version: { type: integer, required: true, values: [1] }
+  plan: { type: string, required: true, description: the plan id this intent is for }
+  fields:
+    type: object
+    required: false
+    description: plan-level provider fields (best-effort, one-way)
+    fields:
+      start_date: { type: string, required: false, description: ISO 8601 date or date-time; canonical on disk }
+      due_date: { type: string, required: false, description: ISO 8601 date or date-time; canonical on disk }
+      estimate_minutes:
+        type: integer
+        required: false
+        description: >
+          Canonical time estimate in whole minutes — exact (no 2.5h float),
+          diff-stable (one representation per value), and convertible to every
+          provider. The "2h 30m" / "15m" form is input/display only and is never
+          stored (see estimate_format); a malformed input is rejected at the I/O
+          boundary, so a bad edit never becomes bad state.
+  tasks:
+    type: list
+    required: false
+    description: per-task field intent, keyed by the plan.yaml task id
+    item:
+      task: { type: string, required: true, description: the plan.yaml task id }
+      estimate_minutes: { type: integer, required: false, description: canonical whole minutes, as above }
+      start_date: { type: string, required: false, description: ISO 8601 date or date-time; optional per task }
+      due_date: { type: string, required: false, description: ISO 8601 date or date-time; optional per task }
+
+estimate_format:
+  canonical_on_disk: >
+    estimate_minutes, an integer. Stored form is always minutes, so a bad input
+    cannot become bad state.
+  human_io: >
+    "2h 30m" / "15m" / "1h" — largest unit first, no zero units, single space.
+    Parsed to minutes on input (the consult session and any hand edit), formatted
+    from minutes for the diff and report. 90m on input renders back as 1h 30m.
+  units: >
+    h and m only. d and w are rejected — a "day" is scheduling policy (its hours
+    are config-relative) and belongs in config.yaml instructions, never in a
+    duration field. A malformed input ("2 hrs", bare "90", "1d") is rejected at
+    the I/O boundary, never stored.
+  provider_conversion:
+    clickup: time_estimate milliseconds = minutes * 60000
+    jira: timetracking.originalEstimate string = format as "2h 30m"
+    github_projects: numeric custom field = minutes / 60 (hours), or minutes per the field
+    notion: number property = minutes / 60, or as-is per the property
+
+authority:
+  local_owns_intent: >
+    This file is the source of truth for the values we want to push; the provider
+    holds a copy that may drift. The workspace never reads the provider's copy as
+    authority (INV-EXTERNAL-02). A publish pushes these desired values one-way; a
+    human edit in the tracker is drift and never flows back into this file.
+  policy_vs_values: >
+    config.yaml instructions owns language, tone, term handling, and the schedule
+    POLICY; field-intent/<plan-id>.yaml owns the resolved per-plan VALUES. No fact is
+    written twice.
+  not_an_execution_input: >
+    Lives under publication/, never under plans/. No planning, execution,
+    verification, or delivery step reads or writes it. Read and written only by
+    the cc-publish skill on explicit manual invocation (INV-EXTERNAL-01).
+
+forbidden:
+  - credentials, tokens, or provider payloads
+  - an external id or url (identity lives in the publication record, never here)
+  - any field the plan already owns (title, tasks, depends_on, status)
+  - a d or w unit in a stored duration (estimate is canonical whole minutes)
+
+rules:
+  - INV-EXTERNAL-01
+  - INV-EXTERNAL-02
+  - INV-SEC-01
+  - INV-SKILL-01

@@ -22,16 +22,16 @@ sequence, distinct from plan ids).
 Write two files with a strict division of audience. `intent/<id>/INTENT.md` is
 **what the human reads** — plain, short; it reassures them that the blurry thing
 they asked for was understood and shows what they get. Author it from
-`docs/templates/intent.md`, which fixes the five human-facing sections (Intention,
+`.context-circuit/docs/templates/intent.md`, which fixes the five human-facing sections (Intention,
 Expectations, The plans, How carefully this is checked, Open questions);
-`docs/templates/intent.example.md` shows the voice. Keep technical terms as they
+`.context-circuit/docs/templates/intent.example.md` shows the voice. Keep technical terms as they
 are; do not rename them into something that does not mean the same thing. Do not
 restate the product's mechanics or add out-of-scope, history, or
 assurance-rationale sections there.
 
 `intent/<id>/contract.yaml` is **what the agent reads** — the detailed,
 machine-checkable record; the human is not expected to open it. It (schema
-`wrapper/contracts/schemas/intent-contract.yaml`) carries:
+`.context-circuit/wrapper/contracts/schemas/intent-contract.yaml`) carries:
 
 - `goal` — one paragraph of what a correct change achieves;
 - `non_goals` and `constraints` — explicit exclusions and limits;
@@ -141,16 +141,16 @@ they approve — that is not a second product-level design and not a second gate
 
 ## Runtime actions — invoke, never read the engine
 
-Invoke from the workspace directory (`wrapper/adapters/AGENTS.md` → Runtime owns
+Invoke from the workspace directory (`.context-circuit/wrapper/adapters/AGENTS.md` → Runtime owns
 the invoke-not-read boundary):
 
-- `sh wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNN>-slug`.
-- `sh wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
-- `sh wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.
-- `sh wrapper/runtime/engine.sh intent-human-status . <id> "<phrase>"` — rewrite
+- `sh .context-circuit/wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNN>-slug`.
+- `sh .context-circuit/wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
+- `sh .context-circuit/wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.
+- `sh .context-circuit/wrapper/runtime/engine.sh intent-human-status . <id> "<phrase>"` — rewrite
   the `INTENT.md` `_Status` line after a feasible tracer; never changes
   `contract.yaml`.
-- `sh wrapper/runtime/engine.sh intent-archive . <id>` / `intent-restore . <id>` —
+- `sh .context-circuit/wrapper/runtime/engine.sh intent-archive . <id>` / `intent-restore . <id>` —
   status-blind organization (INV-ARCHIVE-01/02), the same as plans.
 
 ## Report — plain language only

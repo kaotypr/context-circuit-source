@@ -21,7 +21,7 @@ not_contains "$ROOT/agent-harness/scenarios/14-codex-direct-collaboration/case.y
 # leave. This exercises scenario preparation and every deterministic grade rule
 # without invoking a model.
 # shellcheck disable=SC1090
-. "$ws/wrapper/runtime/engine.sh"
+. "$ws/.context-circuit/wrapper/runtime/engine.sh"
 cc_pair_begin "$ws" widgets scenario-worker >/dev/null
 pointer="$ws/.runtime/pairing/scenario-worker/pointer.yaml"
 wt=$(cc_scalar "$pointer" worktree)

@@ -30,4 +30,4 @@ intent/
 
 Authoring or approving an intent never creates a plan, executes, verifies,
 completes, or delivers. Contract owner:
-`wrapper/contracts/schemas/intent-contract.yaml`.
+`.context-circuit/wrapper/contracts/schemas/intent-contract.yaml`.

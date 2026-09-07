@@ -32,7 +32,7 @@ expect_failure cc_repo_resolve "$ws" linky
 
 # --- credentials never appear in shipped or workspace-owned files ---
 for term in password api_key access_token client_secret provider_payload BEGIN\ RSA\ PRIVATE\ KEY; do
-	if grep -RIlF "$term" "$ROOT/wrapper" "$ROOT/template" "$ROOT/.agents" "$ROOT/agents" 2>/dev/null | grep -v '/test/' | grep . ; then
+	if grep -RIlF "$term" "$ROOT/.context-circuit/wrapper" "$ROOT/template" "$ROOT/.agents" "$ROOT/.context-circuit/agents" 2>/dev/null | grep -v '/test/' | grep . ; then
 		fail "credential-like term '$term' found in shipped files"
 	fi
 done

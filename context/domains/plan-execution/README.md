@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Plan execution
@@ -33,7 +33,7 @@ authorization derives from the approved intent (re-checked at execution start vi
 the scope-free `intent-authorized` check), not a separate plan-approval step. Route
 "execute plan `<id>`",
 repair, and resume/recovery requests here. Owned by the `cc-execute` skill and the
-`agents/worker.md` worker role.
+`.context-circuit/agents/worker.md` worker role.
 
 ## Scope
 
@@ -105,7 +105,7 @@ captured base commits, the worktree paths, and ownership all still match.
 
 ## Workflows
 
-- Approve the intent and execute, then inspect results: `docs/getting-started.md`
+- Approve the intent and execute, then inspect results: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -132,16 +132,16 @@ Product Knowledge, expands scope silently, or merges/pushes/publishes.
 
 ## Implementation references
 
-- `.agents/skills/cc-execute/SKILL.md`, `agents/worker.md`
-- `wrapper/runtime/engine.sh`: `cc_execution_begin` (base-aware for dependents),
+- `.agents/skills/cc-execute/SKILL.md`, `.context-circuit/agents/worker.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_execution_begin` (base-aware for dependents),
   `cc_execution_next_id`, `cc_exec_set`, `cc_attempt_begin`,
   `cc_worker_commit_record`, `cc_worker_handoff_record`, `cc_lock_acquire`,
   `cc_lock_owner`, `cc_lock_release`, `cc_repair_allowed`, `cc_recovery_inspect`;
   base selection and grounding: `cc_base_prepare`, `cc_discover_repo_grounding`,
   `cc_worker_brief_assemble` (see the run-stack and repository-grounding domains)
-- `wrapper/contracts/schemas/execution.yaml`,
-  `wrapper/contracts/schemas/worker-handoff.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-EXEC-01, INV-EXEC-02, INV-EXEC-03,
+- `.context-circuit/wrapper/contracts/schemas/execution.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/worker-handoff.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-EXEC-01, INV-EXEC-02, INV-EXEC-03,
   INV-EXEC-04, INV-OWN-01, INV-REPAIR-01, INV-PRESERVE-01, INV-RUNTIME-01,
   INV-RUNTIME-02
 

@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-28
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # External surface
@@ -108,7 +108,7 @@ its parent approved intent.
 
 ## Workflows
 
-- Publish a plan to a tracker as a separate step: `docs/getting-started.md`
+- Publish a plan to a tracker as a separate step: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -137,10 +137,10 @@ deletes a message; a no-longer-open question is left in place.
 ## Implementation references
 
 - `.agents/skills/cc-publish/SKILL.md`
-- `wrapper/contracts/invariants.yaml`: INV-EXTERNAL-01, INV-EXTERNAL-02,
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-EXTERNAL-01, INV-EXTERNAL-02,
   INV-EXTERNAL-03 (owners map: `external_surface`, `publication_config`,
   `publication_record`, `publication_thread_record`)
-- `wrapper/contracts/schemas/publication-config.yaml`,
+- `.context-circuit/wrapper/contracts/schemas/publication-config.yaml`,
   `publication-record.yaml`, `publication-thread-record.yaml`
 - No `engine.sh` provider/network code (INV-RUNTIME-01); the record write reuses the
   existing atomic-write path and `cc_digest`.

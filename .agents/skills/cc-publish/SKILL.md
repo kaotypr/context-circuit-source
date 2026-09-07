@@ -49,7 +49,7 @@ If no publication is configured for the request, create one — the `publication
 folder is created on first use, never shipped empty:
 
 1. Write `publication/<name>/config.yaml` per
-   `wrapper/contracts/schemas/publication-config.yaml`: a `<name>` like
+   `.context-circuit/wrapper/contracts/schemas/publication-config.yaml`: a `<name>` like
    `plans-clickup`, `kind: plan`, `direction: export`, `trigger: manual`, the
    `provider`, a bounded `reads:` list, and a **credential-free** `target_ref` (a
    list name, project key, repo id — never a token). Optionally set
@@ -93,7 +93,7 @@ mapping, or relax a boundary.
 Publishable provider fields that are **not derivable from the plan itself** — the
 schedule dates and the time estimate, pushed one-way as **best-effort estimates** —
 live in a user-owned, structured, diffable file per plan, per
-`wrapper/contracts/schemas/publication-field-intent.yaml`:
+`.context-circuit/wrapper/contracts/schemas/publication-field-intent.yaml`:
 
 ```
 publication/<name>/field-intent/<plan-id>.yaml
@@ -250,7 +250,7 @@ readable plan/task sections) and open a discussion:
   message** (a no-longer-open question is left in place, optionally with a short
   "resolved" reply).
 
-Write the record per `wrapper/contracts/schemas/publication-thread-record.yaml` —
+Write the record per `.context-circuit/wrapper/contracts/schemas/publication-thread-record.yaml` —
 the thread `parent_ts` and each question's `reply_ts`, keyed by a stable per-question
 `ref`.
 
