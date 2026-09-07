@@ -64,7 +64,7 @@ grader:
     handle-conflict:
       required: []
       allowed:  ["plans/**", ".runtime/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
   # environmental overlay (NOT from the plot) — conversation-only tuning
   budgets:
     handle-conflict: { max_turns: 3, max_tokens: 12000 }

@@ -4,7 +4,7 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
 
-inv="$ROOT/wrapper/contracts/invariants.yaml"
+inv="$ROOT/.context-circuit/wrapper/contracts/invariants.yaml"
 pe="$ROOT/context/domains/plan-execution/README.md"
 arch="$ROOT/context/ARCHITECTURE.md"
 tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
@@ -58,7 +58,7 @@ contract_digest:
 EOF
 printf '# Split\n' >"$ws/intent/$iid/INTENT.md"
 cc_intent_index_upsert "$ws" "$iid" >/dev/null
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
 
 cc_fx_plan_intent "$ws" 0001-api "API half" api src "$iid"
 cc_fx_plan_intent "$ws" 0002-web "Web half" web src "$iid"

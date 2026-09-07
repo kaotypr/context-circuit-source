@@ -75,7 +75,7 @@ access_discipline:
   verify:
     required: []
     allowed: ["plans/**", ".runtime/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
 ```
 
 ## Dialogue

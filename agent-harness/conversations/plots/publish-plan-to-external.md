@@ -91,7 +91,7 @@ access_discipline:
     # A publication reads plans/** and writes only under publication/**; never plans/.
     required: []
     allowed: ["plans/**", "publication/**", "intent/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
 ```
 
 ## Dialogue

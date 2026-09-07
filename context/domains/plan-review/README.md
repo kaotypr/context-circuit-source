@@ -21,8 +21,8 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/planning.md
-  - docs/plan-review.md
+  - .context-circuit/docs/planning.md
+  - .context-circuit/docs/plan-review.md
 ---
 
 # Planning and plan review
@@ -71,8 +71,8 @@ choices may be offered there, but a missing or failed prompt is not
 
 ## Workflows
 
-- Plan authoring: `docs/planning.md`
-- Plan review: `docs/plan-review.md`
+- Plan authoring: `.context-circuit/docs/planning.md`
+- Plan review: `.context-circuit/docs/plan-review.md`
 
 ## Interfaces
 
@@ -106,10 +106,10 @@ rule, is a shipped invariant beyond the design; see `context/DESIGN-DELTAS.md`.)
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_plan_allocate_id`, `cc_plan_validate`,
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_allocate_id`, `cc_plan_validate`,
   `cc_plan_status`
-- `wrapper/contracts/schemas/plan.yaml`, `wrapper/contracts/schemas/task.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-PLAN-01, INV-PLAN-02, INV-PLAN-03,
+- `.context-circuit/wrapper/contracts/schemas/plan.yaml`, `.context-circuit/wrapper/contracts/schemas/task.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-01, INV-PLAN-02, INV-PLAN-03,
   INV-PLAN-04
 
 ## Provenance

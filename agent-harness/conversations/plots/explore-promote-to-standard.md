@@ -91,12 +91,12 @@ expected_end_state:
 access_discipline:
   direct-collaboration:
     required: []
-    allowed: [".agents/skills/cc-pair/SKILL.md", "agents/worker.md", "role-tiering.local.yaml", ".runtime/pairing/**", ".runtime/explore/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+    allowed: [".agents/skills/cc-pair/SKILL.md", ".context-circuit/agents/worker.md", "role-tiering.local.yaml", ".runtime/pairing/**", ".runtime/explore/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   promote:
     required: []
     allowed: ["intent/**", "plans/**", "context/**", ".runtime/pairing/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
 ```
 
 ## Dialogue

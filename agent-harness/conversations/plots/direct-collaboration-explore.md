@@ -82,8 +82,8 @@ expected_end_state:
 access_discipline:
   direct-collaboration:
     required: []
-    allowed: [".agents/skills/cc-pair/SKILL.md", "agents/worker.md", "role-tiering.local.yaml", "docs/role-tiering.md", ".runtime/pairing/**", ".runtime/explore/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+    allowed: [".agents/skills/cc-pair/SKILL.md", ".context-circuit/agents/worker.md", "role-tiering.local.yaml", ".context-circuit/docs/role-tiering.md", ".runtime/pairing/**", ".runtime/explore/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
 ```
 
 ## Dialogue

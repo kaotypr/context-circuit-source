@@ -20,9 +20,9 @@ guides and ordering records; they are not runtime workspace plans. The product
 workflow remains applicable when this repository is acting as a registered
 product repository for another workspace.
 
-The shipped product contract is under `wrapper/`; the mutable blank seed is
+The shipped product contract is under `.context-circuit/wrapper/`; the mutable blank seed is
 under `template/`. Product behavior has one owner per rule: use the owner map
-in `wrapper/contracts/invariants.yaml` and do not add parallel policy to a
+in `.context-circuit/wrapper/contracts/invariants.yaml` and do not add parallel policy to a
 skill or role file.
 
 Repository safety still applies:
@@ -35,11 +35,11 @@ Repository safety still applies:
   source-only commit; registered product repositories still require their
   separate delivery and publication gates;
 - an authorized source-only commit uses the same Conventional Commits format
-  the product defines (`wrapper/contracts/invariants.yaml`, INV-COMMIT-01):
+  the product defines (`.context-circuit/wrapper/contracts/invariants.yaml`, INV-COMMIT-01):
   `type(scope): imperative subject`, where scope names the changed component
   (for example engine, grade, coordinator, context);
 - do not modify runtime state belonging to another session;
-- use `wrapper/runtime/engine.sh` only as the host-neutral implementation
+- use `.context-circuit/wrapper/runtime/engine.sh` only as the host-neutral implementation
   library and keep the human interface conversational;
 - run the semantic acceptance suite after meaningful phases.
 
@@ -51,7 +51,7 @@ Host adapters
 Codex CLI, Claude Code, and Cursor Agent CLI use this shared instruction
 surface. Host identity, observed version, capabilities, role, permission mode,
 provider status, and offline fallback belong in the bounded `host_evidence`
-shape owned by `wrapper/contracts/schemas/`; they never authorize a route or
+shape owned by `.context-circuit/wrapper/contracts/schemas/`; they never authorize a route or
 gate. Native child features map to the existing coordinator, worker, and
 independent verifier packets. If a required child is unavailable, preserve the
 read-only `host-blocked` outcome and do not self-verify.

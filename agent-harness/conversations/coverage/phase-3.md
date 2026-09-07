@@ -2,7 +2,7 @@
 
 How the two phase-3 plots cover the existing `scenarios/` cases and the harness gaps
 they surface. Descriptive only: every rule cited is owned by
-`wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`. Explore
+`.context-circuit/wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`. Explore
 is the bottom rung of the one assurance ladder (INV-ASSURE-01), so this phase
 continues the tier material from phase 2 (`tier-fails-upward-refuse-explore`).
 

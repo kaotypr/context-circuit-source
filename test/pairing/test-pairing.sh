@@ -100,12 +100,12 @@ assert_eq "$base_before" "$(git -C "$ws/.runtime/explore/from-explicit-base/api"
 
 # Host adapters invoke the engine from the workspace with `.`. Pairing state
 # and Git must agree on one absolute worktree path in that mode.
-(cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-begin . api relative-root >/dev/null)
+(cd "$ws" && sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" pair-begin . api relative-root >/dev/null)
 relative_pointer="$ws/.runtime/pairing/relative-root/pointer.yaml"
 relative_wt="$ws/.runtime/explore/relative-root/api"
 require_dir "$relative_wt"
 contains "$relative_pointer" "worktree: $relative_wt"
-(cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
+(cd "$ws" && sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
 	| grep -Fq 'resumable: true' || fail 'relative-root pair is not resumable'
 
 contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "Model & effort per role"

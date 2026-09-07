@@ -66,7 +66,7 @@ grader:
     execute-plan:
       required: []
       allowed:  ["plans/**", ".runtime/**", "context/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   # environmental overlay (NOT from the plot) — preserved from case 11
   budgets:
     execute-plan: { max_turns: 3, max_tokens: 20000, max_agent_turns: 45, max_cost_usd: 5 }

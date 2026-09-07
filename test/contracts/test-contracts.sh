@@ -2,10 +2,10 @@
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 
-W="$ROOT/wrapper"
+W="$ROOT/.context-circuit/wrapper"
 
 # --- invariants owner map: v0.5 rules and owners present ---
-inv="$W/contracts/invariants.yaml"
+inv="${W}/contracts/invariants.yaml"
 require_file "$inv"
 for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-ASSURE-01 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
 	INV-VERIFY-01 INV-VERIFY-02 \
@@ -32,22 +32,22 @@ not_contains "$inv" "routes:"
 not_contains "$inv" "push, publication, deployment"
 not_contains "$inv" "push/publish/deploy"
 contains "$inv" "plans in different repositories are delivered"
-contains "$W/runtime/engine.sh" "cc_change_set_require_same_repo"
-contains "$W/runtime/engine.sh" "cc_change_set_partition"
-contains "$W/runtime/engine.sh" "CHANGE_SET_CROSS_REPO"
-contains "$W/runtime/engine.sh" "CHANGE_SET_NO_SINGLE_TIP"
-contains "$W/runtime/engine.sh" "CHANGE_SET_DELIVERY_HAS_NO_VERIFIER"
+contains "${W}/runtime/engine.sh" "cc_change_set_require_same_repo"
+contains "${W}/runtime/engine.sh" "cc_change_set_partition"
+contains "${W}/runtime/engine.sh" "CHANGE_SET_CROSS_REPO"
+contains "${W}/runtime/engine.sh" "CHANGE_SET_NO_SINGLE_TIP"
+contains "${W}/runtime/engine.sh" "CHANGE_SET_DELIVERY_HAS_NO_VERIFIER"
 contains "$inv" "does not spawn a verifier"
 contains "$ROOT/.agents/skills/cc-deliver/SKILL.md" "CHANGE_SET_CROSS_REPO"
 contains "$ROOT/.agents/skills/cc-deliver/SKILL.md" "change-set-partition"
 contains "$ROOT/.agents/skills/cc-deliver/SKILL.md" "CHANGE_SET_DELIVERY_HAS_NO_VERIFIER"
 contains "$ROOT/.agents/skills/cc-run-stack/SKILL.md" "CHANGE_SET_CROSS_REPO"
 contains "$ROOT/.agents/skills/cc-run-stack/SKILL.md" "change-set-partition"
-contains "$ROOT/agents/coordinator.md" "one pull request per covering tip"
-contains "$ROOT/agents/coordinator.md" "Delivery does not spawn a verifier"
+contains "$ROOT/.context-circuit/agents/coordinator.md" "one pull request per covering tip"
+contains "$ROOT/.context-circuit/agents/coordinator.md" "Delivery does not spawn a verifier"
 
 # --- manifest declares runtime exclusions and the release boundary ---
-man="$W/manifest.yaml"
+man="${W}/manifest.yaml"
 require_file "$man"
 contains "$man" "runtime_version: 1.0.0"
 contains "$man" "plan: [3]"
@@ -63,15 +63,15 @@ contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
 contains "$man" "pairing-session: [1]"
-contains "$W/contracts/schemas/repositories-local.yaml" "base_branch"
-contains "$W/contracts/schemas/repositories-local.yaml" "anchor_branch"
-contains "$W/contracts/schemas/execution.yaml" "base_branch"
-contains "$W/contracts/schemas/workspace.yaml" "values: [1]"
-contains "$W/contracts/schemas/verifier-result.yaml" "schema_version: { type: integer, required: true, values: [1] }"
-contains "$W/contracts/schemas/context-impact.yaml" "schema_version: { type: integer, required: true, values: [1] }"
-assert_eq "schema_version: 2" "$(sed -n '1p' "$W/contracts/schemas/repositories-local.yaml")"
-assert_eq "schema_version: 2" "$(sed -n '1p' "$W/contracts/schemas/execution.yaml")"
-assert_eq "schema_version: 3" "$(sed -n '1p' "$W/contracts/schemas/plan.yaml")"
+contains "${W}/contracts/schemas/repositories-local.yaml" "base_branch"
+contains "${W}/contracts/schemas/repositories-local.yaml" "anchor_branch"
+contains "${W}/contracts/schemas/execution.yaml" "base_branch"
+contains "${W}/contracts/schemas/workspace.yaml" "values: [1]"
+contains "${W}/contracts/schemas/verifier-result.yaml" "schema_version: { type: integer, required: true, values: [1] }"
+contains "${W}/contracts/schemas/context-impact.yaml" "schema_version: { type: integer, required: true, values: [1] }"
+assert_eq "schema_version: 2" "$(sed -n '1p' "${W}/contracts/schemas/repositories-local.yaml")"
+assert_eq "schema_version: 2" "$(sed -n '1p' "${W}/contracts/schemas/execution.yaml")"
+assert_eq "schema_version: 3" "$(sed -n '1p' "${W}/contracts/schemas/plan.yaml")"
 
 # --- shipped schemas present; old-design schemas absent ---
 for s in workspace repositories-local intent-contract plan task execution worker-handoff \
@@ -79,23 +79,23 @@ for s in workspace repositories-local intent-contract plan task execution worker
 	grounding-manifest pairing-session publication-config publication-field-intent \
 	publication-record \
 	publication-thread-record; do
-	require_file "$W/contracts/schemas/$s.yaml"
+	require_file "${W}/contracts/schemas/$s.yaml"
 done
 for old in delegation session stack child-start context-receipt handoff archive; do
-	test ! -e "$W/contracts/schemas/$old.yaml" || fail "old schema remains: $old"
+	test ! -e "${W}/contracts/schemas/$old.yaml" || fail "old schema remains: $old"
 done
 for oldc in routes context-sets tier0; do
-	test ! -e "$W/contracts/$oldc.yaml" || fail "old contract remains: $oldc"
+	test ! -e "${W}/contracts/$oldc.yaml" || fail "old contract remains: $oldc"
 done
 
 # --- runtime engine present and host-neutral ---
-require_file "$W/runtime/engine.sh"
-not_contains "$W/runtime/engine.sh" "cc_probe"
-not_contains "$W/runtime/engine.sh" "cc_route"
-not_contains "$W/runtime/engine.sh" "cc_confirmation_card"
+require_file "${W}/runtime/engine.sh"
+not_contains "${W}/runtime/engine.sh" "cc_probe"
+not_contains "${W}/runtime/engine.sh" "cc_route"
+not_contains "${W}/runtime/engine.sh" "cc_confirmation_card"
 # persisted record formats have independent schema-version owners; there is no
 # generic runtime schema version that can be mistaken for a record schema.
-not_contains "$W/runtime/engine.sh" "CC_SCHEMA_VERSION"
+not_contains "${W}/runtime/engine.sh" "CC_SCHEMA_VERSION"
 for record_schema in \
 	CC_REPOSITORIES_LOCAL_SCHEMA_VERSION CC_PAIRING_SESSION_SCHEMA_VERSION \
 	CC_GROUNDING_MANIFEST_SCHEMA_VERSION CC_LEASE_SCHEMA_VERSION \
@@ -103,7 +103,7 @@ for record_schema in \
 	CC_CHANGE_SET_SCHEMA_VERSION CC_VERIFIER_RESULT_SCHEMA_VERSION \
 	CC_HUMAN_ACCEPTANCE_SCHEMA_VERSION CC_COMPLETION_SCHEMA_VERSION \
 	CC_DELIVERY_SCHEMA_VERSION CC_KNOWLEDGE_DEBT_SCHEMA_VERSION; do
-	contains "$W/runtime/engine.sh" "$record_schema"
+	contains "${W}/runtime/engine.sh" "$record_schema"
 done
 
 # --- shipped skills present; old-design skills absent ---
@@ -122,12 +122,12 @@ contains "$ci" "plan-level"
 # --- tracing/feasibility replaced the spec adversary + envelope check ---
 not_contains "$ci" "spec adversary"
 not_contains "$ci" "scope envelope"
-test ! -e "$ROOT/agents/spec-adversary.md" || fail "spec-adversary role must be removed"
-require_file "$ROOT/agents/tracer.md"
-contains "$ROOT/agents/tracer.md" "real code"
-contains "$ROOT/agents/tracer.md" "child per repository"
-require_file "$W/contracts/schemas/trace-manifest.yaml"
-contains "$W/contracts/schemas/intent-contract.yaml" "i<NNN>-<kebab-slug>"
+test ! -e "$ROOT/.context-circuit/agents/spec-adversary.md" || fail "spec-adversary role must be removed"
+require_file "$ROOT/.context-circuit/agents/tracer.md"
+contains "$ROOT/.context-circuit/agents/tracer.md" "real code"
+contains "$ROOT/.context-circuit/agents/tracer.md" "child per repository"
+require_file "${W}/contracts/schemas/trace-manifest.yaml"
+contains "${W}/contracts/schemas/intent-contract.yaml" "i<NNN>-<kebab-slug>"
 tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
 contains "$tr" "one read-only tracer child per repository"
 contains "$tr" "feasibility check"
@@ -139,10 +139,10 @@ contains "$ce" "intent-authorized"
 contains "$ce" "unresolved intent-level question"
 not_contains "$ce" "intent-envelope-check"
 # the envelope verb is gone from the runtime; the authorization verb replaces it
-not_contains "$W/runtime/engine.sh" "intent-envelope-check"
-not_contains "$W/runtime/engine.sh" "cc_intent_envelope_check"
-contains "$W/runtime/engine.sh" "cc_intent_authorized"
-contains "$W/runtime/engine.sh" "cc_attempt_norm"
+not_contains "${W}/runtime/engine.sh" "intent-envelope-check"
+not_contains "${W}/runtime/engine.sh" "cc_intent_envelope_check"
+contains "${W}/runtime/engine.sh" "cc_intent_authorized"
+contains "${W}/runtime/engine.sh" "cc_attempt_norm"
 cv="$ROOT/.agents/skills/cc-verify/SKILL.md"
 contains "$cv" "current_attempt"
 contains "$cv" "003"
@@ -166,15 +166,15 @@ contains "$pair" "runtime-cleanup"
 contains "$pair" "Explore tier"
 contains "$pair" "Promote"
 contains "$inv" "INV-ASSURE-01"
-contains "$W/adapters/WORKFLOW.md" "/cc-pair"
-contains "$ROOT/agents/coordinator.md" "INV-PAIR-01"
-contains "$ROOT/agents/worker.md" "Direct-collaboration mode"
-contains "$W/adapters/AGENTS.md" "reads and follows \`agents/coordinator.md\`"
-contains "$ROOT/agents/coordinator.md" "Start at the user's vocabulary level"
-contains "$ROOT/docs/terminology.md" '| Workspace | "workspace" when the user has not introduced that term |'
-contains "$ROOT/docs/terminology.md" '| Runtime, skill, tool, or command failure |'
-contains "$ROOT/agents/coordinator.md" "classify every trace question"
-contains "$ROOT/docs/templates/intent.md" "At draft time"
+contains "${W}/adapters/WORKFLOW.md" "/cc-pair"
+contains "$ROOT/.context-circuit/agents/coordinator.md" "INV-PAIR-01"
+contains "$ROOT/.context-circuit/agents/worker.md" "Direct-collaboration mode"
+contains "${W}/adapters/AGENTS.md" "reads and follows \`.context-circuit/agents/coordinator.md\`"
+contains "$ROOT/.context-circuit/agents/coordinator.md" "Start at the user's vocabulary level"
+contains "$ROOT/.context-circuit/docs/terminology.md" '| Workspace | "workspace" when the user has not introduced that term |'
+contains "$ROOT/.context-circuit/docs/terminology.md" '| Runtime, skill, tool, or command failure |'
+contains "$ROOT/.context-circuit/agents/coordinator.md" "classify every trace question"
+contains "$ROOT/.context-circuit/docs/templates/intent.md" "At draft time"
 for old in cc-entry cc-gates cc-next cc-upgrade; do
 	test ! -e "$ROOT/.agents/skills/$old" || fail "old skill remains: $old"
 done
@@ -194,44 +194,44 @@ contains "$ROOT/context/domains/system-design-authoring/README.md" "sources/syst
 test ! -e "$ROOT/.agents/skills/cc-intent-detail" || fail "cc-intent-detail must not exist"
 test ! -e "$ROOT/sources/system-design/context-circuit/v1.1.0" || fail "unsolicited v1.1.0 design tree must be absent"
 # system-design is authoring-only: no runtime schema, no invariant, no WORKFLOW action
-test ! -e "$W/contracts/schemas/system-design.yaml" || fail "system-design must add no runtime schema"
-test ! -e "$W/contracts/schemas/design-acceptance.yaml" || fail "system-design must add no acceptance schema"
+test ! -e "${W}/contracts/schemas/system-design.yaml" || fail "system-design must add no runtime schema"
+test ! -e "${W}/contracts/schemas/design-acceptance.yaml" || fail "system-design must add no acceptance schema"
 not_contains "$inv" "INV-DESIGN"
-not_contains "$W/adapters/WORKFLOW.md" "design the system"
+not_contains "${W}/adapters/WORKFLOW.md" "design the system"
 
 # --- adapters and roles present; role aliases removed ---
 for a in AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md worker-brief.md; do
-	require_file "$W/adapters/$a"
+	require_file "${W}/adapters/$a"
 done
 # execution-latency: additive-only, no new invariant id. Per-role tiering
-# guidance is coordinator-read, so it ships in docs/ (a wholesale-shipped tree),
-# not in the source-only wrapper/adapters/ staging directory.
-require_file "$ROOT/docs/role-tiering.md"
-contains "$inv" "role_tiering: docs/role-tiering.md"
-contains "$ROOT/docs/role-tiering.md" "tracer"
-contains "$ROOT/docs/role-tiering.md" "workspace root"
-contains "$ROOT/docs/role-tiering.md" "A missing file in an isolated working copy is not an absent config"
+# guidance is coordinator-read, so it ships in .context-circuit/docs/ (a wholesale-shipped tree),
+# not in the source-only .context-circuit/wrapper/adapters/ staging directory.
+require_file "$ROOT/.context-circuit/docs/role-tiering.md"
+contains "$inv" "role_tiering: .context-circuit/docs/role-tiering.md"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "tracer"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "workspace root"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "A missing file in an isolated working copy is not an absent config"
 contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "workspace root"
 contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "workspace root"
 contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "role-tiering"
-contains "$W/adapters/AGENTS.md" "workspace root"
-contains "$W/adapters/CLAUDE.md" "workspace root"
-contains "$W/adapters/CURSOR.md" "workspace root"
-contains "$W/adapters/AGENTS.md" "Applying a configured tier on Cursor"
-contains "$W/adapters/CURSOR.md" "Do not default to inherit"
-not_contains "$ROOT/docs/role-tiering.md" "Tracer tiering isn’t supported"
-not_contains "$ROOT/docs/role-tiering.md" "Tracer tiering isn't supported"
+contains "${W}/adapters/AGENTS.md" "workspace root"
+contains "${W}/adapters/CLAUDE.md" "workspace root"
+contains "${W}/adapters/CURSOR.md" "workspace root"
+contains "${W}/adapters/AGENTS.md" "Applying a configured tier on Cursor"
+contains "${W}/adapters/CURSOR.md" "Do not default to inherit"
+not_contains "$ROOT/.context-circuit/docs/role-tiering.md" "Tracer tiering isn’t supported"
+not_contains "$ROOT/.context-circuit/docs/role-tiering.md" "Tracer tiering isn't supported"
 not_contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "Tracer tiering isn’t supported"
 not_contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "Tracer tiering isn’t supported"
-not_contains "$W/adapters/AGENTS.md" "Tracer tiering isn’t supported"
+not_contains "${W}/adapters/AGENTS.md" "Tracer tiering isn’t supported"
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
 contains "$man" "runtime_version: 1.0.0"
 for r in coordinator worker verifier; do
-	require_file "$ROOT/agents/$r.md"
+	require_file "$ROOT/.context-circuit/agents/$r.md"
 done
 for alias in repository-worker reviewer; do
-	test ! -e "$ROOT/agents/$alias.md" || fail "role alias remains: $alias"
+	test ! -e "$ROOT/.context-circuit/agents/$alias.md" || fail "role alias remains: $alias"
 done
 
 pass 'contracts'

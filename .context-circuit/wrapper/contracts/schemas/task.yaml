@@ -1,0 +1,35 @@
+schema_version: 1
+owner: .context-circuit/wrapper/contracts/schemas/task.yaml
+describes: plans/<plan-id>/tasks/NNN-<slug>.md
+concern: task_projection
+
+purpose: >
+  Readable per-task detail file. It explains rationale, intended behavior,
+  concrete change, affected surfaces, inputs, outputs, risks, and stop
+  conditions. It does not own lifecycle status and never duplicates canonical
+  identifiers defined in plan.yaml.
+
+frontmatter_fields:
+  id: { type: string, required: true, description: must match a plan.yaml task id }
+  title: { type: string, required: true }
+  repositories: { type: list, required: true }
+  paths: { type: list, required: true }
+  depends_on: { type: list, required: true }
+  acceptance: { type: list, required: true, description: acceptance ids only }
+  verification: { type: list, required: true, description: verification ids only }
+
+body_sections:
+  - intended behavior
+  - concrete change and affected surfaces
+  - inputs and outputs
+  - context references
+  - risks and open questions
+  - stop conditions
+
+notes: >
+  A task status is a synchronized projection of the plan status (draft/done); it
+  is never an independent lifecycle authority.
+
+rules:
+  - INV-PLAN-01
+  - INV-PLAN-02

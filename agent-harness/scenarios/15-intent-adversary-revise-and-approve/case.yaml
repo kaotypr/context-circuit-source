@@ -65,19 +65,19 @@ grader:
   access_policy:
     orient:
       required: []
-      allowed: ["context/**", "intent/**", "wrapper/contracts/**"]
+      allowed: ["context/**", "intent/**", ".context-circuit/wrapper/contracts/**"]
       forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
     approve:
       required: []
-      allowed: ["intent/**", "context/**", "wrapper/contracts/**"]
+      allowed: ["intent/**", "context/**", ".context-circuit/wrapper/contracts/**"]
       forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
     trace:
       required: []
-      allowed: ["intent/**", "context/**", "notes/**", "wrapper/contracts/**"]
+      allowed: ["intent/**", "context/**", "notes/**", ".context-circuit/wrapper/contracts/**"]
       forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
     create-plan:
       required: []
-      allowed: ["intent/**", "plans/**", "context/**", "wrapper/contracts/**"]
+      allowed: ["intent/**", "plans/**", "context/**", ".context-circuit/wrapper/contracts/**"]
       forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
   budgets:
     approve: { max_turns: 4, max_tokens: 30000 }

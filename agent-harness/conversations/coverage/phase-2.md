@@ -2,7 +2,7 @@
 
 How the six phase-2 plots cover the existing `scenarios/` cases and the harness
 gaps they surface. Descriptive only: every rule cited is owned by
-`wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`.
+`.context-circuit/wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`.
 
 ## Existing cases → plots
 

@@ -57,11 +57,11 @@ grader:
   access_policy:
     orient:
       required: []
-      allowed: ["intent/**", "context/**", "wrapper/contracts/**"]
+      allowed: ["intent/**", "context/**", ".context-circuit/wrapper/contracts/**"]
       forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
     review:
       required: []
-      allowed: ["intent/**", "context/**", "wrapper/contracts/**"]
+      allowed: ["intent/**", "context/**", ".context-circuit/wrapper/contracts/**"]
       forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
   budgets:
     review: { max_turns: 3, max_tokens: 20000 }

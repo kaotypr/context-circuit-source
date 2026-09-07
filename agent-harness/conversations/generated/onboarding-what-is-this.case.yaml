@@ -59,9 +59,9 @@ grader:
       allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md"]
       forbidden:
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
   # environmental overlay (NOT from the plot) — aligned to orient-new-project's budget
   budgets:
     orient: { max_turns: 3, max_tokens: 10000 }

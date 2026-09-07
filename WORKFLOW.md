@@ -20,8 +20,8 @@ adapter → multi-repository execution → independent verification → repair l
 recovery/delivery → semantic verification. Scoped increments layer on that core
 in the order recorded in `plans/context-circuit-plans/INDEX.md`.
 
-The released product's lifecycle is specified by `wrapper/adapters/WORKFLOW.md`
-and owned by `wrapper/contracts/`. The source workflow only governs safe
+The released product's lifecycle is specified by `.context-circuit/wrapper/adapters/WORKFLOW.md`
+and owned by `.context-circuit/wrapper/contracts/`. The source workflow only governs safe
 maintainer changes to that product.
 
 Before changing a rule, identify its canonical owner and update the semantic

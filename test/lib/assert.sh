@@ -12,4 +12,4 @@ expect_failure() { if "$@" >/dev/null 2>&1; then fail "expected failure: $*"; fi
 # (e.g. test/<suite>/ or the top-level agent-harness/). Git is authoritative;
 # the ../.. form is a fallback for non-git contexts.
 ROOT=$(git -C "$(dirname -- "$0")" rev-parse --show-toplevel 2>/dev/null) || ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-. "$ROOT/wrapper/runtime/engine.sh"
+. "$ROOT/.context-circuit/wrapper/runtime/engine.sh"

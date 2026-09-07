@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-27
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Run-stack
@@ -32,7 +32,7 @@ Executing a *set* of intent-authorized plans in one request — a "plan stack" �
 conflict between them becomes a scheduling decision made before a worker runs,
 not a merge collision discovered afterward. Route "execute plans `<X>`…`<Z>`" and
 "run the ready stack" here. Owned by the `cc-run-stack` skill; the run-stack
-action is owned by `wrapper/adapters/WORKFLOW.md`. Adds no new authority: every
+action is owned by `.context-circuit/wrapper/adapters/WORKFLOW.md`. Adds no new authority: every
 plan is still individually authorized by its intent, verified, completed, and delivered.
 
 ## Scope
@@ -79,7 +79,7 @@ verification ([verification](../verification/README.md)), completion
 
 ## Workflows
 
-- Execute a batch of intent-authorized plans in one go: `docs/getting-started.md`
+- Execute a batch of intent-authorized plans in one go: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -102,14 +102,14 @@ predecessor fails — keep such a plan late and thin.
 
 ## Implementation references
 
-- `.agents/skills/cc-run-stack/SKILL.md`, `wrapper/adapters/WORKFLOW.md`
-- `wrapper/runtime/engine.sh`: `cc_plan_dependencies`, `cc_plan_dep_closure`,
+- `.agents/skills/cc-run-stack/SKILL.md`, `.context-circuit/wrapper/adapters/WORKFLOW.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_dependencies`, `cc_plan_dep_closure`,
   `cc_plan_is_descendant`, `cc_region_overlap`, `cc_lease_check`,
   `cc_lease_acquire`, `cc_lease_release`, `cc_plan_same_repo_preds`,
   `cc_base_prepare`, `cc_plan_ready`, `cc_run_stack_ready`
-- `wrapper/contracts/schemas/lease.yaml`, `plan.yaml` (`plan_dependencies`,
+- `.context-circuit/wrapper/contracts/schemas/lease.yaml`, `plan.yaml` (`plan_dependencies`,
   `schema_version [1, 2]`), `execution.yaml` (`based_on`)
-- `wrapper/contracts/invariants.yaml`: INV-PLAN-05, INV-CONCURRENCY-01,
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-05, INV-CONCURRENCY-01,
   INV-CONCURRENCY-02
 
 ## Verification

@@ -70,11 +70,11 @@ grader:
     orient:
       required: []
       allowed: ["plans/**", "intent/**", "context/**"]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
     trace:
       required: []
       allowed: ["plans/**", "intent/**", "context/**", "notes/**"]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
   # environmental overlay (NOT from the plot) — preserved from case 16
   budgets:
     trace: { max_turns: 3, max_tokens: 24000 }

@@ -78,7 +78,7 @@ access_discipline:
   refuse-unapproved:
     required: []
     allowed: ["plans/**", "intent/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
 ```
 
 ## Dialogue

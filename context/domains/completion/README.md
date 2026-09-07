@@ -21,8 +21,8 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
-  - docs/product-knowledge.md
+  - .context-circuit/docs/getting-started.md
+  - .context-circuit/docs/product-knowledge.md
 ---
 
 # Completion
@@ -70,8 +70,8 @@ index is a retrieval catalog, not a full copy of page content
 
 ## Workflows
 
-- Mark complete: `docs/getting-started.md`
-- In-place knowledge updates: `docs/product-knowledge.md`
+- Mark complete: `.context-circuit/docs/getting-started.md`
+- In-place knowledge updates: `.context-circuit/docs/product-knowledge.md`
 
 ## Interfaces
 
@@ -105,13 +105,13 @@ reference and refreshes it before execution.
 ## Implementation references
 
 - `.agents/skills/cc-complete/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_plan_complete`, `cc_completion_finalize`,
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_complete`, `cc_completion_finalize`,
   `cc_latest_execution`, `cc_context_impact_record`. `cc_completion_ready` is
   an eligibility query, not a mark-done gate.
-- `wrapper/contracts/schemas/completion.yaml`,
-  `wrapper/contracts/schemas/context-impact.yaml`,
-  `wrapper/contracts/schemas/context-index.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-COMPLETE-01, INV-COMPLETE-02,
+- `.context-circuit/wrapper/contracts/schemas/completion.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/context-impact.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/context-index.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-COMPLETE-01, INV-COMPLETE-02,
   INV-KNOWLEDGE-01, INV-KNOWLEDGE-02
 
 ## Verification

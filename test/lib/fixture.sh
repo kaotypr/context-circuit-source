@@ -7,6 +7,7 @@ cc_fx_ws() {
 	cc_fx_root=$(mktemp -d "${TMPDIR:-/tmp}/cc-fx.XXXXXX") || return 1
 	cc_fx_root=$(cd "$cc_fx_root" && pwd -P) || return 1
 	printf 'schema_version: 1\nworkspace: fx-ws\ntitle: Fixture\nrepositories: []\n' >"$cc_fx_root/workspace.yaml"
+	mkdir -p "$cc_fx_root/.context-circuit/wrapper"
 	cc_workspace_init "$cc_fx_root" >/dev/null
 	printf '# Project\n\nFixture project knowledge.\n' >"$cc_fx_root/context/PROJECT.md"
 	printf '%s' "$cc_fx_root"

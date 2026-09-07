@@ -77,9 +77,9 @@ grader:
       forbidden:
         - "notes/**"
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
   # environmental overlay (NOT from the plot) — per-host tuning
   budgets:
     query: { max_turns: 3, max_tokens: 12000 }

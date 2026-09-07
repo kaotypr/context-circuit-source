@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-09-02
   accepted_by: maintainer
 workflows:
-  - docs/planning.md
+  - .context-circuit/docs/planning.md
 ---
 
 # Plan authorization
@@ -105,9 +105,9 @@ plan is not re-executed. Unrelated dirty working-tree files are preserved.
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`, `.agents/skills/cc-execute/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_intent_authorized`, `cc_execution_begin`, `cc_plan_set_status`
-- `wrapper/contracts/schemas/plan.yaml`, `wrapper/contracts/schemas/intent-contract.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-APPROVE-01, INV-INTENT-02, INV-PLAN-01, INV-EXEC-01
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_intent_authorized`, `cc_execution_begin`, `cc_plan_set_status`
+- `.context-circuit/wrapper/contracts/schemas/plan.yaml`, `.context-circuit/wrapper/contracts/schemas/intent-contract.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-APPROVE-01, INV-INTENT-02, INV-PLAN-01, INV-EXEC-01
 
 ## Provenance
 

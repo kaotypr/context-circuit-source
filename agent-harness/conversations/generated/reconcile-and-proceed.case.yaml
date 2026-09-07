@@ -69,7 +69,7 @@ grader:
     reconcile:
       required: []
       allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", "wrapper/contracts/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".context-circuit/wrapper/contracts/**"]
   # environmental overlay (NOT from the plot) — conversation-only tuning
   budgets:
     reconcile: { max_turns: 3, max_tokens: 20000 }
