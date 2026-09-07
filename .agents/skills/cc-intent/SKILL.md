@@ -116,6 +116,14 @@ with no intent-level questions, update the `INTENT.md` status line with
 stale, then `cc-plan` derives the plan or plans **in that same turn**. After
 approval the human is not asked to approve a plan.
 
+Treat approval-to-plan as one measured continuation. Carry a bounded monotonic phase
+record through approval/freeze, trace dispatch and its exact/delta/cold/fallback mode,
+feasibility and question disposition, fragment ratification, allocation/render,
+validation, authorization/publication, and total. This evidence contains phase offsets
+and trace mode only and grants no authority. A feasible Standard/Critical approval
+continues through one atomic stack materialization request in the same turn; no
+additional human action is inserted.
+
 Changing any criteria-bearing field after approval is a new decision: it breaks
 the frozen digest, so the plan's authorization fails until re-approved, and it voids
 prior candidate evidence (INV-CANDIDATE-01). Take approval again on the changed

@@ -51,6 +51,14 @@ Knowledge. Its task is to read the repository first-hand and report back a durab
   showing the found set is the *whole* set, so completeness is a check that passes or
   fails rather than a file count hand-maintained.
 
+The same report must be plan-ready: record `plan_ready_version: 1`, stable repository
+identity and canonical location/binding, observed and current revisions, structural-map
+schema/discovery identity, exact/delta/cold/fallback mode and reread paths, typed
+revision-bound anchors, investigation leads, normalized request-local fragments and
+dependencies, criterion coverage, checks, and a typed feasibility outcome. This does
+not make the tracer a planner: it allocates no ids, ratifies no boundary, approves
+nothing, and publishes nothing.
+
 What it does **not** do: it does not write plans, does not edit the frozen contract,
 and does not talk to the human. It can **kick back to the intent** (when the intent
 itself is wrong, incomplete, infeasible, or larger than approved) or surface an
@@ -69,6 +77,13 @@ pass that measures the change first: a proportionate read at Standard, an exhaus
 call-site and dependency map with completeness proofs required at Critical. The
 manifest is durable grounding evidence: a later session loads it and runs a bounded
 freshness check against current code rather than re-tracing from zero (INV-GROUND-*).
+
+Structural maps live only in the gitignored local trace cache and contain inventory and
+command metadata, never source copies, ignored files, secrets, or provider payloads.
+Exact reuse still rereads current intent sites. Bounded delta reuse rereads changed
+sites and known dependents. Legacy/incompatible evidence, discovery-rule drift, broad
+or ancestry-uncertain drift, and identity uncertainty fall back to a cold trace. Record
+the reason and never let cached knowledge silently survive relevant drift.
 
 If the host cannot create the tracer child, the coordinator reports `host-blocked` and
 grounds the plan on whatever is available (existing Product Knowledge and the worker's
