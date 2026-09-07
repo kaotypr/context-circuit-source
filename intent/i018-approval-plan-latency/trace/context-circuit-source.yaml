@@ -1,0 +1,186 @@
+schema_version: 1
+intent: i018-approval-plan-latency
+repository: context-circuit-source
+file_map:
+  - path: .context-circuit/wrapper/runtime/engine.sh
+    sites:
+      - "509-549 cc_intent_approve: currently validates, freezes contract_digest, syncs INTENT.md, and updates intent/INDEX.md only; it has no tracer dispatch, feasibility barrier, plan derivation, timing, or cache handling."
+      - "125-143 cc_atomic_write and 1594-1611 cc_plan_allocate_id: reusable atomic file helper exists, but ID allocation scans active/archive directories without a reservation or batch invocation identity, so concurrent/multi-plan allocation can collide."
+      - "1512-1592 cc_plan_validate: validates one already-materialized plan and its dependency/task structure; it has no staged-stack validation, criterion coverage, or all-or-nothing publication boundary."
+      - "1613-1643 cc_plan_index_row_present/cc_plan_index_upsert: mutates one active index row at a time, with no batch index transaction."
+      - "3516-3605 cc_main: exposes separate intent-approve, plan-allocate-id, plan-validate, and plan-index-upsert verbs; no approval-to-plan or atomic materialization verb exists."
+    integration: "This is the deterministic runtime owner for approval mechanics, plan IDs, validation, indexing, and atomic writes; coordinator skills must continue to own tracing, feasibility, and plan judgment."
+  - path: .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
+    sites:
+      - "23-100 schema_version 1 manifest fields: supports file_map/task_partition/risks/done_checks/feasible/questions and freshness_checked_at, but has no repository revision, grounding_mode, reread paths, or plan-shaped fragments/anchors."
+    integration: "The manifest is the durable handoff from the independent tracer to feasibility and cc-plan; schema evolution must preserve existing required fields and keep derived evidence outside contract_digest."
+  - path: .context-circuit/wrapper/contracts/schemas/plan.yaml
+    sites:
+      - "36-145 plan schema v3: requires one repository per plan, tasks with declared paths/dependencies, context_grounding decisions, acceptance/verification, and execution lifecycle; any new materializer must emit this shape and preserve advisory anchors without turning them into an implicit allowlist."
+    integration: "The canonical artifact validated by cc_plan_validate and consumed by worker/verifier execution."
+  - path: .context-circuit/wrapper/contracts/invariants.yaml
+    sites:
+      - "48-89 INV-INTENT-01/02: approval freezes criteria; tracer remains post-approval, independent, per-repository, and before plans; feasibility is coordinator judgment and fails upward."
+      - "471-510 owners map: assigns intent gate/feasibility/trace manifest/tracer role/plan lifecycle/runtime owners; new latency behavior must not create parallel policy in skills or role packets."
+    integration: "Authoritative one-rule-one-owner contract and host-neutral boundary."
+  - path: .context-circuit/agents/coordinator.md
+    sites:
+      - "46-76 intent front door: coordinator currently sequences approval, parallel tracer spawn, feasibility, status sync, and same-turn cc-plan derivation; materialization must be invoked as one ratified operation without moving judgment into runtime."
+      - "115-132 execution coordination and 160-174 host evidence: host/model/effort evidence is bounded and must not become authorization or user-visible timing payload."
+    integration: "Coordinator is the only owner of feasibility, question dispositions, tier/plan-boundary judgment, and final materialization request."
+  - path: .agents/skills/cc-trace/SKILL.md
+    sites:
+      - "Freshness and manifest requirements: current skill requires revision-aware bounded freshness checks, complete manifest fields, question dispositions, completeness proof, and one tracer child per scoped repository."
+      - "Plan-boundary guidance: one repository can remain one plan with embedded tasks; independent boundaries or multiple repositories require stacked plans."
+    integration: "Must gain cache-mode/revision evidence and plan-shaped output without becoming a plan writer or replacing the independent tracer."
+  - path: .agents/skills/cc-plan/SKILL.md
+    sites:
+      - "6-29 derives plans only after feasible trace; 35-69 ratifies one vs stacked boundaries and resolves every trace question before writing."
+      - "79-117 writes PLAN.md/plan.yaml, adds INDEX row, validates, and preflights intent authorization one plan at a time."
+    integration: "The second interpretation/command loop to remove; retain coordinator judgment while feeding one validated materialization request."
+  - path: .context-circuit/agents/worker.md
+    sites:
+      - "7-23 worker reads snapshot and writes only declared paths; 25-41 forbids silent path/repository expansion and requires reporting."
+    integration: "Conflicts with approved i018 behavior that tracer anchors are advisory and same-repository necessary worker discoveries may be recorded without plan rewrite; semantics must be reconciled with verifier/handoff evidence."
+  - path: .context-circuit/agents/verifier.md
+    sites:
+      - "3-22 verifier replays canonical checks and checks repository/path scope from the plan and handoff, read-only."
+    integration: "Verifier must inspect complete candidate diff and account for worker-discovered same-repository paths when anchors cease to be an exhaustive allowlist."
+  - path: test/intent/test-approval-trace-plan.sh
+    sites:
+      - "1-56 asserts approval → tracer → feasibility → same-turn plan sequencing and INTENT.md feasible status; current coverage is textual/runtime fixture based and does not exercise real materialization."
+    integration: "Regression suite for LAT-AC-001 and the no-second-gate ordering."
+  - path: test/intent/test-feasibility.sh
+    sites:
+      - "1-105 asserts manifest contract fields, feasibility outcomes, and approved-intent authorization; preserve the deliberate absence of an automated scope gate."
+    integration: "Regression suite for LAT-AC-004/LAT-AC-009."
+  - path: test/latency/test-latency.sh
+    sites:
+      - "1-45,52-60,100-170 covers bounded timing/evidence fields for execution attempts, not approval-to-plan timing; it is adjacent regression evidence, not sufficient i018 coverage."
+    integration: "Existing latency test location is the natural home for approval benchmark tests, but new tests must measure approval request through validated plan-stack publication."
+  - path: test/acceptance.sh
+    sites:
+      - "1-24 runs the semantic acceptance suites; it is the full regression command after meaningful implementation phases."
+    integration: "Final broad verification for contract, intent, plan, grounding, and runtime regressions."
+  - path: intent/i018-approval-plan-latency/detail/incremental-grounding.md
+    sites:
+      - "Repository-map identity, warm exact/delta/fallback flow, cache isolation, and no-secret/no-source-copy constraints define the intended implementation behavior."
+    integration: "Approved design evidence; implementation must land in source/runtime/contracts/tests rather than modifying this pre-approval detail as a policy owner."
+  - path: intent/i018-approval-plan-latency/detail/plan-shaped-trace.md
+    sites:
+      - "Fragment shape, advisory anchors, worker adaptation protocol, and pre-materialization validation define the intended trace-to-plan handoff."
+    integration: "Approved design evidence for schema/skill/role changes; final plan IDs remain materializer-owned."
+  - path: intent/i018-approval-plan-latency/detail/atomic-materialization.md
+    sites:
+      - "Materialization request, batch allocation, staging/publication, idempotent retry, and phase timing sections define required atomic-operation behavior and benchmark cases."
+    integration: "Approved design evidence; current engine has only single-step primitives, so this is a cross-cutting runtime/contract/test change."
+task_partition:
+  - id: incremental-grounding
+    title: Make repository grounding revision-bound and reusable
+    rationale: "Add a derived immutable cache/map identity and bounded exact/delta/fallback freshness path to cc-trace while preserving an independent first-hand tracer and the existing manifest evidence."
+    paths:
+      - .agents/skills/cc-trace/SKILL.md
+      - .context-circuit/agents/tracer.md
+      - .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
+      - .context-circuit/wrapper/contracts/invariants.yaml
+      - context/domains/tracing/README.md
+      - test/intent/test-feasibility.sh
+      - test/latency/test-latency.sh
+    depends_on: []
+  - id: plan-shaped-trace
+    title: Produce structured plan-ready trace fragments
+    rationale: "Extend the durable trace handoff with observed revision/cache mode, typed anchors, investigation leads, criterion coverage, and normalized fragment/task dependencies so cc-plan need not perform a second repository interpretation pass."
+    paths:
+      - .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
+      - .agents/skills/cc-trace/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - .context-circuit/agents/coordinator.md
+      - .context-circuit/agents/worker.md
+      - .context-circuit/agents/verifier.md
+      - .context-circuit/wrapper/contracts/schemas/worker-handoff.yaml
+      - .context-circuit/wrapper/contracts/schemas/verifier-result.yaml
+      - test/intent/test-approval-trace-plan.sh
+    depends_on:
+      - incremental-grounding
+  - id: atomic-plan-stack
+    title: Materialize and measure the complete plan stack atomically
+    rationale: "Introduce one validated request boundary that batch-allocates unique IDs, renders and validates all plans/dependencies/authorization/index rows in staging, publishes all-or-nothing, and records phase timing/cache mode."
+    paths:
+      - .context-circuit/wrapper/runtime/engine.sh
+      - .context-circuit/wrapper/contracts/schemas/plan.yaml
+      - .context-circuit/wrapper/contracts/schemas/intent-contract.yaml
+      - .context-circuit/wrapper/contracts/schemas/invariants.yaml
+      - .context-circuit/agents/coordinator.md
+      - .agents/skills/cc-intent/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - test/intent/test-approval-trace-plan.sh
+      - test/intent/test-feasibility.sh
+      - test/latency/test-approval-plan.sh
+      - test/acceptance.sh
+    depends_on:
+      - plan-shaped-trace
+    plan_boundary: one-plan-with-embedded-tasks
+    boundary_rationale: "The intent is scoped to one repository. These partitions share one approval/coordinator lifecycle, one runtime/materialization failure surface, one plan-stack publication boundary, and one independent verification boundary; separating them into stacked plans would make the intermediate trace/cache contracts unverifiable in isolation and would violate the intent's same-turn outcome."
+risks:
+  - "Current cc_intent_approve only freezes and indexes the intent; wiring plans into approval can accidentally make approval mutate plans before feasibility or publish partial state. Keep tracer/feasibility as a barrier and publish no plan on blocked/intent-revision/host-blocked outcomes."
+  - "cc_plan_allocate_id scans directories without reservation; concurrent or retried batch allocation can duplicate IDs unless the materializer uses a lock/reservation keyed by invocation identity and includes archived IDs."
+  - "cc_plan_validate and cc_plan_index_upsert are single-plan/single-row operations; composing them naïvely leaves partial plans/index rows when a later plan fails. Stage the complete tree and validate staged dependencies/authorization before one publication boundary."
+  - "Trace-manifest is schema v1 and lacks revision/cache/fragment fields; old manifests cannot silently be treated as plan-ready. Use explicit legacy fallback or bounded re-trace and preserve required v1 evidence."
+  - "Repository-map cache can hide relevant drift or leak source/credential/provider payloads if it stores content rather than structural indexes. Bind by workspace/repository/revision/schema/discovery rules, use immutable keys, and fall back cold on uncertain/broad drift."
+  - "The approved design changes tracer paths from an inferred worker allowlist to advisory anchors, while worker.md and plan.yaml currently require declared bounded paths. Updating only the trace schema would either violate the intent or weaken existing worker/verifier scope safety; handoff and verifier must account for every same-repository expansion and stop on another repository or decision change."
+  - "The runtime is model-blind and feasibility is coordinator judgment; moving fragment ratification, tier selection, question dispositions, or cache validity verdicts into engine.sh would create a parallel policy owner and weaken host neutrality."
+  - "Timing evidence must use monotonic elapsed measurements and bounded fields without provider payloads, hidden reasoning, credentials, or user-facing internal jargon; shell wall-clock/date values alone are insufficient for elapsed timing."
+  - "Retries around malformed plan fragments or publication failures can recreate the observed eight-minute command loop or consume IDs. Return one stage/key/error diagnostic; make pre-publication retries discardable and same-invocation success idempotent."
+  - "The current test/latency/test-latency.sh measures execution attempt evidence, not approval-to-plan latency. Passing it alone cannot prove LAT-AC-002/003/007; add repeatable warm exact, delta, fallback, cold, multi-plan, and invalid-request benchmark cases while preserving quality assertions."
+done_checks:
+  - criterion: LAT-AC-001
+    command: "sh test/latency/test-approval-plan.sh"
+    expect: "pass; a single explicit approval produces every feasible plan in the fixture, each plan file validates and is authorized, with no second approval action."
+  - criterion: LAT-AC-002
+    command: "sh test/latency/test-approval-plan.sh --case warm-standard"
+    expect: "pass; representative exact-cache warm approval reaches validated plan stack within 120 seconds and records whether the approximately 90-second target was met."
+  - criterion: LAT-AC-003
+    command: "sh test/latency/test-approval-plan.sh --case cold-multi-repository"
+    expect: "pass; representative cold full trace completes within the three-to-four-minute benchmark target under the harness conditions, without reducing trace quality."
+  - criterion: LAT-AC-004
+    command: "sh test/intent/test-feasibility.sh && sh test/intent/test-approval-trace-plan.sh"
+    expect: "pass; manifests retain anchors, task partitions, risks, runnable checks, tier/feasibility, scope reach, and question dispositions, and plans are derived only after the feasibility barrier."
+  - criterion: LAT-AC-005
+    command: "sh test/latency/test-approval-plan.sh --case exact-delta-fallback"
+    expect: "pass; exact revision reuses a map, bounded relevant drift rereads/updates it, and unknown/broad drift or incompatible cache falls back to cold trace; stale evidence is never silently reused."
+  - criterion: LAT-AC-006
+    command: "sh test/latency/test-approval-plan.sh --case multi-plan-atomicity"
+    expect: "pass; batch IDs are unique/stable, all staged plan files/dependencies/authorization/index rows agree, and injected validation failure leaves no partial visible stack or duplicate IDs."
+  - criterion: LAT-AC-007
+    command: "sh test/latency/test-approval-plan.sh --case timing-evidence"
+    expect: "pass; approval records monotonic phase durations for approval, trace dispatch/per-repository trace, feasibility, ratification, materialization, validation, publication, fallback, and total time with no sensitive payloads."
+  - criterion: LAT-AC-008
+    command: "sh test/latency/test-approval-plan.sh --case same-repository-expansion"
+    expect: "pass; worker can record and verifier checks an additional necessary path inside its assigned repository without plan rewrite or a new human gate, while tracer anchors remain advisory."
+  - criterion: LAT-AC-009
+    command: "sh test/latency/test-approval-plan.sh --case expansion-stop"
+    expect: "pass; a needed second repository or approved-decision change stops with a structured coordinator finding, while ordinary same-repository discovery proceeds."
+  - criterion: LAT-AC-001
+    command: "sh test/acceptance.sh"
+    expect: "pass; complete semantic acceptance suite remains green after the latency changes."
+tier_signal: "Standard remains appropriate: this changes host-neutral orchestration, cache metadata, shell materialization, and plan records, but the approved scope contains no auth, secrets, money, production deployment, data migration, or irreversible side effect. Raise only if implementation introduces credential-bearing cache data, production/deploy automation, or destructive publication semantics."
+feasible: true
+out_of_scope_reach: []
+open_questions:
+  - question: "Which host-local cache location and repository revision command should implement the map identity?"
+    disposition: plan-resolution
+    note: "The approved detail already fixes the identity dimensions and cold fallback; choose a git-aware, gitignored, immutable-by-key location during plan derivation without changing the intent."
+  - question: "Should plan-shaped trace fragments become a new trace-manifest schema version or be represented compatibly inside schema v1?"
+    disposition: plan-resolution
+    note: "Schema evolution is an implementation detail; old manifests must receive explicit legacy fallback or bounded re-trace, never be silently accepted as complete."
+  - question: "Should atomic materialization be exposed as a new runtime verb or invoked through an adapter/coordinator wrapper?"
+    disposition: plan-resolution
+    note: "Runtime owns deterministic allocation/render/validation/publication, while coordinator owns judgment; select the smallest host-neutral interface during planning."
+  - question: "How should plan/task path fields represent advisory trace anchors while retaining protected constraints?"
+    disposition: plan-resolution
+    note: "The approved intent already answers the semantic question: anchors are not exhaustive worker allowlists, same-repository necessary expansions are recorded and independently checked, and second-repository/decision changes stop. The plan must resolve the concrete schema/handoff migration."
+  - question: "Do existing single-plan tests and fixtures need to remain supported alongside the new batch materializer?"
+    disposition: already-answered
+    note: "Preserve existing runtime verbs and acceptance behavior unless the derived plan explicitly migrates them; i018 requires latency improvements without weakening existing guarantees."
+recorded_at: "2026-09-07T16:25:25Z"
+freshness_checked_at: "2026-09-07T16:25:25Z"
