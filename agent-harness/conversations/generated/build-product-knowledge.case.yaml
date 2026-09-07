@@ -67,7 +67,7 @@ grader:
     learn:
       required: [workspace.yaml, context/INDEX.md]
       allowed: [AGENTS.md, WORKFLOW.md, "context/**", "notes/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
   # environmental overlay (NOT from the plot) — per-host tuning
   budgets:
     learn: { max_turns: 3, max_tokens: 20000 }

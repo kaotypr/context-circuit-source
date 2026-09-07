@@ -69,9 +69,9 @@ grader:
       allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md"]
       forbidden:
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
   # environmental overlay (NOT from the plot) — per-host tuning, preserved from case 01
   budgets:
     orient: { max_turns: 2, max_tokens: 8000 }

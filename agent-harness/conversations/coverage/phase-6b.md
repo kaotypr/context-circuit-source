@@ -1,7 +1,7 @@
 # Phase 6b coverage cross-check — peripheral surfaces & whole-flow
 
 How the four phase-6b plots cover the surface and the harness gaps they surface.
-Descriptive only: every rule cited is owned by `wrapper/contracts/invariants.yaml` or
+Descriptive only: every rule cited is owned by `.context-circuit/wrapper/contracts/invariants.yaml` or
 `test/acceptance/criteria-map.yaml`. This phase completes the whole-surface catalog:
 the two external-publication kinds, the system-design→intents path, and a live case for
 the whole-flow plot.

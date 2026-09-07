@@ -2,7 +2,7 @@
 
 How the six phase-5 plots cover the existing `scenarios/` cases and the harness gaps
 they surface. Descriptive only: every rule cited is owned by
-`wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`. This phase
+`.context-circuit/wrapper/contracts/invariants.yaml` or `test/acceptance/criteria-map.yaml`. This phase
 is the back half of the lifecycle: candidate honesty, the two completion modes, the
 delivery gate, and the change-set path (happy and blocked).
 

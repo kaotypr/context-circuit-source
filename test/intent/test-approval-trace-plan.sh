@@ -8,8 +8,8 @@ set -eu
 ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
 tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
 cp="$ROOT/.agents/skills/cc-plan/SKILL.md"
-coord="$ROOT/agents/coordinator.md"
-tmpl="$ROOT/docs/templates/intent.md"
+coord="$ROOT/.context-circuit/agents/coordinator.md"
+tmpl="$ROOT/.context-circuit/docs/templates/intent.md"
 
 # --- 0008: tracer and feasibility run after approval, before any plan ---
 contains "$ci" "before any plan is written"
@@ -35,19 +35,19 @@ contains "$ci" "intent-human-status"
 contains "$ci" "approved, look complete, feasible"
 contains "$tmpl" "approved, look complete, feasible"
 contains "$tmpl" "Keep the line; do not remove it"
-contains "$ROOT/wrapper/runtime/engine.sh" "intent-human-status"
-contains "$ROOT/wrapper/runtime/engine.sh" "cc_intent_human_status"
+contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "intent-human-status"
+contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "cc_intent_human_status"
 
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 iid=i001-status-sync
 cc_fx_intent "$ws" "$iid" "Status sync" api "src"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$iid/contract.yaml" status)"
 assert_eq "approved" "$(sed -n 's/^_Status:[[:space:]]*\([^,._]*\).*$/\1/p' "$ws/intent/$iid/INTENT.md")"
 grep -q '^_Status:' "$ws/intent/$iid/INTENT.md" || fail "INTENT.md status line was removed"
 
-sh "$ROOT/wrapper/runtime/engine.sh" intent-human-status "$ws" "$iid" "approved, look complete, feasible" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-human-status "$ws" "$iid" "approved, look complete, feasible" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$iid/contract.yaml" status)"
 contains "$ws/intent/$iid/INTENT.md" "_Status: approved, look complete, feasible."
 not_contains "$ws/intent/$iid/INTENT.md" "waiting for your approval"

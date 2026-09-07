@@ -72,7 +72,7 @@ access_discipline:
     allowed: ["plans/**"]
     forbidden:
       - "plans/archive/**"            # never READ the archived area (the runtime MOVES the plan there)
-      - "wrapper/runtime/engine.sh"
+      - ".context-circuit/wrapper/runtime/engine.sh"
       - "sources/**"
 ```
 

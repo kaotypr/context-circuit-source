@@ -1,10 +1,10 @@
 ---
-description: On Cursor Task spawn, follow wrapper/adapters/CURSOR.md
+description: On Cursor Task spawn, follow .context-circuit/wrapper/adapters/CURSOR.md
 alwaysApply: true
 ---
 
 # Role-tiering on Cursor child spawn
 
-Before spawning a worker, verifier, or tracer, Read `wrapper/adapters/CURSOR.md`
+Before spawning a worker, verifier, or tracer, Read `.context-circuit/wrapper/adapters/CURSOR.md`
 and follow it. That file owns how this host sets `Task.model`. Do not copy the
 rule elsewhere.

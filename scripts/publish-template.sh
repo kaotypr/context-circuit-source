@@ -43,7 +43,7 @@ fi
 
 # Assemble a source-versioned artifact into a temp area. The template version is
 # stamped later; assembly stays source-versioned.
-src_version=v$(sed -n 's/^runtime_version:[[:space:]]*//p' "$source_root/wrapper/manifest.yaml" | head -n1)
+src_version=v$(sed -n 's/^runtime_version:[[:space:]]*//p' "$source_root/.context-circuit/wrapper/manifest.yaml" | head -n1)
 work=$(mktemp -d)
 cleanup() { rm -rf "$work"; }
 trap cleanup EXIT HUP INT TERM
@@ -58,7 +58,7 @@ normalize() {
   src=$1; dst=$2
   cp -R "$src" "$dst"
   rm -rf "$dst/.git" "$dst/CHANGELOG.md"
-  mf="$dst/wrapper/manifest.yaml"
+  mf="$dst/.context-circuit/wrapper/manifest.yaml"
   if [ -f "$mf" ]; then
     sed 's/^template_version:.*/template_version: NORMALIZED/' "$mf" > "$mf.norm" && mv "$mf.norm" "$mf"
   fi
@@ -82,8 +82,8 @@ find "$template_dir" -mindepth 1 -maxdepth 1 ! -name .git ! -name CHANGELOG.md -
 (CDPATH= cd "$artifact" && tar -cf - .) | (CDPATH= cd "$template_dir" && tar -xf -)
 
 # Stamp the published version into the shipped manifest.
-mf="$template_dir/wrapper/manifest.yaml"
-[ -f "$mf" ] || fail 'assembled artifact is missing wrapper/manifest.yaml'
+mf="$template_dir/.context-circuit/wrapper/manifest.yaml"
+[ -f "$mf" ] || fail 'assembled artifact is missing .context-circuit/wrapper/manifest.yaml'
 sed "s/^template_version:.*/template_version: $version/" "$mf" > "$mf.stamp" && mv "$mf.stamp" "$mf"
 
 # Prepend the release notes (request body, frontmatter stripped) to CHANGELOG.md.

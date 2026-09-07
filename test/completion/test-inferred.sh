@@ -11,7 +11,7 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
 
-eng() { sh "$ROOT/wrapper/runtime/engine.sh" "$@"; }
+eng() { sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "$@"; }
 
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM

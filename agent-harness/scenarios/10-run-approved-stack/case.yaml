@@ -143,7 +143,7 @@ grader:
     execute-plan:
       required: []
       allowed:  ["plans/**", ".runtime/**", "context/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only) — recalibrated from measured runs.
   # max_tokens = generated output tokens; max_turns = conversational turns;
   # max_agent_turns = agent-loop turns; max_cost_usd = dollars.

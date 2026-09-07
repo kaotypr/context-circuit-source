@@ -86,8 +86,8 @@ grader:
   access_policy:
     execute-plan:
       required: []
-      allowed:  ["plans/**", ".runtime/**", "context/**", "role-tiering.local.yaml", "docs/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      allowed:  ["plans/**", ".runtime/**", "context/**", "role-tiering.local.yaml", ".context-circuit/docs/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
   budgets:
     execute-plan: { max_turns: 3, max_tokens: 60000, max_agent_turns: 90, max_cost_usd: 12 }

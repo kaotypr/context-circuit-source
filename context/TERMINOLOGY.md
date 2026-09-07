@@ -2,9 +2,9 @@
 
 Accepted glossary for the Context Circuit source project. The source project's
 domain is Context Circuit itself, so this page accepts the product vocabulary
-shipped to workspaces as `docs/terminology.md`. Term *meaning* and the
+shipped to workspaces as `.context-circuit/docs/terminology.md`. Term *meaning* and the
 *user-facing translation* are owned there, and their exact authority is settled
-by the runtime contracts under `wrapper/contracts/`; this page records that the
+by the runtime contracts under `.context-circuit/wrapper/contracts/`; this page records that the
 source project accepts that vocabulary as Product Knowledge and makes it
 retrievable.
 
@@ -12,7 +12,7 @@ retrievable.
 
 | Term | Meaning |
 | --- | --- |
-| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product. The directory `wrapper/` holds its shipped layer (runtime, contracts, adapters). |
+| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product. The directory `.context-circuit/wrapper/` holds its shipped layer (runtime, contracts, adapters). |
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit / context index | One knowledge unit; the retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to units. |
 | Plan / plan status | A derivation of an approved intent for an outcome; its human-owned `draft`/`done` state (no separate plan approval). |
@@ -41,28 +41,28 @@ retrievable.
 
 The coordinator reports actions by their effect and never exposes internal
 mechanism unless a user asks for diagnostics. The canonical internal → plain
-mapping is the "say the effect, not the mechanism" table in `docs/terminology.md`
+mapping is the "say the effect, not the mechanism" table in `.context-circuit/docs/terminology.md`
 (worktree, base branch, binding, execution branch, verifier, worker,
 host-blocked, delivery, archive/restore, and internal file names), whose
-authority is settled by the runtime contracts under `wrapper/contracts/`.
+authority is settled by the runtime contracts under `.context-circuit/wrapper/contracts/`.
 
 ## Provenance
 
-- `docs/terminology.md` — the shipped product glossary and internal → user-facing
+- `.context-circuit/docs/terminology.md` — the shipped product glossary and internal → user-facing
   translation table; the coordinator references it, and its authority is settled
-  by the runtime contracts under `wrapper/contracts/`.
-- `agents/coordinator.md` — the role that applies the translation.
+  by the runtime contracts under `.context-circuit/wrapper/contracts/`.
+- `.context-circuit/agents/coordinator.md` — the role that applies the translation.
 - Design material under `sources/` is historical maintainer input, not a live
   owner, and is read only when a request names it.
 
 Accepted from proposal `0001-terminology-glossary` on 2026-08-24. Extended
 2026-08-27 from proposal `0022-change-terminology` with the plan-stack terms (plan
 stack, path lease, execution/integration base, drift guard, repository grounding,
-grounding manifest, worker brief, system design), mirrored in `docs/terminology.md`.
+grounding manifest, worker brief, system design), mirrored in `.context-circuit/docs/terminology.md`.
 Extended 2026-08-28 from proposal `0025-change-terminology`: the Delivery row drops
 "publishing" (git delivery no longer uses the word), and the external-surface terms
 (publication, publish/`cc-publish`, publication kind, publication `instructions`) are
-added and mirrored in `docs/terminology.md`.
+added and mirrored in `.context-circuit/docs/terminology.md`.
 Extended 2026-09-06: Completion is explicit mark-done at Standard and Critical;
 delivery does not complete a plan; mark-done then updates live context files
 when Product Knowledge was affected.

@@ -54,7 +54,7 @@ grader:
       reason: >
         The coordinator must not expose internals to a lay user. "verifier" is
         deliberately NOT forbidden: the product surfaces "an independent verifier"
-        to the user by design (adapters/AGENTS.md, agents/coordinator.md).
+        to the user by design (adapters/AGENTS.md, .context-circuit/agents/coordinator.md).
     - requires_any: ["get you set up", "set up", "get started"]
       reason: It should orient/initialize rather than fabricate a project.
   # C. access-discipline audit (hard gate) — right files, only necessary files
@@ -64,16 +64,16 @@ grader:
       allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md"]
       forbidden:
         - "plans/archive/**"               # archived exclusion
-        - "wrapper/runtime/engine.sh"      # never load the runtime as a substitute
+        - ".context-circuit/wrapper/runtime/engine.sh"      # never load the runtime as a substitute
         - "sources/**"                     # passive unless explicitly named (INV-SEC-02)
-        - "wrapper/contracts/**"           # do not re-read all contracts to orient
+        - ".context-circuit/wrapper/contracts/**"           # do not re-read all contracts to orient
     create-plan:
       # PROJECT.md is a blank placeholder in a new workspace; grounding is driven by
       # the retrieval index (cc-plan), so only INDEX.md is required. PROJECT.md stays
       # permitted via context/**.
       required: [context/INDEX.md]
       allowed:  ["context/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   # D. efficiency ledger (soft, warning-only)
   budgets:
     orient:      { max_turns: 2, max_tokens: 8000 }

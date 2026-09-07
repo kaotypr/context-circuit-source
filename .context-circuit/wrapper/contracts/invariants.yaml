@@ -1,0 +1,516 @@
+schema_version: 1
+owner: .context-circuit/wrapper/contracts/invariants.yaml
+purpose: >
+  Single authoritative index of Context Circuit product rules (v0.5 core, the
+  v0.6 run-stack delta, the v0.7.0 deltas, and the v1.0 trust-core deltas) and the
+  one file that owns each rule. One rule has one owner. Other artifacts reference
+  an effect defined here; they never define a parallel copy of it. The v0.7.0
+  execution-latency scope adds no new invariant: its concurrency safety is the
+  existing INV-CONCURRENCY-01/02 and its per-role model/effort tiering safety is
+  the existing INV-HOST-01 / INV-RUNTIME-01. It contributes only additive host
+  evidence (per-role model/effort) and coordinator/host policy (run-stack fan-out
+  width, the per-role tier ladder).
+  The v1.0 evolution moves the human gate upstream to the intent (what "correct"
+  means, from the plain ask alone) and makes everything between intent and delivery
+  mechanical, consequence-tiered, and self-invalidating. On approval the coordinator
+  spawns the tracer — one read-only child per repository — which reads the real code
+  and reports a manifest; the coordinator then runs a feasibility check on the findings
+  before any plan is written. It adds INV-INTENT-01/02 (intent gate + post-approval
+  tracing and feasibility), INV-CANDIDATE-01 (candidate-bound evidence), and
+  INV-ASSURE-01 (tiered assurance, with pairing folded in as the Explore tier); it
+  reworks INV-APPROVE-01, INV-EXEC-01, INV-PLAN-01, INV-VERIFY-01, INV-COMPLETE-01/02,
+  and INV-KNOWLEDGE-02; and it keeps the whole mechanics spine (leases, base selection,
+  verifier read-only enforcement, preserve-on-failure, delivery drift guard, atomic
+  records, host neutrality) verbatim. The one safety-critical automated check is
+  consequence tiering, which fails upward; scope-safety is settled at delivery (Gate 2),
+  not by any automated scope gate. Every plan derives from an approved intent; there is
+  no intent-less plan and no backward-compatibility path for one.
+
+invariants:
+  - id: INV-KNOWLEDGE-01
+    rule: >
+      Product Knowledge is optimized first for agent retrieval (stable IDs,
+      summaries, domains, repositories, decisions, constraints, freshness,
+      provenance) while remaining human-readable. The context index is a
+      retrieval catalog, not a full copy of page content.
+  - id: INV-KNOWLEDGE-02
+    rule: >
+      Product Knowledge is updated by writing live context/ files in place.
+      Gathering context edits those files and keeps the retrieval catalog
+      consistent. After a plan is marked done (INV-COMPLETE-01), the coordinator
+      performs the same in-place reconcile when the plan affected Product
+      Knowledge. There is no separate accept-the-context-update gate, no
+      context/proposals/ staging path, and no next-plan grounding block waiting
+      for a knowledge update. Completion, verification, worker claims, delivery,
+      and the runtime never write or accept Product Knowledge (INV-RUNTIME-01).
+      A later plan may start even if Product Knowledge from a prior plan has not
+      yet been updated. Explore is planless and has no plan grounding preflight.
+  - id: INV-INTENT-01
+    rule: >
+      Every writing request is anchored to a first-class intent/<id>/ whose
+      contract.yaml holds the goal, non-goals, constraints, OUTCOME-level acceptance
+      criteria, a coarse and OPTIONAL scope, and a provisional consequence tier —
+      drafted by the coordinator without reading the codebase (it grounds only in
+      existing context/ Product Knowledge). Criteria are not frozen as executable
+      here; the tracer earns the runnable check that proves each one against the real
+      code after approval (INV-INTENT-02). Approval is the single upstream human gate
+      (Gate 1, INV-APPROVE-01); it freezes contract_digest — the frozen identity of the
+      criteria the change is later proven against (INV-CANDIDATE-01) — and also confirms
+      the coordinator understood the plain ask, which is what lets the tracer read the
+      real code next. Intent ids use the distinct form i<NNN>-slug, their own
+      never-reused sequence with a hard ceiling at i999; allocation fails clearly
+      when no exact three-digit id is representable and never archives, deletes, or
+      recycles an identifier automatically.
+  - id: INV-INTENT-02
+    rule: >
+      A v1.0 plan declares its parent intent. On intent approval the coordinator spawns
+      the tracer — one read-only child per repository in the intent's scope, in parallel
+      (no lease, no worktree) — which reads the real code and reports a manifest
+      (trace-manifest.yaml: file/call-site map, concrete risks, the runnable done-checks
+      that prove each outcome criterion, a tier signal, feasibility, and any out-of-scope
+      reach). Before any plan is written the coordinator runs a FEASIBILITY CHECK on the
+      findings: feasible → it sets the tier and derives the plan(s) with no second gate;
+      not feasible → it stops, explains the blocker, and hands the decision to the human;
+      every tracer question is dispositioned before planning: an intent-level question
+      that changes the goal, constraints, outcome criteria, scope, tier, authority, or
+      lifecycle semantics stops planning and re-enters Gate 1; a plan-level question is
+      carried into the plan; a question already answered by the plain request is applied
+      without asking again. A required change that must MODIFY a repository or area beyond
+      a bound scope is surfaced only when the plain request does not already authorize it.
+      The feasibility check fails upward — when it cannot conclude the change is buildable,
+      or when an intent-level question remains unresolved, it stops rather than proceed —
+      and is a QUALITY gate, not a safety gate: it is coordinator judgment over the
+      tracer's findings, not an engine verb. Scope-safety is NOT enforced here — the
+      concrete scope is settled at delivery (Gate 2, INV-DELIVER-01), where the human sees
+      and authorizes the exact diff and repositories, and all pre-delivery work is
+      sandboxed in isolated worktrees. The runtime's only intent check at planning and
+      execution is the derives-from-an-approved-intent authorization: the plan names an
+      approved intent whose criteria are unchanged since approval; a criteria drift
+      re-enters Gate 1.
+  - id: INV-CANDIDATE-01
+    rule: >
+      A candidate is a deterministic digest over the per-repository commit map, the
+      selected base commits, and the intent's frozen contract_digest.
+      Independent-check results and human acceptance bind to
+      a candidate; any new commit OR a criteria change (re-approved on the intent)
+      yields a new candidate and voids all prior evidence and acceptance for the old
+      one. No role decides whether old evidence is "close enough"; the void is by
+      construction. Stale or missing evidence still voids verify and deliver;
+      it does not refuse mark-done (INV-COMPLETE-01). This generalizes the verifier's
+      existing read-only tip check (VERIFIER_MODIFIED_PRODUCT) from "tips unchanged
+      since the worker commit" to "candidate unchanged since the evidence was
+      recorded", and extends it to human acceptance.
+  - id: INV-ASSURE-01
+    rule: >
+      Assurance is composed from parts and summarized by a consequence tier
+      (Explore / Standard / Critical), declared on the intent from transparent risk
+      signals (repository count, security/secrets, money, data migration,
+      production/deploy, irreversibility, novelty) and raisable by the human.
+      Explore is human-supervised: no independent verifier, and its output is never
+      labeled "verified". Standard and Critical require an independent read-only
+      verifier bound to the current candidate (INV-VERIFY-01). The runtime is
+      model-blind (INV-RUNTIME-01): it never selects a tier; it provides a
+      deterministic fail-upward signal classifier over declared facts and enforces
+      the floor at approval and verifier spawn — approval refuses the Explore tier
+      (which drops the verifier) whenever a risk signal is present, Standard and
+      Critical execution requires a candidate-bound independent pass
+      (INV-VERIFY-01), and it refuses to treat an Explore result as verified.
+      completion-ready reports that eligibility as a query; it does not refuse
+      mark-done (INV-COMPLETE-01). Tiering fails upward: when unsure, tier
+      higher. Direct collaboration (cc-pair) is the Explore tier of this ladder,
+      not a separate mode: INV-PAIR-01's mechanics stand in full, plus an explicit
+      promote step that attaches an intent and raises the tier to turn a session
+      into a candidate-bearing change without restart.
+  - id: INV-PLAN-01
+    rule: >
+      plan.yaml carries the plan's status (draft, done) and names its parent intent
+      (schema_version 3). There is no intermediate "approved" status: authorization
+      follows from the approved intent (INV-INTENT-02), so a
+      plan is `draft` from creation until it completes. The status is a projection, not
+      a second human gate: Standard and Critical become done only on an explicit
+      mark-done (INV-COMPLETE-01). Task status is a
+      synchronized projection and never a second lifecycle authority.
+  - id: INV-PLAN-02
+    rule: >
+      Every task names the plan's single repository and bounded paths or an
+      explicit repository-wide scope. Dependencies are explicit.
+  - id: INV-PLAN-03
+    rule: >
+      New plans use stable IDs of the form NNNN-<kebab-slug>. The four-digit
+      sequence is the next after the highest ever allocated and is never reused,
+      including after archive or restore.
+  - id: INV-PLAN-04
+    rule: >
+      Plans are grounded against available Product Knowledge, source evidence,
+      and repository evidence. Missing or contradictory information becomes an
+      explicit open question, assumption, or risk; the agent never silently
+      invents a decision.
+  - id: INV-PLAN-05
+    rule: >
+      A plan may declare optional inter-plan plan_dependencies (a list of
+      {id, reason}), distinct from a task's intra-plan depends_on. Every dependency
+      entry references an existing, non-self plan id in the same workspace, and the
+      inter-plan dependency graph is acyclic. A plan is schema_version 3; any other
+      value is unsupported.
+  - id: INV-APPROVE-01
+    rule: >
+      Approval is the explicit conversational human gate on the INTENT (Gate 1):
+      it changes the intent contract draft→approved, freezes contract_digest, and
+      confirms the coordinator understood the plain ask (which is what lets the tracer
+      read the real code next, INV-INTENT-02). There is no confirmation card and no
+      hidden confirmation token. A plan derived from an approved intent carries no
+      second human approval — plan readiness once the intent is approved is automatic
+      (INV-INTENT-02), not a second human gate. Scope-safety is settled at delivery
+      (Gate 2), not by an automated scope gate here.
+  - id: INV-EXEC-01
+    rule: >
+      A plan derived from an approved intent (criteria unchanged since approval) may
+      execute once the human asks for execution; execution authorization comes from the
+      intent's approval, not a separate per-plan approval, but the intent's approval
+      does not itself trigger execution — it stays a separate human-triggered action.
+      A request that approves an intent and asks to build in one turn is honored; a
+      human who wants to lock an intent without building yet may still separate the two.
+  - id: INV-EXEC-02
+    rule: >
+      One worker executes every task of one authorized plan in one bounded
+      execution, in dependency order, in that plan's single repository. A plan
+      names exactly one repository; a plan that lists two or more is invalid.
+  - id: INV-EXEC-03
+    rule: >
+      Execution creates exactly one deterministic branch (cc/<plan-id>/<repo-id>)
+      and one isolated worktree per affected repository, from the captured
+      base-branch tip. The base checkout is never written during execution.
+  - id: INV-EXEC-04
+    rule: >
+      The worker commits each changed repository before verification. Every
+      repair creates a new commit; a prior commit is never amended to conceal a
+      repair attempt.
+  - id: INV-COMMIT-01
+    rule: >
+      Every commit an agent authors anywhere in the product, and every
+      pull-request title, follows Conventional Commits: a lowercase type from
+      the fixed set (feat, fix, docs, refactor, perf, test, build, ci, chore,
+      revert), an optional scope naming the affected repository id or component,
+      an optional "!" before the colon for a breaking change, and a short
+      imperative subject with no trailing period. An optional body explains what
+      changed and why; an optional "Refs:" footer names the plan and task IDs
+      the commit implements. A repair commit uses the same convention and is a
+      new commit, never an amendment (see INV-EXEC-04). Commit and pull-request
+      text never contain credentials, provider payloads, or host-specific paths.
+      No commit message, pull request, merge request, review, or comment an
+      agent authors ever carries an AI attribution, credit, co-author, or
+      "generated by" footer or trailer for any tool, model, provider, or the
+      agent itself; the human author is the sole recorded author. Any such text
+      the host would inject automatically is disabled rather than re-added.
+  - id: INV-VERIFY-01
+    rule: >
+      At Standard and Critical (INV-ASSURE-01), one independent verifier checks the
+      current candidate of every affected repository, strictly read-only with
+      respect to product files, and its result binds to that candidate
+      (INV-CANDIDATE-01). At Explore there is no independent verifier and the result
+      is never labeled "verified". The verifier never repairs, modifies product
+      files, changes plan status, or self-verifies.
+  - id: INV-VERIFY-02
+    rule: >
+      If the host cannot create an independent verifier with read-only
+      capability, the execution is blocked. The worker or coordinator must not
+      self-verify as a substitute.
+  - id: INV-REPAIR-01
+    rule: >
+      The worker-failure counter increments on each verifier rejection including
+      the initial implementation. The maximum is three, after which execution
+      stops. A block from missing host capability or external evidence is a
+      blocked execution, not an invented worker failure.
+  - id: INV-PRESERVE-01
+    rule: >
+      Failure, interruption, or blocking preserves branches, worktrees, commits,
+      worker handoffs, verifier evidence, repair attempts, and runtime records.
+      Failed work is never silently cleaned up.
+  - id: INV-COMPLETE-01
+    rule: >
+      Completion is gated by the intent's consequence tier (INV-ASSURE-01).
+      Standard and Critical plans become done only on an explicit human
+      mark-done request. Explore is planless until promotion, so it has no plan
+      completion record. Verification, candidate acceptance, and delivery never
+      mark a plan done. Mark-done changes plan status with no look at work or
+      evidence and no unreadiness refusal: a plan that was never built, failed
+      a check, or has no evidence still becomes done when the human asks.
+      Verification alone never completes anything.
+  - id: INV-COMPLETE-02
+    rule: >
+      An explicit mark-done changes plan status draft → done. When an
+      implementation completion record can be populated from existing execution
+      files (plan revision, candidate, execution, per-repository commits,
+      verifier result, acceptor), it is written; missing files do not block the
+      status change. When the plan affected Product Knowledge, that same
+      mark-done starts in-place reconcile of live context/ files
+      (INV-KNOWLEDGE-02). Delivery does not start reconcile and does not mark
+      the plan done. The runtime never writes or interprets Product Knowledge;
+      in-place edits are a coordinator act after mark-done.
+  - id: INV-ARCHIVE-01
+    rule: >
+      Archiving moves plans/<id>/ to plans/archive/<id>/, removes the row from
+      plans/INDEX.md, and preserves plan files, status, and runtime evidence. It
+      performs no plan-status or execution validation and implies no completion,
+      delivery, cleanup, or deletion.
+  - id: INV-ARCHIVE-02
+    rule: >
+      The normal agent must not read or traverse plans/archive/. An explicit
+      restore is the only operation that returns a named archived plan to the
+      active plan area before normal reading resumes.
+  - id: INV-REPO-01
+    rule: >
+      Portable workspace identity holds only a logical repository key, an
+      optional credential-free canonical URL, and an optional default_branch.
+      It never contains a machine-specific path or credentials.
+  - id: INV-REPO-02
+    rule: >
+      base_branch is the required user-local execution base and the default
+      pull-request target. default_branch is only portable clone/setup guidance
+      and is never inferred as the base branch or execution base.
+  - id: INV-REPO-03
+    rule: >
+      repositories/ is the gitignored default destination for cloned or
+      initialized project repositories. The workspace root, when it is a Git
+      repository, binds as the reserved logical id workspace at path "." with its
+      own base branch, and is never placed under repositories/.
+  - id: INV-REPO-04
+    rule: >
+      Binding resolution is explicit and bounded. Missing, ambiguous, non-Git,
+      traversal, unsafe-symlink, or identity-mismatched bindings fail closed
+      without scanning the filesystem or substituting a similarly named path.
+  - id: INV-DELIVER-01
+    rule: >
+      Pull-request creation, merge, push, deployment, archive, and
+      cleanup are separate human-requested actions. A pull request uses each
+      execution branch as source and the repository's recorded base_branch as
+      the default target; it never substitutes default_branch or silently follows
+      a moving remote. Delivery partitions named plans by covering tip: each
+      covering execution tip is one candidate and one pull request. A repository
+      may have several covering tips (sibling stacks). Stacked dependents that
+      already nest on one tip are one change set, not one pull request per plan; plans in different repositories are delivered
+      independently as separate covering-tip pull requests and never combined
+      into an integration candidate or a fresh shared verifier. Delivery does not spawn a verifier:
+      a change set is the member tip map and reuses each member's candidate-bound
+      independent pass; the pull request source is the one covering execution branch.
+      Cross-repo predecessors remain ordering gates only (INV-CONCURRENCY-02). Drift guard:
+      when a plan is delivered and its recorded base has diverged from the
+      current base_branch tip (because a sibling plan already merged), the plan
+      is rebased onto the current tip and re-verified before its pull request
+      opens. A plan is never merged from a base that no longer reflects the
+      branch it will land on.
+  - id: INV-DELIVER-02
+    rule: >
+      Delivery blocks and reports when the source branch, configured provider or
+      remote, or target branch is unavailable, rather than inferring a remote or
+      pushing silently.
+  - id: INV-SEC-01
+    rule: >
+      Workspace-relative paths reject traversal and unsafe symlinks. Credentials
+      remain in host Git configuration or the host agent and never enter
+      workspace files or runtime records.
+  - id: INV-SEC-02
+    rule: >
+      sources/ is passive raw evidence. Only exact request-scoped source files
+      are read; the workspace never scans all sources or sibling workspaces to
+      fill a context gap.
+  - id: INV-RUNTIME-01
+    rule: >
+      The Context Circuit runtime is a small host-neutral deterministic library.
+      It contains no provider launch code, model prompts, Product Knowledge
+      interpretation, plan-writing intelligence, conversational routing policy,
+      confirmation cards, product test-runner logic, or automatic
+      pull-request/merge/push/deploy/cleanup/completion.
+  - id: INV-RUNTIME-02
+    rule: >
+      Runtime records are written atomically. A partial or contradictory record
+      cannot grant ownership, resume a worker, prove verification, or authorize
+      completion.
+  - id: INV-OWN-01
+    rule: >
+      At most one active worker owns a plan execution, enforced by an atomic
+      exclusive-create lock. A competing worker receives a read-only or blocked
+      result; a live lock is never silently stolen.
+  - id: INV-CONCURRENCY-01
+    rule: >
+      A path lease generalizes the one-worker lock (INV-OWN-01) from plan scope
+      to (repository, path-region) scope, recorded atomically under
+      .runtime/locks/paths/. While an execution holds a lease on a path region in
+      a repository, no other execution that is not a descendant of the holder in
+      the plan-dependency graph may acquire an overlapping region in that
+      repository (regions overlap when equal, when one is a path-prefix ancestor
+      of the other, or when either is the repository-wide "."). A competing plan
+      receives a read-only or blocked result, the same outcome INV-OWN-01 gives a
+      competing worker; a live lease is never silently stolen. A declared
+      descendant is exempt because it builds on the holder rather than competing
+      with it. A lease is held from execution start until the plan is delivered,
+      not merely verified. It composes with INV-OWN-01 and does not redefine it.
+  - id: INV-CONCURRENCY-02
+    rule: >
+      When a plan becomes runnable the runtime selects its base in each
+      repository it touches, before the worker starts: the base tip when there
+      are no same-repo predecessors, the single predecessor branch when there is
+      exactly one, or a runtime-authored integration merge of the predecessor
+      branches when there are two or more, recorded as base_commit. The
+      integration merge is authored by the runtime, never counted as a worker
+      attempt; a base that cannot be built cleanly is a blocked execution, not a
+      worker failure. Cross-repo predecessors never affect the base; they are
+      ordering gates only. A kept base reference lives in the reserved namespace
+      refs/cc-base/<plan>/<repo> and is never nested beneath a branch ref. If a
+      predecessor is repaired after a dependent's base was built, the dependent's
+      base is stale and is rebuilt from the predecessor's new tip before the
+      dependent re-runs; a stale base never silently persists.
+  - id: INV-GROUND-01
+    rule: >
+      Before implementing, the worker reads and honors the target repository's own
+      agent guidance (AGENTS.md, CLAUDE.md, .cursor/rules, .github/copilot-
+      instructions.md, and .agents/skills/*/SKILL.md), discovered live from the
+      execution worktree by a deterministic runtime scan. The runtime emits data
+      (a grounding manifest recorded as execution evidence), never prompt text
+      (INV-RUNTIME-01). The repository's guidance is referenced, never captured
+      into Product Knowledge; there is no per-repo profile and no plan.yaml field.
+  - id: INV-GROUND-02
+    rule: >
+      Precedence: the worker brief's scope and safety rules are authoritative on
+      what and where a worker may change; the repository's own guidance is
+      authoritative on how to write code correctly there (conventions, patterns,
+      build, test) within that scope. Where they conflict on scope or safety the
+      worker stops and reports; the repository's guidance never overrides a
+      Context Circuit safety or scope rule.
+  - id: INV-GROUND-03
+    rule: >
+      The worker brief's fact-bearing sections are a fixed template
+      (.context-circuit/wrapper/adapters/worker-brief.md) filled by deterministic slot
+      substitution from the grounding manifest and the plan; the coordinator
+      delivers the brief and authors only a one-line task focus, never the fact
+      sections. The repository-grounding section is required; a preflight refuses
+      to deliver a brief that omits or leaves it unfilled. Execution-environment
+      workarounds are eliminated by worktree hardening, never documented by hand.
+  - id: INV-HOST-01
+    rule: >
+      Host identity, version, capability, permission mode, and provider status
+      are bounded provider-neutral evidence only. They never authorize a route,
+      role, lease, gate, verification, or completion.
+  - id: INV-SKILL-01
+    rule: >
+      Product skills ship only at `.agents/skills/<name>/SKILL.md` and are
+      read-as-procedure packets the coordinator resolves by path. A host may
+      additionally surface a skill as a directly invocable slash command, but
+      that host bridge is an optional convenience owned by the host adapter and
+      is never a separate route, role, or authority. The shipped workspace never
+      contains a host-specific skill directory or symlink.
+  - id: INV-PAIR-01
+    rule: >
+      Direct collaboration (`cc-pair`) is the Explore tier of the assurance ladder
+      (INV-ASSURE-01), not a separate mode. All of its mechanics stand in full, plus
+      an explicit PROMOTE step: attaching an intent and raising the tier to
+      Standard/Critical turns a session into a candidate-bearing change — a tracer then
+      spawns and reads the code, a plan is derived from its manifest, and the independent
+      verifier spawns on the candidate — without stopping and restarting as a separate plan. Before promotion it is an
+      interactive working mode outside the plan lifecycle, limited to one connected
+      repository per session. Its actors
+      are the user, the coordinator, and one worker: the coordinator interprets
+      and delegates but never writes, the worker writes only in a fresh
+      `cc-pair/<session>` branch and isolated worktree created from a chosen base
+      commit, and the user is the live acceptance oracle. It has no verifier,
+      lease, execution record, failure counter, plan status, or completion gate;
+      its only runtime state is a light resumable pairing-session pointer. Pairing
+      output is human-supervised and never "verified", never edits the active
+      checkout or a plan execution branch in place, and never auto-completes or
+      delivers. Worker commits occur only on explicit human request and follow
+      INV-COMMIT-01. Closing a clean session preserves its branch and worktree;
+      cleanup remains separate and explicit. If the current base tip is not in
+      the pairing branch at delivery time, delivery blocks and the work must be
+      brought forward in a new human-supervised session rather than silently
+      rebased. If the host cannot create the worker child or the isolated
+      worktree, the outcome is host-blocked and read-only.
+  - id: INV-EXTERNAL-01
+    rule: >
+      The external surface is a set of opt-in, manually-triggered publications
+      that push workspace data to external systems and are orthogonal to the core
+      workflow. No core-workflow phase (plan, approve, execute, verify, deliver),
+      runtime action, coordinator route, or role references, triggers, schedules,
+      waits on, or is affected by any publication, and none runs except on an
+      explicit human invocation of the cc-publish skill. A publication is a
+      command, not a standing relationship: it observes the workspace as it finds
+      it at invocation time. There is no automatic, scheduled, event, or
+      workflow-driven trigger.
+  - id: INV-EXTERNAL-02
+    rule: >
+      A publication reads only the workspace artifact types its config.yaml names
+      and writes only its own files under its own publication/<name>/ folder — its
+      config, its field-intent/ files, and its published/ records. Nothing
+      is written under plans/, so no planning, execution, verification, or delivery
+      step encounters a publication file and none updates external state or status.
+      It is export-only, and export-only governs authority and persistence: data
+      flows from the workspace outward, and external state never becomes, or writes
+      to, any workspace artifact. Reading external field values solely to display them to the human —
+      a preview diff — is not an inbound flow, provided nothing read is persisted to
+      any workspace artifact; a read that ends at the screen crosses no boundary. It
+      never mutates core Context Circuit state or human plan status (INV-PLAN-01).
+      External side effects are performed through the host or MCP layer, never the
+      runtime (INV-RUNTIME-01); configuration, intent, and records are
+      credential-free and hold no provider payload (INV-SEC-01). A record's
+      lifecycle is independent of a plan's archive state, keyed to the stable plan
+      id. Any inbound flow — external state pulled into plans or workspace state —
+      must pass through the normal plan-authoring and approval gates
+      (INV-APPROVE-01), never around them.
+  - id: INV-EXTERNAL-03
+    rule: >
+      Every external artifact a publication creates or updates (a task, document,
+      or message) is self-contained: its title, description, and any checklist or
+      field describe the plan, task, or document in plain language understandable
+      to a reader with no access to the workspace. It never contains a workspace
+      file name (for example plan.yaml, config.yaml), a workspace-internal path
+      (for example plans/, context/, publication/), a workspace-internal
+      identifier (for example an acceptance or verification id), or internal
+      Context Circuit mechanism or vocabulary. A stable plan or task identifier may
+      appear — normally in the title, as [<plan-number>] — solely so a human can
+      map what went where.
+
+owners:
+  authority_order: WORKFLOW.md
+  source_boundary: AGENTS.md
+  product_knowledge: context/INDEX.md
+  context_retrieval: .context-circuit/wrapper/contracts/schemas/context-index.yaml
+  intent_contract: .context-circuit/wrapper/contracts/schemas/intent-contract.yaml
+  intent_gate: .context-circuit/wrapper/contracts/invariants.yaml
+  feasibility_check: .context-circuit/wrapper/contracts/invariants.yaml
+  trace_manifest: .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
+  tracer_role: .context-circuit/agents/tracer.md
+  candidate_identity: .context-circuit/wrapper/contracts/schemas/candidate.yaml
+  human_acceptance: .context-circuit/wrapper/contracts/schemas/candidate.yaml
+  assurance_tiering: .context-circuit/wrapper/contracts/invariants.yaml
+  plan_lifecycle: .context-circuit/wrapper/contracts/schemas/plan.yaml
+  task_projection: .context-circuit/wrapper/contracts/schemas/task.yaml
+  repository_identity: .context-circuit/wrapper/contracts/schemas/workspace.yaml
+  local_binding: .context-circuit/wrapper/contracts/schemas/repositories-local.yaml
+  commit_convention: .context-circuit/wrapper/contracts/invariants.yaml
+  runtime: .context-circuit/wrapper/runtime/engine.sh
+  path_leases: .context-circuit/wrapper/runtime/engine.sh
+  path_lease_records: .context-circuit/wrapper/contracts/schemas/lease.yaml
+  base_selection: .context-circuit/wrapper/runtime/engine.sh
+  run_stack_action: .context-circuit/wrapper/adapters/WORKFLOW.md
+  repository_grounding: .context-circuit/wrapper/runtime/engine.sh
+  grounding_manifest: .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml
+  worker_brief: .context-circuit/wrapper/adapters/worker-brief.md
+  role_tiering: .context-circuit/docs/role-tiering.md
+  execution_records: .context-circuit/wrapper/contracts/schemas/execution.yaml
+  worker_handoff: .context-circuit/wrapper/contracts/schemas/worker-handoff.yaml
+  verifier_result: .context-circuit/wrapper/contracts/schemas/verifier-result.yaml
+  completion_record: .context-circuit/wrapper/contracts/schemas/completion.yaml
+  context_impact: .context-circuit/wrapper/contracts/schemas/context-impact.yaml
+  release_boundary: .context-circuit/wrapper/manifest.yaml
+  skill_packets: .agents/skills/
+  coordinator_role: .context-circuit/agents/coordinator.md
+  worker_role: .context-circuit/agents/worker.md
+  verifier_role: .context-circuit/agents/verifier.md
+  host_adapter: .context-circuit/wrapper/adapters/AGENTS.md
+  delivery_boundary: .context-circuit/wrapper/adapters/WORKFLOW.md
+  pairing_mode: .agents/skills/cc-pair/SKILL.md
+  pairing_session: .context-circuit/wrapper/contracts/schemas/pairing-session.yaml
+  external_surface: .context-circuit/wrapper/contracts/invariants.yaml
+  publication_config: .context-circuit/wrapper/contracts/schemas/publication-config.yaml
+  publication_field_intent: .context-circuit/wrapper/contracts/schemas/publication-field-intent.yaml
+  publication_record: .context-circuit/wrapper/contracts/schemas/publication-record.yaml
+  publication_thread_record: .context-circuit/wrapper/contracts/schemas/publication-thread-record.yaml

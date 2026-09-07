@@ -87,11 +87,11 @@ access_discipline:
   intent:
     required: []
     allowed: ["intent/**", "context/**", AGENTS.md, WORKFLOW.md]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
   execute-deliver:
     required: []
     allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
 ```
 
 ## Dialogue

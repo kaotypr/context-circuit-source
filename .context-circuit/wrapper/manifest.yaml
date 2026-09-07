@@ -1,0 +1,107 @@
+schema_version: 1
+owner: .context-circuit/wrapper/manifest.yaml
+product: context-circuit
+runtime_version: 1.0.0
+# Template release version (see 10-template-publication.md): the current/pending
+# release this source builds as. The dev dist build names its artifact from it, and
+# publish-template.sh re-stamps it at publish time; the context-circuit-template git
+# tag remains authoritative for what has actually been published.
+template_version: 0.0.1-beta.1
+artifact_kind: universal-project-workspace-template
+release_contract: template-owned-files-only
+
+purpose: >
+  Declares the Context Circuit product template boundary: which files are
+  shipped and replaceable on upgrade, which blank seed files are copied once,
+  and which workspace-owned material an upgrade must always preserve.
+
+accepted_schema_versions:
+  workspace: [1]
+  repositories-local: [1, 2]
+  intent-contract: [1, 2]
+  trace-manifest: [1]
+  plan: [3]
+  task: [1]
+  execution: [1, 2]
+  lease: [1]
+  grounding-manifest: [1]
+  worker-handoff: [1]
+  verifier-result: [1]
+  candidate: [1]
+  human-acceptance: [1]
+  completion: [1]
+  context-impact: [1]
+  context-index: [1]
+  pairing-session: [1]
+  publication-config: [1]
+  publication-field-intent: [1]
+  publication-record: [1]
+  publication-thread-record: [1]
+
+runtime:
+  entrypoint: .context-circuit/wrapper/runtime/engine.sh
+  kind: host-neutral-deterministic-library
+  excludes:
+    - provider-specific child-agent launch
+    - model prompts and SDKs
+    - Product Knowledge interpretation
+    - plan-writing intelligence
+    - conversational routing policy
+    - confirmation cards or confirmation tokens
+    - product test-runner logic
+    - automatic pull-request, merge, push, deployment, or cleanup
+    - automatic plan completion
+
+release_boundary:
+  shipped:
+    - .context-circuit/wrapper/
+    - .agents/skills/
+    - .context-circuit/agents/
+    - .context-circuit/docs/
+  mutable_seed:
+    - template/
+  never_ship:
+    - .git/
+    - .runtime/
+    - context/
+    - intent/
+    - plans/
+    - publication/
+    - sources/
+    - test/
+    - scripts/
+    - repositories/
+    - repositories.local.yaml
+    - role-tiering.local.yaml
+    - node_modules/
+    - .code-review-graph/
+
+upgrade_boundary:
+  wrapper_only:
+    - .context-circuit/wrapper/
+    - .agents/skills/
+    - .context-circuit/agents/
+    - .context-circuit/docs/
+  preserve:
+    - workspace.yaml
+    - context/
+    - intent/
+    - sources/
+    - plans/
+    - repositories.local.yaml
+    - repositories/
+    - .runtime/
+
+identity:
+  kind: product-template
+  product: Context Circuit
+  release_seed: template/
+
+host_evidence:
+  purpose: provider-neutral bounded evidence only
+  authorization: never
+  forbids:
+    - credentials
+    - provider payloads
+    - transcripts
+    - auth state

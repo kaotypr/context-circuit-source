@@ -73,7 +73,7 @@ access_discipline:
   reconcile:
     required: []
     allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", "wrapper/contracts/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".context-circuit/wrapper/contracts/**"]
 ```
 
 ## Dialogue

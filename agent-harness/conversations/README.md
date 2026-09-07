@@ -73,7 +73,7 @@ coordinator + skills + engine  (the implementation)
 ## Two disciplines this library must keep
 
 1. **Descriptive, never a second policy owner.** A plot *demonstrates* behavior
-   that `wrapper/contracts/invariants.yaml` and `test/acceptance/criteria-map.yaml`
+   that `.context-circuit/wrapper/contracts/invariants.yaml` and `test/acceptance/criteria-map.yaml`
    already own. It references `INV-*`/`AC-*`; it never redefines a rule. Context
    Circuit's "one rule, one owner" discipline stays intact — the plot owns the
    *expected dialogue*, invariants own the *rules*, the criteria map owns

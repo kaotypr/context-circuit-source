@@ -52,7 +52,7 @@ grader:
   access_policy:
     direct-collaboration:
       required: []
-      allowed: [".agents/skills/cc-pair/SKILL.md", "agents/worker.md", "role-tiering.local.yaml", "docs/role-tiering.md", ".runtime/pairing/**", ".runtime/explore/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      allowed: [".agents/skills/cc-pair/SKILL.md", ".context-circuit/agents/worker.md", "role-tiering.local.yaml", ".context-circuit/docs/role-tiering.md", ".runtime/pairing/**", ".runtime/explore/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   budgets:
     direct-collaboration: { max_turns: 3, max_tokens: 24000, max_agent_turns: 50, max_cost_usd: 3 }

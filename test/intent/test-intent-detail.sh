@@ -13,9 +13,9 @@ intent_dom="$ROOT/context/domains/intent/README.md"
 sda="$ROOT/context/domains/system-design-authoring/README.md"
 tracing="$ROOT/context/domains/tracing/README.md"
 auth="$ROOT/context/domains/plan-authorization/README.md"
-coord="$ROOT/agents/coordinator.md"
-planning="$ROOT/docs/planning.md"
-tmpl="$ROOT/docs/templates/intent.md"
+coord="$ROOT/.context-circuit/agents/coordinator.md"
+planning="$ROOT/.context-circuit/docs/planning.md"
+tmpl="$ROOT/.context-circuit/docs/templates/intent.md"
 
 # AC-BOTH-ROOTS: same rubric, both homes
 contains "$sd" "sources/system-design/"
@@ -65,15 +65,15 @@ contains "$ci" "five human-facing sections"
 contains "$intent_dom" "exactly five sections"
 not_contains "$tmpl" "## Detail"
 not_contains "$tmpl" "sixth section"
-not_contains "$ROOT/docs/templates/intent.example.md" "## Detail"
+not_contains "$ROOT/.context-circuit/docs/templates/intent.example.md" "## Detail"
 
 # Extra detail files do not affect digest or block a short intent from skipping them
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 iid=i001-short-change
 cc_fx_intent "$ws" "$iid" "Short change" api "src/short"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$iid" >/dev/null
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$iid" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
 frozen=$(cc_scalar "$ws/intent/$iid/contract.yaml" contract_digest)
 mkdir -p "$ws/intent/$iid/detail"
 printf '# overview\n' >"$ws/intent/$iid/detail/README.md"
@@ -81,7 +81,7 @@ assert_eq "$frozen" "$(cc_intent_contract_digest "$ws/intent/$iid/contract.yaml"
 # skipping detail still leaves an approved short intent
 iid2=i002-skip-detail
 cc_fx_intent "$ws" "$iid2" "Skip detail" api "src/skip"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid2" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid2" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$iid2/contract.yaml" status)"
 test ! -d "$ws/intent/$iid2/detail" || fail "small intent must be allowed to skip detail/"
 

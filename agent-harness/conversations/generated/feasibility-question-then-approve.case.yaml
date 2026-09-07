@@ -71,15 +71,15 @@ grader:
     approve:
       required: []
       allowed: ["intent/**", "context/**", AGENTS.md, WORKFLOW.md]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
     trace:
       required: []
       allowed: ["intent/**", "context/**", "notes/**"]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
     create-plan:
       required: []
       allowed: ["intent/**", "plans/**", "context/**"]
-      forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
   # environmental overlay (NOT from the plot) — preserved from case 15
   budgets:
     approve: { max_turns: 4, max_tokens: 30000 }

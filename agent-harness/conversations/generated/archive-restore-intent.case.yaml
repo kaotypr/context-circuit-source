@@ -65,7 +65,7 @@ grader:
       forbidden:
         - "intent/archive/**"
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
   # environmental overlay (NOT from the plot) — aligned to case 07's archive budget
   budgets:

@@ -100,7 +100,7 @@ intent detail reuses that inner rubric at `intent/<id>/detail/`.
 
 - `.agents/skills/cc-system-design/SKILL.md`
 - `test/contracts/test-contracts.sh` (skill present + rubric + no-runtime-surface checks)
-- `wrapper/contracts/invariants.yaml`: INV-SKILL-01 (skill packaging/resolution)
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-SKILL-01 (skill packaging/resolution)
 
 ## Verification
 

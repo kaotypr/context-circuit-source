@@ -9,4 +9,4 @@ not from a single mention.
 
 This glossary is your project's vocabulary. It is not the Context Circuit
 product glossary; for the product's own terms and how they are phrased to users,
-see `docs/terminology.md`.
+see `.context-circuit/docs/terminology.md`.

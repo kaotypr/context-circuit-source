@@ -85,7 +85,7 @@ access_discipline:
   orient:
     required: [workspace.yaml, context/INDEX.md]
     allowed: [AGENTS.md, WORKFLOW.md, "context/*.md"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
 ```
 
 ## Dialogue

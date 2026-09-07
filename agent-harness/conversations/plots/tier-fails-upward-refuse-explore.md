@@ -81,11 +81,11 @@ access_discipline:
   orient:
     required: []
     allowed: ["intent/**", "context/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
   review:
     required: []
     allowed: ["intent/**", "context/**"]
-    forbidden: ["sources/**", "plans/archive/**", "wrapper/runtime/engine.sh", ".runtime/**"]
+    forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".runtime/**"]
 ```
 
 ## Dialogue
