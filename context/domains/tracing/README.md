@@ -76,6 +76,21 @@ with a **bounded freshness check** against current code rather than re-traced
 from zero. Tracer role and schema files live with the nested product home
 (`.context-circuit/agents`, `.context-circuit/wrapper/contracts/schemas`).
 
+Current manifests are plan-ready and revision-bound. A local gitignored structural
+map cache under `.runtime/trace-cache/maps/` is keyed by workspace/repository identity,
+canonical binding and location, revision, map schema, and discovery rules. Maps contain
+inventory and command metadata only, never source copies, ignored files, secrets, or
+provider payloads; complete maps publish atomically and remain safe to delete.
+
+An exact hit still rereads the intent's current sites. Bounded delta drift rereads
+changed sites and known dependents. Legacy or incompatible evidence, changed discovery
+rules or identity, broad drift, missing ancestry, and uncertainty fall back to a cold
+trace. The manifest records observed/current revision, mode, reread paths, and fallback
+reason, plus typed evidence anchors, investigation leads, normalized plan fragments,
+criterion coverage, checks, and a typed feasibility outcome. The coordinator ratifies
+those fragments without a second interpretation read, then materializes the complete
+stack atomically.
+
 **Feasibility check (INV-INTENT-02).** Before any plan is written the coordinator
 judges the tracer's findings — this is **coordinator judgment, not an engine
 verb**, and a **quality gate, not a safety gate**:
@@ -117,8 +132,11 @@ approved intent. Task `depends_on` expresses order inside one plan;
 `plan_dependencies` expresses the acyclic ordering between stacked plans. The
 coordinator records the human-readable decomposition rationale in the derived
 plan's `context_grounding.decisions` and readable `PLAN.md`, while each
-inter-plan edge carries its own reason. This uses the existing contracts and
-does not add a second plan-approval gate.
+inter-plan edge carries its own reason. Anchors and initial task paths are advisory
+evidence, not a worker write allowlist. Necessary intent-consistent expansion in the
+same repository is recorded and independently checked over the complete diff; a
+second-repository or approved-decision expansion stops as a coordinator finding.
+This uses the existing contracts and does not add a second plan-approval gate.
 
 ## Tracing is not the execution-time grounding scan
 
@@ -139,7 +157,8 @@ replaces the other.
 
 - Trigger: intent approval (Gate 1) automatically spawns the tracer
 - Role: `.context-circuit/agents/tracer.md` (read-only, one child per repository, never talks to the human)
-- Record: `intent/<id>/trace/<repo>.yaml` (`trace-manifest.yaml`, `schema_version` 1)
+- Record: `intent/<id>/trace/<repo>.yaml` (`trace-manifest.yaml`, compatible
+  `schema_version` 1 plus `plan_ready_version` 1; absence triggers legacy fallback)
 - Coordinator outputs: set tier + derive plans · stop-and-explain · scope question to the human
 
 ## Data

@@ -13,6 +13,10 @@ purpose: >
   check instead of re-tracing from zero (INV-GROUND-*). The tracer never writes plans,
   never edits the frozen contract, and never talks to the human: it finds, records, and
   reports to the coordinator, which authors the plan and runs the feasibility check.
+  Current manifests are plan-ready (`plan_ready_version: 1`) and revision-bound.
+  A schema-1 manifest without that additive marker is legacy evidence: it remains
+  readable, but must take the bounded fallback path and be refreshed before plan
+  materialization rather than silently claiming current grounding.
 
 produced_by: cc-trace (the tracer) — read-only over the code; no lease, no worktree
 consumed_by:
@@ -22,14 +26,80 @@ consumed_by:
 
 fields:
   schema_version: { type: integer, required: true, values: [1] }
+  plan_ready_version:
+    type: integer
+    required: true for newly recorded manifests
+    values: [1]
+    description: >
+      Additive migration marker. Absence identifies a legacy schema-1 manifest and
+      requires fallback refresh before its evidence may authorize materialization.
   intent: { type: string, required: true, description: the parent intent id }
   repository: { type: string, required: true, description: which repository this manifest covers }
+  repository_identity:
+    type: object
+    required: true for newly recorded manifests
+    fields:
+      workspace: { type: string, required: true }
+      repository: { type: string, required: true }
+      canonical_binding: { type: string, required: true }
+      canonical_location: { type: string, required: true }
+    description: stable logical and canonical identity used to reject cross-workspace cache reuse
+  revision:
+    type: object
+    required: true for newly recorded manifests
+    fields:
+      observed: { type: string, required: true, description: revision the evidence was read from }
+      current: { type: string, required: true, description: revision checked immediately before ratification }
+      merge_base: { type: string, required: false, description: common base used to bound a delta refresh }
+  repository_map:
+    type: object
+    required: true for newly recorded manifests
+    fields:
+      schema_version: { type: integer, required: true, values: [1] }
+      discovery_rules_digest: { type: string, required: true }
+      cache_key: { type: string, required: true }
+    description: >
+      Reference to a structural map cached below
+      .runtime/trace-cache/maps/<workspace>/<repository>/<cache-key>.yaml. The key
+      binds workspace and repository identity, canonical binding/location, observed
+      revision, map schema, and discovery rules. Maps contain structural inventory
+      and command metadata only: never secrets, ignored files, provider payloads, or
+      source copies. They are written by temp-file rename, are safe to delete, and
+      an incomplete map is never published.
+  grounding:
+    type: object
+    required: true for newly recorded manifests
+    fields:
+      mode: { type: enum, required: true, values: [cold, exact, delta, fallback] }
+      reread_paths: { type: list, required: true }
+      fallback_reason: { type: string, required: false }
+    description: >
+      Exact reuse still rereads current intent sites. Delta reuse is allowed only
+      for bounded, understood drift and rereads changed sites plus known dependents.
+      Incompatible schemas, changed discovery rules, broad drift, missing ancestry,
+      identity uncertainty, or legacy manifests use fallback and perform a cold trace.
   file_map:
     type: list
     required: true
     description: >
       exact paths, the specific call sites that change, relevant signatures and
       integration points — the grounded map the coordinator plans from.
+  evidence_anchors:
+    type: list
+    required: true for newly recorded manifests
+    description: >
+      Revision-bound typed evidence for planning. Anchors are investigation and
+      implementation guides, not a worker write allowlist.
+    item:
+      type: { type: enum, required: true, values: [file, symbol, call-site, dependency, test] }
+      path: { type: string, required: true }
+      site: { type: string, required: false }
+      revision: { type: string, required: true }
+      supports: { type: list, required: false, description: intent criterion ids supported by this anchor }
+  investigation_leads:
+    type: list
+    required: false
+    description: bounded follow-up reads which may confirm or reject a proposed fragment
   task_partition:
     type: list
     required: false
@@ -41,6 +111,22 @@ fields:
       distinct failure surfaces justify stacked plans. Task depends_on and inter-plan
       plan_dependencies remain separate; the rationale is recorded on the derived
       plan rather than by adding a new manifest field.
+  plan_fragments:
+    type: list
+    required: true for newly recorded manifests
+    description: >
+      Normalized plan-ready fragments proposed by the tracer. Each has a stable
+      request-local key, exactly one repository, typed tasks and dependencies,
+      criterion coverage, checks, risks, and a boundary reason. The tracer never
+      allocates plan ids, ratifies boundaries, approves, or publishes these fragments.
+  criterion_coverage:
+    type: list
+    required: true for newly recorded manifests
+    item:
+      criterion: { type: string, required: true }
+      anchors: { type: list, required: true }
+      checks: { type: list, required: true }
+    description: every approved outcome criterion must be covered before ratification
   risks:
     type: list
     required: false
@@ -69,6 +155,11 @@ fields:
       whether the approved intent is buildable given the real code. false stops the
       coordinator, which explains the blocker (carried in open_questions) and hands the
       decision to the human before any plan is written (intent-feasibility).
+  feasibility_outcome:
+    type: enum
+    required: true for newly recorded manifests
+    values: [feasible, question, not-feasible]
+    description: typed finding consumed by the coordinator; never an engine judgment
   out_of_scope_reach:
     type: list
     required: false
@@ -106,6 +197,10 @@ invariants:
     never authored on the intent contract (INV-INTENT-01)
   - the manifest is durable grounding evidence, reused with a bounded freshness check
     rather than re-traced from zero (INV-GROUND-*)
+  - reuse is bound to repository identity, revision, map schema, and discovery rules;
+    uncertainty, incompatible or legacy evidence, and broad drift fall back to a cold trace
+  - plan-ready fragments and anchors are evidence only: the coordinator ratifies and
+    materializes plans, and anchors do not exhaustively constrain worker writes
   - it is not part of contract_digest — earned post-approval, it never re-enters Gate 1
     (whether post-approval done-checks should bind into the frozen contract is an open
     question in risks-and-open-questions; current behavior keeps them out)

@@ -75,6 +75,21 @@ per-plan approval, and no automated scope gate: scope-safety is settled at deliv
 Every plan derives from an approved intent; there is no plan-approval fallback and no
 plan-level `approved` status. `contract.yaml` approved does not skip the tracer.
 
+Reuse tracing only when repository/workspace identity, canonical binding/location,
+revision, structural-map schema, and discovery rules remain current. Exact reuse still
+rereads intent sites; bounded drift rereads changed sites and dependents; legacy,
+incompatible, broad, or uncertain drift falls back cold. After feasibility, ratify the
+plan-ready fragments by checking criterion coverage, identities, dependency graphs,
+tier floor, current anchors, checks, boundary reasons, and every question disposition.
+Do not repeat the tracer's code-reading pass. Submit the complete ratified stack through
+one materialization request so ids, artifacts, dependencies, authorization, and index
+rows become visible together or not at all. Same-invocation retry returns the same ids.
+
+Task paths and trace anchors guide implementation but are not exhaustive. A worker may
+record a necessary intent-consistent expansion in the same repository for complete-diff
+verification. A second repository or approved-decision change is a coordinator finding
+and stops for the appropriate intent/plan decision.
+
 A request to run a *set* of already-authorized plans ("execute plans X through Z",
 "run the ready stack") is the run-stack action (`.agents/skills/cc-run-stack`,
 WORKFLOW.md). It adds no authority: the runtime detects which plans are ready

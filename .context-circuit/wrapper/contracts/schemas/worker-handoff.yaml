@@ -17,6 +17,11 @@ required_sections:
   - known limitations
   - suggested verifier focus
   - whether this handoff follows a repair
+  - scope_expansions: >
+      Every necessary path outside the plan's grounded starting map, with repository,
+      path, reason, and why it remains consistent with the approved intent. Use an
+      explicit empty list when none. A required second repository or approved-decision
+      change is a coordinator finding and stops the worker; it is not an expansion.
 
 optional_sections:
   - repository_friction: >
@@ -31,6 +36,7 @@ forbidden:
   - changing intent approval or plan completion status
   - altering verifier evidence
   - credentials or provider payloads
+  - presenting trace anchors or initial task paths as an exhaustive write allowlist
 
 rules:
   - INV-EXEC-04

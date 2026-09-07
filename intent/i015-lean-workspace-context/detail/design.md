@@ -18,13 +18,16 @@ The loop is about right. The waste is around it.
 
 Today a typical workspace turn still:
 
-- Treats the knowledge catalog as a **directory list**, then greps or lists
-  the knowledge tree to find matching pages — even though the catalog’s job is
-  to make that search unnecessary.
+- Treats the knowledge catalog as a **directory list**, then greps, lists
+  the knowledge tree, or falls through to another index (such as
+  `context/domains/README.md`) to find matching pages — even though
+  `context/INDEX.md`’s job is to make that search unnecessary.
 - Rereads the **same lifecycle** in shared instructions, workflow, coordinator,
   and the skill — four tellings of gates, tracer, and one-owner-per-rule.
-- Opens a **schema** or **searches tests** because the skill restates the
-  contract in prose and the documented invoke line does not match the runtime.
+- Opens a **schema** because the skill restates the contract in prose and
+  treats the schema as a procedure. Invoke lines on core skills already
+  match the nested runtime; they must stay matching so that cannot
+  regress.
 
 That is not a missing design. It is extra reads the current design already
 forbids in principle (smallest route-selected context; catalog as retrieval
@@ -57,7 +60,13 @@ select becomes the dominant extra cost. Both are the same product.
 - Do not rewrite Product Knowledge pages in this intent.
 - Do not copy rules into skills so the agent “need not open the owner.”
 - Ship in wrapper adapters, skills, and the template seed — the instantiated
-  workspace, not a source-checkout-only convenience.
+  workspace, not a source-checkout-only convenience — against the nested
+  home already in place (`.context-circuit/wrapper`, `.context-circuit/agents`,
+  `.context-circuit/docs`). Do not move those folders back to the workspace
+  root.
+- Do not fill this source checkout’s catalog as a product feature. The
+  shipped win is the template entry shape and the procedure that forbids
+  a tree search.
 - Use Standard assurance: an independent check that the loop is still the
   loop, and that the three wastes are gone.
 
@@ -97,5 +106,7 @@ Plans follow these topics: catalog, one home, skills, then proof.
 ## Out of scope here
 
 Harness measurement features, runtime evidence redesign, new hosts, and
-rewriting domain pages. `sources/` stays passive. The fuller picture of
-*this* intent is this folder; it is not a product-level system design.
+rewriting domain pages. `sources/` stays passive. Filling this source
+checkout’s catalog is not the product change. The nested home under
+`.context-circuit/` is assumed, not redone. The fuller picture of *this*
+intent is this folder; it is not a product-level system design.

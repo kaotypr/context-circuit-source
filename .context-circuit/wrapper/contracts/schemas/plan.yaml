@@ -10,6 +10,21 @@ purpose: >
   PLAN.md is the readable half describing the same plan; plan.yaml is canonical
   for identifiers and status.
 
+stack_materialization_request:
+  interface: plan-stack-materialize ROOT REQUEST_DIR
+  request_file: REQUEST_DIR/request.yaml
+  fragments: REQUEST_DIR/fragments/<key>/{plan.yaml,PLAN.md}
+  description: >
+    A coordinator-ratified request supplies invocation_id, approved intent,
+    ratified/current-trace/coverage/question/tier assertions, and an ordered list
+    of request-local plan keys and slugs. Fragment files are complete plan artifacts
+    whose `plan` and dependency references use `@plan:<key>` tokens. The runtime
+    validates the complete request, reserves one consecutive id range for the
+    invocation, renders and validates every artifact in staging, rechecks intent
+    authorization and the prospective index, then publishes the whole stack or
+    rolls back to no visible stack. Retrying a published invocation returns the
+    original allocation. Runtime diagnostics are one stable stage/key/error tuple.
+
 plan_status:
   authority: this file
   values: [draft, done]
@@ -106,6 +121,14 @@ fields:
       title: { type: string, required: true }
       repositories: { type: list, required: true, description: the plan's single repository this task may change }
       paths: { type: list, required: true, description: bounded paths or explicit repo-wide scope }
+      evidence_anchors:
+        type: list
+        required: false
+        description: >
+          Revision-bound trace evidence that guides the worker but is not an
+          exhaustive write allowlist. Necessary intent-consistent expansion in the
+          same repository is recorded in the worker handoff and checked over the
+          complete diff; another repository or approved-decision change stops.
       depends_on: { type: list, required: true }
       changes: { type: list, required: true }
       acceptance: { type: list, required: true, item: [id, statement] }
@@ -126,6 +149,8 @@ invariants:
   - every plan names exactly one repository (INV-EXEC-02)
   - every task names that plan's single declared repository (INV-PLAN-02)
   - every task names bounded paths or an explicit repository-wide scope (INV-PLAN-02)
+  - task paths and evidence anchors are the grounded starting map, not a claim that
+    real-code investigation can never discover another necessary path in that repository
   - task dependencies reference existing task ids (INV-PLAN-02)
   - acceptance and verification use distinct identifiers
   - each product_knowledge reference has a stable id, path, and reason (INV-PLAN-04)

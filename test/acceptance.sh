@@ -24,6 +24,7 @@ run_suite test/execution/test-execution.sh
 run_suite test/concurrency/test-leases.sh
 run_suite test/run-stack/test-run-stack.sh
 run_suite test/latency/test-latency.sh
+run_suite test/latency/test-approval-plan.sh
 run_suite test/grounding/test-grounding.sh
 run_suite test/pairing/test-pairing.sh
 run_suite test/external-surface/test-external-surface.sh
