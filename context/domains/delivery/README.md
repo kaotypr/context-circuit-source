@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Delivery
@@ -36,7 +36,7 @@ scope gate** upstream (the scope-envelope check was removed), delivery is where
 diff and repositories before anything lands, while all pre-delivery work stays
 sandboxed in isolated worktrees (INV-INTENT-02, INV-DELIVER-01). Route "open a pull
 request for `<id>`", merge, and push requests here. Owned by the `cc-deliver`
-skill; the delivery boundary is owned by `wrapper/adapters/WORKFLOW.md`.
+skill; the delivery boundary is owned by `.context-circuit/wrapper/adapters/WORKFLOW.md`.
 
 In this product "publish"/"publication" names sending data to an external system
 ([external-surface](../external-surface/README.md)); git delivery is "push" / "open
@@ -105,7 +105,7 @@ the only path that rebases and re-verifies automatically.
 
 ## Workflows
 
-- Open a pull request as a separate step: `docs/getting-started.md`
+- Open a pull request as a separate step: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -122,14 +122,14 @@ requested; a failed execution is never cleaned up as a side effect.
 ## Implementation references
 
 - `.agents/skills/cc-deliver/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_delivery_targets` (read-only report),
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_delivery_targets` (read-only report),
 `cc_delivery_drift`, `cc_delivery_rebase` (delivery drift guard),
 `cc_change_set_partition` / `cc_change_set_prepare` / `cc_change_set_candidate`
 (`CHANGE_SET_CROSS_REPO`, `CHANGE_SET_NO_SINGLE_TIP`,
 `CHANGE_SET_DELIVERY_HAS_NO_VERIFIER`)
 - `.agents/skills/cc-deliver/SKILL.md` (one pull request per covering tip; Drift guard section)
-- `wrapper/adapters/WORKFLOW.md` (delivery-boundary owner per `invariants.yaml`)
-- `wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (same-repository change sets
+- `.context-circuit/wrapper/adapters/WORKFLOW.md` (delivery-boundary owner per `invariants.yaml`)
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-DELIVER-01 (same-repository change sets
   and the drift-guard clause), INV-DELIVER-02, INV-PAIR-01 (pairing delivery blocks on base drift)
 - `.agents/skills/cc-pair/SKILL.md` (pairing delivery is a separate `cc-deliver`
   action, human-supervised)

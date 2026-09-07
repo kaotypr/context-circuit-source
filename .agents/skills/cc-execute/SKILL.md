@@ -39,12 +39,12 @@ limit), then:
    verbatim — do not author or omit the repository-grounding facts, and do not
    read the runtime implementation to compose them (INV-GROUND-01/03).
 3. Launch exactly one worker with that brief and the assigned worktrees
-   (see `agents/worker.md`), at the worker's configured `(model, effort)` (see
+   (see `.context-circuit/agents/worker.md`), at the worker's configured `(model, effort)` (see
    "Model & effort per role" below). The worker reads and honors the repository's
    own agent guidance, executes all tasks in dependency order, and commits each
    affected repository. Record each commit with `worker-commit-record` and the
    handoff with `worker-handoff-record` (including any `repository_friction`).
-4. Launch one independent, read-only verifier (see `agents/verifier.md`) after
+4. Launch one independent, read-only verifier (see `.context-circuit/agents/verifier.md`) after
    `verifier-prepare`, at the verifier's configured `(model, effort)`. It inspects
    the latest commit of every affected repository. Record its outcome with
    `verifier-result-record`, which **binds the result to the current candidate**
@@ -62,10 +62,10 @@ verifier steps, or repairs. The plan — authorized by its approved intent — i
 
 ## Runtime actions — invoke, never read the engine
 
-You **must not read** `wrapper/runtime/engine.sh` or any runtime implementation
-file (`wrapper/adapters/AGENTS.md` → Runtime owns this boundary): the actions below
+You **must not read** `.context-circuit/wrapper/runtime/engine.sh` or any runtime implementation
+file (`.context-circuit/wrapper/adapters/AGENTS.md` → Runtime owns this boundary): the actions below
 and the execution brief carry everything needed to drive it. Invoke each action as
-`sh wrapper/runtime/engine.sh <action> <args>` from the workspace directory.
+`sh .context-circuit/wrapper/runtime/engine.sh <action> <args>` from the workspace directory.
 
 - `execution-begin . <plan-id> <owner>` — preflight, snapshot, worktree(s), and
   repository-grounding discovery; prints `execution_id`.
@@ -112,7 +112,7 @@ raised `(model, effort)` with `attempt-evidence-record`.
 
 Spawn the worker and verifier at the concrete `(model, effort)` configured for
 each role in the host-local role-tiering config, with adapter-shipped defaults for
-any unset role (`docs/role-tiering.md` owns the shape, defaults, and
+any unset role (`.context-circuit/docs/role-tiering.md` owns the shape, defaults, and
 escalation ladder). This is a coordinator/host decision — the runtime is
 model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning.
@@ -148,7 +148,7 @@ Say "I built it and it was independently checked, and the check passed; nothing 
 marked complete yet — that's your call" — not the branches, worktrees, or commits
 behind it. Refer to a plan by its title and the branch the user works from by its
 plain name. Reveal runtime records or branch mechanics only if the user explicitly
-asks for diagnostics (`docs/terminology.md` is the internal→user-facing mapping).
+asks for diagnostics (`.context-circuit/docs/terminology.md` is the internal→user-facing mapping).
 
 ## Boundaries
 

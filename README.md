@@ -31,13 +31,13 @@ archive and restore remain separate organization actions.
 
 ## Source layout
 
-- `wrapper/` — shipped runtime, contracts, schemas, adapters, and migration
-  boundary. `wrapper/runtime/engine.sh` is the small host-neutral deterministic
-  runtime; `wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
+- `.context-circuit/wrapper/` — shipped runtime, contracts, schemas, adapters, and migration
+  boundary. `.context-circuit/wrapper/runtime/engine.sh` is the small host-neutral deterministic
+  runtime; `.context-circuit/wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
 - `template/` — the blank mutable seed for a new workspace.
-- `.agents/skills/` and `agents/` — thin host skills and worker/verifier/
+- `.agents/skills/` and `.context-circuit/agents/` — thin host skills and worker/verifier/
   coordinator role deltas.
-- `docs/` — shipped guides and plan/task templates.
+- `.context-circuit/docs/` — shipped guides and plan/task templates.
 - `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
   released.
 - `sources/system-design/context-circuit/` — the authoritative maintainer design

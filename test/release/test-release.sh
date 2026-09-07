@@ -16,22 +16,22 @@ require_file "$artifact/CLAUDE.md"
 require_file "$artifact/CURSOR.md"
 require_file "$artifact/WORKFLOW.md"
 require_file "$artifact/README.md"
-require_file "$artifact/wrapper/runtime/worker-brief.md"
+require_file "$artifact/.context-circuit/wrapper/runtime/worker-brief.md"
 require_file "$artifact/.gitignore"
 require_file "$artifact/workspace.yaml"
-require_file "$artifact/wrapper/manifest.yaml"
-require_file "$artifact/wrapper/runtime/engine.sh"
-require_file "$artifact/wrapper/migrations/README.md"
-require_file "$artifact/wrapper/contracts/invariants.yaml"
+require_file "$artifact/.context-circuit/wrapper/manifest.yaml"
+require_file "$artifact/.context-circuit/wrapper/runtime/engine.sh"
+require_file "$artifact/.context-circuit/wrapper/migrations/README.md"
+require_file "$artifact/.context-circuit/wrapper/contracts/invariants.yaml"
 for s in workspace repositories-local intent-contract trace-manifest plan task execution worker-handoff \
   verifier-result candidate human-acceptance completion context-impact context-index \
   lease grounding-manifest pairing-session publication-config publication-field-intent \
   publication-record \
   publication-thread-record; do
-  require_file "$artifact/wrapper/contracts/schemas/$s.yaml"
+  require_file "$artifact/.context-circuit/wrapper/contracts/schemas/$s.yaml"
 done
-require_file "$artifact/docs/getting-started.md"
-require_file "$artifact/docs/templates/plan.yaml"
+require_file "$artifact/.context-circuit/docs/getting-started.md"
+require_file "$artifact/.context-circuit/docs/templates/plan.yaml"
 require_file "$artifact/context/PROJECT.md"
 require_file "$artifact/sources/README.md"
 require_file "$artifact/intent/README.md"
@@ -39,8 +39,13 @@ require_file "$artifact/intent/INDEX.md"
 require_file "$artifact/intent/archive/README.md"
 require_file "$artifact/plans/README.md"
 require_file "$artifact/plans/INDEX.md"
-require_file "$artifact/agents/tracer.md"
-test ! -e "$artifact/agents/spec-adversary.md" || fail "spec-adversary role leaked into artifact"
+require_file "$artifact/.context-circuit/agents/tracer.md"
+test ! -e "$artifact/.context-circuit/agents/spec-adversary.md" || fail "spec-adversary role leaked into artifact"
+test ! -e "$artifact/wrapper" || fail "root wrapper leaked into artifact"
+test ! -e "$artifact/agents" || fail "root agents leaked into artifact"
+test ! -d "$artifact/docs" || fail "root docs leaked into artifact"
+require_dir "$artifact/.agents/skills"
+require_file "$artifact/.agents/skills/cc-workspace/SKILL.md"
 
 # --- uninitialized identity and thin adapter ---
 contains "$artifact/workspace.yaml" 'workspace: uninitialized-workspace'
@@ -60,9 +65,9 @@ printf '%s\n' "$result" | grep -F "runtime_version: 1.0.0" >/dev/null || fail 'r
 
 # --- exclusion boundary: no maintainer, source, test, or runtime state ---
 for leaked in .runtime test .github scripts template repositories repositories.local.yaml \
-  wrapper/adapters plans/context-circuit-plans sources/system-design sources/reports \
-  docs/release.md wrapper/contracts/routes.yaml wrapper/contracts/context-sets.yaml \
-  wrapper/contracts/schemas/delegation.yaml .agents/skills/cc-entry .code-review-graph; do
+  .context-circuit/wrapper/adapters plans/context-circuit-plans sources/system-design sources/reports \
+  .context-circuit/docs/release.md .context-circuit/wrapper/contracts/routes.yaml .context-circuit/wrapper/contracts/context-sets.yaml \
+  .context-circuit/wrapper/contracts/schemas/delegation.yaml .agents/skills/cc-entry .code-review-graph; do
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"
 done
 contains "$artifact/.gitignore" ".code-review-graph"

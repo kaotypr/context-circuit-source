@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/release.md
+  - .context-circuit/docs/release.md
 ---
 
 # Source release and upgrade
@@ -50,23 +50,28 @@ checkout), `context-circuit-template` (the distributable universal project
 workspace — the wrapper a user works in), and the instantiated project
 workspace.
 
-Assembly ships the template-owned files plus the blank `template/` seed and
-never ships: the source design, maintainer plans and logs, source-only tests and
-evidence, source `.runtime/`, `agent-harness/`, credentials, local bindings,
-connected repositories, project Product Knowledge, customer plans, or
-archived-plan contents.
+Assembly ships the nested product home
+(`.context-circuit/{wrapper,agents,docs}`) plus root host pointers and
+`.agents/`, and the blank `template/` seed at the source root. It never ships:
+the source design, maintainer plans and logs, source-only tests and evidence,
+source `.runtime/`, `agent-harness/`, credentials, local bindings, connected
+repositories, project Product Knowledge, customer plans, or archived-plan
+contents.
 
 The template's root `.gitignore` must exclude at least `/repositories/`,
 `/repositories.local.yaml`, `/.runtime/`, and `.code-review-graph/`.
 
 An upgrade may replace template-owned files, runtime code, contracts, and role
-guidance, but must preserve workspace-owned files: project identity, accepted
-Product Knowledge, sources and provenance, plans and their status, local
-bindings, connected repositories, runtime evidence, and active worktrees. When a
-template change alters the meaning of a plan, context, or runtime record, the
-upgrade reports migration-needed and preserves the old state.
+guidance — including moving template-owned `wrapper/`, `agents/`, and `docs/`
+under `.context-circuit/` — but must preserve workspace-owned files: project
+identity, accepted Product Knowledge, sources and provenance, plans and their
+status, local bindings, connected repositories, runtime evidence, and active
+worktrees. When a template change alters the meaning of a plan, context, or
+runtime record (including a record that still depends on a former top-level
+`wrapper/` path), the upgrade reports migration-needed and preserves the old
+state.
 
-The template artifact's version is its `template_version` (`wrapper/manifest.yaml`),
+The template artifact's version is its `template_version` (`.context-circuit/wrapper/manifest.yaml`),
 never the product's internal `runtime_version`. The dev build
 `scripts/build-dist.sh` derives its default version from that field — matching the
 published archive name `scripts/publish-template.sh` produces
@@ -86,10 +91,10 @@ Product Knowledge, plans, `.runtime/`, or implementation state.
 
 ## Interfaces
 
-- Release boundary and shipped/never-ship sets: `wrapper/manifest.yaml`,
+- Release boundary and shipped/never-ship sets: `.context-circuit/wrapper/manifest.yaml`,
   `scripts/release-manifest.txt`
 - Assembler: `scripts/release-artifact.sh`, `scripts/build-dist.sh`
-- Migration guidance: `wrapper/migrations/README.md`
+- Migration guidance: `.context-circuit/wrapper/migrations/README.md`
 - Template seed: `template/`
 
 ## Constraints and edge cases
@@ -100,10 +105,10 @@ template-owned files and preserves workspace-owned state.
 
 ## Implementation references
 
-- `wrapper/manifest.yaml`, `scripts/release-manifest.txt`,
+- `.context-circuit/wrapper/manifest.yaml`, `scripts/release-manifest.txt`,
   `scripts/release-artifact.sh`, `scripts/build-dist.sh`
-- `wrapper/migrations/README.md`
-- `WORKFLOW.md`, `docs/release.md`
+- `.context-circuit/wrapper/migrations/README.md`
+- `WORKFLOW.md`, `.context-circuit/docs/release.md`
 - root `.gitignore` and `template/.gitignore`
 
 ## Provenance

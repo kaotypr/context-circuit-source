@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - wrapper/adapters/AGENTS.md
+  - .context-circuit/wrapper/adapters/AGENTS.md
 ---
 
 # Host adapters
@@ -47,7 +47,14 @@ second router or lifecycle.
 
 ## Behavior
 
-All three hosts enter the same coordinator, lifecycle, and runtime library.
+All three hosts enter through workspace-root discovery. `.agents/` stays at
+the workspace root. Product adapter text lives under
+`.context-circuit/wrapper/adapters/` and is what release assembly copies onto
+a new workspace. That copy must not overwrite this maintainer source
+checkout: root `AGENTS.md` / `WORKFLOW.md` stay source-specific, and root
+`CLAUDE.md` / `CURSOR.md` import workspace-root `AGENTS.md` (`@AGENTS.md`)
+so they do not pull the shipped product `AGENTS.md` from the nested adapters.
+In an instantiated workspace, the root files *are* those adapter copies.
 Host identity, version, capability, permission mode, and provider status are
 bounded provider-neutral evidence; they never authorize a route, role, lease,
 gate, verification, or completion (INV-HOST-01).
@@ -55,8 +62,8 @@ gate, verification, or completion (INV-HOST-01).
 | Host | Instruction surface | Native child mapping |
 | --- | --- | --- |
 | Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | subagent → worker or verifier packet |
-| Claude Code | `wrapper/adapters/CLAUDE.md` imports `AGENTS.md` | Task/subagent → same packet |
-| Cursor Agent CLI | root `AGENTS.md`; thin `CURSOR.md` import (`CLAUDE.md` also readable) | Task/subagent if available; otherwise host-blocked |
+| Claude Code | root `CLAUDE.md` (`@AGENTS.md`) | Task/subagent → same packet |
+| Cursor Agent CLI | root `CURSOR.md` (`@AGENTS.md`) | Task/subagent if available; otherwise host-blocked |
 
 A native child maps only to the bounded worker or independent read-only
 verifier packet. If a required child is unavailable, the route stays read-only
@@ -86,24 +93,25 @@ provider payloads, transcripts, or auth state.
 
 ## Workflows
 
-- Shared host contract and safety spine: `wrapper/adapters/AGENTS.md`
-- Claude Code adapter: `wrapper/adapters/CLAUDE.md`
-- Cursor Agent adapter: `wrapper/adapters/CURSOR.md`
+- Shared host contract and safety spine: `.context-circuit/wrapper/adapters/AGENTS.md`
+- Claude Code adapter: `.context-circuit/wrapper/adapters/CLAUDE.md`
+- Cursor Agent adapter: `.context-circuit/wrapper/adapters/CURSOR.md`
 
 ## Interfaces
 
 - Shared instructions: root `AGENTS.md` / `WORKFLOW.md`
-- Claude adapter: `wrapper/adapters/CLAUDE.md`
-- Cursor adapter: `wrapper/adapters/CURSOR.md`
-- Coordinator role: `agents/coordinator.md`
-- `host_evidence` shape owned by `wrapper/contracts/schemas/`
+- Claude adapter: root `CLAUDE.md`; shipped copy `.context-circuit/wrapper/adapters/CLAUDE.md`
+- Cursor adapter: root `CURSOR.md`; shipped copy `.context-circuit/wrapper/adapters/CURSOR.md`
+- Coordinator role: `.context-circuit/agents/coordinator.md`
+- `host_evidence` shape owned by `.context-circuit/wrapper/contracts/schemas/`
 
 ## Constraints and edge cases
 
 Optional live host probes are explicitly pass, unavailable, or blocked; never a
 false success. Cursor does not require `.cursor/rules` for this behavior; a
-scoped Cursor rule must remain a thin pointer at `CURSOR.md`, not a second copy
-of the spawn rule.
+scoped Cursor rule must point at workspace-root `CURSOR.md`, not a second copy
+of the spawn rule, and must not import the nested product adapter in this
+source checkout.
 
 ## Adapter duties and limits
 
@@ -118,12 +126,12 @@ unavailable.
 
 ## Implementation references
 
-- `wrapper/adapters/AGENTS.md`, `wrapper/adapters/CLAUDE.md`,
-  `wrapper/adapters/CURSOR.md`, `wrapper/adapters/WORKFLOW.md`,
-  `wrapper/adapters/README.md`
-- `agents/coordinator.md` (routing owner; there is no `routes.yaml`)
+- `.context-circuit/wrapper/adapters/AGENTS.md`, `.context-circuit/wrapper/adapters/CLAUDE.md`,
+  `.context-circuit/wrapper/adapters/CURSOR.md`, `.context-circuit/wrapper/adapters/WORKFLOW.md`,
+  `.context-circuit/wrapper/adapters/README.md`
+- `.context-circuit/agents/coordinator.md` (routing owner; there is no `routes.yaml`)
 - `.agents/skills/cc-pair/SKILL.md` (the worker-child mapping for direct collaboration)
-- `wrapper/contracts/invariants.yaml`: INV-HOST-01, INV-PAIR-01
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-HOST-01, INV-PAIR-01
 
 ## Provenance
 
@@ -135,8 +143,8 @@ its provenance was retired. Raw `sources/` was not scanned.
 
 Accepted 2026-08-24. Corrected against the shipped wrapper: the invariant family
 consolidated to a single `INV-HOST-01`; the offline-fallback rule is no longer a
-separate invariant id; `wrapper/contracts/routes.yaml`,
-`docs/host-capabilities.md`, and `docs/agent-workspace-workflow.md` no longer
+separate invariant id; `.context-circuit/wrapper/contracts/routes.yaml`,
+`.context-circuit/docs/host-capabilities.md`, and `.context-circuit/docs/agent-workspace-workflow.md` no longer
 exist. The seven shipped skills are `cc-workspace`, `cc-plan`, `cc-execute`,
 `cc-verify`, `cc-complete`, `cc-archive`, `cc-deliver`.
 

@@ -5,7 +5,7 @@ aliases, repositories, domains, decisions, and constraints to knowledge units so
 an agent can locate the right knowledge without scanning the whole directory.
 
 Retrieval metadata and entry shape are owned by
-`wrapper/contracts/schemas/context-index.yaml`.
+`.context-circuit/wrapper/contracts/schemas/context-index.yaml`.
 
 Knowledge homes: owned concepts live under `context/domains/` (scoped by
 `repositories`) and `context/roles/`. Knowledge about an external service the

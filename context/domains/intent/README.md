@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-09-04
   accepted_by: maintainer
 workflows:
-  - docs/planning.md
+  - .context-circuit/docs/planning.md
 ---
 
 # Intent and Gate 1
@@ -57,7 +57,7 @@ ask (INV-INTENT-01). Two artifacts hold it:
 - **`INTENT.md`** is human-facing: plain, short, jargon-free — no ids, file names,
   digests, branch/model names, or runtime commands. It uses exactly five sections
   (Intention, Expectations, The plans, How carefully this is checked, Open
-  questions) per `docs/templates/intent.md`. The human is not expected to open the
+  questions) per `.context-circuit/docs/templates/intent.md`. The human is not expected to open the
   machine record. A fuller by-concern write-up, when present, lives as extra files
   under `intent/<id>/detail/` — not as a sixth section.
 - **`contract.yaml`** is the machine record: goal, non-goals, constraints,
@@ -135,10 +135,10 @@ against the old criteria. Implementation-only questions stay in the trace and pl
 ## Implementation references
 
 - `.agents/skills/cc-intent/SKILL.md`
-- `docs/templates/intent.md`, `docs/templates/intent.example.md`
-- `wrapper/runtime/engine.sh`: `cc_intent_validate`, `cc_intent_approve`, `cc_intent_criteria_count`, `cc_intent_authorized`
-- `wrapper/contracts/schemas/intent-contract.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-INTENT-01, INV-APPROVE-01 (owner map: `intent_gate`, `intent_contract`)
+- `.context-circuit/docs/templates/intent.md`, `.context-circuit/docs/templates/intent.example.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_intent_validate`, `cc_intent_approve`, `cc_intent_criteria_count`, `cc_intent_authorized`
+- `.context-circuit/wrapper/contracts/schemas/intent-contract.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-INTENT-01, INV-APPROVE-01 (owner map: `intent_gate`, `intent_contract`)
 
 ## Verification
 

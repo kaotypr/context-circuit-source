@@ -14,16 +14,16 @@ ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
 # the trace manifest is a first-class schema (the tracer's recorded report)
-require_file "$ROOT/wrapper/contracts/schemas/trace-manifest.yaml"
-contains "$ROOT/wrapper/contracts/schemas/trace-manifest.yaml" "done_checks"
-contains "$ROOT/wrapper/contracts/schemas/trace-manifest.yaml" "out_of_scope_reach"
+require_file "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "done_checks"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "out_of_scope_reach"
 
 iid=i001-checkout
 cc_fx_intent "$ws" "$iid" "Checkout" checkout-service "src/checkout test/checkout"
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
 
-auth() { sh "$ROOT/wrapper/runtime/engine.sh" intent-authorized "$ws" "$1" 2>/dev/null; }
-auth_reason() { sh "$ROOT/wrapper/runtime/engine.sh" intent-authorized "$ws" "$1" 2>/dev/null | sed -n 's/^reason: //p'; }
+auth() { sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-authorized "$ws" "$1" 2>/dev/null; }
+auth_reason() { sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-authorized "$ws" "$1" 2>/dev/null | sed -n 's/^reason: //p'; }
 
 # --- AUTHORIZED: an in-scope plan derived from the approved intent ---
 cc_fx_plan_intent "$ws" 0001-child "Child" checkout-service src/checkout/retry "$iid"
@@ -54,7 +54,7 @@ sed 's/works\./works within budget./' "$ws/intent/$iid/contract.yaml.bak" >"$ws/
 expect_failure auth 0007-ok
 assert_eq "CRITERIA_CHANGED" "$(auth_reason 0007-ok)"
 # re-approving on the changed criteria restores authorization (Gate 1 re-entered)
-sh "$ROOT/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$iid" >/dev/null
 auth 0007-ok | grep -q '^authorized: yes' || fail "re-approval on changed criteria should re-authorize"
 rm -f "$ws/intent/$iid/contract.yaml.bak"
 
@@ -94,11 +94,11 @@ expect_failure auth 0010-noparent
 # --- authorization gates execution as a preflight ---
 cc_fx_repo "$ws" checkout-service development
 # a plan on an unapproved intent cannot begin execution (re-gate, not proceed)
-expect_failure sh "$ROOT/wrapper/runtime/engine.sh" execution-begin "$ws" 0008-draft sess-x
+expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" execution-begin "$ws" 0008-draft sess-x
 # an authorized plan begins execution even though the plan itself was never explicitly
 # approved (INV-EXEC-01 reworked); it stays draft (no intermediate "approved")
 assert_eq "draft" "$(cc_plan_status "$ws" 0007-ok)"
-exec=$(sh "$ROOT/wrapper/runtime/engine.sh" execution-begin "$ws" 0007-ok sess-ok | sed -n 's/^execution_id: //p')
+exec=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" execution-begin "$ws" 0007-ok sess-ok | sed -n 's/^execution_id: //p')
 test -n "$exec" || fail "authorized plan should begin execution without plan approval"
 assert_eq "draft" "$(cc_plan_status "$ws" 0007-ok)"
 

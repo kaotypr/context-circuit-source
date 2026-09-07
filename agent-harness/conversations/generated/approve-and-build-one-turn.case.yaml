@@ -71,9 +71,9 @@ grader:
       allowed:  ["intent/**", "plans/**", "context/**", AGENTS.md, WORKFLOW.md]
       forbidden:
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
   # environmental overlay (NOT from the plot) — aligned to case 03's approve budget
   budgets:
     approve-and-build: { max_turns: 2, max_tokens: 12000 }

@@ -76,7 +76,7 @@ access_discipline:
     required: []
     allowed: ["plans/**"]
     forbidden:
-      - "wrapper/runtime/engine.sh"
+      - ".context-circuit/wrapper/runtime/engine.sh"
       - "sources/**"
 ```
 

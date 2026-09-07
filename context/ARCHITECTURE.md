@@ -4,12 +4,16 @@ Context Circuit is a universal project workspace (the wrapper) with a compact
 conversational entry, human-facing plan artifacts, and private resumable runtime
 evidence. The coordinator interprets a request and selects one bounded action;
 there is no separately exposed router layer, and conversation keywords are not
-the source of lifecycle policy. The source repository separates the shipped
-product layer under `wrapper/` from the blank mutable seed under `template/`. An
-instantiated workspace keeps the shipped layer, identity, context, sources,
-plans, runtime, and registered repositories distinct.
+the source of lifecycle policy. The source repository nests the shipped product under `.context-circuit/`
+(`.context-circuit/wrapper`, `.context-circuit/agents`, `.context-circuit/docs`)
+and keeps the blank mutable seed under `template/` at the source root. Hosts
+enter through workspace-root `AGENTS.md` / `WORKFLOW.md` / `CLAUDE.md` /
+`CURSOR.md` and `.agents/` (skills). In this source checkout those files stay
+maintainer-specific (`CLAUDE.md` / `CURSOR.md` import root `AGENTS.md`). An
+instantiated workspace receives copies of `.context-circuit/wrapper/adapters/`
+at the root. Workspace-owned files are not moved into `.context-circuit/`.
 
-The invariant catalog (`wrapper/contracts/invariants.yaml`) is the
+The invariant catalog (`.context-circuit/wrapper/contracts/invariants.yaml`) is the
 one-owner-per-rule authority; skills and the coordinator are thin
 natural-language adapters. The core execution model: one worker executes all
 tasks of one intent-authorized plan in dependency order in that plan's single
@@ -23,7 +27,7 @@ silently stolen. Runtime records are filesystem evidence, not a database or
 scheduler.
 
 Assurance is a single consequence-tier ladder — Explore, Standard, Critical
-(`wrapper/contracts/invariants.yaml`, INV-ASSURE-01) — declared on the intent from
+(`.context-circuit/wrapper/contracts/invariants.yaml`, INV-ASSURE-01) — declared on the intent from
 transparent risk signals and raisable by the human. `cc-pair` (direct
 collaboration) is the **Explore tier** of that ladder, not a separate mode: live
 human-supervised work in one connected repository with a coordinator and one

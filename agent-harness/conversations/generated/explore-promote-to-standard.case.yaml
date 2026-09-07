@@ -66,12 +66,12 @@ grader:
   access_policy:
     direct-collaboration:
       required: []
-      allowed: [".agents/skills/cc-pair/SKILL.md", "agents/worker.md", "role-tiering.local.yaml", ".runtime/pairing/**", ".runtime/explore/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      allowed: [".agents/skills/cc-pair/SKILL.md", ".context-circuit/agents/worker.md", "role-tiering.local.yaml", ".runtime/pairing/**", ".runtime/explore/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
     promote:
       required: []
       allowed: ["intent/**", "plans/**", "context/**", ".runtime/pairing/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
   # environmental overlay (NOT from the plot) — full-execution tuning
   budgets:
     direct-collaboration: { max_turns: 2, max_tokens: 20000, max_agent_turns: 40, max_cost_usd: 3 }

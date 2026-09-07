@@ -13,8 +13,8 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
 # the shipped brief template is promoted beside the runtime on release; mirror
 # that here so cc_worker_brief_assemble can find it in the fixture.
-mkdir -p "$ws/wrapper/runtime"
-cp "$ROOT/wrapper/adapters/worker-brief.md" "$ws/wrapper/runtime/worker-brief.md"
+mkdir -p "$ws/.context-circuit/wrapper/runtime"
+cp "$ROOT/.context-circuit/wrapper/adapters/worker-brief.md" "$ws/.context-circuit/wrapper/runtime/worker-brief.md"
 
 # --- a rich repo: agent guidance + a skill + cursor rules + a lockfile ---
 cc_fx_repo "$ws" widgets development
@@ -89,10 +89,10 @@ printf '# Worker brief\n\n## Repository grounding\n\n@@GROUNDING@@\n' >"$ws/unfi
 expect_failure cc_brief_preflight "$ws/unfilled-brief.md"
 
 # --- contracts: precedence + friction->proposal are owned, not duplicated ---
-contains "$ROOT/wrapper/contracts/invariants.yaml" "INV-GROUND-02"
-contains "$ROOT/wrapper/contracts/schemas/worker-handoff.yaml" "repository_friction"
+contains "$ROOT/.context-circuit/wrapper/contracts/invariants.yaml" "INV-GROUND-02"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/worker-handoff.yaml" "repository_friction"
 
 # --- the runtime discovery emits DATA, not a model prompt (INV-RUNTIME-01) ---
-not_contains "$ROOT/wrapper/runtime/engine.sh" "claude -p"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "claude -p"
 
 pass 'repository grounding'

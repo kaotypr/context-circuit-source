@@ -26,4 +26,4 @@ an approved intent (scope-safety is settled at delivery, Gate 2); Standard compl
 candidate acceptance plus delivery, while Critical completion is explicit.
 Explore is planless. Creating or reviewing a plan never approves or executes it,
 and verification never implies completion. Contract owner:
-`wrapper/contracts/schemas/plan.yaml`.
+`.context-circuit/wrapper/contracts/schemas/plan.yaml`.

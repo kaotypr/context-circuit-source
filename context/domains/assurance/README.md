@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-09-04
   accepted_by: maintainer
 workflows:
-  - docs/planning.md
+  - .context-circuit/docs/planning.md
 ---
 
 # Assurance and consequence tiering
@@ -109,8 +109,8 @@ cannot create an independent verifier at Standard/Critical, the execution is
 
 ## Implementation references
 
-- `wrapper/runtime/engine.sh`: `cc_tier_classify`, `cc_tier_signals`, `cc_tier_lower_check`, `cc_intent_scope_repos`, `cc_intent_scope_paths`; floor in `cc_intent_approve` and verifier spawn. `cc_completion_ready` remains an eligibility query.
-- `wrapper/contracts/invariants.yaml`: INV-ASSURE-01, INV-VERIFY-01, INV-VERIFY-02, INV-COMPLETE-01, INV-PAIR-01 (owner map: `assurance_tiering`)
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_tier_classify`, `cc_tier_signals`, `cc_tier_lower_check`, `cc_intent_scope_repos`, `cc_intent_scope_paths`; floor in `cc_intent_approve` and verifier spawn. `cc_completion_ready` remains an eligibility query.
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-ASSURE-01, INV-VERIFY-01, INV-VERIFY-02, INV-COMPLETE-01, INV-PAIR-01 (owner map: `assurance_tiering`)
 
 ## Verification
 

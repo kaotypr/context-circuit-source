@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Verification
@@ -31,7 +31,7 @@ workflows:
 An independent, read-only check of the latest worker commits. Verification is
 the only authority for "verified"; the worker never self-verifies. Route the
 verify step and its outcome-reporting here. Owned by the `cc-verify` skill and
-the `agents/verifier.md` role.
+the `.context-circuit/agents/verifier.md` role.
 
 ## Scope
 
@@ -66,7 +66,7 @@ evidence requirement because a host lacks a capability.
 
 ## Workflows
 
-- Execute → verify → repair loop: `docs/getting-started.md`
+- Execute → verify → repair loop: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -97,11 +97,11 @@ logged in `context/DESIGN-DELTAS.md`; this page describes the shipped verifier.
 
 ## Implementation references
 
-- `.agents/skills/cc-verify/SKILL.md`, `agents/verifier.md`
-- `wrapper/runtime/engine.sh`: `cc_verifier_prepare`, `cc_verifier_result_record`,
+- `.agents/skills/cc-verify/SKILL.md`, `.context-circuit/agents/verifier.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_verifier_prepare`, `cc_verifier_result_record`,
   `cc_repair_allowed`
-- `wrapper/contracts/schemas/verifier-result.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-VERIFY-01, INV-VERIFY-02, INV-REPAIR-01
+- `.context-circuit/wrapper/contracts/schemas/verifier-result.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-VERIFY-01, INV-VERIFY-02, INV-REPAIR-01
 
 ## Verification
 

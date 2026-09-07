@@ -29,18 +29,20 @@ stage_tree="$staging_dir/tree"
 [ ! -e "$stage_tree" ] || fail "staging tree already exists: $stage_tree"
 mkdir -p "$stage_tree"
 
-# Stage template-owned source trees only.
-(CDPATH= cd "$source_root" && tar -cf - .agents agents docs wrapper) | tar -xf - -C "$stage_tree"
+# Stage template-owned source trees only. Nested product home lives under
+# .context-circuit/{wrapper,agents,docs}; .agents/ stays at the workspace root.
+mkdir -p "$stage_tree/.context-circuit"
+(CDPATH= cd "$source_root" && tar -cf - .agents .context-circuit) | tar -xf - -C "$stage_tree"
 
 # Root adapters become the workspace entry files.
-cp "$source_root/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
-cp "$source_root/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
-cp "$source_root/wrapper/adapters/CURSOR.md" "$stage_tree/CURSOR.md"
-cp "$source_root/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
-cp "$source_root/wrapper/adapters/README.md" "$stage_tree/README.md"
+cp "$source_root/.context-circuit/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
+cp "$source_root/.context-circuit/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
+cp "$source_root/.context-circuit/wrapper/adapters/CURSOR.md" "$stage_tree/CURSOR.md"
+cp "$source_root/.context-circuit/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
+cp "$source_root/.context-circuit/wrapper/adapters/README.md" "$stage_tree/README.md"
 # The worker-brief template is a runtime-only artifact; promote it beside the
-# runtime that consumes it (wrapper/runtime/) rather than to the user-facing root.
-cp "$source_root/wrapper/adapters/worker-brief.md" "$stage_tree/wrapper/runtime/worker-brief.md"
+# runtime that consumes it (.context-circuit/wrapper/runtime/) rather than to the user-facing root.
+cp "$source_root/.context-circuit/wrapper/adapters/worker-brief.md" "$stage_tree/.context-circuit/wrapper/runtime/worker-brief.md"
 
 # Blank workspace seed from the template.
 cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
@@ -86,7 +88,7 @@ for schema in workspace repositories-local intent-contract plan task execution w
   verifier-result candidate human-acceptance completion context-impact context-index \
   lease grounding-manifest pairing-session publication-config publication-record \
   publication-thread-record; do
-  [ -f "$stage_tree/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
+  [ -f "$stage_tree/.context-circuit/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
 
 # No repository state, credentials, or maintainer plans in the artifact.
@@ -94,7 +96,7 @@ for forbidden_path in repositories.local.yaml repositories; do
   [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
 done
 [ ! -e "$stage_tree/plans/context-circuit-plans" ] || fail 'maintainer plan stack leaked into artifact'
-[ ! -e "$stage_tree/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
+[ ! -e "$stage_tree/.context-circuit/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
 find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
 
 # Only the allowlisted product skills may ship.
@@ -120,7 +122,7 @@ mv "$stage_tree" "$artifact_dir"
 archive_path="$output_dir/$artifact_name.tar.gz"
 (CDPATH= cd "$artifact_dir" && tar -cf - .) | gzip -n > "$archive_path"
 
-runtime_version=$(sed -n 's/^runtime_version:[[:space:]]*//p' "$artifact_dir/wrapper/manifest.yaml" | head -n1)
+runtime_version=$(sed -n 's/^runtime_version:[[:space:]]*//p' "$artifact_dir/.context-circuit/wrapper/manifest.yaml" | head -n1)
 [ -n "$runtime_version" ] || fail 'staged manifest has no runtime_version'
 
 printf 'version: %s\n' "$version"

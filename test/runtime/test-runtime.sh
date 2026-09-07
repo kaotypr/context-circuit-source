@@ -148,12 +148,21 @@ printf '%s\n' "$rj" | grep -Fq "resume_reason: OWNER_MISMATCH" || fail "expected
 rt=$(cc_recovery_inspect "$edir" sess1)
 printf '%s\n' "$rt" | grep -Fq "resume_eligible: false" || fail "failed execution not resumable"
 
+# --- nested product home: workspace-validate fails closed without it ---
+bare=$(mktemp -d "${TMPDIR:-/tmp}/cc-bare.XXXXXX")
+printf 'schema_version: 1\nworkspace: bare\ntitle: Bare\nrepositories: []\n' >"$bare/workspace.yaml"
+mkdir -p "$bare/plans"
+expect_failure cc_workspace_validate "$bare"
+mkdir -p "$bare/.context-circuit/wrapper"
+cc_workspace_validate "$bare" >/dev/null || fail 'nested wrapper should satisfy workspace-validate'
+rm -rf "$bare"
+
 # --- provider-specific launch and old-design machinery absent from the runtime ---
-not_contains "$ROOT/wrapper/runtime/engine.sh" "cc_probe"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "cc_route"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "cc_confirmation_card"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "cc_context_packet"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "codex exec"
-not_contains "$ROOT/wrapper/runtime/engine.sh" "claude -p"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "cc_probe"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "cc_route"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "cc_confirmation_card"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "cc_context_packet"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "codex exec"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "claude -p"
 
 pass 'runtime boundary'

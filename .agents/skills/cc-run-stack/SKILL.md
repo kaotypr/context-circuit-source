@@ -28,9 +28,9 @@ broken.
 
 ## Runtime actions — invoke, never read the engine
 
-You **must not read** `wrapper/runtime/engine.sh` or any runtime implementation
-file (`wrapper/adapters/AGENTS.md` → Runtime owns this boundary); everything the
-loop needs is below. Invoke each as `sh wrapper/runtime/engine.sh <action> <args>`
+You **must not read** `.context-circuit/wrapper/runtime/engine.sh` or any runtime implementation
+file (`.context-circuit/wrapper/adapters/AGENTS.md` → Runtime owns this boundary); everything the
+loop needs is below. Invoke each as `sh .context-circuit/wrapper/runtime/engine.sh <action> <args>`
 from the workspace directory (its root is the current directory) — use these
 actions as a tool.
 
@@ -105,7 +105,7 @@ Repeat until no plan in the set is runnable:
    c. **One worker.** Assemble the worker brief with `worker-brief-assemble` (it
       carries the repository-grounding directive discovered from the worktree; add
       only a one-line task focus and deliver it verbatim — INV-GROUND-01/03), then
-      launch exactly one worker (`agents/worker.md`) with that brief and its
+      launch exactly one worker (`.context-circuit/agents/worker.md`) with that brief and its
       assigned worktree(s), at the worker's configured `(model, effort)`. It reads
       and honors the repository's own agent guidance, implements every task in
       dependency order inside the assigned worktree and declared paths only, and
@@ -113,7 +113,7 @@ Repeat until no plan in the set is runnable:
       the handoff with `worker-handoff-record`.
 
    d. **One independent verifier.** After `verifier-prepare`, launch exactly one
-      independent, read-only verifier (`agents/verifier.md`), at the verifier's
+      independent, read-only verifier (`.context-circuit/agents/verifier.md`), at the verifier's
       configured `(model, effort)`, over the latest commit of every affected
       repository. Record its outcome with `verifier-result-record`, then record the
       `(model, effort)` each role ran at with `attempt-evidence-record` (no
@@ -125,7 +125,7 @@ Repeat until no plan in the set is runnable:
       the same worker within the same execution: check `repair-allowed`, begin a new
       attempt, let the worker create a new commit, and verify again. When the
       worker's role has `escalate_on_repair: true`, raise the repair attempt's
-      `(model, effort)` above its configured start (`docs/role-tiering.md`);
+      `(model, effort)` above its configured start (`.context-circuit/docs/role-tiering.md`);
       escalation changes only which model runs the attempt, never the accounting.
       The failure counter increments on each rejection; at three failures the plan
       is **failed** and execution stops with all evidence preserved.
@@ -152,7 +152,7 @@ Concurrent progress interleaves — several plans build and check at once — so
 narrate interleaved **effects** ("one plan is built and being checked while
 another is still building"), never the mechanism behind the overlap. A plan left
 waiting for a busy path region reads simply as "waiting on another plan's area";
-never mention leases or conflicts. `docs/terminology.md` is the internal→user
+never mention leases or conflicts. `.context-circuit/docs/terminology.md` is the internal→user
 mapping.
 
 ## Change set — one candidate for same-repository plans delivered as one pull request

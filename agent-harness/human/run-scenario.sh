@@ -124,7 +124,7 @@ done
 setup_empty() { awk -v k="$1" '$0 ~ "^  " k ":[[:space:]]*\\[\\]" {f=1} END{exit f?0:1}' "$CASE_FILE"; }
 US=$(printf '\037')   # non-whitespace field separator: preserves EMPTY middle fields (TAB, being IFS-whitespace, collapses them)
 
-ENGINE_CLI="$WORKSPACE/wrapper/runtime/engine.sh"
+ENGINE_CLI="$WORKSPACE/.context-circuit/wrapper/runtime/engine.sh"
 
 # Emit one TSV row per setup.repositories entry:
 #   id dest default_branch branches seed_files connect agents_md

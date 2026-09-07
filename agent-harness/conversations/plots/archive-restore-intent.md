@@ -79,7 +79,7 @@ access_discipline:
     forbidden:
       - "intent/archive/**"          # never READ the archived area (the runtime MOVES the intent there)
       - "plans/archive/**"
-      - "wrapper/runtime/engine.sh"
+      - ".context-circuit/wrapper/runtime/engine.sh"
       - "sources/**"
 ```
 

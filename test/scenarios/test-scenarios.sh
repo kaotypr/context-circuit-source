@@ -8,7 +8,7 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
 
-eng() { sh "$ROOT/wrapper/runtime/engine.sh" "$@"; }
+eng() { sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "$@"; }
 here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 require_file "$here/scenarios.md"
 require_file "$here/conversations.md"

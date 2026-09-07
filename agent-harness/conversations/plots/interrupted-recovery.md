@@ -80,7 +80,7 @@ access_discipline:
   recover:
     required: []
     allowed: ["plans/**", ".runtime/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
 ```
 
 ## Dialogue

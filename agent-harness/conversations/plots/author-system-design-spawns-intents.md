@@ -80,11 +80,11 @@ access_discipline:
     # other sources/ subtrees and the runtime stay off-limits.
     required: []
     allowed: ["sources/system-design/**", "context/**", AGENTS.md, WORKFLOW.md]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "wrapper/contracts/**"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", ".context-circuit/wrapper/contracts/**"]
   spawn-intents:
     required: []
     allowed: ["intent/**", "sources/system-design/**", "context/**"]
-    forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh"]
+    forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh"]
 ```
 
 ## Dialogue

@@ -7,7 +7,7 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
 
-eng() { sh "$ROOT/wrapper/runtime/engine.sh" "$@"; }
+eng() { sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "$@"; }
 tier_of() { eng tier-classify "$1" "$2" | sed -n 's/^classified_tier: //p'; }
 explore_ok() { eng tier-classify "$1" "$2" | sed -n 's/^explore_ok: //p'; }
 

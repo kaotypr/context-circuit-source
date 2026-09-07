@@ -6,7 +6,7 @@ gathers bounded Product Knowledge, drafts grounded plans that map every change t
 a repository, holds explicit human gates, isolates one worker per execution,
 verifies independently, and preserves resumable runtime evidence.
 
-This source repository owns the shipped product layer under `wrapper/`, the
+This source repository owns the shipped product layer under `.context-circuit/wrapper/`, the
 template seed, contracts, adapters, skills, documentation, semantic tests, and
 release assembly. It does not act as an instantiated product repository for a
 user workspace.

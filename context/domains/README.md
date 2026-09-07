@@ -5,7 +5,7 @@ bounded project area. The domain page owns exact behavior, workflows, rules,
 interfaces, data, constraints, edge cases, implementation references, and
 verification when those facts are supported by evidence.
 
-Generated domain pages use [the domain template](../../docs/templates/domain-context.md)
+Generated domain pages use [the domain template](../../.context-circuit/docs/templates/domain-context.md)
 and normally live at `context/domains/<domain>/README.md`. Detailed workflow
 pages may live below that domain at `workflows/<workflow>.md`.
 

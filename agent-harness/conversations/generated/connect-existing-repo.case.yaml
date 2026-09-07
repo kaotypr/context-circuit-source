@@ -75,13 +75,13 @@ grader:
       allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md", context/INDEX.md]
       forbidden:
         - "plans/archive/**"
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
-        - "wrapper/contracts/**"
+        - ".context-circuit/wrapper/contracts/**"
     connect-repo:
       required: [workspace.yaml]
       allowed:  ["context/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
   # environmental overlay (NOT from the plot) — preserved from case 02
   budgets:
     orient:       { max_turns: 2, max_tokens: 8000 }

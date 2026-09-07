@@ -27,4 +27,4 @@ different number is refused). The runtime rejects any product write and any
 changed branch tip.
 
 If an independent read-only verifier cannot be created, report `blocked`; never
-self-verify. Full role behavior: `agents/verifier.md`.
+self-verify. Full role behavior: `.context-circuit/agents/verifier.md`.

@@ -60,7 +60,7 @@ grader:
       required: []
       allowed:  ["plans/**"]
       forbidden:
-        - "wrapper/runtime/engine.sh"
+        - ".context-circuit/wrapper/runtime/engine.sh"
         - "sources/**"
   # environmental overlay (NOT from the plot) — preserved from case 07b
   budgets:

@@ -67,7 +67,7 @@ grader:
     publish:
       required: []
       allowed: ["plans/**", "publication/**", "intent/**"]
-      forbidden: ["plans/archive/**", "wrapper/runtime/engine.sh", "sources/**", "wrapper/contracts/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
   # environmental overlay (NOT from the plot) — conversation-only tuning
   budgets:
     publish: { max_turns: 4, max_tokens: 18000 }
