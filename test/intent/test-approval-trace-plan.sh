@@ -29,6 +29,10 @@ contains "$cp" "write no plan"
 contains "$tr" "in the same turn"
 contains "$coord" "in that same turn"
 contains "$cp" "does not start execution"
+contains "$cp" "plan-stack-materialize"
+contains "$cp" "publishes all plans and index rows or none"
+contains "$tr" "plan-ready"
+contains "$tr" "criterion coverage"
 
 # --- 0009: INTENT.md status stays truthful; contract.yaml is still approval ---
 contains "$ci" "intent-human-status"

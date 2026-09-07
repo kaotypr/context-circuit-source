@@ -26,6 +26,17 @@ fields:
   checked_at: { type: string, required: true }
   evidence_refs: { type: list, required: false }
   failures: { type: list, required: false, description: failed acceptance/verification ids }
+  scope_expansion_review:
+    type: object
+    required: true when the worker handoff records an expansion
+    fields:
+      complete_diff_checked: { const: true, required: true }
+      recorded_expansions: { type: list, required: true }
+      unrecorded_expansions: { type: list, required: true }
+      outcome: { type: enum, required: true, values: [passed, failed] }
+    description: >
+      Confirms each same-repository expansion is necessary and intent-consistent and
+      that no second-repository or approved-decision expansion was smuggled into the diff.
 
 outcome_semantics:
   passed: required evidence observed at the required layer; the only satisfying outcome
@@ -41,6 +52,8 @@ read_only_enforcement:
   - verifier-result-record requires the current attempt's verifier-scope.yaml,
     created by verifier-prepare after worker commits are recorded. The attempt
     argument is current_attempt; 003 and 3 are the same attempt.
+  - verification covers the complete committed diff, not only trace anchors or the
+    task paths that were known when the plan was authored
 
 rules:
   - INV-VERIFY-01

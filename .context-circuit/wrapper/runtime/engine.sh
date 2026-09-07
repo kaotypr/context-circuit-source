@@ -44,6 +44,8 @@ CC_HUMAN_ACCEPTANCE_SCHEMA_VERSION="1"
 CC_COMPLETION_SCHEMA_VERSION="1"
 CC_DELIVERY_SCHEMA_VERSION="1"
 CC_KNOWLEDGE_DEBT_SCHEMA_VERSION="1"
+CC_PLAN_STACK_REQUEST_SCHEMA_VERSION="1"
+CC_PLAN_MATERIALIZATION_SCHEMA_VERSION="1"
 
 # ---------------------------------------------------------------------------
 # Diagnostics
@@ -1508,6 +1510,280 @@ cc_worker_brief_assemble() {
 # Plan structure, status, and active index
 # ---------------------------------------------------------------------------
 
+# cc_stack_request_entries REQUEST_YAML -> ordered `key|slug` rows from the
+# controlled request subset. Each plan entry is a request-local key plus the slug
+# used after allocation; complete artifacts live under fragments/<key>/.
+cc_stack_request_entries() {
+	[ -f "$1" ] || return 1
+	awk '
+		/^[A-Za-z_][A-Za-z0-9_]*:/ { in_plans=($0 ~ /^plans:/); cur=""; next }
+		in_plans && /^  -[[:space:]]*key:[[:space:]]*/ {
+			v=$0; sub(/^  -[[:space:]]*key:[[:space:]]*/, "", v); gsub(/[[:space:]]+$/, "", v); cur=v; next
+		}
+		in_plans && cur != "" && /^    slug:[[:space:]]*/ {
+			v=$0; sub(/^    slug:[[:space:]]*/, "", v); gsub(/[[:space:]]+$/, "", v)
+			print cur "|" v; cur=""; next
+		}
+	' "$1"
+}
+
+cc_materialize_diag() {
+	cc_emit stage "$1"
+	cc_emit key "${2:--}"
+	cc_emit error "$3"
+	return 1
+}
+
+cc_stack_request_digest() {
+	cc_srd_req="$1"; cc_srd_entries="$2"
+	cc_srd_tmp=$(mktemp "${TMPDIR:-/tmp}/cc-stack-digest.XXXXXX") || return 1
+	: >"$cc_srd_tmp"
+	printf '%s\n' 'request.yaml' >>"$cc_srd_tmp"
+	cat "$cc_srd_req/request.yaml" >>"$cc_srd_tmp" || { rm -f "$cc_srd_tmp"; return 1; }
+	while IFS='|' read -r cc_srd_key cc_srd_slug; do
+		[ -n "$cc_srd_key" ] || continue
+		for cc_srd_name in plan.yaml PLAN.md; do
+			printf '\n%s/%s\n' "$cc_srd_key" "$cc_srd_name" >>"$cc_srd_tmp"
+			cat "$cc_srd_req/fragments/$cc_srd_key/$cc_srd_name" >>"$cc_srd_tmp" \
+				|| { rm -f "$cc_srd_tmp"; return 1; }
+		done
+	done <"$cc_srd_entries"
+	cc_digest "$cc_srd_tmp"
+	rm -f "$cc_srd_tmp"
+}
+
+# cc_plan_max_sequence ROOT -> highest active, archived, or reserved plan number.
+# Reserved materialization ranges are never silently recycled after a failed stage.
+cc_plan_max_sequence() {
+	cc_pms_root="$1"; cc_pms_max=0
+	for cc_pms_d in "$cc_pms_root/plans"/*/ "$cc_pms_root/plans/archive"/*/; do
+		[ -d "$cc_pms_d" ] || continue
+		cc_pms_base=$(basename -- "$cc_pms_d")
+		case "$cc_pms_base" in
+			[0-9][0-9][0-9][0-9]-*)
+				cc_pms_n=${cc_pms_base%%-*}; cc_pms_n=$(printf '%s' "$cc_pms_n" | sed 's/^0*//')
+				[ -n "$cc_pms_n" ] || cc_pms_n=0
+				[ "$cc_pms_n" -gt "$cc_pms_max" ] && cc_pms_max=$cc_pms_n ;;
+		esac
+	done
+	for cc_pms_a in "$cc_pms_root/.runtime/materialization"/*/allocation.tsv; do
+		[ -f "$cc_pms_a" ] || continue
+		while IFS='|' read -r cc_pms_k cc_pms_id; do
+			cc_pms_n=${cc_pms_id%%-*}; cc_pms_n=$(printf '%s' "$cc_pms_n" | sed 's/^0*//')
+			[ -n "$cc_pms_n" ] || cc_pms_n=0
+			[ "$cc_pms_n" -gt "$cc_pms_max" ] && cc_pms_max=$cc_pms_n
+		done <"$cc_pms_a"
+	done
+	printf '%s\n' "$cc_pms_max"
+}
+
+cc_materialization_emit_allocation() {
+	while IFS='|' read -r cc_mea_key cc_mea_id; do
+		[ -n "$cc_mea_key" ] && cc_emit plan "$cc_mea_key=$cc_mea_id"
+	done <"$1"
+}
+
+# cc_plan_stack_materialize ROOT REQUEST_DIR
+# Validate a coordinator-ratified complete stack, reserve one invocation-bound
+# range, render request-local @plan:<key> references, validate and authorize every
+# plan, and publish all artifacts plus one prospective index by rollback-safe moves.
+# The runtime validates assertions; it never makes trace/feasibility/tier/boundary
+# judgments. Existing single-plan verbs are unchanged.
+cc_plan_stack_materialize() {
+	cc_psm_root=$(cc_root_abs "$1") || { cc_materialize_diag request - WORKSPACE_ROOT_INVALID; return 1; }
+	cc_psm_req=$(cc_root_abs "$2") || { cc_materialize_diag request - REQUEST_DIR_INVALID; return 1; }
+	cc_psm_yaml="$cc_psm_req/request.yaml"
+	[ -f "$cc_psm_yaml" ] || { cc_materialize_diag request - REQUEST_MISSING; return 1; }
+	cc_workspace_validate "$cc_psm_root" >/dev/null 2>/dev/null || { cc_materialize_diag request - WORKSPACE_INVALID; return 1; }
+
+	cc_psm_schema=$(cc_scalar "$cc_psm_yaml" schema_version 2>/dev/null) || cc_psm_schema=""
+	[ "$cc_psm_schema" = "$CC_PLAN_STACK_REQUEST_SCHEMA_VERSION" ] || { cc_materialize_diag request - REQUEST_SCHEMA_UNSUPPORTED; return 1; }
+	cc_psm_inv=$(cc_scalar "$cc_psm_yaml" invocation_id 2>/dev/null) || cc_psm_inv=""
+	cc_safe_id "$cc_psm_inv" || { cc_materialize_diag request - INVOCATION_ID_INVALID; return 1; }
+	cc_psm_intent=$(cc_scalar "$cc_psm_yaml" intent 2>/dev/null) || cc_psm_intent=""
+	cc_intent_id_valid "$cc_psm_intent" || { cc_materialize_diag request - INTENT_ID_INVALID; return 1; }
+	for cc_psm_assert in ratified trace_current; do
+		[ "$(cc_scalar "$cc_psm_yaml" "$cc_psm_assert" 2>/dev/null)" = true ] \
+			|| { cc_materialize_diag request "$cc_psm_assert" ASSERTION_FALSE; return 1; }
+	done
+	[ "$(cc_scalar "$cc_psm_yaml" criterion_coverage 2>/dev/null)" = complete ] \
+		|| { cc_materialize_diag request criterion_coverage INCOMPLETE; return 1; }
+	[ "$(cc_scalar "$cc_psm_yaml" question_dispositions 2>/dev/null)" = complete ] \
+		|| { cc_materialize_diag request question_dispositions INCOMPLETE; return 1; }
+	cc_psm_tier=$(cc_scalar "$cc_psm_yaml" tier 2>/dev/null) || cc_psm_tier=""
+	case "$cc_psm_tier" in standard|critical) : ;; *) cc_materialize_diag request tier TIER_FLOOR_INVALID; return 1 ;; esac
+
+	cc_psm_entries=$(mktemp "${TMPDIR:-/tmp}/cc-stack-entries.XXXXXX") || return 1
+	cc_stack_request_entries "$cc_psm_yaml" >"$cc_psm_entries"
+	[ -s "$cc_psm_entries" ] || { rm -f "$cc_psm_entries"; cc_materialize_diag request plans PLANS_MISSING; return 1; }
+	cc_psm_declared=$(awk '/^plans:/{p=1;next} p&&/^  -[[:space:]]*key:[[:space:]]*/{n++} /^[A-Za-z_][A-Za-z0-9_]*:/&&$0!~/^plans:/{p=0} END{print n+0}' "$cc_psm_yaml")
+	cc_psm_parsed=$(wc -l <"$cc_psm_entries" | tr -d ' ')
+	[ "$cc_psm_declared" -eq "$cc_psm_parsed" ] || { rm -f "$cc_psm_entries"; cc_materialize_diag request plans ENTRY_INCOMPLETE; return 1; }
+	cc_psm_trace_mode=$(cc_scalar "$cc_psm_yaml" trace_mode 2>/dev/null) || cc_psm_trace_mode=""
+	case "$cc_psm_trace_mode" in cold|exact|delta|fallback) : ;; *) rm -f "$cc_psm_entries"; cc_materialize_diag request trace_mode TRACE_MODE_INVALID; return 1 ;; esac
+	cc_psm_prev=0
+	for cc_psm_phase in approval_freeze_ms trace_dispatch_ms trace_complete_ms feasibility_disposition_ms ratification_ms fallback_ms; do
+		cc_psm_v=$(cc_scalar "$cc_psm_yaml" "$cc_psm_phase" 2>/dev/null) || cc_psm_v=""
+		case "$cc_psm_v" in ''|*[!0-9]*) rm -f "$cc_psm_entries"; cc_materialize_diag request "$cc_psm_phase" TIMING_INVALID; return 1 ;; esac
+		[ "$cc_psm_v" -ge "$cc_psm_prev" ] || { rm -f "$cc_psm_entries"; cc_materialize_diag request "$cc_psm_phase" TIMING_NON_MONOTONIC; return 1; }
+		cc_psm_prev=$cc_psm_v
+	done
+	cc_psm_seen=$(mktemp "${TMPDIR:-/tmp}/cc-stack-seen.XXXXXX") || { rm -f "$cc_psm_entries"; return 1; }
+	: >"$cc_psm_seen"
+	while IFS='|' read -r cc_psm_key cc_psm_slug; do
+		cc_safe_id "$cc_psm_key" || { rm -f "$cc_psm_entries" "$cc_psm_seen"; cc_materialize_diag request "$cc_psm_key" KEY_INVALID; return 1; }
+		cc_safe_slug "$cc_psm_slug" || { rm -f "$cc_psm_entries" "$cc_psm_seen"; cc_materialize_diag request "$cc_psm_key" SLUG_INVALID; return 1; }
+		grep -Fxq "$cc_psm_key" "$cc_psm_seen" 2>/dev/null && { rm -f "$cc_psm_entries" "$cc_psm_seen"; cc_materialize_diag request "$cc_psm_key" KEY_DUPLICATE; return 1; }
+		printf '%s\n' "$cc_psm_key" >>"$cc_psm_seen"
+		cc_psm_frag="$cc_psm_req/fragments/$cc_psm_key"
+		[ -f "$cc_psm_frag/plan.yaml" ] && [ -f "$cc_psm_frag/PLAN.md" ] \
+			|| { rm -f "$cc_psm_entries" "$cc_psm_seen"; cc_materialize_diag request "$cc_psm_key" FRAGMENT_INCOMPLETE; return 1; }
+		[ "$(cc_scalar "$cc_psm_frag/plan.yaml" plan 2>/dev/null)" = "@plan:$cc_psm_key" ] \
+			|| { rm -f "$cc_psm_entries" "$cc_psm_seen"; cc_materialize_diag request "$cc_psm_key" PLAN_TOKEN_INVALID; return 1; }
+		[ "$(cc_scalar "$cc_psm_frag/plan.yaml" intent 2>/dev/null)" = "$cc_psm_intent" ] \
+			|| { rm -f "$cc_psm_entries" "$cc_psm_seen"; cc_materialize_diag request "$cc_psm_key" INTENT_MISMATCH; return 1; }
+	done <"$cc_psm_entries"
+	rm -f "$cc_psm_seen"
+
+	cc_psm_contract="$cc_psm_root/intent/$cc_psm_intent/contract.yaml"
+	[ -f "$cc_psm_contract" ] && [ "$(cc_scalar "$cc_psm_contract" status 2>/dev/null)" = approved ] \
+		|| { rm -f "$cc_psm_entries"; cc_materialize_diag authorization "$cc_psm_intent" INTENT_NOT_APPROVED; return 1; }
+	cc_psm_frozen=$(cc_scalar "$cc_psm_contract" contract_digest 2>/dev/null) || cc_psm_frozen=""
+	cc_psm_current=$(cc_intent_contract_digest "$cc_psm_contract" 2>/dev/null) || cc_psm_current=""
+	[ -n "$cc_psm_frozen" ] && [ "$cc_psm_frozen" = "$cc_psm_current" ] \
+		|| { rm -f "$cc_psm_entries"; cc_materialize_diag authorization "$cc_psm_intent" CRITERIA_CHANGED; return 1; }
+	[ "$(cc_scalar "$cc_psm_contract" tier 2>/dev/null)" = "$cc_psm_tier" ] \
+		|| { rm -f "$cc_psm_entries"; cc_materialize_diag authorization tier TIER_MISMATCH; return 1; }
+
+	cc_psm_digest=$(cc_stack_request_digest "$cc_psm_req" "$cc_psm_entries") \
+		|| { rm -f "$cc_psm_entries"; cc_materialize_diag request - DIGEST_FAILED; return 1; }
+	cc_psm_rec="$cc_psm_root/.runtime/materialization/$cc_psm_inv"
+	mkdir -p "$cc_psm_root/.runtime/materialization"
+	cc_plan_org_lock "$cc_psm_root" >/dev/null || { rm -f "$cc_psm_entries"; cc_materialize_diag allocation - LOCK_HELD; return 1; }
+
+	if [ -f "$cc_psm_rec/materialization.yaml" ]; then
+		cc_psm_old=$(cc_scalar "$cc_psm_rec/materialization.yaml" request_digest 2>/dev/null) || cc_psm_old=""
+		[ "$cc_psm_old" = "$cc_psm_digest" ] || { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag request - INVOCATION_CHANGED; return 1; }
+		if [ "$(cc_scalar "$cc_psm_rec/materialization.yaml" state 2>/dev/null)" = published ]; then
+			cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"
+			cc_emit materialized existing
+			cc_materialization_emit_allocation "$cc_psm_rec/allocation.tsv"
+			return 0
+		fi
+	fi
+
+	mkdir -p "$cc_psm_rec"
+	if [ ! -f "$cc_psm_rec/allocation.tsv" ]; then
+		cc_psm_next=$(( $(cc_plan_max_sequence "$cc_psm_root") + 1 ))
+		cc_psm_alloc_tmp=$(mktemp "$cc_psm_rec/.allocation.XXXXXX") || { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; return 1; }
+		: >"$cc_psm_alloc_tmp"
+		while IFS='|' read -r cc_psm_key cc_psm_slug; do
+			[ "$cc_psm_next" -le 9999 ] || { rm -f "$cc_psm_alloc_tmp"; cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag allocation "$cc_psm_key" PLAN_ID_EXHAUSTED; return 1; }
+			cc_psm_id=$(printf '%04d-%s' "$cc_psm_next" "$cc_psm_slug")
+			printf '%s|%s\n' "$cc_psm_key" "$cc_psm_id" >>"$cc_psm_alloc_tmp"
+			cc_psm_next=$((cc_psm_next + 1))
+		done <"$cc_psm_entries"
+		mv "$cc_psm_alloc_tmp" "$cc_psm_rec/allocation.tsv"
+		printf 'schema_version: %s\ninvocation_id: %s\nintent: %s\nrequest_digest: %s\nstate: reserved\ncreated_at: %s\n' \
+			"$CC_PLAN_MATERIALIZATION_SCHEMA_VERSION" "$cc_psm_inv" "$cc_psm_intent" "$cc_psm_digest" "$(cc_now)" \
+			| cc_atomic_write "$cc_psm_rec/materialization.yaml"
+	fi
+
+	# Rebuild unpublished staging on every retry; the allocation stays stable.
+	rm -rf "$cc_psm_rec/staging"
+	mkdir -p "$cc_psm_rec/staging/plans"
+	while IFS='|' read -r cc_psm_key cc_psm_id; do
+		cc_psm_out="$cc_psm_rec/staging/plans/$cc_psm_id"
+		mkdir -p "$cc_psm_out"
+		cp "$cc_psm_req/fragments/$cc_psm_key/plan.yaml" "$cc_psm_out/plan.yaml"
+		cp "$cc_psm_req/fragments/$cc_psm_key/PLAN.md" "$cc_psm_out/PLAN.md"
+		while IFS='|' read -r cc_psm_rkey cc_psm_rid; do
+			for cc_psm_file in "$cc_psm_out/plan.yaml" "$cc_psm_out/PLAN.md"; do
+				sed "s|@plan:$cc_psm_rkey|$cc_psm_rid|g" "$cc_psm_file" >"$cc_psm_file.tmp" && mv "$cc_psm_file.tmp" "$cc_psm_file"
+			done
+		done <"$cc_psm_rec/allocation.tsv"
+	done <"$cc_psm_rec/allocation.tsv"
+
+	# Existing plans are read-only dependency targets during staged graph validation.
+	for cc_psm_existing in "$cc_psm_root/plans"/*; do
+		[ -d "$cc_psm_existing" ] || continue
+		cc_psm_base=$(basename -- "$cc_psm_existing")
+		[ -e "$cc_psm_rec/staging/plans/$cc_psm_base" ] || ln -s "$cc_psm_existing" "$cc_psm_rec/staging/plans/$cc_psm_base"
+	done
+	while IFS='|' read -r cc_psm_key cc_psm_id; do
+		cc_plan_validate "$cc_psm_rec/staging/plans/$cc_psm_id" >/dev/null 2>/dev/null \
+			|| { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag validation "$cc_psm_key" PLAN_INVALID; return 1; }
+		[ ! -e "$cc_psm_root/plans/$cc_psm_id" ] \
+			|| { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag allocation "$cc_psm_key" PLAN_COLLISION; return 1; }
+	done <"$cc_psm_rec/allocation.tsv"
+	find "$cc_psm_rec/staging/plans" -type l -exec rm -f {} \;
+
+	cc_psm_index="$cc_psm_rec/staging/INDEX.md"
+	if [ -f "$cc_psm_root/plans/INDEX.md" ]; then
+		cp "$cc_psm_root/plans/INDEX.md" "$cc_psm_index"
+	else
+		printf '# Active plans\n\n| Plan ID | Title | Status | Objective | Repositories | Path |\n| --- | --- | --- | --- | --- | --- |\n' >"$cc_psm_index"
+	fi
+	while IFS='|' read -r cc_psm_key cc_psm_id; do
+		cc_psm_py="$cc_psm_rec/staging/plans/$cc_psm_id/plan.yaml"
+		cc_psm_title=$(cc_scalar "$cc_psm_py" title); cc_psm_status=$(cc_scalar "$cc_psm_py" status); cc_psm_obj=$(cc_scalar "$cc_psm_py" objective)
+		cc_psm_repos=$(cc_plan_repositories "$cc_psm_py" | tr '\n' ' ' | sed 's/ *$//; s/ /, /g')
+		printf '| %s | %s | %s | %s | %s | %s |\n' "$cc_psm_id" "$cc_psm_title" "$cc_psm_status" "$cc_psm_obj" "$cc_psm_repos" "plans/$cc_psm_id/PLAN.md" >>"$cc_psm_index"
+	done <"$cc_psm_rec/allocation.tsv"
+
+	cc_psm_moved="$cc_psm_rec/staging/moved.txt"; : >"$cc_psm_moved"
+	while IFS='|' read -r cc_psm_key cc_psm_id; do
+		if mv "$cc_psm_rec/staging/plans/$cc_psm_id" "$cc_psm_root/plans/$cc_psm_id"; then
+			printf '%s\n' "$cc_psm_id" >>"$cc_psm_moved"
+		else
+			while IFS= read -r cc_psm_back; do mv "$cc_psm_root/plans/$cc_psm_back" "$cc_psm_rec/staging/plans/$cc_psm_back" 2>/dev/null || :; done <"$cc_psm_moved"
+			cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag publication "$cc_psm_key" MOVE_FAILED; return 1
+		fi
+	done <"$cc_psm_rec/allocation.tsv"
+	if ! mv -f "$cc_psm_index" "$cc_psm_root/plans/INDEX.md"; then
+		while IFS= read -r cc_psm_back; do mv "$cc_psm_root/plans/$cc_psm_back" "$cc_psm_rec/staging/plans/$cc_psm_back" 2>/dev/null || :; done <"$cc_psm_moved"
+		cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag publication - INDEX_WRITE_FAILED; return 1
+	fi
+
+	# Final authorization is checked against the now-complete visible graph. A failure
+	# rolls all directories and the index back to the pre-publication state.
+	cc_psm_auth_ok=true
+	while IFS='|' read -r cc_psm_key cc_psm_id; do
+		cc_intent_authorized "$cc_psm_root" "$cc_psm_id" >/dev/null 2>/dev/null || { cc_psm_auth_ok=false; cc_psm_auth_key="$cc_psm_key"; break; }
+	done <"$cc_psm_rec/allocation.tsv"
+	if [ "$cc_psm_auth_ok" != true ]; then
+		grep -v -F -f "$cc_psm_moved" "$cc_psm_root/plans/INDEX.md" | cc_atomic_write "$cc_psm_root/plans/INDEX.md"
+		while IFS= read -r cc_psm_back; do mv "$cc_psm_root/plans/$cc_psm_back" "$cc_psm_rec/staging/plans/$cc_psm_back" 2>/dev/null || :; done <"$cc_psm_moved"
+		cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag authorization "$cc_psm_auth_key" PLAN_UNAUTHORIZED; return 1
+	fi
+
+	cc_psm_start=$(cc_scalar "$cc_psm_yaml" ratification_ms 2>/dev/null) || cc_psm_start=0
+	case "$cc_psm_start" in ''|*[!0-9]*) cc_psm_start=0 ;; esac
+	cc_psm_end=$cc_psm_start
+	{
+		printf 'schema_version: 1\ninvocation_id: %s\ntrace_mode: %s\n' "$cc_psm_inv" "$cc_psm_trace_mode"
+		for cc_psm_phase in approval_freeze_ms trace_dispatch_ms trace_complete_ms feasibility_disposition_ms ratification_ms fallback_ms; do
+			cc_psm_v=$(cc_scalar "$cc_psm_yaml" "$cc_psm_phase" 2>/dev/null) || cc_psm_v=0
+			case "$cc_psm_v" in ''|*[!0-9]*) cc_psm_v=0 ;; esac
+			[ "$cc_psm_v" -lt "$cc_psm_end" ] && cc_psm_v=$cc_psm_end
+			cc_psm_end=$cc_psm_v; printf '%s: %s\n' "$cc_psm_phase" "$cc_psm_v"
+		done
+		printf 'allocation_render_ms: %s\nvalidation_ms: %s\nauthorization_publication_ms: %s\ntotal_ms: %s\n' "$cc_psm_end" "$cc_psm_end" "$cc_psm_end" "$cc_psm_end"
+	} | cc_atomic_write "$cc_psm_rec/timing.yaml"
+	cc_psm_published_at=$(cc_now)
+	awk -v published_at="$cc_psm_published_at" '
+		/^state:/ { print "state: published"; next }
+		{ print }
+		END { print "published_at: " published_at }
+	' "$cc_psm_rec/materialization.yaml" | cc_atomic_write "$cc_psm_rec/materialization.yaml"
+	cc_plan_org_unlock "$cc_psm_root"
+	rm -f "$cc_psm_entries"
+	cc_emit materialized created
+	cc_materialization_emit_allocation "$cc_psm_rec/allocation.tsv"
+	cc_emit timing "$cc_psm_rec/timing.yaml"
+	return 0
+}
+
 # cc_plan_validate PLAN_DIR -> validate structure and repository mapping
 cc_plan_validate() {
 	cc_pv_dir="$1"
@@ -1595,17 +1871,7 @@ cc_plan_validate() {
 cc_plan_allocate_id() {
 	cc_ai_root="$1"; cc_ai_slug="$2"
 	cc_safe_slug "$cc_ai_slug" || { cc_fail PLAN_SLUG_INVALID "$cc_ai_slug"; return 1; }
-	cc_ai_max=0
-	for cc_ai_d in "$cc_ai_root/plans"/*/ "$cc_ai_root/plans/archive"/*/; do
-		[ -d "$cc_ai_d" ] || continue
-		cc_ai_base=$(basename -- "$cc_ai_d")
-		case "$cc_ai_base" in
-			[0-9][0-9][0-9][0-9]-*)
-				cc_ai_seq=${cc_ai_base%%-*}
-				cc_ai_seq=$(printf '%s' "$cc_ai_seq" | sed 's/^0*//'); [ -n "$cc_ai_seq" ] || cc_ai_seq=0
-				[ "$cc_ai_seq" -gt "$cc_ai_max" ] && cc_ai_max=$cc_ai_seq ;;
-		esac
-	done
+	cc_ai_max=$(cc_plan_max_sequence "$cc_ai_root") || return 1
 	cc_ai_next=$((cc_ai_max + 1))
 	printf '%04d-%s\n' "$cc_ai_next" "$cc_ai_slug"
 }
@@ -3544,6 +3810,7 @@ cc_main() {
 		delivery-drift)          cc_delivery_drift "$@" ;;
 		delivery-rebase)         cc_delivery_rebase "$@" ;;
 		plan-validate)           cc_plan_validate "$@" ;;
+		plan-stack-materialize)  cc_plan_stack_materialize "$@" ;;
 		plan-allocate-id)        cc_plan_allocate_id "$@" ;;
 		plan-archive)            cc_plan_archive "$@" ;;
 		plan-restore)            cc_plan_restore "$@" ;;

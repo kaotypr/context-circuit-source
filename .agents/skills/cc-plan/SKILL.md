@@ -26,7 +26,9 @@ proposed task partition, concrete risks, and the runnable "done" checks that pro
 each outcome criterion. The feasibility check ran on those findings before you got
 here — so you are planning a change already judged buildable. If no trace manifest
 exists yet (the tracer has not run), run `cc-trace` first rather than improvising a
-code read inline.
+code read inline. Require a current plan-ready manifest: a legacy manifest without
+`plan_ready_version: 1`, an incompatible structural map, or uncertain revision
+binding returns to `cc-trace` for bounded fallback and never authorizes a fast path.
 
 When `intent/<id>/detail/` exists, use it as the **confirmed shape** of what to
 build so plans and tasks follow those topics. It does this without replacing the
@@ -68,6 +70,16 @@ question is carried into the plan's assumptions, risks, or verification. An
 repeat it. No unresolved intent-level question may be hidden in a plan's open
 questions.
 
+Ratify normalized fragments without repeating the tracer's repository read. Confirm
+complete criterion coverage, current revision-bound anchors, repository/task identity,
+acyclic task and plan dependency graphs, tier floor, checks, boundary reasons, and a
+disposition for every question. Record each adjustment and why.
+
+Trace anchors and initial task paths are advisory grounding, not an exhaustive worker
+write allowlist. A necessary intent-consistent path discovered in the same repository
+may proceed when recorded in the worker handoff and checked over the complete diff.
+A required second repository or approved-decision change stops as a coordinator finding.
+
 Retrieve relevant Product Knowledge by the request's concepts, domains,
 repositories, decisions, and constraints using `context/INDEX.md`; read only the
 selected units, not the whole directory. Read repository instructions and only
@@ -96,8 +108,14 @@ every X" obligation. Write `PLAN.md` (readable) and `plan.yaml` (canonical,
 
 Perform a context-grounding drift check and a request-fidelity check. Any
 contradiction or missing detail becomes an explicit open question, assumption,
-or risk — never a silently chosen implementation. Add the plan to `plans/INDEX.md`
-and validate it with the runtime `plan-validate`.
+or risk — never a silently chosen implementation. For one plan, existing single-plan
+verbs remain available. For a ratified stack, render complete fragments with
+request-local `@plan:<key>` references and submit one `plan-stack-materialize` request.
+It reserves a consecutive id range by invocation identity, stages readable and
+canonical artifacts, validates dependency/coverage/current-authorization/index state,
+and publishes all plans and index rows or none. A successful same-invocation retry
+returns the original ids; malformed input returns one stable stage/key/error diagnostic.
+Writing or materializing plans does not execute them.
 
 ## Authorization preflight (INV-INTENT-02)
 

@@ -8,7 +8,11 @@ identifiers, and read-only worktree access.
 
 It inspects the latest commit in every affected repository, replays the promised
 acceptance and verification evidence, checks the evidence proves the required
-layer, and checks that repository and path scope was respected. It reports each
+layer, and checks the complete committed diff rather than only original paths or
+trace anchors. It reconciles every worker `scope_expansions` entry, fails unrecorded
+expansion, and confirms each recorded same-repository expansion is necessary and
+intent-consistent. A second-repository or approved-decision expansion fails with a
+coordinator finding. It reports each
 acceptance and verification id with its observed evidence and one outcome:
 
 - `passed` — required evidence observed at the required layer (the only

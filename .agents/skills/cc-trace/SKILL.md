@@ -58,6 +58,14 @@ Each child reports a manifest, recorded at `intent/<id>/trace/<repo>.yaml` (sche
 - a **completeness proof** for any "change every X" obligation — the command and count
   showing the found set is the whole set.
 
+Make the report plan-ready in the same read. Alongside the compatible `file_map`,
+`task_partition`, and `done_checks`, record `plan_ready_version: 1`, repository and
+workspace identity, observed/current revisions, structural-map identity, grounding
+mode, reread paths, typed evidence anchors and investigation leads, normalized
+plan fragments/tasks/dependencies, criterion coverage, checks, and the typed
+feasibility outcome. Fragments use request-local keys only: the tracer never
+allocates plan ids, ratifies a boundary, approves, or publishes a plan.
+
 ### Surface the plan boundary for the coordinator
 
 `task_partition` is evidence for the coordinator to ratify, not an instruction for
@@ -113,11 +121,29 @@ than asking the user to restate the requirement.
 
 ## Freshness — pay for tracing once
 
-If a manifest for this intent already exists, do not re-trace from zero: load it and run
-a **bounded freshness check** against current code (have the files it describes changed
-since it was written?), re-reading only what drifted and updating `freshness_checked_at`.
-Captured design knowledge (`sources/`, `context/`) is reused the same way; the freshness
-check is what keeps a reused snapshot from silently going stale.
+Use a local, gitignored structural repository map at
+`.runtime/trace-cache/maps/<workspace-id>/<repository>/<cache-key>.yaml`. Its key
+binds workspace/repository identity, canonical binding and location, base revision,
+map schema, and discovery rules. It contains structural inventory and command
+metadata only—never secrets, ignored files, provider payloads, or source copies—and
+is published by temp-file rename. An incomplete map is ignored and the cache is
+always safe to delete.
+
+If a manifest exists, classify reuse before planning:
+
+- **exact**: identity, revision, schema, and discovery rules match. Reuse the map,
+  but reread the current intent sites and record those paths;
+- **delta**: ancestry and drift are bounded and understood. Reread changed sites and
+  their known dependents, refresh affected anchors/fragments/checks, and record the
+  merge base and reread paths;
+- **fallback**: a legacy manifest without `plan_ready_version`, incompatible schema
+  or discovery rules, changed identity, missing ancestry, broad drift, or any
+  uncertainty. Perform a cold trace and record the reason;
+- **cold**: no usable evidence exists; build and atomically publish a fresh structural map.
+
+Record observed and current revisions and update `freshness_checked_at`. Never let
+reused knowledge silently survive relevant code drift. Captured design knowledge
+(`sources/`, `context/`) follows the same bounded-freshness principle.
 
 ## Run the feasibility check on the findings
 
@@ -145,6 +171,11 @@ the change is buildable, stop and ask a human rather than proceed:
 
 Feasibility is a reasoned judgment over the tracer's findings, not an engine verb; there
 is **no** automated scope-containment check. Scope-safety is settled at delivery (Gate 2).
+
+Before handing off to planning, require current revisions, complete criterion coverage,
+valid repository/task identities and dependency graphs, a tier at or above the intent
+floor, and a disposition for every question. If any of those cannot be established,
+use fallback or stop; do not label the manifest plan-ready.
 
 ## Feedback edges
 

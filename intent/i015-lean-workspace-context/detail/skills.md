@@ -18,8 +18,12 @@ It does not:
 
 - restate a contract schema field-by-field
 - retell Gate 1 / tracer / Gate 2 for a route that is not that
-- document an invoke line that the runtime does not accept
 - say “see the schema” as a substitute for “copy the template, then validate”
+
+Invoke lines must still match the runtime. On core skills they already do,
+against `.context-circuit/wrapper/runtime/engine.sh`. Keeping them matching
+is a guard so a typical route still does not search tests or open the
+engine. Teaching the agent to discover the runtime is not in scope.
 
 ## Named files beat “read the schema”
 
@@ -35,16 +39,18 @@ not a grep of tests.
 ## Invoke lines must match the runtime
 
 A skill that drives the runtime lists the actions this route uses, each with
-the argument shape that **succeeds**.
+the argument shape that **succeeds**. That is a guard, not the main cut.
 
-If the documented line and the runtime disagree, the agent will search tests
-or open the engine. Both are failures of this intent:
+The live waste on authoring skills is **restating the contract** and naming
+the schema as a procedure. Core invoke lines already match the nested
+runtime. If a documented line and the runtime later disagree, the agent will
+search tests or open the engine. Both are still failures of this intent:
 
 - searching tests is discovery waste
 - reading the engine is already forbidden (invoke-not-read)
 
-Fixing a wrong line in the skill is in scope. Teaching the agent to discover
-the runtime is not.
+Fixing a wrong line in a skill this change touches is in scope. Teaching the
+agent to discover the runtime is not.
 
 ```mermaid
 flowchart TD
@@ -64,15 +70,17 @@ belongs in the intent skill. What does not belong is a pasted copy of the
 intent contract, the tracer skill, and the plan skill.
 
 Publish and run-stack are large because those routes are large. This intent
-does not target them for a line-count cut. It targets **restatement and wrong
-invokes** wherever they appear. If a large skill is large only because it
-retells neighbors, that restatement goes; the route-specific procedure stays.
+does not target them for a line-count cut. It targets **restatement**
+wherever it appears, and **wrong invokes** only where a line no longer
+matches. If a large skill is large only because it retells neighbors, that
+restatement goes; the route-specific procedure stays.
 
 ## Catalog sentence every retrieval skill needs
 
 Any skill that today says “retrieve via the catalog, read only selected
 units” also says the negative in [catalog.md](catalog.md): do not list or grep
-the knowledge tree to discover units.
+the knowledge tree to discover units, and do not treat
+`context/domains/README.md` or another index as the catalog.
 
 ## What this is not
 
