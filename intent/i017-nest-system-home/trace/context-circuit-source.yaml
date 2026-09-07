@@ -1,0 +1,503 @@
+schema_version: 1
+intent: i017-nest-system-home
+repository: context-circuit-source
+file_map:
+  - path: wrapper/runtime/engine.sh
+    sites:
+      - "637-652 cc_workspace_validate: KEEP shape (workspace.yaml + plans/). PLAN-RESOLUTION add optional nested-home probe so a workspace missing .context-circuit/wrapper fails loudly; not required for every verb today."
+      - "1455-1456 cc_worker_brief_assemble: MUST CHANGE. Hardcoded $cc_wb_root/wrapper/runtime/worker-brief.md and wrapper/adapters/worker-brief.md — retarget to .context-circuit/wrapper/... or a single cc_product_home helper."
+      - "1344 comment wrapper/adapters/: MUST CHANGE path in comment when home moves."
+      - "3584 dispatch usage line: KEEP verb surface; path to engine file itself moves with wrapper/."
+    integration: "Only runtime file with literal wrapper/ path joins. cc_workspace_validate does not locate wrapper today — skills and tests hardcode the invoke path instead."
+  - path: wrapper/manifest.yaml
+    sites:
+      - "41-43 runtime.entrypoint: MUST CHANGE wrapper/runtime/engine.sh → .context-circuit/wrapper/runtime/engine.sh."
+      - "55-60 release_boundary.shipped: MUST CHANGE wrapper/, agents/, docs/ → .context-circuit/wrapper, .context-circuit/agents, .context-circuit/docs. KEEP .agents/skills/ at workspace root."
+      - "79-84 upgrade_boundary.wrapper_only: MUST CHANGE same three paths under .context-circuit/."
+      - "2 owner: wrapper/manifest.yaml: MUST CHANGE owner path after move."
+    integration: "Authoritative shipped/never-ship and upgrade preserve sets. test/contracts/test-contracts.sh and release tests read this file."
+  - path: wrapper/contracts/invariants.yaml
+    sites:
+      - "2 owner: wrapper/contracts/invariants.yaml: MUST CHANGE."
+      - "471-516 owners map: MUST CHANGE every wrapper/, agents/, docs/ owner value to .context-circuit/... KEEP skill_packets: .agents/skills/, authority_order: WORKFLOW.md (root pointer), source_boundary: AGENTS.md (root pointer), product_knowledge: context/INDEX.md."
+      - "383 worker_brief owner wrapper/adapters/worker-brief.md: MUST CHANGE to nested adapters path (runtime promotes brief beside engine)."
+    integration: "One-owner-per-rule index. test/contracts loops concerns: and owner keys — all must match nested paths."
+  - path: wrapper/contracts/schemas/
+    sites:
+      - "21 schema files with owner: wrapper/contracts/schemas/*.yaml: MUST CHANGE owner field prefix to .context-circuit/wrapper/contracts/schemas/."
+      - "trace-manifest.yaml 4-5, 118: MUST CHANGE describes/owner paths."
+      - "intent-contract.yaml 118 trace_manifest owner: MUST CHANGE."
+    integration: "Schema self-owner fields are part of the contract surface skills and PK cite."
+  - path: wrapper/adapters/AGENTS.md
+    sites:
+      - "8-9 coordinator reads agents/coordinator.md: MUST CHANGE to .context-circuit/agents/coordinator.md (or pointer-relative form hosts resolve from nested home)."
+      - "33-34 wrapper/contracts/invariants.yaml: MUST CHANGE nested path."
+      - "57-60 wrapper/runtime/engine.sh invoke + must-not-read: MUST CHANGE to .context-circuit/wrapper/runtime/engine.sh."
+      - "88 docs/role-tiering.md: MUST CHANGE to .context-circuit/docs/role-tiering.md."
+    integration: "Canonical product host adapter; release-artifact.sh copies this to workspace-root AGENTS.md. After nest, root AGENTS.md is a thin pointer; this file remains the full adapter under .context-circuit/wrapper/adapters/."
+  - path: wrapper/adapters/CLAUDE.md
+    sites:
+      - "6-14 agents/coordinator.md, agents/worker.md, agents/verifier.md, agents/tracer.md: MUST CHANGE nested role paths."
+      - "21 docs/role-tiering.md: MUST CHANGE."
+      - "54-62 .agents/skills/ symlink note: KEEP .agents/ at workspace root (already-answered)."
+    integration: "Copied to root CLAUDE.md in artifact. Source checkout also keeps root CLAUDE.md for host convenience — both must retarget."
+  - path: wrapper/adapters/CURSOR.md
+    sites:
+      - "6-14 role file paths: MUST CHANGE to .context-circuit/agents/..."
+      - "21 docs/role-tiering.md: MUST CHANGE."
+    integration: "Copied to root CURSOR.md in artifact; .cursor/rules/role-tiering-spawn.mdc points here."
+  - path: wrapper/adapters/WORKFLOW.md
+    sites:
+      - "10 wrapper/contracts/invariants.yaml: MUST CHANGE."
+    integration: "Copied to root WORKFLOW.md in shipped workspace. Source WORKFLOW.md is maintainer-specific and separate."
+  - path: wrapper/migrations/README.md
+    sites:
+      - "3-4 upgrade replaces wrapper/, agents/, docs/: MUST CHANGE to .context-circuit/ paths; ADD layout migration note for workspaces with root product folders (move template-owned trees, retarget pointers, preserve workspace-owned)."
+      - "16-17 wrapper/manifest.yaml: MUST CHANGE path."
+      - "27 repository-binding-migrate example: MUST CHANGE invoke to .context-circuit/wrapper/runtime/engine.sh."
+    integration: "Upgrade guidance owner. No automated layout migration script exists today — plan must add migration steps or a new engine verb."
+  - path: agents/coordinator.md
+    sites:
+      - "29-30 must-not-read wrapper/runtime/engine.sh: MUST CHANGE invoke path in prohibition text."
+      - "throughout: any agents/ self-reference in shipped role guidance moves with folder; coordinator spawn instructions cite agents/worker.md etc. — paths become .context-circuit/agents/... in host prompts or stay basename-only if root pointers teach resolution."
+    integration: "Role files move to .context-circuit/agents/. Host front-door files must tell hosts where to read them."
+  - path: agents/tracer.md
+    sites:
+      - "23-24 manifest schema wrapper/contracts/schemas/trace-manifest.yaml and output intent/<id>/trace/: KEEP intent/ at workspace root; MUST CHANGE schema path to nested wrapper."
+    integration: "This tracer run writes intent/i017-nest-system-home/trace/context-circuit-source.yaml — workspace-owned, stays at root."
+  - path: agents/worker.md
+    sites:
+      - "28 plan status: KEEP rule; file moves with agents/."
+    integration: "Role packet; test/contracts requires file at product agents home."
+  - path: agents/verifier.md
+    sites:
+      - "20 plan status: KEEP rule; file moves."
+    integration: "Role packet."
+  - path: docs/
+    sites:
+      - "entire shipped tree (getting-started.md, planning.md, terminology.md, role-tiering.md, templates/*): MUST MOVE to .context-circuit/docs/. docs/release.md is source-only (excluded from release-manifest) but lives under docs/ today — moves with docs/ in source checkout; release-manifest exclude stays."
+    integration: "Product documentation; not a host discovery surface. Skills and PK cite docs/ paths heavily."
+  - path: .agents/skills/cc-intent/SKILL.md
+    sites:
+      - "25-27 docs/templates/*: MUST CHANGE."
+      - "34 wrapper/contracts/schemas/intent-contract.yaml: MUST CHANGE."
+      - "144-153 wrapper/adapters/AGENTS.md + sh wrapper/runtime/engine.sh verbs: MUST CHANGE all paths and invoke lines."
+    integration: "Invoke-not-read boundary: every engine line must retarget or skills break after move."
+  - path: .agents/skills/cc-execute/SKILL.md
+    sites:
+      - "42,47 agents/worker.md, agents/verifier.md: MUST CHANGE."
+      - "65-68 wrapper/runtime/engine.sh invoke: MUST CHANGE."
+      - "115,151 docs/role-tiering.md, docs/terminology.md: MUST CHANGE."
+    integration: "Execute packet; cc-execute also referenced from test/contracts."
+  - path: .agents/skills/cc-trace/SKILL.md
+    sites:
+      - "21 docs/role-tiering.md: MUST CHANGE."
+      - "29 agents/tracer.md: MUST CHANGE."
+      - "42 wrapper/contracts/schemas/trace-manifest.yaml: MUST CHANGE."
+    integration: "Tracer spawn packet."
+  - path: .agents/skills/cc-verify/SKILL.md
+    sites:
+      - "30 agents/verifier.md: MUST CHANGE."
+    integration: "Verifier packet."
+  - path: .agents/skills/cc-run-stack/SKILL.md
+    sites:
+      - "31-33 wrapper/runtime/engine.sh + wrapper/adapters/AGENTS.md: MUST CHANGE."
+      - "108,116 agents/worker.md, agents/verifier.md: MUST CHANGE."
+      - "128,155 docs/role-tiering.md, docs/terminology.md: MUST CHANGE."
+    integration: "Run-stack loop invokes engine repeatedly."
+  - path: .agents/skills/cc-pair/SKILL.md
+    sites:
+      - "55 docs/role-tiering.md: MUST CHANGE."
+      - "72 agents/worker.md: MUST CHANGE."
+      - "132-135 sh wrapper/runtime/engine.sh pair-*: MUST CHANGE."
+      - "139 wrapper/adapters/AGENTS.md: MUST CHANGE."
+      - "148 docs/terminology.md: MUST CHANGE."
+    integration: "Pairing invokes engine from workspace directory."
+  - path: .agents/skills/cc-publish/SKILL.md
+    sites:
+      - "52,96,253 wrapper/contracts/schemas/publication-*.yaml: MUST CHANGE."
+    integration: "Publication schema paths."
+  - path: .agents/skills/cc-plan/SKILL.md
+    sites:
+      - "no literal wrapper/agents/docs strings today: KEEP content; verify after move that plan authoring still resolves trace manifest and templates via nested paths (may inherit from coordinator reads)."
+    integration: "Indirect dependence on paths coordinator and cc-trace teach."
+  - path: .agents/skills/cc-complete/SKILL.md
+    sites:
+      - "plan-complete invoke likely via generic wording: VERIFY post-move; add explicit .context-circuit/wrapper/runtime/engine.sh if absent."
+    integration: "Mark-done skill."
+  - path: .agents/skills/cc-deliver/SKILL.md
+    sites:
+      - "test/contracts asserts strings CHANGE_SET_*: KEEP; any engine invoke lines: retarget if present."
+    integration: "Delivery skill."
+  - path: scripts/release-artifact.sh
+    sites:
+      - "33 tar stage .agents agents docs wrapper: MUST CHANGE — stage .agents plus .context-circuit/{wrapper,agents,docs}; mkdir .context-circuit in stage tree."
+      - "36-40 cp wrapper/adapters/* to root AGENTS.md CLAUDE.md CURSOR.md WORKFLOW.md README.md: KEEP pattern (thin root copies) but source paths become .context-circuit/wrapper/adapters/*."
+      - "43 worker-brief promote to wrapper/runtime/: MUST CHANGE to .context-circuit/wrapper/runtime/worker-brief.md."
+      - "89-97 schema fixture loop wrapper/contracts/schemas: MUST CHANGE prefix."
+      - "97 wrapper/adapters leaked check: KEEP — adapters still excluded from artifact (only root copies ship)."
+      - "123 runtime_version read wrapper/manifest.yaml: MUST CHANGE path."
+    integration: "Single assembler for context-circuit-template. test/release/test-release.sh and agent-harness/test-template-runtime.sh depend on its output shape."
+  - path: scripts/release-manifest.txt
+    sites:
+      - "14-96 all required wrapper/, agents/, docs/ paths: MUST CHANGE to .context-circuit/... prefix. KEEP required .agents/skills/* and root adapter files (AGENTS.md etc.)."
+    integration: "Release boundary checklist consumed by release-artifact.sh."
+  - path: scripts/build-dist.sh
+    sites:
+      - "15-16 comment and manifest= source_root/wrapper/manifest.yaml: MUST CHANGE to .context-circuit/wrapper/manifest.yaml."
+    integration: "Dist build reads template_version from manifest."
+  - path: scripts/resolve-release-version.sh
+    sites:
+      - "PLAN-RESOLUTION: read file; if it references wrapper/manifest.yaml, retarget."
+    integration: "Version helper for publish pipeline."
+  - path: test/lib/assert.sh
+    sites:
+      - "15 . $ROOT/wrapper/runtime/engine.sh: MUST CHANGE to .context-circuit/wrapper/runtime/engine.sh (or CC_PRODUCT_HOME variable set once here)."
+    integration: "Every test suite sources this; wrong path breaks the entire semantic acceptance suite."
+  - path: test/contracts/test-contracts.sh
+    sites:
+      - "5 W=$ROOT/wrapper: MUST CHANGE to $ROOT/.context-circuit/wrapper (or shared home variable)."
+      - "46-47,126-127,170-177,209-231 agents/, docs/ path assertions: MUST CHANGE product home prefix."
+      - "172 W/adapters/AGENTS.md reads agents/coordinator.md: MUST CHANGE expected string to nested path or pointer contract."
+      - "50-107 manifest and schema loops under $W: follow $W retarget."
+    integration: "Contract regression suite; encodes shipped layout and owner map."
+  - path: test/release/test-release.sh
+    sites:
+      - "19-43 artifact paths wrapper/, agents/, docs/: MUST CHANGE to .context-circuit/..."
+      - "62-66 leaked paths wrapper/adapters: KEEP exclusion checks."
+    integration: "Release artifact acceptance."
+  - path: test/release/test-publish.sh
+    sites:
+      - "39-64 tpl/wrapper/manifest.yaml: MUST CHANGE to tpl/.context-circuit/wrapper/manifest.yaml."
+    integration: "Publish template version stamping."
+  - path: agent-harness/test-template-runtime.sh
+    sites:
+      - "22 ENGINE=$ws/wrapper/runtime/engine.sh: MUST CHANGE."
+      - "208-227 $ws/wrapper/runtime/worker-brief.md, $ws/wrapper/manifest.yaml, $ws/docs/role-tiering.md: MUST CHANGE."
+    integration: "Template laboratory proves instantiated workspace behavior through shipped engine only."
+  - path: agent-harness/human/run-scenario.sh
+    sites:
+      - "127 ENGINE_CLI=$WORKSPACE/wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Human-simulated harness driver."
+  - path: agent-harness/human/grade.sh
+    sites:
+      - "35 ENGINE=$WORKSPACE/wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Grading uses workspace engine."
+  - path: agent-harness/human/test-direct-collaboration-scenario.sh
+    sites:
+      - "24 . $ws/wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Pairing scenario fixture."
+  - path: test/grounding/test-grounding.sh
+    sites:
+      - "16-17 mkdir $ws/wrapper/runtime + cp worker-brief: MUST CHANGE to .context-circuit/wrapper/runtime."
+      - "96 engine path in not_contains: MUST CHANGE."
+    integration: "Grounding suite builds minimal workspace with brief beside engine."
+  - path: test/runtime/test-runtime.sh
+    sites:
+      - "152-157 not_contains on $ROOT/wrapper/runtime/engine.sh: MUST CHANGE path."
+    integration: "Runtime smoke."
+  - path: test/delivery/test-delivery.sh
+    sites:
+      - "21-37 $ROOT/wrapper/runtime/engine.sh: MUST CHANGE all references."
+    integration: "Delivery boundary tests."
+  - path: test/intent/test-intent.sh
+    sites:
+      - "throughout sh $ROOT/wrapper/runtime/engine.sh: MUST CHANGE (15+ invocations)."
+    integration: "Intent lifecycle suite."
+  - path: test/intent/test-feasibility.sh
+    sites:
+      - "17-18 trace-manifest schema path; 23-101 engine invocations: MUST CHANGE."
+    integration: "Feasibility gate tests."
+  - path: test/intent/test-intent-detail.sh
+    sites:
+      - "75-76 engine invocations: MUST CHANGE."
+    integration: "Intent detail validation."
+  - path: test/intent/test-approval-trace-plan.sh
+    sites:
+      - "38-39 engine source contains; 45-50 invocations: MUST CHANGE."
+    integration: "Approval → trace → plan flow."
+  - path: test/assurance/test-tier.sh
+    sites:
+      - "10 eng() helper: MUST CHANGE."
+    integration: "Tier floor suite."
+  - path: test/candidate/test-candidate.sh
+    sites:
+      - "10 eng() helper: MUST CHANGE."
+    integration: "Candidate honesty suite."
+  - path: test/knowledge/test-debt.sh
+    sites:
+      - "10 eng() helper: MUST CHANGE."
+    integration: "Knowledge debt suite."
+  - path: test/scenarios/test-scenarios.sh
+    sites:
+      - "11 eng() helper: MUST CHANGE."
+    integration: "End-to-end scenario."
+  - path: test/pairing/test-pairing.sh
+    sites:
+      - "103,108 cd $ws && sh $ROOT/wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Pairing engine verbs."
+  - path: test/plans/test-decomposition.sh
+    sites:
+      - "92-93 docs/planning.md; 111-112 engine: MUST CHANGE."
+    integration: "Decomposition guidance tests."
+  - path: test/plans/test-one-repo-per-plan.sh
+    sites:
+      - "61 engine invoke: MUST CHANGE."
+    integration: "One-repo-per-plan constraint."
+  - path: agent-harness/scenarios/
+    sites:
+      - "01-new-project-simple-idea/case.yaml 67-76, 02-connect-existing-repo 68-74, and ~20 other case.yaml files: forbidden/allowed paths listing wrapper/runtime/engine.sh, wrapper/contracts/**, agents/worker.md — MUST CHANGE to .context-circuit/wrapper/... and .context-circuit/agents/.... KEEP forbidden sources/**, plans/archive/**."
+      - "generated/*.case.yaml: MUST REGENERATE from plots after plot path updates (same pattern as i016 stale harness)."
+    integration: "Human-simulated harness encodes invoke-not-read boundaries with literal engine paths."
+  - path: agent-harness/conversations/plots/
+    sites:
+      - "forbidden/allowed blocks in ~30 plots mirror scenario paths (wrapper/runtime/engine.sh, agents/worker.md): MUST CHANGE in lockstep with scenarios."
+    integration: "Plot source for generated case.yaml."
+  - path: AGENTS.md
+    sites:
+      - "23-26,38-42 maintainer source references wrapper/, agents/, docs/ at root: MUST CHANGE to describe .context-circuit/ nested home for product files."
+      - "PLAN-RESOLUTION: reconciled with intent host front door — product adapter content should not duplicate here; this file may stay maintainer-specific with pointers, while shipped root AGENTS.md comes from wrapper/adapters copy."
+    integration: "Source checkout root AGENTS.md is maintainer safety today, not identical to wrapper/adapters/AGENTS.md."
+  - path: WORKFLOW.md
+    sites:
+      - "23-24 wrapper/adapters/WORKFLOW.md reference: MUST CHANGE to nested path."
+    integration: "Maintainer source workflow; product WORKFLOW copied from adapters at release."
+  - path: CLAUDE.md
+    sites:
+      - "6-14,21 agents/* and docs/role-tiering.md: MUST CHANGE (mirror wrapper/adapters/CLAUDE.md)."
+    integration: "Host adapter at source root for maintainer convenience."
+  - path: CURSOR.md
+    sites:
+      - "6-14,21 same as CLAUDE.md: MUST CHANGE."
+    integration: "Host adapter at source root."
+  - path: .cursor/rules/role-tiering-spawn.mdc
+    sites:
+      - "2,8 Read wrapper/adapters/CURSOR.md: MUST CHANGE to .context-circuit/wrapper/adapters/CURSOR.md (or root CURSOR.md pointer target)."
+    integration: "Cursor always-applied rule; breaking path breaks Task spawn tiering."
+  - path: README.md
+    sites:
+      - "34-40 source layout lists wrapper/, agents/, docs/ at top level: MUST CHANGE to .context-circuit/{wrapper,agents,docs}."
+    integration: "Maintainer orientation."
+  - path: context/domains/host-adapters/README.md
+    sites:
+      - "24,58,89-99,121-123 wrapper/adapters/*, agents/coordinator.md, root AGENTS.md: MUST CHANGE nested paths in PK."
+    integration: "Accepted PK; agents read this for host behavior."
+  - path: context/domains/source-release-and-upgrade/README.md
+    sites:
+      - "69,89-106 wrapper/manifest.yaml, release scripts, template/: MUST CHANGE product path references; KEEP template/ at source root identity."
+    integration: "Release/upgrade PK."
+  - path: context/domains/tracing/README.md
+    sites:
+      - "implementation refs wrapper/contracts/schemas/trace-manifest.yaml, agents/tracer.md: MUST CHANGE."
+    integration: "Tracing domain PK."
+  - path: context/domains/completion/README.md
+    sites:
+      - "108 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Completion domain PK."
+  - path: context/domains/assurance/README.md
+    sites:
+      - "wrapper/ and docs/ refs in implementation section: MUST CHANGE."
+    integration: "Assurance PK."
+  - path: context/domains/plan-execution/README.md
+    sites:
+      - "136 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Execution PK."
+  - path: context/domains/direct-collaboration/README.md
+    sites:
+      - "135 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Pairing PK."
+  - path: context/domains/run-stack/README.md
+    sites:
+      - "106 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Run-stack PK."
+  - path: context/domains/repository-grounding/README.md
+    sites:
+      - "119 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Grounding PK."
+  - path: context/domains/delivery/README.md
+    sites:
+      - "wrapper/ paths in implementation refs: MUST CHANGE."
+    integration: "Delivery PK."
+  - path: context/domains/intent/README.md
+    sites:
+      - "docs/ and wrapper/ refs: MUST CHANGE."
+    integration: "Intent PK."
+  - path: context/domains/plan-review/README.md
+    sites:
+      - "docs/ refs: MUST CHANGE."
+    integration: "Plan review PK."
+  - path: context/domains/plan-authorization/README.md
+    sites:
+      - "wrapper/ refs: MUST CHANGE."
+    integration: "Plan authorization PK."
+  - path: context/domains/verification/README.md
+    sites:
+      - "agents/verifier.md, docs/ refs: MUST CHANGE."
+    integration: "Verification PK."
+  - path: context/domains/external-surface/README.md
+    sites:
+      - "wrapper/contracts paths: MUST CHANGE."
+    integration: "External surface PK."
+  - path: context/domains/repository-binding/README.md
+    sites:
+      - "119 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Binding PK."
+  - path: context/domains/plan-organization/README.md
+    sites:
+      - "76 wrapper/runtime/engine.sh: MUST CHANGE."
+    integration: "Plan organization PK."
+  - path: context/TERMINOLOGY.md
+    sites:
+      - "wrapper/, docs/ glossary paths: MUST CHANGE product home references."
+    integration: "PK glossary."
+  - path: context/DECISIONS.md
+    sites:
+      - "wrapper/ mentions: MUST CHANGE where they name product home."
+    integration: "PK decisions log."
+  - path: context/ARCHITECTURE.md
+    sites:
+      - "wrapper/ layout description: MUST CHANGE."
+    integration: "PK architecture."
+  - path: context/INDEX.md
+    sites:
+      - "domain workflow refs to wrapper/adapters: MUST CHANGE."
+    integration: "PK index."
+  - path: template/
+    sites:
+      - "KEEP template/ directory at source root (seed identity). PLAN-RESOLUTION: seed contents do not currently include wrapper/agents/docs — assembly copies from source product trees. No template/ subtree move required unless plan adds nested-home fixtures for documentation."
+    integration: "Blank workspace seed; workspace.yaml, context/, plans/, intent/ seeds stay workspace-owned paths."
+task_partition:
+  - id: nest-product-home
+    title: Move wrapper, agents, docs under .context-circuit and retarget runtime
+    rationale: >
+      Physical move of the three product folders plus engine worker-brief lookup,
+      manifest shipped/upgrade sets, invariants owner map, and schema owner fields.
+      Without this, nothing else can pass verification.
+    paths:
+      - wrapper/runtime/engine.sh
+      - wrapper/manifest.yaml
+      - wrapper/contracts/invariants.yaml
+      - wrapper/contracts/schemas/
+      - wrapper/migrations/README.md
+    plan_boundary: one-plan-embedded-tasks
+    depends_on: []
+  - id: host-front-door
+    title: Keep workspace-root host discovery as thin pointers
+    rationale: >
+      Root AGENTS.md, WORKFLOW.md, CLAUDE.md, CURSOR.md (source + adapter sources),
+      wrapper/adapters/* content, and .cursor/rules/role-tiering-spawn.mdc must
+      point hosts into .context-circuit without duplicating product policy.
+      .agents/skills/ stays at root (already-answered). Depends on nested home
+      existing so pointers have a target.
+    paths:
+      - wrapper/adapters/AGENTS.md
+      - wrapper/adapters/CLAUDE.md
+      - wrapper/adapters/CURSOR.md
+      - wrapper/adapters/WORKFLOW.md
+      - CLAUDE.md
+      - CURSOR.md
+      - .cursor/rules/role-tiering-spawn.mdc
+      - agents/coordinator.md
+    depends_on: [nest-product-home]
+  - id: template-and-upgrade-ship
+    title: Ship nested home in release assembly and upgrade docs
+    rationale: >
+      release-artifact.sh, release-manifest.txt, and build-dist.sh must emit
+      .context-circuit/{wrapper,agents,docs} in the distributable template;
+      migrations/README must document layout upgrade preserving workspace-owned
+      files. test/release and agent-harness/test-template-runtime.sh verify this
+      boundary. Cannot verify independently of path retargeting in tests.
+    paths:
+      - scripts/release-artifact.sh
+      - scripts/release-manifest.txt
+      - scripts/build-dist.sh
+      - agent-harness/test-template-runtime.sh
+      - test/release/test-release.sh
+    depends_on: [nest-product-home]
+  - id: retarget-and-prove
+    title: Retarget skills, tests, PK, harness; prove no root leftovers
+    rationale: >
+      .agents/skills with engine/role/docs paths, test/lib/assert.sh and all
+      eng() helpers, agent-harness scenarios/plots, context/domains PK, README,
+      and maintainer root docs. Completeness proof must go to zero actionable
+      old-home references. Same verification suite as slices 1–3.
+    paths:
+      - .agents/skills/
+      - test/lib/assert.sh
+      - test/contracts/test-contracts.sh
+      - agent-harness/scenarios/
+      - context/domains/
+      - README.md
+    depends_on: [nest-product-home, host-front-door, template-and-upgrade-ship]
+risks:
+  - "Partial move: relocating directories without retargeting test/lib/assert.sh leaves every suite sourcing a missing engine at $ROOT/wrapper/runtime/engine.sh."
+  - "Invoke-not-read break: skills that still say sh wrapper/runtime/engine.sh after the move fail closed — coordinators cannot allocate intents, execute, pair, or trace."
+  - "Release-assembler drift: release-artifact.sh staging tar of top-level wrapper agents docs produces an artifact with root product folders, failing AC-NESTED-HOME and AC-TEMPLATE-AND-UPGRADE even if source checkout is nested."
+  - "Owner-map-only change: updating invariants.yaml owners without schema owner: fields and skill citations leaves one-owner-per-rule inconsistent and test/contracts owner loops failing."
+  - "Host double-copy: making root AGENTS.md a full product adapter instead of a thin pointer violates AC-HOST-FRONT-DOOR and duplicates policy outside .context-circuit/wrapper/adapters/."
+  - "Accidentally moving .agents/, context/, plans/, intent/, or .runtime/ into .context-circuit/ violates AC-WORKSPACE-OWNED-STAY."
+  - "Maintainer source AGENTS.md conflation: source checkout uses a distinct maintainer AGENTS.md today; folding maintainer safety into the shipped pointer without separation could leak maintainer-only rules into instantiated workspaces or drop them from source."
+  - "Harness stale paths: ~30 agent-harness scenarios forbid wrapper/runtime/engine.sh as invoke-not-read boundary — paths must update together or grading rejects correct coordinator behavior."
+  - "Upgrade without migration: existing instantiated workspaces with root wrapper/agents/docs need a documented move; silent failure leaves AC-NO-LEFTOVER-ROOT false for upgraded users."
+  - "engine.sh worker-brief lookup: cc_worker_brief_assemble hardcodes wrapper/runtime/worker-brief.md — pairing/grounding tests fail if brief is promoted beside engine under nested path but lookup is not retargeted."
+done_checks:
+  - criterion: AC-NESTED-HOME
+    command: "test -d .context-circuit/wrapper && test -d .context-circuit/agents && test -d .context-circuit/docs && test ! -e wrapper && test ! -e agents && test ! -d docs"
+    expect: "nested product folders exist; root wrapper/, agents/, docs/ product trees are absent."
+  - criterion: AC-NESTED-HOME
+    command: "artifact=$(mktemp -d)/out && sh scripts/release-artifact.sh \"$(mktemp -d)/stg\" \"$artifact\" v-nest-check >/dev/null && test -d \"$artifact/context-circuit-v-nest-check/.context-circuit/wrapper\" && test ! -e \"$artifact/context-circuit-v-nest-check/wrapper\""
+    expect: "assembled template artifact uses nested home, not root wrapper/."
+  - criterion: AC-RUNTIME-FINDS-HOME
+    command: "sh .context-circuit/wrapper/runtime/engine.sh workspace-validate . 2>/dev/null || sh .context-circuit/wrapper/runtime/engine.sh workspace-init /tmp/cc-nest-smoke-$$(date +%s) && sh .context-circuit/wrapper/runtime/engine.sh workspace-validate /tmp/cc-nest-smoke-$$(date +%s)"
+    expect: "engine invokes from nested path; workspace verbs succeed."
+  - criterion: AC-RUNTIME-FINDS-HOME
+    command: "sh test/acceptance.sh"
+    expect: "full semantic acceptance suite passes with retargeted paths."
+  - criterion: AC-HOST-FRONT-DOOR
+    command: "test -f AGENTS.md && test -f WORKFLOW.md && test -d .agents/skills && rg -n 'context-circuit' AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md 2>/dev/null | head -1"
+    expect: "root host surfaces exist; AGENTS.md or WORKFLOW.md points into .context-circuit. .agents/ remains at workspace root."
+  - criterion: AC-HOST-FRONT-DOOR
+    command: "artifact=$(mktemp -d)/out && sh scripts/release-artifact.sh \"$(mktemp -d)/stg\" \"$artifact\" v-nest-check >/dev/null && a=\"$artifact/context-circuit-v-nest-check\" && test -f \"$a/AGENTS.md\" && test ! -d \"$a/wrapper/adapters\" && test -d \"$a/.agents/skills\""
+    expect: "shipped workspace has root adapters and .agents/; wrapper/adapters source dir not leaked."
+  - criterion: AC-WORKSPACE-OWNED-STAY
+    command: "test -d context && test -d plans && test -d intent && test -d template && test ! -e .context-circuit/context && test ! -e .context-circuit/plans"
+    expect: "workspace-owned trees remain at workspace root; not under .context-circuit/."
+  - criterion: AC-TEMPLATE-AND-UPGRADE
+    command: "sh test/release/test-release.sh && sh agent-harness/test-template-runtime.sh"
+    expect: "release boundary and template-runtime laboratory pass with nested layout."
+  - criterion: AC-NO-LEFTOVER-ROOT
+    command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/plans/context-circuit-plans/**' --glob '!**/sources/**' --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**' '(^|[[:space:]`\"'\"'(])wrapper/|(^|[[:space:]`\"'\"'(])agents/|(^|[[:space:]`\"'\"'(])docs/|\\$ROOT/wrapper|\\$W/|wrapper/runtime/engine\\.sh|agents/(coordinator|worker|verifier|tracer)\\.md' wrapper .agents agents docs context template test agent-harness scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md 2>/dev/null; test $? -ne 0"
+    expect: "zero matches after retarget (completeness_proof count was 718 pre-change). Migration README may quote old paths only if explicitly marked historical and excluded from this grep via plan."
+tier_signal: >
+  Keep Standard. This is a product home relocation and path retargeting with
+  a template/upgrade migration that preserves workspace-owned files. No auth,
+  secrets, money, or irreversible user-data wipe. Gate 2, verifier independence,
+  and host-blocked semantics stay unchanged.
+feasible: true
+out_of_scope_reach: []
+open_questions:
+  - question: "Should engine.sh expose a single cc_product_home/cc_product_path helper used by cc_worker_brief_assemble (and future lookups), or retarget literal .context-circuit/ strings everywhere?"
+    disposition: plan-resolution
+    note: "Only engine.sh joins wrapper/ today besides comments; skills and tests use literal invoke paths. A helper reduces drift but is not required if every cite retargets consistently."
+  - question: "How does an upgrade move root wrapper/, agents/, and docs/ on an existing workspace — automated engine verb, release script step, or documented manual migration in wrapper/migrations/?"
+    disposition: plan-resolution
+    note: "repository-binding-migrate is the precedent for workspace-owned file migration. Layout move is template-owned; must preserve context/, plans/, intent/, .runtime/. Intent requires migration-needed reporting when meaning changes."
+  - question: "In context-circuit-source, root AGENTS.md is maintainer-specific (not wrapper/adapters/AGENTS.md). After nest, does maintainer safety stay in a separate file while root AGENTS.md becomes only the thin product pointer copied from adapters?"
+    disposition: plan-resolution
+    note: "Instantiated workspaces and assembled artifact should get thin product pointer only. Source checkout may need maintainer rules in WORKFLOW.md or README without duplicating product policy at root."
+  - question: "Does cc_workspace_validate (or a new probe) require .context-circuit/wrapper to exist, or is nested-home discovery entirely via host pointers and invoke paths?"
+    disposition: plan-resolution
+    note: "Today validate only checks workspace.yaml and plans/. Optional probe improves fail-closed for half-upgraded workspaces."
+  - question: "Does .agents/ stay at workspace root?"
+    disposition: already-answered
+    note: "Yes — frozen on intent and host-surfaces.md."
+  - question: "Does docs/ move under .context-circuit/?"
+    disposition: already-answered
+    note: "Yes — including source-only docs/release.md in the maintainer checkout; it remains excluded from release-manifest ship set."
+  - question: "Does template/ stay at source root?"
+    disposition: already-answered
+    note: "Yes — seed identity, not a user-facing product folder; assembly copies seed contents into artifact workspace root."
+completeness_proof:
+  command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/plans/context-circuit-plans/**' --glob '!**/sources/**' --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**' '(^|[[:space:]`\"'\"'(])wrapper/|(^|[[:space:]`\"'\"'(])agents/|(^|[[:space:]`\"'\"'(])docs/|\\$ROOT/wrapper|\\$W/|wrapper/runtime/engine\\.sh|agents/(coordinator|worker|verifier|tracer)\\.md' wrapper .agents agents docs context template test agent-harness scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md"
+  count: 718
+recorded_at: "2026-09-07T07:10:00Z"
