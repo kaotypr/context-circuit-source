@@ -32,7 +32,10 @@ no path to the fact, that is a downgrade — put the pointer in, not the essay.
 ## Suggested homes (shape, not a file map the tracer will refine)
 
 These are the concerns, not an enforced path list. The tracer names the real
-files after approval.
+files after approval. Those files already live in the nested home
+(`.context-circuit/wrapper` adapters, `.context-circuit/agents`,
+`.context-circuit/docs`) and at `.agents/skills/` for product skills. This
+intent does not move them.
 
 | Fact | Home (kind) | Who points |
 | --- | --- | --- |

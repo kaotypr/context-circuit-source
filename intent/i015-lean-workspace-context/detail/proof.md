@@ -22,9 +22,11 @@ Length is not the test. **Behavior** is the test. Waste gone, loop intact.
 
 On a typical orientation or intent-authoring turn in a product workspace:
 
-- the knowledge units opened are a subset named by catalog entries (or none,
-  if the catalog is empty)
+- the knowledge units opened are a subset named by `context/INDEX.md`
+  entries (or none, if the catalog is empty)
 - there is no grep or recursive list of `context/` used to *discover* units
+- there is no fall-through to `context/domains/README.md` or another index
+  when the catalog is empty or has no match
 - there is no read of the runtime implementation
 - there is no search of tests to learn an invoke line
 - the skill did not require opening a contract schema to draft a file that
@@ -42,18 +44,22 @@ checks must prove:
    tracer, verifier, host-blocked, and invoke-not-read still passes. This
    intent does not weaken those fixtures.
 2. **Catalog selects** — a fixture or harness access policy where the request
-   maps to named units: required reads include the catalog and the named
-   units; listing `context/domains/**` or grepping `context/` is forbidden
-   (or fails the case). An empty-catalog case forbids a domains-tree scan.
-3. **Invoke matches** — each documented skill invoke the change touches is
-   asserted against the runtime’s actual action names and argument shape, so
-   a wrong line cannot ship.
-4. **No schema-as-procedure** — intent (and any other authoring skill this
+   maps to named units: required reads include `context/INDEX.md` and the
+   named units; listing `context/domains/**`, grepping `context/`, or
+   treating `context/domains/README.md` as the selector is forbidden (or
+   fails the case). An empty-catalog case forbids a domains-tree scan and
+   forbids falling through to another index.
+3. **No schema-as-procedure** — intent (and any other authoring skill this
    change touches) names templates + validate, not “read the schema and
    transcribe fields.”
+4. **Invoke matches** — each documented skill invoke the change touches is
+   asserted against the runtime’s actual action names and argument shape, so
+   a wrong line cannot ship. This is a regression guard; core skills already
+   match the nested runtime.
 5. **Product workspace** — template seed carries the catalog shape and the
-   shipped adapters/skills; a blank assembled workspace is the proving
-   ground, not only this source checkout.
+   shipped adapters/skills against the nested home; a blank assembled
+   workspace is the proving ground, not only this source checkout. Filling
+   this source checkout’s catalog is not the proof.
 
 Harness efficiency budgets (tokens, turns) may **observe** the win. They
 stay soft. They are not the definition of done. Access discipline (right
@@ -65,6 +71,7 @@ number.
 - A smaller line count on coordinator or shared instructions by itself.
 - A rewritten domain page.
 - A new always-on file that “indexes” everything (that would add a read).
+- Treating `context/domains/README.md` as a successful catalog.
 - Passing validate on this intent’s own files (necessary, not sufficient).
 
 ## Relation to the four plans
