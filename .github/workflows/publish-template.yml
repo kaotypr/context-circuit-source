@@ -28,6 +28,9 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Run acceptance suite
+        run: sh test/acceptance.sh
+
       - name: Checkout template repository
         uses: actions/checkout@v4
         with:
@@ -41,9 +44,6 @@ jobs:
         run: |
           git -C .template-repo config user.name  "${{ vars.MAINTAINER_NAME }}"
           git -C .template-repo config user.email "${{ vars.MAINTAINER_EMAIL }}"
-
-      - name: Run acceptance suite
-        run: sh test/acceptance.sh
 
       - name: Resolve target version
         id: resolve

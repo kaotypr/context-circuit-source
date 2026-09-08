@@ -5,6 +5,12 @@ set -eu
 wf="$ROOT/.github/workflows/publish-template.yml"
 require_file "$wf"
 
+# Acceptance runs on the source checkout before the nested template git appears.
+acc_line=$(grep -nF 'sh test/acceptance.sh' "$wf" | head -n1 | cut -d: -f1)
+tpl_line=$(grep -nF 'path: .template-repo' "$wf" | head -n1 | cut -d: -f1)
+test -n "$acc_line" && test -n "$tpl_line" || fail 'missing acceptance or template checkout'
+test "$acc_line" -lt "$tpl_line" || fail 'acceptance must run before template checkout'
+
 # GitHub push of main and the version tag remains.
 contains "$wf" 'git -C .template-repo push origin main'
 contains "$wf" 'git -C .template-repo push origin "v$V"'
