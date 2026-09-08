@@ -162,7 +162,7 @@ file_map:
     sites:
       - "Product-level system-design → spawn intents path (whole plot); allowed writes under sources/system-design/**."
     integration: "Existing conversation coverage for product-level root only. A new intent-detail conversation plot would live under agent-harness/ (out of bound scope); prefer deterministic skill/guidance greps in test/ unless coordinator widens scope."
-  - path: plans/context-circuit-plans/archive/0019-system-design-authoring-skill/
+  - path: plans/archive/0019-system-design-authoring-skill/
     sites:
       - "PLAN.md: skill owns rubric; no engine/schema/invariant/WORKFLOW action (archive evidence)."
     integration: "Historical ownership of cc-system-design; treat as evidence, not active spec."

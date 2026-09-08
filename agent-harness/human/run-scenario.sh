@@ -113,7 +113,7 @@ cp -R "$ARTIFACT" "$WORKSPACE"
 # host-local role configuration for every scenario.
 cp "$ROLE_TIERING_SOURCE" "$WORKSPACE/role-tiering.local.yaml"
 # Safety: the seed must not carry any source-side state.
-for leak in .runtime plans/context-circuit-plans repositories.local.yaml repositories; do
+for leak in .runtime plans/context-circuit-plans plans/0002-mark-done-no-precheck plans/archive/0001-contracts-runtime-foundation repositories.local.yaml repositories; do
 	[ ! -e "$WORKSPACE/$leak" ] || { printf 'FAIL: source state leaked into workspace: %s\n' "$leak" >&2; exit 1; }
 done
 

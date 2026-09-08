@@ -103,7 +103,7 @@ tasks:
     repositories: [context-circuit-source]
     paths:
       - intent/
-      - plans/context-circuit-plans/
+      - plans/
     depends_on: [IDW-001]
     changes:
       - Rename the three existing intent directories to their canonical three-digit names.

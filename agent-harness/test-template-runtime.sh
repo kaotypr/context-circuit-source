@@ -27,6 +27,8 @@ require_file "$ENGINE"
 # 3. The instantiated workspace carries only the blank seed (no source state).
 not_contains "$ws/plans/INDEX.md" "0001-"
 test ! -e "$ws/plans/context-circuit-plans" || fail 'source maintainer plans leaked into workspace'
+test ! -e "$ws/plans/0002-mark-done-no-precheck" || fail 'source maintainer plan leaked into workspace'
+test ! -e "$ws/plans/archive/0001-contracts-runtime-foundation" || fail 'source archived maintainer plan leaked into workspace'
 test ! -e "$ws/.runtime/executions" || fail 'source runtime state leaked into workspace'
 contains "$ws/workspace.yaml" 'uninitialized-workspace'
 require_file "$ws/.claude/agents/worker.md"

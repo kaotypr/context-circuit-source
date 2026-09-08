@@ -466,7 +466,7 @@ done_checks:
     command: "sh test/release/test-release.sh && sh agent-harness/test-template-runtime.sh"
     expect: "release boundary and template-runtime laboratory pass with nested layout."
   - criterion: AC-NO-LEFTOVER-ROOT
-    command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/plans/context-circuit-plans/**' --glob '!**/sources/**' --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**' '(^|[[:space:]`\"'\"'(])wrapper/|(^|[[:space:]`\"'\"'(])agents/|(^|[[:space:]`\"'\"'(])docs/|\\$ROOT/wrapper|\\$W/|wrapper/runtime/engine\\.sh|agents/(coordinator|worker|verifier|tracer)\\.md' wrapper .agents agents docs context template test agent-harness scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md 2>/dev/null; test $? -ne 0"
+    command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/sources/**' --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**' '(^|[[:space:]`\"'\"'(])wrapper/|(^|[[:space:]`\"'\"'(])agents/|(^|[[:space:]`\"'\"'(])docs/|\\$ROOT/wrapper|\\$W/|wrapper/runtime/engine\\.sh|agents/(coordinator|worker|verifier|tracer)\\.md' wrapper .agents agents docs context template test agent-harness scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md 2>/dev/null; test $? -ne 0"
     expect: "zero matches after retarget (completeness_proof count was 718 pre-change). Migration README may quote old paths only if explicitly marked historical and excluded from this grep via plan."
 tier_signal: >
   Keep Standard. This is a product home relocation and path retargeting with
@@ -498,6 +498,6 @@ open_questions:
     disposition: already-answered
     note: "Yes — seed identity, not a user-facing product folder; assembly copies seed contents into artifact workspace root."
 completeness_proof:
-  command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/plans/context-circuit-plans/**' --glob '!**/sources/**' --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**' '(^|[[:space:]`\"'\"'(])wrapper/|(^|[[:space:]`\"'\"'(])agents/|(^|[[:space:]`\"'\"'(])docs/|\\$ROOT/wrapper|\\$W/|wrapper/runtime/engine\\.sh|agents/(coordinator|worker|verifier|tracer)\\.md' wrapper .agents agents docs context template test agent-harness scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md"
+  command: "rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**' --glob '!**/sources/**' --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**' '(^|[[:space:]`\"'\"'(])wrapper/|(^|[[:space:]`\"'\"'(])agents/|(^|[[:space:]`\"'\"'(])docs/|\\$ROOT/wrapper|\\$W/|wrapper/runtime/engine\\.sh|agents/(coordinator|worker|verifier|tracer)\\.md' wrapper .agents agents docs context template test agent-harness scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md"
   count: 718
 recorded_at: "2026-09-07T07:10:00Z"

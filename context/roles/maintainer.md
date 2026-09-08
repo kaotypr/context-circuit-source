@@ -53,8 +53,8 @@ adapters, skills, docs, and tests, and keeps `template/` as the blank seed.
 
 ## Product surfaces
 
-- Maintainer plans under `plans/context-circuit-plans/` (the namespace exists
-  per `plans/README.md`; it is currently empty).
+- Maintainer plans under `plans/` (same layout as the product, per
+  `plans/README.md`; not shipped).
 - Wrapper contracts and `.context-circuit/wrapper/runtime/engine.sh`.
 - Shipped adapters and the seven `cc-*` skills: `cc-workspace`, `cc-plan`,
   `cc-execute`, `cc-verify`, `cc-complete`, `cc-archive`, `cc-deliver`.

@@ -154,7 +154,7 @@ tasks:
       - context/domains/completion/
       - context/domains/delivery/
       - context/DECISIONS.md
-      - plans/context-circuit-plans/0001-conversation-spec-library/
+      - plans/archive/0001-conversation-spec-library/
     depends_on:
       - DCU-001
     changes:

@@ -3,7 +3,7 @@
 This checkout is `context-circuit-source`, the maintainer source repository for
 Context Circuit. Implementation proceeds directly from the maintainer design set
 under `sources/system-design/context-circuit/` and the source-only ordering
-guides under `plans/context-circuit-plans/`. The source is not bound to a
+guides under `plans/`. The source is not bound to a
 version; it tracks the current design and may lead the version last published to
 `context-circuit-template`.
 
@@ -18,7 +18,7 @@ Preserve the dependency order:
 workspace/plan contract → Product Knowledge → runtime reduction → conversational
 adapter → multi-repository execution → independent verification → repair loop →
 recovery/delivery → semantic verification. Scoped increments layer on that core
-in the order recorded in `plans/context-circuit-plans/INDEX.md`.
+in the order recorded in `plans/INDEX.md`.
 
 The released product's lifecycle is specified by `.context-circuit/wrapper/adapters/WORKFLOW.md`
 and owned by `.context-circuit/wrapper/contracts/`. The source workflow only governs safe
