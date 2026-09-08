@@ -107,15 +107,19 @@ require_dir "$ws/intent/$id1"
 contains "$ws/intent/INDEX.md" "| $id1 |"
 
 # --- current-source completeness: historical migration evidence is the only old-form exception ---
-stale=$(rg -n --hidden --pcre2 -g '!sources/**' -g '!.git/**' \
-	-g '!intent/i003-intent-id-width/trace/context-circuit-source.yaml' \
-	-g '!intent/archive/i003-intent-id-width/trace/context-circuit-source.yaml' \
-	'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' "$ROOT" || true)
+# git grep (not ripgrep): plain shells and CI often lack `rg`; missing `rg` with
+# `|| true` would silently skip this scan.
+stale=$(git -C "$ROOT" grep -nIE 'i[0-9]{4}(-[a-z0-9]+)*' -- . \
+	':(exclude)sources' ':(exclude)sources/**' \
+	':(exclude)intent/i003-intent-id-width/trace/context-circuit-source.yaml' \
+	':(exclude)intent/archive/i003-intent-id-width/trace/context-circuit-source.yaml' \
+	2>/dev/null || true)
 [ -z "$stale" ] || { printf '%s\n' "$stale" >&2; fail 'stale four-digit intent reference remains'; }
-stale_derivation=$(rg -n --hidden -g '!sources/**' -g '!.git/**' \
-	-g '!intent/i003-intent-id-width/trace/context-circuit-source.yaml' \
-	-g '!intent/archive/i003-intent-id-width/trace/context-circuit-source.yaml' \
-	'intent: i[0-9]{4}|intent/(?:archive/)?i[0-9]{4}|i\$(?:pid|cc_fxp_pid|cc_fxe_pid)' "$ROOT" || true)
+stale_derivation=$(git -C "$ROOT" grep -nIE 'intent: i[0-9]{4}|intent/(archive/)?i[0-9]{4}|i\$(pid|cc_fxp_pid|cc_fxe_pid)' -- . \
+	':(exclude)sources' ':(exclude)sources/**' \
+	':(exclude)intent/i003-intent-id-width/trace/context-circuit-source.yaml' \
+	':(exclude)intent/archive/i003-intent-id-width/trace/context-circuit-source.yaml' \
+	2>/dev/null || true)
 [ -z "$stale_derivation" ] || { printf '%s\n' "$stale_derivation" >&2; fail 'stale dynamic intent derivation remains'; }
 
 # Approved records retain their status and use the unchanged digest algorithm after renaming.
