@@ -4,21 +4,12 @@ describes: intent/<intent-id>/trace/<repository>.yaml
 concern: trace_manifest
 
 purpose: >
-  The tracer's report, captured as durable grounding evidence (Context Circuit v1.0,
-  Mechanism 1, tracing-and-grounding). On intent approval the coordinator spawns one
-  read-only tracer child per repository in the intent's scope, in parallel; each reads
-  its repository first-hand for this change and reports back a manifest rich enough for
-  the coordinator to plan from without having read the code itself. It is recorded (not
-  lost in a context window) so a later session loads it and runs a bounded freshness
-  check instead of re-tracing from zero (INV-GROUND-*). The tracer never writes plans,
-  never edits the frozen contract, and never talks to the human: it finds, records, and
-  reports to the coordinator, which authors the plan and runs the feasibility check.
-  Current manifests are plan-ready (`plan_ready_version: 1`) and revision-bound.
-  A schema-1 manifest without that additive marker is legacy evidence: it remains
-  readable, but must take the bounded fallback path and be refreshed before plan
-  materialization rather than silently claiming current grounding.
+  Legacy schema for existing `intent/<id>/trace/<repository>.yaml` files.
+  New approvals do not require this file: the planner writes `finding.yaml` and,
+  when feasible, the plan files. The field definitions below remain so recorded
+  traces stay readable.
 
-produced_by: cc-trace (the tracer) — read-only over the code; no lease, no worktree
+produced_by: cc-trace (legacy recorded look) — no lease, no worktree
 consumed_by:
   - cc-plan authors the plan(s) from the file map, task partition, and done checks
   - the coordinator's feasibility check reads feasible + out_of_scope_reach + open_questions
@@ -115,10 +106,10 @@ fields:
     type: list
     required: true for newly recorded manifests
     description: >
-      Normalized plan-ready fragments proposed by the tracer. Each has a stable
+      Normalized plan-ready fragments from a recorded look. Each has a stable
       request-local key, exactly one repository, typed tasks and dependencies,
-      criterion coverage, checks, risks, and a boundary reason. The tracer never
-      allocates plan ids, ratifies boundaries, approves, or publishes these fragments.
+      criterion coverage, checks, risks, and a boundary reason. These fragments
+      do not allocate plan ids, ratify boundaries, approve, or publish.
   criterion_coverage:
     type: list
     required: true for newly recorded manifests
@@ -172,8 +163,8 @@ fields:
     type: list
     required: false
     description: >
-      anything the human must settle, for the coordinator to relay (never the tracer
-      directly). Each entry carries a provisional disposition: intent-revision when
+      anything the human must settle, for the coordinator to relay. Each entry
+      carries a provisional disposition: intent-revision when
       it changes the approved decision and blocks planning, plan-resolution when it
       is an implementation detail to carry into the plan, or already-answered when
       the plain request or approved intent already resolves it.
@@ -191,7 +182,7 @@ fields:
   freshness_checked_at: { type: string, required: false, description: last bounded freshness check against current code }
 
 invariants:
-  - the tracer reads the real code AFTER Gate 1 and reports to the coordinator only,
+  - the look reads the real code AFTER Gate 1 and reports to the coordinator only,
     never to the human (roles-and-spawning, tracing-and-grounding)
   - the runnable check that proves an outcome criterion is a tracing output here,
     never authored on the intent contract (INV-INTENT-01)

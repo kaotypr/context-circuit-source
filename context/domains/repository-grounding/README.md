@@ -35,11 +35,11 @@ runtime grounding/hardening/brief functions and the shipped `worker-brief.md`
 template, applied by the `cc-execute` and `cc-run-stack` skills and honored by the
 `.context-circuit/agents/worker.md` worker.
 
-This is **not** the post-approval **tracer**
+This is **not** the post-approval **planner**
 ([tracing and feasibility](../tracing/README.md)). Both phases read the repository,
-but they differ: tracing runs *after approval, before planning* to judge *whether
-the change is buildable* (file map, risks, done-checks, tier signal) and produces
-the **trace manifest**; repository grounding runs *at execution setup, inside the
+but they differ: the planner runs *after approval* to judge *whether
+the change is buildable* (file map, risks, done-checks, tier signal) and writes
+the **plan files**; repository grounding runs *at execution setup, inside the
 worktree* to establish *how to write code in this repository* and produces the
 **worker brief**. Different timing, subject, and output.
 

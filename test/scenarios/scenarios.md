@@ -9,10 +9,11 @@ steps below name the internal mechanism the driver exercises.
 
 1. Intent (Gate 1): `cc-intent` drafts goal, non-goals, outcome criteria, a coarse
    scope `checkout-service:[src/checkout]`, tier `standard`. Approval freezes the
-   contract digest and confirms the ask; a read-only tracer then reads the real code
-   and the coordinator runs the feasibility check.
-2. Plan: `cc-plan` derives one plan from the trace manifest with two ordered embedded
-   tasks sharing the same bounded execution and verification boundary. It is
+   contract digest and confirms the ask; a planner then reads the real code,
+   writes the plan when the look is feasible, and the coordinator runs the
+   feasibility check.
+2. Plan: `cc-plan` publishes the plan the planner already wrote — two ordered
+   embedded tasks sharing the same bounded execution and verification boundary. It is
    authorized by the approved intent — no second approval and no automated scope
    gate.
 3. Execute: one worker commits; the independent verifier passes, bound to the
@@ -29,9 +30,9 @@ mark the plan done.
 ## Scenario B — Explore then promote
 
 1. Explore: no intent, no plan, no candidate — coordinator + one worker in an
-   isolated working copy; the human watches live. No verifier, no tracer.
+   isolated working copy; the human watches live. No verifier, no planner.
 2. The work turns out to be real. Promote in place: attach an intent, raise the tier
-   to Standard so a tracer reads the code, author a plan of record from its manifest.
+   to Standard so a planner reads the code and writes a plan of record.
    A candidate now exists and the independent verifier spawns. From here it is
    Scenario A.
 

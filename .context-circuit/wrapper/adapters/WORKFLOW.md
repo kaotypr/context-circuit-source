@@ -20,9 +20,9 @@ Everything the human decides is one of two gates; everything between is mechanic
 
 - **Gate 1 — the intent.** The human approves *what "correct" means*, from the plain
   ask alone. Approval freezes the criteria (`contract_digest`) and confirms the
-  coordinator understood the ask, which is what lets the tracer read the real code
-  next; on approval a read-only tracer maps the code and the coordinator runs a
-  feasibility check before any plan is written.
+  coordinator understood the ask, which is what lets the planner read the real code
+  next; on approval a planner writes the plan from that look and the coordinator runs a
+  feasibility check before rewriting any plan.
 - **Gate 2 — delivery.** The human authorizes the irreversible act (pull request,
   merge, push, deploy). Never implied by verification or completion.
 
@@ -33,10 +33,10 @@ Everything the human decides is one of two gates; everything between is mechanic
 | What is this workspace? | Read-only orientation. |
 | Gather context about X. | Write live context files with provenance; keep INDEX.md consistent. |
 | Connect / clone / initialize the R repository. | Register and bind; clone/init only when explicitly asked. |
-| Work on / refine X with me, or `/cc-pair`. | Explore-tier direct collaboration in one connected repository; live human supervision, no intent, plan, tracer, or verifier — promotable in place. |
+| Work on / refine X with me, or `/cc-pair`. | Explore-tier direct collaboration in one connected repository; live human supervision, no intent, plan, planner, or verifier — promotable in place. |
 | Shape what I want to build (X). | Author an **intent**: goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, tier — from the plain ask, without reading the code. |
-| Approve the intent. | **Gate 1**: the single upstream human approval; freezes the criteria and spawns the tracer to read the real code, then the feasibility check runs. |
-| Create a plan for F. | Derive a grounded, readable plan from an approved intent and its trace manifest. Carries no separate approval. |
+| Approve the intent. | **Gate 1**: the single upstream human approval; freezes the criteria and spawns the planner to read the real code and write the plan, then the feasibility check runs. |
+| Create a plan for F. | Publish the grounded, readable plan the planner already wrote from an approved intent. Carries no separate approval. |
 | Review plan X. | Non-executing discussion; may update draft content. |
 | Execute plan X. | Execute a plan authorized by its approved intent; a criteria drift after approval re-enters Gate 1, not run. |
 | Execute plans X…Z / run the ready stack. | Run a set of intent-authorized plans in dependency order: the runtime detects which are ready (dependencies verified, paths free) and selects each base; the coordinator may overlap provably-independent ready plans up to a fan-out width (the lease arbitrates races), each still one worker and one independent verifier. Adds no authority; marks nothing done or delivered. |

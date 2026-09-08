@@ -301,7 +301,7 @@ cc_plan_is_descendant() {
 # a status-blind archive move, an INDEX catalog) so it reuses the same id, index,
 # and archive machinery. contract.yaml is the frozen definition of correct;
 # approval freezes contract_digest (INV-INTENT-01) and also confirms the coordinator
-# understood the plain ask, which is what lets the tracer read the real code next.
+# understood the plain ask, which is what lets the planner read the real code next.
 # The runtime owns only the deterministic mechanics — id allocation, structure
 # validation, digest freezing, archive/restore, and the plan's derives-from-an-
 # approved-intent authorization (INV-INTENT-02). It never authors the criteria,
@@ -411,10 +411,10 @@ cc_intent_validate() {
 		*) cc_fail INTENT_TIER_INVALID "$cc_iv_tier"; return 1 ;;
 	esac
 	# goal and at least one outcome-level acceptance criterion. Criteria are NOT
-	# frozen as executable here — the tracer earns the runnable check against the real
+	# frozen as executable here — the planner earns the runnable check against the real
 	# code after approval (tracing-and-grounding). scope is COARSE and OPTIONAL: it may
 	# name no repository at all (a lay human draws almost no paths), so an empty scope
-	# is valid — the tracer reports where the change lands and scope-safety is settled
+	# is valid — the planner reports where the change lands and scope-safety is settled
 	# at delivery (Gate 2), not by an automated gate here (intent-feasibility).
 	cc_iv_goal=$(cc_scalar "$cc_iv_yaml" "goal") || cc_iv_goal=""
 	[ -n "$cc_iv_goal" ] || { cc_fail INTENT_GOAL_MISSING; return 1; }
@@ -493,7 +493,7 @@ cc_intent_human_status_sync() {
 }
 
 # cc_intent_human_status ROOT INTENT PHRASE -> rewrite INTENT.md _Status without
-# changing contract.yaml. Used after a feasible tracer so the human file cannot
+# changing contract.yaml. Used after a feasible planner so the human file cannot
 # stay stale while approval identity remains on the contract.
 cc_intent_human_status() {
 	cc_ihsr_root="$1"; cc_ihsr_id="$2"; cc_ihsr_phrase="$3"
@@ -602,7 +602,7 @@ cc_intent_restore() {
 # names a parent intent, and that intent is APPROVED with its criteria unchanged since
 # approval (current contract digest == frozen contract_digest). It does NOT compare
 # scope or path regions against the intent: v1.0 has no automated scope gate — the
-# tracer reports where the change lands, the coordinator's feasibility check surfaces a
+# planner reports where the change lands, the coordinator's feasibility check surfaces a
 # required change beyond a bound scope, and scope-safety is settled at delivery
 # (Gate 2, INV-DELIVER-01). A criteria change after approval re-enters Gate 1 (the
 # frozen digest no longer matches) and also voids candidate evidence (INV-CANDIDATE-01).

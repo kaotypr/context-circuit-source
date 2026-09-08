@@ -1,5 +1,5 @@
 #!/bin/sh
-# Approval → tracer → feasibility → same-turn plans; INTENT.md status after a
+# Approval → planner → feasibility → same-turn plans; INTENT.md status after a
 # feasible look. contract.yaml remains the approval authority.
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
@@ -11,7 +11,7 @@ cp="$ROOT/.agents/skills/cc-plan/SKILL.md"
 coord="$ROOT/.context-circuit/agents/coordinator.md"
 tmpl="$ROOT/.context-circuit/docs/templates/intent.md"
 
-# --- 0008: tracer and feasibility run after approval, before any plan ---
+# --- 0008: planner and feasibility run after approval, before any plan ---
 contains "$ci" "before any plan is written"
 contains "$ci" "cc-trace"
 contains "$ci" "feasibility"
@@ -20,9 +20,7 @@ contains "$tr" "before any plan"
 contains "$tr" "feasibility"
 contains "$coord" "before writing any plan"
 contains "$coord" "cc-trace"
-contains "$ci" "cannot skip or stand in for the tracer"
-
-# --- 0010: same-turn derivation; blocked when not feasible ---
+contains "$ci" "cannot skip or stand in for the planner"
 contains "$ci" "in that same turn"
 contains "$cp" "in the same"
 contains "$cp" "write no plan"
@@ -31,8 +29,7 @@ contains "$coord" "in that same turn"
 contains "$cp" "does not start execution"
 contains "$cp" "plan-stack-materialize"
 contains "$cp" "publishes all plans and index rows or none"
-contains "$tr" "plan-ready"
-contains "$tr" "criterion coverage"
+contains "$tr" "planner"
 
 # --- 0009: INTENT.md status stays truthful; contract.yaml is still approval ---
 contains "$ci" "intent-human-status"

@@ -18,8 +18,8 @@ In a released workspace you talk to the agent in ordinary language:
 > Execute it, then ship it.
 
 You approve the **intent** — what "correct" means — from the plain ask. On approval a
-read-only tracer reads the real code and the coordinator runs a feasibility check, then
-derives a plan from what it found (no separate plan approval and no automated scope
+planner reads the real code and writes the plan; the coordinator runs a feasibility check
+and publishes that plan (no separate plan approval and no automated scope
 gate; scope-safety is settled at delivery). The workspace prepares isolated
 repository worktrees; one worker
 implements the whole plan in that plan's single repository and commits it; an independent read-only
@@ -35,7 +35,7 @@ archive and restore remain separate organization actions.
   boundary. `.context-circuit/wrapper/runtime/engine.sh` is the small host-neutral deterministic
   runtime; `.context-circuit/wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
 - `template/` — the blank mutable seed for a new workspace.
-- `.agents/skills/` and `.context-circuit/agents/` — thin host skills and worker/verifier/
+- `.agents/skills/` and `.context-circuit/agents/` — thin host skills and planner/worker/verifier/
   coordinator role deltas.
 - `.context-circuit/docs/` — shipped guides and plan/task templates.
 - `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not

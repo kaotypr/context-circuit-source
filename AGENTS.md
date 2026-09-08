@@ -58,7 +58,7 @@ read-only `host-blocked` outcome and do not self-verify.
 
 Across hosts, the coordinator's resumable session may be represented by a
 session or thread id, but that root is only the conversation transport. Required
-worker, verifier, and tracer roles must be launched through the host's native
+worker, verifier, and planner roles must be launched through the host's native
 child-agent mechanism and attached to that coordinator. A separate top-level
 task, peer thread, or resumed root session is not a child and does not satisfy
 the role requirement; if native child creation is unavailable, remain read-only

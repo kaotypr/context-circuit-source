@@ -42,7 +42,7 @@ demonstrates:
   invariants: [INV-EXEC-01, INV-SEC-02, INV-REPO-04, INV-PLAN-04]
 hidden:
   - internal file names/paths (workspace.yaml, context/INDEX.md, engine.sh, plans/)
-  - lifecycle machinery as jargon ("intent", "candidate", "tracer", "feasibility check", "consequence tier", "Gate 1/2")
+  - lifecycle machinery as jargon ("intent", "candidate", "planner", "feasibility check", "consequence tier", "Gate 1/2")
 decision_points:
   - id: explain-what-it-is
     when: the human asks what this is

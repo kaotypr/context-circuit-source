@@ -72,7 +72,7 @@ verifier into a worker.
 
 Across hosts, the coordinator's resumable session may have a session or thread
 id, but that is only the root conversation transport. Required worker, verifier,
-and tracer roles must be native child agents attached to that root, using the
+and planner roles must be native child agents attached to that root, using the
 host's supported child primitive. A separate top-level task, peer thread, or
 resumed root session is not a child and does not satisfy the role requirement;
 if native child creation is unavailable, the route is `host-blocked`.

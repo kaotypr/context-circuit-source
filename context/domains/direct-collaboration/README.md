@@ -94,9 +94,9 @@ INV-ASSURE-01.
   verified**.
 - **Promote — the ramp into the trust system.** When the work is real, promote in
   place rather than restart: attach an intent (`cc-intent`, so the human approves
-  it at Gate 1 and tracers ground it against the real code on approval), raise the tier
+  it at Gate 1 and a planner grounds it against the real code on approval), raise the tier
   to Standard/Critical (the independent verifier appears — a risk surface refuses
-  to stay Explore), and author a lightweight plan of record (`cc-plan`) whose
+  to stay Explore), and publish the plan of record (`cc-plan`) the planner wrote, whose
   execution binds to the existing pairing-branch commits and so produces the
   candidate. Everything downstream then runs on the standard scaffolding,
   unchanged. Un-promoted Explore work never produces a plan file or a candidate.

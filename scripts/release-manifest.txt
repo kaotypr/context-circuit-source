@@ -93,7 +93,8 @@ required .agents/skills/cc-publish/SKILL.md
 required .context-circuit/agents/coordinator.md
 required .context-circuit/agents/worker.md
 required .context-circuit/agents/verifier.md
-required .context-circuit/agents/tracer.md
+required .context-circuit/agents/planner.md
+required .context-circuit/agents/planner-brief.md
 
 # Removed from the staged tree and verified absent.
 exclude test

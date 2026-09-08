@@ -1,12 +1,12 @@
 ---
 name: cc-intent
-description: Author an intent — the first-class decision for one change (goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, tier) — from the plain ask without reading the code, and take the single upstream human approval that freezes it and spawns the tracer.
+description: Author an intent — the first-class decision for one change (goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, tier) — from the plain ask without reading the code, and take the single upstream human approval that freezes it and spawns the planner.
 ---
 
 An intent is the one thing a human actually decides before code exists: **what
 "correct" means** (Context Circuit v1.0, Mechanism 1). Approving an intent is Gate 1
 — the single upstream human gate. Approval also confirms you understood the plain
-ask, which is what lets the tracer read the real code next (`cc-trace`); plans then
+ask, which is what lets the planner read the real code next (`cc-trace`); plans then
 derive from the approved intent automatically, with no separate per-plan approval and
 no automated scope gate (INV-INTENT-01, INV-INTENT-02, INV-APPROVE-01).
 
@@ -39,11 +39,11 @@ machine-checkable record; the human is not expected to open it. It (schema
   be true, in terms a human can approve ("no direct localStorage access remains").
   These are the definition of correct. Do **not** try to make them executable here —
   the runnable check that proves each one is earned against the real code by the
-  tracer after approval and carried into the plan (`cc-trace`). You cannot read the
+  planner after approval and carried into the plan (`cc-trace`). You cannot read the
   code yet, so you cannot author a machine-precise criterion; state the honest
   human-level target.
 - `scope` — **coarse and optional**: `repositories: [{id, paths[]}]`, and it may be
-  empty. It is not an enforced boundary — the tracer reports where the change actually
+  empty. It is not an enforced boundary — the planner reports where the change actually
   lands, the feasibility check surfaces a required change beyond it, and scope-safety
   is settled at delivery (Gate 2). Its one deterministic use is as a transparent input
   to tier signals. Note a rough boundary if the human gave one; do not invent paths.
@@ -51,13 +51,13 @@ machine-checkable record; the human is not expected to open it. It (schema
   (INV-ASSURE-01; the runtime `tier-classify` reports them): more than one repository, security/secrets, money,
   data migration, production/deploy, irreversibility, or novelty push higher; a single
   reversible well-covered change is Explore-eligible. Default anything uncertain to
-  **standard**; a human may raise it. Fail upward. It is provisional — the tracer's
+  **standard**; a human may raise it. Fail upward. It is provisional — the planner's
   findings may raise it before plans are written.
 
 Grounding, missing detail, and contradictions follow INV-PLAN-04: an unresolved
 gap is an explicit open question, never a silently chosen decision. You draft the
 intent from the plain ask and existing Product Knowledge only — you do **not** read
-the codebase here; that is the tracer's job after approval.
+the codebase here; that is the planner's job after approval.
 
 ### Optional fuller write-up
 
@@ -106,22 +106,19 @@ no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
 `intent-approve`, which flips `draft → approved`, synchronizes the human-facing
 `INTENT.md` status line, and **freezes** `contract_digest`
 (the frozen identity of the criteria). Approval is also your confirmation that you
-understood the ask: it is what lets the tracer read the real code next. Immediately
-after approval, hand off to `cc-trace` — spawn one read-only tracer child per
-repository in scope, collect the manifests, and run the feasibility check on the
-findings — **before any plan is written**. `contract.yaml` status `approved` is
-Gate 1 only; it cannot skip or stand in for the tracer. After a feasible tracer
+understood the ask: it is what lets the planner read the real code next. Immediately
+after approval, hand off to `cc-trace` — spawn one planner child per
+repository in scope, collect each finding, and run the feasibility check —
+**before any plan is written**. `contract.yaml` status `approved` is
+Gate 1 only; it cannot skip or stand in for the planner. After a feasible planner
 with no intent-level questions, update the `INTENT.md` status line with
 `intent-human-status . <id> "approved, look complete, feasible"` so it cannot stay
-stale, then `cc-plan` derives the plan or plans **in that same turn**. After
+stale, then `cc-plan` publishes the plan or plans the child already wrote **in that same turn**. After
 approval the human is not asked to approve a plan.
 
-Treat approval-to-plan as one measured continuation. Carry a bounded monotonic phase
-record through approval/freeze, trace dispatch and its exact/delta/cold/fallback mode,
-feasibility and question disposition, fragment ratification, allocation/render,
-validation, authorization/publication, and total. This evidence contains phase offsets
-and trace mode only and grants no authority. A feasible Standard/Critical approval
-continues through one atomic stack materialization request in the same turn; no
+Treat approval-to-plan as one continuation. Spawn the planner immediately after
+freeze. Do not load plan templates or read the target repository first. A feasible
+Standard/Critical approval publishes the child's plan files in the same turn; no
 additional human action is inserted.
 
 Changing any criteria-bearing field after approval is a new decision: it breaks
@@ -156,7 +153,7 @@ the invoke-not-read boundary):
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-human-status . <id> "<phrase>"` — rewrite
-  the `INTENT.md` `_Status` line after a feasible tracer; never changes
+  the `INTENT.md` `_Status` line after a feasible planner; never changes
   `contract.yaml`.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-archive . <id>` / `intent-restore . <id>` —
   status-blind organization (INV-ARCHIVE-01/02), the same as plans.
@@ -167,16 +164,16 @@ Keep technical terms as they are; do not rename them into something that does
 not mean the same thing. Do not dump runtime commands, digest hashes, or engine
 invocations. "Here's what I understand you want to build… here's what you'll
 have when it's done… this is Standard risk, so it gets an independent check.
-Approve this and I'll spawn the tracer, or tell me what to change." Approving an
+Approve this and I'll look at the code and write the breakdown, or tell me what to change." Approving an
 intent is a real decision; present it as one, not a rubber stamp.
 
 ## Boundaries
 
 Authoring or the Gate 1 approve act never creates a plan, executes, verifies,
 completes, or delivers, and never reads the codebase. It writes only under
-`intent/<id>/` (`INTENT.md`, `contract.yaml`, and optional `detail/`). The tracer
+`intent/<id>/` (`INTENT.md`, `contract.yaml`, and optional `detail/`). The planner
 that reads the code runs only after approval (`cc-trace`) and may send an
-intent-level question back here before planning. After a feasible tracer with no
-intent-level questions, `cc-plan` writes the derived plans in that same turn;
+intent-level question back here before a plan is published. After a feasible planner with no
+intent-level questions, `cc-plan` publishes the child's plans in that same turn;
 writing those plans does not start execution. Approval is conversational, never
 a confirmation card or hidden token, and there is no second approval of the detail.
