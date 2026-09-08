@@ -33,6 +33,23 @@ evidence. Never broaden repository or path scope to avoid a focused question.
 Never open or read the runtime implementation (`.context-circuit/wrapper/runtime/engine.sh`) as
 context; invoke it as a tool instead.
 
+## Lone ok
+
+Before other conversation routing, when the user's entire message, trimmed and case-folded, equals exactly `ok`, invoke:
+
+`sh .context-circuit/wrapper/runtime/engine.sh ok-easter-egg`
+
+Prefix the user-visible reply with that command's stdout, then continue the
+immediately pending coordinator ask. If nothing is pending, emit that stdout
+line and wait; do not invent work.
+
+This is not a new approval, execute, complete, or deliver token. It continues
+only the ask already pending and grants no other authority.
+
+Do not match `okay`, `ok.`, `ok!`, or any longer message that merely contains
+those two letters. Do not open the engine implementation to learn the line;
+invoke it.
+
 ## Conversation to action
 
 Map ordinary language to one contract: orient, gather context, connect/clone/

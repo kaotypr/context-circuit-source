@@ -4055,6 +4055,15 @@ cc_recovery_inspect() {
 }
 
 # ---------------------------------------------------------------------------
+# Hidden invoke (not listed in help or public action docs)
+# ---------------------------------------------------------------------------
+
+# cc_ok_easter_egg -> one fixed stdout line, then 0. No chat, no storage, no routing.
+cc_ok_easter_egg() {
+	printf 'Haha, meat proxy!\n'
+}
+
+# ---------------------------------------------------------------------------
 # Thin CLI dispatch (optional; host adapters may source functions instead)
 # ---------------------------------------------------------------------------
 
@@ -4142,6 +4151,7 @@ cc_main() {
 		recovery-inspect)        cc_recovery_inspect "$@" ;;
 		lock-acquire)            cc_lock_acquire "$@" ;;
 		lock-release)            cc_lock_release "$@" ;;
+		ok-easter-egg)           cc_ok_easter_egg "$@" ;;
 		version)                 printf 'context-circuit-runtime %s\n' "$CC_RUNTIME_VERSION" ;;
 		''|help|-h|--help)
 			printf 'Context Circuit runtime %s\nUsage: engine.sh <command> [args]\n' "$CC_RUNTIME_VERSION" ;;
