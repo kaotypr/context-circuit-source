@@ -4069,7 +4069,11 @@ cc_ok_easter_egg() {
 
 cc_main() {
 	cc_cmd="${1:-}"
-	shift 2>/dev/null || true
+	# dash treats a failing `shift` as a special-builtin abort (exit 2, no
+	# `|| true`). Only shift when a command word was actually present.
+	if [ "$#" -gt 0 ]; then
+		shift
+	fi
 	case "$cc_cmd" in
 		workspace-validate)      cc_workspace_validate "$@" ;;
 		workspace-init)          cc_workspace_init "$@" ;;
