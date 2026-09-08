@@ -44,7 +44,7 @@ classifier, fail-upward behavior, the lowering guard, and the floor enforced at
 approval and verifier spawn.
 
 Outside: the intent that declares the tier ([intent and Gate 1](../intent/README.md)),
-the tier *signal* the tracer contributes ([tracing and feasibility](../tracing/README.md)),
+the tier *signal* the planner contributes ([tracing and feasibility](../tracing/README.md)),
 the verifier mechanism itself ([verification](../verification/README.md)),
 completion gating ([completion](../completion/README.md)), and the Explore-tier
 pairing mechanics ([direct collaboration](../direct-collaboration/README.md)).
@@ -94,8 +94,8 @@ Standard keeps the verifier and is allowed).
 ## Data
 
 The intent's `tier` field (provisional at draft, set at feasibility, frozen with
-the contract at approval). The tracer contributes a `tier_signal` in the trace
-manifest; the human's declared tier and any raise are recorded on the intent.
+the contract at approval). The planner contributes a `tier_signal` in the
+finding; the human's declared tier and any raise are recorded on the intent.
 
 ## Constraints and edge cases
 

@@ -67,7 +67,7 @@ tasks:
     repositories: [context-circuit-source]
     paths:
       - .agents/skills/cc-trace/SKILL.md
-      - .context-circuit/agents/tracer.md
+      - .context-circuit/agents/planner.md
       - .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
       - .context-circuit/wrapper/contracts/invariants.yaml
       - context/domains/tracing/README.md
@@ -82,7 +82,7 @@ tasks:
         metadata only; exclude secrets, ignored files, provider payloads, and source
         copies. Publish complete maps atomically and make them safe to delete.
       - >
-        Extend the trace contract and tracer/coordinator guidance to record observed
+        Extend the trace contract and planner/coordinator guidance to record observed
         and current revisions, grounding mode (cold, exact, delta, fallback), reread
         paths, and fallback reason. On exact hits read current intent sites; on
         bounded drift reread affected sites/dependents; use cold trace on uncertainty.

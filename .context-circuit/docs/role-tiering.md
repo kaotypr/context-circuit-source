@@ -29,7 +29,7 @@ workspace root is the directory that contains `repositories.local.yaml` and from
 which `sh .context-circuit/wrapper/runtime/engine.sh` is invoked. Never look for the file inside a
 repository checkout, Explore copy, or execution worktree. It is gitignored, so it
 is not copied there. A missing file in an isolated working copy is not an absent config.
-Do not copy the file into a working copy. The worker, verifier, and tracer must
+Do not copy the file into a working copy. The worker, verifier, and planner must
 not resolve it; their working directory is the isolated copy.
 
 Because a model id only means something on a host that offers it, the config is
@@ -51,20 +51,20 @@ hosts:
       model: <a-cheaper-model-on-this-host>
       effort: medium
       escalate_on_repair: false   # hard pin — same (model, effort) every attempt
-    tracer:
+    planner:
       model: <a-model-on-this-host>
       effort: medium
       escalate_on_repair: false
   <another-host-id>:
     worker:   { model: <a-model-on-that-host>, effort: high }
     verifier: { model: <a-model-on-that-host>, effort: medium }
-    tracer:   { model: <a-model-on-that-host>, effort: medium }
+    planner:  { model: <a-model-on-that-host>, effort: medium }
 ```
 
 - **Grouped by host.** `hosts.<id>` names the models for that host; the same
   workspace run from a different host reads that host's own group. A host with no
   group uses the adapter defaults.
-- **Only `worker`, `verifier`, and `tracer`** appear in a group. The coordinator
+- **Only `worker`, `verifier`, and `planner`** appear in a group. The coordinator
   is the root session the user already controls at the host level (its own
   model/effort controls), so it needs no entry and is never auto-retiered.
   Explore (`cc-pair`) uses the `worker` entry for its one worker and never
@@ -84,7 +84,7 @@ model.
 | --- | --- | --- | --- |
 | worker | the session's current model | high | true |
 | verifier | the session's current model | medium | false |
-| tracer | the session's current model | medium | false |
+| planner | the session's current model | medium | false |
 
 "The session's current model" means: absent an explicit choice, spawn the child at
 whatever model the coordinator session is already running, so the default is
@@ -148,7 +148,8 @@ worker or verifier runs — the value must be **applied to the spawn**, and how 
 host-adapter concern:
 
 - The coordinator records the configured `(model, effort)` as host evidence, and
-  **the host adapter sets it on the child** when launching the worker/verifier
+  **the host adapter sets it on the child** when launching the worker, verifier,
+  or planner
   (see the host adapter for the concrete mechanism). Recording without setting it
   on the spawn is intent only; the child then silently inherits the coordinator's
   session model.

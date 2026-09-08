@@ -29,6 +29,11 @@ not_contains "$ws/plans/INDEX.md" "0001-"
 test ! -e "$ws/plans/context-circuit-plans" || fail 'source maintainer plans leaked into workspace'
 test ! -e "$ws/.runtime/executions" || fail 'source runtime state leaked into workspace'
 contains "$ws/workspace.yaml" 'uninitialized-workspace'
+require_file "$ws/.claude/agents/worker.md"
+require_file "$ws/.codex/agents/worker.toml"
+require_file "$ws/.cursor/agents/worker.md"
+test ! -e "$ws/.claude/agents/cc-human-simulator.md" || fail 'source-only Claude agent leaked into workspace'
+test ! -e "$ws/.claude/skills/cc-test-case" || fail 'source-only Claude skill leaked into workspace'
 
 # 4. Initialize and confirm identity.
 printf 'schema_version: 1\nworkspace: lab-commerce\ntitle: Lab Commerce\nrepositories: []\n' >"$ws/workspace.yaml"

@@ -287,7 +287,7 @@ the live intents and context pages). The immutable proposal/decision id
 never rewritten), and historical `sources/` design docs and archived `plans/`
 are left as they were.
 
-## 2026-09-04 — context/ re-grounded to Context Circuit v1.0 (tracer/feasibility)
+## 2026-09-04 — context/ re-grounded to Context Circuit v1.0 (planner/feasibility)
 
 Decision: reconcile the Product Knowledge base with the shipped v1.0 trust-core.
 The v1.0 layer (intent gate, post-approval tracing, feasibility check, consequence
@@ -297,11 +297,11 @@ earlier v1.0 design's spec-adversary and scope-envelope vocabulary from the doma
 pages and `roles/maintainer.md`, replacing it with the scope-free
 `intent-authorized` model (approved intent + unchanged criteria); (b) adds three
 `status: proposed` domain pages — [intent](domains/intent/README.md) (Gate 1),
-[tracing](domains/tracing/README.md) (tracer + feasibility check), and
+[tracing](domains/tracing/README.md) (planner + feasibility check), and
 [assurance](domains/assurance/README.md) (the consequence-tier ladder, the one
 safety-critical automated check); and (c) re-grounds delivery (named as Gate 2,
 where scope-safety is now settled), verification (tier-conditional, candidate-bound),
-and repository-grounding (disambiguated from the new tracer).
+and repository-grounding (disambiguated from the post-approval planner).
 
 Rationale: one rule, one owner, and "shipped is truth" — the knowledge base must
 describe the product that ships. v1.0 removed the automated scope gate, so

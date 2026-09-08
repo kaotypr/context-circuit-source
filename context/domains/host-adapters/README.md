@@ -29,17 +29,20 @@ workflows:
 ## Summary
 
 Codex CLI, Claude Code, and Cursor Agent CLI enter the same Context Circuit
-workflow as thin transports. Host identity, version, capability, permission
-mode, and provider status are bounded, provider-neutral evidence only. Route
-host-discovery, child-delegation, permission-mode, and missing-child questions
-here.
+workflow as thin transports. Each host also discovers that workflow through
+its committed native project folders — `.claude/`, `.codex/`, `.cursor/` —
+which route to Context Circuit owners rather than copying policy. Host
+identity, version, capability, permission mode, and provider status are
+bounded, provider-neutral evidence only. Route host-discovery, native-folder
+routing, child-delegation, permission-mode, and missing-child questions here.
 
 ## Scope
 
 Inside: provider-neutral `host_evidence`, the shared `AGENTS.md` instruction
 surface, the `CLAUDE.md` Claude Code adapter, the `CURSOR.md` Cursor Agent
-adapter, native-child mapping to the worker or verifier packet, and
-`host-blocked` missing-child behavior.
+adapter, committed host-native folders (`.claude/`, `.codex/`, `.cursor/`) as
+routes into owners, native-child mapping to the worker, verifier, or planner
+packet, and `host-blocked` missing-child behavior.
 
 Outside: embedding a host CLI or SDK, storing credentials/transcripts/auth
 state, treating permission mode or child features as authorization, and adding a
@@ -47,32 +50,47 @@ second router or lifecycle.
 
 ## Behavior
 
-All three hosts enter through workspace-root discovery. `.agents/` stays at
-the workspace root. Product adapter text lives under
-`.context-circuit/wrapper/adapters/` and is what release assembly copies onto
-a new workspace. That copy must not overwrite this maintainer source
-checkout: root `AGENTS.md` / `WORKFLOW.md` stay source-specific, and root
-`CLAUDE.md` / `CURSOR.md` import workspace-root `AGENTS.md` (`@AGENTS.md`)
-so they do not pull the shipped product `AGENTS.md` from the nested adapters.
-In an instantiated workspace, the root files *are* those adapter copies.
+All three hosts enter through workspace-root instruction adapters **and**
+committed native project folders. `.agents/` stays at the workspace root.
+Product adapter text lives under `.context-circuit/wrapper/adapters/` and is
+what release assembly copies onto a new workspace. That copy must not
+overwrite this maintainer source checkout: root `AGENTS.md` / `WORKFLOW.md`
+stay source-specific, and root `CLAUDE.md` / `CURSOR.md` import workspace-root
+`AGENTS.md` (`@AGENTS.md`) so they do not pull the shipped product
+`AGENTS.md` from the nested adapters. In an instantiated workspace, the root
+files *are* those adapter copies.
+
+Host-native folders are the committed integration surface each host already
+searches. They are thin routes: they name the owner and the host-only
+frontmatter or TOML the host requires. They do not copy role bodies or invent
+a second authorization policy.
+
+| Host | Instruction surface | Native project tree | Native child mapping |
+| --- | --- | --- | --- |
+| Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | `.codex/agents/*.toml` (no `.codex/rules/`) | `spawn_agent` → worker, verifier, or planner packet |
+| Claude Code | root `CLAUDE.md` (`@AGENTS.md`) | `.claude/agents/`, `.claude/rules/`, `.claude/skills/` links to `.agents/skills/cc-*` | Task/subagent → same packet |
+| Cursor Agent CLI | root `CURSOR.md` (`@AGENTS.md`) | `.cursor/agents/`, `.cursor/rules/`; skills via `.agents/skills/` | Task/subagent if available; otherwise host-blocked |
+
+The product host set is worker, verifier, and planner stubs in each host's
+format, plus standing-rule stubs on Claude and Cursor (role-tiering spawn,
+commit convention; Cursor also keeps the GitHub unsandboxed `gh` rule).
+Claude skill discovery uses symlinks under `.claude/skills/`; Codex and
+Cursor already scan `.agents/skills/`. Maintainer-only extras
+(`.claude/agents/cc-human-simulator.md`, `.claude/skills/cc-test-case/`) stay
+in this source checkout and are not the shipped set.
+
 Host identity, version, capability, permission mode, and provider status are
 bounded provider-neutral evidence; they never authorize a route, role, lease,
 gate, verification, or completion (INV-HOST-01).
 
-| Host | Instruction surface | Native child mapping |
-| --- | --- | --- |
-| Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | subagent → worker or verifier packet |
-| Claude Code | root `CLAUDE.md` (`@AGENTS.md`) | Task/subagent → same packet |
-| Cursor Agent CLI | root `CURSOR.md` (`@AGENTS.md`) | Task/subagent if available; otherwise host-blocked |
-
-A native child maps only to the bounded worker or independent read-only
-verifier packet. If a required child is unavailable, the route stays read-only
-and reports `host-blocked`; the host must never self-verify or downgrade a
-verifier into a worker.
+A native child maps only to the bounded worker, independent read-only
+verifier, or planner packet. If a required child is unavailable, the route
+stays read-only and reports `host-blocked`; the host must never self-verify or
+downgrade a verifier into a worker.
 
 Across hosts, the coordinator's resumable session may have a session or thread
 id, but that is only the root conversation transport. Required worker, verifier,
-and tracer roles must be native child agents attached to that root, using the
+and planner roles must be native child agents attached to that root, using the
 host's supported child primitive. A separate top-level task, peer thread, or
 resumed root session is not a child and does not satisfy the role requirement;
 if native child creation is unavailable, the route is `host-blocked`.
@@ -102,16 +120,20 @@ provider payloads, transcripts, or auth state.
 - Shared instructions: root `AGENTS.md` / `WORKFLOW.md`
 - Claude adapter: root `CLAUDE.md`; shipped copy `.context-circuit/wrapper/adapters/CLAUDE.md`
 - Cursor adapter: root `CURSOR.md`; shipped copy `.context-circuit/wrapper/adapters/CURSOR.md`
+- Host-native routes: `.claude/`, `.codex/`, `.cursor/` (product stubs and links)
 - Coordinator role: `.context-circuit/agents/coordinator.md`
 - `host_evidence` shape owned by `.context-circuit/wrapper/contracts/schemas/`
 
 ## Constraints and edge cases
 
 Optional live host probes are explicitly pass, unavailable, or blocked; never a
-false success. Cursor does not require `.cursor/rules` for this behavior; a
-scoped Cursor rule must point at workspace-root `CURSOR.md`, not a second copy
-of the spawn rule, and must not import the nested product adapter in this
-source checkout.
+false success. Host-native files stay pointers: `.context-circuit/agents` and
+the owning invariant remain the single policy. Cursor rules point at
+workspace-root `CURSOR.md`, not a second copy of the spawn rule, and must not
+import the nested product adapter in this source checkout. Codex has no
+documented project rules tree — do not create `.codex/rules/`. Personal host
+state (`~/.claude/`, `~/.codex/`, `~/.cursor/`, `settings.local.json`,
+transcripts, credentials) is never workspace state.
 
 ## Adapter duties and limits
 
@@ -129,6 +151,7 @@ unavailable.
 - `.context-circuit/wrapper/adapters/AGENTS.md`, `.context-circuit/wrapper/adapters/CLAUDE.md`,
   `.context-circuit/wrapper/adapters/CURSOR.md`, `.context-circuit/wrapper/adapters/WORKFLOW.md`,
   `.context-circuit/wrapper/adapters/README.md`
+- `.claude/`, `.codex/`, `.cursor/` (committed host-native routes)
 - `.context-circuit/agents/coordinator.md` (routing owner; there is no `routes.yaml`)
 - `.agents/skills/cc-pair/SKILL.md` (the worker-child mapping for direct collaboration)
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-HOST-01, INV-PAIR-01
@@ -152,3 +175,8 @@ Extended 2026-09-03 from proposal `0030-change-host-adapters-for-pairing`: the
 worker packet also serves direct collaboration ([cc-pair](../direct-collaboration/README.md),
 the Explore tier), which launches no verifier and fails closed to `host-blocked`
 with no coordinator write fallback. INV-HOST-01 is unchanged.
+
+Extended 2026-09-08 from intent `i020-host-conventions-preserved`: committed
+`.claude/`, `.codex/`, and `.cursor/` trees are the native integration surface.
+They route to existing owners; they are not optional host-local convenience
+and are not a second policy copy.

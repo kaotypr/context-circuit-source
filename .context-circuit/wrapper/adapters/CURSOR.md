@@ -10,8 +10,8 @@ delivery discussion.
 
 A Cursor Task/subagent maps only to the single bounded worker (`.context-circuit/agents/worker.md`)
 for an execution or direct-collaboration session, the independent read-only
-verifier (`.context-circuit/agents/verifier.md`) for one execution, or the read-only tracer
-(`.context-circuit/agents/tracer.md`) after intent approval.
+verifier (`.context-circuit/agents/verifier.md`) for one execution, or the planner
+(`.context-circuit/agents/planner.md`) after intent approval.
 Record provider-neutral `host_evidence` for the child; a host permission flag is
 an observation, not authorization.
 
@@ -27,7 +27,7 @@ not an absent config. A missing file in an isolated working copy is not an
 absent config. Concretely:
 
 - **Model — set it on the spawn.** Pass the role's configured model id to the
-  worker's, verifier's, or tracer's `Task` spawn as its `model` parameter. The
+  worker's, verifier's, or planner's `Task` spawn as its `model` parameter. The
   value must be a slug the host lists on Task (for example `composer-2.5-fast`,
   `cursor-grok-4.6-high`). A child launched without `model`, or with
   `model: inherit`, inherits the coordinator's session model, so an inherit or
@@ -35,7 +35,7 @@ absent config. Concretely:
 - **The yaml is the user's explicit model request.** Cursor's Task tool prefers
   `inherit` unless another listed model was requested. `role-tiering.local.yaml`
   *is* that standing request for child roles. When `hosts.cursor-agent` names a
-  listed slug for `worker`, `verifier`, or `tracer`, pass that slug. Do not default to inherit because the root session already has a model.
+  listed slug for `worker`, `verifier`, or `planner`, pass that slug. Do not default to inherit because the root session already has a model.
 - **Invalid or display names.** Names such as `Auto` are not Task slugs; do not
   pass them. If the configured id is not on the host's Task allow-list, do not
   omit `model` (omitting inherits). Report the mismatch, or use a listed slug
@@ -47,7 +47,7 @@ absent config. Concretely:
   Cursor. (The coordinator's own effort remains the user's session control.)
 
 Set the worker's `model` from the `worker` entry, the verifier's from the
-`verifier` entry, and the tracer's from the `tracer` entry before launching.
+`verifier` entry, and the planner's from the `planner` entry before launching.
 
 Model and effort stay bounded, provider-neutral `host_evidence` (INV-HOST-01):
 they change cost and speed, never a route, role, lease, verification, or
@@ -61,3 +61,12 @@ Cursor permission prompts, authentication, memory, MCP settings, and transcripts
 are host-local. They never replace a human approval or completion gate and never
 enter workspace state. If Task/subagent creation is unavailable, report
 `host-blocked` and keep the route read-only; never self-verify.
+
+## Host-native routes
+
+Cursor discovers worker, verifier, and planner through committed
+`.cursor/agents/` stubs that route to `.context-circuit/agents/`. Standing rules
+live under `.cursor/rules/` and point at this file and owning invariants.
+Skills stay at `.agents/skills/cc-*`. These folders are routes, not a second
+authorization policy. Cursor may also read `.claude/` and `.codex/` for
+compatibility; `.cursor/` remains this host's source of truth.

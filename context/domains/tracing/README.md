@@ -13,7 +13,7 @@ generated_at: 2026-09-04T00:00:00Z
 review_date: 2026-12-04
 freshness: accepted-from-current-wrapper
 assumptions:
-  - Tracing runs after Gate 1 (intent approval) and before any plan is written.
+  - The planner runs after Gate 1 (intent approval) and writes the plan when feasible.
   - The feasibility check is coordinator judgment, not an engine verb.
 unknowns: []
 contradictions: []
@@ -30,19 +30,20 @@ workflows:
 ## Summary
 
 The bridge between an approved intent and its plans. On intent approval the
-coordinator spawns the **tracer** — one read-only child per repository in scope —
-which reads the *real code* and reports a **trace manifest**. The coordinator then
-runs a **feasibility check** over those findings and decides whether to derive
-plans, stop, or ask the human a scope question (INV-INTENT-02). Route the
+coordinator spawns the **planner** — one child per repository in scope —
+which reads the *real code* and writes that repository's plan when the look is
+feasible. The coordinator then
+runs a **feasibility check** over the finding and decides whether to publish
+those plans, stop, or ask the human a scope question (INV-INTENT-02). Route the
 post-approval "read the code and see if this is buildable" step here. Owned by the
-`cc-trace` skill, the `.context-circuit/agents/tracer.md` role, and the feasibility-check rule in
+`cc-trace` skill, the `.context-circuit/agents/planner.md` role, and the feasibility-check rule in
 `invariants.yaml`.
 
 ## Scope
 
-Inside: the tracer role and its read-only spawning (one child per repository, in
-parallel, no lease, no worktree), the trace-manifest contents, bounded freshness
-reuse, and the coordinator's feasibility judgment and its three outcomes.
+Inside: the planner role and its spawning (one child per repository, in
+parallel, no lease, no worktree), the finding it records, and the coordinator's
+feasibility judgment and its three outcomes.
 
 Outside: drafting/approving the intent itself ([intent and Gate 1](../intent/README.md)),
 how an authorized plan is written and reviewed ([plan review](../plan-review/README.md)),
@@ -52,12 +53,13 @@ a different phase (see the disambiguation below).
 
 ## Behavior
 
-**Tracing (INV-INTENT-02).** When the human approves an intent (Gate 1), the
-coordinator spawns the tracer: **one read-only child per repository** named in the
-intent's scope, in parallel, with **no lease and no worktree** (it never writes).
-Each tracer reads the real code and reports a `trace-manifest.yaml`:
+**Planner (INV-INTENT-02).** When the human approves an intent (Gate 1), the
+coordinator spawns the planner: **one child per repository** named in the
+intent's scope, in parallel, with **no lease and no worktree** (it writes only
+workspace plan files). Each planner reads the real code and, when the look is
+feasible, writes that repository's `PLAN.md` and `plan.yaml`:
 
-- a **file / call-site map** of where the change lands;
+- tasks and bounded **paths** of where the change lands;
 - concrete **risks**;
 - the **runnable done-checks** that prove each outcome criterion against the real
   code (earned here, *after* approval — never authored on the intent, and **not**
@@ -70,29 +72,11 @@ Each tracer reads the real code and reports a `trace-manifest.yaml`:
   intent-level (stop and revisit Gate 1), plan-level (carry into the plan), or
   already answered (apply without asking again).
 
-The manifest is durable grounding evidence at `intent/<id>/trace/<repo>.yaml`
-(workspace root; `intent/` does not move under `.context-circuit/`), reused later
-with a **bounded freshness check** against current code rather than re-traced
-from zero. Tracer role and schema files live with the nested product home
-(`.context-circuit/agents`, `.context-circuit/wrapper/contracts/schemas`).
+The finding is recorded at `intent/<id>/finding.yaml`. The coordinator does not
+read the target repository and does not rewrite the plan the planner wrote.
 
-Current manifests are plan-ready and revision-bound. A local gitignored structural
-map cache under `.runtime/trace-cache/maps/` is keyed by workspace/repository identity,
-canonical binding and location, revision, map schema, and discovery rules. Maps contain
-inventory and command metadata only, never source copies, ignored files, secrets, or
-provider payloads; complete maps publish atomically and remain safe to delete.
-
-An exact hit still rereads the intent's current sites. Bounded delta drift rereads
-changed sites and known dependents. Legacy or incompatible evidence, changed discovery
-rules or identity, broad drift, missing ancestry, and uncertainty fall back to a cold
-trace. The manifest records observed/current revision, mode, reread paths, and fallback
-reason, plus typed evidence anchors, investigation leads, normalized plan fragments,
-criterion coverage, checks, and a typed feasibility outcome. The coordinator ratifies
-those fragments without a second interpretation read, then materializes the complete
-stack atomically.
-
-**Feasibility check (INV-INTENT-02).** Before any plan is written the coordinator
-judges the tracer's findings — this is **coordinator judgment, not an engine
+**Feasibility check (INV-INTENT-02).** Before any plan is rewritten the coordinator
+judges the planner's finding — this is **coordinator judgment, not an engine
 verb**, and a **quality gate, not a safety gate**:
 
 - **Feasible** → it sets the consequence tier, updates the human-facing
@@ -115,7 +99,7 @@ substitutes for delivery: concrete **scope-safety is settled at Gate 2**
 
 ### Ratifying one plan or stacked plans
 
-After feasibility, the coordinator ratifies the manifest's `task_partition` by
+After feasibility, the coordinator ratifies the planner's task partition by
 looking at the actual execution boundary. Every derived plan names **exactly one
 repository**. A bounded change with one worker lifecycle and one independent
 verification boundary in one repository stays **one plan with embedded tasks**,
@@ -142,9 +126,10 @@ This uses the existing contracts and does not add a second plan-approval gate.
 
 Two different phases both "read the repository"; keep them distinct:
 
-- **Tracing** (this page) runs **after approval, before planning**. Its subject is
+- **Planning look** (this page) runs **after approval**. Its subject is
   *whether and how the change is buildable* — file/call-site map, risks,
-  done-checks, tier signal, feasibility. It produces the **trace manifest**.
+  done-checks, tier signal, feasibility. It produces the **plan files** and
+  `intent/<id>/finding.yaml`.
 - **Repository grounding** ([repository grounding](../repository-grounding/README.md))
   runs **at execution setup**, inside the worker's worktree. Its subject is *how to
   write code in this repository* — the repo's own `AGENTS.md`/`CLAUDE.md`/skills —
@@ -155,38 +140,35 @@ replaces the other.
 
 ## Interfaces
 
-- Trigger: intent approval (Gate 1) automatically spawns the tracer
-- Role: `.context-circuit/agents/tracer.md` (read-only, one child per repository, never talks to the human)
-- Record: `intent/<id>/trace/<repo>.yaml` (`trace-manifest.yaml`, compatible
-  `schema_version` 1 plus `plan_ready_version` 1; absence triggers legacy fallback)
-- Coordinator outputs: set tier + derive plans · stop-and-explain · scope question to the human
+- Trigger: intent approval (Gate 1) automatically spawns the planner
+- Role: `.context-circuit/agents/planner.md` (one child per repository, never talks to the human)
+- Record: `intent/<id>/finding.yaml` plus, when feasible, `plans/<id>/PLAN.md` and `plan.yaml`
+- Coordinator outputs: set tier + publish the child's plans · stop-and-explain · scope question to the human
 
 ## Data
 
-The trace manifest per repository: `intent`, `repository`, `file_map`,
-`task_partition`, `risks`, `done_checks`, `tier_signal`, `feasible`,
-`out_of_scope_reach`, `open_questions`, `completeness_proof`, `recorded_at`,
-`freshness_checked_at`.
+The finding per repository: `intent`, `repository`, `feasible`,
+`feasibility_outcome`, `out_of_scope_reach`, `open_questions`, `tier_signal`,
+`revision`. The plan carries tasks, bounded paths, risks, and done-checks.
 
 ## Constraints and edge cases
 
-The tracer is strictly read-only — no lease, no worktree, no product write. Its
-done-checks and any criterion it surfaces live in the manifest and the derived
+The planner needs **no lease and no worktree** — it writes only workspace plan
+files and the finding. Its done-checks and any criterion it surfaces live in the
 plan; they are **never** folded into the frozen `contract_digest` (they are earned
 post-approval and must not silently re-enter Gate 1). Intent detail
-(`intent/<id>/detail/`) is pre-approval authoring evidence for later planning, not a tracing output and not a second gate; tracing remains the first code read.
+(`intent/<id>/detail/`) is pre-approval authoring evidence for later planning, not a tracing output and not a second gate; the planner remains the first code read.
 Whether post-approval
 done-checks should ever bind into the frozen contract is an open question recorded
 in the design's `risks-and-open-questions`; current behavior keeps them out. If a
-required child cannot be created read-only, the route stays `host-blocked` and
-read-only rather than self-tracing.
+required child cannot be created, the route stays `host-blocked` and
+the coordinator does not author a stand-in plan.
 
 ## Implementation references
 
-- `.agents/skills/cc-trace/SKILL.md`, `.context-circuit/agents/tracer.md`
-- `.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml`
-- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-INTENT-02 (owner map: `tracer_role`, `trace_manifest`, `feasibility_check`)
-- `.context-circuit/wrapper/contracts/schemas/intent-contract.yaml` (the `trace_manifest` reference block)
+- `.agents/skills/cc-trace/SKILL.md`, `.context-circuit/agents/planner.md`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-INTENT-02 (owner map: `planner_role`, `feasibility_check`)
+- `.context-circuit/wrapper/contracts/schemas/intent-contract.yaml` (the `planner_finding` reference block)
 
 ## Verification
 

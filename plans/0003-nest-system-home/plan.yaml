@@ -58,7 +58,7 @@ context_grounding:
     - The blank template seed remains template/ at the source root.
     - An upgrade may replace template-owned files and must preserve
       workspace-owned files; report migration-needed when meaning changes.
-    - Do not change gates, tracer, verifier floor, or self-verify.
+    - Do not change gates, planner, verifier floor, or self-verify.
     - Do not move workspace-owned files into .context-circuit.
     - Do not rename the wrapper or drop the wrapper/template split.
     - Do not add a new host, router, or runtime scheduler.
@@ -339,7 +339,7 @@ tasks:
           rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**'
           --glob '!**/plans/context-circuit-plans/**' --glob '!**/sources/**'
           --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**'
-          '(^|[[:space:]`\"'"'"'(])wrapper/|(^|[[:space:]`\"'"'"'(])agents/|(^|[[:space:]`\"'"'"'(])docs/|\$ROOT/wrapper|\$W/|wrapper/runtime/engine\.sh|agents/(coordinator|worker|verifier|tracer)\.md'
+          '(^|[[:space:]`\"'"'"'(])wrapper/|(^|[[:space:]`\"'"'"'(])agents/|(^|[[:space:]`\"'"'"'(])docs/|\$ROOT/wrapper|\$W/|wrapper/runtime/engine\.sh|agents/(coordinator|worker|verifier)\.md'
           .context-circuit .agents context template test agent-harness
           scripts .cursor AGENTS.md WORKFLOW.md CLAUDE.md CURSOR.md README.md;
           test $? -ne 0

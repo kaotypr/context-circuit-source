@@ -1,48 +1,43 @@
 ---
 name: cc-plan
-description: Create a detailed grounded plan from a request, or conversationally review a draft plan without approving or executing it.
+description: Publish the plan a planner child already wrote, or conversationally review a draft plan without approving or executing it.
 ---
 
-## Derive a plan from an approved intent
+## Publish a plan from an approved intent
 
 A v1.0 plan is the **derivation of an approved intent**, not the thing the human
-approves (Context Circuit v1.0, Mechanism 1). Before planning a writing change,
+approves (Context Circuit v1.0, Mechanism 1). Before a writing change is planned
 there must be an approved parent intent (`cc-intent`, Gate 1). If none exists,
 author the intent first — do not create a plan that invents its own goal or scope.
-Plan derivation is then automatic — the coordinator's next action **in the same
-turn** after a feasible tracer with no intent-level questions, not a gate — so
-the human hears "here's the breakdown," never "approve this plan." Writing the
-plans does not start execution. If the look is not feasible or an intent-level
-question remains, write no plan.
+
+The planner child (`cc-trace`) already read the real code and, when the look was
+feasible, wrote `PLAN.md` and `plan.yaml`. Plan publication is then automatic —
+the coordinator's next action **in the same turn** after a feasible planner with
+no intent-level questions, not a gate — so the human hears "here's the
+breakdown," never "approve this plan." Writing or publishing those plans does not start execution.
+If the look is not feasible or an intent-level question remains,
+write no plan.
 
 If the approved intent is **Explore**, do not create a plan of record. Explore is
 the planless `cc-pair` path: the user supervises the work live, and there is no
 independent verifier or completion record to derive.
 
-A plan is derived from the **trace manifest** the tracer produced after approval
-(`cc-trace`, `intent/<id>/trace/<repo>.yaml`), not from a blind read of `context/`:
-the tracer has already read the real code and reported the file/call-site map, a
-proposed task partition, concrete risks, and the runnable "done" checks that prove
-each outcome criterion. The feasibility check ran on those findings before you got
-here — so you are planning a change already judged buildable. If no trace manifest
-exists yet (the tracer has not run), run `cc-trace` first rather than improvising a
-code read inline. Require a current plan-ready manifest: a legacy manifest without
-`plan_ready_version: 1`, an incompatible structural map, or uncertain revision
-binding returns to `cc-trace` for bounded fallback and never authorizes a fast path.
+**Do not author a second copy.** Do not read the target repository. Do not glob it.
+Validate and index the files the planner wrote. If no plan and no finding exist
+yet, run `cc-trace` rather than improvising a code read inline.
 
-When `intent/<id>/detail/` exists, use it as the **confirmed shape** of what to
-build so plans and tasks follow those topics. It does this without replacing the
-trace manifest or the post-approval read of the real code, is not a second approval, and is not part of `contract_digest`.
+When `intent/<id>/detail/` exists, it is the **confirmed shape** of what to build so
+plans and tasks follow those topics. It does this without replacing the
+post-approval read of the real code, is not a second approval, and is not part of
+`contract_digest`.
 
 ## Ratify the task partition
 
-Treat the trace's `task_partition` as grounded evidence, then make one explicit
-plan-boundary decision. Every derived plan names **exactly one repository**; a
-plan that lists two or more is invalid. Keep a **one-plan** derivation when all
-tasks share one bounded execution/change surface in that one repository, one
-worker lifecycle, and one independent verification boundary. Put the tasks in that
-plan and use task `depends_on` for their intra-plan order; several tasks do not
-require several plans.
+Every derived plan names **exactly one repository**; a plan that lists two or more
+is invalid. Keep a **one-plan** derivation when all tasks share one bounded
+execution/change surface in that one repository, one worker lifecycle, and one
+independent verification boundary. Put the tasks in that plan and use task
+`depends_on` for their intra-plan order; several tasks do not require several plans.
 
 Derive **stacked plans** when the partitions are independently executable or
 independently verifiable, when there are meaningful dependencies between them,
@@ -52,70 +47,25 @@ paths, record an acyclic `plan_dependencies` edge with a reason, and preserve on
 worker plus one independent verifier lifecycle for every Standard/Critical plan.
 Refuse collapsing two repositories into one plan.
 
-Record the overall rationale in `context_grounding.decisions` and mirror it in the
-readable `PLAN.md`; use each `plan_dependencies.reason` for the specific edge. Do
-not split work solely because it is Standard or Critical, and do not combine
-partitions merely to make one plan when their execution, verification, dependency,
-or failure boundaries are genuinely independent. Plan count is not an assurance
-tier and does not create a separate plan-approval gate. One approved intent may
-authorize one plan or a stack of plans.
+The coordinator may add a `plan_dependencies` reason across children. It must not
+rewrite task bodies, paths, or checks the planner earned. An unresolved intent-level question
+blocks publication: return to `cc-intent`. A
+`plan-resolution` question is already in the plan. An `already-answered` finding
+is applied without asking again.
 
-Before writing a plan, inspect the manifest's `open_questions` and
-`out_of_scope_reach` and record a disposition for each finding. An
-`intent-revision` question, or a required scope change not already authorized by
-the plain request, blocks planning: return to `cc-intent`, update the approved
-decision, and take Gate 1 again when the contract changes. A `plan-resolution`
-question is carried into the plan's assumptions, risks, or verification. An
-`already-answered` finding is applied and recorded without asking the human to
-repeat it. No unresolved intent-level question may be hidden in a plan's open
-questions.
+Task paths are advisory grounding, not an exhaustive worker write allowlist. A
+necessary intent-consistent path discovered in the same repository may proceed
+when recorded in the worker handoff and checked over the complete diff. A
+required second repository or approved-decision change stops as a coordinator
+finding.
 
-Ratify normalized fragments without repeating the tracer's repository read. Confirm
-complete criterion coverage, current revision-bound anchors, repository/task identity,
-acyclic task and plan dependency graphs, tier floor, checks, boundary reasons, and a
-disposition for every question. Record each adjustment and why.
-
-Trace anchors and initial task paths are advisory grounding, not an exhaustive worker
-write allowlist. A necessary intent-consistent path discovered in the same repository
-may proceed when recorded in the worker handoff and checked over the complete diff.
-A required second repository or approved-decision change stops as a coordinator finding.
-
-Retrieve relevant Product Knowledge by the request's concepts, domains,
-repositories, decisions, and constraints using `context/INDEX.md`; read only the
-selected units, not the whole directory. Read repository instructions and only
-request-named source files. Ground the plan in the approved `contract.yaml` (the
-outcome criteria), the trace manifest (the grounded map and done-checks), the
-intent detail when it exists (the confirmed topic shape), Product Knowledge, and
-repository grounding.
-
-Expand the approved intent into a detailed readable plan grounded in the manifest.
-Preserve the intent's goal, criteria, constraints, non-goals, assumptions, open
-questions, and risks — remove repetition, not meaning. Carry the tracer's executable
-done-checks into the plan's verification, and its completeness proof for any "change
-every X" obligation. Write `PLAN.md` (readable) and `plan.yaml` (canonical,
-`schema_version: 3`) with:
-
-- a stable plan id `NNNN-<kebab-slug>` allocated by the runtime `plan-allocate-id`;
-- `intent: i<NNN>-slug` — the required parent intent (INV-INTENT-02);
-- original request and request coverage;
-- objective, desired behavior, constraints, non-goals;
-- Product Knowledge grounding (each reference: stable id, path, reason);
-- source and repository evidence;
-- explicit repository mapping for every task, with bounded paths and dependencies;
-- implementation details, acceptance criteria, and verification (distinct ids);
-- expected commits, assumptions, open questions, risks, delivery notes;
-- expected Product Knowledge impact, or an explicit no-durable-impact statement.
-
-Perform a context-grounding drift check and a request-fidelity check. Any
-contradiction or missing detail becomes an explicit open question, assumption,
-or risk — never a silently chosen implementation. For one plan, existing single-plan
-verbs remain available. For a ratified stack, render complete fragments with
-request-local `@plan:<key>` references and submit one `plan-stack-materialize` request.
-It reserves a consecutive id range by invocation identity, stages readable and
-canonical artifacts, validates dependency/coverage/current-authorization/index state,
-and publishes all plans and index rows or none. A successful same-invocation retry
-returns the original ids; malformed input returns one stable stage/key/error diagnostic.
-Writing or materializing plans does not execute them.
+For one plan, run `plan-validate`, `intent-authorized`, and `plan-index-upsert`.
+For a stack the planner staged as `@plan:` fragments, submit one
+`plan-stack-materialize` request. It reserves a consecutive id range by
+invocation identity, stages readable and canonical artifacts, validates
+dependency/coverage/current-authorization/index state, and publishes all plans and index rows or none.
+A successful same-invocation retry returns the original
+ids. Writing or materializing plans does not execute them.
 
 ## Authorization preflight (INV-INTENT-02)
 
@@ -126,12 +76,12 @@ with `reason: CRITERIA_CHANGED`, the intent's criteria were edited after approva
 the change re-enters Gate 1 — take approval again on the changed criteria via
 `cc-intent`. A missing or unapproved intent is likewise unauthorized; author or
 approve the intent first. There is **no** automated scope gate: scope-safety is
-settled at delivery (Gate 2), the tracer reports where the change actually lands, and
+settled at delivery (Gate 2), the planner reports where the change actually lands, and
 a required change beyond a bound scope was surfaced as a question by the feasibility
-check in `cc-trace` before you planned. The authorization check also runs again at
+check in `cc-trace` before publication. The authorization check also runs again at
 execution start.
 
-One intent may yield **one or more** stacked plans, each naming the same intent
+One approved intent may yield **one or more** stacked plans, each naming the same intent
 and exactly one repository. Deriving a plan does not execute it.
 
 ## Grounding and unupdated Product Knowledge (INV-KNOWLEDGE-02)

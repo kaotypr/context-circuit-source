@@ -13,7 +13,7 @@ set -eu
 ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
-# the trace manifest is a first-class schema (the tracer's recorded report)
+# the finding is a first-class record (the planner's recorded report)
 require_file "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml"
 contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "done_checks"
 contains "$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml" "out_of_scope_reach"

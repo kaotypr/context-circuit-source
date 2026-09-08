@@ -62,7 +62,7 @@ one plan with ordered embedded tasks, rather than false independent stacked plan
 1. LAT-001 (context-circuit-source; trace contract/guidance, tracing context, and
    latency/feasibility tests; depends on: none) — implement immutable,
    revision-bound structural repository-map reuse and exact/delta/fallback evidence.
-   Keep the tracer first-hand and independent. Acceptance LAT-AC-005 and
+   Keep the planner first-hand and independent. Acceptance LAT-AC-005 and
    LAT-AC-002; verification LAT-VT-001 and LAT-VT-002.
 
 2. LAT-002 (context-circuit-source; trace, plan, handoff/verifier contracts and

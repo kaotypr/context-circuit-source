@@ -93,7 +93,37 @@ required .agents/skills/cc-publish/SKILL.md
 required .context-circuit/agents/coordinator.md
 required .context-circuit/agents/worker.md
 required .context-circuit/agents/verifier.md
-required .context-circuit/agents/tracer.md
+required .context-circuit/agents/planner.md
+required .context-circuit/agents/planner-brief.md
+
+# Host-native routes (thin pointers into the owners above).
+required .claude/agents/worker.md
+required .claude/agents/verifier.md
+required .claude/agents/planner.md
+required .claude/rules/role-tiering-spawn.md
+required .claude/rules/commit-convention.md
+required .claude/skills/cc-workspace
+required .claude/skills/cc-intent
+required .claude/skills/cc-trace
+required .claude/skills/cc-plan
+required .claude/skills/cc-execute
+required .claude/skills/cc-run-stack
+required .claude/skills/cc-system-design
+required .claude/skills/cc-verify
+required .claude/skills/cc-complete
+required .claude/skills/cc-archive
+required .claude/skills/cc-deliver
+required .claude/skills/cc-pair
+required .claude/skills/cc-publish
+required .codex/agents/worker.toml
+required .codex/agents/verifier.toml
+required .codex/agents/planner.toml
+required .cursor/agents/worker.md
+required .cursor/agents/verifier.md
+required .cursor/agents/planner.md
+required .cursor/rules/role-tiering-spawn.mdc
+required .cursor/rules/commit-convention.mdc
+required .cursor/rules/gh-unsandboxed.mdc
 
 # Removed from the staged tree and verified absent.
 exclude test
@@ -109,3 +139,5 @@ exclude template
 exclude plans/context-circuit-plans
 exclude sources/system-design
 exclude sources/reports
+exclude .claude/agents/cc-human-simulator.md
+exclude .claude/skills/cc-test-case
