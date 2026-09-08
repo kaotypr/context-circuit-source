@@ -110,8 +110,9 @@ applied without asking again.
 - Human-facing file: `intent/<id>/INTENT.md` (five sections, plain language)
 - Machine record: `intent/<id>/contract.yaml` (`schema_version` 2; `status` `draft`/`approved`; frozen `contract_digest`)
 - Optional detail: `intent/<id>/detail/` (three-tier write-up; not digested; not a second gate)
-- Intent ids: the distinct form `i<NNN>-slug`, their own never-reused sequence
-  with a hard `i999` ceiling; allocation fails rather than inventing a fourth digit
+- Intent ids: the distinct form `i<NNN>-slug`, allocated inside the current
+  member's band and never reused including after archive, with a hard `i999`
+  ceiling; allocation fails rather than inventing a fourth digit or wrapping
 
 ## Data
 

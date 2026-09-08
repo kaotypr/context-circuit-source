@@ -15,7 +15,10 @@ entry files and the `context/INDEX.md` retrieval catalog; resolve the named
 plan, repository, task, or source; read only the active plan and context
 references the action needs (an existing execution uses its immutable snapshot);
 ask one focused question only when a missing fact would change the action or
-create unsafe ambiguity; perform the action through the right skill or role —
+create unsafe ambiguity; require resolved member identity (`member-band-resolve`)
+before `intent-allocate-id` or `plan-allocate-id` — if identity is missing, run
+the cc-workspace one-time setup rather than asking for a block number; if a band
+is exhausted, extend the roster rather than wrapping (INV-MEMBER-01); perform the action through the right skill or role —
 product skills are read-as-procedure packets at `.agents/skills/<name>/SKILL.md`,
 read by path and never a separate authority; then report what changed, what was
 verified, and the next human decision.
@@ -50,6 +53,9 @@ A writing request is anchored to a first-class **intent** — the decision for o
 change: goal, non-goals, constraints, outcome-level acceptance criteria, a coarse
 and optional scope, and the consequence tier (`.agents/skills/cc-intent`). You draft
 it from the plain ask and existing Product Knowledge, without reading the codebase.
+Before allocating an intent or plan id, resolve local member identity; never ask
+the user to type a block number. Allocation is band-scoped (INV-INTENT-01,
+INV-PLAN-03, INV-MEMBER-01).
 When one change has several concerns, recommend — or honor a request for — a fuller
 by-concern write-up of that intent, authored by `cc-system-design` at
 `intent/<id>/detail/`. Skipping it does not block approval; a small single-outcome

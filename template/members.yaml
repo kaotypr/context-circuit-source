@@ -1,0 +1,10 @@
+# Example-only seed. Replace `example` with real members and non-overlapping
+# bands. Host-local identity belongs in ignored member.local.yaml, not here.
+schema_version: 1
+members:
+  example:
+    display_name: example
+    intent_band_start: 1
+    intent_band_end: 99
+    plan_band_start: 1
+    plan_band_end: 999

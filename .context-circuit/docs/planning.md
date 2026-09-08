@@ -77,9 +77,11 @@ in every task.
 ## Identifiers
 
 New plans use stable ids `NNNN-<kebab-slug>`. The four-digit sequence is the next
-after the highest ever allocated and is never reused, including after archive or
-restore. The id is the canonical mention key in conversation, paths, branches,
-and runtime records.
+after the highest number ever used in the current member's plan band (active and
+archived) and is never reused, including after archive or restore. The id never
+includes a member token; execution branches stay `cc/<plan-id>/<repository-id>`.
+The id is the canonical mention key in conversation, paths, branches, and
+runtime records.
 
 ## Status
 

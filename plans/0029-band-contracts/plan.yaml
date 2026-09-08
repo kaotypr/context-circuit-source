@@ -1,0 +1,176 @@
+schema_version: 3
+plan: 0029-band-contracts
+intent: i021-id-number-blocks
+title: Align contracts, docs, and checks with band allocation
+status: draft
+objective: >
+  Product rules, contract schemas, invariants, skills, coordinator guidance, template
+  seed, and acceptance checks describe and enforce per-member band allocation —
+  short id forms unchanged, branches stay cc/<plan-id>/<repo>, duplicate prefixes and
+  overlapping bands fail closed — matching runtime behavior from plans 0027 and 0028.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns invariant and schema updates, product docs, skills, maintainer and template
+      context, release manifest, criteria-map entries, and the consolidated band
+      acceptance suite wired into test/acceptance.sh.
+plan_dependencies:
+  - id: 0028-band-allocation
+    reason: >
+      Contract and doc wording must match implemented band-scoped allocation,
+      stack reservation, and failure modes before product surface is finalized.
+product_knowledge:
+  - id: repository-binding
+    path: context/domains/repository-binding/README.md
+    reason: >
+      Documents portable vs host-local workspace files; member roster and local identity
+      extend this domain after band allocation lands.
+  - id: plan-review
+    path: context/domains/plan-review/README.md
+    reason: >
+      Primary domain page for plan id allocation rules that must state band-scoped
+      never-reuse semantics instead of a single global sequence.
+context_grounding:
+  summary: >
+    Grounded at HEAD 7db954f. intent-contract.yaml and plan.yaml schemas describe
+    global next-after-highest allocation (three-digit intents, four-digit plans).
+    INV-INTENT-01 and INV-PLAN-03 state workspace-wide sequences. engine-and-seam.md
+    lists intent-allocate-id and plan-allocate-id without member context. cc-intent,
+    cc-trace, cc-plan, and cc-workspace skills mention allocate-id but not bands.
+    context/domains/plan-review/README.md documents cc_plan_allocate_id globally.
+    test/acceptance/criteria-map.yaml has no AC-BAND entries yet. Plans 0027–0028
+    implement roster, identity, and band allocation; this plan aligns every owned
+    product surface and adds criteria-map coverage so verification matches AC-BAND-01
+    through AC-BAND-09 at the product boundary.
+  constraints:
+    - One owner per rule — update invariants.yaml and contract schemas; skills reference
+      owners, not parallel policy.
+    - Do not rename existing intent or plan directories; docs describe forward behavior.
+    - Explaining id form iNNN-slug / NNNN-slug and branch cc/<plan-id>/<repo> stays;
+      member names must not appear in ids or branches.
+    - Preserve unrelated and dirty work; run full semantic acceptance before done.
+  decisions:
+    - Update INV-INTENT-01 and INV-PLAN-03 in place for band-scoped never-reuse;
+      add a focused invariant for roster and local identity if needed rather than
+      scattering rules across skills.
+    - Refresh intent-contract.yaml plan_id/intent_id notes, members.yaml cross-refs,
+      engine-and-seam verb list, getting-started member setup, and plan-review domain
+      page; template seed carries example members.yaml only.
+    - Consolidate band acceptance in test/bands/ with criteria-map entries for each
+      AC-BAND criterion; remove stale global-sequence-only wording where contradicted.
+    - context/domains/repository-binding gains a short member-identity subsection
+      pointing to members.yaml and member.local.yaml conventions.
+knowledge_impact:
+  expected_context_units:
+    - repository-binding
+    - plan-review
+    - terminology
+  review_on_completion: true
+tasks:
+  - id: BC-001
+    title: Update invariants and contract schemas for band allocation
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/wrapper/contracts/invariants.yaml
+      - .context-circuit/wrapper/contracts/schemas/intent-contract.yaml
+      - .context-circuit/wrapper/contracts/schemas/plan.yaml
+      - .context-circuit/wrapper/contracts/schemas/members.yaml
+      - .context-circuit/wrapper/contracts/schemas/member-local.yaml
+      - test/contracts/test-contracts.sh
+    depends_on: []
+    changes:
+      - >
+        Revise INV-INTENT-01 and INV-PLAN-03 to describe band-scoped allocation from
+        a committed roster and local member identity while preserving id forms and
+        never-reuse including after archive; add roster/identity invariant if needed.
+      - >
+        Update intent-contract.yaml and plan.yaml schema notes — next id is highest in
+        the current member's band, default band sizes, stack consecutive reservation,
+        exhaustion and overlap failure; cross-reference members.yaml and member.local.yaml.
+      - >
+        Extend test/contracts/test-contracts.sh to assert schema and invariant roster
+        entries mention band allocation.
+    acceptance:
+      - id: BC-AC-01
+        statement: >
+          Contract schemas and invariants describe band-scoped allocation with one owner
+          per rule and no contradiction with short id forms or branch naming.
+    verification:
+      - id: BC-VT-01
+        command: sh test/contracts/test-contracts.sh
+  - id: BC-002
+    title: Align skills, docs, template seed, and Product Knowledge
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-intent/SKILL.md
+      - .agents/skills/cc-trace/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - .agents/skills/cc-workspace/SKILL.md
+      - .context-circuit/agents/coordinator.md
+      - .context-circuit/agents/planner.md
+      - .context-circuit/docs/getting-started.md
+      - .context-circuit/docs/terminology.md
+      - sources/system-design/context-circuit/v1.0.0/core/engine-and-seam.md
+      - context/domains/plan-review/README.md
+      - context/domains/repository-binding/README.md
+      - template/members.yaml
+      - scripts/release-manifest.txt
+    depends_on: [BC-001]
+    changes:
+      - >
+        Update cc-intent, cc-trace, cc-plan, cc-workspace, coordinator, and planner
+        guidance to require resolved member identity before allocate-id calls and to
+        describe roster extension when bands exhaust — never prompt for block numbers.
+      - >
+        Update getting-started, terminology, engine-and-seam, plan-review, and
+        repository-binding pages for members.yaml and member.local.yaml conventions.
+      - >
+        Ensure template seed and release manifest include members.yaml example and
+        exclude member.local.yaml.
+    acceptance:
+      - id: BC-AC-03
+        statement: >
+          Product docs and skills state that ordinary authoring uses roster plus local
+          identity and never asks the user to name a block number in chat.
+      - id: BC-AC-07
+        statement: >
+          Execution branch guidance remains cc/<plan-id>/<repository-id> with no member
+          token added.
+    verification:
+      - id: BC-VT-02
+        command: sh test/bands/test-band-contracts.sh --case docs-skills
+  - id: BC-003
+    title: Acceptance criteria map and full semantic verification
+    repositories: [context-circuit-source]
+    paths:
+      - test/bands/test-band-contracts.sh
+      - test/bands/test-member-roster.sh
+      - test/bands/test-band-allocation.sh
+      - test/acceptance/criteria-map.yaml
+      - test/acceptance.sh
+      - test/release/test-release.sh
+    depends_on: [BC-002]
+    changes:
+      - >
+        Add test/bands/test-band-contracts.sh cross-checking docs and criteria-map
+        entries against AC-BAND-01 through AC-BAND-09; extend criteria-map.yaml with
+        runnable suite pointers for each criterion.
+      - >
+        Confirm test/acceptance.sh runs all band suites; release test still excludes
+        member.local.yaml from shipped artifacts.
+    acceptance:
+      - id: BC-AC-ALL
+        statement: >
+          Every AC-BAND outcome criterion has a mapped runnable verification command
+          and the full semantic acceptance suite passes on the completed stack.
+    verification:
+      - id: BC-VT-03
+        command: sh test/bands/test-band-contracts.sh
+      - id: BC-VT-04
+        command: sh test/acceptance.sh
+      - id: BC-VT-05
+        command: sh test/release/test-release.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

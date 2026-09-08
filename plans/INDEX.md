@@ -7,3 +7,6 @@
 | 0004-approval-plan-latency | Reduce approval-to-plan latency | draft | A feasible intent approval reaches a complete, grounded, authorized, and validated plan stack within the warm and cold performance targets without weakening independent tracing, feasibility judgment, plan authorization, or repository-local worker adaptation. | context-circuit-source | plans/0004-approval-plan-latency/PLAN.md |
 | 0006-host-native-routes | Integrate Context Circuit through host-native route folders | done | > | context-circuit-source | plans/0006-host-native-routes/PLAN.md |
 | 0026-durable-context-knowledge | Context files hold only durable product knowledge | done | > | context-circuit-source | plans/0026-durable-context-knowledge/PLAN.md |
+| 0027-member-roster | Member roster and local identity | draft | > | context-circuit-source | plans/0027-member-roster/PLAN.md |
+| 0028-band-allocation | Band-scoped intent and plan id allocation | draft | > | context-circuit-source | plans/0028-band-allocation/PLAN.md |
+| 0029-band-contracts | Align contracts, docs, and checks with band allocation | draft | > | context-circuit-source | plans/0029-band-contracts/PLAN.md |

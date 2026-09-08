@@ -29,6 +29,12 @@ project repositories can be cloned or initialized under the git-ignored
 `workspace` repository. `base_branch` — not `default_branch` — is the
 execution base and default pull-request target.
 
+Each machine also names **who you are** in the shared member roster once, in a
+gitignored local identity file — the same host-local idea as repository
+bindings. The committed roster maps members to number bands; pick an existing
+member (or add the first one). You never type a block number. When a band is
+full, add another range to the shared roster — still never a number in chat.
+
 ## 3. Gather context (optional)
 
 > Gather context about billing from sources/billing-requirements.md.

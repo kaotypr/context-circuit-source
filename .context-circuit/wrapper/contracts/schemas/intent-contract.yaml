@@ -36,11 +36,13 @@ intent_id:
   rules:
     - a leading `i`, then exactly three zero-padded decimal digits, then `-` and a slug
     - distinct from a plan id (NNNN-slug) so an id reads as an intent on sight
-    - three digits are the next after the highest intent id ever allocated
-    - i999 is the exact representational ceiling; allocation fails clearly beyond it
+    - three digits are the next after the highest intent number ever used in the current member's band (active and archived)
+    - default new-member band size is 99 intents; see members.yaml and member.local.yaml
+    - i999 is the exact representational ceiling; a full band or an unrepresentable id fails clearly without wrapping
     - lowercase kebab-case slug, no dates, underscores, punctuation, or hashes
     - unique across active and archived intents for the workspace lifetime
     - stable after creation even if title or status changes; never reused
+    - no member, machine, or workspace token in the id
 
 fields:
   schema_version: { type: integer, required: true, values: [2] }
@@ -154,6 +156,7 @@ invariants:
 rules:
   - INV-INTENT-01
   - INV-INTENT-02
+  - INV-MEMBER-01
   - INV-APPROVE-01
   - INV-ASSURE-01
   - INV-CANDIDATE-01

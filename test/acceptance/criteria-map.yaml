@@ -140,3 +140,30 @@ criteria:
   - id: AC-HOST-06
     statement: Shipped host folders store no credentials, transcripts, provider payloads, or authentication state.
     suite: test/host-native/test-host-routes.sh
+  - id: AC-BAND-01
+    statement: Two different members can allocate new intent and plan ids without either waiting for the other to push, and their new ids do not share a numeric prefix.
+    suite: test/bands/test-band-allocation.sh
+  - id: AC-BAND-02
+    statement: New intent and plan ids keep the existing short forms (iNNN-slug and NNNN-slug) with no person or machine token in the id.
+    suite: test/bands/test-band-allocation.sh
+  - id: AC-BAND-03
+    statement: Ordinary authoring never requires the user to state a block or band number; allocation uses a one-time local member identity plus the committed roster.
+    suite: test/bands/test-band-contracts.sh
+  - id: AC-BAND-04
+    statement: Missing local member identity stops once and asks the user to choose an existing roster member (or set up the first member), then writes the local identity — it does not invent a band or ask for numeric ranges in chat.
+    suite: test/bands/test-member-roster.sh
+  - id: AC-BAND-05
+    statement: Archived intent and plan numbers inside a band are never reused; the next id advances past the highest ever used in that band.
+    suite: test/bands/test-band-allocation.sh
+  - id: AC-BAND-06
+    statement: A multi-plan stack from one intent receives consecutive plan ids inside the current member's band, reserved together.
+    suite: test/bands/test-band-allocation.sh
+  - id: AC-BAND-07
+    statement: Execution branches continue to use cc/<plan-id>/<repository-id> with no member token added.
+    suite: test/bands/test-band-allocation.sh
+  - id: AC-BAND-08
+    statement: Existing intents and plans keep their current ids; enabling bands does not rename them.
+    suite: test/bands/test-band-allocation.sh
+  - id: AC-BAND-09
+    statement: Overlapping member bands, or two active/archived ids sharing a numeric prefix, are rejected; a full band fails clearly without wrapping.
+    suite: test/bands/test-band-allocation.sh
