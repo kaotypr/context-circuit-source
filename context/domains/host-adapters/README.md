@@ -127,13 +127,18 @@ provider payloads, transcripts, or auth state.
 ## Constraints and edge cases
 
 Optional live host probes are explicitly pass, unavailable, or blocked; never a
-false success. Host-native files stay pointers: `.context-circuit/agents` and
-the owning invariant remain the single policy. Cursor rules point at
-workspace-root `CURSOR.md`, not a second copy of the spawn rule, and must not
-import the nested product adapter in this source checkout. Codex has no
-documented project rules tree — do not create `.codex/rules/`. Personal host
-state (`~/.claude/`, `~/.codex/`, `~/.cursor/`, `settings.local.json`,
-transcripts, credentials) is never workspace state.
+false success. Host-native agent stubs stay pointers: `.context-circuit/agents`
+remain the role owners. Standing host rules cite the owning invariant and
+restate the clauses that must be true at commit or spawn time — they do not
+invent a second policy. The commit-convention rule restates INV-COMMIT-01's
+no-attribution clause (including stripping a host-injected trailer) because a
+worker or host git wrapper still commits without opening `invariants.yaml`.
+Cursor spawn rules point at workspace-root `CURSOR.md`, not a second copy of
+the spawn rule, and must not import the nested product adapter in this source
+checkout. Codex has no documented project rules tree — do not create
+`.codex/rules/`; Codex standing instructions stay in this adapter and agent
+TOML. Personal host state (`~/.claude/`, `~/.codex/`, `~/.cursor/`,
+`settings.local.json`, transcripts, credentials) is never workspace state.
 
 ## Adapter duties and limits
 
@@ -173,3 +178,8 @@ fallback. INV-HOST-01 is unchanged.
 Extended 2026-09-08: committed `.claude/`, `.codex/`, and `.cursor/` trees are
 the native integration surface. They route to existing owners; they are not
 optional host-local convenience and are not a second policy copy.
+
+Extended 2026-09-09: the commit-convention host rule restates INV-COMMIT-01's
+no-attribution clause (inspect and strip a host-injected trailer) instead of
+only pointing at the invariant, so a worker or host git wrapper still sees it
+at commit time.

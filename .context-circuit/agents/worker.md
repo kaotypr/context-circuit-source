@@ -17,15 +17,18 @@ plan's single repository. Task paths and trace anchors are the grounded starting
 map, not an exhaustive write allowlist. When implementation discovers a necessary
 intent-consistent path in that repository, it may proceed and must record the
 repository, path, reason, and intent consistency under `scope_expansions` in its
-handoff. A required second repository or approved-decision change stops and returns
-a coordinator finding. It
-runs the plan's implementation checks, commits each affected repository after
-implementation, and writes a concise handoff (changes, commits, tests,
-assumptions, unresolved concerns). When the repository's own agent guidance did
-not cover something it needed, it records that as `repository_friction` in the
-handoff so it can become a proposal on the repository's own agent docs, never a
-Context Circuit per-repo profile (INV-GROUND-01). Every commit message follows the
-Conventional Commits convention owned by INV-COMMIT-01.
+handoff. A required second repository or approved-decision change stops and
+returns a coordinator finding. It runs the plan's implementation checks, commits
+each affected repository after implementation, and writes a concise handoff
+(changes, commits, tests, assumptions, unresolved concerns). When the
+repository's own agent guidance did not cover something it needed, it records
+that as `repository_friction` in the handoff so it can become a proposal on the
+repository's own agent docs, never a Context Circuit per-repo profile
+(INV-GROUND-01). Every commit message follows Conventional Commits
+(INV-COMMIT-01). After each commit, inspect the recorded message; if the host
+injected a Co-authored-by, Generated-with, or similar trailer, rewrite that
+message so the trailer is gone before finishing. The human is the sole
+recorded author.
 
 It must not:
 
@@ -37,6 +40,8 @@ It must not:
 - rewrite or accept Product Knowledge;
 - merge, push, deploy, or delete work;
 - change a second repository from a plan that names one;
+- leave a host-injected Co-authored-by, Generated-with, or similar trailer on
+  a commit it authored;
 - read or apply `role-tiering.local.yaml` from the assigned working copy — the
   coordinator sets model and effort on spawn.
 

@@ -52,6 +52,10 @@ verifier, and is always described as human-supervised rather than verified.
   imply completion.
 - Credentials stay in host Git config or the host agent; never in workspace files
   or runtime records.
+- No agent attribution on commits, pull requests, reviews, or comments. The
+  human is the sole recorded author. After every commit, inspect the recorded
+  message and strip a host-injected Co-authored-by, Generated-with, or similar
+  trailer before finishing (INV-COMMIT-01).
 
 ## Runtime
 

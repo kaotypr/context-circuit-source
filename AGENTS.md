@@ -77,5 +77,8 @@ trailer, and any equivalent wording that credits a tool, model, provider, or
 this agent. If the host would inject such text automatically (Claude Code
 `attribution`, Codex `commit_attribution`, Cursor Attribution), it must be
 disabled so no attribution reaches the record; the agent must not re-add it in
-message text, and must strip any that appears in text it is composing. For
-product output this restates INV-COMMIT-01, which owns the rule.
+message text, and must strip any that appears in text it is composing. After
+every commit, inspect the recorded message (`git log -1 --format='%B'`); if a
+host trailer is still present, rewrite that recorded message so it is gone
+before finishing. For product output this restates INV-COMMIT-01, which owns
+the rule.

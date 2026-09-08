@@ -64,9 +64,15 @@ for skill_dir in "$ROOT"/.agents/skills/cc-*; do
 	esac
 done
 
-# --- standing rules point at owners, not a second policy ---
+# --- standing rules restate always-on clauses and cite the owner ---
 contains "$ROOT/.claude/rules/commit-convention.md" "INV-COMMIT-01"
 contains "$ROOT/.cursor/rules/commit-convention.mdc" "INV-COMMIT-01"
+contains "$ROOT/.claude/rules/commit-convention.md" "Co-authored-by"
+contains "$ROOT/.cursor/rules/commit-convention.mdc" "Co-authored-by"
+contains "$ROOT/.claude/rules/commit-convention.md" "inspect the recorded message"
+contains "$ROOT/.cursor/rules/commit-convention.mdc" "inspect the recorded message"
+not_contains "$ROOT/.claude/rules/commit-convention.md" "Do not restate the rule here"
+not_contains "$ROOT/.cursor/rules/commit-convention.mdc" "Do not restate the rule here"
 contains "$ROOT/.claude/rules/role-tiering-spawn.md" "CLAUDE.md"
 contains "$ROOT/.cursor/rules/role-tiering-spawn.mdc" "CURSOR.md"
 contains "$ROOT/.cursor/rules/role-tiering-spawn.mdc" "Do not import"
