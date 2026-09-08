@@ -72,10 +72,14 @@ invariants:
       (Gate 1, INV-APPROVE-01); it freezes contract_digest — the frozen identity of the
       criteria the change is later proven against (INV-CANDIDATE-01) — and also confirms
       the coordinator understood the plain ask, which is what lets the planner read the
-      real code next. Intent ids use the distinct form i<NNN>-slug, their own
+      real code next.       Intent ids use the distinct form i<NNN>-slug, their own
       never-reused sequence with a hard ceiling at i999; allocation fails clearly
       when no exact three-digit id is representable and never archives, deletes, or
-      recycles an identifier automatically.
+      recycles an identifier automatically. A committed member roster may map
+      members to non-overlapping intent number bands, and each machine names one
+      roster member in a host-local identity file; until band-scoped allocation
+      is in force the next unused id remains the workspace-wide sequence, and
+      the user is never asked to type a block number.
   - id: INV-INTENT-02
     rule: >
       A v1.0 plan declares its parent intent. On intent approval the coordinator spawns
@@ -161,7 +165,10 @@ invariants:
     rule: >
       New plans use stable IDs of the form NNNN-<kebab-slug>. The four-digit
       sequence is the next after the highest ever allocated and is never reused,
-      including after archive or restore. A ratified plan stack reserves one unique
+      including after archive or restore. A committed member roster may map
+      members to non-overlapping plan number bands with the same host-local
+      identity as intents; until band-scoped allocation is in force the next
+      unused id remains the workspace-wide sequence. A ratified plan stack reserves one unique
       consecutive range keyed by invocation identity, renders and validates the
       complete stack, then publishes every plan and index row or none. A successful
       same-invocation retry returns the original allocation; a failed unpublished
@@ -518,6 +525,8 @@ owners:
   task_projection: .context-circuit/wrapper/contracts/schemas/task.yaml
   repository_identity: .context-circuit/wrapper/contracts/schemas/workspace.yaml
   local_binding: .context-circuit/wrapper/contracts/schemas/repositories-local.yaml
+  member_roster: .context-circuit/wrapper/contracts/schemas/members.yaml
+  member_identity: .context-circuit/wrapper/contracts/schemas/member-local.yaml
   commit_convention: .context-circuit/wrapper/contracts/invariants.yaml
   runtime: .context-circuit/wrapper/runtime/engine.sh
   path_leases: .context-circuit/wrapper/runtime/engine.sh

@@ -17,7 +17,12 @@ Retrieve relevant Product Knowledge by the request's concepts via
 source files (a `sources/` doc or a `sources/system-design/` design may ground the
 intent; `sources/` stays passive — INV-SEC-02). Allocate a stable intent id with
 the runtime `intent-allocate-id` (form `i<NNN>-slug`, its own never-reused
-sequence, distinct from plan ids).
+sequence, distinct from plan ids). Before `intent-allocate-id`, resolve local
+member identity with `member-band-resolve` (or `member-identity-read`). If
+identity is missing (`MEMBER_IDENTITY_MISSING`), stop and use `cc-workspace` for
+the one-time roster-member choice — never prompt for a block number or numeric
+range. Allocation itself remains the workspace-wide sequence until band-scoped
+allocation is in force.
 
 Write two files with a strict division of audience. `intent/<id>/INTENT.md` is
 **what the human reads** — plain, short; it reassures them that the blurry thing
@@ -149,6 +154,8 @@ they approve — that is not a second product-level design and not a second gate
 Invoke from the workspace directory (`.context-circuit/wrapper/adapters/AGENTS.md` → Runtime owns
 the invoke-not-read boundary):
 
+- `sh .context-circuit/wrapper/runtime/engine.sh member-band-resolve .` — require
+  a resolved roster member before `intent-allocate-id`; never pass a numeric range.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNN>-slug`.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.

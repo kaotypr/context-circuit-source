@@ -18,6 +18,7 @@ done
 for concern in intent_contract intent_gate feasibility_check planner_role trace_manifest \
 	candidate_identity human_acceptance assurance_tiering \
 	plan_lifecycle runtime repository_identity local_binding \
+	member_roster member_identity \
 	execution_records verifier_result completion_record \
 	worker_role verifier_role coordinator_role path_leases path_lease_records \
 	base_selection run_stack_action repository_grounding grounding_manifest \
@@ -63,6 +64,8 @@ contains "$man" "host-neutral-deterministic-library"
 contains "$man" "automatic plan completion"
 contains "$man" "provider-specific child-agent launch"
 contains "$man" "pairing-session: [1]"
+contains "$man" "members: [1]"
+contains "$man" "member-local: [1]"
 contains "${W}/contracts/schemas/repositories-local.yaml" "base_branch"
 contains "${W}/contracts/schemas/repositories-local.yaml" "anchor_branch"
 contains "${W}/contracts/schemas/execution.yaml" "base_branch"
@@ -78,7 +81,7 @@ for s in workspace repositories-local intent-contract plan task execution worker
 	verifier-result candidate human-acceptance completion context-impact context-index lease \
 	grounding-manifest pairing-session publication-config publication-field-intent \
 	publication-record \
-	publication-thread-record; do
+	publication-thread-record members member-local; do
 	require_file "${W}/contracts/schemas/$s.yaml"
 done
 for old in delegation session stack child-start context-receipt handoff archive; do
@@ -98,6 +101,7 @@ not_contains "${W}/runtime/engine.sh" "cc_confirmation_card"
 not_contains "${W}/runtime/engine.sh" "CC_SCHEMA_VERSION"
 for record_schema in \
 	CC_REPOSITORIES_LOCAL_SCHEMA_VERSION CC_PAIRING_SESSION_SCHEMA_VERSION \
+	CC_MEMBERS_SCHEMA_VERSION CC_MEMBER_LOCAL_SCHEMA_VERSION \
 	CC_GROUNDING_MANIFEST_SCHEMA_VERSION CC_LEASE_SCHEMA_VERSION \
 	CC_EXECUTION_SCHEMA_VERSION CC_CANDIDATE_SCHEMA_VERSION \
 	CC_CHANGE_SET_SCHEMA_VERSION CC_VERIFIER_RESULT_SCHEMA_VERSION \

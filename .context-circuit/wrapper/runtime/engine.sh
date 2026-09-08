@@ -6,7 +6,8 @@
 # also be invoked as a thin CLI: `sh engine.sh <command> [--flag value ...]`.
 #
 # This runtime OWNS: safe path/identifier checks, atomic writes and digests,
-# workspace and repository-binding validation, base branch/commit validation,
+# workspace and repository-binding validation, member roster validation and
+# local identity resolution, base branch/commit validation,
 # branch/worktree preparation, plan structure and intent-derived authorization validation,
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
@@ -32,6 +33,8 @@ CC_RUNTIME_VERSION="1.0.0"
 # Each persisted runtime record owns its schema version independently. These
 # constants are record-format versions, not runtime or template versions.
 CC_REPOSITORIES_LOCAL_SCHEMA_VERSION="2"
+CC_MEMBERS_SCHEMA_VERSION="1"
+CC_MEMBER_LOCAL_SCHEMA_VERSION="1"
 CC_PLAN_SCHEMA_VERSION="3"
 CC_PAIRING_SESSION_SCHEMA_VERSION="1"
 CC_GROUNDING_MANIFEST_SCHEMA_VERSION="1"
@@ -687,6 +690,7 @@ cc_workspace_init() {
 	[ -f "$cc_wi_root/intent/INDEX.md" ] || cc_intent_index_init "$cc_wi_root"
 	[ -f "$cc_wi_root/context/INDEX.md" ] || printf '# Context index\n\nNo accepted context units yet.\n' | cc_atomic_write "$cc_wi_root/context/INDEX.md"
 	[ -f "$cc_wi_root/repositories.local.yaml" ] || printf 'schema_version: %s\nbindings: {}\n' "$CC_REPOSITORIES_LOCAL_SCHEMA_VERSION" | cc_atomic_write "$cc_wi_root/repositories.local.yaml"
+	[ -f "$cc_wi_root/members.yaml" ] || printf 'schema_version: %s\nmembers:\n' "$CC_MEMBERS_SCHEMA_VERSION" | cc_atomic_write "$cc_wi_root/members.yaml"
 	cc_emit workspace_init ok
 	return 0
 }
@@ -694,6 +698,181 @@ cc_workspace_init() {
 cc_plan_index_init() {
 	printf '# Active plans\n\n| Plan ID | Title | Status | Objective | Repositories | Path |\n| --- | --- | --- | --- | --- | --- |\n' \
 		| cc_atomic_write "$1/plans/INDEX.md"
+}
+
+# ---------------------------------------------------------------------------
+# Member roster and host-local identity
+# ---------------------------------------------------------------------------
+
+# cc_member_field ROOT MEMBER FIELD -> one scalar under members.yaml
+cc_member_field() {
+	cc_mf_file="$1/members.yaml"
+	[ -f "$cc_mf_file" ] || return 1
+	awk -v mem="$2" -v field="$3" '
+		/^members:/ { in_m=1; next }
+		in_m && /^[A-Za-z]/ { in_m=0 }
+		in_m && /^[[:space:]][[:space:]][A-Za-z0-9._-]+:/ {
+			k=$0; sub("^[[:space:]]+", "", k); sub(":.*$", "", k)
+			cur=(k==mem); next
+		}
+		in_m && cur && $0 ~ "^[[:space:]]+" field ":[[:space:]]*" {
+			sub("^[[:space:]]+" field ":[[:space:]]*", "")
+			gsub(/[[:space:]]+$/, ""); gsub(/^["'"'"']|["'"'"']$/, "")
+			print; found=1; exit
+		}
+		END { if (!found) exit 1 }
+	' "$cc_mf_file"
+}
+
+# cc_member_ids ROOT -> roster member ids in file order
+cc_member_ids() {
+	cc_mi_file="$1/members.yaml"
+	[ -f "$cc_mi_file" ] || return 1
+	awk '
+		/^members:/ { in_m=1; next }
+		in_m && /^[A-Za-z]/ { in_m=0 }
+		in_m && /^[[:space:]][[:space:]][A-Za-z0-9._-]+:/ {
+			k=$0; sub("^[[:space:]]+", "", k); sub(":.*$", "", k)
+			if (k != "") print k
+		}
+	' "$cc_mi_file"
+}
+
+# cc_member_roster_validate ROOT -> committed roster present, well-formed, non-overlapping
+cc_member_roster_validate() {
+	cc_mrv_root="$1"
+	cc_mrv_file="$cc_mrv_root/members.yaml"
+	[ -f "$cc_mrv_file" ] || { cc_fail MEMBER_ROSTER_MISSING; return 1; }
+	cc_mrv_schema=$(cc_scalar "$cc_mrv_file" schema_version) || cc_mrv_schema=""
+	[ "$cc_mrv_schema" = "$CC_MEMBERS_SCHEMA_VERSION" ] || { cc_fail MEMBER_ROSTER_INVALID; return 1; }
+	cc_mrv_st=0
+	awk '
+		function safe_id(s) {
+			if (s == "" || length(s) > 96) return 0
+			if (s ~ /^-/ || s ~ /^\./) return 0
+			if (s ~ /[^A-Za-z0-9._-]/) return 0
+			return 1
+		}
+		function is_uint(s) { return (s ~ /^[0-9]+$/) }
+		function flush() {
+			if (cur == "") return
+			n++
+			id[n] = cur
+			if (!safe_id(cur)) bad_form = 1
+			if (dn == "" || is == "" || ie == "" || ps == "" || pe == "") bad_form = 1
+			if (is != "" && !is_uint(is)) bad_band = 1
+			if (ie != "" && !is_uint(ie)) bad_band = 1
+			if (ps != "" && !is_uint(ps)) bad_band = 1
+			if (pe != "" && !is_uint(pe)) bad_band = 1
+			if (is_uint(is) && (is + 0 < 1 || is + 0 > 999)) bad_band = 1
+			if (is_uint(ie) && (ie + 0 < 1 || ie + 0 > 999)) bad_band = 1
+			if (is_uint(ps) && (ps + 0 < 1 || ps + 0 > 9999)) bad_band = 1
+			if (is_uint(pe) && (pe + 0 < 1 || pe + 0 > 9999)) bad_band = 1
+			if (is_uint(is) && is_uint(ie) && (is + 0 > ie + 0)) bad_band = 1
+			if (is_uint(ps) && is_uint(pe) && (ps + 0 > pe + 0)) bad_band = 1
+			ist[n] = is + 0; ien[n] = ie + 0
+			pst[n] = ps + 0; pen[n] = pe + 0
+			cur = ""; dn = ""; is = ""; ie = ""; ps = ""; pe = ""
+		}
+		BEGIN { in_m = 0; seen_members = 0; n = 0; bad_form = 0; bad_band = 0; bad_overlap = 0 }
+		/^[[:space:]]*#/ { next }
+		/^[[:space:]]*$/ { next }
+		/^members:/ { flush(); in_m = 1; seen_members = 1; next }
+		in_m && /^[A-Za-z]/ { flush(); in_m = 0 }
+		in_m && /^[[:space:]][[:space:]][A-Za-z0-9._-]+:/ {
+			flush()
+			k = $0; sub("^[[:space:]]+", "", k); sub(":.*$", "", k)
+			if (seen[k]) bad_form = 1
+			seen[k] = 1
+			cur = k
+			next
+		}
+		in_m && cur != "" && /^[[:space:]]+display_name:[[:space:]]*/ {
+			val = $0; sub("^[[:space:]]+display_name:[[:space:]]*", "", val)
+			gsub(/[[:space:]]+$/, "", val); gsub(/^["'"'"']|["'"'"']$/, "", val)
+			dn = val
+			next
+		}
+		in_m && cur != "" && /^[[:space:]]+intent_band_start:[[:space:]]*/ {
+			val = $0; sub("^[[:space:]]+intent_band_start:[[:space:]]*", "", val)
+			gsub(/[[:space:]]+$/, "", val); is = val; next
+		}
+		in_m && cur != "" && /^[[:space:]]+intent_band_end:[[:space:]]*/ {
+			val = $0; sub("^[[:space:]]+intent_band_end:[[:space:]]*", "", val)
+			gsub(/[[:space:]]+$/, "", val); ie = val; next
+		}
+		in_m && cur != "" && /^[[:space:]]+plan_band_start:[[:space:]]*/ {
+			val = $0; sub("^[[:space:]]+plan_band_start:[[:space:]]*", "", val)
+			gsub(/[[:space:]]+$/, "", val); ps = val; next
+		}
+		in_m && cur != "" && /^[[:space:]]+plan_band_end:[[:space:]]*/ {
+			val = $0; sub("^[[:space:]]+plan_band_end:[[:space:]]*", "", val)
+			gsub(/[[:space:]]+$/, "", val); pe = val; next
+		}
+		END {
+			flush()
+			if (!seen_members) bad_form = 1
+			for (i = 1; i <= n; i++) {
+				for (j = i + 1; j <= n; j++) {
+					if (ist[i] <= ien[j] && ist[j] <= ien[i]) bad_overlap = 1
+					if (pst[i] <= pen[j] && pst[j] <= pen[i]) bad_overlap = 1
+				}
+			}
+			if (bad_form) exit 4
+			if (bad_band) exit 3
+			if (bad_overlap) exit 2
+		}
+	' "$cc_mrv_file" || cc_mrv_st=$?
+	case "$cc_mrv_st" in
+		0) ;;
+		2) cc_fail MEMBER_BAND_OVERLAP; return 1 ;;
+		3) cc_fail MEMBER_BAND_INVALID; return 1 ;;
+		*) cc_fail MEMBER_ROSTER_INVALID; return 1 ;;
+	esac
+	cc_emit roster ok
+	return 0
+}
+
+# cc_member_identity_read ROOT -> active member id from member.local.yaml
+# Extra arguments are ignored; a numeric range is never accepted as identity.
+cc_member_identity_read() {
+	cc_mir_root="$1"
+	cc_mir_file="$cc_mir_root/member.local.yaml"
+	[ -f "$cc_mir_file" ] || { cc_fail MEMBER_IDENTITY_MISSING; return 1; }
+	cc_mir_schema=$(cc_scalar "$cc_mir_file" schema_version) || cc_mir_schema=""
+	[ "$cc_mir_schema" = "$CC_MEMBER_LOCAL_SCHEMA_VERSION" ] || { cc_fail MEMBER_IDENTITY_UNKNOWN; return 1; }
+	cc_mir_id=$(cc_scalar "$cc_mir_file" member) || cc_mir_id=""
+	cc_mir_id=$(printf '%s' "$cc_mir_id" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^["'"'"']//;s/["'"'"']$//')
+	cc_safe_id "$cc_mir_id" || { cc_fail MEMBER_IDENTITY_UNKNOWN; return 1; }
+	[ -f "$cc_mir_root/members.yaml" ] || { cc_fail MEMBER_ROSTER_MISSING; return 1; }
+	cc_mir_found=0
+	for cc_mir_k in $(cc_member_ids "$cc_mir_root"); do
+		[ "$cc_mir_k" = "$cc_mir_id" ] && cc_mir_found=1
+	done
+	[ "$cc_mir_found" -eq 1 ] || { cc_fail MEMBER_IDENTITY_UNKNOWN; return 1; }
+	cc_emit member "$cc_mir_id"
+	return 0
+}
+
+# cc_member_band_resolve ROOT -> validate roster, read identity, emit active bands
+cc_member_band_resolve() {
+	cc_mbr_root="$1"
+	cc_member_roster_validate "$cc_mbr_root" >/dev/null || return 1
+	cc_mbr_out=$(cc_member_identity_read "$cc_mbr_root") || return 1
+	cc_mbr_id=$(printf '%s\n' "$cc_mbr_out" | sed -n 's/^member: //p')
+	[ -n "$cc_mbr_id" ] || { cc_fail MEMBER_IDENTITY_MISSING; return 1; }
+	cc_mbr_is=$(cc_member_field "$cc_mbr_root" "$cc_mbr_id" intent_band_start) || cc_mbr_is=""
+	cc_mbr_ie=$(cc_member_field "$cc_mbr_root" "$cc_mbr_id" intent_band_end) || cc_mbr_ie=""
+	cc_mbr_ps=$(cc_member_field "$cc_mbr_root" "$cc_mbr_id" plan_band_start) || cc_mbr_ps=""
+	cc_mbr_pe=$(cc_member_field "$cc_mbr_root" "$cc_mbr_id" plan_band_end) || cc_mbr_pe=""
+	[ -n "$cc_mbr_is" ] && [ -n "$cc_mbr_ie" ] && [ -n "$cc_mbr_ps" ] && [ -n "$cc_mbr_pe" ] \
+		|| { cc_fail MEMBER_ROSTER_INVALID; return 1; }
+	cc_emit member "$cc_mbr_id"
+	cc_emit intent_start "$cc_mbr_is"
+	cc_emit intent_end "$cc_mbr_ie"
+	cc_emit plan_start "$cc_mbr_ps"
+	cc_emit plan_end "$cc_mbr_pe"
+	return 0
 }
 
 # ---------------------------------------------------------------------------
@@ -3785,6 +3964,9 @@ cc_main() {
 	case "$cc_cmd" in
 		workspace-validate)      cc_workspace_validate "$@" ;;
 		workspace-init)          cc_workspace_init "$@" ;;
+		member-roster-validate)  cc_member_roster_validate "$@" ;;
+		member-identity-read)    cc_member_identity_read "$@" ;;
+		member-band-resolve)     cc_member_band_resolve "$@" ;;
 		repository-register)     cc_repository_register "$@" ;;
 		repository-binding-migrate) cc_repository_binding_migrate "$@" ;;
 		repository-resolve)      cc_repo_resolve "$@" ;;

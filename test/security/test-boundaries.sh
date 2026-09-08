@@ -39,6 +39,7 @@ done
 
 # --- the template ignores local bindings, checkouts, and runtime state ---
 contains "$ROOT/template/.gitignore" "repositories.local.yaml"
+contains "$ROOT/template/.gitignore" "/member.local.yaml"
 contains "$ROOT/template/.gitignore" "/repositories/"
 contains "$ROOT/template/.gitignore" "/.runtime/"
 contains "$ROOT/template/.gitignore" ".code-review-graph"

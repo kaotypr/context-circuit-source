@@ -219,3 +219,23 @@ cc_fx_plan_intent() {
 	printf '# %s\n\nObjective: %s objective.\n' "$cc_fxpi_title" "$cc_fxpi_title" >"$cc_fxpi_dir/PLAN.md"
 	cc_plan_index_upsert "$cc_fxpi_ws" "$cc_fxpi_pid" >/dev/null
 }
+
+# cc_fx_roster WS [ID] [INTENT_START] [INTENT_END] [PLAN_START] [PLAN_END] [DISPLAY]
+# Overwrite members.yaml with a one-member roster. Defaults: kao, 1-99 / 1-999.
+cc_fx_roster() {
+	cc_fxro_ws=$1
+	cc_fxro_id=${2:-kao}
+	cc_fxro_is=${3:-1}
+	cc_fxro_ie=${4:-99}
+	cc_fxro_ps=${5:-1}
+	cc_fxro_pe=${6:-999}
+	cc_fxro_dn=${7:-$cc_fxro_id}
+	printf 'schema_version: 1\nmembers:\n  %s:\n    display_name: %s\n    intent_band_start: %s\n    intent_band_end: %s\n    plan_band_start: %s\n    plan_band_end: %s\n' \
+		"$cc_fxro_id" "$cc_fxro_dn" "$cc_fxro_is" "$cc_fxro_ie" "$cc_fxro_ps" "$cc_fxro_pe" \
+		>"$cc_fxro_ws/members.yaml"
+}
+
+# cc_fx_member_identity WS MEMBER -> write host-local member.local.yaml
+cc_fx_member_identity() {
+	printf 'schema_version: 1\nmember: %s\n' "$2" >"$1/member.local.yaml"
+}
