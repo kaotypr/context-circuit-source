@@ -10,6 +10,9 @@ run_suite() {
 
 run_suite test/contracts/test-contracts.sh
 run_suite test/runtime/test-runtime.sh
+run_suite test/bands/test-member-roster.sh
+run_suite test/bands/test-band-allocation.sh
+run_suite test/bands/test-band-contracts.sh
 run_suite test/repositories/test-repositories.sh
 run_suite test/plans/test-plans.sh
 run_suite test/plans/test-decomposition.sh
@@ -54,6 +57,13 @@ grep -q '^implicit_external_checks: false' "$map" || { printf 'FAIL: criteria ma
 n=1
 while [ "$n" -le 38 ]; do
 	id=$(printf 'AC-%02d' "$n")
+	grep -q "id: $id" "$map" || { printf 'FAIL: criteria map missing %s\n' "$id" >&2; exit 1; }
+	n=$((n + 1))
+done
+
+n=1
+while [ "$n" -le 9 ]; do
+	id=$(printf 'AC-BAND-%02d' "$n")
 	grep -q "id: $id" "$map" || { printf 'FAIL: criteria map missing %s\n' "$id" >&2; exit 1; }
 	n=$((n + 1))
 done

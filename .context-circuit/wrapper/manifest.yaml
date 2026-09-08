@@ -33,6 +33,8 @@ accepted_schema_versions:
   context-impact: [1]
   context-index: [1]
   pairing-session: [1]
+  members: [1]
+  member-local: [1]
   publication-config: [1]
   publication-field-intent: [1]
   publication-record: [1]
@@ -76,6 +78,7 @@ release_boundary:
     - repositories/
     - repositories.local.yaml
     - role-tiering.local.yaml
+    - member.local.yaml
     - node_modules/
     - .code-review-graph/
 
@@ -94,8 +97,10 @@ upgrade_boundary:
     - intent/
     - sources/
     - plans/
+    - members.yaml
     - repositories.local.yaml
     - repositories/
+    - member.local.yaml
     - .runtime/
 
 identity:

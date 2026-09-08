@@ -20,7 +20,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit | One Product Knowledge unit with a stable ID, summary, scope, facts, decisions, and provenance. |
 | Context index | The retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to context units. |
-| Intent | The first-class decision for one change (Context Circuit v1.0): goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, and consequence tier. Approving it is the single upstream human gate (Gate 1); approval freezes its contract and confirms the coordinator understood the ask. Ids take the form `i<NNN>-slug`. |
+| Intent | The first-class decision for one change (Context Circuit v1.0): goal, non-goals, constraints, outcome-level acceptance criteria, a coarse optional scope, and consequence tier. Approving it is the single upstream human gate (Gate 1); approval freezes its contract and confirms the coordinator understood the ask. Ids take the form `i<NNN>-slug`, allocated inside the current member's number band. |
 | Contract | The machine record of an intent (`contract.yaml`); its frozen digest identifies the criteria the change is proven against. |
 | Acceptance criterion | One condition that defines "correct" at the outcome level; the runnable check that proves it is earned against the real code by the planner, carried in the plan. |
 | Planner | An independent child that reads the real code after approval (one child per repository) and writes that repository's plan when the look is feasible. |
@@ -30,7 +30,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Human acceptance | A first-class record that a human accepted a specific candidate ("looks right, ship it"). Distinct from marking the plan done. |
 | Promote | Turn an Explore (direct-collaboration) session into a candidate-bearing change by attaching an intent and raising the tier. |
 | Change set | Same-repository plans delivered as one covering-tip pull request; the candidate is the member tip map, accepted once, with no delivery-time check. Named plans partition by covering tip; a repository may have several sibling stacks. |
-| Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives from the approved intent and the planner's look. |
+| Plan | The derivation of an approved intent into an outcome: coverage, grounding, repository map, tasks, acceptance, verification, risks, open questions. Under v1.0 a plan carries no second approval — it derives from the approved intent and the planner's look. Ids take the form `NNNN-slug`, allocated inside the current member's number band. |
 | Plan status | The `draft` or `done` state of a plan (no intermediate `approved`). It is a projection: authorization follows the approved intent (criteria unchanged since approval); Standard and Critical become done only on an explicit mark-done. |
 | Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
 | Worker | The single role that implements an intent-authorized plan and commits its changes for one execution. |
@@ -40,6 +40,9 @@ importantly, how the coordinator translates them into plain language for a user.
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
 | Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
+| Member roster | Committed `members.yaml` mapping each person to non-overlapping intent and plan number bands. Portable; shipped with the workspace. |
+| Member identity | Gitignored `member.local.yaml` naming which roster member this machine is — set once, like `repositories.local.yaml`. |
+| Number band | The inclusive id range a member allocates from. Next id is highest-in-band plus one (active and archived). Exhaustion adds a new band; it never wraps. |
 | Host-blocked | A state where the environment cannot run a required step (for example, an independent check), so the coordinator reports it and preserves the work rather than faking the step. |
 | Plan stack | A named set of intent-authorized plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`. A v1.0 plan is `schema_version: 3`. |
@@ -81,7 +84,7 @@ explicitly asks for diagnostics.
 | Verifier | "the verifier" | "an independent check" — "I had it checked independently" |
 | Worker | "the worker" | "I made the changes" |
 | Host-blocked | "host-blocked" | "I can't run an independent check in this environment right now" |
-| Workspace and runtime files (`workspace.yaml`, `repositories.local.yaml`, `plan.yaml`, `plans/INDEX.md`, `engine.sh`) | any internal file name | the thing by its effect — "your plan", "your connected projects" |
+| Workspace and runtime files (`workspace.yaml`, `repositories.local.yaml`, `members.yaml`, `member.local.yaml`, `plan.yaml`, `plans/INDEX.md`, `engine.sh`) | any internal file name | the thing by its effect — "your plan", "your connected projects", "who you are on this machine" |
 | Delivery / delivery boundary | "delivery boundary" | "opening a pull request", named as a separate step |
 | Archive / restore (as file moves) | the file-move mechanics | "set aside" / "bring back" the plan |
 | Path lease / region | "lease", "path region" | say nothing about the mechanism; if relevant, "I ran those together" or "I did those one after another" |

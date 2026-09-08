@@ -26,7 +26,11 @@ missing file in an isolated working copy is not an absent config.
 For each repository in the intent's scope, spawn **one planner child per repository**,
 in parallel when each child writes only its own repository's
 plan or plans. If two children would allocate plan ids at the same time, spawn them
-sequentially instead. Deliver the assembled
+sequentially instead. Plan ids come from `plan-allocate-id` inside the current
+member's band (INV-PLAN-03, INV-MEMBER-01). Identity is already resolved at
+intent authoring; if allocation reports `MEMBER_IDENTITY_MISSING`, stop and use
+`cc-workspace` — never prompt for a block number. If the band is exhausted
+(`PLAN_ID_EXHAUSTED`), extend the roster rather than wrapping. Deliver the assembled
 `.context-circuit/agents/planner-brief.md` with intent id, repository
 id, tier, and workspace root filled in. Do not paste the contract. Do not add extra classification homework, naming notes, or a request to reconcile old product names.
 

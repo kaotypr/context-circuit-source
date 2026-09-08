@@ -14,6 +14,7 @@ review_date: 2026-11-24
 freshness: accepted-from-current-wrapper
 assumptions:
   - Portable identity lives in workspace.yaml; host-local paths in repositories.local.yaml.
+  - Member roster is portable members.yaml; host-local identity is member.local.yaml.
 unknowns: []
 contradictions: []
 acceptance:
@@ -75,6 +76,15 @@ scanning the filesystem or substituting a similarly named path (INV-REPO-04).
 Workspace-relative paths reject traversal and unsafe symlinks; credentials
 remain in host Git configuration or the host agent (INV-SEC-01).
 
+## Member identity
+
+Portable member roster lives in committed `members.yaml` (non-overlapping intent
+and plan number bands). Host-local identity lives in gitignored
+`member.local.yaml`, the same once-per-machine convention as
+`repositories.local.yaml`. Gitignore is not a read block. Missing identity
+fails closed (`MEMBER_IDENTITY_MISSING`); the human chooses an existing roster
+member once. Allocation never asks for a block number (INV-MEMBER-01).
+
 ## Workflows
 
 - Orient, connect, clone, or initialize a repository: `.context-circuit/docs/getting-started.md`
@@ -83,6 +93,8 @@ remain in host Git configuration or the host agent (INV-SEC-01).
 
 - Shared identity: `workspace.yaml` `repositories.<key>`
 - Host binding: `repositories.local.yaml` (`path`, `base_branch`)
+- Member roster: `members.yaml` (portable bands)
+- Member identity: `member.local.yaml` (host-local; gitignored)
 - Convenience directory: `repositories/<key>` (gitignored; never assumed present)
 - Reserved id: `workspace` at path `.`
 - Missing-binding signal: `BINDING_MISSING`
@@ -121,9 +133,11 @@ different users may set different base branches for the same logical repository.
   `cc_repository_preflight`, `cc_worktree_prepare`, `cc_workspace_validate`,
   `cc_workspace_init`
 - `.context-circuit/wrapper/contracts/schemas/workspace.yaml`,
-  `.context-circuit/wrapper/contracts/schemas/repositories-local.yaml`
+  `.context-circuit/wrapper/contracts/schemas/repositories-local.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/members.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/member-local.yaml`
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-REPO-01, INV-REPO-02, INV-REPO-03,
-  INV-REPO-04, INV-SEC-01
+  INV-REPO-04, INV-SEC-01, INV-MEMBER-01
 - `.agents/skills/cc-workspace/SKILL.md`
 
 ## Acceptance notes

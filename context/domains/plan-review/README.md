@@ -52,9 +52,11 @@ available evidence; missing or contradictory information becomes an explicit
 open question, assumption, or risk rather than an invented decision
 (INV-PLAN-04). Every task names the repository or repositories it may change and
 bounded paths or an explicit repository-wide scope, with explicit dependencies
-(INV-PLAN-02). New plans use stable ids `NNNN-<kebab-slug>`; the four-digit
-sequence is the next after the highest ever allocated and is never reused
-(INV-PLAN-03).
+(INV-PLAN-02). New plans use stable ids `NNNN-<kebab-slug>`; the next id is one
+past the highest number ever used in the current member's plan band among active
+and archived plans and is never reused, including after archive (INV-PLAN-03,
+INV-MEMBER-01). Member names do not appear in the id or in execution branches
+(`cc/<plan-id>/<repository-id>`).
 
 `plan.yaml` owns human plan status (`draft`, `done`); task status is a
 synchronized projection and never a second lifecycle authority (INV-PLAN-01).
@@ -100,17 +102,18 @@ acceptance and verification ids, the repair limit, plan-level stop conditions,
 and the context units to reassess at completion.
 
 Request fidelity: a plan removes repetition, not meaning; detail is not discarded
-merely to shorten. (Note: `INV-PLAN-03`, the never-reused / next-after-highest id
-rule, is a shipped invariant beyond the design; see `context/DESIGN-DELTAS.md`.)
+merely to shorten. (Note: `INV-PLAN-03` is the band-scoped never-reused /
+next-after-highest-in-band id rule; see `context/DESIGN-DELTAS.md`.)
 
 ## Implementation references
 
 - `.agents/skills/cc-plan/SKILL.md`
 - `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_allocate_id`, `cc_plan_validate`,
-  `cc_plan_status`
-- `.context-circuit/wrapper/contracts/schemas/plan.yaml`, `.context-circuit/wrapper/contracts/schemas/task.yaml`
+  `cc_plan_status`, `cc_member_band_resolve`
+- `.context-circuit/wrapper/contracts/schemas/plan.yaml`, `.context-circuit/wrapper/contracts/schemas/task.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/members.yaml`, `.context-circuit/wrapper/contracts/schemas/member-local.yaml`
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-01, INV-PLAN-02, INV-PLAN-03,
-  INV-PLAN-04
+  INV-PLAN-04, INV-MEMBER-01
 
 ## Acceptance notes
 

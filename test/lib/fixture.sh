@@ -9,6 +9,8 @@ cc_fx_ws() {
 	printf 'schema_version: 1\nworkspace: fx-ws\ntitle: Fixture\nrepositories: []\n' >"$cc_fx_root/workspace.yaml"
 	mkdir -p "$cc_fx_root/.context-circuit/wrapper"
 	cc_workspace_init "$cc_fx_root" >/dev/null
+	cc_fx_roster "$cc_fx_root" kao 1 99 1 999
+	cc_fx_member_identity "$cc_fx_root" kao
 	printf '# Project\n\nFixture project knowledge.\n' >"$cc_fx_root/context/PROJECT.md"
 	printf '%s' "$cc_fx_root"
 }
@@ -218,4 +220,35 @@ cc_fx_plan_intent() {
 	} >"$cc_fxpi_dir/plan.yaml"
 	printf '# %s\n\nObjective: %s objective.\n' "$cc_fxpi_title" "$cc_fxpi_title" >"$cc_fxpi_dir/PLAN.md"
 	cc_plan_index_upsert "$cc_fxpi_ws" "$cc_fxpi_pid" >/dev/null
+}
+
+# cc_fx_roster WS [ID] [INTENT_START] [INTENT_END] [PLAN_START] [PLAN_END] [DISPLAY]
+# Overwrite members.yaml with a one-member roster. Defaults: kao, 1-99 / 1-999.
+cc_fx_roster() {
+	cc_fxro_ws=$1
+	cc_fxro_id=${2:-kao}
+	cc_fxro_is=${3:-1}
+	cc_fxro_ie=${4:-99}
+	cc_fxro_ps=${5:-1}
+	cc_fxro_pe=${6:-999}
+	cc_fxro_dn=${7:-$cc_fxro_id}
+	printf 'schema_version: 1\nmembers:\n  %s:\n    display_name: %s\n    intent_band_start: %s\n    intent_band_end: %s\n    plan_band_start: %s\n    plan_band_end: %s\n' \
+		"$cc_fxro_id" "$cc_fxro_dn" "$cc_fxro_is" "$cc_fxro_ie" "$cc_fxro_ps" "$cc_fxro_pe" \
+		>"$cc_fxro_ws/members.yaml"
+}
+
+# cc_fx_member_identity WS MEMBER -> write host-local member.local.yaml
+cc_fx_member_identity() {
+	printf 'schema_version: 1\nmember: %s\n' "$2" >"$1/member.local.yaml"
+}
+
+# cc_fx_roster_pair WS [ID_A] [ID_B] -> two-member roster for parallel allocation.
+# Defaults: kao 1-99 / 1-999 and bobby 100-199 / 1000-1999.
+cc_fx_roster_pair() {
+	cc_fxrp_ws=$1
+	cc_fxrp_a=${2:-kao}
+	cc_fxrp_b=${3:-bobby}
+	printf 'schema_version: 1\nmembers:\n  %s:\n    display_name: %s\n    intent_band_start: 1\n    intent_band_end: 99\n    plan_band_start: 1\n    plan_band_end: 999\n  %s:\n    display_name: %s\n    intent_band_start: 100\n    intent_band_end: 199\n    plan_band_start: 1000\n    plan_band_end: 1999\n' \
+		"$cc_fxrp_a" "$cc_fxrp_a" "$cc_fxrp_b" "$cc_fxrp_b" \
+		>"$cc_fxrp_ws/members.yaml"
 }
