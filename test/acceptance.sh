@@ -43,6 +43,7 @@ run_suite test/host-native/test-host-routes.sh
 run_suite test/scenarios/test-scenarios.sh
 run_suite test/release/test-release.sh
 run_suite test/release/test-publish.sh
+run_suite test/release/test-gitlab-mirror-workflow.sh
 run_suite agent-harness/test-template-runtime.sh
 run_suite agent-harness/human/test-codex-driver.sh
 run_suite agent-harness/human/test-direct-collaboration-scenario.sh

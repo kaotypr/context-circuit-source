@@ -82,3 +82,16 @@ jobs:
             --title "v$V" \
             --notes-file release-notes.md \
             "${{ steps.publish.outputs.archive }}#context-circuit-v$V.tar.gz"
+
+      - name: Push commit and tag to GitLab
+        env:
+          GITLAB_TEMPLATE_PROJECT: ${{ vars.GITLAB_TEMPLATE_PROJECT }}
+          GITLAB_TEMPLATE_TOKEN: ${{ secrets.GITLAB_TEMPLATE_TOKEN }}
+        run: |
+          V="${{ steps.resolve.outputs.version }}"
+          : "${GITLAB_TEMPLATE_PROJECT:?GITLAB_TEMPLATE_PROJECT is not set}"
+          : "${GITLAB_TEMPLATE_TOKEN:?GITLAB_TEMPLATE_TOKEN is not set}"
+          git -C .template-repo remote add gitlab \
+            "https://oauth2:${GITLAB_TEMPLATE_TOKEN}@gitlab.sicepat.tech/${GITLAB_TEMPLATE_PROJECT}.git"
+          git -C .template-repo push gitlab main
+          git -C .template-repo push gitlab "v$V"
