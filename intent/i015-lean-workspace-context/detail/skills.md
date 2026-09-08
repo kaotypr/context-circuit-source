@@ -18,6 +18,8 @@ It does not:
 
 - restate a contract schema field-by-field
 - retell Gate 1 / tracer / Gate 2 for a route that is not that
+- retell member-band mechanics or durable-only citations when those facts
+  have an owner
 - say “see the schema” as a substitute for “copy the template, then validate”
 
 Invoke lines must still match the runtime. On core skills they already do,
@@ -51,6 +53,10 @@ search tests or open the engine. Both are still failures of this intent:
 
 Fixing a wrong line in a skill this change touches is in scope. Teaching the
 agent to discover the runtime is not.
+
+Skills that allocate an intent or plan id still invoke member-band resolve
+and allocate. They point at the member invariant for the rule; they do not
+paste how bands are sized or how exhaustion is extended.
 
 ```mermaid
 flowchart TD
@@ -89,6 +95,8 @@ the knowledge tree to discover units, and do not treat
 - Not making skills the owner of invariants.
 - Not shortening verify/archive by deleting their actual procedure — those
   are already short.
+- Not changing band allocation, durable-only writing, or host-native
+  discovery — only stopping skills from retelling them.
 
 ## Edge cases
 
@@ -100,3 +108,6 @@ the knowledge tree to discover units, and do not treat
   just must not grow a second copy of execute inside intent.
 - **Host-blocked:** the skill points at the shared-instructions / coordinator
   rule; it does not invent a local fallback.
+- **Missing member identity:** the allocating skill stops and points at the
+  workspace route for the one-time roster choice; it does not invent a
+  numeric-range prompt.

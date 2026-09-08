@@ -5,12 +5,17 @@ goal: >
   When Context Circuit is used as a workspace, keep the current agent loop
   (catalog then selected Product Knowledge, skill as procedure, Gate 1 then
   tracer then derived plan, independent verifier on Standard and Critical,
-  host-blocked fail-closed). Remove waste that does not change that loop:
-  the retrieval catalog at context/INDEX.md actually selects units by
-  summary, topics, and aliases so a typical route does not grep, list the
-  knowledge tree, or fall through to another index; each procedure fact has
-  one home so shared instructions, workflow, coordinator, and skills do not
-  restate it; each skill names the files to open and the runtime actions to
+  Explore as live human-supervised pairing with no verifier, host-blocked
+  fail-closed). The nested home under .context-circuit/, host-native routes,
+  durable-only knowledge writing, and band-scoped intent and plan ids are
+  already how the product works; this change uses them and does not redo
+  them. Remove waste that does not change that loop: the retrieval catalog
+  at context/INDEX.md actually selects units by summary, topics, and aliases
+  so a typical route does not grep, list the knowledge tree, or fall through
+  to another index; each procedure fact has one home so shared instructions,
+  workflow, coordinator, skills, and host-native stubs do not restate it
+  (including durable-only writing and member identity, which already have
+  owners); each skill names the files to open and the runtime actions to
   invoke, matching the runtime, so an agent does not restate a schema or
   treat the schema as a procedure. The result is an instantiated product
   workspace on the nested home under .context-circuit/, not a one-off
@@ -19,14 +24,17 @@ goal: >
 non_goals:
   - Changing what the agent is supposed to do: do not collapse Gate 1 or
     Gate 2, merge lifecycle phases, drop the tracer after approval, drop
-    the independent verifier on Standard or Critical, or allow the
-    coordinator to self-verify when a required child is missing.
+    the independent verifier on Standard or Critical, drop Explore as the
+    pairing tier, or allow the coordinator to self-verify when a required
+    child is missing.
   - Gutting the always-on safety spine (shared instructions, coordinator,
     workflow) just to make those files shorter.
   - Rewriting Product Knowledge pages, including domain pages, whether a
-    typical route opens them or not.
-  - Copying a rule into a skill or adapter so the agent does not open the
-    owner.
+    typical route opens them or not. Durable-only writing
+    (INV-KNOWLEDGE-03) already landed; this intent does not reopen that
+    rewrite.
+  - Copying a rule into a skill, adapter, or host-native stub so the agent
+    does not open the owner.
   - Changing how sources/ is read (still passive and request-scoped).
   - Redesigning runtime evidence records (executions, locks, candidates)
     except where an agent-facing procedure currently searches them to
@@ -35,34 +43,48 @@ non_goals:
     harness access-discipline and budgets may be used as proof, but this
     intent is not a harness-features change.
   - Adding a new host, router, or runtime scheduler.
+  - Redoing the nested product home under .context-circuit/.
+  - Redesigning host-native folders (.claude/, .codex/, .cursor/) as a
+    second policy; they stay thin routes into owners (INV-HOST-01).
+  - Changing how intent and plan ids allocate from per-member bands
+    (INV-MEMBER-01, INV-INTENT-01, INV-PLAN-03). This intent may point at
+    those owners; it does not change allocation.
+  - Reducing approval-to-plan latency as a product feature; that remains a
+    separate concern.
   - Filling this source checkout's Product Knowledge catalog as a product
     feature; the shipped change is the catalog shape in the template and
     the procedure that forbids a tree search.
-  - Moving shipped system files or undoing the nested home under
-    .context-circuit/.
   - Delivering, publishing, merging, or committing the implementation
     implicitly.
 
 constraints:
   - Improvement, not downgrade: every removed sentence must still have an
     owner the agent is told to open when that fact is needed.
-  - Product behavior has one owner per rule; skills and adapters stay thin
-    (INV-KNOWLEDGE-01, one-owner-per-rule).
+  - Product behavior has one owner per rule; skills, adapters, and
+    host-native stubs stay thin (INV-KNOWLEDGE-01, one-owner-per-rule,
+    INV-HOST-01).
   - The retrieval catalog is a catalog, not a second copy of page content
     (INV-KNOWLEDGE-01). context/INDEX.md is the only selector; a directory
     list or context/domains/README.md is not a substitute.
   - Use the smallest route-selected context; name exact files before
     reading them. Do not glob or grep context/ to discover units.
+  - Live context stays durable-only (INV-KNOWLEDGE-03). Slimming
+    instructions must not put particular plan, intent-file, or sources-file
+    cites back into context/.
+  - Member identity and band-scoped allocation stay fail-closed
+    (INV-MEMBER-01). Skills that allocate still invoke the runtime; other
+    files point at the owner instead of retelling band mechanics.
   - Lifecycle actions remain separate human actions; eligibility is not
     authorization.
   - Isolation, host-blocked fail-closed, invoke-not-read of the runtime,
     and credential-free offline behavior are preserved.
   - The change ships in the product workspace (wrapper adapters, skills,
-    template seed) against the nested home: .context-circuit/wrapper,
-    .context-circuit/agents, and .context-circuit/docs. The host front
-    door stays at the workspace root. Do not move system files back to
-    the workspace root. The blank template catalog must work with zero
-    units without a directory scan.
+    template seed) against the nested home already in place:
+    .context-circuit/wrapper, .context-circuit/agents, and
+    .context-circuit/docs. Host-native trees (.claude/, .codex/, .cursor/)
+    stay routes. The host front door stays at the workspace root. Do not
+    move system files back to the workspace root. The blank template
+    catalog must work with zero units without a directory scan.
   - Catalog entries are written by context gathering and by in-place
     knowledge updates on mark-done. A unit without an entry is not
     retrievable.
@@ -76,7 +98,9 @@ acceptance_criteria:
       only selected Product Knowledge, follow the named skill as procedure,
       take Gate 1 before a tracer reads code, derive plans only after a
       feasible trace, keep an independent verifier on Standard and
-      Critical, and stay host-blocked when a required child is missing.
+      Critical, keep Explore as live human-supervised pairing with no
+      verifier and no verified label, and stay host-blocked when a required
+      child is missing.
   - id: AC-CATALOG-SELECTS
     statement: >
       An agent can pick the Product Knowledge units for a typical request
@@ -88,9 +112,10 @@ acceptance_criteria:
   - id: AC-ONE-HOME
     statement: >
       Each agent-facing procedure fact (the two gates, tracer after
-      approval, one-owner-per-rule, invoke-not-read runtime, host-blocked)
-      has one home. Shared instructions, workflow, coordinator, and skills
-      point at that home instead of restating the fact.
+      approval, one-owner-per-rule, invoke-not-read runtime, host-blocked,
+      durable-only writing, member identity, host-native trees as routes)
+      has one home. Shared instructions, workflow, coordinator, skills, and
+      host-native stubs point at that home instead of restating the fact.
   - id: AC-SKILL-INVOKE
     statement: >
       Each product skill names the files to open next and the runtime
@@ -101,13 +126,15 @@ acceptance_criteria:
   - id: AC-NO-DOWNGRADE
     statement: >
       Slimming does not drop the safety spine, collapse a human gate, move
-      a rule into a skill-only copy, or rewrite Product Knowledge pages,
-      whether a typical route opens them or not.
+      a rule into a skill-only copy, undo nested home, host-native routes,
+      durable-only writing, or band allocation, or rewrite Product
+      Knowledge pages, whether a typical route opens them or not.
   - id: AC-PRODUCT-WORKSPACE
     statement: >
       The leaner behavior is what an instantiated Context Circuit
       workspace gets, not only this source checkout, and it ships against
-      the nested home under .context-circuit/.
+      the nested home under .context-circuit/ with host-native trees still
+      acting as routes.
 
 scope:
   repositories:
