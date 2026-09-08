@@ -68,4 +68,5 @@ scope:
         - "template/"
         - "host entry instruction surfaces"
 tier: standard
-status: draft
+status: approved
+contract_digest: sha256:f2d429e9d5bf8dfcad49898c932bdedb23f469c19300d7980dda15191e684c53
