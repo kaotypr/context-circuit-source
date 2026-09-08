@@ -74,13 +74,19 @@ edges as a reason the coordinator can ratify across children.
 
 Invoke, never read, the runtime:
 
-- `sh .context-circuit/wrapper/runtime/engine.sh plan-allocate-id . <slug>`
+- `sh .context-circuit/wrapper/runtime/engine.sh member-band-resolve .` — require
+  a resolved roster member before `plan-allocate-id`; never pass a numeric range
+  or prompt for a block number (INV-MEMBER-01)
+- `sh .context-circuit/wrapper/runtime/engine.sh plan-allocate-id . <slug>` — next
+  `NNNN-slug` in the current member's band (INV-PLAN-03)
 - write `plans/<id>/plan.yaml` (`schema_version: 3`) and `PLAN.md`
 - `sh .context-circuit/wrapper/runtime/engine.sh plan-validate plans/<id>`
 
 Do not upsert the index or change `INTENT.md` status — the coordinator publishes.
 Do not call `plan-stack-materialize` unless the spawn brief says this child is
-writing `@plan:` fragments for a multi-plan stack.
+writing `@plan:` fragments for a multi-plan stack. A stack reserves consecutive
+ids inside the current member's plan band. If the band is exhausted, stop —
+roster extension is a coordinator/`cc-workspace` action, not wrapping.
 
 Carry into the plan:
 

@@ -74,6 +74,11 @@ band size (99 intents, 999 plans) with a name the human chooses; do not invent
 overlapping bands. Never ask for numeric ranges or a block number in ordinary
 chat — bands live in the roster, not in the conversation.
 
+When a member's band is exhausted (`INTENT_ID_EXHAUSTED` / `PLAN_ID_EXHAUSTED`),
+extend the committed roster with a new non-overlapping band for that member
+(or add another member). Never wrap, recycle, or ask for a block number in
+chat. Default new-member size remains 99 intents and 999 plans (INV-MEMBER-01).
+
 Do not write `member.local.yaml` during `workspace-init`. Runtime verbs
 `member-roster-validate`, `member-identity-read`, and `member-band-resolve`
 fail closed (`MEMBER_IDENTITY_MISSING`) rather than inventing a band.

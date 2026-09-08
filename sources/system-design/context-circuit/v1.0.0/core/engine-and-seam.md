@@ -9,7 +9,10 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 | Verb | Purpose | Mechanism |
 | --- | --- | --- |
 | `intent-validate <dir>` | structural/schema check only: does `intent/<id>/` have the required files, does `contract.yaml` parse and match its schema — not a feasibility or risk check | M1 |
-| `intent-allocate-id <slug>` | next `i<NNNN>-slug` for intents (own sequence, mirrors plan id allocation) | M1 |
+| `intent-allocate-id <slug>` | next `i<NNN>-slug` in the current member's intent band (active+archived; never wrap) | M1 |
+| `member-roster-validate` | validate committed `members.yaml` (non-overlapping bands) | M1 |
+| `member-identity-read` | read gitignored `member.local.yaml`; fail closed if missing | M1 |
+| `member-band-resolve` | resolve local identity to roster bands; never accept a numeric range | M1 |
 | `intent-approve <id>` | draft→approved; freeze `contract_digest`; the one upstream gate | M1 |
 | `intent-archive <id>` | move `intent/<id>/` to `intent/archive/<id>/`; status-blind (INV-ARCHIVE-01/02) | M1 |
 | `intent-restore <id>` | move an archived intent back to the active area | M1 |
@@ -23,6 +26,7 @@ is the reason evolution is safe: skills that call stable verbs keep working.
 
 | Verb | Change |
 | --- | --- |
+| `plan-allocate-id <slug>` | next `NNNN-slug` in the current member's plan band (active+archived; never wrap); a stack reserves consecutive in-band ids |
 | `plan-validate` | require `intent:` and a structural/schema check; there is no scope-containment verb — feasibility is a coordinator judgment run once on the tracer's findings (`intent-feasibility.md`), and scope-safety is settled at delivery (Gate 2) |
 | `plan-approve` | narrowed: automatic once the intent is approved, not a human gate (INV-APPROVE-01 reworked) |
 | `verifier-result-record` | bind the result to the current candidate (INV-CANDIDATE-01); keep the exact read-only tip-check |
@@ -49,7 +53,7 @@ From the skill/engine coupling read:
 | --- | --- | --- |
 | `cc-publish` | none (host/MCP only) | **unchanged** (depends only on `cc_digest` + atomic write, preserved) |
 | `cc-system-design` | none | **unchanged** — and now feeds the new intent object naturally |
-| `cc-workspace` | 2 simple verbs | **unchanged** (shim over `workspace-init`, `repository-resolve`) |
+| `cc-workspace` | workspace + member identity verbs | **additive** — `member-roster-validate`, `member-identity-read`, `member-band-resolve` |
 | `cc-archive` | 2 simple verbs | **unchanged** (`plan-archive`, `plan-restore`) |
 | `cc-pair` | 3 `pair-*` verbs | **reframed** as Explore tier; verbs unchanged, adds promote |
 | `cc-execute` / `cc-run-stack` | deep (≈11 verbs + `.runtime/executions/`) | **additive changes** — record candidate, tier-gate the verifier |

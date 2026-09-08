@@ -19,10 +19,11 @@ entry: what the design says, what ships, where seen, and disposition.
    Seen: design 05 §3/§13 vs `.context-circuit/wrapper/contracts/invariants.yaml`. Disposition:
    pages state the shipped hard limit of three.
 
-3. **Plan-id reuse.** `INV-PLAN-03` (never reused / next after highest ever) is a
-   shipped invariant not stated in the design, which says only "stable id". Seen:
+3. **Plan-id reuse.** `INV-PLAN-03` (never reused / next after highest ever used
+   in the current member's band) is a shipped invariant not stated in the original
+   design, which says only "stable id". Seen:
    `.context-circuit/wrapper/contracts/invariants.yaml` vs design 05 §3. Disposition: pages keep
-   the shipped invariant.
+   the shipped band-scoped invariant (`INV-MEMBER-01`).
 
 4. **Terminology authority.** The design makes the design chapter the owner of
    term meaning and translation, projected to `.context-circuit/docs/terminology.md`. The shipped
