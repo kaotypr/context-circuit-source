@@ -55,7 +55,7 @@ demonstrates:
   invariants: [INV-INTENT-02, INV-EXEC-01, INV-APPROVE-01]
 hidden:
   - internal file names/paths (intent id, plan.yaml, contract.yaml, trace manifest, contract_digest, refs/cc-)
-  - lifecycle jargon ("feasibility check", "tracer", "scope", "out-of-scope reach") as jargon
+  - lifecycle jargon ("feasibility check", "planner", "scope", "out-of-scope reach") as jargon
 decision_points:
   - id: name-the-reach
     when: delivering the requested work would have to change an area outside the approved agreement

@@ -71,7 +71,7 @@ ask (INV-INTENT-01). Two artifacts hold it:
 Acceptance criteria are stated at the **outcome** level — what must be true, not
 how to test it. They are **not** frozen as executable checks here; the runnable
 check that proves each criterion against the real code is *earned after approval*
-by the tracer ([tracing and feasibility](../tracing/README.md), INV-INTENT-02),
+by the planner ([tracing and feasibility](../tracing/README.md), INV-INTENT-02),
 never authored on the intent.
 
 Scope is **coarse and optional**. It is a hint, not a fence: there is no
@@ -83,22 +83,22 @@ diff and repositories ([delivery](../delivery/README.md), INV-DELIVER-01).
 moves the contract `draft → approved`, **freezes `contract_digest`** — the frozen
 identity of the criteria the change is later proven against (INV-CANDIDATE-01) —
 and confirms the coordinator understood the plain ask, which is what lets the
-tracer read the real code next (INV-INTENT-02). There is no confirmation card and
+planner read the real code next (INV-INTENT-02). There is no confirmation card and
 no hidden confirmation token; a vague "yes" is not an approval. Approving an intent
 and asking to build in one turn is honored as two sequential explicit actions; a
 human who wants to lock an intent without building yet may separate the two.
 
 Approval does **not** trigger execution and carries **no** second gate for the
-plans that derive from it — plan readiness after a feasible tracer is automatic
+plans that derive from it — plan readiness after a feasible planner is automatic
 (INV-INTENT-02), not a second human approval. Optional intent detail likewise has
 **no separate approval**. That automatic derivation happens **in the same turn**
 after a feasible look with no unresolved intent-level question; `contract.yaml`
-status `approved` does not skip the tracer. After a feasible tracer the
+status `approved` does not skip the planner. After a feasible planner the
 human-facing `INTENT.md` status line is updated so it cannot stay stale;
 `contract.yaml` remains the approval authority.
 
 The human-facing **Open questions** section is phase-aware. At draft time it records
-known unresolved decisions; after tracing, newly discovered questions are classified
+known unresolved decisions; after the planner look, newly discovered questions are classified
 as intent-level, plan-level, or already answered. An intent-level question sends the
 work back through Gate 1 when the approved decision changes. A plan-level question
 is carried into planning, and an answer already present in the plain request is

@@ -13,7 +13,7 @@ _Status: draft, waiting for your approval._
   `_Status:` is the human mirror. Keep the line; do not remove it.
   Draft: `draft, waiting for your approval.`
   After Gate 1: `approved.`
-  After a feasible tracer with no intent-level questions:
+  After a feasible planner with no intent-level questions:
   `approved, look complete, feasible.`
   contract.yaml remains the authority for approval identity (draft|approved).
 

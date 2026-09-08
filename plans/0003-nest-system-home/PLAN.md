@@ -17,7 +17,7 @@ Status: done
   the nested home in the template and in upgrades (NEST-003), then
   retarget leftover path names and prove the old root homes are gone
   (NEST-004).
-- Unchanged: gates, tracer, independent check, one-owner-per-rule,
+- Unchanged: gates, planner, independent check, one-owner-per-rule,
   invoke-not-read, host-blocked. No implicit deliver, publish, merge, or
   commit.
 
@@ -42,7 +42,7 @@ the workspace root.
 - An upgrade may replace template-owned files and must preserve
   workspace-owned files. When the layout change alters the meaning of a
   record, report migration-needed and preserve the old state.
-- Do not change what the product does (gates, tracer, verifier floor,
+- Do not change what the product does (gates, planner, verifier floor,
   self-verify).
 - Do not move workspace-owned files into `.context-circuit`.
 - Do not rename the wrapper or drop the wrapper/template split.

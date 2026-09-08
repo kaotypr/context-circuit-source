@@ -55,7 +55,7 @@ fields:
     values: [3]
     description: >
       A v1.0 plan is schema_version 3: it requires the `intent` field and derives
-      from an approved intent, grounded in that intent's trace manifest
+      from an approved intent, grounded in the planner's look at that repository
       (INV-INTENT-02), and may also carry plan_dependencies. Any other value is
       unsupported.
   plan: { type: string, required: true, description: canonical plan id }

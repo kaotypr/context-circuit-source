@@ -14,9 +14,9 @@ purpose: >
   contract_digest. Approval is the single upstream human gate (Gate 1); it freezes
   contract_digest — the identity of the criteria the candidate (candidate.yaml) is
   later proven against — and also confirms the coordinator understood the plain ask,
-  which is what lets the tracer read the real code next (tracing-and-grounding).
-  The runnable check that proves each outcome criterion is a TRACING output carried
-  in the plan (trace-manifest.yaml), never authored here.
+  which is what lets the planner read the real code next (tracing-and-grounding).
+  The runnable check that proves each outcome criterion is a PLANNER output carried
+  in the plan, never authored here.
 
 intent_status:
   authority: this file
@@ -56,8 +56,8 @@ fields:
       Each criterion defines one part of correct at the OUTCOME level — what must be
       true, in terms a human can approve (for example "no direct localStorage access
       remains"). Criteria are not executable and not frozen as runnable here: the
-      tracer earns the runnable check that proves each one against the real code
-      after approval, carried into the plan (trace-manifest.yaml). At least one is
+      planner earns the runnable check that proves each one against the real code
+      after approval, carried into the plan. At least one is
       required.
     item:
       id: { type: string, required: true }
@@ -68,7 +68,7 @@ fields:
     description: >
       COARSE and OPTIONAL — a rough boundary the human may draw, not an enforced
       gate. A lay human usually states a goal, not paths, so this is often empty. It
-      is NOT compared against a plan by any automated gate: the tracer reports where
+      is NOT compared against a plan by any automated gate: the planner reports where
       the change lands, the coordinator's feasibility check surfaces a required change
       that must MODIFY a repository or area beyond a bound scope (intent-feasibility),
       and scope-safety itself is settled at delivery (Gate 2, INV-DELIVER-01). Its one
@@ -89,7 +89,7 @@ fields:
       independent verifier and is never labeled verified; Standard and Critical
       require an independent read-only verifier bound to the current candidate.
       Proposed at intent time from transparent risk signals and raisable by the
-      human, and re-checked with the tracer's findings before plans are written
+      human, and re-checked with the planner's finding before plans are published
       (a tier signal may raise it). The runtime enforces the verifier floor but
       never selects a tier (INV-ASSURE-01). A reader may treat an absent tier as
       standard.
@@ -112,17 +112,23 @@ fields:
       candidate digest (candidate.yaml), so a criteria change yields a new
       candidate and voids prior evidence (INV-CANDIDATE-01). Empty while draft.
 
+planner_finding:
+  file: intent/<intent-id>/finding.yaml
+  produced_by: cc-trace (the planner), spawned on approval — one per repository in scope
+  owner: .context-circuit/agents/planner.md
+  note: >
+    The planner reads the real code AFTER approval and either writes the plan or
+    stops. finding.yaml records feasibility, questions, and revision so the
+    coordinator can publish without reading the repository. It is NOT part of
+    contract_digest.
+
 trace_manifest:
   file: intent/<intent-id>/trace/<repository>.yaml
-  produced_by: cc-trace (the tracer), spawned on approval — one per repository in scope
+  produced_by: legacy traces only; new approvals do not require this file
   owner: .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
   note: >
-    The tracer reads the real code AFTER approval and reports a durable manifest —
-    file/call-site map, concrete risks, the runnable "done" checks that prove each
-    outcome criterion, a tier signal, feasibility, and any out-of-scope reach. The
-    contract above holds the stable human-level target; the manifest holds the
-    machine-precise measure. The manifest is NOT part of contract_digest (it is
-    earned post-approval, so it never re-enters Gate 1).
+    Kept for existing recorded traces. New approvals use the planner's plan files
+    and finding.yaml. The contract above holds the stable human-level target.
 
 approval_plan_timing:
   file: .runtime/materialization/<invocation-id>/timing.yaml
@@ -137,10 +143,10 @@ approval_plan_timing:
 invariants:
   - every writing request is anchored to an intent whose contract.yaml holds goal,
     outcome-level acceptance criteria, and an optional coarse scope (INV-INTENT-01)
-  - acceptance criteria are OUTCOME level; the runnable check is a tracing output
+  - acceptance criteria are OUTCOME level; the runnable check is a planner output
     carried in the plan, never authored here (INV-INTENT-01, tracing-and-grounding)
   - approval is the single upstream human gate, freezes contract_digest, and confirms
-    the coordinator understood the ask so the tracer can read the code (INV-INTENT-01, INV-APPROVE-01)
+    the coordinator understood the ask so the planner can read the code (INV-INTENT-01, INV-APPROVE-01)
   - scope is coarse and optional; it is not an enforced gate — scope-safety is settled
     at delivery (Gate 2), and the feasibility check surfaces an out-of-scope reach (INV-INTENT-02)
   - tier is declared here and enforced as a floor by the runtime, never selected by it (INV-ASSURE-01)

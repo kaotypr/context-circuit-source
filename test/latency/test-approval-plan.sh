@@ -61,14 +61,12 @@ new_ws() {
 }
 
 case_exact_delta_fallback() {
-	manifest="$ROOT/.context-circuit/wrapper/contracts/schemas/trace-manifest.yaml"
 	trace="$ROOT/.agents/skills/cc-trace/SKILL.md"
-	for word in plan_ready_version repository_identity observed current cold exact delta fallback reread_paths fallback_reason discovery_rules_digest; do contains "$manifest" "$word"; done
-	contains "$trace" '`.runtime/trace-cache/maps/'
-	contains "$trace" "never secrets, ignored files, provider payloads, or source copies"
-	contains "$trace" "reread the current intent sites"
-	contains "$trace" "changed sites and"
-	contains "$trace" "broad drift"
+	planner="$ROOT/.context-circuit/agents/planner.md"
+	contains "$trace" "Do not rebuild a structural map cache"
+	contains "$trace" "spawn a second planner"
+	contains "$planner" "Write no plan"
+	contains "$planner" "one repository"
 }
 
 case_same_repository_expansion() {

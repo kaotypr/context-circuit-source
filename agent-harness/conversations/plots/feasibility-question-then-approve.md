@@ -1,7 +1,7 @@
 # Approve the intent → a feasibility question surfaces → resolve it → derive the plan
 
 Proves that after Gate 1 approval the real code is read before any plan is written:
-the read-only trace surfaces a decision the intent as-worded doesn't settle, the
+the planner look surfaces a decision the intent as-worded doesn't settle, the
 coordinator raises it in plain language, the human resolves it, and only then is the
 plan derived. The coordinator never silently fills the gap itself, and the approved
 intent's outcome is unchanged — this is a quality gate over planning, not a re-gate.
@@ -51,7 +51,7 @@ demonstrates:
   invariants: [INV-INTENT-01, INV-PLAN-01, INV-APPROVE-01, INV-EXEC-01]
 hidden:
   - internal file names/paths (intent id, contract.yaml, trace manifest, contract_digest, refs/cc-)
-  - lifecycle jargon ("tracer", "feasibility check", "trace manifest", "schema-3") as jargon
+  - lifecycle jargon ("planner", "feasibility check", "schema-3") as jargon
 decision_points:
   - id: approve-then-read-code
     when: the human approves the intent and says not to build yet

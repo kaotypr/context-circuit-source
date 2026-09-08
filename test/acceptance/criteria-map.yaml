@@ -99,7 +99,7 @@ criteria:
     statement: An intent is a first-class decision — goal, outcome-level criteria, a coarse optional scope, tier — with an i-prefixed never-reused id; approval freezes its contract digest, confirms the ask was understood, and is the single upstream human gate; archive/restore are status-blind moves.
     suite: test/intent/test-intent.sh
   - id: AC-31
-    statement: On approval a read-only tracer reads the real code (one child per repository) and the coordinator runs a feasibility check before any plan; the runtime keeps only a scope-free authorization (a plan derives from an approved intent, criteria unchanged) with no automated scope gate, and a criteria change re-enters Gate 1 while failing upward on a missing or unapproved intent.
+    statement: On approval a planner reads the real code (one child per repository) and writes the plan; the coordinator runs a feasibility check and does not rewrite the child's plan; the runtime keeps only a scope-free authorization (a plan derives from an approved intent, criteria unchanged) with no automated scope gate, and a criteria change re-enters Gate 1 while failing upward on a missing or unapproved intent.
     suite: test/intent/test-feasibility.sh
   - id: AC-32
     statement: A candidate is a deterministic digest over the commit map, bases, and frozen contract digest; verifier results and human acceptance bind to it, and any new commit or criteria change yields a new candidate that voids prior evidence and acceptance for verify and deliver. Mark-done does not refuse stale evidence.

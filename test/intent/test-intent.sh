@@ -55,7 +55,7 @@ sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/inten
 assert_eq "draft" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"
 before=$(cc_scalar "$ws/intent/$id1/contract.yaml" contract_digest)
 assert_eq "" "$before"
-# Gate 1 needs no pre-approval challenge record: the tracer reads the real code
+# Gate 1 needs no pre-approval challenge record: the planner reads the real code
 # only AFTER approval, so approval depends on the contract alone (no adversary).
 sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-approve "$ws" "$id1" >/dev/null
 assert_eq "approved" "$(cc_scalar "$ws/intent/$id1/contract.yaml" status)"

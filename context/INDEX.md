@@ -31,7 +31,7 @@ sources are passive and request-scoped; ordinary entry never scans them.
 Domain pages added and accepted in the 2026-09-04 v1.0 re-ground, closing the gap
 where v1.0's core additions had no owning domain page:
 [intent](domains/intent/README.md) (Gate 1 front door),
-[tracing](domains/tracing/README.md) (post-approval tracer + feasibility check), and
+[tracing](domains/tracing/README.md) (post-approval planner + feasibility check), and
 [assurance](domains/assurance/README.md) (consequence-tier ladder).
 
 The direct-collaboration proposals `0029`–`0033` were accepted on 2026-09-03,

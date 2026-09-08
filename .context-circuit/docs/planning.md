@@ -9,8 +9,8 @@ repository mappings, dependencies, and verification ids.
 A v1.0 plan is the **derivation of an approved intent** (`.agents/skills/cc-intent`),
 not the thing the human approves. Before planning a writing change there must be an
 approved parent intent, which holds the goal, outcome-level acceptance criteria, a
-coarse optional scope, and tier. On approval a read-only tracer reads the real code
-and reports a manifest; the plan is derived from that manifest and names the intent
+coarse optional scope, and tier. On approval a planner reads the real code
+and writes that repository's plan; the plan is published from those files and names the intent
 (`intent: i<NNN>-slug`, `schema_version: 3`). The derives-from-an-approved-intent
 authorization runs as a preflight and again at execution start — a criteria change
 after approval re-enters Gate 1 — but there is no automated scope gate: scope-safety
@@ -28,7 +28,7 @@ request-fidelity check: any contradiction or unresolved detail becomes an
 explicit open question, assumption, or risk — never a silently chosen
 implementation.
 
-Questions are dispositioned by phase before planning. A trace finding that changes
+Questions are dispositioned by phase before planning. A planner finding that changes
 the approved goal, scope, criteria, tier, authority, or lifecycle is an intent-level
 question and sends the work back through Gate 1; an implementation-only question is
 carried into the plan; a question already answered by the user's request is applied
@@ -36,11 +36,11 @@ without asking again. No plan may hide an unresolved intent-level question.
 
 When `intent/<id>/detail/` exists, planning uses it as the confirmed shape of what
 to build so plans and tasks follow those topics. It does not replace the
-post-approval read of the real code or the trace manifest.
+post-approval read of the real code.
 
 ## Choosing one plan or a stack
 
-The trace's `task_partition` is a proposal. After feasibility, the coordinator
+The planner's task partition is a proposal. After feasibility, the coordinator
 ratifies it using the real execution and verification boundaries:
 
 - Keep a bounded Standard change in **one plan with embedded tasks** when it has one

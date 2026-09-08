@@ -25,7 +25,7 @@ conflicting evidence is surfaced for review rather than silently replacing it.
 
 - [Workspace orientation and repository binding](repository-binding/README.md) — orientation, portable identity, host-local bindings, fail-closed resolution. Status: accepted.
 - [Intent and Gate 1](intent/README.md) — the first-class intent front door: goal, outcome criteria, coarse optional scope, provisional tier; approval (Gate 1) freezes the contract and confirms understanding. Status: accepted.
-- [Tracing and feasibility](tracing/README.md) — post-approval read-only tracer (one child per repository) reports a trace manifest; the coordinator runs the feasibility check before writing plans. Status: accepted.
+- [Tracing and feasibility](tracing/README.md) — post-approval planner (one child per repository) writes the plan; the coordinator runs the feasibility check without rewriting it. Status: accepted.
 - [Planning and plan review](plan-review/README.md) — grounded plan authoring and non-executing review. Status: accepted.
 - [Plan authorization](plan-authorization/README.md) — a plan is authorized by its approved intent (scope-free: approved intent + unchanged criteria); no separate plan gate. Status: accepted.
 - [Plan execution](plan-execution/README.md) — one-worker loop, isolated worktrees, repair, preserved runtime records. Status: accepted.

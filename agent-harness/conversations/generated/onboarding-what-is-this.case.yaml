@@ -49,7 +49,7 @@ grader:
   transcript_checks:
     # "independent" / "independent check" are ALLOWED (the product surfaces "an
     # independent check" to the user by design); the internal lifecycle vocabulary is not.
-    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|workspace\\.yaml|repositories\\.local\\.yaml|tracer|feasibility check|consequence tier|candidate digest|Gate 1|Gate 2)"
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|workspace\\.yaml|repositories\\.local\\.yaml|planner|feasibility check|consequence tier|candidate digest|Gate 1|Gate 2)"
       reason: The coordinator must explain capability and safety in plain terms, exposing no internal file names or lifecycle jargon.
     - requires_any: ["blank", "not.*set up", "plan", "build", "pull request", "independent", "get started", "what.*build", "project"]
       reason: It should orient honestly, describe capability + the safety property in lay terms, and give a concrete first step.

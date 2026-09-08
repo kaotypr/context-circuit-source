@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Role-tiering on Cursor child spawn
 
-Before spawning a worker, verifier, or tracer, Read `CURSOR.md` at the
+Before spawning a worker, verifier, or planner, Read `CURSOR.md` at the
 workspace root and follow it. That file owns how this host sets `Task.model`.
 Do not copy the rule elsewhere. Do not import
 `.context-circuit/wrapper/adapters/CURSOR.md` from this checkout — that nested
