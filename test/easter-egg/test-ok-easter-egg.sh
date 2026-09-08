@@ -45,9 +45,9 @@ case_engine() {
 
 	for help_cmd in help -h --help ''; do
 		if [ -n "$help_cmd" ]; then
-			help_out=$(eng "$help_cmd")
+			help_out=$(eng "$help_cmd") || fail "engine help ($help_cmd) failed"
 		else
-			help_out=$(eng)
+			help_out=$(eng) || fail "engine (no args) failed"
 		fi
 		printf '%s\n' "$help_out" | grep -F "$PUNCHLINE" >/dev/null 2>&1 \
 			&& fail "punchline leaked into engine help ($help_cmd)" || :
