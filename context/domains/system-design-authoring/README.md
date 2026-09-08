@@ -29,8 +29,9 @@ workflows: []
 
 Authoring and structuring a **system design** as source material via the shipped
 `cc-system-design` skill. A system design is one kind of source, not a lifecycle
-stage: it lives under `sources/system-design/` (product-level) or, for one intent,
-under `intent/<id>/detail/` (intent detail). Both homes use the same three-tier
+stage: product-level designs live as passive source material organized by
+product, grouping, and scope; for one intent they live under
+`intent/<id>/detail/` (intent detail). Both homes use the same three-tier
 layout and split-when-earned rule; neither carries status, an acceptance gate, or
 a runtime record. Route "design the system for `<X>`" / "structure the system
 design" / "write this change out by topic" here; the skill is purely
@@ -49,12 +50,13 @@ is not Product Knowledge and has no approval of its own.
 
 ## Behavior
 
-- **A source, not a stage.** A product-level system design lives at
-  `sources/system-design/<product-or-project>/<grouping>/<scope>/`; an intent's
-  fuller write-up lives at `intent/<id>/detail/`. Both are read as named sources
-  (passive, INV-SEC-02) and have no status, gate, or record. Choose the
-  product-level home for a picture that will spawn several intents; choose intent
-  detail for the shape of one already-drafted (or about-to-be-drafted) intent.
+- **A source, not a stage.** A product-level system design lives as passive
+  source material organized by `<product-or-project>/<grouping>/<scope>/`; an
+  intent's fuller write-up lives at `intent/<id>/detail/`. Both are read as
+  named sources (passive, INV-SEC-02) and have no status, gate, or record. Choose
+  the product-level home for a picture that will spawn several intents; choose
+  intent detail for the shape of one already-drafted (or about-to-be-drafted)
+  intent.
 - **Grouping segment.** The middle segment is a *grouping* dimension, default a
   version (3-number semver with a `v` prefix going forward, e.g. `v0.6.1`); a named
   grouping (`phase-2`, `Q1`, a milestone) is an explicit author choice, one
@@ -87,14 +89,16 @@ is not Product Knowledge and has no approval of its own.
 ## Interfaces
 
 - Human request: "Design the system for `<X>`" / "write this change out by topic" / `/cc-system-design`
-- Output: authored files under `sources/system-design/<product-or-project>/<grouping>/<scope>/` or `intent/<id>/detail/`
+- Output: authored files as product-level passive source material organized by
+  `<product-or-project>/<grouping>/<scope>/`, or under `intent/<id>/detail/`
 
 ## Constraints and edge cases
 
 A bounded change needs no product-level system design — go straight from Product
 Knowledge to a plan. A small single-outcome intent needs no intent detail. The
-reference model is this repository's own `sources/system-design/` (dogfooded);
-intent detail reuses that inner rubric at `intent/<id>/detail/`.
+reference model is this repository's own product-level system-design source
+material (dogfooded); intent detail reuses that inner rubric at
+`intent/<id>/detail/`.
 
 ## Implementation references
 
@@ -108,18 +112,10 @@ intent detail reuses that inner rubric at `intent/<id>/detail/`.
 rubric, and adds no runtime surface). No live harness case — it is authoring
 guidance, not an execution behavior.
 
-## Provenance
-
-Authored from the current wrapper at HEAD `cb84870` (implementation `048eb67`).
-Design source `sources/system-design/context-circuit/v0.6/system-design-authoring/`
-was named by the accepting request.
-
 ## Acceptance notes
 
-Accepted 2026-08-27 from proposal `0020-domain-system-design-authoring`.
-Updated 2026-08-29 from proposal `0027-system-design-grouping` (v0.6.1
-design-layout-grouping): the middle path segment is a grouping dimension
-(version-default, 3-number semver going forward; named groupings allowed) with an
-agent current/next default derivation. Implementation `c67dd23`.
+Accepted 2026-08-27. Updated 2026-08-29: the middle path segment is a grouping
+dimension (version-default, 3-number semver going forward; named groupings
+allowed) with an agent current/next default derivation.
 Refreshed 2026-09-06: gathering motivates in-place Product Knowledge updates,
 not a proposal sidecar.

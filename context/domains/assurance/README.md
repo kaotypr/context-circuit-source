@@ -117,16 +117,11 @@ cannot create an independent verifier at Standard/Critical, the execution is
 `sh test/acceptance.sh` (tier suite — the deepest fixtures, pinning fail-upward
 corners and the per-tier verifier floor).
 
-## Provenance
-
-Authored from the current wrapper for Context Circuit v1.0. In the earlier v1.0
-design this was framed as "crown jewel 2" alongside the scope-envelope check; the
-envelope check was removed, leaving consequence tiering as the single
-safety-critical automated check. Grounds on the shipped contract; raw `sources/`
-was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-09-04 (maintainer) to close a knowledge gap: the consequence-tier
-ladder — the one safety-critical automated check — had no owning domain page (only
-glancing mentions in `ARCHITECTURE.md` and plan-authorization).
+ladder — the one safety-critical automated check — had no owning domain page
+(only glancing mentions in `ARCHITECTURE.md` and plan-authorization).
+In the earlier v1.0 design this was framed as "crown jewel 2" alongside the
+scope-envelope check; the envelope check was removed, leaving consequence
+tiering as the single safety-critical automated check.

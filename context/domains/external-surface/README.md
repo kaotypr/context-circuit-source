@@ -152,12 +152,6 @@ deletes a message; a no-longer-open question is left in place.
 scope is additive: the rest of the core acceptance suite is unchanged by the
 surface's presence.
 
-## Provenance
-
-Authored from the current wrapper at HEAD `6614841`. Design source
-`sources/system-design/context-circuit/v0.6/external-surface/` was named by the
-accepting request.
-
 ## Acceptance notes
 
-Accepted 2026-08-28 from proposal `0023-domain-external-surface`.
+Accepted 2026-08-28.

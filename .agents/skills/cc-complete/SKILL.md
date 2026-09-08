@@ -24,10 +24,16 @@ Then, **if the plan affected Product Knowledge**, reconcile in place — the sam
 act as gathering context. Compare the plan's knowledge references, changed
 paths, worker handoffs, and verifier evidence with the live context units.
 Edit live `context/` files and keep `INDEX.md` consistent only when there is a
-durable knowledge change. If the plan did not affect Product Knowledge, leave
-context files as they are. Record optional reconciliation references with
-`context-impact-record`. Write live context files only; there is no sidecar
-staging path and no extra knowledge-acceptance gate.
+durable knowledge change. Those writes follow the durable-only rule
+(INV-KNOWLEDGE-03): live context files hold durable product knowledge only;
+they never name a particular plan, intent file, or sources file, and never
+name a `sources/` path. A knowledge-change entry in `DECISIONS.md` records
+decision, rationale, and consequence — what is now true about the product —
+not edited paths or the ephemeral artifact behind the change. If the plan did
+not affect Product Knowledge, leave context files as they are. Record optional
+reconciliation references with `context-impact-record`. Write live context
+files only; there is no sidecar staging path and no extra knowledge-acceptance
+gate.
 
 In-place edits are a coordinator act after mark-done. The runtime does not
 write or interpret Product Knowledge (INV-RUNTIME-01, INV-COMPLETE-02). A later

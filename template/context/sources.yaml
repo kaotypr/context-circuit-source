@@ -1,4 +1,0 @@
-schema_version: 1
-# Provenance ledger for accepted source artifacts. Each entry records path,
-# revision or digest, and how the source was used. sources/ itself stays passive.
-entries: []
