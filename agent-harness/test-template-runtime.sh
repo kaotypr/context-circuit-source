@@ -41,6 +41,9 @@ test ! -e "$ws/.claude/skills/cc-test-case" || fail 'source-only Claude skill le
 printf 'schema_version: 1\nworkspace: lab-commerce\ntitle: Lab Commerce\nrepositories: []\n' >"$ws/workspace.yaml"
 cc_workspace_init "$ws" >/dev/null
 cc_workspace_validate "$ws" >/dev/null
+# Host-local identity is required before allocate-id; the template roster's
+# default member is `example` (intent 1-99 / plan 1-999).
+printf 'schema_version: 1\nmember: example\n' >"$ws/member.local.yaml"
 
 # 5. Connect two fixture repositories with team base branches.
 for r in api web; do

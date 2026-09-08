@@ -429,24 +429,26 @@ cc_intent_validate() {
 	return 0
 }
 
-# cc_intent_allocate_id ROOT SLUG -> next i<NNN>-slug after the highest ever
-# allocated (active + archived), the intent tree's own never-reused sequence.
+# cc_intent_allocate_id ROOT SLUG -> next i<NNN>-slug in the current member's
+# intent band (active + archived). Empty band starts at intent_start, never wraps.
 cc_intent_allocate_id() {
 	cc_ia_root="$1"; cc_ia_slug="$2"
 	cc_safe_slug "$cc_ia_slug" || { cc_fail INTENT_SLUG_INVALID "$cc_ia_slug"; return 1; }
-	cc_ia_max=0
-	for cc_ia_d in "$cc_ia_root/intent"/*/ "$cc_ia_root/intent/archive"/*/; do
-		[ -d "$cc_ia_d" ] || continue
-		cc_ia_base=$(basename -- "$cc_ia_d")
-		case "$cc_ia_base" in
-			i[0-9][0-9][0-9]-*)
-				cc_ia_seq=${cc_ia_base#i}; cc_ia_seq=${cc_ia_seq%%-*}
-				cc_ia_seq=$(printf '%s' "$cc_ia_seq" | sed 's/^0*//'); [ -n "$cc_ia_seq" ] || cc_ia_seq=0
-				[ "$cc_ia_seq" -gt "$cc_ia_max" ] && cc_ia_max=$cc_ia_seq ;;
-		esac
-	done
-	[ "$cc_ia_max" -lt 999 ] || { cc_fail INTENT_ID_EXHAUSTED; return 1; }
-	cc_ia_next=$((cc_ia_max + 1))
+	cc_ia_bands=$(cc_member_band_resolve "$cc_ia_root") || return 1
+	cc_ia_start=$(cc_seq_int "$(printf '%s\n' "$cc_ia_bands" | sed -n 's/^intent_start: //p')")
+	cc_ia_end=$(cc_seq_int "$(printf '%s\n' "$cc_ia_bands" | sed -n 's/^intent_end: //p')")
+	[ "$cc_ia_start" -ge 1 ] && [ "$cc_ia_end" -ge "$cc_ia_start" ] || { cc_fail MEMBER_ROSTER_INVALID; return 1; }
+	if cc_intent_numbers "$cc_ia_root" | cc_numbers_dup; then
+		cc_fail INTENT_PREFIX_COLLISION
+		return 1
+	fi
+	cc_ia_max=$(cc_intent_max_in_band "$cc_ia_root" "$cc_ia_start" "$cc_ia_end")
+	cc_ia_next=$(cc_band_next "$cc_ia_max" "$cc_ia_start")
+	[ "$cc_ia_next" -le "$cc_ia_end" ] || { cc_fail INTENT_ID_EXHAUSTED; return 1; }
+	if cc_intent_numbers "$cc_ia_root" | cc_numbers_has "$cc_ia_next"; then
+		cc_fail INTENT_PREFIX_COLLISION
+		return 1
+	fi
 	printf 'i%03d-%s\n' "$cc_ia_next" "$cc_ia_slug"
 }
 
@@ -873,6 +875,93 @@ cc_member_band_resolve() {
 	cc_emit plan_start "$cc_mbr_ps"
 	cc_emit plan_end "$cc_mbr_pe"
 	return 0
+}
+
+# ---------------------------------------------------------------------------
+# Band-scoped id sequences
+# ---------------------------------------------------------------------------
+
+# cc_seq_int RAW -> decimal integer with leading zeros stripped
+cc_seq_int() {
+	cc_si=$(printf '%s' "$1" | sed 's/^0*//')
+	[ -n "$cc_si" ] || cc_si=0
+	printf '%s' "$cc_si"
+}
+
+# cc_intent_numbers ROOT -> one decimal prefix per active or archived intent
+cc_intent_numbers() {
+	for cc_in_d in "$1/intent"/*/ "$1/intent/archive"/*/; do
+		[ -d "$cc_in_d" ] || continue
+		cc_in_base=$(basename -- "$cc_in_d")
+		case "$cc_in_base" in
+			i[0-9][0-9][0-9]-*)
+				cc_in_seq=${cc_in_base#i}; cc_in_seq=${cc_in_seq%%-*}
+				cc_seq_int "$cc_in_seq"; printf '\n' ;;
+		esac
+	done
+}
+
+# cc_plan_dir_numbers ROOT -> one decimal prefix per active or archived plan dir
+cc_plan_dir_numbers() {
+	for cc_pd_d in "$1/plans"/*/ "$1/plans/archive"/*/; do
+		[ -d "$cc_pd_d" ] || continue
+		cc_pd_base=$(basename -- "$cc_pd_d")
+		case "$cc_pd_base" in
+			[0-9][0-9][0-9][0-9]-*)
+				cc_pd_n=${cc_pd_base%%-*}
+				cc_seq_int "$cc_pd_n"; printf '\n' ;;
+		esac
+	done
+}
+
+# cc_plan_numbers ROOT -> one decimal prefix per active, archived, or reserved plan
+cc_plan_numbers() {
+	cc_plan_dir_numbers "$1"
+	for cc_pn_a in "$1/.runtime/materialization"/*/allocation.tsv; do
+		[ -f "$cc_pn_a" ] || continue
+		while IFS='|' read -r cc_pn_k cc_pn_id; do
+			[ -n "$cc_pn_id" ] || continue
+			cc_pn_n=${cc_pn_id%%-*}
+			cc_seq_int "$cc_pn_n"; printf '\n'
+		done <"$cc_pn_a"
+	done
+}
+
+# cc_intent_max_in_band ROOT START END -> highest in-band intent prefix, or 0
+cc_intent_max_in_band() {
+	cc_intent_numbers "$1" | awk -v s="$2" -v e="$3" '
+		$1+0 >= s+0 && $1+0 <= e+0 { if ($1+0 > m) m=$1+0 }
+		END { print m+0 }
+	'
+}
+
+# cc_plan_max_in_band ROOT START END -> highest in-band plan prefix, or 0
+cc_plan_max_in_band() {
+	cc_plan_numbers "$1" | awk -v s="$2" -v e="$3" '
+		$1+0 >= s+0 && $1+0 <= e+0 { if ($1+0 > m) m=$1+0 }
+		END { print m+0 }
+	'
+}
+
+# cc_band_next MAX START -> START when the band is unused, otherwise MAX+1
+cc_band_next() {
+	cc_bn_max=$(cc_seq_int "$1")
+	cc_bn_start=$(cc_seq_int "$2")
+	if [ "$cc_bn_max" -eq 0 ]; then
+		printf '%s\n' "$cc_bn_start"
+	else
+		printf '%s\n' $((cc_bn_max + 1))
+	fi
+}
+
+# cc_numbers_dup -> stdin of prefixes; exit 0 when any prefix repeats
+cc_numbers_dup() {
+	awk '{ count[$1]++ } END { for (k in count) if (count[k] > 1) exit 0; exit 1 }'
+}
+
+# cc_numbers_has N -> stdin of prefixes; exit 0 when N is present
+cc_numbers_has() {
+	awk -v n="$1" '$1+0 == n+0 { f=1 } END { exit f ? 0 : 1 }'
 }
 
 # ---------------------------------------------------------------------------
@@ -1734,26 +1823,7 @@ cc_stack_request_digest() {
 # cc_plan_max_sequence ROOT -> highest active, archived, or reserved plan number.
 # Reserved materialization ranges are never silently recycled after a failed stage.
 cc_plan_max_sequence() {
-	cc_pms_root="$1"; cc_pms_max=0
-	for cc_pms_d in "$cc_pms_root/plans"/*/ "$cc_pms_root/plans/archive"/*/; do
-		[ -d "$cc_pms_d" ] || continue
-		cc_pms_base=$(basename -- "$cc_pms_d")
-		case "$cc_pms_base" in
-			[0-9][0-9][0-9][0-9]-*)
-				cc_pms_n=${cc_pms_base%%-*}; cc_pms_n=$(printf '%s' "$cc_pms_n" | sed 's/^0*//')
-				[ -n "$cc_pms_n" ] || cc_pms_n=0
-				[ "$cc_pms_n" -gt "$cc_pms_max" ] && cc_pms_max=$cc_pms_n ;;
-		esac
-	done
-	for cc_pms_a in "$cc_pms_root/.runtime/materialization"/*/allocation.tsv; do
-		[ -f "$cc_pms_a" ] || continue
-		while IFS='|' read -r cc_pms_k cc_pms_id; do
-			cc_pms_n=${cc_pms_id%%-*}; cc_pms_n=$(printf '%s' "$cc_pms_n" | sed 's/^0*//')
-			[ -n "$cc_pms_n" ] || cc_pms_n=0
-			[ "$cc_pms_n" -gt "$cc_pms_max" ] && cc_pms_max=$cc_pms_n
-		done <"$cc_pms_a"
-	done
-	printf '%s\n' "$cc_pms_max"
+	cc_plan_max_in_band "$1" 1 9999
 }
 
 cc_materialization_emit_allocation() {
@@ -1853,11 +1923,27 @@ cc_plan_stack_materialize() {
 
 	mkdir -p "$cc_psm_rec"
 	if [ ! -f "$cc_psm_rec/allocation.tsv" ]; then
-		cc_psm_next=$(( $(cc_plan_max_sequence "$cc_psm_root") + 1 ))
+		cc_psm_bands=$(cc_member_band_resolve "$cc_psm_root") || { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; return 1; }
+		cc_psm_start=$(cc_seq_int "$(printf '%s\n' "$cc_psm_bands" | sed -n 's/^plan_start: //p')")
+		cc_psm_end=$(cc_seq_int "$(printf '%s\n' "$cc_psm_bands" | sed -n 's/^plan_end: //p')")
+		[ "$cc_psm_start" -ge 1 ] && [ "$cc_psm_end" -ge "$cc_psm_start" ] \
+			|| { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_fail MEMBER_ROSTER_INVALID; return 1; }
+		if cc_plan_dir_numbers "$cc_psm_root" | cc_numbers_dup; then
+			cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"
+			cc_materialize_diag allocation - PLAN_PREFIX_COLLISION
+			return 1
+		fi
+		cc_psm_max=$(cc_plan_max_in_band "$cc_psm_root" "$cc_psm_start" "$cc_psm_end")
+		cc_psm_next=$(cc_band_next "$cc_psm_max" "$cc_psm_start")
 		cc_psm_alloc_tmp=$(mktemp "$cc_psm_rec/.allocation.XXXXXX") || { cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; return 1; }
 		: >"$cc_psm_alloc_tmp"
 		while IFS='|' read -r cc_psm_key cc_psm_slug; do
-			[ "$cc_psm_next" -le 9999 ] || { rm -f "$cc_psm_alloc_tmp"; cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag allocation "$cc_psm_key" PLAN_ID_EXHAUSTED; return 1; }
+			[ "$cc_psm_next" -le "$cc_psm_end" ] || { rm -f "$cc_psm_alloc_tmp"; cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"; cc_materialize_diag allocation "$cc_psm_key" PLAN_ID_EXHAUSTED; return 1; }
+			if cc_plan_numbers "$cc_psm_root" | cc_numbers_has "$cc_psm_next"; then
+				rm -f "$cc_psm_alloc_tmp"; cc_plan_org_unlock "$cc_psm_root"; rm -f "$cc_psm_entries"
+				cc_materialize_diag allocation "$cc_psm_key" PLAN_PREFIX_COLLISION
+				return 1
+			fi
 			cc_psm_id=$(printf '%04d-%s' "$cc_psm_next" "$cc_psm_slug")
 			printf '%s|%s\n' "$cc_psm_key" "$cc_psm_id" >>"$cc_psm_alloc_tmp"
 			cc_psm_next=$((cc_psm_next + 1))
@@ -2046,12 +2132,26 @@ cc_plan_validate() {
 	return 0
 }
 
-# cc_plan_allocate_id ROOT SLUG -> next NNNN-slug after the highest ever allocated
+# cc_plan_allocate_id ROOT SLUG -> next NNNN-slug in the current member's plan band
+# (active + archived + reserved). Empty band starts at plan_start, never wraps.
 cc_plan_allocate_id() {
 	cc_ai_root="$1"; cc_ai_slug="$2"
 	cc_safe_slug "$cc_ai_slug" || { cc_fail PLAN_SLUG_INVALID "$cc_ai_slug"; return 1; }
-	cc_ai_max=$(cc_plan_max_sequence "$cc_ai_root") || return 1
-	cc_ai_next=$((cc_ai_max + 1))
+	cc_ai_bands=$(cc_member_band_resolve "$cc_ai_root") || return 1
+	cc_ai_start=$(cc_seq_int "$(printf '%s\n' "$cc_ai_bands" | sed -n 's/^plan_start: //p')")
+	cc_ai_end=$(cc_seq_int "$(printf '%s\n' "$cc_ai_bands" | sed -n 's/^plan_end: //p')")
+	[ "$cc_ai_start" -ge 1 ] && [ "$cc_ai_end" -ge "$cc_ai_start" ] || { cc_fail MEMBER_ROSTER_INVALID; return 1; }
+	if cc_plan_dir_numbers "$cc_ai_root" | cc_numbers_dup; then
+		cc_fail PLAN_PREFIX_COLLISION
+		return 1
+	fi
+	cc_ai_max=$(cc_plan_max_in_band "$cc_ai_root" "$cc_ai_start" "$cc_ai_end")
+	cc_ai_next=$(cc_band_next "$cc_ai_max" "$cc_ai_start")
+	[ "$cc_ai_next" -le "$cc_ai_end" ] || { cc_fail PLAN_ID_EXHAUSTED; return 1; }
+	if cc_plan_numbers "$cc_ai_root" | cc_numbers_has "$cc_ai_next"; then
+		cc_fail PLAN_PREFIX_COLLISION
+		return 1
+	fi
 	printf '%04d-%s\n' "$cc_ai_next" "$cc_ai_slug"
 }
 
