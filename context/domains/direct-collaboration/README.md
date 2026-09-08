@@ -144,22 +144,13 @@ resumability, close-only-clean, block-on-base-drift) and the tier suite that
 enforces the Explore floor (no verifier; Explore never treated as verified;
 approval refuses Explore when a risk signal is present).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `13a8e92`, where INV-PAIR-01 and
-INV-ASSURE-01 place direct collaboration as the Explore tier. The v0.7.0 design
-source `sources/system-design/context-circuit/v0.7.0/direct-collaboration/` was
-named by the original proposal and describes the standalone-mode ancestor of this
-behavior; the shipped v1.0 invariants are the authoritative present-day evidence.
-
 ## Acceptance notes
 
-Accepted 2026-09-03 from proposal `0029-add-direct-collaboration`, **rewritten to
-the v1.0 assurance-ladder framing**. The original v0.7.0 proposal described
-`cc-pair` as a mode "outside the plan lifecycle" and orthogonal to plan execution;
-the accepted page instead records it as the Explore tier of the single ladder
-(INV-ASSURE-01), with the promote step as the ramp into the checked pipeline,
-because the shipped invariants supersede the standalone-mode framing. The
-Explore-tier mechanics (one repository, user-as-oracle, no verifier/lease/record,
-light resumable pointer, human-supervised labeling, block-on-base-drift,
-host-blocked read-only) stand in full.
+Accepted 2026-09-03, **rewritten to the v1.0 assurance-ladder framing**. An
+earlier framing described `cc-pair` as a mode "outside the plan lifecycle" and
+orthogonal to plan execution; the accepted page instead records it as the
+Explore tier of the single ladder (INV-ASSURE-01), with the promote step as the
+ramp into the checked pipeline, because the shipped invariants supersede the
+standalone-mode framing. The Explore-tier mechanics (one repository, user-as-oracle,
+no verifier/lease/record, light resumable pointer, human-supervised labeling,
+block-on-base-drift, host-blocked read-only) stand in full.

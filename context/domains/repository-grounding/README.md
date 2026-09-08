@@ -120,16 +120,10 @@ may author the repo's agent docs, which later stacked plans then discover).
 live scenario `agent-harness/scenarios/11-repo-grounding` (grade.sh PASS incl.
 `file_grounded` + `grounding_manifest_recorded`, human-simulator pass).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `cb84870` (implementation `e3e95cd`).
-Design source `sources/system-design/context-circuit/v0.6/repository-grounding/`
-was named by the accepting request.
-
 ## Acceptance notes
 
-Accepted 2026-08-27 from proposal `0017-domain-repository-grounding`.
-Updated 2026-08-29 from proposal `0026-repository-grounding-brief-location` (v0.6.1
-writer-brief-placement): the shipped brief moved out of the workspace root to
-`.context-circuit/wrapper/runtime/worker-brief.md`; source of truth (`.context-circuit/wrapper/adapters/worker-brief.md`)
-and INV-GROUND semantics unchanged. Implementation `2c2adab`.
+Accepted 2026-08-27.
+Updated 2026-08-29: the shipped brief moved out of the workspace root to
+`.context-circuit/wrapper/runtime/worker-brief.md`; source of truth
+(`.context-circuit/wrapper/adapters/worker-brief.md`) and INV-GROUND semantics
+unchanged.

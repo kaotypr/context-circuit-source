@@ -138,31 +138,23 @@ requested; a failed execution is never cleaned up as a side effect.
 
 `sh test/acceptance.sh` (delivery suite).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0015-domain-delivery`. Extended 2026-08-27 from
-proposal `0019-change-delivery` (the v0.6 drift guard), and 2026-08-28 from proposal
-`0024-change-delivery` (vacate "publish"/"publication" from git delivery; the word is
+Accepted 2026-08-24. Extended 2026-08-27 with the v0.6 drift guard, and
+2026-08-28 to vacate "publish"/"publication" from git delivery; the word is
 reserved for the [external surface](../external-surface/README.md), matching
-INV-DELIVER-01 and AC-16). Extended 2026-09-03 from proposal
-`0031-change-delivery-for-pairing`: pairing-branch delivery is a separate,
-human-supervised action that blocks on base drift rather than rebasing (the plan
-drift guard is unchanged and remains the only auto-rebase path). Re-grounded
-2026-09-04 for Context Circuit v1.0: delivery is named as Gate 2, the point where
-scope-safety is settled now that there is no automated scope gate upstream
-(mechanics unchanged). Extended 2026-09-06: a change set is only same-repository
-plans that will ship as one pull request; different repositories deliver
-independently as separate covering-tip pull requests and never share an
-integration candidate. Extended 2026-09-06:
-delivery does not spawn a verifier; a same-repository change set is the member
-tip map and the covering execution branch. Extended 2026-09-06: named plans
-partition by repository covering tip, so a three-deep stack in one repository
-plus one plan in another is two pull requests, not four. Sibling stacks in
-one repository are several pull requests, not zero. Extended 2026-09-06:
-delivery records Gate 2 only — it does not mark members done and does not
-start in-place knowledge reconcile.
+INV-DELIVER-01 and AC-16. Extended 2026-09-03: pairing-branch delivery is a
+separate, human-supervised action that blocks on base drift rather than rebasing
+(the plan drift guard is unchanged and remains the only auto-rebase path).
+Re-grounded 2026-09-04 for Context Circuit v1.0: delivery is named as Gate 2, the
+point where scope-safety is settled now that there is no automated scope gate
+upstream (mechanics unchanged). Extended 2026-09-06: a change set is only
+same-repository plans that will ship as one pull request; different repositories
+deliver independently as separate covering-tip pull requests and never share an
+integration candidate. Extended 2026-09-06: delivery does not spawn a verifier; a
+same-repository change set is the member tip map and the covering execution
+branch. Extended 2026-09-06: named plans partition by repository covering tip, so
+a three-deep stack in one repository plus one plan in another is two pull
+requests, not four. Sibling stacks in one repository are several pull requests,
+not zero. Extended 2026-09-06: delivery records Gate 2 only — it does not mark
+members done and does not start in-place knowledge reconcile.

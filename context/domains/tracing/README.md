@@ -175,13 +175,6 @@ the coordinator does not author a stand-in plan.
 `sh test/acceptance.sh` (feasibility suite — pins authorization plus the
 deliberate absence of a scope gate; tracing/manifest contract assertions).
 
-## Provenance
-
-Authored from the current wrapper for Context Circuit v1.0. This phase replaced
-the earlier design's spec-adversary + automated scope-envelope check: the adversary
-and envelope are gone; post-approval tracing plus a coordinator feasibility check
-took their place. Grounds on the shipped contract; raw `sources/` was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-09-04 (maintainer) to close a knowledge gap: v1.0 added post-approval

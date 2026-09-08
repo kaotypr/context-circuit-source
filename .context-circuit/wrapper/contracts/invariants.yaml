@@ -50,6 +50,16 @@ invariants:
       and the runtime never write or accept Product Knowledge (INV-RUNTIME-01).
       A later plan may start even if Product Knowledge from a prior plan has not
       yet been updated. Explore is planless and has no plan grounding preflight.
+  - id: INV-KNOWLEDGE-03
+    rule: >
+      Live context/ holds durable product knowledge only. It never names a
+      particular plan, intent file, or sources file, and never names a sources/
+      path. DECISIONS.md records what is now true about the product — decision,
+      rationale, and consequence — not edited paths or ephemeral artifacts.
+      Explaining the concepts plan, intent, and sources remains allowed; path
+      patterns that describe product structure (for example intent/<id>/) are
+      not particular-file cites. Invariant IDs and shipped contract or adapter
+      paths remain nameable.
   - id: INV-INTENT-01
     rule: >
       Every writing request is anchored to a first-class intent/<id>/ whose

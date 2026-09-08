@@ -46,23 +46,25 @@ mapping is the "say the effect, not the mechanism" table in `.context-circuit/do
 host-blocked, delivery, archive/restore, and internal file names), whose
 authority is settled by the runtime contracts under `.context-circuit/wrapper/contracts/`.
 
-## Provenance
+## Implementation references
 
 - `.context-circuit/docs/terminology.md` — the shipped product glossary and internal → user-facing
   translation table; the coordinator references it, and its authority is settled
   by the runtime contracts under `.context-circuit/wrapper/contracts/`.
 - `.context-circuit/agents/coordinator.md` — the role that applies the translation.
-- Design material under `sources/` is historical maintainer input, not a live
-  owner, and is read only when a request names it.
 
-Accepted from proposal `0001-terminology-glossary` on 2026-08-24. Extended
-2026-08-27 from proposal `0022-change-terminology` with the plan-stack terms (plan
+Historical design material is maintainer input, not a live owner, and is read
+only when a request names it.
+
+## Acceptance notes
+
+Accepted 2026-08-24. Extended 2026-08-27 with the plan-stack terms (plan
 stack, path lease, execution/integration base, drift guard, repository grounding,
 grounding manifest, worker brief, system design), mirrored in `.context-circuit/docs/terminology.md`.
-Extended 2026-08-28 from proposal `0025-change-terminology`: the Delivery row drops
-"publishing" (git delivery no longer uses the word), and the external-surface terms
-(publication, publish/`cc-publish`, publication kind, publication `instructions`) are
-added and mirrored in `.context-circuit/docs/terminology.md`.
+Extended 2026-08-28: the Delivery row drops "publishing" (git delivery no longer
+uses the word), and the external-surface terms (publication, publish/`cc-publish`,
+publication kind, publication `instructions`) are added and mirrored in
+`.context-circuit/docs/terminology.md`.
 Extended 2026-09-06: Completion is explicit mark-done at Standard and Critical;
 delivery does not complete a plan; mark-done then updates live context files
 when Product Knowledge was affected.

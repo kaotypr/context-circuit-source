@@ -145,12 +145,6 @@ against the old criteria. Implementation-only questions stay in the trace and pl
 `sh test/acceptance.sh` (intent suite; the feasibility suite pins the deliberate
 absence of an automated scope gate).
 
-## Provenance
-
-Authored from the current wrapper for Context Circuit v1.0 (the two-gate,
-tiered-assurance layer: INV-INTENT-01/02, INV-APPROVE-01, INV-ASSURE-01). Grounds
-on the shipped contract; raw `sources/` was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-09-04 (maintainer) to close a knowledge gap: v1.0 introduced the

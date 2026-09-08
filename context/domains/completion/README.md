@@ -118,14 +118,8 @@ reference and refreshes it before execution.
 
 `sh test/acceptance.sh` (completion suite).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0013-domain-completion`. Refreshed for
-in-place knowledge updates, then for ungated mark-done: asking flips status
-with no unreadiness look; reconcile still writes live context files rather
-than a sidecar.
+Accepted 2026-08-24. Refreshed for in-place knowledge updates, then for ungated
+mark-done: asking flips status with no unreadiness look; reconcile still writes
+live context files rather than a sidecar.

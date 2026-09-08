@@ -1,9 +1,19 @@
 # Conventions
 
 Use the smallest route-selected context. Name exact source files before reading
-them and record provenance. Keep one normative owner per rule and use invariant
-IDs in prose and tests. Treat `plan.yaml` as canonical status and `PLAN.md` as
-the human explanation.
+them. Keep one normative owner per rule and use invariant IDs in prose and tests.
+Treat `plan.yaml` as canonical status and `PLAN.md` as the human explanation.
+
+Live context files hold durable product knowledge only (INV-KNOWLEDGE-03). They
+never name a particular plan, intent file, or sources file, and never name a
+path into the sources tree. Path patterns that explain product structure (for
+example `intent/<id>/`) remain allowed. Invariant IDs and shipped contract or
+adapter paths remain nameable.
+
+`DECISIONS.md` records what is now true about the product — decision, rationale,
+and consequence — not edited paths or the ephemeral artifact behind the change.
+Write durable conclusions into live context files; do not copy raw source text
+or cite the ephemeral artifact.
 
 Separate owned knowledge from consumed external services. Knowledge the
 workspace owns is organized by concept and scoped by repository: a
