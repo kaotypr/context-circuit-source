@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0032-gitlab-template-push
 intent: i023-gitlab-template-push
 title: Push published template to GitLab from GitHub Action
-status: draft
+status: done
 objective: >
   After a successful template publication to GitHub (main, version tag, and
   GitHub Release unchanged), the same publish-template workflow also pushes

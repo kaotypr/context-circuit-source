@@ -12,4 +12,4 @@
 | 0029-band-contracts | Align contracts, docs, and checks with band allocation | done | > | context-circuit-source | plans/0029-band-contracts/PLAN.md |
 | 0030-lean-workspace-context | Keep the workspace agent loop; remove discovery waste | draft | > | context-circuit-source | plans/0030-lean-workspace-context/PLAN.md |
 | 0031-ok-easter-egg | Hide ok punchline in engine; trigger from coordinator | draft | > | context-circuit-source | plans/0031-ok-easter-egg/PLAN.md |
-| 0032-gitlab-template-push | Push published template to GitLab from GitHub Action | draft | > | context-circuit-source | plans/0032-gitlab-template-push/PLAN.md |
+| 0032-gitlab-template-push | Push published template to GitLab from GitHub Action | done | > | context-circuit-source | plans/0032-gitlab-template-push/PLAN.md |

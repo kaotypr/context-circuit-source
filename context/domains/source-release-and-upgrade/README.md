@@ -97,8 +97,8 @@ same `.template-repo` commit and tag to `gitlab.sicepat.tech` as an operator-
 configured mirror — not a second assembly — and creates a GitLab Release with
 the same notes and archive as GitHub. Operators set GitHub Actions
 `GITLAB_TEMPLATE_PROJECT` (`group/project`, no host prefix) and
-`GITLAB_TEMPLATE_TOKEN` on the source repository before the first publish
-after this lands. The token may be a GitLab project access token with
+`GITLAB_TEMPLATE_TOKEN` on the source repository before a publish that should
+also update GitLab. The token may be a GitLab project access token with
 `write_repository` and `api` (git push plus Releases API). The GitLab project
 must already exist. Variable and secret names stay in this page; the project
 path and credential stay in GitHub Actions settings and never enter workspace

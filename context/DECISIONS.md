@@ -1,5 +1,24 @@
 # Decisions
 
+## 2026-09-09 — Published template is GitHub-canonical with an optional GitLab mirror
+
+Decision: official template publication still lands on GitHub (`main`, the
+version tag, and the GitHub Release). The same publish Action then pushes that
+same assembled tree and tag to GitLab and creates a GitLab Release with the
+same notes and archive. GitHub stays canonical; GitLab is a mirror of the
+already-published tree, not a second assembly. The GitLab project path and
+token live only in GitHub Actions settings (`GITLAB_TEMPLATE_PROJECT`,
+`GITLAB_TEMPLATE_TOKEN`). The GitLab project must already exist. A GitLab push
+or Release failure fails the job.
+
+Rationale: the published template has one canonical GitHub home. A second host
+can receive the same commit without a second assembler and without credentials
+in workspace files.
+
+Consequence: [source-release-and-upgrade](domains/source-release-and-upgrade/README.md)
+documents the operator variables and token scopes (`write_repository` and
+`api`). Runtime and `cc-publish` are unchanged.
+
 ## 2026-09-08 — Intent and plan ids allocate from per-member bands
 
 Decision: new intent ids (`i<NNN>-slug`) and plan ids (`NNNN-slug`) are allocated
