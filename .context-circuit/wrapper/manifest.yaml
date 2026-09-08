@@ -6,7 +6,7 @@ runtime_version: 1.0.0
 # release this source builds as. The dev dist build names its artifact from it, and
 # publish-template.sh re-stamps it at publish time; the context-circuit-template git
 # tag remains authoritative for what has actually been published.
-template_version: 0.0.1-beta.1
+template_version: 0.1.0
 artifact_kind: universal-project-workspace-template
 release_contract: template-owned-files-only
 
