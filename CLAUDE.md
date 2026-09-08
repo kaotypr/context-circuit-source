@@ -50,17 +50,26 @@ are host-local. They never replace a human approval or completion gate and never
 enter workspace state. If Task/subagent creation is unavailable, report
 `host-blocked` and keep the route read-only; never self-verify.
 
-## Optional: slash-invocation of skills
+## Host-native routes
 
-Product skills ship only at `.agents/skills/<name>/SKILL.md`, and the coordinator
-resolves them by path (see INV-SKILL-01). Claude Code does not discover
-`.agents/skills/`, so to also invoke a skill directly — for example
-`/cc-execute plan 0078` — create per-skill symlinks under `.claude/skills/` once:
+Claude discovers Context Circuit child roles, standing rules, and slash skills
+through the committed `.claude/` tree. Those files are thin routes, not a second
+policy:
 
-    mkdir -p .claude/skills && for d in .agents/skills/*/; do ln -s "../../$d" ".claude/skills/$(basename "$d")"; done
+- Agents: `.claude/agents/{worker,verifier,planner}.md` → Read
+  `.context-circuit/agents/<role>.md`
+- Rules: `.claude/rules/` → owning invariants (role-tiering spawn, commit
+  convention) and this file where the host requires it
+- Skills: `.claude/skills/cc-*` are symlinks to `.agents/skills/cc-*`. Product
+  skills remain owned at `.agents/skills/<name>/SKILL.md` (INV-SKILL-01). The
+  coordinator still resolves them by path; the Claude skills tree is how `/cc-*`
+  is discovered.
 
-`.claude/` is host-local: it is never part of workspace or shipped state and an
-upgrade neither creates nor preserves it. Re-run the command after an upgrade
-that adds or renames a skill; remove any dangling links for skills an upgrade
-dropped. This is a host convenience only — it grants no route, role, or authority
-that the read-as-procedure path does not already carry.
+`.claude/` is committed workspace integration. Personal Claude state
+(`~/.claude/`, `.claude/settings.local.json`, transcripts, credentials) stays
+host-local and never enters workspace state. Native folders grant no route,
+role, or authority that the read-as-procedure path does not already carry.
+
+This maintainer checkout may also hold source-only Claude extras
+(`.claude/agents/cc-human-simulator.md`, `.claude/skills/cc-test-case/`). Those
+are not the product set and are not shipped.

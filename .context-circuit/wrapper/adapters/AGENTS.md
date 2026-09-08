@@ -74,6 +74,16 @@ capability, permission mode, and provider status are bounded provider-neutral
 completion. A native child maps to the single worker (for execution or direct
 collaboration) or the independent verifier (for execution only).
 
+Committed host-native folders are the project integration surface for those
+transports, not optional host-local convenience. They route to Context Circuit
+owners and must not copy role bodies or invent a second authorization policy:
+
+- Claude Code: `.claude/agents/`, `.claude/rules/`, `.claude/skills/` (symlinks
+  to `.agents/skills/cc-*`)
+- Codex CLI: `.codex/agents/*.toml` plus this file; Codex has no `.codex/rules/`
+  tree — standing instructions stay here and in agent TOML
+- Cursor Agent: `.cursor/agents/`, `.cursor/rules/`; skills via `.agents/skills/`
+
 ## Per-role model & effort
 
 The coordinator may run the worker, verifier, and planner at a per-role `(model, effort)`

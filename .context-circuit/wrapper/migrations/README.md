@@ -52,3 +52,24 @@ meaning still depends on a former top-level wrapper path after the trees have
 moved, report migration-needed and preserve the old state rather than silently
 rewriting it. The workspace-owned-file precedent remains
 `repository-binding-migrate`; this layout change does not migrate those files.
+
+## Host-native routes (`.claude/`, `.codex/`, `.cursor/`)
+
+Workspaces assembled before host-native integration had only root instruction
+adapters (`AGENTS.md`, `CLAUDE.md`, `CURSOR.md`) and `.agents/skills/`. An
+upgrade adds the product host-native set as template-owned files:
+
+- Claude: `.claude/agents/{worker,verifier,planner}.md`, `.claude/rules/`
+  stubs, and `.claude/skills/cc-*` links to `.agents/skills/cc-*`
+- Codex: `.codex/agents/{worker,verifier,planner}.toml` (no `.codex/rules/`)
+- Cursor: `.cursor/agents/{worker,verifier,planner}.md` and `.cursor/rules/`
+  stubs
+
+These files are routes into `.context-circuit/agents` and owning invariants;
+they do not replace root adapters. Do not copy maintainer-only extras
+(`.claude/agents/cc-human-simulator.md`, `.claude/skills/cc-test-case/`) into
+an instantiated workspace. Personal host state stays personal: `~/.claude/`,
+`~/.codex/`, `~/.cursor/`, `.claude/settings.local.json`, `AGENTS.override.md`,
+transcripts, and credentials. If a workspace already has personal files in
+those trees, add the missing product stubs and links; do not overwrite
+personal overrides.

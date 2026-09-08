@@ -1,0 +1,9 @@
+---
+description: Commit messages follow INV-COMMIT-01; do not restate the rule here
+alwaysApply: true
+---
+
+# Commit convention
+
+Owner: INV-COMMIT-01 in `.context-circuit/wrapper/contracts/invariants.yaml`.
+Read that invariant. Do not restate the rule here.

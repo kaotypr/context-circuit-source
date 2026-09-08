@@ -122,3 +122,21 @@ criteria:
   - id: AC-38
     statement: The system-design skill authors both a product-level design and an optional intent detail write-up; skipping detail does not block Gate 1; there is no second approval; planning uses detail when present without replacing the post-approval code read; the short five-section intent page stays short.
     suite: test/intent/test-intent-detail.sh
+  - id: AC-HOST-01
+    statement: Each supported host exposes native project surfaces for worker, verifier, and planner under .claude/, .codex/, and .cursor/.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-02
+    statement: Host-native agent and rule files route to .context-circuit/agents or owning invariants and do not copy role bodies or invent a second authorization policy.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-03
+    statement: Claude exposes cc-* skills through .claude/skills/ links to .agents/skills/cc-* without copying skill bodies.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-04
+    statement: Missing required native child creation remains host-blocked; adapters and coordinator never self-verify.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-05
+    statement: Source product host-native routes and the blank template seed expose the same roles and owner paths.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-06
+    statement: Shipped host folders store no credentials, transcripts, provider payloads, or authentication state.
+    suite: test/host-native/test-host-routes.sh

@@ -34,6 +34,7 @@ run_suite test/knowledge/test-debt.sh
 run_suite test/archive/test-archive.sh
 run_suite test/delivery/test-delivery.sh
 run_suite test/security/test-boundaries.sh
+run_suite test/host-native/test-host-routes.sh
 run_suite test/scenarios/test-scenarios.sh
 run_suite test/release/test-release.sh
 run_suite test/release/test-publish.sh
