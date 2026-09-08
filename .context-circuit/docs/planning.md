@@ -10,7 +10,7 @@ A v1.0 plan is the **derivation of an approved intent** (`.agents/skills/cc-inte
 not the thing the human approves. Before planning a writing change there must be an
 approved parent intent, which holds the goal, outcome-level acceptance criteria, a
 coarse optional scope, and tier. On approval a planner reads the real code
-and writes that repository's plan; the plan is published from those files and names the intent
+and writes that repository's plan or plans; the plan is published from those files and names the intent
 (`intent: i<NNN>-slug`, `schema_version: 3`). The derives-from-an-approved-intent
 authorization runs as a preflight and again at execution start — a criteria change
 after approval re-enters Gate 1 — but there is no automated scope gate: scope-safety

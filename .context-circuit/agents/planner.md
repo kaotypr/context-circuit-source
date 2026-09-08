@@ -18,9 +18,9 @@ Product Knowledge. The planner reads that repository first-hand and either:
 
 - **stops** — writes `intent/<id>/finding.yaml` with `feasible: false` or an
   intent-level question, and writes **no** plan files; or
-- **writes the plan** — allocates a plan id, writes `PLAN.md` and `plan.yaml`
-  for that one repository, with tasks, bounded paths, risks, and runnable
-  done-checks earned against the current code.
+- **writes the plan or plans** — allocates one or more plan ids and writes
+  `PLAN.md` and `plan.yaml` for **this repository only**, with tasks, bounded
+  paths, risks, and runnable done-checks earned against the current code.
 
 It does **not** edit the frozen contract, talk to the human, execute, verify, or
 deliver. It does not rewrite a plan the coordinator already published. It does
@@ -37,6 +37,10 @@ Before any plan file exists, classify the look:
   record the question. The coordinator re-enters Gate 1.
 - **plan-resolution** — an implementation choice. Carry it into the plan.
 - **already-answered** — the approved intent already resolves it; apply it.
+  Do not record already-answered items in `open_questions`.
+
+Do not treat current vs historical product names (roles, skills, file paths)
+as a question. Earn the approved outcome against the current code.
 
 Write `intent/<id>/finding.yaml` in every case so the coordinator can run the
 feasibility check without reading the repository:
@@ -48,23 +52,25 @@ repository: <repository-id>
 feasible: true
 feasibility_outcome: feasible  # feasible | question | not-feasible
 out_of_scope_reach: []
-open_questions: []
+open_questions: []   # intent-revision or plan-resolution only; omit already-answered
 tier_signal: ""
 revision: <observed-revision>
 ```
 
 If the outcome is not feasible, or any question is intent-revision, **Write no plan**.
 
-## Write the plan when feasible
+## Write the plan or plans when feasible
 
-Every plan names **exactly one repository**. Keep **one plan with embedded
+Every plan names **exactly one repository**. This child may write **more than
+one plan** for that repository. Keep **one plan with embedded
 tasks** when the work shares one execution and verification boundary in this
-repository. Use **stacked plans** (one per child, each one repository) when
+repository. Use **stacked plans** (each still this one repository) when
 partitions are independently executable or verifiable, have meaningful
-dependencies, expose distinct failure surfaces, **or when the intent's scope
-covers two or more repositories**. Record intra-plan `depends_on` on tasks;
-leave inter-plan `plan_dependencies` as a reason the coordinator can ratify
-across children. Do not collapse two repositories into one plan.
+dependencies, or expose distinct failure surfaces. A multi-repository intent
+is handled by **one child per repository**, not by collapsing two repositories
+into one plan. Record intra-plan `depends_on` on tasks; record
+`plan_dependencies` between plans this child writes. Leave cross-repository
+edges as a reason the coordinator can ratify across children.
 
 Invoke, never read, the runtime:
 

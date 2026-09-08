@@ -1,6 +1,6 @@
 ---
 name: cc-trace
-description: On intent approval, spawn one planner child per repository in scope to read the real code and write that repository's plan, then run the feasibility check so the coordinator can publish without rewriting.
+description: On intent approval, spawn one planner child per repository in scope to read the real code and write that repository's plan or plans, then run the feasibility check so the coordinator can publish without rewriting.
 ---
 
 This skill is the approval-spawn packet. The child it launches is the
@@ -25,12 +25,12 @@ missing file in an isolated working copy is not an absent config.
 
 For each repository in the intent's scope, spawn **one planner child per repository**,
 in parallel when each child writes only its own repository's
-plan. If two children would allocate plan ids at the same time, spawn them
+plan or plans. If two children would allocate plan ids at the same time, spawn them
 sequentially instead. Deliver the assembled
 `.context-circuit/agents/planner-brief.md` with intent id, repository
-id, tier, and workspace root filled in. Do not paste schemas into the prompt.
+id, tier, and workspace root filled in. Do not paste the contract. Do not add extra classification homework, naming notes, or a request to reconcile old product names.
 
-If a current plan already exists for this intent and repository and the finding
+If current plans already exist for this intent and repository and the finding
 records the same revision, do not spawn a second planner.
 
 ## Feasibility check
@@ -58,11 +58,12 @@ that area.
 
 The planner earns runnable done-checks against the current code and carries them into the plan. The coordinator never invents those commands.
 
-The planner's files already name one repository. Keep **one plan with
+The planner's files already name one repository. This child may write more than
+one plan for that repository. Keep **one plan with
 embedded tasks** when they share one bounded execution and verification
 boundary. Use **stacked** plans, each one repository, with `plan_dependencies`
-when partitions are independent, ordered, or when the intent's scope covers two
-or more repositories. The coordinator may add a `plan_dependencies` edge across
+when partitions are independent, ordered, or have distinct failure surfaces.
+A two-repository intent still needs one child per repository. The coordinator may add a `plan_dependencies` edge across
 children; it must not collapse two repositories into one plan and must not
 rewrite task bodies.
 
