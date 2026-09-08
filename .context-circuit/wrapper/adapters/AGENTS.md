@@ -82,8 +82,8 @@ Committed host-native folders are the project integration surface for those
 transports, not optional host-local convenience. They route to Context Circuit
 owners and must not copy role bodies or invent a second authorization policy:
 
-- Claude Code: `.claude/agents/`, `.claude/rules/`, `.claude/skills/` (symlinks
-  to `.agents/skills/cc-*`)
+- Claude Code: `.claude/agents/`, `.claude/rules/`, `.claude/skills/cc-*/SKILL.md`
+  (thin routes into `.agents/skills/cc-*`)
 - Codex CLI: `.codex/agents/*.toml` plus this file; Codex has no `.codex/rules/`
   tree — standing instructions stay here and in agent TOML
 - Cursor Agent: `.cursor/agents/`, `.cursor/rules/`; skills via `.agents/skills/`

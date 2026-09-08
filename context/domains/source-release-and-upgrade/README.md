@@ -53,7 +53,7 @@ workspace.
 Assembly ships the nested product home
 (`.context-circuit/{wrapper,agents,docs}`) plus root host pointers,
 `.agents/`, and the product host-native trees (`.claude/`, `.codex/`,
-`.cursor/` — agent stubs, Claude/Cursor rule stubs, Claude skill links to
+`.cursor/` — agent stubs, Claude/Cursor rule stubs, Claude skill routes to
 `.agents/skills/cc-*`). It never ships: the source design, maintainer plans
 and logs, source-only tests and evidence, source-only Claude extras
 (`cc-human-simulator`, `cc-test-case`), source `.runtime/`, `agent-harness/`,

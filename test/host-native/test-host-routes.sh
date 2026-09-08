@@ -49,19 +49,22 @@ if grep -E '^# Worker role|^# Verifier role|^# Planner role' \
 	fail 'host agent stub copied a role-body heading'
 fi
 
-# --- Claude skill links are pointers to .agents/skills/cc-*, not copies ---
+# --- Claude skill stubs route to .agents/skills/cc-*, not copies ---
 for skill_dir in "$ROOT"/.agents/skills/cc-*; do
 	[ -d "$skill_dir" ] || continue
 	name=${skill_dir##*/}
-	test -e "$ROOT/.claude/skills/$name" || fail "missing Claude skill route: $name"
-	test -L "$ROOT/template/.claude/skills/$name" || fail "missing template Claude skill route: $name"
-	src_link=$(readlink "$ROOT/.claude/skills/$name") || fail "Claude skill $name is not a symlink"
-	tpl_link=$(readlink "$ROOT/template/.claude/skills/$name") || fail "template Claude skill $name is not a symlink"
-	[ "$src_link" = "$tpl_link" ] || fail "Claude skill link mismatch: $name"
-	case "$src_link" in
-		../../.agents/skills/"$name"|../../.agents/skills/"$name"/) ;;
-		*) fail "Claude skill $name does not point at .agents/skills/$name (got $src_link)" ;;
-	esac
+	src="$ROOT/.claude/skills/$name/SKILL.md"
+	tpl="$ROOT/template/.claude/skills/$name/SKILL.md"
+	require_file "$src"
+	require_file "$tpl"
+	test ! -L "$ROOT/.claude/skills/$name" || fail "Claude skill $name is still a symlink"
+	test ! -L "$ROOT/template/.claude/skills/$name" || fail "template Claude skill $name is still a symlink"
+	cmp -s "$src" "$tpl" || fail "source/template mismatch: .claude/skills/$name/SKILL.md"
+	contains "$src" ".agents/skills/$name/SKILL.md"
+	contains "$src" "Do not elaborate a second skill policy here"
+	if grep -E '^## ' "$src" >/dev/null 2>&1; then
+		fail "Claude skill stub $name copied a skill-body heading"
+	fi
 done
 
 # --- standing rules restate always-on clauses and cite the owner ---
