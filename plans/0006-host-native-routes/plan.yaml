@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0006-host-native-routes
 intent: i020-host-conventions-preserved
 title: Integrate Context Circuit through host-native route folders
-status: draft
+status: done
 objective: >
   Claude Code, Codex CLI, and Cursor Agent CLI each discover Context Circuit
   through that host's committed native folders — thin routes into

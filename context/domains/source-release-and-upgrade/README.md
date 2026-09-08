@@ -7,10 +7,10 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 6921a31
+    commit: e268297
     basis: current-wrapper
-generated_at: 2026-08-24T00:00:00Z
-review_date: 2026-11-24
+generated_at: 2026-09-08T00:00:00Z
+review_date: 2026-12-08
 freshness: accepted-from-current-wrapper
 assumptions:
   - This maintainer checkout assembles a distributable product it is not itself.

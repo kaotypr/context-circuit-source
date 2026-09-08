@@ -7,10 +7,10 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 4b8ac0b
+    commit: e268297
     basis: current-wrapper
-generated_at: 2026-08-24T00:00:00Z
-review_date: 2026-11-24
+generated_at: 2026-09-08T00:00:00Z
+review_date: 2026-12-08
 freshness: accepted-from-current-wrapper
 assumptions:
   - The three named hosts share one router and one lifecycle.

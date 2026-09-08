@@ -39,3 +39,10 @@ rewritten to the v1.0 assurance-ladder framing (`cc-pair` is the Explore tier, n
 a separate mode): a new [direct-collaboration](domains/direct-collaboration/README.md)
 domain plus extensions to host-adapters, delivery, ARCHITECTURE.md, and
 DECISIONS.md. See the 2026-09-03 decision in `context/DECISIONS.md`.
+
+Plan `0006-host-native-routes` (intent `i020-host-conventions-preserved`) was
+marked done 2026-09-08: committed `.claude/`, `.codex/`, and `.cursor/` trees
+are the native integration surface. See the 2026-09-08 decision in
+`context/DECISIONS.md` and the updated [host-adapters](domains/host-adapters/README.md)
+and [source-release-and-upgrade](domains/source-release-and-upgrade/README.md)
+domain pages.
