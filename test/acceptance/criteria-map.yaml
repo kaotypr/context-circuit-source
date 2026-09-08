@@ -99,7 +99,7 @@ criteria:
     statement: An intent is a first-class decision — goal, outcome-level criteria, a coarse optional scope, tier — with an i-prefixed never-reused id; approval freezes its contract digest, confirms the ask was understood, and is the single upstream human gate; archive/restore are status-blind moves.
     suite: test/intent/test-intent.sh
   - id: AC-31
-    statement: On approval a read-only tracer reads the real code (one child per repository) and the coordinator runs a feasibility check before any plan; the runtime keeps only a scope-free authorization (a plan derives from an approved intent, criteria unchanged) with no automated scope gate, and a criteria change re-enters Gate 1 while failing upward on a missing or unapproved intent.
+    statement: On approval a planner reads the real code (one child per repository) and writes the plan; the coordinator runs a feasibility check and does not rewrite the child's plan; the runtime keeps only a scope-free authorization (a plan derives from an approved intent, criteria unchanged) with no automated scope gate, and a criteria change re-enters Gate 1 while failing upward on a missing or unapproved intent.
     suite: test/intent/test-feasibility.sh
   - id: AC-32
     statement: A candidate is a deterministic digest over the commit map, bases, and frozen contract digest; verifier results and human acceptance bind to it, and any new commit or criteria change yields a new candidate that voids prior evidence and acceptance for verify and deliver. Mark-done does not refuse stale evidence.
@@ -122,3 +122,21 @@ criteria:
   - id: AC-38
     statement: The system-design skill authors both a product-level design and an optional intent detail write-up; skipping detail does not block Gate 1; there is no second approval; planning uses detail when present without replacing the post-approval code read; the short five-section intent page stays short.
     suite: test/intent/test-intent-detail.sh
+  - id: AC-HOST-01
+    statement: Each supported host exposes native project surfaces for worker, verifier, and planner under .claude/, .codex/, and .cursor/.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-02
+    statement: Host-native agent and rule files route to .context-circuit/agents or owning invariants and do not copy role bodies or invent a second authorization policy.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-03
+    statement: Claude exposes cc-* skills through .claude/skills/ links to .agents/skills/cc-* without copying skill bodies.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-04
+    statement: Missing required native child creation remains host-blocked; adapters and coordinator never self-verify.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-05
+    statement: Source product host-native routes and the blank template seed expose the same roles and owner paths.
+    suite: test/host-native/test-host-routes.sh
+  - id: AC-HOST-06
+    statement: Shipped host folders store no credentials, transcripts, provider payloads, or authentication state.
+    suite: test/host-native/test-host-routes.sh

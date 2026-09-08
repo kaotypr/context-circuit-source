@@ -13,10 +13,11 @@ purpose: >
   The v1.0 evolution moves the human gate upstream to the intent (what "correct"
   means, from the plain ask alone) and makes everything between intent and delivery
   mechanical, consequence-tiered, and self-invalidating. On approval the coordinator
-  spawns the tracer — one read-only child per repository — which reads the real code
-  and reports a manifest; the coordinator then runs a feasibility check on the findings
-  before any plan is written. It adds INV-INTENT-01/02 (intent gate + post-approval
-  tracing and feasibility), INV-CANDIDATE-01 (candidate-bound evidence), and
+  spawns the planner — one child per repository — which reads the real code
+  and writes that repository's plan when the look is feasible; the coordinator
+  then runs a feasibility check on the finding
+  before rewriting any plan. It adds INV-INTENT-01/02 (intent gate + post-approval
+  planner and feasibility), INV-CANDIDATE-01 (candidate-bound evidence), and
   INV-ASSURE-01 (tiered assurance, with pairing folded in as the Explore tier); it
   reworks INV-APPROVE-01, INV-EXEC-01, INV-PLAN-01, INV-VERIFY-01, INV-COMPLETE-01/02,
   and INV-KNOWLEDGE-02; and it keeps the whole mechanics spine (leases, base selection,
@@ -25,10 +26,9 @@ purpose: >
   consequence tiering, which fails upward; scope-safety is settled at delivery (Gate 2),
   not by any automated scope gate. Every plan derives from an approved intent; there is
   no intent-less plan and no backward-compatibility path for one.
-  The approval-to-plan latency increment adds no gate and no new authority. It
-  makes trace evidence revision-bound and plan-ready, treats anchors as advisory,
-  and adds one idempotent atomic stack-materialization boundary. Cache and timing
-  records are bounded runtime evidence only; feasibility, tier, plan boundaries,
+  The approval-to-plan path adds no gate and no new authority. The planner child
+  reads the code and writes the plan; the coordinator publishes without a second
+  authorship. Feasibility, tier, plan boundaries,
   and question dispositions remain coordinator judgments.
 
 invariants:
@@ -57,11 +57,11 @@ invariants:
       criteria, a coarse and OPTIONAL scope, and a provisional consequence tier —
       drafted by the coordinator without reading the codebase (it grounds only in
       existing context/ Product Knowledge). Criteria are not frozen as executable
-      here; the tracer earns the runnable check that proves each one against the real
+      here; the planner earns the runnable check that proves each one against the real
       code after approval (INV-INTENT-02). Approval is the single upstream human gate
       (Gate 1, INV-APPROVE-01); it freezes contract_digest — the frozen identity of the
       criteria the change is later proven against (INV-CANDIDATE-01) — and also confirms
-      the coordinator understood the plain ask, which is what lets the tracer read the
+      the coordinator understood the plain ask, which is what lets the planner read the
       real code next. Intent ids use the distinct form i<NNN>-slug, their own
       never-reused sequence with a hard ceiling at i999; allocation fails clearly
       when no exact three-digit id is representable and never archives, deletes, or
@@ -69,14 +69,15 @@ invariants:
   - id: INV-INTENT-02
     rule: >
       A v1.0 plan declares its parent intent. On intent approval the coordinator spawns
-      the tracer — one read-only child per repository in the intent's scope, in parallel
-      (no lease, no worktree) — which reads the real code and reports a manifest
-      (trace-manifest.yaml: file/call-site map, concrete risks, the runnable done-checks
-      that prove each outcome criterion, a tier signal, feasibility, and any out-of-scope
-      reach). Before any plan is written the coordinator runs a FEASIBILITY CHECK on the
-      findings: feasible → it sets the tier and derives the plan(s) with no second gate;
-      not feasible → it stops, explains the blocker, and hands the decision to the human;
-      every tracer question is dispositioned before planning: an intent-level question
+      the planner — one child per repository in the intent's scope, in parallel
+      (no lease, no worktree) — which reads the real code and writes that repository's
+      plan files (PLAN.md and plan.yaml: tasks, bounded paths, concrete risks, the
+      runnable done-checks that prove each outcome criterion, a tier signal,
+      feasibility, and any out-of-scope reach). Before any plan is rewritten by the
+      coordinator, it runs a FEASIBILITY CHECK on the
+      finding: feasible → it sets the tier and publishes the plan(s) with no second gate
+      and without rewriting the child's prose; not feasible → it stops, explains the blocker, and hands the decision to the human;
+      every planner question is dispositioned before publication: an intent-level question
       that changes the goal, constraints, outcome criteria, scope, tier, authority, or
       lifecycle semantics stops planning and re-enters Gate 1; a plan-level question is
       carried into the plan; a question already answered by the plain request is applied
@@ -85,20 +86,16 @@ invariants:
       The feasibility check fails upward — when it cannot conclude the change is buildable,
       or when an intent-level question remains unresolved, it stops rather than proceed —
       and is a QUALITY gate, not a safety gate: it is coordinator judgment over the
-      tracer's findings, not an engine verb. Scope-safety is NOT enforced here — the
+      planner's finding, not an engine verb. Scope-safety is NOT enforced here — the
       concrete scope is settled at delivery (Gate 2, INV-DELIVER-01), where the human sees
       and authorizes the exact diff and repositories, and all pre-delivery work is
       sandboxed in isolated worktrees. The runtime's only intent check at planning and
       execution is the derives-from-an-approved-intent authorization: the plan names an
       approved intent whose criteria are unchanged since approval; a criteria drift
       re-enters Gate 1.
-      Reused grounding is bound to workspace/repository identity, canonical binding
-      and location, revision, structural-map schema, and discovery rules. Exact reuse
-      rereads current intent sites; bounded drift rereads affected sites and dependents;
-      legacy, incompatible, broad, ancestry-uncertain, or otherwise uncertain evidence
-      falls back to a cold trace. A current manifest carries typed anchors, fragments,
-      dependencies, criterion coverage, checks, questions, and feasibility evidence
-      sufficient for coordinator ratification without a second code-reading pass.
+      The coordinator must not read the target repository and must not rewrite the
+      plan the planner wrote. Reused grounding is an existing plan plus finding at the
+      recorded revision; uncertain drift spawns the planner again.
   - id: INV-CANDIDATE-01
     rule: >
       A candidate is a deterministic digest over the per-repository commit map, the
@@ -176,7 +173,7 @@ invariants:
     rule: >
       Approval is the explicit conversational human gate on the INTENT (Gate 1):
       it changes the intent contract draft→approved, freezes contract_digest, and
-      confirms the coordinator understood the plain ask (which is what lets the tracer
+      confirms the coordinator understood the plain ask (which is what lets the planner
       read the real code next, INV-INTENT-02). There is no confirmation card and no
       hidden confirmation token. A plan derived from an approved intent carries no
       second human approval — plan readiness once the intent is approved is automatic
@@ -430,8 +427,8 @@ invariants:
       Direct collaboration (`cc-pair`) is the Explore tier of the assurance ladder
       (INV-ASSURE-01), not a separate mode. All of its mechanics stand in full, plus
       an explicit PROMOTE step: attaching an intent and raising the tier to
-      Standard/Critical turns a session into a candidate-bearing change — a tracer then
-      spawns and reads the code, a plan is derived from its manifest, and the independent
+      Standard/Critical turns a session into a candidate-bearing change — a planner then
+      spawns and reads the code, writes the plan, and the independent
       verifier spawns on the candidate — without stopping and restarting as a separate plan. Before promotion it is an
       interactive working mode outside the plan lifecycle, limited to one connected
       repository per session. Its actors
@@ -503,7 +500,7 @@ owners:
   intent_gate: .context-circuit/wrapper/contracts/invariants.yaml
   feasibility_check: .context-circuit/wrapper/contracts/invariants.yaml
   trace_manifest: .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
-  tracer_role: .context-circuit/agents/tracer.md
+  planner_role: .context-circuit/agents/planner.md
   candidate_identity: .context-circuit/wrapper/contracts/schemas/candidate.yaml
   human_acceptance: .context-circuit/wrapper/contracts/schemas/candidate.yaml
   assurance_tiering: .context-circuit/wrapper/contracts/invariants.yaml

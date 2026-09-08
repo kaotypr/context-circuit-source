@@ -31,8 +31,10 @@ mkdir -p "$stage_tree"
 
 # Stage template-owned source trees only. Nested product home lives under
 # .context-circuit/{wrapper,agents,docs}; .agents/ stays at the workspace root.
+# Host-native routes (.claude/, .codex/, .cursor/) ship as thin pointers;
+# source-only Claude extras are removed via the exclude manifest.
 mkdir -p "$stage_tree/.context-circuit"
-(CDPATH= cd "$source_root" && tar -cf - .agents .context-circuit) | tar -xf - -C "$stage_tree"
+(CDPATH= cd "$source_root" && tar -cf - .agents .context-circuit .claude .codex .cursor) | tar -xf - -C "$stage_tree"
 
 # Root adapters become the workspace entry files.
 cp "$source_root/.context-circuit/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"

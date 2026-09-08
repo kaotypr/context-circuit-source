@@ -15,7 +15,7 @@ for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-ASSURE-01 INV-PLAN-01
 	INV-EXTERNAL-03 INV-PAIR-01; do
 	contains "$inv" "$id"
 done
-for concern in intent_contract intent_gate feasibility_check tracer_role trace_manifest \
+for concern in intent_contract intent_gate feasibility_check planner_role trace_manifest \
 	candidate_identity human_acceptance assurance_tiering \
 	plan_lifecycle runtime repository_identity local_binding \
 	execution_records verifier_result completion_record \
@@ -112,7 +112,7 @@ for sk in cc-workspace cc-intent cc-trace cc-plan cc-execute cc-run-stack cc-sys
 done
 # --- v1.0 intent front door: skill, schema, role, and gate wording present ---
 ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
-contains "$ci" "tracer"
+contains "$ci" "planner"
 contains "$ci" "intent-approve"
 contains "$ci" "contract_digest"
 contains "$ci" "feasibility"
@@ -123,17 +123,24 @@ contains "$ci" "plan-level"
 not_contains "$ci" "spec adversary"
 not_contains "$ci" "scope envelope"
 test ! -e "$ROOT/.context-circuit/agents/spec-adversary.md" || fail "spec-adversary role must be removed"
-require_file "$ROOT/.context-circuit/agents/tracer.md"
-contains "$ROOT/.context-circuit/agents/tracer.md" "real code"
-contains "$ROOT/.context-circuit/agents/tracer.md" "child per repository"
+require_file "$ROOT/.context-circuit/agents/planner.md"
+contains "$ROOT/.context-circuit/agents/planner.md" "real code"
+contains "$ROOT/.context-circuit/agents/planner.md" "child per repository"
+contains "$ROOT/.context-circuit/agents/planner.md" "Do not record already-answered"
+contains "$ROOT/.context-circuit/agents/planner.md" "more than"
+require_file "$ROOT/.context-circuit/agents/planner-brief.md"
+contains "$ROOT/.context-circuit/agents/planner-brief.md" "one or more plans"
+contains "$ROOT/.context-circuit/agents/planner-brief.md" "Do not record already-answered"
+test ! -e "$ROOT/.context-circuit/agents/tracer.md" || fail "tracer role must be removed"
 require_file "${W}/contracts/schemas/trace-manifest.yaml"
 contains "${W}/contracts/schemas/intent-contract.yaml" "i<NNN>-<kebab-slug>"
 tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
-contains "$tr" "one read-only tracer child per repository"
+contains "$tr" "one planner child per repository"
 contains "$tr" "feasibility check"
 contains "$tr" "Classify every question before feasibility"
 contains "$tr" "already-answered"
 contains "$tr" "done"
+contains "$tr" "Do not add extra classification homework"
 ce="$ROOT/.agents/skills/cc-plan/SKILL.md"
 contains "$ce" "intent-authorized"
 contains "$ce" "unresolved intent-level question"
@@ -216,7 +223,7 @@ done
 # not in the source-only .context-circuit/wrapper/adapters/ staging directory.
 require_file "$ROOT/.context-circuit/docs/role-tiering.md"
 contains "$inv" "role_tiering: .context-circuit/docs/role-tiering.md"
-contains "$ROOT/.context-circuit/docs/role-tiering.md" "tracer"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "planner"
 contains "$ROOT/.context-circuit/docs/role-tiering.md" "workspace root"
 contains "$ROOT/.context-circuit/docs/role-tiering.md" "A missing file in an isolated working copy is not an absent config"
 contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "workspace root"
@@ -227,18 +234,25 @@ contains "${W}/adapters/CLAUDE.md" "workspace root"
 contains "${W}/adapters/CURSOR.md" "workspace root"
 contains "${W}/adapters/AGENTS.md" "Applying a configured tier on Cursor"
 contains "${W}/adapters/CURSOR.md" "Do not default to inherit"
-not_contains "$ROOT/.context-circuit/docs/role-tiering.md" "Tracer tiering isn’t supported"
-not_contains "$ROOT/.context-circuit/docs/role-tiering.md" "Tracer tiering isn't supported"
-not_contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "Tracer tiering isn’t supported"
-not_contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "Tracer tiering isn’t supported"
-not_contains "${W}/adapters/AGENTS.md" "Tracer tiering isn’t supported"
+not_contains "$ROOT/.context-circuit/docs/role-tiering.md" "tracer"
+not_contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "tracer"
+not_contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "tracer"
+not_contains "${W}/adapters/AGENTS.md" "tracer"
+not_contains "${W}/adapters/CLAUDE.md" "tracer"
+not_contains "${W}/adapters/CURSOR.md" "tracer"
+not_contains "$ROOT/CLAUDE.md" "tracer"
+not_contains "$ROOT/CURSOR.md" "tracer"
+not_contains "$ROOT/.context-circuit/agents/coordinator.md" "tracer"
+not_contains "$ROOT/.context-circuit/agents/planner.md" "tracer"
+not_contains "$inv" "tracer"
+not_contains "${W}/contracts/schemas/trace-manifest.yaml" "tracer"
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
 contains "$man" "runtime_version: 1.0.0"
 for r in coordinator worker verifier; do
 	require_file "$ROOT/.context-circuit/agents/$r.md"
 done
-for alias in repository-worker reviewer; do
+for alias in repository-worker reviewer tracer; do
 	test ! -e "$ROOT/.context-circuit/agents/$alias.md" || fail "role alias remains: $alias"
 done
 

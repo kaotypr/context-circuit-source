@@ -10,9 +10,10 @@ conversation routing and reporting language for every host.
 
 ## How it works
 
-A planned request flows as a normal conversation: the coordinator reads the relevant
-Product Knowledge and plan material, drafts or reviews a readable plan, you
-approve it in conversation, the workspace prepares isolated repository worktrees,
+A planned request flows as a normal conversation: the coordinator drafts an intent
+from the plain ask, you approve it (Gate 1), a planner reads the real code and writes
+the plan, the coordinator runs a feasibility check and publishes it, the workspace
+prepares isolated repository worktrees,
 one worker implements the whole plan in that plan's single repository and commits it, an independent
 verifier checks the latest commits, and the worker repairs failures with new
 commits. A plan becomes done only on an explicit mark-done at Standard and
@@ -32,9 +33,9 @@ verifier, and is always described as human-supervised rather than verified.
   the plan and context units an action needs.
 - Rule ownership is indexed in `.context-circuit/wrapper/contracts/invariants.yaml`. One rule has
   one owner; do not add parallel policy to a skill or role file.
-- The human gate is on the intent (Gate 1), not the plan: on approval a read-only
-  tracer reads the real code and the coordinator runs a feasibility check, then a
-  plan derives from the approved intent and executes with no separate plan gate and
+- The human gate is on the intent (Gate 1), not the plan: on approval a
+  planner reads the real code and writes the plan, the coordinator runs a feasibility check, then the
+  plan executes with no separate plan gate and
   no automated scope gate (scope-safety is settled at delivery, Gate 2). Intent
   approval and delivery are explicit conversational actions, never confirmation
   cards or hidden tokens.
@@ -73,9 +74,19 @@ capability, permission mode, and provider status are bounded provider-neutral
 completion. A native child maps to the single worker (for execution or direct
 collaboration) or the independent verifier (for execution only).
 
+Committed host-native folders are the project integration surface for those
+transports, not optional host-local convenience. They route to Context Circuit
+owners and must not copy role bodies or invent a second authorization policy:
+
+- Claude Code: `.claude/agents/`, `.claude/rules/`, `.claude/skills/` (symlinks
+  to `.agents/skills/cc-*`)
+- Codex CLI: `.codex/agents/*.toml` plus this file; Codex has no `.codex/rules/`
+  tree — standing instructions stay here and in agent TOML
+- Cursor Agent: `.cursor/agents/`, `.cursor/rules/`; skills via `.agents/skills/`
+
 ## Per-role model & effort
 
-The coordinator may run the worker, verifier, and tracer at a per-role `(model, effort)`
+The coordinator may run the worker, verifier, and planner at a per-role `(model, effort)`
 from an optional host-local, per-user, gitignored `role-tiering.local.yaml`,
 grouped by host so each host names the models available on it. Read that file
 from the workspace root (next to `repositories.local.yaml`) before spawning;
@@ -97,10 +108,10 @@ directory is the isolated copy. A model
 or effort override requires `fork_turns: "none"`; provide the complete role,
 scope, working-copy path, and task in the spawn prompt instead of relying on
 forked conversation context. End the Codex `task_name` with `_worker`,
-`_verifier`, or `_tracer` so bounded host evidence can identify the role without
+`_verifier`, or `_planner` so bounded host evidence can identify the role without
 retaining a provider prompt. For direct collaboration, apply the `worker` tier to
-its one worker and never launch a verifier. For tracing, apply the `tracer` tier
-when that host group has a tracer entry.
+its one worker and never launch a verifier. For planning after approve, apply the
+`planner` tier when that host group has that entry.
 
 ### Applying a configured tier on Cursor
 
@@ -109,7 +120,7 @@ gets its `model`; do not restate it here.
 
 The coordinator on any host may keep one resumable root session, represented by
 a session or thread id, for the human conversation. That root is not a worker,
-verifier, or tracer. Every required child role must use the host's native
+verifier, or planner. Every required child role must use the host's native
 child-agent primitive and be attached to that coordinator: Codex uses
 `spawn_agent`, Claude Code uses `Task`/subagent, and Cursor Agent uses its native
 child feature when available. A separate top-level task, peer thread, or resumed
