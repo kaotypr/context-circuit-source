@@ -94,13 +94,15 @@ It assembles, gates, commits, and tags the product into `.template-repo`, pushes
 `main` and the annotated version tag to GitHub, and creates the GitHub Release.
 GitHub remains the canonical published template. The same job then pushes that
 same `.template-repo` commit and tag to `gitlab.sicepat.tech` as an operator-
-configured mirror — not a second assembly, and not a GitLab Release. Operators
-set GitHub Actions `GITLAB_TEMPLATE_PROJECT` (`group/project`, no host prefix)
-and `GITLAB_TEMPLATE_TOKEN` on the source repository before the first publish
+configured mirror — not a second assembly — and creates a GitLab Release with
+the same notes and archive as GitHub. Operators set GitHub Actions
+`GITLAB_TEMPLATE_PROJECT` (`group/project`, no host prefix) and
+`GITLAB_TEMPLATE_TOKEN` on the source repository before the first publish
 after this lands. The token may be a GitLab project access token with
-`write_repository`. The GitLab project must already exist. Variable and secret
-names stay in this page; the project path and credential stay in GitHub Actions
-settings and never enter workspace files.
+`write_repository` and `api` (git push plus Releases API). The GitLab project
+must already exist. Variable and secret names stay in this page; the project
+path and credential stay in GitHub Actions settings and never enter workspace
+files.
 
 The `agent-harness/` assembles or selects the same `context-circuit-template`
 artifact that would be distributed and must not import the source repository's
@@ -141,4 +143,5 @@ Claude extras stay out of the artifact and the template seed.
 
 Updated 2026-09-09: template publication also mirrors the published `.template-repo`
 `main` and version tag to `gitlab.sicepat.tech` from the publish Action, using
-operator-configured `GITLAB_TEMPLATE_PROJECT` and `GITLAB_TEMPLATE_TOKEN`.
+operator-configured `GITLAB_TEMPLATE_PROJECT` and `GITLAB_TEMPLATE_TOKEN`, and
+creates a GitLab Release with the same notes and archive as GitHub.

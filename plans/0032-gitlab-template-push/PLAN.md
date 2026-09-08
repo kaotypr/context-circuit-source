@@ -10,7 +10,8 @@
 After a successful template publication to GitHub (main, version tag, and GitHub
 Release unchanged), the same `publish-template` workflow also pushes that same
 commit and annotated tag from the `.template-repo` checkout to
-`gitlab.sicepat.tech`. GitHub remains canonical; GitLab receives a mirror of the
+`gitlab.sicepat.tech`, then creates a GitLab Release with the same notes and
+archive as GitHub. GitHub remains canonical; GitLab receives a mirror of the
 tree already published, not a second assembly.
 
 ## Grounding (HEAD 4575c02)
@@ -41,14 +42,16 @@ set.
 
 ## Decisions
 
-**One plan, two tasks** — workflow change and static proof share one execution
-and verification boundary.
+**One plan, three tasks** — workflow change, GitLab Release, and static proof
+share one execution and verification boundary.
 
 - Add a workflow step that pushes `.template-repo` `main` and the resolved `v*`
   tag to GitLab using a transient remote and the configured variable/secret.
 - Do not extend `publish-template.sh` or `release/binding.yaml` with GitLab
   credentials or paths.
 - GitLab step must not use `continue-on-error`.
+- After the GitLab git push, create a GitLab Release (same notes and archive
+  as GitHub) via the GitLab API.
 - New `test/release/test-gitlab-mirror-workflow.sh` for structural checks; wire
   into `test/acceptance.sh`.
 
@@ -69,6 +72,14 @@ Add `test/release/test-gitlab-mirror-workflow.sh`, wire it into
 `test/acceptance.sh`, and confirm `test/release/test-publish.sh` is unchanged.
 
 **Done when:** `sh test/acceptance.sh` passes.
+
+### GLP-003 — GitLab Release after the mirror push
+
+After the GitLab git push, create a GitLab Release for `v$V` using the same
+`release-notes.md` and dist archive as the GitHub Release. Document that the
+project access token needs `write_repository` and `api`.
+
+**Done when:** `sh test/release/test-gitlab-mirror-workflow.sh` passes.
 
 ## Risks
 

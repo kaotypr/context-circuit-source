@@ -4,15 +4,16 @@ title: Push the published template to GitLab from the GitHub Action
 goal: >
   When a template publication job publishes the assembled Context Circuit
   template to GitHub, that same job also pushes the same commit and version
-  tag to gitlab.sicepat.tech. GitHub remains the canonical published
-  template. GitLab receives a copy of that already-published tree, not a
-  separately assembled artifact, and not a GitLab Release.
+  tag to gitlab.sicepat.tech and creates a GitLab Release there with the
+  same notes and archive as the GitHub Release. GitHub remains the
+  canonical published template. GitLab receives a copy of that
+  already-published tree, not a separately assembled artifact.
 
 non_goals:
   - Replacing GitHub as the canonical template destination or making GitLab
     the sole or equal binding.
-  - Creating a GitLab Release, GitLab project template flag, or GitLab
-    package/registry artifact.
+  - Creating a GitLab project template flag, or using GitLab as a general
+    package registry beyond attaching this release's archive.
   - Changing cc-publish, plan publications, or any workspace external-surface
     pipeline.
   - Changing template assembly, the acceptance suite, or the meaning of a
@@ -59,8 +60,13 @@ acceptance_criteria:
       any workspace file or runtime record.
   - id: AC-FAILURE-VISIBLE
     statement: >
-      If the GitLab push cannot complete, the publication job fails rather
-      than reporting success.
+      If the GitLab push or GitLab Release cannot complete, the publication
+      job fails rather than reporting success.
+  - id: AC-GITLAB-RELEASE
+    statement: >
+      After the GitLab git push, that same job creates a GitLab Release for
+      the version tag, with the same release notes and archive attachment
+      as the GitHub Release.
 
 scope:
   repositories:
@@ -68,4 +74,4 @@ scope:
 
 tier: standard
 status: approved
-contract_digest: sha256:6d7f6b4e2c8f82a9481172268b61efbfd89a49e2793c27d62def04b62c71ac52
+contract_digest: sha256:533841bcd230083b0b563414efe07e2ea1471441203ef283f6b2e38afe3edb3a

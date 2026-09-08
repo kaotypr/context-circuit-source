@@ -1,24 +1,27 @@
 # Intention — i023
 
+_Status: approved, look complete, feasible.
+
 _Status: approved, look complete, feasible._
 
 ## Intention
 
 What you want: **when the template is published on GitHub, the same GitHub
-Action also pushes that same commit and version tag to `gitlab.sicepat.tech`.**
-GitHub stays the canonical published template. GitLab gets a copy of that
-release, not a second assembly.
+Action also pushes that same commit and version tag to `gitlab.sicepat.tech`,
+and creates a GitLab Release there.** GitHub stays the canonical published
+template. GitLab gets a copy of that tree, then a Release with the same notes
+and archive.
 
 The publication job already builds, checks, commits, and tags the template,
-then pushes to GitHub and creates a GitHub Release. Add one more push of that
-same `main` and `v*` tag to SiCepat GitLab. A GitLab Release is not part of
-this.
+then pushes to GitHub and creates a GitHub Release. After that it pushes the
+same `main` and `v*` tag to SiCepat GitLab and creates a GitLab Release.
 
 ```mermaid
 flowchart TD
   A["Template publication job runs"] --> B["Assemble, check, commit, and tag"]
   B --> C["Push main and tag to GitHub<br/>create the GitHub Release"]
   C --> D["Push the same main and tag<br/>to gitlab.sicepat.tech"]
+  D --> E["Create a GitLab Release<br/>same notes and archive"]
 ```
 
 ## Expectations
@@ -26,6 +29,8 @@ flowchart TD
 - A successful template publish still lands on GitHub as it does today: `main`,
   the version tag, and the GitHub Release.
 - The same commit and version tag are also pushed to `gitlab.sicepat.tech`.
+- That job also creates a GitLab Release with the same notes and archive as
+  GitHub.
 - GitHub remains the canonical destination; GitLab is an additional copy of
   that tree.
 - The GitLab credential stays a GitHub Actions secret. It never enters a
@@ -37,7 +42,7 @@ flowchart TD
 
 1. **Push the published template to GitLab from the GitHub Action.** (`0032-gitlab-template-push`)
    _After this:_ a template publication that succeeds on GitHub also pushes the
-   same commit and tag to `gitlab.sicepat.tech`.
+   same commit and tag to `gitlab.sicepat.tech` and creates a GitLab Release.
 
 ## How carefully this is checked
 
@@ -61,4 +66,6 @@ Explanations:
 **What is the GitLab project path on `gitlab.sicepat.tech` (group/project)?**
 _Answer: Do not hardcode it in the repo. Before the first publish after this
 lands, set GitHub Actions `GITLAB_TEMPLATE_PROJECT` (`group/project`) and
-`GITLAB_TEMPLATE_TOKEN`. The GitLab project must already exist._
+`GITLAB_TEMPLATE_TOKEN`. The GitLab project must already exist. The token is a
+project access token with `write_repository` and `api` (git push plus GitLab
+Release)._
