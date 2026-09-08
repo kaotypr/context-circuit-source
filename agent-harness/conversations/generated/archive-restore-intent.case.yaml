@@ -1,0 +1,72 @@
+# generated from plots/archive-restore-intent.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case (optional;
+# no existing scenario counterpart). Conversation-only. `intent_archived` is a NEW
+# predicate (harness gap) — see coverage/phase-6a.md.
+id: archive-restore-intent
+title: Archive an approved intent by name — moves it aside, status-blind, nothing else touched
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  intents:
+    - id: i001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add a command that exports the notes to a chosen output file.
+      tier: standard
+      state: approved
+  sources: []
+
+human:
+  persona: >
+    A solo maker who approved a change earlier but wants to shelve the whole idea for
+    now. Has never heard of Context Circuit; does not know what an intent is — just
+    "that export idea I signed off on".
+  turns:
+    - say: "Shelve that export idea I approved earlier — take it off my active list for now."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It moves the named idea off the active list and confirms in plain terms, treating
+      an intent's organization exactly like a plan's.
+    - It does not change or re-validate the fact that it was approved, and does not
+      require anything of it first.
+    - It does not start, plan, complete, deliver, or delete anything — only its place on
+      the active list changes.
+
+grader:
+  acceptance_criteria: [AC-30]
+  invariants: [INV-ARCHIVE-01, INV-ARCHIVE-02]
+  post_conditions:
+    - repositories_registered: 1
+    - intent_archived: i001-md-export:approved
+    - plans_created: 0
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|contract_digest|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals — including the intent id or contract file — to a lay user.
+    - requires_any: ["shelved", "set aside", "aside", "off your active", "moved", "archived"]
+      reason: It should shelve the named idea off the active list.
+  access_policy:
+    archive:
+      required: []
+      allowed:  ["intent/**", "plans/**"]
+      forbidden:
+        - "intent/archive/**"
+        - "plans/archive/**"
+        - ".context-circuit/wrapper/runtime/engine.sh"
+        - "sources/**"
+  # environmental overlay (NOT from the plot) — aligned to case 07's archive budget
+  budgets:
+    archive: { max_turns: 1, max_tokens: 6000 }

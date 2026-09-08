@@ -13,7 +13,7 @@ generated_at: 2026-08-27T00:00:00Z
 review_date: 2026-11-27
 freshness: accepted-from-current-wrapper
 assumptions:
-  - Concurrency changes only order and overlap of already-approved plans; it adds no authority.
+  - Concurrency changes only order and overlap of already-authorized plans; it adds no authority.
 unknowns: []
 contradictions: []
 acceptance:
@@ -21,19 +21,19 @@ acceptance:
   accepted_at: 2026-08-27
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Run-stack
 
 ## Summary
 
-Executing a *set* of approved plans in one request — a "plan stack" — so any
+Executing a *set* of intent-authorized plans in one request — a "plan stack" — so any
 conflict between them becomes a scheduling decision made before a worker runs,
 not a merge collision discovered afterward. Route "execute plans `<X>`…`<Z>`" and
 "run the ready stack" here. Owned by the `cc-run-stack` skill; the run-stack
-action is owned by `wrapper/adapters/WORKFLOW.md`. Adds no new authority: every
-plan is still separately approved, verified, completed, and delivered.
+action is owned by `.context-circuit/wrapper/adapters/WORKFLOW.md`. Adds no new authority: every
+plan is still individually authorized by its intent, verified, completed, and delivered.
 
 ## Scope
 
@@ -49,9 +49,10 @@ verification ([verification](../verification/README.md)), completion
 
 - **Inter-plan dependencies (INV-PLAN-05).** `plan.yaml` may declare optional
   `plan_dependencies` (`{id, reason}`), distinct from a task's intra-plan
-  `depends_on`. Declaring them requires `schema_version: 2`; entries reference an
-  existing, non-self plan id and the graph is acyclic. Plans without the field
-  stay `schema_version: 1` and behave exactly as v0.5.
+  `depends_on`. A v1.0 plan is `schema_version: 3` (the only supported version);
+  entries reference an existing, non-self plan id and the graph is acyclic.
+  A ratified stack reserves consecutive plan ids inside the current member's
+  plan band (INV-PLAN-03, INV-MEMBER-01), not a workspace-wide sequence.
 - **Path leases (INV-CONCURRENCY-01).** The one-worker lock generalizes to
   `(repository, path-region)` scope, recorded under `.runtime/locks/paths/`.
   Regions overlap when equal, when one is a path-prefix ancestor of the other, or
@@ -60,7 +61,7 @@ verification ([verification](../verification/README.md)), completion
   it builds on the holder. A lease is held from execution start until delivery;
   release preserves the record. Composes with INV-OWN-01.
 - **Execution bases (INV-CONCURRENCY-02).** A dependent plan's base in each
-  repository is the anchor tip (no same-repo predecessor), the single predecessor
+  repository is the base tip (no same-repo predecessor), the single predecessor
   branch (stack), or a runtime-authored integration merge of the predecessor
   branches (two or more), recorded as `base_commit` with `based_on`. The kept ref
   lives at `refs/cc-base/<plan>/<repo>` (never nested under a branch ref). The
@@ -80,7 +81,7 @@ verification ([verification](../verification/README.md)), completion
 
 ## Workflows
 
-- Execute a batch of approved plans in one go: `docs/getting-started.md`
+- Execute a batch of intent-authorized plans in one go: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -103,29 +104,24 @@ predecessor fails — keep such a plan late and thin.
 
 ## Implementation references
 
-- `.agents/skills/cc-run-stack/SKILL.md`, `wrapper/adapters/WORKFLOW.md`
-- `wrapper/runtime/engine.sh`: `cc_plan_dependencies`, `cc_plan_dep_closure`,
+- `.agents/skills/cc-run-stack/SKILL.md`, `.context-circuit/wrapper/adapters/WORKFLOW.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_dependencies`, `cc_plan_dep_closure`,
   `cc_plan_is_descendant`, `cc_region_overlap`, `cc_lease_check`,
   `cc_lease_acquire`, `cc_lease_release`, `cc_plan_same_repo_preds`,
-  `cc_base_prepare`, `cc_plan_ready`, `cc_run_stack_ready`
-- `wrapper/contracts/schemas/lease.yaml`, `plan.yaml` (`plan_dependencies`,
-  `schema_version [1, 2]`), `execution.yaml` (`based_on`)
-- `wrapper/contracts/invariants.yaml`: INV-PLAN-05, INV-CONCURRENCY-01,
-  INV-CONCURRENCY-02
+  `cc_base_prepare`, `cc_plan_ready`, `cc_run_stack_ready`,
+  `cc_plan_stack_materialize`
+- `.context-circuit/wrapper/contracts/schemas/lease.yaml`, `plan.yaml` (`plan_dependencies`,
+  `schema_version [3]`), `execution.yaml` (`based_on`)
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-03, INV-PLAN-05,
+  INV-MEMBER-01, INV-CONCURRENCY-01, INV-CONCURRENCY-02
 
 ## Verification
 
 `sh test/acceptance.sh` (path leases + run-stack suites); live scenario
-`template-harness/scenarios/10-run-approved-stack` (grade.sh PASS + human-simulator
+`agent-harness/scenarios/10-run-approved-stack` (grade.sh PASS + human-simulator
 pass; ten plans built and verified in dependency order with integration bases for
 the fan-ins).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `cb84870` (implementation `74eb510`).
-Design source `sources/system-design/context-circuit/v0.6/run-stack/` was named by
-the accepting request.
-
 ## Acceptance notes
 
-Accepted 2026-08-27 from proposal `0016-domain-run-stack`.
+Accepted 2026-08-27.

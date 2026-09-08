@@ -1,0 +1,175 @@
+schema_version: 3
+owner: .context-circuit/wrapper/contracts/schemas/plan.yaml
+describes: plans/<plan-id>/plan.yaml
+concern: plan_lifecycle
+
+purpose: >
+  Machine-readable half of a plan. Owns the canonical stable plan id, human plan
+  status, repository map, Product Knowledge references, tasks, dependencies,
+  bounded paths, acceptance and verification identifiers, and execution policy.
+  PLAN.md is the readable half describing the same plan; plan.yaml is canonical
+  for identifiers and status.
+
+stack_materialization_request:
+  interface: plan-stack-materialize ROOT REQUEST_DIR
+  request_file: REQUEST_DIR/request.yaml
+  fragments: REQUEST_DIR/fragments/<key>/{plan.yaml,PLAN.md}
+  description: >
+    A coordinator-ratified request supplies invocation_id, approved intent,
+    ratified/current-trace/coverage/question/tier assertions, and an ordered list
+    of request-local plan keys and slugs. Fragment files are complete plan artifacts
+    whose `plan` and dependency references use `@plan:<key>` tokens. The runtime
+    validates the complete request, reserves one consecutive in-band id range for
+    the current member's plan band, renders and validates every artifact in staging, rechecks intent
+    authorization and the prospective index, then publishes the whole stack or
+    rolls back to no visible stack. Retrying a published invocation returns the
+    original allocation. Runtime diagnostics are one stable stage/key/error tuple.
+
+plan_status:
+  authority: this file
+  values: [draft, done]
+  transitions:
+    - draft -> done       # explicit human mark-done; no readiness or evidence
+                          # precondition (INV-COMPLETE-01)
+  notes: >
+    A plan has no intermediate "approved" status: authorization is upstream on the
+    intent (Gate 1), and a plan that derives from that approved intent executes with
+    no separate plan gate and no automated scope gate (INV-INTENT-02). A plan is `draft` from creation until
+    it completes, then `done`. Execution status (running, verifying, repairing,
+    verified, failed, blocked) is runtime evidence and never replaces plan status.
+    Plan status is a projection, not a second human gate (INV-APPROVE-01 / INV-PLAN-01).
+
+plan_id:
+  form: NNNN-<kebab-slug>
+  rules:
+    - four zero-padded decimal digits, next after the highest plan number ever used in the current member's band (active and archived)
+    - default new-member band size is 999 plans; see members.yaml and member.local.yaml
+    - a ratified stack reserves consecutive ids inside that band in one materialization
+    - a full band or overlapping bands fail clearly without wrapping
+    - lowercase kebab-case slug, no dates, underscores, punctuation, or hashes
+    - unique across active and archived plans for the workspace lifetime
+    - stable after creation even if title or status changes
+    - never reused, including after archive or restore
+    - no member, machine, or workspace token in the id
+
+fields:
+  schema_version:
+    type: integer
+    required: true
+    values: [3]
+    description: >
+      A v1.0 plan is schema_version 3: it requires the `intent` field and derives
+      from an approved intent, grounded in the planner's look at that repository
+      (INV-INTENT-02), and may also carry plan_dependencies. Any other value is
+      unsupported.
+  plan: { type: string, required: true, description: canonical plan id }
+  intent:
+    type: string
+    required: true
+    description: >
+      The parent intent id (form i<NNN>-slug) this plan derives from. Every plan
+      names one. The derives-from-an-approved-intent authorization (cc_intent_authorized,
+      INV-INTENT-02) confirms the intent is approved with unchanged criteria and re-gates
+      on a criteria drift; there is no automated scope gate (scope-safety is settled at
+      delivery, Gate 2). The frozen contract_digest of this intent is folded into the
+      plan's execution candidate (INV-CANDIDATE-01).
+  title: { type: string, required: true }
+  status: { type: enum, required: true, values: [draft, done] }
+  objective: { type: string, required: true }
+  repositories:
+    type: list
+    required: true
+    description: >
+      Exactly one repository. A plan that lists two or more repositories is
+      invalid (INV-EXEC-02). An intent whose scope covers two repositories
+      derives at least two plans, one per repository.
+    item:
+      id: { type: string, required: true }
+      purpose: { type: string, required: false }
+  plan_dependencies:
+    type: list
+    required: false
+    description: >
+      Inter-plan ordering, distinct from a task's intra-plan depends_on. Each
+      entry names another plan this plan builds on, with a reason. Its effect
+      (same-repo git base vs cross-repo ordering gate) is derived per repository,
+      never declared. Use this only when independent execution, verification,
+      dependency, or failure boundaries justify stacked plans; a bounded one-plan
+      change keeps its ordered work in tasks instead.
+    item:
+      id: { type: string, required: true, description: an existing, non-self plan id }
+      reason: { type: string, required: true }
+  product_knowledge:
+    type: list
+    required: true
+    item:
+      id: { type: string, required: true }
+      path: { type: string, required: true }
+      reason: { type: string, required: true }
+  context_grounding:
+    type: object
+    required: true
+    fields: [summary, constraints, decisions]
+    description: >
+      decisions carries the durable, human-readable rationale for the chosen
+      one-plan or stacked-plan decomposition; PLAN.md mirrors it for review.
+  knowledge_impact:
+    type: object
+    required: true
+    fields: [expected_context_units, review_on_completion]
+  tasks:
+    type: list
+    required: true
+    item:
+      id: { type: string, required: true }
+      title: { type: string, required: true }
+      repositories: { type: list, required: true, description: the plan's single repository this task may change }
+      paths: { type: list, required: true, description: bounded paths or explicit repo-wide scope }
+      evidence_anchors:
+        type: list
+        required: false
+        description: >
+          Revision-bound trace evidence that guides the worker but is not an
+          exhaustive write allowlist. Necessary intent-consistent expansion in the
+          same repository is recorded in the worker handoff and checked over the
+          complete diff; another repository or approved-decision change stops.
+      depends_on: { type: list, required: true }
+      changes: { type: list, required: true }
+      acceptance: { type: list, required: true, item: [id, statement] }
+      verification: { type: list, required: true, item: [id, command] }
+  execution:
+    type: object
+    required: true
+    description: >
+      Each plan has one bounded worker lifecycle and, for Standard/Critical work,
+      one independent verifier lifecycle. Stacking plans does not merge these
+      per-plan boundaries.
+    fields:
+      worker: { const: one }
+      independent_verifier: { const: required }
+      max_worker_failures: { const: 3 }
+
+invariants:
+  - every plan names exactly one repository (INV-EXEC-02)
+  - every task names that plan's single declared repository (INV-PLAN-02)
+  - every task names bounded paths or an explicit repository-wide scope (INV-PLAN-02)
+  - task paths and evidence anchors are the grounded starting map, not a claim that
+    real-code investigation can never discover another necessary path in that repository
+  - task dependencies reference existing task ids (INV-PLAN-02)
+  - acceptance and verification use distinct identifiers
+  - each product_knowledge reference has a stable id, path, and reason (INV-PLAN-04)
+  - plan status is a projection, not a second human gate: Standard and Critical
+    become done only on an explicit mark-done (INV-PLAN-01)
+  - a v1.0 plan (schema_version 3) names its parent intent and derives from it once approved (INV-INTENT-02)
+  - schema_version is 3; any other value is unsupported (INV-PLAN-05, INV-INTENT-02)
+  - every plan_dependencies entry references an existing, non-self plan id and the
+    inter-plan dependency graph is acyclic (INV-PLAN-05)
+
+rules:
+  - INV-PLAN-01
+  - INV-PLAN-02
+  - INV-PLAN-03
+  - INV-PLAN-04
+  - INV-PLAN-05
+  - INV-MEMBER-01
+  - INV-INTENT-02

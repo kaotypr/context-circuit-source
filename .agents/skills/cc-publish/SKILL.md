@@ -1,6 +1,6 @@
 ---
 name: cc-publish
-description: Publish Context Circuit data to an external system (ClickUp, Jira, GitHub, Notion, Slack, …) as self-contained, one-way, idempotent records. A manually-triggered publication, orthogonal to the core workflow — never a plan/approve/execute/verify/deliver step, and it never changes plan status. It publishes either a plan and its tasks (kind plan), or a plan's open questions as a chat discussion thread (kind thread).
+description: Publish Context Circuit data to an external system (ClickUp, Jira, GitHub, Notion, Slack, …) as self-contained, one-way, idempotent records. A manually-triggered publication, orthogonal to the core workflow — never an intent/plan/execute/verify/deliver step, and it never changes plan status. It publishes either a plan and its tasks (kind plan), or a plan's open questions as a chat discussion thread (kind thread).
 ---
 
 ## When to use
@@ -13,9 +13,9 @@ according to its `kind`: **`plan`** (a plan and its tasks → a tracker) or **`t
 (a plan's open questions → a chat discussion).
 
 Publishing is **orthogonal to the core workflow**. It is not a phase and is not
-triggered by one: approving, executing, verifying, delivering, or completing a plan
-neither runs this nor is affected by it. You may publish a plan in any state —
-`draft`, `approved`, `done`, or never. Run it only when the human asks, every time;
+triggered by one: approving an intent, executing, verifying, delivering, or
+completing a plan neither runs this nor is affected by it. You may publish a plan in
+any state — `draft`, `done`, or never. Run it only when the human asks, every time;
 there is no automatic, scheduled, or event trigger.
 
 Note the vocabulary: in this product "publish" means sending data to an external
@@ -31,7 +31,7 @@ system. Git delivery is "push" / "open a pull request" (`cc-deliver`) and never
   provider tools** — never through the runtime engine, which has no provider action
   (INV-RUNTIME-01).
 - **Write** its own files under its own `publication/<name>/` folder: the
-  `intent/<plan-id>.yaml` field intent (below) and the authoritative record under
+  `field-intent/<plan-id>.yaml` field intent (below) and the authoritative record under
   `publication/<name>/published/<plan-id>.yaml`.
 - **Read the provider's current field values — display only, and only when the
   config opts in** (`preview.drift_read: true`). This is used solely to show a
@@ -49,7 +49,7 @@ If no publication is configured for the request, create one — the `publication
 folder is created on first use, never shipped empty:
 
 1. Write `publication/<name>/config.yaml` per
-   `wrapper/contracts/schemas/publication-config.yaml`: a `<name>` like
+   `.context-circuit/wrapper/contracts/schemas/publication-config.yaml`: a `<name>` like
    `plans-clickup`, `kind: plan`, `direction: export`, `trigger: manual`, the
    `provider`, a bounded `reads:` list, and a **credential-free** `target_ref` (a
    list name, project key, repo id — never a token). Optionally set
@@ -82,33 +82,33 @@ text), for every kind:
 - **Schedule policy** — workday hours, weekends skipped, a start date. This is
   *policy* and stays in `instructions:`. The concrete resolved per-plan values it
   implies (this plan starts here, is estimated at that) do **not** stay in the prose;
-  they live in the structured `intent/` layer below.
+  they live in the structured `field-intent/` layer below.
 
 Instructions guide wording and *policy* only: they never make you leak internals
 (INV-EXTERNAL-03), read beyond `reads`, write back to the workspace, change the
 mapping, or relax a boundary.
 
-## Field intent and estimates (the `intent/` layer)
+## Field intent and estimates (the `field-intent/` layer)
 
 Publishable provider fields that are **not derivable from the plan itself** — the
 schedule dates and the time estimate, pushed one-way as **best-effort estimates** —
 live in a user-owned, structured, diffable file per plan, per
-`wrapper/contracts/schemas/publication-intent.yaml`:
+`.context-circuit/wrapper/contracts/schemas/publication-field-intent.yaml`:
 
 ```
-publication/<name>/intent/<plan-id>.yaml
+publication/<name>/field-intent/<plan-id>.yaml
 ```
 
 - **Derived once, then owned.** On first publish or preview with no
-  `intent/<plan-id>.yaml`, derive a **first draft** from the `instructions:` schedule
+  `field-intent/<plan-id>.yaml`, derive a **first draft** from the `instructions:` schedule
   policy (workday hours, weekends skipped, start date) and the plan set, and write it
   here — the only workspace write the preview makes, and only under the publication's
-  own `intent/`, never under `plans/`. From then on this file is authoritative for
+  own `field-intent/`, never under `plans/`. From then on this file is authoritative for
   intent; the derivation **never silently overwrites a human edit**.
 - **What it holds, and never restates.** Only the field intent — plan-level and
   optional per-task `start_date`, `due_date`, `estimate_minutes`. Everything the plan
   already owns (title, tasks, `depends_on`, status) stays read from the plan as-found;
-  `intent/` never restates it, holds no external id or url (those live in the record),
+  `field-intent/` never restates it, holds no external id or url (those live in the record),
   and holds no credential (INV-SEC-01).
 
 **The estimate unit.** Canonical on disk is `estimate_minutes`, an **integer** —
@@ -137,9 +137,9 @@ new skill, route, or authority (INV-SKILL-01), and it is manual like every publi
 action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
 
 1. **Load the three local layers** — the plan as-found (`plans/<plan>/`), the intent
-   (`intent/<plan-id>.yaml`), and the last snapshot (`published/<plan-id>.yaml`
-   `fields:`). If no `intent/` file exists, derive a first draft and write it (the
-   only write the preview makes, only under the publication's own `intent/`).
+   (`field-intent/<plan-id>.yaml`), and the last snapshot (`published/<plan-id>.yaml`
+   `fields:`). If no `field-intent/` file exists, derive a first draft and write it (the
+   only write the preview makes, only under the publication's own `field-intent/`).
 2. **Render a plain-language diff.** For each plan and task, show intended vs
    last-pushed values in the human format, marking added / changed / unchanged:
 
@@ -154,7 +154,7 @@ action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
    The default diff is **intent vs last-published snapshot** — entirely local data, so
    the common "let me review the dates before I re-publish" case touches the provider
    **zero times**.
-3. **Converse and edit.** Discuss; edits land in `intent/<plan-id>.yaml`; re-preview
+3. **Converse and edit.** Discuss; edits land in `field-intent/<plan-id>.yaml`; re-preview
    until it reads right. No provider call has happened yet.
 4. **Publish on an explicit go.** Only "publish" pushes through the host/MCP tools and
    then refreshes the `fields:` snapshot in the record.
@@ -163,15 +163,15 @@ action; nothing auto-advances from preview to publish (INV-EXTERNAL-01).
 "did a human change it in the tracker since." When the config opts in
 (`preview.drift_read: true`), the preview may read the provider's *current* field
 values and add a third column — `desired … | we sent … | tracker now …`. This read is
-strictly bounded: **display only** (nothing read is written to `intent/`, the record,
+strictly bounded: **display only** (nothing read is written to `field-intent/`, the record,
 `plan.yaml`, or any workspace file), **never authority** (a publish still pushes the
-desired value; tracker drift stays cosmetic as in v0.6), read-only through the same
+desired value; tracker drift stays cosmetic), read-only through the same
 host/MCP tools, and **off by default**. If the config does not opt in, never read the
 provider in preview.
 
 ## Publish (the `plan` kind)
 
-Read the plan and its tasks, the intent (`intent/<plan-id>.yaml`), and the existing
+Read the plan and its tasks, the intent (`field-intent/<plan-id>.yaml`), and the existing
 record if one exists. Then realize the fixed mapping through the host/MCP tools, and
 push the intent field values (dates, estimate — converted from `estimate_minutes` per
 the provider table above):
@@ -226,7 +226,7 @@ On re-publish, compare against the record on **both** axes — content and field
 
 Update the **same** external item in place, and skip a task only when it is unchanged
 on **both** — so a task whose content is unchanged but whose desired estimate moved
-from 60→90 is still a **field-only update**, not a skip. This closes the v0.6 blind
+from 60→90 is still a **field-only update**, not a skip. This closes the prior blind
 spot where a date/estimate change was invisible because only content was hashed. Never
 create a second item for a plan or task that already has a mapped id. Leave provider
 fields neither the intent nor the record owns (a human's manual edits) untouched.
@@ -250,7 +250,7 @@ readable plan/task sections) and open a discussion:
   message** (a no-longer-open question is left in place, optionally with a short
   "resolved" reply).
 
-Write the record per `wrapper/contracts/schemas/publication-thread-record.yaml` —
+Write the record per `.context-circuit/wrapper/contracts/schemas/publication-thread-record.yaml` —
 the thread `parent_ts` and each question's `reply_ts`, keyed by a stable per-question
 `ref`.
 
@@ -279,7 +279,7 @@ mutate `plan.yaml` or plan status, never trigger or be triggered by a workflow p
 never put a credential or provider payload in a workspace file, and never invoke a
 runtime provider action (there is none), and never write under `plans/`. The
 publication writes only within its own `publication/<name>/` folder (config,
-`intent/`, `published/`).
+`field-intent/`, `published/`).
 The only permitted provider read is the **display-only** drift read in preview when
 the config opts in: nothing read is ever persisted to a workspace file, and it never
 becomes intent or authority. If the host cannot reach the provider, report

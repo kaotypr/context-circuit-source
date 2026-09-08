@@ -27,20 +27,30 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 ln -s "$ws/repositories/api" "$ws/repositories/linky"
 cc_fx_bindings_header "$ws"
-printf '  linky:\n    path: repositories/linky\n    anchor_branch: development\n' >>"$ws/repositories.local.yaml"
+printf '  linky:\n    path: repositories/linky\n    base_branch: development\n' >>"$ws/repositories.local.yaml"
 expect_failure cc_repo_resolve "$ws" linky
 
 # --- credentials never appear in shipped or workspace-owned files ---
 for term in password api_key access_token client_secret provider_payload BEGIN\ RSA\ PRIVATE\ KEY; do
-	if grep -RIlF "$term" "$ROOT/wrapper" "$ROOT/template" "$ROOT/.agents" "$ROOT/agents" 2>/dev/null | grep -v '/test/' | grep . ; then
+	if grep -RIlF "$term" "$ROOT/.context-circuit/wrapper" "$ROOT/template" "$ROOT/.agents" "$ROOT/.context-circuit/agents" 2>/dev/null | grep -v '/test/' | grep . ; then
 		fail "credential-like term '$term' found in shipped files"
 	fi
 done
 
 # --- the template ignores local bindings, checkouts, and runtime state ---
 contains "$ROOT/template/.gitignore" "repositories.local.yaml"
+contains "$ROOT/template/.gitignore" "/member.local.yaml"
 contains "$ROOT/template/.gitignore" "/repositories/"
 contains "$ROOT/template/.gitignore" "/.runtime/"
+contains "$ROOT/template/.gitignore" ".code-review-graph"
+
+# --- leftover .code-review-graph is dropped on workspace-init ---
+ws_crg=$(cc_fx_ws)
+mkdir -p "$ws_crg/.code-review-graph"
+printf 'junk\n' >"$ws_crg/.code-review-graph/graph.db"
+cc_workspace_init "$ws_crg" >/dev/null
+test ! -e "$ws_crg/.code-review-graph" || fail "workspace-init kept leftover .code-review-graph"
+rm -rf "$ws_crg"
 
 # --- negative fixtures document forbidden record fields ---
 require_file "$ROOT/test/security/fixtures/negatives/forbidden-fields.yaml"

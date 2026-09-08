@@ -1,0 +1,11 @@
+---
+description: On Cursor Task spawn, follow workspace-root CURSOR.md
+alwaysApply: true
+---
+
+# Role-tiering on Cursor child spawn
+
+Before spawning a worker, verifier, or planner, Read `CURSOR.md` at the
+workspace root and follow it. That file owns how this host sets `Task.model`.
+Do not copy the rule elsewhere. Do not import
+`.context-circuit/wrapper/adapters/CURSOR.md` — Read workspace-root `CURSOR.md`.

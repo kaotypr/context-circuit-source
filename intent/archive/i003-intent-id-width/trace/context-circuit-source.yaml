@@ -1,0 +1,245 @@
+schema_version: 1
+intent: i003-intent-id-width
+repository: context-circuit-source
+
+file_map:
+  - path: wrapper/runtime/engine.sh
+    sites:
+      - "310-318: cc_intent_id_valid accepts i[0-9][0-9][0-9][0-9]-*, strips the prefix with i????-, and delegates slug validation."
+      - "321: cc_intent_dir constructs intent/<id> paths for all lifecycle consumers."
+      - "323-334: cc_intent_contract_digest hashes every contract line except status and contract_digest, so the canonical intent field participates in approved digests."
+      - "390-424: cc_intent_validate reads the canonical contract id, validates its grammar, and requires directory basename equality."
+      - "426-444: cc_intent_allocate_id scans active and archived directory names using the four-digit glob and emits printf i%04d-."
+      - "452-474: index initialization/upsert writes canonical ids and intent/<id>/INTENT.md paths."
+      - "478-516: cc_intent_approve validates the id, freezes the digest, and updates the active index."
+      - "519-541: cc_intent_archive moves intent/<id> to intent/archive/<id> and removes the index row; it currently checks only cc_safe_id."
+      - "543-564: cc_intent_restore moves intent/archive/<id> back and re-adds the index row; it currently checks only cc_safe_id."
+      - "566-601: cc_intent_authorized resolves plan.yaml intent through cc_intent_dir and compares the current contract digest with the frozen digest."
+      - "1399-1408: cc_plan_validate validates every plan parent intent through cc_intent_id_valid and cc_intent_dir."
+      - "1741-1745, 2088-2091, 2134-2135, 2344, 2671, 2744, 2806, 2846, 3122: execution, candidate, change-set, tier, delivery, recovery, completion, and knowledge-debt paths consume intent ids through the shared helpers."
+      - "3380-3387: CLI dispatch exposes intent validate, allocation, approval, authorization, archive, restore, and index operations."
+  - path: wrapper/contracts/schemas/intent-contract.yaml
+    sites:
+      - "3: canonical contract path is intent/<intent-id>/contract.yaml."
+      - "34-43: intent_id contract defines i<NNNN>-<kebab-slug>, four digits, uniqueness, stability, and never-reuse rules."
+      - "46: contract intent field must match the directory name."
+      - "103-115: intent dependencies and trace manifest paths carry intent ids."
+  - path: wrapper/contracts/schemas/plan.yaml
+    sites:
+      - "47-56: every schema-3 plan carries a parent intent in the old i<NNNN>-slug form and uses it for authorization."
+  - path: wrapper/contracts/invariants.yaml
+    sites:
+      - "51-63: INV-INTENT-01/02 describe intent anchoring and the old four-digit intent form."
+  - path: intent/i003-intent-id-width/contract.yaml
+    sites:
+      - "2: approved canonical id remains i0003-intent-id-width until the migration is executed."
+      - "83-94: approved scope explicitly includes agent-harness/ and template/ along with runtime, contracts, context, docs, agents, skills, intent, plans, and test."
+      - "95-96: approved status and frozen digest record the identity-only migration policy."
+  - path: intent/
+    sites:
+      - "Directories: i0001-conversation-spec-library, i0002-plan-decomposition-guidance, and i0003-intent-id-width; no intent/archive child directories currently exist."
+      - "INDEX.md:5-7: all three active rows contain old directory names, ids, and paths."
+      - "i0001-conversation-spec-library/INTENT.md:1, contract.yaml:2, trace/workspace.yaml:2: canonical existing intent and trace references."
+      - "i0002-plan-decomposition-guidance/INTENT.md:1, contract.yaml:2,17: current draft intent and its explicit i0001 non-goal reference."
+      - "i0003-intent-id-width/INTENT.md:1, contract.yaml:2: the approved intent's own canonical id."
+  - path: plans/archive/0001-conversation-spec-library/
+    sites:
+      - "PLAN.md:4 and plan.yaml:3: active plan parent links to i0001-conversation-spec-library."
+  - path: test/lib/fixture.sh
+    sites:
+      - "44-45 and 99-100: fixture helpers derive intent ids as i$<four-digit-plan-id>, creating old-form ids dynamically."
+      - "167-184: cc_fx_intent creates fixture contracts and indexes using caller-supplied ids; callers must be migrated to three-digit ids."
+  - path: agent-harness/human/run-scenario.sh
+    sites:
+      - "314-328: setup.intents creates and approves caller-supplied intent ids."
+      - "353-366: setup.plans derives iid=i$pid from four-digit plan ids and writes/approves that old-form intent."
+  - path: agent-harness/test-template-runtime.sh
+    sites:
+      - "54-84: template-runtime integration derives intent i$pid from a four-digit plan id and binds it into contract and plan records."
+      - "169-179: multi-plan fixture derives mp_iid=i$1 and uses it in the intent contract/index."
+  - path: agent-harness/human/grade.sh
+    sites:
+      - "180-197: grading resolves intent status and authorization through workspace intent paths; it must continue to follow migrated ids from scenario data."
+  - path: docs/, context/, .agents/skills/, template/
+    sites:
+      - "docs/terminology.md:23; docs/planning.md:14; docs/templates/intent.example.md:8; docs/templates/plan.yaml:3: user-facing and template examples."
+      - "context/domains/intent/README.md:95; context/DECISIONS.md:297: Product Knowledge and historical path reference."
+      - ".agents/skills/cc-intent/SKILL.md:19,95; .agents/skills/cc-plan/SKILL.md:43: coordinator-facing grammar and command examples."
+      - "template/intent/README.md:21-22: shipped template contract for intent naming."
+  - path: agent-harness/conversations/coverage/phase-3.md; agent-harness/conversations/plots/; agent-harness/conversations/generated/; agent-harness/scenarios/
+    sites:
+      - "Current four-digit intent references occur at: coverage/phase-3.md:55; generated/approve-and-build-one-turn.case.yaml:21,56; generated/archive-restore-intent.case.yaml:19,52; generated/explore-promote-to-standard.case.yaml:50,54-55; generated/feasibility-question-then-approve.case.yaml:20,58; generated/refuse-before-gate1.case.yaml:20,56; generated/review-intent-approve-derive.case.yaml:20,60; generated/scope-reach-feasibility-question.case.yaml:58; generated/tier-fails-upward-refuse-explore.case.yaml:21,56."
+      - "Current four-digit intent references occur at: plots/approve-and-build-one-turn.md:28,76; plots/archive-restore-intent.md:28,71; plots/explore-promote-to-standard.md:79,84-85; plots/feasibility-question-then-approve.md:27,74; plots/refuse-before-gate1.md:27,73; plots/review-intent-approve-derive.md:27,83; plots/scope-reach-feasibility-question.md:79; plots/tier-fails-upward-refuse-explore.md:28,77."
+      - "Current four-digit intent references occur at: scenarios/03-plan-review-and-approve/case.yaml:16,54; scenarios/04-refuse-unapproved-execution/case.yaml:16,53; scenarios/15-intent-adversary-revise-and-approve/case.yaml:18,53; scenarios/16-scope-expansion-regate/case.yaml:50; scenarios/20-tier-escalation-fails-upward/case.yaml:16,49."
+  - path: test/
+    sites:
+      - "test/intent/test-intent.sh:12,17,25-30,34,36-38,81: allocation, validation, archive/restore, and expected next ids."
+      - "test/intent/test-feasibility.sh:21,56,63; test/candidate/test-candidate.sh:15; test/completion/test-inferred.sh:19,44-46,57; test/knowledge/test-debt.sh:21,42,51,62: lifecycle fixtures."
+      - "test/assurance/test-tier.sh:18-20,23-24,27-28,33-35,38-40,43-46,63-65,73-75,80,88-98,105,109-111: tier fixtures and id-shape cases."
+      - "test/plans/test-plans.sh:33,64; test/runtime/test-runtime.sh:20; test/run-stack/test-run-stack.sh:168-169; test/scenarios/test-scenarios.sh:24,40,55,70,90,101: parent-intent fixtures and stale-reference assertions."
+      - "test/contracts/test-contracts.sh:113: schema assertion currently expects i<NNNN>-<kebab-slug>."
+      - "Dynamic fixture construction also flows through test/lib/fixture.sh:44,99 and must be updated without changing plan ids, which remain four digits."
+
+task_partition:
+  - id: IDW-001
+    title: Update the owned intent identity contract and runtime mechanics
+    repositories: [context-circuit-source]
+    paths: [wrapper/runtime/, wrapper/contracts/, docs/, context/, .agents/skills/]
+    boundary: >-
+      Change the canonical grammar, allocator formatting and scan, validation,
+      and lifecycle call-site assumptions while leaving approval, authorization,
+      archive/restore status behavior, tiering, and plan id grammar unchanged.
+    dependencies: []
+  - id: IDW-002
+    title: Rename current intent records and relationship references
+    repositories: [context-circuit-source]
+    paths: [intent/, plans/]
+    boundary: >-
+      Rename i0001→i001, i0002→i002, and i0003→i003 wherever they are current
+      canonical records, update directory names and fields together, preserve the
+      i0001 trace contents, and keep existing statuses and plan parent meaning.
+    dependencies: [IDW-001]
+  - id: IDW-003
+    title: Migrate shipped fixtures and scenario-generated intent ids
+    repositories: [context-circuit-source]
+    paths: [test/, agent-harness/, template/]
+    boundary: >-
+      Update deterministic fixtures, generated conversation cases, scenarios,
+      human-simulated setup, and the shipped template so synthetic ids and dynamic
+      plan-to-intent mappings use i001-style ids while plan ids remain NNNN-slug.
+    dependencies: [IDW-001]
+  - id: IDW-004
+    title: Prove completeness and lifecycle preservation
+    repositories: [context-circuit-source]
+    paths: [test/, intent/, plans/, wrapper/runtime/]
+    boundary: >-
+      Add stale-reference and directory/contract consistency checks, exercise
+      allocation and old-form rejection, and run the semantic acceptance suite;
+      verify no lifecycle gate, status, authorization, tier, or delivery meaning
+      changed.
+    dependencies: [IDW-002, IDW-003]
+
+risks:
+  - >-
+    The current approved intents are i0001, i0002, and i0003; there are three active
+    intent directories and zero archived intent directories. Existing i0001 also has
+    an active plan and trace manifest that must move with the record. The approved
+    contract now includes agent-harness/ and template/, so their references are in
+    the migration boundary rather than an out-of-scope reach.
+  - >-
+    cc_intent_contract_digest excludes only status and contract_digest, so changing
+    the canonical intent field necessarily changes the digest for approved records.
+    The approved contract requires recomputing that frozen digest with the existing
+    algorithm after the identity-only rename. If it is not migrated atomically,
+    cc_intent_authorized will reject plans whose parent intent still appears approved.
+    Changing the digest algorithm would change a lifecycle identity rule and is not
+    authorized by this intent.
+  - >-
+    The allocator currently recognizes only four-digit directories and emits %04d;
+    the three-digit grammar introduces a representational ceiling at i999 while the
+    current allocator has no overflow branch.
+  - >-
+    The runtime's archive and restore operations use cc_safe_id rather than
+    cc_intent_id_valid. Updating the shared grammar alone will not make those entry
+    points reject malformed or old-form ids, so their intended validation boundary
+    must be decided without changing their status-blind move semantics.
+  - >-
+    Fixture and scenario code derives intent ids by prefixing four-digit plan ids
+    (i$pid). A mechanical textual replacement can accidentally alter plan ids or
+    create i0001-style ids that the new validator rejects.
+  - >-
+    The trace manifest itself records old-form references as historical grounding
+    evidence. Post-migration stale-reference checks must exclude trace manifests or
+    distinguish evidence from active references, otherwise the proof becomes
+    self-invalidating.
+  - >-
+    The approved contract's INTENT.md still says "draft, waiting for your approval"
+    while its contract and active index say approved. This pre-existing artifact
+    inconsistency is outside the requested semantic change but should not be
+    silently worsened during the rename.
+
+done_checks:
+  - criterion: AC-INTENT-ID-FORM
+    command: >-
+      sh -c '. wrapper/runtime/engine.sh; cc_intent_id_valid i001-checkout-retries
+      && ! cc_intent_id_valid i0001-checkout-retries'
+    expect: exit 0; new three-digit form is accepted and old four-digit form is rejected
+  - criterion: AC-INTENT-ID-FORM
+    command: >-
+      sh wrapper/runtime/engine.sh intent-allocate-id . migration-check
+    expect: exactly i004-migration-check after the migrated i001-i003 records, with no filesystem mutation
+  - criterion: AC-EXISTING-INTENTS-MIGRATED
+    command: >-
+      find intent -type d -print | rg '/i[0-9]{4}-[^/]+$' ; test $? -eq 1
+    expect: no active or archived intent directory uses the old four-digit form
+  - criterion: AC-EXISTING-INTENTS-MIGRATED
+    command: >-
+      for d in intent/i*-* intent/archive/i*-*; do [ -d "$d" ] || continue;
+      id=$(basename "$d"); test "$(sed -n 's/^intent: //p' "$d/contract.yaml")" = "$id";
+      done
+    expect: every migrated directory basename equals its canonical contract intent field
+  - criterion: AC-REFERENCES-CONSISTENT
+    command: >-
+      rg -n --hidden --pcre2 -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml'
+      'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' .
+    expect: no output; trace manifests are excluded because they preserve the pre-migration evidence inventory
+  - criterion: AC-REFERENCES-CONSISTENT
+    command: >-
+      rg -n --hidden -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml' 'intent: i[0-9]{4}|intent/(?:archive/)?i[0-9]{4}|i\$(?:pid|cc_fxp_pid|cc_fxe_pid)' .
+    expect: no output outside the trace manifest and no dynamic four-digit derivation remains
+  - criterion: AC-FUTURE-LIFECYCLE
+    command: >-
+      sh wrapper/runtime/engine.sh intent-validate intent/i001-conversation-spec-library
+      && sh wrapper/runtime/engine.sh intent-validate intent/i002-plan-decomposition-guidance
+      && sh wrapper/runtime/engine.sh intent-validate intent/i003-intent-id-width
+    expect: all migrated active intents validate with the new grammar
+  - criterion: AC-LIFECYCLE-PRESERVED
+    command: sh test/acceptance.sh
+    expect: semantic acceptance suite exits 0; this check is for the worker/verifier phase and was not executed during tracing
+
+tier_signal: >-
+  No security, authentication, money, production, or data-migration signal was found.
+  The change is repository-wide across lifecycle contracts, runtime, fixtures, and
+  shipped guidance, so Standard remains appropriate; the identifier migration is
+  mechanically reversible before delivery but can invalidate authorization if digest
+  handling is wrong.
+
+feasible: true
+
+out_of_scope_reach: []
+
+open_questions:
+  - >-
+    [already-answered] The approved contract and human request include agent-harness/
+    and template/; no scope expansion is required.
+  - >-
+    [already-answered] Approved intent digests are recomputed after identity-only
+    renames using the existing digest algorithm; the algorithm itself is unchanged.
+  - >-
+    [already-answered] Old or unrelated intents may be archived or deleted only by
+    explicit human request or manual human action; identifiers are never silently
+    recycled. The concrete exhaustion failure belongs in the implementation plan.
+
+completeness_proof:
+  command: >-
+    rg -o --hidden --pcre2 -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml'
+    'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' . | wc -l;
+    rg -n --hidden --pcre2 -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml'
+    'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' . | wc -l;
+    rg -l --hidden --pcre2 -g '!sources/**' -g '!.git/**' -g '!intent/*-intent-id-width/trace/context-circuit-source.yaml'
+    'i[0-9]{4}(?:-[a-z0-9]+(?:-[a-z0-9]+)*)?' . | wc -l
+  count: 148
+  matching_lines: 130
+  files: 46
+  notes: >-
+    The refreshed complete repository search found 148 old-form token matches on 130
+    matching lines across 46 files. The three current intent directories are
+    i0001-conversation-spec-library, i0002-plan-decomposition-guidance, and
+    i0003-intent-id-width; archived intent directory count is zero. The command
+    excludes sources/ per repository safety and excludes only this manifest because
+    it intentionally preserves the old-form evidence inventory; the existing i0001
+    trace remains part of the current-reference set. The approved scope includes
+    agent-harness/ and template/, so their references are included in the count.
+
+freshness_checked_at: 2026-09-04T18:29:54Z
+recorded_at: 2026-09-04T18:25:47Z

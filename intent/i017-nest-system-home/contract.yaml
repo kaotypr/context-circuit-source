@@ -1,0 +1,94 @@
+schema_version: 2
+intent: i017-nest-system-home
+title: Nest Context Circuit system files under .context-circuit
+goal: >
+  Context Circuit's shipped system files live under a single nested home,
+  `.context-circuit/`, so a workspace root belongs to the project, not the
+  product. Three product folders move there as children:
+  `.context-circuit/wrapper` (runtime, contracts, adapters),
+  `.context-circuit/agents` (role files), and `.context-circuit/docs`
+  (product documentation and templates). The product's behavior is unchanged:
+  the same runtime, the same gates, the same host entry. Host-required
+  discovery surfaces that hosts already look for at the workspace root remain
+  there: `AGENTS.md` / `WORKFLOW.md` are thin pointers into the nested home,
+  and `.agents/` stays at the workspace root. The template seed and upgrades
+  produce the same layout. Workspace-owned files stay at the workspace root.
+
+non_goals:
+  - Changing what the product does: do not collapse Gate 1 or Gate 2, drop
+    the tracer, drop the independent verifier on Standard and Critical, or
+    allow self-verify when a required child is missing.
+  - Moving workspace-owned files into `.context-circuit` (identity, Product
+    Knowledge, sources, plans, intents, runtime evidence, local bindings,
+    connected repositories).
+  - Flattening `wrapper/`, `agents/`, or `docs/` so their contents sit
+    directly in `.context-circuit/`; those folders move as folders.
+  - Moving `.agents/` (host skill discovery) under `.context-circuit`; it
+    stays at the workspace root.
+  - Renaming the wrapper or replacing the wrapper/template split with a
+    different product identity.
+  - Adding a new host, router, or runtime scheduler.
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - Nested home is `.context-circuit/wrapper`, `.context-circuit/agents`,
+    and `.context-circuit/docs`.
+  - Host-required discovery stays at the surfaces hosts already look at:
+    workspace-root `AGENTS.md` / `WORKFLOW.md` are thin pointers into
+    `.context-circuit`, not a second copy of the product. `.agents/` stays
+    at the workspace root.
+  - The blank template seed remains `template/` in the source checkout; what
+    it contains follows the nested layout so an instantiated workspace matches.
+  - An upgrade may replace template-owned files and must preserve
+    workspace-owned files; when the layout change alters the meaning of a
+    record, report migration-needed and preserve the old state
+    (source-release-and-upgrade).
+  - Product behavior has one owner per rule; skills and adapters stay thin.
+  - Isolation, host-blocked fail-closed, invoke-not-read of the runtime, and
+    credential-free offline behavior are preserved.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-NESTED-HOME
+    statement: >
+      In the source checkout and in an instantiated workspace, the shipped
+      wrapper, the agents role folder, and product docs live under
+      `.context-circuit/` (`.context-circuit/wrapper`,
+      `.context-circuit/agents`, and `.context-circuit/docs`), not as
+      top-level folders beside the project.
+  - id: AC-RUNTIME-FINDS-HOME
+    statement: >
+      The runtime, contracts, adapters, role files, and product docs still
+      work from that nested home. Invoking the engine and following a skill
+      reaches the same product behavior as today.
+  - id: AC-HOST-FRONT-DOOR
+    statement: >
+      Hosts still enter through the workspace-root surfaces they already
+      look at. `AGENTS.md` points into `.context-circuit` and does not carry
+      a second copy of the product. `.agents/` remains at the workspace root.
+  - id: AC-WORKSPACE-OWNED-STAY
+    statement: >
+      Workspace-owned files stay at the workspace root: identity, Product
+      Knowledge, sources, plans, intents, runtime evidence, local bindings,
+      and connected repositories are not moved into `.context-circuit`.
+  - id: AC-TEMPLATE-AND-UPGRADE
+    statement: >
+      A newly instantiated workspace uses the nested home from the start.
+      An upgrade of an existing workspace reaches the same layout without
+      moving or rewriting the user's project files.
+  - id: AC-NO-LEFTOVER-ROOT
+    statement: >
+      After the change, there is no leftover product `wrapper/`, `agents/`,
+      or `docs/` at the workspace root. Instructions, tests, and knowledge
+      that name those homes name `.context-circuit/...` instead. Lifecycle
+      and one-owner-per-rule are unchanged.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:1033306d019978f1223bc60cac4c202a90c3968e56e512c3d0693c254e9650c6

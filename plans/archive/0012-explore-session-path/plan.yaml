@@ -1,0 +1,76 @@
+schema_version: 3
+plan: 0012-explore-session-path
+intent: i010-explore-session-path
+title: Human-named Explore worktrees under .runtime/explore
+status: draft
+objective: >-
+  When a human asks to start Explore, the coordinator asks for a short title
+  and that name is used for the isolated worktree under
+  .runtime/explore/<human-name>, separate from plan-execution worktrees.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns cc-pair, pairing-session runtime, and Explore worktree layout.
+plan_dependencies: []
+product_knowledge:
+  - id: direct-collaboration
+    path: context/domains/direct-collaboration/README.md
+    reason: Owns Explore / cc-pair isolation, branch, and worktree.
+  - id: plan-execution
+    path: context/domains/plan-execution/README.md
+    reason: Owns .runtime/worktrees/ for plan execution; Explore must not mix into it.
+context_grounding:
+  summary: >-
+    Derived from the approved i010 contract without a tracer, at explicit
+    human request. One repository, one Explore-path surface.
+  constraints:
+    - Explore remains one repository, no verifier, explicit entry.
+    - Closing a clean session still preserves the worktree until explicit cleanup.
+  decisions:
+    - Keep one plan with two sequential tasks.
+knowledge_impact:
+  expected_context_units:
+    - direct-collaboration
+  review_on_completion: true
+tasks:
+  - id: EXP-001
+    title: Ask for the name and keep Explore worktrees under .runtime/explore
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-pair/
+      - wrapper/runtime/
+      - wrapper/contracts/
+      - context/domains/direct-collaboration/
+      - docs/
+    depends_on: []
+    changes:
+      - Starting Explore asks the human for a short name and uses it for the worktree at .runtime/explore/<human-name>, not .runtime/worktrees/cc-pair/.
+    acceptance:
+      - id: EXP-AC-001
+        statement: Starting Explore asks the human for a short name and uses that name for the worktree; the agent does not invent the folder name.
+      - id: EXP-AC-002
+        statement: Explore worktrees live under .runtime/explore/<human-name>, not under .runtime/worktrees/cc-pair/.
+      - id: EXP-AC-003
+        statement: Explore still covers one repository, stays human-supervised with no independent verifier, and can still be promoted.
+    verification:
+      - id: EXP-VT-001
+        command: rg -n 'runtime/explore|cc-pair|pair-begin|worktree' .agents/skills/cc-pair/SKILL.md wrapper/runtime/engine.sh context/domains/direct-collaboration/README.md
+  - id: EXP-002
+    title: Prove the split
+    repositories: [context-circuit-source]
+    paths:
+      - test/pairing/
+      - test/acceptance.sh
+    depends_on:
+      - EXP-001
+    changes:
+      - Add coverage that fails if an Explore worktree is still created under .runtime/worktrees/cc-pair/ or under an agent-invented name.
+    acceptance:
+      - id: EXP-AC-002
+        statement: The old mixed location is proven gone.
+    verification:
+      - id: EXP-VT-002
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

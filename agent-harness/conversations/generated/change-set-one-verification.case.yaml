@@ -1,0 +1,70 @@
+# generated from plots/change-set-one-verification.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 21
+# (same seed + budget; expectations sourced from the plot). Would live at
+# scenarios/21-change-set-one-verification/.
+id: change-set-one-verification
+title: Deliver two verified plan members as one change set with one integration check and one acceptance
+mode: full-execution
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - { id: 0001-export-core, title: Export core, repository: notes, objective: Add the core export implementation., path: src/export-core, seed_state: verified }
+    - { id: 0002-export-cli, title: Export command line interface, repository: notes, objective: Add the command line interface for the export implementation., path: src/export-cli, seed_state: verified }
+  sources: []
+
+human:
+  persona: >
+    A maker with two checked changes that belong in one release. They want one combined
+    delivery and one clear acceptance decision, not two separate pull requests. Has never
+    heard of Context Circuit or its internals.
+  turns:
+    - say: "These two checked changes belong together. Prepare them as one combined delivery, check the combined result once, and I accept it."
+    - say: "I opened the one pull request for the combined result. Complete both changes together and tell me what follow-up remains."
+    - say: "Thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It prepares one combined delivery rather than opening separate deliveries for the two related changes.
+    - It runs one independent check against the combined result and records one human acceptance.
+    - After the explicit single delivery event, it completes both members consistently and reports any knowledge follow-up.
+    - It never exposes branch names, worktrees, candidate ids, or runtime file names.
+
+grader:
+  acceptance_criteria: [AC-14, AC-16, AC-22, AC-35]
+  invariants: [INV-CANDIDATE-01, INV-VERIFY-01, INV-DELIVER-01, INV-COMPLETE-01, INV-COMPLETE-02]
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-export-core
+    - execution_verified: 0002-export-cli
+    - change_set_completed: 2
+    - plan_status: 0001-export-core:draft
+    - plan_status: 0002-export-cli:draft
+    - knowledge_debt_pending: 0
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|candidate_id|cand-|contract_digest|refs/cc-)"
+      reason: One combined delivery must be communicated without exposing implementation machinery.
+    - requires_any: ["combined", "one", "single", "pull request", "checked", "verified", "complete", "follow"]
+      reason: The conversation must show one integrated check, one delivery, and joint completion.
+  access_policy:
+    execute-plan:
+      required: []
+      allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh"]
+    deliver:
+      required: []
+      allowed: ["plans/**", "intent/**", ".runtime/**", "context/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh"]
+  # environmental overlay (NOT from the plot) — preserved from case 21
+  budgets:
+    deliver: { max_turns: 3, max_tokens: 50000 }

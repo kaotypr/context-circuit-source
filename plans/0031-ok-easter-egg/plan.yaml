@@ -1,0 +1,153 @@
+schema_version: 3
+plan: 0031-ok-easter-egg
+intent: i022-ok-easter-egg
+title: Hide ok punchline in engine; trigger from coordinator
+status: done
+objective: >
+  When a user's entire message is the two letters ok (case-insensitive, optional
+  surrounding whitespace only), the coordinator invokes a hidden engine action,
+  prefixes its stdout as the first line of the reply, and continues the immediately
+  pending coordinator ask without granting new authority. The punchline string
+  lives only in engine.sh; ordinary instructions, skills, adapters, Product
+  Knowledge, engine help, and engine-and-seam.md do not contain it.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns the runtime engine, coordinator role packet, release assembly, and
+      acceptance tests that prove trigger, hiding, and non-routing constraints.
+plan_dependencies: []
+product_knowledge: []
+context_grounding:
+  summary: >
+    Grounded at HEAD 1aceb907. engine.sh dispatches ~80 verbs through cc_main;
+    help prints only a generic Usage line (no action enumeration). Public verbs
+    are documented in sources/system-design/context-circuit/v1.0.0/core/engine-and-seam.md
+    and checked by test/bands/test-band-contracts.sh for named entries — a hidden
+    verb omitted from that doc and help satisfies AC-PUNCHLINE-HIDDEN and
+    AC-ENGINE-NOT-A-ROUTER. coordinator.md owns conversational routing; it already
+    forbids reading engine source and maps user language to actions, but has no
+    lone-ok trigger today. INV-RUNTIME-01 header explicitly excludes conversational
+    routing policy from the engine. Workers, verifiers, and planners are separate
+    role packets with no user-message loop. plan-allocate-id fails
+    PLAN_PREFIX_COLLISION on historical archive duplicate prefixes; next free
+    in-band id is 0031 after 0030-lean-workspace-context.
+  constraints:
+    - INV-RUNTIME-01 — engine prints a fixed stdout string on invoke only; no chat
+      read, no routing policy, no prompts.
+    - Conversational trigger owned by coordinator.md only; do not copy punchline or
+      a second trigger into skills, host adapters, or child roles.
+    - Hidden verb must not appear in engine help, engine-and-seam.md, or skills'
+      documented invoke lists; semantic tests that grep public surfaces must pass.
+    - Lone ok continues the immediately pending coordinator ask; it does not approve,
+      execute, complete, or deliver anything new.
+    - Preserve unrelated and dirty work; run semantic acceptance after phases.
+  decisions:
+    - One plan, three ordered tasks — hidden engine verb (OKE-001), coordinator
+      trigger (OKE-002), proof suite (OKE-003). Shares one worker/verifier boundary;
+      engine without coordinator trigger and vice versa are not independently
+      verifiable against AC-LONE-OK.
+    - Engine action name ok-easter-egg; coordinator invokes it and prefixes stdout;
+      punchline string appears only inside the cc_ok_easter_egg implementation.
+    - Coordinator match rule — trim whitespace, case-fold, entire message must
+      equal exactly ok; okay, ok., ok!, and longer messages are out of scope per
+      contract non-goals.
+    - Proof via test/easter-egg/test-ok-easter-egg.sh (engine stdout, grep-hidden
+      surfaces, coordinator trigger without punchline, engine-and-seam omission)
+      plus an agent-harness conversation plot for behavioral lone-ok and idle-ok
+      cases; wire plot into test/scenarios/test-scenarios.sh generation path.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: OKE-001
+    title: Add hidden ok-easter-egg engine invoke
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/wrapper/runtime/engine.sh
+    depends_on: []
+    changes:
+      - >
+        Add cc_ok_easter_egg that prints the exact punchline line to stdout and
+        returns 0; register ok-easter-egg in cc_main dispatch only — not in the
+        help case, not in engine-and-seam.md, and with no chat input or routing
+        logic.
+    acceptance:
+      - id: AC-ENGINE-NOT-A-ROUTER
+        statement: >
+          ok-easter-egg takes no user text, stores nothing, and prints a fixed line
+          when invoked.
+      - id: AC-PUNCHLINE-HIDDEN
+        statement: >
+          The punchline string appears in engine.sh implementation only among
+          product surfaces checked by OKE-003.
+    verification:
+      - id: V-OKE-001-engine
+        command: sh test/easter-egg/test-ok-easter-egg.sh --case engine
+  - id: OKE-002
+    title: Coordinator lone-ok trigger and pending-work continuation
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/agents/coordinator.md
+    depends_on: [OKE-001]
+    changes:
+      - >
+        Before other conversation routing, when the user's entire message trimmed
+        and case-folded equals exactly ok, invoke ok-easter-egg, prefix the
+        user-visible reply with its stdout, then continue the immediately pending
+        coordinator ask without approving, executing, completing, or delivering
+        anything that was not already pending; if nothing is pending, emit the
+        line and wait. Document the match rule without embedding the punchline
+        string.
+    acceptance:
+      - id: AC-LONE-OK
+        statement: >
+          Coordinator procedure requires prefixing the hidden line then continuing
+          pending work on a lone ok message.
+      - id: AC-IDLE-OK
+        statement: >
+          When nothing is pending, coordinator still invokes the line and does
+          not invent work.
+      - id: AC-NO-FALSE-TRIGGER
+        statement: >
+          Coordinator match rule is exact two-letter ok only; okay, punctuation,
+          and longer messages are excluded in procedure text.
+    verification:
+      - id: V-OKE-002-coordinator
+        command: sh test/easter-egg/test-ok-easter-egg.sh --case coordinator
+  - id: OKE-003
+    title: Acceptance tests and conversation harness for ok easter egg
+    repositories: [context-circuit-source]
+    paths:
+      - test/easter-egg/test-ok-easter-egg.sh
+      - test/acceptance.sh
+      - test/acceptance/criteria-map.yaml
+      - agent-harness/conversations/plots/lone-ok-easter-egg.md
+      - agent-harness/conversations/generated/lone-ok-easter-egg.case.yaml
+    depends_on: [OKE-002]
+    changes:
+      - >
+        Add test/easter-egg/test-ok-easter-egg.sh covering engine stdout, help
+        omission, punchline absent from coordinator/skills/adapters/context/roles/
+        engine-and-seam.md, and coordinator trigger wording without punchline.
+      - >
+        Add conversation plot lone-ok-easter-egg (pending ask then ok; idle ok)
+        with generated case; map AC-LONE-OK, AC-NO-FALSE-TRIGGER, AC-IDLE-OK in
+        criteria-map.yaml; wire suite into test/acceptance.sh.
+    acceptance:
+      - id: AC-PUNCHLINE-HIDDEN
+        statement: >
+          Grep checks prove the punchline is absent from ordinary product surfaces
+          and public verb documentation.
+      - id: AC-LONE-OK
+        statement: >
+          Harness plot asserts coordinator prefixes the line and continues pending
+          work on lone ok.
+    verification:
+      - id: V-OKE-003-suite
+        command: sh test/easter-egg/test-ok-easter-egg.sh
+      - id: V-OKE-003-acceptance
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

@@ -30,7 +30,7 @@ expect_failure cc_plan_id_valid "0001-Bad"
 
 # --- validation catches missing tasks ---
 mkdir -p "$ws/plans/0009-empty/tasks"
-printf 'schema_version: 1\nplan: 0009-empty\ntitle: E\nstatus: draft\nobjective: e\nrepositories:\n  - id: api\ntasks:\n' >"$ws/plans/0009-empty/plan.yaml"
+printf 'schema_version: 3\nplan: 0009-empty\ntitle: E\nstatus: draft\nobjective: e\nintent: i009-empty\nrepositories:\n  - id: api\ntasks:\n' >"$ws/plans/0009-empty/plan.yaml"
 printf '# E\n' >"$ws/plans/0009-empty/PLAN.md"
 expect_failure cc_plan_validate "$ws/plans/0009-empty"
 rm -rf "$ws/plans/0009-empty"
@@ -46,21 +46,46 @@ not_contains "$ws/plans/INDEX.md" "| $id1 |"
 cc_plan_index_upsert "$ws" "$id1" >/dev/null
 contains "$ws/plans/INDEX.md" "| $id1 |"
 
-# --- approval gate ---
-expect_failure cc_execution_begin "$ws" "$id1" s1   # draft cannot execute
-cc_plan_approve "$ws" "$id1" >/dev/null
-assert_eq "approved" "$(cc_plan_status "$ws" "$id1")"
-contains "$ws/plans/INDEX.md" "approved"
-expect_failure cc_plan_approve "$ws" "$id1"          # cannot approve non-draft
+# --- authorization: a plan derives from its approved intent (INV-INTENT-02). There is
+#     no separate plan-approval status and no automated scope gate — the plan stays
+#     `draft`, and the derives-from-an-approved-intent authorization is the preflight
+#     that execution re-runs. ---
+cc_intent_authorized "$ws" "$id1" >/dev/null
+assert_eq "draft" "$(cc_plan_status "$ws" "$id1")"   # no intermediate "approved" status
 
 # --- a plan authored with block-list task fields also validates ---
 mkdir -p "$ws/plans/0011-block/tasks"
 cat >"$ws/plans/0011-block/plan.yaml" <<'EOF'
-schema_version: 1
+schema_version: 3
 plan: 0011-block
 title: Block form
 status: draft
 objective: block
+intent: i011-block
+repositories:
+  - id: api
+tasks:
+  - id: T-001
+    title: t1
+    repositories:
+      - api
+    paths:
+      - src
+    depends_on: []
+EOF
+printf '# Block\n' >"$ws/plans/0011-block/PLAN.md"
+cc_plan_validate "$ws/plans/0011-block" >/dev/null
+assert_eq "api" "$(cc_plan_affected_repositories "$ws/plans/0011-block/plan.yaml")"
+
+# --- a plan that lists two repositories is invalid ---
+mkdir -p "$ws/plans/0013-tworepo/tasks"
+cat >"$ws/plans/0013-tworepo/plan.yaml" <<'EOF'
+schema_version: 3
+plan: 0013-tworepo
+title: Two repos
+status: draft
+objective: invalid
+intent: i013-tworepo
 repositories:
   - id: api
   - id: web
@@ -81,15 +106,42 @@ tasks:
     depends_on:
       - T-001
 EOF
-printf '# Block\n' >"$ws/plans/0011-block/PLAN.md"
-cc_plan_validate "$ws/plans/0011-block" >/dev/null
-assert_eq "api
-web" "$(cc_plan_affected_repositories "$ws/plans/0011-block/plan.yaml")"
+printf '# Two\n' >"$ws/plans/0013-tworepo/PLAN.md"
+expect_failure cc_plan_validate "$ws/plans/0013-tworepo"
 
-# --- compound approve-and-execute (sequential explicit actions) ---
+# --- execute on the approved intent's authorization (no separate plan-approval step) ---
 cc_fx_plan "$ws" 0010-compound "Compound" "api"
-cc_plan_approve "$ws" 0010-compound >/dev/null
 cc_execution_begin "$ws" 0010-compound s2 >/dev/null
 require_dir "$ws/.runtime/executions/0010-compound"
+assert_eq "draft" "$(cc_plan_status "$ws" 0010-compound)"   # stays draft through execution
+
+# --- one bounded Standard change remains one plan with ordered embedded tasks ---
+cc_fx_plan "$ws" 0012-bounded "Bounded" "api"
+multi="$ws/plans/0012-bounded/plan.yaml"
+awk '
+/^execution:/ && !added {
+    print "  - id: API-002"
+    print "    title: Work in src/billing/receipt"
+    print "    repositories: [api]"
+    print "    paths: [src/billing/receipt]"
+    print "    depends_on: [API-001]"
+    print "    changes:" 
+    print "      - Change the receipt path after the bounded billing task."
+    print "    acceptance:"
+    print "      - id: API-002-AC"
+    print "        statement: The receipt path is changed."
+    print "    verification:"
+    print "      - id: API-002-VT"
+    print "        command: test -f src/billing/receipt/mod.txt"
+    added=1
+}
+{print}
+' "$multi" >"$multi.new"
+mv "$multi.new" "$multi"
+cc_plan_validate "$ws/plans/0012-bounded" >/dev/null
+contains "$multi" "depends_on: [API-001]"
+not_contains "$multi" "plan_dependencies:"
+contains "$multi" "worker: one"
+contains "$multi" "independent_verifier: required"
 
 pass 'plans'

@@ -20,8 +20,11 @@ It must:
 It must not modify product files, repair the worker's implementation, change
 plan status, treat a worker claim as independent evidence, or downgrade an
 evidence requirement because a host lacks a capability. Only `passed` satisfies
-verification. Record the outcome with the runtime `verifier-result-record`; the
-runtime rejects any product write and any changed branch tip.
+verification. Record the outcome with the runtime
+`verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
+`<attempt>` is `current_attempt` (`3` and `003` are the same attempt; a
+different number is refused). The runtime rejects any product write and any
+changed branch tip.
 
 If an independent read-only verifier cannot be created, report `blocked`; never
-self-verify. Full role behavior: `agents/verifier.md`.
+self-verify. Full role behavior: `.context-circuit/agents/verifier.md`.

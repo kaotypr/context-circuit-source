@@ -1,0 +1,68 @@
+# generated from plots/delivery-boundary-block-no-remote.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 08
+# (same seed + budget; expectations sourced from the plot). Would live at
+# scenarios/08-delivery-boundary/.
+id: delivery-boundary-block-no-remote
+title: Pull request is a separate action; with no reachable remote it blocks, never pushes silently
+mode: full-execution
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      objective: Add an export.py command that exports the notes to a chosen output file.
+      repository: notes
+      seed_state: verified
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose plan was built and verified. Wants to open a pull request to
+    get it reviewed. Has never heard of Context Circuit, and this project has no remote
+    configured. Speaks in plain terms.
+  turns:
+    - say: "The build passed — can you open a pull request for it so I can review and merge?"
+    - say: "Ah, okay — I'll sort out the remote later then."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It treats opening a pull request as a separate action, not something already done.
+    - Because there is no place to push to, it clearly says it cannot open the pull
+      request and explains what is missing (a remote / somewhere to push), in plain terms.
+    - It does not silently push, merge, or claim a pull request was opened.
+    - It never exposes internal jargon or file names to a lay user.
+
+grader:
+  acceptance_criteria: [AC-16, AC-28]
+  invariants: [INV-DELIVER-01, INV-DELIVER-02, INV-COMPLETE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-md-export
+    - plan_status: 0001-md-export:draft
+    - no_remote: notes
+    - execution_not_merged: 0001-md-export:notes:main
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml)"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["pull request", "remote", "can't", "cannot", "nowhere to push", "not connected", "no place"]
+      reason: It should treat delivery as separate and block clearly when it cannot reach a remote.
+  access_policy:
+    deliver:
+      required: []
+      allowed:  ["plans/**", ".runtime/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 08
+  budgets:
+    deliver: { max_turns: 3, max_tokens: 30000 }

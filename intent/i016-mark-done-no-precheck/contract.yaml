@@ -1,0 +1,47 @@
+schema_version: 2
+intent: i016-mark-done-no-precheck
+title: Mark a plan done by changing its status, with no check
+goal: >
+  When a human asks to mark a plan done, or several plans done, the agent
+  changes each named plan's status to done. There is no check: no agent look
+  at work or evidence, and no unreadiness refusal that can block the flip.
+  A plan that was never built, failed a check, or has no evidence still
+  becomes done when the human asks.
+
+non_goals:
+  - Marking a plan done without an explicit human ask.
+  - Changing verification, candidate acceptance, or delivery so any of
+    them mark a plan done.
+  - Changing in-place Product Knowledge reconcile after mark-done.
+  - Giving Explore a plan or an intent; Explore stays planless.
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - Product behavior has one owner per rule; update the owning completion
+    contract so mark-done no longer requires a readiness gate, rather than
+    a skill-only exception that leaves a refusal in place.
+  - The same mark-done path applies to one named plan and to several named
+    plans in one ask.
+  - Preserve unrelated and dirty work, and run the semantic acceptance
+    suite after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-NO-CHECK
+    statement: >
+      Asking to mark a plan done, or several plans done, changes each named
+      plan's status to done. There is no agent look at that plan's work or
+      evidence, and no unreadiness refusal that can block the flip — including
+      when the plan was never built, failed a check, or has no evidence.
+  - id: AC-STILL-EXPLICIT
+    statement: >
+      A plan still becomes done only when a human asks to mark it done.
+      Verification, candidate acceptance, and delivery do not mark it done.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:9774b82d7e45b8c4fe2e99a2e107e08e82624a530c84b7351e4210aec4e2deb3

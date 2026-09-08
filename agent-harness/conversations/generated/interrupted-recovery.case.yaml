@@ -1,0 +1,70 @@
+# generated from plots/interrupted-recovery.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case: a
+# conversational probe over interrupted-execution recovery (deterministically owned by
+# test/runtime/test-runtime.sh). Conversation-only over a seeded interrupted state
+# (reuses case 09's worker-committed mid-flight seeding). `no_silent_redo` is a NEW
+# predicate — see coverage/phase-4.md.
+id: interrupted-recovery
+title: An interrupted execution is recovered read-only with nothing lost, resume offered
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add an export.py command that exports the notes to a chosen output file.
+      seed_state: worker-committed
+  sources: []
+
+human:
+  persona: >
+    A solo maker who thinks an earlier build got cut off and wants to know where things
+    stand before doing anything. Has never heard of Context Circuit; does not know what
+    a worktree or an execution record is. Wants the honest state and no surprises.
+  turns:
+    - say: "I think that export build got cut off earlier — what's the state? Can we pick it up without starting over?"
+    - say: "Good — just confirm nothing's lost and don't redo it from scratch. Leave it there for now."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It reports accurately what is preserved — the change was written and saved, and
+      the independent check hadn't run yet — reading the real state, not guessing.
+    - It offers to pick up from where it stopped or leave it read-only, without silently
+      continuing on its own.
+    - It confirms nothing is lost and redoes nothing from scratch.
+
+grader:
+  acceptance_criteria: [AC-19]
+  invariants: [INV-PRESERVE-01, INV-RUNTIME-02]
+  post_conditions:
+    - repositories_registered: 1
+    - worker_commit_preserved: 0001-md-export:notes
+    - not_verified: 0001-md-export
+    - plan_status: 0001-md-export:draft
+    - no_silent_redo: 0001-md-export
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|execution record|resume token)"
+      reason: The coordinator must report the recovered state by effect, not by internal mechanism.
+    - requires_any: ["saved", "preserved", "nothing.*lost", "not lost", "pick.*up", "start over", "won't redo", "as.*is", "where it stopped"]
+      reason: It should report the preserved state, offer resume-or-hold, and promise no silent redo/loss.
+  access_policy:
+    recover:
+      required: []
+      allowed:  ["plans/**", ".runtime/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
+  # environmental overlay (NOT from the plot) — conversation-only tuning
+  budgets:
+    recover: { max_turns: 3, max_tokens: 12000 }

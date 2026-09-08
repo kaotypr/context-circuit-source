@@ -1,0 +1,9 @@
+schema_version: 1
+intent: i020-host-conventions-preserved
+repository: context-circuit-source
+feasible: true
+feasibility_outcome: feasible
+out_of_scope_reach: []
+open_questions: []
+tier_signal: standard
+revision: 8d638de69e660f1b8c21eed25ef7c1e23354024b

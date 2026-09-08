@@ -1,24 +1,34 @@
 ---
 name: cc-execute
-description: Approve and execute an approved plan with one worker and one independent verifier, coordinating repair within the three-failure limit.
+description: Execute a plan derived from an approved intent, with one worker and one independent verifier, coordinating repair within the three-failure limit.
 ---
 
-## Approval
+## Authorization
 
-Approval is an explicit conversational human gate, not a confirmation card. On
-"approve plan X", run the runtime `plan-approve` (draft → approved after
-readiness checks). If the user asks to execute a draft plan, refuse plainly:
-the plan must be approved first. Support the compound request "approve plan X
-and execute it" by approving, re-reading the approved status, then executing.
+There is no separate plan-approval step. The human gate is upstream on the intent
+(Gate 1); a plan derived from an approved intent is authorized to execute once the
+human asks to build (INV-EXEC-01). `execution-begin` re-confirms the plan derives
+from an approved intent whose criteria are unchanged since approval, and proceeds —
+no confirmation card, no "approve the plan" act. There is no automated scope gate:
+scope-safety is settled at delivery (Gate 2). A criteria drift after approval
+re-enters Gate 1; the plan is held and re-gated to the human, never rubber-stamped.
+
+## Tier
+
+A v1.0 plan exists only at **Standard or Critical** (INV-ASSURE-01): Explore work
+is direct collaboration (`cc-pair`) with no plan and no independent verifier. So a
+plan execution here always spawns the independent verifier bound to the candidate;
+never drop it. Plans are not auto-completed; an explicit mark-done is a
+separate human ask (`cc-complete`). The tier is declared on the parent intent.
 
 ## Execute
 
-Execute only an approved plan. Give a short summary (plan, objective,
-repositories/branches, task count, worker and verifier roles, failure limit),
-then:
+Execute a plan authorized by its approved intent. Give a short summary (plan,
+objective, repositories/branches, task count, worker and verifier roles, failure
+limit), then:
 
-1. Run `execution-begin`: it validates approval and repository bindings,
-   validates and captures each `anchor_branch` tip, rejects dirty anchors,
+1. Run `execution-begin`: it re-confirms the plan's intent authorization and repository bindings,
+   validates and captures each `base_branch` tip, rejects dirty base checkouts,
    acquires the one-worker lock, snapshots the plan, creates one branch and
    worktree per affected repository, and discovers each repository's own agent
    guidance from the prepared worktree (recorded as a grounding manifest).
@@ -29,15 +39,18 @@ then:
    verbatim — do not author or omit the repository-grounding facts, and do not
    read the runtime implementation to compose them (INV-GROUND-01/03).
 3. Launch exactly one worker with that brief and the assigned worktrees
-   (see `agents/worker.md`), at the worker's configured `(model, effort)` (see
+   (see `.context-circuit/agents/worker.md`), at the worker's configured `(model, effort)` (see
    "Model & effort per role" below). The worker reads and honors the repository's
    own agent guidance, executes all tasks in dependency order, and commits each
    affected repository. Record each commit with `worker-commit-record` and the
    handoff with `worker-handoff-record` (including any `repository_friction`).
-4. Launch one independent, read-only verifier (see `agents/verifier.md`) after
+4. Launch one independent, read-only verifier (see `.context-circuit/agents/verifier.md`) after
    `verifier-prepare`, at the verifier's configured `(model, effort)`. It inspects
    the latest commit of every affected repository. Record its outcome with
-   `verifier-result-record`.
+   `verifier-result-record`, which **binds the result to the current candidate**
+   (`candidate-digest`; INV-CANDIDATE-01). A new commit or a criteria change after
+   the check yields a new candidate and voids the prior result — re-verify against
+   the new candidate rather than reusing an old green.
 5. Record the `(model, effort)` each role ran at as host evidence with
    `attempt-evidence-record` (below). Do not record inference wall-clock — an
    attempt already carries `started_at` / `checked_at` timestamps whose span is its
@@ -45,14 +58,14 @@ then:
    changes a verdict or the failure counter.
 
 Do not require confirmation for individual tasks, branches, worktrees, commits,
-verifier steps, or repairs. The approved plan is the scope.
+verifier steps, or repairs. The plan — authorized by its approved intent — is the scope.
 
 ## Runtime actions — invoke, never read the engine
 
-You **must not read** `wrapper/runtime/engine.sh` or any runtime implementation
-file (`wrapper/adapters/AGENTS.md` → Runtime owns this boundary): the actions below
+You **must not read** `.context-circuit/wrapper/runtime/engine.sh` or any runtime implementation
+file (`.context-circuit/wrapper/adapters/AGENTS.md` → Runtime owns this boundary): the actions below
 and the execution brief carry everything needed to drive it. Invoke each action as
-`sh wrapper/runtime/engine.sh <action> <args>` from the workspace directory.
+`sh .context-circuit/wrapper/runtime/engine.sh <action> <args>` from the workspace directory.
 
 - `execution-begin . <plan-id> <owner>` — preflight, snapshot, worktree(s), and
   repository-grounding discovery; prints `execution_id`.
@@ -62,11 +75,20 @@ and the execution brief carry everything needed to drive it. Invoke each action 
 - `attempt-begin <execution-dir>` · `worker-commit-record <execution-dir> <repo> implementation|repair`
   · `worker-handoff-record <execution-dir> <handoff-file>`.
 - `verifier-prepare <execution-dir>` · `verifier-result-record <execution-dir> <attempt> passed|failed|blocked`.
+  `<attempt>` is `current_attempt` (`3` and `003` are the same attempt; a
+  different number is refused). Do not treat the folder name `attempts/003/` as
+  a different attempt.
+- `candidate-digest . <plan-id> <execution-id>` — record the current candidate
+  identity (commit map + bases + frozen contract digest); `candidate-current .
+  <plan-id>` reports it. Evidence binds to the candidate (INV-CANDIDATE-01).
+- `human-acceptance-record <execution-dir> <accepted-by> [checklist-file]` — record
+  the human's first-class, candidate-bound acceptance ("looks right, ship it"),
+  after they try the change. A new candidate voids a prior acceptance.
 - `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record
   bounded per-attempt host evidence: the `(model, effort)` each role ran at
-  (`worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`,
-  `complexity`, `escalated`). The runtime stores it and never interprets it; it
-  records no wall-clock (timing is engine-stamped).
+  (`worker_model`, `worker_effort`, `verifier_model`, `verifier_effort`). The
+  runtime stores it and never interprets it; it records no wall-clock (timing is
+  engine-stamped).
 - `repair-allowed <execution-dir>`.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
@@ -84,20 +106,23 @@ When the worker's role has `escalate_on_repair: true`, launch the repair attempt
 at a `(model, effort)` **raised above** the configured start (see below);
 escalation changes only which model runs the attempt, never what a rejection
 costs — the failure counter and the three-failure limit are untouched. Record the
-raised `(model, effort)` and `escalated=true` with `attempt-evidence-record`.
+raised `(model, effort)` with `attempt-evidence-record`.
 
 ## Model & effort per role
 
 Spawn the worker and verifier at the concrete `(model, effort)` configured for
 each role in the host-local role-tiering config, with adapter-shipped defaults for
-any unset role (`docs/role-tiering.md` owns the shape, defaults, and
+any unset role (`.context-circuit/docs/role-tiering.md` owns the shape, defaults, and
 escalation ladder). This is a coordinator/host decision — the runtime is
 model-blind (INV-RUNTIME-01) and `(model, effort)` authorizes nothing
 (INV-HOST-01). It changes cost and speed, never meaning.
 
-- Attempt 1 runs each role at its configured start. If the plan carries
-  `complexity: high`, nudge the worker's attempt-1 start one step above the
-  configured `(model, effort)`; a hard-pinned role ignores the hint.
+- Read `role-tiering.local.yaml` from the workspace root when present — the same
+  directory as `repositories.local.yaml`, never a repository working copy —
+  and apply each role on the spawn. A missing file in an isolated working copy
+  is not an absent config.
+
+- Attempt 1 runs each role at its configured start.
 - On repair, raise a role above its start only when its `escalate_on_repair` is
   true; a hard pin (`false`) holds the same setting at every attempt, even the
   third, and you report that pin's cost honestly rather than silently escalating.
@@ -123,7 +148,7 @@ Say "I built it and it was independently checked, and the check passed; nothing 
 marked complete yet — that's your call" — not the branches, worktrees, or commits
 behind it. Refer to a plan by its title and the branch the user works from by its
 plain name. Reveal runtime records or branch mechanics only if the user explicitly
-asks for diagnostics (`docs/terminology.md` is the internal→user-facing mapping).
+asks for diagnostics (`.context-circuit/docs/terminology.md` is the internal→user-facing mapping).
 
 ## Boundaries
 

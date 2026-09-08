@@ -1,0 +1,94 @@
+schema_version: 2
+plan: 0002-workspace-repository-model
+title: Workspace and repository model
+status: done
+objective: >-
+  Give the workspace a portable identity and fail-closed local bindings, so it
+  can coordinate one or more Git repositories with explicit base branches and
+  isolated worktrees, never a scanned or inferred path.
+repositories:
+  - id: context-circuit-source
+    purpose: The maintainer source repository, also bound as the workspace repo.
+plan_dependencies:
+  - id: 0001-contracts-runtime-foundation
+    reason: Uses the runtime skeleton, invariant owners, and safe path checks.
+product_knowledge:
+  - id: architecture
+    path: context/ARCHITECTURE.md
+    reason: Places the workspace above one or more repositories.
+  - id: conventions
+    path: context/CONVENTIONS.md
+    reason: Binding, base-branch, and worktree conventions.
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: INV-REPO-01..04 are owned here.
+context_grounding:
+  summary: >-
+    Portable identity holds only a logical key, optional credential-free URL, and
+    optional default_branch; the host-local binding holds path and base_branch.
+  constraints:
+    - default_branch is clone guidance only, never the execution base (INV-REPO-02).
+    - Binding is explicit and fails closed; no filesystem scan (INV-REPO-04).
+    - Credentials stay in host Git config, never in workspace files (INV-SEC-01).
+  decisions:
+    - The workspace root, when a Git repo, binds as reserved id "workspace" at ".".
+    - Cloned/initialized repos live under the gitignored repositories/.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: WRK-001
+    title: Define workspace identity and local-binding schemas
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/contracts/schemas/workspace.yaml
+      - wrapper/contracts/schemas/repositories-local.yaml
+    depends_on: []
+    changes:
+      - Author the portable workspace.yaml identity shape (no paths, no secrets).
+      - Author the gitignored repositories.local.yaml binding shape (path + base branch).
+    acceptance:
+      - id: WRK-AC-01
+        statement: Portable identity contains no machine path or credential.
+      - id: WRK-AC-02
+        statement: base_branch is required per bound repo and owns the execution base.
+    verification:
+      - id: WRK-VT-01
+        command: sh test/contracts/test-contracts.sh
+  - id: WRK-002
+    title: Implement binding resolution, bootstrap, and worktree prep
+    repositories: [context-circuit-source]
+    paths:
+      - wrapper/runtime/engine.sh
+    depends_on: [WRK-001]
+    changes:
+      - Resolve and preflight bindings fail-closed (missing/ambiguous/non-Git reject).
+      - Clone or git-init into repositories/ only on explicit request.
+      - Prepare a deterministic worktree from the captured base tip.
+    acceptance:
+      - id: WRK-AC-03
+        statement: A missing, ambiguous, or mismatched binding fails without scanning.
+      - id: WRK-AC-04
+        statement: The base checkout is never written; work happens in a worktree.
+    verification:
+      - id: WRK-VT-02
+        command: sh test/repositories/test-repositories.sh
+  - id: WRK-003
+    title: Coordinator workspace orientation and repository registration
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-workspace/SKILL.md
+    depends_on: [WRK-002]
+    changes:
+      - Author the cc-workspace read-as-procedure packet (orient, register, bind).
+      - Map "connect/clone/init repo" language to registration + binding.
+    acceptance:
+      - id: WRK-AC-05
+        statement: Orientation is read-only; registration binds identity explicitly.
+    verification:
+      - id: WRK-VT-03
+        command: sh test/repositories/test-repositories.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

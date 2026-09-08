@@ -1,0 +1,49 @@
+schema_version: 2
+intent: i010-explore-session-path
+title: Human-named Explore worktrees under .runtime/explore
+goal: >
+  When a human asks to start Explore (cc-pair), the coordinator asks for a
+  short title or what the session is about, and that human-chosen name is
+  used for the isolated worktree. Explore worktrees live under
+  .runtime/explore/<human-name>, separate from plan-execution worktrees under
+  .runtime/worktrees/. The agent must not invent the folder name.
+
+non_goals:
+  - Changing Explore's one-repository, no-verifier, human-supervised rules.
+  - Changing plan-execution worktree layout except to stop mixing Explore
+    worktrees into it.
+  - Cleaning up existing worktrees (that is the following intent).
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - Entry into Explore remains explicit; it is never entered automatically.
+  - The session still uses one connected repository, one worker, and a fresh
+    isolated branch.
+  - Closing a clean session still preserves the branch and worktree;
+    cleanup stays a separate explicit action.
+  - Product behavior has one owner per rule.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-HUMAN-NAME
+    statement: >
+      Starting Explore asks the human for a short name or what the session
+      is about, and that name is used for the worktree; the agent does not
+      invent the folder name.
+  - id: AC-DEDICATED-PLACE
+    statement: >
+      Explore worktrees live under .runtime/explore/<human-name>, not under
+      .runtime/worktrees/cc-pair/.
+  - id: AC-PAIRING-UNCHANGED
+    statement: >
+      Explore still covers one repository, stays human-supervised with no
+      independent verifier, and can still be promoted into a checked change.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:a409a2f3a28ed1891c754772e96e19161225b6df9ac604dc94756bda9ae913c7

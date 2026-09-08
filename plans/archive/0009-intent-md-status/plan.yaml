@@ -1,0 +1,79 @@
+schema_version: 3
+plan: 0009-intent-md-status
+intent: i007-intent-page-status
+title: Keep INTENT.md status truthful after a feasible tracer
+status: draft
+objective: >-
+  After the tracer finishes with no follow-up questions and the coordinator
+  marks the intent feasible, the INTENT.md status line is updated to match
+  that completed feasible tracer so it cannot stay stale. contract.yaml
+  remains the authority for approval.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns INTENT.md status sync after approval and tracing.
+plan_dependencies: []
+product_knowledge:
+  - id: intent
+    path: context/domains/intent/README.md
+    reason: Owns INTENT.md as the human-facing intent file and its status line.
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Owns the feasible finding that must be reflected on INTENT.md.
+context_grounding:
+  summary: >-
+    Derived from the approved i007 contract without a tracer, at explicit
+    human request. Settled decision: keep the INTENT.md status line and
+    update it after a feasible tracer; do not remove it.
+  constraints:
+    - INTENT.md stays the short five-section human file.
+    - contract.yaml remains the authority for approval identity and digest.
+  decisions:
+    - Keep one plan with two sequential tasks. Status line is kept and synced, not removed.
+knowledge_impact:
+  expected_context_units:
+    - intent
+  review_on_completion: true
+tasks:
+  - id: IMS-001
+    title: Keep INTENT.md status in sync after a feasible tracer
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-intent/
+      - .agents/skills/cc-trace/
+      - agents/coordinator.md
+      - wrapper/runtime/
+      - docs/templates/intent.md
+      - context/domains/intent/
+    depends_on: []
+    changes:
+      - After a feasible tracer with no follow-up questions, update the INTENT.md status line so it no longer looks like waiting for approval or otherwise behind that fact.
+    acceptance:
+      - id: IMS-AC-001
+        statement: After a feasible tracer with no follow-up questions, INTENT.md does not keep a stale waiting or incomplete status.
+      - id: IMS-AC-002
+        statement: The INTENT.md status line is kept and updated to match a completed feasible tracer; it is not removed.
+      - id: IMS-AC-003
+        statement: contract.yaml remains the authority for approval identity and frozen criteria.
+    verification:
+      - id: IMS-VT-001
+        command: rg -n 'INTENT.md|status|feasible|human_status|intent-approve' .agents/skills/cc-intent/SKILL.md .agents/skills/cc-trace/SKILL.md wrapper/runtime/engine.sh docs/templates/intent.md
+  - id: IMS-002
+    title: Prove INTENT.md cannot lie
+    repositories: [context-circuit-source]
+    paths:
+      - test/intent/
+      - test/acceptance.sh
+    depends_on:
+      - IMS-001
+    changes:
+      - Add coverage that fails if INTENT.md still shows a stale status after a feasible tracer with no follow-up questions.
+    acceptance:
+      - id: IMS-AC-001
+        statement: Stale INTENT.md status after a feasible tracer is proven to fail.
+    verification:
+      - id: IMS-VT-002
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

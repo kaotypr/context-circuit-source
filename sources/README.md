@@ -15,10 +15,12 @@ This maintainer checkout organizes its own sources with the suggested layout
 
 ```
 sources/
-├── system-design/
-│   ├── context-circuit/v0.5/       # authoritative product design
-│   └── template-harness/v0.5/      # test-harness design
-└── reports/                        # implementation reports and audits
+├── ideas/till/                              # sample product (Till) + prompts
+├── system-design/context-circuit/
+│   ├── v0.5/ … v0.7.0/                      # release-scoped design
+│   ├── v1.0.0/core/                         # proposed major trust-core study
+│   └── runtime-rearchitecture/              # named grouping (runtime form)
+└── reports/                                 # implementation reports and audits
 ```
 
 Domains are versioned independently. The layout is ergonomics only; passivity

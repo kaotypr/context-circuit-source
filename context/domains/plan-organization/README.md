@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Plan organization
@@ -58,7 +58,7 @@ from its immutable snapshot.
 
 ## Workflows
 
-- Archive/restore: `docs/getting-started.md`
+- Archive/restore: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -73,22 +73,17 @@ Restore is the only re-entry into the archived area.
 ## Implementation references
 
 - `.agents/skills/cc-archive/SKILL.md`
-- `wrapper/runtime/engine.sh`: `cc_plan_org_lock`, `cc_plan_org_unlock`,
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_org_lock`, `cc_plan_org_unlock`,
   `cc_plan_archive`, `cc_plan_restore`, `cc_plan_index_remove`,
   `cc_plan_index_upsert`
-- `wrapper/contracts/invariants.yaml`: INV-ARCHIVE-01, INV-ARCHIVE-02
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-ARCHIVE-01, INV-ARCHIVE-02
 
 ## Verification
 
 `sh test/acceptance.sh` (archive suite).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0014-domain-plan-organization`.
+Accepted 2026-08-24.
 Updated 2026-08-27 by explicit maintainer request to use the visible
 `plans/archive/` location.

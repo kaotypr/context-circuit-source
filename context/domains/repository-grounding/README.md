@@ -21,19 +21,27 @@ acceptance:
   accepted_at: 2026-08-27
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Repository grounding
 
 ## Summary
 
-Grounding the worker in the *target repository's own* agent guidance — discovered
+Grounding the worker in the *target repository's own* agent guidance — scanned
 live from the execution worktree and delivered through a generated brief, never
-hand-authored into each worker prompt. Part of execution setup; owned by the
-runtime discovery/hardening/brief functions and the shipped `worker-brief.md`
+hand-authored into each worker prompt. Part of **execution setup**; owned by the
+runtime grounding/hardening/brief functions and the shipped `worker-brief.md`
 template, applied by the `cc-execute` and `cc-run-stack` skills and honored by the
-`agents/worker.md` worker.
+`.context-circuit/agents/worker.md` worker.
+
+This is **not** the post-approval **planner**
+([tracing and feasibility](../tracing/README.md)). Both phases read the repository,
+but they differ: the planner runs *after approval* to judge *whether
+the change is buildable* (file map, risks, done-checks, tier signal) and writes
+the **plan files**; repository grounding runs *at execution setup, inside the
+worktree* to establish *how to write code in this repository* and produces the
+**worker brief**. Different timing, subject, and output.
 
 ## Scope
 
@@ -59,7 +67,8 @@ plan ([run-stack](../run-stack/README.md)).
   workarounds are eliminated rather than documented (full dependency provisioning
   is a later phase).
 - **Deliver, not author (INV-GROUND-03).** A fixed shipped template
-  (`wrapper/runtime/worker-brief.md`, shipped beside the runtime) is filled by deterministic
+  (`.context-circuit/wrapper/runtime/worker-brief.md`, shipped beside the nested
+  runtime) is filled by deterministic
   slot substitution from the manifest and the plan; the coordinator adds only a
   one-line task focus and delivers it verbatim. A preflight refuses a brief that
   omits or leaves unfilled the required repository-grounding section.
@@ -74,13 +83,13 @@ plan ([run-stack](../run-stack/README.md)).
 
 ## Workflows
 
-- Execute a plan grounded in the repo's own conventions: `docs/getting-started.md`
+- Execute a plan grounded in the repo's own conventions: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
 - Records: `.runtime/executions/<plan>/<exec>/grounding/<repo>.yaml` (manifest);
   the assembled brief `brief-<repo>.md`; `repository_friction` in the handoff
-- Template: `wrapper/runtime/worker-brief.md` (shipped, beside the runtime)
+- Template: `.context-circuit/wrapper/runtime/worker-brief.md` (shipped, beside the runtime)
 
 ## Data
 
@@ -95,32 +104,26 @@ may author the repo's agent docs, which later stacked plans then discover).
 
 ## Implementation references
 
-- `wrapper/adapters/worker-brief.md`; `.agents/skills/cc-execute/SKILL.md`,
-  `.agents/skills/cc-run-stack/SKILL.md`; `agents/worker.md`, `agents/coordinator.md`
-- `wrapper/runtime/engine.sh`: `cc_discover_repo_grounding`, `cc_harden_worktree`,
+- `.context-circuit/wrapper/adapters/worker-brief.md`; `.agents/skills/cc-execute/SKILL.md`,
+  `.agents/skills/cc-run-stack/SKILL.md`; `.context-circuit/agents/worker.md`, `.context-circuit/agents/coordinator.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_discover_repo_grounding`, `cc_harden_worktree`,
   `cc_grounding_directive`, `cc_worker_brief_assemble`, `cc_brief_preflight`,
   `cc_skill_desc`
-- `wrapper/contracts/schemas/grounding-manifest.yaml`, `execution.yaml` (grounding
+- `.context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml`, `execution.yaml` (grounding
   record), `worker-handoff.yaml` (`repository_friction`)
-- `wrapper/contracts/invariants.yaml`: INV-GROUND-01, INV-GROUND-02, INV-GROUND-03
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-GROUND-01, INV-GROUND-02, INV-GROUND-03
 
 ## Verification
 
 `sh test/acceptance.sh` (repository-grounding suite); a section in
-`template-harness/test-template-runtime.sh` proves the shipped template carries it;
-live scenario `template-harness/scenarios/11-repo-grounding` (grade.sh PASS incl.
+`agent-harness/test-template-runtime.sh` proves the shipped template carries it;
+live scenario `agent-harness/scenarios/11-repo-grounding` (grade.sh PASS incl.
 `file_grounded` + `grounding_manifest_recorded`, human-simulator pass).
-
-## Provenance
-
-Authored from the current wrapper at HEAD `cb84870` (implementation `e3e95cd`).
-Design source `sources/system-design/context-circuit/v0.6/repository-grounding/`
-was named by the accepting request.
 
 ## Acceptance notes
 
-Accepted 2026-08-27 from proposal `0017-domain-repository-grounding`.
-Updated 2026-08-29 from proposal `0026-repository-grounding-brief-location` (v0.6.1
-writer-brief-placement): the shipped brief moved out of the workspace root to
-`wrapper/runtime/worker-brief.md`; source of truth (`wrapper/adapters/worker-brief.md`)
-and INV-GROUND semantics unchanged. Implementation `2c2adab`.
+Accepted 2026-08-27.
+Updated 2026-08-29: the shipped brief moved out of the workspace root to
+`.context-circuit/wrapper/runtime/worker-brief.md`; source of truth
+(`.context-circuit/wrapper/adapters/worker-brief.md`) and INV-GROUND semantics
+unchanged.

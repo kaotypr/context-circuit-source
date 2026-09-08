@@ -5,10 +5,10 @@
 set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 
-W="$ROOT/wrapper"
+W="$ROOT/.context-circuit/wrapper"
 
 # --- invariants and owners present ---
-inv="$W/contracts/invariants.yaml"
+inv="${W}/contracts/invariants.yaml"
 require_file "$inv"
 contains "$inv" "INV-EXTERNAL-01"
 contains "$inv" "INV-EXTERNAL-02"
@@ -17,17 +17,17 @@ contains "$inv" "orthogonal to the core"
 contains "$inv" "export-only"
 contains "$inv" "self-contained"
 contains "$inv" "no access to the workspace"
-for concern in external_surface publication_config publication_intent publication_record; do
+for concern in external_surface publication_config publication_field_intent publication_record; do
 	contains "$inv" "$concern:"
 done
 # INV-EXTERNAL-02 clarified: a display-only preview read is not inbound flow, and a
-# publication writes within its own publication/<name>/ folder (config, intent/, published/).
+# publication writes within its own publication/<name>/ folder (config, field-intent/, published/).
 contains "$inv" "is not an inbound flow"
 contains "$inv" "publication/<name>/ folder"
 contains "$inv" "a read that ends at the screen"
 
 # --- config schema: credential-free, export-only, manual-only ---
-cfg="$W/contracts/schemas/publication-config.yaml"
+cfg="${W}/contracts/schemas/publication-config.yaml"
 require_file "$cfg"
 contains "$cfg" "concern: publication_config"
 contains "$cfg" "publication/<name>/config.yaml"
@@ -40,13 +40,13 @@ contains "$cfg" "instructions:"
 contains "$cfg" "preview:"
 contains "$cfg" "drift_read"
 contains "$cfg" "display-only"
-contains "$cfg" "intent/<plan-id>.yaml"
+contains "$cfg" "field-intent/<plan-id>.yaml"
 
 # --- intent schema: user-owned field layer, canonical minutes, no d/w ---
-intent="$W/contracts/schemas/publication-intent.yaml"
+intent="${W}/contracts/schemas/publication-field-intent.yaml"
 require_file "$intent"
-contains "$intent" "concern: publication_intent"
-contains "$intent" "publication/<name>/intent/<plan-id>.yaml"
+contains "$intent" "concern: publication_field_intent"
+contains "$intent" "publication/<name>/field-intent/<plan-id>.yaml"
 contains "$intent" "estimate_minutes"
 contains "$intent" "then human-owned"
 contains "$intent" "silently overwrites a human edit"
@@ -56,7 +56,7 @@ contains "$intent" "INV-SEC-01"
 contains "$intent" "an external id or url"
 
 # --- record schema (plan kind): under the publication, idempotent ---
-rec="$W/contracts/schemas/publication-record.yaml"
+rec="${W}/contracts/schemas/publication-record.yaml"
 require_file "$rec"
 contains "$rec" "concern: publication_record"
 contains "$rec" "publication/<name>/published/<plan-id>.yaml"
@@ -72,7 +72,7 @@ contains "$rec" "field-only"
 contains "$rec" "backward-compatible"
 
 # --- record schema (thread kind): discussion-safe, ids/timestamps only ---
-trec="$W/contracts/schemas/publication-thread-record.yaml"
+trec="${W}/contracts/schemas/publication-thread-record.yaml"
 require_file "$trec"
 contains "$trec" "concern: publication_thread_record"
 contains "$trec" "publication/<name>/published/<plan-id>.yaml"
@@ -99,7 +99,7 @@ contains "$sk" "Authoring: instructions"
 contains "$sk" "best-effort estimates"
 # intent layer + estimate unit/format
 contains "$sk" "Field intent and estimates"
-contains "$sk" "publication/<name>/intent/<plan-id>.yaml"
+contains "$sk" "publication/<name>/field-intent/<plan-id>.yaml"
 contains "$sk" "estimate_minutes"
 contains "$sk" "never silently overwrites a human edit"
 contains "$sk" "input and display only"
@@ -122,23 +122,23 @@ contains "$sk" "One reply per question, fully described"
 contains "$sk" "never delete a"
 
 # --- manifest registers the schemas and the workspace-owned folder ---
-man="$W/manifest.yaml"
+man="${W}/manifest.yaml"
 contains "$man" "publication-config: [1]"
-contains "$man" "publication-intent: [1]"
+contains "$man" "publication-field-intent: [1]"
 contains "$man" "publication-record: [1]"
 contains "$man" "- publication/"
 
 # --- ISOLATION: the core workflow references nothing here (INV-EXTERNAL-01) ---
 # Runtime is host-neutral and gains no publish action.
-eng="$W/runtime/engine.sh"
+eng="${W}/runtime/engine.sh"
 not_contains "$eng" "cc_publish"
 not_contains "$eng" "publication/"
 not_contains "$eng" "publication-config"
 # The delivery boundary and coordinator route nothing to a publication.
-not_contains "$W/adapters/WORKFLOW.md" "cc-publish"
-not_contains "$W/adapters/WORKFLOW.md" "publication/"
-not_contains "$ROOT/agents/coordinator.md" "cc-publish"
-not_contains "$ROOT/agents/coordinator.md" "publication/"
+not_contains "${W}/adapters/WORKFLOW.md" "cc-publish"
+not_contains "${W}/adapters/WORKFLOW.md" "publication/"
+not_contains "$ROOT/.context-circuit/agents/coordinator.md" "cc-publish"
+not_contains "$ROOT/.context-circuit/agents/coordinator.md" "publication/"
 # No core-workflow skill triggers or depends on the surface.
 for sk_core in cc-plan cc-execute cc-run-stack cc-verify cc-complete cc-deliver cc-archive; do
 	f="$ROOT/.agents/skills/$sk_core/SKILL.md"
@@ -147,7 +147,7 @@ for sk_core in cc-plan cc-execute cc-run-stack cc-verify cc-complete cc-deliver 
 done
 
 # --- Path A: git delivery no longer says "publish/publication" ---
-not_contains "$W/adapters/WORKFLOW.md" "publish"
+not_contains "${W}/adapters/WORKFLOW.md" "publish"
 not_contains "$ROOT/.agents/skills/cc-deliver/SKILL.md" "publication"
 
 pass 'external-surface'

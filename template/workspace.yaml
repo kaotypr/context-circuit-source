@@ -6,7 +6,7 @@ purpose: >
   Circuit universal project workspace; it has not been configured for a project
   yet.
 
-# Portable logical repository identity only. Host-local paths and anchor
+# Portable logical repository identity only. Host-local paths and base branch
 # branches belong in the ignored repositories.local.yaml file.
 repositories: []
 

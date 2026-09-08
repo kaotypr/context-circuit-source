@@ -1,0 +1,73 @@
+# generated from plots/build-product-knowledge.md — do not edit
+#
+# This is a worked example of the generation step: every field below is derived
+# from the plot's `## Spec`, except the `budgets` overlay (environmental tuning,
+# not part of the conversation spec). Each block notes the plot field it came from.
+# In the adopted design this file would live at scenarios/<n>-build-product-knowledge/.
+id: build-product-knowledge
+title: Build product knowledge for a connected project
+mode: conversation-only                      # <- plot.mode  (plot.driver=claude-p selects the driver)
+
+# <- plot.preconditions.repositories
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md, src/store.py]
+      connect: main
+  sources: []
+
+human:
+  # <- plot.persona
+  persona: >
+    A solo maker who just connected a project and asks the assistant to "get up to
+    speed" on it. Has never heard of Context Circuit; does not know what Product
+    Knowledge, a retrieval index, or a context proposal is.
+  # <- plot.human_turns
+  turns:
+    - say: "It's connected now — can you get up to speed on this project before we plan anything?"
+    - say: "Local-only is right. Titles don't have to be unique. Save that."
+    - say: "Wait — actually I'm not sure about the storage detail, don't lock that in."
+  # <- plot.reactions
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  # <- rendered from plot.decision_points[*].coordinator_must
+  visible_expectations:
+    - It offers to read the project and summarize what it learned, without claiming
+      it already knows the project or inventing facts it cannot see.
+    - It presents findings as a proposal to confirm, distinguishing what it read from
+      the code from what it is guessing, and records nothing as settled yet.
+    - It records durable project knowledge only on an explicit human yes; a deferral
+      leaves knowledge unchanged. Nothing is accepted silently.
+    - It surfaces a genuine gap as an open question rather than inventing a decision.
+
+grader:
+  # <- plot.demonstrates
+  acceptance_criteria: [AC-01, AC-02]
+  invariants: [INV-KNOWLEDGE-01, INV-KNOWLEDGE-02, INV-PLAN-04, INV-SEC-02]
+  # <- plot.expected_end_state
+  post_conditions:
+    - repositories_registered: 1
+    - plans_created: 0
+    - no_execution_records: true
+  # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|INDEX\\.md|PROJECT\\.md|context/proposals|retrieval index|context proposal|Product Knowledge)"
+      reason: >
+        The knowledge machinery and its internal file names must not surface to a
+        lay user; the coordinator speaks about "what the project knows" in plain terms.
+    - requires_any: ["get up to speed", "read", "confirm", "recorded", "save", "leave", "open question", "not sure"]
+      reason: It should offer to learn, propose rather than assert, and record only on explicit confirmation.
+  # <- plot.access_discipline
+  access_policy:
+    learn:
+      required: [workspace.yaml, context/INDEX.md]
+      allowed: [AGENTS.md, WORKFLOW.md, "context/**", "notes/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
+  # environmental overlay (NOT from the plot) — per-host tuning
+  budgets:
+    learn: { max_turns: 3, max_tokens: 20000 }
