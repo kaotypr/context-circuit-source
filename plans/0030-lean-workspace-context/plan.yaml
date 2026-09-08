@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0030-lean-workspace-context
 intent: i015-lean-workspace-context
 title: Keep the workspace agent loop; remove discovery waste
-status: draft
+status: done
 objective: >
   The instantiated product workspace keeps today's agent loop (catalog then
   selected Product Knowledge, skill-as-procedure, Gate 1 then planner then derived

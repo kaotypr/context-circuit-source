@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0031-ok-easter-egg
 intent: i022-ok-easter-egg
 title: Hide ok punchline in engine; trigger from coordinator
-status: draft
+status: done
 objective: >
   When a user's entire message is the two letters ok (case-insensitive, optional
   surrounding whitespace only), the coordinator invokes a hidden engine action,

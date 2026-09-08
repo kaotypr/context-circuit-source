@@ -3,7 +3,7 @@
 **Intent:** i015-lean-workspace-context  
 **Repository:** context-circuit-source  
 **Tier:** Standard  
-**Status:** draft
+**Status:** done
 
 ## Objective
 

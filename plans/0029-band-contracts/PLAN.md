@@ -3,7 +3,7 @@
 **Intent:** i021-id-number-blocks  
 **Repository:** context-circuit-source  
 **Tier:** Standard  
-**Status:** draft  
+**Status:** done  
 **Depends on:** 0028-band-allocation
 
 ## Objective
