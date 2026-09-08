@@ -68,13 +68,13 @@ a second authorization policy.
 | Host | Instruction surface | Native project tree | Native child mapping |
 | --- | --- | --- | --- |
 | Codex CLI | `AGENTS.md`, then `.agents/skills/cc-*` | `.codex/agents/*.toml` (no `.codex/rules/`) | `spawn_agent` → worker, verifier, or planner packet |
-| Claude Code | root `CLAUDE.md` (`@AGENTS.md`) | `.claude/agents/`, `.claude/rules/`, `.claude/skills/` links to `.agents/skills/cc-*` | Task/subagent → same packet |
+| Claude Code | root `CLAUDE.md` (`@AGENTS.md`) | `.claude/agents/`, `.claude/rules/`, `.claude/skills/cc-*/SKILL.md` routes to `.agents/skills/cc-*` | Task/subagent → same packet |
 | Cursor Agent CLI | root `CURSOR.md` (`@AGENTS.md`) | `.cursor/agents/`, `.cursor/rules/`; skills via `.agents/skills/` | Task/subagent if available; otherwise host-blocked |
 
 The product host set is worker, verifier, and planner stubs in each host's
 format, plus standing-rule stubs on Claude and Cursor (role-tiering spawn,
 commit convention; Cursor also keeps the GitHub unsandboxed `gh` rule).
-Claude skill discovery uses symlinks under `.claude/skills/`; Codex and
+Claude skill discovery uses thin `SKILL.md` routes under `.claude/skills/`; Codex and
 Cursor already scan `.agents/skills/`. Maintainer-only extras
 (`.claude/agents/cc-human-simulator.md`, `.claude/skills/cc-test-case/`) stay
 in this source checkout and are not the shipped set.

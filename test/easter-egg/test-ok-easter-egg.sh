@@ -16,7 +16,10 @@ if [ "${1:-}" = --case ]; then case_name=${2:-}; fi
 eng() { sh "$ENG" "$@"; }
 
 assert_exact_stdout() {
-	got=$(eng "$@"; printf x)
+	got=$(
+		eng "$@" || { printf 'engine-exit:%s\n' "$?" >&2; exit 1; }
+		printf x
+	) || fail "engine $* failed"
 	want=$(printf '%s\nx' "$PUNCHLINE")
 	assert_eq "$want" "$got"
 }
@@ -29,7 +32,11 @@ case_engine() {
 	assert_exact_stdout ok-easter-egg
 	# extra argv and stdin are ignored — the engine is not a conversation router
 	assert_exact_stdout ok-easter-egg "user said ok"
-	got=$(printf 'ok\nplease route this\n' | eng ok-easter-egg; printf x)
+	got=$(
+		printf 'ok\nplease route this\n' | eng ok-easter-egg \
+			|| { printf 'engine-exit:%s\n' "$?" >&2; exit 1; }
+		printf x
+	) || fail "engine ok-easter-egg (stdin) failed"
 	want=$(printf '%s\nx' "$PUNCHLINE")
 	assert_eq "$want" "$got"
 
@@ -75,7 +82,7 @@ assert_no_punchline_tree() {
 	tree=$1
 	label=$2
 	[ -e "$tree" ] || fail "missing surface: $label ($tree)"
-	hits=$(grep -R -F -l -- "$PUNCHLINE" "$tree" 2>/dev/null || true)
+	hits=$(grep -r -F -l -- "$PUNCHLINE" "$tree" 2>/dev/null || true)
 	[ -z "$hits" ] || fail "punchline leaked into $label: $hits"
 }
 

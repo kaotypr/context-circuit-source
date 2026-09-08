@@ -60,10 +60,10 @@ policy:
   `.context-circuit/agents/<role>.md`
 - Rules: `.claude/rules/` → owning invariants (role-tiering spawn, commit
   convention) and this file where the host requires it
-- Skills: `.claude/skills/cc-*` are symlinks to `.agents/skills/cc-*`. Product
-  skills remain owned at `.agents/skills/<name>/SKILL.md` (INV-SKILL-01). The
-  coordinator still resolves them by path; the Claude skills tree is how `/cc-*`
-  is discovered.
+- Skills: `.claude/skills/cc-*/SKILL.md` are thin routes. Read
+  `.agents/skills/<name>/SKILL.md` — that file is the owner (INV-SKILL-01).
+  Do not copy the skill body into the Claude tree. The coordinator still
+  resolves skills by path; the Claude skills tree is how `/cc-*` is discovered.
 
 `.claude/` is committed workspace integration. Personal Claude state
 (`~/.claude/`, `.claude/settings.local.json`, transcripts, credentials) stays

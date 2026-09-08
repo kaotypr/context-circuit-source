@@ -129,7 +129,7 @@ criteria:
     statement: Host-native agent and rule files route to .context-circuit/agents or owning invariants and do not copy role bodies or invent a second authorization policy.
     suite: test/host-native/test-host-routes.sh
   - id: AC-HOST-03
-    statement: Claude exposes cc-* skills through .claude/skills/ links to .agents/skills/cc-* without copying skill bodies.
+    statement: Claude exposes cc-* skills through .claude/skills/cc-*/SKILL.md routes to .agents/skills/cc-* without copying skill bodies.
     suite: test/host-native/test-host-routes.sh
   - id: AC-HOST-04
     statement: Missing required native child creation remains host-blocked; adapters and coordinator never self-verify.

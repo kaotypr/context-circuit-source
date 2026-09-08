@@ -60,7 +60,7 @@ adapters (`AGENTS.md`, `CLAUDE.md`, `CURSOR.md`) and `.agents/skills/`. An
 upgrade adds the product host-native set as template-owned files:
 
 - Claude: `.claude/agents/{worker,verifier,planner}.md`, `.claude/rules/`
-  stubs, and `.claude/skills/cc-*` links to `.agents/skills/cc-*`
+  stubs, and `.claude/skills/cc-*/SKILL.md` routes to `.agents/skills/cc-*`
 - Codex: `.codex/agents/{worker,verifier,planner}.toml` (no `.codex/rules/`)
 - Cursor: `.cursor/agents/{worker,verifier,planner}.md` and `.cursor/rules/`
   stubs
@@ -71,5 +71,5 @@ they do not replace root adapters. Do not copy maintainer-only extras
 an instantiated workspace. Personal host state stays personal: `~/.claude/`,
 `~/.codex/`, `~/.cursor/`, `.claude/settings.local.json`, `AGENTS.override.md`,
 transcripts, and credentials. If a workspace already has personal files in
-those trees, add the missing product stubs and links; do not overwrite
+those trees, add the missing product stubs and routes; do not overwrite
 personal overrides.

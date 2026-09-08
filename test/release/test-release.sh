@@ -66,7 +66,7 @@ test ! -e "$artifact/.claude/agents/cc-human-simulator.md" || fail "source-only 
 test ! -e "$artifact/.claude/skills/cc-test-case" || fail "source-only Claude skill leaked into artifact"
 test ! -e "$artifact/.codex/rules" || fail "non-native .codex/rules leaked into artifact"
 for s in cc-workspace cc-intent cc-trace cc-plan cc-execute cc-run-stack cc-system-design cc-verify cc-complete cc-archive cc-deliver cc-pair cc-publish; do
-  test -e "$artifact/.claude/skills/$s" || fail "missing Claude skill route: $s"
+  require_file "$artifact/.claude/skills/$s/SKILL.md"
 done
 
 # --- uninitialized identity and thin adapter ---
