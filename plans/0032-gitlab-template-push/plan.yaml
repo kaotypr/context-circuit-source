@@ -1,0 +1,155 @@
+schema_version: 3
+plan: 0032-gitlab-template-push
+intent: i023-gitlab-template-push
+title: Push published template to GitLab from GitHub Action
+status: draft
+objective: >
+  After a successful template publication to GitHub (main, version tag, and
+  GitHub Release unchanged), the same publish-template workflow also pushes
+  that same commit and annotated tag from the .template-repo checkout to
+  gitlab.sicepat.tech. GitHub remains canonical; GitLab receives a mirror of
+  the tree already published, not a second assembly. Credentials and the
+  project path stay in GitHub Actions settings only.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns the publish-template GitHub Actions workflow, release scripts,
+      source-only binding metadata, and acceptance tests for template
+      publication.
+plan_dependencies: []
+product_knowledge:
+  - id: source-release-and-upgrade
+    path: context/domains/source-release-and-upgrade/README.md
+    reason: >
+      Documents template publication and the GitHub-to-template binding.
+      After this change the domain should note GitLab as an optional mirror
+      destination configured via GitHub Actions variables and secrets.
+context_grounding:
+  summary: >
+    Grounded at HEAD 4575c02. Template publication is a single job in
+    .github/workflows/publish-template.yml: checkout source and
+    kaotypr/context-circuit-template into .template-repo, run acceptance,
+    resolve version, assemble/commit/tag via scripts/publish-template.sh,
+    push main and v* tag to GitHub origin, then gh release create. Push and
+    Release are workflow steps; publish-template.sh stops at remaining_gate.
+    release/binding.yaml names only the GitHub destination
+    (kaotypr/context-circuit-template). test/release/test-publish.sh covers
+    the script path hermetically; no workflow YAML tests exist yet. Runtime
+    engine has no publish behavior (INV-RUNTIME-01). plan-allocate-id fails
+    PLAN_PREFIX_COLLISION on archived duplicate numeric prefixes; next free
+    in-band id is 0032 after 0031-ok-easter-egg.
+  constraints:
+    - GitHub push of main, version tag, and GitHub Release must remain as today.
+    - GitLab push uses the same .template-repo commit and tag; no re-assembly.
+    - INV-SEC-01 — GitLab token and project path never enter workspace files.
+    - Do not invent the GitLab group/project path in source; read it from a
+      GitHub Actions repository variable at runtime.
+    - GitLab push failure must fail the job; no continue-on-error.
+    - Non-goals — no GitLab Release, no GitLab project creation, no cc-publish
+      changes, no template assembly changes.
+    - Preserve unrelated and dirty work; run semantic acceptance after phases.
+  decisions:
+    - One plan, two tasks — workflow mirror step (GLP-001) and static proof
+      (GLP-002). Single execution and verification boundary; tests depend on
+      the workflow shape GLP-001 introduces.
+    - GitLab project path plan-resolution — operators set
+      vars.GITLAB_TEMPLATE_PROJECT (group/project, no host) and
+      secrets.GITLAB_TEMPLATE_TOKEN before the first publish after merge.
+      Static acceptance proves wiring; end-to-end push succeeds once the
+      project exists and values are configured.
+    - Add a transient gitlab remote on .template-repo inside the workflow step
+      and push main plus the resolved v* tag using the token from the secret
+      environment (GitHub Actions masks secrets in logs). Do not extend
+      publish-template.sh or release/binding.yaml with credentials or host paths.
+    - New test/release/test-gitlab-mirror-workflow.sh parses the workflow for
+      step order, GitLab host, variable/secret references, same-checkout push,
+      and absence of hardcoded project paths or repo-stored tokens.
+knowledge_impact:
+  expected_context_units:
+    - source-release-and-upgrade
+  review_on_completion: true
+tasks:
+  - id: GLP-001
+    title: Add GitLab mirror push to publish-template workflow
+    repositories: [context-circuit-source]
+    paths:
+      - .github/workflows/publish-template.yml
+      - context/domains/source-release-and-upgrade/README.md
+    depends_on: []
+    changes:
+      - >
+        After the existing Push commit and tag step (GitHub origin) and before
+        or after Create GitHub Release (order must keep GitHub push and Release
+        intact), add a step that pushes .template-repo main and the resolved
+        annotated tag v$V to gitlab.sicepat.tech using
+        vars.GITLAB_TEMPLATE_PROJECT and secrets.GITLAB_TEMPLATE_TOKEN. Use the
+        same checkout produced by publish-template.sh; do not re-run assembly.
+        Fail the job when the push fails.
+      - >
+        Briefly document the GitLab mirror as an operator-configured secondary
+        destination in context/domains/source-release-and-upgrade/README.md —
+        GitHub Actions variable and secret names only, no literal project path
+        or token placeholder in the repo.
+    acceptance:
+      - id: AC-GITHUB-UNCHANGED
+        statement: >
+          The workflow still pushes main and the version tag to GitHub origin
+          and still runs gh release create with the archive attachment.
+      - id: AC-GITLAB-PUSH
+        statement: >
+          The workflow pushes main and the version tag from .template-repo to
+          gitlab.sicepat.tech using the configured project variable and token
+          secret.
+      - id: AC-SAME-TREE
+        statement: >
+          The GitLab push targets the same .template-repo commit and tag the
+          GitHub push just published; no second publish-template.sh invocation.
+      - id: AC-FAILURE-VISIBLE
+        statement: >
+          The GitLab push step has no continue-on-error and uses default step
+          failure semantics.
+    verification:
+      - id: V-GLP-001-workflow
+        command: sh test/release/test-gitlab-mirror-workflow.sh
+  - id: GLP-002
+    title: Static acceptance for GitLab mirror wiring and credential hygiene
+    repositories: [context-circuit-source]
+    paths:
+      - test/release/test-gitlab-mirror-workflow.sh
+      - test/acceptance.sh
+      - test/release/test-publish.sh
+    depends_on: [GLP-001]
+    changes:
+      - >
+        Add test/release/test-gitlab-mirror-workflow.sh that asserts the
+        publish-template workflow keeps GitHub push and Release steps, adds a
+        GitLab push referencing gitlab.sicepat.tech,
+        vars.GITLAB_TEMPLATE_PROJECT, and secrets.GITLAB_TEMPLATE_TOKEN,
+        pushes from .template-repo, lacks continue-on-error on the GitLab
+        step, and contains no hardcoded group/project path or repo-stored
+        GitLab token patterns.
+      - >
+        Wire the suite into test/acceptance.sh after test/release/test-publish.sh.
+        Confirm test/release/test-publish.sh still passes unchanged for the
+        script-only publication path.
+    acceptance:
+      - id: AC-NO-CREDENTIAL
+        statement: >
+          No GitLab token, URL-with-token, or literal project path is written
+          into workspace files; the workflow references only GitHub Actions
+          vars and secrets.
+      - id: AC-GITHUB-UNCHANGED
+        statement: >
+          Existing publish-template.sh acceptance still passes; GitHub
+          publication script behavior is unchanged.
+    verification:
+      - id: V-GLP-002-mirror-suite
+        command: sh test/release/test-gitlab-mirror-workflow.sh
+      - id: V-GLP-002-publish-suite
+        command: sh test/release/test-publish.sh
+      - id: V-GLP-002-acceptance
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
