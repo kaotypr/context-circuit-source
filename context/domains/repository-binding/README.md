@@ -126,13 +126,6 @@ different users may set different base branches for the same logical repository.
   INV-REPO-04, INV-SEC-01
 - `.agents/skills/cc-workspace/SKILL.md`
 
-## Provenance
-
-Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
-maintainer plans that first seeded this page were deleted in `4b8ac0b`; their
-provenance was retired (see the accepted retirement of `context/sources.yaml`).
-Raw `sources/` was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-08-24. Consolidated from the former `repository-binding` draft,

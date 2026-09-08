@@ -23,7 +23,7 @@ contains "$sd" "intent/<id>/detail/"
 contains "$sd" "three-tier"
 contains "$sd" "by concern"
 contains "$sda" "intent/<id>/detail/"
-contains "$sda" "sources/system-design/"
+contains "$sda" "passive source material"
 
 # AC-OPTIONAL-RECOMMENDED
 contains "$ci" "recommend"

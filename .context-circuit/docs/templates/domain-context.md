@@ -57,18 +57,32 @@ Known constraints, exceptions, failure modes, or unresolved boundaries.
 
 ## Implementation references
 
-Repository paths or services that implement this domain, when verified. These
-references do not replace the domain's product behavior.
+Shipped contract, adapter, or skill paths that implement this domain, when
+verified. These references do not replace the domain's product behavior.
+Invariant IDs and shipped paths remain nameable (INV-KNOWLEDGE-03).
 
 ## Verification
 
 Tests, checks, examples, or review questions that support this knowledge.
 
+## Knowledge-change recording
+
+When this domain changes what is now true about the product, add a
+`DECISIONS.md` entry with:
+
+- **Decision:** what is now true
+- **Rationale:** why
+- **Consequence:** what follows for the product
+
+Do not name a particular plan, intent file, or sources file, and do not name a
+`sources/` path. Path patterns that explain product structure (for example
+`intent/<id>/`) remain allowed.
+
 ## Provenance
 
-List every selected source and repository document actually read, why it was
-relevant, and its revision or freshness signal. Raw source text stays in
-`sources/` and is never copied into this document.
+Optional retrieval pointers to shipped contract or adapter paths and invariant
+IDs. Do not name a particular plan, intent file, or sources file, and do not
+name a `sources/` path. Raw source text is never copied into this document.
 
 ## Acceptance notes
 

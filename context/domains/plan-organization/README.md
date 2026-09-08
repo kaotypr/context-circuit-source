@@ -82,13 +82,8 @@ Restore is the only re-entry into the archived area.
 
 `sh test/acceptance.sh` (archive suite).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0014-domain-plan-organization`.
+Accepted 2026-08-24.
 Updated 2026-08-27 by explicit maintainer request to use the visible
 `plans/archive/` location.

@@ -119,12 +119,6 @@ predecessor fails — keep such a plan late and thin.
 pass; ten plans built and verified in dependency order with integration bases for
 the fan-ins).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `cb84870` (implementation `74eb510`).
-Design source `sources/system-design/context-circuit/v0.6/run-stack/` was named by
-the accepting request.
-
 ## Acceptance notes
 
-Accepted 2026-08-27 from proposal `0016-domain-run-stack`.
+Accepted 2026-08-27.

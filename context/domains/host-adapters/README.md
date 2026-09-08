@@ -156,12 +156,6 @@ unavailable.
 - `.agents/skills/cc-pair/SKILL.md` (the worker-child mapping for direct collaboration)
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-HOST-01, INV-PAIR-01
 
-## Provenance
-
-Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
-`multi-host-agent-support` plan that seeded this page was deleted in `4b8ac0b`;
-its provenance was retired. Raw `sources/` was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-08-24. Corrected against the shipped wrapper: the invariant family
@@ -171,12 +165,11 @@ separate invariant id; `.context-circuit/wrapper/contracts/routes.yaml`,
 exist. The seven shipped skills are `cc-workspace`, `cc-plan`, `cc-execute`,
 `cc-verify`, `cc-complete`, `cc-archive`, `cc-deliver`.
 
-Extended 2026-09-03 from proposal `0030-change-host-adapters-for-pairing`: the
-worker packet also serves direct collaboration ([cc-pair](../direct-collaboration/README.md),
-the Explore tier), which launches no verifier and fails closed to `host-blocked`
-with no coordinator write fallback. INV-HOST-01 is unchanged.
+Extended 2026-09-03: the worker packet also serves direct collaboration
+([cc-pair](../direct-collaboration/README.md), the Explore tier), which launches
+no verifier and fails closed to `host-blocked` with no coordinator write
+fallback. INV-HOST-01 is unchanged.
 
-Extended 2026-09-08 from intent `i020-host-conventions-preserved`: committed
-`.claude/`, `.codex/`, and `.cursor/` trees are the native integration surface.
-They route to existing owners; they are not optional host-local convenience
-and are not a second policy copy.
+Extended 2026-09-08: committed `.claude/`, `.codex/`, and `.cursor/` trees are
+the native integration surface. They route to existing owners; they are not
+optional host-local convenience and are not a second policy copy.

@@ -115,19 +115,11 @@ template-owned files and preserves workspace-owned state.
 - `WORKFLOW.md`, `.context-circuit/docs/release.md`
 - root `.gitignore` and `template/.gitignore`
 
-## Provenance
-
-Authored from the current wrapper and release tooling at HEAD `4b8ac0b`; design
-chapter 09 was the checklist. Raw `sources/` was not otherwise scanned.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0011-domain-source-release-and-upgrade`.
-Updated 2026-08-29 from proposal `0028-dist-build-version-identity` (v0.6.1
-dist-build-version): the template artifact's version is its `template_version`, and
+Accepted 2026-08-24.
+Updated 2026-08-29: the template artifact's version is its `template_version`, and
 `build-dist.sh` derives its default from that field and clean-rebuilds its output.
-Implementation `10f864b`, `6921a31`.
 
-Updated 2026-09-08 from intent `i020-host-conventions-preserved`: host-native
-folders join the shipped set; maintainer-only Claude extras stay out of the
-artifact and the template seed.
+Updated 2026-09-08: host-native folders join the shipped set; maintainer-only
+Claude extras stay out of the artifact and the template seed.

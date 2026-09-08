@@ -107,16 +107,9 @@ logged in `context/DESIGN-DELTAS.md`; this page describes the shipped verifier.
 
 `sh test/acceptance.sh` (execution/verification coverage).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned. This is not the deleted previous-version "verification-evidence-layers"
-plan (its evidence-layer mechanism is absent from the current wrapper); this page
-describes only the verifier mechanism that ships today.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0012-domain-verification`. Re-grounded
-2026-09-04 for Context Circuit v1.0: the verifier floor is tier-conditional
-(Standard/Critical only; Explore has none) and results bind to the candidate
-(INV-ASSURE-01, INV-CANDIDATE-01). The verifier mechanism itself is unchanged.
+Accepted 2026-08-24. Re-grounded 2026-09-04 for Context Circuit v1.0: the
+verifier floor is tier-conditional (Standard/Critical only; Explore has none)
+and results bind to the candidate (INV-ASSURE-01, INV-CANDIDATE-01). The
+verifier mechanism itself is unchanged.

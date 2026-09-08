@@ -109,15 +109,6 @@ plan is not re-executed. Unrelated dirty working-tree files are preserved.
 - `.context-circuit/wrapper/contracts/schemas/plan.yaml`, `.context-circuit/wrapper/contracts/schemas/intent-contract.yaml`
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-APPROVE-01, INV-INTENT-02, INV-PLAN-01, INV-EXEC-01
 
-## Provenance
-
-Re-grounded on the current wrapper for Context Circuit v1.0. Supersedes the earlier
-`plan-approval` domain: v1.0 removed the plan-level approval gate and the
-intermediate `approved` plan status, folding authorization into the intent gate
-(Gate 1). Authorization is scope-free (approved intent + unchanged criteria);
-scope-safety is settled at delivery (Gate 2), not by an authorization-time scope
-check. Raw `sources/` was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-09-02. Replaces the retired `draft → approved` plan gate and the

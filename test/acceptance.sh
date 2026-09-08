@@ -31,6 +31,7 @@ run_suite test/external-surface/test-external-surface.sh
 run_suite test/completion/test-completion.sh
 run_suite test/completion/test-inferred.sh
 run_suite test/knowledge/test-debt.sh
+run_suite test/knowledge/test-durable-context.sh
 run_suite test/archive/test-archive.sh
 run_suite test/delivery/test-delivery.sh
 run_suite test/security/test-boundaries.sh
