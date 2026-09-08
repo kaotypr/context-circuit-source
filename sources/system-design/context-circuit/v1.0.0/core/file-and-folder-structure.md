@@ -121,9 +121,10 @@ sources/  (raw evidence, structured design)   ── grounds ──▶   intent/
   traverse `archive/`; an explicit restore returns an item first.
 - **Three-tier design docs.** `sources/system-design/` follows README → design →
   concern altitude, one concern per file, diagrams inline as fenced ` ```mermaid `.
-- **This study is itself source material.** `sources/context-circuit-v1.0/` is
-  exactly the "structured design under `sources/`" convention applied to the
-  product's own evolution — no status, no authority.
+- **This study is itself source material.**
+  `sources/system-design/context-circuit/v1.0.0/core/` is exactly the
+  "structured design under `sources/`" convention applied to the product's own
+  evolution — no status, no authority.
 
 ## Ownership classes (what ships, what stays local)
 

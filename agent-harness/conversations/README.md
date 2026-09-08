@@ -15,10 +15,10 @@ behavior, owns no rule, and is not wired into any suite yet. It is source-only
 Today the human-facing behavior of the template is specified in three
 delta-shaped places:
 
-- `sources/context-circuit-v1.0/conversations.md` — five worked dialogues (A–E),
-  written to make the **v1.0 changes** concrete.
-- `sources/context-circuit-v1.0/human-experience.md` — the **changed** surface
-  (the two gates, re-gating, transparency questions).
+- `sources/system-design/context-circuit/v1.0.0/core/conversations.md` — five
+  worked dialogues (A–E), written to make the **v1.0 changes** concrete.
+- `sources/system-design/context-circuit/v1.0.0/core/human-experience.md` — the
+  **changed** surface (the two gates, re-gating, transparency questions).
 - `agent-harness/scenarios/*/case.yaml` — 22 cases whose expectations are
   **hand-encoded inline** (`visible_expectations`, `transcript_checks`).
 
@@ -85,8 +85,9 @@ coordinator + skills + engine  (the implementation)
 
 ## Relationship to the existing material
 
-- `sources/context-circuit-v1.0/conversations.md` stays a **design study** (the
-  rationale for the delta). It has no authority and is not the test spec.
+- `sources/system-design/context-circuit/v1.0.0/core/conversations.md` stays a
+  **design study** (the rationale for the delta). It has no authority and is not
+  the test spec.
 - `test/scenarios/test-scenarios.sh` stays the **deterministic** owner of the
   five end-to-end families (AC-36), engine-driven. This library is the **live,
   lay-user, whole-surface** complement — it is not a duplicate of that suite.
