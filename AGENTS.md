@@ -15,7 +15,7 @@ This checkout follows the root `WORKFLOW.md`, not the product lifecycle used by
 an instantiated workspace. Maintainer implementation is performed directly in
 the current active branch. Do not create an execution or pairing branch,
 worktree, lease, execution record, or product candidate for source maintenance.
-The source-only plans under `plans/context-circuit-plans/` are implementation
+The source-only plans under `plans/` are implementation
 guides and ordering records; they are not runtime workspace plans. The product
 workflow remains applicable when this repository is acting as a registered
 product repository for another workspace.

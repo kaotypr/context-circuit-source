@@ -86,7 +86,8 @@ printf '%s\n' "$result" | grep -F "runtime_version: 1.0.0" >/dev/null || fail 'r
 
 # --- exclusion boundary: no maintainer, source, test, or runtime state ---
 for leaked in .runtime test .github scripts template repositories repositories.local.yaml \
-  .context-circuit/wrapper/adapters plans/context-circuit-plans sources/system-design sources/reports \
+  .context-circuit/wrapper/adapters plans/context-circuit-plans plans/0002-mark-done-no-precheck \
+  plans/archive/0001-contracts-runtime-foundation sources/system-design sources/reports \
   .context-circuit/docs/release.md .context-circuit/wrapper/contracts/routes.yaml .context-circuit/wrapper/contracts/context-sets.yaml \
   .context-circuit/wrapper/contracts/schemas/delegation.yaml .agents/skills/cc-entry .code-review-graph; do
   test ! -e "$artifact/$leaked" || fail "leaked into artifact: $leaked"

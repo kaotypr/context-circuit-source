@@ -180,12 +180,12 @@ file_map:
       - "251-252: 'The 0034-add-conversation-spec-library proposal was left pending by explicit request.'"
     integration: "Record that 0034 is dropped, not applied. Do not silently rewrite unrelated historical decision text."
 
-  - path: plans/context-circuit-plans/0001-conversation-spec-library/plan.yaml
+  - path: plans/archive/0001-conversation-spec-library/plan.yaml
     sites:
       - "43-45: product_knowledge id conversation-spec-library-proposal path context/proposals/0034-add-conversation-spec-library.md."
     integration: "Active source-only plan still cites the pending proposal as grounding. After drop 0034 this path dangles unless the citation is removed; do not promote 0034 into a domain page to keep the citation alive."
 
-  - path: plans/context-circuit-plans/0001-conversation-spec-library/PLAN.md
+  - path: plans/archive/0001-conversation-spec-library/PLAN.md
     sites:
       - "113-114: lists context/proposals/0034-add-conversation-spec-library.md as pending."
     integration: "Readable twin of the dangling citation."
@@ -419,7 +419,7 @@ task_partition:
       - context/domains/completion/
       - context/domains/delivery/
       - context/DECISIONS.md
-      - plans/context-circuit-plans/0001-conversation-spec-library/
+      - plans/archive/0001-conversation-spec-library/
     boundary: >-
       Delete context/proposals/0034-add-conversation-spec-library.md without
       creating context/domains/conversation-spec-library/. Remove the INDEX.md
@@ -486,7 +486,7 @@ risks:
     human_completion: inferred will fail until tests use the explicit path.
     Do not change the intent digest algorithm.
   - >-
-    Dropping 0034 leaves plans/context-circuit-plans/0001-conversation-spec-library
+    Dropping 0034 leaves plans/archive/0001-conversation-spec-library
     citing a deleted path. Removing that citation is required for a consistent
     tree; applying 0034 as a domain page is forbidden.
   - >-
@@ -501,14 +501,14 @@ risks:
 done_checks:
   - criterion: AC-IN-PLACE-WRITES
     command: >-
-      rg -n --hidden -g '!sources/**' -g '!.git/**' -g '!intent/**' -g '!plans/context-circuit-plans/archive/**'
+      rg -n --hidden -g '!sources/**' -g '!.git/**' -g '!intent/**' -g '!plans/archive/**'
       'context/proposals/|Propose a context update' wrapper/adapters/WORKFLOW.md .agents/skills/cc-complete/SKILL.md
       docs/product-knowledge.md docs/getting-started.md agents/coordinator.md
     expect: no output; gather/reconcile procedure no longer stages context/proposals/
 
   - criterion: AC-NO-KNOWLEDGE-GATE
     command: >-
-      rg -n --hidden -g '!sources/**' -g '!.git/**' -g '!intent/**' -g '!plans/context-circuit-plans/archive/**'
+      rg -n --hidden -g '!sources/**' -g '!.git/**' -g '!intent/**' -g '!plans/archive/**'
       'accept the context update|Accept the context update|accept a knowledge proposal|Review / accept context updates'
       .agents/skills/ agents/coordinator.md wrapper/adapters/WORKFLOW.md docs/
     expect: no output; the separate accept-context-update route is gone
@@ -631,7 +631,7 @@ open_questions:
 completeness_proof:
   command: >-
     rg -l --hidden -g '!sources/**' -g '!.git/**' -g '!intent/**'
-    -g '!plans/context-circuit-plans/archive/**'
+    -g '!plans/archive/**'
     'context/proposals|context-proposal|accept the context update|completion-infer|cc_completion_infer|knowledge-debt-check|cc_knowledge_debt_check|knowledge-debt-blocks-next-plan|0034-add-conversation-spec-library'
     .
   count: 42

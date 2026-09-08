@@ -42,7 +42,7 @@ file_map:
       - "i0001-conversation-spec-library/INTENT.md:1, contract.yaml:2, trace/workspace.yaml:2: canonical existing intent and trace references."
       - "i0002-plan-decomposition-guidance/INTENT.md:1, contract.yaml:2,17: current draft intent and its explicit i0001 non-goal reference."
       - "i0003-intent-id-width/INTENT.md:1, contract.yaml:2: the approved intent's own canonical id."
-  - path: plans/context-circuit-plans/0001-conversation-spec-library/
+  - path: plans/archive/0001-conversation-spec-library/
     sites:
       - "PLAN.md:4 and plan.yaml:3: active plan parent links to i0001-conversation-spec-library."
   - path: test/lib/fixture.sh

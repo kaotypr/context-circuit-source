@@ -337,7 +337,7 @@ tasks:
       - id: NEST-VT-007
         command: >
           rg -n --glob '!**/archive/**' --glob '!**/intent/archive/**'
-          --glob '!**/plans/context-circuit-plans/**' --glob '!**/sources/**'
+          --glob '!**/sources/**'
           --glob '!intent/i017-nest-system-home/**' --glob '!**/.claude/**'
           '(^|[[:space:]`\"'"'"'(])wrapper/|(^|[[:space:]`\"'"'"'(])agents/|(^|[[:space:]`\"'"'"'(])docs/|\$ROOT/wrapper|\$W/|wrapper/runtime/engine\.sh|agents/(coordinator|worker|verifier)\.md'
           .context-circuit .agents context template test agent-harness

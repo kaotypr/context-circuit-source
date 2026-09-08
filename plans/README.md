@@ -3,13 +3,16 @@
 This source-only directory contains implementation plans for improving the
 Context Circuit product itself. It is not the released workspace plan area.
 
-Maintainer plans live under a repository-specific namespace:
+Maintainer plans use the same workspace layout as the product:
 
 ```text
-plans/context-circuit-plans/<plan-id>/
-├── plan.yaml
-├── PLAN.md
-└── tasks/
+plans/
+├── INDEX.md                 # active plan index
+├── <plan-id>/
+│   ├── plan.yaml
+│   ├── PLAN.md
+│   └── tasks/
+└── archive/<plan-id>/       # completed or inactive plans
 ```
 
 The release assembler does not copy this directory. Released workspaces get

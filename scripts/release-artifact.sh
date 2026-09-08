@@ -98,6 +98,8 @@ for forbidden_path in repositories.local.yaml repositories; do
   [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
 done
 [ ! -e "$stage_tree/plans/context-circuit-plans" ] || fail 'maintainer plan stack leaked into artifact'
+[ ! -e "$stage_tree/plans/0002-mark-done-no-precheck" ] || fail 'source maintainer plan leaked into artifact'
+[ ! -e "$stage_tree/plans/archive/0001-contracts-runtime-foundation" ] || fail 'source archived maintainer plan leaked into artifact'
 [ ! -e "$stage_tree/.context-circuit/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
 find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
 
