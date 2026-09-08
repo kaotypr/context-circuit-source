@@ -1,0 +1,71 @@
+schema_version: 2
+intent: i020-host-conventions-preserved
+title: Integrate Context Circuit through each host's native conventions
+goal: >
+  Context Circuit supports Claude Code, Codex CLI, and Cursor Agent CLI by
+  integrating through each host's documented project conventions — Claude
+  .claude agents/rules/skills, Codex .codex agent TOML plus AGENTS.md and
+  .agents/skills, Cursor .cursor agents/rules — as thin routes into Context
+  Circuit's single-owned files (.context-circuit/agents, invariants, and
+  .agents/skills/cc-*), keeping the shared workflow and one-owner-per-rule
+  contract, and aligning the maintainer source with the blank template so newly
+  created workspaces receive the same host-native integration.
+non_goals:
+  - Embedding or replacing any host CLI or SDK.
+  - Adding a second router, lifecycle, or host-specific authorization policy.
+  - Duplicating Context Circuit policy into host folders instead of routing to the owner.
+  - Inventing a host surface that host does not actually support.
+  - Storing credentials, transcripts, provider payloads, or authentication state.
+  - Expanding support to additional hosts in this intent.
+constraints:
+  - Preserve the shared Context Circuit workflow and one-owner-per-rule contract.
+  - Host-native files are routes into owned Context Circuit files, not a second policy copy.
+  - Use only conventions each host actually supports (Codex-shaped for Codex, Claude-shaped for Claude, Cursor-shaped for Cursor).
+  - Do not invent a host folder the host does not document (no .codex/rules).
+  - Skills remain owned at .agents/skills/cc-*; host skill paths are symlinks or stubs, not copies.
+  - Keep host identity, version, capabilities, permission mode, and provider status as bounded evidence only.
+  - A missing required native child capability must remain read-only and report host-blocked.
+  - Keep the shipped product surface and the mutable blank template behaviorally aligned, including the host-native routing folders.
+  - Maintain the source-checkout distinction: source-specific root instructions must not be overwritten by product adapter copies.
+acceptance_criteria:
+  - id: AC-HOST-01
+    statement: >
+      Claude Code, Codex CLI, and Cursor Agent CLI each integrate through that
+      host's documented native surfaces (Claude agents/rules/skills, Codex
+      agent TOML and AGENTS.md, Cursor agents/rules), not only through root
+      instruction files.
+  - id: AC-HOST-02
+    statement: >
+      Host-native files route to Context Circuit's owned agents and rules
+      (.context-circuit/agents, invariants such as role-tiering spawn and commit
+      convention) and do not become a second copy of that policy.
+  - id: AC-HOST-03
+    statement: >
+      Native child-agent capabilities map to the required worker, independent
+      verifier, and planner roles consistently across the three hosts, using
+      each host's own child-agent conventions.
+  - id: AC-HOST-04
+    statement: >
+      When a required native child capability is unavailable, the host cannot
+      write or self-verify and the outcome is reported as host-blocked.
+  - id: AC-HOST-05
+    statement: >
+      The maintained source and the blank template carry the same host-native
+      routing surfaces so a newly created workspace gets the same integration.
+  - id: AC-HOST-06
+    statement: >
+      Host evidence remains bounded and provider-neutral, with no credentials,
+      transcripts, provider payloads, or authentication state stored.
+scope:
+  repositories:
+    - id: context-circuit-source
+      paths:
+        - ".codex/"
+        - ".claude/"
+        - ".cursor/"
+        - ".context-circuit/wrapper/adapters/"
+        - ".context-circuit/agents/"
+        - "template/"
+        - "host entry instruction surfaces"
+tier: standard
+status: draft
