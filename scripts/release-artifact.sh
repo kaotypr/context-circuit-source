@@ -49,6 +49,7 @@ cp "$source_root/.context-circuit/wrapper/adapters/worker-brief.md" "$stage_tree
 # Blank workspace seed from the template.
 cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
 cp "$source_root/template/workspace.yaml" "$stage_tree/workspace.yaml"
+cp "$source_root/template/members.yaml" "$stage_tree/members.yaml"
 mkdir -p "$stage_tree/context" "$stage_tree/sources/archive" "$stage_tree/plans/archive"
 cp -R "$source_root/template/context/." "$stage_tree/context/"
 cp "$source_root/template/sources/README.md" "$stage_tree/sources/README.md"
@@ -89,19 +90,19 @@ done
 for schema in workspace repositories-local intent-contract plan task execution worker-handoff \
   verifier-result candidate human-acceptance completion context-impact context-index \
   lease grounding-manifest pairing-session publication-config publication-record \
-  publication-thread-record; do
+  publication-thread-record members member-local; do
   [ -f "$stage_tree/.context-circuit/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
 done
 
 # No repository state, credentials, or maintainer plans in the artifact.
-for forbidden_path in repositories.local.yaml repositories; do
+for forbidden_path in repositories.local.yaml repositories member.local.yaml; do
   [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
 done
 [ ! -e "$stage_tree/plans/context-circuit-plans" ] || fail 'maintainer plan stack leaked into artifact'
 [ ! -e "$stage_tree/plans/0002-mark-done-no-precheck" ] || fail 'source maintainer plan leaked into artifact'
 [ ! -e "$stage_tree/plans/archive/0001-contracts-runtime-foundation" ] || fail 'source archived maintainer plan leaked into artifact'
 [ ! -e "$stage_tree/.context-circuit/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
-find "$stage_tree" -type f \( -name repositories.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
+find "$stage_tree" -type f \( -name repositories.local.yaml -o -name member.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
 
 # Only the allowlisted product skills may ship.
 for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
