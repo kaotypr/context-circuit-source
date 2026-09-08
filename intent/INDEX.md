@@ -8,4 +8,4 @@
 | i018-approval-plan-latency | Reduce approval-to-plan latency | approved | standard | >- | intent/i018-approval-plan-latency/INTENT.md |
 | i020-host-conventions-preserved | Integrate Context Circuit through each host's native conventions | approved | standard | > | intent/i020-host-conventions-preserved/INTENT.md |
 | i019-durable-context-knowledge | Context files hold only durable product knowledge | approved | standard | > | intent/i019-durable-context-knowledge/INTENT.md |
-| i021-id-number-blocks | Allocate intent and plan ids from per-member number bands | draft | standard | > | intent/i021-id-number-blocks/INTENT.md |
+| i021-id-number-blocks | Allocate intent and plan ids from per-member number bands | approved | standard | > | intent/i021-id-number-blocks/INTENT.md |
