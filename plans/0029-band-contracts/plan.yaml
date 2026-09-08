@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0029-band-contracts
 intent: i021-id-number-blocks
 title: Align contracts, docs, and checks with band allocation
-status: draft
+status: done
 objective: >
   Product rules, contract schemas, invariants, skills, coordinator guidance, template
   seed, and acceptance checks describe and enforce per-member band allocation —

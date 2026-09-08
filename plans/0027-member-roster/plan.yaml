@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0027-member-roster
 intent: i021-id-number-blocks
 title: Member roster and local identity
-status: draft
+status: done
 objective: >
   The shared workspace carries a committed member roster mapping each member to
   non-overlapping intent and plan number bands, and each machine has a gitignored

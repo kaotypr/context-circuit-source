@@ -1,0 +1,279 @@
+schema_version: 3
+plan: 0030-lean-workspace-context
+intent: i015-lean-workspace-context
+title: Keep the workspace agent loop; remove discovery waste
+status: draft
+objective: >
+  The instantiated product workspace keeps today's agent loop (catalog then
+  selected Product Knowledge, skill-as-procedure, Gate 1 then planner then derived
+  plan, independent verifier on Standard and Critical, Explore as live pairing
+  with no verifier, host-blocked fail-closed) while removing discovery waste:
+  context/INDEX.md actually selects units by summary, topics, and aliases without
+  grepping or listing the knowledge tree; each procedure fact has one home with
+  pointers elsewhere; each skill names files to open and runtime actions to
+  invoke without restating contract schemas; checks prove the loop is preserved
+  and the three wastes are gone.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns wrapper adapters, agent roles, product skills, template seed, release
+      assembly, maintainer context procedure headers, and acceptance tests that
+      ship the leaner instruction surface.
+plan_dependencies: []
+product_knowledge:
+  - id: product-knowledge-doc
+    path: .context-circuit/docs/product-knowledge.md
+    reason: >
+      Owner doc for catalog retrieval shape and durable-only writing; must state
+      catalog-selects-without-tree-search procedure agents follow.
+  - id: context-index-schema
+    path: .context-circuit/wrapper/contracts/schemas/context-index.yaml
+    reason: >
+      Owns per-unit retrieval metadata fields; agents use INDEX.md entries, not
+      the schema, to select units.
+  - id: host-adapters
+    path: context/domains/host-adapters/README.md
+    reason: >
+      Documents host-native folders as thin routes; one-home work must keep stubs
+      as pointers, not policy copies.
+context_grounding:
+  summary: >
+    Grounded at HEAD 36d2907. Nested home (.context-circuit/), host-native routes
+    (0006), durable-only knowledge (0026), and band allocation (0027–0029) are
+    in place. template/context/INDEX.md lists zero units but lacks a worked entry
+    shape and negative no-scan procedure. context/INDEX.md is a maintainer
+    navigation aid with directory pointers, not per-unit retrieval rows — filling
+    maintainer catalog rows is explicitly out of scope. context/domains/README.md
+    is shipped (release-manifest.txt) and reads like a second index; intent forbids
+    fall-through to it, not deletion. AGENTS.md, WORKFLOW.md, and coordinator.md
+    each retell Gate 1, planner/feasibility, verifier, Explore, durable-only,
+    member bands, and invoke-not-read — cc-intent alone mentions Gate 1 nine
+    times. cc-intent names intent-contract.yaml fields inline (schema-as-procedure);
+    core invoke lines already match engine.sh. test/acceptance/criteria-map.yaml
+    maps AC-02 to contract shape only; no suite forbids context/ tree discovery
+    or asserts skill invoke lines. plan-allocate-id fails PLAN_PREFIX_COLLISION
+    on historical archive duplicate prefixes; next free in-band id is 0030.
+  constraints:
+    - Improvement not downgrade — every removed sentence keeps an owner pointer.
+    - Do not rewrite Product Knowledge domain pages or fill maintainer INDEX rows.
+    - context/INDEX.md is the only retrieval selector; domains/README is not.
+    - One owner per rule — slim skills and adapters, do not copy invariants.
+    - Ship through template seed and release assembly, not source-only shortcuts.
+    - Preserve unrelated and dirty work; run semantic acceptance after phases.
+  decisions:
+    - One plan, four ordered tasks — catalog (LWC-001), one-home (LWC-002),
+      skill invokes (LWC-003), proof (LWC-004). Tasks 2–3 both touch skills but
+      share one worker/verifier boundary; stacking would split verification
+      without independent failure surfaces.
+    - Template catalog carries entry shape plus empty-catalog stop procedure;
+      maintainer context/INDEX.md header may gain the same procedure only.
+    - context/domains/README.md keeps its domain listing; add a one-line
+      not-the-retrieval-catalog banner and rely on procedure/checks for the
+      negative, not a domain-page rewrite.
+    - New test/knowledge/test-lean-context.sh plus criteria-map AC-LEAN-01..06
+      wired into test/acceptance.sh; reuse existing loop suites unchanged.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: LWC-001
+    title: Make the catalog actually select
+    repositories: [context-circuit-source]
+    paths:
+      - template/context/INDEX.md
+      - context/INDEX.md
+      - .context-circuit/wrapper/contracts/schemas/context-index.yaml
+      - .context-circuit/docs/product-knowledge.md
+      - .context-circuit/agents/coordinator.md
+      - .context-circuit/wrapper/adapters/AGENTS.md
+      - context/domains/README.md
+      - template/context/domains/README.md
+      - .agents/skills/cc-intent/SKILL.md
+      - .agents/skills/cc-workspace/SKILL.md
+      - .agents/skills/cc-complete/SKILL.md
+      - .agents/skills/cc-system-design/SKILL.md
+    depends_on: []
+    changes:
+      - >
+        Update template/context/INDEX.md with a commented or exemplar entry
+        shape (id, path, summary, topics, aliases, status) and explicit
+        empty-catalog procedure: stop when no units match; do not list
+        context/domains/, grep context/, or open context/domains/README.md as
+        a substitute selector.
+      - >
+        Align product-knowledge.md and context-index.yaml owner prose with the
+        same select-not-scan rule. Add a brief not-the-catalog pointer on
+        context/domains/README.md (source and template) without rewriting domain
+        pages.
+      - >
+        Update coordinator operating loop, AGENTS.md first-reads, and every
+        skill that retrieves Product Knowledge to read context/INDEX.md only,
+        open matched unit paths, and state the negative (no tree search, no
+        fall-through index).
+    acceptance:
+      - id: LWC-AC-01
+        statement: >
+          Template catalog shows per-unit entry shape and empty-catalog stop
+          without prompting a domains-tree scan.
+      - id: LWC-AC-02
+        statement: >
+          Coordinator, AGENTS.md, and retrieval skills instruct catalog-only
+          selection with explicit no-grep/no-list/no-fall-through negatives.
+    verification:
+      - id: LWC-VT-01
+        command: >
+          rg -n 'do not (list|grep)|no tree search|not the retrieval catalog|context/domains/README'
+          template/context/INDEX.md .context-circuit/docs/product-knowledge.md
+          .context-circuit/agents/coordinator.md .context-circuit/wrapper/adapters/AGENTS.md
+          .agents/skills/cc-intent/SKILL.md .agents/skills/cc-workspace/SKILL.md
+          .agents/skills/cc-complete/SKILL.md
+      - id: LWC-VT-02
+        command: >
+          rg -n 'summary|topics|aliases|Knowledge units' template/context/INDEX.md
+  - id: LWC-002
+    title: Give each procedure fact one home
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/wrapper/adapters/AGENTS.md
+      - .context-circuit/wrapper/adapters/WORKFLOW.md
+      - .context-circuit/agents/coordinator.md
+      - .context-circuit/wrapper/adapters/CLAUDE.md
+      - .context-circuit/wrapper/adapters/CURSOR.md
+      - .agents/skills/cc-intent/SKILL.md
+      - .agents/skills/cc-trace/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - .agents/skills/cc-execute/SKILL.md
+      - .agents/skills/cc-verify/SKILL.md
+      - .agents/skills/cc-pair/SKILL.md
+      - .agents/skills/cc-complete/SKILL.md
+      - .agents/skills/cc-workspace/SKILL.md
+      - .agents/skills/cc-archive/SKILL.md
+      - .agents/skills/cc-deliver/SKILL.md
+      - .agents/skills/cc-run-stack/SKILL.md
+      - .agents/skills/cc-publish/SKILL.md
+      - .claude/
+      - .codex/
+      - .cursor/
+    depends_on: [LWC-001]
+    changes:
+      - >
+        Deduplicate lifecycle facts across AGENTS.md, WORKFLOW.md, and
+        coordinator.md: authority order and action table stay in WORKFLOW.md;
+        safety spine and invoke-not-read stay in AGENTS.md; coordinator maps
+        routes to skills and reports in plain language without repasting Gate 1,
+        tracer, feasibility, verifier, Explore, durable-only, or band mechanics.
+      - >
+        Convert skill and host-native restatements to one- or two-line pointers
+        (fact name + owner path). Skills name neighbor routes by path only.
+        Host stubs keep routing to .context-circuit/agents/ and invariants
+        without copying role bodies or lifecycle essays.
+    acceptance:
+      - id: LWC-AC-03
+        statement: >
+          Gate 1, tracer/feasibility, verifier/Explore, invoke-not-read,
+          durable-only, member identity, and host-native-routes each have one
+          prose home; other agent-facing files point at that home.
+      - id: LWC-AC-04
+        statement: >
+          Safety spine, human gates, and one-owner-per-rule remain present as
+          pointers plus owned prose — not deleted or skill-only copies.
+    verification:
+      - id: LWC-VT-03
+        command: >
+          sh test/host-native/test-host-routes.sh
+      - id: LWC-VT-04
+        command: >
+          rg -n 'See WORKFLOW|See AGENTS|\.context-circuit/wrapper/adapters/WORKFLOW|INV-MEMBER-01|INV-KNOWLEDGE-03|host-blocked'
+          .context-circuit/agents/coordinator.md .agents/skills/cc-intent/SKILL.md
+          .agents/skills/cc-trace/SKILL.md .agents/skills/cc-plan/SKILL.md
+          && ! rg -n '^## Take the approval|^## The two human gates' .agents/skills/cc-archive/SKILL.md .agents/skills/cc-verify/SKILL.md
+  - id: LWC-003
+    title: Make skills name files and invokes
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-intent/SKILL.md
+      - .agents/skills/cc-trace/SKILL.md
+      - .agents/skills/cc-plan/SKILL.md
+      - .agents/skills/cc-workspace/SKILL.md
+      - .agents/skills/cc-complete/SKILL.md
+      - .agents/skills/cc-execute/SKILL.md
+      - .agents/skills/cc-run-stack/SKILL.md
+      - .agents/skills/cc-deliver/SKILL.md
+      - .agents/skills/cc-archive/SKILL.md
+      - .agents/skills/cc-verify/SKILL.md
+      - .agents/skills/cc-pair/SKILL.md
+      - .context-circuit/docs/templates/intent.md
+    depends_on: [LWC-002]
+    changes:
+      - >
+        Refactor cc-intent (and any other touched authoring skill) to name
+        intent.md template + intent-validate/intent-approve invokes instead of
+        enumerating intent-contract.yaml fields as procedure. Keep band allocation
+        as member-band-resolve + intent-allocate-id invokes with a pointer to
+        INV-MEMBER-01, not pasted band mechanics.
+      - >
+        Audit documented engine.sh invoke lines on touched skills against the
+        runtime action list; fix any mismatch. Each skill lists only the actions
+        its route uses, with argument shapes that succeed.
+    acceptance:
+      - id: LWC-AC-05
+        statement: >
+          cc-intent and other touched authoring skills use template + validate,
+          not schema field transcription, for intent authoring.
+      - id: LWC-AC-06
+        statement: >
+          Documented invoke lines on touched skills match runtime action names
+          and argument shapes.
+    verification:
+      - id: LWC-VT-05
+        command: >
+          ! rg -n 'read the schema|transcribe the fields|field-by-field'
+          .agents/skills/cc-intent/SKILL.md
+          && rg -n 'intent-validate|intent-approve|member-band-resolve|intent-allocate-id'
+          .agents/skills/cc-intent/SKILL.md
+      - id: LWC-VT-06
+        command: >
+          rg -n 'plan-validate|intent-validate|member-band-resolve|plan-allocate-id|intent-allocate-id'
+          .agents/skills/cc-trace/SKILL.md .agents/skills/cc-plan/SKILL.md
+          .agents/skills/cc-workspace/SKILL.md
+  - id: LWC-004
+    title: Prove improvement without thinning the loop
+    repositories: [context-circuit-source]
+    paths:
+      - test/knowledge/test-lean-context.sh
+      - test/acceptance/criteria-map.yaml
+      - test/acceptance.sh
+      - agent-harness/conversations/plots/query-product-knowledge.md
+      - scripts/release-manifest.txt
+    depends_on: [LWC-001, LWC-002, LWC-003]
+    changes:
+      - >
+        Add test/knowledge/test-lean-context.sh covering catalog-selects
+        (template empty catalog, forbidden domains-tree selector), one-home
+        pointers, no schema-as-procedure on cc-intent, invoke-line presence, and
+        that existing loop suites still pass. Map intent acceptance criteria to
+        AC-LEAN-01..06 in criteria-map.yaml; wire the suite into test/acceptance.sh.
+      - >
+        Extend query-product-knowledge harness access_discipline forbidden paths
+        to include context/domains/** listing as discovery when INDEX suffices.
+        Confirm release assembly still ships template catalog shape and aligned
+        adapters/skills.
+    acceptance:
+      - id: LWC-AC-07
+        statement: >
+          Semantic acceptance includes lean-context checks that fail on catalog
+          tree search, schema-as-procedure, or invoke regressions while existing
+          gate/verifier/Explore/host-blocked suites stay green.
+      - id: LWC-AC-08
+        statement: >
+          Template seed and release manifest carry the lean catalog procedure and
+          aligned product instruction surface.
+    verification:
+      - id: LWC-VT-07
+        command: sh test/knowledge/test-lean-context.sh
+      - id: LWC-VT-08
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
