@@ -89,6 +89,19 @@ guard.
 Release is a gate: a source change is not a product-template change until release
 assembly includes it and the template acceptance checks pass.
 
+Template publication is the GitHub Action `.github/workflows/publish-template.yml`.
+It assembles, gates, commits, and tags the product into `.template-repo`, pushes
+`main` and the annotated version tag to GitHub, and creates the GitHub Release.
+GitHub remains the canonical published template. The same job then pushes that
+same `.template-repo` commit and tag to `gitlab.sicepat.tech` as an operator-
+configured mirror — not a second assembly, and not a GitLab Release. Operators
+set GitHub Actions `GITLAB_TEMPLATE_PROJECT` (`group/project`, no host prefix)
+and `GITLAB_TEMPLATE_TOKEN` on the source repository before the first publish
+after this lands. The token may be a GitLab project access token with
+`write_repository`. The GitLab project must already exist. Variable and secret
+names stay in this page; the project path and credential stay in GitHub Actions
+settings and never enter workspace files.
+
 The `agent-harness/` assembles or selects the same `context-circuit-template`
 artifact that would be distributed and must not import the source repository's
 Product Knowledge, plans, `.runtime/`, or implementation state.
@@ -98,6 +111,7 @@ Product Knowledge, plans, `.runtime/`, or implementation state.
 - Release boundary and shipped/never-ship sets: `.context-circuit/wrapper/manifest.yaml`,
   `scripts/release-manifest.txt`
 - Assembler: `scripts/release-artifact.sh`, `scripts/build-dist.sh`
+- Template publication (GitHub canonical, GitLab mirror): `.github/workflows/publish-template.yml`
 - Migration guidance: `.context-circuit/wrapper/migrations/README.md`
 - Template seed: `template/`
 
@@ -111,6 +125,7 @@ template-owned files and preserves workspace-owned state.
 
 - `.context-circuit/wrapper/manifest.yaml`, `scripts/release-manifest.txt`,
   `scripts/release-artifact.sh`, `scripts/build-dist.sh`
+- `.github/workflows/publish-template.yml`
 - `.context-circuit/wrapper/migrations/README.md`
 - `WORKFLOW.md`, `.context-circuit/docs/release.md`
 - root `.gitignore` and `template/.gitignore`
@@ -123,3 +138,7 @@ Updated 2026-08-29: the template artifact's version is its `template_version`, a
 
 Updated 2026-09-08: host-native folders join the shipped set; maintainer-only
 Claude extras stay out of the artifact and the template seed.
+
+Updated 2026-09-09: template publication also mirrors the published `.template-repo`
+`main` and version tag to `gitlab.sicepat.tech` from the publish Action, using
+operator-configured `GITLAB_TEMPLATE_PROJECT` and `GITLAB_TEMPLATE_TOKEN`.
