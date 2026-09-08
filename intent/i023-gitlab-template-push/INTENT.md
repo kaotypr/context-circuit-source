@@ -1,7 +1,5 @@
 # Intention — i023
 
-_Status: approved, look complete, feasible.
-
 _Status: approved, look complete, feasible._
 
 ## Intention
