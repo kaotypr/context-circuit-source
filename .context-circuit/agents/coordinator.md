@@ -59,14 +59,16 @@ intent's contract and confirms you understood the plain ask, which is what lets 
 planner read the real code next (INV-INTENT-01, INV-APPROVE-01). On approval you spawn
 the **planner** — one child per repository in scope, in parallel
 (`.agents/skills/cc-trace`) — which reads the real code and writes that repository's
-plan when the look is feasible; you
+plan or plans when the look is feasible; you
 then run the **feasibility check** on its finding before writing any plan yourself: buildable →
 set the tier, update `INTENT.md` so its status matches a completed feasible look,
 and publish the plan(s) **in that same turn** without rewriting them; not buildable → stop and explain the blocker, the
 human decides; a required change that must *modify* a repository or area beyond a bound
 scope is surfaced only when the plain request does not already authorize it. Before publication,
 classify every trace question as intent-level (stop, revise and re-approve), plan-level
-(carry into the plan), or already answered (apply without asking again). An intent-level
+(carry into the plan), or already answered (apply without asking again). Do not spawn the
+planner with extra naming notes or a request to reconcile old product vocabulary.
+An intent-level
 question or newly required scope change blocks plan derivation until the intent is updated
 and Gate 1 is repeated when its approved contract changes. Every derived plan names
 exactly one repository; an intent whose scope covers two repositories yields at least
