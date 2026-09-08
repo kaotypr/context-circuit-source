@@ -1,6 +1,6 @@
 # Intention — i019
 
-_Status: approved, look complete, feasible._
+_Status: draft, waiting for your approval._
 
 ## Intention
 
@@ -28,7 +28,7 @@ flowchart TD
 
 ## The plans
 
-1. **Make context hold only durable product knowledge.** (`0005-durable-context-knowledge`)
+1. **Make context hold only durable product knowledge.**
    _After this:_ the writing rule, live context, and the blank seed never name a plan, an intent file, or a sources file; `DECISIONS.md` records the knowledge change, not files; checks prove it.
 
 ## How carefully this is checked
