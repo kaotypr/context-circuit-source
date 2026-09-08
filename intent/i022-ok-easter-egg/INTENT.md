@@ -1,6 +1,6 @@
 # Intention — i022
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible._
 
 ## Intention
 
@@ -40,7 +40,7 @@ flowchart TD
 
 ## The plans
 
-1. **Hide the line in the engine and trigger it from a lone `ok`.**
+1. **Hide the line in the engine and trigger it from a lone `ok`.** (`0031-ok-easter-egg`)
    _After this:_ a two-letter `ok` makes the coordinator invoke the engine, say
    the hidden line, and continue the pending work. The punchline is not in
    ordinary agent instructions.
