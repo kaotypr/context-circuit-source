@@ -1,8 +1,6 @@
 # Intention — i020-host-conventions-preserved
 
-_Status: draft, waiting for your approval..
-
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible._
 
 ## Intention
 
