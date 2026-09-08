@@ -1,6 +1,6 @@
 # Intention — i021-id-number-blocks
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible.
 
 ## Intention
 

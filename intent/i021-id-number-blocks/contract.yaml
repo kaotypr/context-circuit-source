@@ -90,4 +90,5 @@ scope:
         - "test/"
         - "context/"
 tier: standard
-status: draft
+status: approved
+contract_digest: sha256:00c60a572ce4d74763a43274584fe55efa18b67703505eed9dcc6d0681a22251
