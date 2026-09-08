@@ -1,6 +1,6 @@
 # Intention — i023
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible._
 
 ## Intention
 
@@ -35,7 +35,7 @@ flowchart TD
 
 ## The plans
 
-1. **Push the published template to GitLab from the GitHub Action.**
+1. **Push the published template to GitLab from the GitHub Action.** (`0032-gitlab-template-push`)
    _After this:_ a template publication that succeeds on GitHub also pushes the
    same commit and tag to `gitlab.sicepat.tech`.
 
@@ -59,5 +59,6 @@ Explanations:
 ## Open questions
 
 **What is the GitLab project path on `gitlab.sicepat.tech` (group/project)?**
-_The host is decided; the project is not. The Action cannot push until that
-project exists._
+_Answer: Do not hardcode it in the repo. Before the first publish after this
+lands, set GitHub Actions `GITLAB_TEMPLATE_PROJECT` (`group/project`) and
+`GITLAB_TEMPLATE_TOKEN`. The GitLab project must already exist._

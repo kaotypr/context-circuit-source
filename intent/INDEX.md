@@ -10,4 +10,4 @@
 | i021-id-number-blocks | Allocate intent and plan ids from per-member number bands | approved | standard | > | intent/i021-id-number-blocks/INTENT.md |
 | i015-lean-workspace-context | Keep the workspace agent loop; remove discovery waste | approved | standard | > | intent/i015-lean-workspace-context/INTENT.md |
 | i022-ok-easter-egg | Easter egg on a lone ok, punchline hidden in the engine | approved | standard | > | intent/i022-ok-easter-egg/INTENT.md |
-| i023-gitlab-template-push | Push the published template to GitLab from the GitHub Action | draft | standard | > | intent/i023-gitlab-template-push/INTENT.md |
+| i023-gitlab-template-push | Push the published template to GitLab from the GitHub Action | approved | standard | > | intent/i023-gitlab-template-push/INTENT.md |
