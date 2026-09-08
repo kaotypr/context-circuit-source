@@ -1,5 +1,28 @@
 # Decisions
 
+## 2026-09-08 — host-native integration surface
+
+Decision: Claude Code, Codex CLI, and Cursor Agent CLI each integrate through
+committed host-native project folders — `.claude/`, `.codex/`, `.cursor/` — as
+thin routes into Context Circuit owners (`.context-circuit/agents`, owning
+invariants, `.agents/skills/cc-*`). Root instruction adapters remain; the native
+trees are how each host discovers worker, verifier, and planner roles and
+standing rules in that host's format. The product host set ships through release
+assembly and the blank template seed; maintainer-only Claude extras
+(`cc-human-simulator`, `cc-test-case`) stay out of the artifact.
+
+Rationale: each host already searches its own project tree; Context Circuit
+should meet it there instead of treating those folders as optional host-local
+convenience. The routes must not copy role bodies or invent a second
+authorization policy (INV-HOST-01).
+
+Consequence: extensions to [host-adapters](domains/host-adapters/README.md)
+(native trees as the integration surface, child mapping, maintainer-only
+filtering) and [source-release-and-upgrade](domains/source-release-and-upgrade/README.md)
+(host folders join the shipped set). `ARCHITECTURE.md` names the dual entry
+(root adapters plus native routes). Missing required native child support
+remains read-only and reports `host-blocked`.
+
 ## 2026-09-07 — nested product home under `.context-circuit/`
 
 Decision: nest the shipped wrapper, role files, and product docs under

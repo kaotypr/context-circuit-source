@@ -7,11 +7,14 @@ there is no separately exposed router layer, and conversation keywords are not
 the source of lifecycle policy. The source repository nests the shipped product under `.context-circuit/`
 (`.context-circuit/wrapper`, `.context-circuit/agents`, `.context-circuit/docs`)
 and keeps the blank mutable seed under `template/` at the source root. Hosts
-enter through workspace-root `AGENTS.md` / `WORKFLOW.md` / `CLAUDE.md` /
-`CURSOR.md` and `.agents/` (skills). In this source checkout those files stay
+enter through workspace-root instruction adapters (`AGENTS.md` / `WORKFLOW.md` /
+`CLAUDE.md` / `CURSOR.md`), committed host-native project trees (`.claude/`,
+`.codex/`, `.cursor/` — thin routes into owners, not a second policy copy),
+and `.agents/` (skills). In this source checkout root adapters stay
 maintainer-specific (`CLAUDE.md` / `CURSOR.md` import root `AGENTS.md`). An
 instantiated workspace receives copies of `.context-circuit/wrapper/adapters/`
-at the root. Workspace-owned files are not moved into `.context-circuit/`.
+at the root plus the same product host-native routes. Workspace-owned files are
+not moved into `.context-circuit/`.
 
 The invariant catalog (`.context-circuit/wrapper/contracts/invariants.yaml`) is the
 one-owner-per-rule authority; skills and the coordinator are thin

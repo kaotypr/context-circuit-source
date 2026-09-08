@@ -2,7 +2,7 @@
 
 Plan ID: 0006-host-native-routes
 Intent: i020-host-conventions-preserved
-Status: draft
+Status: done
 
 ## Original request and coverage
 
