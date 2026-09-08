@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0026-durable-context-knowledge
 intent: i019-durable-context-knowledge
 title: Context files hold only durable product knowledge
-status: draft
+status: done
 objective: >
   Product Knowledge writing follows a durable-only rule owned in the contract:
   live context files never name a particular plan, intent file, or sources file,
