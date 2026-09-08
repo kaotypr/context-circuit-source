@@ -23,15 +23,15 @@ sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/inten
 old_id=$(printf 'i%04d-old-form' 1)
 expect_failure cc_intent_id_valid "$old_id"
 expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-archive "$ws" "$old_id"
-mkdir -p "$ws/intent/i999-ceiling"
+mkdir -p "$ws/intent/i099-ceiling"
 overflow=$(sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" exhausted 2>&1 || true)
 printf '%s\n' "$overflow" | grep -Fq 'INTENT_ID_EXHAUSTED' || fail 'intent overflow must fail clearly'
-require_dir "$ws/intent/i999-ceiling"
-rmdir "$ws/intent/i999-ceiling"
-mkdir -p "$ws/intent/archive/i999-ceiling"
+require_dir "$ws/intent/i099-ceiling"
+rmdir "$ws/intent/i099-ceiling"
+mkdir -p "$ws/intent/archive/i099-ceiling"
 expect_failure sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-allocate-id "$ws" archived-exhausted
-require_dir "$ws/intent/archive/i999-ceiling"
-rmdir "$ws/intent/archive/i999-ceiling"
+require_dir "$ws/intent/archive/i099-ceiling"
+rmdir "$ws/intent/archive/i099-ceiling"
 
 # an intent with no acceptance criterion is refused (at least one outcome criterion).
 # Built in a scratch dir so it does not consume an intent id number.

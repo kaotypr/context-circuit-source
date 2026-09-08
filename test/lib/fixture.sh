@@ -9,6 +9,8 @@ cc_fx_ws() {
 	printf 'schema_version: 1\nworkspace: fx-ws\ntitle: Fixture\nrepositories: []\n' >"$cc_fx_root/workspace.yaml"
 	mkdir -p "$cc_fx_root/.context-circuit/wrapper"
 	cc_workspace_init "$cc_fx_root" >/dev/null
+	cc_fx_roster "$cc_fx_root" kao 1 99 1 999
+	cc_fx_member_identity "$cc_fx_root" kao
 	printf '# Project\n\nFixture project knowledge.\n' >"$cc_fx_root/context/PROJECT.md"
 	printf '%s' "$cc_fx_root"
 }
@@ -238,4 +240,15 @@ cc_fx_roster() {
 # cc_fx_member_identity WS MEMBER -> write host-local member.local.yaml
 cc_fx_member_identity() {
 	printf 'schema_version: 1\nmember: %s\n' "$2" >"$1/member.local.yaml"
+}
+
+# cc_fx_roster_pair WS [ID_A] [ID_B] -> two-member roster for parallel allocation.
+# Defaults: kao 1-99 / 1-999 and bobby 100-199 / 1000-1999.
+cc_fx_roster_pair() {
+	cc_fxrp_ws=$1
+	cc_fxrp_a=${2:-kao}
+	cc_fxrp_b=${3:-bobby}
+	printf 'schema_version: 1\nmembers:\n  %s:\n    display_name: %s\n    intent_band_start: 1\n    intent_band_end: 99\n    plan_band_start: 1\n    plan_band_end: 999\n  %s:\n    display_name: %s\n    intent_band_start: 100\n    intent_band_end: 199\n    plan_band_start: 1000\n    plan_band_end: 1999\n' \
+		"$cc_fxrp_a" "$cc_fxrp_a" "$cc_fxrp_b" "$cc_fxrp_b" \
+		>"$cc_fxrp_ws/members.yaml"
 }

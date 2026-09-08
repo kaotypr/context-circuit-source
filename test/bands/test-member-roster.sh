@@ -51,10 +51,17 @@ case_runtime_validate() {
 	ws=$(cc_fx_ws)
 	trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
-	# init seeds an empty roster and must not write member.local.yaml
-	require_file "$ws/members.yaml"
-	test ! -e "$ws/member.local.yaml" || fail "workspace-init wrote member.local.yaml"
-	eng member-roster-validate "$ws" >/dev/null
+	# workspace-init seeds an empty roster and must not write member.local.yaml
+	# (cc_fx_ws additionally seeds a default member for allocation tests)
+	ws_init=$(mktemp -d "${TMPDIR:-/tmp}/cc-fx-init.XXXXXX") || fail "init fixture"
+	ws_init=$(cd "$ws_init" && pwd -P)
+	printf 'schema_version: 1\nworkspace: fx-init\ntitle: Fixture\nrepositories: []\n' >"$ws_init/workspace.yaml"
+	mkdir -p "$ws_init/.context-circuit/wrapper"
+	cc_workspace_init "$ws_init" >/dev/null
+	require_file "$ws_init/members.yaml"
+	test ! -e "$ws_init/member.local.yaml" || fail "workspace-init wrote member.local.yaml"
+	eng member-roster-validate "$ws_init" >/dev/null
+	rm -rf "$ws_init"
 
 	# overlapping intent bands fail closed
 	printf '%s\n' \
