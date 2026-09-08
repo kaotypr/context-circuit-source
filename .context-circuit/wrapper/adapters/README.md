@@ -1,42 +1,55 @@
 # Context Circuit
 
-A universal project workspace for AI-assisted work. It holds agent-oriented
-Product Knowledge and readable plans so an agent can understand your project,
-create a grounded plan, and execute it safely across one or more Git
-repositories.
+A project setup you open in an AI coding agent and talk to in ordinary language.
+It remembers what your project is and helps you make decisions based on that.
+It turns a request into a grounded change across one or more Git repositories,
+and keeps the two decisions that matter with you: what "correct" means, and when
+to ship.
 
-## Get started
+Works with **Claude Code**, **Codex CLI**, and **Cursor**.
 
-Talk to the workspace in ordinary language:
+## Start here
 
-> What is this workspace?
+1. Copy or clone this repository into a new folder.
+2. Open that folder in Claude Code, Codex, or Cursor.
+3. Say:
 
-To set up a project:
+> Initialize this for <project name and purpose>, and connect the <repo> repository.
 
-> Initialize this workspace for <project>, and connect the <repo> repository.
+That records the project and connects your code. It does not invent knowledge
+or change any repository on its own.
 
-To do work:
+Then either work live on a small change:
 
-> Work with me directly on <small change> in <repository>.
-> I want to build <feature> — <what "correct" means>.
-> Approve this intent.
-> Execute it, then ship it.
+> Work with me on <small change> in <repository>.
 
-## What you control
+Or describe a real change and approve it:
 
-Intent approval and delivery (pull request, merge, push, deployment) are the two
-explicit human gates. Execution follows an approved intent (scope-safety is settled
-at delivery, Gate 2, not by an automated scope gate);
-Standard and Critical completion are an explicit mark-done. Explore is planless
-and human-supervised.
-Archive and restore remain explicit organization actions. Creating or reviewing a
-plan never approves or executes it, and verification never implies completion.
+> I want to add <feature> — <what correct looks like>.
+> Approve that.
+> Build it, then open a pull request.
 
-## Human surfaces
+The longer walkthrough is [Getting started](.context-circuit/docs/getting-started.md).
 
-- `plans/<plan-id>/PLAN.md` — the readable plan.
-- `plans/INDEX.md` — active plans.
-- the worker handoff and the independent verifier result after an execution.
+## What you decide
 
-The workspace works offline and stores no credentials. Branches, worktrees, and
-runtime records are managed for you.
+You make two decisions. Everything else is mechanical.
+
+- **What correct means.** You approve that from the plain ask. The agent then
+  looks at the real code and writes the plan. When you ask it to build, it makes
+  the change and independently checks it when the risk warrants it.
+- **When to ship.** Opening a pull request, merging, or pushing is always a
+  separate ask. Checking the work never ships it.
+
+For a small change you want to judge as it happens, work together instead — no
+plan and no independent check; you are watching it live. If it turns into real
+work, it can be promoted in place.
+
+## What you can read
+
+- [Getting started](.context-circuit/docs/getting-started.md) — initialize, connect, change, ship
+- `plans/` — readable plans for work in progress
+- `intent/` — what you approved as correct
+
+This folder is a blank, uninitialized workspace. It works offline and stores no
+credentials. Branches and working copies are managed for you.
