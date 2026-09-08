@@ -1,0 +1,28 @@
+---
+description: Run gh and GitHub activity-record writes unsandboxed; do not trust sandbox auth failures
+alwaysApply: true
+---
+
+# GitHub CLI and activity-record writes
+
+Cursor's default sandbox can make `gh` report an invalid token even when
+the host login is valid. That is not evidence the credential is broken.
+
+- Run `gh` (auth, issue, pr, api, run) with `required_permissions: ["all"]`
+  on the first attempt. Do not probe auth in the sandbox first.
+- Before reporting activity-record as `unavailable` or falling back to
+  `core-filesystem`, retry the same `gh` command unsandboxed.
+- Do not write "token invalid" or "gh unavailable" into a handoff from a
+  sandboxed check.
+- Canonical plan and task status stay independent of whether GitHub
+  publish succeeds.
+
+```bash
+# ❌ BAD — sandbox probe, then treat failure as missing auth
+gh auth status
+
+# ✅ GOOD — first GitHub call is already unsandboxed
+# Shell required_permissions: ["all"]
+gh auth status
+gh issue create --repo owner/repo ...
+```

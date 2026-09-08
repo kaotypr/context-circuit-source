@@ -61,3 +61,12 @@ Cursor permission prompts, authentication, memory, MCP settings, and transcripts
 are host-local. They never replace a human approval or completion gate and never
 enter workspace state. If Task/subagent creation is unavailable, report
 `host-blocked` and keep the route read-only; never self-verify.
+
+## Host-native routes
+
+Cursor discovers worker, verifier, and planner through committed
+`.cursor/agents/` stubs that route to `.context-circuit/agents/`. Standing rules
+live under `.cursor/rules/` and point at this file and owning invariants.
+Skills stay at `.agents/skills/cc-*`. These folders are routes, not a second
+authorization policy. Cursor may also read `.claude/` and `.codex/` for
+compatibility; `.cursor/` remains this host's source of truth.

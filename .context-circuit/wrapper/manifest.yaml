@@ -58,6 +58,9 @@ release_boundary:
     - .agents/skills/
     - .context-circuit/agents/
     - .context-circuit/docs/
+    - .claude/
+    - .codex/
+    - .cursor/
   mutable_seed:
     - template/
   never_ship:
@@ -82,6 +85,9 @@ upgrade_boundary:
     - .agents/skills/
     - .context-circuit/agents/
     - .context-circuit/docs/
+    - .claude/
+    - .codex/
+    - .cursor/
   preserve:
     - workspace.yaml
     - context/

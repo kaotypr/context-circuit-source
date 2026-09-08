@@ -51,12 +51,16 @@ workspace — the wrapper a user works in), and the instantiated project
 workspace.
 
 Assembly ships the nested product home
-(`.context-circuit/{wrapper,agents,docs}`) plus root host pointers and
-`.agents/`, and the blank `template/` seed at the source root. It never ships:
-the source design, maintainer plans and logs, source-only tests and evidence,
-source `.runtime/`, `agent-harness/`, credentials, local bindings, connected
-repositories, project Product Knowledge, customer plans, or archived-plan
-contents.
+(`.context-circuit/{wrapper,agents,docs}`) plus root host pointers,
+`.agents/`, and the product host-native trees (`.claude/`, `.codex/`,
+`.cursor/` — agent stubs, Claude/Cursor rule stubs, Claude skill links to
+`.agents/skills/cc-*`). It never ships: the source design, maintainer plans
+and logs, source-only tests and evidence, source-only Claude extras
+(`cc-human-simulator`, `cc-test-case`), source `.runtime/`, `agent-harness/`,
+credentials, local bindings, connected repositories, project Product
+Knowledge, customer plans, or archived-plan contents. The blank `template/`
+seed at the source root carries the same product host-native routes once
+those owners are present.
 
 The template's root `.gitignore` must exclude at least `/repositories/`,
 `/repositories.local.yaml`, `/.runtime/`, and `.code-review-graph/`.
@@ -123,3 +127,7 @@ Updated 2026-08-29 from proposal `0028-dist-build-version-identity` (v0.6.1
 dist-build-version): the template artifact's version is its `template_version`, and
 `build-dist.sh` derives its default from that field and clean-rebuilds its output.
 Implementation `10f864b`, `6921a31`.
+
+Updated 2026-09-08 from intent `i020-host-conventions-preserved`: host-native
+folders join the shipped set; maintainer-only Claude extras stay out of the
+artifact and the template seed.
