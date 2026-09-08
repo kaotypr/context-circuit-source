@@ -16,13 +16,15 @@ Retrieve relevant Product Knowledge by the request's concepts via
 `context/INDEX.md`, read only the selected units, and read only request-named
 source files (a `sources/` doc or a `sources/system-design/` design may ground the
 intent; `sources/` stays passive — INV-SEC-02). Allocate a stable intent id with
-the runtime `intent-allocate-id` (form `i<NNN>-slug`, its own never-reused
-sequence, distinct from plan ids). Before `intent-allocate-id`, resolve local
-member identity with `member-band-resolve` (or `member-identity-read`). If
-identity is missing (`MEMBER_IDENTITY_MISSING`), stop and use `cc-workspace` for
-the one-time roster-member choice — never prompt for a block number or numeric
-range. Allocation itself remains the workspace-wide sequence until band-scoped
-allocation is in force.
+the runtime `intent-allocate-id` (form `i<NNN>-slug`, distinct from plan ids,
+never reused including after archive). Before `intent-allocate-id`, resolve local
+member identity with `member-band-resolve` (or `member-identity-read`)
+(INV-MEMBER-01). If identity is missing (`MEMBER_IDENTITY_MISSING`), stop and
+use `cc-workspace` for the one-time roster-member choice — never prompt for a
+block number or numeric range. The next id is the next free number in the
+current member's intent band (INV-INTENT-01). If the band is exhausted
+(`INTENT_ID_EXHAUSTED`), extend the roster with a new non-overlapping band —
+do not wrap, recycle, or ask for a block number.
 
 Write two files with a strict division of audience. `intent/<id>/INTENT.md` is
 **what the human reads** — plain, short; it reassures them that the blurry thing
@@ -156,7 +158,8 @@ the invoke-not-read boundary):
 
 - `sh .context-circuit/wrapper/runtime/engine.sh member-band-resolve .` — require
   a resolved roster member before `intent-allocate-id`; never pass a numeric range.
-- `sh .context-circuit/wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next `i<NNN>-slug`.
+- `sh .context-circuit/wrapper/runtime/engine.sh intent-allocate-id . <slug>` — next
+  `i<NNN>-slug` in the current member's band.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-validate . intent/<id>` — structure + fields.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-approve . <id>` — Gate 1; freezes the digest.
 - `sh .context-circuit/wrapper/runtime/engine.sh intent-human-status . <id> "<phrase>"` — rewrite

@@ -61,11 +61,14 @@ finding.
 
 For one plan, run `plan-validate`, `intent-authorized`, and `plan-index-upsert`.
 For a stack the planner staged as `@plan:` fragments, submit one
-`plan-stack-materialize` request. It reserves a consecutive id range by
-invocation identity, stages readable and canonical artifacts, validates
-dependency/coverage/current-authorization/index state, and publishes all plans and index rows or none.
+`plan-stack-materialize` request. It reserves a consecutive id range **inside
+the current member's plan band** (INV-PLAN-03, INV-MEMBER-01), stages readable
+and canonical artifacts, validates dependency/coverage/current-authorization/index
+state, and publishes all plans and index rows or none.
 A successful same-invocation retry returns the original
-ids. Writing or materializing plans does not execute them.
+ids. If materialize reports `MEMBER_IDENTITY_MISSING` or `PLAN_ID_EXHAUSTED`,
+do not invent ids: resolve identity via `cc-workspace` or extend the roster.
+Never prompt for a block number. Writing or materializing plans does not execute them.
 
 ## Authorization preflight (INV-INTENT-02)
 

@@ -72,14 +72,14 @@ invariants:
       (Gate 1, INV-APPROVE-01); it freezes contract_digest — the frozen identity of the
       criteria the change is later proven against (INV-CANDIDATE-01) — and also confirms
       the coordinator understood the plain ask, which is what lets the planner read the
-      real code next.       Intent ids use the distinct form i<NNN>-slug, their own
-      never-reused sequence with a hard ceiling at i999; allocation fails clearly
-      when no exact three-digit id is representable and never archives, deletes, or
-      recycles an identifier automatically. A committed member roster may map
-      members to non-overlapping intent number bands, and each machine names one
-      roster member in a host-local identity file; until band-scoped allocation
-      is in force the next unused id remains the workspace-wide sequence, and
-      the user is never asked to type a block number.
+      real code next. Intent ids use the distinct form i<NNN>-slug with a hard
+      ceiling at i999; they never include a member, machine, or workspace token.
+      The next unused id is one past the highest number ever used in the
+      current member's intent band among active and archived intents
+      (INV-MEMBER-01) and is never reused, including after archive. Allocation
+      fails clearly when the band is exhausted or no exact three-digit id is
+      representable, never wraps, and never archives, deletes, or recycles an
+      identifier automatically.
   - id: INV-INTENT-02
     rule: >
       A v1.0 plan declares its parent intent. On intent approval the coordinator spawns
@@ -163,16 +163,31 @@ invariants:
       second-repository or approved-decision expansion stops for coordinator handling.
   - id: INV-PLAN-03
     rule: >
-      New plans use stable IDs of the form NNNN-<kebab-slug>. The four-digit
-      sequence is the next after the highest ever allocated and is never reused,
-      including after archive or restore. A committed member roster may map
-      members to non-overlapping plan number bands with the same host-local
-      identity as intents; until band-scoped allocation is in force the next
-      unused id remains the workspace-wide sequence. A ratified plan stack reserves one unique
-      consecutive range keyed by invocation identity, renders and validates the
-      complete stack, then publishes every plan and index row or none. A successful
-      same-invocation retry returns the original allocation; a failed unpublished
-      stage never masquerades as success from a partial index.
+      New plans use stable IDs of the form NNNN-<kebab-slug>. They never include a
+      member, machine, or workspace token. The four-digit sequence is the next
+      after the highest number ever used in the current member's plan band among
+      active and archived plans (INV-MEMBER-01) and is never reused, including
+      after archive or restore. A ratified plan stack reserves one unique
+      consecutive in-band range keyed by invocation identity, renders and validates
+      the complete stack, then publishes every plan and index row or none. A
+      successful same-invocation retry returns the original allocation; a failed
+      unpublished stage never masquerades as success from a partial index.
+      Exhaustion of the member's band fails clearly without wrapping.
+  - id: INV-MEMBER-01
+    rule: >
+      A committed members.yaml maps each member to non-overlapping intent and plan
+      number bands. Default size when adding a member is 99 intents and 999 plans
+      unless the roster records a different non-overlapping assignment. Each machine
+      names exactly one roster member in gitignored member.local.yaml — the same
+      once-per-machine host-local convention as repositories.local.yaml. Allocation
+      reads that identity and never asks the user to type a block or band number.
+      Missing identity fails closed and is resolved by a one-time choice of an
+      existing roster member, or first-member setup into the roster; it does not
+      invent a band or accept a numeric range in chat. Overlapping bands and two
+      live or archived ids sharing a numeric prefix fail closed. A full band fails
+      clearly without wrapping; the fix is a new non-overlapping band in the roster,
+      not recycling. Member names are allocation identity only: they never appear in
+      intent ids, plan ids, or execution branches (cc/<plan-id>/<repository-id>).
   - id: INV-PLAN-04
     rule: >
       Plans are grounded against available Product Knowledge, source evidence,
