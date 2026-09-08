@@ -7,6 +7,9 @@ argument to test, not an answer to adopt. "v1.0" names this design line — the
 proposed next major version of Context Circuit, following today's v0.7 — not a
 rebrand; the product stays Context Circuit.
 
+The **core** scope of the Context Circuit v1.0.0 design. For the version index,
+see [../README.md](../README.md).
+
 ## What this is
 
 A proposal for **major changes to Context Circuit's trust core**, keeping its

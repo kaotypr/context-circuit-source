@@ -1,18 +1,29 @@
 # Context Circuit v1.0.0
 
-Source design for the v1.0.0 template-harness host matrix. Read the preceding
-v0.7.0 design for the direct-collaboration and execution-latency foundations;
-this grouping defines the shared role-tiering fixture and concurrent
-Codex/Claude Code/Cursor Agent scenario runner.
+Source design for Context Circuit v1.0.0 — a **proposed major evolution** on
+today's v0.7 line. Read the preceding designs ([../v0.7.0/](../v0.7.0/),
+[../v0.6/](../v0.6/), [../v0.5/](../v0.5/)) first; this grouping is an argument
+to test, not accepted Product Knowledge. This README is the version index; each
+scope owns its own design.
 
 ## Scopes
 
-- [template-harness/](./template-harness/) — one host-grouped role-tiering
-  fixture, host-specific live bindings, and a three-lane scenario matrix.
+- [core/](./core/) — the intent-gated, candidate-proven trust-core study:
+  what "correct" means (intent), what ships (delivery), and the mechanical
+  middle. Start at [core/design.md](./core/design.md).
 
-## Authority
+## Layout convention
 
-This is passive source material. It adds no lifecycle gate, runtime policy, or
-new invariant. The shipped role-tiering contract remains owned by
-`docs/role-tiering.md`; host behavior remains bounded by `INV-HOST-01`,
-`INV-RUNTIME-01`, and the verifier independence rules.
+`sources/system-design/<product>/<version>/<scope>/`. A **scope** is a bounded
+area of the design. The version folder holds one scope folder per area it
+covers; this version README indexes them and carries the reading order.
+
+Every folder has a **`README.md`** as its landing and index. Each scope's
+normative design is **`design.md`**; the scope's `README.md` states purpose and
+reading order.
+
+## Source boundary
+
+These documents are maintainer design material. They have no status, no
+authority, and change nothing on their own. They are not copied into an
+instantiated workspace as Product Knowledge and are not normal agent context.
