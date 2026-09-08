@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-09-08 — Intent and plan ids allocate from per-member bands
+
+Decision: new intent ids (`i<NNN>-slug`) and plan ids (`NNNN-slug`) are allocated
+from non-overlapping numeric bands on a committed member roster. Each machine
+names one roster member once in gitignored `member.local.yaml`. Next id is the
+highest number ever used in that member's band among active and archived work,
+plus one. A stack from one intent still receives consecutive plan ids inside
+that band. Exhaustion fails clearly; archived numbers are never reused. Member
+names never appear in the id or in execution branches
+(`cc/<plan-id>/<repository-id>`).
+
+Rationale: teammates sharing one workspace can create intents and plans in
+parallel without waiting for each other to push, while keeping short speakable
+sequential ids and a one-time local identity instead of a block number in chat.
+
+Consequence: INV-MEMBER-01 owns the roster and local identity. INV-INTENT-01 and
+INV-PLAN-03 are band-scoped never-reuse. Missing identity fails closed. Domain
+pages: [repository-binding](domains/repository-binding/README.md),
+[plan-review](domains/plan-review/README.md), [intent](domains/intent/README.md),
+[run-stack](domains/run-stack/README.md).
+
 ## 2026-09-08 — Product Knowledge is durable-only
 
 Decision: live context files hold durable product knowledge only. They never

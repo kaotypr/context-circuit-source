@@ -51,6 +51,8 @@ verification ([verification](../verification/README.md)), completion
   `plan_dependencies` (`{id, reason}`), distinct from a task's intra-plan
   `depends_on`. A v1.0 plan is `schema_version: 3` (the only supported version);
   entries reference an existing, non-self plan id and the graph is acyclic.
+  A ratified stack reserves consecutive plan ids inside the current member's
+  plan band (INV-PLAN-03, INV-MEMBER-01), not a workspace-wide sequence.
 - **Path leases (INV-CONCURRENCY-01).** The one-worker lock generalizes to
   `(repository, path-region)` scope, recorded under `.runtime/locks/paths/`.
   Regions overlap when equal, when one is a path-prefix ancestor of the other, or
@@ -106,11 +108,12 @@ predecessor fails — keep such a plan late and thin.
 - `.context-circuit/wrapper/runtime/engine.sh`: `cc_plan_dependencies`, `cc_plan_dep_closure`,
   `cc_plan_is_descendant`, `cc_region_overlap`, `cc_lease_check`,
   `cc_lease_acquire`, `cc_lease_release`, `cc_plan_same_repo_preds`,
-  `cc_base_prepare`, `cc_plan_ready`, `cc_run_stack_ready`
+  `cc_base_prepare`, `cc_plan_ready`, `cc_run_stack_ready`,
+  `cc_plan_stack_materialize`
 - `.context-circuit/wrapper/contracts/schemas/lease.yaml`, `plan.yaml` (`plan_dependencies`,
-  `schema_version [1, 2]`), `execution.yaml` (`based_on`)
-- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-05, INV-CONCURRENCY-01,
-  INV-CONCURRENCY-02
+  `schema_version [3]`), `execution.yaml` (`based_on`)
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-03, INV-PLAN-05,
+  INV-MEMBER-01, INV-CONCURRENCY-01, INV-CONCURRENCY-02
 
 ## Verification
 

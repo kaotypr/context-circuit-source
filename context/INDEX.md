@@ -46,3 +46,8 @@ integration surface. See the 2026-09-08 host-native decision in
 `context/DECISIONS.md` and the updated [host-adapters](domains/host-adapters/README.md)
 and [source-release-and-upgrade](domains/source-release-and-upgrade/README.md)
 domain pages.
+
+Intent and plan ids allocate from per-member number bands (committed roster,
+one-time local identity). See the 2026-09-08 bands decision in
+`context/DECISIONS.md` and [repository-binding](domains/repository-binding/README.md),
+[plan-review](domains/plan-review/README.md), and [intent](domains/intent/README.md).

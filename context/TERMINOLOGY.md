@@ -23,6 +23,9 @@ retrievable.
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
 | Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
+| Member roster | Committed `members.yaml` mapping each person to non-overlapping intent and plan number bands. Portable with the workspace. |
+| Member identity | Gitignored `member.local.yaml` naming which roster member this machine is — set once, like `repositories.local.yaml`. |
+| Number band | The inclusive id range a member allocates from. Next id is highest-in-band plus one (active and archived). Exhaustion adds a new band; it never wraps. |
 | Host-blocked | A state where the environment cannot run a required step, so the coordinator reports it and preserves the work rather than faking it. |
 | Plan stack | A named set of intent-authorized plans executed in one run; ordered and overlapped safely with no new authority. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's `depends_on`. A v1.0 plan is `schema_version: 3`. |
@@ -68,3 +71,5 @@ publication kind, publication `instructions`) are added and mirrored in
 Extended 2026-09-06: Completion is explicit mark-done at Standard and Critical;
 delivery does not complete a plan; mark-done then updates live context files
 when Product Knowledge was affected.
+Extended 2026-09-08: member roster, member identity, and number band — intent and
+plan ids allocate inside the current member's band (INV-MEMBER-01).

@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0028-band-allocation
 intent: i021-id-number-blocks
 title: Band-scoped intent and plan id allocation
-status: draft
+status: done
 objective: >
   intent-allocate-id, plan-allocate-id, and plan-stack-materialize allocate only
   inside the current member's bands — next id is highest ever used in that band
