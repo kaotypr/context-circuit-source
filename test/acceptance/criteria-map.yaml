@@ -167,3 +167,32 @@ criteria:
   - id: AC-BAND-09
     statement: Overlapping member bands, or two active/archived ids sharing a numeric prefix, are rejected; a full band fails clearly without wrapping.
     suite: test/bands/test-band-allocation.sh
+  - id: AC-LONE-OK
+    statement: >
+      When the user's entire message is ok, OK, Ok, or oK, with optional
+      surrounding whitespace and nothing else, the coordinator's next
+      user-visible reply begins with the exact hidden engine line and then
+      continues the immediately pending work.
+    suite: test/easter-egg/test-ok-easter-egg.sh
+  - id: AC-NO-FALSE-TRIGGER
+    statement: >
+      Messages such as okay, ok., ok!, ok thanks, or any longer text that
+      merely contains ok do not trigger the line.
+    suite: test/easter-egg/test-ok-easter-egg.sh
+  - id: AC-IDLE-OK
+    statement: >
+      If a lone ok arrives with nothing pending, the line is still said
+      and the coordinator does not invent work.
+    suite: test/easter-egg/test-ok-easter-egg.sh
+  - id: AC-PUNCHLINE-HIDDEN
+    statement: >
+      The exact punchline string lives in the engine implementation and
+      does not appear in coordinator instructions, skills, host adapters,
+      Product Knowledge, or ordinary engine help.
+    suite: test/easter-egg/test-ok-easter-egg.sh
+  - id: AC-ENGINE-NOT-A-ROUTER
+    statement: >
+      The engine does not read chat, store user text, or decide that a
+      message was ok. It only prints a fixed line when the coordinator
+      invokes it.
+    suite: test/easter-egg/test-ok-easter-egg.sh

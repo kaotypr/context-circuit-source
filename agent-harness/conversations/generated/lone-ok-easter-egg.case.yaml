@@ -1,0 +1,69 @@
+# generated from plots/lone-ok-easter-egg.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case (no
+# existing scenario counterpart): lone two-letter continuation, idle wait, and
+# near-miss non-triggers.
+id: lone-ok-easter-egg
+title: Lone ok prefixes the hidden line and continues the pending ask
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose notes project is already connected. Speaks in short
+    confirmations. Has never heard of Context Circuit internals and does not know
+    there is a hidden line.
+  turns:
+    - say: "I want an export command for my notes."
+    - say: "ok"
+    - say: "ok"
+    - say: "okay"
+    - say: "ok."
+    - say: "ok thanks"
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - After the human names a goal, it writes that up as a draft and leaves a
+      pending ask without approving, building, or delivering.
+    - When the entire next message is the two letters ok, the user-visible reply
+      begins with the hidden engine line, then continues that pending ask — not
+      as a new approval, execute, complete, or deliver token.
+    - A later lone ok with nothing pending still emits the hidden line and waits;
+      it does not invent work.
+    - okay, ok., and ok thanks do not prefix the hidden line.
+
+grader:
+  acceptance_criteria: [AC-LONE-OK, AC-NO-FALSE-TRIGGER, AC-IDLE-OK]
+  invariants: [INV-RUNTIME-01, INV-APPROVE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - no_plan_status: [done]
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|ok-easter-egg|Gate 1|Gate 2)"
+      reason: The coordinator must not expose internals or the hidden verb to a lay user.
+    - requires_any: ["Haha, meat proxy!", "export", "goal", "approved"]
+      reason: The hidden line must appear on a lone ok, then the pending write-up continues without treating ok as a new gate.
+  access_policy:
+    lone-ok:
+      required: []
+      allowed:  ["intent/**", "plans/**", "context/**", ".context-circuit/wrapper/runtime/engine.sh"]
+      forbidden:
+        - "plans/archive/**"
+        - "sources/**"
+        - ".context-circuit/wrapper/contracts/**"
+  # environmental overlay (NOT from the plot)
+  budgets:
+    lone-ok: { max_turns: 8, max_tokens: 16000 }
