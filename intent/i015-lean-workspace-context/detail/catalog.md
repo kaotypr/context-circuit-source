@@ -21,11 +21,13 @@ A match is a catalog **entry** in `context/INDEX.md`, not a directory. The
 entry already carries the path. That file is the only selector. A domain
 README with one-line summaries is knowledge about domains, not the catalog.
 
-## What the catalog must carry per unit
+The retrieval schema already names the fields, and durable-only writing
+already forbids particular plan, intent-file, or sources-file cites in live
+context — including catalog provenance. This intent does not change that
+writing rule. It makes the file agents actually read carry the retrieval
+fields, so the schema is not a second place the agent must visit.
 
-The retrieval schema already names the fields. This intent makes the file
-agents actually read carry them, so the schema is not a second place the agent
-must visit:
+## What the catalog must carry per unit
 
 - stable id
 - path of the unit
@@ -39,7 +41,8 @@ The catalog remains a **catalog**. It does not paste page content. A one-line
 summary plus topics and aliases is enough to decide “open this” vs “skip this.”
 
 There is no proposal staging path. The catalog lists live `context/` files
-only.
+only. Provenance pointers, when present, are durable retrieval facts only
+(INV-KNOWLEDGE-03).
 
 ## Empty catalog (template seed)
 
@@ -81,10 +84,11 @@ to discover units, and do not treat another file as the catalog.** If
 - Not a second copy of Product Knowledge inside the catalog.
 - Not treating `context/domains/README.md` or a directory listing as the
   catalog.
-- Not a requirement to fill this source checkout’s catalog as a product
-  feature. Filling *this* project’s catalog may happen when knowledge is
-  gathered here; the **shipped** change is the catalog shape in the template
-  and the procedure that forbids a tree search.
+- Not filling this source checkout’s catalog as a product feature. This
+  checkout may already have many accepted domain pages; filling their catalog
+  rows may happen when knowledge is gathered here. The **shipped** change is
+  the catalog shape in the template and the procedure that forbids a tree
+  search.
 
 ## Edge cases
 

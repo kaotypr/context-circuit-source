@@ -1,6 +1,6 @@
 # Proof it is an improvement, not a thinner wrong loop
 
-Continues from [design.md](design.md). This is how “90% already correct”
+Continues from [design.md](design.md). This is how “already correct”
 stays true after the change.
 
 ## What would count as a downgrade
@@ -10,11 +10,14 @@ Any of these, even if files got shorter or greps went down:
 - a writing request that skips the intent gate
 - a plan written before a feasible tracer (when the loop requires one)
 - Standard or Critical work labeled verified without an independent child
+- Explore work labeled verified, or a verifier spawned for pairing
 - a coordinator that writes when the worker child is missing
 - a rule that now exists only inside a skill
 - `sources/` scanned because the catalog was silent
 - always-on safety spine gone (archive exclusion, credential rule,
   invoke-not-read, host-blocked)
+- nested home undone, host-native trees turned into a second policy,
+  durable-only writing reversed, or band allocation changed
 
 Length is not the test. **Behavior** is the test. Waste gone, loop intact.
 
@@ -33,7 +36,8 @@ On a typical orientation or intent-authoring turn in a product workspace:
   validate then accepts
 
 On always-on plus skill load: restated lifecycle essays are gone; pointers
-remain; the route still has a complete procedure.
+remain; the route still has a complete procedure. Host-native stubs still
+name owners rather than copy policy.
 
 ## How that is checked (outcome, not a test plan)
 
@@ -41,8 +45,9 @@ The tracer will earn runnable checks against the real files. The shape those
 checks must prove:
 
 1. **Loop preserved** — existing semantic acceptance that encodes gates,
-   tracer, verifier, host-blocked, and invoke-not-read still passes. This
-   intent does not weaken those fixtures.
+   tracer, verifier, Explore/pairing, host-blocked, and invoke-not-read still
+   passes. This intent does not weaken those fixtures, including durable-only
+   knowledge checks.
 2. **Catalog selects** — a fixture or harness access policy where the request
    maps to named units: required reads include `context/INDEX.md` and the
    named units; listing `context/domains/**`, grepping `context/`, or
@@ -57,9 +62,10 @@ checks must prove:
    a wrong line cannot ship. This is a regression guard; core skills already
    match the nested runtime.
 5. **Product workspace** — template seed carries the catalog shape and the
-   shipped adapters/skills against the nested home; a blank assembled
-   workspace is the proving ground, not only this source checkout. Filling
-   this source checkout’s catalog is not the proof.
+   shipped adapters/skills against the nested home, with host-native trees
+   still routes; a blank assembled workspace is the proving ground, not only
+   this source checkout. Filling this source checkout’s catalog is not the
+   proof.
 
 Harness efficiency budgets (tokens, turns) may **observe** the win. They
 stay soft. They are not the definition of done. Access discipline (right
