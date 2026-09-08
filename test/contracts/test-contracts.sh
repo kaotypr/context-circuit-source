@@ -10,7 +10,7 @@ require_file "$inv"
 for id in INV-INTENT-01 INV-INTENT-02 INV-CANDIDATE-01 INV-ASSURE-01 INV-PLAN-01 INV-PLAN-05 INV-APPROVE-01 INV-EXEC-01 \
 	INV-VERIFY-01 INV-VERIFY-02 \
 	INV-REPAIR-01 INV-COMPLETE-01 INV-ARCHIVE-01 INV-REPO-02 INV-DELIVER-01 \
-	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
+	INV-RUNTIME-01 INV-KNOWLEDGE-02 INV-KNOWLEDGE-03 INV-OWN-01 INV-CONCURRENCY-01 INV-CONCURRENCY-02 \
 	INV-GROUND-01 INV-GROUND-02 INV-GROUND-03 INV-EXTERNAL-01 INV-EXTERNAL-02 \
 	INV-EXTERNAL-03 INV-PAIR-01; do
 	contains "$inv" "$id"
@@ -203,9 +203,10 @@ contains "$sd" "design.md"
 contains "$sd" "by concern"
 contains "$sd" "never by repository"
 contains "$sd" "Never approve"
-# dual-root: product-level path preserved; intent detail is a second home, not a new skill
+# dual-root: product-level home is passive source material; intent detail is a second home, not a new skill
 contains "$ROOT/context/domains/system-design-authoring/README.md" "intent/<id>/detail/"
-contains "$ROOT/context/domains/system-design-authoring/README.md" "sources/system-design/"
+contains "$ROOT/context/domains/system-design-authoring/README.md" "passive source material"
+contains "$ROOT/context/domains/system-design-authoring/README.md" "<product-or-project>/<grouping>/<scope>/"
 test ! -e "$ROOT/.agents/skills/cc-intent-detail" || fail "cc-intent-detail must not exist"
 test ! -e "$ROOT/sources/system-design/context-circuit/v1.1.0" || fail "unsolicited v1.1.0 design tree must be absent"
 # system-design is authoring-only: no runtime schema, no invariant, no WORKFLOW action

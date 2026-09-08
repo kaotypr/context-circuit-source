@@ -156,7 +156,12 @@ several pull requests, not zero. Plans in different repositories keep their own
 covering-tip candidates and are never combined for a second check. Delivery does not spawn a verifier. Between the two gates everything is mechanical:
 planner, feasibility check, execution, candidate, tiered verification,
 acceptance, drift rebase. Gather context writes live `context/` files and keeps
-`INDEX.md` consistent. Mark-done is the only `draft → done` trigger and, when
+`INDEX.md` consistent. Those writes follow the durable-only rule
+(INV-KNOWLEDGE-03): live context files hold durable product knowledge only;
+they never name a particular plan, intent file, or sources file, and never
+name a `sources/` path. `DECISIONS.md` records what is now true about the
+product — decision, rationale, and consequence — not edited paths or ephemeral
+artifacts. Mark-done is the only `draft → done` trigger and, when
 the plan affected Product Knowledge, starts that same in-place reconcile.
 Asking to mark a plan done, or several plans done, flips each named plan's
 status with no look at work or evidence and no unreadiness refusal —

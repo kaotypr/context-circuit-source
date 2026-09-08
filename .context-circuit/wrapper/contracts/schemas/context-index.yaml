@@ -23,7 +23,14 @@ per_unit_metadata:
   status: { type: enum, values: [accepted, needs-review, stale] }
   owner: { type: string, required: false }
   freshness: { type: string, required: false }
-  provenance: { type: list, required: false }
+  provenance:
+    type: list
+    required: false
+    description: >
+      Durable retrieval pointers only (INV-KNOWLEDGE-03): shipped contract or
+      adapter paths, invariant IDs, and links to other live context units.
+      Never a particular plan, intent file, or sources file, and never a
+      sources/ path. There is no sources.yaml provenance ledger.
 
 index_entries:
   - page path
@@ -33,7 +40,7 @@ index_entries:
   - related domains and repositories
   - decisions and constraints covered
   - status, owner, freshness
-  - primary related repositories and provenance
+  - primary related repositories and durable provenance pointers
 
 update_triggers:
   - a unit is added, renamed, archived, or materially changed
@@ -42,3 +49,4 @@ update_triggers:
 rules:
   - INV-KNOWLEDGE-01
   - INV-KNOWLEDGE-02
+  - INV-KNOWLEDGE-03

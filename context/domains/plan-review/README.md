@@ -112,14 +112,6 @@ rule, is a shipped invariant beyond the design; see `context/DESIGN-DELTAS.md`.)
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-PLAN-01, INV-PLAN-02, INV-PLAN-03,
   INV-PLAN-04
 
-## Provenance
-
-Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
-`interactive-plan-review` plan that seeded this page was deleted in `4b8ac0b`;
-its provenance was retired, along with the previous-version route tokens
-`review-plan` / `plan-review` / `clarify-target`, which are absent from the
-current engine. Raw `sources/` was not scanned.
-
 ## Acceptance notes
 
 Accepted 2026-08-24. Broadened from the former review-only `plan-review` draft to

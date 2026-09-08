@@ -2,8 +2,17 @@
 
 `context/` holds accepted, durable, agent-oriented knowledge about the project:
 purpose, architecture, conventions, decisions, domain rules, roles, terminology,
-and provenance. It is human-readable, but it exists first so an agent can locate
+and retrieval metadata. It is human-readable, but it exists first so an agent can locate
 and apply the right knowledge when creating a plan.
+
+Live context files follow a durable-only writing rule (INV-KNOWLEDGE-03): they
+never name a particular plan, intent file, or sources file, and never name a
+`sources/` path. Explaining the concepts plan, intent, and sources remains
+allowed; path patterns that describe product structure (for example
+`intent/<id>/`) are not particular-file cites. Invariant IDs and shipped
+contract or adapter paths remain nameable. `DECISIONS.md` records what is now
+true about the product — decision, rationale, and consequence — not edited
+paths or the ephemeral artifact behind the change.
 
 `context/TERMINOLOGY.md` is this project's own domain glossary — the words the
 team and codebase use, with an agreed meaning for each. It is distinct from the
@@ -21,5 +30,5 @@ the coordinator performs the same in-place reconcile when the plan affected
 Product Knowledge. There is no sidecar staging path and no extra
 knowledge-acceptance gate. Completion, verification, worker claims, and
 delivery never write Product Knowledge. A later plan may start even if a
-knowledge update has not landed. `sources/` is passive raw evidence and is read
-only when named.
+knowledge update has not landed. Passive source material is raw evidence and is
+read only when named.

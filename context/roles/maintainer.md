@@ -88,14 +88,8 @@ explicit actions.
 
 An explicit user request may authorize a source-only commit. Registered product
 repositories still need their own delivery and publication gates. Do not scan
-`sources/` unless the request names exact files. Do not treat this checkout as a
-user project or restore an obsolete lifecycle.
-
-## Provenance
-
-Re-grounded on the current wrapper at HEAD `4b8ac0b`. The five previous-version
-maintainer plans that first seeded this page were deleted in `4b8ac0b`; their
-provenance was retired. Raw `sources/` was not scanned.
+passive source material unless the request names exact files. Do not treat this
+checkout as a user project or restore an obsolete lifecycle.
 
 ## Acceptance notes
 

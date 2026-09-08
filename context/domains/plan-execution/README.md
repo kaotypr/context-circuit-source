@@ -150,14 +150,7 @@ Product Knowledge, expands scope silently, or merges/pushes/publishes.
 `sh test/acceptance.sh` (execution suite). Independent verification of results
 is owned by [verification](../verification/README.md).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned. This is not the deleted previous-version "engine-owned-runtime-records"
-plan; it describes the runtime records that ship today.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0011-domain-plan-execution`. Extended
-2026-08-27 from proposal `0018-change-plan-execution` (v0.6 base-aware begin for
-dependents, the grounded brief, and plan `schema_version [1, 2]`).
+Accepted 2026-08-24. Extended 2026-08-27 with v0.6 base-aware begin for
+dependents, the grounded brief, and plan `schema_version [1, 2]`.
