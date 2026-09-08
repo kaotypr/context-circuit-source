@@ -1,0 +1,93 @@
+id: 13-execution-latency
+title: Run a small intent-authorized stack with the shared host-matrix tiering fixture; the batch overlaps independent plans, builds a fan-in integration base, and records the per-role model/effort each role ran at — all without exposing any of it to the user
+mode: full-execution
+setup:
+  # Role tiering is supplied by the shared agent-harness/fixtures fixture.
+  # One connected repo and THREE intent-authorized plans: two independent roots (alpha,
+  # beta) that can overlap, and a fan-in (gamma) that depends on both — so the
+  # runtime authors an integration base by merging the two predecessors.
+  repositories:
+    - id: widgets
+      dest: widgets
+      default_branch: main
+      branches: [main]
+      seed_files: [README.md]
+      connect: main
+  plans:
+    - id: 0001-alpha
+      title: Alpha module
+      repository: widgets
+      objective: Add the alpha module.
+      path: src/alpha
+      seed_state: draft
+    - id: 0002-beta
+      title: Beta module
+      repository: widgets
+      objective: Add the beta module.
+      path: src/beta
+      seed_state: draft
+    - id: 0003-gamma
+      title: Gamma module
+      repository: widgets
+      objective: Combine alpha and beta into the gamma module.
+      path: src/gamma
+      deps: [0001-alpha, 0002-beta]
+      seed_state: draft
+  sources: []
+
+human:
+  persona: >
+    A maker with three small authorized plans, two of which are independent and one
+    that ties them together. Wants the whole batch built in one go and a plain
+    confirmation that it is all built and checked. Has never heard of Context
+    Circuit, knows none of its internals, and does not know or care which model
+    does the building or the checking.
+  turns:
+    - say: "Please build the three plans 0001 through 0003 in one go."
+    - say: "How did that go — is everything built and checked?"
+  reactions:
+    approves: true             # already authorized; this is an execute request
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It builds all three authorized plans in one run, overlapping the two independent ones.
+    - It reports that every plan was implemented and independently checked/verified.
+    - When asked, it says the work is built and verified but leaves marking each plan done as a separate step.
+    - It never exposes internal jargon, file names, branch names, model names, effort levels, or timing numbers to the user.
+
+grader:
+  acceptance_criteria: [AC-07, AC-08, AC-14]
+  invariants: [INV-CONCURRENCY-02, INV-HOST-01, INV-VERIFY-01, INV-RUNTIME-01]
+  # A. state post-conditions (hard gate)
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-alpha
+    - execution_verified: 0002-beta
+    - execution_verified: 0003-gamma
+    # fan-in base names both same-repo predecessors, built on top of them
+    - based_on: 0003-gamma:widgets:0001-alpha,0002-beta
+    - built_on: 0003-gamma:widgets:0001-alpha
+    # evidence: coordinator recorded the per-role (model, effort) it ran
+    - attempt_evidence_recorded: 0001-alpha
+    - attempt_evidence_recorded: 0003-gamma
+    # tiering HONORED: the seeded (model, effort) per role is what ran
+    - role_evidence_configured: 0001-alpha:worker
+    - role_evidence_configured: 0001-alpha:verifier
+    - role_evidence_configured: 0003-gamma:verifier
+    - no_plan_status: [done]
+    - product_knowledge_unchanged_silently: true
+  # B. transcript checks (hard gate)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|role-tiering|phase_ms|attempt-evidence|refs/cc-|cc/[0-9]|opus|sonnet|haiku)"
+      reason: The coordinator must not expose internals (runtime files, branches) OR the speed knobs (model names, tiering, timing fields) to a lay user.
+    - requires_any: ["verified", "checked", "built", "not.*done", "complete"]
+      reason: It should report a verified build across the small stack and leave completion to the human.
+  # C. access-discipline audit (session-level; forbidden = hard gate; trace-less in this driver)
+  access_policy:
+    execute-plan:
+      required: []
+      allowed:  ["plans/**", ".runtime/**", "context/**", "role-tiering.local.yaml", ".context-circuit/docs/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
+  # D. efficiency ledger (soft, warning-only)
+  budgets:
+    execute-plan: { max_turns: 3, max_tokens: 60000, max_agent_turns: 90, max_cost_usd: 12 }

@@ -1,0 +1,84 @@
+schema_version: 3
+plan: 0010-plans-after-trace
+intent: i008-plans-after-trace
+title: Write plans as soon as the tracer is feasible
+status: draft
+objective: >-
+  After an intent is approved and the tracer finishes with no follow-up
+  questions and a feasible finding, the coordinator must derive and write the
+  plan or plans in that same turn. Execution remains a separate explicit ask.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns post-feasibility plan derivation in the coordinator and cc-plan.
+plan_dependencies:
+  - id: 0008-approval-then-trace
+    reason: Plans must be written only after the tracer and feasibility check actually run.
+product_knowledge:
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Feasible finding is the trigger to derive plans.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Plan derivation is automatic after Gate 1 and a feasible look.
+  - id: planning
+    path: docs/planning.md
+    reason: Owns writing PLAN.md and plan.yaml from the trace manifest.
+context_grounding:
+  summary: >-
+    Derived from the approved i008 contract without a tracer, at explicit
+    human request. One plan stacked after 0008 so the required order exists
+    before same-turn derivation is required.
+  constraints:
+    - Do not start execution from this handoff.
+    - Do not write plans when not feasible or an intent-level question remains.
+  decisions:
+    - Keep one plan with two sequential tasks. Stack on 0008 rather than merging, because 0008's sequence is a prior execution boundary.
+knowledge_impact:
+  expected_context_units:
+    - tracing
+    - plan-authorization
+  review_on_completion: true
+tasks:
+  - id: PAT-001
+    title: Write plans as soon as the tracer is feasible
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-intent/
+      - .agents/skills/cc-trace/
+      - .agents/skills/cc-plan/
+      - agents/coordinator.md
+      - context/domains/tracing/
+      - context/domains/plan-authorization/
+    depends_on: []
+    changes:
+      - After a feasible tracer with no follow-up questions, the coordinator derives and writes the plan or plans in that same turn without a further human request to create them.
+    acceptance:
+      - id: PAT-AC-001
+        statement: After approval and a feasible tracer with no follow-up questions, the coordinator writes the derived plan or plans in that same turn.
+      - id: PAT-AC-002
+        statement: If the feasibility check is not feasible, or an intent-level question remains, no plan is written.
+      - id: PAT-AC-003
+        statement: Writing the plans does not start execution, verification, completion, or delivery.
+    verification:
+      - id: PAT-VT-001
+        command: rg -n 'feasible|derive|cc-plan|same turn|before any plan' .agents/skills/cc-intent/SKILL.md .agents/skills/cc-plan/SKILL.md .agents/skills/cc-trace/SKILL.md agents/coordinator.md
+  - id: PAT-002
+    title: Prove the handoff
+    repositories: [context-circuit-source]
+    paths:
+      - test/intent/
+      - test/acceptance.sh
+    depends_on:
+      - PAT-001
+    changes:
+      - Add coverage that fails if a feasible tracer leaves the intent with no plans, and fails if plans appear when the tracer still has questions.
+    acceptance:
+      - id: PAT-AC-001
+        statement: Same-turn derivation and blocked derivation are both proven.
+    verification:
+      - id: PAT-VT-002
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

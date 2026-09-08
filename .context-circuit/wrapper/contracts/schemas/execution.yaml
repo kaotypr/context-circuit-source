@@ -1,0 +1,101 @@
+schema_version: 2
+owner: .context-circuit/wrapper/contracts/schemas/execution.yaml
+describes: .runtime/executions/<plan-id>/<execution-id>/execution.yaml
+concern: execution_records
+
+purpose: >
+  Private runtime evidence for one bounded execution of a plan authorized by its
+  approved intent. It is
+  execution evidence, not Product Knowledge or plan intent. Records are written
+  atomically; a partial or contradictory record grants nothing.
+
+layout:
+  execution_dir: .runtime/executions/<plan-id>/<execution-id>/
+  files:
+    execution.yaml: this record
+    snapshot/: immutable copy of PLAN.md, plan.yaml, and tasks/ at execution start
+    handoff.md: latest worker handoff
+    completion.yaml: implementation completion record (inferred at Standard after acceptance and delivery; explicit at Critical)
+    context-impact.yaml: knowledge reconciliation references (written by coordinator)
+    attempts/NNN/worker.yaml: worker attempt record and captured commits
+    attempts/NNN/verifier-scope.yaml: read-only scope prepared for the independent verifier
+    attempts/NNN/verifier.yaml: independent verifier result for that attempt
+    attempts/NNN/host-evidence.yaml: >
+      additive per-attempt host evidence — the (model, effort) each role
+      ran at (see timing_fields). Evidence only; no gate, route, verdict, or
+      counter reads it (INV-HOST-01).
+    repositories/<repository-id>.yaml: per-repository worktree, branch, base and latest commit
+    grounding/<repository-id>.yaml: repository-grounding manifest discovered for the
+      execution worktree (INV-GROUND-01; schema grounding-manifest.yaml)
+    brief-<repository-id>.md: the assembled worker brief (deterministic; optional evidence)
+
+fields:
+  schema_version: { type: integer, required: true, values: [1, 2] }
+  execution_id: { type: string, required: true, description: exec-<plan-id>-NNN }
+  plan: { type: string, required: true }
+  plan_revision: { type: string, required: true, description: digest of the snapshot plan.yaml }
+  owner: { type: string, required: true, description: worker/session id holding the lock }
+  status:
+    type: enum
+    required: true
+    values: [running, verifying, repairing, verified, failed, blocked]
+  worker_failures: { type: integer, required: true, description: 0..3 }
+  current_attempt: { type: integer, required: true }
+  created_at: { type: string, required: true }
+  updated_at: { type: string, required: true }
+
+host_evidence_fields:
+  purpose: >
+    per-attempt host evidence: the (model, effort) each role ran at — the
+    one thing the engine cannot know, being model-blind (INV-RUNTIME-01). Bounded,
+    additive, evidence only, never a gate; it does not alter execution semantics.
+  file: attempts/NNN/host-evidence.yaml
+  written_by: runtime action attempt-evidence-record (atomic; INV-RUNTIME-02)
+  key_allowlist:
+    - worker_model        # (model, effort) the worker ran at — host evidence
+    - worker_effort
+    - verifier_model      # (model, effort) the verifier ran at — host evidence
+    - verifier_effort
+  notes: >
+    No wall-clock is recorded here: an attempt already carries started_at
+    (worker.yaml) and checked_at (verifier.yaml), whose span is its duration, so
+    timing needs no coordinator step (the most precise per-role figure lives in the
+    host's own sub-agent transcript, outside workspace state). A host-blocked
+    verifier records worker_model but no verifier_model (none ran); the missing
+    value, with status: blocked and no passed verifier record, is the evidence of
+    the block. Unknown keys and unsafe values are refused so the surface stays
+    bounded and credential-free (INV-HOST-01 / INV-SEC-01).
+
+repository_record_fields:
+  repository: logical repository id
+  worktree: isolated worktree path under .runtime/worktrees/<plan-id>/<repository-id>/
+  branch: cc/<plan-id>/<repository-id>
+  base_branch: recorded user-local base branch (default pull-request target)
+  base_commit: >
+    the execution base tip captured at start. For a plan with no same-repo
+    predecessor this is the base-branch tip. For a dependent
+    plan (INV-CONCURRENCY-02) it is the single predecessor branch tip
+    (stack) or a runtime-authored integration merge commit (>=2 predecessors).
+  based_on: >
+    optional. When present, the same-repo predecessor plan ids this
+    repository's base was built on. Absent for a plan with no same-repo
+    predecessor. The kept base ref lives at refs/cc-base/<plan-id>/<repository-id>.
+  latest_commit: latest worker commit inspected by the verifier
+  allowed_paths: union of the bounded paths of every task mapped to this repository
+
+legacy:
+  repository_record_base_branch: >
+    Runtime readers accept the former anchor_branch field in schema 1 execution
+    records while schema 2 writers emit base_branch.
+
+rules:
+  - INV-EXEC-01
+  - INV-EXEC-02
+  - INV-EXEC-03
+  - INV-REPAIR-01
+  - INV-PRESERVE-01
+  - INV-RUNTIME-01
+  - INV-RUNTIME-02
+  - INV-HOST-01
+  - INV-OWN-01
+  - INV-CONCURRENCY-02

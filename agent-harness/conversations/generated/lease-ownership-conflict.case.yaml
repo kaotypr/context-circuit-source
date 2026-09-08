@@ -1,0 +1,70 @@
+# generated from plots/lease-ownership-conflict.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. NEW case: a
+# conversational probe over the path lease / one-worker lock (deterministically owned
+# by the engine tests). Conversation-only over a seeded in-progress execution holding
+# a live lease. `seed_state: executing` (active lease) and the *_read_only/
+# lease_not_stolen predicates are harness gaps — see coverage/phase-4.md.
+id: lease-ownership-conflict
+title: A second request to touch in-progress work is held read-only, never steals the lease
+mode: conversation-only
+
+setup:
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  plans:
+    - id: 0001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Add an export command under the export area.
+      path: src/export
+      seed_state: executing
+  sources: []
+
+human:
+  persona: >
+    A solo maker who forgot a change is already being built and asks to start another
+    one that touches the same area. Has never heard of Context Circuit; does not know
+    what a lease or a lock is. Fine to wait once it's explained.
+  turns:
+    - say: "While that's going, can you also start building another tweak in the export area right now?"
+    - say: "Ah, right — okay, wait until the current one's done then. Don't force it."
+    - say: "Thanks."
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It recognizes the area is currently being worked by an active run and says so in plain language.
+    - It declines to start a second change that would touch the same area, and does not
+      take over or interrupt the running work.
+    - It offers a real path — wait until the current work is done, or work on a different area.
+    - It leaves the running work untouched and starts nothing.
+
+grader:
+  acceptance_criteria: []
+  invariants: [INV-CONCURRENCY-01, INV-OWN-01, INV-PRESERVE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - second_execution_blocked_read_only: notes:src/export
+    - lease_not_stolen: 0001-md-export
+    - running_work_preserved: 0001-md-export
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|lease|lock|path region)"
+      reason: The coordinator must explain the conflict by effect ("in progress"), not by internal mechanism.
+    - requires_any: ["in progress", "being worked", "already", "won't", "wait", "step on", "different area", "underway"]
+      reason: It should recognize the in-progress work, decline to step on it, and offer to wait or work elsewhere.
+  access_policy:
+    handle-conflict:
+      required: []
+      allowed:  ["plans/**", ".runtime/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**", ".context-circuit/wrapper/contracts/**"]
+  # environmental overlay (NOT from the plot) — conversation-only tuning
+  budgets:
+    handle-conflict: { max_turns: 3, max_tokens: 12000 }

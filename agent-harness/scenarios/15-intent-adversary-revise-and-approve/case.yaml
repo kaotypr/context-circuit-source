@@ -1,0 +1,84 @@
+id: 15-intent-adversary-revise-and-approve
+title: Approve an intent, surface a feasibility question from the real code, resolve it, derive the plan
+mode: conversation-only
+setup:
+  # After Gate 1 approval the coordinator reads the real code to plan from a grounded
+  # basis. That surfaces a decision the goal never settled (the existing save path
+  # overwrites silently). The human must resolve it before the schema-3 plan is
+  # derived; the coordinator never picks the behavior on its own. This is a quality
+  # gate over planning, not a re-gate — the approved intent's outcome is unchanged.
+  repositories:
+    - id: notes
+      dest: notes
+      default_branch: main
+      branches: [main]
+      seed_files: [notes.md]
+      connect: main
+  intents:
+    - id: i001-md-export
+      title: Add a Markdown export command
+      repository: notes
+      objective: Export notes to a chosen output file.
+      open_question: What should happen when the chosen output file already exists?
+      tier: standard
+      state: draft
+      path: src/export
+  sources: []
+
+human:
+  persona: >
+    A solo maker proposing a small Markdown export command. Approving it should send
+    the coordinator to read the real code, which turns up a decision the goal never
+    settled; they are willing to make that call before any plan is written. Has never
+    heard of Context Circuit or its internals.
+  turns:
+    - say: "This export idea looks right to me. Approve it — but don't build anything yet."
+    - say: "Good question. Never overwrite: if the file's already there, stop and leave it alone with a clear message."
+    - say: "Thanks."
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It takes the approval, then reads the real code before planning and reports that nothing is being built.
+    - It surfaces the overwrite decision the goal doesn't settle as a plain-language question instead of silently choosing a behavior.
+    - After the human resolves it, it derives a schema-3 plan without executing it or asking for a separate plan approval.
+    - It never exposes runtime files, internal identifiers, or implementation jargon.
+
+grader:
+  acceptance_criteria: [AC-03, AC-04]
+  invariants: [INV-INTENT-01, INV-PLAN-01, INV-APPROVE-01, INV-EXEC-01]
+  post_conditions:
+    - repositories_registered: 1
+    - intent_status: i001-md-export:approved
+    - intent_authorized: 0001-md-export
+    - plans_created: 1
+    - plan_schema: 0001-md-export:3
+    - plan_status: 0001-md-export:draft
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|contract\\.yaml|contract_digest|sources/|refs/cc-)"
+      reason: The coordinator must explain the decision without leaking implementation internals.
+    - requires_any: ["real code", "overwrite", "decision", "approved", "untouched"]
+      reason: The dialogue must show approval, the code-grounded feasibility question, and its resolution.
+  access_policy:
+    orient:
+      required: []
+      allowed: ["context/**", "intent/**", ".context-circuit/wrapper/contracts/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
+    approve:
+      required: []
+      allowed: ["intent/**", "context/**", ".context-circuit/wrapper/contracts/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
+    trace:
+      required: []
+      allowed: ["intent/**", "context/**", "notes/**", ".context-circuit/wrapper/contracts/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
+    create-plan:
+      required: []
+      allowed: ["intent/**", "plans/**", "context/**", ".context-circuit/wrapper/contracts/**"]
+      forbidden: ["sources/**", "plans/archive/**", ".runtime/**"]
+  budgets:
+    approve: { max_turns: 4, max_tokens: 30000 }
+    trace: { max_turns: 2, max_tokens: 12000 }

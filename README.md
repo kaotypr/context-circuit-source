@@ -13,34 +13,39 @@ self-hosted maintainer workspace.
 In a released workspace you talk to the agent in ordinary language:
 
 > What is this workspace?
-> Create a plan for adding billing.
-> Approve plan 0001-billing-v2 and execute it.
-> Mark 0001-billing-v2 complete.
+> I want to add billing — retry a failed charge before failing the order.
+> Approve this intent.
+> Execute it, then ship it.
 
-The coordinator drafts or reviews a readable plan; you approve it in
-conversation; the workspace prepares isolated repository worktrees; one worker
-implements the whole plan and commits each repository; an independent read-only
+You approve the **intent** — what "correct" means — from the plain ask. On approval a
+planner reads the real code and writes the plan; the coordinator runs a feasibility check
+and publishes that plan (no separate plan approval and no automated scope
+gate; scope-safety is settled at delivery). The workspace prepares isolated
+repository worktrees; one worker
+implements the whole plan in that plan's single repository and commits it; an independent read-only
 verifier checks the latest commits; the worker repairs failures with new
-commits; and you decide when the plan is complete. Approval, execution,
-completion, archive, restore, and delivery are separate explicit human actions.
+commits; and completion follows the tier: Standard after candidate acceptance
+plus delivery, Critical after explicit human completion. Explore is planless and
+human-supervised. Intent approval and delivery are the two explicit human gates;
+archive and restore remain separate organization actions.
 
 ## Source layout
 
-- `wrapper/` — shipped runtime, contracts, schemas, adapters, and migration
-  boundary. `wrapper/runtime/engine.sh` is the small host-neutral deterministic
-  runtime; `wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
+- `.context-circuit/wrapper/` — shipped runtime, contracts, schemas, adapters, and migration
+  boundary. `.context-circuit/wrapper/runtime/engine.sh` is the small host-neutral deterministic
+  runtime; `.context-circuit/wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
 - `template/` — the blank mutable seed for a new workspace.
-- `.agents/skills/` and `agents/` — thin host skills and worker/verifier/
+- `.agents/skills/` and `.context-circuit/agents/` — thin host skills and planner/worker/verifier/
   coordinator role deltas.
-- `docs/` — shipped guides and plan/task templates.
+- `.context-circuit/docs/` — shipped guides and plan/task templates.
 - `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
   released.
 - `sources/system-design/context-circuit/` — the authoritative maintainer design
   set (core plus scoped increments in versioned subfolders); maintainer material
   only, never shipped.
 - `test/` — semantic acceptance suites (the deterministic engine-level laboratory
-  is run from here via `template-harness/test-template-runtime.sh`).
-- `template-harness/` — the built-template behavior laboratory: the deterministic
+  is run from here via `agent-harness/test-template-runtime.sh`).
+- `agent-harness/` — the built-template behavior laboratory: the deterministic
   engine-level suite plus the human-simulated harness (`human/`, `scenarios/`).
   Source-only; never shipped in `context-circuit-template`.
 - `scripts/` — maintainer-only release assembly.

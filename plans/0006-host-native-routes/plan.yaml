@@ -1,0 +1,260 @@
+schema_version: 3
+plan: 0006-host-native-routes
+intent: i020-host-conventions-preserved
+title: Integrate Context Circuit through host-native route folders
+status: done
+objective: >
+  Claude Code, Codex CLI, and Cursor Agent CLI each discover Context Circuit
+  through that host's committed native folders — thin routes into
+  .context-circuit/agents, owning invariants, and .agents/skills/cc-* — with
+  the same product set in release assembly and the blank template seed, and
+  checks that prove the folders stay pointers and host-blocked still holds.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns .claude/, .codex/, .cursor/, product adapters, release assembly,
+      template seed, host-adapters Product Knowledge, and acceptance tests.
+plan_dependencies: []
+product_knowledge:
+  - id: host-adapters
+    path: context/domains/host-adapters/README.md
+    reason: >
+      Documents how the three hosts enter the workflow. After this change the
+      domain must describe native host folders as the committed integration
+      surface, not optional host-local convenience.
+  - id: source-release-and-upgrade
+    path: context/domains/source-release-and-upgrade/README.md
+    reason: >
+      Assembly ships the nested product home plus root pointers. Host-native
+      folders join the shipped set; maintainer-only extras stay out of the
+      artifact.
+context_grounding:
+  summary: >
+    Grounded at HEAD 8d638de. Host integration today is root-only: product
+    adapters under .context-circuit/wrapper/adapters/ and root
+    AGENTS.md/CLAUDE.md/CURSOR.md. .codex/ is absent. .claude/ holds only
+    source-only cc-human-simulator and a cc-test-case skill stub — no product
+    worker/verifier/planner agents, rules, or cc-* skill symlinks.
+    .cursor/rules/ has role-tiering-spawn and gh-unsandboxed only — no
+    .cursor/agents/. Product CLAUDE.md still says ".claude/ is host-local
+    and never shipped", contradicting the approved intent. release-artifact.sh
+    stages only .agents and .context-circuit; release-manifest.txt lists no
+    host folders; template/ has no host trees. intent detail/hosts/ and
+    routing.md fix the product set shape. One plan with three ordered tasks
+    shares one worker lifecycle and one acceptance.sh verification surface;
+    wiring without assembly would fail AC-HOST-05; assembly without stubs
+    would fail manifest checks.
+  constraints:
+    - Host-native files route to single owners; do not copy role bodies or
+      invent host-specific authorization.
+    - Use only documented host surfaces; no .codex/rules/.
+    - Skills stay at .agents/skills/cc-*; Claude gets symlinks, not copies.
+    - Preserve source-checkout distinction — maintainer AGENTS.md and
+      source-only cc-human-simulator are not the shipped product set.
+    - Root CLAUDE.md/CURSOR.md and .cursor/rules stay pointed at workspace
+      root adapters in this checkout, not nested product adapter imports.
+    - host-blocked fail-closed language in adapters and coordinator stays.
+    - Do not store credentials, transcripts, or auth state in host folders.
+    - Run the semantic acceptance suite after meaningful phases.
+  decisions:
+    - One plan, three tasks — wire routes (HOST-001), ship and seed
+      (HOST-002), prove pointers and fail-closed (HOST-003). Stacked plans
+      would split one verification boundary without independent value.
+    - Product host set is worker, verifier, and planner agent stubs per host
+      format; standing rules in Claude/Cursor rules trees and Codex
+      AGENTS.md pointers; Claude skill symlinks for every shipped cc-* skill.
+    - Source-only .claude/agents/cc-human-simulator.md and
+      .claude/skills/cc-test-case/ stay in the maintainer checkout but are
+      filtered out of release assembly and template seed.
+    - Prefer symlinks for Claude skills in source and template; if a
+      supported platform cannot ship symlinks, use the thinnest stub that
+      still names the owner path under .agents/skills/.
+    - Add .codex/config.toml only if Codex requires project config for custom
+      agent discovery; never credentials or provider keys.
+    - Update product adapters to describe committed host folders; remove
+      "host-local unshipped" language from shipped CLAUDE.md.
+knowledge_impact:
+  expected_context_units:
+    - host-adapters
+    - source-release-and-upgrade
+  review_on_completion: true
+tasks:
+  - id: HOST-001
+    title: Wire Claude, Codex, and Cursor native folders as thin routes
+    repositories: [context-circuit-source]
+    paths:
+      - .claude/
+      - .codex/
+      - .cursor/
+      - .context-circuit/wrapper/adapters/
+      - CLAUDE.md
+      - CURSOR.md
+    depends_on: []
+    changes:
+      - >
+        Add product .claude/agents/{worker,verifier,planner}.md stubs with
+        Claude frontmatter routing each child to the matching file under
+        .context-circuit/agents/. Keep cc-human-simulator labeled source-only
+        and outside the product set.
+      - >
+        Add .claude/rules/ stubs for role-tiering on child spawn and commit
+        convention, each pointing at the owning invariant (and root CURSOR.md
+        or CLAUDE.md where the host requires), without restating policy.
+      - >
+        Add .claude/skills/ symlinks (or thinnest acceptable stubs) for every
+        shipped .agents/skills/cc-* skill.
+      - >
+        Create .codex/agents/{worker,verifier,planner}.toml with spawn_agent
+        names and instructions that route to .context-circuit/agents/. Add
+        .codex/config.toml only if required for discovery. Do not create
+        .codex/rules/.
+      - >
+        Add .cursor/agents/{worker,verifier,planner}.md stubs with Cursor
+        YAML frontmatter routing to .context-circuit/agents/. Keep existing
+        .cursor/rules/ pointing at workspace-root CURSOR.md; add a commit
+        convention rule stub if not already covered.
+      - >
+        Update shipped product adapters (CLAUDE.md, CURSOR.md, AGENTS.md) to
+        describe committed host-native routes and remove language that treats
+        .claude/ as unshipped host-local convenience. Preserve maintainer
+        source-checkout root pointer behavior.
+    acceptance:
+      - id: HOST-AC-01
+        statement: >
+          Each host has native agent stubs for worker, verifier, and planner
+          in that host's format under .claude/, .codex/, and .cursor/
+          respectively.
+      - id: HOST-AC-02
+        statement: >
+          Host-native agent and rule files route to .context-circuit/agents
+          or owning invariants and do not contain full role bodies or a
+          second authorization policy.
+      - id: HOST-AC-03
+        statement: >
+          Claude exposes cc-* skills through .claude/skills/ links to
+          .agents/skills/cc-* without copying skill bodies.
+    verification:
+      - id: HOST-VT-01
+        command: >
+          test -f .claude/agents/worker.md && test -f .claude/agents/verifier.md
+          && test -f .claude/agents/planner.md && test -f .codex/agents/worker.toml
+          && test -f .codex/agents/verifier.toml && test -f .codex/agents/planner.toml
+          && test -f .cursor/agents/worker.md && test -f .cursor/agents/verifier.md
+          && test -f .cursor/agents/planner.md && test ! -e .codex/rules
+      - id: HOST-VT-02
+        command: >
+          rg -l '\.context-circuit/agents/(worker|verifier|planner)\.md'
+          .claude/agents/worker.md .claude/agents/verifier.md
+          .claude/agents/planner.md .cursor/agents/worker.md
+          .cursor/agents/verifier.md .cursor/agents/planner.md .codex/agents/*.toml
+          && ! rg -l '^# Worker role|^# Verifier role|^# Planner role'
+          .claude/agents/worker.md .claude/agents/verifier.md
+          .claude/agents/planner.md .cursor/agents/worker.md
+          .cursor/agents/verifier.md .cursor/agents/planner.md
+      - id: HOST-VT-03
+        command: >
+          for s in .agents/skills/cc-*; do b=$(basename "$s"); test -e
+          ".claude/skills/$b"; done
+  - id: HOST-002
+    title: Ship host-native routes in assembly and template seed
+    repositories: [context-circuit-source]
+    paths:
+      - scripts/release-artifact.sh
+      - scripts/release-manifest.txt
+      - template/
+      - .context-circuit/wrapper/migrations/README.md
+      - test/release/
+      - agent-harness/test-template-runtime.sh
+    depends_on: [HOST-001]
+    changes:
+      - >
+        Extend release-artifact.sh to stage the product host-native set
+        (.claude/, .codex/, .cursor/) into the artifact, excluding
+        source-only cc-human-simulator and cc-test-case. Keep .agents/ and
+        .context-circuit/ staging unchanged.
+      - >
+        Add required host-native paths to release-manifest.txt (agent stubs,
+        Claude rules, Claude skill links, Codex agent TOML, Cursor rules).
+        Verify forbidden maintainer paths still absent.
+      - >
+        Copy the same product host folder set into template/ so a new
+        workspace seed includes native routes once product owners are
+        present. Symlinks must survive clone on supported platforms.
+      - >
+        Document host-folder addition in wrapper/migrations/README.md for
+        upgrades from workspaces that lacked native integration.
+      - >
+        Update test/release/test-release.sh and
+        agent-harness/test-template-runtime.sh to expect host-native paths
+        in assembled artifacts and exclude source-only Claude files.
+    acceptance:
+      - id: HOST-AC-04
+        statement: >
+          Release assembly ships the product host-native trees and excludes
+          maintainer-only cc-human-simulator and cc-test-case.
+      - id: HOST-AC-05
+        statement: >
+          The blank template seed carries the same product host-native routes
+          as the assembled artifact.
+    verification:
+      - id: HOST-VT-04
+        command: >
+          rg -n '\.claude|\.codex|\.cursor' scripts/release-artifact.sh
+          scripts/release-manifest.txt
+      - id: HOST-VT-05
+        command: sh test/release/test-release.sh && sh agent-harness/test-template-runtime.sh
+      - id: HOST-VT-06
+        command: >
+          test -f template/.claude/agents/worker.md && test -f
+          template/.codex/agents/worker.toml && test -f
+          template/.cursor/agents/worker.md && test ! -e
+          template/.claude/agents/cc-human-simulator.md
+  - id: HOST-003
+    title: Prove routes stay pointers and host-blocked still holds
+    repositories: [context-circuit-source]
+    paths:
+      - test/
+      - context/domains/host-adapters/
+      - .context-circuit/wrapper/adapters/
+      - .context-circuit/agents/coordinator.md
+    depends_on: [HOST-001, HOST-002]
+    changes:
+      - >
+        Add a focused host-native acceptance suite (for example
+        test/host-native/test-host-routes.sh) that checks product stubs point
+        at owners, forbid credential/transcript patterns in host folders,
+        confirm adapters still require host-blocked on missing children, and
+        confirm source/template product sets match.
+      - >
+        Wire the suite into test/acceptance.sh and map intent criteria
+        AC-HOST-01 through AC-HOST-06 in test/acceptance/criteria-map.yaml
+        when that file tracks intent-level criteria.
+      - >
+        Update context/domains/host-adapters/README.md and, if needed,
+        source-release-and-upgrade to describe committed host-native
+        integration instead of root-only discovery.
+    acceptance:
+      - id: HOST-AC-06
+        statement: >
+          Automated checks prove host folders are routes not policy copies,
+          product source and template sets align, and host-blocked
+          fail-closed behavior is unchanged in adapters and coordinator.
+      - id: HOST-AC-07
+        statement: >
+          Host evidence remains bounded — no credentials, transcripts,
+          provider payloads, or authentication state in shipped host folders.
+    verification:
+      - id: HOST-VT-07
+        command: sh test/host-native/test-host-routes.sh
+      - id: HOST-VT-08
+        command: >
+          rg -n 'host-blocked' .context-circuit/wrapper/adapters/AGENTS.md
+          .context-circuit/wrapper/adapters/CLAUDE.md
+          .context-circuit/wrapper/adapters/CURSOR.md
+          .context-circuit/agents/coordinator.md
+      - id: HOST-VT-09
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

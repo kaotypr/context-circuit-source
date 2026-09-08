@@ -82,3 +82,49 @@ jobs:
             --title "v$V" \
             --notes-file release-notes.md \
             "${{ steps.publish.outputs.archive }}#context-circuit-v$V.tar.gz"
+
+      - name: Push commit and tag to GitLab
+        env:
+          GITLAB_TEMPLATE_PROJECT: ${{ vars.GITLAB_TEMPLATE_PROJECT }}
+          GITLAB_TEMPLATE_TOKEN: ${{ secrets.GITLAB_TEMPLATE_TOKEN }}
+        run: |
+          V="${{ steps.resolve.outputs.version }}"
+          : "${GITLAB_TEMPLATE_PROJECT:?GITLAB_TEMPLATE_PROJECT is not set}"
+          : "${GITLAB_TEMPLATE_TOKEN:?GITLAB_TEMPLATE_TOKEN is not set}"
+          git -C .template-repo remote add gitlab \
+            "https://oauth2:${GITLAB_TEMPLATE_TOKEN}@gitlab.sicepat.tech/${GITLAB_TEMPLATE_PROJECT}.git"
+          git -C .template-repo push gitlab main
+          git -C .template-repo push gitlab "v$V"
+
+      - name: Create GitLab Release
+        env:
+          GITLAB_TEMPLATE_PROJECT: ${{ vars.GITLAB_TEMPLATE_PROJECT }}
+          GITLAB_TEMPLATE_TOKEN: ${{ secrets.GITLAB_TEMPLATE_TOKEN }}
+        run: |
+          V="${{ steps.resolve.outputs.version }}"
+          ARCHIVE="${{ steps.publish.outputs.archive }}"
+          : "${GITLAB_TEMPLATE_PROJECT:?GITLAB_TEMPLATE_PROJECT is not set}"
+          : "${GITLAB_TEMPLATE_TOKEN:?GITLAB_TEMPLATE_TOKEN is not set}"
+          : "${ARCHIVE:?missing publish archive}"
+          test -f release-notes.md
+          test -f "$ARCHIVE"
+          ENC=$(python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["GITLAB_TEMPLATE_PROJECT"], safe=""))')
+          API="https://gitlab.sicepat.tech/api/v4/projects/${ENC}"
+          curl --fail --silent --show-error \
+            --request PUT \
+            --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" \
+            --upload-file "$ARCHIVE" \
+            "${API}/packages/generic/context-circuit/${V}/context-circuit-v${V}.tar.gz"
+          ASSET_URL="${API}/packages/generic/context-circuit/${V}/context-circuit-v${V}.tar.gz"
+          jq -n \
+            --arg name "v$V" \
+            --arg tag "v$V" \
+            --rawfile desc release-notes.md \
+            --arg url "$ASSET_URL" \
+            --arg file "context-circuit-v$V.tar.gz" \
+            '{name:$name, tag_name:$tag, description:$desc, assets:{links:[{name:$file, url:$url, link_type:"package"}]}}' \
+          | curl --fail --silent --show-error \
+              --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" \
+              --header "Content-Type: application/json" \
+              --data @- \
+              "${API}/releases"

@@ -1,0 +1,29 @@
+schema_version: 1
+owner: .context-circuit/wrapper/contracts/schemas/member-local.yaml
+describes: member.local.yaml
+concern: member_identity
+
+purpose: >
+  Host-local, git-ignored identity naming exactly one committed roster member.
+  Never portable and never shipped. Same once-per-machine pattern as
+  repositories.local.yaml. Required before intent-allocate-id and
+  plan-allocate-id (INV-MEMBER-01); the roster is members.yaml. Missing identity
+  fails closed (MEMBER_IDENTITY_MISSING) and must not invent a band or accept a
+  numeric range. An id that is not in the roster is MEMBER_IDENTITY_UNKNOWN.
+
+fields:
+  schema_version: { type: integer, required: true, values: [1] }
+  member:
+    type: string
+    required: true
+    description: Roster member id; must match a key in members.yaml.
+
+resolution_rejects:
+  - missing member.local.yaml (MEMBER_IDENTITY_MISSING)
+  - member id absent from the roster or not a safe id (MEMBER_IDENTITY_UNKNOWN)
+
+rules:
+  - INV-INTENT-01
+  - INV-PLAN-03
+  - INV-MEMBER-01
+  - INV-SEC-01

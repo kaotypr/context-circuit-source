@@ -1,0 +1,94 @@
+schema_version: 2
+intent: i021-id-number-blocks
+title: Allocate intent and plan ids from per-member number bands
+goal: >
+  In a shared Context Circuit workspace, allocate intent ids (iNNN-slug) and plan
+  ids (NNNN-slug) from per-member numeric bands so teammates can create work in
+  parallel without waiting for each other to push, while keeping short speakable
+  sequential ids, never reusing archived numbers inside a band, never embedding
+  person identity in the id or execution branch, and never requiring the user to
+  name a block number in the prompt — local identity is configured once like
+  other host-local workspace settings.
+non_goals:
+  - Putting a person, machine, or workspace name into the plan or intent id.
+  - Changing the execution branch form away from cc/<plan-id>/<repository-id>.
+  - Reusing archived intent or plan numbers inside a band.
+  - Making the user specify a block or band number in ordinary chat.
+  - Requiring a remote push before another member can allocate in their own band.
+  - Renaming or reminting existing intents and plans already in the workspace.
+  - Treating a number band as ownership, assignee, or handoff authority.
+  - Solving Alice-vs-Alice multi-clone sync for the same member (same-person
+    clones still share one band and must sync that member's own workspace).
+constraints:
+  - Teams use one shared workspace repository as the ledger for plans and intents.
+  - Plan id form remains NNNN-<kebab-slug>; intent id form remains i<NNN>-<kebab-slug>.
+  - A committed roster maps each member to non-overlapping intent and plan bands.
+  - A gitignored local identity file at the workspace root names the current
+    member (same host-local convention as repositories.local.yaml /
+    role-tiering.local.yaml); allocation reads it and never asks for a block in
+    the prompt.
+  - Next id is highest ever used in that member's band among active and archived,
+    plus one; never wrap; exhaustion fails clearly and is resolved by assigning
+    a new band in the roster.
+  - Default new-member band size is 99 intents and 999 plans unless the roster
+    records a different non-overlapping assignment.
+  - A multi-plan stack from one intent reserves consecutive ids inside the
+    current member's plan band in one materialization.
+  - Numeric prefixes must be unique workspace-wide; overlapping roster bands or
+    two live/archived ids sharing a prefix fail closed.
+  - Execution branches remain cc/<plan-id>/<repository-id>.
+  - Existing ids stay as allocated; only new allocation uses bands.
+  - Preserve one-owner-per-rule: identity grammar and allocation stay owned by
+    the existing plan/intent contracts and runtime verbs, updated in place.
+acceptance_criteria:
+  - id: AC-BAND-01
+    statement: >
+      Two different members can allocate new intent and plan ids without either
+      waiting for the other to push, and their new ids do not share a numeric
+      prefix.
+  - id: AC-BAND-02
+    statement: >
+      New intent and plan ids keep the existing short forms (iNNN-slug and
+      NNNN-slug) with no person or machine token in the id.
+  - id: AC-BAND-03
+    statement: >
+      Ordinary authoring never requires the user to state a block or band number;
+      allocation uses a one-time local member identity plus the committed roster.
+  - id: AC-BAND-04
+    statement: >
+      Missing local member identity stops once and asks the user to choose an
+      existing roster member (or set up the first member), then writes the local
+      identity — it does not invent a band or ask for numeric ranges in chat.
+  - id: AC-BAND-05
+    statement: >
+      Archived intent and plan numbers inside a band are never reused; the next
+      id advances past the highest ever used in that band.
+  - id: AC-BAND-06
+    statement: >
+      A multi-plan stack from one intent receives consecutive plan ids inside the
+      current member's band, reserved together.
+  - id: AC-BAND-07
+    statement: >
+      Execution branches continue to use cc/<plan-id>/<repository-id> with no
+      member token added.
+  - id: AC-BAND-08
+    statement: >
+      Existing intents and plans keep their current ids; enabling bands does not
+      rename them.
+  - id: AC-BAND-09
+    statement: >
+      Overlapping member bands, or two active/archived ids sharing a numeric
+      prefix, are rejected; a full band fails clearly without wrapping.
+scope:
+  repositories:
+    - id: context-circuit-source
+      paths:
+        - ".context-circuit/wrapper/runtime/"
+        - ".context-circuit/wrapper/contracts/"
+        - ".context-circuit/docs/"
+        - "template/"
+        - "test/"
+        - "context/"
+tier: standard
+status: approved
+contract_digest: sha256:00c60a572ce4d74763a43274584fe55efa18b67703505eed9dcc6d0681a22251

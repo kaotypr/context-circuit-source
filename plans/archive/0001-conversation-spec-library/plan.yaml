@@ -1,0 +1,199 @@
+schema_version: 3
+plan: 0001-conversation-spec-library
+intent: i001-conversation-spec-library
+title: Establish the conversation-spec library as the living harness specification
+status: draft
+objective: >-
+  Make agent-harness/conversations/ the descriptive, whole-surface and
+  generative source of the agent harness: plots specify expected human and
+  coordinator behavior, including expected coordinator outputs; deterministic
+  generation produces the live scenario projections; the harness checks
+  conversation fidelity, grounded artifacts, and bidirectional drift; and the
+  existing 22 cases retain their calibrated behavior while becoming generated
+  projections.
+repositories:
+  - id: context-circuit-source
+    purpose: Hosts the source-only agent harness, conversation plots, generator, grader, and live scenario projections.
+plan_dependencies: []
+product_knowledge:
+  - id: invariants
+    path: wrapper/contracts/invariants.yaml
+    reason: Owns the product rules cited by descriptive plots; read-only.
+  - id: acceptance-surface
+    path: test/acceptance/criteria-map.yaml
+    reason: Owns the AC-* definitions and deterministic suite ownership; read-only.
+  - id: architecture
+    path: context/ARCHITECTURE.md
+    reason: Grounds current coordinator, worker, verifier, and assurance ownership.
+  - id: intent
+    path: context/domains/intent/README.md
+    reason: Grounds Gate 1, intent artifacts, and the intent-to-plan relationship.
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Grounds post-approval tracing, feasibility, manifest evidence, and question classification.
+  - id: assurance
+    path: context/domains/assurance/README.md
+    reason: Grounds the Explore/Standard/Critical ladder and independent-verifier expectation.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Grounds intent-derived authorization and the absence of a second plan-approval gate.
+  - id: plan-review
+    path: context/domains/plan-review/README.md
+    reason: Grounds plan derivation, task dependencies, and plan-record responsibilities.
+context_grounding:
+  summary: >-
+    The re-approved Standard intent is feasible and scoped to agent-harness/.
+    The refreshed trace records 39 plots, 39 generated-looking cases, and 22
+    currently executed scenario cases, with no tracked generator or drift guard.
+    The live runner still resolves cases from agent-harness/scenarios/. Recent
+    host-driver changes add a native-child distinction that must remain honest
+    in role evidence. The current corpus also contains stale lifecycle wording
+    that must be refit before the plot source becomes authoritative.
+  constraints:
+    - All implementation changes stay under agent-harness/.
+    - wrapper/, template/, sources/, invariants, and acceptance criteria remain untouched.
+    - The library remains descriptive and cites existing INV-* and AC-* rules.
+    - Existing scenario seeds, budgets, identities, and AC-36 behavior are preserved.
+    - The generated-case overlay is limited to host lane and per-host budgets.
+    - Code-discovered feasibility questions appear after initial approval; an intent-changing answer returns through Gate 1 before planning.
+  decisions:
+    - Keep this as one plan with four ordered tasks: every partition shares one repository, one bounded agent-harness change surface, one worker lifecycle, and one independent verification boundary; task dependencies are intra-plan, so no plan_dependencies edge is needed.
+    - Treat plots as the only source. One generator run emits conversations/generated/<plot-id>.case.yaml as the canonical generated artifact and scenarios/<plot-id>/case.yaml as the runner projection, with identity and content-hash checks proving the projection is generated rather than hand-authored.
+    - Use coordinator_must for expected coordinator outputs and generated state/post-condition checks for machine evidence; do not add a product contract field or expose internal filenames in Dialogue.
+    - Refitting follows the approved v1.0 lifecycle: initial approval precedes code inspection and feasibility, and an intent-changing question discovered there returns through Gate 1 before plan derivation.
+    - Use the existing agent-harness/test-template-runtime.sh acceptance bridge rather than modifying test/acceptance.sh.
+    - Keep Product Knowledge impact empty; this source-only harness change does not silently write durable context.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: false
+tasks:
+  - id: CSL-001
+    title: Define the plot source and refit stale v1.0 conversations
+    repositories: [context-circuit-source]
+    paths:
+      - agent-harness/conversations/README.md
+      - agent-harness/conversations/FLOW.md
+      - agent-harness/conversations/coverage/
+      - agent-harness/conversations/plots/
+      - agent-harness/README.md
+      - agent-harness/scenarios/README.md
+    depends_on: []
+    changes:
+      - Establish the externally anchored inventory and parser-facing Spec/Dialogue conventions.
+      - Make coordinator_must descriptions explicit about intent artifacts and downstream trace/plan outcomes while keeping Dialogues free of internal filenames.
+      - Refit feasibility, Product Knowledge, system-design, delivery, tier, legacy-label, count, and acceptance-mapping documentation to v1.0.
+      - Freeze and record the net-new plot set.
+    acceptance:
+      - id: CSL-AC-001
+        statement: Every inventory entry has one complete plot with Spec and Dialogue, and every plot names coordinator expectations, reporting rules, citations, and a terminal outcome.
+      - id: CSL-AC-002
+        statement: Intent-flow plots describe expected intent, trace, and plan outputs in coordinator expectations while human-facing Dialogues do not expose internal filenames, ids, or mechanics.
+      - id: CSL-AC-003
+        statement: All plot citations resolve to the current invariant and acceptance surfaces, and stale lifecycle wording and operation names are removed.
+    verification:
+      - id: CSL-VT-001
+        command: sh agent-harness/conversations/test-library.sh --check whole-surface
+      - id: CSL-VT-002
+        command: sh agent-harness/conversations/test-library.sh --check surface-coverage
+      - id: CSL-VT-003
+        command: sh agent-harness/conversations/test-library.sh --check descriptive-only
+      - id: CSL-VT-004
+        command: sh agent-harness/conversations/test-library.sh --check reporting-rules
+      - id: CSL-VT-005
+        command: sh agent-harness/conversations/test-library.sh --check dialogue-faithful
+  - id: CSL-002
+    title: Generate cases deterministically and guard inventory-to-live drift
+    repositories: [context-circuit-source]
+    paths:
+      - agent-harness/conversations/generate.sh
+      - agent-harness/conversations/test-library.sh
+      - agent-harness/conversations/generated/
+      - agent-harness/scenarios/
+    depends_on: [CSL-001]
+    changes:
+      - Implement plot-only deterministic generation with full semantic-field propagation and a bounded host/budget overlay.
+      - Emit the canonical generated artifact and the runner projection while preserving the 22 existing scenario directory identities.
+      - Enforce inventory, plot, generated, and live-scenario bijection, orphan detection, and hand-edit/plot-edit drift failures.
+      - Add full-set forward mutation and decorative reverse-mutation checks.
+    acceptance:
+      - id: CSL-AC-004
+        statement: Regeneration of all cases is byte-identical outside the enumerated overlay, reads no committed generated case as input, and every semantic Spec field is traceably propagated or proven decorative.
+      - id: CSL-AC-005
+        statement: Generated cases and live scenarios have the documented bijective relationship, and inventory, plot, generated-case, and live-scenario drift fails mechanically.
+      - id: CSL-AC-006
+        statement: Only the host lane and per-host budgets are overlay data; all other case semantics derive from plots.
+    verification:
+      - id: CSL-VT-006
+        command: sh agent-harness/conversations/generate.sh --check-all
+      - id: CSL-VT-007
+        command: sh agent-harness/conversations/test-library.sh --check overlay
+      - id: CSL-VT-008
+        command: sh agent-harness/conversations/test-library.sh --check wiring
+      - id: CSL-VT-009
+        command: sh agent-harness/conversations/test-library.sh --check drift
+  - id: CSL-003
+    title: Add artifact-aware grading and required harness capabilities
+    repositories: [context-circuit-source]
+    paths:
+      - agent-harness/human/run-scenario.sh
+      - agent-harness/human/grade.sh
+      - agent-harness/human/run-matrix.sh
+      - agent-harness/human/drivers/
+      - agent-harness/fixtures/
+      - agent-harness/human/test-*.sh
+    depends_on: [CSL-002]
+    changes:
+      - Add intent, trace, and plan artifact/state predicates needed by coordinator expectations and post-conditions.
+      - Add id-agnostic entity binding, wrong-entity/kind/count negatives, falsifiable post-condition fixtures, new seed states, faults, and host-aware access auditing.
+      - Preserve disposable workspace setup and the Codex/Cursor access-audit degradation, including immediate native-child role evidence boundaries.
+    acceptance:
+      - id: CSL-AC-007
+        statement: Intent-flow cases can verify expected intent artifacts and downstream trace/plan state without fixed generated ids or internal-name leakage.
+      - id: CSL-AC-008
+        statement: Every generated post-condition is individually falsifiable, and every enumerated new fixture or predicate has a failing negative fixture.
+      - id: CSL-AC-009
+        statement: Host-specific access and role evidence remains honest and no credentials or provider payloads enter harness artifacts.
+    verification:
+      - id: CSL-VT-010
+        command: sh agent-harness/conversations/test-library.sh --check id-agnostic
+      - id: CSL-VT-011
+        command: sh agent-harness/conversations/test-library.sh --check falsifiable
+      - id: CSL-VT-012
+        command: sh agent-harness/conversations/test-library.sh --check new-fixtures
+  - id: CSL-004
+    title: Rebuild the corpus and wire the live execution floor
+    repositories: [context-circuit-source]
+    paths:
+      - agent-harness/conversations/generated/
+      - agent-harness/scenarios/
+      - agent-harness/conversations/coverage/
+      - agent-harness/test-template-runtime.sh
+      - agent-harness/human/
+    depends_on: [CSL-003]
+    changes:
+      - Regenerate the 22 existing cases from plots while preserving calibrated seeds, budgets, identities, and assertion strength.
+      - Add and execute the frozen net-new successful conversation cases through the live coordinator when required host lanes are available.
+      - Gate library checks through the existing acceptance bridge and keep AC-36's deterministic five-family suite unchanged.
+      - Mechanically verify the five acceptance-criterion corrections and the unchanged live-execution floor.
+    acceptance:
+      - id: CSL-AC-010
+        statement: The 22 existing cases retain calibrated setup and assertion strength, and AC-36 remains unchanged and green.
+      - id: CSL-AC-011
+        statement: Every frozen net-new successful conversation case reaches its expected live grade, while explicitly expected failure cases assert their specific failure mode.
+      - id: CSL-AC-012
+        statement: The implementation diff is fenced to agent-harness/ and the baseline acceptance suite remains green.
+    verification:
+      - id: CSL-VT-013
+        command: sh agent-harness/conversations/test-library.sh --check regeneration-equivalence
+      - id: CSL-VT-014
+        command: sh agent-harness/conversations/test-library.sh --check corrections
+      - id: CSL-VT-015
+        command: sh test/scenarios/test-scenarios.sh
+      - id: CSL-VT-016
+        command: sh test/acceptance.sh
+      - id: CSL-VT-017
+        command: sh agent-harness/human/run-matrix.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

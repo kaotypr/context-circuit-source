@@ -1,0 +1,38 @@
+schema_version: 3
+plan: 0001-example
+intent: i001-example
+title: Example plan
+status: draft
+objective: One-sentence description of the outcome.
+repositories:
+  - id: api
+    purpose: What this repository owns for the plan. Exactly one repository per plan.
+product_knowledge:
+  - id: domain.example
+    path: context/domains/example/README.md
+    reason: Why this knowledge unit grounds the plan.
+context_grounding:
+  summary: Short grounding statement.
+  constraints: []
+  decisions: []
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: true
+tasks:
+  - id: API-001
+    title: First task
+    repositories: [api]
+    paths: [src/example, test/example]
+    depends_on: []
+    changes:
+      - Concrete change to make.
+    acceptance:
+      - id: API-AC-001
+        statement: Observable desired result.
+    verification:
+      - id: API-VT-001
+        command: test/example.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

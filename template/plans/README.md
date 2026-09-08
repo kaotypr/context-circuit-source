@@ -15,10 +15,15 @@ plans/
 
 - Plan IDs are stable and take the form `NNNN-<kebab-slug>` (for example
   `0001-billing-v2`). The sequence is never reused.
-- Plan status is human-controlled: `draft → approved → done`.
+- Plan status is `draft → done`: a plan derives from an approved intent (no separate
+  plan approval and no automated scope gate); Standard `done` follows candidate
+  acceptance plus delivery, while Critical `done` requires explicit completion.
 - `plans/INDEX.md` lists only active plans. Archived plans are excluded from
   normal agent reads until an explicit restore.
 
-Approval, execution, completion, archive, restore, and delivery are separate
-explicit human actions. Creating or reviewing a plan never approves or executes
-it. Contract owner: `wrapper/contracts/schemas/plan.yaml`.
+Intent approval and delivery are the two explicit human gates. Execution follows
+an approved intent (scope-safety is settled at delivery, Gate 2); Standard completion is inferred from
+candidate acceptance plus delivery, while Critical completion is explicit.
+Explore is planless. Creating or reviewing a plan never approves or executes it,
+and verification never implies completion. Contract owner:
+`.context-circuit/wrapper/contracts/schemas/plan.yaml`.

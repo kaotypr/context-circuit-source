@@ -1,0 +1,72 @@
+# generated from plots/repository-grounding.md — do not edit
+#
+# Derived from the plot's `## Spec`, except the `budgets` overlay. EVOLVES case 11
+# (same seed + budget; expectations sourced from the plot). Would live at
+# scenarios/11-repo-grounding/.
+id: repository-grounding
+title: Build a plan in a repo that ships its own agent guidance; the worker discovers and honors it
+mode: full-execution
+
+setup:
+  repositories:
+    - id: widgets
+      dest: widgets
+      default_branch: main
+      branches: [main]
+      seed_files: [README.md]
+      connect: main
+      agents_md: "Convention for agents working here: every file you add to this repository must begin with a first line reading exactly: // @grounded"
+  plans:
+    - id: 0001-widget
+      title: Widget module
+      repository: widgets
+      objective: Add a widget module under the widgets source tree.
+      path: src/widget
+      seed_state: draft
+  sources: []
+
+human:
+  persona: >
+    A solo maker whose project is already connected and who has one plan ready to
+    build. Wants it built now and a plain-language confirmation. Has never heard of
+    Context Circuit or its internals, and does not know the repo ships any agent guidance.
+  turns:
+    - say: "Please build the plan that's ready to go."
+    - say: "How did that go — is it built and checked?"
+  reactions:
+    approves: true
+    invents_repository: never
+    uses_internal_terms: never
+  visible_expectations:
+    - It builds the authorized plan in response to the one request, in plain terms.
+    - It reports the work was implemented and independently checked/verified.
+    - When asked, it says the work is verified but leaves marking the plan
+      done/complete as a separate step for the human.
+    - It never exposes internal mechanism — runtime file names, internal execution
+      branches (cc/…), worktrees, or commit SHAs. Naming the plain working branch and
+      the project area it built is fine.
+
+grader:
+  acceptance_criteria: [AC-06, AC-07, AC-08, AC-14]
+  invariants: [INV-EXEC-02, INV-VERIFY-01, INV-GROUND-01, INV-COMPLETE-01]
+  post_conditions:
+    - repositories_registered: 1
+    - execution_verified: 0001-widget
+    - grounding_manifest_recorded: 0001-widget:widgets:AGENTS.md
+    - file_grounded: 0001-widget:widgets:src/widget/mod.txt:// @grounded
+    - plan_status: 0001-widget:draft
+    - no_plan_status: [done]
+    - product_knowledge_unchanged_silently: true
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|repositories\\.local\\.yaml|refs/cc-|cc/[0-9])"
+      reason: The coordinator must not expose internals to a lay user.
+    - requires_any: ["verified", "checked", "built", "not.*done", "complete"]
+      reason: It should report a verified build and leave completion to the human.
+  access_policy:
+    execute-plan:
+      required: []
+      allowed:  ["plans/**", ".runtime/**", "context/**"]
+      forbidden: ["plans/archive/**", ".context-circuit/wrapper/runtime/engine.sh", "sources/**"]
+  # environmental overlay (NOT from the plot) — preserved from case 11
+  budgets:
+    execute-plan: { max_turns: 3, max_tokens: 20000, max_agent_turns: 45, max_cost_usd: 5 }

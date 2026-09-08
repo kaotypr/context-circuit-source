@@ -2,9 +2,9 @@
 
 Accepted glossary for the Context Circuit source project. The source project's
 domain is Context Circuit itself, so this page accepts the product vocabulary
-shipped to workspaces as `docs/terminology.md`. Term *meaning* and the
+shipped to workspaces as `.context-circuit/docs/terminology.md`. Term *meaning* and the
 *user-facing translation* are owned there, and their exact authority is settled
-by the runtime contracts under `wrapper/contracts/`; this page records that the
+by the runtime contracts under `.context-circuit/wrapper/contracts/`; this page records that the
 source project accepts that vocabulary as Product Knowledge and makes it
 retrievable.
 
@@ -12,23 +12,26 @@ retrievable.
 
 | Term | Meaning |
 | --- | --- |
-| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product. The directory `wrapper/` holds its shipped layer (runtime, contracts, adapters). |
+| Wrapper | Accepted synonym for the universal project workspace — the Context Circuit product. The directory `.context-circuit/wrapper/` holds its shipped layer (runtime, contracts, adapters). |
 | Product Knowledge | Accepted, agent-oriented understanding of the project, stored as indexed, human-readable units under `context/`. |
 | Context unit / context index | One knowledge unit; the retrieval catalog (`context/INDEX.md`) mapping concepts and aliases to units. |
-| Plan / plan status | Human-reviewed intent for an outcome; its human-owned `draft`/`approved`/`done` state. |
-| Execution | One runtime attempt to implement an approved plan, with one worker and one independent verifier. |
-| Worker / verifier | The single role that implements an approved plan and commits its changes for an execution; the independent read-only role that checks the worker's latest commits. |
+| Plan / plan status | A derivation of an approved intent for an outcome; its human-owned `draft`/`done` state (no separate plan approval). |
+| Execution | One runtime attempt to implement an intent-authorized plan, with one worker and one independent verifier. |
+| Worker / verifier | The single role that implements an intent-authorized plan and commits its changes for an execution; the independent read-only role that checks the worker's latest commits. |
 | Repair attempt | A new worker commit plus a new independent check after a failed verification. |
-| Completion | The human decision to mark a plan done after a verified execution. |
+| Completion | The implementation-completion record: an explicit human mark-done at Standard and Critical. Explore is planless. Delivery does not complete a plan. When the plan affected Product Knowledge, mark-done then updates live context files in place. |
 | Archive / restore | Setting a plan aside, or bringing it back, without changing its status. |
 | Delivery | Opening a pull request, merging, or pushing — always a separate, explicit action. "Publish" is not a delivery word; it names the external surface. |
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
+| Member roster | Committed `members.yaml` mapping each person to non-overlapping intent and plan number bands. Portable with the workspace. |
+| Member identity | Gitignored `member.local.yaml` naming which roster member this machine is — set once, like `repositories.local.yaml`. |
+| Number band | The inclusive id range a member allocates from. Next id is highest-in-band plus one (active and archived). Exhaustion adds a new band; it never wraps. |
 | Host-blocked | A state where the environment cannot run a required step, so the coordinator reports it and preserves the work rather than faking it. |
-| Plan stack | A named set of approved plans executed in one run (v0.6 run-stack); ordered and overlapped safely with no new authority. |
-| Plan dependency | Inter-plan ordering (`plan_dependencies`); declaring it makes a plan `schema_version: 2`. Distinct from a task's `depends_on`. |
+| Plan stack | A named set of intent-authorized plans executed in one run; ordered and overlapped safely with no new authority. |
+| Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's `depends_on`. A v1.0 plan is `schema_version: 3`. |
 | Path lease | A `(repository, path-region)` reservation extending the one-worker lock; overlapping plans serialize, disjoint ones run together. |
-| Execution base / integration base | The commit a plan builds on: anchor tip, a predecessor branch (stack), or a runtime-authored integration merge (≥2 predecessors). |
-| Drift guard | Rebase-onto-current-anchor-tip + re-verify before a pull request when the recorded base has diverged. |
+| Execution base / integration base | The commit a plan builds on: base tip, a predecessor branch (stack), or a runtime-authored integration merge (≥2 predecessors). |
+| Drift guard | Rebase-onto-current-base-tip + re-verify before a pull request when the recorded base has diverged. |
 | Repository grounding | The worker honoring the target repository's own agent guidance, discovered live from the worktree. |
 | Grounding manifest / worker brief | The discovered guidance (files, skills, environment) for one execution; the assembled instructions handed to the worker. |
 | System design | A structured source describing the shape of a change, authored via `cc-system-design`; a source, not a lifecycle stage. |
@@ -41,25 +44,32 @@ retrievable.
 
 The coordinator reports actions by their effect and never exposes internal
 mechanism unless a user asks for diagnostics. The canonical internal → plain
-mapping is the "say the effect, not the mechanism" table in `docs/terminology.md`
-(worktree, anchor branch, binding, execution branch, verifier, worker,
+mapping is the "say the effect, not the mechanism" table in `.context-circuit/docs/terminology.md`
+(worktree, base branch, binding, execution branch, verifier, worker,
 host-blocked, delivery, archive/restore, and internal file names), whose
-authority is settled by the runtime contracts under `wrapper/contracts/`.
+authority is settled by the runtime contracts under `.context-circuit/wrapper/contracts/`.
 
-## Provenance
+## Implementation references
 
-- `docs/terminology.md` — the shipped product glossary and internal → user-facing
+- `.context-circuit/docs/terminology.md` — the shipped product glossary and internal → user-facing
   translation table; the coordinator references it, and its authority is settled
-  by the runtime contracts under `wrapper/contracts/`.
-- `agents/coordinator.md` — the role that applies the translation.
-- Design material under `sources/` is historical maintainer input, not a live
-  owner, and is read only when a request names it.
+  by the runtime contracts under `.context-circuit/wrapper/contracts/`.
+- `.context-circuit/agents/coordinator.md` — the role that applies the translation.
 
-Accepted from proposal `0001-terminology-glossary` on 2026-08-24. Extended
-2026-08-27 from proposal `0022-change-terminology` with the v0.6 terms (plan
+Historical design material is maintainer input, not a live owner, and is read
+only when a request names it.
+
+## Acceptance notes
+
+Accepted 2026-08-24. Extended 2026-08-27 with the plan-stack terms (plan
 stack, path lease, execution/integration base, drift guard, repository grounding,
-grounding manifest, worker brief, system design), mirrored in `docs/terminology.md`.
-Extended 2026-08-28 from proposal `0025-change-terminology`: the Delivery row drops
-"publishing" (git delivery no longer uses the word), and the external-surface terms
-(publication, publish/`cc-publish`, publication kind, publication `instructions`) are
-added and mirrored in `docs/terminology.md`.
+grounding manifest, worker brief, system design), mirrored in `.context-circuit/docs/terminology.md`.
+Extended 2026-08-28: the Delivery row drops "publishing" (git delivery no longer
+uses the word), and the external-surface terms (publication, publish/`cc-publish`,
+publication kind, publication `instructions`) are added and mirrored in
+`.context-circuit/docs/terminology.md`.
+Extended 2026-09-06: Completion is explicit mark-done at Standard and Critical;
+delivery does not complete a plan; mark-done then updates live context files
+when Product Knowledge was affected.
+Extended 2026-09-08: member roster, member identity, and number band — intent and
+plan ids allocate inside the current member's band (INV-MEMBER-01).

@@ -14,6 +14,7 @@ review_date: 2026-11-24
 freshness: accepted-from-current-wrapper
 assumptions:
   - Portable identity lives in workspace.yaml; host-local paths in repositories.local.yaml.
+  - Member roster is portable members.yaml; host-local identity is member.local.yaml.
 unknowns: []
 contradictions: []
 acceptance:
@@ -21,7 +22,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Workspace orientation and repository binding
@@ -38,7 +39,7 @@ init`, missing-binding, and repository-resolution requests here. Owned by the
 
 Inside: workspace orientation (read-only), portable logical repository ids,
 credential-free canonical URLs, `default_branch` as portable clone guidance,
-host-local bindings (`path` + user-selected `anchor_branch`), the reserved
+host-local bindings (`path` + user-selected `base_branch`), the reserved
 `workspace` id at path `.`, and fail-closed binding resolution.
 
 Outside: the execution worktree lifecycle (see [plan-execution](../plan-execution/README.md)),
@@ -56,10 +57,10 @@ optional credential-free canonical URL, and an optional `default_branch`. It
 never contains a machine-specific path or credentials (INV-REPO-01).
 
 Each host may create `repositories.local.yaml` binding a key already named in
-`workspace.yaml` to a concrete `path` and a user-selected `anchor_branch`.
-`anchor_branch` is the required execution base and default pull-request target;
+`workspace.yaml` to a concrete `path` and a user-selected `base_branch`.
+`base_branch` is the required execution base and default pull-request target;
 `default_branch` is only portable clone/setup guidance and is never inferred as
-the anchor (INV-REPO-02). A missing binding file is expected on a fresh clone:
+the base branch (INV-REPO-02). A missing binding file is expected on a fresh clone:
 the engine reports `BINDING_MISSING`; the agent does not scan, invent a path, or
 create the file — the human supplies an explicit `path` or connects/clones the
 repository.
@@ -75,14 +76,25 @@ scanning the filesystem or substituting a similarly named path (INV-REPO-04).
 Workspace-relative paths reject traversal and unsafe symlinks; credentials
 remain in host Git configuration or the host agent (INV-SEC-01).
 
+## Member identity
+
+Portable member roster lives in committed `members.yaml` (non-overlapping intent
+and plan number bands). Host-local identity lives in gitignored
+`member.local.yaml`, the same once-per-machine convention as
+`repositories.local.yaml`. Gitignore is not a read block. Missing identity
+fails closed (`MEMBER_IDENTITY_MISSING`); the human chooses an existing roster
+member once. Allocation never asks for a block number (INV-MEMBER-01).
+
 ## Workflows
 
-- Orient, connect, clone, or initialize a repository: `docs/getting-started.md`
+- Orient, connect, clone, or initialize a repository: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
 - Shared identity: `workspace.yaml` `repositories.<key>`
-- Host binding: `repositories.local.yaml` (`path`, `anchor_branch`)
+- Host binding: `repositories.local.yaml` (`path`, `base_branch`)
+- Member roster: `members.yaml` (portable bands)
+- Member identity: `member.local.yaml` (host-local; gitignored)
 - Convenience directory: `repositories/<key>` (gitignored; never assumed present)
 - Reserved id: `workspace` at path `.`
 - Missing-binding signal: `BINDING_MISSING`
@@ -103,35 +115,30 @@ tokens, private keys, provider payloads, or credentials.
 Registration is two parts: record the portable logical identity and add a
 host-local binding. Registration does not clone; a clone or `git init` first
 reports the source URL, destination, branch, and external Git effect. A `git
-init` creates the directory, initializes with the anchor as the initial branch,
-records identity and anchor, and makes an initial (optionally empty) anchor
+init` creates the directory, initializes with the base branch as the initial branch,
+records identity and base branch, and makes an initial (optionally empty) base
 commit; a repository with no commit is registered but not ready, because it
 cannot provide a worktree base.
 
 A connected repository moves through states — registered, bound, unavailable,
 mismatched, dirty, ready, active — reported in project terms rather than raw
-record names. `anchor_branch` is the user's actual active branch (for example
+record names. `base_branch` is the user's actual active branch (for example
 `development` or `kao/development/v0.5`), not the same as `default_branch`;
-different users may set different anchors for the same logical repository.
+different users may set different base branches for the same logical repository.
 
 ## Implementation references
 
-- `wrapper/runtime/engine.sh`: `cc_repository_register`, `cc_binding_field`,
-  `cc_repo_resolve`, `cc_repo_anchor_commit`, `cc_repo_clean`,
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_repository_register`, `cc_binding_field`,
+  `cc_repo_resolve`, `cc_repo_base_commit`, `cc_repo_clean`,
   `cc_repository_preflight`, `cc_worktree_prepare`, `cc_workspace_validate`,
   `cc_workspace_init`
-- `wrapper/contracts/schemas/workspace.yaml`,
-  `wrapper/contracts/schemas/repositories-local.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-REPO-01, INV-REPO-02, INV-REPO-03,
-  INV-REPO-04, INV-SEC-01
+- `.context-circuit/wrapper/contracts/schemas/workspace.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/repositories-local.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/members.yaml`,
+  `.context-circuit/wrapper/contracts/schemas/member-local.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-REPO-01, INV-REPO-02, INV-REPO-03,
+  INV-REPO-04, INV-SEC-01, INV-MEMBER-01
 - `.agents/skills/cc-workspace/SKILL.md`
-
-## Provenance
-
-Re-grounded on the current wrapper at HEAD `4b8ac0b`. The previous-version
-maintainer plans that first seeded this page were deleted in `4b8ac0b`; their
-provenance was retired (see the accepted retirement of `context/sources.yaml`).
-Raw `sources/` was not scanned.
 
 ## Acceptance notes
 

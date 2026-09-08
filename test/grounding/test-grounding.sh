@@ -13,8 +13,8 @@ trap 'rm -rf "$ws"' EXIT HUP INT TERM
 
 # the shipped brief template is promoted beside the runtime on release; mirror
 # that here so cc_worker_brief_assemble can find it in the fixture.
-mkdir -p "$ws/wrapper/runtime"
-cp "$ROOT/wrapper/adapters/worker-brief.md" "$ws/wrapper/runtime/worker-brief.md"
+mkdir -p "$ws/.context-circuit/wrapper/runtime"
+cp "$ROOT/.context-circuit/wrapper/adapters/worker-brief.md" "$ws/.context-circuit/wrapper/runtime/worker-brief.md"
 
 # --- a rich repo: agent guidance + a skill + cursor rules + a lockfile ---
 cc_fx_repo "$ws" widgets development
@@ -28,13 +28,13 @@ printf '{ "name": "widgets" }\n' >"$wr/package-lock.json"
 git -C "$wr" add -A && git -C "$wr" commit -q -m 'chore: add agent guidance + toolchain'
 
 cc_fx_plan_ex "$ws" 0001-widget "Widget" widgets src/widget ""
-cc_plan_approve "$ws" 0001-widget >/dev/null
 exec=$(cc_execution_begin "$ws" 0001-widget sess1 | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/0001-widget/$exec"
 
 # 1. discovery recorded the manifest as execution evidence
 mf="$edir/grounding/widgets.yaml"
 require_file "$mf"
+contains "$mf" "schema_version: 1"
 contains "$mf" "- AGENTS.md"
 contains "$mf" "- CLAUDE.md"
 contains "$mf" "- .cursor/rules/"
@@ -64,7 +64,6 @@ cc_brief_preflight "$brief" >/dev/null
 # --- a doc-less repo: code, but no agent guidance ---
 cc_fx_repo "$ws" plain development
 cc_fx_plan_ex "$ws" 0002-plain "Plain" plain src/plain ""
-cc_plan_approve "$ws" 0002-plain >/dev/null
 exec2=$(cc_execution_begin "$ws" 0002-plain sess2 | sed -n 's/^execution_id: //p')
 edir2="$ws/.runtime/executions/0002-plain/$exec2"
 mf2="$edir2/grounding/plain.yaml"
@@ -90,10 +89,10 @@ printf '# Worker brief\n\n## Repository grounding\n\n@@GROUNDING@@\n' >"$ws/unfi
 expect_failure cc_brief_preflight "$ws/unfilled-brief.md"
 
 # --- contracts: precedence + friction->proposal are owned, not duplicated ---
-contains "$ROOT/wrapper/contracts/invariants.yaml" "INV-GROUND-02"
-contains "$ROOT/wrapper/contracts/schemas/worker-handoff.yaml" "repository_friction"
+contains "$ROOT/.context-circuit/wrapper/contracts/invariants.yaml" "INV-GROUND-02"
+contains "$ROOT/.context-circuit/wrapper/contracts/schemas/worker-handoff.yaml" "repository_friction"
 
 # --- the runtime discovery emits DATA, not a model prompt (INV-RUNTIME-01) ---
-not_contains "$ROOT/wrapper/runtime/engine.sh" "claude -p"
+not_contains "$ROOT/.context-circuit/wrapper/runtime/engine.sh" "claude -p"
 
 pass 'repository grounding'

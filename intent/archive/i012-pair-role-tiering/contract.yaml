@@ -1,0 +1,53 @@
+schema_version: 2
+intent: i012-pair-role-tiering
+title: Honor role-tiering.local.yaml in Explore
+goal: >
+  The host-local per-role (model, effort) configuration in
+  role-tiering.local.yaml must apply during Explore (cc-pair) the same way it
+  applies during cc-execute. The cc-pair skill must include the same
+  "Model & effort per role" step that cc-execute already has, so the Explore
+  worker runs at the configured model and effort. The observed failure —
+  role-tiering.local.yaml ignored in Explore, with the worker model and
+  effort not matching the file — is the defect this change closes.
+
+non_goals:
+  - Changing what Explore means, the one-repository rule, or the absence of
+    an independent verifier.
+  - Letting model or effort select a consequence tier, grant a gate, or
+    change independence or the failure limit.
+  - Redesigning the role-tiering file format except as needed to honor it
+    in Explore.
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - Role tiering remains bounded host evidence: it changes cost and speed,
+    never meaning, independence, or the failure limit.
+  - Adapter defaults still apply when no local file is present.
+  - Product behavior has one owner per rule; do not add a second
+    Explore-only tiering policy.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-PAIR-HONORS-LOCAL
+    statement: >
+      When role-tiering.local.yaml sets the worker model and effort, an
+      Explore worker is launched with that model and effort, not with a
+      different default that ignores the file.
+  - id: AC-PAIR-SKILL-STEP
+    statement: >
+      The cc-pair skill includes a Model & effort per role step equivalent
+      to cc-execute, so the coordinator applies the setting before spawning
+      the worker.
+  - id: AC-MEANING-UNCHANGED
+    statement: >
+      Applying the setting does not change Explore's meaning, drop or add a
+      verifier, or alter independence or the failure limit.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:12e75facc8bc901c2df113c4ccadaee34715ad279e0fdc2a9858db54df472caf

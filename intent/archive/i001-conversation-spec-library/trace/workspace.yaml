@@ -1,0 +1,242 @@
+schema_version: 1
+intent: i001-conversation-spec-library
+repository: workspace
+
+file_map:
+  - path: agent-harness/conversations/README.md
+    role: "plot format, source/generated relationship, catalog, overlay rules, and proposed build order"
+    call_sites: "The README defines ## Spec fields, including decision_points.coordinator_must and expected_end_state; it currently documents the library as unwired."
+  - path: agent-harness/conversations/FLOW.md
+    role: "lifecycle spine and branch index"
+    call_sites: "The golden path links onboarding, intent Gate 1, tracing/feasibility, plan derivation, execution, acceptance, delivery, inferred completion, and reconciliation."
+  - path: agent-harness/conversations/coverage/*.md
+    role: "phase coverage maps and harness-gap inventory"
+    call_sites: "phase-1 through phase-6b map plots to the 22 existing scenarios and identify missing setup, grader, id, and live-execution capabilities."
+  - path: agent-harness/conversations/plots/*.md
+    role: "39 current conversation specifications; each contains ## Spec and ## Dialogue"
+    call_sites: "The Spec supplies human_turns, decision_points.coordinator_must, reporting_rules, expected_end_state, access_discipline, and citations; the Dialogue is annotated with decision-point ids."
+    current_findings: "The corpus is broad but has stale v1.0 remnants: init-project-context, legacy scenario names, pre-plan feasibility shapes, an unresolved pre-approval question in one feasibility plot, and a system-design plot that implies automatic intent spawning."
+  - path: agent-harness/conversations/generated/*.case.yaml
+    role: "39 committed case artifacts labeled generated from plots"
+    call_sites: "The files contain setup, human, grader, transcript, access, and budget data, but no tracked generator currently produces or validates them."
+  - path: agent-harness/scenarios/*/case.yaml
+    role: "22 hand-maintained cases currently executed by the human harness"
+    call_sites: "run-scenario.sh resolves cases from ../scenarios; the current live suite does not consume conversations/generated/*.case.yaml."
+  - path: agent-harness/human/run-scenario.sh
+    role: "case preparation, template assembly, fixture seeding, driver dispatch, and grading entrypoint"
+    call_sites: "SCENARIOS points to agent-harness/scenarios; setup parsers seed repositories, intents, and plans; the script writes disposable run.yaml and invokes grade.sh."
+  - path: agent-harness/human/grade.sh
+    role: "deterministic dimensions A-D grader"
+    call_sites: "Reads grader.post_conditions, transcript_checks, access_policy, and budgets; supports existing named predicates but no generic artifact, id-agnostic, mutation, falsifiability, or plot/case drift checks."
+  - path: agent-harness/human/run-matrix.sh
+    role: "three-host scenario matrix"
+    call_sites: "Enumerates the current 22 scenario directories and prepares or drives one isolated run per scenario and host."
+  - path: agent-harness/human/drivers/claude-code.sh
+    role: "Claude Code live coordinator and human-simulator adapter"
+    call_sites: "Drives scripted case turns, records transcript/file-access/telemetry, and grades the human-facing conversation."
+  - path: agent-harness/human/drivers/codex.sh
+    role: "Codex live coordinator and human-simulator adapter"
+    call_sites: "Uses resumable Codex turns and bounded role evidence; counts only immediate native subagent.thread_spawn children attached to the coordinator whose task names match the adapter's *_worker / *_verifier convention, excludes generic peer threads, and deliberately does not claim a dependable file-access trace."
+  - path: agent-harness/human/drivers/cursor-agent.sh
+    role: "Cursor Agent live coordinator and human-simulator adapter"
+    call_sites: "Uses resumable Cursor turns and degrades access auditing because the host does not expose a dependable read trace."
+  - path: agent-harness/fixtures/role-tiering.yaml
+    role: "shared host/role configuration copied into disposable workspaces"
+    call_sites: "The harness copies the full fixture to role-tiering.local.yaml; host lane and role evidence are environmental inputs, not conversation semantics."
+  - path: agent-harness/test-template-runtime.sh
+    role: "acceptance-suite bridge and template laboratory"
+    call_sites: "test/acceptance.sh already invokes this file; it is the in-scope hook through which a conversation-library structural/drift test can become acceptance-gated without editing test/."
+  - path: agent-harness/human/test-codex-driver.sh
+    role: "Codex driver contract test"
+    call_sites: "Called by test/acceptance.sh; validates transcript, resumable turns, bounded role evidence, and no false file-access trace."
+  - path: agent-harness/human/test-direct-collaboration-scenario.sh
+    role: "Explore/direct-collaboration preparation and grader test"
+    call_sites: "Called by test/acceptance.sh; seeds ground truth and grades scenario 14 without a live model."
+  - path: agent-harness/human/test-role-tiering-matrix.sh
+    role: "three-host matrix preparation test"
+    call_sites: "Called by test/acceptance.sh; asserts 22 cases x 3 hosts and copied role-tiering configuration."
+  - path: agent-harness/scenarios/README.md
+    role: "22-case inventory and current v1.0 behavior summary"
+    call_sites: "Still exposes legacy directory names 15-intent-adversary-revise-and-approve and 16-scope-expansion-regate; the rename is explicitly deferred."
+  - path: agent-harness/README.md
+    role: "harness top-level orientation"
+    call_sites: "The title still says template-runtime laboratory despite the current agent-harness naming."
+  - path: wrapper/contracts/invariants.yaml
+    role: "read-only owner of product invariants cited by plots"
+    call_sites: "Plot citations must resolve here; no changes are allowed by the approved intent."
+  - path: test/acceptance/criteria-map.yaml
+    role: "read-only owner of AC-* definitions and suite ownership"
+    call_sites: "Plot citations and the five correction mappings must resolve here; no changes are allowed by the approved intent."
+  - path: wrapper/contracts/schemas/intent-contract.yaml
+    role: "read-only definition of INTENT.md/contract.yaml lifecycle"
+    call_sites: "An intent has human-readable INTENT.md plus machine-readable contract.yaml; approval freezes contract_digest, while executable checks are earned by tracing."
+  - path: .agents/skills/cc-intent/SKILL.md
+    role: "read-only authoring and Gate 1 behavior"
+    call_sites: "Defines the two intent artifacts, approval, tracer handoff, and plain-language reporting boundary."
+  - path: .agents/skills/cc-plan/SKILL.md
+    role: "read-only plan derivation and grounding behavior"
+    call_sites: "Requires an approved intent and trace manifest; derives plans without a second approval and carries tracer done_checks forward."
+  - path: .agents/skills/cc-trace/SKILL.md
+    role: "read-only tracing contract used for this manifest"
+    call_sites: "Defines the manifest fields, feasibility judgment, and read-only boundary."
+  - path: .agents/skills/cc-system-design/SKILL.md
+    role: "read-only system-design boundary"
+    call_sites: "System design is passive source material with no acceptance gate and does not automatically plan or create intents."
+  - path: .agents/skills/cc-workspace/SKILL.md
+    role: "read-only workspace/orientation surface"
+    call_sites: "The current surface is orientation, initialization, repository registration/connection, and clone/init; there is no init-project-context skill."
+  - path: sources/context-circuit-v1.0/design.md
+    role: "read-only normative v1.0 lifecycle"
+    call_sites: "Defines exactly two human gates, tracing/feasibility, candidate-bound evidence, tiered assurance, and reconciliation debt."
+  - path: sources/context-circuit-v1.0/intent-and-criteria.md
+    role: "read-only intent and plan relationship"
+    call_sites: "Defines INTENT.md/contract.yaml, one intent to one-or-more plans, automatic plan derivation, and feasibility before planning."
+  - path: sources/context-circuit-v1.0/tracing-and-grounding.md
+    role: "read-only manifest requirements"
+    call_sites: "Requires exact file/call-site mapping, partition, risks, executable checks, tier signal, feasibility, reach, questions, and completeness proof."
+  - path: sources/context-circuit-v1.0/human-experience.md
+    role: "read-only user-facing reporting rules"
+    call_sites: "Requires plain language, hidden internals, honest assurance wording, and visible grounded results without exposing filenames or ids in normal dialogue."
+  - path: sources/context-circuit-v1.0/data-model.md
+    role: "read-only artifact layout"
+    call_sites: "Defines intent/<id>/INTENT.md, contract.yaml, trace/<repo>.yaml, and the plan/candidate relationship."
+  - path: context/INDEX.md
+    role: "read-only Product Knowledge retrieval catalog"
+    call_sites: "Confirms current durable context and proposal 0034 remains pending."
+  - path: context/ARCHITECTURE.md
+    role: "read-only current architecture"
+    call_sites: "Confirms coordinator/worker/verifier ownership, Explore/Standard/Critical ladder, and source/template separation."
+  - path: context/PROJECT.md
+    role: "read-only workspace identity and purpose"
+    call_sites: "Confirms this checkout is the maintainer source repository, not an instantiated product workspace."
+  - path: context/TERMINOLOGY.md
+    role: "read-only human/internal vocabulary boundary"
+    call_sites: "Confirms user-facing dialogue must translate internal filenames, ids, digests, branches, and role mechanics."
+
+task_partition:
+  - id: library-inventory-and-parser
+    paths:
+      - agent-harness/conversations/README.md
+      - agent-harness/conversations/FLOW.md
+      - agent-harness/conversations/coverage/*.md
+      - agent-harness/conversations/plots/*.md
+    work: "Define the external-surface inventory, parse ## Spec/## Dialogue, validate decision-point alignment, and retain coordinator_must as the place where expected agent output may be described, including artifact outcomes such as creating INTENT.md and contract.yaml."
+  - id: deterministic-generation-and-drift
+    paths:
+      - agent-harness/conversations/generated/*.case.yaml
+      - agent-harness/scenarios/*/case.yaml
+      - agent-harness/conversations/generate.sh
+    work: "Add a deterministic generator that reads plots only, emits the canonical live cases, bounds the host/budget overlay, and rejects plot/generated/live-scenario drift."
+  - id: harness-fixtures-grader-and-live-wiring
+    paths:
+      - agent-harness/human/run-scenario.sh
+      - agent-harness/human/grade.sh
+      - agent-harness/human/run-matrix.sh
+      - agent-harness/human/drivers/*.sh
+      - agent-harness/fixtures/role-tiering.yaml
+    work: "Add the setup and grading capabilities required by the plots: artifact-aware intent outcomes, dynamic entity ids, negative fixtures, falsifiable post-conditions, new seed states, and whole-case execution while preserving calibrated seeds and host behavior."
+  - id: acceptance-and-corpus-refit
+    paths:
+      - agent-harness/test-template-runtime.sh
+      - agent-harness/human/test-*.sh
+      - agent-harness/conversations/plots/*.md
+      - agent-harness/conversations/coverage/*.md
+      - agent-harness/scenarios/README.md
+      - agent-harness/README.md
+    work: "Re-ground stale plots and documentation to v1.0, preserve the 22 existing scenario identities and calibration, add the library guard through the existing acceptance hook, and exercise the frozen net-new live floor."
+
+risks:
+  - "The current repository has 39 plots and 39 generated cases but no tracked generator; every generated header is presently an assertion, not evidence."
+  - "The current runner executes agent-harness/scenarios/*/case.yaml, while the proposed library describes agent-harness/conversations/generated/*.case.yaml. The canonical output topology and the bijection between generated and live cases must be made explicit."
+  - "test/acceptance.sh does not directly invoke the conversation library, but it already invokes agent-harness/test-template-runtime.sh. The in-scope implementation must use that existing bridge; changing test/acceptance.sh would violate the approved scope."
+  - "Current plots describe coordinator_must text and expected state, but the grader has no general artifact assertion for intent/<id>/INTENT.md, intent/<id>/contract.yaml, trace manifests, or derived plan files. Intent-flow plots must preserve the expected output in coordinator_must and add executable state checks without exposing internal names to the simulated human."
+  - "feasibility-question-then-approve carries an unresolved open question through approval, and scope-reach-feasibility-question starts from an existing plan; both conflict with the current post-approval, pre-plan tracing/feasibility order."
+  - "build-product-knowledge names the removed init-project-context surface; author-system-design-spawns-intents implies automatic intent creation even though cc-system-design is passive source authoring."
+  - "Legacy scenario directory names 15-intent-adversary-revise-and-approve and 16-scope-expansion-regate remain in the live inventory; renaming is deferred, so semantic refits must not accidentally restore the old lifecycle."
+  - "At least one current mapping overclaims AC-06: execute-standard-verify-not-complete does not itself demonstrate approve-and-execute in one turn."
+  - "The proposal says 38 plots/cases and phase-1 says six plots before an addendum; the actual surface is 39 plots/cases. Counts must be generated, not hand-maintained."
+  - "Claude Code exposes a file-access trace, while Codex and Cursor intentionally degrade access auditing; live execution and access assertions must preserve that host distinction."
+  - "The Codex driver now distinguishes immediate native subagent.thread_spawn children attached to the coordinator from generic peer threads; live role evidence must preserve that distinction and never promote peer metadata to worker/verifier evidence."
+  - "The live matrix depends on external host CLIs and nested-agent support; deterministic library, drift, and grader checks must remain runnable without credentials or provider payloads."
+
+done_checks:
+  - criterion: AC-WHOLE-SURFACE
+    command: "sh agent-harness/conversations/test-library.sh --check whole-surface"
+    expect: "exit 0; every inventory entry has one plot and one generated case; plot count equals generated-case count"
+  - criterion: AC-SURFACE-COVERAGE
+    command: "sh agent-harness/conversations/test-library.sh --check surface-coverage"
+    expect: "exit 0; the external skills/phases/AC/cross-cutting enumeration, inventory, and plots are mechanically reconciled"
+  - criterion: AC-DESCRIPTIVE-ONLY
+    command: "sh agent-harness/conversations/test-library.sh --check descriptive-only"
+    expect: "exit 0; every cited INV-/AC- id resolves and no plot defines an uncited product rule"
+  - criterion: AC-REPORTING-RULES
+    command: "sh agent-harness/conversations/test-library.sh --check reporting-rules"
+    expect: "exit 0; all Dialogues pass internal-vocabulary and overclaiming lint"
+  - criterion: AC-DIALOGUE-FAITHFUL
+    command: "sh agent-harness/conversations/test-library.sh --check dialogue-faithful"
+    expect: "exit 0; actors, turns, decision points, and terminal outcome agree between Spec and Dialogue"
+  - criterion: AC-GEN-DERIVES
+    command: "sh agent-harness/conversations/generate.sh --check-all"
+    expect: "exit 0; regeneration reads plots only, reproduces all committed cases outside the fixed overlay, and full-field mutation/decorative reverse-mutation tests pass"
+  - criterion: AC-OVERLAY-BOUNDED
+    command: "sh agent-harness/conversations/test-library.sh --check overlay"
+    expect: "exit 0; only the enumerated per-host budgets and host lane differ from plot-derived output"
+  - criterion: AC-WIRED-SOURCE
+    command: "sh agent-harness/conversations/test-library.sh --check wiring"
+    expect: "exit 0; live scenarios are a bijective projection of plots and the suite executes those generated files"
+  - criterion: AC-ID-AGNOSTIC
+    command: "sh agent-harness/conversations/test-library.sh --check id-agnostic"
+    expect: "exit 0; every entity-bound flow grades correctly under fresh ids and wrong-entity/kind/count negatives fail"
+  - criterion: AC-FALSIFIABLE-GRADES
+    command: "sh agent-harness/conversations/test-library.sh --check falsifiable"
+    expect: "exit 0; every generated post-condition has a targeted negative fixture that flips its grade"
+  - criterion: AC-NEW-FIXTURES-EXERCISED
+    command: "sh agent-harness/conversations/test-library.sh --check new-fixtures"
+    expect: "exit 0; every enumerated new seed, fault, and predicate is exercised and has a failing negative fixture"
+  - criterion: AC-REGEN-EQUIV
+    command: "sh agent-harness/conversations/test-library.sh --check regeneration-equivalence && sh test/scenarios/test-scenarios.sh"
+    expect: "exit 0; 22 existing cases retain calibrated seeds/budgets and assertion strength, required successful flows reach the live floor, and AC-36 remains unchanged"
+  - criterion: AC-CORRECTIONS-MECHANICAL
+    command: "sh agent-harness/conversations/test-library.sh --check corrections"
+    expect: "exit 0; retired tags are absent, cases 01/16/17/19/20 map to their fixed current ids, and each target resolves in the external acceptance surface"
+  - criterion: AC-DRIFT-BIDIRECTIONAL
+    command: "sh agent-harness/conversations/test-library.sh --check drift"
+    expect: "exit 0; inventory, plot, generated case, and live scenario drift mutations all fail"
+  - criterion: AC-NEW-CASES-RUN
+    command: "sh agent-harness/human/run-matrix.sh"
+    expect: "exit 0 when host lanes are available; every frozen net-new plot, including successful lifecycle completions, reaches its expected live grade"
+  - criterion: AC-SCOPE-FENCED
+    command: "git diff --name-only \"$WORKER_BASE\" \"$WORKER_TIP\" | awk 'index($0, \"agent-harness/\") != 1 {bad=1} END {exit bad}'"
+    expect: "exit 0; the implementation candidate changes only agent-harness/"
+  - criterion: baseline
+    command: "sh test/acceptance.sh"
+    expect: "current deterministic product and harness baseline remains green; library-specific checks are additionally gated through the in-scope acceptance bridge"
+
+tier_signal: "standard; the change is source-only harness tooling and documentation with no product, credential, money, security, migration, deployment, or irreversible data path. Live host drivers are operationally sensitive but run disposable workspaces and do not raise the product consequence tier."
+feasible: true
+out_of_scope_reach: []
+
+open_questions:
+  - question: "Choose and document one canonical relationship between conversations/generated/*.case.yaml and scenarios/*/case.yaml so AC-WIRED-SOURCE is unambiguous while the 22 scenario directories remain preserved."
+    disposition: plan-resolution
+    rationale: "This is an implementation-topology choice within the approved library scope."
+  - question: "Confirm that the intended artifact expectation is expressed in each plot's coordinator_must description and machine-checked through generated post-conditions/state checks, without adding a new product contract field or exposing internal filenames in Dialogue."
+    disposition: plan-resolution
+    rationale: "This is a harness representation and verification choice; the approved product contract remains unchanged."
+  - question: "When refitting the feasibility plots, decide whether the post-approval question is newly discovered by tracing or whether the decision must be settled before Gate 1; the current fixtures mix both interpretations."
+    disposition: plan-resolution
+    rationale: "The approved intent fixes the lifecycle: initial approval precedes code inspection and feasibility; inspection questions are shown afterward; any answer that changes the intent returns through approval before planning."
+
+completeness_proof:
+  command: "test \"$(find agent-harness/conversations/plots -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ')\" -eq 39 && test \"$(find agent-harness/conversations/generated -maxdepth 1 -type f -name '*.case.yaml' | wc -l | tr -d ' ')\" -eq 39 && test \"$(find agent-harness/scenarios -mindepth 2 -maxdepth 2 -type f -name 'case.yaml' | wc -l | tr -d ' ')\" -eq 22"
+  count: 39
+  found_sets:
+    plots: 39
+    generated_cases: 39
+    live_scenario_cases: 22
+    plot_generated_id_bijection: true
+    external_acceptance_ids: AC-01 through AC-37
+    skill_surface: 13 current .agents/skills entries
+
+recorded_at: 2026-09-04T16:06:08Z
+freshness_checked_at: 2026-09-05T04:16:36Z

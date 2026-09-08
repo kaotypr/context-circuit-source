@@ -36,8 +36,8 @@ printf '%s\n' "$out" | grep -F 'first-release' >/dev/null || fail 'first release
 git -C "$tpl" rev-parse -q --verify refs/tags/v0.0.1-alpha.1 >/dev/null || fail 'first release did not tag v0.0.1-alpha.1'
 commits=$(git -C "$tpl" rev-list --count HEAD); assert_eq "$commits" 1
 subject=$(git -C "$tpl" log -1 --format='%s'); assert_eq "$subject" 'chore(release): v0.0.1-alpha.1'
-require_file "$tpl/wrapper/manifest.yaml"
-contains "$tpl/wrapper/manifest.yaml" 'template_version: 0.0.1-alpha.1'
+require_file "$tpl/.context-circuit/wrapper/manifest.yaml"
+contains "$tpl/.context-circuit/wrapper/manifest.yaml" 'template_version: 0.0.1-alpha.1'
 require_file "$tpl/CHANGELOG.md"
 contains "$tpl/CHANGELOG.md" '## v0.0.1-alpha.1'
 test ! -e "$tpl/release" || fail 'release ledger leaked into published tree'
@@ -61,7 +61,7 @@ printf '\ntest drift\n' >> "$tpl/README.md"
 git_as -C "$tpl" commit -qam 'chore: simulate drifted prior release'
 out=$(sh "$ROOT/scripts/publish-template.sh" 0.0.1-test.1 "$tpl")
 git -C "$tpl" rev-parse -q --verify refs/tags/v0.0.1-test.1 >/dev/null || fail 'real-change publish did not tag v0.0.1-test.1'
-contains "$tpl/wrapper/manifest.yaml" 'template_version: 0.0.1-test.1'
+contains "$tpl/.context-circuit/wrapper/manifest.yaml" 'template_version: 0.0.1-test.1'
 # newest-first changelog keeps every prior entry
 contains "$tpl/CHANGELOG.md" '## v0.0.1-test.1'
 contains "$tpl/CHANGELOG.md" '## v0.0.1-alpha.1'

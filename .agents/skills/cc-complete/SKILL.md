@@ -1,29 +1,40 @@
 ---
 name: cc-complete
-description: Mark a verified plan done at explicit human request and reconcile the implementation against Product Knowledge.
+description: Mark a plan done at explicit human request and reconcile the implementation against Product Knowledge in place.
 ---
 
-Completion is human-controlled. Verification never marks a plan complete.
+A plan becomes done only when a human asks to mark it done. Verification,
+candidate acceptance, and delivery never mark a plan complete.
 
-On "mark plan X complete", run the runtime `plan-complete`. It refuses unless the
-latest execution passed independent verification; if the current result is
-`failed` or `blocked`, report that plainly and do not change status. On success
-it changes plan status `approved → done`, writes the implementation completion
-record (plan revision, execution, per-repository commits, verifier result, human
-request), and keeps branches and worktrees intact (no merge or publication).
+- **Standard and Critical — explicit mark-done.** On "mark plan X complete" or
+  "mark X done", or the same ask naming several plans, run `plan-complete .
+  <plan-id>` for each named plan. There is no look at that plan's work or
+  evidence, and no unreadiness refusal. A plan that was never built, failed a
+  check, or has no evidence still becomes done when asked. Delivery, candidate
+  acceptance, and verification do not mark the plan done.
+- **Explore — planless.** Explore work is direct human-supervised collaboration;
+  it has no plan-of-record completion path until the human promotes it.
 
-Then reconcile the implementation against Product Knowledge. Compare the actual
-committed changes, changed paths, worker handoffs, and verifier evidence with the
-context units that grounded the plan. Produce one of:
+On success `plan-complete` changes plan status `draft → done` and keeps
+branches and worktrees intact (no merge or publication). When execution
+evidence files exist it may also write the implementation completion record
+(`human_completion: accepted`); missing files do not block the status flip.
 
-- no durable knowledge change;
-- one or more context update proposals under `context/proposals/` (target unit,
-  operation, statement, evidence, affected repositories/commits, confidence,
-  conflict);
-- a stale/conflict warning.
+Then, **if the plan affected Product Knowledge**, reconcile in place — the same
+act as gathering context. Compare the plan's knowledge references, changed
+paths, worker handoffs, and verifier evidence with the live context units.
+Edit live `context/` files and keep `INDEX.md` consistent only when there is a
+durable knowledge change. Those writes follow the durable-only rule
+(INV-KNOWLEDGE-03): live context files hold durable product knowledge only;
+they never name a particular plan, intent file, or sources file, and never
+name a `sources/` path. A knowledge-change entry in `DECISIONS.md` records
+decision, rationale, and consequence — what is now true about the product —
+not edited paths or the ephemeral artifact behind the change. If the plan did
+not affect Product Knowledge, leave context files as they are. Record optional
+reconciliation references with `context-impact-record`. Write live context
+files only; there is no sidecar staging path and no extra knowledge-acceptance
+gate.
 
-Record the reconciliation references with `context-impact-record` and index
-pending impacts. Never silently accept a Product Knowledge change: accepting a
-proposal is a separate explicit human decision ("accept the context update for
-X"). The plan may remain done while a proposal is pending; surface a relevant
-pending impact during future plan creation.
+In-place edits are a coordinator act after mark-done. The runtime does not
+write or interpret Product Knowledge (INV-RUNTIME-01, INV-COMPLETE-02). A later
+plan may start even if this update has not landed (INV-KNOWLEDGE-02).

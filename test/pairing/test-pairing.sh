@@ -7,28 +7,29 @@ ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 repo="$ws/repositories/api"
-anchor_before=$(git -C "$repo" rev-parse HEAD)
+base_before=$(git -C "$repo" rev-parse HEAD)
 
 # A dirty connected checkout is untouched: pairing branches from its committed
-# anchor tip into a separate worktree and never needs to clean the checkout.
+# base tip into a separate worktree and never needs to clean the checkout.
 printf 'user work\n' >"$repo/src/user-work.txt"
-anchor_dirty_before=$(git -C "$repo" status --porcelain)
+base_dirty_before=$(git -C "$repo" status --porcelain)
 begin=$(cc_pair_begin "$ws" api tighten-checkout)
 printf '%s\n' "$begin" | grep -Fq 'branch: cc-pair/tighten-checkout' || fail 'pair branch missing'
 printf '%s\n' "$begin" | grep -Fq 'supervision: human-supervised' || fail 'supervision label missing'
-assert_eq "$anchor_dirty_before" "$(git -C "$repo" status --porcelain)"
-assert_eq "$anchor_before" "$(git -C "$repo" rev-parse HEAD)"
+assert_eq "$base_dirty_before" "$(git -C "$repo" status --porcelain)"
+assert_eq "$base_before" "$(git -C "$repo" rev-parse HEAD)"
 
 pdir="$ws/.runtime/pairing/tighten-checkout"
 pointer="$pdir/pointer.yaml"
-wt="$ws/.runtime/worktrees/cc-pair/tighten-checkout/api"
+wt="$ws/.runtime/explore/tighten-checkout/api"
 require_file "$pointer"
 require_dir "$wt"
+test ! -d "$ws/.runtime/worktrees/cc-pair/tighten-checkout" || fail 'Explore mixed into plan-execution worktrees'
 contains "$pointer" 'schema_version: 1'
 contains "$pointer" 'repo: api'
 contains "$pointer" "worktree: $wt"
 contains "$pointer" 'branch: cc-pair/tighten-checkout'
-contains "$pointer" "base: $anchor_before"
+contains "$pointer" "base: $base_before"
 not_contains "$pointer" 'verifier'
 not_contains "$pointer" 'failure'
 not_contains "$pointer" 'plan:'
@@ -75,36 +76,58 @@ git -C "$repo" worktree remove "$wt"
 test ! -d "$wt" || fail 'explicit worktree cleanup failed'
 cc_pair_delivery_targets "$ws" tighten-checkout >/dev/null
 
-# If the anchor advances outside the pairing branch, delivery blocks rather than
+# If the base branch advances outside the pairing branch, delivery blocks rather than
 # silently rebasing or inventing independent verification.
 rm -f "$repo/src/user-work.txt"
-printf 'anchor advance\n' >"$repo/src/anchor-change.txt"
+printf 'base branch advance\n' >"$repo/src/base-change.txt"
 git -C "$repo" add -A
-git -C "$repo" commit -q -m 'feat(api): advance anchor'
+git -C "$repo" commit -q -m 'feat(api): advance base branch'
 drift_out=$(mktemp "${TMPDIR:-/tmp}/cc-pair-drift.XXXXXX")
 drift_err=$(mktemp "${TMPDIR:-/tmp}/cc-pair-drift.XXXXXX")
 if cc_pair_delivery_targets "$ws" tighten-checkout >"$drift_out" 2>"$drift_err"; then
   fail 'drifted pair delivery succeeded'
 fi
 contains "$drift_out" 'drift_detected: true'
-contains "$drift_err" 'PAIR_ANCHOR_DRIFT tighten-checkout'
+contains "$drift_err" 'PAIR_BASE_DRIFT tighten-checkout'
 rm -f "$drift_out" "$drift_err"
 
 # An explicitly named base is resolved to a commit but still receives a fresh
 # pairing branch/worktree; no plan branch is edited in place.
-cc_pair_begin "$ws" api from-explicit-base "$anchor_before" >/dev/null
+cc_pair_begin "$ws" api from-explicit-base "$base_before" >/dev/null
 explicit="$ws/.runtime/pairing/from-explicit-base/pointer.yaml"
-contains "$explicit" "base: $anchor_before"
-assert_eq "$anchor_before" "$(git -C "$ws/.runtime/worktrees/cc-pair/from-explicit-base/api" rev-parse HEAD)"
+contains "$explicit" "base: $base_before"
+assert_eq "$base_before" "$(git -C "$ws/.runtime/explore/from-explicit-base/api" rev-parse HEAD)"
 
 # Host adapters invoke the engine from the workspace with `.`. Pairing state
 # and Git must agree on one absolute worktree path in that mode.
-(cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-begin . api relative-root >/dev/null)
+(cd "$ws" && sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" pair-begin . api relative-root >/dev/null)
 relative_pointer="$ws/.runtime/pairing/relative-root/pointer.yaml"
-relative_wt="$ws/.runtime/worktrees/cc-pair/relative-root/api"
+relative_wt="$ws/.runtime/explore/relative-root/api"
 require_dir "$relative_wt"
 contains "$relative_pointer" "worktree: $relative_wt"
-(cd "$ws" && sh "$ROOT/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
+(cd "$ws" && sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
 	| grep -Fq 'resumable: true' || fail 'relative-root pair is not resumable'
+
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "Model & effort per role"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "role-tiering"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "workspace root"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "isolated working copy"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "runtime/explore"
+contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "never invent"
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "Model & effort per role"
+contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "workspace root"
+
+# Live Explore sessions survive cleanup; closed ones are removed.
+cc_runtime_cleanup "$ws" >/dev/null
+require_dir "$relative_wt"
+require_dir "$ws/.runtime/explore/from-explicit-base/api"
+cc_pair_close "$ws" relative-root >/dev/null
+require_dir "$relative_wt"
+mkdir -p "$ws/.code-review-graph"
+printf 'junk\n' >"$ws/.code-review-graph/graph.db"
+cc_runtime_cleanup "$ws" >/dev/null
+test ! -d "$relative_wt" || fail 'cleanup left closed Explore worktree'
+require_dir "$ws/.runtime/explore/from-explicit-base/api"
+test ! -e "$ws/.code-review-graph" || fail 'cleanup kept leftover .code-review-graph'
 
 pass 'direct collaboration'

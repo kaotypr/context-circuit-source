@@ -21,7 +21,7 @@ acceptance:
   accepted_at: 2026-08-24
   accepted_by: maintainer
 workflows:
-  - docs/getting-started.md
+  - .context-circuit/docs/getting-started.md
 ---
 
 # Verification
@@ -31,7 +31,7 @@ workflows:
 An independent, read-only check of the latest worker commits. Verification is
 the only authority for "verified"; the worker never self-verifies. Route the
 verify step and its outcome-reporting here. Owned by the `cc-verify` skill and
-the `agents/verifier.md` role.
+the `.context-circuit/agents/verifier.md` role.
 
 ## Scope
 
@@ -44,10 +44,15 @@ Outside: repairing the implementation, changing plan status, and the worker loop
 
 ## Behavior
 
-One independent verifier checks the latest commit of every affected repository,
-strictly read-only with respect to product files. It never repairs, modifies
-product files, changes plan status, or self-verifies (INV-VERIFY-01). If the
-host cannot create an independent verifier with read-only capability, the
+Independent verification applies at **Standard and Critical** only
+(INV-ASSURE-01): at those tiers one independent verifier checks the current
+**candidate** of every affected repository, strictly read-only with respect to
+product files, and its result **binds to that candidate** (INV-CANDIDATE-01) — a
+new commit or a criteria change yields a new candidate and voids the prior pass. At
+**Explore** there is no independent verifier and the result is never labeled
+"verified" (see [assurance](../assurance/README.md)). The verifier never repairs,
+modifies product files, changes plan status, or self-verifies (INV-VERIFY-01). If
+the host cannot create an independent verifier with read-only capability, the
 execution is blocked; the worker or coordinator must not self-verify as a
 substitute (INV-VERIFY-02).
 
@@ -61,7 +66,7 @@ evidence requirement because a host lacks a capability.
 
 ## Workflows
 
-- Execute → verify → repair loop: `docs/getting-started.md`
+- Execute → verify → repair loop: `.context-circuit/docs/getting-started.md`
 
 ## Interfaces
 
@@ -92,23 +97,19 @@ logged in `context/DESIGN-DELTAS.md`; this page describes the shipped verifier.
 
 ## Implementation references
 
-- `.agents/skills/cc-verify/SKILL.md`, `agents/verifier.md`
-- `wrapper/runtime/engine.sh`: `cc_verifier_prepare`, `cc_verifier_result_record`,
+- `.agents/skills/cc-verify/SKILL.md`, `.context-circuit/agents/verifier.md`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_verifier_prepare`, `cc_verifier_result_record`,
   `cc_repair_allowed`
-- `wrapper/contracts/schemas/verifier-result.yaml`
-- `wrapper/contracts/invariants.yaml`: INV-VERIFY-01, INV-VERIFY-02, INV-REPAIR-01
+- `.context-circuit/wrapper/contracts/schemas/verifier-result.yaml`
+- `.context-circuit/wrapper/contracts/invariants.yaml`: INV-VERIFY-01, INV-VERIFY-02, INV-REPAIR-01
 
 ## Verification
 
 `sh test/acceptance.sh` (execution/verification coverage).
 
-## Provenance
-
-Authored from the current wrapper at HEAD `4b8ac0b`. Raw `sources/` was not
-scanned. This is not the deleted previous-version "verification-evidence-layers"
-plan (its evidence-layer mechanism is absent from the current wrapper); this page
-describes only the verifier mechanism that ships today.
-
 ## Acceptance notes
 
-Accepted 2026-08-24 from proposal `0012-domain-verification`.
+Accepted 2026-08-24. Re-grounded 2026-09-04 for Context Circuit v1.0: the
+verifier floor is tier-conditional (Standard/Critical only; Explore has none)
+and results bind to the candidate (INV-ASSURE-01, INV-CANDIDATE-01). The
+verifier mechanism itself is unchanged.

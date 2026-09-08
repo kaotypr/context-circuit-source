@@ -5,7 +5,7 @@ role's cross-domain perspective. It links to canonical Domain Knowledge and
 explains outcomes, surfaces, journeys, handoffs, role-specific behavior, and
 limitations without becoming a second copy of domain facts.
 
-Generated role pages use [the role template](../../docs/templates/role-context.md).
+Generated role pages use [the role template](../../.context-circuit/docs/templates/role-context.md).
 Their metadata has a simple `domains` list containing links to relevant domain
 pages. It is not a relationship matrix and does not describe technical access
 control.

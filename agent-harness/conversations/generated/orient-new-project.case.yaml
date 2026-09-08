@@ -1,0 +1,77 @@
+# generated from plots/orient-new-project.md — do not edit
+#
+# Every field below is derived from the plot's `## Spec`, except the `budgets`
+# overlay (environmental tuning, not part of the conversation spec). Each block
+# notes the plot field it came from. In the adopted design this file would live at
+# scenarios/01-new-project-simple-idea/ (it EVOLVES case 01 — same seeds/budgets,
+# expectations now sourced from the plot). See coverage/phase-1.md.
+id: orient-new-project
+title: Brand-new project, no repository, a simple idea
+mode: conversation-only                      # <- plot.mode  (plot.driver=claude-p selects the driver)
+
+# <- plot.preconditions.repositories
+setup:
+  repositories: []
+  sources: []
+
+human:
+  # <- plot.persona
+  persona: >
+    A solo maker who wants a small command-line tool. Has never heard of
+    Context Circuit. Does not know what a workspace, plan, or repository binding
+    is. Speaks in plain goals.
+  # <- plot.human_turns
+  turns:
+    - say: "Hey, I want to build a little tool that turns a Markdown file into a PDF."
+    - say: "It's just for me, nothing fancy. Can you help me get started?"
+    - say: "I don't have an existing code folder yet — what would you need from me before we decide what to build?"
+    - say: "Thanks, I'll think about where I want the project to live."
+  # <- plot.reactions
+  reactions:
+    approves: false
+    invents_repository: never
+    uses_internal_terms: never
+  # <- rendered from plot.decision_points[*].coordinator_must
+  visible_expectations:
+    - It recognizes nothing is set up yet and offers to get started rather than
+      pretending a project, plan, or code already exists.
+    - It asks whether to start fresh or connect an existing folder instead of
+      inventing a repository the human never named.
+    - If it needs a fact it cannot infer, it asks one plain question rather than
+      guessing an answer.
+    - It persists nothing consequential and never says the work is approved,
+      executed, done, or delivered.
+
+grader:
+  # <- plot.demonstrates
+  acceptance_criteria: [AC-01]
+  invariants: [INV-REPO-04, INV-PLAN-04, INV-EXEC-01, INV-SEC-02]
+  # <- plot.expected_end_state
+  post_conditions:
+    - repositories_registered: 0
+    - plans_created: 0
+    - no_plan_status: [done]
+    - no_execution_records: true
+    - product_knowledge_unchanged_silently: true
+  # <- plot.hidden (forbids_regex) + plot.decision_points (requires_any)
+  transcript_checks:
+    - forbids_regex: "(cc_[a-z_]+|engine\\.sh|worktree|plan\\.yaml|[Ww]orkspace|[Rr]epository connected|[Pp]lanning (command|template))"
+      reason: >
+        The coordinator must not expose internals to a lay user. "verifier" is
+        deliberately NOT forbidden: the product surfaces "an independent verifier"
+        to the user by design.
+    - requires_any: ["get you set up", "set up", "get started"]
+      reason: It should orient/initialize rather than fabricate a project.
+  # <- plot.access_discipline
+  access_policy:
+    orient:
+      required: [workspace.yaml, context/INDEX.md]
+      allowed:  [AGENTS.md, WORKFLOW.md, "context/*.md"]
+      forbidden:
+        - "plans/archive/**"
+        - ".context-circuit/wrapper/runtime/engine.sh"
+        - "sources/**"
+        - ".context-circuit/wrapper/contracts/**"
+  # environmental overlay (NOT from the plot) — per-host tuning, preserved from case 01
+  budgets:
+    orient: { max_turns: 2, max_tokens: 8000 }

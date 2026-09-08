@@ -30,7 +30,7 @@ sub-agents instead of a headless `claude -p`.
 ## Procedure
 
 1. **Prepare** the run (deterministic; no live model):
-   `sh template-harness/human/run-scenario.sh --host claude-code <case-id>`
+   `sh agent-harness/human/run-scenario.sh --host claude-code <case-id>`
    Capture the printed run directory (`prepared run: <RUN>`), and read
    `<RUN>/run.yaml` for `workspace`, `case_file`, `transcript`, `mode`.
 
@@ -72,12 +72,12 @@ sub-agents instead of a headless `claude -p`.
    `cc-human-simulator` agent with ONLY the `human:` block and the finished
    transcript; save its verdict to `<RUN>/conversational-verdict.txt`.
 
-7. **Grade:** `sh template-harness/human/grade.sh <RUN>` and report the
+7. **Grade:** `sh agent-harness/human/grade.sh <RUN>` and report the
    result. C will show its forbidden checks (hard) and warn that required-reads /
    the trace are unavailable in this driver.
 
 8. **Snapshot the sub-agent transcripts** into the run dir:
-   `sh template-harness/human/snapshot-subagents.sh <RUN>`. The in-session driver
+   `sh agent-harness/human/snapshot-subagents.sh <RUN>`. The in-session driver
    spawns real nested sub-agents whose JSONL transcripts live in the host session
    store (`~/.claude/projects/<project>/<session>/subagents/agent-<id>.jsonl`),
    NOT under `.out` — unlike the shell `--live` driver, which records one

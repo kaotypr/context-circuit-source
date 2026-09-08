@@ -44,6 +44,7 @@ cc_lease_release "$ws" api 0001-alpha >/dev/null
 cc_lease_check "$ws" api 0002-beta "src/a" >/dev/null || fail "released region must be free"
 # the record is preserved (released_at set), never deleted
 require_file "$ws/.runtime/locks/paths/api/0001-alpha.yaml"
+contains "$ws/.runtime/locks/paths/api/0001-alpha.yaml" "schema_version: 1"
 contains "$ws/.runtime/locks/paths/api/0001-alpha.yaml" "released_at:"
 
 # --- acquire refuses when a non-descendant holds an overlapping region ---

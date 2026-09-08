@@ -1,0 +1,80 @@
+schema_version: 3
+plan: 0005-decomposition-acceptance
+intent: i002-plan-decomposition-guidance
+title: Prove one-plan and stacked-plan derivation
+status: draft
+objective: >-
+  Prove both valid decomposition outcomes and their authority boundaries through
+  deterministic plan/run-stack checks, scenarios, and the full semantic suite.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns deterministic acceptance suites, scenarios, and criteria mapping.
+plan_dependencies:
+  - id: 0004-handoff-representation
+    reason: Verifies the representation produced by the preceding handoff plan.
+product_knowledge:
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Grounds trace-derived done checks and feasibility.
+  - id: plan-authorization
+    path: context/domains/plan-authorization/README.md
+    reason: Grounds intent-derived authorization.
+  - id: planning
+    path: docs/planning.md
+    reason: Grounds plan status and derivation behavior.
+  - id: assurance
+    path: context/domains/assurance/README.md
+    reason: Ensures plan count is not a tier proxy.
+  - id: acceptance-surface
+    path: test/acceptance/criteria-map.yaml
+    reason: Owns semantic suite mapping and acceptance invariants.
+context_grounding:
+  summary: >-
+    The trace maps both outcomes to existing plan, run-stack, feasibility,
+    scenario, and full acceptance suites; Scenario A and Scenario C are the
+    initial one-plan and stacked-plan fixtures.
+  constraints:
+    - Preserve existing acceptance mappings and credential-free behavior.
+    - Do not add an approval gate or alter tier semantics.
+    - Keep delivery, candidate, verification, and scope-safety ownership unchanged.
+  decisions:
+    - Strengthen existing suites/scenarios where possible and add only bounded dedicated checks if needed.
+knowledge_impact:
+  expected_context_units: []
+  review_on_completion: true
+tasks:
+  - id: DCA-001
+    title: Add and align decomposition acceptance coverage
+    repositories: [context-circuit-source]
+    paths:
+      - test/plans/
+      - test/run-stack/
+      - test/intent/
+      - test/scenarios/
+      - test/acceptance.sh
+      - test/acceptance/criteria-map.yaml
+      - docs/
+    depends_on: []
+    changes:
+      - Exercise one-plan and stacked-plan choices, including wrong combine/split negatives.
+      - Preserve intent authorization and delivery/candidate/verification/scope-safety ownership.
+      - Run and align the complete semantic suite and acceptance mapping.
+    acceptance:
+      - id: DCA-AC-001
+        statement: A bounded Standard case passes as one plan containing multiple tasks and fails if unnecessarily split by tier.
+      - id: DCA-AC-002
+        statement: An independently executable/verifiable case passes as stacked dependent plans and fails if incorrectly combined without its dependency/lifecycle boundary.
+      - id: DCA-AC-003
+        statement: The complete suite remains green and documents no second approval gate or ownership shift for verification, candidate, delivery, or scope safety.
+    verification:
+      - id: DCA-VT-001
+        command: sh test/plans/test-plans.sh && sh test/intent/test-feasibility.sh
+      - id: DCA-VT-002
+        command: sh test/run-stack/test-run-stack.sh && sh test/scenarios/test-scenarios.sh
+      - id: DCA-VT-003
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
+

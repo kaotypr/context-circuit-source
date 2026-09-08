@@ -1,0 +1,54 @@
+schema_version: 2
+intent: i011-cleanup-explore-copies
+title: Runtime cleanup also removes Explore worktrees
+goal: >
+  An explicit human request to clean up runtime leftovers must also remove
+  Explore worktrees, including after they move to .runtime/explore/. Cleanup
+  remains a separate explicit action; it does not run automatically when a
+  pairing session closes, and it must not delete a still-live session without
+  that request.
+
+non_goals:
+  - Auto-deleting an Explore worktree when the session closes cleanly.
+  - Changing delivery, promote, or the one-repository Explore rule.
+  - Choosing the Explore path and naming rule (that is the prior intent).
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - This intent depends on i010-explore-session-path so cleanup targets
+    .runtime/explore/ rather than only the old .runtime/worktrees/cc-pair/ path.
+  - Closing a clean session still preserves the branch and worktree until
+    an explicit cleanup request.
+  - Failed or interrupted work is never silently cleaned up.
+  - Product behavior has one owner per rule.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+intent_dependencies:
+  - id: i010-explore-session-path
+    reason: >
+      Cleanup must target .runtime/explore/ and human-chosen names; that
+      layout is a prior decision.
+
+acceptance_criteria:
+  - id: AC-CLEANUP-INCLUDES-EXPLORE
+    statement: >
+      An explicit runtime-cleanup request removes Explore worktrees as well
+      as plan-execution worktrees.
+  - id: AC-NEW-LOCATION-COVERED
+    statement: >
+      After Explore worktrees move to .runtime/explore/, cleanup still finds
+      and removes them there.
+  - id: AC-NO-SILENT-DELETE
+    statement: >
+      Closing a clean Explore session does not delete its worktree by itself,
+      and a still-live Explore session is not removed unless cleanup was
+      explicitly asked.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:a008a4f387aaeae4c14c7b196482e04a36761bbbb3b0f207d38050bf024bc329

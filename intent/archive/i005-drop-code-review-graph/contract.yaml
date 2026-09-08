@@ -1,0 +1,41 @@
+schema_version: 2
+intent: i005-drop-code-review-graph
+title: Drop the leftover .code-review-graph folder
+goal: >
+  A Context Circuit template and an instantiated workspace must not keep a
+  leftover .code-review-graph folder. Remove it from what is shipped and from
+  a workspace that still has it, without changing intent, tracing, planning,
+  execution, or delivery behavior.
+
+non_goals:
+  - Changing how an intent is approved, traced, planned, executed, or delivered.
+  - Redesigning code review, graph tooling, or Product Knowledge retrieval.
+  - Delivering, publishing, merging, or committing the implementation implicitly.
+
+constraints:
+  - Product behavior has one owner per rule; do not add parallel cleanup policy
+    in a skill if an existing template or ignore owner already covers leftovers.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-NOT-SHIPPED
+    statement: >
+      A newly instantiated workspace from the template does not include a
+      .code-review-graph folder.
+  - id: AC-REMOVED-WHEN-PRESENT
+    statement: >
+      A workspace that already has a leftover .code-review-graph folder no
+      longer keeps it after this change lands.
+  - id: AC-LIFECYCLE-UNCHANGED
+    statement: >
+      Intent approval, tracing, planning, execution, verification, and
+      delivery continue to work as they do today.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:aac38f2220f5cd5a0ef5da3773cf5bb8cf4d0213cca46d423bb831a1902d9eeb

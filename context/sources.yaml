@@ -1,6 +1,0 @@
-# Entries are added only after request-scoped source reads.
-# The five previous-version maintainer-plan provenance entries were retired on
-# 2026-08-24 after plans/context-circuit-plans/ was deleted in commit 4b8ac0b.
-# The current wrapper is the authoritative present-day evidence and is not a
-# sources/ read, so no provenance entry stands in for it.
-sources: []

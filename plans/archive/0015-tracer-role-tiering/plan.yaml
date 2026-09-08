@@ -1,0 +1,98 @@
+schema_version: 3
+plan: 0015-tracer-role-tiering
+intent: i013-tracer-role-tiering
+title: Support tracer in role-tiering.local.yaml
+status: draft
+objective: >-
+  When a human asks the coordinator to set up role-tiering.local.yaml with a
+  tracer (model, effort), that tracer entry is written into the file and used
+  when the tracer is spawned. Tracer becomes a supported role next to worker
+  and verifier.
+repositories:
+  - id: context-circuit-source
+    purpose: Owns role-tiering contract, coordinator setup, and tracer spawn.
+plan_dependencies: []
+product_knowledge:
+  - id: tracing
+    path: context/domains/tracing/README.md
+    reason: Owns tracer spawn; must honor configured model and effort.
+  - id: host-adapters
+    path: context/domains/host-adapters/README.md
+    reason: Role tiering is bounded host evidence.
+  - id: role-tiering
+    path: docs/role-tiering.md
+    reason: Currently allows only worker and verifier; this plan adds tracer.
+context_grounding:
+  summary: >-
+    Derived from the approved i013 contract without a tracer, at explicit
+    human request. Observed failure: coordinator creates
+    role-tiering.local.yaml but reports tracer tiering unsupported and omits
+    the tracer entry.
+  constraints:
+    - Role tiering changes cost and speed only.
+    - Adapter defaults still apply when no tracer entry is present.
+    - Do not change the tracer's read-only role or feasibility check.
+  decisions:
+    - Keep one plan with three sequential tasks. Independent of 0014 (Explore worker honor).
+knowledge_impact:
+  expected_context_units:
+    - tracing
+  review_on_completion: true
+tasks:
+  - id: TRT-001
+    title: Allow tracer in role-tiering.local.yaml
+    repositories: [context-circuit-source]
+    paths:
+      - docs/role-tiering.md
+      - wrapper/contracts/
+      - wrapper/adapters/
+    depends_on: []
+    changes:
+      - Accept a tracer role in role-tiering.local.yaml next to worker and verifier. Stop reporting that tracer tiering is unsupported by the workspace contract.
+    acceptance:
+      - id: TRT-AC-001
+        statement: When a human asks the coordinator to set role-tiering including tracer, role-tiering.local.yaml contains the requested tracer (model, effort) for that host.
+      - id: TRT-AC-003
+        statement: The coordinator does not report that tracer tiering is unsupported by the workspace contract when the human requested a tracer config.
+      - id: TRT-AC-004
+        statement: Adding tracer to role-tiering does not change what the tracer does or alter independence or the failure limit.
+    verification:
+      - id: TRT-VT-001
+        command: rg -n 'tracer' docs/role-tiering.md && ! rg -n 'Tracer tiering isn’t supported|Tracer tiering isn.t supported' docs/role-tiering.md .agents/skills/ docs/ wrapper/adapters/
+  - id: TRT-002
+    title: Honor tracer role-tiering when spawning the tracer
+    repositories: [context-circuit-source]
+    paths:
+      - .agents/skills/cc-trace/
+      - .agents/skills/cc-intent/
+      - agents/coordinator.md
+      - docs/role-tiering.md
+    depends_on:
+      - TRT-001
+    changes:
+      - A spawned tracer uses the (model, effort) from role-tiering.local.yaml when that host has a tracer entry.
+    acceptance:
+      - id: TRT-AC-002
+        statement: A spawned tracer uses the (model, effort) from role-tiering.local.yaml when that host has a tracer entry, not only the adapter default.
+    verification:
+      - id: TRT-VT-002
+        command: rg -n 'role-tiering|Model & effort|tracer' .agents/skills/cc-trace/SKILL.md .agents/skills/cc-intent/SKILL.md agents/coordinator.md docs/role-tiering.md
+  - id: TRT-003
+    title: Prove tracer config is no longer refused
+    repositories: [context-circuit-source]
+    paths:
+      - test/
+    depends_on:
+      - TRT-002
+    changes:
+      - Add coverage that fails if a requested tracer entry is dropped, or if the coordinator still says tracer tiering is unsupported.
+    acceptance:
+      - id: TRT-AC-001
+        statement: Requested tracer config is written and used.
+    verification:
+      - id: TRT-VT-003
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

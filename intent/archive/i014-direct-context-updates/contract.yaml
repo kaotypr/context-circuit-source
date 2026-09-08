@@ -1,0 +1,95 @@
+schema_version: 2
+intent: i014-direct-context-updates
+title: Update Product Knowledge in place; start knowledge update when a plan is marked done
+goal: >
+  Gathering context and reconciling Product Knowledge update the live context
+  files directly. They no longer create proposal documents under
+  context/proposals/, and a Product Knowledge change no longer waits for a
+  separate human accept. A plan becomes done only when a human asks to mark
+  it done. That request reads the plan, marks it done, then — if the plan
+  affected Product Knowledge — updates the live context files from what the
+  plan changed. A human request to open a pull request, merge, or sync the
+  local repository after merge performs delivery only: it does not mark the
+  plan done and does not start a knowledge update. A later plan can start
+  even if that knowledge update has not landed. Pending proposal 0034 is
+  dropped.
+
+non_goals:
+  - Changing Gate 1 (intent approval) or Gate 2 (delivery as a separate
+    explicit action). Delivery remains an explicit ask and does not start
+    the knowledge update or mark a plan done.
+  - Restoring the context/proposals/ staging path or a separate “accept the
+    context update” decision.
+  - Starting a knowledge update from delivery.
+  - Blocking the next plan until Product Knowledge has been updated.
+  - Applying pending proposal 0034 as a context page.
+  - Giving Explore a plan or an intent; Explore stays planless.
+  - Writing Product Knowledge as a side-effect of worker implementation or
+    verifier evidence without a gathering-context, reconcile, or
+    mark-done knowledge act.
+  - Changing how sources/ is read (still passive and request-scoped).
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - Product Knowledge remains agent-oriented indexed units under context/;
+    the retrieval catalog stays a catalog, not a second copy of page
+    content (INV-KNOWLEDGE-01).
+  - New context units, when needed, are authored as real files under
+    context/, not as sidecar proposal documents.
+  - Product behavior has one owner per rule; update the owning knowledge
+    and completion contracts rather than a skill-only exception.
+  - Preserve unrelated and dirty work, and run the semantic acceptance
+    suite after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-IN-PLACE-WRITES
+    statement: >
+      Gathering context and reconciling Product Knowledge change the live
+      context files (and keep the retrieval catalog consistent with those
+      files). They do not create a proposal document under
+      context/proposals/.
+  - id: AC-NO-KNOWLEDGE-GATE
+    statement: >
+      A Product Knowledge update does not wait for a separate human
+      “accept the context update” decision. Intent approval and delivery
+      remain the two human gates.
+  - id: AC-EXPLICIT-MARK-DONE
+    statement: >
+      A plan becomes done only when a human asks to mark it done.
+      Delivery, verification, and candidate acceptance do not mark it
+      done. Explore has no plan and is unchanged.
+  - id: AC-NO-DELIVERY-RECONCILE
+    statement: >
+      Asking to open a pull request, merge, or sync the local repository
+      after merge does not start Product Knowledge reconciliation and does
+      not mark the plan done.
+  - id: AC-MARK-DONE-STARTS-RECONCILE
+    statement: >
+      Asking to mark a plan done marks it done. If that plan affected
+      Product Knowledge, the live context files are then updated from what
+      the plan changed. If it did not affect Product Knowledge, marking it
+      done does not change context files.
+  - id: AC-NEXT-PLAN-NOT-BLOCKED
+    statement: >
+      A later plan can start even if Product Knowledge has not yet been
+      updated from a prior plan. There is no wait that blocks the next
+      plan until knowledge is updated.
+  - id: AC-DROP-0034
+    statement: >
+      Pending proposal 0034-add-conversation-spec-library is dropped. It is
+      not applied as a context page.
+  - id: AC-RECONCILE-IS-ITS-OWN-ACT
+    statement: >
+      Gathering context still writes context in place rather than staging a
+      proposal. Marking a plan done starts that same in-place reconcile
+      when the plan affected Product Knowledge, rather than a proposal
+      sidecar.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:d5d5071465f898704eeaf14b91a525b3638173a97bda2d07f1b625016cdfe6d7

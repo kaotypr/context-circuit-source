@@ -1,0 +1,44 @@
+schema_version: 1
+owner: .context-circuit/wrapper/contracts/schemas/worker-handoff.yaml
+describes: .runtime/executions/<plan-id>/<execution-id>/handoff.md
+concern: worker_handoff
+
+purpose: >
+  The worker's concise handoff after implementation or repair. It is a claim,
+  not verification evidence. The independent verifier treats it as input, never
+  as proof.
+
+required_sections:
+  - execution and attempt ids
+  - repository commits (per affected repository)
+  - tasks completed
+  - implementation checks run and results
+  - assumptions
+  - known limitations
+  - suggested verifier focus
+  - whether this handoff follows a repair
+  - scope_expansions: >
+      Every necessary path outside the plan's grounded starting map, with repository,
+      path, reason, and why it remains consistent with the approved intent. Use an
+      explicit empty list when none. A required second repository or approved-decision
+      change is a coordinator finding and stops the worker; it is not an expansion.
+
+optional_sections:
+  - repository_friction: >
+      When the target repository's own agent guidance did not cover something the
+      worker needed (e.g. no AGENTS.md, an undiscoverable test command), the worker
+      records it here (INV-GROUND-01). Reconciliation routes it to a proposal on
+      the repository's OWN agent docs (a normal plan targeting its AGENTS.md /
+      skills), never a Context Circuit per-repo profile.
+
+forbidden:
+  - claiming independent verification
+  - changing intent approval or plan completion status
+  - altering verifier evidence
+  - credentials or provider payloads
+  - presenting trace anchors or initial task paths as an exhaustive write allowlist
+
+rules:
+  - INV-EXEC-04
+  - INV-VERIFY-01
+  - INV-SEC-01
