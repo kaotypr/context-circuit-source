@@ -8,13 +8,13 @@ What you want: **the runtime agents call is a compiled binary**, so a product
 workspace has nothing useful to read and you can drop the repeated "must not
 read `engine.sh`" rule.
 
-Today that rule is a warning on a readable bash script. After this, the thing
-agents invoke is opaque in the product they work in:
+Keep the current bash engine. Compile it with a shell compiler (`shc`). Ship
+the binary in the product; keep `engine.sh` in this maintainer checkout:
 
 - **They call a binary.** Same lifecycle actions as today; not a script they
   can open and interpret.
-- **The product does not ship a readable implementation.** Runtime source
-  stays in this maintainer checkout, where people who change the engine work.
+- **The product does not ship `engine.sh`.** Runtime source stays here, where
+  people who change the engine work.
 - **Instructions just say invoke it.** Skills, adapters, and the coordinator
   stop restating a "don't read the engine" prohibition.
 
@@ -23,17 +23,20 @@ flowchart TD
   A["An agent needs a runtime action"] --> B["Invoke the compiled binary"]
   B --> C["Printed result"]
   D["Product workspace"] --> E["Binary only<br/>nothing useful to read"]
-  F["Maintainer checkout"] --> G["Runtime source<br/>humans change it here"]
+  F["Maintainer checkout"] --> G["engine.sh<br/>compile with shc"]
+  G --> B
 ```
 
 A fuller write-up by topic sits beside this page. You still approve once.
 
 ## Expectations
 
-- Agents in a product workspace invoke a compiled runtime binary, not a bash
-  script.
-- That workspace does not contain a readable runtime implementation, so there
-  is nothing to substitute for a skill or brief.
+- Agents in a product workspace invoke a compiled runtime binary, not
+  `engine.sh`.
+- The bash engine is unchanged as source; it is compiled, not rewritten in
+  another language.
+- That workspace does not contain `engine.sh`, so there is nothing to
+  substitute for a skill or brief.
 - The repeated "must not read `engine.sh`" instruction is gone, not retargeted
   at a new source file in the product.
 - Lifecycle behavior is unchanged: same actions, same gates, still model-blind
@@ -44,11 +47,11 @@ A fuller write-up by topic sits beside this page. You still approve once.
 
 ## The plans
 
-1. **Replace the bash engine with a compiled binary.**
-   _After this:_ the runtime agents call is a binary with the same actions.
-2. **Ship the binary in the product, keep source in this checkout.**
-   _After this:_ an instantiated workspace has the binary, not a readable
-   implementation.
+1. **Compile the bash engine into a binary.**
+   _After this:_ the runtime agents call is an `shc`-compiled binary with the
+   same actions.
+2. **Ship the binary in the product, keep `engine.sh` in this checkout.**
+   _After this:_ an instantiated workspace has the binary, not the script.
 3. **Drop the "must not read the engine" instructions.**
    _After this:_ adapters, skills, coordinator, and harness tell agents to
    invoke the binary; they do not repeat a read prohibition.
@@ -58,12 +61,12 @@ A fuller write-up by topic sits beside this page. You still approve once.
 
 ## How carefully this is checked
 
-**`Critical`**
+**`Standard`**
 
-This rewrites the library that enforces every gate, then ships it to every
-workspace. A mistake could skip approval or verification. Independent
-verification plus the repair-and-recheck loop is the right floor. You can
-lower it.
+This is the same bash engine in a new form, then shipped to every workspace.
+A second agent should confirm the binary is what product workspaces invoke and
+that `engine.sh` is no longer in that tree. It is not a rewrite of the gates
+themselves.
 
 Explanations:
 - **Explore:** you check it yourself as you work alongside the agent — no separate
@@ -77,5 +80,5 @@ Explanations:
 ## Open questions
 
 **Which compiled language should the runtime be rewritten in?**
-_Recommendation: Go — one static binary, straightforward cross-compile for the
-POSIX hosts the product already targets._
+_Answer: None — keep bash and compile it with a shell compiler (`shc`). No
+rewrite into another language._
