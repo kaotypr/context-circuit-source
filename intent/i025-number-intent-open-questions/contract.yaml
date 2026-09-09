@@ -1,0 +1,74 @@
+schema_version: 2
+intent: i025-number-intent-open-questions
+title: Number open questions on an intent
+goal: >
+  Open questions on the human-facing intent are numbered, so a person can
+  answer by number instead of repeating the question. Numbering uses the same
+  1, 2, 3 list style as The plans: the question stays bold, the answer stays
+  an italic line under that item, the number is stable for the life of that
+  intent, and a later question gets the next unused number. The empty state
+  stays an unnumbered "no known unresolved human decisions" line. New intents,
+  the intent template, the filled example, the cc-intent skill, and the intent
+  domain page teach and use this form, including when the coordinator asks for
+  Gate 1 approval.
+
+non_goals:
+  - Rewriting already-written intents (active, archived, or other drafts).
+  - Numbering plan open questions, planner findings, or publish-thread
+    questions as part of this change.
+  - Adding a machine open-questions list or ids to the intent contract schema.
+  - Changing what belongs in Open questions, when a question is intent-level
+    versus plan-level, or when Gate 1 is re-entered.
+  - Adding a sixth INTENT.md section or putting numbering rationale on the
+    human page.
+  - Mixing this change into unrelated dirty work already in the checkout.
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - INTENT.md keeps exactly five sections. Open questions remains the fifth
+    and stays phase-aware: unanswered questions stay, answered questions keep
+    their number and gain an answer line, and none means no known unresolved
+    decision at the current phase.
+  - Numbering is a human-facing convention on the intent page and in the
+    approval ask. It does not become a second identifier authority and does
+    not enter contract_digest as a new field.
+  - Product behavior has one owner per rule. The numbered form lives with the
+    intent template, the cc-intent skill, and the intent domain page; do not
+    copy a second numbering policy into other skills.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-NUMBERED
+    statement: >
+      When an intent has one or more open questions, each is numbered in the
+      human-facing Open questions section so a person can refer to it by that
+      number.
+  - id: AC-STABLE
+    statement: >
+      Answering a question keeps its number. A question added later receives
+      the next unused number and does not reshuffle earlier numbers.
+  - id: AC-EMPTY
+    statement: >
+      When there are no open questions, the empty-state line remains
+      unnumbered; no dummy numbered item is invented.
+  - id: AC-STYLE
+    statement: >
+      Numbering uses the same 1, 2, 3 list style as The plans, with the
+      question still bold and the answer still an italic line under that item.
+  - id: AC-AUTHORING
+    statement: >
+      New intents, the intent template, the filled example, and the approval
+      ask use the numbered form.
+  - id: AC-EXISTING-UNTOUCHED
+    statement: >
+      Already-written intents are not rewritten to add numbers as part of
+      this change.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: draft
