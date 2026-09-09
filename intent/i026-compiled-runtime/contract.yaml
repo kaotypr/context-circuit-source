@@ -1,0 +1,92 @@
+schema_version: 2
+intent: i026-compiled-runtime
+title: Ship the runtime as a compiled binary
+goal: >
+  The Context Circuit runtime that agents invoke is a compiled binary, so a
+  product workspace has no readable runtime implementation and no longer needs
+  a repeated "must not read engine.sh" rule. Agents call the same host-neutral
+  deterministic actions they call today and consume printed results. Runtime
+  source stays in the maintainer source checkout, where changing the engine is
+  intentional work. The shipped product and an instantiated workspace contain
+  the binary, not a script or other source an agent can open in place of a
+  skill or brief. INV-RUNTIME-01/02 stay: the runtime remains model-blind,
+  credential-free, and free of provider, prompt, Product Knowledge, routing,
+  and automatic delivery behavior.
+
+non_goals:
+  - Changing what the runtime is allowed to decide or authorize (INV-RUNTIME-01
+    stays; this is the form of the library, not its authority).
+  - Packing or obfuscating the current bash script (shc or similar) while
+    still shipping a readable implementation.
+  - Leaving a readable runtime implementation in the product tree and only
+    renaming the prohibition to that new file.
+  - Adding provider launch, model prompts, Product Knowledge interpretation,
+    routing policy, confirmation cards, or automatic
+    pull-request/merge/push/deploy/cleanup/completion to the runtime.
+  - Changing Gate 1, Gate 2, the planner, the verifier floor, host-blocked,
+    or one-owner-per-rule.
+  - Making the maintainer source checkout itself opaque: people who change
+    the engine still read and edit runtime source here.
+  - Cryptographic or anti-disassembly guarantees; opacity means no useful
+    readable implementation in the product an agent is instructed to work in.
+  - Mixing this change into unrelated dirty work already in the checkout.
+  - Delivering, publishing, merging, or committing the implementation
+    implicitly.
+
+constraints:
+  - Agents invoke a compiled binary under the nested product home
+    `.context-circuit/wrapper/runtime/`; they do not `sh` a bash engine.
+  - Instantiated workspaces and the shipped template contain that binary, not
+    a readable runtime implementation (no leftover `engine.sh`, no compiled-
+    language source next to it in the product tree).
+  - Runtime source lives in this maintainer checkout and is not copied into
+    the product template (source-release-and-upgrade ships-vs-never-ships).
+  - CLI actions and printed results stay the contract agents already use;
+    skills keep driving the engine by construction.
+  - The coordinator-side corollary of INV-RUNTIME-01 becomes "invoke the
+    binary"; it is not restated as "must not read" across skills. Product
+    behavior has one owner per rule.
+  - An upgrade may replace the template-owned runtime and must preserve
+    workspace-owned files; when the form of the runtime changes the meaning
+    of a record or invoke path, report migration-needed and preserve the old
+    state.
+  - Isolation, host-blocked fail-closed, and credential-free offline behavior
+    are preserved.
+  - Preserve unrelated and dirty work, and run the semantic acceptance suite
+    after meaningful phases.
+
+acceptance_criteria:
+  - id: AC-BINARY-INVOKE
+    statement: >
+      Agents in a product workspace invoke a compiled runtime binary for
+      lifecycle actions, not a bash script.
+  - id: AC-NO-READABLE-IMPL
+    statement: >
+      An instantiated workspace and the shipped template do not contain a
+      readable runtime implementation an agent can open in place of a skill
+      or brief.
+  - id: AC-NO-READ-PROHIBITION
+    statement: >
+      Product instructions no longer repeat a "must not read engine.sh" (or
+      equivalent) prohibition; they tell the agent to invoke the binary.
+  - id: AC-SAME-LIFECYCLE
+    statement: >
+      The same runtime actions, gates, and model-blind limits hold: the
+      binary does not gain provider, prompt, Product Knowledge, routing, or
+      automatic delivery behavior.
+  - id: AC-SOURCE-STAYS
+    statement: >
+      Runtime source remains in the maintainer source checkout so the engine
+      can still be changed on purpose.
+  - id: AC-UPGRADE
+    statement: >
+      A new workspace starts with the compiled runtime; an upgrade of an
+      existing workspace replaces the template-owned engine without rewriting
+      the user's project files.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: critical
+status: draft
