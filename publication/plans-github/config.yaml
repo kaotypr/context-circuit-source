@@ -17,7 +17,7 @@ reads:
   - plans
   - tasks
 target_ref:
-  repository: kaotypr/context-circuit
+  repository: kaotypr/context-circuit-source
 mapping:
   plan_to_work_item: github-issue
   task_to_child_item: description-checklist

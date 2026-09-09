@@ -46,8 +46,9 @@ delivery actions.
 ## Behavior
 
 Three identities stay distinct: `context-circuit-source` (this maintainer
-checkout), `context-circuit-template` (the distributable universal project
-workspace — the wrapper a user works in), and the instantiated project
+checkout, GitHub `kaotypr/context-circuit-source`), `context-circuit-template`
+(the distributable universal project workspace — the wrapper a user works in,
+published on GitHub as `kaotypr/context-circuit`), and the instantiated project
 workspace.
 
 Assembly ships the nested product home
@@ -91,14 +92,15 @@ assembly includes it and the template acceptance checks pass.
 
 Template publication is the GitHub Action `.github/workflows/publish-template.yml`.
 It assembles, gates, commits, and tags the product into `.template-repo`, pushes
-`main` and the annotated version tag to GitHub, and creates the GitHub Release.
-GitHub remains the canonical published template. The same job then pushes that
-same `.template-repo` commit and tag to `gitlab.sicepat.tech` as an operator-
-configured mirror — not a second assembly — and creates a GitLab Release with
-the same notes and archive as GitHub. Operators set GitHub Actions
-`GITLAB_TEMPLATE_PROJECT` (`group/project`, no host prefix) and
-`GITLAB_TEMPLATE_TOKEN` on the source repository before a publish that should
-also update GitLab. The token may be a GitLab project access token with
+`main` and the annotated version tag to GitHub `kaotypr/context-circuit`, and
+creates the GitHub Release. GitHub remains the canonical published template.
+The same job then pushes that same `.template-repo` commit and tag to
+`gitlab.sicepat.tech` as an operator-configured mirror — not a second
+assembly — and creates a GitLab Release with the same notes and archive as
+GitHub. Operators set GitHub Actions `GITLAB_TEMPLATE_PROJECT`
+(`group/project`, no host prefix) and `GITLAB_TEMPLATE_TOKEN` on the source
+repository `kaotypr/context-circuit-source` before a publish that should also
+update GitLab. The token may be a GitLab project access token with
 `write_repository` and `api` (git push plus Releases API). The GitLab project
 must already exist. Variable and secret names stay in this page; the project
 path and credential stay in GitHub Actions settings and never enter workspace
@@ -145,3 +147,6 @@ Updated 2026-09-09: template publication also mirrors the published `.template-r
 `main` and version tag to `gitlab.sicepat.tech` from the publish Action, using
 operator-configured `GITLAB_TEMPLATE_PROJECT` and `GITLAB_TEMPLATE_TOKEN`, and
 creates a GitLab Release with the same notes and archive as GitHub.
+
+Updated 2026-09-10: GitHub destinations are `kaotypr/context-circuit-source` for
+this maintainer source and `kaotypr/context-circuit` for the published template.

@@ -3,7 +3,7 @@ plan: 0005-approval-and-execution
 provider: github
 plan_item:
   id: "77"
-  url: "https://github.com/kaotypr/context-circuit/issues/77"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/77"
 task_items:
   - task: EXE-001
     id: "77"

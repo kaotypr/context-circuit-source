@@ -3,7 +3,7 @@ plan: 0009-delivery
 provider: github
 plan_item:
   id: "81"
-  url: "https://github.com/kaotypr/context-circuit/issues/81"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/81"
 task_items:
   - task: DEL-001
     id: "81"

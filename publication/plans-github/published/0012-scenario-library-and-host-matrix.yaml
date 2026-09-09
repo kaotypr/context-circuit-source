@@ -3,7 +3,7 @@ plan: 0012-scenario-library-and-host-matrix
 provider: github
 plan_item:
   id: "84"
-  url: "https://github.com/kaotypr/context-circuit/issues/84"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/84"
 task_items:
   - task: SCN-001
     id: "84"

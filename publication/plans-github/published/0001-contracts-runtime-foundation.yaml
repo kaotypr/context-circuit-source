@@ -3,7 +3,7 @@ plan: 0001-contracts-runtime-foundation
 provider: github
 plan_item:
   id: "73"
-  url: "https://github.com/kaotypr/context-circuit/issues/73"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/73"
 task_items:
   - task: FND-001
     id: "73"

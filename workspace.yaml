@@ -8,7 +8,7 @@ workspace:
 
 repositories:
   context-circuit-source:
-    canonical_url: https://github.com/kaotypr/context-circuit.git
+    canonical_url: https://github.com/kaotypr/context-circuit-source.git
     default_branch: main
 
 identity:

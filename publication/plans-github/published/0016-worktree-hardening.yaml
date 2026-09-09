@@ -3,7 +3,7 @@ plan: 0016-worktree-hardening
 provider: github
 plan_item:
   id: "88"
-  url: "https://github.com/kaotypr/context-circuit/issues/88"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/88"
 task_items:
   - task: WTH-001
     id: "88"

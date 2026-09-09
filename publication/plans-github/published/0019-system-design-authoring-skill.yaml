@@ -3,7 +3,7 @@ plan: 0019-system-design-authoring-skill
 provider: github
 plan_item:
   id: "91"
-  url: "https://github.com/kaotypr/context-circuit/issues/91"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/91"
 task_items:
   - task: SDA-001
     id: "91"

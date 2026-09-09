@@ -3,7 +3,7 @@ plan: 0004-planning
 provider: github
 plan_item:
   id: "76"
-  url: "https://github.com/kaotypr/context-circuit/issues/76"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/76"
 task_items:
   - task: PLN-001
     id: "76"

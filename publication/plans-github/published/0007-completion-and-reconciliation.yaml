@@ -3,7 +3,7 @@ plan: 0007-completion-and-reconciliation
 provider: github
 plan_item:
   id: "79"
-  url: "https://github.com/kaotypr/context-circuit/issues/79"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/79"
 task_items:
   - task: CMP-001
     id: "79"

@@ -3,7 +3,7 @@ plan: 0010-release-assembly-and-publication
 provider: github
 plan_item:
   id: "82"
-  url: "https://github.com/kaotypr/context-circuit/issues/82"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/82"
 task_items:
   - task: REL-001
     id: "82"

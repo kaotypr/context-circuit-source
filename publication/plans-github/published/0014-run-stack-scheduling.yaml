@@ -3,7 +3,7 @@ plan: 0014-run-stack-scheduling
 provider: github
 plan_item:
   id: "86"
-  url: "https://github.com/kaotypr/context-circuit/issues/86"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/86"
 task_items:
   - task: RSC-001
     id: "86"

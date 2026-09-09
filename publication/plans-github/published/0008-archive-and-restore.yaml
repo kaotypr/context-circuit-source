@@ -3,7 +3,7 @@ plan: 0008-archive-and-restore
 provider: github
 plan_item:
   id: "80"
-  url: "https://github.com/kaotypr/context-circuit/issues/80"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/80"
 task_items:
   - task: ARC-001
     id: "80"
