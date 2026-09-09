@@ -1,0 +1,16 @@
+schema_version: 1
+intent: i024-align-github-names
+repository: context-circuit-source
+feasible: true
+feasibility_outcome: feasible
+out_of_scope_reach: []
+open_questions:
+  - id: plan-resolution-template-repo-token
+    kind: plan-resolution
+    question: >
+      After kaotypr/context-circuit-template is renamed to kaotypr/context-circuit,
+      does TEMPLATE_REPO_TOKEN already grant push and release access to the
+      renamed template repository, or must the operator re-issue or re-scope the
+      fine-grained PAT before the next publish?
+tier_signal: standard
+revision: 3bc56d592db255d9c44c14d42704df890aaad38a

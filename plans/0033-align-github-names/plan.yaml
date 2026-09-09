@@ -1,0 +1,216 @@
+schema_version: 3
+plan: 0033-align-github-names
+intent: i024-align-github-names
+title: Align GitHub repository names with source and product identity
+status: draft
+objective: >
+  Swap GitHub slugs so this maintainer source lives at kaotypr/context-circuit-source,
+  the published template lives at kaotypr/context-circuit, and source-side
+  publication binding, publish Action, workspace canonical URL, and plans-github
+  issue records follow those names. The swap does not publish a new template
+  version or change the assembled product tree. GitLab mirror configuration is
+  unchanged.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns workspace canonical URL, release binding, publish-template workflow,
+      plans-github publication config and published records, and acceptance tests.
+plan_dependencies: []
+product_knowledge:
+  - id: source-release-and-upgrade
+    path: context/domains/source-release-and-upgrade/README.md
+    reason: >
+      Documents template publication, GitHub destination binding, and the
+      GitHub-to-GitLab mirror. After this change the domain should name the
+      new GitHub slugs for source and template destinations.
+context_grounding:
+  summary: >
+    Grounded at HEAD 3bc56d59. Today origin is git@github.com:kaotypr/context-circuit.git
+    (this source). The template publishes to kaotypr/context-circuit-template via
+    release/binding.yaml and .github/workflows/publish-template.yml (checkout +
+    gh release create). workspace.yaml canonical_url still points at the short
+    source name. publication/plans-github/config.yaml target_ref.repository and
+    twenty publication/plans-github/published/*.yaml issue urls use
+    kaotypr/context-circuit for source issues. Operational GitHub slugs appear only
+    in workspace.yaml, release/binding.yaml, .github/workflows/publish-template.yml,
+    publication/plans-github/config.yaml, and publication/plans-github/published/*.yaml;
+    scripts and tests use conceptual context-circuit-template in comments only.
+    sources/ design history is out of scope per intent non_goals. template/ and
+    assembled artifact are unchanged. plan-allocate-id fails PLAN_PREFIX_COLLISION
+    on archived duplicate numeric prefixes; next free in-band id is 0033 after
+    0032-gitlab-template-push.
+  constraints:
+    - Rename kaotypr/context-circuit to kaotypr/context-circuit-source before
+      renaming kaotypr/context-circuit-template to kaotypr/context-circuit.
+    - Do not edit template/ or any shipped product file solely to retarget GitHub
+      names; that would force a template content bump.
+    - Do not add release/requests entries or advance template_version in manifest.
+    - GitLab mirror vars and secrets (GITLAB_TEMPLATE_PROJECT, GITLAB_TEMPLATE_TOKEN)
+      stay unchanged; no GitLab project rename.
+    - Conceptual identity strings (context-circuit-template as product name in prose)
+      remain valid; only operational GitHub owner/repo slugs change.
+    - Preserve unrelated and dirty work; run semantic acceptance after phases.
+  decisions:
+    - One plan, four tasks — GitHub rename operator work, operational binding
+      retarget, publication record retarget, and static acceptance share one
+      execution and verification boundary for the full rename swap.
+    - TEMPLATE_REPO_TOKEN plan-resolution — after the template repository rename,
+      the worker verifies push access with gh; if the existing fine-grained PAT
+      lacks access to kaotypr/context-circuit, the operator re-grants or re-issues
+      the secret before merge is considered complete for publish readiness.
+    - Publication issue URLs are rewritten to kaotypr/context-circuit-source explicitly
+      (GitHub redirects old URLs, but AC-SOURCE-LINKS requires records to name the
+      source repository after the short name becomes the template).
+    - New test/release/test-github-names.sh asserts operational slugs in binding,
+      workspace, workflow, and publication config; gh repo view checks live GitHub
+      state when credentials are available.
+knowledge_impact:
+  expected_context_units:
+    - source-release-and-upgrade
+  review_on_completion: true
+tasks:
+  - id: GNA-001
+    title: Rename GitHub repositories and refresh local remote
+    repositories: [context-circuit-source]
+    paths:
+      - workspace.yaml
+    evidence_anchors:
+      - workspace.yaml
+    depends_on: []
+    changes:
+      - >
+        Using gh with maintainer credentials, rename kaotypr/context-circuit to
+        kaotypr/context-circuit-source first, then rename
+        kaotypr/context-circuit-template to kaotypr/context-circuit. Update this
+        checkout origin remote to git@github.com:kaotypr/context-circuit-source.git.
+        Verify TEMPLATE_REPO_TOKEN can push to kaotypr/context-circuit; if not,
+        document the operator action to re-grant the fine-grained PAT on the
+        renamed template repo. Do not run publish-template or cut a release.
+    acceptance:
+      - id: AC-SOURCE-GITHUB
+        statement: >
+          GitHub repository kaotypr/context-circuit-source exists and is this
+          maintainer source (origin remote points at it).
+      - id: AC-TEMPLATE-GITHUB
+        statement: >
+          GitHub repository kaotypr/context-circuit exists and holds the published
+          template history (tags and releases moved with the rename).
+    verification:
+      - id: V-GNA-001-source-repo
+        command: gh repo view kaotypr/context-circuit-source --json nameWithOwner -q .nameWithOwner | grep -Fx kaotypr/context-circuit-source
+      - id: V-GNA-001-template-repo
+        command: gh repo view kaotypr/context-circuit --json nameWithOwner -q .nameWithOwner | grep -Fx kaotypr/context-circuit
+      - id: V-GNA-001-old-slugs-gone
+        command: gh repo view kaotypr/context-circuit-template 2>&1 | grep -qi 'not found\|Could not resolve'
+      - id: V-GNA-001-origin-remote
+        command: git remote get-url origin | grep -F 'kaotypr/context-circuit-source'
+  - id: GNA-002
+    title: Retarget publication binding and publish workflow
+    repositories: [context-circuit-source]
+    paths:
+      - release/binding.yaml
+      - .github/workflows/publish-template.yml
+      - context/domains/source-release-and-upgrade/README.md
+    evidence_anchors:
+      - release/binding.yaml
+      - .github/workflows/publish-template.yml
+    depends_on: [GNA-001]
+    changes:
+      - >
+        Set release/binding.yaml destination_repo to kaotypr/context-circuit.
+        In .github/workflows/publish-template.yml change the template checkout
+        repository and gh release create --repo to kaotypr/context-circuit.
+        Update context/domains/source-release-and-upgrade/README.md GitHub slug
+        references to name kaotypr/context-circuit-source (source) and
+        kaotypr/context-circuit (published template). Leave GitLab mirror
+        configuration unchanged.
+    acceptance:
+      - id: AC-PUBLISH-TARGET
+        statement: >
+          The publish-template workflow checks out and creates GitHub Releases on
+          kaotypr/context-circuit, not kaotypr/context-circuit-template.
+      - id: AC-GITLAB-UNCHANGED
+        statement: >
+          GitLab mirror steps and variable/secret names in the workflow are
+          unchanged from before this rename.
+    verification:
+      - id: V-GNA-002-binding
+        command: grep -F 'destination_repo: kaotypr/context-circuit' release/binding.yaml && ! grep -F context-circuit-template release/binding.yaml
+      - id: V-GNA-002-workflow
+        command: grep -F 'repository: kaotypr/context-circuit' .github/workflows/publish-template.yml && grep -F '--repo kaotypr/context-circuit' .github/workflows/publish-template.yml && ! grep -F context-circuit-template .github/workflows/publish-template.yml
+      - id: V-GNA-002-gitlab-unchanged
+        command: sh test/release/test-gitlab-mirror-workflow.sh
+  - id: GNA-003
+    title: Retarget workspace URL and plans-github publication records
+    repositories: [context-circuit-source]
+    paths:
+      - workspace.yaml
+      - publication/plans-github/config.yaml
+      - publication/plans-github/published/
+    evidence_anchors:
+      - workspace.yaml
+      - publication/plans-github/config.yaml
+    depends_on: [GNA-001]
+    changes:
+      - >
+        Set workspace.yaml repositories.context-circuit-source.canonical_url to
+        https://github.com/kaotypr/context-circuit-source.git. Set
+        publication/plans-github/config.yaml target_ref.repository to
+        kaotypr/context-circuit-source. Rewrite every
+        publication/plans-github/published/*.yaml issue url from
+        github.com/kaotypr/context-circuit/issues/ to
+        github.com/kaotypr/context-circuit-source/issues/.
+    acceptance:
+      - id: AC-WORKSPACE-URL
+        statement: >
+          workspace.yaml canonical_url names kaotypr/context-circuit-source.
+      - id: AC-SOURCE-LINKS
+        statement: >
+          plans-github config and published records reference
+          kaotypr/context-circuit-source for source issue URLs, not the template
+          short name.
+    verification:
+      - id: V-GNA-003-workspace
+        command: grep -F 'canonical_url: https://github.com/kaotypr/context-circuit-source.git' workspace.yaml
+      - id: V-GNA-003-publication-config
+        command: grep -F 'repository: kaotypr/context-circuit-source' publication/plans-github/config.yaml
+      - id: V-GNA-003-published-urls
+        command: '! grep -rlF github.com/kaotypr/context-circuit/issues publication/plans-github/published/ && grep -rlF github.com/kaotypr/context-circuit-source/issues publication/plans-github/published/ | wc -l | grep -Fx 20'
+  - id: GNA-004
+    title: Static acceptance and no template release guard
+    repositories: [context-circuit-source]
+    paths:
+      - test/release/test-github-names.sh
+      - test/acceptance.sh
+      - .context-circuit/wrapper/manifest.yaml
+      - release/requests/
+    depends_on: [GNA-002, GNA-003]
+    changes:
+      - >
+        Add test/release/test-github-names.sh asserting operational GitHub slugs
+        in binding, workspace, workflow checkout/release targets, and
+        publication config; assert no kaotypr/context-circuit-template slug
+        remains in those paths. Wire into test/acceptance.sh after
+        test-gitlab-mirror-workflow.sh. Confirm template_version in manifest is
+        unchanged and no new release/requests file was added for this rename.
+    acceptance:
+      - id: AC-NO-TEMPLATE-RELEASE
+        statement: >
+          template_version is unchanged, no new release request was added, and
+          release assembly output is not modified by this rename-only work.
+      - id: AC-SOURCE-LINKS
+        statement: >
+          Static acceptance proves source-side operational records no longer
+          reference the pre-rename source slug or context-circuit-template as a
+          GitHub destination.
+    verification:
+      - id: V-GNA-004-github-names-suite
+        command: sh test/release/test-github-names.sh
+      - id: V-GNA-004-no-new-release-request
+        command: test $(find release/requests -maxdepth 1 -type f -name '*.md' | wc -l | tr -d ' ') -eq 5
+      - id: V-GNA-004-acceptance
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
