@@ -3,7 +3,7 @@ plan: 0011-human-simulated-harness
 provider: github
 plan_item:
   id: "83"
-  url: "https://github.com/kaotypr/context-circuit/issues/83"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/83"
 task_items:
   - task: HRN-001
     id: "83"

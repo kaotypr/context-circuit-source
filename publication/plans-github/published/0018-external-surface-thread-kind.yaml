@@ -3,7 +3,7 @@ plan: 0018-external-surface-thread-kind
 provider: github
 plan_item:
   id: "90"
-  url: "https://github.com/kaotypr/context-circuit/issues/90"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/90"
 task_items:
   - task: THR-001
     id: "90"

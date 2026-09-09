@@ -3,7 +3,7 @@ plan: 0013-run-stack-substrate
 provider: github
 plan_item:
   id: "85"
-  url: "https://github.com/kaotypr/context-circuit/issues/85"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/85"
 task_items:
   - task: RSS-001
     id: "85"

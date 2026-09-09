@@ -3,7 +3,7 @@ plan: 0002-workspace-repository-model
 provider: github
 plan_item:
   id: "74"
-  url: "https://github.com/kaotypr/context-circuit/issues/74"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/74"
 task_items:
   - task: WRK-001
     id: "74"

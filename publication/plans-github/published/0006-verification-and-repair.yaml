@@ -3,7 +3,7 @@ plan: 0006-verification-and-repair
 provider: github
 plan_item:
   id: "78"
-  url: "https://github.com/kaotypr/context-circuit/issues/78"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/78"
 task_items:
   - task: VER-001
     id: "78"
