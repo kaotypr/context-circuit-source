@@ -11,3 +11,4 @@
 | i015-lean-workspace-context | Keep the workspace agent loop; remove discovery waste | approved | standard | > | intent/i015-lean-workspace-context/INTENT.md |
 | i022-ok-easter-egg | Easter egg on a lone ok, punchline hidden in the engine | approved | standard | > | intent/i022-ok-easter-egg/INTENT.md |
 | i023-gitlab-template-push | Push the published template to GitLab from the GitHub Action | approved | standard | > | intent/i023-gitlab-template-push/INTENT.md |
+| i024-align-github-names | Align GitHub names with source and product identity | draft | standard | GitHub names match source vs product; publication follows; no template release for the rename. | intent/i024-align-github-names/INTENT.md |
