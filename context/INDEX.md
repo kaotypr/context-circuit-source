@@ -57,3 +57,6 @@ mirrors the published tree and Release to GitLab when operators configure
 GitHub Actions variables and secrets. See the 2026-09-09 decision in
 `context/DECISIONS.md` and
 [source-release-and-upgrade](domains/source-release-and-upgrade/README.md).
+The GitHub destinations are `kaotypr/context-circuit-source` (this maintainer
+source) and `kaotypr/context-circuit` (the published template). See the
+2026-09-10 decision in `context/DECISIONS.md`.

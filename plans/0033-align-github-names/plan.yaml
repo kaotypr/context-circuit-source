@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0033-align-github-names
 intent: i024-align-github-names
 title: Align GitHub repository names with source and product identity
-status: draft
+status: done
 objective: >
   Swap GitHub slugs so this maintainer source lives at kaotypr/context-circuit-source,
   the published template lives at kaotypr/context-circuit, and source-side

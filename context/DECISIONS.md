@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-09-10 — GitHub names match source vs published template
+
+Decision: this maintainer source lives on GitHub as `kaotypr/context-circuit-source`. The published template lives on GitHub as `kaotypr/context-circuit`. The conceptual product identity remains `context-circuit-template` (the distributable universal project workspace). GitLab remains an optional mirror of the already-published tree; its project path is not renamed with GitHub.
+
+Rationale: the short GitHub name is the product people use. The factory must not occupy that name.
+
+Consequence: [source-release-and-upgrade](domains/source-release-and-upgrade/README.md) names both GitHub destinations. Publication binding, the publish Action, and this workspace's canonical URL follow those slugs. GitHub stays the canonical published template.
+
 ## 2026-09-09 — Published template is GitHub-canonical with an optional GitLab mirror
 
 Decision: official template publication still lands on GitHub (`main`, the

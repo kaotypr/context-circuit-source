@@ -3,7 +3,7 @@
 **Intent:** i024-align-github-names  
 **Repository:** context-circuit-source  
 **Tier:** Standard  
-**Status:** draft
+**Status:** done
 
 ## Objective
 
