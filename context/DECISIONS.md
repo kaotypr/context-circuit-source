@@ -1,5 +1,25 @@
 # Decisions
 
+## 2026-09-10 — New worktrees are runnable before a worker is attached
+
+Decision: a new execution or Explore worktree is prepared before anyone is
+attached. The bound checkout's eligible gitignored paths, including `.env`, are
+copied in and never symlinked. A copied install tree remains only when it matches
+that worktree's lockfile; otherwise a frozen install prepares the worktree.
+`ready` therefore means prepared, and an overlay or provisioning failure blocks
+setup.
+
+Rationale: a worker cannot honestly be told that a fresh isolated checkout is
+ready when its ignored runtime inputs or its lockfile-correct dependencies are
+missing.
+
+Consequence: workspace self-protection exclusions remain outside the overlay, so
+runtime state, registered checkouts, and host-local configuration do not leak into
+new worktrees. [Repository grounding](domains/repository-grounding/README.md),
+[plan execution](domains/plan-execution/README.md), and
+[direct collaboration](domains/direct-collaboration/README.md) describe the
+create-time behavior in their respective domains.
+
 ## 2026-09-10 — A host obtains the per-role config only through the runtime
 
 Decision: a host must never `Read`, `find`, or `grep` the per-role `(model, effort)` config file directly. It invokes a print-only runtime verb instead, which resolves the workspace-root local override when present, else a newly committed fallback file, and reports which source it used.

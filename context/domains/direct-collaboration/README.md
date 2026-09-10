@@ -7,10 +7,10 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 13a8e92
+    commit: d95bbd7
     basis: current-wrapper
-generated_at: 2026-09-03T00:00:00Z
-review_date: 2026-12-03
+generated_at: 2026-09-10T00:00:00Z
+review_date: 2026-12-10
 freshness: accepted-from-current-wrapper
 assumptions:
   - Direct collaboration adds no authority; promotion is the only path that
@@ -64,8 +64,8 @@ INV-ASSURE-01.
   plan lifecycle: it neither invokes nor is invoked by intent approval, execution,
   verification, completion, or delivery. It is nonetheless the Explore rung of the
   single ladder — the same ladder whose Standard and Critical tiers require an
-  independent verifier. Explore is planless and has no grounding preflight of its
-  own.
+  independent verifier. Explore is planless and receives the shared create-time
+  worktree preparation, but has no execution grounding manifest or worker brief.
 - **One repository, three actors.** A session resolves exactly one connected
   repository and cannot span repositories; ambiguity is one focused question
   before any state is created. The user is the live acceptance oracle, the
@@ -78,7 +78,11 @@ INV-ASSURE-01.
   commit the user names). The human chooses the short name; the agent does not
   invent it. Explore worktrees are not mixed with plan-execution worktrees under
   `.runtime/worktrees/`. It never reuses the active checkout or edits a plan
-  execution branch in place.
+  execution branch in place. Before the pairing pointer is written, the runtime
+  applies the same gitignored-path overlay and lockfile-correct provisioning as
+  execution worktrees. A failed overlay or provisioning step removes the new
+  worktree and branch and leaves no pointer, so no worker is attached to a partial
+  Explore session.
 - **No trust scaffolding.** There is no verifier, lease, execution record, failure
   counter, plan status, or completion gate; the only runtime state is a light
   resumable pairing-session pointer. Build/test checks are feedback for the live
@@ -154,3 +158,5 @@ ramp into the checked pipeline, because the shipped invariants supersede the
 standalone-mode framing. The Explore-tier mechanics (one repository, user-as-oracle,
 no verifier/lease/record, light resumable pointer, human-supervised labeling,
 block-on-base-drift, host-blocked read-only) stand in full.
+Updated 2026-09-10: Explore worktrees receive the same runnable-at-creation
+preparation as execution worktrees; failed preparation leaves no pairing state.

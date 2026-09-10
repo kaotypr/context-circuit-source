@@ -7,6 +7,8 @@ ws=$(cc_fx_ws)
 trap 'rm -rf "$ws"' EXIT HUP INT TERM
 cc_fx_repo "$ws" api development
 repo="$ws/repositories/api"
+cc_fx_ignored_content "$repo"
+cc_fx_node_toolchain "$repo" '{ "name": "api" }'
 base_before=$(git -C "$repo" rev-parse HEAD)
 
 # A dirty connected checkout is untouched: pairing branches from its committed
@@ -16,6 +18,7 @@ base_dirty_before=$(git -C "$repo" status --porcelain)
 begin=$(cc_pair_begin "$ws" api tighten-checkout)
 printf '%s\n' "$begin" | grep -Fq 'branch: cc-pair/tighten-checkout' || fail 'pair branch missing'
 printf '%s\n' "$begin" | grep -Fq 'supervision: human-supervised' || fail 'supervision label missing'
+printf '%s\n' "$begin" | grep -Fq 'environment: ready' || fail 'pair worktree not prepared'
 assert_eq "$base_dirty_before" "$(git -C "$repo" status --porcelain)"
 assert_eq "$base_before" "$(git -C "$repo" rev-parse HEAD)"
 
@@ -24,12 +27,17 @@ pointer="$pdir/pointer.yaml"
 wt="$ws/.runtime/explore/tighten-checkout/api"
 require_file "$pointer"
 require_dir "$wt"
+require_file "$wt/.env"
+test ! -L "$wt/.env" || fail 'Explore overlay linked .env'
+require_file "$wt/node_modules/fixture/index.js"
+test ! -L "$wt/node_modules" || fail 'Explore overlay linked node_modules'
 test ! -d "$ws/.runtime/worktrees/cc-pair/tighten-checkout" || fail 'Explore mixed into plan-execution worktrees'
 contains "$pointer" 'schema_version: 1'
 contains "$pointer" 'repo: api'
 contains "$pointer" "worktree: $wt"
 contains "$pointer" 'branch: cc-pair/tighten-checkout'
 contains "$pointer" "base: $base_before"
+assert_eq "5" "$(wc -l <"$pointer" | tr -d ' ')"
 not_contains "$pointer" 'verifier'
 not_contains "$pointer" 'failure'
 not_contains "$pointer" 'plan:'

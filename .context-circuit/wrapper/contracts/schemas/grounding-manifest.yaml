@@ -40,8 +40,12 @@ fields:
     required: true
     values: [ready, no-toolchain]
     description: >
-      Set by worktree hardening: ready when a toolchain was detected and prepared,
-      no-toolchain when none was detected (e.g. a greenfield repository).
+      Set only after worktree hardening completes the gitignored overlay and,
+      when a toolchain exists, provisions the worktree to match its own lockfile:
+      ready means that preparation succeeded; no-toolchain means no toolchain was
+      detected after the overlay (for example, a greenfield repository). A detected
+      lockfile alone is not ready. An overlay or provisioning failure blocks setup
+      instead of being recorded as an environment value.
 
 rules:
   - INV-GROUND-01

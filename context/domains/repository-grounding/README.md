@@ -7,10 +7,10 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 2c2adab
+    commit: d95bbd7
     basis: current-wrapper
-generated_at: 2026-08-27T00:00:00Z
-review_date: 2026-11-27
+generated_at: 2026-09-10T00:00:00Z
+review_date: 2026-12-10
 freshness: accepted-from-current-wrapper
 assumptions:
   - Repository guidance is referenced from the worktree, never captured into Product Knowledge.
@@ -62,10 +62,14 @@ plan ([run-stack](../run-stack/README.md)).
   skill's description) — and records a grounding manifest (`files`, `skills`,
   `environment`) as execution evidence. Scanning the *execution base* means
   bootstrapping propagates through a stack.
-- **Worktree hardening.** The runtime detects the toolchain and reports
-  `environment: ready | no-toolchain`, so CC-induced execution-environment
-  workarounds are eliminated rather than documented (full dependency provisioning
-  is a later phase).
+- **Worktree hardening.** Before a worker is attached, the runtime overlays the
+  bound checkout's gitignored paths into the fresh worktree with copy-on-write or
+  a real copy, never a symlink; untracked paths that are not ignored stay out.
+  It then detects a toolchain. A copied install tree is kept only when it matches
+  this worktree's lockfile; otherwise the runtime runs that toolchain's frozen
+  install. The grounding-manifest schema owns the resulting environment value:
+  preparation emits `ready` only after these steps succeed, while a setup failure
+  blocks execution rather than reaching a worker.
 - **Deliver, not author (INV-GROUND-03).** A fixed shipped template
   (`.context-circuit/wrapper/runtime/worker-brief.md`, shipped beside the nested
   runtime) is filled by deterministic
@@ -106,19 +110,18 @@ may author the repo's agent docs, which later stacked plans then discover).
 
 - `.context-circuit/wrapper/adapters/worker-brief.md`; `.agents/skills/cc-execute/SKILL.md`,
   `.agents/skills/cc-run-stack/SKILL.md`; `.context-circuit/agents/worker.md`, `.context-circuit/agents/coordinator.md`
-- `.context-circuit/wrapper/runtime/engine.sh`: `cc_discover_repo_grounding`, `cc_harden_worktree`,
-  `cc_grounding_directive`, `cc_worker_brief_assemble`, `cc_brief_preflight`,
-  `cc_skill_desc`
+- `.context-circuit/wrapper/runtime/engine.sh`: `cc_overlay_ignored`,
+  `cc_provision_worktree`, `cc_toolchain_matches`, `cc_toolchain_install`,
+  `cc_discover_repo_grounding`, `cc_harden_worktree`, `cc_grounding_directive`,
+  `cc_worker_brief_assemble`, `cc_brief_preflight`, `cc_skill_desc`
 - `.context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml`, `execution.yaml` (grounding
   record), `worker-handoff.yaml` (`repository_friction`)
 - `.context-circuit/wrapper/contracts/invariants.yaml`: INV-GROUND-01, INV-GROUND-02, INV-GROUND-03
 
 ## Verification
 
-`sh test/acceptance.sh` (repository-grounding suite); a section in
-`agent-harness/test-template-runtime.sh` proves the shipped template carries it;
-live scenario `agent-harness/scenarios/11-repo-grounding` (grade.sh PASS incl.
-`file_grounded` + `grounding_manifest_recorded`, human-simulator pass).
+`sh test/grounding/test-grounding.sh` and `sh test/acceptance.sh`
+(repository-grounding suite).
 
 ## Acceptance notes
 
@@ -127,3 +130,6 @@ Updated 2026-08-29: the shipped brief moved out of the workspace root to
 `.context-circuit/wrapper/runtime/worker-brief.md`; source of truth
 (`.context-circuit/wrapper/adapters/worker-brief.md`) and INV-GROUND semantics
 unchanged.
+Updated 2026-09-10: fresh worktrees receive the ignored-path overlay and
+lockfile-correct provisioning before grounding; setup failures block rather than
+asking a worker to compensate.

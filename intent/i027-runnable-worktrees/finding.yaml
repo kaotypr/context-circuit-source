@@ -1,0 +1,118 @@
+schema_version: 1
+intent: i027-runnable-worktrees
+repository: context-circuit-source
+feasible: true
+feasibility_outcome: feasible
+out_of_scope_reach: []
+open_questions:
+  - id: 1
+    disposition: plan-resolution
+    question: >
+      The bound checkout for context-circuit-source IS the workspace root
+      (repositories.local.yaml binds it at `path: .`), so "every gitignored file
+      and folder that exists on disk in the bound checkout" literally includes
+      `.runtime/` — which is where every execution and Explore worktree lives.
+      A naive overlay would copy the runtime state, including the worktree being
+      created, into itself. The same listing also yields `/repositories/`
+      (other repositories' checkouts), `dist/`, and the workspace-root
+      host-local files the contract's non-goals already exclude
+      (role-tiering.local.yaml, member.local.yaml, repositories.local.yaml).
+      `.gitignore` lines 1-3 and 6-35 are the concrete evidence.
+    carried_as: >
+      Plan 0039 defines one runtime-constant overlay exclusion set applied when
+      the ignored-path listing is taken: the workspace runtime directory
+      (`.runtime/`), the workspace repositories directory (`/repositories/`),
+      and the three workspace-root `*.local.yaml` host-local files, each matched
+      only at the top level of the source checkout. This is a workspace
+      self-protection constant, not a per-repository copy list, so the
+      no-CC-side-profile non-goal is preserved. Everything else Git reports as
+      ignored is overlaid, including `.env`.
+  - id: 2
+    disposition: plan-resolution
+    question: >
+      The contract says a cloned install tree is kept "only when it matches this
+      worktree's lockfile", but nothing in the current runtime records what a
+      given install tree was built from — `cc_harden_worktree` (engine.sh 1668)
+      only tests for a lockfile's existence. Matching therefore needs a defined
+      mechanism.
+    carried_as: >
+      Plan 0040 decides matching by lockfile content digest, not by inspecting
+      the install tree: the overlay source's on-disk lockfile digest is compared
+      to the new worktree's lockfile digest, and the runtime writes a stamp file
+      inside the prepared install tree recording the digest it was provisioned
+      from. Keep the cloned tree when the stamp (or, on a first run, the source
+      lockfile) matches; otherwise run the frozen install and rewrite the stamp.
+      An install tree with no stamp and a differing lockfile is always treated as
+      a mismatch. This works for `cc-pair`, where the checkout may be dirty,
+      because the on-disk lockfile is exactly what the on-disk install tree was
+      built from.
+  - id: 3
+    disposition: plan-resolution
+    question: >
+      The contract requires "a runtime-constant table keyed by detected lockfile
+      or manifest" but does not fix its rows. The existing detection list
+      (engine.sh 1672-1674) mixes ecosystems with a per-worktree install tree
+      (npm/pnpm/yarn/bun, poetry, pip, composer) with ecosystems whose cache is
+      global and whose worktree needs no install tree at all (go.mod, pom.xml,
+      build.gradle).
+    carried_as: >
+      Plan 0040 gives every existing detection key an explicit row of
+      (install tree path, frozen install command) or the explicit
+      "no per-worktree install tree — ready without installing" outcome, so no
+      key silently falls through. Exact command strings are named in the plan
+      and flagged for the coordinator to confirm at plan review, because they
+      ship to every template consumer and some ecosystems have more than one
+      defensible frozen form.
+  - id: 4
+    disposition: plan-resolution
+    question: >
+      A frozen install may use the network, but `test/acceptance.sh` must stay
+      offline and deterministic. Proving AC-RUNNABLE and AC-LOCKFILE-CORRECT
+      cannot mean actually running `npm ci` in the suite.
+    carried_as: >
+      Plan 0040 proves the three branches without a network: the keep path
+      (overlaid install tree plus an identical lockfile digest, asserting the
+      install command was never invoked), the no-install-tree path (a `go.mod`
+      fixture reaching ready with no install), and the fail-closed path (a
+      lockfile whose table command names a tool absent from PATH, asserting
+      provisioning fails, the execution is blocked, and no brief is assembled).
+      The install command itself is invoked through one indirection point the
+      suite can observe.
+  - id: 5
+    disposition: plan-resolution
+    question: >
+      Explore worktrees are created by `cc_pair_begin` (engine.sh 1305), which
+      today performs no grounding, no hardening, and no environment reporting at
+      all — only `cc_execution_begin` (engine.sh 2533) calls
+      `cc_discover_repo_grounding`. The contract requires overlay and
+      readiness for Explore copies too, so the Explore path needs preparation it
+      has never had, without turning a pairing pointer into an execution record
+      (INV-PAIR-01).
+    carried_as: >
+      Plans 0039 and 0040 wire overlay and provisioning into `cc_pair_begin`
+      before the pointer is written, and emit `environment:` on the pair-begin
+      stdout only. No manifest, no grounding directory, and no new field on
+      `pairing-session.yaml`: the pointer keeps its five fields, and failure
+      removes the worktree and branch so no half-ready Explore session is
+      resumable.
+tier_signal: >
+  Standard confirmed, and nothing found argues for raising or lowering it. The
+  change is confined to worktree setup in one runtime library plus its contracts,
+  tests, and Product Knowledge; it touches no gate, lease, candidate,
+  verification, completion, or delivery semantics. The one genuinely sharp edge
+  is that `.env` and every other gitignored local file is cloned into a worktree
+  the human already accepted at intent approval, and the existing
+  `cc_worktree_drop` (engine.sh 1464) already removes those copies with
+  `--force` on cleanup. The second sharp edge, the `.runtime/` recursion above,
+  is a correctness hazard resolved inside plan 0039, not a consequence tier
+  signal.
+revision: 7d72f4687440a88969538f541737061e3f70d528
+notes: >
+  Runtime blocker for id allocation, unrelated to this intent and already
+  recorded by plans 0034 and 0038: `plan-allocate-id` fails
+  PLAN_PREFIX_COLLISION because plans/archive/ carries duplicate numeric
+  prefixes 0001-0016 (for example 0015-repository-grounding and
+  0015-tracer-role-tiering). The ids were therefore derived by the same band
+  rule the runtime would apply: member `kao`, plan band 1-999, highest existing
+  prefix 0038, so the next consecutive in-band ids are 0039, 0040, 0041; each
+  was checked free against `cc_plan_numbers`.
