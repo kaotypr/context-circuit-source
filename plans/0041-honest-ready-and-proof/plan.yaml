@@ -164,7 +164,7 @@ tasks:
           guarantees and contains no dependency workaround instruction.
     verification:
       - id: HR-VT-001
-        command: "grep -q 'values: [ready, no-toolchain]' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml && grep -qi 'not ready' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml"
+        command: "grep -Fq 'values: [ready, no-toolchain]' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml && grep -qi 'not ready' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml"
       - id: HR-VT-002
         command: grep -q '@@ENVIRONMENT@@' .context-circuit/wrapper/adapters/worker-brief.md && ! grep -qiE 'no-verify|verify-deps|shared node_modules' .context-circuit/wrapper/adapters/worker-brief.md .context-circuit/wrapper/runtime/engine.sh
       - id: HR-VT-003
