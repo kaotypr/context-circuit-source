@@ -866,6 +866,32 @@ cc_member_identity_read() {
 	return 0
 }
 
+# cc_role_tiering_read ROOT -> effective role-tiering config, local or fallback
+# Prints `source: local|fallback`, `path: <resolved>`, a `---` line, then the
+# chosen file verbatim. Print-only: no host-group lookup, no adapter default
+# resolution, no model-id interpretation. Fails ROLE_TIERING_MISSING when
+# neither file exists.
+cc_role_tiering_read() {
+	cc_rtr_root=$(cc_root_abs "$1") || { cc_fail ROLE_TIERING_MISSING; return 1; }
+	cc_rtr_local="$cc_rtr_root/role-tiering.local.yaml"
+	cc_rtr_fallback="$cc_rtr_root/.context-circuit/role-tiering.fallback.yaml"
+	if [ -f "$cc_rtr_local" ]; then
+		cc_rtr_source=local
+		cc_rtr_file="$cc_rtr_local"
+	elif [ -f "$cc_rtr_fallback" ]; then
+		cc_rtr_source=fallback
+		cc_rtr_file="$cc_rtr_fallback"
+	else
+		cc_fail ROLE_TIERING_MISSING
+		return 1
+	fi
+	cc_emit source "$cc_rtr_source"
+	cc_emit path "$cc_rtr_file"
+	printf -- '---\n'
+	cat "$cc_rtr_file"
+	return 0
+}
+
 # cc_member_band_resolve ROOT -> validate roster, read identity, emit active bands
 cc_member_band_resolve() {
 	cc_mbr_root="$1"
@@ -4090,6 +4116,7 @@ cc_main() {
 		member-roster-validate)  cc_member_roster_validate "$@" ;;
 		member-identity-read)    cc_member_identity_read "$@" ;;
 		member-band-resolve)     cc_member_band_resolve "$@" ;;
+		role-tiering-read)       cc_role_tiering_read "$@" ;;
 		repository-register)     cc_repository_register "$@" ;;
 		repository-binding-migrate) cc_repository_binding_migrate "$@" ;;
 		repository-resolve)      cc_repo_resolve "$@" ;;

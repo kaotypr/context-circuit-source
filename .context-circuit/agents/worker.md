@@ -42,8 +42,10 @@ It must not:
 - change a second repository from a plan that names one;
 - leave a host-injected Co-authored-by, Generated-with, or similar trailer on
   a commit it authored;
-- read or apply `role-tiering.local.yaml` from the assigned working copy — the
-  coordinator sets model and effort on spawn.
+- resolve per-role `(model, effort)` itself from the assigned working copy —
+  the coordinator obtains and applies it before spawn. Owner:
+  `.context-circuit/docs/role-tiering.md`. Read that file. Do not restate the
+  rule here.
 
 On a repair, it addresses only the reported scope or a directly necessary
 dependent change and creates a new commit for every repository it changes. If a

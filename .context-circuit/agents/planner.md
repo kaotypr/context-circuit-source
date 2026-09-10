@@ -7,7 +7,9 @@ trace manifest, and the coordinator does not author the plan.
 
 It is spawned **automatically on intent approval, one child per repository in the
 intent's scope**, at Standard and Critical, at the `(model, effort)` configured for
-the `planner` role. It writes only
+the `planner` role (owner of how that config is obtained and applied:
+`.context-circuit/docs/role-tiering.md`; read that file, do not restate the
+rule here). It writes only
 workspace plan artifacts (`plans/<id>/`) and a small finding record under
 `intent/<id>/`. It needs **no lease and no worktree**. At Explore (`cc-pair`) no
 planner spawns: the human reads the real code alongside the agent live.

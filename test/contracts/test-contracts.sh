@@ -251,6 +251,25 @@ not_contains "$ROOT/.context-circuit/agents/coordinator.md" "tracer"
 not_contains "$ROOT/.context-circuit/agents/planner.md" "tracer"
 not_contains "$inv" "tracer"
 not_contains "${W}/contracts/schemas/trace-manifest.yaml" "tracer"
+
+# --- engine-verb access to role-tiering config, with a committed fallback ---
+contains "${W}/runtime/engine.sh" "role-tiering-read"
+contains "${W}/runtime/engine.sh" "ROLE_TIERING_MISSING"
+require_file "$ROOT/.context-circuit/role-tiering.fallback.yaml"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "role-tiering-read"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "fallback"
+for f in "${W}/adapters/AGENTS.md" "${W}/adapters/CLAUDE.md" "${W}/adapters/CURSOR.md" \
+	"$ROOT/AGENTS.md" "$ROOT/CLAUDE.md" "$ROOT/CURSOR.md" \
+	"$ROOT/.context-circuit/agents/coordinator.md" "$ROOT/.context-circuit/agents/worker.md" \
+	"$ROOT/.context-circuit/agents/verifier.md" "$ROOT/.context-circuit/agents/planner.md"; do
+	contains "$f" ".context-circuit/docs/role-tiering.md"
+	not_contains "$f" "role-tiering.fallback.yaml"
+done
+contains "${W}/manifest.yaml" ".context-circuit/role-tiering.fallback.yaml"
+contains "${W}/manifest.yaml" "role-tiering.local.yaml"
+if git -C "$ROOT" status --porcelain -- .gitignore .rtk '*/config.toml' 2>/dev/null | grep . >/dev/null 2>&1; then
+	fail "this plan must not modify .gitignore or rtk config"
+fi
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
 contains "$man" "runtime_version: 1.0.0"

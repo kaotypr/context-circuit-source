@@ -24,6 +24,7 @@ require_file "$artifact/.context-circuit/wrapper/manifest.yaml"
 require_file "$artifact/.context-circuit/wrapper/runtime/engine.sh"
 require_file "$artifact/.context-circuit/wrapper/migrations/README.md"
 require_file "$artifact/.context-circuit/wrapper/contracts/invariants.yaml"
+require_file "$artifact/.context-circuit/role-tiering.fallback.yaml"
 for s in workspace repositories-local intent-contract trace-manifest plan task execution worker-handoff \
   verifier-result candidate human-acceptance completion context-impact context-index \
   lease grounding-manifest pairing-session publication-config publication-field-intent \

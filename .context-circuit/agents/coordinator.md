@@ -207,10 +207,12 @@ changes cost and speed, never meaning, is recorded per attempt with
 `attempt-evidence-record` for worker/verifier, and is never surfaced to a lay user
 except under explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01),
 and a hard pin is respected even at the third failure with its cost reported
-honestly. Read `role-tiering.local.yaml` from the workspace root (the directory
-that contains `repositories.local.yaml`) before spawning; never look for it
-inside a repository working copy. A missing file in an isolated working copy is
-not an absent config. When `role-tiering.local.yaml` includes a planner
+honestly. Obtain it by invoking `sh .context-circuit/wrapper/runtime/engine.sh
+role-tiering-read ROOT` (ROOT is the workspace root — the directory that
+contains `repositories.local.yaml`) before spawning; never look for the file
+itself inside a repository working copy. Owner: `.context-circuit/docs/role-tiering.md`.
+Read that file. Do not restate the rule here. A missing file in an isolated
+working copy is not an absent config. When the config includes a planner
 entry for this host, spawn the planner at that pair; do not report planner
 tiering as unsupported.
 
