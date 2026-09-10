@@ -1,0 +1,82 @@
+schema_version: 2
+intent: i028-role-tiering-config-access
+title: Engine-verb access to role-tiering config, with a committed fallback
+goal: >
+  Any agent (coordinator or child, any host) can reliably learn the effective
+  per-role (model, effort) config from role-tiering.local.yaml, even though
+  that file is gitignored and invisible to find/grep on this host (the Claude
+  Code PreToolUse hook rewrites find/grep to RTK's proxy, which walks with
+  git_ignore(true) hardcoded and never surfaces a gitignored path), and even
+  when the file does not exist at all yet. A new engine.sh verb prints the
+  effective role-tiering config: it reads role-tiering.local.yaml from the
+  workspace root when present, and falls back to a new committed
+  .context-circuit/role-tiering.fallback.yaml when it is absent.
+  .context-circuit/docs/role-tiering.md becomes the sole owner of the rule
+  ("call the engine verb, never Read/find/grep the file directly") and
+  documents the fallback behavior. AGENTS.md, CLAUDE.md, CURSOR.md, and each
+  of .context-circuit/agents/{coordinator,worker,verifier,planner}.md carry a
+  short pointer stub to that owner doc, not a restatement of the rule.
+
+non_goals:
+  - Changing what (model, effort) values mean or how they are applied on a
+    child spawn (INV-HOST-01 unaffected).
+  - Changing RTK configuration (.rtk/filters.toml, config.toml, or any
+    upstream rtk-ai/rtk behavior), or disabling/reconfiguring the RTK
+    PreToolUse hook.
+  - Filing an upstream feature request against rtk-ai/rtk.
+  - Un-gitignoring repositories.local.yaml, role-tiering.local.yaml, or
+    member.local.yaml, or altering .gitignore.
+  - Documenting every RTK-affected command generally; scope is role-tiering
+    config access only.
+  - Committing, publishing, merging, or delivering implicitly.
+
+constraints:
+  - Add exactly one new engine.sh verb that prints the effective role-tiering
+    config (workspace-root role-tiering.local.yaml when present, else the new
+    committed fallback file).
+  - Add exactly one new committed file, .context-circuit/role-tiering.fallback.yaml,
+    with content the human supplied verbatim; it is not gitignored and ships
+    with the repo.
+  - .context-circuit/docs/role-tiering.md is the single owner of the "call the
+    engine verb, don't Read/find/grep the file" rule and the fallback
+    behavior; AGENTS.md, CLAUDE.md, CURSOR.md, and each
+    .context-circuit/agents/*.md role file get a short pointer to that owner,
+    matching the existing "Owner: X. Read that file. Do not restate the rule
+    here." pattern already used in .claude/rules/role-tiering-spawn.md and
+    .claude/rules/commit-convention.md — not a duplicated restatement.
+  - Preserve unrelated and dirty work already in the checkout.
+
+acceptance_criteria:
+  - id: AC-ENGINE-VERB
+    statement: >
+      engine.sh exposes one new verb that prints the effective role-tiering
+      config, sourcing role-tiering.local.yaml from the workspace root when
+      present and .context-circuit/role-tiering.fallback.yaml otherwise.
+  - id: AC-FALLBACK-FILE
+    statement: >
+      .context-circuit/role-tiering.fallback.yaml exists, is committed (not
+      gitignored), and holds the host-role-tiering content the human
+      supplied.
+  - id: AC-OWNER-DOC
+    statement: >
+      .context-circuit/docs/role-tiering.md states the rule (call the engine
+      verb, never Read/find/grep role-tiering.local.yaml directly) and the
+      fallback behavior, and is the only place that states it in full.
+  - id: AC-POINTERS-PRESENT
+    statement: >
+      AGENTS.md, CLAUDE.md, CURSOR.md, and each of
+      .context-circuit/agents/{coordinator,worker,verifier,planner}.md
+      contain a short pointer to .context-circuit/docs/role-tiering.md as the
+      owner, without restating the rule's detail.
+  - id: AC-NO-RTK-CHANGE
+    statement: >
+      No .rtk/filters.toml, rtk config.toml, or RTK hook configuration is
+      added or modified by this change.
+
+scope:
+  repositories:
+    - id: context-circuit-source
+
+tier: standard
+status: approved
+contract_digest: sha256:d89a766f4baa589e010d2a12539d88614ea0de3afaec04099c52de423d191826

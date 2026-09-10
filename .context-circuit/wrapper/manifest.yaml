@@ -60,6 +60,7 @@ release_boundary:
     - .agents/skills/
     - .context-circuit/agents/
     - .context-circuit/docs/
+    - .context-circuit/role-tiering.fallback.yaml
     - .claude/
     - .codex/
     - .cursor/
@@ -88,6 +89,7 @@ upgrade_boundary:
     - .agents/skills/
     - .context-circuit/agents/
     - .context-circuit/docs/
+    - .context-circuit/role-tiering.fallback.yaml
     - .claude/
     - .codex/
     - .cursor/

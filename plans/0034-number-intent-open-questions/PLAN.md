@@ -3,7 +3,7 @@
 **Intent:** i025-number-intent-open-questions  
 **Repository:** context-circuit-source  
 **Tier:** Standard  
-**Status:** draft
+**Status:** done
 
 ## Objective
 

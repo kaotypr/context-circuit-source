@@ -393,9 +393,19 @@ cc_intent_criteria_count() {
 	' "$1"
 }
 
-# cc_intent_validate DIR -> confirm intent/<id>/ structure and contract.yaml fields
+# cc_intent_validate DIR | ROOT REL_DIR -> confirm intent/<id>/ structure and
+# contract.yaml fields. The two-argument form keeps workspace-relative runtime
+# invocations consistent with the other intent actions.
 cc_intent_validate() {
-	cc_iv_dir="$1"
+	case "$#" in
+		1) cc_iv_dir="$1" ;;
+		2)
+			cc_iv_root=$(cc_root_abs "$1") || { cc_fail INTENT_ROOT_MISSING; return 1; }
+			cc_safe_relative "$2" || { cc_fail INTENT_PATH_INVALID "$2"; return 1; }
+			cc_iv_dir="$cc_iv_root/$2"
+			;;
+		*) cc_fail INTENT_USAGE; return 1 ;;
+	esac
 	[ -d "$cc_iv_dir" ] || { cc_fail INTENT_DIR_MISSING; return 1; }
 	[ -f "$cc_iv_dir/contract.yaml" ] || { cc_fail INTENT_CONTRACT_MISSING; return 1; }
 	[ -f "$cc_iv_dir/INTENT.md" ] || { cc_fail INTENT_MD_MISSING; return 1; }
@@ -853,6 +863,32 @@ cc_member_identity_read() {
 	done
 	[ "$cc_mir_found" -eq 1 ] || { cc_fail MEMBER_IDENTITY_UNKNOWN; return 1; }
 	cc_emit member "$cc_mir_id"
+	return 0
+}
+
+# cc_role_tiering_read ROOT -> effective role-tiering config, local or fallback
+# Prints `source: local|fallback`, `path: <resolved>`, a `---` line, then the
+# chosen file verbatim. Print-only: no host-group lookup, no adapter default
+# resolution, no model-id interpretation. Fails ROLE_TIERING_MISSING when
+# neither file exists.
+cc_role_tiering_read() {
+	cc_rtr_root=$(cc_root_abs "$1") || { cc_fail ROLE_TIERING_MISSING; return 1; }
+	cc_rtr_local="$cc_rtr_root/role-tiering.local.yaml"
+	cc_rtr_fallback="$cc_rtr_root/.context-circuit/role-tiering.fallback.yaml"
+	if [ -f "$cc_rtr_local" ]; then
+		cc_rtr_source=local
+		cc_rtr_file="$cc_rtr_local"
+	elif [ -f "$cc_rtr_fallback" ]; then
+		cc_rtr_source=fallback
+		cc_rtr_file="$cc_rtr_fallback"
+	else
+		cc_fail ROLE_TIERING_MISSING
+		return 1
+	fi
+	cc_emit source "$cc_rtr_source"
+	cc_emit path "$cc_rtr_file"
+	printf -- '---\n'
+	cat "$cc_rtr_file"
 	return 0
 }
 
@@ -4080,6 +4116,7 @@ cc_main() {
 		member-roster-validate)  cc_member_roster_validate "$@" ;;
 		member-identity-read)    cc_member_identity_read "$@" ;;
 		member-band-resolve)     cc_member_band_resolve "$@" ;;
+		role-tiering-read)       cc_role_tiering_read "$@" ;;
 		repository-register)     cc_repository_register "$@" ;;
 		repository-binding-migrate) cc_repository_binding_migrate "$@" ;;
 		repository-resolve)      cc_repo_resolve "$@" ;;

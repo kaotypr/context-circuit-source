@@ -17,14 +17,15 @@ an observation, not authorization.
 
 ## Applying per-role model & effort
 
-When `role-tiering.local.yaml` configures a `(model, effort)` for a role (see
-`.context-circuit/docs/role-tiering.md`), read the file from the workspace root (next to
-`repositories.local.yaml`), never from a Task working directory, then read the
-group for this host from `hosts.cursor-agent` and apply it — which on Cursor
-means **setting it on the spawn, not just recording it**. Open the path with
-Read; gitignore is not a read block, and a search that skips ignored files is
-not an absent config. A missing file in an isolated working copy is not an
-absent config. Concretely:
+Owner: `.context-circuit/docs/role-tiering.md` (how to obtain the config, by
+invoking the engine verb, from the workspace root). Read that file. Do not
+restate the rule here.
+
+When the config carries a `(model, effort)` for a role, obtain it by invoking
+the engine verb, per the owner doc — never from a Task working directory —
+then read the group for this host from `hosts.cursor-agent` and apply it —
+which on Cursor means **setting it on the spawn, not just recording it**. A
+missing file in an isolated working copy is not an absent config. Concretely:
 
 - **Model — set it on the spawn.** Pass the role's configured model id to the
   worker's, verifier's, or planner's `Task` spawn as its `model` parameter. The

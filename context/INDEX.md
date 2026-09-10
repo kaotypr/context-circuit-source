@@ -52,6 +52,10 @@ one-time local identity). See the 2026-09-08 bands decision in
 `context/DECISIONS.md` and [repository-binding](domains/repository-binding/README.md),
 [plan-review](domains/plan-review/README.md), and [intent](domains/intent/README.md).
 
+Open questions on a new intent are numbered 1, 2, 3 like The plans so a person
+can answer by number; already-written intents stay as authored. See the
+2026-09-10 decision in `context/DECISIONS.md` and [intent](domains/intent/README.md).
+
 Official template publication is GitHub-canonical; the same Action optionally
 mirrors the published tree and Release to GitLab when operators configure
 GitHub Actions variables and secrets. See the 2026-09-09 decision in

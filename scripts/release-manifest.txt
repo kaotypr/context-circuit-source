@@ -39,6 +39,7 @@ required plans/archive/README.md
 # Runtime, contracts, and schemas.
 required .context-circuit/wrapper/manifest.yaml
 required .context-circuit/wrapper/runtime/engine.sh
+required .context-circuit/role-tiering.fallback.yaml
 required .context-circuit/wrapper/migrations/README.md
 required .context-circuit/wrapper/contracts/invariants.yaml
 required .context-circuit/wrapper/contracts/schemas/workspace.yaml

@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0034-number-intent-open-questions
 intent: i025-number-intent-open-questions
 title: Number open questions on the intent page
-status: draft
+status: done
 objective: >
   Teach and use a numbered 1, 2, 3 list for human-facing intent Open questions —
   same shape as The plans, stable numbers when answered, next unused number for
