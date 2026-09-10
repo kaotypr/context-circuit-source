@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-09-10 — A host obtains the per-role config only through the runtime
+
+Decision: a host must never `Read`, `find`, or `grep` the per-role `(model, effort)` config file directly. It invokes a print-only runtime verb instead, which resolves the workspace-root local override when present, else a newly committed fallback file, and reports which source it used.
+
+Rationale: on at least one host, local file-search tooling can be configured to silently exclude gitignored paths from every search, so a failed `find`/`grep` is not evidence the config is absent — even on a fresh checkout where no local override exists yet, the runtime verb still resolves an answer via the committed fallback.
+
+Consequence: [host-adapters](domains/host-adapters/README.md) records the access rule; [source-release-and-upgrade](domains/source-release-and-upgrade/README.md) adds the fallback file to the shipped set and the wrapper-only upgrade boundary. `.context-circuit/docs/role-tiering.md` remains the sole full statement of the rule; other host-facing files carry only a pointer to it.
+
 ## 2026-09-10 — Intent open questions are numbered like The plans
 
 Decision: on a new human-facing intent, Open questions use the same numbered 1, 2, 3 list as The plans — number, bold question, italic answer beneath. Answering keeps the number. A question added later takes the next unused number. When there are none, the empty-state line stays unnumbered; no dummy numbered item. Already-written intents stay as authored. Numbering is human-facing only and is not a machine identifier on the contract.

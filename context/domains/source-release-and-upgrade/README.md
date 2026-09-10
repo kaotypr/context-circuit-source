@@ -53,9 +53,11 @@ workspace.
 
 Assembly ships the nested product home
 (`.context-circuit/{wrapper,agents,docs}`) plus root host pointers,
-`.agents/`, and the product host-native trees (`.claude/`, `.codex/`,
+`.agents/`, the product host-native trees (`.claude/`, `.codex/`,
 `.cursor/` — agent stubs, Claude/Cursor rule stubs, Claude skill routes to
-`.agents/skills/cc-*`). It never ships: the source design, maintainer plans
+`.agents/skills/cc-*`), and the committed role-tiering fallback config
+(`.context-circuit/role-tiering.fallback.yaml`) that a host reads when no
+workspace-root local override exists. It never ships: the source design, maintainer plans
 and logs, source-only tests and evidence, source-only Claude extras
 (`cc-human-simulator`, `cc-test-case`), source `.runtime/`, `agent-harness/`,
 credentials, local bindings, connected repositories, project Product
@@ -150,3 +152,8 @@ creates a GitLab Release with the same notes and archive as GitHub.
 
 Updated 2026-09-10: GitHub destinations are `kaotypr/context-circuit-source` for
 this maintainer source and `kaotypr/context-circuit` for the published template.
+
+Updated 2026-09-10: the committed role-tiering fallback config joins the
+shipped set and the wrapper-only upgrade boundary, so an upgrade always
+installs or replaces it while a workspace's own local override stays
+untouched.

@@ -109,6 +109,17 @@ evidence and a missing required capability fails closed.
 permission-mode, and provider-status fields. It never stores credentials,
 provider payloads, transcripts, or auth state.
 
+Each host obtains the per-role `(model, effort)` config by invoking the
+workspace runtime, never by reading, finding, or grepping the config file
+directly: a print-only runtime verb resolves the workspace-root local
+override when present, else a committed fallback, and reports which source it
+used. This exists because a host's own file-search tooling can be rewritten by
+that host's local configuration to silently exclude gitignored paths, so a
+failed search is not evidence the config is absent. The verb only prints; it
+never selects a host group or applies a default itself (INV-RUNTIME-01), and
+the resulting `(model, effort)` stays bounded host evidence that authorizes
+nothing (INV-HOST-01).
+
 ## Workflows
 
 - Shared host contract and safety spine: `.context-circuit/wrapper/adapters/AGENTS.md`
@@ -123,6 +134,7 @@ provider payloads, transcripts, or auth state.
 - Host-native routes: `.claude/`, `.codex/`, `.cursor/` (product stubs and links)
 - Coordinator role: `.context-circuit/agents/coordinator.md`
 - `host_evidence` shape owned by `.context-circuit/wrapper/contracts/schemas/`
+- Per-role config access rule and fallback behavior: `.context-circuit/docs/role-tiering.md`
 
 ## Constraints and edge cases
 
@@ -183,3 +195,7 @@ Extended 2026-09-09: the commit-convention host rule restates INV-COMMIT-01's
 no-attribution clause (inspect and strip a host-injected trailer) instead of
 only pointing at the invariant, so a worker or host git wrapper still sees it
 at commit time.
+
+Extended 2026-09-10: a host obtains the per-role config only by invoking the
+runtime, never by reading the config file directly, because a host's own
+file-search tooling can be configured to silently exclude gitignored paths.

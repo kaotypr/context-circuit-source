@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0038-role-tiering-config-access
 intent: i028-role-tiering-config-access
 title: Engine-verb access to role-tiering config, with a committed fallback
-status: draft
+status: done
 objective: >
   Any agent on any host learns the effective per-role (model, effort) config by
   invoking one new engine.sh verb instead of reading, finding, or grepping
