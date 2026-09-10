@@ -2096,10 +2096,11 @@ cc_plan_stack_materialize() {
 	done <"$cc_psm_rec/allocation.tsv"
 
 	# Existing plans are read-only dependency targets during staged graph validation.
+	cc_psm_link_mode=-s
 	for cc_psm_existing in "$cc_psm_root/plans"/*; do
 		[ -d "$cc_psm_existing" ] || continue
 		cc_psm_base=$(basename -- "$cc_psm_existing")
-		[ -e "$cc_psm_rec/staging/plans/$cc_psm_base" ] || ln -s "$cc_psm_existing" "$cc_psm_rec/staging/plans/$cc_psm_base"
+		[ -e "$cc_psm_rec/staging/plans/$cc_psm_base" ] || ln "$cc_psm_link_mode" "$cc_psm_existing" "$cc_psm_rec/staging/plans/$cc_psm_base"
 	done
 	while IFS='|' read -r cc_psm_key cc_psm_id; do
 		cc_plan_validate "$cc_psm_rec/staging/plans/$cc_psm_id" >/dev/null 2>/dev/null \
