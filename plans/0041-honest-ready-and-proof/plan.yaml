@@ -12,15 +12,16 @@ objective: >
   collaboration describe the create-time overlay and the toolchain correction
   instead of "full dependency provisioning is a later phase"; and one accepted
   decision plus the index record the change. Coverage closes the loop: the
-  shipped-template runtime harness proves a released workspace behaves the same
-  way, and one end-to-end assertion proves an execution worktree and an Explore
-  worktree are both runnable at creation.
+  maintained grounding, pairing, and contract suites prove the behavior, with
+  one end-to-end assertion proving an execution worktree and an Explore
+  worktree are both runnable at creation. The stale shipped-template harness is
+  intentionally outside this plan.
 repositories:
   - id: context-circuit-source
     purpose: >
       Owns the wrapper contracts and schemas, the shipped worker-brief adapter,
-      the Product Knowledge under context/, the semantic acceptance suite, and
-      the shipped-template harness under agent-harness/.
+      the Product Knowledge under context/, and the maintained semantic
+      acceptance suites.
 plan_dependencies:
   - id: 0039-worktree-ignored-overlay
     reason: >
@@ -76,10 +77,9 @@ context_grounding:
     setup. context/DECISIONS.md is a dated append-only list ("## YYYY-MM-DD -
     title" with Decision / Rationale / Consequence) and context/INDEX.md carries
     short paragraphs pointing at the decisions and their domain pages.
-    agent-harness/test-template-runtime.sh drives a staged shipped template
-    through a real execution (worktrees at .runtime/worktrees/<plan>/api,
-    lines 137-139 and 242-245) and is where a released workspace's behavior is
-    proved. INV-GROUND-03 already says execution-environment workarounds are
+    The maintained grounding, pairing, and contract suites drive the runtime and
+    prove its behavior in this repository. The stale shipped-template harness is
+    intentionally outside this plan and will be recreated separately. INV-GROUND-03 already says execution-environment workarounds are
     eliminated by worktree hardening and never documented by hand, so the
     invariant text needs no rewrite; the concern is that the brief must not
     acquire a workaround sentence.
@@ -106,8 +106,8 @@ context_grounding:
       attribution (INV-COMMIT-01).
   decisions:
     - This is a separate plan because it is only verifiable once both behaviors
-      exist, and because its failure surface is documentation drift and shipped
-      template behavior rather than runtime correctness. Folding it into 0040
+      exist, and because its failure surface is documentation drift and cross-
+      surface behavior rather than runtime correctness. Folding it into 0040
       would mean either publishing a Product Knowledge page ahead of the code or
       holding the runtime change hostage to a knowledge review.
     - The brief's ready sentence is re-read and adjusted only if 0040 made it
@@ -117,8 +117,8 @@ context_grounding:
     - One dated decision in context/DECISIONS.md plus one short pointer
       paragraph in context/INDEX.md, matching the house pattern of the
       2026-09-08 and 2026-09-10 entries. No new domain page.
-    - The shipped-template harness gets the create-time assertion, because a
-      released workspace, not this checkout, is what a user runs.
+    - The maintained grounding, pairing, and contract suites carry the create-time
+      assertions until the stale shipped-template harness is recreated.
 knowledge_impact:
   expected_context_units:
     - repository-grounding
@@ -164,7 +164,7 @@ tasks:
           guarantees and contains no dependency workaround instruction.
     verification:
       - id: HR-VT-001
-        command: grep -q 'values: \[ready, no-toolchain\]' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml && grep -qi 'not ready' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml
+        command: "grep -q 'values: [ready, no-toolchain]' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml && grep -qi 'not ready' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml"
       - id: HR-VT-002
         command: grep -q '@@ENVIRONMENT@@' .context-circuit/wrapper/adapters/worker-brief.md && ! grep -qiE 'no-verify|verify-deps|shared node_modules' .context-circuit/wrapper/adapters/worker-brief.md .context-circuit/wrapper/runtime/engine.sh
       - id: HR-VT-003
@@ -261,26 +261,19 @@ tasks:
       - id: HR-VT-008
         command: sh test/knowledge/test-durable-context.sh
   - id: HR-004
-    title: Prove a released workspace creates runnable worktrees
+    title: Prove execution and Explore create runnable worktrees
     repositories: [context-circuit-source]
     paths:
-      - agent-harness/test-template-runtime.sh
       - test/grounding/test-grounding.sh
       - test/pairing/test-pairing.sh
       - test/contracts/test-contracts.sh
     evidence_anchors:
-      - agent-harness/test-template-runtime.sh
       - test/grounding/test-grounding.sh
       - test/pairing/test-pairing.sh
       - test/contracts/test-contracts.sh
     depends_on:
       - HR-003
     changes:
-      - Extend agent-harness/test-template-runtime.sh so the staged shipped
-        template proves the same behavior a user gets - give its fixture
-        repository a gitignored .env and an install tree, then assert the
-        created execution worktree under .runtime/worktrees/<plan>/api contains
-        them and that the recorded grounding manifest says environment ready.
       - Add the end-to-end assertion to test/grounding/test-grounding.sh that an
         execution worktree is runnable at creation - overlay present, manifest
         environment ready, brief assembled - and the matching Explore assertion
@@ -291,11 +284,6 @@ tasks:
       - Run the full semantic acceptance suite and reconcile any suite that
         depended on the old detection-only meaning.
     acceptance:
-      - id: HR-AC-TEMPLATE-PROVEN
-        statement: >
-          The shipped-template harness fails if a released workspace stops
-          creating a worktree that already holds the checkout's gitignored
-          files and a prepared toolchain.
       - id: HR-AC-SUITE-GREEN
         statement: >
           The full semantic acceptance suite passes with the new meaning of
@@ -303,12 +291,10 @@ tasks:
           meaning.
     verification:
       - id: HR-VT-009
-        command: sh agent-harness/test-template-runtime.sh
-      - id: HR-VT-010
         command: sh test/grounding/test-grounding.sh && sh test/pairing/test-pairing.sh
-      - id: HR-VT-011
+      - id: HR-VT-010
         command: sh test/contracts/test-contracts.sh
-      - id: HR-VT-012
+      - id: HR-VT-011
         command: sh test/acceptance.sh
 execution:
   worker: one
