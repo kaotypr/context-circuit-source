@@ -91,6 +91,20 @@ for oldc in routes context-sets tier0; do
 	test ! -e "${W}/contracts/$oldc.yaml" || fail "old contract remains: $oldc"
 done
 
+# --- grounding environment is preparation, never lockfile detection alone ---
+grounding_schema="${W}/contracts/schemas/grounding-manifest.yaml"
+contains "$grounding_schema" "values: [ready, no-toolchain]"
+contains "$grounding_schema" "gitignored overlay"
+contains "$grounding_schema" "match its own lockfile"
+contains "$grounding_schema" "not ready"
+contains "$grounding_schema" "blocks setup"
+contains "${W}/runtime/engine.sh" "Ready: gitignored overlay complete"
+for f in "${W}/adapters/worker-brief.md" "${W}/runtime/engine.sh"; do
+	not_contains "$f" "no-verify"
+	not_contains "$f" "verify-deps"
+	not_contains "$f" "shared node_modules"
+done
+
 # --- runtime engine present and host-neutral ---
 require_file "${W}/runtime/engine.sh"
 not_contains "${W}/runtime/engine.sh" "cc_probe"

@@ -25,7 +25,8 @@ mkdir -p "$wr/.agents/skills/widget-style" "$wr/.cursor/rules"
 printf -- '---\nname: widget-style\ndescription: DLS components via the private registry\n---\n\n# style\n' >"$wr/.agents/skills/widget-style/SKILL.md"
 printf 'always use tabs\n' >"$wr/.cursor/rules/base.md"
 printf '{ "name": "widgets" }\n' >"$wr/package-lock.json"
-printf 'node_modules/\n' >"$wr/.gitignore"
+printf 'node_modules/\n.env\n' >"$wr/.gitignore"
+printf 'fixture environment\n' >"$wr/.env"
 mkdir -p "$wr/node_modules/widget"
 printf 'prepared\n' >"$wr/node_modules/widget/index.js"
 cc_toolchain_stamp_write "$wr/node_modules" "$(cc_digest "$wr/package-lock.json")"
@@ -34,8 +35,17 @@ git -C "$wr" add -A && git -C "$wr" commit -q -m 'chore: add agent guidance + to
 cc_fx_plan_ex "$ws" 0001-widget "Widget" widgets src/widget ""
 exec=$(cc_execution_begin "$ws" 0001-widget sess1 | sed -n 's/^execution_id: //p')
 edir="$ws/.runtime/executions/0001-widget/$exec"
+execution_wt="$ws/.runtime/worktrees/0001-widget/widgets"
 
-# 1. discovery recorded the manifest as execution evidence
+# 1. the fresh execution worktree is runnable before a worker is attached:
+# ignored inputs were copied rather than linked, the prepared install tree is
+# present, discovery recorded ready, and the generated brief is available.
+require_file "$execution_wt/.env"
+test ! -L "$execution_wt/.env" || fail "execution overlay linked .env"
+require_file "$execution_wt/node_modules/widget/index.js"
+test ! -L "$execution_wt/node_modules" || fail "execution overlay linked node_modules"
+
+# 2. discovery recorded the manifest as execution evidence
 mf="$edir/grounding/widgets.yaml"
 require_file "$mf"
 contains "$mf" "schema_version: 1"
@@ -46,14 +56,14 @@ contains "$mf" "name: widget-style"
 contains "$mf" "description: DLS components via the private registry"
 contains "$mf" "environment: ready"          # the overlaid install tree was prepared
 
-# 2. the grounding directive renders the discovered guidance (non-empty variant)
+# 3. the grounding directive renders the discovered guidance (non-empty variant)
 dir=$(cc_grounding_directive "$mf")
 printf '%s' "$dir" | grep -q "read and apply this repository" || fail "directive missing read-and-apply"
 printf '%s' "$dir" | grep -q "AGENTS.md — read and honor it" || fail "directive missing AGENTS.md"
 printf '%s' "$dir" | grep -q "widget-style — DLS components" || fail "directive missing the skill menu entry"
 printf '%s' "$dir" | grep -q "STOP and report" || fail "directive missing the precedence/conflict stop"
 
-# 3. brief assembly fills every slot and passes the preflight
+# 4. brief assembly fills every slot and passes the preflight
 cc_worker_brief_assemble "$ws" "$edir" widgets "Add the widget module." >/dev/null
 brief="$edir/brief-widgets.md"
 require_file "$brief"
@@ -62,6 +72,7 @@ contains "$brief" "## Repository grounding"
 contains "$brief" "AGENTS.md — read and honor it"
 not_contains "$brief" "@@GROUNDING@@"          # the slot is filled, not left raw
 not_contains "$brief" "@@ENVIRONMENT@@"
+contains "$brief" "Ready: gitignored overlay complete; dependencies provisioned to this worktree's lockfile."
 contains "$brief" "Add the widget module."     # the coordinator's task focus
 cc_brief_preflight "$brief" >/dev/null
 

@@ -1993,7 +1993,7 @@ cc_worker_brief_assemble() {
 	if [ -f "$cc_wb_mf" ]; then cc_grounding_directive "$cc_wb_mf" >"$cc_wb_grf"; else printf 'No repository agent guidance was discovered.\n' >"$cc_wb_grf"; fi
 	cc_wb_envf="$cc_wb_edir/grounding/$cc_wb_repo.env.txt"
 	if [ "$cc_wb_env" = "ready" ]; then
-		printf "Ready: dependencies provisioned, commit hooks handled. Do NOT install or modify dependencies. Use the repository's own build/test/lint commands.\n" >"$cc_wb_envf"
+		printf "Ready: gitignored overlay complete; dependencies provisioned to this worktree's lockfile. Do NOT install or modify dependencies. Use the repository's own build/test/lint commands.\n" >"$cc_wb_envf"
 	else
 		printf 'No dependency toolchain detected. If this plan scaffolds one, create it within the allowed paths; add no dependencies beyond what the plan specifies.\n' >"$cc_wb_envf"
 	fi

@@ -7,10 +7,10 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 4b8ac0b
+    commit: d95bbd7
     basis: current-wrapper
-generated_at: 2026-08-24T00:00:00Z
-review_date: 2026-11-24
+generated_at: 2026-09-10T00:00:00Z
+review_date: 2026-12-10
 freshness: accepted-from-current-wrapper
 assumptions:
   - One worker executes one intent-authorized plan in one bounded execution.
@@ -60,6 +60,14 @@ Execution creates exactly one deterministic
 branch `cc/<plan-id>/<repo-id>` and one isolated worktree per affected
 repository, from the captured base-branch tip; the base checkout is never
 written (INV-EXEC-03).
+
+Each fresh execution worktree is prepared before a worker is attached: the
+runtime overlays the bound checkout's eligible gitignored paths, then provisions
+any detected toolchain against the worktree's own lockfile. The
+[repository-grounding](../repository-grounding/README.md) domain and its schema
+owner define the preparation details and environment result. An overlay or
+provisioning failure blocks the execution with its stable setup reason; it is not
+a worker failure.
 
 A plan with **same-repo predecessors** (see
 [run-stack](../run-stack/README.md)) begins base-aware: its worktree is prepared
@@ -154,3 +162,5 @@ is owned by [verification](../verification/README.md).
 
 Accepted 2026-08-24. Extended 2026-08-27 with v0.6 base-aware begin for
 dependents, the grounded brief, and plan `schema_version [1, 2]`.
+Updated 2026-09-10: execution worktrees are runnable at creation, and failed
+preparation blocks setup before a worker can start.

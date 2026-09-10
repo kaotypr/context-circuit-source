@@ -56,6 +56,13 @@ Open questions on a new intent are numbered 1, 2, 3 like The plans so a person
 can answer by number; already-written intents stay as authored. See the
 2026-09-10 decision in `context/DECISIONS.md` and [intent](domains/intent/README.md).
 
+New execution and Explore worktrees are runnable before a worker is attached:
+their create-time overlay and lockfile-correct provisioning fail closed. See the
+2026-09-10 decision in `context/DECISIONS.md` and the
+[repository-grounding](domains/repository-grounding/README.md),
+[plan-execution](domains/plan-execution/README.md), and
+[direct-collaboration](domains/direct-collaboration/README.md) domains.
+
 Official template publication is GitHub-canonical; the same Action optionally
 mirrors the published tree and Release to GitLab when operators configure
 GitHub Actions variables and secrets. See the 2026-09-09 decision in
