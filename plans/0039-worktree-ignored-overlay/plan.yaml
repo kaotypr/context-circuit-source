@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0039-worktree-ignored-overlay
 intent: i027-runnable-worktrees
 title: Overlay the checkout's gitignored paths into every new worktree
-status: draft
+status: done
 objective: >
   After git worktree add creates a tree with tracked files only, the runtime
   copies every gitignored file and folder that exists on disk in the bound

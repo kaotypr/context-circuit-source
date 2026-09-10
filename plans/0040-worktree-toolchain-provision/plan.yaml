@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0040-worktree-toolchain-provision
 intent: i027-runnable-worktrees
 title: Make the worktree's toolchain match this commit
-status: draft
+status: done
 objective: >
   After the gitignored overlay lands, the runtime makes the new worktree's
   dependency tree match the commit it was created from. A cloned install tree is

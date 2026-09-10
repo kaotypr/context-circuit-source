@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0041-honest-ready-and-proof
 intent: i027-runnable-worktrees
 title: Tell the truth about a ready worktree, and prove it end to end
-status: draft
+status: done
 objective: >
   Make every place that describes a prepared worktree say what the runtime now
   actually does. The grounding manifest schema stops describing environment
