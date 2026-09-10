@@ -1,6 +1,6 @@
 # Intention — i025
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible._
 
 ## Intention
 

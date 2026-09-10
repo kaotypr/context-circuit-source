@@ -66,7 +66,7 @@ Explanations:
 
 ## Open questions
 
-**Should a trusted, long-time member's comments skip review, or does everyone go
-through the queue?**
-_Answer: Everyone goes through the queue for now — one simple rule, no exceptions
-to keep track of._
+1. **Should a trusted, long-time member's comments skip review, or does everyone go
+   through the queue?**
+   _Answer: Everyone goes through the queue for now — one simple rule, no exceptions
+   to keep track of._
