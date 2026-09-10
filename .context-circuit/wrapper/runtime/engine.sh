@@ -393,9 +393,19 @@ cc_intent_criteria_count() {
 	' "$1"
 }
 
-# cc_intent_validate DIR -> confirm intent/<id>/ structure and contract.yaml fields
+# cc_intent_validate DIR | ROOT REL_DIR -> confirm intent/<id>/ structure and
+# contract.yaml fields. The two-argument form keeps workspace-relative runtime
+# invocations consistent with the other intent actions.
 cc_intent_validate() {
-	cc_iv_dir="$1"
+	case "$#" in
+		1) cc_iv_dir="$1" ;;
+		2)
+			cc_iv_root=$(cc_root_abs "$1") || { cc_fail INTENT_ROOT_MISSING; return 1; }
+			cc_safe_relative "$2" || { cc_fail INTENT_PATH_INVALID "$2"; return 1; }
+			cc_iv_dir="$cc_iv_root/$2"
+			;;
+		*) cc_fail INTENT_USAGE; return 1 ;;
+	esac
 	[ -d "$cc_iv_dir" ] || { cc_fail INTENT_DIR_MISSING; return 1; }
 	[ -f "$cc_iv_dir/contract.yaml" ] || { cc_fail INTENT_CONTRACT_MISSING; return 1; }
 	[ -f "$cc_iv_dir/INTENT.md" ] || { cc_fail INTENT_MD_MISSING; return 1; }

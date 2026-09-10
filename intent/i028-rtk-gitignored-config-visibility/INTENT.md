@@ -1,5 +1,7 @@
 # Intention — i028
 
+_Status: approved.
+
 _Status: draft, waiting for your approval._
 
 ## Intention
