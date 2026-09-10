@@ -1,0 +1,316 @@
+schema_version: 3
+plan: 0041-honest-ready-and-proof
+intent: i027-runnable-worktrees
+title: Tell the truth about a ready worktree, and prove it end to end
+status: draft
+objective: >
+  Make every place that describes a prepared worktree say what the runtime now
+  actually does. The grounding manifest schema stops describing environment
+  ready as a detection and describes it as preparation that succeeded; the
+  shipped worker brief's environment text matches the two real outcomes; the
+  Product Knowledge pages for repository grounding, plan execution, and direct
+  collaboration describe the create-time overlay and the toolchain correction
+  instead of "full dependency provisioning is a later phase"; and one accepted
+  decision plus the index record the change. Coverage closes the loop: the
+  shipped-template runtime harness proves a released workspace behaves the same
+  way, and one end-to-end assertion proves an execution worktree and an Explore
+  worktree are both runnable at creation.
+repositories:
+  - id: context-circuit-source
+    purpose: >
+      Owns the wrapper contracts and schemas, the shipped worker-brief adapter,
+      the Product Knowledge under context/, the semantic acceptance suite, and
+      the shipped-template harness under agent-harness/.
+plan_dependencies:
+  - id: 0039-worktree-ignored-overlay
+    reason: >
+      The overlay behavior this plan documents and proves end to end does not
+      exist until 0039 lands; documenting it first would ship a Product
+      Knowledge page describing behavior the runtime does not have.
+  - id: 0040-worktree-toolchain-provision
+    reason: >
+      The honest meaning of environment ready is created by 0040. This plan
+      only records that meaning in the schema, the brief, and Product
+      Knowledge, and proves the combined result.
+product_knowledge:
+  - id: repository-grounding
+    path: context/domains/repository-grounding/README.md
+    reason: >
+      Owns worktree hardening, the grounding manifest, the worker brief and its
+      preflight, and currently states that full dependency provisioning is a
+      later phase - the sentence this change retires.
+  - id: plan-execution
+    path: context/domains/plan-execution/README.md
+    reason: >
+      Owns execution setup and the isolated per-repository worktree the overlay
+      and provisioning now prepare before a worker is attached.
+  - id: direct-collaboration
+    path: context/domains/direct-collaboration/README.md
+    reason: >
+      Owns the Explore worktree, which gains create-time preparation and a
+      fail-closed setup path it did not have.
+context_grounding:
+  summary: >
+    Grounded at HEAD 7d72f468. Four surfaces currently describe a prepared
+    worktree and three of them will be wrong once 0039 and 0040 land.
+    .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml describes
+    environment ready as "a toolchain was detected and prepared" - close, but
+    the enum's own description is the only statement of what preparation means,
+    and it says nothing about overlay or lockfile correction.
+    .context-circuit/wrapper/adapters/worker-brief.md carries the @@ENVIRONMENT@@
+    slot (line 16) filled by cc_worker_brief_assemble (engine.sh 1788-1791) with
+    either "Ready: dependencies provisioned, commit hooks handled. Do NOT install
+    or modify dependencies." or the no-toolchain sentence; the ready text is a
+    forward-looking claim today and becomes literally true after 0040, so it
+    needs review rather than assumption. context/domains/repository-grounding/README.md
+    is the owning Product Knowledge page: its Behavior section says the runtime
+    "detects the toolchain and reports environment: ready | no-toolchain
+    (full dependency provisioning is a later phase)" and its Constraints section
+    says a greenfield repository reports no-toolchain and does not block - the
+    first is retired here, the second stays true. context/domains/plan-execution/README.md
+    (lines 40, 60, 65, 84, 104, 113, 120) describes isolated worktrees and
+    branches but nothing about what is in them beyond tracked files.
+    context/domains/direct-collaboration/README.md (lines 75-91) describes the
+    Explore worktree, its cleanup, and explicitly that closing preserves it -
+    all still true, but it says nothing about preparation or a fail-closed
+    setup. context/DECISIONS.md is a dated append-only list ("## YYYY-MM-DD -
+    title" with Decision / Rationale / Consequence) and context/INDEX.md carries
+    short paragraphs pointing at the decisions and their domain pages.
+    agent-harness/test-template-runtime.sh drives a staged shipped template
+    through a real execution (worktrees at .runtime/worktrees/<plan>/api,
+    lines 137-139 and 242-245) and is where a released workspace's behavior is
+    proved. INV-GROUND-03 already says execution-environment workarounds are
+    eliminated by worktree hardening and never documented by hand, so the
+    invariant text needs no rewrite; the concern is that the brief must not
+    acquire a workaround sentence.
+  constraints:
+    - One owner per rule. The grounding manifest schema owns the environment
+      field's meaning; the Product Knowledge page describes behavior and does
+      not restate the schema; the brief states facts to the worker and neither
+      duplicates the invariant nor documents a workaround (INV-GROUND-03).
+    - Do not rewrite INV-GROUND-01/02/03 or any other invariant. Their existing
+      text already covers this behavior; a restatement would create a second
+      owner.
+    - environment keeps its two values, ready and no-toolchain. This plan
+      changes descriptions, not the enum.
+    - Product Knowledge is updated in place with honest freshness and
+      acceptance metadata; do not create a new domain page for behavior that
+      already has owners.
+    - The worker brief's ready text must not tell a worker how to work around a
+      missing dependency; if the tree is not ready, setup blocked and no brief
+      exists (INV-GROUND-03).
+    - External-facing text carries no workspace-internal path where the
+      external-surface rules apply; this plan touches no publication surface.
+    - Preserve unrelated and dirty work; run the semantic acceptance suite after
+      meaningful phases; commit only on explicit human request, with no AI
+      attribution (INV-COMMIT-01).
+  decisions:
+    - This is a separate plan because it is only verifiable once both behaviors
+      exist, and because its failure surface is documentation drift and shipped
+      template behavior rather than runtime correctness. Folding it into 0040
+      would mean either publishing a Product Knowledge page ahead of the code or
+      holding the runtime change hostage to a knowledge review.
+    - The brief's ready sentence is re-read and adjusted only if 0040 made it
+      inaccurate, not rewritten on principle. It already says dependencies are
+      provisioned; after 0040 that is true, and the smallest honest change is
+      the right one.
+    - One dated decision in context/DECISIONS.md plus one short pointer
+      paragraph in context/INDEX.md, matching the house pattern of the
+      2026-09-08 and 2026-09-10 entries. No new domain page.
+    - The shipped-template harness gets the create-time assertion, because a
+      released workspace, not this checkout, is what a user runs.
+knowledge_impact:
+  expected_context_units:
+    - repository-grounding
+    - plan-execution
+    - direct-collaboration
+  review_on_completion: true
+tasks:
+  - id: HR-001
+    title: Make the manifest schema and the worker brief describe real preparation
+    repositories: [context-circuit-source]
+    paths:
+      - .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml
+      - .context-circuit/wrapper/adapters/worker-brief.md
+      - .context-circuit/wrapper/runtime/engine.sh
+    evidence_anchors:
+      - .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml
+      - .context-circuit/wrapper/adapters/worker-brief.md
+      - .context-circuit/wrapper/runtime/engine.sh
+    depends_on: []
+    changes:
+      - In grounding-manifest.yaml, keep the environment enum at
+        [ready, no-toolchain] and rewrite its description so ready means the
+        gitignored overlay completed and, when a toolchain exists, the worktree
+        was provisioned to match its own lockfile - and state plainly that a
+        detected lockfile alone is not ready and that a failure blocks setup
+        instead of being recorded as a value.
+      - Re-read the two environment sentences cc_worker_brief_assemble writes
+        (engine.sh 1788-1791) against what 0040 actually does, and adjust only
+        what became inaccurate. Do not add any sentence telling a worker how to
+        proceed when dependencies are missing.
+      - Confirm .context-circuit/wrapper/adapters/worker-brief.md still needs no
+        change beyond its @@ENVIRONMENT@@ slot, and leave the template's fixed
+        sections alone.
+    acceptance:
+      - id: HR-AC-SCHEMA-HONEST
+        statement: >
+          The grounding manifest schema states that environment ready means
+          overlay and, where a toolchain exists, provisioning succeeded, and
+          that detection alone is not ready.
+      - id: HR-AC-BRIEF-HONEST
+        statement: >
+          The worker brief's environment text matches what the runtime
+          guarantees and contains no dependency workaround instruction.
+    verification:
+      - id: HR-VT-001
+        command: grep -q 'values: \[ready, no-toolchain\]' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml && grep -qi 'not ready' .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml
+      - id: HR-VT-002
+        command: grep -q '@@ENVIRONMENT@@' .context-circuit/wrapper/adapters/worker-brief.md && ! grep -qiE 'no-verify|verify-deps|shared node_modules' .context-circuit/wrapper/adapters/worker-brief.md .context-circuit/wrapper/runtime/engine.sh
+      - id: HR-VT-003
+        command: sh test/contracts/test-contracts.sh
+  - id: HR-002
+    title: Update the three owning Product Knowledge pages in place
+    repositories: [context-circuit-source]
+    paths:
+      - context/domains/repository-grounding/README.md
+      - context/domains/plan-execution/README.md
+      - context/domains/direct-collaboration/README.md
+    evidence_anchors:
+      - context/domains/repository-grounding/README.md
+      - context/domains/plan-execution/README.md
+      - context/domains/direct-collaboration/README.md
+    depends_on:
+      - HR-001
+    changes:
+      - In repository-grounding/README.md, replace the "full dependency
+        provisioning is a later phase" statement with the real behavior - the
+        runtime overlays the bound checkout's gitignored paths into a freshly
+        created worktree (copy-on-write or a real copy, never a symlink,
+        untracked-but-not-ignored files excluded), then keeps a cloned install
+        tree only when it matches this worktree's lockfile and otherwise runs a
+        frozen install - and state that ready is emitted only afterwards and
+        that a failure blocks setup. Keep the greenfield sentence, which stays
+        true. Update the Implementation references list with the new runtime
+        functions, and refresh source_revisions, generated_at, review_date, and
+        the acceptance note.
+      - In plan-execution/README.md, record that a freshly created execution
+        worktree is prepared before a worker is attached and that an overlay or
+        provisioning failure is a blocked execution with a stable reason, not a
+        worker failure. Refresh its freshness and acceptance metadata.
+      - In direct-collaboration/README.md, record that an Explore worktree gets
+        the same create-time preparation and that a failed preparation leaves no
+        pointer, branch, or worktree - while the pointer itself still carries
+        only its five fields and closing still preserves a session. Refresh its
+        freshness and acceptance metadata.
+      - Do not restate the schema's enum or any invariant text on these pages;
+        link to the owners instead.
+    acceptance:
+      - id: HR-AC-PK-CURRENT
+        statement: >
+          The three owning domain pages describe create-time overlay, lockfile
+          correction, honest ready, and fail-closed setup, and no page still
+          says dependency provisioning is a later phase.
+      - id: HR-AC-ONE-OWNER
+        statement: >
+          No domain page restates the environment enum or an invariant's rule
+          text; each points at its owner.
+    verification:
+      - id: HR-VT-004
+        command: ! grep -rq 'later phase' context/domains/
+      - id: HR-VT-005
+        command: grep -q 'gitignored' context/domains/repository-grounding/README.md && grep -qi 'lockfile' context/domains/repository-grounding/README.md
+      - id: HR-VT-006
+        command: sh test/knowledge/test-durable-context.sh
+  - id: HR-003
+    title: Record the decision and point the index at it
+    repositories: [context-circuit-source]
+    paths:
+      - context/DECISIONS.md
+      - context/INDEX.md
+      - context/TERMINOLOGY.md
+    evidence_anchors:
+      - context/DECISIONS.md
+      - context/INDEX.md
+      - context/TERMINOLOGY.md
+    depends_on:
+      - HR-002
+    changes:
+      - Append one dated decision to context/DECISIONS.md in the house
+        Decision / Rationale / Consequence shape - a new worktree is runnable
+        before anyone is attached; the checkout's gitignored paths including
+        .env are copied in, never symlinked; a cloned install tree is kept only
+        when it matches this worktree's lockfile; ready means prepared; failure
+        blocks setup. Name the workspace self-protection exclusion as part of
+        the consequence.
+      - Add one short pointer paragraph to context/INDEX.md beside the existing
+        dated-decision paragraphs, naming the decision and the three domain
+        pages it touches.
+      - Add or adjust the TERMINOLOGY.md entry for a prepared or runnable
+        worktree only if the existing wording is now misleading; do not
+        introduce a term the product does not use.
+    acceptance:
+      - id: HR-AC-DECISION-RECORDED
+        statement: >
+          One dated decision records the runnable-worktree behavior including
+          the .env copy and the workspace self-protection exclusion, and the
+          index points at it.
+    verification:
+      - id: HR-VT-007
+        command: grep -qi 'runnable' context/DECISIONS.md && grep -qi 'runnable' context/INDEX.md
+      - id: HR-VT-008
+        command: sh test/knowledge/test-durable-context.sh
+  - id: HR-004
+    title: Prove a released workspace creates runnable worktrees
+    repositories: [context-circuit-source]
+    paths:
+      - agent-harness/test-template-runtime.sh
+      - test/grounding/test-grounding.sh
+      - test/pairing/test-pairing.sh
+      - test/contracts/test-contracts.sh
+    evidence_anchors:
+      - agent-harness/test-template-runtime.sh
+      - test/grounding/test-grounding.sh
+      - test/pairing/test-pairing.sh
+      - test/contracts/test-contracts.sh
+    depends_on:
+      - HR-003
+    changes:
+      - Extend agent-harness/test-template-runtime.sh so the staged shipped
+        template proves the same behavior a user gets - give its fixture
+        repository a gitignored .env and an install tree, then assert the
+        created execution worktree under .runtime/worktrees/<plan>/api contains
+        them and that the recorded grounding manifest says environment ready.
+      - Add the end-to-end assertion to test/grounding/test-grounding.sh that an
+        execution worktree is runnable at creation - overlay present, manifest
+        environment ready, brief assembled - and the matching Explore assertion
+        to test/pairing/test-pairing.sh.
+      - Extend test/contracts/test-contracts.sh to pin the schema's honest
+        environment description and to assert no shipped file documents a
+        dependency workaround.
+      - Run the full semantic acceptance suite and reconcile any suite that
+        depended on the old detection-only meaning.
+    acceptance:
+      - id: HR-AC-TEMPLATE-PROVEN
+        statement: >
+          The shipped-template harness fails if a released workspace stops
+          creating a worktree that already holds the checkout's gitignored
+          files and a prepared toolchain.
+      - id: HR-AC-SUITE-GREEN
+        statement: >
+          The full semantic acceptance suite passes with the new meaning of
+          environment ready and no suite still asserts the detection-only
+          meaning.
+    verification:
+      - id: HR-VT-009
+        command: sh agent-harness/test-template-runtime.sh
+      - id: HR-VT-010
+        command: sh test/grounding/test-grounding.sh && sh test/pairing/test-pairing.sh
+      - id: HR-VT-011
+        command: sh test/contracts/test-contracts.sh
+      - id: HR-VT-012
+        command: sh test/acceptance.sh
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
