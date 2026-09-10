@@ -37,6 +37,37 @@ cc_fx_repo() {
 		>>"$cc_fxr_ws/repositories.local.yaml"
 }
 
+# cc_fx_ignored_content REPO -> add ignored files plus one non-ignored untracked file.
+cc_fx_ignored_content() {
+	cc_fic_repo=$1
+	printf '.env\nnode_modules/\nignored directory with spaces/\n' >>"$cc_fic_repo/.gitignore"
+	printf 'tracked\n' >"$cc_fic_repo/src/tracked.txt"
+	printf 'fixture-overlay-value\n' >"$cc_fic_repo/.env"
+	mkdir -p "$cc_fic_repo/node_modules/nested"
+	printf 'module fixture\n' >"$cc_fic_repo/node_modules/nested/file.txt"
+	mkdir -p "$cc_fic_repo/ignored directory with spaces"
+	printf 'spaced fixture\n' >"$cc_fic_repo/ignored directory with spaces/file.txt"
+	printf 'leave me behind\n' >"$cc_fic_repo/untracked.txt"
+	git -C "$cc_fic_repo" add .gitignore src/tracked.txt
+	git -C "$cc_fic_repo" commit -q -m 'test: add ignored fixture content'
+}
+
+# cc_fx_node_toolchain REPO LOCK_CONTENT -> tracked npm lockfile plus an ignored,
+# stamped install tree. The ignored-content overlay carries this tree into a
+# worktree, allowing provisioning tests to remain fully offline.
+cc_fx_node_toolchain() {
+	cc_fnt_repo=$1; cc_fnt_lock=$2
+	grep -Fxq 'node_modules/' "$cc_fnt_repo/.gitignore" 2>/dev/null \
+		|| printf 'node_modules/\n' >>"$cc_fnt_repo/.gitignore"
+	printf '%s\n' "$cc_fnt_lock" >"$cc_fnt_repo/package-lock.json"
+	mkdir -p "$cc_fnt_repo/node_modules/fixture"
+	printf 'prepared\n' >"$cc_fnt_repo/node_modules/fixture/index.js"
+	cc_fnt_digest=$(cc_digest "$cc_fnt_repo/package-lock.json") || return 1
+	cc_toolchain_stamp_write "$cc_fnt_repo/node_modules" "$cc_fnt_digest" || return 1
+	git -C "$cc_fnt_repo" add .gitignore package-lock.json
+	git -C "$cc_fnt_repo" commit -q -m 'test: add node toolchain fixture'
+}
+
 # cc_fx_plan WS PID TITLE "repo1 repo2..." -> write a minimal valid draft plan
 # One task per repository, named <REPO>-001, dependencies chained in order.
 cc_fx_intent_id_from_plan() {
