@@ -1,5 +1,13 @@
 # Decisions
 
+## 2026-09-10 — Intent open questions are numbered like The plans
+
+Decision: on a new human-facing intent, Open questions use the same numbered 1, 2, 3 list as The plans — number, bold question, italic answer beneath. Answering keeps the number. A question added later takes the next unused number. When there are none, the empty-state line stays unnumbered; no dummy numbered item. Already-written intents stay as authored. Numbering is human-facing only and is not a machine identifier on the contract.
+
+Rationale: a person can answer by number instead of repeating the question, and the number remains a stable handle for the life of that intent.
+
+Consequence: [intent](domains/intent/README.md) owns the convention with the intent template and the `cc-intent` skill. The approval ask invites an answer by number. Plan open questions and thread questions are unchanged.
+
 ## 2026-09-10 — GitHub names match source vs published template
 
 Decision: this maintainer source lives on GitHub as `kaotypr/context-circuit-source`. The published template lives on GitHub as `kaotypr/context-circuit`. The conceptual product identity remains `context-circuit-template` (the distributable universal project workspace). GitLab remains an optional mirror of the already-published tree; its project path is not renamed with GitHub.
