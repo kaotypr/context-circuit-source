@@ -67,10 +67,14 @@ _At draft time: no known unresolved human decisions._
     scope, tier, authority, or lifecycle; update the intent and re-enter Gate 1;
   - a plan-level implementation question belongs in the trace and plan instead;
   - a question already answered by the request is applied without asking again.
-  When there is a genuine undecided question the human must settle, write it in bold.
-  Once it is answered, keep the question and add an italic answer line beneath it;
-  never delete an answered question:
+  When there is a genuine undecided question the human must settle, number it the
+  same way as The plans: a 1, 2, 3 list, bold question, italic answer line beneath.
+  Keep the question and its number once answered; never delete an answered question.
+  Later questions take the next unused number; do not reshuffle earlier numbers.
+  The empty-state line stays unnumbered. Do not invent a dummy numbered item when
+  there are no questions. Already-written intents are left as authored; do not
+  rewrite them to add numbers.
 
-  **<the question>**
-  _Answer: <the decision>._
+  1. **<the question>**
+     _Answer: <the decision>._
 -->

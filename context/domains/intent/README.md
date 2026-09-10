@@ -102,7 +102,12 @@ known unresolved decisions; after the planner look, newly discovered questions a
 as intent-level, plan-level, or already answered. An intent-level question sends the
 work back through Gate 1 when the approved decision changes. A plan-level question
 is carried into planning, and an answer already present in the plain request is
-applied without asking again.
+applied without asking again. When there are questions, they are a numbered 1, 2, 3
+list matching The plans (number, bold question, italic answer beneath). Answering
+keeps the question and its number; later questions take the next unused number.
+The empty-state line stays unnumbered; do not invent a dummy numbered item when
+there are none. Already-written intents are left unchanged. Numbering is
+human-facing only and does not enter `contract.yaml` or `contract_digest`.
 
 ## Interfaces
 
@@ -125,13 +130,15 @@ schema 2.
 ## Constraints and edge cases
 
 The `INTENT.md` "Open questions" section is only for a genuine undecided question
-the human must settle (a bold question, plus an italic answer once decided); it is
-not a place for assurance rationale or accepted-risk notes — those belong in the
+the human must settle (a numbered bold question, plus an italic answer once decided);
+it is not a place for assurance rationale or accepted-risk notes — those belong in the
 machine record. `None` means no known unresolved human decision **at the current
-phase**, not that tracing cannot reveal one. A criteria, scope, tier, authority, or
-lifecycle change after approval is an explicit edit to the contract that re-freezes
-the digest and **re-enters Gate 1** (INV-CANDIDATE-01), voiding any candidate proven
-against the old criteria. Implementation-only questions stay in the trace and plan.
+phase**, not that tracing cannot reveal one. Do not invent a dummy numbered item
+when there are no questions, and do not rewrite already-written intents to add
+numbers. A criteria, scope, tier, authority, or lifecycle change after approval is
+an explicit edit to the contract that re-freezes the digest and **re-enters Gate 1**
+(INV-CANDIDATE-01), voiding any candidate proven against the old criteria.
+Implementation-only questions stay in the trace and plan.
 
 ## Implementation references
 

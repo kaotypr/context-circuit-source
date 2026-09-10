@@ -22,6 +22,7 @@ run_suite test/intent/test-intent.sh
 run_suite test/intent/test-intent-detail.sh
 run_suite test/intent/test-feasibility.sh
 run_suite test/intent/test-approval-trace-plan.sh
+run_suite test/intent/test-open-questions-numbering.sh
 run_suite test/candidate/test-candidate.sh
 run_suite test/assurance/test-tier.sh
 run_suite test/execution/test-execution.sh
