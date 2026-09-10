@@ -50,6 +50,10 @@ CC_KNOWLEDGE_DEBT_SCHEMA_VERSION="1"
 CC_PLAN_STACK_REQUEST_SCHEMA_VERSION="1"
 CC_PLAN_MATERIALIZATION_SCHEMA_VERSION="1"
 
+# context-circuit-source may be bound at path: ., so never overlay workspace
+# runtime state, registered checkouts, or host-local configuration into a tree.
+CC_OVERLAY_EXCLUDE=".runtime repositories role-tiering.local.yaml member.local.yaml repositories.local.yaml"
+
 # ---------------------------------------------------------------------------
 # Diagnostics
 # ---------------------------------------------------------------------------
@@ -1225,6 +1229,76 @@ cc_repository_preflight() {
 	return 0
 }
 
+# cc_copy_mode DIR -> print clone, reflink, or copy after probing DIR once.
+cc_copy_mode() {
+	cc_cm_dir="$1"
+	[ -d "$cc_cm_dir" ] && [ ! -L "$cc_cm_dir" ] || { cc_fail OVERLAY_FAILED destination; return 1; }
+	cc_cm_probe=$(mktemp "$cc_cm_dir/.cc-overlay-probe.XXXXXX") || { cc_fail OVERLAY_FAILED probe; return 1; }
+	cc_cm_copy="$cc_cm_probe.copy"
+	printf 'probe\n' >"$cc_cm_probe" || { rm -f "$cc_cm_probe"; cc_fail OVERLAY_FAILED probe; return 1; }
+	cc_cm_mode=copy
+	if cp -c "$cc_cm_probe" "$cc_cm_copy" >/dev/null 2>&1 && [ -f "$cc_cm_copy" ]; then
+		cc_cm_mode=clone
+	elif cp --reflink=auto "$cc_cm_probe" "$cc_cm_copy" >/dev/null 2>&1 && [ -f "$cc_cm_copy" ]; then
+		cc_cm_mode=reflink
+	fi
+	rm -f "$cc_cm_probe" "$cc_cm_copy"
+	printf '%s\n' "$cc_cm_mode"
+}
+
+# cc_copy_path MODE SRC DST [REL] -> copy one non-symlinked file or tree.
+cc_copy_path() {
+	cc_cp_mode="$1"; cc_cp_src="$2"; cc_cp_dst="$3"; cc_cp_rel=${4:-"$3"}
+	[ -e "$cc_cp_src" ] || [ -L "$cc_cp_src" ] || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	if [ -L "$cc_cp_src" ] || { [ -d "$cc_cp_src" ] && find "$cc_cp_src" -type l -print | grep -q .; }; then
+		cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1
+	fi
+	mkdir -p "$(dirname -- "$cc_cp_dst")" || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	case "$cc_cp_mode" in
+		clone) cp -c -R "$cc_cp_src" "$cc_cp_dst" >/dev/null 2>&1 || : ;;
+		reflink) cp --reflink=auto -R "$cc_cp_src" "$cc_cp_dst" >/dev/null 2>&1 || : ;;
+	esac
+	[ -e "$cc_cp_dst" ] && [ ! -L "$cc_cp_dst" ] || {
+		rm -rf "$cc_cp_dst"
+		cp -R "$cc_cp_src" "$cc_cp_dst" >/dev/null 2>&1 || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	}
+	[ ! -L "$cc_cp_dst" ] || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	return 0
+}
+
+# cc_overlay_ignored SRC DST -> reproduce SRC's ignored on-disk paths in DST.
+# Git owns the list; the NUL stream preserves ordinary shell-hostile names.
+cc_overlay_ignored() {
+	cc_oi_src="$1"; cc_oi_dst="$2"
+	[ -d "$cc_oi_src" ] && [ ! -L "$cc_oi_src" ] && [ -d "$cc_oi_dst" ] && [ ! -L "$cc_oi_dst" ] \
+		|| { cc_fail OVERLAY_FAILED directories; return 1; }
+	cc_oi_mode=$(cc_copy_mode "$cc_oi_dst") || return 1
+	cc_oi_raw=$(mktemp "$cc_oi_dst/.cc-overlay-list.XXXXXX") || { cc_fail OVERLAY_FAILED listing; return 1; }
+	cc_oi_lines="$cc_oi_raw.lines"
+	git -C "$cc_oi_src" ls-files -z --others --ignored --exclude-standard --directory --no-empty-directory >"$cc_oi_raw" \
+		|| { rm -f "$cc_oi_raw"; cc_fail OVERLAY_FAILED listing; return 1; }
+	tr '\000' '\n' <"$cc_oi_raw" >"$cc_oi_lines" \
+		|| { rm -f "$cc_oi_raw" "$cc_oi_lines"; cc_fail OVERLAY_FAILED listing; return 1; }
+	rm -f "$cc_oi_raw"
+	cc_oi_count=0
+	while IFS= read -r cc_oi_path; do
+		[ -n "$cc_oi_path" ] || continue
+		cc_oi_top=${cc_oi_path%%/*}
+		cc_oi_skip=false
+		for cc_oi_exclude in $CC_OVERLAY_EXCLUDE; do
+			[ "$cc_oi_top" = "$cc_oi_exclude" ] && { cc_oi_skip=true; break; }
+		done
+		[ "$cc_oi_skip" = true ] && continue
+		cc_copy_path "$cc_oi_mode" "$cc_oi_src/$cc_oi_path" "$cc_oi_dst/$cc_oi_path" "$cc_oi_path" \
+			|| { rm -f "$cc_oi_lines"; return 1; }
+		cc_oi_count=$((cc_oi_count + 1))
+	done <"$cc_oi_lines"
+	rm -f "$cc_oi_lines"
+	cc_emit copy_mode "$cc_oi_mode"
+	cc_emit overlay_paths "$cc_oi_count"
+	return 0
+}
+
 # cc_worktree_prepare ROOT PLAN_ID REPO -> create branch + worktree from base tip
 cc_worktree_prepare() {
 	cc_wp_root="$1"; cc_wp_plan="$2"; cc_wp_id="$3"
@@ -1249,6 +1323,11 @@ cc_worktree_prepare() {
 		git -C "$cc_wp_abs" worktree add -b "$cc_wp_branch" "$cc_wp_tree" "$cc_wp_base" >/dev/null 2>&1 \
 			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_wp_id"; return 1; }
 	fi
+	cc_wp_overlay=$(cc_overlay_ignored "$cc_wp_abs" "$cc_wp_tree") || {
+		cc_emit setup_reason WORKTREE_OVERLAY_FAILED
+		cc_fail WORKTREE_OVERLAY_FAILED "$cc_wp_id"; return 1
+	}
+	printf '%s\n' "$cc_wp_overlay"
 	cc_emit worktree "$cc_wp_tree"
 	cc_emit branch "$cc_wp_branch"
 	cc_emit base_commit "$cc_wp_base"
@@ -1333,6 +1412,11 @@ cc_pair_begin() {
 	mkdir -p "$(dirname -- "$cc_pb_wt")" "$cc_pb_dir" || { cc_fail PAIR_STATE_CREATE_FAILED "$cc_pb_session"; return 1; }
 	git -C "$cc_pb_abs" worktree add -b "$cc_pb_branch" "$cc_pb_wt" "$cc_pb_base" >/dev/null 2>&1 \
 		|| { cc_fail PAIR_WORKTREE_CREATE_FAILED "$cc_pb_repo"; return 1; }
+	cc_pb_overlay=$(cc_overlay_ignored "$cc_pb_abs" "$cc_pb_wt") || {
+		cc_worktree_drop "$cc_pb_wt"
+		git -C "$cc_pb_abs" branch -D "$cc_pb_branch" >/dev/null 2>&1 || :
+		cc_fail PAIR_WORKTREE_OVERLAY_FAILED "$cc_pb_repo"; return 1
+	}
 	{
 		printf 'schema_version: %s\n' "$CC_PAIRING_SESSION_SCHEMA_VERSION"
 		printf 'repo: %s\n' "$cc_pb_repo"
@@ -1341,6 +1425,7 @@ cc_pair_begin() {
 		printf 'base: %s\n' "$cc_pb_base"
 	} | cc_atomic_write "$cc_pb_pointer" \
 		|| { cc_fail PAIR_POINTER_WRITE_FAILED "$cc_pb_session"; return 1; }
+	printf '%s\n' "$cc_pb_overlay"
 	cc_emit session "$cc_pb_session"
 	cc_emit repository "$cc_pb_repo"
 	cc_emit worktree "$cc_pb_wt"
@@ -1644,7 +1729,12 @@ cc_base_prepare() {
 		cc_bp_base=$(git -C "$cc_bp_tree" rev-parse HEAD)
 	fi
 	git -C "$cc_bp_abs" update-ref "$cc_bp_baseref" "$cc_bp_base" >/dev/null 2>&1 || :
+	cc_bp_overlay=$(cc_overlay_ignored "$cc_bp_abs" "$cc_bp_tree") || {
+		cc_emit setup_reason WORKTREE_OVERLAY_FAILED
+		cc_fail WORKTREE_OVERLAY_FAILED "$cc_bp_repo"; return 1
+	}
 	cc_bp_based=$(printf '%s' "$cc_bp_preds" | tr ' ' ',' | sed 's/,/, /g')
+	printf '%s\n' "$cc_bp_overlay"
 	cc_emit worktree "$cc_bp_tree"
 	cc_emit branch "$cc_bp_branch"
 	cc_emit base_commit "$cc_bp_base"
@@ -2502,6 +2592,11 @@ cc_execution_begin() {
 		cc_eb_based=""
 		if cc_plan_has_same_repo_pred "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"; then
 			if ! cc_eb_out=$(cc_base_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"); then
+				if printf '%s\n' "$cc_eb_out" | grep -Fqx 'setup_reason: WORKTREE_OVERLAY_FAILED'; then
+					cc_exec_set "$cc_eb_edir" status blocked
+					cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_OVERLAY_FAILED
+					cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1
+				fi
 				# a base that cannot be built cleanly is a blocked execution, not a
 				# worker failure (INV-CONCURRENCY-02); preserve evidence, no worker runs.
 				cc_exec_set "$cc_eb_edir" status blocked
@@ -2514,7 +2609,14 @@ cc_execution_begin() {
 			cc_eb_based=$(printf '%s' "$cc_eb_out" | sed -n 's/^based_on: //p')
 		else
 			cc_eb_out=$(cc_worktree_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id") \
-				|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_SETUP_FAILED; cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
+				|| {
+					if printf '%s\n' "$cc_eb_out" | grep -Fqx 'setup_reason: WORKTREE_OVERLAY_FAILED'; then
+						cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_OVERLAY_FAILED
+					else
+						cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_SETUP_FAILED
+					fi
+					cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1
+				}
 		fi
 		cc_eb_wt=$(printf '%s' "$cc_eb_out" | sed -n 's/^worktree: //p')
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
@@ -4123,6 +4225,7 @@ cc_main() {
 		repository-preflight)    cc_repository_preflight "$@" ;;
 		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
+		worktree-overlay)        cc_overlay_ignored "$@" ;;
 		pair-begin)              cc_pair_begin "$@" ;;
 		pair-inspect)            cc_pair_inspect "$@" ;;
 		pair-close)              cc_pair_close "$@" ;;

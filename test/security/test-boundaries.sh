@@ -30,12 +30,30 @@ cc_fx_bindings_header "$ws"
 printf '  linky:\n    path: repositories/linky\n    base_branch: development\n' >>"$ws/repositories.local.yaml"
 expect_failure cc_repo_resolve "$ws" linky
 
-# --- credentials never appear in shipped or workspace-owned files ---
+# --- credentials never appear in runtime or other shipped files ---
+credential_scan_paths="$ROOT/.context-circuit/wrapper $ROOT/template $ROOT/.agents $ROOT/.context-circuit/agents"
 for term in password api_key access_token client_secret provider_payload BEGIN\ RSA\ PRIVATE\ KEY; do
-	if grep -RIlF "$term" "$ROOT/.context-circuit/wrapper" "$ROOT/template" "$ROOT/.agents" "$ROOT/.context-circuit/agents" 2>/dev/null | grep -v '/test/' | grep . ; then
+	if grep -RIlF "$term" $credential_scan_paths 2>/dev/null | grep -v '/test/' | grep . ; then
 		fail "credential-like term '$term' found in shipped files"
 	fi
 done
+
+# Overlay content belongs only in the worktree; runtime records carry metadata,
+# never a copied path or its content.
+ws_overlay=$(cc_fx_ws)
+cc_fx_repo "$ws_overlay" api development
+cc_fx_ignored_content "$ws_overlay/repositories/api"
+rm -f "$ws_overlay/repositories/api/untracked.txt"
+cc_fx_plan_ex "$ws_overlay" 0001-overlay-security "Overlay security" api src ""
+exec_overlay=$(cc_execution_begin "$ws_overlay" 0001-overlay-security security-worker | sed -n 's/^execution_id: //p')
+overlay_records="$ws_overlay/.runtime/executions/0001-overlay-security/$exec_overlay"
+if grep -RIlF 'fixture-overlay-value' "$overlay_records" | grep . >/dev/null 2>&1; then
+	fail 'overlay content was written to a runtime record'
+fi
+if grep -RIlF '.env' "$overlay_records" | grep . >/dev/null 2>&1; then
+	fail 'overlay path was written to a runtime record'
+fi
+rm -rf "$ws_overlay"
 
 # --- the template ignores local bindings, checkouts, and runtime state ---
 contains "$ROOT/template/.gitignore" "repositories.local.yaml"
