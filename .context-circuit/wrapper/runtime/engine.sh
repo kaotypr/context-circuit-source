@@ -1417,6 +1417,11 @@ cc_pair_begin() {
 		git -C "$cc_pb_abs" branch -D "$cc_pb_branch" >/dev/null 2>&1 || :
 		cc_fail PAIR_WORKTREE_OVERLAY_FAILED "$cc_pb_repo"; return 1
 	}
+	cc_pb_environment=$(cc_provision_worktree "$cc_pb_abs" "$cc_pb_wt") || {
+		cc_worktree_drop "$cc_pb_wt"
+		git -C "$cc_pb_abs" branch -D "$cc_pb_branch" >/dev/null 2>&1 || :
+		cc_fail PAIR_TOOLCHAIN_PROVISION_FAILED "$cc_pb_repo"; return 1
+	}
 	{
 		printf 'schema_version: %s\n' "$CC_PAIRING_SESSION_SCHEMA_VERSION"
 		printf 'repo: %s\n' "$cc_pb_repo"
@@ -1426,6 +1431,7 @@ cc_pair_begin() {
 	} | cc_atomic_write "$cc_pb_pointer" \
 		|| { cc_fail PAIR_POINTER_WRITE_FAILED "$cc_pb_session"; return 1; }
 	printf '%s\n' "$cc_pb_overlay"
+	printf '%s\n' "$cc_pb_environment"
 	cc_emit session "$cc_pb_session"
 	cc_emit repository "$cc_pb_repo"
 	cc_emit worktree "$cc_pb_wt"
@@ -1752,25 +1758,134 @@ cc_base_prepare() {
 # prompt (INV-RUNTIME-01); the brief prose lives in .context-circuit/wrapper/adapters/, not here.
 # ---------------------------------------------------------------------------
 
-# cc_harden_worktree WORKTREE -> detect the toolchain and report the prepared
-# environment. Detection is a table lookup; no network, no per-worktree install
-# here (full provisioning is a later phase). Emits environment ready|no-toolchain.
-cc_harden_worktree() {
-	cc_hw_wt="$1"
-	[ -d "$cc_hw_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_hw_wt"; return 1; }
-	cc_hw_tc=""
-	for cc_hw_lf in package-lock.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock \
+# cc_toolchain_row KEY -> the install tree and frozen command for every detected
+# toolchain key. Command forms are intentionally explicit pending plan-review
+# confirmation: they ship to every template consumer.
+cc_toolchain_row() {
+	case "$1" in
+		package-lock.json) printf 'tree: node_modules\ninstall: npm ci\n' ;;
+		pnpm-lock.yaml)    printf 'tree: node_modules\ninstall: pnpm install --frozen-lockfile\n' ;;
+		yarn.lock)         printf 'tree: node_modules\ninstall: yarn install --immutable\n' ;;
+		bun.lockb|bun.lock) printf 'tree: node_modules\ninstall: bun install --frozen-lockfile\n' ;;
+		go.mod)            printf 'tree: -\ninstall: -\n' ;;
+		Cargo.lock)        printf 'tree: target\ninstall: cargo fetch --locked\n' ;;
+		Gemfile.lock)      printf 'tree: .bundle\ninstall: bundle install --deployment\n' ;;
+		requirements.txt)  printf 'tree: .venv\ninstall: python -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.txt\n' ;;
+		poetry.lock)       printf 'tree: .venv\ninstall: poetry install --sync --no-root\n' ;;
+		composer.lock)     printf 'tree: vendor\ninstall: composer install --no-dev --prefer-dist --no-interaction\n' ;;
+		pom.xml|build.gradle|build.gradle.kts) printf 'tree: -\ninstall: -\n' ;;
+		*) cc_fail TOOLCHAIN_KEY_UNKNOWN "$1"; return 1 ;;
+	esac
+}
+
+# cc_toolchain_detect WORKTREE -> first detected key, in the established order.
+cc_toolchain_detect() {
+	cc_td_wt="$1"
+	for cc_td_key in package-lock.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock \
 		go.mod Cargo.lock Gemfile.lock requirements.txt poetry.lock composer.lock \
 		pom.xml build.gradle build.gradle.kts; do
-		[ -f "$cc_hw_wt/$cc_hw_lf" ] && { cc_hw_tc="$cc_hw_lf"; break; }
+		[ -f "$cc_td_wt/$cc_td_key" ] && { printf '%s\n' "$cc_td_key"; return 0; }
 	done
-	if [ -n "$cc_hw_tc" ]; then
-		cc_emit environment ready
-		cc_emit toolchain "$cc_hw_tc"
-	else
-		cc_emit environment no-toolchain
+	return 1
+}
+
+# cc_toolchain_stamp_path TREE -> path to the digest stamp carried by the overlay.
+cc_toolchain_stamp_path() { printf '%s/.context-circuit-toolchain-lock-digest\n' "$1"; }
+
+# cc_toolchain_stamp_read TREE -> print a valid one-line stamp when present.
+cc_toolchain_stamp_read() {
+	cc_tsr_file=$(cc_toolchain_stamp_path "$1")
+	[ -f "$cc_tsr_file" ] || return 1
+	sed -n '1p' "$cc_tsr_file"
+}
+
+# cc_toolchain_stamp_write TREE DIGEST -> atomically record the tree's lockfile.
+cc_toolchain_stamp_write() {
+	cc_tsw_tree="$1"; cc_tsw_digest="$2"
+	mkdir -p "$cc_tsw_tree" || return 1
+	printf '%s\n' "$cc_tsw_digest" | cc_atomic_write "$(cc_toolchain_stamp_path "$cc_tsw_tree")"
+}
+
+# cc_toolchain_matches SOURCE WORKTREE KEY -> a copied install tree is valid only
+# for the worktree lockfile. An un-stamped tree gets the source-lockfile fallback.
+cc_toolchain_matches() {
+	cc_tm_src="$1"; cc_tm_wt="$2"; cc_tm_key="$3"
+	cc_tm_row=$(cc_toolchain_row "$cc_tm_key") || return 1
+	cc_tm_tree=$(printf '%s\n' "$cc_tm_row" | sed -n 's/^tree: //p')
+	[ "$cc_tm_tree" != "-" ] || return 0
+	[ -d "$cc_tm_wt/$cc_tm_tree" ] && [ -n "$(ls -A "$cc_tm_wt/$cc_tm_tree" 2>/dev/null)" ] || return 1
+	cc_tm_wdigest=$(cc_digest "$cc_tm_wt/$cc_tm_key") || return 1
+	cc_tm_stamp=$(cc_toolchain_stamp_read "$cc_tm_wt/$cc_tm_tree" 2>/dev/null) || cc_tm_stamp=""
+	if [ -n "$cc_tm_stamp" ]; then
+		[ "$cc_tm_stamp" = "$cc_tm_wdigest" ]
+		return
 	fi
+	[ -f "$cc_tm_src/$cc_tm_key" ] || return 1
+	cc_tm_sdigest=$(cc_digest "$cc_tm_src/$cc_tm_key") || return 1
+	[ "$cc_tm_sdigest" = "$cc_tm_wdigest" ]
+}
+
+# cc_toolchain_install WORKTREE KEY -> run the table's frozen command inside the
+# worktree. This is the single install seam used by the offline acceptance suite.
+cc_toolchain_install() {
+	cc_ti_wt="$1"; cc_ti_key="$2"
+	cc_ti_row=$(cc_toolchain_row "$cc_ti_key") || return 1
+	cc_ti_cmd=$(printf '%s\n' "$cc_ti_row" | sed -n 's/^install: //p')
+	[ "$cc_ti_cmd" != "-" ] || return 0
+	cc_ti_tool=$(printf '%s\n' "$cc_ti_cmd" | awk '{print $1}')
+	command -v "$cc_ti_tool" >/dev/null 2>&1 \
+		|| { cc_fail TOOLCHAIN_TOOL_MISSING "$cc_ti_tool"; return 1; }
+	(cd "$cc_ti_wt" && sh -c "$cc_ti_cmd") >/dev/null 2>&1 \
+		|| { cc_fail TOOLCHAIN_INSTALL_FAILED "$cc_ti_key"; return 1; }
 	return 0
+}
+
+# cc_provision_worktree SOURCE WORKTREE -> make the worktree runnable before a
+# worker or Explore session is attached. Emits toolchain/provision/environment.
+cc_provision_worktree() {
+	cc_pw_src="$1"; cc_pw_wt="$2"
+	[ -d "$cc_pw_src" ] && [ -d "$cc_pw_wt" ] \
+		|| { cc_fail GROUNDING_WORKTREE_MISSING "$cc_pw_wt"; return 1; }
+	cc_pw_key=$(cc_toolchain_detect "$cc_pw_wt") || {
+		cc_emit provision none
+		cc_emit environment no-toolchain
+		return 0
+	}
+	cc_pw_row=$(cc_toolchain_row "$cc_pw_key") || return 1
+	cc_pw_tree=$(printf '%s\n' "$cc_pw_row" | sed -n 's/^tree: //p')
+	cc_emit toolchain "$cc_pw_key"
+	if [ "$cc_pw_tree" = "-" ]; then
+		cc_emit provision none
+		cc_emit environment ready
+		return 0
+	fi
+	cc_safe_relative "$cc_pw_tree" || { cc_fail TOOLCHAIN_TREE_INVALID "$cc_pw_tree"; return 1; }
+	cc_pw_digest=$(cc_digest "$cc_pw_wt/$cc_pw_key") || return 1
+	if cc_toolchain_matches "$cc_pw_src" "$cc_pw_wt" "$cc_pw_key"; then
+		cc_toolchain_stamp_write "$cc_pw_wt/$cc_pw_tree" "$cc_pw_digest" \
+			|| { cc_fail TOOLCHAIN_STAMP_WRITE_FAILED "$cc_pw_key"; return 1; }
+		cc_emit provision kept
+	else
+		if [ -e "$cc_pw_wt/$cc_pw_tree" ]; then
+			rm -rf "$cc_pw_wt/$cc_pw_tree" \
+				|| { cc_fail TOOLCHAIN_TREE_REMOVE_FAILED "$cc_pw_key"; return 1; }
+		fi
+		cc_toolchain_install "$cc_pw_wt" "$cc_pw_key" || return 1
+		[ -d "$cc_pw_wt/$cc_pw_tree" ] \
+			|| { cc_fail TOOLCHAIN_INSTALL_TREE_MISSING "$cc_pw_key"; return 1; }
+		cc_toolchain_stamp_write "$cc_pw_wt/$cc_pw_tree" "$cc_pw_digest" \
+			|| { cc_fail TOOLCHAIN_STAMP_WRITE_FAILED "$cc_pw_key"; return 1; }
+		cc_emit provision installed
+	fi
+	cc_emit environment ready
+	return 0
+}
+
+# cc_harden_worktree SOURCE WORKTREE -> provision the detected toolchain and
+# report ready only after preparation succeeds.
+cc_harden_worktree() {
+	cc_hw_src="$1"; cc_hw_wt="$2"
+	cc_provision_worktree "$cc_hw_src" "$cc_hw_wt"
 }
 
 # cc_skill_desc SKILL_FILE -> the first line of a skill's frontmatter description
@@ -1787,13 +1902,15 @@ cc_skill_desc() {
 	' "$1"
 }
 
-# cc_discover_repo_grounding WORKTREE [REPO] -> print the grounding manifest for
+# cc_discover_repo_grounding SOURCE WORKTREE [REPO] -> print the grounding manifest for
 # the worktree: the agent-guidance files present, the skills (name + description),
 # and the prepared-environment status. Deterministic scan; data, not prompt text.
 cc_discover_repo_grounding() {
-	cc_dg_wt="$1"; cc_dg_repo="${2:-}"
+	cc_dg_src="$1"; cc_dg_wt="$2"; cc_dg_repo="${3:-}"
 	[ -d "$cc_dg_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_dg_wt"; return 1; }
-	cc_dg_env=$(cc_harden_worktree "$cc_dg_wt" | sed -n 's/^environment: //p'); [ -n "$cc_dg_env" ] || cc_dg_env=no-toolchain
+	cc_dg_harden=$(cc_harden_worktree "$cc_dg_src" "$cc_dg_wt") || return 1
+	cc_dg_env=$(printf '%s\n' "$cc_dg_harden" | sed -n 's/^environment: //p')
+	[ -n "$cc_dg_env" ] || { cc_fail GROUNDING_ENVIRONMENT_MISSING "$cc_dg_wt"; return 1; }
 	printf 'schema_version: %s\n' "$CC_GROUNDING_MANIFEST_SCHEMA_VERSION"
 	[ -n "$cc_dg_repo" ] && printf 'repository: %s\n' "$cc_dg_repo" || :
 	printf 'worktree: %s\n' "$cc_dg_wt"
@@ -2633,8 +2750,17 @@ cc_execution_begin() {
 		# repository grounding (INV-GROUND-01): discover the target repo's own agent
 		# guidance from the prepared worktree and record it as execution evidence.
 		mkdir -p "$cc_eb_edir/grounding"
-		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml" \
-			|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
+		cc_eb_src=$(cc_repo_resolve "$cc_eb_root" "$cc_eb_id" | sed -n 's/^path: //p') || return 1
+		cc_eb_ground=$(mktemp "${TMPDIR:-/tmp}/cc-grounding.XXXXXX") || { cc_fail GROUNDING_DISCOVERY_FAILED "$cc_eb_id"; return 1; }
+		if ! cc_discover_repo_grounding "$cc_eb_src" "$cc_eb_wt" "$cc_eb_id" >"$cc_eb_ground"; then
+			rm -f "$cc_eb_ground"
+			cc_exec_set "$cc_eb_edir" status blocked
+			cc_exec_set "$cc_eb_edir" blocked_reason TOOLCHAIN_PROVISION_FAILED
+			cc_fail EXECUTION_TOOLCHAIN_PROVISION_FAILED "$cc_eb_id"; return 1
+		fi
+		cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml" <"$cc_eb_ground" \
+			|| { rm -f "$cc_eb_ground"; cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
+		rm -f "$cc_eb_ground"
 	done
 	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
@@ -4227,6 +4353,8 @@ cc_main() {
 		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
 		worktree-overlay)        cc_overlay_ignored "$@" ;;
+		toolchain-row)           cc_toolchain_row "$@" ;;
+		toolchain-provision)     cc_provision_worktree "$@" ;;
 		pair-begin)              cc_pair_begin "$@" ;;
 		pair-inspect)            cc_pair_inspect "$@" ;;
 		pair-close)              cc_pair_close "$@" ;;

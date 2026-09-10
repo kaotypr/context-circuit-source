@@ -33,6 +33,7 @@ run_suite test/latency/test-latency.sh
 run_suite test/latency/test-approval-plan.sh
 run_suite test/grounding/test-grounding.sh
 run_suite test/worktree/test-overlay.sh
+run_suite test/worktree/test-provision.sh
 run_suite test/pairing/test-pairing.sh
 run_suite test/external-surface/test-external-surface.sh
 run_suite test/completion/test-completion.sh

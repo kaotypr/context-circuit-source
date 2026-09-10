@@ -25,6 +25,10 @@ mkdir -p "$wr/.agents/skills/widget-style" "$wr/.cursor/rules"
 printf -- '---\nname: widget-style\ndescription: DLS components via the private registry\n---\n\n# style\n' >"$wr/.agents/skills/widget-style/SKILL.md"
 printf 'always use tabs\n' >"$wr/.cursor/rules/base.md"
 printf '{ "name": "widgets" }\n' >"$wr/package-lock.json"
+printf 'node_modules/\n' >"$wr/.gitignore"
+mkdir -p "$wr/node_modules/widget"
+printf 'prepared\n' >"$wr/node_modules/widget/index.js"
+cc_toolchain_stamp_write "$wr/node_modules" "$(cc_digest "$wr/package-lock.json")"
 git -C "$wr" add -A && git -C "$wr" commit -q -m 'chore: add agent guidance + toolchain'
 
 cc_fx_plan_ex "$ws" 0001-widget "Widget" widgets src/widget ""
@@ -40,7 +44,7 @@ contains "$mf" "- CLAUDE.md"
 contains "$mf" "- .cursor/rules/"
 contains "$mf" "name: widget-style"
 contains "$mf" "description: DLS components via the private registry"
-contains "$mf" "environment: ready"          # a lockfile was detected/hardened
+contains "$mf" "environment: ready"          # the overlaid install tree was prepared
 
 # 2. the grounding directive renders the discovered guidance (non-empty variant)
 dir=$(cc_grounding_directive "$mf")
@@ -78,9 +82,9 @@ cc_worker_brief_assemble "$ws" "$edir2" plain "Add the plain module." >/dev/null
 contains "$edir2/brief-plain.md" "## Repository grounding"
 cc_brief_preflight "$edir2/brief-plain.md" >/dev/null
 
-# --- hardening detects a toolchain vs greenfield directly ---
-cc_harden_worktree "$wr" | grep -q "environment: ready" || fail "lockfile repo should harden ready"
-cc_harden_worktree "$ws/repositories/plain" | grep -q "environment: no-toolchain" || fail "toolchain-less repo should be no-toolchain"
+# --- hardening provisions a toolchain vs preserving a greenfield directly ---
+cc_harden_worktree "$wr" "$wr" | grep -q "environment: ready" || fail "prepared lockfile repo should harden ready"
+cc_harden_worktree "$ws/repositories/plain" "$ws/repositories/plain" | grep -q "environment: no-toolchain" || fail "toolchain-less repo should be no-toolchain"
 
 # --- preflight refuses a brief missing / with an unfilled grounding slot ---
 printf '# Worker brief\n\nno grounding here\n' >"$ws/bad-brief.md"
