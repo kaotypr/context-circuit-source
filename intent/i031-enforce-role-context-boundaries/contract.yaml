@@ -1,0 +1,50 @@
+schema_version: 2
+intent: i031-enforce-role-context-boundaries
+title: Enforce role-specific context boundaries
+goal: >
+  Make minimal, role-correct context usage a strict Agent Harness outcome by
+  declaring normal coordinator, planner, worker, and verifier envelopes,
+  measuring available, provided, actively read, and charged context separately,
+  and permitting broader behavior only when the human prompt explicitly grants
+  the exact additional scope.
+non_goals:
+  - Inspect or assert private model reasoning.
+  - Treat exact natural-language output as context-boundary evidence.
+  - Infer zero context usage from missing host telemetry.
+  - Permit an explicit expansion for one resource to broaden access to adjacent sources, repositories, histories, or diagnostics.
+constraints:
+  - This intent depends on both the standalone harness foundation and role-attributed real-host execution evidence.
+  - The normal-request baseline must be the default for every scenario.
+  - Expanded behavior must name the exact authorizing prompt clause, affected role, additional surface, purpose, stopping condition, and revised budget.
+  - Input-token measurements supplement resource-level evidence and cannot replace it.
+  - Host background indexing must remain distinct from content actually delivered to or actively read by an agent role when the host can distinguish them.
+acceptance_criteria:
+  - id: AC-01
+    statement: Every scenario declares the expected normal context envelope for each coordinator, planner, worker, and verifier role it creates.
+  - id: AC-02
+    statement: Results distinguish context available to a role, context provided in its packets, context it actively read, and charged input usage reported by the host.
+  - id: AC-03
+    statement: A strict scenario cannot pass when a role actively reads a forbidden surface or receives context outside its declared packet.
+  - id: AC-04
+    statement: Broader role behavior is accepted only when the scenario records an exact human prompt clause authorizing the exact additional resource and purpose.
+  - id: AC-05
+    statement: Context expansion remains bounded to the named source, repository, history, archive, diagnostic surface, or research target and does not spread to adjacent resources.
+  - id: AC-06
+    statement: Scenarios enforce role-specific ceilings for provided context, actively read context, file count, and input tokens where the host exposes them.
+  - id: AC-07
+    statement: Unavailable or unattributable context evidence produces an honest inconclusive measurement rather than a false zero-use or passing result.
+  - id: AC-08
+    statement: Context results identify the largest contributors and attribute delivered and active-read events to the originating root or native child role.
+scope:
+  repositories:
+    - id: agent-harness
+      paths:
+        - .
+tier: standard
+status: draft
+intent_dependencies:
+  - id: i029-establish-agent-harness-foundation
+    reason: Context policies and budgets are evaluated inside the standalone scenario and run model.
+  - id: i030-integrate-real-host-sessions
+    reason: Strict role accounting requires native session, child-role, event, and usage evidence from each real host.
+contract_digest: ""

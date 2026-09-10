@@ -1,0 +1,42 @@
+schema_version: 2
+intent: i030-integrate-real-host-sessions
+title: Integrate real host sessions
+goal: >
+  Integrate Codex, Claude Code, and Cursor as genuine Agent Harness execution
+  hosts through a shared driver lifecycle that launches new native sessions,
+  preserves native child-agent topology and host differences, and collects
+  trustworthy host evidence without mocking agent behavior.
+non_goals:
+  - Replace real host sessions with transcript replay, mock responses, or direct coordinator-function calls.
+  - Hide meaningful host capability differences behind a falsely uniform result.
+  - Copy host credentials, cookies, provider payloads, or configuration directories into scenario workspaces.
+  - Exercise production repositories, deployment targets, or external publication destinations.
+constraints:
+  - This intent depends on the standalone Agent Harness foundation and its disposable run model.
+  - Drivers must use supported native host interfaces when structured session or event interfaces are available.
+  - A real-host result must prove that a new native root session ran to a native terminal state.
+  - Required child roles must be native children of the scenario's root session rather than separate top-level processes.
+acceptance_criteria:
+  - id: AC-01
+    statement: Agent Harness can launch and complete a new real session on Codex, Claude Code, and Cursor through a common driver lifecycle.
+  - id: AC-02
+    statement: Each run records the real host identity, version, root session, terminal state, timing, and available usage evidence.
+  - id: AC-03
+    statement: Native child sessions are preserved and reported with their parent session and roles when the host exposes that evidence.
+  - id: AC-04
+    statement: Missing host capabilities or observations are represented as unavailable rather than silently converted into successful empty evidence.
+  - id: AC-05
+    statement: Drivers use existing supported authentication without placing credentials or private provider payloads in test fixtures or retained results.
+  - id: AC-06
+    statement: One scenario definition can run on a selected supported host or as an explicit compatibility matrix without host-specific scenario duplication.
+scope:
+  repositories:
+    - id: agent-harness
+      paths:
+        - .
+tier: standard
+status: draft
+intent_dependencies:
+  - id: i029-establish-agent-harness-foundation
+    reason: Real host drivers require the standalone runner, run lifecycle, and disposable workspace contract.
+contract_digest: ""

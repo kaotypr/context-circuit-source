@@ -1,0 +1,39 @@
+schema_version: 2
+intent: i029-establish-agent-harness-foundation
+title: Establish the standalone Agent Harness foundation
+goal: >
+  Establish Agent Harness as a standalone product with a core runner and
+  composable workspace factory that materialize isolated, reproducible project
+  conditions around an immutable Context Circuit artifact without operating in
+  or depending on the Context Circuit maintainer checkout at runtime.
+non_goals:
+  - Implement real Codex, Claude Code, or Cursor session drivers in this change.
+  - Implement final scenario grading or the complete positive-journey catalog in this change.
+  - Add Agent Harness behavior to the Context Circuit runtime or product lifecycle.
+constraints:
+  - Agent Harness must remain independently developed, versioned, packaged, and run.
+  - Workspace fixtures must be composable and resolved into immutable run inputs rather than copied from opaque completed workspaces.
+  - Each scenario run must use a unique project root and independent runtime state.
+  - Credentials and host configuration must not be copied into run fixtures or retained results.
+  - Work must target the standalone agent-harness repository connected at /Users/kao/Workspace/kaotypr/repositories/agent-harness from its main branch.
+acceptance_criteria:
+  - id: AC-01
+    statement: Agent Harness exists behind a standalone product and repository boundary, and Context Circuit does not import or contain its runtime behavior.
+  - id: AC-02
+    statement: A scenario can declare and resolve a complete starting condition from reusable project, evidence, Product Knowledge, repository, binding, member, and lifecycle fixtures.
+  - id: AC-03
+    statement: Every run receives a unique disposable project area with isolated repositories, inputs, observations, and runtime state.
+  - id: AC-04
+    statement: Every run records the exact Context Circuit artifact, source revision, scenario revision, and resolved fixture identities it exercised.
+  - id: AC-05
+    statement: Repository fixtures are real Git repositories with deterministic histories and are independent of the Context Circuit source checkout.
+  - id: AC-06
+    statement: Passing runs can discard disposable project state while questioned, interrupted, or explicitly kept runs preserve enough evidence and inputs for reproduction.
+scope:
+  repositories:
+    - id: agent-harness
+      paths:
+        - .
+tier: standard
+status: approved
+contract_digest: sha256:c1a7225db780f8c06ff1b60866395e0c3c11a9b14413761c0e3c53e93ce63c5c

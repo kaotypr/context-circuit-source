@@ -1,0 +1,27 @@
+schema_version: 1
+intent: i029-establish-agent-harness-foundation
+repository: agent-harness
+feasible: false
+feasibility_outcome: not-feasible
+out_of_scope_reach: []
+open_questions: []
+tier_signal: >
+  Standard remains proportionate to the intended implementation: the repository
+  is a greenfield standalone product whose core runner, fixture resolution,
+  disposable Git workspaces, retention, and reproduction behavior require an
+  independent verifier, but the look found no irreversible or production-facing
+  consequence that would require Critical. This signal does not override the
+  plan-allocation blocker.
+revision: 985acabffd575b58ed4e171f7d6bc7e99e039807
+notes: >
+  The repository look itself found the approved outcome buildable from the clean
+  main branch: agent-harness currently contains only README.md and already states
+  the required standalone boundary. Planning cannot proceed because the mandatory
+  runtime command `sh .context-circuit/wrapper/runtime/engine.sh plan-allocate-id
+  . <slug>` returns PLAN_PREFIX_COLLISION before allocating an id. The collision
+  is in workspace plan history, not agent-harness: plans/archive contains
+  duplicate numeric prefixes 0001 through 0016. Concrete examples include three
+  0001 directories (0001-contracts-runtime-foundation,
+  0001-conversation-spec-library, 0001-mark-done-no-precheck), three 0002
+  directories, and two 0015 directories (0015-tracer-role-tiering and
+  0015-repository-grounding). No id was derived manually and no plan was written.

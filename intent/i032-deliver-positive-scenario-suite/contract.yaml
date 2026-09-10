@@ -1,0 +1,55 @@
+schema_version: 2
+intent: i032-deliver-positive-scenario-suite
+title: Deliver the positive real-host scenario suite
+goal: >
+  Deliver the first nine independent positive Agent Harness scenarios across
+  fresh-project, context-gathering, and intent-to-verification journeys, with
+  evidence-backed deterministic and bounded semantic grading that includes
+  strict per-role context requirements and supports comparison and reproduction
+  across real hosts and Context Circuit revisions.
+non_goals:
+  - Add scenarios whose intended successful outcome is a refusal, outage, malformed state, policy violation, merge conflict, or other negative condition.
+  - Require exact transcript text or one implementation shape when several outcomes are valid.
+  - Allow semantic grading to override contradictory mechanical evidence.
+  - Make one scenario depend on another scenario having completed earlier.
+constraints:
+  - This intent depends on the standalone workspace factory, real-host drivers, and strict role-context accounting.
+  - Each scenario must declare its complete fixture condition, human prompt, required host capabilities, expected outcomes, context policy, budgets, and retention behavior.
+  - Automated scenarios must not operate on production repositories or external targets.
+  - Every assertion must identify the evidence used to reach its result.
+acceptance_criteria:
+  - id: AC-01
+    statement: The suite includes successful journeys for new workspace initialization, initialization with intent creation, and complete system-design creation.
+  - id: AC-02
+    statement: The suite includes successful journeys for gathering Product Knowledge from a named PRD, from an active repository, and from compatible PRD and repository evidence together.
+  - id: AC-03
+    statement: The suite includes successful journeys for drafting an intent in an established workspace, approving it through real planner creation and plan publication, and executing and independently verifying a Standard plan.
+  - id: AC-04
+    statement: Every scenario starts from a newly materialized complete condition and can run independently in a new real host session.
+  - id: AC-05
+    statement: Mechanical facts are graded deterministically from normalized filesystem, Git, lifecycle, host-session, child-agent, and context-usage evidence.
+  - id: AC-06
+    statement: Semantic grading is limited to declared human-facing meaning, cites relevant evidence, and cannot excuse a failed deterministic assertion.
+  - id: AC-07
+    statement: A scenario passes only when its requested positive journey succeeds and every required outcome and role-context assertion passes.
+  - id: AC-08
+    statement: Results distinguish pass, fail, inconclusive observation, and harness error without blaming Context Circuit for harness setup or collection failures.
+  - id: AC-09
+    statement: Questioned, inconclusive, interrupted, or explicitly kept runs preserve enough resolved inputs, observations, and workspace state to reproduce the scenario as a fresh run.
+  - id: AC-10
+    statement: Results can be compared by scenario revision, fixture identities, Context Circuit artifact, host version, declared model settings, duration, usage, and assertion outcomes.
+scope:
+  repositories:
+    - id: agent-harness
+      paths:
+        - .
+tier: standard
+status: draft
+intent_dependencies:
+  - id: i029-establish-agent-harness-foundation
+    reason: The positive suite requires reproducible scenario conditions and disposable workspaces.
+  - id: i030-integrate-real-host-sessions
+    reason: Every foundation scenario must execute through a new genuine host session.
+  - id: i031-enforce-role-context-boundaries
+    reason: Strict role context and usage assertions are required for every scenario pass.
+contract_digest: ""
