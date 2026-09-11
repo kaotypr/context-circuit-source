@@ -41,10 +41,10 @@ scope:
       paths:
         - .
 tier: standard
-status: draft
+status: approved
 intent_dependencies:
   - id: i029-establish-agent-harness-foundation
     reason: Context policies and budgets are evaluated inside the standalone scenario and run model.
   - id: i030-integrate-real-host-sessions
     reason: Strict role accounting requires native session, child-role, event, and usage evidence from each real host.
-contract_digest: ""
+contract_digest: sha256:9b6991df3f2a293f95ed72c639f80c7764a1afd79a17fda221c6b4f043a933de

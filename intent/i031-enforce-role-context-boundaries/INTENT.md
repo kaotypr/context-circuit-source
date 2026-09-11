@@ -1,5 +1,9 @@
 # Intention — i031-enforce-role-context-boundaries
 
+_Status: approved, look complete, feasible.
+
+_Status: approved.
+
 _Status: draft, waiting for your approval._
 
 ## Intention

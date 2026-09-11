@@ -1,6 +1,6 @@
 # Intention — i030-integrate-real-host-sessions
 
-_Status: draft, waiting for your approval._
+_Status: approved, look complete, feasible.
 
 ## Intention
 
@@ -45,4 +45,3 @@ Explanations:
 ## Open questions
 
 _At draft time: no known unresolved human decisions._
-

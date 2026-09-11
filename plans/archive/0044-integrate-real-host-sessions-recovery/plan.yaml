@@ -1,0 +1,196 @@
+schema_version: 3
+plan: 0044-integrate-real-host-sessions-recovery
+intent: i030-integrate-real-host-sessions
+title: Recover real Codex, Claude Code, and Cursor session integration
+status: draft
+objective: >
+  Implement the approved real-host lifecycle from current agent-harness main
+  with streaming native protocol collection, pre-persistence redaction, truthful
+  native evidence and grading, independent per-host worlds and manifests, safe
+  cleanup, and strict device-host acceptance.
+repositories:
+  - id: agent-harness
+    purpose: Owns scenario resolution, disposable worlds, native drivers, evidence, orchestration, grading, and acceptance.
+product_knowledge:
+  - id: agent-harness-product-boundary
+    path: README.md
+    reason: Defines the standalone package, external artifact, disposable-world contract, portable evidence boundary, and deferred host-driver scope.
+context_grounding:
+  summary: >
+    Grounded at clean revision 3f25ccb187ba320acde306e227d334845d67b392.
+    The repository provides scenario resolution, artifact staging, synthetic
+    repositories, worlds, manifests, finalization, retention, cleanup, and
+    reproduction, but no native host layer. Failed plan 0043 is diagnostic only:
+    its non-ancestor candidate buffered raw output, misgraded authentication
+    failure, synthesized or omitted native evidence, built incomplete matrix
+    directories, and treated live skips as proof.
+  constraints:
+    - Start from registered current main; do not depend on or cherry-pick plan 0043 candidate commits.
+    - Use supported native structured interfaces; replay, mocks, and direct coordinator calls cannot satisfy live acceptance.
+    - Launch a new native root with the unchanged prompt; required roles count only as native children of that root.
+    - Preserve host/version, root, terminal, timing, usage, child, parent, role, auth/error, and availability facts exactly when exposed; never synthesize absent native evidence.
+    - Redact every output chunk and structured provider field before persistence or retention; never copy credentials, cookies, host configuration, or raw private payloads into runs or fixtures.
+    - Give every selected or matrix host a complete independent world, manifest, root, evidence stream, finalization, and cleanup decision.
+    - Authentication failure, provider error, nonzero exit, contradiction, missing native root/terminal, unavailable required evidence, and harness limits cannot grade pass.
+    - Terminate only the launched root and descendants owned by the run, on normal, timeout, interruption, and partial-launch paths.
+    - Explicit live acceptance must fail rather than skip any requested host; use synthetic worlds, minimal prompts, realistic per-host timeouts, and supported native usage limits.
+    - Preserve unrelated work and do not commit, push, publish, or touch production systems without separate authorization.
+  decisions:
+    - Use one plan because streaming, redaction, grading, world ownership, and live proof form one correctness and security boundary.
+    - Build typed probe, launch, observe, wait, terminate, and collect operations around existing run manifests.
+    - Model available, unavailable, and unattributed native observations and keep harness process ids separate from native session ids.
+    - Resolve one scenario once, then build and execute a full fresh run per host; aggregate only after per-host finalization and reporting.
+    - Mark captured protocol fixtures as non-live provenance so they can test parsing but cannot satisfy real-host grading.
+knowledge_impact:
+  expected_context_units: [agent-harness-product-boundary]
+  review_on_completion: true
+tasks:
+  - id: RRH-001
+    title: Define trustworthy streaming lifecycle and evidence semantics
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/drivers/
+      - src/agent_harness/observations.py
+      - src/agent_harness/runs.py
+      - src/agent_harness/workspace.py
+      - tests/test_driver_contract.py
+      - tests/test_session_evidence.py
+      - tests/test_process_ownership.py
+    evidence_anchors:
+      - src/agent_harness/observations.py:5
+      - src/agent_harness/runs.py:7
+      - src/agent_harness/runs.py:13
+      - src/agent_harness/workspace.py:73
+    depends_on: []
+    changes:
+      - Define typed lifecycle records for capabilities, native roots/children, terminal, usage, auth/error, timing, unavailable, unattributed, and provenance evidence.
+      - Consume stdout/stderr incrementally with bounded buffering and redact secrets and sensitive fields before any durable write, retained value, diagnostic, or manifest update.
+      - Grade conservatively so auth/error evidence, nonzero exit, limits, contradictions, or missing required native facts override optimistic completion-shaped events.
+      - Track run-owned process/session boundaries without conflating OS identity with native identity; make cleanup safe and idempotent across all exit paths.
+      - Extend scenario inputs with host selection/matrix, required capabilities and child roles, duration, and optional enforceable usage ceiling while preserving the prompt.
+    acceptance:
+      - id: RRH-AC-01
+        statement: Every driver implements the six semantic operations and streams observations instead of parsing only after process completion.
+      - id: RRH-AC-02
+        statement: No unredacted chunk or sensitive field is persisted or retained first, including malformed, stderr, exception, timeout, and interruption paths.
+      - id: RRH-AC-03
+        statement: Native evidence distinguishes root, child, parent, role, terminal, usage, availability, attribution, and provenance from harness-owned identifiers.
+      - id: RRH-AC-04
+        statement: Authentication failures, errors, nonzero exits, contradictions, missing required evidence, and harness limits never grade pass.
+      - id: RRH-AC-05
+        statement: Cleanup stops only the owned root and descendants, preserves unrelated processes, and is safe and idempotent on every exit path.
+    verification:
+      - id: RRH-VT-001
+        command: python3 -m unittest tests.test_driver_contract tests.test_session_evidence tests.test_process_ownership -v
+  - id: RRH-002
+    title: Implement native Codex, Claude Code, and Cursor adapters
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/drivers/codex.py
+      - src/agent_harness/drivers/claude.py
+      - src/agent_harness/drivers/cursor.py
+      - tests/host_protocol_fixtures/
+      - tests/test_codex_driver.py
+      - tests/test_claude_driver.py
+      - tests/test_cursor_driver.py
+    evidence_anchors:
+      - pyproject.toml:6
+      - src/agent_harness/workspace.py:96
+    depends_on: [RRH-001]
+    changes:
+      - Probe interface version, auth readiness, structured events, root/child visibility, model controls, usage, termination, and enforceable limits without reading credential stores.
+      - Launch each host in the prepared project with its native structured stream, unchanged prompt, declared settings/limits, and owned process boundary.
+      - Parse streams incrementally, carrying native root identity through terminal records and preserving auth, error, terminal, usage, child, parent, role, timing, and unknown events after redaction.
+      - Reject auth failure followed by nominal success, completion without native root, and child claims without native parent linkage.
+      - Add sanitized, version-labeled protocol fixtures for translation and adversarial ordering, structurally ineligible for live success.
+    acceptance:
+      - id: RRH-AC-06
+        statement: Each adapter launches a fresh native root and follows its stream to a trustworthy native terminal or declared non-success harness limit.
+      - id: RRH-AC-07
+        statement: Each adapter preserves native host/version, root, terminal state/reason, timing, and available usage without substitutes.
+      - id: RRH-AC-08
+        statement: Exposed native child identifiers, parent linkage, roles, timing, and terminal facts are retained; unsupported topology is explicitly unavailable.
+      - id: RRH-AC-09
+        statement: Tests prove auth/error precedence, identity continuity, usage, child linkage, malformed input handling, and non-live provenance rejection.
+    verification:
+      - id: RRH-VT-002
+        command: python3 -m unittest tests.test_codex_driver tests.test_claude_driver tests.test_cursor_driver -v
+  - id: RRH-003
+    title: Integrate independent selected-host and matrix run worlds
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/hosts.py
+      - src/agent_harness/cli.py
+      - src/agent_harness/runs.py
+      - src/agent_harness/workspace.py
+      - scenarios/
+      - tests/test_host_matrix.py
+      - tests/test_run_lifecycle.py
+      - tests/test_end_to_end.py
+      - README.md
+    evidence_anchors:
+      - src/agent_harness/cli.py:72
+      - src/agent_harness/workspace.py:73
+      - src/agent_harness/runs.py:13
+      - src/agent_harness/runs.py:17
+      - scenarios/standard.yaml:1
+    depends_on: [RRH-002]
+    changes:
+      - Add selected-host and matrix CLI flows that reuse one resolved scenario and call build_world separately for every host.
+      - Stream redacted progress, atomically persist evidence, finalize and report each host before summary, and prevent one pass masking any non-pass.
+      - Integrate retention/cleanup so only qualifying passing worlds are removed, partial failures remain diagnosable, and repeated cleanup stays within run boundaries.
+      - Document host protocols, ambient auth, required capabilities, worlds/manifests, provenance, redaction, limits, result semantics, retention, cleanup, and live setup.
+    acceptance:
+      - id: RRH-AC-10
+        statement: One scenario runs selected or matrix with a separately built world, native root, evidence stream, manifest, outcome, and cleanup decision per host.
+      - id: RRH-AC-11
+        statement: Each host is persisted and reported before aggregation, whose success requires every requested host to pass.
+      - id: RRH-AC-12
+        statement: Cleanup removes only qualifying passing worlds; non-passing worlds remain diagnosable and unrelated runs/processes remain intact.
+      - id: RRH-AC-13
+        statement: Documentation accurately describes implemented host differences, limitations, auth, limits, retention, cleanup, and live acceptance.
+    verification:
+      - id: RRH-VT-003
+        command: python3 -m unittest tests.test_host_matrix tests.test_run_lifecycle tests.test_end_to_end -v
+      - id: RRH-VT-004
+        command: PYTHONPATH=src python3 -m agent_harness --help
+  - id: RRH-004
+    title: Establish deterministic and strict live acceptance
+    repositories: [agent-harness]
+    paths:
+      - tests/test_real_hosts.py
+      - tests/test_real_host_acceptance.py
+      - tests/
+      - README.md
+      - pyproject.toml
+    evidence_anchors:
+      - tests/test_end_to_end.py:7
+      - tests/test_run_lifecycle.py:7
+      - pyproject.toml:1
+    depends_on: [RRH-003]
+    changes:
+      - Add deterministic end-to-end coverage for streaming/redaction order, auth/error grading, native continuity, fixture rejection, independent manifests, aggregation, and cleanup.
+      - Add explicit device acceptance using minimal synthetic repositories/prompts, configurable realistic per-host timeouts and supported usage ceilings, requiring every named host to prove a fresh native root and terminal.
+      - Make missing executable/auth, timeout, limit, missing required child linkage or observation, and any requested-host skip fail strict acceptance with retained diagnostics.
+      - Require child roles only when declared and natively observable; otherwise record unavailable and grade the assertion inconclusive rather than synthesize proof.
+      - Run the foundation suite to preserve resolution, isolation, reproduction, retention, and cleanup.
+    acceptance:
+      - id: RRH-AC-14
+        statement: Deterministic tests reject captured, replayed, mocked, synthesized, or missing records as live success and cover plan 0043 failure modes.
+      - id: RRH-AC-15
+        statement: Device acceptance succeeds only when every requested host proves a fresh native root, trustworthy terminal, and required observable child topology within limits.
+      - id: RRH-AC-16
+        statement: Requested-host skips, missing auth, limits, and unavailable required evidence return nonzero while preserving redacted diagnostics.
+      - id: RRH-AC-17
+        statement: The full suite preserves disposable-run, portable-manifest, retention, cleanup, and reproduction contracts.
+    verification:
+      - id: RRH-VT-005
+        command: python3 -m unittest discover -s tests -v
+      - id: RRH-VT-006
+        command: python3 -m compileall -q src tests
+      - id: RRH-VT-007
+        command: AGENT_HARNESS_REAL_HOSTS=codex,claude,cursor AGENT_HARNESS_REAL_HOST_TIMEOUT_SECONDS=300 python3 -m unittest tests.test_real_host_acceptance -v
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

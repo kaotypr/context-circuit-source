@@ -1,0 +1,197 @@
+schema_version: 3
+plan: 0045-integrate-real-host-sessions-second-recovery
+intent: i030-integrate-real-host-sessions
+title: Complete real Codex, Claude Code, and Cursor session integration
+status: draft
+objective: >
+  Implement the approved real-host outcome afresh from registered agent-harness
+  main, with corrected native launches, protocol-specific streaming parsers,
+  pre-persistence redaction, truthful typed evidence and grading, complete
+  independent per-host runs, safe ownership and retention, and strict live proof.
+repositories:
+  - id: agent-harness
+    purpose: Owns scenario resolution, disposable worlds, native host drivers, evidence, grading, reporting, retention, and acceptance.
+product_knowledge:
+  - id: agent-harness-product-boundary
+    path: README.md
+    reason: Defines the standalone package, immutable external artifact, disposable-world lifecycle, portable evidence boundary, and currently deferred host-driver scope.
+context_grounding:
+  summary: >
+    Grounded at registered main revision 3f25ccb187ba320acde306e227d334845d67b392.
+    Main has scenario resolution, artifact staging, synthetic Git repositories,
+    disposable worlds, manifests, finalization, retention, cleanup, and
+    reproduction, but no host drivers. Failed plans 0043 and 0044 are diagnostic
+    only. Final 0044 verification proved native streams work when Codex uses
+    --skip-git-repo-check, Claude stream-json print uses --verbose, and Cursor
+    Agent uses --trust; it also exposed dead typed evidence and probe-only proof.
+  constraints:
+    - Start from registered main at 3f25ccb187ba320acde306e227d334845d67b392; do not depend on or cherry-pick failed-plan commits.
+    - Use supported native structured interfaces; replay, mocks, fixtures, and direct coordinator calls cannot satisfy live acceptance.
+    - Launch a new native root in the prepared synthetic Git project with the unchanged prompt; required children need native parent linkage to that root.
+    - Preserve host/version, native root, terminal, timing, usage, child, parent, role, auth/error, availability, attribution, and provenance exactly when exposed; never synthesize absent facts or substitute process ids.
+    - Redact each stdout/stderr chunk and decoded field before every durable write, retained object, diagnostic, exception, report, or manifest update; buffers are explicitly bounded.
+    - Authentication failure, provider/protocol error, nonzero exit, contradiction, harness limit, absent native root/terminal, or unavailable required evidence cannot grade pass.
+    - Every requested host gets a complete independent world, manifest, native session, evidence stream, finalization, report, retention decision, and cleanup boundary before aggregation.
+    - Stop only the launched process group and descendants owned by the run on all exit paths; preserve unrelated processes and make cleanup idempotent.
+    - Strict live checks use ambient authentication without reading or copying credential stores, synthetic repositories, minimal prompts, realistic per-host timeouts, and only host-supported usage controls.
+    - Preserve unrelated work; do not commit, push, publish, deploy, or exercise production repositories or destinations without separate authorization.
+  decisions:
+    - Keep one plan because launch correctness, streaming secrecy, native evidence, grading, world ownership, and live proof form one acceptance and security boundary.
+    - Use a shared lifecycle and evidence model with separate version-aware translators for Codex, Claude Code, and Cursor, not generic event-name heuristics.
+    - Persist an append-only redacted event stream during execution and atomically checkpoint typed evidence and outcome into each manifest; reports read persisted per-host state.
+    - Treat probes as capability evidence only; strict acceptance invokes the public run path and validates a fresh native root, terminal, and exact per-host result.
+    - Sanitized protocol fixtures and fake subprocesses are non-live by construction and may prove parsing but never real-host success.
+knowledge_impact:
+  expected_context_units: [agent-harness-product-boundary]
+  review_on_completion: true
+tasks:
+  - id: RHS2-001
+    title: Establish streaming native evidence and conservative lifecycle semantics
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/drivers/
+      - src/agent_harness/observations.py
+      - src/agent_harness/runs.py
+      - src/agent_harness/workspace.py
+      - tests/test_driver_contract.py
+      - tests/test_session_evidence.py
+      - tests/test_process_ownership.py
+    evidence_anchors:
+      - src/agent_harness/observations.py:5
+      - src/agent_harness/runs.py:7
+      - src/agent_harness/runs.py:13
+      - src/agent_harness/workspace.py:73
+    depends_on: []
+    changes:
+      - Define typed probe, root, terminal, usage, child/topology, auth/error, availability, attribution, timing, provenance, and outcome records, keeping native ids distinct from process ownership.
+      - Consume stdout/stderr incrementally with fixed line, chunk, and aggregate bounds and redact before memory, JSONL, diagnostics, reports, exceptions, or manifests receive data.
+      - Persist redacted progress during execution and atomically finalize typed evidence; abrupt exceptions and interruptions cannot leave raw secrets or false success.
+      - Centralize outcome precedence so auth failure, errors, contradictions, nonzero exit, limits, missing root/terminal, required evidence, and unlinked child claims override completion-shaped events.
+      - Model owned process groups/descendants and terminate them idempotently on normal, timeout, interrupt, parse-error, and partial-launch paths without touching sentinels.
+    acceptance:
+      - id: RHS2-AC-01
+        statement: The six-operation lifecycle streams bounded, redacted stdout and stderr into durable per-run evidence before finalization and never retains raw sensitive chunks on any exit path.
+      - id: RHS2-AC-02
+        statement: Typed evidence is populated from native records for host/version, root, terminal, timing, usage, child/parent/role topology, availability, attribution, errors, and provenance, with unavailable facts explicit and process ids separate.
+      - id: RHS2-AC-03
+        statement: Failure and contradiction precedence prevents pass after auth, provider/protocol, nonzero-exit, limit, missing-root/terminal, required-evidence, or topology failures.
+      - id: RHS2-AC-04
+        statement: Run ownership and cleanup are safe, bounded, and idempotent on every exit path and preserve unrelated sentinel processes and runs.
+    verification:
+      - id: RHS2-VT-001
+        command: python3 -m unittest tests.test_driver_contract tests.test_session_evidence tests.test_process_ownership -v
+  - id: RHS2-002
+    title: Implement corrected protocol-specific Codex, Claude Code, and Cursor drivers
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/drivers/base.py
+      - src/agent_harness/drivers/codex.py
+      - src/agent_harness/drivers/claude.py
+      - src/agent_harness/drivers/cursor.py
+      - tests/host_protocol_fixtures/
+      - tests/test_codex_driver.py
+      - tests/test_claude_driver.py
+      - tests/test_cursor_driver.py
+    evidence_anchors:
+      - pyproject.toml:6
+      - src/agent_harness/workspace.py:96
+      - README.md:1
+    depends_on: [RHS2-001]
+    changes:
+      - Probe executable identity/version and observable capabilities without inspecting credentials, then launch using Codex exec --json --skip-git-repo-check, Claude print stream-json --verbose, and Cursor Agent print stream-json --trust.
+      - Preserve the prompt and declared model/limit settings, applying only supported controls and recording unsupported usage enforcement as unavailable.
+      - Decode actual per-host event shapes into populated typed evidence while retaining redacted native event kinds and identifiers needed for root continuity and topology.
+      - Reject malformed/truncated streams, duplicated or changing roots, terminal-before-root, auth/error then success, mismatched parents, synthesized roles, and fixture/mock provenance as live proof.
+      - Add sanitized version-labeled protocol fixtures for success, unavailable, malformed, contradictory, usage, auth/error, and child-topology cases.
+    acceptance:
+      - id: RHS2-AC-05
+        statement: All adapters issue corrected supported native commands and a direct launch can reach and parse each installed host's native structured stream.
+      - id: RHS2-AC-06
+        statement: Each parser produces a fresh native root and trustworthy terminal plus available version, timing, usage, auth/error, and topology evidence without generic event-name guessing or fabricated values.
+      - id: RHS2-AC-07
+        statement: Per-host adversarial tests cover identity continuity, precedence, stderr, fragmentation, oversized/malformed records, usage availability, child linkage, and non-live provenance rejection.
+    verification:
+      - id: RHS2-VT-002
+        command: python3 -m unittest tests.test_codex_driver tests.test_claude_driver tests.test_cursor_driver -v
+  - id: RHS2-003
+    title: Integrate complete selected-host and matrix runs with truthful reporting
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/hosts.py
+      - src/agent_harness/cli.py
+      - src/agent_harness/runs.py
+      - src/agent_harness/workspace.py
+      - src/agent_harness/reproduce.py
+      - scenarios/
+      - tests/test_host_matrix.py
+      - tests/test_run_lifecycle.py
+      - tests/test_end_to_end.py
+    evidence_anchors:
+      - src/agent_harness/cli.py:72
+      - src/agent_harness/workspace.py:73
+      - src/agent_harness/runs.py:13
+      - src/agent_harness/reproduce.py:7
+      - scenarios/standard.yaml:1
+    depends_on: [RHS2-002]
+    changes:
+      - Extend scenario resolution and CLI with unchanged prompts, selected/matrix hosts, required capabilities/roles, per-host duration, settings, and optional supported usage ceilings.
+      - Resolve once but build every host separately, recording complete inputs, probe, redacted stream, typed evidence, result, report, retention, and reproduction facts in its manifest.
+      - Finalize and emit each persisted per-host report before aggregation; every requested host must pass and exact host outcomes remain visible.
+      - Retain non-passing or kept worlds; clean only qualifying passing worlds after ownership release while preserving manifests, reports, unrelated runs, and reproducibility.
+    acceptance:
+      - id: RHS2-AC-08
+        statement: One scenario executes selected or matrix hosts as complete independent runs with one world, manifest, native root, evidence stream, typed result, report, retention decision, and cleanup boundary per host.
+      - id: RHS2-AC-09
+        statement: Per-host results are durably finalized and reported before aggregation, exact requested-host outcomes remain visible, and aggregate pass requires every requested host to pass.
+      - id: RHS2-AC-10
+        statement: Retention, cleanup, and reproduction preserve failed diagnostics and portable evidence, remove only eligible passing worlds after processes end, and do not affect unrelated state.
+    verification:
+      - id: RHS2-VT-003
+        command: python3 -m unittest tests.test_host_matrix tests.test_run_lifecycle tests.test_end_to_end tests.test_reproduction -v
+      - id: RHS2-VT-004
+        command: PYTHONPATH=src python3 -m agent_harness --help
+  - id: RHS2-004
+    title: Prove deterministic failure modes and strict authenticated live outcomes
+    repositories: [agent-harness]
+    paths:
+      - tests/test_real_hosts.py
+      - tests/test_real_host_acceptance.py
+      - tests/
+      - README.md
+      - pyproject.toml
+    evidence_anchors:
+      - tests/test_end_to_end.py:7
+      - tests/test_run_lifecycle.py:7
+      - pyproject.toml:1
+      - README.md:9
+    depends_on: [RHS2-003]
+    changes:
+      - Add fake-process end-to-end tests for streaming-before-finalize, buffer bounds, all-exit redaction, evidence population, precedence, manifests/reports, aggregation, retention, cleanup, and replay/synthesis rejection.
+      - Make strict acceptance invoke the public run lifecycle, not probes/helpers, in fresh synthetic Git worlds with a minimal read-only prompt and configurable realistic per-host timeout and supported limits.
+      - Require each named host to expose its expected protocol, nonempty fresh root, native terminal, version, timing, typed evidence, redacted persisted stream, completed manifest/report, and exact pass; failures retain diagnostics and return nonzero.
+      - Document exact commands/trust flags, protocols, ambient auth, usage availability, grading, limits, persistence/redaction, ownership, reporting, retention, cleanup, and strict live invocation.
+      - Run all foundation tests for resolution, isolation, portable manifests, artifact integrity, reproduction, and cleanup.
+    acceptance:
+      - id: RHS2-AC-11
+        statement: Deterministic tests reject replayed, mocked, synthesized, malformed, unredacted, unbounded, incomplete, contradictory, or probe-only evidence as live success and cover every prior verifier failure.
+      - id: RHS2-AC-12
+        statement: Strict authenticated acceptance launches Codex, Claude Code, and Cursor through the public run path and succeeds only when each has a fresh native root, trustworthy terminal, persisted report, and exact pass within limits.
+      - id: RHS2-AC-13
+        statement: Requested-host skips, unavailable auth/executables, limits, protocol failures, missing required evidence, or incomplete persistence return nonzero and retain redacted per-host diagnostics.
+      - id: RHS2-AC-14
+        statement: Documentation matches implemented commands, native differences, authentication, evidence, limits, precedence, reporting, retention, cleanup, and live-check behavior.
+      - id: RHS2-AC-15
+        statement: The full deterministic suite preserves the Agent Harness foundation contracts while proving the integrated real-host lifecycle.
+    verification:
+      - id: RHS2-VT-005
+        command: python3 -m unittest discover -s tests -v
+      - id: RHS2-VT-006
+        command: python3 -m compileall -q src tests
+      - id: RHS2-VT-007
+        command: AGENT_HARNESS_REAL_HOSTS=codex,claude,cursor AGENT_HARNESS_REAL_HOST_TIMEOUT_SECONDS=300 python3 -m unittest tests.test_real_host_acceptance -v
+      - id: RHS2-VT-008
+        command: PYTHONPATH=src python3 -m agent_harness run scenarios/real-host-smoke.yaml fixtures/standard.yaml README.md .runtime/live-acceptance --hosts codex,claude,cursor
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

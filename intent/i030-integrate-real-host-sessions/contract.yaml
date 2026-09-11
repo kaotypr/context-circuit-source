@@ -35,8 +35,8 @@ scope:
       paths:
         - .
 tier: standard
-status: draft
+status: approved
 intent_dependencies:
   - id: i029-establish-agent-harness-foundation
     reason: Real host drivers require the standalone runner, run lifecycle, and disposable workspace contract.
-contract_digest: ""
+contract_digest: sha256:b1baa4f987aea5f770be58e2e53e41d4d4a62079e7e65146df3a6b700ac194ef

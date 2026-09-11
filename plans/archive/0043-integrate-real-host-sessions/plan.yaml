@@ -1,0 +1,183 @@
+schema_version: 3
+plan: 0043-integrate-real-host-sessions
+intent: i030-integrate-real-host-sessions
+title: Integrate real Codex, Claude Code, and Cursor sessions
+status: draft
+objective: >
+  Extend Agent Harness with a shared real-host lifecycle and genuine Codex,
+  Claude Code, and Cursor drivers that launch native root sessions in disposable
+  worlds, preserve observable native child topology and host differences, safely
+  collect redacted evidence through terminal states, and run one scenario on a
+  selected host or explicit compatibility matrix.
+repositories:
+  - id: agent-harness
+    purpose: Owns scenario resolution, disposable runs, native host drivers, evidence collection, CLI orchestration, and compatibility tests.
+product_knowledge:
+  - id: agent-harness-product-boundary
+    path: README.md
+    reason: >
+      Defines the standalone package, immutable external Context Circuit artifact,
+      disposable world, portable evidence boundary, and currently deferred host-driver scope.
+context_grounding:
+  summary: >
+    Grounded at agent-harness revision 3f25ccb187ba320acde306e227d334845d67b392
+    with a clean worktree. The Python 3.12 standard-library package already resolves
+    and digests declarative scenarios, builds isolated run worlds, records prompt
+    identity and host facts, finalizes durable manifests, and preserves or safely
+    cleans worlds. No driver abstraction, process ownership layer, native event
+    collector, host matrix command, or real-host test surface exists yet; README.md
+    explicitly defers host drivers and grading.
+  constraints:
+    - Use supported native Codex, Claude Code, and Cursor interfaces when structured session or event interfaces are available; never replace them with transcript replay, model mocks, or direct coordinator calls.
+    - Prove a newly launched native root session reaches a native terminal state or an explicitly recorded harness limit.
+    - Treat required planner, worker, and verifier roles only as native children of the run's root session; never substitute separate top-level harness processes.
+    - Preserve raw host identity, version, identifiers, terminal reason, and capability differences while using only a small shared semantic lifecycle.
+    - Represent unavailable capabilities and observations explicitly; do not manufacture successful empty evidence or infer child roles from model names.
+    - Use authentication already owned by each host and never copy credentials, cookies, configuration trees, or private provider payloads into disposable worlds, fixtures, logs, or retained evidence.
+    - Submit the unchanged human prompt without hidden grading instructions; keep every matrix host in an independent workspace and report its result separately.
+    - Terminate only the root process/session and descendants owned by the run, retaining limit termination as a non-success terminal reason.
+    - Preserve unrelated work and do not commit, push, publish, or exercise production repositories or deployment targets without separate authorization.
+  decisions:
+    - Use one plan because the public contract is one matrix-capable run lifecycle, and trustworthy verification requires the shared contract, all three native adapters, evidence redaction, CLI orchestration, and end-to-end matrix behavior together.
+    - Add an explicit driver protocol and typed capability/session evidence records around the existing resolved scenario and run manifest instead of overloading fixture or workspace construction code with host-specific branches.
+    - Keep host executables and authentication ambient to the host while passing only the prepared project path, unchanged prompt, declared limits, and supported native flags into owned subprocesses.
+    - Make real-host availability tests opt-in and capability-gated, while deterministic contract and adapter parsing tests use captured synthetic protocol records only to test translation; such records never satisfy a real-host acceptance run.
+    - Expand one resolved scenario into independent per-host runs so a selected host and matrix use the same scenario definition and one host cannot mask another host's unavailable or failed result.
+knowledge_impact:
+  expected_context_units: [agent-harness-product-boundary]
+  review_on_completion: true
+tasks:
+  - id: RH-001
+    title: Define the shared real-host lifecycle and evidence boundary
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/drivers/
+      - src/agent_harness/observations.py
+      - src/agent_harness/runs.py
+      - src/agent_harness/workspace.py
+      - tests/test_driver_contract.py
+      - tests/test_session_evidence.py
+    evidence_anchors:
+      - src/agent_harness/workspace.py:38
+      - src/agent_harness/workspace.py:73
+      - src/agent_harness/runs.py:13
+      - src/agent_harness/observations.py:5
+    depends_on: []
+    changes:
+      - Define probe, launch, observe, wait, terminate, and collect operations with typed capability, root-session, child-session, event, usage, timing, and terminal records.
+      - Extend resolved scenario inputs with selected host or explicit host matrix, unchanged human prompt, required capabilities, maximum duration, and optional enforceable usage ceiling without duplicating host-specific scenario definitions.
+      - Record native values alongside a small normalized vocabulary, including explicit unavailable and unattributed states; capability probes are evidence and never authorization.
+      - Add streaming redaction before persistence for configured secret patterns and sensitive provider fields, preserving evidence shape without first storing raw private payloads.
+      - Add run-owned process/session bookkeeping so termination is bounded to the launched root and its descendants and a harness limit remains distinct from native completion.
+    acceptance:
+      - id: RH-AC-01
+        statement: Every driver implements one semantic six-operation lifecycle while retaining native capability, identity, and terminal details.
+      - id: RH-AC-02
+        statement: Run evidence represents unavailable capabilities, unavailable observations, and unattributed events explicitly rather than as empty success.
+      - id: RH-AC-03
+        statement: Evidence is redacted before persistence and run worlds and retained records contain no copied host credentials, configuration trees, or private provider payloads.
+      - id: RH-AC-04
+        statement: Harness limits and owned-root termination are distinguishable from native successful completion and cannot target unrelated processes.
+    verification:
+      - id: RH-VT-001
+        command: python3 -m unittest tests.test_driver_contract -v
+      - id: RH-VT-002
+        command: python3 -m unittest tests.test_session_evidence -v
+  - id: RH-002
+    title: Implement genuine native host drivers
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/drivers/codex.py
+      - src/agent_harness/drivers/claude.py
+      - src/agent_harness/drivers/cursor.py
+      - tests/test_codex_driver.py
+      - tests/test_claude_driver.py
+      - tests/test_cursor_driver.py
+      - tests/host_protocol_fixtures/
+    evidence_anchors:
+      - src/agent_harness/workspace.py:96
+      - pyproject.toml:1
+    depends_on: [RH-001]
+    changes:
+      - Probe installed Codex, Claude Code, and Cursor interfaces for version, authentication readiness, session controls, structured events, child-agent support, model controls, usage reporting, and termination support.
+      - Launch a new native root session for each host in the prepared project with the unchanged scenario prompt and declared limits, without copying ambient authentication material.
+      - Translate each host's supported structured events and human-visible output into shared evidence while preserving native identifiers, terminal reasons, missing fields, and unattributed records.
+      - Preserve child identifiers, parent linkage, role evidence, timing, and terminal state exactly when exposed; reject separate top-level processes as proof of required native child roles.
+      - Collect versioned protocol parsing fixtures for deterministic adapter tests, clearly separating translation tests from opt-in proof that a real host actually ran.
+    acceptance:
+      - id: RH-AC-05
+        statement: Codex, Claude Code, and Cursor drivers each launch a new genuine native root session and follow it to a native terminal state or declared harness limit.
+      - id: RH-AC-06
+        statement: Each driver records host identity, version, root session identity, timing, terminal state and reason, plus usage when the native host exposes it.
+      - id: RH-AC-07
+        statement: Native child sessions remain linked to their root and carry role evidence when exposed, with unsupported topology reported unavailable rather than synthesized.
+    verification:
+      - id: RH-VT-003
+        command: python3 -m unittest tests.test_codex_driver tests.test_claude_driver tests.test_cursor_driver -v
+  - id: RH-003
+    title: Orchestrate selected-host and matrix runs
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/cli.py
+      - src/agent_harness/hosts.py
+      - src/agent_harness/runs.py
+      - scenarios/
+      - tests/test_host_matrix.py
+      - README.md
+    evidence_anchors:
+      - src/agent_harness/cli.py:72
+      - src/agent_harness/workspace.py:73
+      - scenarios/standard.yaml:1
+      - README.md:26
+    depends_on: [RH-002]
+    changes:
+      - Add CLI orchestration that probes and runs one selected supported host or expands the same resolved scenario into an explicit Codex, Claude Code, and Cursor matrix.
+      - Allocate a separate disposable run and native root session per matrix entry, stream progress, enforce declared limits, finalize evidence atomically, and report each host before any cross-host summary.
+      - Grade required capabilities as pass, fail, or inconclusive from recorded evidence so unavailable observations remain visible and one host's success cannot replace another host's missing or failed proof.
+      - Document host prerequisites, ambient authentication, scenario host requirements, selected and matrix invocations, evidence shapes, limits, redaction, retention, and opt-in real-host testing.
+    acceptance:
+      - id: RH-AC-08
+        statement: One scenario definition runs on one selected supported host or expands into independent Codex, Claude Code, and Cursor runs without host-specific scenario copies.
+      - id: RH-AC-09
+        statement: Matrix output reports every host independently before summarizing and never lets one success replace another unavailable, inconclusive, limited, or failed run.
+      - id: RH-AC-10
+        statement: Public documentation explains safe ambient authentication, capability differences, limits, retained evidence, and real-host prerequisites.
+    verification:
+      - id: RH-VT-004
+        command: python3 -m unittest tests.test_host_matrix -v
+      - id: RH-VT-005
+        command: PYTHONPATH=src python3 -m agent_harness --help
+  - id: RH-004
+    title: Prove the real-host story end to end
+    repositories: [agent-harness]
+    paths:
+      - tests/test_real_hosts.py
+      - tests/test_end_to_end.py
+      - tests/
+      - README.md
+      - pyproject.toml
+    evidence_anchors:
+      - tests/test_end_to_end.py:7
+      - pyproject.toml:6
+    depends_on: [RH-003]
+    changes:
+      - Add opt-in real-host acceptance coverage that launches a new session on each available configured host, verifies native root identity and terminal evidence, and requires native child linkage for scenarios that declare a child-role capability.
+      - Exercise the same scenario through selected-host and full-matrix paths and assert independent workspaces, per-host results, honest unavailable observations, timeout termination, redaction, and durable evidence collection.
+      - Keep normal unit tests deterministic and independent of installed hosts while ensuring their protocol fixtures cannot be accepted as evidence that a real session ran.
+      - Run the existing foundation suite to protect scenario resolution, isolated world construction, retention, cleanup, and reproduction behavior.
+    acceptance:
+      - id: RH-AC-11
+        statement: Opt-in acceptance evidence proves new real native sessions complete on every available configured supported host and records native child topology where required and exposed.
+      - id: RH-AC-12
+        statement: The full automated suite preserves the standalone disposable-run contract and rejects replayed or mocked records as real-host success.
+    verification:
+      - id: RH-VT-006
+        command: python3 -m unittest discover -s tests -v
+      - id: RH-VT-007
+        command: python3 -m compileall -q src tests
+      - id: RH-VT-008
+        command: AGENT_HARNESS_REAL_HOSTS=codex,claude,cursor python3 -m unittest tests.test_real_hosts -v
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3
