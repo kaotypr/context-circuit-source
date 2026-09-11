@@ -71,3 +71,10 @@ GitHub Actions variables and secrets. See the 2026-09-09 decision in
 The GitHub destinations are `kaotypr/context-circuit-source` (this maintainer
 source) and `kaotypr/context-circuit` (the published template). See the
 2026-09-10 decision in `context/DECISIONS.md`.
+
+Agent Harness is a standalone product that consumes one immutable Context
+Circuit artifact and builds isolated deterministic run worlds from explicit
+scenario fixtures. Portable evidence supports ownership-safe cleanup and fresh
+reproduction without importing the maintainer checkout or retaining private host
+state. See the 2026-09-11 decision in `context/DECISIONS.md` and
+[source-release-and-upgrade](domains/source-release-and-upgrade/README.md).

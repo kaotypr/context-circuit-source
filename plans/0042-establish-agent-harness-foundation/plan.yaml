@@ -2,7 +2,7 @@ schema_version: 3
 plan: 0042-establish-agent-harness-foundation
 intent: i029-establish-agent-harness-foundation
 title: Establish the standalone Agent Harness foundation
-status: draft
+status: done
 objective: >
   Establish an independently packaged runner and workspace factory that resolve
   complete scenario conditions, create isolated disposable projects around one

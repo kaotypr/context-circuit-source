@@ -108,9 +108,30 @@ must already exist. Variable and secret names stay in this page; the project
 path and credential stay in GitHub Actions settings and never enter workspace
 files.
 
-The `agent-harness/` assembles or selects the same `context-circuit-template`
-artifact that would be distributed and must not import the source repository's
-Product Knowledge, plans, `.runtime/`, or implementation state.
+Agent Harness is a separately developed, versioned, packaged, and executed
+product at `kaotypr/agent-harness`. It consumes Context Circuit only as one
+external immutable artifact: released, revision-bound assembled, or an explicit
+local-development artifact whose bytes are copied and digest-verified. It never
+imports Context Circuit runtime code or discovers the maintainer checkout, and
+it never consumes the source repository's Product Knowledge, plans, `.runtime/`,
+credentials, host configuration, private provider payloads, or session state.
+
+Harness scenarios resolve reusable project, evidence, Product Knowledge/index,
+repository, binding, member, and lifecycle fixtures before constructing a run.
+Resolution rejects missing references, cycles, version conflicts, and destination
+collisions, then freezes canonical fixture and scenario identities. Each run owns
+an isolated disposable world containing project, repository, optional bare-remote,
+input, observation, and runtime-state paths. Git fixtures are real repositories
+with deterministic histories and no link to the maintainer checkout.
+
+Portable run records retain run-relative identities, normalized baselines,
+artifact facts, prompt/input identity, deterministic seeds, and available
+host/tool facts. Only a known passing non-kept run may remove its owned `world/`;
+questioned, interrupted, failed, inconclusive, harness-error, and kept runs retain
+their complete worlds. Reproduction compares recorded facts first, reports changed
+or unavailable inputs, requires an explicit non-identical override when needed,
+and always constructs a fresh run. Host drivers and final grading remain outside
+the foundation.
 
 ## Interfaces
 
@@ -120,6 +141,7 @@ Product Knowledge, plans, `.runtime/`, or implementation state.
 - Template publication (GitHub canonical, GitLab mirror): `.github/workflows/publish-template.yml`
 - Migration guidance: `.context-circuit/wrapper/migrations/README.md`
 - Template seed: `template/`
+- Standalone harness: `https://github.com/kaotypr/agent-harness`
 
 ## Constraints and edge cases
 
@@ -157,3 +179,7 @@ Updated 2026-09-10: the committed role-tiering fallback config joins the
 shipped set and the wrapper-only upgrade boundary, so an upgrade always
 installs or replaces it while a workspace's own local override stays
 untouched.
+
+Updated 2026-09-11: Agent Harness is an independently packaged product that
+constructs digest-bound, isolated deterministic run worlds and retains portable
+evidence for safe cleanup and fresh exact-input reproduction.

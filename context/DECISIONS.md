@@ -1,5 +1,26 @@
 # Decisions
 
+## 2026-09-11 — Agent Harness is a standalone artifact consumer
+
+Decision: Agent Harness is independently developed, versioned, packaged, and
+run. It consumes exactly one copied and digest-verified Context Circuit artifact
+and constructs complete scenario conditions in isolated disposable worlds from
+explicit, revision-bound fixtures. It never imports Context Circuit code or
+uses the maintainer checkout as runtime input.
+
+Rationale: host behavior can be compared only when every scenario input,
+artifact byte, Git history, baseline, prompt/input identity, and available
+host/tool fact is explicit and reproducible. Separation also prevents source
+state, credentials, local configuration, and private provider data from leaking
+into fixtures or retained evidence.
+
+Consequence: run records remain portable while questioned worlds are preserved;
+cleanup is ownership-checked and limited to passing non-kept worlds; reproduction
+reports changed or unavailable facts before creating a fresh world and requires
+an explicit override for a non-identical run. Host drivers and final grading are
+separate future concerns. The owning boundary is documented in
+[source release and upgrade](domains/source-release-and-upgrade/README.md).
+
 ## 2026-09-11 — Plan numbering follows active plans only
 
 Decision: a new plan number is one past the highest active plan number in the
