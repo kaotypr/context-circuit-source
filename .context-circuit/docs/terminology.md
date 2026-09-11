@@ -42,7 +42,7 @@ importantly, how the coordinator translates them into plain language for a user.
 | Connected repository | A repository registered in the workspace and resolved to a local checkout. |
 | Member roster | Committed `members.yaml` mapping each person to non-overlapping intent and plan number bands. Portable; shipped with the workspace. |
 | Member identity | Gitignored `member.local.yaml` naming which roster member this machine is — set once, like `repositories.local.yaml`. |
-| Number band | The inclusive id range a member allocates from. Next id is highest-in-band plus one (active and archived). Exhaustion adds a new band; it never wraps. |
+| Number band | The inclusive id range a member allocates from. Intent ids advance past active and archived intents; plan ids advance past active plans only. Exhaustion adds a new band; it never wraps. |
 | Host-blocked | A state where the environment cannot run a required step (for example, an independent check), so the coordinator reports it and preserves the work rather than faking the step. |
 | Plan stack | A named set of intent-authorized plans executed in one run; the runtime orders and overlaps them safely without changing any gate. |
 | Plan dependency | Inter-plan ordering (`plan_dependencies`), distinct from a task's intra-plan `depends_on`. A v1.0 plan is `schema_version: 3`. |

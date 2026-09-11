@@ -23,8 +23,9 @@ evidence; it does not read the archived plan directory.
 
 On "restore plan X", run the runtime `plan-restore`. It moves
 `plans/archive/X/` back to `plans/X/`, preserves plan files and status, and
-re-adds the active index row. Restore does not approve, execute, complete, or
-otherwise validate the plan.
+re-adds the active index row. It refuses the restore when an active plan already
+uses X's numeric prefix. Restore does not approve, execute, complete, or otherwise
+validate the plan.
 
 The normal agent must not read or traverse `plans/archive/` for any other
 purpose.

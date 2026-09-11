@@ -176,7 +176,7 @@ case_plan_stack_consecutive() {
 	rm -rf "$ws"
 }
 
-case_never_reuse_archived() {
+case_archive_scoped_plan_numbering() {
 	ws=$(cc_fx_ws)
 	trap 'rm -rf "$ws"' EXIT HUP INT TERM
 	cc_fx_roster "$ws" kao 1 99 1 999
@@ -195,8 +195,12 @@ case_never_reuse_archived() {
 	plant_plan "$ws" "$pid"
 	cc_plan_archive "$ws" "$pid" >/dev/null
 	pid2=$(eng plan-allocate-id "$ws" after-plan-archive)
-	assert_eq "0002-after-plan-archive" "$pid2"
+	assert_eq "0001-after-plan-archive" "$pid2"
 	require_dir "$ws/plans/archive/$pid"
+	plant_plan "$ws" "$pid2"
+	expect_code RESTORE_PREFIX_COLLISION cc_plan_restore "$ws" "$pid"
+	cc_plan_archive "$ws" "$pid2" >/dev/null
+	cc_plan_restore "$ws" "$pid" >/dev/null
 
 	trap - EXIT HUP INT TERM
 	rm -rf "$ws"
@@ -241,6 +245,10 @@ case_exhaustion_overlap_collision() {
 	mkdir -p "$ws/plans/0010-alpha" "$ws/plans/0010-beta"
 	expect_code PLAN_PREFIX_COLLISION eng plan-allocate-id "$ws" dup-plan
 	rm -rf "$ws/plans/0010-alpha" "$ws/plans/0010-beta"
+	mkdir -p "$ws/plans/archive/0010-alpha" "$ws/plans/archive/0010-beta"
+	archived_ignored=$(eng plan-allocate-id "$ws" archived-ignored)
+	assert_eq "0001-archived-ignored" "$archived_ignored"
+	rm -rf "$ws/plans/archive/0010-alpha" "$ws/plans/archive/0010-beta"
 
 	# full intent band does not wrap
 	cc_fx_roster "$ws" kao 1 1 1 1
@@ -288,7 +296,7 @@ run_case() {
 	case "$1" in
 		intent-parallel) case_intent_parallel ;;
 		plan-stack-consecutive) case_plan_stack_consecutive ;;
-		never-reuse-archived) case_never_reuse_archived ;;
+		archive-scoped-plan-numbering) case_archive_scoped_plan_numbering ;;
 		exhaustion-overlap-collision) case_exhaustion_overlap_collision ;;
 		*) fail "unknown case $1" ;;
 	esac
@@ -297,7 +305,7 @@ run_case() {
 if [ "$case_name" = all ]; then
 	run_case intent-parallel
 	run_case plan-stack-consecutive
-	run_case never-reuse-archived
+	run_case archive-scoped-plan-numbering
 	run_case exhaustion-overlap-collision
 else
 	run_case "$case_name"

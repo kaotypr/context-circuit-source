@@ -14,7 +14,8 @@ plans/
 ```
 
 - Plan IDs are stable and take the form `NNNN-<kebab-slug>` (for example
-  `0001-billing-v2`). The sequence is never reused.
+  `0001-billing-v2`). Allocation follows active plans only; archiving releases a
+  number for reuse, and restore refuses a collision with an active plan.
 - Plan status is `draft → done`: a plan derives from an approved intent (no separate
   plan approval and no automated scope gate); Standard `done` follows candidate
   acceptance plus delivery, while Critical `done` requires explicit completion.

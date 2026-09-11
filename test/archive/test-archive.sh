@@ -43,6 +43,20 @@ cc_plan_restore "$ws" 0003-live >/dev/null
 require_dir "$ws/plans/0003-live"
 contains "$ws/plans/INDEX.md" "| 0003-live |"
 
+# --- restore refuses any active plan with the archived numeric prefix ---
+cc_fx_plan "$ws" 0004-old "Old" "api"
+cc_plan_archive "$ws" 0004-old >/dev/null
+cc_fx_plan "$ws" 0004-new "New" "api"
+restore_collision=$(cc_plan_restore "$ws" 0004-old 2>&1 || true)
+printf '%s\n' "$restore_collision" | grep -Fq RESTORE_PREFIX_COLLISION \
+	|| fail "restore did not report active prefix collision"
+require_dir "$ws/plans/archive/0004-old"
+require_dir "$ws/plans/0004-new"
+contains "$ws/plans/INDEX.md" "| 0004-new |"
+cc_plan_archive "$ws" 0004-new >/dev/null
+cc_plan_restore "$ws" 0004-old >/dev/null
+require_dir "$ws/plans/0004-old"
+
 # --- archive/restore collision safety leaves everything unchanged ---
 mkdir -p "$ws/plans/archive/0001-draft-collide"
 cc_fx_plan "$ws" 0001-draft-collide "Collide" "api"

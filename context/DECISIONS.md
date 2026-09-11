@@ -1,5 +1,21 @@
 # Decisions
 
+## 2026-09-11 — Plan numbering follows active plans only
+
+Decision: a new plan number is one past the highest active plan number in the
+current member's band. Archived plans do not participate in allocation, so an
+archived number may be reused. Restoring an archived plan is refused while any
+active plan uses the same numeric prefix. Intent numbering remains unchanged and
+continues to count archived intents.
+
+Rationale: the active plan sequence should describe the live planning surface;
+historical archive collisions must not block new planning. Restore remains safe
+because it cannot introduce two active plans with the same speakable number.
+
+Consequence: INV-PLAN-03 and INV-ARCHIVE-02 own active-only plan allocation and
+restore collision safety. This supersedes only the plan-number portion of the
+2026-09-08 member-band decision.
+
 ## 2026-09-10 — New worktrees are runnable before a worker is attached
 
 Decision: a new execution or Explore worktree is prepared before anyone is

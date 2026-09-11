@@ -941,9 +941,9 @@ cc_intent_numbers() {
 	done
 }
 
-# cc_plan_dir_numbers ROOT -> one decimal prefix per active or archived plan dir
+# cc_plan_dir_numbers ROOT -> one decimal prefix per active plan dir
 cc_plan_dir_numbers() {
-	for cc_pd_d in "$1/plans"/*/ "$1/plans/archive"/*/; do
+	for cc_pd_d in "$1/plans"/*/; do
 		[ -d "$cc_pd_d" ] || continue
 		cc_pd_base=$(basename -- "$cc_pd_d")
 		case "$cc_pd_base" in
@@ -954,7 +954,8 @@ cc_plan_dir_numbers() {
 	done
 }
 
-# cc_plan_numbers ROOT -> one decimal prefix per active, archived, or reserved plan
+# cc_plan_numbers ROOT -> one decimal prefix per active or reserved plan
+# Archived plans deliberately release their numeric prefix for new allocation.
 cc_plan_numbers() {
 	cc_plan_dir_numbers "$1"
 	for cc_pn_a in "$1/.runtime/materialization"/*/allocation.tsv; do
@@ -2063,7 +2064,7 @@ cc_stack_request_digest() {
 	rm -f "$cc_srd_tmp"
 }
 
-# cc_plan_max_sequence ROOT -> highest active, archived, or reserved plan number.
+# cc_plan_max_sequence ROOT -> highest active or reserved plan number.
 # Reserved materialization ranges are never silently recycled after a failed stage.
 cc_plan_max_sequence() {
 	cc_plan_max_in_band "$1" 1 9999
@@ -2377,7 +2378,8 @@ cc_plan_validate() {
 }
 
 # cc_plan_allocate_id ROOT SLUG -> next NNNN-slug in the current member's plan band
-# (active + archived + reserved). Empty band starts at plan_start, never wraps.
+# (active + reserved; archived plans are ignored). Empty band starts at plan_start,
+# never wraps.
 cc_plan_allocate_id() {
 	cc_ai_root="$1"; cc_ai_slug="$2"
 	cc_safe_slug "$cc_ai_slug" || { cc_fail PLAN_SLUG_INVALID "$cc_ai_slug"; return 1; }
@@ -2490,8 +2492,13 @@ cc_plan_restore() {
 	cc_re_src="$cc_re_root/plans/archive/$cc_re_plan"
 	cc_re_dst="$cc_re_root/plans/$cc_re_plan"
 	[ -d "$cc_re_src" ] || { cc_fail RESTORE_SOURCE_MISSING "$cc_re_plan"; return 1; }
-	[ -e "$cc_re_dst" ] && { cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
 	cc_plan_org_lock "$cc_re_root" || return 1
+	cc_re_prefix=${cc_re_plan%%-*}
+	if cc_plan_dir_numbers "$cc_re_root" | cc_numbers_has "$(cc_seq_int "$cc_re_prefix")"; then
+		cc_plan_org_unlock "$cc_re_root"
+		cc_fail RESTORE_PREFIX_COLLISION "$cc_re_plan"; return 1
+	fi
+	[ -e "$cc_re_dst" ] && { cc_plan_org_unlock "$cc_re_root"; cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
 	if mv "$cc_re_src" "$cc_re_dst" 2>/dev/null; then
 		if cc_plan_index_upsert "$cc_re_root" "$cc_re_plan" >/dev/null; then
 			cc_plan_org_unlock "$cc_re_root"

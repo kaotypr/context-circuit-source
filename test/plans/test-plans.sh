@@ -15,10 +15,15 @@ id2=$(cc_plan_allocate_id "$ws" saved-checkout)
 assert_eq "0002-saved-checkout" "$id2"
 cc_fx_plan "$ws" "$id2" "Saved checkout" "api"
 
-# --- sequence never reused after archive ---
+# --- archive releases the numeric prefix; restore refuses an active collision ---
 cc_plan_archive "$ws" "$id2" >/dev/null
 id3=$(cc_plan_allocate_id "$ws" checkout-v2)
-assert_eq "0003-checkout-v2" "$id3"
+assert_eq "0002-checkout-v2" "$id3"
+cc_fx_plan "$ws" "$id3" "Checkout v2" "api"
+restore_collision=$(cc_plan_restore "$ws" "$id2" 2>&1 || true)
+printf '%s\n' "$restore_collision" | grep -Fq RESTORE_PREFIX_COLLISION \
+	|| fail "restore did not report active prefix collision"
+cc_plan_archive "$ws" "$id3" >/dev/null
 cc_plan_restore "$ws" "$id2" >/dev/null
 
 # --- bad slugs and ids are rejected ---
