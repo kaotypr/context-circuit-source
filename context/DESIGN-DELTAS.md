@@ -15,7 +15,8 @@ entry: what the design says, what ships, where seen, and disposition.
    shipped verifier; revisit if/when evidence layers are implemented.
 
 2. **Repair limit.** Design treats the limit as an authored `plan.yaml` field
-   (`repair limit`). The shipped `INV-REPAIR-01` hard-codes a maximum of three.
+   (`repair limit`). The shipped `INV-REPAIR-01` forces a stop at three and permits
+   one additional attempt per explicit human continuation without resetting the count.
    Seen: design 05 §3/§13 vs `.context-circuit/wrapper/contracts/invariants.yaml`. Disposition:
    pages state the shipped hard limit of three.
 

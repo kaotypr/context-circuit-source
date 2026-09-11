@@ -277,9 +277,13 @@ invariants:
   - id: INV-REPAIR-01
     rule: >
       The worker-failure counter increments on each verifier rejection including
-      the initial implementation. The maximum is three, after which execution
-      stops. A block from missing host capability or external evidence is a
-      blocked execution, not an invented worker failure.
+      the initial implementation. Three recorded rejections force the execution
+      to stop with all evidence preserved. An explicit human continuation may
+      reopen that same failed execution for one additional repair attempt; it
+      never resets or reduces the failure counter, erases attempts, or supplies a
+      verifier pass. Every later rejection stops again and requires another
+      explicit human continuation. A block from missing host capability or
+      external evidence is a blocked execution, not an invented worker failure.
   - id: INV-PRESERVE-01
     rule: >
       Failure, interruption, or blocking preserves branches, worktrees, commits,

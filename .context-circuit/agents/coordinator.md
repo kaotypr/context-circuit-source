@@ -118,8 +118,10 @@ WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
 the coordinator may overlap provably-independent ready plans up to a fan-out width
 (a coordinator policy over the already-safe path lease, INV-CONCURRENCY-01/02, not
 a new rule; the lease arbitrates any race); each plan is still executed by one
-worker and one independent verifier under the three-failure limit; a failed or
-blocked plan holds only its descendants. Nothing is marked done or delivered.
+worker and one independent verifier under the mandatory three-rejection stop; an
+explicit human continuation may reopen one additional repair without resetting
+evidence, while a failed or blocked plan holds only its descendants. Nothing is
+marked done or delivered.
 Report progress and outcomes in plain language — concurrent progress interleaves,
 so narrate interleaved effects, never the overlap mechanism.
 

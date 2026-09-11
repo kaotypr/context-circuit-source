@@ -87,8 +87,10 @@ atomic exclusive-create lock; a competing worker gets a read-only or blocked
 result and a live lock is never silently stolen (INV-OWN-01).
 
 The worker-failure counter increments on each verifier rejection including the
-initial implementation, to a maximum of three, after which execution stops
-(INV-REPAIR-01). Failure, interruption, or blocking preserves branches,
+initial implementation. Three rejections force execution to stop. An explicit
+human continuation reopens the same execution for one additional attempt without
+resetting the cumulative count; every later rejection stops again until another
+explicit continuation (INV-REPAIR-01). Failure, interruption, or blocking preserves branches,
 worktrees, commits, handoffs, verifier evidence, repair attempts, and runtime
 records; failed work is never silently cleaned up (INV-PRESERVE-01). Runtime
 records are written atomically; a partial or contradictory record cannot grant
@@ -125,7 +127,7 @@ captured base commits, the worktree paths, and ownership all still match.
 
 `execution.yaml` holds `execution_id`, a `plan_revision` digest, `owner`,
 `status` (`running`/`verifying`/`repairing`/`verified`/`failed`/`blocked`),
-`worker_failures` 0..3, and per-repository worktree/branch/base/latest records
+the cumulative `worker_failures`, `repair_continuations`, and per-repository worktree/branch/base/latest records
 (a dependent plan's record also carries `based_on`). Each execution records a
 grounding manifest under `grounding/<repo>.yaml`.
 The worker handoff is a claim (commits, tasks done, checks, assumptions, limits,

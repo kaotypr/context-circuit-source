@@ -24,13 +24,14 @@ layout:
       additive per-attempt host evidence — the (model, effort) each role
       ran at (see timing_fields). Evidence only; no gate, route, verdict, or
       counter reads it (INV-HOST-01).
+    continuations/NNN.yaml: explicit human continuation after a three-rejection stop
     repositories/<repository-id>.yaml: per-repository worktree, branch, base and latest commit
     grounding/<repository-id>.yaml: repository-grounding manifest discovered for the
       execution worktree (INV-GROUND-01; schema grounding-manifest.yaml)
     brief-<repository-id>.md: the assembled worker brief (deterministic; optional evidence)
 
 fields:
-  schema_version: { type: integer, required: true, values: [1, 2] }
+  schema_version: { type: integer, required: true, values: [1, 2, 3] }
   execution_id: { type: string, required: true, description: exec-<plan-id>-NNN }
   plan: { type: string, required: true }
   plan_revision: { type: string, required: true, description: digest of the snapshot plan.yaml }
@@ -39,7 +40,10 @@ fields:
     type: enum
     required: true
     values: [running, verifying, repairing, verified, failed, blocked]
-  worker_failures: { type: integer, required: true, description: 0..3 }
+  worker_failures: { type: integer, required: true, description: non-negative cumulative verifier rejections; never reset by continuation }
+  repair_continuations: { type: integer, required: false, description: required in schema 3; explicit human continuations after the three-rejection stop; absent means 0 for legacy records }
+  last_continued_by: { type: string, required: false, description: human identity supplied to the latest repair continuation }
+  last_continued_at: { type: string, required: false }
   current_attempt: { type: integer, required: true }
   created_at: { type: string, required: true }
   updated_at: { type: string, required: true }

@@ -136,17 +136,18 @@ entirely; the pin holds for every attempt.
 
 ### It must not touch the accounting
 
-INV-REPAIR-01 is unchanged: the worker-failure counter increments on **every**
-verifier rejection including the initial implementation, and three still stops
-execution. Escalation changes *which model runs attempt N*, never *what a
+INV-REPAIR-01 is unchanged by tiering: the worker-failure counter increments on
+**every** verifier rejection including the initial implementation, and three
+forces a stop. Escalation changes *which model runs attempt N*, never *what a
 rejection costs*. A rejection at the configured start is a real failure and
-counts; escalation never buys extra attempts. Each repair is still a new commit
-(INV-EXEC-04).
+counts; escalation never buys extra attempts. An explicit human continuation can
+reopen one attempt, but does not reset the counter. Each repair is still a new
+commit (INV-EXEC-04).
 
 ### The honest consequence of a hard pin
 
 If a user pins the worker to a small model + low effort with escalation off, the
-three-failure limit may be reached more often, because the system can no longer
+three-failure stop may be reached more often, because the system can no longer
 add capability on repair. That is the user's tradeoff to own, not a bug — but the
 report must make it visible in plain language: "stopped after three attempts; the
 plan was pinned to a fixed setting, so no extra capability was added on repair."

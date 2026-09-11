@@ -11,7 +11,7 @@
 # branch/worktree preparation, plan structure and intent-derived authorization validation,
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
-# the three-failure counter, one-worker locking, completion eligibility,
+# the three-failure stop and explicit continuation record, one-worker locking, completion eligibility,
 # implementation completion records, context-impact handoff references, light
 # direct-collaboration session pointers, explicit leftover cleanup, and recovery
 # inspection.
@@ -39,7 +39,7 @@ CC_PLAN_SCHEMA_VERSION="3"
 CC_PAIRING_SESSION_SCHEMA_VERSION="1"
 CC_GROUNDING_MANIFEST_SCHEMA_VERSION="1"
 CC_LEASE_SCHEMA_VERSION="1"
-CC_EXECUTION_SCHEMA_VERSION="2"
+CC_EXECUTION_SCHEMA_VERSION="3"
 CC_CANDIDATE_SCHEMA_VERSION="1"
 CC_CHANGE_SET_SCHEMA_VERSION="1"
 CC_VERIFIER_RESULT_SCHEMA_VERSION="1"
@@ -2695,7 +2695,7 @@ cc_execution_begin() {
 	# Persist the execution record before creating any branch/worktree. If setup is
 	# interrupted, recovery can see the owner and the execution remains an honest,
 	# blocked/running record instead of an orphaned lock with no evidence.
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nblocked_reason:\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nblocked_reason:\nworker_failures: 0\nrepair_continuations: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
 		|| { cc_lock_release "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null 2>&1 || :; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
@@ -2769,7 +2769,7 @@ cc_execution_begin() {
 			|| { rm -f "$cc_eb_ground"; cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
 		rm -f "$cc_eb_ground"
 	done
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\nrepair_continuations: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
 		|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason EXECUTION_RECORD_WRITE_FAILED; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
@@ -2808,6 +2808,12 @@ cc_attempt_norm() {
 cc_attempt_begin() {
 	cc_ab_dir="$1"
 	[ -f "$cc_ab_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	cc_ab_status=$(cc_scalar "$cc_ab_dir/execution.yaml" status)
+	case "$cc_ab_status" in
+		running|repairing) : ;;
+		failed) cc_fail ATTEMPT_CONTINUATION_REQUIRED; return 1 ;;
+		*) cc_fail ATTEMPT_STATUS_INVALID "$cc_ab_status"; return 1 ;;
+	esac
 	cc_ab_cur=$(cc_scalar "$cc_ab_dir/execution.yaml" "current_attempt")
 	cc_ab_next=$((cc_ab_cur + 1))
 	cc_ab_pad=$(printf '%03d' "$cc_ab_next")
@@ -3018,12 +3024,49 @@ cc_attempt_evidence_record() {
 	return 0
 }
 
+# cc_repair_continue EXEC_DIR HUMAN -> explicitly reopen a stopped execution for
+# one additional repair. The cumulative failure count and prior evidence remain.
+cc_repair_continue() {
+	cc_rc_dir="$1"; cc_rc_human="$2"
+	[ -f "$cc_rc_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	case "$cc_rc_human" in ''|*[!A-Za-z0-9._@-]*) cc_fail REPAIR_CONTINUER_INVALID; return 1 ;; esac
+	cc_rc_status=$(cc_scalar "$cc_rc_dir/execution.yaml" status)
+	cc_rc_wf=$(cc_scalar "$cc_rc_dir/execution.yaml" worker_failures)
+	[ "$cc_rc_status" = "failed" ] && [ "$cc_rc_wf" -ge 3 ] \
+		|| { cc_fail REPAIR_CONTINUATION_NOT_STOPPED; return 1; }
+	cc_rc_count=$(cc_scalar "$cc_rc_dir/execution.yaml" repair_continuations 2>/dev/null) || cc_rc_count=0
+	cc_rc_count=$((cc_rc_count + 1))
+	cc_rc_at=$(cc_now)
+	cc_rc_next=$(( $(cc_scalar "$cc_rc_dir/execution.yaml" current_attempt) + 1 ))
+	mkdir -p "$cc_rc_dir/continuations"
+	printf 'schema_version: 1\ncontinuation: %s\ncontinued_by: %s\ncontinued_at: %s\nworker_failures_at_stop: %s\nnext_attempt: %s\n' \
+		"$cc_rc_count" "$cc_rc_human" "$cc_rc_at" "$cc_rc_wf" "$cc_rc_next" \
+		| cc_atomic_write "$cc_rc_dir/continuations/$(printf '%03d' "$cc_rc_count").yaml" \
+		|| { cc_fail REPAIR_CONTINUATION_WRITE_FAILED; return 1; }
+	cc_exec_set "$cc_rc_dir" repair_continuations "$cc_rc_count" || return 1
+	cc_exec_set "$cc_rc_dir" last_continued_by "$cc_rc_human" || return 1
+	cc_exec_set "$cc_rc_dir" last_continued_at "$cc_rc_at" || return 1
+	cc_exec_set "$cc_rc_dir" status repairing || return 1
+	cc_emit repair continued
+	cc_emit continuation "$cc_rc_count"
+	cc_emit worker_failures "$cc_rc_wf"
+	cc_emit next_attempt "$cc_rc_next"
+	return 0
+}
+
 # cc_repair_allowed EXEC_DIR -> yes/no with remaining attempts
 cc_repair_allowed() {
 	cc_ra_wf=$(cc_scalar "$1/execution.yaml" "worker_failures")
 	if [ "$cc_ra_wf" -lt 3 ]; then
 		cc_emit repair allowed
 		cc_emit remaining "$((3 - cc_ra_wf))"
+		return 0
+	fi
+	cc_ra_status=$(cc_scalar "$1/execution.yaml" status)
+	if [ "$cc_ra_status" = "repairing" ]; then
+		cc_emit repair allowed
+		cc_emit remaining 1
+		cc_emit continued yes
 		return 0
 	fi
 	cc_emit repair denied
@@ -4404,6 +4447,7 @@ cc_main() {
 		verifier-result-record)  cc_verifier_result_record "$@" ;;
 		attempt-evidence-record) cc_attempt_evidence_record "$@" ;;
 		repair-allowed)          cc_repair_allowed "$@" ;;
+		repair-continue)         cc_repair_continue "$@" ;;
 		execution-status)        cc_execution_status "$@" ;;
 		candidate-digest)        cc_candidate_digest "$@" ;;
 		candidate-current)       cc_candidate_current "$@" ;;
