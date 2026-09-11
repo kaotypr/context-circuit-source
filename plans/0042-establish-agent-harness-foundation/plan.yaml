@@ -1,0 +1,211 @@
+schema_version: 3
+plan: 0042-establish-agent-harness-foundation
+intent: i029-establish-agent-harness-foundation
+title: Establish the standalone Agent Harness foundation
+status: draft
+objective: >
+  Establish an independently packaged runner and workspace factory that resolve
+  complete scenario conditions, create isolated disposable projects around one
+  digest-verified Context Circuit artifact and deterministic Git repositories,
+  and safely record, retain, clean, and reproduce exact run inputs without using
+  the Context Circuit maintainer checkout at runtime.
+repositories:
+  - id: agent-harness
+    purpose: Owns the standalone package, fixtures, run storage, tests, and docs.
+product_knowledge:
+  - id: agent-harness-boundary
+    path: README.md
+    reason: >
+      The only existing product statement establishes an independent product
+      that consumes Context Circuit solely as an external immutable artifact.
+context_grounding:
+  summary: >
+    Grounded at agent-harness HEAD 985acab on clean main. The repository has only
+    README.md and no source, package, test, dependency, or compatibility surface.
+    The approved detail fixes the run-root shape, fixture kinds, construction
+    order, artifact identity, retention, and reproduction behavior. A
+    standard-library-first Python package and explicit JSON records can establish
+    the greenfield product without importing Context Circuit.
+  constraints:
+    - Keep Agent Harness independently developed, versioned, packaged, and run;
+      do not import Context Circuit code or add harness behavior to that product.
+    - Resolve named composable fixtures before construction and freeze each
+      revision and digest; never seed from an opaque completed workspace.
+    - Give every run unique project, repository, remote, input, observation, and
+      runtime-state paths under its own root.
+    - Materialize exactly one artifact, recording source, available version,
+      source revision, and content digest; expose only its copied bytes.
+    - Never copy credentials, host configuration, private provider payloads, or
+      host session state into fixtures or retained results.
+    - Build real Git fixtures with deterministic histories and no link to the
+      Context Circuit source checkout.
+    - Treat construction failure as a harness error before host launch. Host
+      drivers and final grading remain non-goals.
+    - Cleanup only the exact disposable world owned by a known run. Preserve the
+      complete world for failed, inconclusive, interrupted, or kept runs.
+    - Preserve unrelated work; do not commit, push, or publish without separate
+      human authorization.
+  decisions:
+    - Use one plan because contracts, resolution, construction, lifecycle, and
+      end-to-end proof form one execution and verification seam.
+    - Use Python 3.12, a src layout, and canonical JSON; Git is the sole external
+      runtime executable. This is a greenfield implementation choice.
+    - Separate each durable run record from its disposable world/ so pass cleanup
+      can preserve portable evidence and reproduction inputs.
+    - Resolve fixture dependency graphs deterministically, reject cycles and
+      destination conflicts, and include scenario, artifact, and resolved fixture
+      identities in the run identity.
+    - Reproduction always constructs a fresh run and reports unavailable or
+      changed artifact and host/tool facts before construction.
+knowledge_impact:
+  expected_context_units: [agent-harness-boundary]
+  review_on_completion: true
+tasks:
+  - id: AH-001
+    title: Establish the package and declarative contracts
+    repositories: [agent-harness]
+    paths: [pyproject.toml, src/agent_harness/, fixtures/, scenarios/, README.md]
+    evidence_anchors: [README.md]
+    depends_on: []
+    changes:
+      - Create an independently versioned Python 3.12 src-layout package and
+        agent-harness command with no Context Circuit import or checkout lookup.
+      - Define schema-versioned models for scenarios, fixture references,
+        artifacts, retention, resolved inputs, manifests, observations, and
+        results, using portable run-relative paths.
+      - Resolve reusable project, evidence, Product Knowledge and index,
+        repository, binding, member, and lifecycle fixtures through explicit
+        dependencies; reject missing references, cycles, version conflicts, and
+        destination collisions before construction.
+      - Canonicalize and digest the scenario and every resolved fixture, freezing
+        declared revisions and resolved bytes before allocating a world.
+      - Add small readable fixture and scenario examples that together declare a
+        complete Standard starting condition, never a completed-workspace copy.
+    acceptance:
+      - id: AH-AC-PRODUCT-BOUNDARY
+        statement: Agent Harness installs and runs independently with no Context Circuit runtime import or maintainer-checkout dependency.
+      - id: AH-AC-COMPLETE-SCENARIO
+        statement: A scenario resolves all seven required fixture concerns before workspace construction.
+      - id: AH-AC-IMMUTABLE-RESOLUTION
+        statement: Resolution rejects dependency and destination conflicts and freezes canonical fixture revisions and digests.
+    verification:
+      - id: AH-VT-001
+        command: python3 -m unittest discover -s tests -p 'test_contracts.py' -v
+      - id: AH-VT-002
+        command: PYTHONPATH=src python3 -m agent_harness --version
+  - id: AH-002
+    title: Build deterministic repositories and isolated worlds
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/artifacts.py
+      - src/agent_harness/git_fixtures.py
+      - src/agent_harness/workspace.py
+      - src/agent_harness/observations.py
+      - fixtures/
+      - tests/test_git_fixtures.py
+      - tests/test_workspace.py
+    evidence_anchors: [README.md]
+    depends_on: [AH-001]
+    changes:
+      - Accept released, revision-bound assembled, or explicit local-development
+        artifacts; digest before copying, verify after copying, and record source,
+        available version, revision, and digest.
+      - Create real Git repositories with controlled files, author, committer,
+        timestamps, branches, commits, working state, and optional local bare
+        remotes, sourced only from registered fixtures.
+      - Allocate a collision-resistant run id; construct project, repositories,
+        remotes, inputs, observations, and runtime state; install all resolved
+        conditions; validate; then capture a normalized baseline.
+      - Publish ready only after every phase succeeds. Record partial construction
+        as a harness error and never invoke a host or synthesize an agent result.
+      - Record only run-relative portable paths and reject or scrub credential,
+        host-config, and private-provider fields from all retained records.
+    acceptance:
+      - id: AH-AC-ISOLATED-RUN
+        statement: Every build has an independent unique world and construction failures are harness errors.
+      - id: AH-AC-ARTIFACT-IDENTITY
+        statement: Every ready world exposes one verified artifact and records artifact, source, scenario, and fixture identities.
+      - id: AH-AC-REAL-GIT
+        statement: Repository fixtures are independent real Git repositories with deterministic histories.
+      - id: AH-AC-NO-SECRETS
+        statement: Portable records contain no credentials, host configuration, private provider payloads, or source-checkout paths.
+    verification:
+      - id: AH-VT-003
+        command: python3 -m unittest discover -s tests -p 'test_git_fixtures.py' -v
+      - id: AH-VT-004
+        command: python3 -m unittest discover -s tests -p 'test_workspace.py' -v
+  - id: AH-003
+    title: Complete retention, cleanup, and reproduction
+    repositories: [agent-harness]
+    paths:
+      - src/agent_harness/cli.py
+      - src/agent_harness/runs.py
+      - src/agent_harness/reproduce.py
+      - src/agent_harness/retention.py
+      - tests/test_run_lifecycle.py
+      - tests/test_reproduction.py
+      - README.md
+    evidence_anchors: [README.md]
+    depends_on: [AH-002]
+    changes:
+      - Expose CLI operations to list and validate scenarios, resolve inputs,
+        build and inspect a world, finalize, keep, clean, and reproduce a run;
+        exclude host launch and grading.
+      - Atomically record pass, fail, inconclusive, interrupted, harness-error,
+        and kept outcomes plus normalized evidence before applying retention.
+      - Remove only a known passing non-kept run's owned world/; preserve portable
+        records for it and the complete root for all other outcomes. Make cleanup
+        idempotent and reject arbitrary or cross-run targets.
+      - Generate reproduction from recorded scenario and fixture revisions and
+        digests, artifact identity, prompt/input identity, and deterministic
+        seeds; create a fresh world without mutating preserved evidence.
+      - Compare artifact and available host/tool facts before reproduction and
+        report differences, requiring an explicit non-identical override.
+      - Document installation, layouts, fixture authoring, lifecycle commands,
+        retention, reproduction, and the deferred driver/grading scope.
+    acceptance:
+      - id: AH-AC-RETENTION
+        statement: Passing worlds can be removed after durable records, while all questioned or kept worlds are preserved.
+      - id: AH-AC-REPRODUCE
+        statement: Retained results provide an exact-input reproduction invocation that creates a fresh world and reports unavailable facts.
+      - id: AH-AC-CLEANUP-SAFETY
+        statement: Cleanup is idempotent, ownership-checked, and cannot delete another run or arbitrary path.
+    verification:
+      - id: AH-VT-005
+        command: python3 -m unittest discover -s tests -p 'test_run_lifecycle.py' -v
+      - id: AH-VT-006
+        command: python3 -m unittest discover -s tests -p 'test_reproduction.py' -v
+      - id: AH-VT-007
+        command: PYTHONPATH=src python3 -m agent_harness --help
+  - id: AH-004
+    title: Prove the foundation end to end
+    repositories: [agent-harness]
+    paths: [tests/, README.md, pyproject.toml]
+    evidence_anchors: [README.md]
+    depends_on: [AH-003]
+    changes:
+      - Test one complete scenario through resolution and two isolated builds,
+        proving distinct roots, identical declared inputs, deterministic Git and
+        baseline state; pass-clean one, preserve the questioned other, then
+        reproduce it into a third fresh root.
+      - Cover changed artifact bytes, cycles, destination conflicts, partial
+        construction, sensitive inputs, cross-run cleanup, and unavailable exact
+        reproduction inputs.
+      - Prove clean-environment installation and execution without the Context
+        Circuit checkout, and exclude generated run state from the distribution.
+    acceptance:
+      - id: AH-AC-END-TO-END
+        statement: One automated story proves resolution, artifact identity, isolation, deterministic Git, retention, cleanup, and fresh reproduction.
+      - id: AH-AC-STANDALONE-INSTALL
+        statement: A clean environment installs and runs the package without Context Circuit source, run state, credentials, or host config.
+    verification:
+      - id: AH-VT-008
+        command: python3 -m unittest discover -s tests -v
+      - id: AH-VT-009
+        command: python3 -m compileall -q src tests
+      - id: AH-VT-010
+        command: python3 -m unittest tests.test_end_to_end -v
+execution:
+  worker: one
+  independent_verifier: required
+  max_worker_failures: 3

@@ -1,5 +1,7 @@
 # Intention — i029-establish-agent-harness-foundation
 
+_Status: approved, look complete, feasible.
+
 _Status: approved.
 
 _Status: draft, waiting for your approval._

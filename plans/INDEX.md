@@ -8,3 +8,4 @@
 | 0039-worktree-ignored-overlay | Overlay the checkout's gitignored paths into every new worktree | done | > | context-circuit-source | plans/0039-worktree-ignored-overlay/PLAN.md |
 | 0040-worktree-toolchain-provision | Make the worktree's toolchain match this commit | done | > | context-circuit-source | plans/0040-worktree-toolchain-provision/PLAN.md |
 | 0041-honest-ready-and-proof | Tell the truth about a ready worktree, and prove it end to end | done | > | context-circuit-source | plans/0041-honest-ready-and-proof/PLAN.md |
+| 0042-establish-agent-harness-foundation | Establish the standalone Agent Harness foundation | draft | > | agent-harness | plans/0042-establish-agent-harness-foundation/PLAN.md |
