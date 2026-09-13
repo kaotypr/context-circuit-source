@@ -8,10 +8,10 @@ case_name=all
 if [ "${1:-}" = --case ]; then case_name=${2:-}; fi
 
 product_files="
-$ROOT/.agents/skills/cc-intent/SKILL.md
-$ROOT/.agents/skills/cc-trace/SKILL.md
-$ROOT/.agents/skills/cc-plan/SKILL.md
-$ROOT/.agents/skills/cc-workspace/SKILL.md
+$ROOT/product/.agents/skills/cc-intent/SKILL.md
+$ROOT/product/.agents/skills/cc-trace/SKILL.md
+$ROOT/product/.agents/skills/cc-plan/SKILL.md
+$ROOT/product/.agents/skills/cc-workspace/SKILL.md
 $ROOT/.context-circuit/agents/coordinator.md
 $ROOT/.context-circuit/agents/planner.md
 $ROOT/.context-circuit/docs/getting-started.md
@@ -33,18 +33,18 @@ case_docs_skills() {
 	done
 
 	# AC-BAND-03: ordinary authoring never asks for a block number
-	contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "member-band-resolve"
-	contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "block number"
-	contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "INV-MEMBER-01"
-	contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "current member's intent band"
-	contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "block number"
-	contains "$ROOT/.agents/skills/cc-trace/SKILL.md" "member's band"
-	contains "$ROOT/.agents/skills/cc-plan/SKILL.md" "current member's plan band"
-	contains "$ROOT/.agents/skills/cc-plan/SKILL.md" "block number"
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "members.yaml"
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "member.local.yaml"
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "block number"
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "exhausted"
+	contains "$ROOT/product/.agents/skills/cc-intent/SKILL.md" "member-band-resolve"
+	contains "$ROOT/product/.agents/skills/cc-intent/SKILL.md" "block number"
+	contains "$ROOT/product/.agents/skills/cc-intent/SKILL.md" "INV-MEMBER-01"
+	contains "$ROOT/product/.agents/skills/cc-intent/SKILL.md" "current member's intent band"
+	contains "$ROOT/product/.agents/skills/cc-trace/SKILL.md" "block number"
+	contains "$ROOT/product/.agents/skills/cc-trace/SKILL.md" "member's band"
+	contains "$ROOT/product/.agents/skills/cc-plan/SKILL.md" "current member's plan band"
+	contains "$ROOT/product/.agents/skills/cc-plan/SKILL.md" "block number"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "members.yaml"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "member.local.yaml"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "block number"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "exhausted"
 	contains "$ROOT/.context-circuit/agents/coordinator.md" "member identity"
 	contains "$ROOT/.context-circuit/agents/coordinator.md" "block number"
 	contains "$ROOT/.context-circuit/agents/planner.md" "member-band-resolve"

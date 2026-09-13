@@ -31,7 +31,7 @@ printf '  linky:\n    path: repositories/linky\n    base_branch: development\n' 
 expect_failure cc_repo_resolve "$ws" linky
 
 # --- credentials never appear in runtime or other shipped files ---
-credential_scan_paths="$ROOT/.context-circuit/wrapper $ROOT/template $ROOT/.agents $ROOT/.context-circuit/agents"
+credential_scan_paths="$ROOT/.context-circuit/wrapper $ROOT/template $ROOT/.agents $ROOT/product $ROOT/.context-circuit/agents"
 for term in password api_key access_token client_secret provider_payload BEGIN\ RSA\ PRIVATE\ KEY; do
 	if grep -RIlF "$term" $credential_scan_paths 2>/dev/null | grep -v '/test/' | grep . ; then
 		fail "credential-like term '$term' found in shipped files"

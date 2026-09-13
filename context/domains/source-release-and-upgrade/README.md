@@ -133,6 +133,15 @@ or unavailable inputs, requires an explicit non-identical override when needed,
 and always constructs a fresh run. Host drivers and final grading remain outside
 the foundation.
 
+## Source packaging
+
+Shipped skills and native host integrations live under packaging-only
+`product/`, retaining their output-relative layout. Release assembly copies
+those discovery trees to the generated workspace root. Root source skills and
+maintainer host tools never ship; the mutable seed holds no duplicate native
+integrations. Maintainer development uses direct edits on the active branch,
+under root instructions, without the product lifecycle.
+
 ## Interfaces
 
 - Release boundary and shipped/never-ship sets: `.context-circuit/wrapper/manifest.yaml`,

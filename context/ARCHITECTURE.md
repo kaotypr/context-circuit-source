@@ -10,7 +10,10 @@ and keeps the blank mutable seed under `template/` at the source root. Hosts
 enter through workspace-root instruction adapters (`AGENTS.md` / `WORKFLOW.md` /
 `CLAUDE.md` / `CURSOR.md`), committed host-native project trees (`.claude/`,
 `.codex/`, `.cursor/` — thin routes into owners, not a second policy copy),
-and `.agents/` (skills). In this source checkout root adapters stay
+and `.agents/` (skills). In this source checkout product skills and native
+host trees live under packaging-only `product/`; root `.agents/skills/` holds
+source development skills. Release assembly maps packaged trees to the same
+workspace-root output paths. In this source checkout root adapters stay
 maintainer-specific (`CLAUDE.md` / `CURSOR.md` import root `AGENTS.md`). An
 instantiated workspace receives copies of `.context-circuit/wrapper/adapters/`
 at the root plus the same product host-native routes. Workspace-owned files are

@@ -81,7 +81,7 @@ contains "$trec" "discussion_safe"
 contains "$trec" "not_an_execution_input"
 
 # --- cc-publish skill: manual, export, one-way, self-contained, host/MCP ---
-sk="$ROOT/.agents/skills/cc-publish/SKILL.md"
+sk="$ROOT/product/.agents/skills/cc-publish/SKILL.md"
 require_file "$sk"
 contains "$sk" "orthogonal to the core workflow"
 contains "$sk" "never through the runtime engine"
@@ -141,13 +141,13 @@ not_contains "$ROOT/.context-circuit/agents/coordinator.md" "cc-publish"
 not_contains "$ROOT/.context-circuit/agents/coordinator.md" "publication/"
 # No core-workflow skill triggers or depends on the surface.
 for sk_core in cc-plan cc-execute cc-run-stack cc-verify cc-complete cc-deliver cc-archive; do
-	f="$ROOT/.agents/skills/$sk_core/SKILL.md"
+	f="$ROOT/product/.agents/skills/$sk_core/SKILL.md"
 	not_contains "$f" "cc-publish"
 	not_contains "$f" "publication/"
 done
 
 # --- Path A: git delivery no longer says "publish/publication" ---
 not_contains "${W}/adapters/WORKFLOW.md" "publish"
-not_contains "$ROOT/.agents/skills/cc-deliver/SKILL.md" "publication"
+not_contains "$ROOT/product/.agents/skills/cc-deliver/SKILL.md" "publication"
 
 pass 'external-surface'

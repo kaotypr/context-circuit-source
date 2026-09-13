@@ -8,7 +8,7 @@ set -eu
 
 tmpl="$ROOT/.context-circuit/docs/templates/intent.md"
 ex="$ROOT/.context-circuit/docs/templates/intent.example.md"
-ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
+ci="$ROOT/product/.agents/skills/cc-intent/SKILL.md"
 dom="$ROOT/context/domains/intent/README.md"
 
 # --- NQ-AC-NUMBERED / NQ-AC-AUTHORING: shipped surfaces teach numbered questions ---

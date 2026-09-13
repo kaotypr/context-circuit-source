@@ -5,10 +5,10 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
 
-sd="$ROOT/.agents/skills/cc-system-design/SKILL.md"
-ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
-cp="$ROOT/.agents/skills/cc-plan/SKILL.md"
-tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
+sd="$ROOT/product/.agents/skills/cc-system-design/SKILL.md"
+ci="$ROOT/product/.agents/skills/cc-intent/SKILL.md"
+cp="$ROOT/product/.agents/skills/cc-plan/SKILL.md"
+tr="$ROOT/product/.agents/skills/cc-trace/SKILL.md"
 intent_dom="$ROOT/context/domains/intent/README.md"
 sda="$ROOT/context/domains/system-design-authoring/README.md"
 tracing="$ROOT/context/domains/tracing/README.md"
@@ -44,7 +44,7 @@ contains "$planning" "no second approval gate"
 
 # AC-SKILL-NOT-SOURCE-DESIGN
 test ! -e "$ROOT/sources/system-design/context-circuit/v1.1.0" || fail "v1.1.0 spec tree must be absent"
-test ! -e "$ROOT/.agents/skills/cc-intent-detail" || fail "cc-intent-detail must not exist"
+test ! -e "$ROOT/product/.agents/skills/cc-intent-detail" || fail "cc-intent-detail must not exist"
 contains "$ci" "intent/<id>/detail/"
 not_contains "$sd" "v1.1.0/intent-detail"
 not_contains "$ci" "v1.1.0/intent-detail"

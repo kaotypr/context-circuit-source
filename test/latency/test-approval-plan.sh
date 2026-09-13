@@ -61,7 +61,7 @@ new_ws() {
 }
 
 case_exact_delta_fallback() {
-	trace="$ROOT/.agents/skills/cc-trace/SKILL.md"
+	trace="$ROOT/product/.agents/skills/cc-trace/SKILL.md"
 	planner="$ROOT/.context-circuit/agents/planner.md"
 	contains "$trace" "Do not rebuild a structural map cache"
 	contains "$trace" "spawn a second planner"

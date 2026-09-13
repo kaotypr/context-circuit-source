@@ -48,6 +48,14 @@ test ! -e "$artifact/.context-circuit/agents/spec-adversary.md" || fail "spec-ad
 test ! -e "$artifact/wrapper" || fail "root wrapper leaked into artifact"
 test ! -e "$artifact/agents" || fail "root agents leaked into artifact"
 test ! -d "$artifact/docs" || fail "root docs leaked into artifact"
+test ! -e "$artifact/.agents/skills/cc-source-develop" || fail 'source development skill leaked'
+test ! -e "$artifact/product" || fail 'packaging directory leaked'
+# Packaging relocation must preserve every shipped discovery file.
+find "$ROOT/product" -type f | while IFS= read -r packaged; do
+  relpath=${packaged#"$ROOT/product/"}
+  require_file "$artifact/$relpath"
+  cmp -s "$packaged" "$artifact/$relpath" || fail "packaged file changed: $relpath"
+done
 require_dir "$artifact/.agents/skills"
 require_file "$artifact/.agents/skills/cc-workspace/SKILL.md"
 require_file "$artifact/.claude/agents/worker.md"

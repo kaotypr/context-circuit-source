@@ -7,8 +7,8 @@ set -eu
 inv="$ROOT/.context-circuit/wrapper/contracts/invariants.yaml"
 pe="$ROOT/context/domains/plan-execution/README.md"
 arch="$ROOT/context/ARCHITECTURE.md"
-tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
-cp="$ROOT/.agents/skills/cc-plan/SKILL.md"
+tr="$ROOT/product/.agents/skills/cc-trace/SKILL.md"
+cp="$ROOT/product/.agents/skills/cc-plan/SKILL.md"
 tracing="$ROOT/context/domains/tracing/README.md"
 
 contains "$inv" "INV-EXEC-02"

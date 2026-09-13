@@ -35,8 +35,10 @@ archive and restore remain separate organization actions.
   boundary. `.context-circuit/wrapper/runtime/engine.sh` is the small host-neutral deterministic
   runtime; `.context-circuit/wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
 - `template/` — the blank mutable seed for a new workspace.
-- `.agents/skills/` and `.context-circuit/agents/` — thin host skills and planner/worker/verifier/
-  coordinator role deltas.
+- `product/` — packaging-only shipped skills and native host integrations; its
+  nested discovery trees become workspace-root paths in the output.
+- `.agents/skills/` — source-only direct-development skills, never released.
+- `.context-circuit/agents/` — shipped planner/worker/verifier/coordinator role deltas.
 - `.context-circuit/docs/` — shipped guides and plan/task templates.
 - `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
   released.
@@ -51,6 +53,13 @@ archive and restore remain separate organization actions.
 - `scripts/` — maintainer-only release assembly.
 - `repositories/`, `repositories.local.yaml`, `.runtime/` — host-local, ignored,
   never released.
+
+## Source development
+
+Read and edit files directly on the active branch under root `AGENTS.md` and
+`WORKFLOW.md`. Use `cc-source-develop` for maintainer work; product lifecycle
+skills are packaged under `product/` and do not govern this checkout. Generated
+workspaces retain their own adapters and lifecycle unchanged.
 
 ## Tests
 

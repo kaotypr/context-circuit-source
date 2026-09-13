@@ -116,14 +116,14 @@ contains "$relative_pointer" "worktree: $relative_wt"
 (cd "$ws" && sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" pair-inspect . relative-root) \
 	| grep -Fq 'resumable: true' || fail 'relative-root pair is not resumable'
 
-contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "Model & effort per role"
-contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "role-tiering"
-contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "workspace root"
-contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "isolated working copy"
-contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "runtime/explore"
-contains "$ROOT/.agents/skills/cc-pair/SKILL.md" "never invent"
-contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "Model & effort per role"
-contains "$ROOT/.agents/skills/cc-execute/SKILL.md" "workspace root"
+contains "$ROOT/product/.agents/skills/cc-pair/SKILL.md" "Model & effort per role"
+contains "$ROOT/product/.agents/skills/cc-pair/SKILL.md" "role-tiering"
+contains "$ROOT/product/.agents/skills/cc-pair/SKILL.md" "workspace root"
+contains "$ROOT/product/.agents/skills/cc-pair/SKILL.md" "isolated working copy"
+contains "$ROOT/product/.agents/skills/cc-pair/SKILL.md" "runtime/explore"
+contains "$ROOT/product/.agents/skills/cc-pair/SKILL.md" "never invent"
+contains "$ROOT/product/.agents/skills/cc-execute/SKILL.md" "Model & effort per role"
+contains "$ROOT/product/.agents/skills/cc-execute/SKILL.md" "workspace root"
 
 # Live Explore sessions survive cleanup; closed ones are removed.
 cc_runtime_cleanup "$ws" >/dev/null

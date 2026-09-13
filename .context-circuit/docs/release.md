@@ -24,7 +24,9 @@ Pass a version explicitly when building another release, for example
 Pass a second output directory when testing without using the repository's
 `dist/` folder.
 
-The assembler stages the current source tree without `.git`, runtime, tests,
+The assembler takes product skills and native host integrations from packaging-only
+`product/`, installing their nested discovery trees at the artifact root. Root
+source skills and maintainer host tools are never copied. It stages the current source tree without `.git`, runtime, tests,
 scripts, source inbox, plans, Product Knowledge, maintainer design material, old skill
 adapters, the source-only `template/` directory, or credentials. It overlays
 root adapters from `.context-circuit/wrapper/adapters/` and the uninitialized mutable seed from

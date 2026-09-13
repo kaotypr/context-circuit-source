@@ -128,11 +128,11 @@ case_runtime_validate() {
 }
 
 case_guidance() {
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "member.local.yaml"
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "members.yaml"
-	contains "$ROOT/.agents/skills/cc-workspace/SKILL.md" "numeric range"
-	contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "member-band-resolve"
-	contains "$ROOT/.agents/skills/cc-intent/SKILL.md" "block number"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "member.local.yaml"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "members.yaml"
+	contains "$ROOT/product/.agents/skills/cc-workspace/SKILL.md" "numeric range"
+	contains "$ROOT/product/.agents/skills/cc-intent/SKILL.md" "member-band-resolve"
+	contains "$ROOT/product/.agents/skills/cc-intent/SKILL.md" "block number"
 	contains "$ROOT/.context-circuit/agents/coordinator.md" "member identity"
 	contains "$ROOT/.context-circuit/agents/coordinator.md" "block number"
 	contains "$ROOT/.context-circuit/docs/getting-started.md" "member"

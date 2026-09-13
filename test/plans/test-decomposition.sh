@@ -91,7 +91,7 @@ expect_failure stacked_plan_shape "$wrong_combined"
 # boundaries; these are review failures rather than new runtime gates.
 contains "$ROOT/.context-circuit/docs/planning.md" "Do not split solely to match an assurance tier"
 contains "$ROOT/.context-circuit/docs/planning.md" "do not combine genuinely independent execution"
-contains "$ROOT/.agents/skills/cc-plan/SKILL.md" "One approved intent may"
+contains "$ROOT/product/.agents/skills/cc-plan/SKILL.md" "One approved intent may"
 
 # The stack is independently ready and verified one plan at a time, while retaining
 # the same upstream authorization and allowing one later change-set candidate.

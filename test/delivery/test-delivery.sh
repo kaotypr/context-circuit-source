@@ -54,7 +54,7 @@ expect_failure cc_delivery_targets "$ws" 9999-none
 
 # --- the delivery skill fixes source, target, the blocked boundary, and
 #     same-repository change sets (INV-DELIVER-01) ---
-skill="$ROOT/.agents/skills/cc-deliver/SKILL.md"
+skill="$ROOT/product/.agents/skills/cc-deliver/SKILL.md"
 require_file "$skill"
 contains "$skill" "execution branch"
 contains "$skill" "base_branch"

@@ -92,13 +92,13 @@ case_hidden() {
 	not_contains "$SEAM" "ok-easter-egg"
 
 	assert_no_punchline_tree "$ROOT/.context-circuit/agents" "role packets"
-	assert_no_punchline_tree "$ROOT/.agents/skills" "skills"
+	assert_no_punchline_tree "$ROOT/product/.agents/skills" "skills"
 	assert_no_punchline_tree "$ROOT/.context-circuit/wrapper/adapters" "host adapters"
 	assert_no_punchline_tree "$ROOT/.context-circuit/docs" "product docs"
 	assert_no_punchline_tree "$ROOT/context" "Product Knowledge"
-	assert_no_punchline_tree "$ROOT/.claude" "Claude host routes"
-	assert_no_punchline_tree "$ROOT/.codex" "Codex host routes"
-	assert_no_punchline_tree "$ROOT/.cursor" "Cursor host routes"
+	assert_no_punchline_tree "$ROOT/product/.claude" "Claude host routes"
+	assert_no_punchline_tree "$ROOT/product/.codex" "Codex host routes"
+	assert_no_punchline_tree "$ROOT/product/.cursor" "Cursor host routes"
 
 	if [ -d "$ROOT/template/.agents/skills" ]; then
 		assert_no_punchline_tree "$ROOT/template/.agents/skills" "template skills"

@@ -5,9 +5,9 @@ set -eu
 . "$(dirname -- "$0")/../lib/assert.sh"
 . "$ROOT/test/lib/fixture.sh"
 
-ci="$ROOT/.agents/skills/cc-intent/SKILL.md"
-tr="$ROOT/.agents/skills/cc-trace/SKILL.md"
-cp="$ROOT/.agents/skills/cc-plan/SKILL.md"
+ci="$ROOT/product/.agents/skills/cc-intent/SKILL.md"
+tr="$ROOT/product/.agents/skills/cc-trace/SKILL.md"
+cp="$ROOT/product/.agents/skills/cc-plan/SKILL.md"
 coord="$ROOT/.context-circuit/agents/coordinator.md"
 tmpl="$ROOT/.context-circuit/docs/templates/intent.md"
 

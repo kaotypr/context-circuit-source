@@ -13,6 +13,12 @@ candidate for maintainer implementation. The source-only plan files describe
 scope and implementation order; they do not invoke the product workspace
 lifecycle.
 
+Source requests use direct reads and edits on the active branch, without the
+CC intent, planning, pairing, execution, verification, or completion lifecycle.
+Ordinary engineering plans are conversational maintainer guides, not runtime
+workspace plans. No child agent, lease, host-evidence record, or worktree is
+required. Product skill and role packets are implementation material.
+
 Each phase owns its files and runs the semantic tests that exist at that point.
 Preserve the dependency order:
 workspace/plan contract → Product Knowledge → runtime reduction → conversational
