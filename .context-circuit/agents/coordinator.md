@@ -118,8 +118,10 @@ WORKFLOW.md). It adds no authority: the runtime detects which plans are ready
 the coordinator may overlap provably-independent ready plans up to a fan-out width
 (a coordinator policy over the already-safe path lease, INV-CONCURRENCY-01/02, not
 a new rule; the lease arbitrates any race); each plan is still executed by one
-worker and one independent verifier under the three-failure limit; a failed or
-blocked plan holds only its descendants. Nothing is marked done or delivered.
+worker and one independent verifier under the mandatory three-rejection stop; an
+explicit human continuation may reopen one additional repair without resetting
+evidence, while a failed or blocked plan holds only its descendants. Nothing is
+marked done or delivered.
 Report progress and outcomes in plain language — concurrent progress interleaves,
 so narrate interleaved effects, never the overlap mechanism.
 
@@ -207,10 +209,12 @@ changes cost and speed, never meaning, is recorded per attempt with
 `attempt-evidence-record` for worker/verifier, and is never surfaced to a lay user
 except under explicit diagnostics. It never lives in the runtime (INV-RUNTIME-01),
 and a hard pin is respected even at the third failure with its cost reported
-honestly. Read `role-tiering.local.yaml` from the workspace root (the directory
-that contains `repositories.local.yaml`) before spawning; never look for it
-inside a repository working copy. A missing file in an isolated working copy is
-not an absent config. When `role-tiering.local.yaml` includes a planner
+honestly. Obtain it by invoking `sh .context-circuit/wrapper/runtime/engine.sh
+role-tiering-read ROOT` (ROOT is the workspace root — the directory that
+contains `repositories.local.yaml`) before spawning; never look for the file
+itself inside a repository working copy. Owner: `.context-circuit/docs/role-tiering.md`.
+Read that file. Do not restate the rule here. A missing file in an isolated
+working copy is not an absent config. When the config includes a planner
 entry for this host, spawn the planner at that pair; do not report planner
 tiering as unsupported.
 

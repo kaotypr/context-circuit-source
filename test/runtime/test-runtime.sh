@@ -82,6 +82,33 @@ out=$(cc_verifier_result_record "$edir" 003 failed)
 printf '%s\n' "$out" | grep -Fq "stop: FAILURE_LIMIT_REACHED" || fail "expected FAILURE_LIMIT_REACHED"
 assert_eq "failed" "$(cc_execution_status "$edir")"
 expect_failure cc_repair_allowed "$edir"
+expect_failure cc_attempt_begin "$edir"
+
+# --- explicit human continuation reopens one repair without hiding failures ---
+cc_repair_continue "$edir" maintainer >/dev/null
+assert_eq "repairing" "$(cc_execution_status "$edir")"
+assert_eq "3" "$(cc_scalar "$edir/execution.yaml" worker_failures)"
+assert_eq "1" "$(cc_scalar "$edir/execution.yaml" repair_continuations)"
+contains "$edir/continuations/001.yaml" "continued_by: maintainer"
+cc_repair_allowed "$edir" >/dev/null
+cc_attempt_begin "$edir" >/dev/null
+cc_fx_commit "$ws" 0001-alpha api repair3
+cc_worker_commit_record "$edir" api repair >/dev/null
+cc_verifier_prepare "$edir" >/dev/null
+out=$(cc_verifier_result_record "$edir" 004 failed)
+printf '%s\n' "$out" | grep -Fq "stop: FAILURE_LIMIT_REACHED" || fail "continued rejection must stop again"
+assert_eq "4" "$(cc_scalar "$edir/execution.yaml" worker_failures)"
+assert_eq "failed" "$(cc_execution_status "$edir")"
+expect_failure cc_repair_continue "$edir" 'bad human'
+cc_repair_continue "$edir" maintainer >/dev/null
+assert_eq "2" "$(cc_scalar "$edir/execution.yaml" repair_continuations)"
+cc_attempt_begin "$edir" >/dev/null
+cc_fx_commit "$ws" 0001-alpha api repair4
+cc_worker_commit_record "$edir" api repair >/dev/null
+cc_verifier_prepare "$edir" >/dev/null
+cc_verifier_result_record "$edir" 005 failed >/dev/null
+assert_eq "5" "$(cc_scalar "$edir/execution.yaml" worker_failures)"
+assert_eq "failed" "$(cc_execution_status "$edir")"
 
 # --- failed execution can still be marked done ---
 cc_plan_complete "$ws" 0001-alpha >/dev/null

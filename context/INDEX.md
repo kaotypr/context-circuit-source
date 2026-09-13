@@ -52,8 +52,29 @@ one-time local identity). See the 2026-09-08 bands decision in
 `context/DECISIONS.md` and [repository-binding](domains/repository-binding/README.md),
 [plan-review](domains/plan-review/README.md), and [intent](domains/intent/README.md).
 
+Open questions on a new intent are numbered 1, 2, 3 like The plans so a person
+can answer by number; already-written intents stay as authored. See the
+2026-09-10 decision in `context/DECISIONS.md` and [intent](domains/intent/README.md).
+
+New execution and Explore worktrees are runnable before a worker is attached:
+their create-time overlay and lockfile-correct provisioning fail closed. See the
+2026-09-10 decision in `context/DECISIONS.md` and the
+[repository-grounding](domains/repository-grounding/README.md),
+[plan-execution](domains/plan-execution/README.md), and
+[direct-collaboration](domains/direct-collaboration/README.md) domains.
+
 Official template publication is GitHub-canonical; the same Action optionally
 mirrors the published tree and Release to GitLab when operators configure
 GitHub Actions variables and secrets. See the 2026-09-09 decision in
 `context/DECISIONS.md` and
+[source-release-and-upgrade](domains/source-release-and-upgrade/README.md).
+The GitHub destinations are `kaotypr/context-circuit-source` (this maintainer
+source) and `kaotypr/context-circuit` (the published template). See the
+2026-09-10 decision in `context/DECISIONS.md`.
+
+Agent Harness is a standalone product that consumes one immutable Context
+Circuit artifact and builds isolated deterministic run worlds from explicit
+scenario fixtures. Portable evidence supports ownership-safe cleanup and fresh
+reproduction without importing the maintainer checkout or retaining private host
+state. See the 2026-09-11 decision in `context/DECISIONS.md` and
 [source-release-and-upgrade](domains/source-release-and-upgrade/README.md).

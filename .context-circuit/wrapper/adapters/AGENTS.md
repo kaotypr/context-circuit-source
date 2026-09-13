@@ -92,15 +92,17 @@ owners and must not copy role bodies or invent a second authorization policy:
 
 The coordinator may run the worker, verifier, and planner at a per-role `(model, effort)`
 from an optional host-local, per-user, gitignored `role-tiering.local.yaml`,
-grouped by host so each host names the models available on it. Read that file
-from the workspace root (next to `repositories.local.yaml`) before spawning;
-never look for it inside the child's working copy. A missing file in an
+grouped by host so each host names the models available on it. Obtain it by
+invoking the engine verb from the workspace root (next to
+`repositories.local.yaml`) before spawning; never look for the file itself
+inside the child's working copy. A missing file in an
 isolated working copy is not an absent config. This is bounded
 host evidence (`host_evidence`): it changes cost and speed, never a route, role,
 lease, verification, completion, verifier independence, or the failure limit, and
 the runtime never learns it (INV-RUNTIME-01). Reading the config does not apply
 it — the host adapter sets the model on the child spawn; absent any config, the
-adapter defaults apply. Full rules: `.context-circuit/docs/role-tiering.md`.
+adapter defaults apply. Owner: `.context-circuit/docs/role-tiering.md`. Read
+that file. Do not restate the rule here.
 
 ### Applying a configured tier on Codex
 

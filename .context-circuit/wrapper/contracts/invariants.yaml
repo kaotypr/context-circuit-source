@@ -165,9 +165,10 @@ invariants:
     rule: >
       New plans use stable IDs of the form NNNN-<kebab-slug>. They never include a
       member, machine, or workspace token. The four-digit sequence is the next
-      after the highest number ever used in the current member's plan band among
-      active and archived plans (INV-MEMBER-01) and is never reused, including
-      after archive or restore. A ratified plan stack reserves one unique
+      after the highest active number in the current member's plan band
+      (INV-MEMBER-01). Archived plans are ignored by allocation, so archiving
+      releases their number for reuse. Restoring an archived plan is refused when
+      any active plan already uses the same numeric prefix. A ratified plan stack reserves one unique
       consecutive in-band range keyed by invocation identity, renders and validates
       the complete stack, then publishes every plan and index row or none. A
       successful same-invocation retry returns the original allocation; a failed
@@ -184,9 +185,11 @@ invariants:
       Missing identity fails closed and is resolved by a one-time choice of an
       existing roster member, or first-member setup into the roster; it does not
       invent a band or accept a numeric range in chat. Overlapping bands and two
-      live or archived ids sharing a numeric prefix fail closed. A full band fails
-      clearly without wrapping; the fix is a new non-overlapping band in the roster,
-      not recycling. Member names are allocation identity only: they never appear in
+      active plan ids sharing a numeric prefix fail closed. Archived plan prefixes
+      do not participate in allocation; restore fails closed when an active plan
+      already uses the archived plan's prefix. A full band fails clearly without
+      wrapping; the fix is a new non-overlapping band in the roster. Member names
+      are allocation identity only: they never appear in
       intent ids, plan ids, or execution branches (cc/<plan-id>/<repository-id>).
   - id: INV-PLAN-04
     rule: >
@@ -274,9 +277,13 @@ invariants:
   - id: INV-REPAIR-01
     rule: >
       The worker-failure counter increments on each verifier rejection including
-      the initial implementation. The maximum is three, after which execution
-      stops. A block from missing host capability or external evidence is a
-      blocked execution, not an invented worker failure.
+      the initial implementation. Three recorded rejections force the execution
+      to stop with all evidence preserved. An explicit human continuation may
+      reopen that same failed execution for one additional repair attempt; it
+      never resets or reduces the failure counter, erases attempts, or supplies a
+      verifier pass. Every later rejection stops again and requires another
+      explicit human continuation. A block from missing host capability or
+      external evidence is a blocked execution, not an invented worker failure.
   - id: INV-PRESERVE-01
     rule: >
       Failure, interruption, or blocking preserves branches, worktrees, commits,
@@ -313,7 +320,8 @@ invariants:
     rule: >
       The normal agent must not read or traverse plans/archive/. An explicit
       restore is the only operation that returns a named archived plan to the
-      active plan area before normal reading resumes.
+      active plan area before normal reading resumes. Restore is refused when any
+      active plan already uses the archived plan's numeric prefix.
   - id: INV-REPO-01
     rule: >
       Portable workspace identity holds only a logical repository key, an

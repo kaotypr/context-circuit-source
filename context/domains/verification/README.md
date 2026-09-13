@@ -61,7 +61,7 @@ outcome is `passed`, `failed`, `blocked`, or `waived`; only `passed` satisfies
 verification. Recording rejects any product write (`VERIFIER_WRITE_REJECTED`) or
 changed branch tip (`VERIFIER_MODIFIED_PRODUCT`). Each verifier rejection —
 including the initial implementation — increments the worker-failure counter
-toward the three-failure limit (INV-REPAIR-01). A verifier must not downgrade an
+toward the mandatory three-rejection stop (INV-REPAIR-01). A verifier must not downgrade an
 evidence requirement because a host lacks a capability.
 
 ## Workflows

@@ -45,6 +45,8 @@ actions as a tool.
 - `verifier-result-record <execution-dir> <attempt> passed|failed|blocked` — record the independent verifier's outcome. `<attempt>` is `current_attempt` (`3` and `003` are the same attempt).
 - `attempt-evidence-record <execution-dir> <attempt> <key=value> ...` — record bounded per-attempt host evidence: the `(model, effort)` each role ran at (no wall-clock; timing is engine-stamped). Evidence only; never a gate.
 - `repair-allowed <execution-dir>` — whether another repair attempt remains.
+- `repair-continue <execution-dir> <human>` — record an explicit human decision
+  to reopen one additional attempt after the three-rejection stop.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
 assigned worktree(s) are named in each execution's per-repository record.
@@ -128,7 +130,10 @@ Repeat until no plan in the set is runnable:
       `(model, effort)` above its configured start (`.context-circuit/docs/role-tiering.md`);
       escalation changes only which model runs the attempt, never the accounting.
       The failure counter increments on each rejection; at three failures the plan
-      is **failed** and execution stops with all evidence preserved.
+      is **failed** and execution stops with all evidence preserved. It remains
+      stopped unless the human explicitly requests continuation; record that
+      decision with `repair-continue`, run one additional attempt, and stop again
+      after any later rejection until another explicit continuation.
 
    f. **On verified:** keep the plan's leases held (they hold until delivery, not
       merely verification) so an unrelated plan cannot grab the same region and

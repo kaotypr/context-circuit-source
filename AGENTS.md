@@ -56,6 +56,9 @@ gate. Native child features map to the existing coordinator, worker, and
 independent verifier packets. If a required child is unavailable, preserve the
 read-only `host-blocked` outcome and do not self-verify.
 
+Per-role `(model, effort)` config access: owner `.context-circuit/docs/role-tiering.md`.
+Read that file. Do not restate the rule here.
+
 Across hosts, the coordinator's resumable session may be represented by a
 session or thread id, but that root is only the conversation transport. Required
 worker, verifier, and planner roles must be launched through the host's native

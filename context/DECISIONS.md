@@ -1,5 +1,86 @@
 # Decisions
 
+## 2026-09-11 — Agent Harness is a standalone artifact consumer
+
+Decision: Agent Harness is independently developed, versioned, packaged, and
+run. It consumes exactly one copied and digest-verified Context Circuit artifact
+and constructs complete scenario conditions in isolated disposable worlds from
+explicit, revision-bound fixtures. It never imports Context Circuit code or
+uses the maintainer checkout as runtime input.
+
+Rationale: host behavior can be compared only when every scenario input,
+artifact byte, Git history, baseline, prompt/input identity, and available
+host/tool fact is explicit and reproducible. Separation also prevents source
+state, credentials, local configuration, and private provider data from leaking
+into fixtures or retained evidence.
+
+Consequence: run records remain portable while questioned worlds are preserved;
+cleanup is ownership-checked and limited to passing non-kept worlds; reproduction
+reports changed or unavailable facts before creating a fresh world and requires
+an explicit override for a non-identical run. Host drivers and final grading are
+separate future concerns. The owning boundary is documented in
+[source release and upgrade](domains/source-release-and-upgrade/README.md).
+
+## 2026-09-11 — Plan numbering follows active plans only
+
+Decision: a new plan number is one past the highest active plan number in the
+current member's band. Archived plans do not participate in allocation, so an
+archived number may be reused. Restoring an archived plan is refused while any
+active plan uses the same numeric prefix. Intent numbering remains unchanged and
+continues to count archived intents.
+
+Rationale: the active plan sequence should describe the live planning surface;
+historical archive collisions must not block new planning. Restore remains safe
+because it cannot introduce two active plans with the same speakable number.
+
+Consequence: INV-PLAN-03 and INV-ARCHIVE-02 own active-only plan allocation and
+restore collision safety. This supersedes only the plan-number portion of the
+2026-09-08 member-band decision.
+
+## 2026-09-10 — New worktrees are runnable before a worker is attached
+
+Decision: a new execution or Explore worktree is prepared before anyone is
+attached. The bound checkout's eligible gitignored paths, including `.env`, are
+copied in and never symlinked. A copied install tree remains only when it matches
+that worktree's lockfile; otherwise a frozen install prepares the worktree.
+`ready` therefore means prepared, and an overlay or provisioning failure blocks
+setup.
+
+Rationale: a worker cannot honestly be told that a fresh isolated checkout is
+ready when its ignored runtime inputs or its lockfile-correct dependencies are
+missing.
+
+Consequence: workspace self-protection exclusions remain outside the overlay, so
+runtime state, registered checkouts, and host-local configuration do not leak into
+new worktrees. [Repository grounding](domains/repository-grounding/README.md),
+[plan execution](domains/plan-execution/README.md), and
+[direct collaboration](domains/direct-collaboration/README.md) describe the
+create-time behavior in their respective domains.
+
+## 2026-09-10 — A host obtains the per-role config only through the runtime
+
+Decision: a host must never `Read`, `find`, or `grep` the per-role `(model, effort)` config file directly. It invokes a print-only runtime verb instead, which resolves the workspace-root local override when present, else a newly committed fallback file, and reports which source it used.
+
+Rationale: on at least one host, local file-search tooling can be configured to silently exclude gitignored paths from every search, so a failed `find`/`grep` is not evidence the config is absent — even on a fresh checkout where no local override exists yet, the runtime verb still resolves an answer via the committed fallback.
+
+Consequence: [host-adapters](domains/host-adapters/README.md) records the access rule; [source-release-and-upgrade](domains/source-release-and-upgrade/README.md) adds the fallback file to the shipped set and the wrapper-only upgrade boundary. `.context-circuit/docs/role-tiering.md` remains the sole full statement of the rule; other host-facing files carry only a pointer to it.
+
+## 2026-09-10 — Intent open questions are numbered like The plans
+
+Decision: on a new human-facing intent, Open questions use the same numbered 1, 2, 3 list as The plans — number, bold question, italic answer beneath. Answering keeps the number. A question added later takes the next unused number. When there are none, the empty-state line stays unnumbered; no dummy numbered item. Already-written intents stay as authored. Numbering is human-facing only and is not a machine identifier on the contract.
+
+Rationale: a person can answer by number instead of repeating the question, and the number remains a stable handle for the life of that intent.
+
+Consequence: [intent](domains/intent/README.md) owns the convention with the intent template and the `cc-intent` skill. The approval ask invites an answer by number. Plan open questions and thread questions are unchanged.
+
+## 2026-09-10 — GitHub names match source vs published template
+
+Decision: this maintainer source lives on GitHub as `kaotypr/context-circuit-source`. The published template lives on GitHub as `kaotypr/context-circuit`. The conceptual product identity remains `context-circuit-template` (the distributable universal project workspace). GitLab remains an optional mirror of the already-published tree; its project path is not renamed with GitHub.
+
+Rationale: the short GitHub name is the product people use. The factory must not occupy that name.
+
+Consequence: [source-release-and-upgrade](domains/source-release-and-upgrade/README.md) names both GitHub destinations. Publication binding, the publish Action, and this workspace's canonical URL follow those slugs. GitHub stays the canonical published template.
+
 ## 2026-09-09 — Published template is GitHub-canonical with an optional GitLab mirror
 
 Decision: official template publication still lands on GitHub (`main`, the

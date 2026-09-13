@@ -1,6 +1,6 @@
 name: Publish template
 
-# Publishes one release of the assembled product into context-circuit-template.
+# Publishes one release of the assembled product into kaotypr/context-circuit.
 # Manual (workflow_dispatch) or on a new request file landing on main.
 # Design: sources/system-design/context-circuit/v0.5/10-template-publication.md
 
@@ -34,7 +34,7 @@ jobs:
       - name: Checkout template repository
         uses: actions/checkout@v4
         with:
-          repository: kaotypr/context-circuit-template
+          repository: kaotypr/context-circuit
           ref: main
           token: ${{ secrets.TEMPLATE_REPO_TOKEN }}
           path: .template-repo
@@ -78,7 +78,7 @@ jobs:
           awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
             "release/requests/$V.md" > release-notes.md
           gh release create "v$V" \
-            --repo kaotypr/context-circuit-template \
+            --repo kaotypr/context-circuit \
             --title "v$V" \
             --notes-file release-notes.md \
             "${{ steps.publish.outputs.archive }}#context-circuit-v$V.tar.gz"

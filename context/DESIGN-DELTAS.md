@@ -15,13 +15,14 @@ entry: what the design says, what ships, where seen, and disposition.
    shipped verifier; revisit if/when evidence layers are implemented.
 
 2. **Repair limit.** Design treats the limit as an authored `plan.yaml` field
-   (`repair limit`). The shipped `INV-REPAIR-01` hard-codes a maximum of three.
+   (`repair limit`). The shipped `INV-REPAIR-01` forces a stop at three and permits
+   one additional attempt per explicit human continuation without resetting the count.
    Seen: design 05 §3/§13 vs `.context-circuit/wrapper/contracts/invariants.yaml`. Disposition:
    pages state the shipped hard limit of three.
 
-3. **Plan-id reuse.** `INV-PLAN-03` (never reused / next after highest ever used
-   in the current member's band) is a shipped invariant not stated in the original
-   design, which says only "stable id". Seen:
+3. **Plan-id allocation.** `INV-PLAN-03` (next after the highest active plan in
+   the current member's band, with archived prefixes reusable) is a shipped
+   invariant not stated in the original design, which says only "stable id". Seen:
    `.context-circuit/wrapper/contracts/invariants.yaml` vs design 05 §3. Disposition: pages keep
    the shipped band-scoped invariant (`INV-MEMBER-01`).
 

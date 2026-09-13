@@ -10,6 +10,7 @@ run_suite() {
 
 run_suite test/contracts/test-contracts.sh
 run_suite test/runtime/test-runtime.sh
+run_suite test/runtime/test-role-tiering-read.sh
 run_suite test/easter-egg/test-ok-easter-egg.sh
 run_suite test/bands/test-member-roster.sh
 run_suite test/bands/test-band-allocation.sh
@@ -22,6 +23,7 @@ run_suite test/intent/test-intent.sh
 run_suite test/intent/test-intent-detail.sh
 run_suite test/intent/test-feasibility.sh
 run_suite test/intent/test-approval-trace-plan.sh
+run_suite test/intent/test-open-questions-numbering.sh
 run_suite test/candidate/test-candidate.sh
 run_suite test/assurance/test-tier.sh
 run_suite test/execution/test-execution.sh
@@ -30,6 +32,8 @@ run_suite test/run-stack/test-run-stack.sh
 run_suite test/latency/test-latency.sh
 run_suite test/latency/test-approval-plan.sh
 run_suite test/grounding/test-grounding.sh
+run_suite test/worktree/test-overlay.sh
+run_suite test/worktree/test-provision.sh
 run_suite test/pairing/test-pairing.sh
 run_suite test/external-surface/test-external-surface.sh
 run_suite test/completion/test-completion.sh
@@ -44,6 +48,7 @@ run_suite test/scenarios/test-scenarios.sh
 run_suite test/release/test-release.sh
 run_suite test/release/test-publish.sh
 run_suite test/release/test-gitlab-mirror-workflow.sh
+run_suite test/release/test-github-names.sh
 run_suite agent-harness/test-template-runtime.sh
 run_suite agent-harness/human/test-codex-driver.sh
 run_suite agent-harness/human/test-direct-collaboration-scenario.sh

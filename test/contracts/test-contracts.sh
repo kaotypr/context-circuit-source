@@ -91,6 +91,20 @@ for oldc in routes context-sets tier0; do
 	test ! -e "${W}/contracts/$oldc.yaml" || fail "old contract remains: $oldc"
 done
 
+# --- grounding environment is preparation, never lockfile detection alone ---
+grounding_schema="${W}/contracts/schemas/grounding-manifest.yaml"
+contains "$grounding_schema" "values: [ready, no-toolchain]"
+contains "$grounding_schema" "gitignored overlay"
+contains "$grounding_schema" "match its own lockfile"
+contains "$grounding_schema" "not ready"
+contains "$grounding_schema" "blocks setup"
+contains "${W}/runtime/engine.sh" "Ready: gitignored overlay complete"
+for f in "${W}/adapters/worker-brief.md" "${W}/runtime/engine.sh"; do
+	not_contains "$f" "no-verify"
+	not_contains "$f" "verify-deps"
+	not_contains "$f" "shared node_modules"
+done
+
 # --- runtime engine present and host-neutral ---
 require_file "${W}/runtime/engine.sh"
 not_contains "${W}/runtime/engine.sh" "cc_probe"
@@ -251,6 +265,25 @@ not_contains "$ROOT/.context-circuit/agents/coordinator.md" "tracer"
 not_contains "$ROOT/.context-circuit/agents/planner.md" "tracer"
 not_contains "$inv" "tracer"
 not_contains "${W}/contracts/schemas/trace-manifest.yaml" "tracer"
+
+# --- engine-verb access to role-tiering config, with a committed fallback ---
+contains "${W}/runtime/engine.sh" "role-tiering-read"
+contains "${W}/runtime/engine.sh" "ROLE_TIERING_MISSING"
+require_file "$ROOT/.context-circuit/role-tiering.fallback.yaml"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "role-tiering-read"
+contains "$ROOT/.context-circuit/docs/role-tiering.md" "fallback"
+for f in "${W}/adapters/AGENTS.md" "${W}/adapters/CLAUDE.md" "${W}/adapters/CURSOR.md" \
+	"$ROOT/AGENTS.md" "$ROOT/CLAUDE.md" "$ROOT/CURSOR.md" \
+	"$ROOT/.context-circuit/agents/coordinator.md" "$ROOT/.context-circuit/agents/worker.md" \
+	"$ROOT/.context-circuit/agents/verifier.md" "$ROOT/.context-circuit/agents/planner.md"; do
+	contains "$f" ".context-circuit/docs/role-tiering.md"
+	not_contains "$f" "role-tiering.fallback.yaml"
+done
+contains "${W}/manifest.yaml" ".context-circuit/role-tiering.fallback.yaml"
+contains "${W}/manifest.yaml" "role-tiering.local.yaml"
+if git -C "$ROOT" status --porcelain -- .gitignore .rtk '*/config.toml' 2>/dev/null | grep . >/dev/null 2>&1; then
+	fail "this plan must not modify .gitignore or rtk config"
+fi
 not_contains "$inv" "INV-LATENCY"
 not_contains "$inv" "INV-TIER"
 contains "$man" "runtime_version: 1.0.0"

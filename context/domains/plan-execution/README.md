@@ -7,10 +7,10 @@ owners: []
 sources: []
 source_revisions:
   - wrapper: HEAD
-    commit: 4b8ac0b
+    commit: d95bbd7
     basis: current-wrapper
-generated_at: 2026-08-24T00:00:00Z
-review_date: 2026-11-24
+generated_at: 2026-09-10T00:00:00Z
+review_date: 2026-12-10
 freshness: accepted-from-current-wrapper
 assumptions:
   - One worker executes one intent-authorized plan in one bounded execution.
@@ -61,6 +61,14 @@ branch `cc/<plan-id>/<repo-id>` and one isolated worktree per affected
 repository, from the captured base-branch tip; the base checkout is never
 written (INV-EXEC-03).
 
+Each fresh execution worktree is prepared before a worker is attached: the
+runtime overlays the bound checkout's eligible gitignored paths, then provisions
+any detected toolchain against the worktree's own lockfile. The
+[repository-grounding](../repository-grounding/README.md) domain and its schema
+owner define the preparation details and environment result. An overlay or
+provisioning failure blocks the execution with its stable setup reason; it is not
+a worker failure.
+
 A plan with **same-repo predecessors** (see
 [run-stack](../run-stack/README.md)) begins base-aware: its worktree is prepared
 on the predecessor branch (stack) or a runtime-authored integration merge, and the
@@ -79,8 +87,10 @@ atomic exclusive-create lock; a competing worker gets a read-only or blocked
 result and a live lock is never silently stolen (INV-OWN-01).
 
 The worker-failure counter increments on each verifier rejection including the
-initial implementation, to a maximum of three, after which execution stops
-(INV-REPAIR-01). Failure, interruption, or blocking preserves branches,
+initial implementation. Three rejections force execution to stop. An explicit
+human continuation reopens the same execution for one additional attempt without
+resetting the cumulative count; every later rejection stops again until another
+explicit continuation (INV-REPAIR-01). Failure, interruption, or blocking preserves branches,
 worktrees, commits, handoffs, verifier evidence, repair attempts, and runtime
 records; failed work is never silently cleaned up (INV-PRESERVE-01). Runtime
 records are written atomically; a partial or contradictory record cannot grant
@@ -117,7 +127,7 @@ captured base commits, the worktree paths, and ownership all still match.
 
 `execution.yaml` holds `execution_id`, a `plan_revision` digest, `owner`,
 `status` (`running`/`verifying`/`repairing`/`verified`/`failed`/`blocked`),
-`worker_failures` 0..3, and per-repository worktree/branch/base/latest records
+the cumulative `worker_failures`, `repair_continuations`, and per-repository worktree/branch/base/latest records
 (a dependent plan's record also carries `based_on`). Each execution records a
 grounding manifest under `grounding/<repo>.yaml`.
 The worker handoff is a claim (commits, tasks done, checks, assumptions, limits,
@@ -154,3 +164,5 @@ is owned by [verification](../verification/README.md).
 
 Accepted 2026-08-24. Extended 2026-08-27 with v0.6 base-aware begin for
 dependents, the grounded brief, and plan `schema_version [1, 2]`.
+Updated 2026-09-10: execution worktrees are runnable at creation, and failed
+preparation blocks setup before a worker can start.

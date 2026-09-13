@@ -3,7 +3,7 @@ plan: 0017-external-surface-plan-kind
 provider: github
 plan_item:
   id: "89"
-  url: "https://github.com/kaotypr/context-circuit/issues/89"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/89"
 task_items:
   - task: EXT-001
     id: "89"

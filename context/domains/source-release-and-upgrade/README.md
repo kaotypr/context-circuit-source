@@ -46,15 +46,18 @@ delivery actions.
 ## Behavior
 
 Three identities stay distinct: `context-circuit-source` (this maintainer
-checkout), `context-circuit-template` (the distributable universal project
-workspace — the wrapper a user works in), and the instantiated project
+checkout, GitHub `kaotypr/context-circuit-source`), `context-circuit-template`
+(the distributable universal project workspace — the wrapper a user works in,
+published on GitHub as `kaotypr/context-circuit`), and the instantiated project
 workspace.
 
 Assembly ships the nested product home
 (`.context-circuit/{wrapper,agents,docs}`) plus root host pointers,
-`.agents/`, and the product host-native trees (`.claude/`, `.codex/`,
+`.agents/`, the product host-native trees (`.claude/`, `.codex/`,
 `.cursor/` — agent stubs, Claude/Cursor rule stubs, Claude skill routes to
-`.agents/skills/cc-*`). It never ships: the source design, maintainer plans
+`.agents/skills/cc-*`), and the committed role-tiering fallback config
+(`.context-circuit/role-tiering.fallback.yaml`) that a host reads when no
+workspace-root local override exists. It never ships: the source design, maintainer plans
 and logs, source-only tests and evidence, source-only Claude extras
 (`cc-human-simulator`, `cc-test-case`), source `.runtime/`, `agent-harness/`,
 credentials, local bindings, connected repositories, project Product
@@ -91,22 +94,44 @@ assembly includes it and the template acceptance checks pass.
 
 Template publication is the GitHub Action `.github/workflows/publish-template.yml`.
 It assembles, gates, commits, and tags the product into `.template-repo`, pushes
-`main` and the annotated version tag to GitHub, and creates the GitHub Release.
-GitHub remains the canonical published template. The same job then pushes that
-same `.template-repo` commit and tag to `gitlab.sicepat.tech` as an operator-
-configured mirror — not a second assembly — and creates a GitLab Release with
-the same notes and archive as GitHub. Operators set GitHub Actions
-`GITLAB_TEMPLATE_PROJECT` (`group/project`, no host prefix) and
-`GITLAB_TEMPLATE_TOKEN` on the source repository before a publish that should
-also update GitLab. The token may be a GitLab project access token with
+`main` and the annotated version tag to GitHub `kaotypr/context-circuit`, and
+creates the GitHub Release. GitHub remains the canonical published template.
+The same job then pushes that same `.template-repo` commit and tag to
+`gitlab.sicepat.tech` as an operator-configured mirror — not a second
+assembly — and creates a GitLab Release with the same notes and archive as
+GitHub. Operators set GitHub Actions `GITLAB_TEMPLATE_PROJECT`
+(`group/project`, no host prefix) and `GITLAB_TEMPLATE_TOKEN` on the source
+repository `kaotypr/context-circuit-source` before a publish that should also
+update GitLab. The token may be a GitLab project access token with
 `write_repository` and `api` (git push plus Releases API). The GitLab project
 must already exist. Variable and secret names stay in this page; the project
 path and credential stay in GitHub Actions settings and never enter workspace
 files.
 
-The `agent-harness/` assembles or selects the same `context-circuit-template`
-artifact that would be distributed and must not import the source repository's
-Product Knowledge, plans, `.runtime/`, or implementation state.
+Agent Harness is a separately developed, versioned, packaged, and executed
+product at `kaotypr/agent-harness`. It consumes Context Circuit only as one
+external immutable artifact: released, revision-bound assembled, or an explicit
+local-development artifact whose bytes are copied and digest-verified. It never
+imports Context Circuit runtime code or discovers the maintainer checkout, and
+it never consumes the source repository's Product Knowledge, plans, `.runtime/`,
+credentials, host configuration, private provider payloads, or session state.
+
+Harness scenarios resolve reusable project, evidence, Product Knowledge/index,
+repository, binding, member, and lifecycle fixtures before constructing a run.
+Resolution rejects missing references, cycles, version conflicts, and destination
+collisions, then freezes canonical fixture and scenario identities. Each run owns
+an isolated disposable world containing project, repository, optional bare-remote,
+input, observation, and runtime-state paths. Git fixtures are real repositories
+with deterministic histories and no link to the maintainer checkout.
+
+Portable run records retain run-relative identities, normalized baselines,
+artifact facts, prompt/input identity, deterministic seeds, and available
+host/tool facts. Only a known passing non-kept run may remove its owned `world/`;
+questioned, interrupted, failed, inconclusive, harness-error, and kept runs retain
+their complete worlds. Reproduction compares recorded facts first, reports changed
+or unavailable inputs, requires an explicit non-identical override when needed,
+and always constructs a fresh run. Host drivers and final grading remain outside
+the foundation.
 
 ## Interfaces
 
@@ -116,6 +141,7 @@ Product Knowledge, plans, `.runtime/`, or implementation state.
 - Template publication (GitHub canonical, GitLab mirror): `.github/workflows/publish-template.yml`
 - Migration guidance: `.context-circuit/wrapper/migrations/README.md`
 - Template seed: `template/`
+- Standalone harness: `https://github.com/kaotypr/agent-harness`
 
 ## Constraints and edge cases
 
@@ -145,3 +171,15 @@ Updated 2026-09-09: template publication also mirrors the published `.template-r
 `main` and version tag to `gitlab.sicepat.tech` from the publish Action, using
 operator-configured `GITLAB_TEMPLATE_PROJECT` and `GITLAB_TEMPLATE_TOKEN`, and
 creates a GitLab Release with the same notes and archive as GitHub.
+
+Updated 2026-09-10: GitHub destinations are `kaotypr/context-circuit-source` for
+this maintainer source and `kaotypr/context-circuit` for the published template.
+
+Updated 2026-09-10: the committed role-tiering fallback config joins the
+shipped set and the wrapper-only upgrade boundary, so an upgrade always
+installs or replaces it while a workspace's own local override stays
+untouched.
+
+Updated 2026-09-11: Agent Harness is an independently packaged product that
+constructs digest-bound, isolated deterministic run worlds and retains portable
+evidence for safe cleanup and fresh exact-input reproduction.

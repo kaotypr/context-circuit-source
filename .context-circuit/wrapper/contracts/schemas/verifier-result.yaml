@@ -40,7 +40,7 @@ fields:
 
 outcome_semantics:
   passed: required evidence observed at the required layer; the only satisfying outcome
-  failed: evidence contradicts or does not satisfy the requirement; increments worker_failures
+  failed: evidence contradicts or does not satisfy the requirement; increments cumulative worker_failures and forces a stop at and after the third rejection
   blocked: required observation could not be performed (host/external); not a worker failure
   waived: a human limitation decision exists; non-passing metadata, not a verifier pass
 

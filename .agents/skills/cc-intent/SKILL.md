@@ -103,12 +103,23 @@ The `Open questions` section is **phase-aware**, not a one-time draft field:
 - A plan must never silently answer an intent-level question. If one remains open,
   stop before planning and return to the intent route. The approval gate is repeated
   only when the approved decision changes; plan-level resolution remains mechanical.
+- Number new questions as a 1, 2, 3 list in the same shape as The plans: number,
+  bold question, italic `_Answer:_` line beneath, so a person can refer to each
+  by that number.
+- Answering keeps the question and its number. Later questions take the next unused
+  number; earlier numbers are not reshuffled.
+- The empty-state line stays unnumbered. Do not invent a dummy numbered item
+  when there are no questions.
+- Already-written intents are left unchanged. Do not rewrite historical
+  `INTENT.md` files to add numbers. Numbering is human-facing only; do not add
+  open-question ids to `contract.yaml` or `contract_digest`.
 
 ## Take the approval (Gate 1)
 
 Present the intent as one readable thing: the goal in plain language, the non-goals,
-the repositories it will likely touch, any open questions the human must settle, and
-the tier with a one-line "why this tier". Ask for a single conversational decision —
+the repositories it will likely touch, any numbered open questions the human must
+settle (invite them to answer by number), and the tier with a one-line "why this
+tier". Ask for a single conversational decision —
 no confirmation card, no token (INV-APPROVE-01). On a yes, run the runtime
 `intent-approve`, which flips `draft → approved`, synchronizes the human-facing
 `INTENT.md` status line, and **freezes** `contract_digest`
@@ -174,8 +185,9 @@ Keep technical terms as they are; do not rename them into something that does
 not mean the same thing. Do not dump runtime commands, digest hashes, or engine
 invocations. "Here's what I understand you want to build… here's what you'll
 have when it's done… this is Standard risk, so it gets an independent check.
-Approve this and I'll look at the code and write the breakdown, or tell me what to change." Approving an
-intent is a real decision; present it as one, not a rubber stamp.
+Approve this and I'll look at the code and write the breakdown, or tell me what to change." If there are
+numbered open questions, invite the human to answer by number before or as they
+approve. Approving an intent is a real decision; present it as one, not a rubber stamp.
 
 ## Boundaries
 

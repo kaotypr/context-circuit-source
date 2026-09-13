@@ -1,6 +1,6 @@
 ---
 name: cc-execute
-description: Execute a plan derived from an approved intent, with one worker and one independent verifier, coordinating repair within the three-failure limit.
+description: Execute a plan derived from an approved intent, with one worker and one independent verifier, stopping after three rejections unless a human explicitly continues one more attempt.
 ---
 
 ## Authorization
@@ -90,6 +90,9 @@ and the execution brief carry everything needed to drive it. Invoke each action 
   runtime stores it and never interprets it; it records no wall-clock (timing is
   engine-stamped).
 - `repair-allowed <execution-dir>`.
+- `repair-continue <execution-dir> <human>` — after the three-rejection stop,
+  record an explicit human continuation and reopen exactly one additional repair
+  attempt without resetting the cumulative failure count.
 
 The execution directory is `.runtime/executions/<plan-id>/<execution-id>/`; the
 assigned worktree(s) and the grounding manifest are named in that record.
@@ -100,12 +103,16 @@ On a verifier failure, pass the failure evidence back to the same worker within
 the same execution. Check `repair-allowed`, begin a new attempt, let the worker
 create a new commit for every repository it changes, and verify again. The
 worker-failure counter increments on each rejection (including the first); at
-three failures execution stops and all evidence is preserved.
+three failures execution stops and all evidence is preserved. A human may then
+explicitly continue the same execution. Record that decision with
+`repair-continue`, which permits one more repair attempt without resetting the
+counter. If that attempt is rejected, execution stops again and another explicit
+continuation is required. Never infer continuation from a generic request to retry.
 
 When the worker's role has `escalate_on_repair: true`, launch the repair attempt
 at a `(model, effort)` **raised above** the configured start (see below);
 escalation changes only which model runs the attempt, never what a rejection
-costs — the failure counter and the three-failure limit are untouched. Record the
+costs — the failure counter and mandatory stop are untouched. Record the
 raised `(model, effort)` with `attempt-evidence-record`.
 
 ## Model & effort per role

@@ -3,7 +3,7 @@ plan: 0020-efficiency-ledger
 provider: github
 plan_item:
   id: "92"
-  url: "https://github.com/kaotypr/context-circuit/issues/92"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/92"
 task_items:
   - task: EFL-001
     id: "92"

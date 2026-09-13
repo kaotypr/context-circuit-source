@@ -11,7 +11,7 @@
 # branch/worktree preparation, plan structure and intent-derived authorization validation,
 # active plan-index maintenance, exact archive/restore moves, execution and
 # attempt records, commit capture, verifier-result and read-only enforcement,
-# the three-failure counter, one-worker locking, completion eligibility,
+# the three-failure stop and explicit continuation record, one-worker locking, completion eligibility,
 # implementation completion records, context-impact handoff references, light
 # direct-collaboration session pointers, explicit leftover cleanup, and recovery
 # inspection.
@@ -39,7 +39,7 @@ CC_PLAN_SCHEMA_VERSION="3"
 CC_PAIRING_SESSION_SCHEMA_VERSION="1"
 CC_GROUNDING_MANIFEST_SCHEMA_VERSION="1"
 CC_LEASE_SCHEMA_VERSION="1"
-CC_EXECUTION_SCHEMA_VERSION="2"
+CC_EXECUTION_SCHEMA_VERSION="3"
 CC_CANDIDATE_SCHEMA_VERSION="1"
 CC_CHANGE_SET_SCHEMA_VERSION="1"
 CC_VERIFIER_RESULT_SCHEMA_VERSION="1"
@@ -49,6 +49,10 @@ CC_DELIVERY_SCHEMA_VERSION="1"
 CC_KNOWLEDGE_DEBT_SCHEMA_VERSION="1"
 CC_PLAN_STACK_REQUEST_SCHEMA_VERSION="1"
 CC_PLAN_MATERIALIZATION_SCHEMA_VERSION="1"
+
+# context-circuit-source may be bound at path: ., so never overlay workspace
+# runtime state, registered checkouts, or host-local configuration into a tree.
+CC_OVERLAY_EXCLUDE=".runtime repositories role-tiering.local.yaml member.local.yaml repositories.local.yaml"
 
 # ---------------------------------------------------------------------------
 # Diagnostics
@@ -393,9 +397,19 @@ cc_intent_criteria_count() {
 	' "$1"
 }
 
-# cc_intent_validate DIR -> confirm intent/<id>/ structure and contract.yaml fields
+# cc_intent_validate DIR | ROOT REL_DIR -> confirm intent/<id>/ structure and
+# contract.yaml fields. The two-argument form keeps workspace-relative runtime
+# invocations consistent with the other intent actions.
 cc_intent_validate() {
-	cc_iv_dir="$1"
+	case "$#" in
+		1) cc_iv_dir="$1" ;;
+		2)
+			cc_iv_root=$(cc_root_abs "$1") || { cc_fail INTENT_ROOT_MISSING; return 1; }
+			cc_safe_relative "$2" || { cc_fail INTENT_PATH_INVALID "$2"; return 1; }
+			cc_iv_dir="$cc_iv_root/$2"
+			;;
+		*) cc_fail INTENT_USAGE; return 1 ;;
+	esac
 	[ -d "$cc_iv_dir" ] || { cc_fail INTENT_DIR_MISSING; return 1; }
 	[ -f "$cc_iv_dir/contract.yaml" ] || { cc_fail INTENT_CONTRACT_MISSING; return 1; }
 	[ -f "$cc_iv_dir/INTENT.md" ] || { cc_fail INTENT_MD_MISSING; return 1; }
@@ -856,6 +870,32 @@ cc_member_identity_read() {
 	return 0
 }
 
+# cc_role_tiering_read ROOT -> effective role-tiering config, local or fallback
+# Prints `source: local|fallback`, `path: <resolved>`, a `---` line, then the
+# chosen file verbatim. Print-only: no host-group lookup, no adapter default
+# resolution, no model-id interpretation. Fails ROLE_TIERING_MISSING when
+# neither file exists.
+cc_role_tiering_read() {
+	cc_rtr_root=$(cc_root_abs "$1") || { cc_fail ROLE_TIERING_MISSING; return 1; }
+	cc_rtr_local="$cc_rtr_root/role-tiering.local.yaml"
+	cc_rtr_fallback="$cc_rtr_root/.context-circuit/role-tiering.fallback.yaml"
+	if [ -f "$cc_rtr_local" ]; then
+		cc_rtr_source=local
+		cc_rtr_file="$cc_rtr_local"
+	elif [ -f "$cc_rtr_fallback" ]; then
+		cc_rtr_source=fallback
+		cc_rtr_file="$cc_rtr_fallback"
+	else
+		cc_fail ROLE_TIERING_MISSING
+		return 1
+	fi
+	cc_emit source "$cc_rtr_source"
+	cc_emit path "$cc_rtr_file"
+	printf -- '---\n'
+	cat "$cc_rtr_file"
+	return 0
+}
+
 # cc_member_band_resolve ROOT -> validate roster, read identity, emit active bands
 cc_member_band_resolve() {
 	cc_mbr_root="$1"
@@ -901,9 +941,9 @@ cc_intent_numbers() {
 	done
 }
 
-# cc_plan_dir_numbers ROOT -> one decimal prefix per active or archived plan dir
+# cc_plan_dir_numbers ROOT -> one decimal prefix per active plan dir
 cc_plan_dir_numbers() {
-	for cc_pd_d in "$1/plans"/*/ "$1/plans/archive"/*/; do
+	for cc_pd_d in "$1/plans"/*/; do
 		[ -d "$cc_pd_d" ] || continue
 		cc_pd_base=$(basename -- "$cc_pd_d")
 		case "$cc_pd_base" in
@@ -914,7 +954,8 @@ cc_plan_dir_numbers() {
 	done
 }
 
-# cc_plan_numbers ROOT -> one decimal prefix per active, archived, or reserved plan
+# cc_plan_numbers ROOT -> one decimal prefix per active or reserved plan
+# Archived plans deliberately release their numeric prefix for new allocation.
 cc_plan_numbers() {
 	cc_plan_dir_numbers "$1"
 	for cc_pn_a in "$1/.runtime/materialization"/*/allocation.tsv; do
@@ -1189,6 +1230,76 @@ cc_repository_preflight() {
 	return 0
 }
 
+# cc_copy_mode DIR -> print clone, reflink, or copy after probing DIR once.
+cc_copy_mode() {
+	cc_cm_dir="$1"
+	[ -d "$cc_cm_dir" ] && [ ! -L "$cc_cm_dir" ] || { cc_fail OVERLAY_FAILED destination; return 1; }
+	cc_cm_probe=$(mktemp "$cc_cm_dir/.cc-overlay-probe.XXXXXX") || { cc_fail OVERLAY_FAILED probe; return 1; }
+	cc_cm_copy="$cc_cm_probe.copy"
+	printf 'probe\n' >"$cc_cm_probe" || { rm -f "$cc_cm_probe"; cc_fail OVERLAY_FAILED probe; return 1; }
+	cc_cm_mode=copy
+	if cp -c "$cc_cm_probe" "$cc_cm_copy" >/dev/null 2>&1 && [ -f "$cc_cm_copy" ]; then
+		cc_cm_mode=clone
+	elif cp --reflink=auto "$cc_cm_probe" "$cc_cm_copy" >/dev/null 2>&1 && [ -f "$cc_cm_copy" ]; then
+		cc_cm_mode=reflink
+	fi
+	rm -f "$cc_cm_probe" "$cc_cm_copy"
+	printf '%s\n' "$cc_cm_mode"
+}
+
+# cc_copy_path MODE SRC DST [REL] -> copy one non-symlinked file or tree.
+cc_copy_path() {
+	cc_cp_mode="$1"; cc_cp_src="$2"; cc_cp_dst="$3"; cc_cp_rel=${4:-"$3"}
+	[ -e "$cc_cp_src" ] || [ -L "$cc_cp_src" ] || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	if [ -L "$cc_cp_src" ] || { [ -d "$cc_cp_src" ] && find "$cc_cp_src" -type l -print | grep -q .; }; then
+		cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1
+	fi
+	mkdir -p "$(dirname -- "$cc_cp_dst")" || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	case "$cc_cp_mode" in
+		clone) cp -c -R "$cc_cp_src" "$cc_cp_dst" >/dev/null 2>&1 || : ;;
+		reflink) cp --reflink=auto -R "$cc_cp_src" "$cc_cp_dst" >/dev/null 2>&1 || : ;;
+	esac
+	[ -e "$cc_cp_dst" ] && [ ! -L "$cc_cp_dst" ] || {
+		rm -rf "$cc_cp_dst"
+		cp -R "$cc_cp_src" "$cc_cp_dst" >/dev/null 2>&1 || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	}
+	[ ! -L "$cc_cp_dst" ] || { cc_fail OVERLAY_COPY_FAILED "$cc_cp_rel"; return 1; }
+	return 0
+}
+
+# cc_overlay_ignored SRC DST -> reproduce SRC's ignored on-disk paths in DST.
+# Git owns the list; the NUL stream preserves ordinary shell-hostile names.
+cc_overlay_ignored() {
+	cc_oi_src="$1"; cc_oi_dst="$2"
+	[ -d "$cc_oi_src" ] && [ ! -L "$cc_oi_src" ] && [ -d "$cc_oi_dst" ] && [ ! -L "$cc_oi_dst" ] \
+		|| { cc_fail OVERLAY_FAILED directories; return 1; }
+	cc_oi_mode=$(cc_copy_mode "$cc_oi_dst") || return 1
+	cc_oi_raw=$(mktemp "$cc_oi_dst/.cc-overlay-list.XXXXXX") || { cc_fail OVERLAY_FAILED listing; return 1; }
+	cc_oi_lines="$cc_oi_raw.lines"
+	git -C "$cc_oi_src" ls-files -z --others --ignored --exclude-standard --directory --no-empty-directory >"$cc_oi_raw" \
+		|| { rm -f "$cc_oi_raw"; cc_fail OVERLAY_FAILED listing; return 1; }
+	tr '\000' '\n' <"$cc_oi_raw" >"$cc_oi_lines" \
+		|| { rm -f "$cc_oi_raw" "$cc_oi_lines"; cc_fail OVERLAY_FAILED listing; return 1; }
+	rm -f "$cc_oi_raw"
+	cc_oi_count=0
+	while IFS= read -r cc_oi_path; do
+		[ -n "$cc_oi_path" ] || continue
+		cc_oi_top=${cc_oi_path%%/*}
+		cc_oi_skip=false
+		for cc_oi_exclude in $CC_OVERLAY_EXCLUDE; do
+			[ "$cc_oi_top" = "$cc_oi_exclude" ] && { cc_oi_skip=true; break; }
+		done
+		[ "$cc_oi_skip" = true ] && continue
+		cc_copy_path "$cc_oi_mode" "$cc_oi_src/$cc_oi_path" "$cc_oi_dst/$cc_oi_path" "$cc_oi_path" \
+			|| { rm -f "$cc_oi_lines"; return 1; }
+		cc_oi_count=$((cc_oi_count + 1))
+	done <"$cc_oi_lines"
+	rm -f "$cc_oi_lines"
+	cc_emit copy_mode "$cc_oi_mode"
+	cc_emit overlay_paths "$cc_oi_count"
+	return 0
+}
+
 # cc_worktree_prepare ROOT PLAN_ID REPO -> create branch + worktree from base tip
 cc_worktree_prepare() {
 	cc_wp_root="$1"; cc_wp_plan="$2"; cc_wp_id="$3"
@@ -1213,6 +1324,11 @@ cc_worktree_prepare() {
 		git -C "$cc_wp_abs" worktree add -b "$cc_wp_branch" "$cc_wp_tree" "$cc_wp_base" >/dev/null 2>&1 \
 			|| { cc_fail WORKTREE_CREATE_FAILED "$cc_wp_id"; return 1; }
 	fi
+	cc_wp_overlay=$(cc_overlay_ignored "$cc_wp_abs" "$cc_wp_tree") || {
+		cc_emit setup_reason WORKTREE_OVERLAY_FAILED
+		cc_fail WORKTREE_OVERLAY_FAILED "$cc_wp_id"; return 1
+	}
+	printf '%s\n' "$cc_wp_overlay"
 	cc_emit worktree "$cc_wp_tree"
 	cc_emit branch "$cc_wp_branch"
 	cc_emit base_commit "$cc_wp_base"
@@ -1297,6 +1413,16 @@ cc_pair_begin() {
 	mkdir -p "$(dirname -- "$cc_pb_wt")" "$cc_pb_dir" || { cc_fail PAIR_STATE_CREATE_FAILED "$cc_pb_session"; return 1; }
 	git -C "$cc_pb_abs" worktree add -b "$cc_pb_branch" "$cc_pb_wt" "$cc_pb_base" >/dev/null 2>&1 \
 		|| { cc_fail PAIR_WORKTREE_CREATE_FAILED "$cc_pb_repo"; return 1; }
+	cc_pb_overlay=$(cc_overlay_ignored "$cc_pb_abs" "$cc_pb_wt") || {
+		cc_worktree_drop "$cc_pb_wt"
+		git -C "$cc_pb_abs" branch -D "$cc_pb_branch" >/dev/null 2>&1 || :
+		cc_fail PAIR_WORKTREE_OVERLAY_FAILED "$cc_pb_repo"; return 1
+	}
+	cc_pb_environment=$(cc_provision_worktree "$cc_pb_abs" "$cc_pb_wt") || {
+		cc_worktree_drop "$cc_pb_wt"
+		git -C "$cc_pb_abs" branch -D "$cc_pb_branch" >/dev/null 2>&1 || :
+		cc_fail PAIR_TOOLCHAIN_PROVISION_FAILED "$cc_pb_repo"; return 1
+	}
 	{
 		printf 'schema_version: %s\n' "$CC_PAIRING_SESSION_SCHEMA_VERSION"
 		printf 'repo: %s\n' "$cc_pb_repo"
@@ -1305,6 +1431,8 @@ cc_pair_begin() {
 		printf 'base: %s\n' "$cc_pb_base"
 	} | cc_atomic_write "$cc_pb_pointer" \
 		|| { cc_fail PAIR_POINTER_WRITE_FAILED "$cc_pb_session"; return 1; }
+	printf '%s\n' "$cc_pb_overlay"
+	printf '%s\n' "$cc_pb_environment"
 	cc_emit session "$cc_pb_session"
 	cc_emit repository "$cc_pb_repo"
 	cc_emit worktree "$cc_pb_wt"
@@ -1608,7 +1736,12 @@ cc_base_prepare() {
 		cc_bp_base=$(git -C "$cc_bp_tree" rev-parse HEAD)
 	fi
 	git -C "$cc_bp_abs" update-ref "$cc_bp_baseref" "$cc_bp_base" >/dev/null 2>&1 || :
+	cc_bp_overlay=$(cc_overlay_ignored "$cc_bp_abs" "$cc_bp_tree") || {
+		cc_emit setup_reason WORKTREE_OVERLAY_FAILED
+		cc_fail WORKTREE_OVERLAY_FAILED "$cc_bp_repo"; return 1
+	}
 	cc_bp_based=$(printf '%s' "$cc_bp_preds" | tr ' ' ',' | sed 's/,/, /g')
+	printf '%s\n' "$cc_bp_overlay"
 	cc_emit worktree "$cc_bp_tree"
 	cc_emit branch "$cc_bp_branch"
 	cc_emit base_commit "$cc_bp_base"
@@ -1626,25 +1759,134 @@ cc_base_prepare() {
 # prompt (INV-RUNTIME-01); the brief prose lives in .context-circuit/wrapper/adapters/, not here.
 # ---------------------------------------------------------------------------
 
-# cc_harden_worktree WORKTREE -> detect the toolchain and report the prepared
-# environment. Detection is a table lookup; no network, no per-worktree install
-# here (full provisioning is a later phase). Emits environment ready|no-toolchain.
-cc_harden_worktree() {
-	cc_hw_wt="$1"
-	[ -d "$cc_hw_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_hw_wt"; return 1; }
-	cc_hw_tc=""
-	for cc_hw_lf in package-lock.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock \
+# cc_toolchain_row KEY -> the install tree and frozen command for every detected
+# toolchain key. Command forms are intentionally explicit pending plan-review
+# confirmation: they ship to every template consumer.
+cc_toolchain_row() {
+	case "$1" in
+		package-lock.json) printf 'tree: node_modules\ninstall: npm ci\n' ;;
+		pnpm-lock.yaml)    printf 'tree: node_modules\ninstall: pnpm install --frozen-lockfile\n' ;;
+		yarn.lock)         printf 'tree: node_modules\ninstall: yarn install --immutable\n' ;;
+		bun.lockb|bun.lock) printf 'tree: node_modules\ninstall: bun install --frozen-lockfile\n' ;;
+		go.mod)            printf 'tree: -\ninstall: -\n' ;;
+		Cargo.lock)        printf 'tree: target\ninstall: cargo fetch --locked\n' ;;
+		Gemfile.lock)      printf 'tree: .bundle\ninstall: bundle install --deployment\n' ;;
+		requirements.txt)  printf 'tree: .venv\ninstall: python -m venv .venv && .venv/bin/pip install --require-hashes -r requirements.txt\n' ;;
+		poetry.lock)       printf 'tree: .venv\ninstall: poetry install --sync --no-root\n' ;;
+		composer.lock)     printf 'tree: vendor\ninstall: composer install --no-dev --prefer-dist --no-interaction\n' ;;
+		pom.xml|build.gradle|build.gradle.kts) printf 'tree: -\ninstall: -\n' ;;
+		*) cc_fail TOOLCHAIN_KEY_UNKNOWN "$1"; return 1 ;;
+	esac
+}
+
+# cc_toolchain_detect WORKTREE -> first detected key, in the established order.
+cc_toolchain_detect() {
+	cc_td_wt="$1"
+	for cc_td_key in package-lock.json pnpm-lock.yaml yarn.lock bun.lockb bun.lock \
 		go.mod Cargo.lock Gemfile.lock requirements.txt poetry.lock composer.lock \
 		pom.xml build.gradle build.gradle.kts; do
-		[ -f "$cc_hw_wt/$cc_hw_lf" ] && { cc_hw_tc="$cc_hw_lf"; break; }
+		[ -f "$cc_td_wt/$cc_td_key" ] && { printf '%s\n' "$cc_td_key"; return 0; }
 	done
-	if [ -n "$cc_hw_tc" ]; then
-		cc_emit environment ready
-		cc_emit toolchain "$cc_hw_tc"
-	else
-		cc_emit environment no-toolchain
+	return 1
+}
+
+# cc_toolchain_stamp_path TREE -> path to the digest stamp carried by the overlay.
+cc_toolchain_stamp_path() { printf '%s/.context-circuit-toolchain-lock-digest\n' "$1"; }
+
+# cc_toolchain_stamp_read TREE -> print a valid one-line stamp when present.
+cc_toolchain_stamp_read() {
+	cc_tsr_file=$(cc_toolchain_stamp_path "$1")
+	[ -f "$cc_tsr_file" ] || return 1
+	sed -n '1p' "$cc_tsr_file"
+}
+
+# cc_toolchain_stamp_write TREE DIGEST -> atomically record the tree's lockfile.
+cc_toolchain_stamp_write() {
+	cc_tsw_tree="$1"; cc_tsw_digest="$2"
+	mkdir -p "$cc_tsw_tree" || return 1
+	printf '%s\n' "$cc_tsw_digest" | cc_atomic_write "$(cc_toolchain_stamp_path "$cc_tsw_tree")"
+}
+
+# cc_toolchain_matches SOURCE WORKTREE KEY -> a copied install tree is valid only
+# for the worktree lockfile. An un-stamped tree gets the source-lockfile fallback.
+cc_toolchain_matches() {
+	cc_tm_src="$1"; cc_tm_wt="$2"; cc_tm_key="$3"
+	cc_tm_row=$(cc_toolchain_row "$cc_tm_key") || return 1
+	cc_tm_tree=$(printf '%s\n' "$cc_tm_row" | sed -n 's/^tree: //p')
+	[ "$cc_tm_tree" != "-" ] || return 0
+	[ -d "$cc_tm_wt/$cc_tm_tree" ] && [ -n "$(ls -A "$cc_tm_wt/$cc_tm_tree" 2>/dev/null)" ] || return 1
+	cc_tm_wdigest=$(cc_digest "$cc_tm_wt/$cc_tm_key") || return 1
+	cc_tm_stamp=$(cc_toolchain_stamp_read "$cc_tm_wt/$cc_tm_tree" 2>/dev/null) || cc_tm_stamp=""
+	if [ -n "$cc_tm_stamp" ]; then
+		[ "$cc_tm_stamp" = "$cc_tm_wdigest" ]
+		return
 	fi
+	[ -f "$cc_tm_src/$cc_tm_key" ] || return 1
+	cc_tm_sdigest=$(cc_digest "$cc_tm_src/$cc_tm_key") || return 1
+	[ "$cc_tm_sdigest" = "$cc_tm_wdigest" ]
+}
+
+# cc_toolchain_install WORKTREE KEY -> run the table's frozen command inside the
+# worktree. This is the single install seam used by the offline acceptance suite.
+cc_toolchain_install() {
+	cc_ti_wt="$1"; cc_ti_key="$2"
+	cc_ti_row=$(cc_toolchain_row "$cc_ti_key") || return 1
+	cc_ti_cmd=$(printf '%s\n' "$cc_ti_row" | sed -n 's/^install: //p')
+	[ "$cc_ti_cmd" != "-" ] || return 0
+	cc_ti_tool=$(printf '%s\n' "$cc_ti_cmd" | awk '{print $1}')
+	command -v "$cc_ti_tool" >/dev/null 2>&1 \
+		|| { cc_fail TOOLCHAIN_TOOL_MISSING "$cc_ti_tool"; return 1; }
+	(cd "$cc_ti_wt" && sh -c "$cc_ti_cmd") >/dev/null 2>&1 \
+		|| { cc_fail TOOLCHAIN_INSTALL_FAILED "$cc_ti_key"; return 1; }
 	return 0
+}
+
+# cc_provision_worktree SOURCE WORKTREE -> make the worktree runnable before a
+# worker or Explore session is attached. Emits toolchain/provision/environment.
+cc_provision_worktree() {
+	cc_pw_src="$1"; cc_pw_wt="$2"
+	[ -d "$cc_pw_src" ] && [ -d "$cc_pw_wt" ] \
+		|| { cc_fail GROUNDING_WORKTREE_MISSING "$cc_pw_wt"; return 1; }
+	cc_pw_key=$(cc_toolchain_detect "$cc_pw_wt") || {
+		cc_emit provision none
+		cc_emit environment no-toolchain
+		return 0
+	}
+	cc_pw_row=$(cc_toolchain_row "$cc_pw_key") || return 1
+	cc_pw_tree=$(printf '%s\n' "$cc_pw_row" | sed -n 's/^tree: //p')
+	cc_emit toolchain "$cc_pw_key"
+	if [ "$cc_pw_tree" = "-" ]; then
+		cc_emit provision none
+		cc_emit environment ready
+		return 0
+	fi
+	cc_safe_relative "$cc_pw_tree" || { cc_fail TOOLCHAIN_TREE_INVALID "$cc_pw_tree"; return 1; }
+	cc_pw_digest=$(cc_digest "$cc_pw_wt/$cc_pw_key") || return 1
+	if cc_toolchain_matches "$cc_pw_src" "$cc_pw_wt" "$cc_pw_key"; then
+		cc_toolchain_stamp_write "$cc_pw_wt/$cc_pw_tree" "$cc_pw_digest" \
+			|| { cc_fail TOOLCHAIN_STAMP_WRITE_FAILED "$cc_pw_key"; return 1; }
+		cc_emit provision kept
+	else
+		if [ -e "$cc_pw_wt/$cc_pw_tree" ]; then
+			rm -rf "$cc_pw_wt/$cc_pw_tree" \
+				|| { cc_fail TOOLCHAIN_TREE_REMOVE_FAILED "$cc_pw_key"; return 1; }
+		fi
+		cc_toolchain_install "$cc_pw_wt" "$cc_pw_key" || return 1
+		[ -d "$cc_pw_wt/$cc_pw_tree" ] \
+			|| { cc_fail TOOLCHAIN_INSTALL_TREE_MISSING "$cc_pw_key"; return 1; }
+		cc_toolchain_stamp_write "$cc_pw_wt/$cc_pw_tree" "$cc_pw_digest" \
+			|| { cc_fail TOOLCHAIN_STAMP_WRITE_FAILED "$cc_pw_key"; return 1; }
+		cc_emit provision installed
+	fi
+	cc_emit environment ready
+	return 0
+}
+
+# cc_harden_worktree SOURCE WORKTREE -> provision the detected toolchain and
+# report ready only after preparation succeeds.
+cc_harden_worktree() {
+	cc_hw_src="$1"; cc_hw_wt="$2"
+	cc_provision_worktree "$cc_hw_src" "$cc_hw_wt"
 }
 
 # cc_skill_desc SKILL_FILE -> the first line of a skill's frontmatter description
@@ -1661,13 +1903,15 @@ cc_skill_desc() {
 	' "$1"
 }
 
-# cc_discover_repo_grounding WORKTREE [REPO] -> print the grounding manifest for
+# cc_discover_repo_grounding SOURCE WORKTREE [REPO] -> print the grounding manifest for
 # the worktree: the agent-guidance files present, the skills (name + description),
 # and the prepared-environment status. Deterministic scan; data, not prompt text.
 cc_discover_repo_grounding() {
-	cc_dg_wt="$1"; cc_dg_repo="${2:-}"
+	cc_dg_src="$1"; cc_dg_wt="$2"; cc_dg_repo="${3:-}"
 	[ -d "$cc_dg_wt" ] || { cc_fail GROUNDING_WORKTREE_MISSING "$cc_dg_wt"; return 1; }
-	cc_dg_env=$(cc_harden_worktree "$cc_dg_wt" | sed -n 's/^environment: //p'); [ -n "$cc_dg_env" ] || cc_dg_env=no-toolchain
+	cc_dg_harden=$(cc_harden_worktree "$cc_dg_src" "$cc_dg_wt") || return 1
+	cc_dg_env=$(printf '%s\n' "$cc_dg_harden" | sed -n 's/^environment: //p')
+	[ -n "$cc_dg_env" ] || { cc_fail GROUNDING_ENVIRONMENT_MISSING "$cc_dg_wt"; return 1; }
 	printf 'schema_version: %s\n' "$CC_GROUNDING_MANIFEST_SCHEMA_VERSION"
 	[ -n "$cc_dg_repo" ] && printf 'repository: %s\n' "$cc_dg_repo" || :
 	printf 'worktree: %s\n' "$cc_dg_wt"
@@ -1750,7 +1994,7 @@ cc_worker_brief_assemble() {
 	if [ -f "$cc_wb_mf" ]; then cc_grounding_directive "$cc_wb_mf" >"$cc_wb_grf"; else printf 'No repository agent guidance was discovered.\n' >"$cc_wb_grf"; fi
 	cc_wb_envf="$cc_wb_edir/grounding/$cc_wb_repo.env.txt"
 	if [ "$cc_wb_env" = "ready" ]; then
-		printf "Ready: dependencies provisioned, commit hooks handled. Do NOT install or modify dependencies. Use the repository's own build/test/lint commands.\n" >"$cc_wb_envf"
+		printf "Ready: gitignored overlay complete; dependencies provisioned to this worktree's lockfile. Do NOT install or modify dependencies. Use the repository's own build/test/lint commands.\n" >"$cc_wb_envf"
 	else
 		printf 'No dependency toolchain detected. If this plan scaffolds one, create it within the allowed paths; add no dependencies beyond what the plan specifies.\n' >"$cc_wb_envf"
 	fi
@@ -1820,7 +2064,7 @@ cc_stack_request_digest() {
 	rm -f "$cc_srd_tmp"
 }
 
-# cc_plan_max_sequence ROOT -> highest active, archived, or reserved plan number.
+# cc_plan_max_sequence ROOT -> highest active or reserved plan number.
 # Reserved materialization ranges are never silently recycled after a failed stage.
 cc_plan_max_sequence() {
 	cc_plan_max_in_band "$1" 1 9999
@@ -1970,10 +2214,11 @@ cc_plan_stack_materialize() {
 	done <"$cc_psm_rec/allocation.tsv"
 
 	# Existing plans are read-only dependency targets during staged graph validation.
+	cc_psm_link_mode=-s
 	for cc_psm_existing in "$cc_psm_root/plans"/*; do
 		[ -d "$cc_psm_existing" ] || continue
 		cc_psm_base=$(basename -- "$cc_psm_existing")
-		[ -e "$cc_psm_rec/staging/plans/$cc_psm_base" ] || ln -s "$cc_psm_existing" "$cc_psm_rec/staging/plans/$cc_psm_base"
+		[ -e "$cc_psm_rec/staging/plans/$cc_psm_base" ] || ln "$cc_psm_link_mode" "$cc_psm_existing" "$cc_psm_rec/staging/plans/$cc_psm_base"
 	done
 	while IFS='|' read -r cc_psm_key cc_psm_id; do
 		cc_plan_validate "$cc_psm_rec/staging/plans/$cc_psm_id" >/dev/null 2>/dev/null \
@@ -2133,7 +2378,8 @@ cc_plan_validate() {
 }
 
 # cc_plan_allocate_id ROOT SLUG -> next NNNN-slug in the current member's plan band
-# (active + archived + reserved). Empty band starts at plan_start, never wraps.
+# (active + reserved; archived plans are ignored). Empty band starts at plan_start,
+# never wraps.
 cc_plan_allocate_id() {
 	cc_ai_root="$1"; cc_ai_slug="$2"
 	cc_safe_slug "$cc_ai_slug" || { cc_fail PLAN_SLUG_INVALID "$cc_ai_slug"; return 1; }
@@ -2246,8 +2492,13 @@ cc_plan_restore() {
 	cc_re_src="$cc_re_root/plans/archive/$cc_re_plan"
 	cc_re_dst="$cc_re_root/plans/$cc_re_plan"
 	[ -d "$cc_re_src" ] || { cc_fail RESTORE_SOURCE_MISSING "$cc_re_plan"; return 1; }
-	[ -e "$cc_re_dst" ] && { cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
 	cc_plan_org_lock "$cc_re_root" || return 1
+	cc_re_prefix=${cc_re_plan%%-*}
+	if cc_plan_dir_numbers "$cc_re_root" | cc_numbers_has "$(cc_seq_int "$cc_re_prefix")"; then
+		cc_plan_org_unlock "$cc_re_root"
+		cc_fail RESTORE_PREFIX_COLLISION "$cc_re_plan"; return 1
+	fi
+	[ -e "$cc_re_dst" ] && { cc_plan_org_unlock "$cc_re_root"; cc_fail RESTORE_TARGET_COLLISION "$cc_re_plan"; return 1; }
 	if mv "$cc_re_src" "$cc_re_dst" 2>/dev/null; then
 		if cc_plan_index_upsert "$cc_re_root" "$cc_re_plan" >/dev/null; then
 			cc_plan_org_unlock "$cc_re_root"
@@ -2444,7 +2695,7 @@ cc_execution_begin() {
 	# Persist the execution record before creating any branch/worktree. If setup is
 	# interrupted, recovery can see the owner and the execution remains an honest,
 	# blocked/running record instead of an orphaned lock with no evidence.
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nblocked_reason:\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nblocked_reason:\nworker_failures: 0\nrepair_continuations: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
 		|| { cc_lock_release "$cc_eb_root" "$cc_eb_plan" "$cc_eb_owner" >/dev/null 2>&1 || :; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
@@ -2466,6 +2717,11 @@ cc_execution_begin() {
 		cc_eb_based=""
 		if cc_plan_has_same_repo_pred "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"; then
 			if ! cc_eb_out=$(cc_base_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id"); then
+				if printf '%s\n' "$cc_eb_out" | grep -Fqx 'setup_reason: WORKTREE_OVERLAY_FAILED'; then
+					cc_exec_set "$cc_eb_edir" status blocked
+					cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_OVERLAY_FAILED
+					cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1
+				fi
 				# a base that cannot be built cleanly is a blocked execution, not a
 				# worker failure (INV-CONCURRENCY-02); preserve evidence, no worker runs.
 				cc_exec_set "$cc_eb_edir" status blocked
@@ -2478,7 +2734,14 @@ cc_execution_begin() {
 			cc_eb_based=$(printf '%s' "$cc_eb_out" | sed -n 's/^based_on: //p')
 		else
 			cc_eb_out=$(cc_worktree_prepare "$cc_eb_root" "$cc_eb_plan" "$cc_eb_id") \
-				|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_SETUP_FAILED; cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1; }
+				|| {
+					if printf '%s\n' "$cc_eb_out" | grep -Fqx 'setup_reason: WORKTREE_OVERLAY_FAILED'; then
+						cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_OVERLAY_FAILED
+					else
+						cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason WORKTREE_SETUP_FAILED
+					fi
+					cc_fail EXECUTION_WORKTREE_FAILED "$cc_eb_id"; return 1
+				}
 		fi
 		cc_eb_wt=$(printf '%s' "$cc_eb_out" | sed -n 's/^worktree: //p')
 		cc_eb_br=$(printf '%s' "$cc_eb_out" | sed -n 's/^branch: //p')
@@ -2494,10 +2757,19 @@ cc_execution_begin() {
 		# repository grounding (INV-GROUND-01): discover the target repo's own agent
 		# guidance from the prepared worktree and record it as execution evidence.
 		mkdir -p "$cc_eb_edir/grounding"
-		cc_discover_repo_grounding "$cc_eb_wt" "$cc_eb_id" | cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml" \
-			|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
+		cc_eb_src=$(cc_repo_resolve "$cc_eb_root" "$cc_eb_id" | sed -n 's/^path: //p') || return 1
+		cc_eb_ground=$(mktemp "${TMPDIR:-/tmp}/cc-grounding.XXXXXX") || { cc_fail GROUNDING_DISCOVERY_FAILED "$cc_eb_id"; return 1; }
+		if ! cc_discover_repo_grounding "$cc_eb_src" "$cc_eb_wt" "$cc_eb_id" >"$cc_eb_ground"; then
+			rm -f "$cc_eb_ground"
+			cc_exec_set "$cc_eb_edir" status blocked
+			cc_exec_set "$cc_eb_edir" blocked_reason TOOLCHAIN_PROVISION_FAILED
+			cc_fail EXECUTION_TOOLCHAIN_PROVISION_FAILED "$cc_eb_id"; return 1
+		fi
+		cc_atomic_write "$cc_eb_edir/grounding/$cc_eb_id.yaml" <"$cc_eb_ground" \
+			|| { rm -f "$cc_eb_ground"; cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason GROUNDING_DISCOVERY_FAILED; cc_fail EXECUTION_GROUNDING_FAILED "$cc_eb_id"; return 1; }
+		rm -f "$cc_eb_ground"
 	done
-	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
+	printf 'schema_version: %s\nexecution_id: %s\nplan: %s\nintent: %s\ncontract_digest: %s\ntier: %s\nplan_revision: %s\nowner: %s\nstatus: running\nworker_failures: 0\nrepair_continuations: 0\ncurrent_attempt: 0\ncreated_at: %s\nupdated_at: %s\n' \
 		"$CC_EXECUTION_SCHEMA_VERSION" "$cc_eb_exec" "$cc_eb_plan" "${cc_eb_intent:-}" "$cc_eb_cdigest" "$cc_eb_tier" "$cc_eb_rev" "$cc_eb_owner" "$(cc_now)" "$(cc_now)" \
 		| cc_atomic_write "$cc_eb_edir/execution.yaml" \
 		|| { cc_exec_set "$cc_eb_edir" status blocked; cc_exec_set "$cc_eb_edir" blocked_reason EXECUTION_RECORD_WRITE_FAILED; cc_fail EXECUTION_RECORD_WRITE_FAILED "$cc_eb_exec"; return 1; }
@@ -2536,6 +2808,12 @@ cc_attempt_norm() {
 cc_attempt_begin() {
 	cc_ab_dir="$1"
 	[ -f "$cc_ab_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	cc_ab_status=$(cc_scalar "$cc_ab_dir/execution.yaml" status)
+	case "$cc_ab_status" in
+		running|repairing) : ;;
+		failed) cc_fail ATTEMPT_CONTINUATION_REQUIRED; return 1 ;;
+		*) cc_fail ATTEMPT_STATUS_INVALID "$cc_ab_status"; return 1 ;;
+	esac
 	cc_ab_cur=$(cc_scalar "$cc_ab_dir/execution.yaml" "current_attempt")
 	cc_ab_next=$((cc_ab_cur + 1))
 	cc_ab_pad=$(printf '%03d' "$cc_ab_next")
@@ -2746,12 +3024,49 @@ cc_attempt_evidence_record() {
 	return 0
 }
 
+# cc_repair_continue EXEC_DIR HUMAN -> explicitly reopen a stopped execution for
+# one additional repair. The cumulative failure count and prior evidence remain.
+cc_repair_continue() {
+	cc_rc_dir="$1"; cc_rc_human="$2"
+	[ -f "$cc_rc_dir/execution.yaml" ] || { cc_fail EXECUTION_RECORD_MISSING; return 1; }
+	case "$cc_rc_human" in ''|*[!A-Za-z0-9._@-]*) cc_fail REPAIR_CONTINUER_INVALID; return 1 ;; esac
+	cc_rc_status=$(cc_scalar "$cc_rc_dir/execution.yaml" status)
+	cc_rc_wf=$(cc_scalar "$cc_rc_dir/execution.yaml" worker_failures)
+	[ "$cc_rc_status" = "failed" ] && [ "$cc_rc_wf" -ge 3 ] \
+		|| { cc_fail REPAIR_CONTINUATION_NOT_STOPPED; return 1; }
+	cc_rc_count=$(cc_scalar "$cc_rc_dir/execution.yaml" repair_continuations 2>/dev/null) || cc_rc_count=0
+	cc_rc_count=$((cc_rc_count + 1))
+	cc_rc_at=$(cc_now)
+	cc_rc_next=$(( $(cc_scalar "$cc_rc_dir/execution.yaml" current_attempt) + 1 ))
+	mkdir -p "$cc_rc_dir/continuations"
+	printf 'schema_version: 1\ncontinuation: %s\ncontinued_by: %s\ncontinued_at: %s\nworker_failures_at_stop: %s\nnext_attempt: %s\n' \
+		"$cc_rc_count" "$cc_rc_human" "$cc_rc_at" "$cc_rc_wf" "$cc_rc_next" \
+		| cc_atomic_write "$cc_rc_dir/continuations/$(printf '%03d' "$cc_rc_count").yaml" \
+		|| { cc_fail REPAIR_CONTINUATION_WRITE_FAILED; return 1; }
+	cc_exec_set "$cc_rc_dir" repair_continuations "$cc_rc_count" || return 1
+	cc_exec_set "$cc_rc_dir" last_continued_by "$cc_rc_human" || return 1
+	cc_exec_set "$cc_rc_dir" last_continued_at "$cc_rc_at" || return 1
+	cc_exec_set "$cc_rc_dir" status repairing || return 1
+	cc_emit repair continued
+	cc_emit continuation "$cc_rc_count"
+	cc_emit worker_failures "$cc_rc_wf"
+	cc_emit next_attempt "$cc_rc_next"
+	return 0
+}
+
 # cc_repair_allowed EXEC_DIR -> yes/no with remaining attempts
 cc_repair_allowed() {
 	cc_ra_wf=$(cc_scalar "$1/execution.yaml" "worker_failures")
 	if [ "$cc_ra_wf" -lt 3 ]; then
 		cc_emit repair allowed
 		cc_emit remaining "$((3 - cc_ra_wf))"
+		return 0
+	fi
+	cc_ra_status=$(cc_scalar "$1/execution.yaml" status)
+	if [ "$cc_ra_status" = "repairing" ]; then
+		cc_emit repair allowed
+		cc_emit remaining 1
+		cc_emit continued yes
 		return 0
 	fi
 	cc_emit repair denied
@@ -4080,12 +4395,16 @@ cc_main() {
 		member-roster-validate)  cc_member_roster_validate "$@" ;;
 		member-identity-read)    cc_member_identity_read "$@" ;;
 		member-band-resolve)     cc_member_band_resolve "$@" ;;
+		role-tiering-read)       cc_role_tiering_read "$@" ;;
 		repository-register)     cc_repository_register "$@" ;;
 		repository-binding-migrate) cc_repository_binding_migrate "$@" ;;
 		repository-resolve)      cc_repo_resolve "$@" ;;
 		repository-preflight)    cc_repository_preflight "$@" ;;
 		delivery-targets)        cc_delivery_targets "$@" ;;
 		worktree-prepare)        cc_worktree_prepare "$@" ;;
+		worktree-overlay)        cc_overlay_ignored "$@" ;;
+		toolchain-row)           cc_toolchain_row "$@" ;;
+		toolchain-provision)     cc_provision_worktree "$@" ;;
 		pair-begin)              cc_pair_begin "$@" ;;
 		pair-inspect)            cc_pair_inspect "$@" ;;
 		pair-close)              cc_pair_close "$@" ;;
@@ -4128,6 +4447,7 @@ cc_main() {
 		verifier-result-record)  cc_verifier_result_record "$@" ;;
 		attempt-evidence-record) cc_attempt_evidence_record "$@" ;;
 		repair-allowed)          cc_repair_allowed "$@" ;;
+		repair-continue)         cc_repair_continue "$@" ;;
 		execution-status)        cc_execution_status "$@" ;;
 		candidate-digest)        cc_candidate_digest "$@" ;;
 		candidate-current)       cc_candidate_current "$@" ;;

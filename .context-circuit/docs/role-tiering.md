@@ -18,19 +18,44 @@ Model availability differs per host and provider, and each person's preference
 differs, so this config is **host-local and per-user**, in the same category as
 `repositories.local.yaml`: it lives at the workspace root, is **gitignored**, is
 never part of shipped template or workspace state, and an upgrade neither creates
-nor preserves it (`.context-circuit/wrapper/manifest.yaml` never-ship boundary). Read it, when
-present, from **`role-tiering.local.yaml`** at the workspace root. The
+nor preserves it (`.context-circuit/wrapper/manifest.yaml` never-ship boundary).
+When present it lives at **`role-tiering.local.yaml`** at the workspace root. The
 `*.local.yaml` suffix is this workspace's convention for a gitignored, per-user,
 host-local file (the same convention as `repositories.local.yaml`).
 
-The coordinator reads `role-tiering.local.yaml` from the workspace root itself,
-before spawning a child, and applies the current host's role on the spawn. The
-workspace root is the directory that contains `repositories.local.yaml` and from
-which `sh .context-circuit/wrapper/runtime/engine.sh` is invoked. Never look for the file inside a
-repository checkout, Explore copy, or execution worktree. It is gitignored, so it
-is not copied there. A missing file in an isolated working copy is not an absent config.
-Do not copy the file into a working copy. The worker, verifier, and planner must
-not resolve it; their working directory is the isolated copy.
+## How to obtain the config — invoke the verb, never Read/find/grep the file
+
+The coordinator obtains the effective config with one instruction: invoke
+`sh .context-circuit/wrapper/runtime/engine.sh role-tiering-read ROOT`, where
+`ROOT` is the workspace root — the directory that contains
+`repositories.local.yaml` and from which `sh .context-circuit/wrapper/runtime/engine.sh`
+is invoked. Do this before spawning a child, then apply the current host's group
+from the printed body on the spawn.
+
+An agent must never `Read`, `find`, or `grep` `role-tiering.local.yaml` itself.
+On some hosts a search wrapper never emits a gitignored path, so a search that
+finds nothing is not evidence the config is absent — it is evidence the search
+tool cannot see it. The verb resolves the file directly with no such blind spot.
+
+The verb prints `source: local` or `source: fallback`, a `path:` line, a `---`
+separator, then the chosen file verbatim. It prefers the workspace-root
+`role-tiering.local.yaml` when present; when that file is absent it falls back to
+the committed `.context-circuit/role-tiering.fallback.yaml`, so a checkout with
+no local override still yields a config. Either way the verb reports which
+source it used, and fails with `ROLE_TIERING_MISSING` only when neither file
+exists. The verb prints and never selects: no host-group matching, no adapter
+default resolution, and no model-id interpretation happens inside
+`.context-circuit/wrapper/runtime/engine.sh` (INV-RUNTIME-01) — the coordinator
+reads the printed body and applies the group for its own host.
+
+Never invoke the verb from inside a repository checkout, Explore copy, or
+execution worktree. The workspace root is the directory that contains
+`repositories.local.yaml`.
+A missing file in an isolated working copy is not an absent config: the local
+override is gitignored, so it is never copied there, and the working copy is not
+the workspace root the verb should be pointed at. Do not copy the file into a
+working copy. The worker, verifier, and planner must not resolve it themselves;
+their working directory is the isolated copy.
 
 Because a model id only means something on a host that offers it, the config is
 **grouped by host**. Each host group names the models available on that host. One
@@ -111,17 +136,18 @@ entirely; the pin holds for every attempt.
 
 ### It must not touch the accounting
 
-INV-REPAIR-01 is unchanged: the worker-failure counter increments on **every**
-verifier rejection including the initial implementation, and three still stops
-execution. Escalation changes *which model runs attempt N*, never *what a
+INV-REPAIR-01 is unchanged by tiering: the worker-failure counter increments on
+**every** verifier rejection including the initial implementation, and three
+forces a stop. Escalation changes *which model runs attempt N*, never *what a
 rejection costs*. A rejection at the configured start is a real failure and
-counts; escalation never buys extra attempts. Each repair is still a new commit
-(INV-EXEC-04).
+counts; escalation never buys extra attempts. An explicit human continuation can
+reopen one attempt, but does not reset the counter. Each repair is still a new
+commit (INV-EXEC-04).
 
 ### The honest consequence of a hard pin
 
 If a user pins the worker to a small model + low effort with escalation off, the
-three-failure limit may be reached more often, because the system can no longer
+three-failure stop may be reached more often, because the system can no longer
 add capability on repair. That is the user's tradeoff to own, not a bug — but the
 report must make it visible in plain language: "stopped after three attempts; the
 plan was pinned to a fixed setting, so no extra capability was added on repair."

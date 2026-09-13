@@ -153,7 +153,7 @@ criteria:
     statement: Missing local member identity stops once and asks the user to choose an existing roster member (or set up the first member), then writes the local identity — it does not invent a band or ask for numeric ranges in chat.
     suite: test/bands/test-member-roster.sh
   - id: AC-BAND-05
-    statement: Archived intent and plan numbers inside a band are never reused; the next id advances past the highest ever used in that band.
+    statement: Intent allocation still counts archived intents, while plan allocation uses only the highest active in-band plan and restore refuses an active numeric-prefix collision.
     suite: test/bands/test-band-allocation.sh
   - id: AC-BAND-06
     statement: A multi-plan stack from one intent receives consecutive plan ids inside the current member's band, reserved together.

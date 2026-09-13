@@ -18,6 +18,8 @@ assert_eq "i002-coupon-field" "$id2"
 
 # --- validate: structure + fields ---
 sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws/intent/$id1" >/dev/null
+# The documented workspace-root form must resolve the relative intent path.
+sh "$ROOT/.context-circuit/wrapper/runtime/engine.sh" intent-validate "$ws" "intent/$id1" >/dev/null
 
 # --- old form is rejected and the exact three-digit ceiling is explicit ---
 old_id=$(printf 'i%04d-old-form' 1)

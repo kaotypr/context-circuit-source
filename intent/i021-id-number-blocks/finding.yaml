@@ -1,9 +1,0 @@
-schema_version: 1
-intent: i021-id-number-blocks
-repository: context-circuit-source
-feasible: true
-feasibility_outcome: feasible
-out_of_scope_reach: []
-open_questions: []
-tier_signal: standard
-revision: 7db954f6d87e514951889a487e51aeb3eccf7388

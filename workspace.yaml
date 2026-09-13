@@ -7,8 +7,11 @@ workspace:
   default_branch: main
 
 repositories:
+  agent-harness:
+    canonical_url: https://github.com/kaotypr/agent-harness.git
+    default_branch: main
   context-circuit-source:
-    canonical_url: https://github.com/kaotypr/context-circuit.git
+    canonical_url: https://github.com/kaotypr/context-circuit-source.git
     default_branch: main
 
 identity:

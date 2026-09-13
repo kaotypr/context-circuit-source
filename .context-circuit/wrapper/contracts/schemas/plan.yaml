@@ -42,14 +42,14 @@ plan_status:
 plan_id:
   form: NNNN-<kebab-slug>
   rules:
-    - four zero-padded decimal digits, next after the highest plan number ever used in the current member's band (active and archived)
+    - four zero-padded decimal digits, next after the highest active plan number in the current member's band
     - default new-member band size is 999 plans; see members.yaml and member.local.yaml
     - a ratified stack reserves consecutive ids inside that band in one materialization
     - a full band or overlapping bands fail clearly without wrapping
     - lowercase kebab-case slug, no dates, underscores, punctuation, or hashes
-    - unique across active and archived plans for the workspace lifetime
+    - unique among active plans; archived plans are ignored during allocation
     - stable after creation even if title or status changes
-    - never reused, including after archive or restore
+    - an archived prefix may be reused; restoring that archived plan is refused while an active plan uses the prefix
     - no member, machine, or workspace token in the id
 
 fields:

@@ -53,9 +53,9 @@ open question, assumption, or risk rather than an invented decision
 (INV-PLAN-04). Every task names the repository or repositories it may change and
 bounded paths or an explicit repository-wide scope, with explicit dependencies
 (INV-PLAN-02). New plans use stable ids `NNNN-<kebab-slug>`; the next id is one
-past the highest number ever used in the current member's plan band among active
-and archived plans and is never reused, including after archive (INV-PLAN-03,
-INV-MEMBER-01). Member names do not appear in the id or in execution branches
+past the highest active plan in the current member's band. Archived plans are
+ignored by allocation, and restore refuses an active numeric-prefix collision
+(INV-PLAN-03, INV-ARCHIVE-02, INV-MEMBER-01). Member names do not appear in the id or in execution branches
 (`cc/<plan-id>/<repository-id>`).
 
 `plan.yaml` owns human plan status (`draft`, `done`); task status is a

@@ -3,7 +3,7 @@ plan: 0015-repository-grounding
 provider: github
 plan_item:
   id: "87"
-  url: "https://github.com/kaotypr/context-circuit/issues/87"
+  url: "https://github.com/kaotypr/context-circuit-source/issues/87"
 task_items:
   - task: RGD-001
     id: "87"
