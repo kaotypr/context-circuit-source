@@ -1,9 +1,0 @@
-schema_version: 1
-intent: i025-number-intent-open-questions
-repository: context-circuit-source
-feasible: true
-feasibility_outcome: feasible
-out_of_scope_reach: []
-open_questions: []
-tier_signal: ""
-revision: 05e384ed90b31e0719a36e4fa6cbec05eea79980

@@ -1,9 +1,0 @@
-schema_version: 1
-intent: i030-integrate-real-host-sessions
-repository: agent-harness
-feasible: true
-feasibility_outcome: feasible
-out_of_scope_reach: []
-open_questions: []
-tier_signal: "Standard remains proportionate: host processes and credential-adjacent streams require independent verification, but execution is confined to synthetic disposable repositories and bounded native sessions."
-revision: 3f25ccb187ba320acde306e227d334845d67b392

@@ -1,9 +1,0 @@
-schema_version: 1
-intent: i022-ok-easter-egg
-repository: context-circuit-source
-feasible: true
-feasibility_outcome: feasible
-out_of_scope_reach: []
-open_questions: []
-tier_signal: standard
-revision: 1aceb90765e7ee68f2234701d8ea47b00ae16cd9
