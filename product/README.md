@@ -16,7 +16,7 @@ Installed Git is required for repository operations. No Go or Python setup is
 needed. Initialize the cloned blank template, or ask your agent to do it:
 
 ```sh
-context-circuit --workspace . init --name Acme \
+context-circuit-cli --workspace . init --name Acme \
   --purpose 'Billing software' --member maya --member-name Maya
 ```
 

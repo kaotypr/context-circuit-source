@@ -20,7 +20,7 @@ func productFile(t *testing.T, rel string) string {
 	return string(data)
 }
 
-// documentedCommands returns every complete `context-circuit ...` invocation in
+// documentedCommands returns every complete `context-circuit-cli ...` invocation in
 // fenced examples, rejoining the backslash continuations the docs wrap with.
 func documentedCommands(text string) []string {
 	var commands []string
@@ -35,7 +35,7 @@ func documentedCommands(text string) []string {
 			continue
 		}
 		line = strings.TrimSpace(line)
-		if pending == "" && !strings.HasPrefix(line, "context-circuit ") {
+		if pending == "" && !strings.HasPrefix(line, "context-circuit-cli ") {
 			continue
 		}
 		if strings.HasSuffix(line, "\\") {

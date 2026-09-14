@@ -18,9 +18,9 @@ chooses its supported defaults. No hardcoded model catalog or cost ladder ships.
 These settings describe agent capability, not plan ownership or risk gates.
 
 ```sh
-context-circuit agent settings
-context-circuit agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit agent setup --host codex
+context-circuit-cli agent settings
+context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
+context-circuit-cli agent setup --host codex
 ```
 
 Configure the actual host (`codex`, `claude-code`, or `cursor`) and verify that its

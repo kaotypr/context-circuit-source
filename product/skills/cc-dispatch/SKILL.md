@@ -18,7 +18,7 @@ explicit user settings; never infer model quality order or silently escalate.
 Before the first dispatch, or after settings change, run:
 
 ```sh
-context-circuit --workspace <root> agent setup --host <codex|claude-code|cursor>
+context-circuit-cli --workspace <root> agent setup --host <codex|claude-code|cursor>
 ```
 
 This installs native role definitions without replacing custom edits. Reload the
@@ -29,7 +29,7 @@ spawn tool with the full resolved role prompt and settings, where supported.
 For each bounded task, obtain its dispatch specification:
 
 ```sh
-context-circuit --workspace <root> --json agent dispatch \
+context-circuit-cli --workspace <root> --json agent dispatch \
   --host <host> --role <explorer|planner|worker|reviewer> \
   --plan <plan-id> --path <actual-working-directory> \
   --task '<bounded assignment and references>'

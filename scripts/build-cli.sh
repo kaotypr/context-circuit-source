@@ -36,8 +36,8 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
   target_arch=${target#*/}
   package_dir="$staging_dir/$target_os-$target_arch"
   mkdir "$package_dir"
-  binary=context-circuit
-  [ "$target_os" != windows ] || binary=context-circuit.exe
+  binary=context-circuit-cli
+  [ "$target_os" != windows ] || binary=context-circuit-cli.exe
   CGO_ENABLED=0 GOOS=$target_os GOARCH=$target_arch go build -trimpath \
     -ldflags "-s -w -X main.version=${version#v}" -o "$package_dir/$binary" ./cmd/context-circuit
   cp CLI.md "$package_dir/README.md"

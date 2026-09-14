@@ -6,7 +6,7 @@ creates the shared instruction and folders alongside these small records:
 | File | Contents | Shared? |
 | --- | --- | --- |
 | .context-circuit/VERSION | Workspace template version | Yes |
-| .context-circuit/CLI_VERSION | Recommended independently released CLI version | Yes |
+| .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | workspace.yaml | Version, name, purpose, repository IDs, default base branches, relationships | Yes |
 | members.yaml | Member ID to display name | Yes |

@@ -34,8 +34,8 @@ Go 1.25+ is needed by contributors. Users need the executable for their platform
 and installed Git; no Python, Go toolchain, or YAML package installation is needed.
 
 ```sh
-go build -o /tmp/context-circuit ./cmd/context-circuit
-/tmp/context-circuit --workspace /tmp/acme-new init \
+go build -o /tmp/context-circuit-cli ./cmd/context-circuit
+/tmp/context-circuit-cli --workspace /tmp/acme-new init \
   --name Acme --purpose 'Billing software' --member maya --member-name Maya
 ```
 

@@ -1,41 +1,46 @@
 # Agent-facing commands
 
-Use `context-circuit --workspace PATH --json COMMAND ...` for structured output.
-Global flags precede the command. Run `context-circuit help` for the full surface;
+Run the CLI version this workspace pins in `.context-circuit/CLI_VERSION`. Versions
+install side by side, so the shared command on PATH may select a different one; the
+`cc-cli` skill resolves the pinned path. The CLI warns on stderr when it is run
+against a workspace pinning another version.
+
+Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
+Global flags precede the command. Run `context-circuit-cli help` for the full surface;
 each command supports `--help`. Errors go to stderr with a nonzero exit status.
 Normal output is readable YAML; `--json` gives the agent structured values.
 The examples assume the current directory is the initialized workspace.
 
 ```sh
-context-circuit status
-context-circuit member add --id alex --name Alex
-context-circuit member use --id alex
-context-circuit member list
-context-circuit repo connect --id api --path ../api --base main
-context-circuit repo clone --id web --path repositories/web --base main --url GIT_URL
-context-circuit repo init --id docs --path repositories/docs --base main
-context-circuit repo base --id api --branch development
-context-circuit repo relate --from web --to api --description 'Consumes the API'
-context-circuit repo inspect --id api
-context-circuit repo fetch --id api --remote origin
-context-circuit context find --query billing
+context-circuit-cli status
+context-circuit-cli member add --id alex --name Alex
+context-circuit-cli member use --id alex
+context-circuit-cli member list
+context-circuit-cli repo connect --id api --path ../api --base main
+context-circuit-cli repo clone --id web --path repositories/web --base main --url GIT_URL
+context-circuit-cli repo init --id docs --path repositories/docs --base main
+context-circuit-cli repo base --id api --branch development
+context-circuit-cli repo relate --from web --to api --description 'Consumes the API'
+context-circuit-cli repo inspect --id api
+context-circuit-cli repo fetch --id api --remote origin
+context-circuit-cli context find --query billing
 ```
 
 Records:
 
 ```sh
-context-circuit record create --kind intent --slug add-billing --title 'Add billing'
-context-circuit record approve --id i001 --text 'User approved the billing outcome'
-context-circuit record create --kind plan --slug billing-api --title 'Billing API' \
+context-circuit-cli record create --kind intent --slug add-billing --title 'Add billing'
+context-circuit-cli record approve --id i001 --text 'User approved the billing outcome'
+context-circuit-cli record create --kind plan --slug billing-api --title 'Billing API' \
   --intent i001 --repo api
-context-circuit record create --kind plan --slug billing-web --title 'Billing UI' \
+context-circuit-cli record create --kind plan --slug billing-web --title 'Billing UI' \
   --intent i001 --repo web --depends-on p0001
-context-circuit record show --id p0001
-context-circuit record list
-context-circuit record note --id p0001 --text 'Implemented API; normal tests passed.'
-context-circuit record dependencies --id p0002 --depends-on p0001
-context-circuit record complete --id p0001 --text 'User requested completion.'
-context-circuit record order --intent i001 --mode waves
+context-circuit-cli record show --id p0001
+context-circuit-cli record list
+context-circuit-cli record note --id p0001 --text 'Implemented API; normal tests passed.'
+context-circuit-cli record dependencies --id p0002 --depends-on p0001
+context-circuit-cli record complete --id p0001 --text 'User requested completion.'
+context-circuit-cli record order --intent i001 --mode waves
 ```
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
@@ -61,14 +66,14 @@ branch is gone. The report is advice: it runs, merges, and reserves nothing, and
 Worktrees:
 
 ```sh
-context-circuit worktree prepare --repo api --plan p0001 --copy-mode auto
-context-circuit worktree prepare --repo web --plan p0002 --start origin/main
-context-circuit worktree list --repo api
-context-circuit worktree inspect --repo api --path .worktrees/p0001/api
-context-circuit worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
-context-circuit worktree repair --repo api --path ../api-billing
-context-circuit worktree remove --repo api --path ../api-billing
-context-circuit check
+context-circuit-cli worktree prepare --repo api --plan p0001 --copy-mode auto
+context-circuit-cli worktree prepare --repo web --plan p0002 --start origin/main
+context-circuit-cli worktree list --repo api
+context-circuit-cli worktree inspect --repo api --path .worktrees/p0001/api
+context-circuit-cli worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
+context-circuit-cli worktree repair --repo api --path ../api-billing
+context-circuit-cli worktree remove --repo api --path ../api-billing
+context-circuit-cli check
 ```
 
 `--reuse` explicitly selects an existing branch/worktree, without resetting it.
@@ -83,10 +88,10 @@ It cannot migrate an existing v1 or reinitialize an active v2 workspace.
 Subagent setup and dispatch:
 
 ```sh
-context-circuit agent settings
-context-circuit agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit agent setup --host codex
-context-circuit --json agent dispatch --host codex --role worker \
+context-circuit-cli agent settings
+context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
+context-circuit-cli agent setup --host codex
+context-circuit-cli --json agent dispatch --host codex --role worker \
   --plan p0001 --path /actual/worktree --task 'Implement the assigned tasks from p0001'
 ```
 

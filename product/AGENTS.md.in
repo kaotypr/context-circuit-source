@@ -3,8 +3,10 @@
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
 plans useful for solo and team work. Talk in ordinary project language. Use the
-`context-circuit` executable for dependable bookkeeping; users need not manage
-runtime commands or ID numbers. See `.context-circuit/docs/commands.md` as needed.
+`context-circuit-cli` executable for dependable bookkeeping; users need not manage
+runtime commands or ID numbers. Run the version this workspace pins in
+`.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
+`.context-circuit/docs/commands.md` as needed.
 
 ## Orient and initialize
 

@@ -27,10 +27,10 @@ mkdir "$lock" 2>/dev/null || fail "another install is running (or inspect a stal
 work=$(mktemp -d "$versions/.install-XXXXXX")
 cleanup() { rm -rf "$work"; rmdir "$lock"; }
 trap cleanup EXIT HUP INT TERM
-command_path="$bin_dir/context-circuit"
+command_path="$bin_dir/context-circuit-cli"
 if [ -e "$command_path" ] || [ -L "$command_path" ]; then
   [ -L "$command_path" ] || fail 'existing command is not managed by this installer; use another --bin-dir'
-  case "$(readlink "$command_path")" in "$versions"/*/context-circuit) ;; *) fail 'existing command points outside managed versions' ;; esac
+  case "$(readlink "$command_path")" in "$versions"/*/context-circuit-cli) ;; *) fail 'existing command points outside managed versions' ;; esac
 fi
 hash() {
   if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d ' ' -f1
@@ -50,23 +50,27 @@ fi
 expected=$(awk -v name="$package" '{file=$2; sub(/^\*/, "", file); sub(/^\.\//, "", file); if(file==name) print $1}' "$work/SHA256SUMS")
 [ "${#expected}" -eq 64 ] || fail 'missing or ambiguous checksum entry'
 [ "$(hash "$work/$package")" = "$expected" ] || fail 'checksum mismatch'
-printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit | LC_ALL=C sort > "$work/expected"
+printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit-cli | LC_ALL=C sort > "$work/expected"
 tar -tzf "$work/$package" | LC_ALL=C sort > "$work/actual"
 cmp "$work/expected" "$work/actual" >/dev/null || fail 'unexpected archive contents'
 mkdir "$work/package"
 tar -xzf "$work/$package" -C "$work/package"
-for file in context-circuit README.md THIRD_PARTY_NOTICES.txt; do
+for file in context-circuit-cli README.md THIRD_PARTY_NOTICES.txt; do
   [ -f "$work/package/$file" ] && [ ! -L "$work/package/$file" ] || fail 'archive contains non-regular files'
 done
-chmod 755 "$work/package/context-circuit"
-[ "$("$work/package/context-circuit" version)" = "$version" ] || fail 'executable version does not match the release'
+chmod 755 "$work/package/context-circuit-cli"
+[ "$("$work/package/context-circuit-cli" version)" = "$version" ] || fail 'executable version does not match the release'
 target="$versions/$version-$platform-$arch"
 if [ -e "$target" ] || [ -L "$target" ]; then
   [ -d "$target" ] && [ ! -L "$target" ] || fail 'existing version path is not a directory'
-  cmp "$target/context-circuit" "$work/package/context-circuit" >/dev/null || fail 'existing version differs; preserved'
+  cmp "$target/context-circuit-cli" "$work/package/context-circuit-cli" >/dev/null || fail 'existing version differs; preserved'
 else
   mv "$work/package" "$target"
 fi
-ln -s "$target/context-circuit" "$work/context-circuit"
-mv -f "$work/context-circuit" "$command_path"
-printf 'version: %s\nplatform: %s/%s\ncommand: %s\nPATH directory: %s\n' "$version" "$platform" "$arch" "$command_path" "$bin_dir"
+ln -s "$target/context-circuit-cli" "$work/context-circuit-cli"
+mv -f "$work/context-circuit-cli" "$command_path"
+# Report the version-specific command as well. Workspaces pin their own CLI
+# version, so a caller serving several workspaces invokes that path directly
+# instead of relying on which version the shared command currently selects.
+printf 'version: %s\nplatform: %s/%s\ncommand: %s\nversioned command: %s\nversion store: %s\nPATH directory: %s\n' \
+  "$version" "$platform" "$arch" "$command_path" "$target/context-circuit-cli" "$versions" "$bin_dir"

@@ -20,9 +20,9 @@ $lock = [IO.File]::Open($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]:
 $work = Join-Path $versions ('.install-' + [Guid]::NewGuid().ToString('N'))
 try {
   [void](New-Item -ItemType Directory -Path $work)
-  $commandPath = Join-Path $BinDir 'context-circuit.cmd'
+  $commandPath = Join-Path $BinDir 'context-circuit-cli.cmd'
   $commandHash = Join-Path $versions 'launcher.sha256'
-  if (Test-Path -LiteralPath (Join-Path $BinDir 'context-circuit.exe')) { throw 'An existing executable would shadow the launcher; use another -BinDir.' }
+  if (Test-Path -LiteralPath (Join-Path $BinDir 'context-circuit-cli.exe')) { throw 'An existing executable would shadow the launcher; use another -BinDir.' }
   if (Test-Path -LiteralPath $commandPath) {
     if (!(Test-Path -LiteralPath $commandHash) -or ((Get-FileHash -Algorithm SHA256 -LiteralPath $commandPath).Hash -ne (Get-Content -Raw -LiteralPath $commandHash).Trim())) { throw 'Existing command is unmanaged or modified; preserved.' }
   }
@@ -46,31 +46,33 @@ try {
   $zip = [IO.Compression.ZipFile]::OpenRead($download)
   try {
     $names = @($zip.Entries | ForEach-Object { $_.FullName } | Sort-Object)
-    $expected = @('README.md', 'THIRD_PARTY_NOTICES.txt', 'context-circuit.exe' | Sort-Object)
+    $expected = @('README.md', 'THIRD_PARTY_NOTICES.txt', 'context-circuit-cli.exe' | Sort-Object)
     if (($names -join "`n") -cne ($expected -join "`n")) { throw 'Unexpected archive contents.' }
   } finally { $zip.Dispose() }
   $staged = Join-Path $work 'package'
   [IO.Compression.ZipFile]::ExtractToDirectory($download, $staged)
-  $binary = Join-Path $staged 'context-circuit.exe'
+  $binary = Join-Path $staged 'context-circuit-cli.exe'
   $reported = & $binary version
   if ($LASTEXITCODE -ne 0 -or $reported -ne $Version) { throw 'Executable version does not match the release.' }
   $target = Join-Path $versions "$Version-windows-$arch"
   if (Test-Path -LiteralPath $target) {
     if ((Get-Item -LiteralPath $target).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Existing version path is a link.' }
-    if ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $target 'context-circuit.exe')).Hash -ne (Get-FileHash -Algorithm SHA256 -LiteralPath $binary).Hash) { throw 'Existing version differs; preserved.' }
+    if ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $target 'context-circuit-cli.exe')).Hash -ne (Get-FileHash -Algorithm SHA256 -LiteralPath $binary).Hash) { throw 'Existing version differs; preserved.' }
   } else { Move-Item -LiteralPath $staged -Destination $target }
   # A small command shim allows updates while an older executable is in use.
-  $launcher = Join-Path $work 'context-circuit.cmd'
-  $content = '@"%~dp0.context-circuit-versions\' + "$Version-windows-$arch" + '\context-circuit.exe" %*' + "`r`n"
+  $launcher = Join-Path $work 'context-circuit-cli.cmd'
+  $content = '@"%~dp0.context-circuit-versions\' + "$Version-windows-$arch" + '\context-circuit-cli.exe" %*' + "`r`n"
   [IO.File]::WriteAllText($launcher, $content, [Text.Encoding]::ASCII)
   # Replace needs a real backup path: PowerShell binds $null to a string
   # parameter as an empty string, which is not a legal path. The backup stays in
   # the working directory and is discarded with it.
-  $backup = Join-Path $work 'context-circuit.cmd.backup'
+  $backup = Join-Path $work 'context-circuit-cli.cmd.backup'
   if (Test-Path -LiteralPath $commandPath) { [IO.File]::Replace($launcher, $commandPath, $backup) }
   else { [IO.File]::Move($launcher, $commandPath) }
   [IO.File]::WriteAllText($commandHash, (Get-FileHash -Algorithm SHA256 -LiteralPath $commandPath).Hash)
-  Write-Output "version: $Version`nplatform: windows/$arch`ncommand: $commandPath`nPATH directory: $BinDir"
+  # Report the version-specific command as well, so a caller serving several
+  # workspaces invokes the version each one pins instead of the shared launcher.
+  Write-Output "version: $Version`nplatform: windows/$arch`ncommand: $commandPath`nversioned command: $(Join-Path $target 'context-circuit-cli.exe')`nversion store: $versions`nPATH directory: $BinDir"
 } finally {
   if (Test-Path -LiteralPath $work) { Remove-Item -Recurse -Force -LiteralPath $work }
   $lock.Dispose()

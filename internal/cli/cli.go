@@ -17,7 +17,7 @@ import (
 
 const Help = `Context Circuit — shared workspace operations
 
-Usage: context-circuit [--workspace PATH] [--json] COMMAND [OPTIONS]
+Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
 status                inspect workspace, members, bindings, and Git state
@@ -70,8 +70,26 @@ type listFlag []string
 func (v *listFlag) String() string         { return strings.Join(*v, ",") }
 func (v *listFlag) Set(value string) error { *v = append(*v, value); return nil }
 
+// pinnedVersionWarning reports when the running CLI differs from the version a
+// workspace pins in .context-circuit/CLI_VERSION. Workspaces are installed and
+// pinned independently, so a mismatch is a caller mistake rather than a
+// workspace fault: warn on the error stream and continue, leaving structured
+// output on the result stream untouched.
+func pinnedVersionWarning(s *workspace.Store, running string) string {
+	data, err := s.Read(".context-circuit/CLI_VERSION")
+	if err != nil {
+		return ""
+	}
+	pinned := strings.TrimSpace(string(data))
+	if pinned == "" || pinned == running {
+		return ""
+	}
+	return fmt.Sprintf("warning: this workspace pins CLI %s but %s is running; "+
+		"run the version this workspace pins, or ask the cc-cli skill to install it\n", pinned, running)
+}
+
 func Run(ctx context.Context, args []string, out, errOut io.Writer, version string) int {
-	global := flag.NewFlagSet("context-circuit", flag.ContinueOnError)
+	global := flag.NewFlagSet("context-circuit-cli", flag.ContinueOnError)
 	global.SetOutput(errOut)
 	root := global.String("workspace", ".", "workspace root")
 	asJSON := global.Bool("json", false, "structured JSON output")
@@ -222,6 +240,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	if err != nil {
 		fmt.Fprintln(errOut, err)
 		return 1
+	}
+	if command != "template export" {
+		if warning := pinnedVersionWarning(s, version); warning != "" {
+			fmt.Fprint(errOut, warning)
+		}
 	}
 	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "worktree list" || command == "worktree inspect"
 	checkFailed := false

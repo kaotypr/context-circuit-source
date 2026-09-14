@@ -150,7 +150,12 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	var blank Config
 	existingSeed := false
 	if err := s.YAML("workspace.yaml", &blank); err == nil {
-		if blank.Version != 2 || blank.Name != "" || blank.Purpose != "" || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
+		// Separate the two reasons a template cannot be initialized. An
+		// incompatible schema is a CLI problem; data is a workspace problem.
+		if blank.Version != 2 {
+			return fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schema 2", blank.Version)
+		}
+		if blank.Name != "" || blank.Purpose != "" || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
 			return errors.New("existing workspace data; initialization stopped")
 		}
 		var members Members

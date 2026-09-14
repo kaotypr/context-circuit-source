@@ -55,9 +55,9 @@ func TestInstallUpdateRollbackAndChecksumProtection(t *testing.T) {
 	}
 	checkVersion := func(expected string) {
 		t.Helper()
-		command := exec.Command(filepath.Join(binDir, "context-circuit"), "version")
+		command := exec.Command(filepath.Join(binDir, "context-circuit-cli"), "version")
 		if runtime.GOOS == "windows" {
-			command = exec.Command("cmd.exe", "/d", "/c", filepath.Join(binDir, "context-circuit.cmd"), "version")
+			command = exec.Command("cmd.exe", "/d", "/c", filepath.Join(binDir, "context-circuit-cli.cmd"), "version")
 		}
 		data, err := command.CombinedOutput()
 		if err != nil || strings.TrimSpace(string(data)) != expected {
@@ -95,7 +95,7 @@ func packageFixture(t *testing.T, root, version string, reported ...string) (str
 	if err := os.WriteFile(source, []byte(text), 0600); err != nil {
 		t.Fatal(err)
 	}
-	binaryName := "context-circuit"
+	binaryName := "context-circuit-cli"
 	if runtime.GOOS == "windows" {
 		binaryName += ".exe"
 	}

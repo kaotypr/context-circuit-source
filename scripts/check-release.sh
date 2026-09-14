@@ -26,8 +26,8 @@ release_output=$(CDPATH= cd -- "$release_output" && pwd -P)
   if command -v sha256sum >/dev/null 2>&1; then sha256sum -c SHA256SUMS; else shasum -a 256 -c SHA256SUMS; fi
 )
 # Inspect all binary archives, including the Windows targets.
-printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit | LC_ALL=C sort > "$work/unix-inventory"
-printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit.exe | LC_ALL=C sort > "$work/windows-inventory"
+printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit-cli | LC_ALL=C sort > "$work/unix-inventory"
+printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit-cli.exe | LC_ALL=C sort > "$work/windows-inventory"
 for archive in "$release_output/cli"/*-darwin-*.tar.gz "$release_output/cli"/*-linux-*.tar.gz; do
   tar -tzf "$archive" | LC_ALL=C sort > "$work/inventory"
   cmp "$work/unix-inventory" "$work/inventory"
@@ -38,7 +38,7 @@ for archive in "$release_output/cli"/*-windows-*.zip; do
 done
 mkdir "$work/native"
 tar -xzf "$release_output/cli/context-circuit-cli-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" -C "$work/native"
-cc_binary="$work/native/context-circuit"
+cc_binary="$work/native/context-circuit-cli"
 [ "$("$cc_binary" version)" = "$cli_version" ]
 "$cc_binary" --workspace "$work/workspace" init --name Release --purpose 'Release fixture' --member fixture --member-name Fixture >/dev/null
 "$cc_binary" --workspace "$work/workspace" --json check
@@ -52,7 +52,7 @@ sh "$work/seed/.agents/skills/cc-cli/scripts/install.sh" --version "$cli_version
   --bin-dir "$work/installed" \
   --archive "$release_output/cli/context-circuit-cli-v$cli_version-$(go env GOOS)-$(go env GOARCH).tar.gz" \
   --checksums "$release_output/cli/SHA256SUMS"
-"$work/installed/context-circuit" --workspace "$work/seed" --json check
+"$work/installed/context-circuit-cli" --workspace "$work/seed" --json check
 # Building into an existing output must fail without deleting its contents.
 mkdir "$work/protected-dist"
 printf 'preserve me\n' > "$work/protected-dist/sentinel"
