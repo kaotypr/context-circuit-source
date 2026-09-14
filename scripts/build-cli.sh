@@ -1,13 +1,22 @@
 #!/bin/sh
 # CLI-only packages. CLI versions and publication are independent of the template.
+# The default output under dist/ is clean-rebuilt each run; an explicit output
+# directory must be new and is never cleaned or replaced.
 set -eu
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 [ "$#" -le 2 ] || fail 'usage: build-cli.sh [version-without-v] [new-output-dir]'
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 version=${1:-$(cat "$source_root/CLI_VERSION")}
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid CLI version: $version" ;; esac
-output_dir=${2:-$source_root/dist/cli-$version}
-[ ! -e "$output_dir" ] && [ ! -L "$output_dir" ] || fail "output already exists: $output_dir"
+if [ "$#" -ge 2 ]; then
+  output_dir=$2
+  [ ! -e "$output_dir" ] && [ ! -L "$output_dir" ] || fail "output already exists: $output_dir"
+else
+  # Own subdirectory per build so a CLI rebuild never removes workspace assets.
+  output_dir=$source_root/dist/cli-$version
+  case "$output_dir" in ''|/|"$source_root"|"$source_root"/) fail "refusing to clean: $output_dir" ;; esac
+  rm -rf "$output_dir"
+fi
 mkdir -p "$output_dir"
 output_dir=$(CDPATH= cd -- "$output_dir" && pwd)
 staging_dir=$(mktemp -d)

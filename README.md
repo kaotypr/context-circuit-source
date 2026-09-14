@@ -40,9 +40,14 @@ go build -o /tmp/context-circuit-cli ./cmd/context-circuit
 ```
 
 Native binary archives are built for macOS, Linux, and Windows on amd64/arm64.
-Use a new output directory; builds never replace existing output:
+With no output argument each build clean-rebuilds its own directory under `dist/`
+(`dist/workspace-<version>` and `dist/cli-<version>`), so repeated runs replace
+rather than fail and neither build removes the other's assets. An explicit output
+directory must be new; builds never replace existing output there:
 
 ```sh
+sh scripts/build-dist.sh
+sh scripts/build-cli.sh
 sh scripts/build-dist.sh v2.0.0-dev /tmp/cc-v2-workspace
 sh scripts/build-cli.sh 2.0.0-dev /tmp/cc-v2-cli
 sh scripts/check-release.sh
