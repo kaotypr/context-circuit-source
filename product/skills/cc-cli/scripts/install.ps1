@@ -63,7 +63,11 @@ try {
   $launcher = Join-Path $work 'context-circuit.cmd'
   $content = '@"%~dp0.context-circuit-versions\' + "$Version-windows-$arch" + '\context-circuit.exe" %*' + "`r`n"
   [IO.File]::WriteAllText($launcher, $content, [Text.Encoding]::ASCII)
-  if (Test-Path -LiteralPath $commandPath) { [IO.File]::Replace($launcher, $commandPath, $null) }
+  # Replace needs a real backup path: PowerShell binds $null to a string
+  # parameter as an empty string, which is not a legal path. The backup stays in
+  # the working directory and is discarded with it.
+  $backup = Join-Path $work 'context-circuit.cmd.backup'
+  if (Test-Path -LiteralPath $commandPath) { [IO.File]::Replace($launcher, $commandPath, $backup) }
   else { [IO.File]::Move($launcher, $commandPath) }
   [IO.File]::WriteAllText($commandHash, (Get-FileHash -Algorithm SHA256 -LiteralPath $commandPath).Hash)
   Write-Output "version: $Version`nplatform: windows/$arch`ncommand: $commandPath`nPATH directory: $BinDir"
