@@ -1,0 +1,7 @@
+.DS_Store
+/repositories/
+/.worktrees/
+/repositories.local.yaml
+/member.local.yaml
+/.context-circuit/local/
+/.context-circuit/bin/

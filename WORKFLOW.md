@@ -1,30 +1,42 @@
-# context-circuit-source workflow
+# Source workflow
 
-This checkout is `context-circuit-source`, the maintainer source repository for
-Context Circuit. Implementation proceeds directly from the maintainer design set
-under `sources/system-design/context-circuit/` and the source-only ordering
-guides under `plans/`. The source is not bound to a
-version; it tracks the current design and may lead the version last published to
-`context-circuit-template`.
+Maintain v2 directly on the active branch under AGENTS.md. The user's request
+defines the change. Product instructions apply only to generated workspaces.
 
-Source changes are made directly in the current active branch. Do not create an
-execution or pairing branch, worktree, lease, execution record, or product
-candidate for maintainer implementation. The source-only plan files describe
-scope and implementation order; they do not invoke the product workspace
-lifecycle.
+## Owners
 
-Each phase owns its files and runs the semantic tests that exist at that point.
-Preserve the dependency order:
-workspace/plan contract → Product Knowledge → runtime reduction → conversational
-adapter → multi-repository execution → independent verification → repair loop →
-recovery/delivery → semantic verification. Scoped increments layer on that core
-in the order recorded in `plans/INDEX.md`.
+- product/AGENTS.md.in: shared agent behavior and responsibility boundaries.
+- product/docs/: workspace files, agent-facing commands, and worktree guidance.
+- internal/workspace/: Go bookkeeping, YAML edits, Git and worktree operations.
+- internal/cli/: the command surface and human/JSON output.
+- cmd/context-circuit/: executable entry point.
+- template/: blank workspace files, embedded with the product instruction.
+- scripts/release-manifest.txt: exact source-to-output file mapping.
+- assets.go: embeds only product assets and materializes the manifest.
+- VERSION: development artifact version; changing it does not publish a release.
+- scripts/: build, checks, and explicitly invoked publication.
 
-The released product's lifecycle is specified by `.context-circuit/wrapper/adapters/WORKFLOW.md`
-and owned by `.context-circuit/wrapper/contracts/`. The source workflow only governs safe
-maintainer changes to that product.
+The Go executable handles workspace mechanics. The agent owns interpretation,
+planning, implementation, environment setup, and user-requested review/delivery.
+No product execution state machine or mandatory child-agent workflow is required.
 
-Before changing a rule, identify its canonical owner and update the semantic
-fixture that proves it. Keep changes offline and credential-free. Release
-assembly is staged and inspectable; publication, deployment, merge, and
-destructive cleanup remain outside this task.
+Historical sources/, source context/, plans/, publication/, and release requests
+are passive maintainer history and never ship. The remaining source design skill
+is maintainer tooling and is excluded from the binary and exported workspace.
+
+## Validation
+
+Run gofmt on changed Go files, go test ./..., go vet ./..., and
+sh scripts/check-release.sh. Tests use temporary directories and disposable Git
+repositories. The release check builds and exercises a native binary, verifies
+the embedded seed inventory, and cross-compiles the supported binary targets.
+It also tests publication guards and commit/tag behavior in disposable fixtures.
+An optional new output directory retains the checked release assets.
+CI runs native tests on Linux, macOS, and Windows. Cross-compilation alone is not
+proof of behavior on another operating system.
+
+Validate Markdown scenarios against the shared entry instruction. Deterministic
+tests establish file and Git behavior, not whether a coding host loads or follows
+instructions. Report host behavior as unverified unless actually exercised. Do
+not revive the retired v1 acceptance harness or run a separate agent review
+unless the user requests one.

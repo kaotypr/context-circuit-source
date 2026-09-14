@@ -1,15 +1,5 @@
-schema_version: 1
-workspace: uninitialized-workspace
-title: Uninitialized workspace
-purpose: >
-  Describe the project purpose during initialization. This is a blank Context
-  Circuit universal project workspace; it has not been configured for a project
-  yet.
-
-# Portable logical repository identity only. Host-local paths and base branch
-# branches belong in the ignored repositories.local.yaml file.
-repositories: []
-
-identity:
-  kind: instantiated-workspace
-  status: uninitialized
+version: 2
+name: ""
+purpose: ""
+repositories: {}
+relationships: []

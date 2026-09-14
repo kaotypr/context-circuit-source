@@ -1,0 +1,472 @@
+package cli_test
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+	"sync"
+	"testing"
+
+	assets "github.com/kaotypr/context-circuit-source"
+	"github.com/kaotypr/context-circuit-source/internal/cli"
+	"github.com/kaotypr/context-circuit-source/internal/workspace"
+)
+
+type fixture struct {
+	t    *testing.T
+	root string
+	home string
+}
+
+func setup(t *testing.T) fixture {
+	t.Helper()
+	home := t.TempDir()
+	config := filepath.Join(home, "gitconfig")
+	write(t, config, "")
+	t.Setenv("GIT_CONFIG_GLOBAL", config)
+	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
+	f := fixture{t, filepath.Join(home, "workspace"), home}
+	f.ok("init", "--name", "Acme", "--purpose", "Billing software", "--member", "maya", "--member-name", "Maya")
+	return f
+}
+func write(t *testing.T, path, text string) {
+	t.Helper()
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(text), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+func read(t *testing.T, path string) string {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return string(data)
+}
+func call(root string, args ...string) (int, string, string) {
+	var out, err bytes.Buffer
+	code := cli.Run(context.Background(), append([]string{"--workspace", root, "--json"}, args...), &out, &err, "2.0.0-test")
+	return code, out.String(), err.String()
+}
+func (f fixture) ok(args ...string) string {
+	f.t.Helper()
+	code, out, err := call(f.root, args...)
+	if code != 0 {
+		f.t.Fatalf("%v: exit=%d %s %s", args, code, out, err)
+	}
+	return out
+}
+func (f fixture) fail(args ...string) string {
+	f.t.Helper()
+	code, out, err := call(f.root, args...)
+	if code == 0 {
+		f.t.Fatalf("expected failure: %v: %s", args, out)
+	}
+	return out + err
+}
+func git(t *testing.T, path string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", append([]string{"-C", path, "-c", "commit.gpgsign=false"}, args...)...)
+	data, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %v: %v %s", args, err, data)
+	}
+	return strings.TrimSpace(string(data))
+}
+func (f fixture) repository(id string) string {
+	f.t.Helper()
+	path := filepath.Join(f.home, id)
+	if err := os.Mkdir(path, 0755); err != nil {
+		f.t.Fatal(err)
+	}
+	git(f.t, path, "init", "-b", "main")
+	write(f.t, filepath.Join(path, "README.md"), "# Fixture\n")
+	git(f.t, path, "add", "README.md")
+	git(f.t, path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: seed repository")
+	f.ok("repo", "connect", "--id", id, "--path", path, "--base", "main")
+	return path
+}
+func record(t *testing.T, out string) workspace.Record {
+	t.Helper()
+	var r workspace.Record
+	if err := json.Unmarshal([]byte(out), &r); err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+func tree(t *testing.T, out string) workspace.Worktree {
+	t.Helper()
+	var r workspace.Worktree
+	if err := json.Unmarshal([]byte(out), &r); err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+func (f fixture) intent(slug string) workspace.Record {
+	return record(f.t, f.ok("record", "create", "--kind", "intent", "--slug", slug, "--title", slug))
+}
+func (f fixture) plan(id, slug string, repos ...string) workspace.Record {
+	args := []string{"record", "create", "--kind", "plan", "--intent", id, "--slug", slug, "--title", slug}
+	for _, repo := range repos {
+		args = append(args, "--repo", repo)
+	}
+	return record(f.t, f.ok(args...))
+}
+
+func TestInitializationAndReleaseSeed(t *testing.T) {
+	f := setup(t)
+	files, err := assets.Files()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name := range files {
+		if _, err := os.Stat(filepath.Join(f.root, filepath.FromSlash(name))); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before := read(t, filepath.Join(f.root, "workspace.yaml"))
+	f.fail("init", "--name", "Other", "--purpose", "Other", "--member", "other", "--member-name", "Other")
+	if after := read(t, filepath.Join(f.root, "workspace.yaml")); after != before {
+		t.Fatal("reinitialization changed data")
+	}
+	blank := filepath.Join(f.home, "blank")
+	f.ok("template", "export", "--path", blank)
+	if _, err := os.Stat(filepath.Join(blank, ".context-circuit", "local")); !os.IsNotExist(err) {
+		t.Fatal("local runtime state leaked into exported seed")
+	}
+	// A Windows Git checkout may convert the published seed to CRLF.
+	for name := range files {
+		path := filepath.Join(blank, filepath.FromSlash(name))
+		write(t, path, strings.ReplaceAll(read(t, path), "\n", "\r\n"))
+	}
+	g := fixture{t, blank, f.home}
+	g.ok("init", "--name", "Seed", "--purpose", "Seed", "--member", "alex", "--member-name", "Alex")
+	protected := filepath.Join(f.home, "protected")
+	write(t, filepath.Join(protected, "README.md"), "Keep my README")
+	h := fixture{t, protected, f.home}
+	h.fail("init", "--name", "Bad", "--purpose", "Bad", "--member", "bad", "--member-name", "Bad")
+	if read(t, filepath.Join(protected, "README.md")) != "Keep my README" {
+		t.Fatal("existing file overwritten")
+	}
+	if _, err := os.Stat(filepath.Join(protected, "members.yaml")); !os.IsNotExist(err) {
+		t.Fatal("failed preflight partially initialized")
+	}
+	f.ok("check")
+}
+
+func TestYAMLEditTrial(t *testing.T) {
+	f := setup(t)
+	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n")
+	f.ok("member", "add", "--id", "alex", "--name", "Alex")
+	updated := read(t, filepath.Join(f.root, "members.yaml"))
+	for _, text := range []string{"# Team roster", "# Keep this author", "# display name", `"Maya"`} {
+		if !strings.Contains(updated, text) {
+			t.Fatalf("lost %s:\n%s", text, updated)
+		}
+	}
+	f.ok("member", "use", "--id", "alex")
+	r := f.intent("first")
+	if r.CreatedBy != "alex" || r.ID != "i001" {
+		t.Fatalf("unexpected record: %+v", r)
+	}
+	f.repository("api")
+	before := "version: 2\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    base_branch: main # preferred target\nrelationships: []\n"
+	write(t, filepath.Join(f.root, "workspace.yaml"), before)
+	f.ok("repo", "base", "--id", "api", "--branch", "development")
+	updated = read(t, filepath.Join(f.root, "workspace.yaml"))
+	if !strings.Contains(updated, "and invoicing") || !strings.Contains(updated, "# preferred target") {
+		t.Fatalf("lost description/comment: %s", updated)
+	}
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n  maya:\n    name: Duplicate\n")
+	f.fail("member", "list")
+	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    owner: true\n")
+	f.fail("member", "list")
+}
+
+func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	f.repository("web")
+	i := f.intent("billing")
+	f.ok("record", "approve", "--id", i.ID, "--text", "User approved $1 billing")
+	p := f.plan(i.ID, "api", "api")
+	q := f.plan(i.ID, "web", "web", "api")
+	if p.ID != "p0001" || q.ID != "p0002" {
+		t.Fatal(p.ID, q.ID)
+	}
+	parent := record(t, f.ok("record", "show", "--id", i.ID))
+	if len(parent.Plans) != 2 || !strings.Contains(parent.Content, "User approved $1 billing") {
+		t.Fatal("plan linking changed intent content", parent)
+	}
+	f.ok("record", "dependencies", "--id", q.ID, "--depends-on", p.ID)
+	f.fail("record", "dependencies", "--id", p.ID, "--depends-on", q.ID)
+	f.ok("record", "note", "--id", p.ID, "--text", "Normal checks passed.")
+	f.ok("record", "complete", "--id", p.ID, "--text", "User requested completion.")
+	f.ok("check")
+	archive := filepath.Join(f.root, "plans", "archive")
+	if err := os.Mkdir(archive, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Rename(filepath.Join(f.root, p.Path), filepath.Join(archive, filepath.Base(p.Path))); err != nil {
+		t.Fatal(err)
+	}
+	r := f.plan(i.ID, "more", "api")
+	if r.ID != "p0003" {
+		t.Fatal(r.ID)
+	}
+	f.ok("record", "show", "--id", p.ID)
+	var active []workspace.Record
+	if err := json.Unmarshal([]byte(f.ok("record", "list")), &active); err != nil {
+		t.Fatal(err)
+	}
+	for _, item := range active {
+		if item.ID == p.ID {
+			t.Fatal("active listing included archived record")
+		}
+	}
+	if !strings.Contains(f.ok("record", "list", "--archived"), "p0001") {
+		t.Fatal("archive not listed")
+	}
+	if err := os.Remove(filepath.Join(f.root, r.Path)); err != nil {
+		t.Fatal(err)
+	}
+	x := f.plan(i.ID, "after-delete", "api")
+	if x.ID != "p0004" {
+		t.Fatal("reused deleted ID", x.ID)
+	}
+	f.fail("check") // Missing plan still linked from intent is visible.
+}
+
+func TestRepositoryBindingsAndCreation(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	f.fail("repo", "connect", "--id", "duplicate", "--path", api, "--base", "main")
+	f.ok("repo", "clone", "--id", "copy", "--path", filepath.Join(f.home, "copy"), "--base", "main", "--url", api)
+	f.ok("repo", "fetch", "--id", "copy")
+	f.ok("repo", "init", "--id", "docs", "--path", filepath.Join(f.home, "docs"), "--base", "main")
+	f.ok("repo", "relate", "--from", "copy", "--to", "api", "--description", "Consumes API")
+	f.fail("repo", "relate", "--from", "copy", "--to", "missing", "--description", "Bad")
+	git(t, f.root, "init", "-b", "main")
+	f.ok("repo", "connect", "--id", "workspace", "--path", ".", "--base", "main")
+	bindings := read(t, filepath.Join(f.root, "repositories.local.yaml"))
+	if !strings.Contains(bindings, "path: .") {
+		t.Fatal("root binding is not relative", bindings)
+	}
+	for _, path := range []string{"repositories.local.yaml", "member.local.yaml", ".context-circuit/local/write.lock", ".worktrees/test/file", "repositories/test/file"} {
+		git(t, f.root, "check-ignore", path)
+	}
+	write(t, filepath.Join(api, "dirty.txt"), "preserve")
+	f.ok("repo", "inspect", "--id", "api")
+	if read(t, filepath.Join(api, "dirty.txt")) != "preserve" {
+		t.Fatal("lost dirty work")
+	}
+}
+
+func TestWorktreePrepareResumeMoveRepairRemove(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	i := f.intent("billing")
+	p := f.plan(i.ID, "api", "api")
+	write(t, filepath.Join(api, "main-dirty.txt"), "keep main work")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+	if w.Head != git(t, api, "rev-parse", "HEAD") || w.StartCommit != w.Head || w.Branch != "cc/p0001/api" {
+		t.Fatalf("wrong prepared state: %+v", w)
+	}
+	if _, err := os.Stat(filepath.Join(w.Path, "main-dirty.txt")); !os.IsNotExist(err) {
+		t.Fatal("copied uncommitted main work")
+	}
+	write(t, filepath.Join(w.Path, "change.txt"), "work in progress")
+	resumed := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+	if !resumed.Reused || resumed.Path != w.Path {
+		t.Fatal("did not reuse prepared worktree")
+	}
+	f.ok("record", "complete", "--id", p.ID, "--text", "Explicitly marked done")
+	if read(t, filepath.Join(w.Path, "change.txt")) != "work in progress" {
+		t.Fatal("completion removed work")
+	}
+	f.fail("worktree", "remove", "--repo", "api", "--path", w.Path)
+	f.fail("worktree", "prepare", "--repo", "api", "--plan", p.ID, "--path", filepath.Join(f.home, "collision"))
+	moved := filepath.Join(f.home, "moved worktree")
+	f.ok("worktree", "move", "--repo", "api", "--path", w.Path, "--to", moved)
+	moved, _ = filepath.EvalSymlinks(moved)
+	f.ok("worktree", "inspect", "--repo", "api", "--path", moved)
+	manual := filepath.Join(f.home, "manual move")
+	if err := os.Rename(moved, manual); err != nil {
+		t.Fatal(err)
+	}
+	f.ok("worktree", "repair", "--repo", "api", "--path", manual)
+	f.ok("check")
+	f.ok("worktree", "remove", "--repo", "api", "--path", manual, "--discard")
+	git(t, api, "show-ref", "--verify", "refs/heads/"+w.Branch)
+	f.fail("worktree", "remove", "--repo", "api", "--path", api, "--discard")
+	if read(t, filepath.Join(api, "main-dirty.txt")) != "keep main work" {
+		t.Fatal("main work changed")
+	}
+}
+
+func TestWorktreeExistingBranchAndIgnoredFiles(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	git(t, api, "branch", "existing")
+	path := filepath.Join(f.home, "existing-worktree")
+	f.fail("worktree", "prepare", "--repo", "api", "--branch", "existing", "--path", path)
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--branch", "existing", "--path", path, "--reuse"))
+	write(t, filepath.Join(w.Path, ".gitignore"), "local.env\n")
+	git(t, w.Path, "add", ".gitignore")
+	git(t, w.Path, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: ignore fixture")
+	write(t, filepath.Join(w.Path, "local.env"), "test-only")
+	f.fail("worktree", "remove", "--repo", "api", "--path", path)
+	git(t, api, "worktree", "lock", path)
+	f.fail("worktree", "remove", "--repo", "api", "--path", path, "--discard")
+	git(t, api, "worktree", "unlock", path)
+	if err := os.Remove(filepath.Join(path, "local.env")); err != nil {
+		t.Fatal(err)
+	}
+	f.ok("worktree", "remove", "--repo", "api", "--path", path)
+}
+
+func TestWorktreeBaseSelectionAndAdoption(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	git(t, api, "tag", "main")
+	write(t, filepath.Join(api, "next.txt"), "next commit")
+	git(t, api, "add", "next.txt")
+	git(t, api, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: advance base")
+	expected := git(t, api, "rev-parse", "HEAD")
+	i := f.intent("choice")
+	p := f.plan(i.ID, "api", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+	if w.Head != expected {
+		t.Fatal("selected same-named tag instead of base branch", w)
+	}
+	manual := filepath.Join(f.home, "native-created")
+	git(t, api, "worktree", "add", "-b", "native-branch", manual, "HEAD")
+	f.fail("worktree", "prepare", "--repo", "api", "--branch", "native-branch", "--path", manual)
+	q := f.plan(i.ID, "adopt", "api")
+	adopted := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", q.ID, "--branch", "native-branch", "--path", manual, "--reuse"))
+	if adopted.Plan != q.ID || !adopted.Reused {
+		t.Fatal("association was not adopted", adopted)
+	}
+	f.ok("worktree", "prepare", "--repo", "api", "--plan", q.ID, "--branch", "native-branch", "--path", manual)
+	git(t, api, "branch", "keep-existing", expected)
+	f.ok("repo", "base", "--id", "api", "--branch", "missing-base")
+	f.ok("worktree", "prepare", "--repo", "api", "--branch", "keep-existing", "--path", filepath.Join(f.home, "existing"), "--reuse")
+	missing := filepath.Join(f.home, "missing-start")
+	f.fail("worktree", "prepare", "--repo", "api", "--branch", "invalid-start", "--path", missing, "--start", "absent-ref")
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatal("created directory before resolving start")
+	}
+	if _, err := workspace.Git(context.Background(), api, "show-ref", "--verify", "refs/heads/invalid-start"); err == nil {
+		t.Fatal("created branch before resolving start")
+	}
+	// Inherited checkout overrides must not redirect a selected repository.
+	foreign := f.repository("foreign")
+	t.Setenv("GIT_DIR", filepath.Join(foreign, ".git"))
+	t.Setenv("GIT_WORK_TREE", foreign)
+	var snapshot workspace.Snapshot
+	if err := json.Unmarshal([]byte(f.ok("repo", "inspect", "--id", "api")), &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	if snapshot.Head != expected {
+		t.Fatal("host environment redirected Git", snapshot)
+	}
+}
+
+func TestHumanOutputAndDuplicateRecordProtection(t *testing.T) {
+	f := setup(t)
+	i := f.intent("readable")
+	var out, errOut bytes.Buffer
+	if code := cli.Run(context.Background(), []string{"--workspace", f.root, "record", "show", "--id", i.ID}, &out, &errOut, "test"); code != 0 {
+		t.Fatal(code, errOut.String())
+	}
+	if out.String() != i.Content {
+		t.Fatal("human record display omitted Markdown")
+	}
+	duplicate := filepath.Join(f.root, "intent", "archive", i.ID+"-duplicate.md")
+	write(t, duplicate, i.Content)
+	f.fail("record", "show", "--id", i.ID)
+	before := read(t, filepath.Join(f.root, ".context-circuit", "ids.yaml"))
+	f.fail("record", "create", "--kind", "intent", "--slug", "another", "--title", "Another")
+	if read(t, filepath.Join(f.root, ".context-circuit", "ids.yaml")) != before {
+		t.Fatal("allocated through an unresolved duplicate")
+	}
+	if err := os.Remove(duplicate); err != nil {
+		t.Fatal(err)
+	}
+	write(t, filepath.Join(f.root, i.Path), "---\nid: "+i.ID+"\ncreated_by: maya\nowner: another\n---\nbody\n")
+	f.fail("record", "show", "--id", i.ID)
+}
+
+func TestConcurrentAllocation(t *testing.T) {
+	f := setup(t)
+	var wg sync.WaitGroup
+	errors := make(chan string, 12)
+	ids := make(chan string, 12)
+	for n := 0; n < 12; n++ {
+		wg.Add(1)
+		go func(n int) {
+			defer wg.Done()
+			code, out, err := call(f.root, "record", "create", "--kind", "intent", "--slug", fmt.Sprintf("parallel-%d", n), "--title", "Parallel")
+			if code != 0 {
+				errors <- err
+				return
+			}
+			var r workspace.Record
+			if err := json.Unmarshal([]byte(out), &r); err != nil {
+				errors <- err.Error()
+				return
+			}
+			ids <- r.ID
+		}(n)
+	}
+	wg.Wait()
+	close(errors)
+	close(ids)
+	for err := range errors {
+		t.Error(err)
+	}
+	seen := map[string]bool{}
+	for id := range ids {
+		if seen[id] {
+			t.Fatal("duplicate ID", id)
+		}
+		seen[id] = true
+	}
+	if len(seen) != 12 {
+		t.Fatalf("got %d IDs", len(seen))
+	}
+	f.ok("check")
+}
+
+func TestCLIValidationAndSourceIsolation(t *testing.T) {
+	f := setup(t)
+	for _, args := range [][]string{{"wat"}, {"member", "add", "--id", "alex"}, {"status", "unexpected"}, {"record", "create", "--kind", "intent", "--slug", "../bad", "--title", "Bad"}} {
+		f.fail(args...)
+	}
+	write(t, filepath.Join(f.root, "sources", "private-fixture.md"), "This content must not be searched.")
+	write(t, filepath.Join(f.root, "context", "INDEX.md"), "- [Billing](billing.md): invoices and retries\n- [Shipping](shipping.md): tracking\n")
+	result := f.ok("context", "find", "--query", "billing")
+	if !strings.Contains(result, "Billing") || strings.Contains(result, "Shipping") || strings.Contains(result, "private-fixture") {
+		t.Fatal(result)
+	}
+	outside := filepath.Join(f.home, "outside.yaml")
+	write(t, outside, "members: {}\n")
+	if err := os.Remove(filepath.Join(f.root, "members.yaml")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, filepath.Join(f.root, "members.yaml")); err != nil {
+		t.Skip("symlinks unavailable:", err)
+	}
+	f.fail("member", "add", "--id", "alex", "--name", "Alex")
+	if read(t, outside) != "members: {}\n" {
+		t.Fatal("followed workspace symlink")
+	}
+}

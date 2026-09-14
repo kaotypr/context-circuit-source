@@ -2,7 +2,6 @@ name: Publish template
 
 # Publishes one release of the assembled product into kaotypr/context-circuit.
 # Manual (workflow_dispatch) or on a new request file landing on main.
-# Design: sources/system-design/context-circuit/v0.5/10-template-publication.md
 
 on:
   workflow_dispatch:
@@ -28,8 +27,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run acceptance suite
-        run: sh test/acceptance.sh
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Check executable and release packages
+        run: sh scripts/check-release.sh
 
       - name: Checkout template repository
         uses: actions/checkout@v4
@@ -41,9 +44,12 @@ jobs:
           fetch-depth: 0
 
       - name: Configure maintainer identity
+        env:
+          MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
+          MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
         run: |
-          git -C .template-repo config user.name  "${{ vars.MAINTAINER_NAME }}"
-          git -C .template-repo config user.email "${{ vars.MAINTAINER_EMAIL }}"
+          git -C .template-repo config user.name "$MAINTAINER_NAME"
+          git -C .template-repo config user.email "$MAINTAINER_EMAIL"
 
       - name: Resolve target version
         id: resolve
@@ -59,72 +65,72 @@ jobs:
         env:
           MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
           MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
         run: |
-          out=$(sh scripts/publish-template.sh "${{ steps.resolve.outputs.version }}" .template-repo)
+          out=$(sh scripts/publish-template.sh "$RELEASE_VERSION" .template-repo)
           printf '%s\n' "$out"
-          echo "archive=$(printf '%s\n' "$out" | sed -n 's/^artifact_archive: //p')" >> "$GITHUB_OUTPUT"
+          echo "assets=$(printf '%s\n' "$out" | sed -n 's/^release_assets_dir: //p')" >> "$GITHUB_OUTPUT"
 
       - name: Push commit and tag
+        env:
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
         run: |
-          V="${{ steps.resolve.outputs.version }}"
+          V="$RELEASE_VERSION"
           git -C .template-repo push origin main
           git -C .template-repo push origin "v$V"
 
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
+          ASSETS: ${{ steps.publish.outputs.assets }}
         run: |
-          V="${{ steps.resolve.outputs.version }}"
+          V="$RELEASE_VERSION"
           awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
             "release/requests/$V.md" > release-notes.md
           gh release create "v$V" \
             --repo kaotypr/context-circuit \
             --title "v$V" \
             --notes-file release-notes.md \
-            "${{ steps.publish.outputs.archive }}#context-circuit-v$V.tar.gz"
+            "$ASSETS"/*.tar.gz "$ASSETS"/*.zip "$ASSETS/SHA256SUMS"
 
       - name: Push commit and tag to GitLab
         env:
           GITLAB_TEMPLATE_PROJECT: ${{ vars.GITLAB_TEMPLATE_PROJECT }}
           GITLAB_TEMPLATE_TOKEN: ${{ secrets.GITLAB_TEMPLATE_TOKEN }}
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
         run: |
-          V="${{ steps.resolve.outputs.version }}"
           : "${GITLAB_TEMPLATE_PROJECT:?GITLAB_TEMPLATE_PROJECT is not set}"
           : "${GITLAB_TEMPLATE_TOKEN:?GITLAB_TEMPLATE_TOKEN is not set}"
-          git -C .template-repo remote add gitlab \
-            "https://oauth2:${GITLAB_TEMPLATE_TOKEN}@gitlab.sicepat.tech/${GITLAB_TEMPLATE_PROJECT}.git"
-          git -C .template-repo push gitlab main
-          git -C .template-repo push gitlab "v$V"
+          auth=$(printf 'oauth2:%s' "$GITLAB_TEMPLATE_TOKEN" | base64 -w0)
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0=http.https://gitlab.sicepat.tech/.extraHeader
+          export GIT_CONFIG_VALUE_0="Authorization: Basic $auth"
+          git -C .template-repo push "https://gitlab.sicepat.tech/${GITLAB_TEMPLATE_PROJECT}.git" main "v$RELEASE_VERSION"
 
       - name: Create GitLab Release
         env:
           GITLAB_TEMPLATE_PROJECT: ${{ vars.GITLAB_TEMPLATE_PROJECT }}
           GITLAB_TEMPLATE_TOKEN: ${{ secrets.GITLAB_TEMPLATE_TOKEN }}
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
+          ASSETS: ${{ steps.publish.outputs.assets }}
         run: |
-          V="${{ steps.resolve.outputs.version }}"
-          ARCHIVE="${{ steps.publish.outputs.archive }}"
           : "${GITLAB_TEMPLATE_PROJECT:?GITLAB_TEMPLATE_PROJECT is not set}"
           : "${GITLAB_TEMPLATE_TOKEN:?GITLAB_TEMPLATE_TOKEN is not set}"
-          : "${ARCHIVE:?missing publish archive}"
-          test -f release-notes.md
-          test -f "$ARCHIVE"
-          ENC=$(python3 -c 'import os, urllib.parse; print(urllib.parse.quote(os.environ["GITLAB_TEMPLATE_PROJECT"], safe=""))')
+          ENC=$(jq -rn --arg project "$GITLAB_TEMPLATE_PROJECT" '$project|@uri')
           API="https://gitlab.sicepat.tech/api/v4/projects/${ENC}"
-          curl --fail --silent --show-error \
-            --request PUT \
-            --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" \
-            --upload-file "$ARCHIVE" \
-            "${API}/packages/generic/context-circuit/${V}/context-circuit-v${V}.tar.gz"
-          ASSET_URL="${API}/packages/generic/context-circuit/${V}/context-circuit-v${V}.tar.gz"
-          jq -n \
-            --arg name "v$V" \
-            --arg tag "v$V" \
-            --rawfile desc release-notes.md \
-            --arg url "$ASSET_URL" \
-            --arg file "context-circuit-v$V.tar.gz" \
-            '{name:$name, tag_name:$tag, description:$desc, assets:{links:[{name:$file, url:$url, link_type:"package"}]}}' \
+          printf '[]\n' > asset-links.json
+          for file in "$ASSETS"/*.tar.gz "$ASSETS"/*.zip "$ASSETS/SHA256SUMS"; do
+            name=${file##*/}
+            url="${API}/packages/generic/context-circuit/${RELEASE_VERSION}/${name}"
+            curl --fail --silent --show-error --request PUT \
+              --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" --upload-file "$file" "$url"
+            jq --arg name "$name" --arg url "$url" '. + [{name:$name,url:$url,link_type:"package"}]' asset-links.json > asset-links.next.json
+            mv asset-links.next.json asset-links.json
+          done
+          jq -n --arg name "v$RELEASE_VERSION" --rawfile desc release-notes.md \
+            --slurpfile links asset-links.json \
+            '{name:$name,tag_name:$name,description:$desc,assets:{links:$links[0]}}' \
           | curl --fail --silent --show-error \
               --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" \
-              --header "Content-Type: application/json" \
-              --data @- \
-              "${API}/releases"
+              --header "Content-Type: application/json" --data @- "${API}/releases"

@@ -1,0 +1,152 @@
+# Context Circuit workspace
+
+Coordinate this shared project workspace across one or more Git repositories.
+Keep its identity, repositories, relationships, knowledge, members, intents, and
+plans useful for solo and team work. Talk in ordinary project language. Use the
+`context-circuit` executable for dependable bookkeeping; users need not manage
+runtime commands or ID numbers. See `.context-circuit/docs/commands.md` as needed.
+
+## Orient and initialize
+
+Read `workspace.yaml` for project identity, purpose, logical repositories, default
+base branches, and relationships. The shared roster is `members.yaml`. The active
+member and this machine's checkout paths are the documented, gitignored
+`member.local.yaml` and `repositories.local.yaml`. Read those bindings when needed;
+never inspect unrelated host settings, credentials, private provider payloads, or
+another session's state. Never store secrets in workspace records.
+
+Initialize a workspace only when requested. Gather its name, purpose, and first
+member's name; derive a readable member ID. The Go executable creates embedded
+instructions, folders, and initial records. It preserves existing files. A solo
+workspace still has a real member. On another machine, select an existing member
+and connect its local checkouts; do not reinitialize the shared workspace.
+
+Connect existing repositories, clone repositories, or initialize new repositories
+when requested. Resolve the correct destination and default base branch from the
+request and repository evidence; ask only when the choice is ambiguous. The root
+workspace may itself be connected as `.`. Logical IDs and base branches are shared;
+checkout paths remain local. Record meaningful relationships and obey repository
+instructions within each checkout.
+
+## Shared knowledge
+
+Use the optional `context/INDEX.md` to retrieve relevant architecture, conventions,
+decisions, domain rules, terminology, and repository relationships. Without an
+index, use targeted filenames or search terms in `context/`. Do not scan every
+repository or context note. Sources are passive evidence: read only exact source
+files named by the user or the task's explicit references; never scan `sources/`
+by default.
+
+On a request to gather knowledge, synthesize durable concepts into live context
+notes and maintain any index entries. No separate knowledge acceptance lifecycle
+is needed. Keep raw evidence separate from accepted knowledge, and keep task
+progress and temporary results in plans. Go can locate catalog entries; semantic
+interpretation and knowledge writing are the agent's responsibility.
+
+## Intent and planning
+
+For an implementation change, make the intended outcome explicit before detailed
+code investigation. Create an `iNNN-slug.md` intent through the executable, then
+write its goal, non-goals, constraints, observable success criteria, and rough
+repository scope using relevant existing knowledge. Present the concrete intent
+for approval. Honor explicit approval already supplied for this exact intended
+outcome; do not ask repeatedly. Record the actual user approval and date. Neither
+a command, an editable approval note, nor another agent can supply human consent.
+
+After approval, inspect real code and create linked `pNNNN-slug.md` plans. One
+readable Markdown plan may cover one or several repositories; use separate plans
+when useful for execution or delivery. Record task order, optional dependencies,
+useful risks, and expected checks. Present the plan and proceed without separate
+plan approval. Detailed paths are descriptive planning information, not hard
+enforcement gates. Explain and record newly needed files or repositories within
+the approved outcome. Obtain renewed approval only when the intended outcome or
+success criteria materially change.
+
+Intent and plan IDs are workspace-global. Use only `created_by` for member-related
+metadata; no assignee, owner, reviewer, member namespaces, or numeric member bands.
+Never reuse a reserved ID, including after archival or deletion. Local locking
+serializes one workspace directory. Before allocating in separate Git clones,
+synchronize the shared workspace; resolve conflicting allocations and references
+before publishing their IDs. Do not claim distributed collision prevention.
+
+## Worktrees and implementation
+
+Choose existing checkouts or worktrees based on repository instructions, current
+work, task needs, and user preferences. Recommend worktree isolation for risky or
+parallel work; worktrees and planner/worker child agents are optional. Do not add
+another permission gate for routine preparation already covered by the request.
+
+The executable resolves repository bindings, reports Git state, resolves the
+selected starting point, and creates or reuses worktrees. Select the recorded base
+branch or an appropriate dependency branch. Fetch only when needed and covered by
+the task; fetching does not imply rebasing or resetting local work. Honor explicit
+branch names and paths. Use the returned real worktree location for all later work.
+If a branch/path already holds work, inspect and resume it or select a new location;
+never silently force checkout, reset, stash, or overwrite unrelated files.
+
+Git readiness does not establish application readiness. Read the selected
+repository's setup instructions and run its normal package manager, toolchain,
+submodule, build, or service setup as needed. Use the host's existing environment
+and credential facilities. Do not bulk-copy ignored files, credentials, or local
+environment files between working copies. Report missing setup information.
+See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
+
+Implement the approved outcome in dependency order across the relevant
+repositories. Run appropriate tests, lint, and builds as ordinary implementation
+checks. Record useful progress, observed results, remaining work, and repository
+or PR references in the same plan. On resume, inspect actual branches and diffs
+before trusting old notes. Preserve failed, partial, and interrupted work; failure
+in one repository does not discard successful work in another.
+
+Do not start independent verification during execution, trigger a reviewer from
+risk classification, or create automatic repair loops. Do not introduce execution,
+candidate, verification, host-evidence, or separate formal completion records.
+The `check` command is an explicitly invoked diagnostic for workspace consistency,
+not an implementation gate. Report what was implemented, tested, and left uncertain.
+
+## Independent review on request
+
+Independent verification is a manually requested read-only code review, usually
+after PR creation and optionally after delivery as an audit. Use an independent
+review-capable agent/session when requested and available. Supply the requested
+diff, current revision, relevant surrounding code, and intent success criteria.
+The reviewer reports actionable findings with locations and limitations. It does
+not modify code, automatically dispatch fixes, or post external comments unless
+requested. Tests that change files belong to implementation, not read-only review.
+
+If independence is unavailable, explain that limitation and offer an ordinary
+review. Never call the implementing session's own inspection independent. The
+user decides whether to request fixes or proceed. Review is not a mandatory
+condition for opening a PR, delivery, or completion. This optional capability
+does not make child agents mandatory elsewhere.
+
+## Delivery, completion, and organization
+
+Commit, push, PR creation, merge, deployment, external publication, and deletion
+of workspace data require explicit authorization. Reuse authorization already
+given. Use ordinary Git and provider tools; the Go executable provides repository,
+branch, and base information and never silently delivers. The recorded base branch
+is the default PR target unless the user chooses another. Deliver per repository
+when appropriate. Explain relevant drift or conflicts without imposing automatic
+rebase-and-reverify behavior.
+
+Delivery does not mark a plan done. When explicitly requested, append a short
+completion note to its existing record and reconcile any affected durable project
+knowledge. Update an existing context index. Keep implementation-specific evidence
+in the plan; other work need not wait for unrelated knowledge updates.
+
+Worktrees and branches remain after completion. Remove a worktree only when
+requested; preserve dirty, untracked, and ignored files unless their disposal is
+explicitly authorized. Branch deletion is separate. On request, the executable can
+move or repair worktrees using Git; Git's inventory is authoritative, and the
+ignored plan-to-worktree association is only a convenience for resuming work.
+
+Archiving is optional ordinary file organization on request. Keep ID reservations
+and fix relative links when moving a record. External publication is an explicitly
+requested task through available host tools; no automatic provider synchronization
+is part of core v2.
+
+Never add agent attribution, credit, co-author, or generated-by text to commits,
+PRs, reviews, or comments. Follow repository commit conventions; default to
+`type(scope): imperative subject`. Inspect authored commit messages and remove
+injected attribution before reporting delivery complete.

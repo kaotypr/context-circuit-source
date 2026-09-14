@@ -1,142 +1,77 @@
 #!/bin/sh
+# Source-only release assembly. Go is required here, never in a user's workspace.
 set -eu
-
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
-usage() { printf 'usage: sh scripts/release-artifact.sh <staging-dir> <output-dir> <version>\n' >&2; exit 2; }
-path_unsafe() { case "$1" in ''|/*|..|../*|*/..|*/../*) return 0 ;; esac; return 1; }
-
-[ "$#" -eq 3 ] || usage
+[ "$#" -eq 3 ] || fail 'usage: release-artifact.sh <staging-dir> <new-output-dir> <version>'
 staging_dir=$1
 output_dir=$2
 version=$3
-case "$version" in ''|*/*|.*|-*|*' '*|*..*) fail "invalid version: $version" ;; esac
-source_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'not a git source checkout'
+case "$version" in ''|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
+source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+[ ! -e "$output_dir" ] && [ ! -L "$output_dir" ] || fail "output already exists: $output_dir"
+mkdir -p "$staging_dir"
+staging_dir=$(CDPATH= cd -- "$staging_dir" && pwd)
+[ ! -e "$staging_dir/native" ] || fail 'staging area already used'
+mkdir -p "$output_dir"
+output_dir=$(CDPATH= cd -- "$output_dir" && pwd)
+cd "$source_root"
 
-# Destination identity comes from the source-only release binding, never hardcoded.
-binding="$source_root/release/binding.yaml"
-[ -f "$binding" ] || fail "missing release binding: $binding"
-DESTINATION_REPO=$(sed -n 's/^destination_repo:[[:space:]]*//p' "$binding" | head -n1)
-DESTINATION_REF=$(sed -n 's/^destination_ref:[[:space:]]*//p' "$binding" | head -n1)
-[ -n "$DESTINATION_REPO" ] && [ -n "$DESTINATION_REF" ] || fail "invalid release binding: $binding"
-
-manifest="$source_root/scripts/release-manifest.txt"
-[ -f "$manifest" ] || fail "missing release manifest: $manifest"
-source_sha=$(git -C "$source_root" rev-parse HEAD 2>/dev/null || printf uncommitted)
-if git -C "$source_root" status --porcelain --untracked-files=all | grep . >/dev/null 2>&1; then source_state=dirty; else source_state=clean; fi
-
-mkdir -p "$staging_dir" "$output_dir"
-stage_tree="$staging_dir/tree"
-[ ! -e "$stage_tree" ] || fail "staging tree already exists: $stage_tree"
-mkdir -p "$stage_tree"
-
-# Stage template-owned source trees only. Nested product home lives under
-# .context-circuit/{wrapper,agents,docs}; .agents/ stays at the workspace root.
-# Host-native routes (.claude/, .codex/, .cursor/) ship as thin pointers;
-# source-only Claude extras are removed via the exclude manifest.
-mkdir -p "$stage_tree/.context-circuit"
-(CDPATH= cd "$source_root" && tar -cf - .agents .context-circuit .claude .codex .cursor) | tar -xf - -C "$stage_tree"
-
-# Root adapters become the workspace entry files.
-cp "$source_root/.context-circuit/wrapper/adapters/AGENTS.md" "$stage_tree/AGENTS.md"
-cp "$source_root/.context-circuit/wrapper/adapters/CLAUDE.md" "$stage_tree/CLAUDE.md"
-cp "$source_root/.context-circuit/wrapper/adapters/CURSOR.md" "$stage_tree/CURSOR.md"
-cp "$source_root/.context-circuit/wrapper/adapters/WORKFLOW.md" "$stage_tree/WORKFLOW.md"
-cp "$source_root/.context-circuit/wrapper/adapters/README.md" "$stage_tree/README.md"
-# The worker-brief template is a runtime-only artifact; promote it beside the
-# runtime that consumes it (.context-circuit/wrapper/runtime/) rather than to the user-facing root.
-cp "$source_root/.context-circuit/wrapper/adapters/worker-brief.md" "$stage_tree/.context-circuit/wrapper/runtime/worker-brief.md"
-
-# Blank workspace seed from the template.
-cp "$source_root/template/.gitignore" "$stage_tree/.gitignore"
-cp "$source_root/template/workspace.yaml" "$stage_tree/workspace.yaml"
-cp "$source_root/template/members.yaml" "$stage_tree/members.yaml"
-mkdir -p "$stage_tree/context" "$stage_tree/sources/archive" "$stage_tree/plans/archive"
-cp -R "$source_root/template/context/." "$stage_tree/context/"
-cp "$source_root/template/sources/README.md" "$stage_tree/sources/README.md"
-cp "$source_root/template/sources/archive/README.md" "$stage_tree/sources/archive/README.md"
-cp "$source_root/template/plans/README.md" "$stage_tree/plans/README.md"
-cp "$source_root/template/plans/INDEX.md" "$stage_tree/plans/INDEX.md"
-[ -f "$source_root/template/plans/archive/README.md" ] && cp "$source_root/template/plans/archive/README.md" "$stage_tree/plans/archive/README.md" || :
-# Intent tree seed (Context Circuit v1.0) — the first-class decision area.
-mkdir -p "$stage_tree/intent/archive"
-cp "$source_root/template/intent/INDEX.md" "$stage_tree/intent/INDEX.md"
-cp "$source_root/template/intent/README.md" "$stage_tree/intent/README.md"
-cp "$source_root/template/intent/archive/README.md" "$stage_tree/intent/archive/README.md"
-
-required_files=''
-exclude_paths=''
-while IFS= read -r line || [ -n "$line" ]; do
-  case "$line" in ''|'#'*) continue ;; esac
-  set -- $line
-  kind=${1:-}; relpath=${2:-}
-  [ -n "$kind" ] && [ -n "$relpath" ] || fail "invalid manifest line: $line"
-  path_unsafe "$relpath" && fail "unsafe manifest path: $relpath"
-  case "$kind" in
-    required) required_files="$required_files $relpath" ;;
-    exclude) exclude_paths="$exclude_paths $relpath" ;;
-    *) fail "unknown manifest directive: $kind" ;;
-  esac
-done < "$manifest"
-
-for relpath in $exclude_paths; do
-  target="$stage_tree/$relpath"
-  if [ -e "$target" ] || [ -L "$target" ]; then rm -rf "$target"; fi
-done
-for relpath in $required_files; do
-  [ -e "$stage_tree/$relpath" ] || fail "missing required file: $relpath"
-done
-
-# Canonical schema fixtures must be present.
-for schema in workspace repositories-local intent-contract plan task execution worker-handoff \
-  verifier-result candidate human-acceptance completion context-impact context-index \
-  lease grounding-manifest pairing-session publication-config publication-record \
-  publication-thread-record members member-local; do
-  [ -f "$stage_tree/.context-circuit/wrapper/contracts/schemas/$schema.yaml" ] || fail "missing schema fixture: $schema"
-done
-
-# No repository state, credentials, or maintainer plans in the artifact.
-for forbidden_path in repositories.local.yaml repositories member.local.yaml; do
-  [ ! -e "$stage_tree/$forbidden_path" ] || fail "forbidden repository state in artifact: $forbidden_path"
-done
-[ ! -e "$stage_tree/plans/context-circuit-plans" ] || fail 'maintainer plan stack leaked into artifact'
-[ ! -e "$stage_tree/plans/0002-mark-done-no-precheck" ] || fail 'source maintainer plan leaked into artifact'
-[ ! -e "$stage_tree/plans/archive/0001-contracts-runtime-foundation" ] || fail 'source archived maintainer plan leaked into artifact'
-[ ! -e "$stage_tree/.context-circuit/wrapper/adapters" ] || fail 'adapters source directory leaked into artifact'
-find "$stage_tree" -type f \( -name repositories.local.yaml -o -name member.local.yaml -o -name '*.credentials' \) -print -quit | grep . && fail 'forbidden repository or credential file' || :
-
-# Only the allowlisted product skills may ship.
-for skill_dir in "$stage_tree"/.agents/skills/cc-*; do
-  [ -d "$skill_dir" ] || continue
-  skill_name=${skill_dir##*/}
-  case "$skill_name" in
-    cc-workspace|cc-intent|cc-trace|cc-plan|cc-execute|cc-run-stack|cc-system-design|cc-verify|cc-complete|cc-archive|cc-deliver|cc-pair|cc-publish) ;;
-    *) fail "unexpected skill remains: $skill_name" ;;
-  esac
-done
-
-# No package-manager or node artifacts.
-for name in package.json package-lock.json npm-shrinkwrap.json yarn.lock pnpm-lock.yaml bun.lock bun.lockb tsconfig.json; do
-  find "$stage_tree" -name "$name" -print -quit | grep . && fail "forbidden package-manager file: $name" || :
-done
-find "$stage_tree" -type d -name node_modules -print -quit | grep . && fail 'forbidden node_modules' || :
-
+# A native helper exports its embedded blank seed. Cross-built executables are
+# never run as evidence of native support.
+CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=${version#v}" -o "$staging_dir/native" ./cmd/context-circuit
 artifact_name="context-circuit-$version"
 artifact_dir="$output_dir/$artifact_name"
-[ ! -e "$artifact_dir" ] || fail "output artifact already exists: $artifact_dir"
-mv "$stage_tree" "$artifact_dir"
-archive_path="$output_dir/$artifact_name.tar.gz"
-(CDPATH= cd "$artifact_dir" && tar -cf - .) | gzip -n > "$archive_path"
+"$staging_dir/native" template export --path "$artifact_dir" >/dev/null
+awk 'NF && $1 !~ /^#/ {print $2}' scripts/release-manifest.txt | LC_ALL=C sort > "$staging_dir/expected"
+(cd "$artifact_dir" && find . -type f -print | sed 's|^./||' | LC_ALL=C sort) > "$staging_dir/actual"
+cmp "$staging_dir/expected" "$staging_dir/actual" || fail 'seed contains missing or unexpected files'
+(cd "$artifact_dir" && tar -cf - .) | gzip -n > "$output_dir/$artifact_name.tar.gz"
 
-runtime_version=$(sed -n 's/^runtime_version:[[:space:]]*//p' "$artifact_dir/.context-circuit/wrapper/manifest.yaml" | head -n1)
-[ -n "$runtime_version" ] || fail 'staged manifest has no runtime_version'
+# Include the licenses for dependencies and the Go runtime in each binary asset.
+notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
+printf 'Context Circuit third-party notices\n\n' > "$notices"
+for module in github.com/goccy/go-yaml github.com/gofrs/flock golang.org/x/sys; do
+  module_dir=$(go list -m -f '{{.Dir}}' "$module")
+  [ -f "$module_dir/LICENSE" ] || fail "missing license for $module"
+  printf '\n%s\n\n' "$module" >> "$notices"
+  cat "$module_dir/LICENSE" >> "$notices"
+done
+printf '\nGo runtime and standard library\n\n' >> "$notices"
+go_root=$(go env GOROOT)
+go_license="$go_root/LICENSE"
+# Homebrew places the license beside libexec; official distributions use GOROOT.
+[ -f "$go_license" ] || go_license="$go_root/../LICENSE"
+[ -f "$go_license" ] || fail 'Go distribution license was not found'
+cat "$go_license" >> "$notices"
 
+for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 windows/arm64; do
+  target_os=${target%/*}
+  target_arch=${target#*/}
+  package_dir="$staging_dir/$target_os-$target_arch"
+  mkdir "$package_dir"
+  binary=context-circuit
+  [ "$target_os" != windows ] || binary=context-circuit.exe
+  CGO_ENABLED=0 GOOS=$target_os GOARCH=$target_arch go build -trimpath \
+    -ldflags "-s -w -X main.version=${version#v}" -o "$package_dir/$binary" ./cmd/context-circuit
+  cp product/README.md "$package_dir/README.md"
+  cp "$notices" "$package_dir/THIRD_PARTY_NOTICES.txt"
+  package_name="$artifact_name-$target_os-$target_arch"
+  if [ "$target_os" = windows ]; then
+    (cd "$package_dir" && zip -q "$output_dir/$package_name.zip" "$binary" README.md THIRD_PARTY_NOTICES.txt)
+  else
+    (cd "$package_dir" && tar -cf - "$binary" README.md THIRD_PARTY_NOTICES.txt) | gzip -n > "$output_dir/$package_name.tar.gz"
+  fi
+  printf 'binary_target: %s\n' "$target"
+done
+(
+  cd "$output_dir"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum ./*.tar.gz ./*.zip
+  else
+    shasum -a 256 ./*.tar.gz ./*.zip
+  fi
+) > "$output_dir/SHA256SUMS"
 printf 'version: %s\n' "$version"
-printf 'runtime_version: %s\n' "$runtime_version"
-printf 'source_revision: %s\n' "$source_sha"
-printf 'source_state: %s\n' "$source_state"
-printf 'destination: %s %s\n' "$DESTINATION_REPO" "$DESTINATION_REF"
 printf 'artifact_dir: %s\n' "$artifact_dir"
-printf 'artifact_archive: %s\n' "$archive_path"
-printf 'remaining_gate: publication\n'
-printf 'inventory:\n'
-(CDPATH= cd "$artifact_dir" && find . -type f -print | sort | sed 's|^\./||')
+printf 'artifact_archive: %s/%s.tar.gz\n' "$output_dir" "$artifact_name"
+printf 'checksums: %s/SHA256SUMS\n' "$output_dir"

@@ -49,6 +49,8 @@ else
   resolved=$1
 fi
 
+case "$resolved" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $resolved" ;; esac
+
 [ -f "$requests_dir/$resolved.md" ] || fail "no release request for: $resolved"
 
 printf 'resolved: %s\n' "$resolved"
