@@ -46,6 +46,10 @@ After cloning a shared workspace onto another machine, use `member use` and
 can be registered before its first commit; worktree preparation needs a commit.
 Setting a default base records the intended branch without creating or resetting it.
 
+Every date in a workspace record is an ISO 8601 calendar date, `YYYY-MM-DD`, in
+UTC, written bare in YAML and unadorned in prose. Frontmatter dates and the dates
+inside approval and progress notes read identically.
+
 YAML changes use goccy/go-yaml document edits to retain surrounding comments and
 ordering. Presentation can normalize; byte-for-byte formatting preservation is
 not promised. Unknown fields in structured control records and duplicate mapping

@@ -35,13 +35,28 @@ context-circuit record list
 context-circuit record note --id p0001 --text 'Implemented API; normal tests passed.'
 context-circuit record dependencies --id p0002 --depends-on p0001
 context-circuit record complete --id p0001 --text 'User requested completion.'
+context-circuit record order --intent i001 --mode waves
 ```
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
 are repeatable. Creation reserves IDs and links a new plan from its intent.
 Approval and completion notes require the actual corresponding user decision.
 Commands do not independently authorize anything. Dependency updates detect
-cycles; omit `--depends-on` to clear a plan's dependencies.
+cycles; omit `--depends-on` to clear a plan's dependencies. Completion also
+records a `completed` date in the plan's frontmatter beside its written note.
+Dates are ISO 8601 `YYYY-MM-DD` in UTC throughout.
+
+`record order` derives execution shape from recorded dependencies and completion.
+`--mode auto` reports a recommendation and follows it; `waves` and `linear`
+select explicitly without changing the recommendation. Waves list each layer, its
+concurrency, every plan's start reference per repository, any integration merge a
+fan-in needs, and which plans in the layer share a repository. A linear chain
+stacks each plan on the previous one and never needs a merge. Completed plans
+drop out and their dependents become ready, so an unfinished plan holds
+everything behind it; recompute after each wave. Start references name a
+predecessor's branch — adjust them yourself once that work is merged and its
+branch is gone. The report is advice: it runs, merges, and reserves nothing, and
+`shares_repository_with` reflects repositories, not paths.
 
 Worktrees:
 
@@ -72,7 +87,7 @@ context-circuit agent settings
 context-circuit agent configure --host codex --role worker --model MODEL_ID --effort high
 context-circuit agent setup --host codex
 context-circuit --json agent dispatch --host codex --role worker \
-  --path /actual/worktree --task 'Implement the assigned tasks from p0001'
+  --plan p0001 --path /actual/worktree --task 'Implement the assigned tasks from p0001'
 ```
 
 Settings default to host inheritance. `agent setup` applies settings to native
@@ -80,6 +95,12 @@ agent files; the host may need to reload them. `agent dispatch` returns the
 resolved invocation for the cc-dispatch skill to launch through the host's tools.
 For a reviewer, `--review-requested` represents a real user request. No CLI command
 launches an LLM or treats a dispatch specification as evidence of completion.
+
+`--plan` adds the plan's repositories, dependencies, and record to the brief, and
+states that its dependencies' work is already in the branch's ancestry and that a
+concurrent sibling plan is invisible. `--shared` is for several workers inside one
+worktree: it replaces sole ownership of the directory with a duty to preserve the
+other workers' edits. Omit it when each worker has its own worktree.
 
 Worktree `--copy-path` adds a specific ignored runtime entry. `--copy-mode` accepts
 `auto`, `required`, `copy`, or `off`. The reuse report distinguishes native CoW

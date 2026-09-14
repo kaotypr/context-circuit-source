@@ -114,7 +114,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		}
 	}
 	if branch == "" && plan != "" {
-		branch = "cc/" + plan + "/" + repoID
+		branch = PlanBranch(plan, repoID)
 	}
 	if err := checkBranch(ctx, repo, branch); err != nil {
 		return Worktree{}, err

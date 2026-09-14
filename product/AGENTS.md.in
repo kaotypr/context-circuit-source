@@ -67,6 +67,10 @@ enforcement gates. Explain and record newly needed files or repositories within
 the approved outcome. Obtain renewed approval only when the intended outcome or
 success criteria materially change.
 
+Record every date as an ISO 8601 calendar date, `YYYY-MM-DD`, in records you
+write by hand as well as through the executable. No other date format belongs in
+a workspace file.
+
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, member namespaces, or numeric member bands.
 Never reuse a reserved ID, including after archival or deletion. Local locking
@@ -119,6 +123,46 @@ candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
 not an implementation gate. Report what was implemented, tested, and left uncertain.
 
+## Stacked plans
+
+To execute several plans at once, derive the order instead of guessing it:
+`record order` reports dependency waves, each plan's starting reference per
+repository, the integration merges a dependent plan needs, and which plans in one
+wave share a repository. It runs nothing and reserves nothing.
+
+Two shapes exist. Waves overlap independent plans and pay an integration merge at
+each fan-in. A linear chain stacks every plan on the previous one, needs no merge,
+and runs strictly serially. Present the recommendation with its cost — a single
+repository with any fan-in usually favors the chain — and honor an explicit choice
+without re-asking. Confirm the shape once before starting.
+
+Then run to completion without further prompting: prepare each worktree from the
+reported start, perform any reported integration merge with ordinary Git, dispatch
+a worker per plan, wait, inspect real diffs, run the repositories' ordinary checks,
+and record progress. Mark a plan complete only when it actually landed and its
+checks passed; `record order` reads that to release the next wave, so an unfinished
+plan holds its dependents automatically. Recompute the order after each wave
+instead of trusting the first result.
+
+Resolve a conflict from an integration merge directly: both sides are plans of this
+same approved intent, and their records and diffs are available. Preserve both
+plans' behavior, then run the repository's checks — a resolved merge is not trusted
+until they pass. Record the resolution in the plan so it can be audited. A conflict
+against anything outside the run, or one where preserving both sides is impossible,
+is a stop.
+
+Stop and report, preserving all work, on: failing checks after implementation or
+after a resolved merge; a conflict outside the run or one needing a decision; a
+worker that cannot complete or returns blocked; worktree preparation that refuses;
+skipped dependency reuse whose fallback setup fails; or an order reporting a cycle,
+an unknown repository, or a broken link. Never unwind completed plans. Name which
+plans finished, which is stuck, and what is held behind it.
+
+Confirming a stacked run authorizes, for that run, worktree preparation,
+implementation commits on `cc/*` branches, and local integration merges that
+assemble a dependent plan's base. It does not authorize push, pull request
+creation, merging into a base branch, deployment, or deletion.
+
 ## Independent review on request
 
 Independent verification is a manually requested read-only code review, usually
@@ -137,9 +181,11 @@ does not make child agents mandatory elsewhere.
 
 ## Delivery, completion, and organization
 
-Commit, push, PR creation, merge, deployment, external publication, and deletion
-of workspace data require explicit authorization. Reuse authorization already
-given. Use ordinary Git and provider tools; the Go executable provides repository,
+Commit, push, PR creation, merge into a base branch, deployment, external
+publication, and deletion of workspace data require explicit authorization.
+Reuse authorization already given. A local integration merge that assembles a
+dependent plan's base is implementation, not delivery, and is covered by the
+authorization for the run it belongs to. Use ordinary Git and provider tools; the Go executable provides repository,
 branch, and base information and never silently delivers. The recorded base branch
 is the default PR target unless the user chooses another. Deliver per repository
 when appropriate. Explain relevant drift or conflicts without imposing automatic

@@ -31,8 +31,12 @@ For each bounded task, obtain its dispatch specification:
 ```sh
 context-circuit --workspace <root> --json agent dispatch \
   --host <host> --role <explorer|planner|worker|reviewer> \
-  --path <actual-working-directory> --task '<bounded assignment and references>'
+  --plan <plan-id> --path <actual-working-directory> \
+  --task '<bounded assignment and references>'
 ```
+
+Omit `--plan` when the task is not plan work. Add `--shared` only when several
+workers use one worktree.
 
 Use `--review-requested` only to represent the actual user request for review.
 It supplies no human approval by itself. Include the intended base/head revisions
@@ -57,6 +61,26 @@ Check requested settings against the host's actual available models/efforts. A
 configured pair is a request, not proof of the model that ran. Report any rejected
 or substituted setting; do not silently downgrade. If the host cannot apply a pin,
 resolve the mismatch with the user. Inherited defaults need no extra confirmation.
+
+## Two kinds of parallel work
+
+Parallelism happens on two axes and the correct brief is opposite in each. One
+worker per plan owns a whole worktree: separate plans get separate working copies
+and branches, so they cannot touch each other's files, and a sibling's work
+arrives later through an integration merge. Several workers inside one plan's
+worktree genuinely share files and must preserve each other's edits.
+
+Pass `--shared` only for the second case. The default brief tells a worker it is
+the sole owner of its directory; `--shared` replaces that with shared-ownership
+language. Claiming the wrong one either invites a worker to guess at edits it
+cannot see, or lets it overwrite edits it can.
+
+Pass `--plan` for plan work. The CLI then states the plan's repositories, its
+dependencies, that their completed work is already in this branch's ancestry so
+it need not be reimplemented, and that a concurrent sibling plan is invisible and
+must not be guessed at. A worker reporting an interface it assumes a sibling may
+also be changing is supplying information, not failing; carry it to the
+integration merge rather than stopping the run.
 
 Give workers explicit ownership and the actual prepared worktree paths. Tell them
 they share the codebase and must preserve other agents' edits. Wait for results,

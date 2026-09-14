@@ -30,6 +30,13 @@ these files and their update inventory are local and ignored. A customized nativ
 file is preserved and reported instead of overwritten. Restart/reload the coding
 host when it does not discover newly written definitions in the current session.
 
+A worker's brief depends on how it is parallelized. One worker per plan owns its
+whole worktree and cannot collide with a sibling plan, whose work arrives later
+through an integration merge; several workers inside one worktree share files and
+must preserve each other's edits. `--shared` selects the second. `--plan` adds the
+plan record, its dependencies, and the fact that their work is already in the
+branch's ancestry.
+
 The `cc-dispatch` skill resolves each task, invokes the host's actual agent tool,
 waits, and integrates the result. `agent dispatch` alone produces a specification;
 `launch_required: true` means it has not launched anything. Available host APIs may

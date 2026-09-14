@@ -40,6 +40,8 @@ record note           --id ID --text TEXT
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
+record order          [--intent ID] [--mode auto|waves|linear]
+                      derive dependency waves, start refs, and integration merges
 context find          --query TEXT (optional index only)
 worktree prepare      --repo ID [--plan ID] [--branch NAME] [--start REF]
                       [--path PATH] [--reuse] [--copy-mode auto|required|copy|off]
@@ -54,7 +56,8 @@ agent settings        inspect per-host role model and effort preferences
 agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEVEL|inherit
 agent setup           --host codex|claude-code|cursor
 agent dispatch        --host HOST --role ROLE --task TEXT --path DIRECTORY
-                      [--review-requested] (host must launch returned specification)
+                      [--plan ID] [--shared] [--review-requested]
+                      (host must launch returned specification)
 version
 
 Approval, completion, fetch, and removal are explicit operations. The caller must
@@ -108,7 +111,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 	}
 	var repos, dependencies, copyPaths listFlag
-	var archived, reuse, discard, reviewRequested bool
+	var archived, reuse, discard, reviewRequested, shared bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
@@ -139,6 +142,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "record dependencies":
 		add("id")
 		f.Var(&dependencies, "depends-on", "plan dependency (repeatable)")
+	case "record order":
+		add("intent")
+		values["mode"] = f.String("mode", "auto", "auto, waves, or linear")
 	case "context find":
 		add("query")
 	case "worktree prepare":
@@ -162,7 +168,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "agent configure":
 		add("host", "role", "model", "effort")
 	case "agent dispatch":
-		add("host", "role", "task", "path")
+		add("host", "role", "task", "path", "plan")
+		f.BoolVar(&shared, "shared", false, "several workers share this worktree")
 		f.BoolVar(&reviewRequested, "review-requested", false, "user explicitly requested independent review")
 	case "agent settings":
 	case "status", "check", "member list":
@@ -186,11 +193,15 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 		return ""
 	}
-	optional := map[string]bool{"intent": command == "record create", "remote": true}
+	optional := map[string]bool{"remote": true}
+	optional["intent"] = command == "record create" || command == "record order"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
 			optional[k] = true
 		}
+	}
+	if command == "agent dispatch" {
+		optional["plan"] = true
 	}
 	for key, value := range values {
 		if *value == "" && !optional[key] {
@@ -236,7 +247,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "agent setup":
 			return s.SetupAgents(get("host"))
 		case "agent dispatch":
-			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), reviewRequested)
+			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), get("plan"), shared, reviewRequested)
 		case "check":
 			issues, e := s.Check(ctx)
 			checkFailed = len(issues) > 0
@@ -281,6 +292,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			err = s.Note(get("id"), get("text"), strings.TrimPrefix(command, "record "))
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
+		case "record order":
+			return s.Order(get("intent"), get("mode"))
 		case "context find":
 			return s.FindContext(get("query"))
 		case "worktree prepare":

@@ -23,8 +23,9 @@ depends_on:
   - p0002
 ```
 
-Dependencies are optional. Separate repository plans may be useful; no one-plan-
-per-repository constraint applies. IDs are global and prefixed, with a minimum of
+Dependencies are optional, and `record order` derives waves, start references,
+and integration merges from them. Separate repository plans may be useful; no
+one-plan-per-repository constraint applies. IDs are global and prefixed, with a minimum of
 three intent digits and four plan digits; numbering expands beyond that width.
 There are no member number ranges. Plans use `created_by` only for member data.
 
@@ -48,9 +49,11 @@ review. Findings do not trigger automatic fixes or block delivery mechanically.
 
 Commit, push, PR, merge, deployment, and external publishing remain explicit host
 tool actions. The executable supplies repository and branch information. On an
-explicit completion request, `record complete` appends a short note; the agent
-then reconciles affected durable project knowledge and an existing context index.
-Delivery alone does not mark the plan done or trigger cleanup.
+explicit completion request, `record complete` appends a short note and records a
+`completed` date in frontmatter; the agent then reconciles affected durable
+project knowledge and an existing context index. That date is what dependency
+ordering reads to release a plan's dependents, so complete a plan only when it
+actually landed. Delivery alone does not mark the plan done or trigger cleanup.
 
 Knowledge notes capture durable concepts, not task logs. Gather from named sources
 on request. `context find` searches only the optional index; the agent chooses and

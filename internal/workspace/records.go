@@ -27,6 +27,7 @@ type Record struct {
 	Intent       string   `yaml:"intent,omitempty" json:"intent,omitempty"`
 	Repositories []string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
 	DependsOn    []string `yaml:"depends_on,omitempty" json:"depends_on,omitempty"`
+	Completed    ISODate  `yaml:"completed,omitempty" json:"completed,omitempty"`
 	Plans        []string `yaml:"plans,omitempty" json:"plans,omitempty"`
 	Path         string   `yaml:"-" json:"path"`
 	Content      string   `yaml:"-" json:"content,omitempty"`
@@ -305,6 +306,17 @@ func (s *Store) replaceRecord(record Record, next []byte) error {
 	return s.Write(record.Path, next, 0644)
 }
 
+// ISODate is a calendar date recorded as ISO 8601 YYYY-MM-DD. Marshaling it as a
+// raw scalar keeps the unquoted form: the YAML encoder quotes a plain Go string
+// that looks like a date, which would make dates read differently depending on
+// which field they sit in.
+type ISODate string
+
+func (d ISODate) MarshalYAML() ([]byte, error) { return []byte(string(d)), nil }
+
+// Every date written anywhere in a workspace record uses this one format.
+func isoDate(moment time.Time) string { return moment.UTC().Format(time.DateOnly) }
+
 func (s *Store) Note(id, text, kind string) error {
 	if strings.TrimSpace(text) == "" || strings.ContainsRune(text, 0) {
 		return errors.New("provide a nonempty note")
@@ -313,7 +325,7 @@ func (s *Store) Note(id, text, kind string) error {
 	if err != nil {
 		return err
 	}
-	stamp := time.Now().UTC().Format("2006-01-02")
+	stamp := isoDate(time.Now())
 	next := strings.TrimRight(record.Content, "\n")
 	switch kind {
 	case "approve":
@@ -343,7 +355,22 @@ func (s *Store) Note(id, text, kind string) error {
 	default:
 		return errors.New("unknown note operation")
 	}
-	return s.replaceRecord(record, []byte(next+"\n"))
+	data := []byte(next + "\n")
+	// Completion also records a machine-readable date so dependency ordering can
+	// tell a finished plan from an unfinished one without reading prose. The
+	// human-readable section stays; one write keeps both consistent.
+	if kind == "complete" {
+		header, body, err := splitRecord(data)
+		if err != nil {
+			return err
+		}
+		updated, err := Edit(header, []string{"completed"}, ISODate(stamp))
+		if err != nil {
+			return err
+		}
+		data = []byte("---\n" + strings.TrimRight(string(updated), "\n") + "\n---\n" + string(body))
+	}
+	return s.replaceRecord(record, data)
 }
 
 func (s *Store) SetDependencies(id string, dependencies []string) error {

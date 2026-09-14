@@ -52,6 +52,14 @@ Approve or refine it. After approval, the agent investigates the code, creates
 linked Markdown plans, and proceeds without separate plan approval. Plans can
 span repositories or be split with dependencies.
 
+> Execute all plans of the billing intent.
+
+For several plans at once, the agent derives the dependency waves, shows you
+whether overlapping them or chaining them costs less, and then runs to completion
+unattended — preparing worktrees, merging a dependent plan's base when needed,
+dispatching workers, and recording progress. It stops and preserves everything on
+a failed check or a decision it should not make alone.
+
 Use worktrees when helpful. The executable prepares the Git working copies;
 it reuses ignored node_modules and .env files using filesystem CoW when available,
 with independent-copy fallback. The agent handles any remaining setup and implements

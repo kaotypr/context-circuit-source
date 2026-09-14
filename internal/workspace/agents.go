@@ -3,6 +3,7 @@ package workspace
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -27,7 +28,7 @@ type Role struct {
 var Roles = map[string]Role{
 	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. Do not edit files or launch other agents.", true},
 	"planner":  {"Plan an approved intent using evidence from the repositories.", "Read the approved intent and relevant code. Return task order, cross-repository dependencies, risks, and expected checks. The coordinator writes the plan. Do not implement or request a separate plan approval. Do not edit files or launch other agents.", true},
-	"worker":   {"Implement a bounded part of an approved plan and run normal checks.", "Implement the assigned approved plan in the supplied working directory. You are not alone in the codebase: preserve others' edits and adapt your changes. Own only the assigned task and paths. Run normal tests and report changes, results, and remaining work. Do not independently verify your implementation, launch agents, or deliver changes without explicit authorization.", false},
+	"worker":   {"Implement a bounded part of an approved plan and run normal checks.", "Implement the assigned approved plan in the supplied working directory. Own only the assigned task and paths. Run normal tests and report changes, results, and remaining work. Do not independently verify your implementation, launch agents, or deliver changes without explicit authorization.", false},
 	"reviewer": {"Independently review a diff only when the user requests review.", "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", true},
 }
 
@@ -216,7 +217,7 @@ type Dispatch struct {
 	LaunchRequired   bool         `json:"launch_required"`
 }
 
-func (s *Store) DispatchAgent(host, role, task, directory string, reviewRequested bool) (Dispatch, error) {
+func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, reviewRequested bool) (Dispatch, error) {
 	setting, err := s.agentSetting(host, role)
 	if err != nil {
 		return Dispatch{}, err
@@ -227,6 +228,9 @@ func (s *Store) DispatchAgent(host, role, task, directory string, reviewRequeste
 	if role == "reviewer" && !reviewRequested {
 		return Dispatch{}, fmt.Errorf("independent review requires an explicit user request; use --review-requested only to represent that request")
 	}
+	if shared && role != "worker" {
+		return Dispatch{}, errors.New("--shared describes workers sharing one worktree")
+	}
 	work, err := Open(directory)
 	if err != nil {
 		return Dispatch{}, err
@@ -236,6 +240,49 @@ func (s *Store) DispatchAgent(host, role, task, directory string, reviewRequeste
 	if host == "codex" {
 		name = "cc_" + role
 	}
-	prompt := r.Instructions + "\n\nWorkspace: " + s.Root + "\nWorking directory: " + work.Root + "\nTask: " + task
+	prompt := r.Instructions + "\n\nWorkspace: " + s.Root + "\nWorking directory: " + work.Root
+	if !r.ReadOnly {
+		// Isolation differs by parallelism axis. One worker per plan owns its
+		// whole worktree; several workers inside one worktree genuinely share
+		// files. Saying the wrong one invites a worker to guess at edits it
+		// cannot see, or to overwrite edits it can.
+		if shared {
+			prompt += "\n\nOwnership: other workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
+		} else {
+			prompt += "\n\nOwnership: you are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
+		}
+	}
+	if plan != "" {
+		record, err := s.FindRecord(plan)
+		if err != nil {
+			return Dispatch{}, err
+		}
+		if !strings.HasPrefix(record.ID, "p") {
+			return Dispatch{}, errors.New("--plan needs a plan ID")
+		}
+		prompt += "\n\n" + planBrief(record)
+	}
+	prompt += "\n\nTask: " + task
 	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true}, nil
+}
+
+// planBrief states the facts the CLI can verify. A dependent plan's branch is
+// prepared from its predecessors, so their work is already in its ancestry;
+// saying so prevents a worker from reimplementing what it inherited.
+func planBrief(record Record) string {
+	brief := "Plan " + record.ID
+	if record.Intent != "" {
+		brief += " of intent " + record.Intent
+	}
+	brief += "\nRepositories: " + strings.Join(record.Repositories, ", ")
+	if len(record.DependsOn) > 0 {
+		brief += "\nDepends on: " + strings.Join(record.DependsOn, ", ") +
+			"\nTheir completed work is expected in this branch's ancestry. Build on it rather than reimplementing it." +
+			"\nAny plan running beside you is invisible in a separate worktree and is reconciled later by the coordinator. Do not guess at its changes; report an interface you assume it may also be changing."
+	}
+	_, body, err := splitRecord([]byte(record.Content))
+	if err == nil && len(strings.TrimSpace(string(body))) > 0 {
+		brief += "\n\nPlan record (authoritative):\n" + strings.TrimSpace(string(body))
+	}
+	return brief
 }
