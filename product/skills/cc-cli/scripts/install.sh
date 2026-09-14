@@ -61,12 +61,22 @@ else
       --header 'X-GitHub-Api-Version: 2022-11-28' \
       "$api/releases/tags/cli-v$version" -o "$work/release.json" ||
       fail "cannot read release cli-v$version; confirm it exists and the token grants access"
-    # Each asset object begins a line once the JSON is split on braces, so the
-    # asset URL read beside a matching name belongs to that asset.
+    # Read each brace-delimited object as one record, so the asset URL and the
+    # name beside it are matched together whether the API pretty-prints the
+    # payload or returns it compact. An asset's own URL precedes the nested
+    # uploader object that ends the record.
     asset_url() {
-      sed 's/" *: */":/g' "$work/release.json" | tr '{' '\n' |
-        grep -F "\"name\":\"$1\"" |
-        sed -n 's|.*"url":"\([^"]*/releases/assets/[0-9][0-9]*\)".*|\1|p' | head -n 1
+      awk -v want="$1" '
+        BEGIN { RS = "{" }
+        {
+          record = $0
+          gsub(/[ \t\r\n]+/, "", record)
+          if (index(record, "\"name\":\"" want "\"") == 0) next
+          if (match(record, /"url":"[^"]*\/releases\/assets\/[0-9]+"/) == 0) next
+          print substr(record, RSTART + 7, RLENGTH - 8)
+          exit
+        }
+      ' "$work/release.json"
     }
     for name in "$package" SHA256SUMS; do
       url=$(asset_url "$name")

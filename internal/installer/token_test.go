@@ -1,8 +1,8 @@
 package installer_test
 
 import (
+	"encoding/json"
 	"encoding/pem"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -15,13 +15,55 @@ import (
 	assets "github.com/kaotypr/context-circuit-source"
 )
 
+// Field order matches the GitHub payload: an asset's own URL precedes the
+// nested uploader object, so both survive a brace-delimited read.
+type releaseAsset struct {
+	URL                string         `json:"url"`
+	ID                 int            `json:"id"`
+	NodeID             string         `json:"node_id"`
+	Name               string         `json:"name"`
+	Label              *string        `json:"label"`
+	Uploader           map[string]any `json:"uploader"`
+	ContentType        string         `json:"content_type"`
+	State              string         `json:"state"`
+	Size               int            `json:"size"`
+	DownloadCount      int            `json:"download_count"`
+	BrowserDownloadURL string         `json:"browser_download_url"`
+}
+
+type release struct {
+	URL        string         `json:"url"`
+	ID         int            `json:"id"`
+	NodeID     string         `json:"node_id"`
+	TagName    string         `json:"tag_name"`
+	Name       string         `json:"name"`
+	Body       string         `json:"body"`
+	Draft      bool           `json:"draft"`
+	Prerelease bool           `json:"prerelease"`
+	Assets     []releaseAsset `json:"assets"`
+}
+
 // A private repository serves release assets only through the API, so the
 // installer resolves an asset id and presents a token. The fixture answers only
-// authenticated requests, which is what proves the credential is sent.
+// authenticated requests, which is what proves the credential is sent. The API
+// pretty-prints its payload, so the asset reader is exercised against that shape
+// as well as a compact one.
 func TestTokenInstallResolvesPrivateReleaseAssets(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("install.ps1 uses its own HTTP client; this fixture drives curl")
 	}
+	for _, shape := range []struct {
+		name   string
+		indent bool
+	}{{"pretty", true}, {"compact", false}} {
+		t.Run(shape.name, func(t *testing.T) {
+			runTokenInstall(t, shape.indent)
+		})
+	}
+}
+
+func runTokenInstall(t *testing.T, indent bool) {
+	t.Helper()
 	root := t.TempDir()
 	const token = "ghp_fixture_TOKEN-0123456789"
 	version := "2.0.0-token"
@@ -29,47 +71,76 @@ func TestTokenInstallResolvesPrivateReleaseAssets(t *testing.T) {
 	packageName := filepath.Base(archive)
 
 	var served, unauthorized int
+	authorized := func(w http.ResponseWriter, r *http.Request) bool {
+		if r.Header.Get("Authorization") != "Bearer "+token {
+			unauthorized++
+			http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
+			return false
+		}
+		return true
+	}
 	mux := http.NewServeMux()
 	var base string
-	body := func(w http.ResponseWriter, r *http.Request, path string) {
-		if r.Header.Get("Authorization") != "Bearer "+token {
-			unauthorized++
-			http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
-			return
+	serve := func(path string) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			if !authorized(w, r) {
+				return
+			}
+			if r.Header.Get("Accept") != "application/octet-stream" {
+				http.Error(w, "wrong accept", http.StatusNotAcceptable)
+				return
+			}
+			served++
+			http.ServeFile(w, r, path)
 		}
-		if r.Header.Get("Accept") != "application/octet-stream" {
-			http.Error(w, "wrong accept", http.StatusNotAcceptable)
-			return
-		}
-		served++
-		http.ServeFile(w, r, path)
 	}
-	mux.HandleFunc("/repos/kaotypr/context-circuit-source/releases/assets/1", func(w http.ResponseWriter, r *http.Request) { body(w, r, archive) })
-	mux.HandleFunc("/repos/kaotypr/context-circuit-source/releases/assets/2", func(w http.ResponseWriter, r *http.Request) { body(w, r, sums) })
-	mux.HandleFunc("/repos/kaotypr/context-circuit-source/releases/tags/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") != "Bearer "+token {
-			unauthorized++
-			http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
+	const prefix = "/repos/kaotypr/context-circuit-source/releases"
+	mux.HandleFunc(prefix+"/assets/564138120", serve(archive))
+	mux.HandleFunc(prefix+"/assets/564138121", serve(sums))
+	mux.HandleFunc(prefix+"/tags/", func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(w, r) {
 			return
 		}
 		if !strings.HasSuffix(r.URL.Path, "/cli-v"+version) {
 			http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		// Shaped like the GitHub payload, including the nested uploader object
-		// and a browser_download_url the installer must not mistake for the
-		// asset API URL.
-		asset := func(id int, name string) string {
-			return fmt.Sprintf(`{"url":"%s/repos/kaotypr/context-circuit-source/releases/assets/%d","id":%d,"node_id":"RA_%d","name":"%s","label":null,`+
-				`"uploader":{"login":"kaotypr","id":99,"node_id":"U_1","type":"User"},`+
-				`"content_type":"application/octet-stream","state":"uploaded","size":1,"download_count":0,`+
-				`"browser_download_url":"https://github.com/kaotypr/context-circuit-source/releases/download/cli-v%s/%s"}`,
-				base, id, id, id, name, version, name)
+		asset := func(id int, name string) releaseAsset {
+			return releaseAsset{
+				URL:                base + prefix + "/assets/" + itoa(id),
+				ID:                 id,
+				NodeID:             "RA_" + itoa(id),
+				Name:               name,
+				Uploader:           map[string]any{"login": "kaotypr", "id": 99, "node_id": "U_1", "type": "User"},
+				ContentType:        "application/octet-stream",
+				State:              "uploaded",
+				Size:               1,
+				BrowserDownloadURL: "https://github.com/kaotypr/context-circuit-source/releases/download/cli-v" + version + "/" + name,
+			}
 		}
-		fmt.Fprintf(w, `{"url":"%s/repos/kaotypr/context-circuit-source/releases/7","id":7,"node_id":"RE_7",`+
-			`"tag_name":"cli-v%s","name":"Context Circuit CLI %s","draft":false,"prerelease":true,"assets":[%s,%s]}`,
-			base, version, version, asset(1, packageName), asset(2, "SHA256SUMS"))
+		payload := release{
+			URL: base + prefix + "/7", ID: 7, NodeID: "RE_7",
+			TagName: "cli-v" + version, Name: "Context Circuit CLI " + version,
+			// Release notes carry braces and quotes, which must not be mistaken
+			// for asset structure.
+			Body:       "Run `context-circuit-cli help`.\nSeeds write {} for an empty container.\n",
+			Prerelease: true,
+			Assets:     []releaseAsset{asset(564138120, packageName), asset(564138121, "SHA256SUMS")},
+		}
+		var body []byte
+		var err error
+		if indent {
+			body, err = json.MarshalIndent(payload, "", "  ")
+		} else {
+			body, err = json.Marshal(payload)
+		}
+		if err != nil {
+			t.Error(err)
+			http.Error(w, "fixture", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(body)
 	})
 	server := httptest.NewTLSServer(mux)
 	defer server.Close()
@@ -107,8 +178,7 @@ func TestTokenInstallResolvesPrivateReleaseAssets(t *testing.T) {
 	if served != 2 {
 		t.Fatalf("expected the package and checksums to be served, got %d", served)
 	}
-	command := exec.Command(filepath.Join(binDir, "context-circuit-cli"), "version")
-	installed, err := command.CombinedOutput()
+	installed, err := exec.Command(filepath.Join(binDir, "context-circuit-cli"), "version").CombinedOutput()
 	if err != nil || strings.TrimSpace(string(installed)) != version {
 		t.Fatalf("installed command: %v %s", err, installed)
 	}
@@ -136,4 +206,16 @@ func TestTokenInstallResolvesPrivateReleaseAssets(t *testing.T) {
 	if err == nil || !strings.Contains(string(data), "token contains unexpected characters") {
 		t.Fatalf("accepted an unquotable token: %v\n%s", err, data)
 	}
+}
+
+func itoa(value int) string {
+	digits := ""
+	for value > 0 {
+		digits = string(rune('0'+value%10)) + digits
+		value /= 10
+	}
+	if digits == "" {
+		return "0"
+	}
+	return digits
 }
