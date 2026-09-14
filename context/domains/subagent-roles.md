@@ -55,9 +55,16 @@ substituted setting is reported, never silently downgraded.
 
 ## Native host mapping
 
-Setup materializes four native role definitions under the host's agents
+Setup materializes four native role definitions under each host's agents
 directory; those generated files are local and ignored while the settings that
-produce them are shared. Codex expresses model, reasoning effort, and a sandbox
+produce them are shared. One workspace is opened in several hosts — an intent
+written in one, a plan grounded in another, execution in a third — so setup
+covers every host unless `--host` narrows it, and initialization runs it rather
+than leaving a step between a new workspace and its first delegation. Seeding
+those files from the template instead would ship content no inventory records,
+which a later version reads as a customization and refuses to replace. A clone
+still carries none of them, because they are ignored; dispatch reporting an
+absent definition is what makes that visible. Codex expresses model, reasoning effort, and a sandbox
 mode for read-only roles; Claude Code expresses model, effort, and a read-only
 tool allowlist; Cursor expresses model with an optional effort parameter and a
 read-only flag, and requires an explicit model whenever an effort is explicit.

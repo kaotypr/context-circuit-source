@@ -167,7 +167,30 @@ func digest(data []byte) string { sum := sha256.Sum256(data); return hex.EncodeT
 
 // SetupAgents only refreshes files previously written by this command, or files
 // already identical to the requested output. User edits are never overwritten.
+// Hosts names every coding host a workspace can be opened in. A workspace is
+// used from more than one, so setup writes them all unless one is named.
+var Hosts = []string{"codex", "claude-code", "cursor"}
+
+// SetupAgents writes native role definitions. An empty host covers every host,
+// because the same workspace is opened in different ones and a definition
+// installed for only the host that happened to run setup leaves the next one
+// with nothing to invoke.
 func (s *Store) SetupAgents(host string) ([]string, error) {
+	if host != "" {
+		return s.setupHost(host)
+	}
+	var paths []string
+	for _, each := range Hosts {
+		written, err := s.setupHost(each)
+		paths = append(paths, written...)
+		if err != nil {
+			return paths, err
+		}
+	}
+	return paths, nil
+}
+
+func (s *Store) setupHost(host string) ([]string, error) {
 	if err := validHost(host); err != nil {
 		return nil, err
 	}

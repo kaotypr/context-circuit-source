@@ -55,7 +55,7 @@ worktree remove        --repo ID --path PATH [--discard]
 template export       --path NEW_DIRECTORY (blank workspace files)
 agent settings        inspect per-host role model and effort preferences
 agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEVEL|inherit
-agent setup           --host codex|claude-code|cursor
+agent setup           [--host codex|claude-code|cursor] (default: every host)
 agent dispatch        --host HOST --role ROLE --task TEXT --path DIRECTORY
                       [--plan ID] [--shared] [--review-requested]
                       (host must launch returned specification)
@@ -226,6 +226,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	if command == "agent dispatch" {
 		optional["plan"] = true
+	}
+	// A workspace is opened in more than one host, so setup covers them all
+	// unless the caller narrows it to one.
+	if command == "agent setup" {
+		optional["host"] = true
 	}
 	for key, value := range values {
 		if *value == "" && !optional[key] {

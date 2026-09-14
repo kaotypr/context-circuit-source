@@ -20,12 +20,12 @@ These settings describe agent capability, not plan ownership or risk gates.
 ```sh
 context-circuit-cli agent settings
 context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent setup --host codex
+context-circuit-cli agent setup
 ```
 
 Configure the actual host (`codex`, `claude-code`, or `cursor`) and verify that its
 account supports the requested pair. Changes are shared workspace preferences.
-`agent setup` materializes four native files under that host's agents directory;
+`agent setup` materializes four native files under each host's agents directory;
 these files and their update inventory are local and ignored. A customized native
 file is preserved and reported instead of overwritten. Restart/reload the coding
 host when it does not discover newly written definitions in the current session.

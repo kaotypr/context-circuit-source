@@ -2,6 +2,8 @@ package cli_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -279,12 +281,22 @@ func waveIDs(wave workspace.OrderWave) []string {
 	return ids
 }
 
-// A specification names an agent type the host registers from a gitignored file
-// that only setup writes. Saying whether that file is there turns a dispatch the
-// host cannot launch into a fact the caller can act on.
+// Role definitions are gitignored, so a clone of an initialized workspace has
+// none of them however the creating machine got them. A specification then names
+// an agent type the host cannot resolve, and saying so turns a dispatch that
+// launches nothing into a fact the caller can act on.
 func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 	f := setup(t)
 	diamond(f)
+	for _, host := range workspace.Hosts {
+		directory := "." + host
+		if host == "claude-code" {
+			directory = ".claude"
+		}
+		if err := os.RemoveAll(filepath.Join(f.root, directory, "agents")); err != nil {
+			t.Fatal(err)
+		}
+	}
 	read := func() workspace.Dispatch {
 		t.Helper()
 		var spec workspace.Dispatch
@@ -298,7 +310,7 @@ func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 
 	before := read()
 	if before.DefinitionInstalled {
-		t.Fatal("no setup has run, so no definition can be installed")
+		t.Fatal("a clone carries no gitignored definition, so none can be installed")
 	}
 	if before.DefinitionPath != ".claude/agents/cc-planner.md" {
 		t.Fatalf("definition path: %q", before.DefinitionPath)
@@ -329,5 +341,29 @@ func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 	}
 	if other.DefinitionInstalled {
 		t.Fatal("claude-code setup must not install cursor definitions")
+	}
+}
+
+// Initialization covers every host, because the same workspace is opened in
+// more than one and the host that created it is not the host that plans or
+// executes in it.
+func TestInitInstallsRolesForEveryHost(t *testing.T) {
+	f := setup(t)
+	for _, want := range []string{
+		".codex/agents/cc-planner.toml",
+		".claude/agents/cc-planner.md",
+		".cursor/agents/cc-planner.md",
+		".claude/agents/cc-explorer.md",
+		".claude/agents/cc-worker.md",
+		".claude/agents/cc-reviewer.md",
+	} {
+		if _, err := os.Stat(filepath.Join(f.root, want)); err != nil {
+			t.Errorf("init left %s missing: %v", want, err)
+		}
+	}
+	// Definitions written by init record an inventory, so a later version
+	// replaces them instead of reading them as a customization.
+	if out := f.ok("agent", "setup"); !strings.Contains(out, "cc-planner") {
+		t.Fatalf("setup after init: %s", out)
 	}
 }

@@ -15,11 +15,14 @@ Use `agent settings` to resolve `.context-circuit/role-tiering.yaml`. The initia
 model and effort for every role are `inherit`, as chosen by the maintainer. Honor
 explicit user settings; never infer model quality order or silently escalate.
 
-Before the first dispatch, or after settings change, run:
+Initialization installs role definitions for every host. Run setup again after
+settings change, or in a clone, where the ignored definitions never arrived:
 
 ```sh
-context-circuit-cli --workspace <root> agent setup --host <codex|claude-code|cursor>
+context-circuit-cli --workspace <root> agent setup
 ```
+
+With no `--host` it covers every host, since one workspace is opened in several.
 
 This installs native role definitions without replacing custom edits. Reload the
 host's agent definitions if required. Do not claim a definition was loaded merely

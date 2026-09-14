@@ -98,13 +98,16 @@ Subagent setup and dispatch:
 ```sh
 context-circuit-cli agent settings
 context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent setup --host codex
+context-circuit-cli agent setup
 context-circuit-cli --json agent dispatch --host codex --role worker \
   --plan p0001 --path /actual/worktree --task 'Implement the assigned tasks from p0001'
 ```
 
 Settings default to host inheritance. `agent setup` applies settings to native
-agent files; the host may need to reload them. `agent dispatch` returns the
+agent files for every host unless `--host` narrows it, because one workspace is
+opened in several; the host may need to reload them. Initialization runs it, so a
+new workspace needs it again only after `agent configure` or in a fresh clone,
+where the ignored definitions never arrive. `agent dispatch` returns the
 resolved invocation for the cc-dispatch skill to launch through the host's tools.
 For a reviewer, `--review-requested` represents a real user request. No CLI command
 launches an LLM or treats a dispatch specification as evidence of completion.
