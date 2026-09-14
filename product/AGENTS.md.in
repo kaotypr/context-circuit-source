@@ -16,16 +16,13 @@ agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
 the template version and existing records unchanged during CLI updates.
 
 Subagent role definitions are host-local and gitignored, so initialization writes
-them for every host this workspace may later be opened in, not only the one that
-ran it. A clone carries none of them, and `agent configure` makes the existing
-ones stale, so if this host's `cc-*` definitions are missing under
-`.claude/agents/`, `.codex/agents/`, or `.cursor/agents/`, or settings changed,
-run `agent setup`; with no `--host` it covers every host and preserves customized
-definitions. Check while orienting rather than when something needs to delegate:
-writing a definition is not loading it, and a host may not register a role until
-it reloads. A dispatch specification reports the definition it expects and
-whether it is present, so an absent one is visible instead of becoming a silent
-non-launch.
+them for every host this workspace may later be opened in. A clone carries none,
+and `agent configure` makes existing ones stale: if this host's `cc-*` definitions
+are missing under `.claude/agents/`, `.codex/agents/`, or `.cursor/agents/`, or
+settings changed, run `agent setup`. With no `--host` it covers every host and
+preserves customized definitions. Check while orienting, not when something needs
+to delegate: writing a definition is not loading it, and a host may not register a
+role until it reloads. Dispatch reports whether the definition it names is there.
 
 Read `workspace.yaml` for project identity, purpose, logical repositories, default
 base branches, and relationships. The shared roster is `members.yaml`. The active
@@ -64,17 +61,16 @@ interpretation and knowledge writing are the agent's responsibility.
 
 Live context notes describe the project, not the workspace machinery that produced
 them. Never name a plan record, an intent record, or a file under `sources/` inside
-a note: records are archived while knowledge is meant to outlast them, and a recorded
-evidence path becomes a standing instruction to read material that must stay passive.
+a note: records are archived while knowledge outlasts them, and a recorded evidence
+path becomes a standing instruction to read material that must stay passive.
 Repository paths are the durable anchor, exact or patterned, written with the logical
 repository ID — `api@internal/billing/dunning/`, `web@src/features/<feature>/` — never
-a local checkout path. Links between context notes are fine, and which record or
-evidence produced a note belongs in that plan. Run `check` after editing notes; it
-reports any line that crosses this boundary. One note is one unwrapped catalog entry
-carrying its own link, repositories, question, and search terms, as `context/INDEX.md`
-describes. Record a domain term in `context/glossary.md` the first time its meaning
-has to be asked for, naming the code identifier whenever it differs from the word the
-project says out loud.
+a local checkout path. Link freely between notes; which record or evidence produced
+a note belongs in that plan. Run `check` after editing notes; it reports any line
+that crosses this boundary. One note is one unwrapped catalog entry, as
+`context/INDEX.md` describes. Record a domain term in `context/glossary.md` the
+first time its meaning has to be asked for, naming the code identifier when it
+differs from the project's own word.
 
 ## Intent and planning
 
@@ -100,14 +96,14 @@ intended outcome or success criteria materially change.
 Delegating that investigation is a judgment about size, not a step. Dispatch a
 planner through `.agents/skills/cc-dispatch/SKILL.md` when the reading would be
 substantially larger than the plan it produces: an intent spanning several
-repositories, code this session has not already read, or a read that would take a
-serious part of the remaining context. Investigate in the session instead when it
-already holds that code, because a planner would re-derive what is present and add
-only latency. One planner runs per intent; splitting it per repository destroys
-the cross-repository order it exists to produce. A `not-feasible` return is a
-complete answer: write no plan and report it with its evidence. A return that the
-outcome or success criteria must change goes back for renewed approval before
-planning continues. The coordinator writes every record either way.
+repositories, code this session has not read, or a read that would take a serious
+part of the remaining context. Investigate in the session when it already holds
+that code, since a planner would re-derive what is present and add only latency.
+One planner runs per intent; splitting it per repository destroys the
+cross-repository order it exists to produce. A `not-feasible` return is a complete
+answer: write no plan, and report it with its evidence. A return that the outcome
+or success criteria must change goes back for renewed approval. The coordinator
+writes every record either way.
 
 Dispatch explorers when several independent codebase questions stand between this
 session and a grounded intent or plan. Each is narrow and read-only, they run in
@@ -136,8 +132,7 @@ colliding, so give every member of a team workspace a distinct band before they
 work apart. A solo workspace needs none, and an unbanded member allocates from
 the numbers no band has claimed. Assign one with `member add --band N` or
 `member band`; the band decides which number comes next and never makes a
-reserved number reusable. A band is not a namespace: the ID stays global, and
-the member is still recorded only as `created_by`.
+reserved number reusable. A band is not a namespace: the ID stays global.
 
 Bands prevent collisions only between members who actually hold distinct ones.
 Unbanded members working in separate clones, and any clone whose roster is stale,
@@ -150,14 +145,14 @@ their IDs. Do not claim distributed collision prevention beyond what bands give.
 Implementation starts on a request to execute a plan, and never before one.
 
 Preparing a worktree for each repository the plan names is the first step of
-execution, not a judgment call. The single exception is explicit: when the person
-asks to work directly in a bound checkout, work there and preserve everything it
-already holds. The execution request covers that preparation, so do not add
-another permission gate in front of it. Use
-`.agents/skills/cc-dispatch/SKILL.md` to delegate bounded exploration, planning,
-and implementation when useful; small tasks may stay in the main session. Apply
-configured host role/model/effort settings to actual subagent invocations, wait
-for their results, and integrate them.
+execution, not a judgment call. The one exception: when the person asks to work
+directly in a bound checkout, work there and preserve everything it already
+holds. The execution request covers that preparation, so do not add another
+permission gate in front of it. Use `.agents/skills/cc-dispatch/SKILL.md` to
+delegate bounded exploration, planning, and implementation when useful; small
+tasks may stay in the main session. Apply configured host role/model/effort
+settings to actual subagent invocations, wait for their results, and integrate
+them.
 
 The executable resolves repository bindings, reports Git state, resolves the
 selected starting point, and creates or reuses worktrees. Select the recorded base
@@ -237,12 +232,13 @@ creation, merging into a base branch, deployment, or deletion.
 ## Independent review on request
 
 Independent verification is a manually requested read-only code review, usually
-after PR creation and optionally after delivery as an audit. Use the cc-dispatch skill to invoke an independent
-review-capable agent/session when requested and available. Supply the requested
-diff, current revision, relevant surrounding code, and intent success criteria.
-The reviewer reports actionable findings with locations and limitations. It does
-not modify code, automatically dispatch fixes, or post external comments unless
-requested. Tests that change files belong to implementation, not read-only review.
+after PR creation and optionally after delivery as an audit. Use the cc-dispatch
+skill to invoke an independent review-capable agent or session when requested and
+available. Supply the requested diff, current revision, relevant surrounding code,
+and intent success criteria. The reviewer reports actionable findings with
+locations and limitations. It does not modify code, automatically dispatch fixes,
+or post external comments unless requested. Tests that change files belong to
+implementation, not read-only review.
 
 If independence is unavailable, explain that limitation and offer an ordinary
 review. Never call the implementing session's own inspection independent. The
@@ -256,21 +252,21 @@ Commit, push, PR creation, merge into a base branch, deployment, external
 publication, and deletion of workspace data require explicit authorization.
 Reuse authorization already given. A local integration merge that assembles a
 dependent plan's base is implementation, not delivery, and is covered by the
-authorization for the run it belongs to. Use ordinary Git and provider tools; the Go executable provides repository,
-branch, and base information and never silently delivers. The recorded base branch
-is the default PR target unless the user chooses another. Deliver per repository
-when appropriate. Explain relevant drift or conflicts without imposing automatic
-rebase-and-reverify behavior.
+authorization for the run it belongs to. Use ordinary Git and provider tools; the
+Go executable provides repository, branch, and base information and never silently
+delivers. The recorded base branch is the default PR target unless the user
+chooses another. Deliver per repository when appropriate. Explain relevant drift
+or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more plans
 completed, append a short completion note to each record and reconcile the durable
 project knowledge those plans changed. The request is finished only when both are
 done. `record complete` returns the catalog entries scoped to that plan's
 repositories: a candidate set to judge, never a list to rewrite. Most completions
-change no durable knowledge, and recording that in the completion note is the normal
-outcome rather than a skipped step. Where meaning did change, edit the note and its
-catalog entry in one pass and move its reviewed date; a renamed or retired identifier
-is a glossary row. Completing several plans at once reconciles once across the set,
+change no durable knowledge; recording that in the note is the normal outcome, not
+a skipped step. Where meaning did change, edit the note and its catalog entry in
+one pass and move its reviewed date; a renamed or retired identifier is a glossary
+row. Completing several plans at once reconciles once across the set,
 not once per plan. Keep implementation-specific evidence in the plan, and keep those
 plans' own identifiers out of every note reconciled from them; run `check` afterwards.
 Other work need not wait for unrelated knowledge updates.
