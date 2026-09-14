@@ -3,15 +3,21 @@
 set -eu
 fail() { printf 'CLI installation failed: %s\n' "$1" >&2; exit 1; }
 version= bin_dir=${HOME:?}/.local/bin archive= checksums=
+token=${CONTEXT_CIRCUIT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}
 while [ "$#" -gt 0 ]; do
   [ "$#" -ge 2 ] || fail 'options require a value'
   case "$1" in
     --version) version=$2 ;; --bin-dir) bin_dir=$2 ;;
     --archive) archive=$2 ;; --checksums) checksums=$2 ;;
+    --token) token=$2 ;;
     *) fail "unknown option: $1" ;;
   esac
   shift 2
 done
+# The token is written to a curl configuration line, which has no escape for a
+# quote or backslash. Reject anything outside the character set GitHub issues
+# rather than build a malformed request from it.
+case "$token" in *[!A-Za-z0-9_-]*) fail 'token contains unexpected characters' ;; esac
 case "$version" in 2.*) ;; *) fail 'supply an exact compatible v2 CLI version without a v prefix' ;; esac
 case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
@@ -43,9 +49,35 @@ if [ -n "$archive" ] || [ -n "$checksums" ]; then
   cp "$checksums" "$work/SHA256SUMS"
 else
   command -v curl >/dev/null 2>&1 || fail 'curl is required to download the CLI'
-  base="https://github.com/kaotypr/context-circuit-source/releases/download/cli-v$version"
-  curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' "$base/$package" -o "$work/$package"
-  curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' "$base/SHA256SUMS" -o "$work/SHA256SUMS"
+  fetch() { curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' "$@"; }
+  # Pass the credential on stdin so it stays out of the process list.
+  fetch_auth() { printf 'header = "Authorization: Bearer %s"\n' "$token" | fetch --config - "$@"; }
+  if [ -n "$token" ]; then
+    # A private repository serves release assets only through the API, by asset
+    # id; the public download path answers 404. curl does not carry the
+    # Authorization header across the redirect to signed storage.
+    api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit-source"
+    fetch_auth --header 'Accept: application/vnd.github+json' \
+      --header 'X-GitHub-Api-Version: 2022-11-28' \
+      "$api/releases/tags/cli-v$version" -o "$work/release.json" ||
+      fail "cannot read release cli-v$version; confirm it exists and the token grants access"
+    # Each asset object begins a line once the JSON is split on braces, so the
+    # asset URL read beside a matching name belongs to that asset.
+    asset_url() {
+      sed 's/" *: */":/g' "$work/release.json" | tr '{' '\n' |
+        grep -F "\"name\":\"$1\"" |
+        sed -n 's|.*"url":"\([^"]*/releases/assets/[0-9][0-9]*\)".*|\1|p' | head -n 1
+    }
+    for name in "$package" SHA256SUMS; do
+      url=$(asset_url "$name")
+      [ -n "$url" ] || fail "release cli-v$version publishes no asset named $name"
+      fetch_auth --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
+    done
+  else
+    base="https://github.com/kaotypr/context-circuit-source/releases/download/cli-v$version"
+    fetch "$base/$package" -o "$work/$package"
+    fetch "$base/SHA256SUMS" -o "$work/SHA256SUMS"
+  fi
 fi
 expected=$(awk -v name="$package" '{file=$2; sub(/^\*/, "", file); sub(/^\.\//, "", file); if(file==name) print $1}' "$work/SHA256SUMS")
 [ "${#expected}" -eq 64 ] || fail 'missing or ambiguous checksum entry'

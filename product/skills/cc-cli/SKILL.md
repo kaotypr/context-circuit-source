@@ -26,6 +26,23 @@ Run the bundled script, using absolute paths when outside this skill directory:
 The Windows policy flag applies only to this installer process; it does not change
 the user's saved execution policy. Honor any organization policy that blocks it.
 
+## Authenticate while the source repository is private
+
+The source repository is private, so its release assets are not publicly
+downloadable and the plain download path answers 404. Supply a GitHub token with
+read access to it: `--token <value>` / `-Token <value>`, or the environment
+variable `CONTEXT_CIRCUIT_TOKEN` (`GH_TOKEN` and `GITHUB_TOKEN` are read as
+fallbacks). With a token the installer resolves the release through the API and
+downloads each asset by id; without one it uses the public download path, which
+works unchanged if the repository is ever published.
+
+Ask the user for the token or read it from an environment variable they already
+set. Never write it into workspace files, a shell profile, a commit, or the
+transcript, and do not pass it to anything but these installer scripts. A 404
+while a token is set usually means the token lacks access to the repository, not
+that the version is missing. Offline `--archive` / `-Archive` installation from a
+trusted release needs no token.
+
 Both install and update use the same script. `--bin-dir` / `-BinDir` selects a
 user-writable command directory. No administrator access is needed. The installer
 verifies SHA-256 and the executable's version before switching the command to the
