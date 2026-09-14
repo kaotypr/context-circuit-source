@@ -288,8 +288,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			return s.FindRecord(get("id"))
 		case "record list":
 			return s.ListRecords(archived)
-		case "record note", "record approve", "record complete":
+		case "record note", "record approve":
 			err = s.Note(get("id"), get("text"), strings.TrimPrefix(command, "record "))
+		case "record complete":
+			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
+				return nil, err
+			}
+			entries, e := s.KnowledgeCandidates(get("id"))
+			return map[string]any{"completed": get("id"), "knowledge_candidates": entries}, e
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":

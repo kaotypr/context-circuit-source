@@ -470,3 +470,43 @@ func TestCLIValidationAndSourceIsolation(t *testing.T) {
 		t.Fatal("followed workspace symlink")
 	}
 }
+
+// Marking a plan complete is the one step that reconciles durable knowledge, so
+// completion hands the agent the catalog entries scoped to that plan's
+// repositories. They are candidates to judge, not a list to rewrite.
+func TestCompletionReportsScopedKnowledgeCandidates(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	f.repository("web")
+	intent := f.intent("billing")
+	plan := f.plan(intent.ID, "billing-api", "api")
+	write(t, filepath.Join(f.root, "context", "INDEX.md"), strings.Join([]string{
+		"# Shared project knowledge",
+		"",
+		"- [Invoice lifecycle](domains/billing/invoice-lifecycle.md) {api} — when an invoice is voided rather than credited · invoices, dunning · reviewed 2026-02-04",
+		"- [Checkout funnel](domains/checkout.md) {web} — which steps a buyer may skip · checkout, funnel · reviewed 2026-02-04",
+		"- [Session handling](architecture/sessions.md) {api} {web} — where a session is created and expired · sessions, cookies · reviewed 2026-02-04",
+		"The braces stop {api} from also matching {api-gateway}.",
+		"",
+	}, "\n"))
+	out := f.ok("--json", "record", "complete", "--id", plan.ID, "--text", "Landed; no durable concept changed.")
+	for _, want := range []string{"Invoice lifecycle", "Session handling", plan.ID} {
+		if !strings.Contains(out, want) {
+			t.Errorf("completion never offered %q: %s", want, out)
+		}
+	}
+	if strings.Contains(out, "Checkout funnel") {
+		t.Errorf("offered an entry outside the plan's repositories: %s", out)
+	}
+	// Index prose may discuss a scope without cataloguing a note.
+	if strings.Contains(out, "braces stop") {
+		t.Errorf("offered prose as a candidate: %s", out)
+	}
+	// A repository ID that is a prefix of another must not widen the candidates.
+	f.repository("api-gateway")
+	other := f.plan(intent.ID, "gateway", "api-gateway")
+	out = f.ok("--json", "record", "complete", "--id", other.ID, "--text", "Landed.")
+	if strings.Contains(out, "Invoice lifecycle") {
+		t.Errorf("{api} matched {api-gateway}: %s", out)
+	}
+}

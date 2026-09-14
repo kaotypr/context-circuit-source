@@ -205,11 +205,18 @@ is the default PR target unless the user chooses another. Deliver per repository
 when appropriate. Explain relevant drift or conflicts without imposing automatic
 rebase-and-reverify behavior.
 
-Delivery does not mark a plan done. When explicitly requested, append a short
-completion note to its existing record and reconcile any affected durable project
-knowledge. Update an existing context index. Keep implementation-specific evidence in
-the plan, and keep that plan's own identifiers out of every note reconciled from it;
-run `check` afterwards. Other work need not wait for unrelated knowledge updates.
+Delivery does not mark a plan done. When the user explicitly marks one or more plans
+completed, append a short completion note to each record and reconcile the durable
+project knowledge those plans changed. The request is finished only when both are
+done. `record complete` returns the catalog entries scoped to that plan's
+repositories: a candidate set to judge, never a list to rewrite. Most completions
+change no durable knowledge, and recording that in the completion note is the normal
+outcome rather than a skipped step. Where meaning did change, edit the note and its
+catalog entry in one pass and move its reviewed date; a renamed or retired identifier
+is a glossary row. Completing several plans at once reconciles once across the set,
+not once per plan. Keep implementation-specific evidence in the plan, and keep those
+plans' own identifiers out of every note reconciled from them; run `check` afterwards.
+Other work need not wait for unrelated knowledge updates.
 
 Worktrees and branches remain after completion. Remove a worktree only when
 requested; preserve dirty, untracked, and ignored files unless their disposal is

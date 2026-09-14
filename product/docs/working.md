@@ -50,10 +50,15 @@ review. Findings do not trigger automatic fixes or block delivery mechanically.
 Commit, push, PR, merge, deployment, and external publishing remain explicit host
 tool actions. The executable supplies repository and branch information. On an
 explicit completion request, `record complete` appends a short note and records a
-`completed` date in frontmatter; the agent then reconciles affected durable
-project knowledge and an existing context index. That date is what dependency
-ordering reads to release a plan's dependents, so complete a plan only when it
-actually landed. Delivery alone does not mark the plan done or trigger cleanup.
+`completed` date in frontmatter, and returns the catalog entries scoped to that
+plan's repositories. Those entries are the candidates for reconcile; the agent reads
+the ones whose meaning the plan could have changed, edits each note together with its
+catalog entry, and moves the reviewed date. A completion that changed no durable
+concept reconciles nothing and says so in its note, which is the ordinary case.
+Several plans marked complete together are reconciled once across the set. That date
+is what dependency ordering reads to release a plan's dependents, so complete a plan
+only when it actually landed. Delivery alone does not mark the plan done or trigger
+cleanup.
 
 Knowledge notes capture durable concepts, not task logs. Gather from named sources
 on request. `context find` searches only the optional index, matching whole lines by

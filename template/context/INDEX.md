@@ -10,12 +10,13 @@ One note is one entry, and an entry is one unwrapped line. Retrieval matches
 whole lines, so a wrapped entry returns a fragment carrying no link. The line
 holds everything needed to choose the note without opening it:
 
-- [Invoice lifecycle](domains/billing/invoice-lifecycle.md) {api} {web} — when an invoice is voided rather than credited · invoices, invoicing, dunning, proration · reviewed 2026-02-04
+- [Invoice lifecycle](domains/billing/invoice-lifecycle.md) {REPOSITORY} — when an invoice is voided rather than credited · invoices, invoicing, dunning, proration · reviewed 2026-02-04
 
 Title and relative link, then the repositories the note applies to in braces,
 then the question the note answers in a few words, then the terms a reader
 would actually search for, then the date the note was last confirmed against
-the code. Matching is plain case-insensitive substring: a line holding
+the code. A real entry names real repositories; the placeholder above cannot
+collide with one, because a repository ID is always lowercase. Matching is plain case-insensitive substring: a line holding
 `invoices` already answers a search for `invoice`, and the braces stop `{api}`
 from also matching `{api-gateway}`. Choose terms that separate a note from its
 neighbours, since a word carried by every entry narrows nothing.

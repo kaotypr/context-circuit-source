@@ -373,6 +373,38 @@ func (s *Store) Note(id, text, kind string) error {
 	return s.replaceRecord(record, data)
 }
 
+// A catalog entry is a linked list item. Prose in the index may legitimately
+// discuss a repository scope without cataloguing a note, and the shipped index
+// explains the entry shape using an example, so only entry-shaped lines are
+// offered as reconcile candidates.
+var catalogEntry = regexp.MustCompile(`^\s*[-*]\s+\[[^\]]+\]\(`)
+
+// KnowledgeCandidates lists the catalog entries scoped to a plan's repositories.
+// Completion reconciles durable knowledge, so Go locates the entries worth
+// considering and the agent decides which of them actually changed meaning.
+func (s *Store) KnowledgeCandidates(id string) ([]string, error) {
+	record, err := s.FindRecord(id)
+	if err != nil {
+		return nil, err
+	}
+	seen := map[string]bool{}
+	entries := []string{}
+	for _, repository := range record.Repositories {
+		lines, err := s.FindContext("{" + repository + "}")
+		if err != nil {
+			return nil, err
+		}
+		for _, line := range lines {
+			if catalogEntry.MatchString(line) && !seen[line] {
+				seen[line] = true
+				entries = append(entries, line)
+			}
+		}
+	}
+	sort.Strings(entries)
+	return entries, nil
+}
+
 func (s *Store) SetDependencies(id string, dependencies []string) error {
 	record, err := s.FindRecord(id)
 	if err != nil {
