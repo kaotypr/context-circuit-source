@@ -108,14 +108,32 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return 0
 	}
 	if len(args) == 0 || args[0] == "help" {
+		if len(args) > 1 {
+			topic := strings.Join(args[1:], " ")
+			text, ok := CommandHelp(topic)
+			if !ok {
+				// Printing the whole manual for a question about one command
+				// answers something the caller did not ask and reads as success.
+				fmt.Fprintf(errOut, "no help topic: %s\ntry: context-circuit-cli help\n", topic)
+				return 2
+			}
+			fmt.Fprint(out, text)
+			return 0
+		}
 		fmt.Fprint(out, Help)
 		return 0
 	}
 	command := args[0]
 	args = args[1:]
-	if command == "member" || command == "repo" || command == "record" || command == "worktree" || command == "context" || command == "template" || command == "agent" {
+	if groups[command] {
 		if len(args) == 0 {
 			fmt.Fprint(errOut, Help)
+			return 2
+		}
+		// A group with an option where its subcommand belongs is a caller
+		// looking for help, not an unknown command. Name the real fault.
+		if strings.HasPrefix(args[0], "-") {
+			fmt.Fprintf(errOut, "unknown option for %s: %s\ntry: context-circuit-cli help %s\n", command, args[0], command)
 			return 2
 		}
 		command += " " + args[0]
@@ -199,6 +217,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "status", "check", "member list":
 	default:
 		fmt.Fprintf(errOut, "unknown command: %s\n", command)
+		if topic := strings.Fields(command)[0]; groups[topic] {
+			fmt.Fprintf(errOut, "try: context-circuit-cli help %s\n", topic)
+		}
 		return 2
 	}
 	if err := f.Parse(args); err != nil {

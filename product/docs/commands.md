@@ -6,8 +6,12 @@ install side by side, so the shared command on PATH may select a different one; 
 against a workspace pinning another version.
 
 Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
-Global flags precede the command. Run `context-circuit-cli help` for the full surface;
-each command supports `--help`. Errors go to stderr with a nonzero exit status.
+Global flags precede the command. Run `context-circuit-cli help` for the full
+surface, and `help` with a command name for that command's signatures and what it
+decides, refuses, or leaves to the caller. A fully resolved command also takes
+`--help` for its flags; a group such as `member` needs its subcommand first, and
+reports which option it could not take. Errors go to stderr with a nonzero exit
+status.
 Normal output is readable YAML; `--json` gives the agent structured values.
 The examples assume the current directory is the initialized workspace.
 

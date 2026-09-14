@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/kaotypr/context-circuit-source/internal/cli"
 )
 
 // An agent learns this CLI from the shipped instruction and docs, so a command
@@ -169,6 +171,78 @@ func TestStackedSectionDoesNotCaptureGeneralRules(t *testing.T) {
 	} {
 		if strings.Contains(section, general) {
 			t.Errorf("general implementation rule is trapped under Stacked plans: %q", general)
+		}
+	}
+}
+
+// An agent asking about one command must get that command. Answering a narrow
+// question with the whole manual, and exiting zero, reads as success and sends
+// the caller round again with a different phrasing.
+func TestHelpAnswersTheCommandAsked(t *testing.T) {
+	f := setup(t)
+	full := f.ok("help")
+	for _, topic := range []string{"member", "repo", "record", "worktree", "agent", "init", "version"} {
+		out := f.ok("help", topic)
+		if out == full {
+			t.Errorf("help %s returned the whole manual", topic)
+		}
+		if !strings.Contains(out, topic) {
+			t.Errorf("help %s never names it: %s", topic, out)
+		}
+		if detail := cli.Topics[topic]; detail != "" && !strings.Contains(out, detail) {
+			t.Errorf("help %s omits its detail", topic)
+		}
+	}
+	// A narrower name still resolves to that command's own signature.
+	if out := f.ok("help", "record", "order"); !strings.Contains(out, "--mode auto|waves|linear") {
+		t.Errorf("help record order: %s", out)
+	} else if strings.Contains(out, "record approve") {
+		t.Errorf("help record order widened to the whole group: %s", out)
+	}
+	// A name with no topic fails loudly rather than printing everything.
+	if out := f.fail("help", "nonsense"); !strings.Contains(out, "no help topic: nonsense") {
+		t.Errorf("unknown topic: %s", out)
+	}
+}
+
+// A group followed by an option is a caller looking for help. Reporting it as an
+// unknown command names the group as the fault when the group was correct.
+func TestGroupWithOptionReportsTheOption(t *testing.T) {
+	f := setup(t)
+	out := f.fail("member", "--help")
+	for _, want := range []string{"unknown option for member: --help", "help member"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("missing %q: %s", want, out)
+		}
+	}
+	if out := f.fail("record", "bogus"); !strings.Contains(out, "try: context-circuit-cli help record") {
+		t.Errorf("unknown subcommand offers no topic: %s", out)
+	}
+}
+
+// Every command the help lists must have detail behind it, and every topic must
+// describe commands that exist, or one side has drifted from the other.
+func TestEveryCommandHasATopic(t *testing.T) {
+	seen := map[string]bool{}
+	for _, line := range strings.Split(cli.Help, "\n") {
+		if line == "" || strings.HasPrefix(line, " ") || !strings.Contains(line, "  ") && line != "version" {
+			continue
+		}
+		name := strings.Fields(line)[0]
+		if strings.HasSuffix(name, ":") || strings.Contains(name, "-") {
+			continue
+		}
+		seen[name] = true
+		if cli.Topics[name] == "" {
+			t.Errorf("help lists %q with no topic detail", name)
+		}
+	}
+	for name := range cli.Topics {
+		if !seen[name] {
+			t.Errorf("topic %q describes no listed command", name)
+		}
+		if _, ok := cli.CommandHelp(name); !ok {
+			t.Errorf("topic %q resolves to nothing", name)
 		}
 	}
 }
