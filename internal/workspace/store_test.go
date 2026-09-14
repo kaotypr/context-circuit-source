@@ -39,6 +39,62 @@ func TestYAMLContainerEdits(t *testing.T) {
 			}
 		})
 	}
+}
+
+// A seed's empty `{}` container must grow into block style rather than extend a
+// single flow line as entries accumulate.
+func TestEmptyContainerGrowsInBlockStyle(t *testing.T) {
+	got, err := Edit([]byte("bindings: {}\n"), []string{"bindings", "tembiter"}, Binding{"/ws/tembiter"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "bindings:\n  tembiter:\n    path: /ws/tembiter\n"
+	if string(got) != want {
+		t.Fatalf("first entry\nwant %q\ngot  %q", want, got)
+	}
+	got, err = Edit(got, []string{"bindings", "other"}, Binding{"/ws/other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(got), "{") {
+		t.Fatalf("second entry fell back to flow style: %s", got)
+	}
+	var decoded Bindings
+	if err := Decode(got, &decoded); err != nil {
+		t.Fatalf("%v: %s", err, got)
+	}
+	if decoded.Bindings["tembiter"].Path != "/ws/tembiter" || decoded.Bindings["other"].Path != "/ws/other" {
+		t.Fatalf("lost a binding: %#v", decoded.Bindings)
+	}
+
+	// The workspace seed keeps its sibling keys and header comment.
+	seed := "# shared\nversion: 2\nrepositories: {}\nrelationships: []\n"
+	ws, err := Edit([]byte(seed), []string{"repositories", "tembiter"}, Repository{"main"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, fragment := range []string{"# shared", "version: 2", "relationships: []", "\n  tembiter:\n    base_branch: main\n"} {
+		if !strings.Contains(string(ws), fragment) {
+			t.Fatalf("lost %q: %s", fragment, ws)
+		}
+	}
+
+	// A populated flow container still receives a flow value, because mixing
+	// styles through MergeFromReader does not serialize.
+	mixed, err := Edit([]byte("bindings: {api: {path: /ws/api}} # local\n"), []string{"bindings", "web"}, Binding{"/ws/web"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var reparsed Bindings
+	if err := Decode(mixed, &reparsed); err != nil {
+		t.Fatalf("%v: %s", err, mixed)
+	}
+	if len(reparsed.Bindings) != 2 {
+		t.Fatalf("lost a binding: %s", mixed)
+	}
+}
+
+func TestAmbiguousYAML(t *testing.T) {
 	for _, input := range []string{"a: 1\na: 2\n", "a: 1\n---\na: 2\n"} {
 		var decoded map[string]any
 		if err := Decode([]byte(input), &decoded); err == nil {
