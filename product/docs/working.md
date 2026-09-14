@@ -27,7 +27,10 @@ Dependencies are optional, and `record order` derives waves, start references,
 and integration merges from them. Separate repository plans may be useful; no
 one-plan-per-repository constraint applies. IDs are global and prefixed, with a minimum of
 three intent digits and four plan digits; numbering expands beyond that width.
-There are no member number ranges. Plans use `created_by` only for member data.
+A member holding a band allocates from that band's block alone — intents from
+`band*100` and plans from `band*1000`, so band 1 writes `i100` and `p1000` — and
+an unbanded member allocates from the numbers no band claims. Plans use
+`created_by` only for member data; a band changes numbering, never ownership.
 
 The agent writes the plan from real code after intent approval, links it, and
 proceeds without a second approval. Record task order, useful risks, expected

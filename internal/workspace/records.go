@@ -128,7 +128,21 @@ func (s *Store) readRecord(path string) (Record, error) {
 	return record, nil
 }
 
-func (s *Store) allocate(kind string) (string, error) {
+// bandWidth is the size of one member's allocation block per record kind. The
+// blocks are N*width..N*width+width-1, so distinct bands can never overlap and
+// band 1 still lands on the kind's minimum digit width (i100, p1000).
+func bandWidth(kind string) int {
+	if kind == "plan" {
+		return 1000
+	}
+	return 100
+}
+
+// allocate reserves the next free number for a record kind. An author holding a
+// band draws from that band's block alone; an author without one draws from the
+// numbers no band has claimed. Either way a reserved number is never reused, so
+// a band changes which number comes next and nothing about the ledger's rules.
+func (s *Store) allocate(kind, author string) (string, error) {
 	var ledger Ledger
 	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
 		return "", err
@@ -164,19 +178,45 @@ func (s *Store) allocate(kind string) (string, error) {
 	if kind == "plan" {
 		prefix, width, key = "p", 4, "plans"
 	}
-	maxID := 0
+	taken := map[int]bool{}
 	for id := range seen {
 		if strings.HasPrefix(id, prefix) {
 			n, err := strconv.Atoi(id[1:])
 			if err != nil || n >= 999999999 {
 				return "", errors.New("numeric ID is outside the supported range")
 			}
-			if n > maxID {
-				maxID = n
-			}
+			taken[n] = true
 		}
 	}
-	id := fmt.Sprintf("%s%0*d", prefix, width, maxID+1)
+	members, err := s.Members()
+	if err != nil {
+		return "", err
+	}
+	block := bandWidth(kind)
+	band := members.Members[author].Band
+	low, high := 1, 999999998
+	if band != 0 {
+		low, high = band*block, band*block+block-1
+	}
+	number := 0
+	for n := low; n <= high; n++ {
+		// An unbanded author must not walk into a band another member is
+		// holding, or the band would stop preventing anything.
+		if band == 0 && members.claimed(n, block) {
+			continue
+		}
+		if !taken[n] {
+			number = n
+			break
+		}
+	}
+	if number == 0 {
+		if band != 0 {
+			return "", fmt.Errorf("member %s has used every %s number in band %d (%d-%d); assign a further band", author, kind, band, low, high)
+		}
+		return "", errors.New("no unbanded numeric ID remains; assign the author a band")
+	}
+	id := fmt.Sprintf("%s%0*d", prefix, width, number)
 	values := ledger.Intents
 	if kind == "plan" {
 		values = ledger.Plans
@@ -230,7 +270,7 @@ func (s *Store) CreateRecord(kind, slug, title, intent string, repos, dependenci
 			}
 		}
 	}
-	id, err := s.allocate(kind)
+	id, err := s.allocate(kind, author)
 	if err != nil {
 		return Record{}, err
 	}

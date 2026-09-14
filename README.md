@@ -26,7 +26,8 @@ environment setup, ordinary checks, and explicitly requested review and delivery
 
 Member attribution is created_by only. Plan IDs are workspace-global, never
 member namespaces. The p prefix distinguishes plans (p0001) from intents (i001).
-Numbers are allocated automatically without member-specific ranges.
+Numbers are allocated automatically; an optional per-member allocation band
+divides the range so members in separate clones never choose the same number.
 
 ## Build and use
 

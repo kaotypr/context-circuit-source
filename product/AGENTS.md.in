@@ -88,11 +88,24 @@ write by hand as well as through the executable. No other date format belongs in
 a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
-metadata; no assignee, owner, reviewer, member namespaces, or numeric member bands.
-Never reuse a reserved ID, including after archival or deletion. Local locking
-serializes one workspace directory. Before allocating in separate Git clones,
-synchronize the shared workspace; resolve conflicting allocations and references
-before publishing their IDs. Do not claim distributed collision prevention.
+metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a
+reserved ID, including after archival or deletion. Local locking serializes one
+workspace directory.
+
+A member may hold an allocation band: a numeric block that member allocates from
+alone. Bands are what let two clones that cannot see each other allocate without
+colliding, so give every member of a team workspace a distinct band before they
+work apart. A solo workspace needs none, and an unbanded member allocates from
+the numbers no band has claimed. Assign one with `member add --band N` or
+`member band`; the band decides which number comes next and never makes a
+reserved number reusable. A band is not a namespace: the ID stays global, and
+the member is still recorded only as `created_by`.
+
+Bands prevent collisions only between members who actually hold distinct ones.
+Unbanded members working in separate clones, and any clone whose roster is stale,
+can still allocate the same number. Synchronize the shared workspace before
+allocating; resolve conflicting allocations and references before publishing
+their IDs. Do not claim distributed collision prevention beyond what bands give.
 
 ## Worktrees and implementation
 

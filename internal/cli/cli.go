@@ -22,7 +22,8 @@ Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
-member add            --id ID --name NAME
+member add            --id ID --name NAME [--band N]
+member band           --id ID --band N|0 (allocation block; 0 clears it)
 member use            --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH
@@ -129,12 +130,17 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 	}
 	var repos, dependencies, copyPaths listFlag
+	var band int
 	var archived, reuse, discard, reviewRequested, shared bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
 	case "member add":
 		add("id", "name")
+		f.IntVar(&band, "band", 0, "allocation block for this member")
+	case "member band":
+		add("id")
+		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
 	case "member use", "repo inspect":
 		add("id")
 	case "repo connect", "repo init":
@@ -278,7 +284,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
-			err = s.AddMember(get("id"), get("name"))
+			err = s.AddMember(get("id"), get("name"), band)
+		case "member band":
+			err = s.SetMemberBand(get("id"), band)
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":

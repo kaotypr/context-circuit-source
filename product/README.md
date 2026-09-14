@@ -84,12 +84,20 @@ durable knowledge. It does not delete a worktree or branch.
 
 ## Team records
 
-Members share plans. `created_by` records attribution; no assignee, owner, reviewer,
-or member-specific numbering appears on plans. IDs look like `i001-add-billing`,
-`p0001-billing-api`, and `p0002-billing-web`. Reservations survive archival and
-deletion. The helper coordinates simultaneous edits in one workspace directory;
-separate Git clones must synchronize and resolve competing allocations before
-sharing new record IDs. No distributed allocation service is included.
+Members share plans. `created_by` records attribution; no assignee, owner, or
+reviewer appears on plans. IDs look like `i001-add-billing`, `p0001-billing-api`,
+and `p0002-billing-web`. Reservations survive archival and deletion.
+
+Give each member of a team an **allocation band** and they can create records in
+separate clones without ever choosing the same number:
+
+> Give Maya band 1 and Alex band 2.
+
+Maya then allocates `i100`, `p1000`, `p1001`; Alex allocates `i200`, `p2000`. A
+solo workspace needs no band and keeps counting from `i001` and `p0001`. Bands
+help only where they are actually assigned: unbanded members in separate clones,
+or a clone with a stale roster, still have to synchronize and resolve competing
+allocations. No distributed allocation service is included.
 
 See [workspace files](.context-circuit/docs/workspace.md),
 [commands](.context-circuit/docs/commands.md),

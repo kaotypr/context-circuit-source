@@ -13,7 +13,8 @@ The examples assume the current directory is the initialized workspace.
 
 ```sh
 context-circuit-cli status
-context-circuit-cli member add --id alex --name Alex
+context-circuit-cli member add --id alex --name Alex --band 2
+context-circuit-cli member band --id alex --band 3
 context-circuit-cli member use --id alex
 context-circuit-cli member list
 context-circuit-cli repo connect --id api --path ../api --base main
@@ -42,6 +43,13 @@ context-circuit-cli record dependencies --id p0002 --depends-on p0001
 context-circuit-cli record complete --id p0001 --text 'User requested completion.'
 context-circuit-cli record order --intent i001 --mode waves
 ```
+
+`--band` is optional. A member holding band N allocates intents from `N*100` and
+plans from `N*1000`, so band 2 writes `i200` and `p2000`; members without one
+allocate from the numbers no band claims. `member band --band 0` clears a band.
+Bands must be distinct across the roster, and every command refuses to run while
+two members share one. Assigning, changing, or clearing a band never renumbers an
+existing record or releases its reservation.
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
 are repeatable. Creation reserves IDs and links a new plan from its intent.
