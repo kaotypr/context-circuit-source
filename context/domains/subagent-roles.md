@@ -14,6 +14,25 @@ and integration. Delegation is a tool, not a ritual: a small task may stay in
 the main session, and no tier or risk classification compels a spawn. A role
 never carries ownership, consequence, or permission to proceed.
 
+Which delegation repays its cost follows from shape. One planner runs per
+intent, so nothing overlaps and dispatching one always costs latency; what it
+buys is a large read kept out of the coordinator, which pays only when that read
+would dwarf the plan it produces. A session that already holds the code gains
+nothing, because a planner would re-derive what is present. Splitting a planner
+per repository destroys the cross-repository order it exists to produce.
+Explorers are the opposite shape — narrow, many, genuinely parallel — so several
+independent questions are answered at once and none of that reading enters the
+session.
+
+A planner answers under fixed headings: verdict, approach, tasks and order,
+risks and checks, evidence, uncertainties, and plan shape. The first three
+transcribe into the record; the rest exist so the coordinator can judge them
+without repeating the investigation. `not-feasible` is a complete answer that
+ends planning with no record written, and a verdict that the outcome or success
+criteria must change returns for renewed approval instead. Because read-only
+roles run nothing, a check either role names is one it read, never one it saw
+pass.
+
 ## Settings without a model catalog
 
 Role tiering is a concrete model-and-effort pair per role and host, every pair
