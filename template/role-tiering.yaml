@@ -1,0 +1,18 @@
+# Per-host role settings. "inherit" uses the coding host's supported defaults.
+# Configure explicit models/efforts with agent configure, then agent setup.
+hosts:
+  codex:
+    explorer: {model: inherit, effort: inherit}
+    planner: {model: inherit, effort: inherit}
+    worker: {model: inherit, effort: inherit}
+    reviewer: {model: inherit, effort: inherit}
+  claude-code:
+    explorer: {model: inherit, effort: inherit}
+    planner: {model: inherit, effort: inherit}
+    worker: {model: inherit, effort: inherit}
+    reviewer: {model: inherit, effort: inherit}
+  cursor:
+    explorer: {model: inherit, effort: inherit}
+    planner: {model: inherit, effort: inherit}
+    worker: {model: inherit, effort: inherit}
+    reviewer: {model: inherit, effort: inherit}

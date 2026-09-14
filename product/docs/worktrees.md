@@ -36,9 +36,8 @@ No automatic cleanup or pruning occurs after failure or completion.
 
 Successful preparation means a usable Git working copy. The agent still needs to
 follow repository setup instructions for package managers, toolchains, submodules,
-generated files, databases, and development services. The executable does not run
-arbitrary setup hooks or copy ignored files from another working copy. Credentials
-stay with the host's normal environment and authentication tools.
+generated files, databases, and development services. The executable does not run arbitrary setup hooks. It reuses selected ignored
+runtime files as described below; unrelated credentials remain in host facilities.
 
 For changes across repositories, prepare each needed working copy independently.
 The agent orders tasks and checks combined behavior; a failure in one repository
@@ -50,3 +49,39 @@ the primary checkout or a locked worktree. A successful removal keeps the branch
 branch deletion is a separate ordinary Git action. Marking a plan done removes
 neither worktrees nor branches. Base drift does not trigger automatic rebasing,
 review, or repair loops.
+
+## CoW environment reuse
+
+After Git creates or selects a worktree, preparation discovers ignored
+`node_modules`, `.env`, and `.env.*` entries from the bound local checkout. It
+attempts native CoW cloning: clonefile on macOS, FICLONE on Linux, and aligned ReFS
+block cloning on Windows. Filesystem and volume capabilities determine success.
+The default `--copy-mode auto` falls back to independent copies, avoiding a package
+reinstall when source dependencies are usable. `required` fails if a regular file
+cannot be cloned; `copy` forces copies; `off` disables environment reuse.
+Windows files without complete cloneable clusters use the copy fallback.
+
+Select additional ignored runtime entries with repeatable `--copy-path PATH`.
+Only repository-relative paths ignored in both source and target are eligible.
+Discovery does not descend into arbitrary ignored parent directories: select an
+entry explicitly if its parent hides it from Git's ignored-file inventory.
+
+Each entry is staged and published only when complete. Existing destination files
+or directories are preserved, including changes made during previous work. Internal
+symlinks are translated to the new checkout; external symlinks and special files
+are rejected. Hard links to the source are never created. A failure preserves the
+Git worktree and previously completed entries; rerun preparation to resume.
+The report names entries and counts cloned/copied files without printing content.
+
+Before reusing node_modules, compare tracked package manifests, lockfiles, workspace
+package definitions, and Node version files against the target working copy. A
+mismatch skips dependencies and reports that setup is needed. Matching inputs do
+not prove that the source installation is complete or that its runtime/Node ABI
+is compatible: reuse a working local environment and run normal project checks.
+Stop source package installs while copying; the whole tree is not an atomic
+snapshot. A new OS/container needs its own compatible dependencies.
+
+Environment files are copied opaquely, only when Git ignores the target, and never
+overwrite an existing worktree environment. This avoids routinely recreating local
+settings while keeping their contents out of prompts, logs, and shared records.
+CoW does not start services, migrate databases, or make local ports unique.

@@ -145,7 +145,29 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	// text files may already occupy generated destinations. Treat Git's CRLF/LF
 	// checkout conversion as equivalent, but never overwrite content edits.
 	missing := map[string][]byte{}
+	// The template and CLI have independent versions. A blank compatible
+	// template owns its own instructions; initialization changes its data only.
+	var blank Config
+	existingSeed := false
+	if err := s.YAML("workspace.yaml", &blank); err == nil {
+		if blank.Version != 2 || blank.Name != "" || blank.Purpose != "" || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
+			return errors.New("existing workspace data; initialization stopped")
+		}
+		var members Members
+		if err := s.YAML("members.yaml", &members); err != nil {
+			return err
+		}
+		if len(members.Members) != 0 {
+			return errors.New("existing members; initialization stopped")
+		}
+		existingSeed = true
+	} else if !os.IsNotExist(err) {
+		return err
+	}
 	for rel, seed := range files {
+		if existingSeed {
+			continue
+		}
 		current, err := s.Read(rel)
 		if os.IsNotExist(err) {
 			missing[rel] = seed

@@ -31,7 +31,7 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Check executable and release packages
+      - name: Check workspace and CLI compatibility
         run: sh scripts/check-release.sh
 
       - name: Checkout template repository
@@ -92,7 +92,7 @@ jobs:
             --repo kaotypr/context-circuit \
             --title "v$V" \
             --notes-file release-notes.md \
-            "$ASSETS"/*.tar.gz "$ASSETS"/*.zip "$ASSETS/SHA256SUMS"
+            "$ASSETS"/*.tar.gz "$ASSETS/SHA256SUMS"
 
       - name: Push commit and tag to GitLab
         env:
@@ -120,7 +120,7 @@ jobs:
           ENC=$(jq -rn --arg project "$GITLAB_TEMPLATE_PROJECT" '$project|@uri')
           API="https://gitlab.sicepat.tech/api/v4/projects/${ENC}"
           printf '[]\n' > asset-links.json
-          for file in "$ASSETS"/*.tar.gz "$ASSETS"/*.zip "$ASSETS/SHA256SUMS"; do
+          for file in "$ASSETS"/*.tar.gz "$ASSETS/SHA256SUMS"; do
             name=${file##*/}
             url="${API}/packages/generic/context-circuit/${RELEASE_VERSION}/${name}"
             curl --fail --silent --show-error --request PUT \

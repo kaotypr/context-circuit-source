@@ -13,11 +13,16 @@ defines the change. Product instructions apply only to generated workspaces.
 - template/: blank workspace files, embedded with the product instruction.
 - scripts/release-manifest.txt: exact source-to-output file mapping.
 - assets.go: embeds only product assets and materializes the manifest.
-- VERSION: development artifact version; changing it does not publish a release.
+- VERSION: workspace template version.
+- CLI_VERSION: independent CLI version; changing either file does not publish.
+- product/skills/: packaged CLI installation/update and subagent dispatch skills.
+- internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and explicitly invoked publication.
 
 The Go executable handles workspace mechanics. The agent owns interpretation,
-planning, implementation, environment setup, and user-requested review/delivery.
+planning, implementation, application-specific setup, subagent dispatch, and
+user-requested review/delivery. CLI worktree preparation reuses ignored runtime
+files through CoW where available. Role settings materialize as native host files.
 No product execution state machine or mandatory child-agent workflow is required.
 
 Historical sources/, source context/, plans/, publication/, and release requests
@@ -32,7 +37,7 @@ repositories. The release check builds and exercises a native binary, verifies
 the embedded seed inventory, and cross-compiles the supported binary targets.
 It also tests publication guards and commit/tag behavior in disposable fixtures.
 An optional new output directory retains the checked release assets.
-CI runs native tests on Linux, macOS, and Windows. Cross-compilation alone is not
+CI runs native tests, including installer upgrade/rollback fixtures, on Linux, macOS, and Windows. Cross-compilation alone is not
 proof of behavior on another operating system.
 
 Validate Markdown scenarios against the shared entry instruction. Deterministic

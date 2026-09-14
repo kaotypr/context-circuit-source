@@ -17,3 +17,14 @@ template/intent/README.md intent/README.md
 template/plans/README.md plans/README.md
 template/sources/README.md sources/README.md
 VERSION .context-circuit/VERSION
+CLI_VERSION .context-circuit/CLI_VERSION
+template/role-tiering.yaml .context-circuit/role-tiering.yaml
+product/docs/agents.md .context-circuit/docs/agents.md
+product/skills/cc-cli/SKILL.md .agents/skills/cc-cli/SKILL.md
+product/skills/cc-cli/scripts/install.sh .agents/skills/cc-cli/scripts/install.sh
+product/skills/cc-cli/scripts/install.ps1 .agents/skills/cc-cli/scripts/install.ps1
+product/skills/cc-cli/route.md .claude/skills/cc-cli/SKILL.md
+product/skills/cc-cli/route.md .cursor/skills/cc-cli/SKILL.md
+product/skills/cc-dispatch/SKILL.md .agents/skills/cc-dispatch/SKILL.md
+product/skills/cc-dispatch/route.md .claude/skills/cc-dispatch/SKILL.md
+product/skills/cc-dispatch/route.md .cursor/skills/cc-dispatch/SKILL.md

@@ -4,13 +4,15 @@ Context Circuit is a shared workspace station for AI-assisted development across
 one or more Git repositories. Solo developers and teams share project knowledge,
 repository relationships, members, intents, and plans.
 
-A small Go executable manages workspace files, global IDs, repository bindings,
-and worktrees. Your coding agent handles understanding, planning, implementation,
+The separately released Context Circuit CLI manages workspace files, global IDs,
+repository bindings, CoW worktrees, and native subagent role settings. The workspace
+ships skills to install/update the CLI and dispatch subagents. Your coding agent handles understanding, planning, implementation,
 environment setup, ordinary checks, and explicitly requested review and delivery.
 
 ## User journey
 
-1. Initialize a named workspace with a purpose and first member.
+1. Clone the workspace template, ask its cc-cli skill to install the CLI, and
+   initialize a named workspace with a purpose and first member.
 2. Connect existing repositories, clone them, or initialize new repositories.
    The workspace root itself can be a repository. Record default base branches
    and relationships; keep concrete checkout paths local to each machine.
@@ -41,11 +43,18 @@ Native binary archives are built for macOS, Linux, and Windows on amd64/arm64.
 Use a new output directory; builds never replace existing output:
 
 ```sh
-sh scripts/build-dist.sh v2.0.0-dev /tmp/cc-v2-new-dist
+sh scripts/build-dist.sh v2.0.0-dev /tmp/cc-v2-workspace
+sh scripts/build-cli.sh 2.0.0-dev /tmp/cc-v2-cli
 sh scripts/check-release.sh
 ```
 
-Pass a new directory to `check-release.sh` to retain the checked release assets.
+Workspace publication uses VERSION and publishes the template repository's v*
+releases. CLI publication uses CLI_VERSION and the source repository's cli-v* tags.
+The two products have separate release workflows and package inventories. The CLI
+also embeds a seed as a convenience for new workspaces; updates do not rewrite
+existing workspaces. See [CLI product](CLI.md).
+
+Pass a new directory to `check-release.sh` to retain both sets of checked assets.
 
 See [the product guide](product/README.md), [commands](product/docs/commands.md),
 [worktree responsibilities](product/docs/worktrees.md), and [source workflow](WORKFLOW.md).

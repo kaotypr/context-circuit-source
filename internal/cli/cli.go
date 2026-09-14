@@ -42,13 +42,19 @@ record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
 context find          --query TEXT (optional index only)
 worktree prepare      --repo ID [--plan ID] [--branch NAME] [--start REF]
-                      [--path PATH] [--reuse]
+                      [--path PATH] [--reuse] [--copy-mode auto|required|copy|off]
+                      [--copy-path IGNORED_PATH ...]
 worktree list          --repo ID
 worktree inspect       --repo ID --path PATH
 worktree move          --repo ID --path PATH --to NEW_PATH
 worktree repair        --repo ID --path PATH
 worktree remove        --repo ID --path PATH [--discard]
 template export       --path NEW_DIRECTORY (blank workspace files)
+agent settings        inspect per-host role model and effort preferences
+agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEVEL|inherit
+agent setup           --host codex|claude-code|cursor
+agent dispatch        --host HOST --role ROLE --task TEXT --path DIRECTORY
+                      [--review-requested] (host must launch returned specification)
 version
 
 Approval, completion, fetch, and removal are explicit operations. The caller must
@@ -85,7 +91,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	command := args[0]
 	args = args[1:]
-	if command == "member" || command == "repo" || command == "record" || command == "worktree" || command == "context" || command == "template" {
+	if command == "member" || command == "repo" || command == "record" || command == "worktree" || command == "context" || command == "template" || command == "agent" {
 		if len(args) == 0 {
 			fmt.Fprint(errOut, Help)
 			return 2
@@ -101,8 +107,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			values[name] = f.String(name, "", name)
 		}
 	}
-	var repos, dependencies listFlag
-	var archived, reuse, discard bool
+	var repos, dependencies, copyPaths listFlag
+	var archived, reuse, discard, reviewRequested bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
@@ -137,6 +143,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("query")
 	case "worktree prepare":
 		add("repo", "plan", "branch", "start", "path")
+		values["copy-mode"] = f.String("copy-mode", "auto", "runtime file reuse: auto, required, copy, off")
+		f.Var(&copyPaths, "copy-path", "additional ignored runtime path (repeatable)")
 		f.BoolVar(&reuse, "reuse", false, "explicitly reuse existing work")
 	case "worktree list":
 		add("repo")
@@ -149,6 +157,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		f.BoolVar(&discard, "discard", false, "explicitly discard worktree files")
 	case "template export":
 		add("path")
+	case "agent setup":
+		add("host")
+	case "agent configure":
+		add("host", "role", "model", "effort")
+	case "agent dispatch":
+		add("host", "role", "task", "path")
+		f.BoolVar(&reviewRequested, "review-requested", false, "user explicitly requested independent review")
+	case "agent settings":
 	case "status", "check", "member list":
 	default:
 		fmt.Fprintf(errOut, "unknown command: %s\n", command)
@@ -196,7 +212,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
-	readOnly := command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "worktree list" || command == "worktree inspect"
+	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "worktree list" || command == "worktree inspect"
 	checkFailed := false
 	action := func() (any, error) {
 		var err error
@@ -206,7 +222,6 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			if e != nil {
 				return nil, e
 			}
-			files[".context-circuit/VERSION"] = []byte(version + "\n")
 			if command == "init" {
 				err = s.Init(files, get("name"), get("purpose"), get("member"), get("member-name"))
 			} else {
@@ -214,6 +229,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			}
 		case "status":
 			return s.Status(ctx)
+		case "agent settings":
+			return s.AgentSettings()
+		case "agent configure":
+			err = s.ConfigureAgent(get("host"), get("role"), get("model"), get("effort"))
+		case "agent setup":
+			return s.SetupAgents(get("host"))
+		case "agent dispatch":
+			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), reviewRequested)
 		case "check":
 			issues, e := s.Check(ctx)
 			checkFailed = len(issues) > 0
@@ -261,7 +284,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "context find":
 			return s.FindContext(get("query"))
 		case "worktree prepare":
-			return s.Prepare(ctx, get("repo"), get("plan"), get("branch"), get("start"), get("path"), reuse)
+			return s.Prepare(ctx, get("repo"), get("plan"), get("branch"), get("start"), get("path"), reuse, workspace.ReuseOptions{Mode: get("copy-mode"), Paths: copyPaths})
 		case "worktree list":
 			return s.Worktrees(ctx, get("repo"))
 		case "worktree inspect":

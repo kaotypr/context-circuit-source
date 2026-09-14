@@ -8,6 +8,11 @@ runtime commands or ID numbers. See `.context-circuit/docs/commands.md` as neede
 
 ## Orient and initialize
 
+Context Circuit CLI is a separately installed product. If it is missing, or the
+user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
+agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
+the template version and existing records unchanged during CLI updates.
+
 Read `workspace.yaml` for project identity, purpose, logical repositories, default
 base branches, and relationships. The shared roster is `members.yaml`. The active
 member and this machine's checkout paths are the documented, gitignored
@@ -73,7 +78,10 @@ before publishing their IDs. Do not claim distributed collision prevention.
 
 Choose existing checkouts or worktrees based on repository instructions, current
 work, task needs, and user preferences. Recommend worktree isolation for risky or
-parallel work; worktrees and planner/worker child agents are optional. Do not add
+parallel work. Use `.agents/skills/cc-dispatch/SKILL.md` to delegate bounded
+exploration, planning, and implementation when useful; small tasks may stay in the
+main session. Apply configured host role/model/effort settings to actual subagent
+invocations, wait for their results, and integrate them. Worktrees are optional. Do not add
 another permission gate for routine preparation already covered by the request.
 
 The executable resolves repository bindings, reports Git state, resolves the
@@ -84,11 +92,18 @@ branch names and paths. Use the returned real worktree location for all later wo
 If a branch/path already holds work, inspect and resume it or select a new location;
 never silently force checkout, reset, stash, or overwrite unrelated files.
 
-Git readiness does not establish application readiness. Read the selected
-repository's setup instructions and run its normal package manager, toolchain,
-submodule, build, or service setup as needed. Use the host's existing environment
-and credential facilities. Do not bulk-copy ignored files, credentials, or local
-environment files between working copies. Report missing setup information.
+Worktree preparation attempts filesystem CoW for ignored node_modules and .env
+files from the selected local checkout, with independent-copy fallback. Additional
+ignored runtime paths can be selected explicitly. Reuse never overwrites existing
+worktree entries and skips dependencies when package inputs differ. Environment
+contents are copied opaquely: never print them, put them in prompts, or store them
+in shared records. Do not copy unrelated credential stores or host configuration.
+
+Inspect the reuse report before application setup. Reused dependencies need no
+reinstall solely because the worktree is new. Read repository setup instructions
+for missing/incompatible dependencies, toolchains, submodules, or services. Local
+files do not make native dependencies portable across OS, architecture, Node ABI,
+or container environments. Report skipped entries and any remaining setup.
 See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
 Implement the approved outcome in dependency order across the relevant
@@ -107,7 +122,7 @@ not an implementation gate. Report what was implemented, tested, and left uncert
 ## Independent review on request
 
 Independent verification is a manually requested read-only code review, usually
-after PR creation and optionally after delivery as an audit. Use an independent
+after PR creation and optionally after delivery as an audit. Use the cc-dispatch skill to invoke an independent
 review-capable agent/session when requested and available. Supply the requested
 diff, current revision, relevant surrounding code, and intent success criteria.
 The reviewer reports actionable findings with locations and limitations. It does

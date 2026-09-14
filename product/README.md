@@ -6,21 +6,25 @@ ordinary language. A Go executable maintains the files and working copies.
 
 ## Start a workspace
 
-Download the executable for your operating system and architecture. Put
-`context-circuit` on PATH (Windows: `context-circuit.exe`); installed Git is the only
-external requirement for repository operations. No Go or Python setup is needed.
-Initialize a fresh directory, or ask your agent to do it:
+Clone this workspace template and open it in your coding agent. Ask it to install
+Context Circuit CLI using the included `cc-cli` skill. The CLI is a separate
+product with its own releases; the skill selects the current execution platform,
+verifies the download, and installs without administrator access. Ask the same
+skill to update or roll back the CLI later. Workspace records remain unchanged.
+
+Installed Git is required for repository operations. No Go or Python setup is
+needed. Initialize the cloned blank template, or ask your agent to do it:
 
 ```sh
-context-circuit --workspace ./acme init --name Acme \
+context-circuit --workspace . init --name Acme \
   --purpose 'Billing software' --member maya --member-name Maya
 ```
 
 Open the resulting workspace in your coding agent. Its shared instruction is
 `AGENTS.md`; Claude and Cursor entry files point to it. Workspace data is readable
 YAML and Markdown. Share the workspace through Git if useful; local checkouts,
-member selection, and worktrees are ignored. The CLI can also export a blank seed
-for inspection or initialize a seed exported by the same version.
+member selection, and worktrees are ignored. Each OS, remote host, or container has its own CLI and local bindings.
+The CLI can also export a blank seed or initialize a compatible blank template.
 
 > Connect `../billing-api` as api, with main as its base branch.
 > Clone our web repository here and connect it as web, based on main.
@@ -49,7 +53,10 @@ linked Markdown plans, and proceeds without separate plan approval. Plans can
 span repositories or be split with dependencies.
 
 Use worktrees when helpful. The executable prepares the Git working copies;
-the agent follows each repository's setup instructions and implements the change.
+it reuses ignored node_modules and .env files using filesystem CoW when available,
+with independent-copy fallback. The agent handles any remaining setup and implements
+the change. A dispatcher skill supports explorer, planner, worker, and manually
+requested reviewer subagents, with configurable per-host model/effort settings.
 Normal tests, linting, and builds remain part of implementation. Progress and
 remaining work stay in the plan so a later session can resume from actual Git state.
 
@@ -78,6 +85,6 @@ sharing new record IDs. No distributed allocation service is included.
 
 See [workspace files](.context-circuit/docs/workspace.md),
 [commands](.context-circuit/docs/commands.md),
-[worktrees](.context-circuit/docs/worktrees.md), and
+[worktrees](.context-circuit/docs/worktrees.md), [subagents](.context-circuit/docs/agents.md), and
 [working records](.context-circuit/docs/working.md).
 V2 supports fresh workspaces; it does not overwrite or automatically migrate v1 data.

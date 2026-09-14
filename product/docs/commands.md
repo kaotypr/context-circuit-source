@@ -46,7 +46,7 @@ cycles; omit `--depends-on` to clear a plan's dependencies.
 Worktrees:
 
 ```sh
-context-circuit worktree prepare --repo api --plan p0001
+context-circuit worktree prepare --repo api --plan p0001 --copy-mode auto
 context-circuit worktree prepare --repo web --plan p0002 --start origin/main
 context-circuit worktree list --repo api
 context-circuit worktree inspect --repo api --path .worktrees/p0001/api
@@ -64,3 +64,23 @@ runs application setup, executes a plan, or starts independent review.
 `template export --path NEW_DIRECTORY` writes the exact blank embedded seed for
 inspection or packaging. `init` can initialize that blank seed or a fresh directory.
 It cannot migrate an existing v1 or reinitialize an active v2 workspace.
+
+Subagent setup and dispatch:
+
+```sh
+context-circuit agent settings
+context-circuit agent configure --host codex --role worker --model MODEL_ID --effort high
+context-circuit agent setup --host codex
+context-circuit --json agent dispatch --host codex --role worker \
+  --path /actual/worktree --task 'Implement the assigned tasks from p0001'
+```
+
+Settings default to host inheritance. `agent setup` applies settings to native
+agent files; the host may need to reload them. `agent dispatch` returns the
+resolved invocation for the cc-dispatch skill to launch through the host's tools.
+For a reviewer, `--review-requested` represents a real user request. No CLI command
+launches an LLM or treats a dispatch specification as evidence of completion.
+
+Worktree `--copy-path` adds a specific ignored runtime entry. `--copy-mode` accepts
+`auto`, `required`, `copy`, or `off`. The reuse report distinguishes native CoW
+from fallback copying and reports existing entries or dependency mismatches.

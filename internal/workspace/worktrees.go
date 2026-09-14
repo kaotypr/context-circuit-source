@@ -11,15 +11,16 @@ import (
 )
 
 type Worktree struct {
-	Path        string `json:"path"`
-	Branch      string `json:"branch"`
-	Head        string `json:"head"`
-	Main        bool   `json:"main"`
-	Locked      bool   `json:"locked"`
-	Prunable    bool   `json:"prunable"`
-	Plan        string `json:"plan,omitempty"`
-	StartCommit string `json:"start_commit,omitempty"`
-	Reused      bool   `json:"reused,omitempty"`
+	Path        string       `json:"path"`
+	Branch      string       `json:"branch"`
+	Head        string       `json:"head"`
+	Main        bool         `json:"main"`
+	Locked      bool         `json:"locked"`
+	Prunable    bool         `json:"prunable"`
+	Plan        string       `json:"plan,omitempty"`
+	StartCommit string       `json:"start_commit,omitempty"`
+	Reused      bool         `json:"reused,omitempty"`
+	Environment []ReuseEntry `json:"environment,omitempty"`
 }
 type Association struct {
 	Repository  string `yaml:"repository"`
@@ -91,7 +92,14 @@ func (s *Store) Worktrees(ctx context.Context, repoID string) ([]Worktree, error
 	return list, nil
 }
 
-func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destination string, reuse bool) (Worktree, error) {
+func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destination string, reuse bool, reuseOptions ...ReuseOptions) (Worktree, error) {
+	options := ReuseOptions{Mode: "auto"}
+	if len(reuseOptions) > 0 {
+		options = reuseOptions[0]
+	}
+	if err := options.Validate(); err != nil {
+		return Worktree{}, err
+	}
 	cfg, repo, err := s.Repository(ctx, repoID)
 	if err != nil {
 		return Worktree{}, err
@@ -149,7 +157,8 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 				}
 			}
 			tree.Reused = true
-			return tree, nil
+			tree.Environment, err = ReuseEnvironment(ctx, repo, tree.Path, options)
+			return tree, err
 		}
 		if tree.Branch == branch {
 			return Worktree{}, fmt.Errorf("branch is already checked out at %s; select that worktree to resume it", tree.Path)
@@ -195,7 +204,8 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err := s.saveAssociation(repoID, result); err != nil {
 		return result, fmt.Errorf("worktree exists at %s but local association could not be saved: %w", actual, err)
 	}
-	return result, nil
+	result.Environment, err = ReuseEnvironment(ctx, repo, result.Path, options)
+	return result, err
 }
 
 func (s *Store) saveAssociation(repo string, tree Worktree) error {

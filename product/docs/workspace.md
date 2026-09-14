@@ -5,6 +5,9 @@ creates the shared instruction and folders alongside these small records:
 
 | File | Contents | Shared? |
 | --- | --- | --- |
+| .context-circuit/VERSION | Workspace template version | Yes |
+| .context-circuit/CLI_VERSION | Recommended independently released CLI version | Yes |
+| .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | workspace.yaml | Version, name, purpose, repository IDs, default base branches, relationships | Yes |
 | members.yaml | Member ID to display name | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
@@ -34,6 +37,9 @@ relationships:
     description: Consumes the billing API
 ```
 
+Use a separate checkout for each execution environment (native Windows, WSL,
+remote server, or container). Shared files synchronize through Git; local paths,
+worktrees, installed dependencies, and uncommitted work do not migrate automatically.
 Local bindings contain paths only, including `.` for the workspace repository.
 After cloning a shared workspace onto another machine, use `member use` and
 `repo connect` with the existing IDs. Do not initialize it again. A new repository
