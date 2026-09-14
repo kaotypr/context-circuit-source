@@ -18,11 +18,5 @@ dist/
 /.context-circuit/local/
 /.worktrees/
 /bin/
-
-# Disposable output from the human-simulated agent test harness.
-/agent-harness/human/.out/
-/agent-harness/human/.live.log
-# Local, this-machine-only opt-in to run the coordinator UNSANDBOXED (never shipped).
-/agent-harness/human/drivers/.allow-unsandboxed
 # Tool-generated local graph cache; never project material.
 .code-review-graph/
