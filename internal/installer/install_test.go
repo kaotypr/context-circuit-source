@@ -39,7 +39,16 @@ func TestInstallUpdateRollbackAndChecksumProtection(t *testing.T) {
 			program = "powershell.exe"
 			args = []string{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", scriptPath, "-Version", version, "-BinDir", binDir, "-Archive", archive, "-Checksums", sums}
 		}
-		data, err := exec.Command(program, args...).CombinedOutput()
+		command := exec.Command(program, args...)
+		if runtime.GOOS == "windows" {
+			// A PowerShell 7 parent, as CI uses, exports a PSModulePath holding
+			// only its own modules. Windows PowerShell then cannot autoload the
+			// cmdlets it ships with, and the documented invocation fails for a
+			// reason the installer does not control. Clear it so the child
+			// rebuilds its own default, which is what a user's shell supplies.
+			command.Env = append(os.Environ(), "PSModulePath=")
+		}
+		data, err := command.CombinedOutput()
 		if (err == nil) != success {
 			t.Fatalf("installer success=%v: %v\n%s", success, err, data)
 		}
