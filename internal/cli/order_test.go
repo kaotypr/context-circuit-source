@@ -2,6 +2,8 @@ package cli_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -277,4 +279,91 @@ func waveIDs(wave workspace.OrderWave) []string {
 		ids = append(ids, plan.ID)
 	}
 	return ids
+}
+
+// Role definitions are gitignored, so a clone of an initialized workspace has
+// none of them however the creating machine got them. A specification then names
+// an agent type the host cannot resolve, and saying so turns a dispatch that
+// launches nothing into a fact the caller can act on.
+func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	for _, host := range workspace.Hosts {
+		directory := "." + host
+		if host == "claude-code" {
+			directory = ".claude"
+		}
+		if err := os.RemoveAll(filepath.Join(f.root, directory, "agents")); err != nil {
+			t.Fatal(err)
+		}
+	}
+	read := func() workspace.Dispatch {
+		t.Helper()
+		var spec workspace.Dispatch
+		out := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "planner",
+			"--path", f.root, "--task", "Investigate the approved intent.")
+		if err := json.Unmarshal([]byte(out), &spec); err != nil {
+			t.Fatal(err)
+		}
+		return spec
+	}
+
+	before := read()
+	if before.DefinitionInstalled {
+		t.Fatal("a clone carries no gitignored definition, so none can be installed")
+	}
+	if before.DefinitionPath != ".claude/agents/cc-planner.md" {
+		t.Fatalf("definition path: %q", before.DefinitionPath)
+	}
+	if !strings.Contains(before.SetupRequired, "agent setup --host claude-code") {
+		t.Fatalf("missing remedy: %q", before.SetupRequired)
+	}
+	// Reporting is not refusing: the prompt still carries what a live spawn tool
+	// needs when native roles are unavailable.
+	if before.Prompt == "" || !before.LaunchRequired {
+		t.Fatal("an absent definition must not empty the specification")
+	}
+
+	f.ok("agent", "setup", "--host", "claude-code")
+	after := read()
+	if !after.DefinitionInstalled {
+		t.Fatal("setup wrote the definition; dispatch still reports it missing")
+	}
+	if after.SetupRequired != "" {
+		t.Fatalf("remedy offered for an installed definition: %q", after.SetupRequired)
+	}
+	// Another host's definitions are separate; setup for one says nothing of it.
+	var other workspace.Dispatch
+	out := f.ok("agent", "dispatch", "--host", "cursor", "--role", "planner",
+		"--path", f.root, "--task", "Investigate the approved intent.")
+	if err := json.Unmarshal([]byte(out), &other); err != nil {
+		t.Fatal(err)
+	}
+	if other.DefinitionInstalled {
+		t.Fatal("claude-code setup must not install cursor definitions")
+	}
+}
+
+// Initialization covers every host, because the same workspace is opened in
+// more than one and the host that created it is not the host that plans or
+// executes in it.
+func TestInitInstallsRolesForEveryHost(t *testing.T) {
+	f := setup(t)
+	for _, want := range []string{
+		".codex/agents/cc-planner.toml",
+		".claude/agents/cc-planner.md",
+		".cursor/agents/cc-planner.md",
+		".claude/agents/cc-explorer.md",
+		".claude/agents/cc-worker.md",
+		".claude/agents/cc-reviewer.md",
+	} {
+		if _, err := os.Stat(filepath.Join(f.root, want)); err != nil {
+			t.Errorf("init left %s missing: %v", want, err)
+		}
+	}
+	// Definitions written by init record an inventory, so a later version
+	// replaces them instead of reading them as a customization.
+	if out := f.ok("agent", "setup"); !strings.Contains(out, "cc-planner") {
+		t.Fatalf("setup after init: %s", out)
+	}
 }

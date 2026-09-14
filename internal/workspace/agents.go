@@ -26,8 +26,8 @@ type Role struct {
 }
 
 var Roles = map[string]Role{
-	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. Do not edit files or launch other agents.", true},
-	"planner":  {"Plan an approved intent using evidence from the repositories.", "Read the approved intent and relevant code. Return task order, cross-repository dependencies, risks, and expected checks. The coordinator writes the plan. Do not implement or request a separate plan approval. Do not edit files or launch other agents.", true},
+	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. You cannot run anything, so report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", true},
+	"planner":  {"Plan an approved intent using evidence from the repositories.", "Read the approved intent and relevant code. Answer under these headings: Verdict, one of feasible, feasible-with-changes, or not-feasible; Approach; Tasks and order, each naming its repository, paths, and the tasks it depends on; Risks and checks, naming check commands and where they are defined; Evidence, the paths that established each conclusion; Uncertainties, what could not be determined and what would settle it; Plan shape, single or a proposed split with reasons. You cannot run anything, so report a check as found, never as passing. Not-feasible is a complete answer: return it with its evidence instead of a plan. The coordinator writes the plan and decides any split. Do not implement or request a separate plan approval. Do not edit files or launch other agents.", true},
 	"worker":   {"Implement a bounded part of an approved plan and run normal checks.", "Implement the assigned approved plan in the supplied working directory. Own only the assigned task and paths. Do not write or reconcile durable project knowledge; report what the coordinator should record. Run normal tests and report changes, results, and remaining work. Do not independently verify your implementation, launch agents, or deliver changes without explicit authorization.", false},
 	"reviewer": {"Independently review a diff only when the user requests review.", "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", true},
 }
@@ -167,7 +167,30 @@ func digest(data []byte) string { sum := sha256.Sum256(data); return hex.EncodeT
 
 // SetupAgents only refreshes files previously written by this command, or files
 // already identical to the requested output. User edits are never overwritten.
+// Hosts names every coding host a workspace can be opened in. A workspace is
+// used from more than one, so setup writes them all unless one is named.
+var Hosts = []string{"codex", "claude-code", "cursor"}
+
+// SetupAgents writes native role definitions. An empty host covers every host,
+// because the same workspace is opened in different ones and a definition
+// installed for only the host that happened to run setup leaves the next one
+// with nothing to invoke.
 func (s *Store) SetupAgents(host string) ([]string, error) {
+	if host != "" {
+		return s.setupHost(host)
+	}
+	var paths []string
+	for _, each := range Hosts {
+		written, err := s.setupHost(each)
+		paths = append(paths, written...)
+		if err != nil {
+			return paths, err
+		}
+	}
+	return paths, nil
+}
+
+func (s *Store) setupHost(host string) ([]string, error) {
 	if err := validHost(host); err != nil {
 		return nil, err
 	}
@@ -215,6 +238,14 @@ type Dispatch struct {
 	ReadOnly         bool         `json:"read_only"`
 	Prompt           string       `json:"prompt"`
 	LaunchRequired   bool         `json:"launch_required"`
+	// A specification names an agent type the host may not have registered,
+	// because role files are host-local, gitignored, and written only by setup.
+	// Reporting the absent definition turns a silent non-launch into a fact the
+	// caller can act on; it is not a refusal, since the prompt still carries
+	// everything a live spawn tool needs when native roles are unavailable.
+	DefinitionPath      string `json:"definition_path"`
+	DefinitionInstalled bool   `json:"definition_installed"`
+	SetupRequired       string `json:"setup_required,omitempty"`
 }
 
 func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, reviewRequested bool) (Dispatch, error) {
@@ -263,7 +294,21 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, 
 		prompt += "\n\n" + planBrief(record)
 	}
 	prompt += "\n\nTask: " + task
-	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true}, nil
+	definition, _, err := roleFile(host, role, setting)
+	if err != nil {
+		return Dispatch{}, err
+	}
+	installed := false
+	if resolved, e := s.Path(definition); e == nil {
+		if info, e := os.Stat(resolved); e == nil && info.Mode().IsRegular() {
+			installed = true
+		}
+	}
+	setup := ""
+	if !installed {
+		setup = "context-circuit-cli --workspace " + s.Root + " agent setup --host " + host
+	}
+	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true, definition, installed, setup}, nil
 }
 
 // planBrief states the facts the CLI can verify. A dependent plan's branch is

@@ -238,7 +238,17 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	if err := s.WriteYAML("repositories.local.yaml", Bindings{map[string]Binding{}}, 0600); err != nil {
 		return err
 	}
-	return s.WriteYAML("member.local.yaml", Identity{member}, 0600)
+	if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
+		return err
+	}
+	// Write role definitions for every host now, from this CLI, rather than
+	// leaving a setup step between a new workspace and its first delegation.
+	// Seeding them from the template instead would ship files no inventory
+	// records, which a later version reads as a customization and refuses to
+	// replace. These carry the shipped inherit settings; `agent configure`
+	// still needs `agent setup` afterwards.
+	_, err := s.SetupAgents("")
+	return err
 }
 
 func (s *Store) AddMember(id, name string, band int) error {

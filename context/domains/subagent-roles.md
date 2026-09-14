@@ -14,6 +14,25 @@ and integration. Delegation is a tool, not a ritual: a small task may stay in
 the main session, and no tier or risk classification compels a spawn. A role
 never carries ownership, consequence, or permission to proceed.
 
+Which delegation repays its cost follows from shape. One planner runs per
+intent, so nothing overlaps and dispatching one always costs latency; what it
+buys is a large read kept out of the coordinator, which pays only when that read
+would dwarf the plan it produces. A session that already holds the code gains
+nothing, because a planner would re-derive what is present. Splitting a planner
+per repository destroys the cross-repository order it exists to produce.
+Explorers are the opposite shape — narrow, many, genuinely parallel — so several
+independent questions are answered at once and none of that reading enters the
+session.
+
+A planner answers under fixed headings: verdict, approach, tasks and order,
+risks and checks, evidence, uncertainties, and plan shape. The first three
+transcribe into the record; the rest exist so the coordinator can judge them
+without repeating the investigation. `not-feasible` is a complete answer that
+ends planning with no record written, and a verdict that the outcome or success
+criteria must change returns for renewed approval instead. Because read-only
+roles run nothing, a check either role names is one it read, never one it saw
+pass.
+
 ## Settings without a model catalog
 
 Role tiering is a concrete model-and-effort pair per role and host, every pair
@@ -36,9 +55,16 @@ substituted setting is reported, never silently downgraded.
 
 ## Native host mapping
 
-Setup materializes four native role definitions under the host's agents
+Setup materializes four native role definitions under each host's agents
 directory; those generated files are local and ignored while the settings that
-produce them are shared. Codex expresses model, reasoning effort, and a sandbox
+produce them are shared. One workspace is opened in several hosts — an intent
+written in one, a plan grounded in another, execution in a third — so setup
+covers every host unless `--host` narrows it, and initialization runs it rather
+than leaving a step between a new workspace and its first delegation. Seeding
+those files from the template instead would ship content no inventory records,
+which a later version reads as a customization and refuses to replace. A clone
+still carries none of them, because they are ignored; dispatch reporting an
+absent definition is what makes that visible. Codex expresses model, reasoning effort, and a sandbox
 mode for read-only roles; Claude Code expresses model, effort, and a read-only
 tool allowlist; Cursor expresses model with an optional effort parameter and a
 read-only flag, and requires an explicit model whenever an effort is explicit.
@@ -55,6 +81,11 @@ merely because it was written.
 The executable resolves settings, composes a brief, and returns the invocation
 with a flag stating that a launch is still required. It has not launched
 anything, and a specification is never evidence that an agent ran or completed.
+Because role files are host-local, gitignored, and written only by setup, a
+specification can name an agent type the host never registered; dispatch
+therefore reports the definition's path, whether it is present, and the setup
+run that writes it. Reporting rather than refusing keeps the prompt usable by a
+live spawn tool where native roles are unavailable.
 The dispatching skill calls the host's own subagent tool, waits, and integrates.
 Prefer a fresh context, and always use a fresh independent one for a reviewer.
 

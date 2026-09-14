@@ -15,11 +15,14 @@ Use `agent settings` to resolve `.context-circuit/role-tiering.yaml`. The initia
 model and effort for every role are `inherit`, as chosen by the maintainer. Honor
 explicit user settings; never infer model quality order or silently escalate.
 
-Before the first dispatch, or after settings change, run:
+Initialization installs role definitions for every host. Run setup again after
+settings change, or in a clone, where the ignored definitions never arrived:
 
 ```sh
-context-circuit-cli --workspace <root> agent setup --host <codex|claude-code|cursor>
+context-circuit-cli --workspace <root> agent setup
 ```
+
+With no `--host` it covers every host, since one workspace is opened in several.
 
 This installs native role definitions without replacing custom edits. Reload the
 host's agent definitions if required. Do not claim a definition was loaded merely
@@ -41,6 +44,12 @@ workers use one worktree.
 Use `--review-requested` only to represent the actual user request for review.
 It supplies no human approval by itself. Include the intended base/head revisions
 and complete diff for a reviewer, along with success criteria and relevant code.
+
+Check `definition_installed` on the returned specification. When it is false the
+host has no native role of that name, and `setup_required` names the run that
+writes one. Install it, then reload the host's definitions if required; where the
+current session cannot pick up a newly written definition, fall back to the live
+spawn tool with the returned prompt rather than abandoning the dispatch.
 
 **Complete the dispatch:** call the host's subagent tool with the returned prompt,
 role, working directory, and supported model/effort settings. The CLI returns

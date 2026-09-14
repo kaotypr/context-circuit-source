@@ -6,8 +6,12 @@ install side by side, so the shared command on PATH may select a different one; 
 against a workspace pinning another version.
 
 Use `context-circuit-cli --workspace PATH --json COMMAND ...` for structured output.
-Global flags precede the command. Run `context-circuit-cli help` for the full surface;
-each command supports `--help`. Errors go to stderr with a nonzero exit status.
+Global flags precede the command. Run `context-circuit-cli help` for the full
+surface, and `help` with a command name for that command's signatures and what it
+decides, refuses, or leaves to the caller. A fully resolved command also takes
+`--help` for its flags; a group such as `member` needs its subcommand first, and
+reports which option it could not take. Errors go to stderr with a nonzero exit
+status.
 Normal output is readable YAML; `--json` gives the agent structured values.
 The examples assume the current directory is the initialized workspace.
 
@@ -98,16 +102,26 @@ Subagent setup and dispatch:
 ```sh
 context-circuit-cli agent settings
 context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
-context-circuit-cli agent setup --host codex
+context-circuit-cli agent setup
 context-circuit-cli --json agent dispatch --host codex --role worker \
   --plan p0001 --path /actual/worktree --task 'Implement the assigned tasks from p0001'
 ```
 
 Settings default to host inheritance. `agent setup` applies settings to native
-agent files; the host may need to reload them. `agent dispatch` returns the
+agent files for every host unless `--host` narrows it, because one workspace is
+opened in several; the host may need to reload them. Initialization runs it, so a
+new workspace needs it again only after `agent configure` or in a fresh clone,
+where the ignored definitions never arrive. `agent dispatch` returns the
 resolved invocation for the cc-dispatch skill to launch through the host's tools.
 For a reviewer, `--review-requested` represents a real user request. No CLI command
 launches an LLM or treats a dispatch specification as evidence of completion.
+
+A specification also reports `definition_path` and `definition_installed` for the
+host's native role file, and `setup_required` naming the exact `agent setup` run
+when that file is absent. Role files are host-local and gitignored, so a workspace
+that never ran setup on this host names an agent type the host cannot resolve. It
+is a report, not a refusal: the prompt remains complete, so a live spawn tool can
+still carry it when native roles are unavailable.
 
 `--plan` adds the plan's repositories, dependencies, and record to the brief, and
 states that its dependencies' work is already in the branch's ancestry and that a
