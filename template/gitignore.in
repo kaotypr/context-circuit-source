@@ -1,0 +1,10 @@
+.DS_Store
+/repositories/
+/.worktrees/
+/repositories.local.yaml
+/member.local.yaml
+/.context-circuit/local/
+/.context-circuit/bin/
+/.codex/agents/cc-*.toml
+/.claude/agents/cc-*.md
+/.cursor/agents/cc-*.md

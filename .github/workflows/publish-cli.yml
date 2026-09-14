@@ -1,0 +1,52 @@
+name: Publish CLI
+
+# Deliberately separate from template publication. Trigger only with a CLI tag.
+on:
+  push:
+    tags: ['cli-v*']
+permissions:
+  contents: write
+concurrency:
+  group: publish-cli-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - run: go vet ./...
+  release:
+    needs: native
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Validate and build
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          version=${RELEASE_TAG#cli-v}
+          test "$version" = "$(cat CLI_VERSION)"
+          sh scripts/build-cli.sh "$version" cli-release
+      - name: Publish CLI assets on the source repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          case "${RELEASE_TAG#cli-v}" in *-*) set -- --prerelease ;; *) set -- ;; esac
+          gh release create "$RELEASE_TAG" --verify-tag \
+            "$@" \
+            --title "Context Circuit CLI ${RELEASE_TAG#cli-v}" \
+            --notes-file CLI.md \
+            cli-release/*.tar.gz cli-release/*.zip cli-release/SHA256SUMS

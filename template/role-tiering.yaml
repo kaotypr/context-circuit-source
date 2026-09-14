@@ -1,0 +1,26 @@
+# Per-host role settings. "inherit" uses the coding host's supported defaults.
+# Configure explicit models/efforts with agent configure, then agent setup.
+#
+# Which role earns an explicit setting: a planner runs once per intent and
+# everything downstream inherits its mistakes, and a reviewer has to catch what
+# another model already convinced itself was fine. Those two repay the strongest
+# settings your host offers. A worker is where token volume goes, and an explorer
+# is high-count and shallow. Where a host offers different model families, a
+# reviewer drawn from a different family than the worker has different blind
+# spots. No model catalog ships here: check what the host actually supports.
+hosts:
+  codex:
+    explorer: {model: inherit, effort: inherit}
+    planner: {model: inherit, effort: inherit}
+    worker: {model: inherit, effort: inherit}
+    reviewer: {model: inherit, effort: inherit}
+  claude-code:
+    explorer: {model: inherit, effort: inherit}
+    planner: {model: inherit, effort: inherit}
+    worker: {model: inherit, effort: inherit}
+    reviewer: {model: inherit, effort: inherit}
+  cursor:
+    explorer: {model: inherit, effort: inherit}
+    planner: {model: inherit, effort: inherit}
+    worker: {model: inherit, effort: inherit}
+    reviewer: {model: inherit, effort: inherit}

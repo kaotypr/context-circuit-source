@@ -1,80 +1,73 @@
-# Context Circuit Product Knowledge index
+# Shared project knowledge
 
-This is the agent retrieval catalog and a human navigation aid
-(INV-KNOWLEDGE-01). Per `.context-circuit/wrapper/contracts/schemas/context-index.yaml` the
-catalog carries per-unit retrieval metadata (context id, summary, topics,
-aliases, domains, repositories, decisions, constraints, status, freshness,
-provenance) for live context files. Provenance pointers, when present, are
-durable retrieval facts only (INV-KNOWLEDGE-03). The product source identity is in
-`workspace.yaml`;
-the one-rule-one-owner map is `.context-circuit/wrapper/contracts/invariants.yaml`; conversational
-routing is owned by `.context-circuit/agents/coordinator.md` and the `cc-*` skills; the retrieval
-catalog shape is owned by `.context-circuit/wrapper/contracts/schemas/context-index.yaml`; runtime
-shapes are owned by the wrapper schemas.
+This optional catalog points to durable architecture, conventions, decisions,
+terminology, domain rules, and repository relationships. Retrieve relevant
+entries instead of scanning every note. Keep task progress in the plan records.
 
-Tier 0 summaries: `context/WORKSPACE.md`, `context/PROJECT.md`.
+## Writing an entry
 
-Route-selected knowledge:
+One note is one entry, and an entry is one unwrapped line. Retrieval matches
+whole lines, so a wrapped entry returns a fragment carrying no link. The line
+holds everything needed to choose the note without opening it:
 
-- architecture: `context/ARCHITECTURE.md`
-- conventions: `context/CONVENTIONS.md`
-- accepted decisions: `context/DECISIONS.md`
-- terminology: `context/TERMINOLOGY.md`
-- provenance rules: `context/SOURCES.md`
-- design deltas: `context/DESIGN-DELTAS.md`
-- bounded domains: `context/domains/`
-- cross-domain roles: `context/roles/`
-- external references: `context/references/`
+```
+- [Invoice lifecycle](domains/billing/invoice-lifecycle.md) {REPOSITORY} — when an invoice is voided rather than credited · invoices, invoicing, dunning, proration · reviewed 2026-02-04
+```
 
-The source inbox and instantiated workspace plans are separate layers. Raw
-sources are passive and request-scoped; ordinary entry never scans them.
+Title and relative link, then the repositories the note applies to in braces,
+then the question the note answers in a few words, then the terms a reader
+would actually search for, then the date the note was last confirmed against
+the code. A real entry names real repositories; the placeholder above cannot
+collide with one, because a repository ID is always lowercase. Matching is
+plain case-insensitive substring: a line holding `invoices` already answers a
+search for `invoice`, and the braces stop `{api}` from also matching
+`{api-gateway}`. Choose terms that separate a note from its neighbours, since a
+word carried by every entry narrows nothing.
 
-Domain pages added and accepted in the v1.0 re-ground, closing the gap where
-v1.0's core additions had no owning domain page:
-[intent](domains/intent/README.md) (Gate 1 front door),
-[tracing](domains/tracing/README.md) (post-approval planner + feasibility check), and
-[assurance](domains/assurance/README.md) (consequence-tier ladder).
+Group entries under headings and order them within a group. This catalog stays
+small enough to read in full; searching it is the fallback once it is not. A
+note absent from here is reachable only by someone who already knows its
+filename, and an entry naming a note that is not there is a confident miss, so
+the entry and the note are written in the same edit. The `check` diagnostic
+reports either half when it is missing.
 
-Direct collaboration was accepted as the Explore tier of the v1.0 assurance
-ladder (`cc-pair` is not a separate mode): a new
-[direct-collaboration](domains/direct-collaboration/README.md)
-domain plus extensions to host-adapters, delivery, ARCHITECTURE.md, and
-DECISIONS.md. See the 2026-09-03 decision in `context/DECISIONS.md`.
+## Durable content only
 
-Committed `.claude/`, `.codex/`, and `.cursor/` trees are the native
-integration surface. See the 2026-09-08 host-native decision in
-`context/DECISIONS.md` and the updated [host-adapters](domains/host-adapters/README.md)
-and [source-release-and-upgrade](domains/source-release-and-upgrade/README.md)
-domain pages.
+A note describes the project, not the machinery that produced it. Never name a
+plan record, an intent record, or a file of raw supplied evidence. Those are
+archived and rewritten while knowledge is meant to outlast them, and a recorded
+evidence path becomes a standing invitation to read material that is supposed
+to stay passive. Anchor to code instead, with the logical repository ID from
+`workspace.yaml`, exact or patterned: `api@internal/billing/dunning/`, or
+`web@src/features/<feature>/`. Link freely to other notes here. Which record or
+which evidence produced a note belongs in that plan record. The `check`
+diagnostic reports any line in a note that crosses this boundary.
 
-Intent and plan ids allocate from per-member number bands (committed roster,
-one-time local identity). See the 2026-09-08 bands decision in
-`context/DECISIONS.md` and [repository-binding](domains/repository-binding/README.md),
-[plan-review](domains/plan-review/README.md), and [intent](domains/intent/README.md).
+## Knowledge units
 
-Open questions on a new intent are numbered 1, 2, 3 like The plans so a person
-can answer by number; already-written intents stay as authored. See the
-2026-09-10 decision in `context/DECISIONS.md` and [intent](domains/intent/README.md).
+- [Glossary](glossary.md) — project vocabulary and the code identifiers implementing it · glossary, terminology, vocabulary, term, jargon, naming
 
-New execution and Explore worktrees are runnable before a worker is attached:
-their create-time overlay and lockfile-correct provisioning fail closed. See the
-2026-09-10 decision in `context/DECISIONS.md` and the
-[repository-grounding](domains/repository-grounding/README.md),
-[plan-execution](domains/plan-execution/README.md), and
-[direct-collaboration](domains/direct-collaboration/README.md) domains.
+### The product
 
-Official template publication is GitHub-canonical; the same Action optionally
-mirrors the published tree and Release to GitLab when operators configure
-GitHub Actions variables and secrets. See the 2026-09-09 decision in
-`context/DECISIONS.md` and
-[source-release-and-upgrade](domains/source-release-and-upgrade/README.md).
-The GitHub destinations are `kaotypr/context-circuit-source` (this maintainer
-source) and `kaotypr/context-circuit` (the published template). See the
-2026-09-10 decision in `context/DECISIONS.md`.
+- [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which two decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-15
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration · reviewed 2026-09-15
 
-Agent Harness is a standalone product that consumes one immutable Context
-Circuit artifact and builds isolated deterministic run worlds from explicit
-scenario fixtures. Portable evidence supports ownership-safe cleanup and fresh
-reproduction without importing the maintainer checkout or retaining private host
-state. See the 2026-09-11 decision in `context/DECISIONS.md` and
-[source-release-and-upgrade](domains/source-release-and-upgrade/README.md).
+### Architecture
+
+- [The executable and agent seam](architecture/executable-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go executable and which to the agent · seam, boundary, executable, refusals, model-blind, judgment, mechanism · reviewed 2026-09-15
+- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the executable exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-15
+- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, lock, atomic, document edit, schema · reviewed 2026-09-15
+
+### Coordination domains
+
+- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen and kept unique across clones · id, allocation, band, reservation, ledger, member, offline, collision · reviewed 2026-09-15
+- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary · reviewed 2026-09-15
+- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, isolation, copy-on-write, clone, dependency, environment · reviewed 2026-09-15
+- [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how several plans of one intent are sequenced, merged, and released · order, waves, chain, dependency, integration merge, concurrency, stop · reviewed 2026-09-15
+- [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, review · reviewed 2026-09-15
+- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, authorization, delivery, completion, cleanup, scope, consent · reviewed 2026-09-15
+
+### Maintaining this source
+
+- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-15
+- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, unverified · reviewed 2026-09-15

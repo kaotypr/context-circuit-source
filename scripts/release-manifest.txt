@@ -1,147 +1,31 @@
-# Context Circuit release boundary.
-# Format: "required <path>" or "exclude <path>" (relative to the staged tree).
-# The assembler stages template-owned files and copies the blank template seed
-# into a clean, uninitialized universal project workspace. Maintainer state,
-# source design, tests, and runtime evidence are never user workspace data.
-
-# Root adapters (from .context-circuit/wrapper/adapters/).
-required AGENTS.md
-required CLAUDE.md
-required CURSOR.md
-required WORKFLOW.md
-required README.md
-# Runtime-only brief template, promoted beside the runtime (not the root).
-required .context-circuit/wrapper/runtime/worker-brief.md
-
-# Blank workspace seed (from template/).
-required .gitignore
-required workspace.yaml
-required members.yaml
-required context/INDEX.md
-required context/WORKSPACE.md
-required context/PROJECT.md
-required context/ARCHITECTURE.md
-required context/CONVENTIONS.md
-required context/DECISIONS.md
-required context/TERMINOLOGY.md
-required context/SOURCES.md
-required context/domains/README.md
-required context/roles/README.md
-required sources/README.md
-required sources/archive/README.md
-required intent/INDEX.md
-required intent/README.md
-required intent/archive/README.md
-required plans/INDEX.md
-required plans/README.md
-required plans/archive/README.md
-
-# Runtime, contracts, and schemas.
-required .context-circuit/wrapper/manifest.yaml
-required .context-circuit/wrapper/runtime/engine.sh
-required .context-circuit/role-tiering.fallback.yaml
-required .context-circuit/wrapper/migrations/README.md
-required .context-circuit/wrapper/contracts/invariants.yaml
-required .context-circuit/wrapper/contracts/schemas/workspace.yaml
-required .context-circuit/wrapper/contracts/schemas/repositories-local.yaml
-required .context-circuit/wrapper/contracts/schemas/members.yaml
-required .context-circuit/wrapper/contracts/schemas/member-local.yaml
-required .context-circuit/wrapper/contracts/schemas/intent-contract.yaml
-required .context-circuit/wrapper/contracts/schemas/trace-manifest.yaml
-required .context-circuit/wrapper/contracts/schemas/plan.yaml
-required .context-circuit/wrapper/contracts/schemas/task.yaml
-required .context-circuit/wrapper/contracts/schemas/execution.yaml
-required .context-circuit/wrapper/contracts/schemas/worker-handoff.yaml
-required .context-circuit/wrapper/contracts/schemas/verifier-result.yaml
-required .context-circuit/wrapper/contracts/schemas/candidate.yaml
-required .context-circuit/wrapper/contracts/schemas/human-acceptance.yaml
-required .context-circuit/wrapper/contracts/schemas/completion.yaml
-required .context-circuit/wrapper/contracts/schemas/context-impact.yaml
-required .context-circuit/wrapper/contracts/schemas/context-index.yaml
-required .context-circuit/wrapper/contracts/schemas/lease.yaml
-required .context-circuit/wrapper/contracts/schemas/grounding-manifest.yaml
-required .context-circuit/wrapper/contracts/schemas/pairing-session.yaml
-required .context-circuit/wrapper/contracts/schemas/publication-config.yaml
-required .context-circuit/wrapper/contracts/schemas/publication-record.yaml
-required .context-circuit/wrapper/contracts/schemas/publication-thread-record.yaml
-
-# Guides and templates.
-required .context-circuit/docs/getting-started.md
-required .context-circuit/docs/planning.md
-required .context-circuit/docs/publishing.md
-required .context-circuit/docs/plan-review.md
-required .context-circuit/docs/product-knowledge.md
-required .context-circuit/docs/terminology.md
-required .context-circuit/docs/templates/intent.md
-required .context-circuit/docs/templates/intent.example.md
-required .context-circuit/docs/templates/plan.md
-required .context-circuit/docs/templates/plan.yaml
-required .context-circuit/docs/templates/task.md
-required .context-circuit/docs/templates/terminology-context.md
-
-# Skills and role deltas.
-required .agents/skills/cc-workspace/SKILL.md
-required .agents/skills/cc-intent/SKILL.md
-required .agents/skills/cc-trace/SKILL.md
-required .agents/skills/cc-plan/SKILL.md
-required .agents/skills/cc-execute/SKILL.md
-required .agents/skills/cc-run-stack/SKILL.md
-required .agents/skills/cc-system-design/SKILL.md
-required .agents/skills/cc-verify/SKILL.md
-required .agents/skills/cc-complete/SKILL.md
-required .agents/skills/cc-archive/SKILL.md
-required .agents/skills/cc-deliver/SKILL.md
-required .agents/skills/cc-pair/SKILL.md
-required .agents/skills/cc-publish/SKILL.md
-required .context-circuit/agents/coordinator.md
-required .context-circuit/agents/worker.md
-required .context-circuit/agents/verifier.md
-required .context-circuit/agents/planner.md
-required .context-circuit/agents/planner-brief.md
-
-# Host-native routes (thin pointers into the owners above).
-required .claude/agents/worker.md
-required .claude/agents/verifier.md
-required .claude/agents/planner.md
-required .claude/rules/role-tiering-spawn.md
-required .claude/rules/commit-convention.md
-required .claude/skills/cc-workspace
-required .claude/skills/cc-intent
-required .claude/skills/cc-trace
-required .claude/skills/cc-plan
-required .claude/skills/cc-execute
-required .claude/skills/cc-run-stack
-required .claude/skills/cc-system-design
-required .claude/skills/cc-verify
-required .claude/skills/cc-complete
-required .claude/skills/cc-archive
-required .claude/skills/cc-deliver
-required .claude/skills/cc-pair
-required .claude/skills/cc-publish
-required .codex/agents/worker.toml
-required .codex/agents/verifier.toml
-required .codex/agents/planner.toml
-required .cursor/agents/worker.md
-required .cursor/agents/verifier.md
-required .cursor/agents/planner.md
-required .cursor/rules/role-tiering-spawn.mdc
-required .cursor/rules/commit-convention.mdc
-required .cursor/rules/gh-unsandboxed.mdc
-
-# Removed from the staged tree and verified absent.
-exclude test
-exclude agent-harness
-exclude .github
-exclude scripts
-exclude release
-exclude .context-circuit/docs/release.md
-exclude .runtime
-exclude .code-review-graph
-exclude member.local.yaml
-exclude .context-circuit/wrapper/adapters
-exclude template
-exclude plans/context-circuit-plans
-exclude sources/system-design
-exclude sources/reports
-exclude .claude/agents/cc-human-simulator.md
-exclude .claude/skills/cc-test-case
+# Exact source-to-output mapping for the embedded blank workspace.
+product/AGENTS.md.in AGENTS.md
+product/CLAUDE.md.in CLAUDE.md
+product/CURSOR.md.in CURSOR.md
+product/cursor.mdc.in .cursor/rules/context-circuit.mdc
+product/README.md README.md
+product/docs/commands.md .context-circuit/docs/commands.md
+product/docs/workspace.md .context-circuit/docs/workspace.md
+product/docs/worktrees.md .context-circuit/docs/worktrees.md
+product/docs/working.md .context-circuit/docs/working.md
+template/gitignore.in .gitignore
+template/workspace.yaml workspace.yaml
+template/members.yaml members.yaml
+template/ids.yaml .context-circuit/ids.yaml
+template/context/INDEX.md context/INDEX.md
+template/context/glossary.md context/glossary.md
+template/intent/README.md intent/README.md
+template/plans/README.md plans/README.md
+template/sources/README.md sources/README.md
+VERSION .context-circuit/VERSION
+CLI_VERSION .context-circuit/CLI_VERSION
+template/role-tiering.yaml .context-circuit/role-tiering.yaml
+product/docs/agents.md .context-circuit/docs/agents.md
+product/skills/cc-cli/SKILL.md .agents/skills/cc-cli/SKILL.md
+product/skills/cc-cli/scripts/install.sh .agents/skills/cc-cli/scripts/install.sh
+product/skills/cc-cli/scripts/install.ps1 .agents/skills/cc-cli/scripts/install.ps1
+product/skills/cc-cli/route.md .claude/skills/cc-cli/SKILL.md
+product/skills/cc-cli/route.md .cursor/skills/cc-cli/SKILL.md
+product/skills/cc-dispatch/SKILL.md .agents/skills/cc-dispatch/SKILL.md
+product/skills/cc-dispatch/route.md .claude/skills/cc-dispatch/SKILL.md
+product/skills/cc-dispatch/route.md .cursor/skills/cc-dispatch/SKILL.md

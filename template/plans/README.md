@@ -1,30 +1,7 @@
 # Plans
 
-Each plan is a workspace-level bundle so one plan can map changes across
-multiple repositories:
-
-```
-plans/
-├── INDEX.md              # active plan index (this workspace)
-├── <plan-id>/
-│   ├── PLAN.md           # readable plan
-│   ├── plan.yaml         # canonical status, ids, repository map, tasks
-│   └── tasks/            # per-task detail files
-└── archive/<plan-id>/    # archived plans; never normal agent context
-```
-
-- Plan IDs are stable and take the form `NNNN-<kebab-slug>` (for example
-  `0001-billing-v2`). Allocation follows active plans only; archiving releases a
-  number for reuse, and restore refuses a collision with an active plan.
-- Plan status is `draft → done`: a plan derives from an approved intent (no separate
-  plan approval and no automated scope gate); Standard `done` follows candidate
-  acceptance plus delivery, while Critical `done` requires explicit completion.
-- `plans/INDEX.md` lists only active plans. Archived plans are excluded from
-  normal agent reads until an explicit restore.
-
-Intent approval and delivery are the two explicit human gates. Execution follows
-an approved intent (scope-safety is settled at delivery, Gate 2); Standard completion is inferred from
-candidate acceptance plus delivery, while Critical completion is explicit.
-Explore is planless. Creating or reviewing a plan never approves or executes it,
-and verification never implies completion. Contract owner:
-`.context-circuit/wrapper/contracts/schemas/plan.yaml`.
+Use pNNNN-slug.md for code-grounded plans linked to an approved intent. A plan
+may cover one or several repositories, with optional dependencies on other plans.
+Member attribution is created_by only. Keep progress, checks, remaining work,
+delivery references, and explicit completion in the same readable file.
+Independent review happens only on request. Delivery does not mark a plan done.

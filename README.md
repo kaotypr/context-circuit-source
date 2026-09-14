@@ -1,65 +1,111 @@
-# Context Circuit source
+# Context Circuit v2
 
-This repository is `context-circuit-source`, the maintainer source that builds
-Context Circuit — a universal project workspace for AI-assisted work that
-connects and coordinates one or more Git repositories. The source is not bound to
-a version; it holds the current design and may lead the version last published as
-the released artifact, `context-circuit-template`: a clean, uninitialized
-universal project workspace. This checkout is the product source and its
-self-hosted maintainer workspace.
+Context Circuit is a shared workspace station for AI-assisted development across
+one or more Git repositories. Solo developers and teams share project knowledge,
+repository relationships, members, intents, and plans.
 
-## Product experience
+The separately released Context Circuit CLI manages workspace files, global IDs,
+repository bindings, CoW worktrees, dependency-ordered execution, knowledge
+consistency, and native subagent role settings. The workspace ships skills to
+install/update the CLI and dispatch subagents. Your coding agent handles
+understanding, planning, implementation, environment setup, ordinary checks, and
+explicitly requested review and delivery.
 
-In a released workspace you talk to the agent in ordinary language:
+## User journey
 
-> What is this workspace?
-> I want to add billing — retry a failed charge before failing the order.
-> Approve this intent.
-> Execute it, then ship it.
+1. Clone the workspace template, ask its cc-cli skill to install the CLI, and
+   initialize a named workspace with a purpose and first member.
+2. Connect existing repositories, clone them, or initialize new repositories.
+   The workspace root itself can be a repository. Record default base branches
+   and relationships; keep concrete checkout paths local to each machine.
+3. Gather durable knowledge from named sources into `context/` notes, catalogued
+   one unwrapped entry each in `context/INDEX.md`, with project vocabulary in
+   `context/glossary.md`. A note describes the project and anchors to repository
+   paths; it never names a record or a file of raw evidence.
+4. Describe a change and approve its intent. The agent then inspects the code,
+   creates linked Markdown plans, and proceeds without a separate plan approval.
+5. Prepare worktrees when useful, or work in selected checkouts, then implement
+   and run normal tests, lint, and builds. For several plans at once,
+   `record order` derives dependency waves or a linear chain and reports the
+   cost of each; the agent confirms the shape once and runs it to completion,
+   preparing worktrees, performing integration merges, dispatching workers, and
+   stopping with all work preserved on a failed check or a decision it should
+   not make alone.
+6. Request delivery and independent code review separately. Review reports
+   findings without modifying code. It never starts automatically during
+   execution, and never blocks a pull request, delivery, or completion.
+7. Explicitly mark plans done and reconcile relevant durable project knowledge.
+   Completion returns the catalog entries scoped to those plans' repositories as
+   candidates to judge; where meaning changed, the note and its entry move
+   together.
 
-You approve the **intent** — what "correct" means — from the plain ask. On approval a
-planner reads the real code and writes the plan; the coordinator runs a feasibility check
-and publishes that plan (no separate plan approval and no automated scope
-gate; scope-safety is settled at delivery). The workspace prepares isolated
-repository worktrees; one worker
-implements the whole plan in that plan's single repository and commits it; an independent read-only
-verifier checks the latest commits; the worker repairs failures with new
-commits; and completion follows the tier: Standard after candidate acceptance
-plus delivery, Critical after explicit human completion. Explore is planless and
-human-supervised. Intent approval and delivery are the two explicit human gates;
-archive and restore remain separate organization actions.
+Member attribution is created_by only. Plan IDs are workspace-global, never
+member namespaces. The p prefix distinguishes plans (p0001) from intents (i001).
+Numbers are allocated automatically; an optional per-member allocation band
+divides the range so members holding distinct bands never choose the same
+number, however long they work in separate clones.
 
-## Source layout
+`context-circuit-cli check` is an explicitly invoked diagnostic over records,
+local bindings, dependency cycles, stale worktree associations, and knowledge
+consistency — a note that crosses the durable-only boundary, a catalog entry
+naming a missing note, a note no entry lists. It is not an execution gate and
+nothing waits on it.
 
-- `.context-circuit/wrapper/` — shipped runtime, contracts, schemas, adapters, and migration
-  boundary. `.context-circuit/wrapper/runtime/engine.sh` is the small host-neutral deterministic
-  runtime; `.context-circuit/wrapper/contracts/invariants.yaml` is the one-rule-one-owner map.
-- `template/` — the blank mutable seed for a new workspace.
-- `.agents/skills/` and `.context-circuit/agents/` — thin host skills and planner/worker/verifier/
-  coordinator role deltas.
-- `.context-circuit/docs/` — shipped guides and plan/task templates.
-- `context/`, `plans/` — source-only maintainer Product Knowledge and plans; not
-  released.
-- `sources/system-design/context-circuit/` — the authoritative maintainer design
-  set (core plus scoped increments in versioned subfolders); maintainer material
-  only, never shipped.
-- `test/` — semantic acceptance suites (the deterministic engine-level laboratory
-  is run from here via `agent-harness/test-template-runtime.sh`).
-- `agent-harness/` — the built-template behavior laboratory: the deterministic
-  engine-level suite plus the human-simulated harness (`human/`, `scenarios/`).
-  Source-only; never shipped in `context-circuit-template`.
-- `scripts/` — maintainer-only release assembly.
-- `repositories/`, `repositories.local.yaml`, `.runtime/` — host-local, ignored,
-  never released.
+## Build and use
 
-## Tests
-
-Run the complete semantic acceptance suite:
+Go 1.25+ is needed by contributors. Users need the executable for their platform
+and installed Git; no Python, Go toolchain, or YAML package installation is
+needed.
 
 ```sh
-sh test/acceptance.sh
+go build -o /tmp/context-circuit-cli ./cmd/context-circuit
+/tmp/context-circuit-cli --workspace /tmp/acme-new init \
+  --name Acme --purpose 'Billing software' --member maya --member-name Maya
 ```
 
-Read the design set under `sources/system-design/context-circuit/` only as
-maintainer design material. The released artifact uses the shipped wrapper and
-template, not the source repository's maintainer state.
+Native binary archives are built for macOS, Linux, and Windows on amd64/arm64.
+With no output argument each build clean-rebuilds its own directory under
+`dist/` (`dist/workspace-<version>` and `dist/cli-<version>`), so repeated runs
+replace rather than fail and neither build removes the other's assets. An
+explicit output directory must be new; builds never replace existing output
+there:
+
+```sh
+sh scripts/build-dist.sh
+sh scripts/build-cli.sh
+sh scripts/build-dist.sh v2.0.0-dev /tmp/cc-v2-workspace
+sh scripts/build-cli.sh 2.0.0-dev /tmp/cc-v2-cli
+sh scripts/check-release.sh
+```
+
+Workspace publication uses VERSION and publishes the template repository's v*
+releases. CLI publication uses CLI_VERSION and the source repository's cli-v*
+tags. The two products have separate release workflows and package inventories.
+Each workspace pins the CLI version it expects and versions install side by
+side, so workspaces pinning different versions coexist on one machine. The CLI
+also embeds a seed as a convenience for new workspaces; updates do not rewrite
+existing workspaces. See [CLI product](CLI.md).
+
+Pass a new directory to `check-release.sh` to retain both sets of checked
+assets.
+
+See [the product guide](product/README.md),
+[workspace files](product/docs/workspace.md),
+[commands](product/docs/commands.md),
+[working records](product/docs/working.md),
+[subagents](product/docs/agents.md),
+[worktree responsibilities](product/docs/worktrees.md), and
+[source workflow](WORKFLOW.md).
+
+Workspace data remains readable YAML and Markdown. Local locking coordinates
+edits in one directory, and allocation bands keep members holding distinct bands
+out of each other's numbers offline. Neither is a distributed allocation
+service: unbanded members in separate clones, and any clone whose roster is
+stale, must still synchronize the workspace and resolve competing allocations
+before sharing new IDs. Initialization is for fresh workspaces; existing v1
+workspaces are not migrated automatically.
+
+The YAML dependency is goccy/go-yaml, pinned in go.mod. A portable file-locking
+library supplies the small operating-system-specific locking primitive. Release
+assets include dependency licenses. Product history and maintainer data never
+ship.

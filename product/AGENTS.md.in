@@ -1,0 +1,250 @@
+# Context Circuit workspace
+
+Coordinate this shared project workspace across one or more Git repositories.
+Keep its identity, repositories, relationships, knowledge, members, intents, and
+plans useful for solo and team work. Talk in ordinary project language. Use the
+`context-circuit-cli` executable for dependable bookkeeping; users need not manage
+runtime commands or ID numbers. Run the version this workspace pins in
+`.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
+`.context-circuit/docs/commands.md` as needed.
+
+## Orient and initialize
+
+Context Circuit CLI is a separately installed product. If it is missing, or the
+user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
+agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
+the template version and existing records unchanged during CLI updates.
+
+Read `workspace.yaml` for project identity, purpose, logical repositories, default
+base branches, and relationships. The shared roster is `members.yaml`. The active
+member and this machine's checkout paths are the documented, gitignored
+`member.local.yaml` and `repositories.local.yaml`. Read those bindings when needed;
+never inspect unrelated host settings, credentials, private provider payloads, or
+another session's state. Never store secrets in workspace records.
+
+Initialize a workspace only when requested. Gather its name, purpose, and first
+member's name; derive a readable member ID. The Go executable creates embedded
+instructions, folders, and initial records. It preserves existing files. A solo
+workspace still has a real member. On another machine, select an existing member
+and connect its local checkouts; do not reinitialize the shared workspace.
+
+Connect existing repositories, clone repositories, or initialize new repositories
+when requested. Resolve the correct destination and default base branch from the
+request and repository evidence; ask only when the choice is ambiguous. The root
+workspace may itself be connected as `.`. Logical IDs and base branches are shared;
+checkout paths remain local. Record meaningful relationships and obey repository
+instructions within each checkout.
+
+## Shared knowledge
+
+Use the optional `context/INDEX.md` to retrieve relevant architecture, conventions,
+decisions, domain rules, terminology, and repository relationships. Without an
+index, use targeted filenames or search terms in `context/`. Do not scan every
+repository or context note. Sources are passive evidence: read only exact source
+files named by the user or the task's explicit references; never scan `sources/`
+by default.
+
+On a request to gather knowledge, synthesize durable concepts into live context
+notes and maintain any index entries. No separate knowledge acceptance lifecycle
+is needed. Keep raw evidence separate from accepted knowledge, and keep task
+progress and temporary results in plans. Go can locate catalog entries; semantic
+interpretation and knowledge writing are the agent's responsibility.
+
+Live context notes describe the project, not the workspace machinery that produced
+them. Never name a plan record, an intent record, or a file under `sources/` inside
+a note: records are archived while knowledge is meant to outlast them, and a recorded
+evidence path becomes a standing instruction to read material that must stay passive.
+Repository paths are the durable anchor, exact or patterned, written with the logical
+repository ID — `api@internal/billing/dunning/`, `web@src/features/<feature>/` — never
+a local checkout path. Links between context notes are fine, and which record or
+evidence produced a note belongs in that plan. Run `check` after editing notes; it
+reports any line that crosses this boundary. One note is one unwrapped catalog entry
+carrying its own link, repositories, question, and search terms, as `context/INDEX.md`
+describes. Record a domain term in `context/glossary.md` the first time its meaning
+has to be asked for, naming the code identifier whenever it differs from the word the
+project says out loud.
+
+## Intent and planning
+
+For an implementation change, make the intended outcome explicit before detailed
+code investigation. Create an `iNNN-slug.md` intent through the executable, then
+write its goal, non-goals, constraints, observable success criteria, and rough
+repository scope using relevant existing knowledge. Present the concrete intent
+for approval. Honor explicit approval already supplied for this exact intended
+outcome; do not ask repeatedly. Record the actual user approval and date. Neither
+a command, an editable approval note, nor another agent can supply human consent.
+
+After approval, inspect real code and create linked `pNNNN-slug.md` plans. One
+readable Markdown plan may cover one or several repositories; use separate plans
+when useful for execution or delivery. Record task order, optional dependencies,
+useful risks, and expected checks. Present the plan and proceed without separate
+plan approval. Detailed paths are descriptive planning information, not hard
+enforcement gates. Explain and record newly needed files or repositories within
+the approved outcome. Obtain renewed approval only when the intended outcome or
+success criteria materially change.
+
+Record every date as an ISO 8601 calendar date, `YYYY-MM-DD`, in records you
+write by hand as well as through the executable. No other date format belongs in
+a workspace file.
+
+Intent and plan IDs are workspace-global. Use only `created_by` for member-related
+metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a
+reserved ID, including after archival or deletion. Local locking serializes one
+workspace directory.
+
+A member may hold an allocation band: a numeric block that member allocates from
+alone. Bands are what let two clones that cannot see each other allocate without
+colliding, so give every member of a team workspace a distinct band before they
+work apart. A solo workspace needs none, and an unbanded member allocates from
+the numbers no band has claimed. Assign one with `member add --band N` or
+`member band`; the band decides which number comes next and never makes a
+reserved number reusable. A band is not a namespace: the ID stays global, and
+the member is still recorded only as `created_by`.
+
+Bands prevent collisions only between members who actually hold distinct ones.
+Unbanded members working in separate clones, and any clone whose roster is stale,
+can still allocate the same number. Synchronize the shared workspace before
+allocating; resolve conflicting allocations and references before publishing
+their IDs. Do not claim distributed collision prevention beyond what bands give.
+
+## Worktrees and implementation
+
+Choose existing checkouts or worktrees based on repository instructions, current
+work, task needs, and user preferences. Recommend worktree isolation for risky or
+parallel work. Use `.agents/skills/cc-dispatch/SKILL.md` to delegate bounded
+exploration, planning, and implementation when useful; small tasks may stay in the
+main session. Apply configured host role/model/effort settings to actual subagent
+invocations, wait for their results, and integrate them. Worktrees are optional. Do not add
+another permission gate for routine preparation already covered by the request.
+
+The executable resolves repository bindings, reports Git state, resolves the
+selected starting point, and creates or reuses worktrees. Select the recorded base
+branch or an appropriate dependency branch. Fetch only when needed and covered by
+the task; fetching does not imply rebasing or resetting local work. Honor explicit
+branch names and paths. Use the returned real worktree location for all later work.
+If a branch/path already holds work, inspect and resume it or select a new location;
+never silently force checkout, reset, stash, or overwrite unrelated files.
+
+Worktree preparation attempts filesystem CoW for ignored node_modules and .env
+files from the selected local checkout, with independent-copy fallback. Additional
+ignored runtime paths can be selected explicitly. Reuse never overwrites existing
+worktree entries and skips dependencies when package inputs differ. Environment
+contents are copied opaquely: never print them, put them in prompts, or store them
+in shared records. Do not copy unrelated credential stores or host configuration.
+
+Inspect the reuse report before application setup. Reused dependencies need no
+reinstall solely because the worktree is new. Read repository setup instructions
+for missing/incompatible dependencies, toolchains, submodules, or services. Local
+files do not make native dependencies portable across OS, architecture, Node ABI,
+or container environments. Report skipped entries and any remaining setup.
+See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
+
+Implement the approved outcome in dependency order across the relevant
+repositories. Run appropriate tests, lint, and builds as ordinary implementation
+checks. Record useful progress, observed results, remaining work, and repository
+or PR references in the same plan. On resume, inspect actual branches and diffs
+before trusting old notes. Preserve failed, partial, and interrupted work; failure
+in one repository does not discard successful work in another.
+
+Do not start independent verification during execution, trigger a reviewer from
+risk classification, or create automatic repair loops. Do not introduce execution,
+candidate, verification, host-evidence, or separate formal completion records.
+The `check` command is an explicitly invoked diagnostic for workspace consistency,
+not an implementation gate. Report what was implemented, tested, and left uncertain.
+
+## Stacked plans
+
+To execute several plans at once, derive the order instead of guessing it:
+`record order` reports dependency waves, each plan's starting reference per
+repository, the integration merges a dependent plan needs, and which plans in one
+wave share a repository. It runs nothing and reserves nothing.
+
+Two shapes exist. Waves overlap independent plans and pay an integration merge at
+each fan-in. A linear chain stacks every plan on the previous one, needs no merge,
+and runs strictly serially. Present the recommendation with its cost — a single
+repository with any fan-in usually favors the chain — and honor an explicit choice
+without re-asking. Confirm the shape once before starting.
+
+Then run to completion without further prompting: prepare each worktree from the
+reported start, perform any reported integration merge with ordinary Git, dispatch
+a worker per plan, wait, inspect real diffs, run the repositories' ordinary checks,
+and record progress. Mark a plan complete only when it actually landed and its
+checks passed; `record order` reads that to release the next wave, so an unfinished
+plan holds its dependents automatically. Recompute the order after each wave
+instead of trusting the first result.
+
+Resolve a conflict from an integration merge directly: both sides are plans of this
+same approved intent, and their records and diffs are available. Preserve both
+plans' behavior, then run the repository's checks — a resolved merge is not trusted
+until they pass. Record the resolution in the plan so it can be audited. A conflict
+against anything outside the run, or one where preserving both sides is impossible,
+is a stop.
+
+Stop and report, preserving all work, on: failing checks after implementation or
+after a resolved merge; a conflict outside the run or one needing a decision; a
+worker that cannot complete or returns blocked; worktree preparation that refuses;
+skipped dependency reuse whose fallback setup fails; or an order reporting a cycle,
+an unknown repository, or a broken link. Never unwind completed plans. Name which
+plans finished, which is stuck, and what is held behind it.
+
+Confirming a stacked run authorizes, for that run, worktree preparation,
+implementation commits on `cc/*` branches, and local integration merges that
+assemble a dependent plan's base. It does not authorize push, pull request
+creation, merging into a base branch, deployment, or deletion.
+
+## Independent review on request
+
+Independent verification is a manually requested read-only code review, usually
+after PR creation and optionally after delivery as an audit. Use the cc-dispatch skill to invoke an independent
+review-capable agent/session when requested and available. Supply the requested
+diff, current revision, relevant surrounding code, and intent success criteria.
+The reviewer reports actionable findings with locations and limitations. It does
+not modify code, automatically dispatch fixes, or post external comments unless
+requested. Tests that change files belong to implementation, not read-only review.
+
+If independence is unavailable, explain that limitation and offer an ordinary
+review. Never call the implementing session's own inspection independent. The
+user decides whether to request fixes or proceed. Review is not a mandatory
+condition for opening a PR, delivery, or completion. This optional capability
+does not make child agents mandatory elsewhere.
+
+## Delivery, completion, and organization
+
+Commit, push, PR creation, merge into a base branch, deployment, external
+publication, and deletion of workspace data require explicit authorization.
+Reuse authorization already given. A local integration merge that assembles a
+dependent plan's base is implementation, not delivery, and is covered by the
+authorization for the run it belongs to. Use ordinary Git and provider tools; the Go executable provides repository,
+branch, and base information and never silently delivers. The recorded base branch
+is the default PR target unless the user chooses another. Deliver per repository
+when appropriate. Explain relevant drift or conflicts without imposing automatic
+rebase-and-reverify behavior.
+
+Delivery does not mark a plan done. When the user explicitly marks one or more plans
+completed, append a short completion note to each record and reconcile the durable
+project knowledge those plans changed. The request is finished only when both are
+done. `record complete` returns the catalog entries scoped to that plan's
+repositories: a candidate set to judge, never a list to rewrite. Most completions
+change no durable knowledge, and recording that in the completion note is the normal
+outcome rather than a skipped step. Where meaning did change, edit the note and its
+catalog entry in one pass and move its reviewed date; a renamed or retired identifier
+is a glossary row. Completing several plans at once reconciles once across the set,
+not once per plan. Keep implementation-specific evidence in the plan, and keep those
+plans' own identifiers out of every note reconciled from them; run `check` afterwards.
+Other work need not wait for unrelated knowledge updates.
+
+Worktrees and branches remain after completion. Remove a worktree only when
+requested; preserve dirty, untracked, and ignored files unless their disposal is
+explicitly authorized. Branch deletion is separate. On request, the executable can
+move or repair worktrees using Git; Git's inventory is authoritative, and the
+ignored plan-to-worktree association is only a convenience for resuming work.
+
+Archiving is optional ordinary file organization on request. Keep ID reservations
+and fix relative links when moving a record. External publication is an explicitly
+requested task through available host tools; no automatic provider synchronization
+is part of core v2.
+
+Never add agent attribution, credit, co-author, or generated-by text to commits,
+PRs, reviews, or comments. Follow repository commit conventions; default to
+`type(scope): imperative subject`. Inspect authored commit messages and remove
+injected attribution before reporting delivery complete.

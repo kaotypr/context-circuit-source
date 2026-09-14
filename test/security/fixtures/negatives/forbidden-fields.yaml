@@ -1,4 +1,0 @@
-case: forbidden-fields
-fields: [password, api_key, access_token, client_secret, provider_payload, transcript]
-rule: evidence records exclude credentials, provider payloads, and transcripts
-ship: never
