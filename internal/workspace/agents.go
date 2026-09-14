@@ -215,6 +215,14 @@ type Dispatch struct {
 	ReadOnly         bool         `json:"read_only"`
 	Prompt           string       `json:"prompt"`
 	LaunchRequired   bool         `json:"launch_required"`
+	// A specification names an agent type the host may not have registered,
+	// because role files are host-local, gitignored, and written only by setup.
+	// Reporting the absent definition turns a silent non-launch into a fact the
+	// caller can act on; it is not a refusal, since the prompt still carries
+	// everything a live spawn tool needs when native roles are unavailable.
+	DefinitionPath      string `json:"definition_path"`
+	DefinitionInstalled bool   `json:"definition_installed"`
+	SetupRequired       string `json:"setup_required,omitempty"`
 }
 
 func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, reviewRequested bool) (Dispatch, error) {
@@ -263,7 +271,21 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, 
 		prompt += "\n\n" + planBrief(record)
 	}
 	prompt += "\n\nTask: " + task
-	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true}, nil
+	definition, _, err := roleFile(host, role, setting)
+	if err != nil {
+		return Dispatch{}, err
+	}
+	installed := false
+	if resolved, e := s.Path(definition); e == nil {
+		if info, e := os.Stat(resolved); e == nil && info.Mode().IsRegular() {
+			installed = true
+		}
+	}
+	setup := ""
+	if !installed {
+		setup = "context-circuit-cli --workspace " + s.Root + " agent setup --host " + host
+	}
+	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true, definition, installed, setup}, nil
 }
 
 // planBrief states the facts the CLI can verify. A dependent plan's branch is

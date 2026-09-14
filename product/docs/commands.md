@@ -109,6 +109,13 @@ resolved invocation for the cc-dispatch skill to launch through the host's tools
 For a reviewer, `--review-requested` represents a real user request. No CLI command
 launches an LLM or treats a dispatch specification as evidence of completion.
 
+A specification also reports `definition_path` and `definition_installed` for the
+host's native role file, and `setup_required` naming the exact `agent setup` run
+when that file is absent. Role files are host-local and gitignored, so a workspace
+that never ran setup on this host names an agent type the host cannot resolve. It
+is a report, not a refusal: the prompt remains complete, so a live spawn tool can
+still carry it when native roles are unavailable.
+
 `--plan` adds the plan's repositories, dependencies, and record to the brief, and
 states that its dependencies' work is already in the branch's ancestry and that a
 concurrent sibling plan is invisible. `--shared` is for several workers inside one

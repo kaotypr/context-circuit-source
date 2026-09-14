@@ -278,3 +278,56 @@ func waveIDs(wave workspace.OrderWave) []string {
 	}
 	return ids
 }
+
+// A specification names an agent type the host registers from a gitignored file
+// that only setup writes. Saying whether that file is there turns a dispatch the
+// host cannot launch into a fact the caller can act on.
+func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	read := func() workspace.Dispatch {
+		t.Helper()
+		var spec workspace.Dispatch
+		out := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "planner",
+			"--path", f.root, "--task", "Investigate the approved intent.")
+		if err := json.Unmarshal([]byte(out), &spec); err != nil {
+			t.Fatal(err)
+		}
+		return spec
+	}
+
+	before := read()
+	if before.DefinitionInstalled {
+		t.Fatal("no setup has run, so no definition can be installed")
+	}
+	if before.DefinitionPath != ".claude/agents/cc-planner.md" {
+		t.Fatalf("definition path: %q", before.DefinitionPath)
+	}
+	if !strings.Contains(before.SetupRequired, "agent setup --host claude-code") {
+		t.Fatalf("missing remedy: %q", before.SetupRequired)
+	}
+	// Reporting is not refusing: the prompt still carries what a live spawn tool
+	// needs when native roles are unavailable.
+	if before.Prompt == "" || !before.LaunchRequired {
+		t.Fatal("an absent definition must not empty the specification")
+	}
+
+	f.ok("agent", "setup", "--host", "claude-code")
+	after := read()
+	if !after.DefinitionInstalled {
+		t.Fatal("setup wrote the definition; dispatch still reports it missing")
+	}
+	if after.SetupRequired != "" {
+		t.Fatalf("remedy offered for an installed definition: %q", after.SetupRequired)
+	}
+	// Another host's definitions are separate; setup for one says nothing of it.
+	var other workspace.Dispatch
+	out := f.ok("agent", "dispatch", "--host", "cursor", "--role", "planner",
+		"--path", f.root, "--task", "Investigate the approved intent.")
+	if err := json.Unmarshal([]byte(out), &other); err != nil {
+		t.Fatal(err)
+	}
+	if other.DefinitionInstalled {
+		t.Fatal("claude-code setup must not install cursor definitions")
+	}
+}

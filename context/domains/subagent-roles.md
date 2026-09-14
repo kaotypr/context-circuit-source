@@ -74,6 +74,11 @@ merely because it was written.
 The executable resolves settings, composes a brief, and returns the invocation
 with a flag stating that a launch is still required. It has not launched
 anything, and a specification is never evidence that an agent ran or completed.
+Because role files are host-local, gitignored, and written only by setup, a
+specification can name an agent type the host never registered; dispatch
+therefore reports the definition's path, whether it is present, and the setup
+run that writes it. Reporting rather than refusing keeps the prompt usable by a
+live spawn tool where native roles are unavailable.
 The dispatching skill calls the host's own subagent tool, waits, and integrates.
 Prefer a fresh context, and always use a fresh independent one for a reviewer.
 

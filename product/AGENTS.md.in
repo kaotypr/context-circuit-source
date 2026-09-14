@@ -15,12 +15,16 @@ user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
 agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
 the template version and existing records unchanged during CLI updates.
 
-Subagent role definitions are host-local like the CLI itself. Run `agent setup
---host <codex|claude-code|cursor>` once per host on each machine, when orienting
-rather than at the moment something needs to delegate; it writes native role
-definitions and preserves custom edits. Without it the host has no role to invoke
-and a later dispatch degrades quietly instead of failing. Re-run it after changing
-settings with `agent configure`.
+Subagent role definitions are host-local like the CLI itself, and the files it
+writes are gitignored, so every host on every machine needs its own. If this
+host's `cc-*` definitions are missing under `.claude/agents/`, `.codex/agents/`,
+or `.cursor/agents/`, or settings changed through `agent configure`, run
+`agent setup --host <codex|claude-code|cursor>`; it preserves customized
+definitions rather than overwriting them. Check while orienting rather than when
+something needs to delegate: writing a definition is not loading it, and a host
+may not register a role until it reloads. A dispatch specification reports the
+definition it expects and whether it is present, so an absent one is visible
+instead of becoming a silent non-launch.
 
 Read `workspace.yaml` for project identity, purpose, logical repositories, default
 base branches, and relationships. The shared roster is `members.yaml`. The active
