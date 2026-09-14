@@ -10,21 +10,26 @@ One note is one entry, and an entry is one unwrapped line. Retrieval matches
 whole lines, so a wrapped entry returns a fragment carrying no link. The line
 holds everything needed to choose the note without opening it:
 
+```
 - [Invoice lifecycle](domains/billing/invoice-lifecycle.md) {REPOSITORY} — when an invoice is voided rather than credited · invoices, invoicing, dunning, proration · reviewed 2026-02-04
+```
 
 Title and relative link, then the repositories the note applies to in braces,
 then the question the note answers in a few words, then the terms a reader
 would actually search for, then the date the note was last confirmed against
 the code. A real entry names real repositories; the placeholder above cannot
-collide with one, because a repository ID is always lowercase. Matching is plain case-insensitive substring: a line holding
-`invoices` already answers a search for `invoice`, and the braces stop `{api}`
-from also matching `{api-gateway}`. Choose terms that separate a note from its
-neighbours, since a word carried by every entry narrows nothing.
+collide with one, because a repository ID is always lowercase. Matching is
+plain case-insensitive substring: a line holding `invoices` already answers a
+search for `invoice`, and the braces stop `{api}` from also matching
+`{api-gateway}`. Choose terms that separate a note from its neighbours, since a
+word carried by every entry narrows nothing.
 
 Group entries under headings and order them within a group. This catalog stays
 small enough to read in full; searching it is the fallback once it is not. A
 note absent from here is reachable only by someone who already knows its
-filename, so the entry and the note are written in the same edit.
+filename, and an entry naming a note that is not there is a confident miss, so
+the entry and the note are written in the same edit. The `check` diagnostic
+reports either half when it is missing.
 
 ## Durable content only
 
@@ -40,4 +45,4 @@ diagnostic reports any line in a note that crosses this boundary.
 
 ## Knowledge units
 
-No notes recorded yet.
+- [Glossary](glossary.md) — project vocabulary and the code identifiers implementing it · glossary, terminology, vocabulary, term, jargon, naming

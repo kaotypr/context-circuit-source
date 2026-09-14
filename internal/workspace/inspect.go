@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"slices"
@@ -192,21 +193,31 @@ func (s *Store) knowledgeIssues() ([]string, error) {
 		return nil, err
 	}
 	var issues []string
-	err = filepath.WalkDir(base, func(path string, entry fs.DirEntry, walkErr error) error {
+	notes := map[string]string{}
+	err = filepath.WalkDir(base, func(filename string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}
 		if entry.Type()&os.ModeSymlink != 0 {
-			return fmt.Errorf("context directories cannot contain symlinks: %s", path)
+			return fmt.Errorf("context directories cannot contain symlinks: %s", filename)
 		}
 		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
 			return nil
 		}
-		relative, err := filepath.Rel(s.Root, path)
+		relative, err := filepath.Rel(s.Root, filename)
 		if err != nil {
 			return err
 		}
 		relative = filepath.ToSlash(relative)
+		// The catalog is not a note, and a README is navigation rather than
+		// knowledge; everything else is reachable only through the catalog.
+		if entry.Name() != "INDEX.md" && entry.Name() != "README.md" {
+			inside, err := filepath.Rel(base, filename)
+			if err != nil {
+				return err
+			}
+			notes[filepath.ToSlash(inside)] = relative
+		}
 		data, err := s.Read(relative)
 		if err != nil {
 			return err
@@ -222,6 +233,63 @@ func (s *Store) knowledgeIssues() ([]string, error) {
 	})
 	if err != nil && !os.IsNotExist(err) {
 		return nil, err
+	}
+	catalog, err := s.catalogIssues(notes)
+	if err != nil {
+		return nil, err
+	}
+	return append(issues, catalog...), nil
+}
+
+var catalogLink = regexp.MustCompile(`\]\(([^)\s]+)(?:\s+"[^"]*")?\)`)
+
+// The catalog is the only way into a note, so an entry naming a note that is not
+// there is a confident miss, and a note no entry names is reachable only by
+// someone who already knows its filename. An absent catalog is not an error: the
+// agent then falls back to filenames and search terms.
+func (s *Store) catalogIssues(notes map[string]string) ([]string, error) {
+	data, err := s.Read("context/INDEX.md")
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var issues []string
+	referenced, fenced := map[string]bool{}, false
+	for index, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+			fenced = !fenced
+			continue
+		}
+		// A fenced example teaches the entry shape; it catalogs nothing.
+		if fenced || !catalogEntry.MatchString(line) {
+			continue
+		}
+		for _, match := range catalogLink.FindAllStringSubmatch(line, -1) {
+			target := match[1]
+			if strings.HasPrefix(target, "#") || strings.Contains(target, "://") || strings.HasPrefix(target, "mailto:") {
+				continue
+			}
+			target, _, _ = strings.Cut(target, "#")
+			target = path.Clean(strings.TrimPrefix(target, "./"))
+			if target == "" || target == "." {
+				continue
+			}
+			if strings.HasPrefix(target, "../") || strings.HasPrefix(target, "/") {
+				issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: catalog entry links outside the catalog (%s)", index+1, target))
+				continue
+			}
+			referenced[target] = true
+			if _, ok := notes[target]; !ok && target != "INDEX.md" {
+				issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: catalog entry links to a missing note (%s)", index+1, target))
+			}
+		}
+	}
+	for inside, relative := range notes {
+		if !referenced[inside] {
+			issues = append(issues, relative+": note is not listed in the catalog")
+		}
 	}
 	return issues, nil
 }

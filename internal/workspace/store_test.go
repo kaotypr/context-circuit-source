@@ -155,3 +155,69 @@ func TestKnowledgeIssuesWithoutContextDirectory(t *testing.T) {
 		t.Fatalf("%v %v", err, issues)
 	}
 }
+
+func TestCatalogConsistency(t *testing.T) {
+	for _, tc := range []struct {
+		name, index string
+		notes       []string
+		want        string
+	}{
+		{"entry and note agree", "- [Billing](domains/billing.md) — voiding rules", []string{"domains/billing.md"}, ""},
+		{"entry without a note", "- [Billing](domains/billing.md) — voiding rules", nil, "links to a missing note"},
+		{"note without an entry", "Nothing catalogued yet.", []string{"domains/billing.md"}, "not listed in the catalog"},
+		{"fenced example catalogs nothing", "```\n- [Example](domains/example.md) — shape only\n```", nil, ""},
+		{"prose link is not an entry", "See [Billing](domains/billing.md) for the shape.", nil, ""},
+		{"README is navigation", "Nothing catalogued yet.", []string{"domains/README.md"}, ""},
+		{"fragment resolves to the note", "- [Billing](domains/billing.md#voiding) — voiding rules", []string{"domains/billing.md"}, ""},
+		{"external link is skipped", "- [Vendor](https://example.invalid/spec) — vendor behavior", nil, ""},
+		{"entry leaving the catalog", "- [Elsewhere](../README.md) — outside", nil, "links outside the catalog"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			for _, note := range tc.notes {
+				full := filepath.Join(root, "context", filepath.FromSlash(note))
+				if err := os.MkdirAll(filepath.Dir(full), 0o755); err != nil {
+					t.Fatal(err)
+				}
+				if err := os.WriteFile(full, []byte("# Note\n"), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			index := filepath.Join(root, "context", "INDEX.md")
+			if err := os.MkdirAll(filepath.Dir(index), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(index, []byte("# Catalog\n\n"+tc.index+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			issues, err := (&Store{Root: root}).knowledgeIssues()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.want == "" {
+				if len(issues) != 0 {
+					t.Fatalf("expected a consistent catalog: %v", issues)
+				}
+				return
+			}
+			if len(issues) != 1 || !strings.Contains(issues[0], tc.want) {
+				t.Fatalf("expected %q: %v", tc.want, issues)
+			}
+		})
+	}
+}
+
+// Without a catalog the agent falls back to filenames, so notes are not faults.
+func TestCatalogConsistencySkippedWithoutAnIndex(t *testing.T) {
+	root := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(root, "context"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "context", "billing.md"), []byte("# Billing\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	issues, err := (&Store{Root: root}).knowledgeIssues()
+	if err != nil || len(issues) != 0 {
+		t.Fatalf("%v %v", err, issues)
+	}
+}
