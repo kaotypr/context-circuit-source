@@ -105,3 +105,53 @@ func TestLockSurvivesProcessInterruption(t *testing.T) {
 		t.Fatalf("lock was not released after process termination: %v", err)
 	}
 }
+
+func TestKnowledgeIssues(t *testing.T) {
+	for _, tc := range []struct {
+		name, line string
+		flagged    bool
+	}{
+		{"concept word", "Task progress and temporary results belong in plans.", false},
+		{"repository path", "Code: `api@internal/billing/dunning/`.", false},
+		{"patterned repository path", "Every feature is `web@src/features/<feature>/` with a `routes.ts`.", false},
+		{"repository directory that shares a reserved name", "Loaders live in `api@src/sources/loader.go`.", false},
+		{"external URL", "Pricing is published at https://example.com/plans/pricing.", false},
+		{"plural business noun", "A customer may hold several subscription plans.", false},
+		{"record file", "See plans/p0007-billing.md for the rollout.", true},
+		{"bare plan ID", "Reworded during p0007 to match the new flow.", true},
+		{"bare intent ID", "Approved as i001.", true},
+		{"intent record path", "Superseded by intent/i002-billing.md.", true},
+		{"raw evidence path", "Derived from sources/vendor-spec.pdf.", true},
+		{"workspace machinery path", "Described in .context-circuit/docs/working.md.", true},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			root := t.TempDir()
+			if err := os.MkdirAll(filepath.Join(root, "context", "domains"), 0o755); err != nil {
+				t.Fatal(err)
+			}
+			note := filepath.Join(root, "context", "domains", "billing.md")
+			if err := os.WriteFile(note, []byte("# Billing\n\n"+tc.line+"\n"), 0o644); err != nil {
+				t.Fatal(err)
+			}
+			store := &Store{Root: root}
+			issues, err := store.knowledgeIssues()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if tc.flagged != (len(issues) > 0) {
+				t.Fatalf("flagged=%v for %q: %v", tc.flagged, tc.line, issues)
+			}
+			if tc.flagged && !strings.HasPrefix(issues[0], "context/domains/billing.md:3:") {
+				t.Fatalf("expected a located finding: %v", issues)
+			}
+		})
+	}
+}
+
+func TestKnowledgeIssuesWithoutContextDirectory(t *testing.T) {
+	store := &Store{Root: t.TempDir()}
+	issues, err := store.knowledgeIssues()
+	if err != nil || len(issues) != 0 {
+		t.Fatalf("%v %v", err, issues)
+	}
+}

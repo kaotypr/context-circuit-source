@@ -48,6 +48,20 @@ is needed. Keep raw evidence separate from accepted knowledge, and keep task
 progress and temporary results in plans. Go can locate catalog entries; semantic
 interpretation and knowledge writing are the agent's responsibility.
 
+Live context notes describe the project, not the workspace machinery that produced
+them. Never name a plan record, an intent record, or a file under `sources/` inside
+a note: records are archived while knowledge is meant to outlast them, and a recorded
+evidence path becomes a standing instruction to read material that must stay passive.
+Repository paths are the durable anchor, exact or patterned, written with the logical
+repository ID — `api@internal/billing/dunning/`, `web@src/features/<feature>/` — never
+a local checkout path. Links between context notes are fine, and which record or
+evidence produced a note belongs in that plan. Run `check` after editing notes; it
+reports any line that crosses this boundary. One note is one unwrapped catalog entry
+carrying its own link, repositories, question, and search terms, as `context/INDEX.md`
+describes. Record a domain term in `context/glossary.md` the first time its meaning
+has to be asked for, naming the code identifier whenever it differs from the word the
+project says out loud.
+
 ## Intent and planning
 
 For an implementation change, make the intended outcome explicit before detailed
@@ -193,8 +207,9 @@ rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When explicitly requested, append a short
 completion note to its existing record and reconcile any affected durable project
-knowledge. Update an existing context index. Keep implementation-specific evidence
-in the plan; other work need not wait for unrelated knowledge updates.
+knowledge. Update an existing context index. Keep implementation-specific evidence in
+the plan, and keep that plan's own identifiers out of every note reconciled from it;
+run `check` afterwards. Other work need not wait for unrelated knowledge updates.
 
 Worktrees and branches remain after completion. Remove a worktree only when
 requested; preserve dirty, untracked, and ignored files unless their disposal is

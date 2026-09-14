@@ -3,7 +3,10 @@ package workspace
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -164,8 +167,62 @@ func (s *Store) Check(ctx context.Context) ([]string, error) {
 			}
 		}
 	}
+	knowledge, err := s.knowledgeIssues()
+	if err != nil {
+		issues = append(issues, err.Error())
+	} else {
+		issues = append(issues, knowledge...)
+	}
 	issues = unique(issues)
 	sort.Strings(issues)
+	return issues, nil
+}
+
+// Context notes describe the project, not the workspace machinery that produced
+// them. A note naming a record or a raw evidence file rots once that ephemeral
+// file is archived, and a recorded evidence path becomes a standing instruction
+// to read material that must stay passive. Repository paths carry a logical
+// repository ID and remain the durable anchor, exact or patterned.
+var knowledgeRecord = regexp.MustCompile(`(^|[^A-Za-z0-9-])(i[0-9]{3,}|p[0-9]{4,})([^A-Za-z0-9-]|$)`)
+var knowledgeMachinery = regexp.MustCompile(`(^|[^A-Za-z0-9@/._-])((intent|plans|sources)/|\.context-circuit/)`)
+
+func (s *Store) knowledgeIssues() ([]string, error) {
+	base, err := s.Path("context")
+	if err != nil {
+		return nil, err
+	}
+	var issues []string
+	err = filepath.WalkDir(base, func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.Type()&os.ModeSymlink != 0 {
+			return fmt.Errorf("context directories cannot contain symlinks: %s", path)
+		}
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
+			return nil
+		}
+		relative, err := filepath.Rel(s.Root, path)
+		if err != nil {
+			return err
+		}
+		relative = filepath.ToSlash(relative)
+		data, err := s.Read(relative)
+		if err != nil {
+			return err
+		}
+		for index, line := range strings.Split(string(data), "\n") {
+			for _, pattern := range []*regexp.Regexp{knowledgeMachinery, knowledgeRecord} {
+				if match := pattern.FindStringSubmatch(line); match != nil {
+					issues = append(issues, fmt.Sprintf("%s:%d: knowledge note names workspace machinery (%s)", relative, index+1, match[2]))
+				}
+			}
+		}
+		return nil
+	})
+	if err != nil && !os.IsNotExist(err) {
+		return nil, err
+	}
 	return issues, nil
 }
 

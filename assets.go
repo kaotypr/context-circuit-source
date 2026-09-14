@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-//go:embed product/AGENTS.md.in product/CLAUDE.md.in product/CURSOR.md.in product/cursor.mdc.in product/README.md product/docs/commands.md product/docs/workspace.md product/docs/worktrees.md product/docs/working.md product/docs/agents.md template/gitignore.in template/workspace.yaml template/members.yaml template/ids.yaml template/role-tiering.yaml template/context/INDEX.md template/intent/README.md template/plans/README.md template/sources/README.md scripts/release-manifest.txt VERSION CLI_VERSION
+//go:embed product/AGENTS.md.in product/CLAUDE.md.in product/CURSOR.md.in product/cursor.mdc.in product/README.md product/docs/commands.md product/docs/workspace.md product/docs/worktrees.md product/docs/working.md product/docs/agents.md template/gitignore.in template/workspace.yaml template/members.yaml template/ids.yaml template/role-tiering.yaml template/context/INDEX.md template/context/glossary.md template/intent/README.md template/plans/README.md template/sources/README.md scripts/release-manifest.txt VERSION CLI_VERSION
 //go:embed product/skills/cc-cli/SKILL.md product/skills/cc-cli/route.md product/skills/cc-cli/scripts/install.sh product/skills/cc-cli/scripts/install.ps1 product/skills/cc-dispatch/SKILL.md product/skills/cc-dispatch/route.md
 var bundled embed.FS
 

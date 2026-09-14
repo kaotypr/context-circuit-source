@@ -56,9 +56,19 @@ ordering reads to release a plan's dependents, so complete a plan only when it
 actually landed. Delivery alone does not mark the plan done or trigger cleanup.
 
 Knowledge notes capture durable concepts, not task logs. Gather from named sources
-on request. `context find` searches only the optional index; the agent chooses and
-reads relevant notes. It can edit knowledge and index files directly. There are
-no mandatory catalogs, acceptance records, or provider integrations.
+on request. `context find` searches only the optional index, matching whole lines by
+case-insensitive substring; the agent chooses and reads relevant notes. It can edit
+knowledge and index files directly. There are no mandatory catalogs, acceptance
+records, or provider integrations.
+
+One note is one unwrapped index entry holding its link, the repositories it applies
+to, the question it answers, its search terms, and the date it was last confirmed.
+`context/glossary.md` is a table of project vocabulary mapped to the code identifiers
+that implement it. A note anchors to repository paths written with the logical
+repository ID; it never names a plan record, an intent record, or a file under
+`sources/`, because those are archived while the knowledge outlasts them and a
+recorded evidence path would reopen material that must stay passive. `check` reports
+the lines in `context/` that cross that boundary.
 
 Archival is optional ordinary file organization. ID-based lookups discover records
 under their intent/plans directories, including archives. Listing archives requires
