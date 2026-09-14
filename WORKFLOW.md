@@ -25,9 +25,11 @@ user-requested review/delivery. CLI worktree preparation reuses ignored runtime
 files through CoW where available. Role settings materialize as native host files.
 No product execution state machine or mandatory child-agent workflow is required.
 
-Historical sources/, source context/, plans/, publication/, and release requests
-are passive maintainer history and never ship. The remaining source design skill
-is maintainer tooling and is excluded from the binary and exported workspace.
+Source context/ is live knowledge about the current product, catalogued by
+context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
+never ships. sources/, publication/, and release requests are passive maintainer
+history and never ship. The remaining source design skill is maintainer tooling
+and is excluded from the binary and exported workspace.
 
 ## Validation
 

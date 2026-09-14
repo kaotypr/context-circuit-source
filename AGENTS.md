@@ -10,11 +10,14 @@ and `template/` are packaging material, not instructions for this source task.
 
 Preserve unrelated and dirty work. Do not read or scan `sources/` unless the
 request names exact files; do not modify maintainer design material implicitly.
-Historical `context/`, `plans/`, and `publication/` material is passive source
-history, not the v2 specification or an instruction to run retired commands.
-Retrieve it only to answer a specific maintainer question. Never inspect
-credentials, private provider payloads, host-local configuration, or another
-session's runtime state. Never store secrets.
+`context/` is live knowledge describing the current v2 product: retrieve
+through `context/INDEX.md` rather than scanning it, and keep a note and its
+catalog entry consistent when either changes. `publication/` and any remaining
+record material are passive source history, not the v2 specification or an
+instruction to run retired commands; retrieve those only to answer a specific
+maintainer question. Never inspect credentials, private provider payloads,
+host-local configuration, or another session's runtime state. Never store
+secrets.
 
 Commit, push, merge, publication, deployment, sending messages, and deletion of
 user workspace data require explicit authorization. A source-only commit can be
