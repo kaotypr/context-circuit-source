@@ -47,10 +47,11 @@ knowledge is retrieved selectively; sources remain separate passive evidence.
 
 > Add recurring billing to the API and web app.
 
-The agent writes an intent defining the desired outcome and success criteria.
-Approve or refine it. After approval, the agent investigates the code, creates
-linked Markdown plans, and proceeds without separate plan approval. Plans can
-span repositories or be split with dependencies.
+The agent writes an intent defining the desired outcome and success criteria, then
+waits. Approve or refine it. Approval is what sends the agent into the code to
+create linked Markdown plans, which can span repositories or be split with
+dependencies. It shows you the plans and waits again. Reading them is optional;
+nothing is built until you ask for execution.
 
 > Execute all plans of the billing intent.
 
@@ -60,10 +61,11 @@ unattended — preparing worktrees, merging a dependent plan's base when needed,
 dispatching workers, and recording progress. It stops and preserves everything on
 a failed check or a decision it should not make alone.
 
-Use worktrees when helpful. The executable prepares the Git working copies;
-it reuses ignored node_modules and .env files using filesystem CoW when available,
-with independent-copy fallback. The agent handles any remaining setup and implements
-the change. A dispatcher skill supports explorer, planner, worker, and manually
+Executing a plan prepares a worktree per repository first, unless you ask for the
+change to be made directly in a checkout you already have. The executable prepares
+the Git working copies; it reuses ignored node_modules and .env files using
+filesystem CoW when available, with independent-copy fallback. The agent handles
+any remaining setup and implements the change. A dispatcher skill supports explorer, planner, worker, and manually
 requested reviewer subagents, with configurable per-host model/effort settings.
 Normal tests, linting, and builds remain part of implementation. Progress and
 remaining work stay in the plan so a later session can resume from actual Git state.

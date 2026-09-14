@@ -20,7 +20,9 @@ the repositories for the business word finds nothing without it.
 | Coordinator | The main agent session that interprets, dispatches, integrates, and reports | `context-circuit-source@product/AGENTS.md.in` |
 | Copy-on-write reuse | Cloning a checkout's ignored runtime entries into a new worktree by filesystem cloning | `context-circuit-source@internal/cow/`, `internal/workspace/reuse.go` |
 | Dependency inputs | The tracked manifests and version files compared before dependencies are reused | `context-circuit-source@internal/workspace/reuse.go` `compareDependencyInputs` |
+| Direct execution | Implementing a plan inside a bound checkout instead of a prepared worktree, only when a person asks for it | `context-circuit-source@product/AGENTS.md.in` |
 | Dispatch specification | The resolved subagent invocation the executable returns without launching anything | `context-circuit-source@internal/workspace/agents.go` `DispatchAgent` |
+| Execution request | A person's separate decision to run presented plans, authorizing worktree preparation and implementation | `context-circuit-source@product/AGENTS.md.in` |
 | Integration merge | The local merge assembling a dependent plan's base at a fan-in; implementation, not delivery | `context-circuit-source@internal/workspace/order.go` `OrderIntegration` |
 | Intent | One approved statement of the outcome a change should produce, written before the code is read | `context-circuit-source@internal/workspace/records.go` `CreateRecord` |
 | Ledger | The permanent record of every reserved intent and plan number | `context-circuit-source@internal/workspace/records.go` `Ledger` |

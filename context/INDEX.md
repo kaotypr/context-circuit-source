@@ -62,10 +62,10 @@ diagnostic reports any line in a note that crosses this boundary.
 
 - [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen and kept unique across clones · id, allocation, band, reservation, ledger, member, offline, collision · reviewed 2026-09-15
 - [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary · reviewed 2026-09-15
-- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, isolation, copy-on-write, clone, dependency, environment · reviewed 2026-09-15
+- [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, isolation, execution, copy-on-write, clone, dependency, environment · reviewed 2026-09-15
 - [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how several plans of one intent are sequenced, merged, and released · order, waves, chain, dependency, integration merge, concurrency, stop · reviewed 2026-09-15
 - [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, review · reviewed 2026-09-15
-- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, authorization, delivery, completion, cleanup, scope, consent · reviewed 2026-09-15
+- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, execution request, authorization, delivery, completion, cleanup, scope, consent · reviewed 2026-09-15
 
 ### Maintaining this source
 

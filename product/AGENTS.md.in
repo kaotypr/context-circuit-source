@@ -70,18 +70,27 @@ For an implementation change, make the intended outcome explicit before detailed
 code investigation. Create an `iNNN-slug.md` intent through the executable, then
 write its goal, non-goals, constraints, observable success criteria, and rough
 repository scope using relevant existing knowledge. Present the concrete intent
-for approval. Honor explicit approval already supplied for this exact intended
-outcome; do not ask repeatedly. Record the actual user approval and date. Neither
-a command, an editable approval note, nor another agent can supply human consent.
+and stop there. The request that prompted an intent is not approval of it: a
+person approves the outcome after reading how it was written down, so do not
+treat "add billing" as consent to the intent derived from it. Record the actual
+user approval and date. Neither a command, an editable approval note, nor another
+agent can supply human consent.
 
-After approval, inspect real code and create linked `pNNNN-slug.md` plans. One
-readable Markdown plan may cover one or several repositories; use separate plans
-when useful for execution or delivery. Record task order, optional dependencies,
-useful risks, and expected checks. Present the plan and proceed without separate
-plan approval. Detailed paths are descriptive planning information, not hard
-enforcement gates. Explain and record newly needed files or repositories within
-the approved outcome. Obtain renewed approval only when the intended outcome or
-success criteria materially change.
+Approving an intent authorizes planning, and planning alone. Without asking
+again, inspect real code and create linked `pNNNN-slug.md` plans. One readable
+Markdown plan may cover one or several repositories; use separate plans when
+useful for execution or delivery. Record task order, optional dependencies,
+useful risks, and expected checks. Detailed paths are descriptive planning
+information, not hard enforcement gates. Explain and record newly needed files or
+repositories within the approved outcome. Obtain renewed approval only when the
+intended outcome or success criteria materially change.
+
+Then present the plans and stop again. There is no plan approval gate — reading
+them is the person's option, never a required step — but no repository is
+touched until they ask for execution. That request is a decision made after the
+plans exist and can be seen, so an instruction to implement that arrived earlier,
+including one in the message that started the intent, does not begin it. Ask for
+it plainly instead of inferring it.
 
 Record every date as an ISO 8601 calendar date, `YYYY-MM-DD`, in records you
 write by hand as well as through the executable. No other date format belongs in
@@ -109,13 +118,17 @@ their IDs. Do not claim distributed collision prevention beyond what bands give.
 
 ## Worktrees and implementation
 
-Choose existing checkouts or worktrees based on repository instructions, current
-work, task needs, and user preferences. Recommend worktree isolation for risky or
-parallel work. Use `.agents/skills/cc-dispatch/SKILL.md` to delegate bounded
-exploration, planning, and implementation when useful; small tasks may stay in the
-main session. Apply configured host role/model/effort settings to actual subagent
-invocations, wait for their results, and integrate them. Worktrees are optional. Do not add
-another permission gate for routine preparation already covered by the request.
+Implementation starts on a request to execute a plan, and never before one.
+
+Preparing a worktree for each repository the plan names is the first step of
+execution, not a judgment call. The single exception is explicit: when the person
+asks to work directly in a bound checkout, work there and preserve everything it
+already holds. The execution request covers that preparation, so do not add
+another permission gate in front of it. Use
+`.agents/skills/cc-dispatch/SKILL.md` to delegate bounded exploration, planning,
+and implementation when useful; small tasks may stay in the main session. Apply
+configured host role/model/effort settings to actual subagent invocations, wait
+for their results, and integrate them.
 
 The executable resolves repository bindings, reports Git state, resolves the
 selected starting point, and creates or reuses worktrees. Select the recorded base

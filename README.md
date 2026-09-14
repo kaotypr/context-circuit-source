@@ -22,10 +22,13 @@ explicitly requested review and delivery.
    one unwrapped entry each in `context/INDEX.md`, with project vocabulary in
    `context/glossary.md`. A note describes the project and anchors to repository
    paths; it never names a record or a file of raw evidence.
-4. Describe a change and approve its intent. The agent then inspects the code,
-   creates linked Markdown plans, and proceeds without a separate plan approval.
-5. Prepare worktrees when useful, or work in selected checkouts, then implement
-   and run normal tests, lint, and builds. For several plans at once,
+4. Describe a change; the agent writes an intent and stops. Approving it is what
+   sends the agent into the code to create linked Markdown plans, which it
+   presents and stops on again. Reading them is optional and there is no plan
+   approval gate, but nothing is implemented until execution is requested.
+5. Ask to execute. That prepares a worktree per repository — unless you ask to
+   work directly in a bound checkout — then implements and runs normal tests,
+   lint, and builds. For several plans at once,
    `record order` derives dependency waves or a linear chain and reports the
    cost of each; the agent confirms the shape once and runs it to completion,
    preparing worktrees, performing integration merges, dispatching workers, and

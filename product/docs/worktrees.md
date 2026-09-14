@@ -1,13 +1,15 @@
 # Worktree responsibilities
 
-Worktrees are optional. The agent chooses a working strategy from the user's
-preferences, repository instructions, existing work, and change dependencies.
-The executable performs the corresponding Git mechanics.
+Executing a plan prepares a worktree for each repository that plan names. The one
+exception is a person asking to work directly in a bound checkout, which is how
+a change gets made in place when isolation is not wanted. Where the work happens
+is therefore the person's choice, not a strategy the agent selects per task. The
+executable performs the corresponding Git mechanics.
 
 | Concern | Executable | Agent |
 | --- | --- | --- |
 | Repository selection | Resolve logical ID and local checkout | Decide which repositories are affected |
-| Existing work | Report branch, changes, and Git worktree inventory | Preserve unrelated work and choose reuse or isolation |
+| Existing work | Report branch, changes, and Git worktree inventory | Preserve unrelated work; resume an existing location or select a new one |
 | Starting point | Resolve selected ref to a commit | Choose default base or dependency branch; fetch if needed |
 | Branch and path | Validate names and collisions; create/reuse using Git | Honor explicit choices and repository conventions |
 | Result | Return path, branch, HEAD, starting commit, association | Use the returned directory for work |
