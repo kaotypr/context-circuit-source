@@ -1,31 +1,57 @@
 # Authorization boundaries
 
-## Two decisions belong to a person
+## Three decisions belong to a person
 
 **Approving the intended outcome.** Before detailed code investigation the agent
-writes the intent and presents it concretely. The rule that carries the weight:
+writes the intent, presents it, and stops. The rule that carries the weight:
 neither a command, nor an editable approval note, nor another agent can supply
 human consent. The approval operation records an actual decision and its date;
-it does not constitute one. In the other direction, approval already supplied in
-the conversation for that exact outcome is honored rather than re-requested —
-asking twice for the same thing teaches people to approve reflexively.
+it does not constitute one.
+
+Nor does the request that prompted the intent. Reading a change request as
+consent to whatever intent gets derived from it collapses the gate entirely —
+the agent writes the outcome and approves it in the same breath — so approval is
+a person's answer to the intent as written.
 
 Re-approval is required only when the outcome or its success criteria materially
 change. A newly needed file or repository *within* the approved outcome is
 explained and recorded, not re-gated, because recorded paths are descriptive
-planning information rather than an enforcement contract.
+planning information rather than an enforcement contract. Asking twice for the
+same thing teaches people to approve reflexively.
+
+**Starting execution.** Plans are derived, presented, and then left alone until a
+person asks for them to be run. This is a decision about *when work begins*, not
+a review of the derivation, which is why it sits beside plan presentation without
+being a plan approval gate.
+
+It is deliberately not pre-suppliable. An instruction to implement that arrived
+before the plans existed cannot be a decision about plans nobody had seen, so it
+does not start execution — otherwise "add billing and implement it" carries the
+agent from an unread intent through unread plans into repository edits, which is
+the failure the two stops exist to prevent.
 
 **Authorizing an outward action.** Commit, push, pull-request creation, merge
+
 into a base branch, deployment, external publication, and deletion of workspace
 data each require explicit authorization, and authorization already given is
 reused rather than re-requested.
 
-## Nothing in between
+## What the execution request is not
 
-There is no plan approval gate. A plan is *derived* from an approved outcome, so
+It is not plan approval. A plan is *derived* from an approved outcome, so
 approving it again asks a person to ratify a derivation they are not positioned
-to check — which is how ratification becomes a rubber stamp. The diagnostic is
-likewise not a gate; nothing waits on it.
+to check — which is how ratification becomes a rubber stamp. Reading the plans
+stays optional, and a person who asks to execute without reading them has
+withheld nothing. The two are separable because they answer different questions:
+whether the derivation is right, and whether now is the time to run it. Only the
+second is asked for. The diagnostic is not a gate either; nothing waits on it.
+
+## What the execution request covers
+
+Preparing a worktree for each repository a plan names, and implementing there.
+Preparation is a step of execution rather than a strategy chosen per task, so it
+is authorized by the same request and never gated separately. Asking to work
+directly in a bound checkout is the stated exception, and the only one.
 
 ## Scoped run authorization
 

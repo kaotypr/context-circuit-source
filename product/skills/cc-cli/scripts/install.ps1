@@ -2,9 +2,14 @@ param(
   [Parameter(Mandatory=$true)][string]$Version,
   [string]$BinDir = (Join-Path $env:LOCALAPPDATA 'ContextCircuit\bin'),
   [string]$Archive,
-  [string]$Checksums
+  [string]$Checksums,
+  [string]$Token
 )
 $ErrorActionPreference = 'Stop'
+foreach ($fallback in $env:CONTEXT_CIRCUIT_TOKEN, $env:GH_TOKEN, $env:GITHUB_TOKEN) {
+  if (!$Token) { $Token = $fallback }
+}
+if ($Token -and $Token -notmatch '^[A-Za-z0-9_-]+$') { throw 'Token contains unexpected characters.' }
 if ($Version -notmatch '^2\.[A-Za-z0-9.+-]+$' -or $Version.Contains('..')) { throw 'Supply an exact compatible v2 CLI version without a v prefix.' }
 if ($env:OS -ne 'Windows_NT') { throw 'Use install.sh on macOS/Linux.' }
 $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
@@ -34,9 +39,27 @@ try {
     Copy-Item -LiteralPath $Checksums -Destination $sums
   } else {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $base = "https://github.com/kaotypr/context-circuit-source/releases/download/cli-v$Version"
-    Invoke-WebRequest -UseBasicParsing -Uri "$base/$package" -OutFile $download
-    Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS" -OutFile $sums
+    if ($Token) {
+      # A private repository serves release assets only through the API, by
+      # asset id; the public download path answers 404. Invoke-WebRequest drops
+      # the Authorization header on the redirect to signed storage, which is
+      # what that storage requires.
+      $host_ = if ($env:CONTEXT_CIRCUIT_API) { $env:CONTEXT_CIRCUIT_API } else { 'https://api.github.com' }
+      $api = "$host_/repos/kaotypr/context-circuit-source"
+      $auth = @{ Authorization = "Bearer $Token" }
+      try {
+        $release = Invoke-RestMethod -UseBasicParsing -Uri "$api/releases/tags/cli-v$Version" -Headers ($auth + @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' })
+      } catch { throw "Cannot read release cli-v$Version; confirm it exists and the token grants access." }
+      foreach ($wanted in @(@{ Name = $package; File = $download }, @{ Name = 'SHA256SUMS'; File = $sums })) {
+        $asset = @($release.assets | Where-Object { $_.name -eq $wanted.Name })[0]
+        if (!$asset) { throw "Release cli-v$Version publishes no asset named $($wanted.Name)." }
+        Invoke-WebRequest -UseBasicParsing -Uri $asset.url -Headers ($auth + @{ Accept = 'application/octet-stream' }) -OutFile $wanted.File
+      }
+    } else {
+      $base = "https://github.com/kaotypr/context-circuit-source/releases/download/cli-v$Version"
+      Invoke-WebRequest -UseBasicParsing -Uri "$base/$package" -OutFile $download
+      Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS" -OutFile $sums
+    }
   }
   $candidateHashes = @(Get-Content -LiteralPath $sums | ForEach-Object {
     if ($_ -match '^([a-fA-F0-9]{64})\s+\*?(?:\./)?(.+)$' -and $Matches[2] -eq $package) { $Matches[1] }

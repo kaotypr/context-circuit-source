@@ -1,14 +1,16 @@
 # Intents, plans, knowledge, and review
 
-The user approves the intended outcome. The agent interprets the project and
-writes meaningful content. Go supplies IDs, record structures, references, and
+The user makes two decisions: approving the intended outcome, and asking for a
+plan to be executed. The agent interprets the project and writes meaningful
+content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
 
 An intent has a global `id`, `created_by`, and linked `plans`. Its Markdown body
 contains goal, non-goals, constraints, success criteria, rough repository scope,
 and an approval note. Intent creation happens before detailed code investigation;
-existing knowledge may inform it. Record actual approval, including approval
-already supplied in the conversation for that exact outcome.
+existing knowledge may inform it. The intent is presented and then waited on: the
+request that prompted it is not approval of it, and the recorded approval is a
+person's answer to the written intent.
 
 A plan's metadata looks like:
 
@@ -32,11 +34,17 @@ A member holding a band allocates from that band's block alone — intents from
 an unbanded member allocates from the numbers no band claims. Plans use
 `created_by` only for member data; a band changes numbering, never ownership.
 
-The agent writes the plan from real code after intent approval, links it, and
-proceeds without a second approval. Record task order, useful risks, expected
-checks, and optional affected paths. Paths are descriptive, not an enforcement
-contract. Changes to the intended outcome reopen approval; an additional file
-within the approved outcome does not automatically do so.
+The agent writes the plan from real code once the intent is approved and links it,
+without asking a second time. Record task order, useful risks, expected checks,
+and optional affected paths. Paths are descriptive, not an enforcement contract.
+Changes to the intended outcome reopen approval; an additional file within the
+approved outcome does not automatically do so.
+
+Plans are then presented and left alone. Reading them is optional, so there is no
+plan approval gate, but implementation waits for a separate request to execute
+them — the decision about when work starts, made once the plans are visible. That
+request prepares a worktree per repository unless the user asks to work directly
+in a bound checkout.
 
 The agent runs appropriate tests/lint/builds, interprets failures, and records
 observed progress in the same file. Resume by resolving a record ID, then examining

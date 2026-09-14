@@ -2,12 +2,18 @@
 
 Isolation cheap enough to actually use.
 
-## Optional, and chosen by the agent
+## Prepared by execution, not chosen per task
 
-Worktrees are not mandatory. The agent picks a working strategy from repository
-instructions, existing work, task needs, and stated preference, recommending
-isolation for risky or parallel work; the executable performs the Git mechanics.
-Routine preparation covered by the request gets no extra permission gate.
+A request to execute a plan prepares a worktree for each repository that plan
+names; the executable performs the Git mechanics. Asking to work directly in a
+bound checkout is the one exception, which makes where the work happens a
+person's choice rather than a strategy the agent re-decides each time.
+
+Leaving it to per-task judgment is what made isolation rare in practice: an agent
+weighing risk against convenience mid-task reliably chose the checkout already
+open in front of it, so the cheap isolation below went unused exactly when
+parallel or risky work needed it. Preparation is covered by the execution request
+and gets no extra permission gate.
 
 For a plan the defaults are a branch and path named from the plan and repository
 IDs under the workspace. Explicit branch, start, and path values override.

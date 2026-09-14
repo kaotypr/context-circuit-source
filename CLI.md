@@ -7,8 +7,11 @@ configuration. Coding agents provide planning, implementation, and orchestration
 Download a platform package from the source repository's `cli-v<version>` release,
 or ask the workspace's `cc-cli` skill to install or update it. The skill detects
 the execution environment, verifies the package checksum, and installs in a
-user-writable directory. No Go or Python runtime is required. Git is required for
-repository operations. Installation does not update workspace files.
+user-writable directory. While the source repository is private, a download needs
+a GitHub token with read access to it; the installers accept one as `--token` /
+`-Token` or in `CONTEXT_CIRCUIT_TOKEN`. No Go or Python runtime is required. Git
+is required for repository operations. Installation does not update workspace
+files.
 
 Run `context-circuit-cli help` for commands. `context-circuit-cli version` reports the CLI
 version; `.context-circuit/VERSION` in a workspace records its separate template

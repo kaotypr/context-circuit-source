@@ -183,9 +183,23 @@ func Edit(data []byte, keys []string, value any) ([]byte, error) {
 		if e != nil {
 			return nil, e
 		}
-		// A flow container (including {}) must receive a flow value. Mixing
-		// styles through MergeFromReader produces malformed YAML in v1.19.2.
-		if mapping, ok := parentNode.(*ast.MappingNode); ok && mapping.IsFlowStyle {
+		mapping, isMapping := parentNode.(*ast.MappingNode)
+		flow := isMapping && mapping.IsFlowStyle
+		// A seed writes an empty container as `{}`. It carries no entries to
+		// stay consistent with, so rebuild it in block style through the node
+		// that holds it instead of letting every later entry extend one line.
+		if flow && len(mapping.Values) == 0 {
+			rebuilt, e := rebuildEmptyContainer(doc, keys, value)
+			if e != nil {
+				return nil, e
+			}
+			if rebuilt {
+				return serializeYAML(doc)
+			}
+		}
+		// A populated flow container must receive a flow value. Mixing styles
+		// through MergeFromReader produces malformed YAML in v1.19.2.
+		if flow {
 			encoded, e = yaml.MarshalWithOptions(map[string]any{keys[len(keys)-1]: value}, yaml.Flow(true))
 			if e != nil {
 				return nil, e
@@ -196,6 +210,41 @@ func Edit(data []byte, keys []string, value any) ([]byte, error) {
 			return nil, e
 		}
 	}
+	return serializeYAML(doc)
+}
+
+// rebuildEmptyContainer replaces an empty flow container at keys[:len(keys)-1]
+// with a block mapping holding the new entry, by merging into the node that
+// holds it. It reports false when that holder is itself a flow mapping, because
+// a block value merged into flow would not serialize.
+func rebuildEmptyContainer(doc *ast.File, keys []string, value any) (bool, error) {
+	if len(keys) < 2 {
+		return false, nil
+	}
+	holder := (&yaml.PathBuilder{}).Root()
+	for _, key := range keys[:len(keys)-2] {
+		holder = holder.Child(key)
+	}
+	holderPath := holder.Build()
+	holderNode, err := holderPath.FilterFile(doc)
+	if err != nil {
+		return false, err
+	}
+	if outer, ok := holderNode.(*ast.MappingNode); ok && outer.IsFlowStyle {
+		return false, nil
+	}
+	container := map[string]any{keys[len(keys)-2]: map[string]any{keys[len(keys)-1]: value}}
+	encoded, err := yaml.Marshal(container)
+	if err != nil {
+		return false, err
+	}
+	if err := holderPath.MergeFromReader(doc, bytes.NewReader(encoded)); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func serializeYAML(doc *ast.File) ([]byte, error) {
 	result := []byte(doc.String())
 	if _, err := parser.ParseBytes(result, 0); err != nil {
 		return nil, fmt.Errorf("YAML edit could not be serialized: %w", err)
@@ -209,14 +258,16 @@ func replaceYAMLNode(doc *ast.File, path *yaml.Path, old ast.Node, encoded []byt
 		return err
 	}
 	next := replacement.Docs[0].Body
-	// Preserve a container's flow style when replacing it within a flow map.
+	// Preserve a populated container's flow style when replacing it within a
+	// flow map. An empty container has no entries whose style must be matched,
+	// so it adopts block style and stays readable as entries accumulate.
 	switch previous := old.(type) {
 	case *ast.MappingNode:
-		if mapping, ok := next.(*ast.MappingNode); ok {
+		if mapping, ok := next.(*ast.MappingNode); ok && len(previous.Values) > 0 {
 			mapping.SetIsFlowStyle(previous.IsFlowStyle)
 		}
 	case *ast.SequenceNode:
-		if sequence, ok := next.(*ast.SequenceNode); ok {
+		if sequence, ok := next.(*ast.SequenceNode); ok && len(previous.Values) > 0 {
 			sequence.SetIsFlowStyle(previous.IsFlowStyle)
 		}
 	}
