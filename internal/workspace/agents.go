@@ -28,22 +28,20 @@ type Role struct {
 }
 
 var Roles = map[string]Role{
-	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. You cannot run anything, so report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", true},
+	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. Run no tests, linters, or builds: report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", true},
 	"planner": {"Plan an approved intent using evidence from the repositories.", `Read the intent above and the code it names, then answer under these headings:
 
 - Verdict: feasible, feasible-with-changes, or not-feasible.
 - Approach: how the outcome is reached.
 - Tasks and order: each task naming its repository, its paths, and the tasks it depends on.
 - Risks and checks: the check commands and where they are defined.
-- Evidence: the paths that established each conclusion.
-- Uncertainties: what you could not determine, and what would settle it.
 - Plan shape: single, or a proposed split with reasons.
 
-You cannot run anything, so report a check as found, never as passing.
-Not-feasible is a complete answer: return it with its evidence instead of a plan.
+Run no tests, linters, or builds: a check you name is one you read, never one you saw pass.
+Not-feasible is a complete answer: return it with its reasons instead of a plan.
 The coordinator writes the plan record and decides any split, so no plan exists yet and none is yours to number.
 Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, true},
-	"worker": {"Implement a bounded part of an approved plan and run normal checks.", `Implement the plan above in the working directory above. Own only the assigned task and paths.
+	"worker": {"Implement a bounded part of an approved plan and run normal checks.", `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
 
 Run the repositories' ordinary checks and report, as your result:
 
@@ -53,7 +51,7 @@ Run the repositories' ordinary checks and report, as your result:
 
 The coordinator integrates your work from that report and does not re-run your checks, so a check you did not run is one nobody ran. Report a failure plainly rather than working around it.
 
-Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents, and do not deliver changes without explicit authorization.`, false},
+Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents. Do not push, open a pull request, merge into the base branch, or deliver changes any other way without explicit authorization.`, false},
 	"reviewer": {"Independently review a diff only when the user requests review.", "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", true},
 }
 
@@ -352,8 +350,20 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	if err != nil {
 		return Dispatch{}, err
 	}
-	if err := Text(task); err != nil {
-		return Dispatch{}, err
+	// The record is the assignment. A planner is dispatched against a whole
+	// approved intent and a worker against the plan quoted in its brief, so a
+	// task on either can only restate what the brief already carries, and a
+	// required flag leaves the coordinator nothing to write but that
+	// restatement. A worker splitting one plan with others is the exception:
+	// its slice is named in the task and nowhere else.
+	if role == "planner" && task != "" {
+		return Dispatch{}, errors.New("a planner plans the whole approved intent quoted in its brief, so it takes no --task")
+	}
+	briefed := role == "planner" || role == "worker"
+	if task != "" || !briefed {
+		if err := Text(task); err != nil {
+			return Dispatch{}, err
+		}
 	}
 	if role == "reviewer" && !reviewRequested {
 		return Dispatch{}, fmt.Errorf("independent review requires an explicit user request; use --review-requested only to represent that request")
@@ -388,17 +398,24 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	// what to return. Every record it names is also quoted in full: an agent
 	// that has to go and find a file reads the whole repository on the way.
 	prompt := "# Working directory\n\n" + work.Root + "\n\nWorkspace root: " + s.Root
+	// A read-only role was told where its working directory is and nothing
+	// about what it may do there, which leaves how to read it an open question
+	// on a host that also offers GUI automation and web search. One planner
+	// answered it by driving an editor's interface to read a local file and
+	// searching the public web for a repository sitting on disk.
+	ownership := "You are reading, not changing. Change nothing in this working directory. Read and search the files here directly rather than driving another application, and consult no external source: what this task needs is this directory and this brief."
 	if !r.ReadOnly {
 		// Isolation differs by parallelism axis. One worker per plan owns its
 		// whole worktree; several workers inside one worktree genuinely share
 		// files. Saying the wrong one invites a worker to guess at edits it
 		// cannot see, or to overwrite edits it can.
 		if shared {
-			prompt += "\n\n# Ownership\n\nOther workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
+			ownership = "Other workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
 		} else {
-			prompt += "\n\n# Ownership\n\nYou are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
+			ownership = "You are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
 		}
 	}
+	prompt += "\n\n# Ownership\n\n" + ownership
 	if plan != "" {
 		record, err := s.FindRecord(plan)
 		if err != nil {
@@ -423,7 +440,10 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		}
 		prompt += "\n\n" + intentBrief(record, s.Root)
 	}
-	prompt += "\n\n# Task\n\n" + task + "\n\n# What to return\n\n" + r.Instructions
+	if task != "" {
+		prompt += "\n\n# Task\n\n" + task
+	}
+	prompt += "\n\n# What to return\n\n" + r.Instructions
 	definition, _, err := roleFile(host, role, setting)
 	if err != nil {
 		return Dispatch{}, err

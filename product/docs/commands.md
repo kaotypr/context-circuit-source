@@ -109,9 +109,11 @@ context-circuit-cli agent settings
 context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
 context-circuit-cli agent setup
 context-circuit-cli --json agent dispatch --host codex --role planner \
-  --intent i001 --path /actual/repository --task 'Plan the approved outcome of i001'
+  --intent i001 --path /actual/repository
 context-circuit-cli --json agent dispatch --host codex --role worker \
-  --plan p0001 --path /actual/worktree --task 'Implement the assigned tasks from p0001'
+  --plan p0001 --path /actual/worktree
+context-circuit-cli --json agent dispatch --host codex --role explorer \
+  --path /actual/repository --task 'Which module owns invoice voiding?'
 ```
 
 Settings default to host inheritance. `agent setup` applies settings to native
@@ -120,8 +122,13 @@ opened in several; the host may need to reload them. Initialization runs it, so 
 new workspace needs it again only after `agent configure` or in a fresh clone,
 where the ignored definitions never arrive. `agent dispatch` returns the
 resolved invocation for the cc-dispatch skill to launch through the host's tools.
-For a reviewer, `--review-requested` represents a real user request. No CLI command
-launches an LLM or treats a dispatch specification as evidence of completion.
+`--task` is the assignment for a role no record assigns: an explorer's question,
+a reviewer's diff and criteria, or the one slice a worker owns when several share
+a plan. A planner is dispatched against a whole intent and refuses it. A worker
+owning its whole plan needs none, and a brief carries no task section when none
+was given. For a reviewer, `--review-requested` represents a real user request.
+No CLI command launches an LLM or treats a dispatch specification as evidence of
+completion.
 
 A specification also reports `definition_path` and `definition_installed` for the
 host's native role file, and `setup_required` naming the exact `agent setup` run

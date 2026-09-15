@@ -256,7 +256,7 @@ func TestDispatchBriefsWorkerOnPlanAncestry(t *testing.T) {
 	if !strings.HasPrefix(spec.Prompt, "# Working directory\n\n"+spec.WorkingDirectory) {
 		t.Fatalf("a brief opens with its working directory:\n%s", spec.Prompt)
 	}
-	if strings.Index(spec.Prompt, "# Plan p0003") > strings.Index(spec.Prompt, "# Task") {
+	if strings.Index(spec.Prompt, "# Plan p0003") > strings.Index(spec.Prompt, "\n# Task\n") {
 		t.Fatalf("the plan precedes the task it assigns:\n%s", spec.Prompt)
 	}
 	// Quoting the record is what stops a worker from searching the repository
@@ -271,6 +271,93 @@ func TestDispatchBriefsWorkerOnPlanAncestry(t *testing.T) {
 	}
 }
 
+// The quoted record is the assignment, so a role that receives one needs no task
+// to restate it. The exception is a worker taking one slice of a plan several
+// workers share, which is named in the task and nowhere else.
+func TestARecordAssignsTheRolesItBriefs(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	f.ok("record", "approve", "--id", "i001", "--text", "User approved the billing outcome.")
+
+	// A planner plans the whole intent, so there is nothing left to narrow.
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "planner",
+		"--intent", "i001", "--path", f.root, "--task", "Plan it."); !strings.Contains(out, "takes no --task") {
+		t.Fatalf("unexpected error: %s", out)
+	}
+
+	whole := dispatch(t, f, "agent", "dispatch", "--host", "claude-code", "--role", "worker",
+		"--plan", "p0003", "--path", f.root)
+	// The quoted plan carries a "## Tasks and order" heading of its own, so the
+	// section is matched exactly rather than by substring.
+	if strings.Contains(whole.Prompt, "\n# Task\n") {
+		t.Fatalf("a worker owning its whole plan is assigned by the plan:\n%s", whole.Prompt)
+	}
+	if !strings.Contains(whole.Prompt, "The full plan follows and is authoritative") {
+		t.Fatalf("dropping the task must not drop the plan:\n%s", whole.Prompt)
+	}
+	// The prohibition the coordinator kept restating belongs to the role.
+	for _, want := range []string{"open a pull request", "merge into the base branch"} {
+		if !strings.Contains(whole.Prompt, want) {
+			t.Fatalf("worker instructions missing %q:\n%s", want, whole.Prompt)
+		}
+	}
+
+	slice := dispatch(t, f, "agent", "dispatch", "--host", "claude-code", "--role", "worker",
+		"--plan", "p0003", "--path", f.root, "--shared", "--task", "Own the ledger package only.")
+	if !strings.Contains(slice.Prompt, "# Task\n\nOwn the ledger package only.") {
+		t.Fatalf("a shared worker's slice is named nowhere else:\n%s", slice.Prompt)
+	}
+
+	// A role with no record to read still states its assignment.
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "explorer",
+		"--path", f.root); !strings.Contains(out, "nonempty") {
+		t.Fatalf("unexpected error: %s", out)
+	}
+}
+
+// A working directory with no statement of what may be done in it leaves how to
+// read it open, and a host that also offers GUI automation and web search will
+// sometimes answer that question badly.
+func TestAReadOnlyBriefSaysHowToRead(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	f.ok("record", "approve", "--id", "i001", "--text", "User approved the billing outcome.")
+	spec := dispatch(t, f, "agent", "dispatch", "--host", "codex", "--role", "planner",
+		"--intent", "i001", "--path", f.root)
+	for _, want := range []string{
+		"# Ownership",
+		"You are reading, not changing",
+		"rather than driving another application",
+		"consult no external source",
+	} {
+		if !strings.Contains(spec.Prompt, want) {
+			t.Fatalf("read-only brief missing %q:\n%s", want, spec.Prompt)
+		}
+	}
+	// Reading the repository is the work; only checks are off limits.
+	if !strings.Contains(spec.Prompt, "Run no tests, linters, or builds") {
+		t.Fatalf("a planner is told which running is forbidden:\n%s", spec.Prompt)
+	}
+	if strings.Contains(spec.Prompt, "You cannot run anything") {
+		t.Fatalf("no host is known to enforce that, so it states conduct instead:\n%s", spec.Prompt)
+	}
+	// An implementer's ownership is unchanged by any of this.
+	worker := dispatch(t, f, "agent", "dispatch", "--host", "codex", "--role", "worker",
+		"--plan", "p0003", "--path", f.root)
+	if !strings.Contains(worker.Prompt, "sole owner of this working directory") {
+		t.Fatalf("worker ownership changed:\n%s", worker.Prompt)
+	}
+}
+
+func dispatch(t *testing.T, f fixture, args ...string) workspace.Dispatch {
+	t.Helper()
+	var spec workspace.Dispatch
+	if err := json.Unmarshal([]byte(f.ok(args...)), &spec); err != nil {
+		t.Fatal(err)
+	}
+	return spec
+}
+
 // A planner returns the plan shape, so handing it a numbered plan settles the
 // split it was dispatched to propose, and an intent that turns out to hold
 // several plans has no single ID to pass.
@@ -278,18 +365,18 @@ func TestPlannerDispatchesAgainstAnApprovedIntent(t *testing.T) {
 	f := setup(t)
 	diamond(f)
 	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "planner",
-		"--plan", "p0001", "--path", f.root, "--task", "Plan it."); !strings.Contains(out, "not an already numbered --plan") {
+		"--plan", "p0001", "--path", f.root); !strings.Contains(out, "not an already numbered --plan") {
 		t.Fatalf("unexpected error: %s", out)
 	}
 	// Planning an unapproved intent plans an outcome nobody agreed to.
 	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "planner",
-		"--intent", "i001", "--path", f.root, "--task", "Plan it."); !strings.Contains(out, "not approved") {
+		"--intent", "i001", "--path", f.root); !strings.Contains(out, "not approved") {
 		t.Fatalf("unexpected error: %s", out)
 	}
 	f.ok("record", "approve", "--id", "i001", "--text", "User approved the billing outcome.")
 	var spec workspace.Dispatch
 	out := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "planner",
-		"--intent", "i001", "--path", f.root, "--task", "Plan the approved outcome.")
+		"--intent", "i001", "--path", f.root)
 	if err := json.Unmarshal([]byte(out), &spec); err != nil {
 		t.Fatal(err)
 	}
@@ -365,7 +452,7 @@ func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 		t.Helper()
 		var spec workspace.Dispatch
 		out := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "planner",
-			"--intent", "i001", "--path", f.root, "--task", "Investigate the approved intent.")
+			"--intent", "i001", "--path", f.root)
 		if err := json.Unmarshal([]byte(out), &spec); err != nil {
 			t.Fatal(err)
 		}
@@ -399,7 +486,7 @@ func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 	// Another host's definitions are separate; setup for one says nothing of it.
 	var other workspace.Dispatch
 	out := f.ok("agent", "dispatch", "--host", "cursor", "--role", "planner",
-		"--intent", "i001", "--path", f.root, "--task", "Investigate the approved intent.")
+		"--intent", "i001", "--path", f.root)
 	if err := json.Unmarshal([]byte(out), &other); err != nil {
 		t.Fatal(err)
 	}

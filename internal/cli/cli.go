@@ -60,9 +60,10 @@ agent settings        inspect effective per-host role model and effort preferenc
 agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEVEL|inherit
                       [--local] (write this machine's override, not the shared setting)
 agent setup           [--host codex|claude-code|cursor] (default: every host)
-agent dispatch        --host HOST --role ROLE --task TEXT --path DIRECTORY
+agent dispatch        --host HOST --role ROLE --path DIRECTORY [--task TEXT]
                       [--intent ID] [--plan ID] [--shared] [--review-requested]
                       (--intent plans an approved intent; --plan implements one.
+                      --task is the assignment where no record carries it.
                       Host must launch the returned prompt unmodified.)
 version
 
@@ -261,6 +262,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// role, where the reason can be stated.
 	if command == "agent dispatch" {
 		optional["plan"], optional["intent"] = true, true
+		// A planner and a whole-plan worker are assigned by the record quoted
+		// in the brief; only a role without one, or a worker taking a slice of
+		// a shared plan, has something left to say.
+		optional["task"] = true
 	}
 	// A workspace is opened in more than one host, so setup covers them all
 	// unless the caller narrows it to one.

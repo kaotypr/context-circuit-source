@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | explorer | Answer a specific codebase question with evidence | Read-only |
 | planner | Investigate an approved intent and return a grounded plan | Read-only; the coordinator writes the plan |
-| worker | Implement assigned work and run normal checks | Repository edits within the assigned task |
+| worker | Implement assigned work and run normal checks | Repository edits within its assignment |
 | reviewer | Independently examine a diff on request | Read-only; no fixes, no follow-up |
 
 The coordinator — the main session — owns task selection, preparation, waiting,
@@ -25,8 +25,8 @@ independent questions are answered at once and none of that reading enters the
 session.
 
 A planner answers under fixed headings: verdict, approach, tasks and order,
-risks and checks, evidence, uncertainties, and plan shape. Approach, tasks and
-order, risks and checks, evidence, and uncertainties transcribe into the record.
+risks and checks, and plan shape. Approach, tasks and order, and risks and
+checks transcribe into the record.
 Verdict and plan shape are answers to the coordinator rather than plan content:
 both are spent the moment the records are created, and a plan recording that it
 is a single plan states what its own existence already says. `not-feasible` is a complete answer that
@@ -45,9 +45,16 @@ planning one plans an outcome nobody agreed to.
 
 A subagent starts with nothing, so the brief is read top to bottom and is
 composed in that order: working directory, ownership, the record, the task, and
-last what to return. Every record it names is quoted in full, because an agent
+last what to return. Ownership reaches every role, because a directory named
+without a word on what may be done in it leaves how to read it open, and a host
+offering GUI automation and web search will occasionally answer that badly: read
+and search the files directly, drive no other application, consult nothing
+external. Every record it names is quoted in full, because an agent
 sent to open a file searches the repository to find it and arrives having read
-far more than the file. For the same reason the returned prompt is launched
+far more than the file. The quoted record is also the assignment, so the task
+section appears only where one is given: a planner takes the whole intent and
+refuses a task, a worker owning its whole plan needs none, and what remains is
+a role no record assigns or one slice of a plan several workers share. For the same reason the returned prompt is launched
 unmodified — a coordinator that retypes it in its own words drops the quoted
 record, and the agent then re-derives everything the coordinator already knew.
 
@@ -104,7 +111,13 @@ tool allowlist; Cursor expresses model with an optional effort parameter and a
 read-only flag, and requires an explicit model whenever an effort is explicit.
 Codex omits an inherited setting, because its configuration has no word for
 inheriting; Claude Code and Cursor both accept `inherit` as a model value and
-receive it written out, which says the same thing in a file a person may read. A customized native file is preserved and
+receive it written out, which says the same thing in a file a person may read. A
+written setting is not an applied one: a Codex agent spawned against a read-only
+role definition was observed running at full access, with that file's model,
+effort, and instructions all in force and its sandbox mode alone dropped. Nor
+would the sandbox have covered much, since it governs file writes rather than a
+host's GUI automation or web search. So the brief states the conduct itself and
+treats host enforcement as a bonus. A customized native file is preserved and
 reported rather than overwritten. Because read-only roles cannot run Git, the
 coordinator supplies diff text to them directly.
 
