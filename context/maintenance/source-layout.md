@@ -8,9 +8,9 @@ generated workspaces, not this one.
 
 | Component | Owns |
 | --- | --- |
-| `context-circuit-source@product/AGENTS.md.in` | Shared agent behavior and responsibility boundaries |
+| `context-circuit-source@product/AGENTS.md.in` | The always-loaded gates and prohibitions, and the pointer to each stage's skill |
 | `context-circuit-source@product/docs/` | Workspace files, agent-facing commands, subagents, working records, worktrees |
-| `context-circuit-source@product/skills/` | Executable installation and update, and subagent dispatch |
+| `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus executable installation and subagent dispatch |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
