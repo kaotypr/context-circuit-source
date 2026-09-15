@@ -240,7 +240,9 @@ func TestDispatchBriefsWorkerOnPlanAncestry(t *testing.T) {
 		"expected in this branch's ancestry",
 		"invisible in a separate worktree",
 		"The full plan follows and is authoritative",
-		"plans/p0003-three.md",
+		// A brief names the file in the host's own path syntax, so the
+		// expectation is built the same way rather than assuming a separator.
+		filepath.Join("plans", "p0003-three.md"),
 	} {
 		if !strings.Contains(spec.Prompt, want) {
 			t.Fatalf("brief missing %q:\n%s", want, spec.Prompt)
@@ -293,7 +295,7 @@ func TestPlannerDispatchesAgainstAnApprovedIntent(t *testing.T) {
 	}
 	for _, want := range []string{
 		"# Intent i001",
-		"intent/i001-billing.md",
+		filepath.Join("intent", "i001-billing.md"),
 		"The full intent follows and is authoritative",
 		"none is yours to number",
 	} {
