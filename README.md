@@ -16,8 +16,9 @@ explicitly requested review and delivery.
 1. Clone the workspace template, ask its cc-cli skill to install the CLI, and
    initialize a named workspace with a purpose and first member.
 2. Connect existing repositories, clone them, or initialize new repositories.
-   The workspace root itself can be a repository. Record default base branches
-   and relationships; keep concrete checkout paths local to each machine.
+   The workspace root itself can be a repository. Record repository URLs, default
+   branches, and relationships; keep concrete checkout paths and base branches
+   local to each machine.
 3. Gather durable knowledge from named sources into `context/` notes, catalogued
    one unwrapped entry each in `context/INDEX.md`, with project vocabulary in
    `context/glossary.md`. A note describes the project and anchors to repository

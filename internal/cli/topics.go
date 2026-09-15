@@ -32,11 +32,13 @@ is what lets clones that cannot see each other avoid colliding. A band is not a
 namespace: IDs stay workspace-global and the member is recorded only as
 created_by.`,
 
-	"repo": `Binds a logical repository ID to a local checkout. The ID and the base branch
-are shared; the checkout path stays in repositories.local.yaml on this machine.
-Connect an existing checkout, clone, or initialize a new repository; the
-workspace root itself may be connected as ".". Fetch updates refs only and
-implies no rebase or reset.`,
+	"repo": `Binds a logical repository ID to a local checkout. The ID, the repository URL,
+and its default branch are shared in workspace.yaml; the checkout path and the
+branch this machine starts work from stay in repositories.local.yaml. Worktrees
+branch from that local base, so one machine can work off a release branch while
+another stays on the default. Connect an existing checkout, clone, or initialize
+a new repository; the workspace root itself may be connected as ".". Fetch
+updates refs only and implies no rebase or reset.`,
 
 	"record": `Creates and updates intents and plans, allocating IDs that are never reused.
 Approve and complete record a decision a person already made; neither command

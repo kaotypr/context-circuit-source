@@ -37,9 +37,14 @@ For each bounded task, obtain its dispatch specification:
 ```sh
 context-circuit-cli --workspace <root> --json agent dispatch \
   --host <host> --role <explorer|planner|worker|reviewer> \
-  --plan <plan-id> --path <actual-working-directory> \
-  --task '<bounded assignment and references>'
+  --plan <plan-id> --path <actual-working-directory>
 ```
+
+The quoted record is the assignment. A planner plans the whole intent and refuses
+`--task`; a worker owning its whole plan needs none, and adding one only restates
+the plan it was already handed. Add `--task '<the assignment>'` where no record
+assigns the role — an explorer's question, a reviewer's criteria — or to name the
+single slice a worker owns when several share a plan, which is said nowhere else.
 
 Dispatch a planner against `--intent <intent-id>`, never `--plan`: the planner
 returns the plan shape, so numbering a plan first settles the split it was asked
@@ -72,14 +77,33 @@ agent from searching the repository for a file it was never given, and dropping 
 costs far more time than the paragraph saved. If a detail is missing, put it in
 `--task` and dispatch again rather than editing the returned text.
 
-- Codex: spawn with `multi_agent_v1__spawn_agent` and wait with
-  `multi_agent_v1__wait_agent`, passing `agent_type` from the specification.
-  These live in the exec sandbox's tool registry rather than the top-level tool
-  list, so call them directly; wrapping one in `exec_command` makes it yield on
-  `yield_time_ms` and turns a single wait into a poll loop, each poll a full
-  round-trip carrying the whole session. Set a `timeout_ms` that matches the work
-  rather than polling a short one. For tools where full-history inheritance
-  prevents overrides, choose a fresh context. Omit overrides for `inherit`.
+- Codex: run `agent dispatch` and the spawn in one exec cell, so the brief goes
+  from one to the other without being retyped or spending context on the way:
+
+  ```js
+  const out = await tools.exec_command({cmd: "<the dispatch command above>"});
+  const spec = JSON.parse(out.output);
+  const {agent_id} = await tools.multi_agent_v1__spawn_agent({
+    agent_type: spec.agent_type, message: spec.prompt,
+  });
+  ```
+
+  The installed role definition carries the resolved model and effort, so pass
+  neither here: a pinned setting there cannot be overridden on the spawn, and an
+  `inherit` role is one meant to take the parent's model. Add `model` and
+  `reasoning_effort` only on the fallback path where no native definition
+  exists, omitting either whose setting is `inherit`. Wait on `agent_id` with
+  `multi_agent_v1__wait_agent`, and release it with
+  `multi_agent_v1__close_agent` once the result is in hand, since a completed
+  agent stays open and counts against the concurrency limit until closed.
+
+  A wait is a poll loop by construction: the exec cell parks long before
+  `timeout_ms` elapses, and every resume is a full round-trip carrying the
+  whole session, so the cost of delegating grows with how long the delegated work
+  takes. Make each round-trip cover as much of the wait as the host allows — a
+  `timeout_ms` measured in minutes, and the longest yield permitted on the resume
+  rather than the default. For tools where full-history inheritance prevents
+  overrides, choose a fresh context.
 - Claude Code: invoke the registered `cc-<role>` with the host's Agent tool.
   Model and effort are set in its native definition. Read-only roles have only
   Read/Glob/Grep; the coordinator supplies diff text because they cannot run Git.

@@ -26,14 +26,15 @@ YAML and Markdown. Share the workspace through Git if useful; local checkouts,
 member selection, and worktrees are ignored. Each OS, remote host, or container has its own CLI and local bindings.
 The CLI can also export a blank seed or initialize a compatible blank template.
 
-> Connect `../billing-api` as api, with main as its base branch.
+> Connect `../billing-api` as api, with main as its base branch here.
 > Clone our web repository here and connect it as web, based on main.
 > Initialize a documentation repository.
 > The web repository consumes the API from api.
 
 Existing checkouts, cloned repositories, new repositories, and using the workspace
 root as a repository are supported. Shared definitions record logical repository
-IDs and default base branches. Each machine binds those IDs to its own paths.
+IDs with their URL and default branch. Each machine binds those IDs to its own
+paths and to the branch it starts work from.
 
 ## Shared project knowledge
 

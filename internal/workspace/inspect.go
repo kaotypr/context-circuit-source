@@ -37,12 +37,12 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 		result.Issues = append(result.Issues, err.Error())
 	}
 	for id := range cfg.Repositories {
-		_, path, err := s.Repository(ctx, id)
+		checkout, err := s.Repository(ctx, id)
 		if err != nil {
 			result.Issues = append(result.Issues, id+": "+err.Error())
 			continue
 		}
-		snapshot, err := Inspect(ctx, path)
+		snapshot, err := Inspect(ctx, checkout.Path)
 		if err != nil {
 			result.Issues = append(result.Issues, id+": "+err.Error())
 			continue

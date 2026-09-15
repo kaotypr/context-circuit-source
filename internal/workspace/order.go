@@ -97,6 +97,12 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 	if err != nil {
 		return Order{}, err
 	}
+	// An order is derived where it will be run, so a repository starts from the
+	// branch this machine bases work on rather than the shared default.
+	bindings, err := s.Bindings()
+	if err != nil {
+		return Order{}, err
+	}
 	records, err := s.ListRecords(false)
 	if err != nil {
 		return Order{}, err
@@ -199,7 +205,7 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 				Start:        map[string]OrderStart{},
 			}
 			for _, repo := range plan.Repositories {
-				start := s.startFor(plans, plan, repo, cfg.Repositories[repo].BaseBranch)
+				start := s.startFor(plans, plan, repo, bindings.BaseBranch(cfg, repo))
 				item.Start[repo] = start
 				if len(start.Merge) > 0 {
 					result.Strategy.FanIns++
@@ -227,7 +233,7 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 	for _, wave := range waves {
 		flat = append(flat, wave...)
 	}
-	chain := s.linearChain(plans, flat, cfg)
+	chain := s.linearChain(plans, flat, cfg, bindings)
 	linearPeak := 0
 	if len(flat) > 0 {
 		linearPeak = 1
@@ -279,7 +285,7 @@ func (s *Store) startFor(plans map[string]Record, plan Record, repo, baseBranch 
 // linearChain stacks every plan on the previous chain member that shares its
 // repository. A topological order guarantees each link already contains its own
 // dependencies, so a chain never needs an integration merge.
-func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config) []OrderPlan {
+func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config, bindings Bindings) []OrderPlan {
 	var chain []OrderPlan
 	for position, id := range order {
 		plan := plans[id]
@@ -290,7 +296,7 @@ func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config)
 			Start:        map[string]OrderStart{},
 		}
 		for _, repo := range plan.Repositories {
-			base := cfg.Repositories[repo].BaseBranch
+			base := bindings.BaseBranch(cfg, repo)
 			for earlier := position - 1; earlier >= 0; earlier-- {
 				if slices.Contains(plans[order[earlier]].Repositories, repo) {
 					base = PlanBranch(order[earlier], repo)

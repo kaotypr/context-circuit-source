@@ -43,11 +43,11 @@ func (s *Store) associations() (Associations, error) {
 }
 
 func (s *Store) Worktrees(ctx context.Context, repoID string) ([]Worktree, error) {
-	_, repo, err := s.Repository(ctx, repoID)
+	checkout, err := s.Repository(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	text, err := Git(ctx, repo, "worktree", "list", "--porcelain", "-z")
+	text, err := Git(ctx, checkout.Path, "worktree", "list", "--porcelain", "-z")
 	if err != nil {
 		return nil, err
 	}
@@ -100,10 +100,11 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err := options.Validate(); err != nil {
 		return Worktree{}, err
 	}
-	cfg, repo, err := s.Repository(ctx, repoID)
+	checkout, err := s.Repository(ctx, repoID)
 	if err != nil {
 		return Worktree{}, err
 	}
+	repo := checkout.Path
 	if plan != "" {
 		r, err := s.FindRecord(plan)
 		if err != nil {
@@ -182,9 +183,9 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		}
 	} else {
 		if start == "" {
-			start = "refs/heads/" + cfg.BaseBranch
+			start = "refs/heads/" + checkout.BaseBranch
 			if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}"); err != nil {
-				start = "refs/remotes/origin/" + cfg.BaseBranch
+				start = "refs/remotes/origin/" + checkout.BaseBranch
 			}
 		}
 		commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}")
@@ -232,10 +233,11 @@ func (s *Store) InspectWorktree(ctx context.Context, repoID, input string) (Snap
 }
 
 func (s *Store) selectedTree(ctx context.Context, repoID, input string) (string, Worktree, error) {
-	_, repo, err := s.Repository(ctx, repoID)
+	checkout, err := s.Repository(ctx, repoID)
 	if err != nil {
 		return "", Worktree{}, err
 	}
+	repo := checkout.Path
 	path, err := s.LocalPath(input)
 	if err != nil {
 		return "", Worktree{}, err
@@ -331,10 +333,11 @@ func (s *Store) RemoveWorktree(ctx context.Context, repoID, input string, discar
 }
 
 func (s *Store) RepairWorktree(ctx context.Context, repoID, input string) error {
-	_, repo, err := s.Repository(ctx, repoID)
+	checkout, err := s.Repository(ctx, repoID)
 	if err != nil {
 		return err
 	}
+	repo := checkout.Path
 	path, err := s.LocalPath(input)
 	if err != nil {
 		return err

@@ -9,8 +9,13 @@ import (
 	"strings"
 )
 
+// Repository is the shared description of one logical repository: where it
+// lives and which branch it defaults to. Where a machine keeps its checkout,
+// and which branch that machine starts work from, belong to the local binding
+// in repositories.local.yaml instead, because both differ per machine.
 type Repository struct {
-	BaseBranch string `yaml:"base_branch" json:"base_branch"`
+	URL           string `yaml:"url,omitempty" json:"url,omitempty"`
+	DefaultBranch string `yaml:"default_branch" json:"default_branch"`
 }
 type Relationship struct {
 	From        string `yaml:"from" json:"from"`
@@ -46,8 +51,13 @@ type Members struct {
 type Identity struct {
 	Member string `yaml:"member" json:"member"`
 }
+
+// Binding is this machine's checkout of a repository: its path, and the branch
+// work starts from here. A binding written before the base moved here records
+// no base and resolves to the shared default.
 type Binding struct {
-	Path string `yaml:"path" json:"path"`
+	Path       string `yaml:"path" json:"path"`
+	BaseBranch string `yaml:"base_branch,omitempty" json:"base_branch,omitempty"`
 }
 type Bindings struct {
 	Bindings map[string]Binding `yaml:"bindings" json:"bindings"`
@@ -71,6 +81,12 @@ func Text(value string) error {
 func (s *Store) Config() (Config, error) {
 	var cfg Config
 	if err := s.YAML("workspace.yaml", &cfg); err != nil {
+		// Candidates through 2.0.0-rc.6 recorded base_branch here, where one
+		// value described every machine at once. The decoder can only report an
+		// unknown key, which reads as a corrupt file, so name the move.
+		if strings.Contains(err.Error(), "base_branch") {
+			return cfg, fmt.Errorf("%w; base_branch now belongs to this machine's binding in repositories.local.yaml, and a repository here records url and default_branch", err)
+		}
 		return cfg, err
 	}
 	if cfg.Version != 2 || cfg.Name == "" {
@@ -92,8 +108,13 @@ func (s *Store) Config() (Config, error) {
 		if err := Name(id); err != nil {
 			return cfg, err
 		}
-		if err := Text(repo.BaseBranch); err != nil {
+		if err := Text(repo.DefaultBranch); err != nil {
 			return cfg, err
+		}
+		if repo.URL != "" {
+			if err := checkRemote(repo.URL); err != nil {
+				return cfg, fmt.Errorf("%s: %w", id, err)
+			}
 		}
 	}
 	return cfg, nil
@@ -159,6 +180,16 @@ func (s *Store) Bindings() (Bindings, error) {
 		err = errors.New("local bindings must be a mapping")
 	}
 	return bindings, err
+}
+
+// BaseBranch reports the branch work starts from for one repository on this
+// machine: the binding's own base when it records one, and the repository's
+// shared default otherwise.
+func (b Bindings) BaseBranch(cfg Config, id string) string {
+	if binding, ok := b.Bindings[id]; ok && binding.BaseBranch != "" {
+		return binding.BaseBranch
+	}
+	return cfg.Repositories[id].DefaultBranch
 }
 
 func (s *Store) ActiveMember() (string, error) {

@@ -17,9 +17,9 @@ func TestYAMLContainerEdits(t *testing.T) {
 		value       any
 		preserve    []string
 	}{
-		{"empty flow", "# shared\nrepositories: {}\n", []string{"repositories", "api"}, Repository{"main"}, []string{"# shared", "api", "main"}},
-		{"populated flow", "repositories: {api: {base_branch: main}} # shared\n", []string{"repositories", "web"}, Repository{"develop"}, []string{"# shared", "api", "main", "web", "develop"}},
-		{"replace flow mapping", "bindings: {api: {path: old}} # local\n", []string{"bindings", "api"}, Binding{"new path"}, []string{"# local", "new path"}},
+		{"empty flow", "# shared\nrepositories: {}\n", []string{"repositories", "api"}, Repository{DefaultBranch: "main"}, []string{"# shared", "api", "main"}},
+		{"populated flow", "repositories: {api: {default_branch: main}} # shared\n", []string{"repositories", "web"}, Repository{DefaultBranch: "develop"}, []string{"# shared", "api", "main", "web", "develop"}},
+		{"replace flow mapping", "bindings: {api: {path: old}} # local\n", []string{"bindings", "api"}, Binding{Path: "new path"}, []string{"# local", "new path"}},
 		{"sequence", "plans: [] # links\n", []string{"plans"}, []string{"p0001", "p0002"}, []string{"# links", "p0001", "p0002"}},
 		{"scalar", "base: main # target\nother: 'quoted'\n", []string{"base"}, "next", []string{"# target", "'quoted'", "next"}},
 	} {
@@ -44,15 +44,15 @@ func TestYAMLContainerEdits(t *testing.T) {
 // A seed's empty `{}` container must grow into block style rather than extend a
 // single flow line as entries accumulate.
 func TestEmptyContainerGrowsInBlockStyle(t *testing.T) {
-	got, err := Edit([]byte("bindings: {}\n"), []string{"bindings", "tembiter"}, Binding{"/ws/tembiter"})
+	got, err := Edit([]byte("bindings: {}\n"), []string{"bindings", "tembiter"}, Binding{"/ws/tembiter", "main"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "bindings:\n  tembiter:\n    path: /ws/tembiter\n"
+	want := "bindings:\n  tembiter:\n    path: /ws/tembiter\n    base_branch: main\n"
 	if string(got) != want {
 		t.Fatalf("first entry\nwant %q\ngot  %q", want, got)
 	}
-	got, err = Edit(got, []string{"bindings", "other"}, Binding{"/ws/other"})
+	got, err = Edit(got, []string{"bindings", "other"}, Binding{"/ws/other", "main"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,11 +69,11 @@ func TestEmptyContainerGrowsInBlockStyle(t *testing.T) {
 
 	// The workspace seed keeps its sibling keys and header comment.
 	seed := "# shared\nversion: 2\nrepositories: {}\nrelationships: []\n"
-	ws, err := Edit([]byte(seed), []string{"repositories", "tembiter"}, Repository{"main"})
+	ws, err := Edit([]byte(seed), []string{"repositories", "tembiter"}, Repository{DefaultBranch: "main"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, fragment := range []string{"# shared", "version: 2", "relationships: []", "\n  tembiter:\n    base_branch: main\n"} {
+	for _, fragment := range []string{"# shared", "version: 2", "relationships: []", "\n  tembiter:\n    default_branch: main\n"} {
 		if !strings.Contains(string(ws), fragment) {
 			t.Fatalf("lost %q: %s", fragment, ws)
 		}
@@ -81,7 +81,7 @@ func TestEmptyContainerGrowsInBlockStyle(t *testing.T) {
 
 	// A populated flow container still receives a flow value, because mixing
 	// styles through MergeFromReader does not serialize.
-	mixed, err := Edit([]byte("bindings: {api: {path: /ws/api}} # local\n"), []string{"bindings", "web"}, Binding{"/ws/web"})
+	mixed, err := Edit([]byte("bindings: {api: {path: /ws/api}} # local\n"), []string{"bindings", "web"}, Binding{"/ws/web", "main"})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -95,9 +95,10 @@ only when both are done.
 ## Delivery mechanics and attribution
 
 Delivery uses ordinary Git and provider tools; the executable supplies
-repository, branch, and base information and never silently delivers. The
-recorded base branch is the default pull-request target unless a person chooses
-another, delivery can happen per repository, and drift is explained rather than
+repository, branch, and base information and never silently delivers. The branch
+the work started from — this machine's recorded base, or the repository's shared
+default branch when the binding records none — is the default pull-request target
+unless a person chooses another, delivery can happen per repository, and drift is explained rather than
 resolved by an automatic rebase-and-recheck behavior. Review is not a
 precondition for any of it.
 

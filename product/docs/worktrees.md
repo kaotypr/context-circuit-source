@@ -10,7 +10,7 @@ executable performs the corresponding Git mechanics.
 | --- | --- | --- |
 | Repository selection | Resolve logical ID and local checkout | Decide which repositories are affected |
 | Existing work | Report branch, changes, and Git worktree inventory | Preserve unrelated work; resume an existing location or select a new one |
-| Starting point | Resolve selected ref to a commit | Choose default base or dependency branch; fetch if needed |
+| Starting point | Resolve selected ref to a commit | Choose this machine's base or a dependency branch; fetch if needed |
 | Branch and path | Validate names and collisions; create/reuse using Git | Honor explicit choices and repository conventions |
 | Result | Return path, branch, HEAD, starting commit, association | Use the returned directory for work |
 | Environment setup | Supply location and Git facts | Follow setup instructions; install dependencies and prepare services |
@@ -22,8 +22,10 @@ path is `.worktrees/<plan-id>/<repository-id>` under the workspace. Explicit
 `--branch`, `--start`, and `--path` values override these choices. Preparation
 without a plan is supported with an explicit branch and path.
 
-An unspecified start uses the recorded local base branch if available, otherwise
-its `origin` tracking branch. No fetch happens implicitly. An explicit start may
+An unspecified start uses the base branch this machine records for the repository
+in `repositories.local.yaml`, falling back to the shared `default_branch` when the
+binding names none, and then to that branch's `origin` tracking branch when the
+checkout has no local copy of it. No fetch happens implicitly. An explicit start may
 be another plan's branch or a commit. It is resolved before creating the worktree.
 Preparation never resets an existing branch. Use `--reuse` when explicitly
 selecting an existing branch or adopting another worktree association. Repeating
