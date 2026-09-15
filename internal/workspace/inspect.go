@@ -11,6 +11,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"time"
 )
 
 type Orientation struct {
@@ -53,6 +54,13 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 }
 
 // Check is an explicitly invoked diagnostic, not an execution admission gate.
+func recordKind(prefix string) string {
+	if prefix == "i" {
+		return "an intent"
+	}
+	return "a plan"
+}
+
 func (s *Store) Check(ctx context.Context) ([]string, error) {
 	state, err := s.Status(ctx)
 	if err != nil {
@@ -92,6 +100,24 @@ func (s *Store) Check(ctx context.Context) ([]string, error) {
 	for _, record := range records {
 		if _, ok := state.Members.Members[record.CreatedBy]; !ok {
 			issues = append(issues, record.ID+": unknown created_by member")
+		}
+		// An instant that no longer parses is reported rather than read as an event
+		// that never happened. Each gate belongs to one kind of record: nothing
+		// approves a plan, and an intent is never the thing that completes.
+		if _, err := time.Parse(TimeLayout, string(record.CreatedAt)); err != nil {
+			issues = append(issues, record.ID+": created_at is not a canonical ISO 8601 UTC timestamp: "+string(record.CreatedAt))
+		}
+		for _, gate := range []struct {
+			field, prefix string
+			value         ISOTime
+		}{{"approved_at", "i", record.ApprovedAt}, {"completed_at", "p", record.CompletedAt}} {
+			if value := string(gate.value); value == "" {
+				continue
+			} else if !strings.HasPrefix(record.ID, gate.prefix) {
+				issues = append(issues, record.ID+": "+gate.field+" belongs to "+recordKind(gate.prefix))
+			} else if _, err := time.Parse(TimeLayout, value); err != nil {
+				issues = append(issues, record.ID+": "+gate.field+" is not a canonical ISO 8601 UTC timestamp: "+value)
+			}
 		}
 		if strings.HasPrefix(record.ID, "p") {
 			parent, err := s.FindRecord(record.Intent)

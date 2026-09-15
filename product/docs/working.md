@@ -5,12 +5,27 @@ plan to be executed. The agent interprets the project and writes meaningful
 content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
 
-An intent has a global `id`, `created_by`, and linked `plans`. Its Markdown body
-contains goal, non-goals, constraints, success criteria, rough repository scope,
-and an approval note. Intent creation happens before detailed code investigation;
-existing knowledge may inform it. The intent is presented and then waited on: the
-request that prompted it is not approval of it, and the recorded approval is a
-person's answer to the written intent.
+An intent has a global `id`, `created_by`, a `created_at` instant, linked
+`plans`, and an `approved_at` instant once a person approves it. Its Markdown body contains goal, non-goals,
+constraints, success criteria, rough repository scope, and open questions.
+Approval records the instant and appends the person's own words under a heading
+carrying it; the field records that decision and never establishes one, so
+nothing reads it as consent. Renewed approval moves the field and appends another
+section, keeping every instant and wording. Intent creation happens before detailed code
+investigation and is grounded in existing knowledge, retrieved first and read against
+what the request was understood to mean; what the knowledge contradicts or cannot
+settle becomes an open question rather than an assumption.
+
+Open questions are a numbered list — bold question, italic `_Answer:_` line beneath
+once settled — so a person can answer by number. Numbers are stable: an answered
+question keeps its number and is never deleted, and a later question takes the next
+unused one. The unnumbered empty-state line stays when there are none. The agent
+writes and answers them in the Markdown; no command records an answer, because only
+approval is a gate. A question arising during planning that bears on the outcome
+returns to the intent instead of being settled inside a plan.
+
+The intent is presented and then waited on: the request that prompted it is not
+approval of it, and the recorded approval is a person's answer to the written intent.
 
 A plan's metadata looks like:
 
@@ -60,8 +75,8 @@ review. Findings do not trigger automatic fixes or block delivery mechanically.
 
 Commit, push, PR, merge, deployment, and external publishing remain explicit host
 tool actions. The executable supplies repository and branch information. On an
-explicit completion request, `record complete` appends a short note and records a
-`completed` date in frontmatter, and returns the catalog entries scoped to that
+explicit completion request, `record complete` appends a short note and records
+`completed_at` in frontmatter, and returns the catalog entries scoped to that
 plan's repositories. Those entries are the candidates for reconcile; the agent reads
 the ones whose meaning the plan could have changed, edits each note together with its
 catalog entry, and moves the reviewed date. A completion that changed no durable

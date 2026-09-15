@@ -150,20 +150,20 @@ func TestRecordCompleteWritesMachineReadableDate(t *testing.T) {
 	f.ok("record", "complete", "--id", "p0001", "--text", "User requested completion.")
 
 	shown := record(t, f.ok("record", "show", "--id", "p0001"))
-	if shown.Completed == "" {
+	if shown.CompletedAt == "" {
 		t.Fatal("completion must be readable without parsing prose")
 	}
 	// The human-readable section is what a person reads; neither replaces the other.
-	if !strings.Contains(shown.Content, "## Completion — "+string(shown.Completed)) {
+	if !strings.Contains(shown.Content, "## Completion — "+string(shown.CompletedAt)) {
 		t.Fatalf("completion note missing from body: %s", shown.Content)
 	}
-	// Dates are written bare, so every ISO date in a record reads the same way
+	// Instants are written bare, so every one in a record reads the same way
 	// whether it sits in frontmatter or in prose.
-	if !strings.Contains(shown.Content, "completed: "+string(shown.Completed)+"\n") {
-		t.Fatalf("completion date is not a bare ISO date: %s", shown.Content)
+	if !strings.Contains(shown.Content, "completed_at: "+string(shown.CompletedAt)+"\n") {
+		t.Fatalf("completion instant is not bare: %s", shown.Content)
 	}
-	if _, err := time.Parse(time.DateOnly, string(shown.Completed)); err != nil {
-		t.Fatalf("completion date is not ISO 8601: %v", err)
+	if _, err := time.Parse(workspace.TimeLayout, string(shown.CompletedAt)); err != nil {
+		t.Fatalf("completion instant is not YYYY-MM-DD HH:mm: %v", err)
 	}
 }
 

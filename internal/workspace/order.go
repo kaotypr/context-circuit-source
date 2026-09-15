@@ -122,7 +122,7 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 	satisfied := map[string]bool{}
 	blocked := map[string]string{}
 	for _, id := range ids {
-		if plans[id].Completed != "" {
+		if plans[id].CompletedAt != "" {
 			satisfied[id] = true
 			result.Completed = append(result.Completed, id)
 		}
@@ -139,7 +139,7 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 			if err != nil {
 				return Order{}, fmt.Errorf("%s: %w", id, err)
 			}
-			if external.Completed != "" {
+			if external.CompletedAt != "" {
 				satisfied[dep] = true
 				continue
 			}

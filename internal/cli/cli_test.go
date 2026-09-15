@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	assets "github.com/kaotypr/context-circuit-source"
 	"github.com/kaotypr/context-circuit-source/internal/cli"
@@ -196,12 +197,41 @@ func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 	f.repository("api")
 	f.repository("web")
 	i := f.intent("billing")
+	// A new intent carries the section that holds questions for the person, with
+	// its empty state unnumbered so no placeholder claims a pending decision.
+	if !strings.Contains(i.Content, "## Open questions\n\nNone known.") {
+		t.Fatal("intent is missing the open questions section", i.Content)
+	}
+	if i.ApprovedAt != "" {
+		t.Fatal("a new intent is not approved", i.ApprovedAt)
+	}
+	// Creation is an event the workspace witnessed, so every record carries it.
+	if _, err := time.Parse(workspace.TimeLayout, string(i.CreatedAt)); err != nil {
+		t.Fatal("a record records when it was created", i.CreatedAt, err)
+	}
 	f.ok("record", "approve", "--id", i.ID, "--text", "User approved $1 billing")
+	approved := record(t, f.ok("record", "show", "--id", i.ID))
+	if _, err := time.Parse(workspace.TimeLayout, string(approved.ApprovedAt)); err != nil {
+		t.Fatal("approval records when it happened", approved.ApprovedAt, err)
+	}
+	if !strings.Contains(approved.Content, "## Approval — "+string(approved.ApprovedAt)) {
+		t.Fatal("the frontmatter instant and the section must agree", approved.Content)
+	}
+	// Renewed approval is a second decision, so both are kept.
+	f.ok("record", "approve", "--id", i.ID, "--text", "User approved the wider scope")
+	again := record(t, f.ok("record", "show", "--id", i.ID))
+	if strings.Count(again.Content, "## Approval — ") != 2 || again.ApprovedAt == "" {
+		t.Fatal("renewed approval must not overwrite the first", again.Content)
+	}
 	p := f.plan(i.ID, "api", "api")
 	q := f.plan(i.ID, "web", "web", "api")
 	if p.ID != "p0001" || q.ID != "p0002" {
 		t.Fatal(p.ID, q.ID)
 	}
+	if p.ApprovedAt != "" {
+		t.Fatal("nothing approves a plan", p.ApprovedAt)
+	}
+	f.fail("record", "approve", "--id", p.ID, "--text", "Nothing approves a plan")
 	parent := record(t, f.ok("record", "show", "--id", i.ID))
 	if len(parent.Plans) != 2 || !strings.Contains(parent.Content, "User approved $1 billing") {
 		t.Fatal("plan linking changed intent content", parent)
@@ -223,6 +253,18 @@ func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 		t.Fatal(r.ID)
 	}
 	f.ok("record", "show", "--id", p.ID)
+	// A hand-edited instant is reported rather than read as a gate that never
+	// passed, and neither gate may appear on the other kind of record.
+	intentPath := filepath.Join(f.root, i.Path)
+	sound := read(t, intentPath)
+	write(t, intentPath, strings.Replace(sound, "approved_at: ", "approved_at: last ", 1))
+	f.fail("check")
+	write(t, intentPath, strings.Replace(sound, "approved_at: ", "completed_at: ", 1))
+	f.fail("check")
+	write(t, intentPath, strings.Replace(sound, "created_at: ", "created_at: today ", 1))
+	f.fail("check")
+	write(t, intentPath, sound)
+	f.ok("check")
 	var active []workspace.Record
 	if err := json.Unmarshal([]byte(f.ok("record", "list")), &active); err != nil {
 		t.Fatal(err)
