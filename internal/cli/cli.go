@@ -351,7 +351,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			}
 			path := checkout.Path
 			if command == "repo inspect" {
-				return workspace.Inspect(ctx, path)
+				snapshot, e := workspace.Inspect(ctx, path)
+				if e != nil {
+					return nil, e
+				}
+				snapshot.BaseBranch = checkout.BaseBranch
+				return snapshot, nil
 			}
 			remote := get("remote")
 			if remote == "" {
@@ -368,13 +373,31 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "record list":
 			return s.ListRecords(archived)
 		case "record approve":
-			err = s.Note(get("id"), get("text"), "approve")
+			if err := s.Note(get("id"), get("text"), "approve"); err != nil {
+				return nil, err
+			}
+			// Approval hands work back rather than finishing it, and a bare
+			// `ok: true` reads as the request being done. What it authorized
+			// is said here, where the caller is standing, rather than only in
+			// instructions read once at the start of a session.
+			return map[string]any{
+				"approved":          get("id"),
+				"planning_required": "approval authorizes planning and planning alone: without asking again, inspect real code and create the linked pNNNN-slug.md plans, then present them and stop",
+			}, nil
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
 				return nil, err
 			}
 			entries, e := s.KnowledgeCandidates(get("id"))
-			return map[string]any{"completed": get("id"), "knowledge_candidates": entries}, e
+			result := map[string]any{"completed": get("id"), "knowledge_candidates": entries}
+			// A bare list of catalog lines reads as information, and a caller
+			// that has just been told "completed" treats the request as done.
+			// Naming the outstanding act beside the data is what `setup_required`
+			// does for a dispatch, so completion says it the same way.
+			if len(entries) > 0 {
+				result["reconcile_required"] = "judge each entry above against what this plan changed: edit the note and its catalog entry together and move its reviewed date, or record in the completion note that it changed nothing"
+			}
+			return result, e
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":

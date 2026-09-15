@@ -33,6 +33,14 @@ shared default branch, so a binding written before the split still resolves. The
 shared record keeps what everyone agrees on — where the repository lives and
 which branch it defaults to — and never carries a URL with a password in it.
 
+Splitting the two created a decoy: an agent asked which branch to deliver to read
+`default_branch` from the shared file, answered confidently, and targeted a pull
+request at the wrong branch. So `base_branch` is reported wherever a repository
+or worktree is described — `status`, `repo inspect`, `worktree prepare`,
+`worktree inspect` — rather than left in a file to be found. A value the
+executable resolves and never states is one the agent will reconstruct from
+whatever is nearest.
+
 A new repository can be registered before its first commit, though worktree
 preparation needs one. Setting a base records the intended branch without
 creating or resetting it.

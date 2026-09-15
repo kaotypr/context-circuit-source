@@ -65,6 +65,12 @@ a binding that records none falls back to the repository's shared
 `default_branch`. `repo base` changes this machine's base; `repo remote` changes
 the shared URL and default branch.
 
+The two are easy to confuse, and confusing them sends a pull request to the wrong
+branch, so `status`, `repo inspect`, `worktree prepare`, and `worktree inspect`
+all report `base_branch` beside the branch currently checked out. Read the base
+from one of those rather than from `workspace.yaml`, whose `default_branch` is
+the repository's default and not what this machine delivers to.
+
 After cloning a shared workspace onto another machine, use `member use` and
 `repo connect` with the existing IDs. Do not initialize it again. `repo connect`
 writes the shared record only when the ID is new, taking the URL from the

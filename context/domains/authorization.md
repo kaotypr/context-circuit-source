@@ -92,6 +92,25 @@ mark work complete; an explicit completion request appends the note *and*
 reconciles the durable knowledge that work changed, and the request is finished
 only when both are done.
 
+## A gate says what it opened
+
+Approval and completion both hand work back rather than finish it, and both have
+been read as finished. An agent that recorded an approval stopped there and
+created no plan; one that recorded a completion wrote that no durable knowledge
+had changed, then reconciled four notes an hour later. In each case the rule was
+in the always-loaded entry instruction and the command had answered with a bare
+success, so success is what the agent acted on.
+
+So each gate names its own consequence in its own output: `planning_required` on
+approval, and `reconcile_required` on completion whenever the plan's repositories
+hold catalog entries, the way a dispatch names `setup_required`. A field whose
+name is the obligation arrives at the moment that obligation comes due, which a
+paragraph read once at session start does not. This is the same reason
+[workspace files and safe editing](../architecture/workspace-files.md) reports a
+resolved base branch instead of leaving it in a file: what the executable knows
+and never states is reconstructed by the agent from whatever is nearest, and a
+gate that states only `ok` leaves the agent to infer that nothing follows.
+
 ## Delivery mechanics and attribution
 
 Delivery uses ordinary Git and provider tools; the executable supplies
@@ -115,3 +134,5 @@ Owner:
   what one authorization covers.
 - `context-circuit-source@internal/workspace/records.go` `Store.Note` — the
   operations that record approval and completion.
+- `context-circuit-source@internal/cli/cli.go` — the obligation each gate's
+  result names, beside the record it just wrote.

@@ -47,6 +47,7 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 			result.Issues = append(result.Issues, id+": "+err.Error())
 			continue
 		}
+		snapshot.BaseBranch = checkout.BaseBranch
 		result.Repositories[id] = snapshot
 	}
 	sort.Strings(result.Issues)

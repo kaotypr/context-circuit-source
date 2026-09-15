@@ -113,14 +113,17 @@ editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
 Approving an intent authorizes planning, and planning alone. Without asking
-again, inspect real code and create linked `pNNNN-slug.md` plans. One readable
-Markdown plan may cover one or several repositories; use separate plans when
-useful for execution or delivery. Record task order, optional dependencies,
-useful risks, and expected checks. Detailed paths are descriptive planning
-information, not hard enforcement gates. Explain and record newly needed files or
-repositories within the approved outcome. Obtain renewed approval only when the
-intended outcome or success criteria materially change. A question that bears on
-the outcome returns to the intent; a plan never silently settles one.
+again, inspect real code and create linked `pNNNN-slug.md` plans.
+`record approve` names that work as `planning_required`, because approval
+reporting success is the decision recorded, not the request finished. One
+readable Markdown plan may cover one or several repositories; use separate
+plans when useful for execution or delivery. Record task order, optional
+dependencies, useful risks, and expected checks. Detailed paths are descriptive
+planning information, not hard enforcement gates. Explain and record newly
+needed files or repositories within the approved outcome. Obtain renewed
+approval only when the intended outcome or success criteria materially change.
+A question that bears on the outcome returns to the intent; a plan never
+silently settles one.
 
 Delegating that investigation is a judgment about size, not a step. Dispatch a
 planner through `.agents/skills/cc-dispatch/SKILL.md` when the reading would be
@@ -307,14 +310,19 @@ authorization for the run it belongs to. Use ordinary Git and provider tools; th
 Go executable provides repository, branch, and base information and never silently
 delivers. The branch the work started from — this machine's recorded base, or the
 repository's default branch when the binding records none — is the default PR
-target unless the user chooses another. Deliver per repository when appropriate. Explain relevant drift
+target unless the user chooses another. Read it as `base_branch` from `status`,
+`repo inspect`, or the worktree you are delivering from; `workspace.yaml` records
+a `default_branch`, which is the repository's default and not what this machine
+delivers to, and answering from it targets the wrong branch convincingly. Deliver per repository when appropriate. Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more plans
 completed, append a short completion note to each record and reconcile the durable
 project knowledge those plans changed. The request is finished only when both are
 done. `record complete` returns the catalog entries scoped to that plan's
-repositories: a candidate set to judge, never a list to rewrite. Most completions
+repositories, and names the judging as `reconcile_required` when there are any:
+a candidate set to judge, never a list to rewrite. Completion reporting success
+is the record written, not the request finished. Most completions
 change no durable knowledge; recording that in the note is the normal outcome, not
 a skipped step. Where meaning did change, edit the note and its catalog entry in
 one pass and move its reviewed date; a renamed or retired identifier is a glossary

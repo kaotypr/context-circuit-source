@@ -105,7 +105,7 @@ that crosses this boundary.
 - [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, isolation, execution, copy-on-write, clone, dependency, environment · reviewed 2026-09-15
 - [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how several plans of one intent are sequenced, merged, and released · order, waves, chain, dependency, integration merge, concurrency, stop · reviewed 2026-09-15
 - [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review · reviewed 2026-09-15
-- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, execution request, authorization, delivery, completion, cleanup, scope, consent · reviewed 2026-09-15
+- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_required, reconcile_required · reviewed 2026-09-16
 
 ### Maintaining this source
 

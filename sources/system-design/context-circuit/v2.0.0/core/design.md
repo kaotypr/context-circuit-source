@@ -130,7 +130,7 @@ sequenceDiagram
     A->>C: worktree prepare (per plan, per repository)
     A->>A: Dispatch workers; wait; inspect real diffs
     A->>G: Run the repositories' ordinary checks
-    A->>C: record note — progress and remaining work
+    A->>H: Report files changed, checks run, and what failed
     H->>A: "Open a PR." / "Review it." / "Mark them done."
     A->>C: record complete → candidate catalog entries
     A->>A: Reconcile the knowledge that actually changed
