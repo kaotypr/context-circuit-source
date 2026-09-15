@@ -295,8 +295,13 @@ func TestARecordAssignsTheRolesItBriefs(t *testing.T) {
 	if !strings.Contains(whole.Prompt, "The full plan follows and is authoritative") {
 		t.Fatalf("dropping the task must not drop the plan:\n%s", whole.Prompt)
 	}
-	// The prohibition the coordinator kept restating belongs to the role.
-	for _, want := range []string{"open a pull request", "merge into the base branch"} {
+	// The prohibition the coordinator kept restating belongs to the role, and so
+	// does the commit: a dependent plan starts from a predecessor's branch, so
+	// work a worker leaves uncommitted is work the next plan cannot start from.
+	for _, want := range []string{
+		"opening a pull request", "merging into the base branch",
+		"leave nothing uncommitted when you report",
+	} {
 		if !strings.Contains(whole.Prompt, want) {
 			t.Fatalf("worker instructions missing %q:\n%s", want, whole.Prompt)
 		}

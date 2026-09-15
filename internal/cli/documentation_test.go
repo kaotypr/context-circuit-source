@@ -222,6 +222,9 @@ func TestGeneralRulesStayOutOfTheStackedSkill(t *testing.T) {
 	for _, gate := range []string{
 		"Implementation starts on a request to execute a plan",
 		"require explicit authorization",
+		// Committing moved sides; both halves of that split are gates.
+		"leave no uncommitted work when the implementation is reported",
+		"a commit in a bound checkout",
 		"Never add agent attribution",
 		"an intent is not\napproved because a field says so",
 	} {

@@ -132,10 +132,16 @@ at once, use `.agents/skills/cc-stacked/SKILL.md`, which derives the shape with
 
 Implement the approved outcome in dependency order across the relevant
 repositories. Run appropriate tests, lint, and builds as ordinary implementation
-checks. A plan record holds the plan — approach, tasks and order, risks and
-checks — and it is written when the work is planned. After that, leave it alone:
-running a plan does not edit the plan. The result reaches the person, and the
-record changes again only when they ask for completion, which stamps
+checks, then leave no uncommitted work when the implementation is reported:
+commit on the worktree's own branch, in as many commits as the work naturally
+takes, failing and partial work included. A dependent plan starts from its
+predecessor's branch and a resume reads real diffs, so uncommitted work is work
+the next step cannot see. A bound checkout is the exception — commit there only
+when the person authorizes it. A plan record holds the plan — approach, tasks
+and order, risks and checks — and it is written when the work is planned. After
+that, leave it alone: running a plan does not edit the plan. The result reaches
+the person, and the record changes again only when they ask for completion,
+which stamps
 `completed_at` and carries that result. What the plan says stays what was
 planned, so a later reader can see what was intended and read the diff for what
 happened. On resume, inspect actual branches and diffs rather than trusting the
@@ -161,16 +167,20 @@ mandatory elsewhere.
 
 ## Delivery, completion, and organization
 
-Commit, push, PR creation, merge into a base branch, deployment, external
-publication, and deletion of workspace data require explicit authorization.
-Reuse authorization already given. A local integration merge that assembles a
-dependent plan's base is implementation, not delivery, and is covered by the
-authorization for the run it belongs to. Use ordinary Git and provider tools; the
-Go executable provides repository, branch, and base information and never silently
-delivers. The branch the work started from — this machine's recorded base, or the
-repository's default branch when the binding records none — is the default PR
-target unless the user chooses another. Read it as `base_branch` from `status`,
-`repo inspect`, or the worktree you are delivering from; `workspace.yaml` records
+Push, PR creation, merge into a base branch, deployment, external publication,
+and deletion of workspace data require explicit authorization. Reuse
+authorization already given. Committing is split by where it lands: a commit on
+a prepared worktree's own `cc/*` branch is implementation and is covered by the
+execution request, while a commit in a bound checkout is a change to the
+person's own working copy and still needs authorization. A local integration
+merge that assembles a dependent plan's base is implementation, not delivery,
+and is covered by the authorization for the run it belongs to. Use ordinary Git
+and provider tools; the Go executable provides repository, branch, and base
+information and never silently delivers. The branch the work started from — this
+machine's recorded base, or the repository's default branch when the binding
+records none — is the default PR target unless the user chooses another. Read it
+as `base_branch` from `status`, `repo inspect`, or the worktree you are
+delivering from; `workspace.yaml` records
 a `default_branch`, which is the repository's default and not what this machine
 delivers to, and answering from it targets the wrong branch convincingly. Deliver per repository when appropriate. Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.

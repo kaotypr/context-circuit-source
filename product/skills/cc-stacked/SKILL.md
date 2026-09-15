@@ -73,7 +73,12 @@ is held behind it.
 
 ## What confirming the run authorizes
 
-For that run: worktree preparation, implementation commits on `cc/*` branches,
-and local integration merges that assemble a dependent plan's base. It does not
-authorize push, pull request creation, merging into a base branch, deployment, or
-deletion — each of those is still a separate act needing a person.
+For that run: worktree preparation and the local integration merges that assemble
+a dependent plan's base. Implementation commits on a worktree's own branch are
+ordinary execution and need no separate confirmation — every plan's work is
+committed before it is reported, which is what gives a dependent plan something
+to start from and an integration merge something to merge.
+
+It does not authorize push, pull request creation, merging into a base branch,
+deployment, or deletion — each of those is still a separate act needing a
+person.
