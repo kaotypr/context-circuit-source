@@ -1,8 +1,4 @@
-schema_version: 1
 members:
   kao:
-    display_name: kao
-    intent_band_start: 1
-    intent_band_end: 99
-    plan_band_start: 1
-    plan_band_end: 999
+    name: kao
+    band: 1

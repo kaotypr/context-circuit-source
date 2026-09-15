@@ -8,11 +8,12 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/VERSION | Workspace template version | Yes |
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
-| workspace.yaml | Version, name, purpose, repository IDs, default base branches, relationships | Yes |
+| .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
+| workspace.yaml | Version, name, purpose, optional CLI release mirror, repository IDs, default base branches, relationships | Yes |
 | members.yaml | Member ID to display name and optional allocation band | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
-| intent/iNNN-slug.md | Intent content, approval note, created_by, linked plans | Yes |
-| plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, progress | Yes |
+| intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
+| plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine | No |
 | repositories.local.yaml | Repository ID to checkout path | No |
@@ -37,6 +38,12 @@ relationships:
     description: Consumes the billing API
 ```
 
+An organization that mirrors CLI releases into its own GitLab project records it
+once as `cli_registry`, an https project URL. The value is shared, so everyone who
+clones the workspace installs from that mirror without setting anything up on
+their own machine; only the credential stays personal. Unset, the CLI installs
+from the product's own releases.
+
 Use a separate checkout for each execution environment (native Windows, WSL,
 remote server, or container). Shared files synchronize through Git; local paths,
 worktrees, installed dependencies, and uncommitted work do not migrate automatically.
@@ -46,9 +53,11 @@ After cloning a shared workspace onto another machine, use `member use` and
 can be registered before its first commit; worktree preparation needs a commit.
 Setting a default base records the intended branch without creating or resetting it.
 
-Every date in a workspace record is an ISO 8601 calendar date, `YYYY-MM-DD`, in
-UTC, written bare in YAML and unadorned in prose. Frontmatter dates and the dates
-inside approval and progress notes read identically.
+A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
+ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; every other date is an ISO 8601
+calendar date, `YYYY-MM-DD`, in UTC. Both are written bare in YAML and unadorned
+in prose, so an instant in frontmatter and the same instant heading its note read
+identically.
 
 YAML changes use goccy/go-yaml document edits to retain surrounding comments and
 ordering. Presentation can normalize; byte-for-byte formatting preservation is

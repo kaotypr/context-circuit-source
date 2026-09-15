@@ -4,20 +4,38 @@ set -eu
 fail() { printf 'CLI installation failed: %s\n' "$1" >&2; exit 1; }
 version= bin_dir=${HOME:?}/.local/bin archive= checksums=
 token=${CONTEXT_CIRCUIT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}
+# An organization that mirrors CLI releases into its own GitLab project names it
+# here. Unset, the installer reads the product's own GitHub releases.
+gitlab_url=${CONTEXT_CIRCUIT_GITLAB_URL:-}
 while [ "$#" -gt 0 ]; do
   [ "$#" -ge 2 ] || fail 'options require a value'
   case "$1" in
     --version) version=$2 ;; --bin-dir) bin_dir=$2 ;;
     --archive) archive=$2 ;; --checksums) checksums=$2 ;;
-    --token) token=$2 ;;
+    --token) token=$2 ;; --gitlab-url) gitlab_url=$2 ;;
     *) fail "unknown option: $1" ;;
   esac
   shift 2
 done
 # The token is written to a curl configuration line, which has no escape for a
-# quote or backslash. Reject anything outside the character set GitHub issues
-# rather than build a malformed request from it.
+# quote or backslash. Reject anything outside the character set GitHub and GitLab
+# issue rather than build a malformed request from it.
 case "$token" in *[!A-Za-z0-9_-]*) fail 'token contains unexpected characters' ;; esac
+# Derive the API base and the project path from the mirror URL, so this shipped
+# script carries no organization's own address. The credential is presented to
+# whichever registry is selected below and never to both.
+if [ -n "$gitlab_url" ]; then
+  case "$gitlab_url" in https://*) ;; *) fail 'mirror URL must begin with https://' ;; esac
+  rest=${gitlab_url%/}
+  rest=${rest%.git}
+  rest=${rest#https://}
+  gitlab_host=${rest%%/*}
+  gitlab_project=${rest#*/}
+  [ -n "$gitlab_host" ] && [ -n "$gitlab_project" ] && [ "$gitlab_project" != "$rest" ] ||
+    fail 'mirror URL needs a host and a project path'
+  case "$gitlab_host$gitlab_project" in *[!A-Za-z0-9._:/-]*) fail 'mirror URL contains unexpected characters' ;; esac
+  gitlab_project=$(printf '%s' "$gitlab_project" | sed 's|/|%2F|g')
+fi
 case "$version" in 2.*) ;; *) fail 'supply an exact compatible v2 CLI version without a v prefix' ;; esac
 case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
@@ -52,15 +70,25 @@ else
   fetch() { curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' "$@"; }
   # Pass the credential on stdin so it stays out of the process list.
   fetch_auth() { printf 'header = "Authorization: Bearer %s"\n' "$token" | fetch --config - "$@"; }
-  if [ -n "$token" ]; then
+  fetch_private() { printf 'header = "PRIVATE-TOKEN: %s"\n' "$token" | fetch --config - "$@"; }
+  if [ -n "$gitlab_url" ]; then
+    # A generic package is addressed by version and file name, so a mirror needs
+    # no release lookup and no asset ids.
+    base="https://$gitlab_host/api/v4/projects/$gitlab_project/packages/generic/context-circuit-cli/$version"
+    fetch_mirror() { if [ -n "$token" ]; then fetch_private "$@"; else fetch "$@"; fi; }
+    for name in "$package" SHA256SUMS; do
+      fetch_mirror "$base/$name" -o "$work/$name" ||
+        fail "cannot download $name from the mirror; confirm the version is published there and the token grants access"
+    done
+  elif [ -n "$token" ]; then
     # A private repository serves release assets only through the API, by asset
     # id; the public download path answers 404. curl does not carry the
     # Authorization header across the redirect to signed storage.
-    api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit-source"
+    api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit"
     fetch_auth --header 'Accept: application/vnd.github+json' \
       --header 'X-GitHub-Api-Version: 2022-11-28' \
-      "$api/releases/tags/cli-v$version" -o "$work/release.json" ||
-      fail "cannot read release cli-v$version; confirm it exists and the token grants access"
+      "$api/releases/tags/context-circuit-cli-v$version" -o "$work/release.json" ||
+      fail "cannot read release context-circuit-cli-v$version; confirm it exists and the token grants access"
     # Read each brace-delimited object as one record, so the asset URL and the
     # name beside it are matched together whether the API pretty-prints the
     # payload or returns it compact. An asset's own URL precedes the nested
@@ -80,11 +108,11 @@ else
     }
     for name in "$package" SHA256SUMS; do
       url=$(asset_url "$name")
-      [ -n "$url" ] || fail "release cli-v$version publishes no asset named $name"
+      [ -n "$url" ] || fail "release context-circuit-cli-v$version publishes no asset named $name"
       fetch_auth --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
     done
   else
-    base="https://github.com/kaotypr/context-circuit-source/releases/download/cli-v$version"
+    base="https://github.com/kaotypr/context-circuit/releases/download/context-circuit-cli-v$version"
     fetch "$base/$package" -o "$work/$package"
     fetch "$base/SHA256SUMS" -o "$work/SHA256SUMS"
   fi

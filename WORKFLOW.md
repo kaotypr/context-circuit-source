@@ -31,6 +31,16 @@ never ships. sources/, publication/, and release requests are passive maintainer
 history and never ship. The remaining source design skill is maintainer tooling
 and is excluded from the binary and exported workspace.
 
+## This checkout as a workspace
+
+The checkout is itself a schema-2 workspace, so `check`, `status`, and
+`context find` run against the real `context/` here instead of a copied fixture.
+That is the only reason the workspace files exist. Source work still goes
+directly on the branch under AGENTS.md: `intent/` and `plans/` stay empty, and
+no ID is allocated for source changes. `.context-circuit/docs/` is deliberately
+absent, because `product/docs/` owns that text and a second copy here would
+drift from it.
+
 ## Validation
 
 Run gofmt on changed Go files, go test ./..., go vet ./..., and

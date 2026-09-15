@@ -82,8 +82,10 @@ sh scripts/check-release.sh
 ```
 
 Workspace publication uses VERSION and publishes the template repository's v*
-releases. CLI publication uses CLI_VERSION and the source repository's cli-v*
-tags. The two products have separate release workflows and package inventories.
+releases. CLI publication uses CLI_VERSION and this repository's
+context-circuit-cli-v* tags, which build here and publish their assets on the
+template repository and its GitLab mirror, so installing needs no access to this
+checkout. The two products have separate release workflows and package inventories.
 Each workspace pins the CLI version it expects and versions install side by
 side, so workspaces pinning different versions coexist on one machine. The CLI
 also embeds a seed as a convenience for new workspaces; updates do not rewrite

@@ -44,11 +44,16 @@ the intended branch without creating or resetting it.
 
 ## Dates
 
-Every date in a workspace file is an ISO 8601 calendar date, `YYYY-MM-DD`, in
-UTC, written bare in structured records and unadorned in prose. The reason is
-retrieval and comparison: a catalog entry's reviewed date and a plan's
-completion date must sort without a parser, and a localized format in a shared
-file breaks both.
+A record's instants — `created_at`, and the `approved_at` or `completed_at` a gate
+stamps — are canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. An event
+records when it happened rather than a word saying that it did, so nothing can
+disagree with it, and two decisions on one day stay distinct. Every other date is
+an ISO 8601 calendar date, `YYYY-MM-DD`, in UTC.
+
+Both are written bare in structured records and unadorned in prose. The reason is
+retrieval and comparison: a catalog entry's reviewed date and a plan's completion
+instant must sort without a parser, and a localized format in a shared file
+breaks both.
 
 Owner: `context-circuit-source@internal/workspace/store.go` and
 `workspace.go`; the shipped description is

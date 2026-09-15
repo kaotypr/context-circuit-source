@@ -11,9 +11,12 @@ ownership. A small task may stay in the main session. Do not launch review unles
 the user requests it. Main-session implementation checks remain ordinary tests.
 
 Read `.context-circuit/docs/agents.md` for the current host's settings mechanism.
-Use `agent settings` to resolve `.context-circuit/role-tiering.yaml`. The initial
-model and effort for every role are `inherit`, as chosen by the maintainer. Honor
-explicit user settings; never infer model quality order or silently escalate.
+Use `agent settings` to resolve the tiering in force: the shared
+`.context-circuit/role-tiering.yaml`, with any host/role this machine overrode in
+`.context-circuit/role-tiering.local.yaml` replacing it. The report names those
+overrides. The initial model and effort for every role are `inherit`, as chosen by
+the maintainer. Honor explicit user settings; never infer model quality order or
+silently escalate.
 
 Initialization installs role definitions for every host. Run setup again after
 settings change, or in a clone, where the ignored definitions never arrived:

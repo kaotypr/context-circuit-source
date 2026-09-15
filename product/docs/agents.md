@@ -17,9 +17,18 @@ Role tiering is a concrete `(model, effort)` pair per role and host in
 chooses its supported defaults. No hardcoded model catalog or cost ladder ships.
 These settings describe agent capability, not plan ownership or risk gates.
 
+`.context-circuit/role-tiering.local.yaml` is this machine's answer to that
+shared file: optional, ignored by Git, and overriding one host/role at a time
+rather than replacing the file, so an overridden role is the only one that stops
+tracking the team's later changes. Its host must already appear in the shared
+file, and the same validation applies to both. `agent settings` reports the
+values in force and names what this machine overrode; `agent configure --local`
+writes there instead of the shared file.
+
 ```sh
 context-circuit-cli agent settings
 context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
+context-circuit-cli agent configure --host codex --role worker --model MY_MODEL --effort low --local
 context-circuit-cli agent setup
 ```
 

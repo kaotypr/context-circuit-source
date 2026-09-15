@@ -23,7 +23,7 @@ func banded(t *testing.T, bands map[string]int, reserved Ledger) *Store {
 	for id, band := range bands {
 		members.Members[id] = Member{Name: strings.ToUpper(id), Band: band}
 	}
-	if err := store.WriteYAML("workspace.yaml", Config{2, "Acme", "Billing", map[string]Repository{}, []Relationship{}}, 0o644); err != nil {
+	if err := store.WriteYAML("workspace.yaml", Config{Version: 2, Name: "Acme", Purpose: "Billing", Repositories: map[string]Repository{}, Relationships: []Relationship{}}, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.WriteYAML("members.yaml", members, 0o644); err != nil {

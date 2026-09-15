@@ -24,15 +24,18 @@ type Ledger struct {
 type Record struct {
 	ID           string   `yaml:"id" json:"id"`
 	CreatedBy    string   `yaml:"created_by" json:"created_by"`
+	CreatedAt    ISOTime  `yaml:"created_at" json:"created_at"`
+	ApprovedAt   ISOTime  `yaml:"approved_at,omitempty" json:"approved_at,omitempty"`
 	Intent       string   `yaml:"intent,omitempty" json:"intent,omitempty"`
 	Repositories []string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
 	DependsOn    []string `yaml:"depends_on,omitempty" json:"depends_on,omitempty"`
-	Completed    ISODate  `yaml:"completed,omitempty" json:"completed,omitempty"`
+	CompletedAt  ISOTime  `yaml:"completed_at,omitempty" json:"completed_at,omitempty"`
 	Plans        []string `yaml:"plans,omitempty" json:"plans,omitempty"`
 	Path         string   `yaml:"-" json:"path"`
 	Content      string   `yaml:"-" json:"content,omitempty"`
 }
 
+var legacyRecordKey = regexp.MustCompile(`(?m)^completed:`)
 var recordPattern = regexp.MustCompile(`^(i[0-9]{3,}|p[0-9]{4,})$`)
 var recordFilename = regexp.MustCompile(`^(i[0-9]{3,}|p[0-9]{4,})-[a-z][a-z0-9-]*\.md$`)
 
@@ -113,6 +116,13 @@ func (s *Store) readRecord(path string) (Record, error) {
 		return record, fmt.Errorf("%s: %w", path, err)
 	}
 	if err := Decode(header, &record); err != nil {
+		// A record from 2.0.0-rc.3 or earlier fails here on a field this
+		// candidate renamed. The decoder can only say the key is unknown, which
+		// reads as a corrupt file rather than a candidate boundary, so the one
+		// renamed key that shipped is named along with what replaced it.
+		if legacyRecordKey.Match(header) {
+			return record, fmt.Errorf("%s: written by 2.0.0-rc.3 or earlier, which this candidate cannot read: `completed` is now `completed_at`, approval is now the `approved_at` instant, and every record carries `created_at`. Records are not converted; start a fresh workspace, or rewrite this frontmatter by hand: %w", path, err)
+		}
 		return record, fmt.Errorf("%s: %w", path, err)
 	}
 	if !recordPattern.MatchString(record.ID) || !strings.HasPrefix(filepath.Base(path), record.ID+"-") {
@@ -274,8 +284,8 @@ func (s *Store) CreateRecord(kind, slug, title, intent string, repos, dependenci
 	if err != nil {
 		return Record{}, err
 	}
-	record := Record{ID: id, CreatedBy: author}
-	body := "## Goal\n\nDescribe the intended outcome.\n\n## Non-goals\n\nDescribe what is out of scope.\n\n## Constraints\n\nRecord relevant constraints.\n\n## Success criteria\n\n- Describe an observable result.\n\n## Repository scope\n\nList the repositories likely to be involved.\n\nApproval: Pending\n"
+	record := Record{ID: id, CreatedBy: author, CreatedAt: ISOTime(isoTime(time.Now()))}
+	body := "## Goal\n\nDescribe the intended outcome.\n\n## Non-goals\n\nDescribe what is out of scope.\n\n## Constraints\n\nRecord relevant constraints.\n\n## Success criteria\n\n- Describe an observable result.\n\n## Repository scope\n\nList the repositories likely to be involved.\n\n## Open questions\n\nNone known.\n"
 	folder := "intent"
 	if kind == "plan" {
 		folder = "plans"
@@ -346,16 +356,21 @@ func (s *Store) replaceRecord(record Record, next []byte) error {
 	return s.Write(record.Path, next, 0644)
 }
 
-// ISODate is a calendar date recorded as ISO 8601 YYYY-MM-DD. Marshaling it as a
-// raw scalar keeps the unquoted form: the YAML encoder quotes a plain Go string
-// that looks like a date, which would make dates read differently depending on
-// which field they sit in.
-type ISODate string
+// ISOTime is an instant recorded as a canonical ISO 8601 UTC timestamp,
+// 2026-09-15T10:53:00Z. A gate records when it happened rather than a word
+// saying that it did, so the two cannot disagree and a second decision on the
+// same day is still distinct. Marshaling it as a raw scalar keeps the unquoted
+// form: the YAML encoder quotes a plain Go string that looks like a timestamp,
+// which would make instants read differently depending on which field they sit
+// in.
+type ISOTime string
 
-func (d ISODate) MarshalYAML() ([]byte, error) { return []byte(string(d)), nil }
+// TimeLayout is the one format every instant in a workspace record uses.
+const TimeLayout = time.RFC3339
 
-// Every date written anywhere in a workspace record uses this one format.
-func isoDate(moment time.Time) string { return moment.UTC().Format(time.DateOnly) }
+func (t ISOTime) MarshalYAML() ([]byte, error) { return []byte(string(t)), nil }
+
+func isoTime(moment time.Time) string { return moment.UTC().Format(TimeLayout) }
 
 func (s *Store) Note(id, text, kind string) error {
 	if strings.TrimSpace(text) == "" || strings.ContainsRune(text, 0) {
@@ -365,7 +380,7 @@ func (s *Store) Note(id, text, kind string) error {
 	if err != nil {
 		return err
 	}
-	stamp := isoDate(time.Now())
+	stamp := isoTime(time.Now())
 	next := strings.TrimRight(record.Content, "\n")
 	switch kind {
 	case "approve":
@@ -375,16 +390,9 @@ func (s *Store) Note(id, text, kind string) error {
 		if err := Text(text); err != nil {
 			return err
 		}
-		line := "Approval: Approved on " + stamp + " — " + text
-		rx := regexp.MustCompile(`(?m)^Approval:.*$`)
-		if len(rx.FindAllStringIndex(next, -1)) > 1 {
-			return errors.New("multiple approval lines; identify the intended approval before updating")
-		}
-		if rx.MatchString(next) {
-			next = rx.ReplaceAllStringFunc(next, func(string) string { return line })
-		} else {
-			next += "\n\n" + line
-		}
+		// Renewed approval is a second decision, not a corrected first one, so
+		// each one keeps its own date and words rather than overwriting them.
+		next += "\n\n## Approval — " + stamp + "\n\n" + text
 	case "complete":
 		if !strings.HasPrefix(id, "p") {
 			return errors.New("completion is recorded on a plan")
@@ -396,15 +404,23 @@ func (s *Store) Note(id, text, kind string) error {
 		return errors.New("unknown note operation")
 	}
 	data := []byte(next + "\n")
-	// Completion also records a machine-readable date so dependency ordering can
-	// tell a finished plan from an unfinished one without reading prose. The
+	// Both gates also record a machine-readable frontmatter value: the status a
+	// person set, and the completion date dependency ordering reads to tell a
+	// finished plan from an unfinished one without reading prose. The
 	// human-readable section stays; one write keeps both consistent.
-	if kind == "complete" {
+	field, value := "", any(nil)
+	switch kind {
+	case "approve":
+		field, value = "approved_at", ISOTime(stamp)
+	case "complete":
+		field, value = "completed_at", ISOTime(stamp)
+	}
+	if field != "" {
 		header, body, err := splitRecord(data)
 		if err != nil {
 			return err
 		}
-		updated, err := Edit(header, []string{"completed"}, ISODate(stamp))
+		updated, err := Edit(header, []string{field}, value)
 		if err != nil {
 			return err
 		}

@@ -31,7 +31,7 @@ the repositories for the business word finds nothing without it.
 | Logical repository ID | The shared name for a repository, independent of where anyone checked it out | `context-circuit-source@internal/workspace/workspace.go` `Config.Repositories` |
 | Plan | How an approved intent maps to real code, plus what actually happened | `context-circuit-source@internal/workspace/records.go` `Record` |
 | Reservation | A permanently allocated number that is never reused, including after archival | `context-circuit-source@internal/workspace/records.go` `Store.allocate` |
-| Role tiering | The per-host model and effort preference for each subagent role | `context-circuit-source@template/role-tiering.yaml`, `internal/workspace/agents.go` |
+| Role tiering | The per-host model and effort preference for each subagent role, shared and optionally overridden per machine | `context-circuit-source@template/role-tiering.yaml`, `internal/workspace/agents.go` |
 | Seed | The blank workspace embedded in the executable for initialization and export | `context-circuit-source@assets.go`, `template/` |
 | Start reference | Where a plan's branch begins in one repository, with any merges it needs first | `context-circuit-source@internal/workspace/order.go` `OrderStart` |
 | Version store | The directory holding side-by-side executable installs, one per version and platform | `context-circuit-source@product/skills/cc-cli/scripts/install.sh` |

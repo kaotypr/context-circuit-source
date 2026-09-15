@@ -4,6 +4,7 @@
 /repositories.local.yaml
 /member.local.yaml
 /.context-circuit/local/
+/.context-circuit/role-tiering.local.yaml
 /.context-circuit/bin/
 /.codex/agents/cc-*.toml
 /.claude/agents/cc-*.md

@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 	"unicode"
@@ -64,27 +65,77 @@ func validateSetting(host string, setting AgentSetting) error {
 	return nil
 }
 
+// The shared file is the workspace's agreed tiering; the local one is this
+// machine's answer to it, because one roster's members run different hosts and
+// pay for different models. Local overrides a single host/role rather than
+// replacing the file, so a member who changes one role still tracks every
+// later change the team makes to the rest.
+const (
+	SharedTiering = ".context-circuit/role-tiering.yaml"
+	LocalTiering  = ".context-circuit/role-tiering.local.yaml"
+)
+
+// AgentSettings reports the effective tiering: shared, with each host/role the
+// local file names replacing its counterpart. Overrides names those keys, since
+// a merged view that cannot say which half supplied a value claims more than it
+// established.
 func (s *Store) AgentSettings() (RoleTiering, error) {
+	cfg, _, err := s.agentTiering()
+	return cfg, err
+}
+
+// EffectiveTiering is what a reader of the settings command needs: the values in
+// force, and which of them this machine overrode.
+type EffectiveTiering struct {
+	Hosts          map[string]map[string]AgentSetting `yaml:"hosts" json:"hosts"`
+	LocalOverrides []string                           `yaml:"local_overrides,omitempty" json:"local_overrides,omitempty"`
+}
+
+func (s *Store) EffectiveAgentSettings() (EffectiveTiering, error) {
+	cfg, overrides, err := s.agentTiering()
+	return EffectiveTiering{cfg.Hosts, overrides}, err
+}
+
+func (s *Store) agentTiering() (RoleTiering, []string, error) {
 	var cfg RoleTiering
-	if err := s.YAML(".context-circuit/role-tiering.yaml", &cfg); err != nil {
-		return cfg, err
+	if err := s.YAML(SharedTiering, &cfg); err != nil {
+		return cfg, nil, err
 	}
+	var local RoleTiering
+	if err := s.YAML(LocalTiering, &local); err != nil && !os.IsNotExist(err) {
+		return cfg, nil, fmt.Errorf("%s: %w", LocalTiering, err)
+	}
+	var overrides []string
+	for host, settings := range local.Hosts {
+		if cfg.Hosts[host] == nil {
+			return cfg, nil, fmt.Errorf("%s: host is absent from the shared tiering: %s", LocalTiering, host)
+		}
+		for role, setting := range settings {
+			cfg.Hosts[host][role] = setting
+			overrides = append(overrides, host+"/"+role)
+		}
+	}
+	sort.Strings(overrides)
 	for host, settings := range cfg.Hosts {
 		if err := validHost(host); err != nil {
-			return cfg, err
+			return cfg, nil, err
 		}
 		for name, setting := range settings {
 			if _, ok := Roles[name]; !ok {
-				return cfg, fmt.Errorf("unknown agent role: %s", name)
+				return cfg, nil, fmt.Errorf("unknown agent role: %s", name)
 			}
 			if err := validateSetting(host, setting); err != nil {
-				return cfg, fmt.Errorf("%s/%s: %w", host, name, err)
+				return cfg, nil, fmt.Errorf("%s/%s: %w", host, name, err)
 			}
 		}
 	}
-	return cfg, nil
+	return cfg, overrides, nil
 }
-func (s *Store) ConfigureAgent(host, role, model, effort string) error {
+
+// ConfigureAgent writes one host/role setting. Local keeps the change on this
+// machine; without it the change is to the shared file every member reads, so
+// which of the two is being edited is stated rather than inferred.
+func (s *Store) ConfigureAgent(host, role, model, effort string, local bool) error {
 	if err := validHost(host); err != nil {
 		return err
 	}
@@ -95,14 +146,38 @@ func (s *Store) ConfigureAgent(host, role, model, effort string) error {
 	if err := validateSetting(host, setting); err != nil {
 		return err
 	}
-	cfg, err := s.AgentSettings()
-	if err != nil {
+	var shared RoleTiering
+	if err := s.YAML(SharedTiering, &shared); err != nil {
 		return err
 	}
-	if cfg.Hosts[host] == nil {
+	// The shared file names the hosts a workspace supports; a local override
+	// answers one of them rather than introducing one nobody else has.
+	if shared.Hosts[host] == nil {
 		return fmt.Errorf("host is absent from role-tiering.yaml: %s", host)
 	}
-	return s.Update(".context-circuit/role-tiering.yaml", []string{"hosts", host, role}, setting, 0644)
+	if !local {
+		return s.Update(SharedTiering, []string{"hosts", host, role}, setting, 0644)
+	}
+	if _, err := s.Read(LocalTiering); os.IsNotExist(err) {
+		seed := "# Machine-local role settings. Each host/role here replaces its counterpart\n" +
+			"# in role-tiering.yaml; everything absent keeps tracking the shared file.\n" +
+			"hosts:\n  " + host + ": {}\n"
+		if err := s.Write(LocalTiering, []byte(seed), 0600); err != nil {
+			return err
+		}
+	} else if err != nil {
+		return err
+	}
+	// A later override of a second host has no node to attach to yet, so the
+	// host is opened before the role is written into it.
+	var current RoleTiering
+	if err := s.YAML(LocalTiering, &current); err != nil {
+		return err
+	}
+	if current.Hosts[host] == nil {
+		return s.Update(LocalTiering, []string{"hosts", host}, map[string]AgentSetting{role: setting}, 0600)
+	}
+	return s.Update(LocalTiering, []string{"hosts", host, role}, setting, 0600)
 }
 
 func (s *Store) agentSetting(host, role string) (AgentSetting, error) {

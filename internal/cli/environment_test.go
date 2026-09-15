@@ -1,10 +1,13 @@
 package cli_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/kaotypr/context-circuit-source/internal/workspace"
 )
 
 func TestWorktreeReusesIgnoredEnvironmentAndPreservesUpdates(t *testing.T) {
@@ -92,6 +95,64 @@ func TestRoleSettingsApplyToNativeDefinitions(t *testing.T) {
 	f.ok("agent", "dispatch", "--host", "codex", "--role", "reviewer", "--task", "Review the requested diff", "--path", f.root, "--review-requested")
 	f.fail("agent", "configure", "--host", "codex", "--role", "worker", "--model", "fixture", "--effort", "nonsense")
 	f.fail("agent", "configure", "--host", "cursor", "--role", "worker", "--model", "inherit", "--effort", "high")
+}
+
+// One roster's members run different hosts and pay for different models, so a
+// machine answers the shared tiering without editing what everyone else reads.
+func TestLocalRoleTieringOverridesTheSharedSetting(t *testing.T) {
+	f := setup(t)
+	shared := filepath.Join(f.root, workspace.SharedTiering)
+	local := filepath.Join(f.root, workspace.LocalTiering)
+	f.ok("agent", "configure", "--host", "codex", "--role", "worker", "--model", "team-model", "--effort", "medium")
+	f.ok("agent", "configure", "--host", "codex", "--role", "planner", "--model", "team-planner", "--effort", "high")
+	if _, err := os.Stat(local); !os.IsNotExist(err) {
+		t.Fatal("a shared configure must not write the local file")
+	}
+
+	f.ok("agent", "configure", "--host", "codex", "--role", "worker", "--model", "my-model", "--effort", "low", "--local")
+	if !strings.Contains(read(t, shared), "team-model") {
+		t.Fatal("a local configure must not edit the shared file", read(t, shared))
+	}
+	var effective workspace.EffectiveTiering
+	if err := json.Unmarshal([]byte(f.ok("agent", "settings")), &effective); err != nil {
+		t.Fatal(err)
+	}
+	if effective.Hosts["codex"]["worker"].Model != "my-model" {
+		t.Fatal("the local override is not in force", effective.Hosts["codex"]["worker"])
+	}
+	// An untouched role keeps tracking the shared file rather than being frozen
+	// by the presence of an override elsewhere.
+	if effective.Hosts["codex"]["planner"].Model != "team-planner" {
+		t.Fatal("an unoverridden role must follow the shared file", effective.Hosts["codex"]["planner"])
+	}
+	if strings.Join(effective.LocalOverrides, ",") != "codex/worker" {
+		t.Fatal("the merged view must name what this machine overrode", effective.LocalOverrides)
+	}
+
+	// A second host has no node in the local file yet; opening one must not
+	// depend on which host happened to create the file.
+	f.ok("agent", "configure", "--host", "claude-code", "--role", "planner", "--model", "other-model", "--effort", "high", "--local")
+	if err := json.Unmarshal([]byte(f.ok("agent", "settings")), &effective); err != nil {
+		t.Fatal(err)
+	}
+	if effective.Hosts["claude-code"]["planner"].Model != "other-model" || effective.Hosts["codex"]["worker"].Model != "my-model" {
+		t.Fatal("a second host must join the local file, not replace it", effective.Hosts)
+	}
+
+	// The override reaches the native definitions the host actually loads.
+	f.ok("agent", "setup", "--host", "codex")
+	if text := read(t, filepath.Join(f.root, ".codex/agents/cc-worker.toml")); !strings.Contains(text, "my-model") {
+		t.Fatal("setup ignored the local override", text)
+	}
+
+	// A local file is validated like the shared one, and cannot invent a host.
+	sound := read(t, local)
+	write(t, local, strings.Replace(sound, "effort: low", "effort: nonsense", 1))
+	f.fail("agent", "settings")
+	write(t, local, "hosts:\n  invented-host:\n    worker:\n      model: x\n      effort: low\n")
+	f.fail("agent", "settings")
+	write(t, local, sound)
+	f.ok("agent", "settings")
 }
 
 func TestIndependentTemplateVersionAndCopyOptionPreflight(t *testing.T) {

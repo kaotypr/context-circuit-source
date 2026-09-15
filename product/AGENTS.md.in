@@ -75,14 +75,31 @@ differs from the project's own word.
 ## Intent and planning
 
 For an implementation change, make the intended outcome explicit before detailed
-code investigation. Create an `iNNN-slug.md` intent through the executable, then
-write its goal, non-goals, constraints, observable success criteria, and rough
-repository scope using relevant existing knowledge. Present the concrete intent
-and stop there. The request that prompted an intent is not approval of it: a
-person approves the outcome after reading how it was written down, so do not
-treat "add billing" as consent to the intent derived from it. Record the actual
-user approval and date. Neither a command, an editable approval note, nor another
-agent can supply human consent.
+code investigation. Ground it first: retrieve the bearing knowledge through
+`context/INDEX.md` and read the request's apparent meaning against what the
+project already records. What that reading contradicts, or cannot settle, is a
+question for the person, not a gap to fill with a quiet assumption. Create an
+`iNNN-slug.md` intent through the executable, then write its goal, non-goals,
+constraints, observable success criteria, and rough repository scope from that
+grounding.
+
+Each decision a person must settle goes under `## Open questions`: a numbered
+list, the question in bold, an italic `_Answer:_` line beneath once settled. The
+number is the handle a person answers by, so it holds still — an answered
+question keeps its number and is never deleted, and a later one takes the next
+unused number. With no questions the unnumbered empty-state line stays as
+written; a placeholder would invent a pending decision. A question the request
+already answers is applied without asking; an implementation question belongs in
+the plan.
+
+Present the concrete intent, invite answers by number, and stop there. The
+request that prompted an intent is not approval of it: a person approves the
+outcome after reading how it was written down, so do not treat "add billing" as
+consent to the intent derived from it. Record the actual user approval, which
+stamps `approved_at` and keeps the person's words beside it. A
+record carries that decision and never establishes one: neither a command, nor an
+editable field, nor another agent can supply human consent, and an intent is not
+approved because a field says so.
 
 Approving an intent authorizes planning, and planning alone. Without asking
 again, inspect real code and create linked `pNNNN-slug.md` plans. One readable
@@ -91,7 +108,8 @@ useful for execution or delivery. Record task order, optional dependencies,
 useful risks, and expected checks. Detailed paths are descriptive planning
 information, not hard enforcement gates. Explain and record newly needed files or
 repositories within the approved outcome. Obtain renewed approval only when the
-intended outcome or success criteria materially change.
+intended outcome or success criteria materially change. A question that bears on
+the outcome returns to the intent; a plan never silently settles one.
 
 Delegating that investigation is a judgment about size, not a step. Dispatch a
 planner through `.agents/skills/cc-dispatch/SKILL.md` when the reading would be
@@ -117,9 +135,10 @@ plans exist and can be seen, so an instruction to implement that arrived earlier
 including one in the message that started the intent, does not begin it. Ask for
 it plainly instead of inferring it.
 
-Record every date as an ISO 8601 calendar date, `YYYY-MM-DD`, in records you
-write by hand as well as through the executable. No other date format belongs in
-a workspace file.
+A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
+ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, in a record
+written by hand as well as through the executable, is an ISO 8601 calendar date,
+`YYYY-MM-DD`. No other date format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a

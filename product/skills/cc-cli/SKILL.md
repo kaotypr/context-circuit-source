@@ -12,10 +12,11 @@ Each workspace pins its own CLI version in `.context-circuit/CLI_VERSION`. Versi
 install side by side, so several workspaces on one machine can pin different ones.
 Read that file first and treat it as the version to run for that workspace.
 For an explicit update request, resolve the requested version, or the latest stable
-compatible `cli-v2.*` release from
-[CLI releases](https://github.com/kaotypr/context-circuit-source/releases).
+compatible `context-circuit-cli-v2.*` release from
+[CLI releases](https://github.com/kaotypr/context-circuit/releases).
 Use available GitHub tools or the releases API; exclude drafts/prereleases unless
-requested. Do not confuse workspace `v*` releases with CLI `cli-v*` releases. Pass
+requested. The workspace template and the CLI release on the same repository:
+template releases are tagged `v*` and CLI releases `context-circuit-cli-v*`. Pass
 an exact version to the installer; do not guess an unpublished version exists.
 
 Run the bundled script, using absolute paths when outside this skill directory:
@@ -26,9 +27,9 @@ Run the bundled script, using absolute paths when outside this skill directory:
 The Windows policy flag applies only to this installer process; it does not change
 the user's saved execution policy. Honor any organization policy that blocks it.
 
-## Authenticate while the source repository is private
+## Authenticate while the product repository is private
 
-The source repository is private, so its release assets are not publicly
+The product repository is private, so its release assets are not publicly
 downloadable and the plain download path answers 404. Supply a GitHub token with
 read access to it: `--token <value>` / `-Token <value>`, or the environment
 variable `CONTEXT_CIRCUIT_TOKEN` (`GH_TOKEN` and `GITHUB_TOKEN` are read as
@@ -42,6 +43,21 @@ transcript, and do not pass it to anything but these installer scripts. A 404
 while a token is set usually means the token lacks access to the repository, not
 that the version is missing. Offline `--archive` / `-Archive` installation from a
 trusted release needs no token.
+
+## Install from an organization's mirror
+
+An organization can mirror CLI releases into its own GitLab project. A workspace
+records that project in `workspace.yaml` as `cli_registry`; read it and pass it as
+`--gitlab-url <value>` / `-GitlabUrl <value>`. The installer then reads the
+release from that project's generic package registry rather than from GitHub, and
+presents the token in the form that registry expects. `CONTEXT_CIRCUIT_GITLAB_URL`
+supplies the same value when no argument is passed, which is how a first install
+works before any workspace exists. The credential reaches only the registry in
+use, never both.
+
+When a mirror is in use, resolve an available version from that host's releases or
+package registry. Do not read the product repository's GitHub releases to pick a
+version the mirror may not carry.
 
 Both install and update use the same script. `--bin-dir` / `-BinDir` selects a
 user-writable command directory. No administrator access is needed. The installer

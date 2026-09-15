@@ -3,10 +3,19 @@
 ## Three decisions belong to a person
 
 **Approving the intended outcome.** Before detailed code investigation the agent
-writes the intent, presents it, and stops. The rule that carries the weight:
-neither a command, nor an editable approval note, nor another agent can supply
-human consent. The approval operation records an actual decision and its date;
-it does not constitute one.
+writes the intent, presents it, and stops. What it is written against, and how a
+decision it cannot make reaches the person as a numbered open question, is
+[grounding an intent](intent-grounding.md). The rule that carries the weight:
+neither a command, nor an editable record, nor another agent can supply human
+consent. The approval operation records an actual decision and its date; it does
+not constitute one.
+
+The intent's `approved_at` field is stamped with the instant there, and the person's
+words are kept under a heading carrying the same instant; an unapproved intent
+carries no such field, so absence is the only empty state. The field is a readable
+record of the gate, never the gate itself — anything that can write the record can
+write the timestamp, so an intent is not approved because a field says so. Nothing
+in the executable reads it to decide whether to proceed.
 
 Nor does the request that prompted the intent. Reading a change request as
 consent to whatever intent gets derived from it collapses the gate entirely —

@@ -1,17 +1,9 @@
-version: 1
-template_version: 0.6.1
-
-workspace:
-  name: context-circuit-source
-  mode: solo
-  default_branch: main
-
+version: 2
+name: context-circuit-source
+purpose: |
+  Maintainer source for Context Circuit v2: the Go executable, the shipped
+  workspace template, and the product instruction they are generated from.
 repositories:
   context-circuit-source:
-    canonical_url: https://github.com/kaotypr/context-circuit-source.git
-    default_branch: main
-
-identity:
-  kind: product-source
-  product: Context Circuit
-  release_seed: template/
+    base_branch: main
+relationships: []

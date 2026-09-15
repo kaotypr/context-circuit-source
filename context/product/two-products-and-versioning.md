@@ -5,7 +5,7 @@ One checkout assembles two separately released products.
 | Product | Version file | Tags | Contents |
 | --- | --- | --- | --- |
 | Workspace template | `context-circuit-source@VERSION` | `v*` on the published template repository | shared instruction, docs, skills, blank seed |
-| Executable | `context-circuit-source@CLI_VERSION` | `cli-v*` on this source repository | Go binaries for six platform targets |
+| Executable | `context-circuit-source@CLI_VERSION` | `context-circuit-cli-v*` here, assets published on the template repository | Go binaries for six platform targets |
 
 They change for different reasons and at different rates. A wording fix in the
 shared instruction should not force anyone to reinstall a binary, and a
@@ -31,10 +31,20 @@ and something ran the wrong binary.
 Owner: `context-circuit-source@internal/cli/cli.go` `pinnedVersionWarning`, and
 the installer under `context-circuit-source@product/skills/cc-cli/`.
 
+The executable is tagged and built in this checkout, where its source is, so a
+released binary stays traceable to the commit that produced it. Its assets are
+published on the template repository and its GitLab mirror instead, so installing
+the CLI never needs read access to this maintainer checkout. The tag created on
+those destinations is a distribution marker rather than a build reference, and the
+release notes carry the source commit.
+
 ## Installation properties
 
 Installation targets the **execution environment**, not the user's desktop: a
-container or remote Linux host installs Linux packages. It needs no
+container or remote Linux host installs Linux packages. An organization that
+mirrors releases into its own GitLab project installs from that project's generic
+package registry, which the workspace records as `cli_registry` so one member
+configures it for everyone; the credential reaches only the registry in use. It needs no
 administrator access, verifies a checksum and the executable's own reported
 version before switching the shared command, leaves the current command
 untouched on any failure, and supports offline install from a trusted release.

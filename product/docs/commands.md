@@ -58,10 +58,15 @@ existing record or releases its reservation.
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
 are repeatable. Creation reserves IDs and links a new plan from its intent.
 Approval and completion notes require the actual corresponding user decision.
-Commands do not independently authorize anything. Dependency updates detect
+Approval records the instant in the intent's frontmatter `approved_at` and appends
+the person's words under a heading carrying the same instant; an unapproved
+intent has no such field. It records a decision and never establishes one, and
+commands do not independently authorize anything. Dependency updates detect
 cycles; omit `--depends-on` to clear a plan's dependencies. Completion also
-records a `completed` date in the plan's frontmatter beside its written note.
-Dates are ISO 8601 `YYYY-MM-DD` in UTC throughout.
+records `completed_at` in the plan's frontmatter beside its written note. Every
+record also carries the `created_at` instant of its creation. Instants are
+canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
+8601 `YYYY-MM-DD` in UTC.
 
 `record order` derives execution shape from recorded dependencies and completion.
 `--mode auto` reports a recommendation and follows it; `waves` and `linear`
