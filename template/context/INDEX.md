@@ -59,11 +59,24 @@ to stay passive. Anchor to code instead, with the logical repository ID from
 
 An anchor earns its place by saying what it anchors. Write one into the sentence
 that explains it — *the format layer in `api@internal/billing/format/` owns the
-schema* — and where several are collected together, give each its own bullet
-carrying that same explanation. A run of paths separated by commas is the one
-shape to avoid: it reads as a string rather than a list, nothing says which path
-answers which question, and a reader who cannot tell them apart opens all of
-them, which is the scanning a note exists to prevent.
+schema* — which is where an anchor belongs whenever a sentence can carry it.
+
+A note covering several surfaces may close with an `Owner:` block naming where
+its subject lives, one bullet per anchor, each saying what that path owns:
+
+```
+Owner:
+
+- `api@internal/billing/dunning/` — the retry schedule and its wind-down.
+- `api@internal/billing/invoice.go` `Void` — the one path that voids rather
+  than credits.
+```
+
+Use that heading and no other, so a reader learns the shape once and finds it in
+every note that has one. A run of paths separated by commas is the shape to
+avoid: it reads as a string rather than a list, nothing says which path answers
+which question, and a reader who cannot tell them apart opens all of them, which
+is the scanning a note exists to prevent.
 
 Link freely to other notes here. Which record or which evidence produced a note
 belongs in that plan record. The `check` diagnostic reports any line in a note

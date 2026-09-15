@@ -66,9 +66,10 @@ path becomes a standing instruction to read material that must stay passive.
 Repository paths are the durable anchor, exact or patterned, written with the logical
 repository ID — `api@internal/billing/dunning/`, `web@src/features/<feature>/` — never
 a local checkout path. An anchor says what it anchors: write it into the sentence that
-explains it, and where several are collected, give each its own bullet carrying that
-explanation. Never a comma-separated run of paths, which names no question any of them
-answers and sends the reader to open all of them. Link freely between notes; which record or evidence produced
+explains it, and where a note covering several surfaces closes with a block naming
+where its subject lives, head it `Owner:` and give each anchor its own bullet carrying
+that explanation. Never a comma-separated run of paths, which names no question any of
+them answers and sends the reader to open all of them. Link freely between notes; which record or evidence produced
 a note belongs in that plan. Run `check` after editing notes; it reports any line
 that crosses this boundary. One note is one unwrapped catalog entry carrying its
 own link, the repositories it applies to, the question it answers, its search
