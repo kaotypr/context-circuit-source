@@ -372,8 +372,14 @@ func TestBaseBranchBelongsToTheLocalBinding(t *testing.T) {
 	// shared default.
 	write(t, filepath.Join(f.root, "repositories.local.yaml"), "bindings:\n  api:\n    path: "+api+"\n")
 	q := f.plan(i.ID, "default-base", "api")
-	if w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", q.ID)); w.Head != main {
+	w = tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", q.ID))
+	if w.Head != main {
 		t.Fatalf("a binding with no base did not fall back to the default branch: %+v", w)
+	}
+	// The reported base is the resolved answer, so it names the fallback too;
+	// reporting an empty field here sends the reader back to the shared file.
+	if w.BaseBranch != "main" {
+		t.Fatalf("the fallback base was not reported: %+v", w)
 	}
 }
 
