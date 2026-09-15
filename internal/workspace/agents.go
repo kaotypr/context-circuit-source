@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -28,8 +29,31 @@ type Role struct {
 
 var Roles = map[string]Role{
 	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. You cannot run anything, so report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", true},
-	"planner":  {"Plan an approved intent using evidence from the repositories.", "Read the approved intent and relevant code. Answer under these headings: Verdict, one of feasible, feasible-with-changes, or not-feasible; Approach; Tasks and order, each naming its repository, paths, and the tasks it depends on; Risks and checks, naming check commands and where they are defined; Evidence, the paths that established each conclusion; Uncertainties, what could not be determined and what would settle it; Plan shape, single or a proposed split with reasons. You cannot run anything, so report a check as found, never as passing. Not-feasible is a complete answer: return it with its evidence instead of a plan. The coordinator writes the plan and decides any split. Do not implement or request a separate plan approval. Do not edit files or launch other agents.", true},
-	"worker":   {"Implement a bounded part of an approved plan and run normal checks.", "Implement the assigned approved plan in the supplied working directory. Own only the assigned task and paths. Do not write or reconcile durable project knowledge; report what the coordinator should record. Run normal tests and report changes, results, and remaining work. Do not independently verify your implementation, launch agents, or deliver changes without explicit authorization.", false},
+	"planner": {"Plan an approved intent using evidence from the repositories.", `Read the intent above and the code it names, then answer under these headings:
+
+- Verdict: feasible, feasible-with-changes, or not-feasible.
+- Approach: how the outcome is reached.
+- Tasks and order: each task naming its repository, its paths, and the tasks it depends on.
+- Risks and checks: the check commands and where they are defined.
+- Evidence: the paths that established each conclusion.
+- Uncertainties: what you could not determine, and what would settle it.
+- Plan shape: single, or a proposed split with reasons.
+
+You cannot run anything, so report a check as found, never as passing.
+Not-feasible is a complete answer: return it with its evidence instead of a plan.
+The coordinator writes the plan record and decides any split, so no plan exists yet and none is yours to number.
+Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, true},
+	"worker": {"Implement a bounded part of an approved plan and run normal checks.", `Implement the plan above in the working directory above. Own only the assigned task and paths.
+
+Run the repositories' ordinary checks and report, as your result:
+
+- every file you changed, and what changed in it;
+- the exact check commands you ran and their real outcome, failures included;
+- what remains unfinished, and anything you had to assume.
+
+The coordinator integrates your work from that report and does not re-run your checks, so a check you did not run is one nobody ran. Report a failure plainly rather than working around it.
+
+Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents, and do not deliver changes without explicit authorization.`, false},
 	"reviewer": {"Independently review a diff only when the user requests review.", "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", true},
 }
 
@@ -323,7 +347,7 @@ type Dispatch struct {
 	SetupRequired       string `json:"setup_required,omitempty"`
 }
 
-func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, reviewRequested bool) (Dispatch, error) {
+func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, shared, reviewRequested bool) (Dispatch, error) {
 	setting, err := s.agentSetting(host, role)
 	if err != nil {
 		return Dispatch{}, err
@@ -337,6 +361,19 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, 
 	if shared && role != "worker" {
 		return Dispatch{}, errors.New("--shared describes workers sharing one worktree")
 	}
+	// A planner decides the plan shape, so a plan cannot already exist to hand
+	// it: numbering one first settles the split the planner was dispatched to
+	// propose, and an intent holding several plans has no single ID to pass.
+	if role == "planner" {
+		if plan != "" {
+			return Dispatch{}, errors.New("a planner proposes the plan shape, so it is dispatched against --intent, not an already numbered --plan")
+		}
+		if intent == "" {
+			return Dispatch{}, errors.New("a planner needs --intent naming the approved intent to plan")
+		}
+	} else if intent != "" {
+		return Dispatch{}, errors.New("--intent dispatches a planner; other roles take --plan")
+	}
 	work, err := Open(directory)
 	if err != nil {
 		return Dispatch{}, err
@@ -346,16 +383,20 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, 
 	if host == "codex" {
 		name = "cc_" + role
 	}
-	prompt := r.Instructions + "\n\nWorkspace: " + s.Root + "\nWorking directory: " + work.Root
+	// The brief is read top to bottom by an agent that has seen nothing else, so
+	// it states where the work happens, then what the work is, and only then
+	// what to return. Every record it names is also quoted in full: an agent
+	// that has to go and find a file reads the whole repository on the way.
+	prompt := "# Working directory\n\n" + work.Root + "\n\nWorkspace root: " + s.Root
 	if !r.ReadOnly {
 		// Isolation differs by parallelism axis. One worker per plan owns its
 		// whole worktree; several workers inside one worktree genuinely share
 		// files. Saying the wrong one invites a worker to guess at edits it
 		// cannot see, or to overwrite edits it can.
 		if shared {
-			prompt += "\n\nOwnership: other workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
+			prompt += "\n\n# Ownership\n\nOther workers are editing this same working directory. Preserve their edits, adapt your changes, and stay within your assigned paths."
 		} else {
-			prompt += "\n\nOwnership: you are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
+			prompt += "\n\n# Ownership\n\nYou are the sole owner of this working directory. Work only here. Do not create, switch, merge, push, or delete branches, and do not run git worktree."
 		}
 	}
 	if plan != "" {
@@ -366,9 +407,23 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, 
 		if !strings.HasPrefix(record.ID, "p") {
 			return Dispatch{}, errors.New("--plan needs a plan ID")
 		}
-		prompt += "\n\n" + planBrief(record)
+		prompt += "\n\n" + planBrief(record, s.Root)
 	}
-	prompt += "\n\nTask: " + task
+	if intent != "" {
+		record, err := s.FindRecord(intent)
+		if err != nil {
+			return Dispatch{}, err
+		}
+		if !strings.HasPrefix(record.ID, "i") {
+			return Dispatch{}, errors.New("--intent needs an intent ID")
+		}
+		// Planning an unapproved intent plans an outcome nobody agreed to.
+		if record.ApprovedAt == "" {
+			return Dispatch{}, fmt.Errorf("intent %s is not approved; approve it before planning it", record.ID)
+		}
+		prompt += "\n\n" + intentBrief(record, s.Root)
+	}
+	prompt += "\n\n# Task\n\n" + task + "\n\n# What to return\n\n" + r.Instructions
 	definition, _, err := roleFile(host, role, setting)
 	if err != nil {
 		return Dispatch{}, err
@@ -389,20 +444,60 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan string, shared, 
 // planBrief states the facts the CLI can verify. A dependent plan's branch is
 // prepared from its predecessors, so their work is already in its ancestry;
 // saying so prevents a worker from reimplementing what it inherited.
-func planBrief(record Record) string {
-	brief := "Plan " + record.ID
+func planBrief(record Record, root string) string {
+	brief := "# Plan " + record.ID
 	if record.Intent != "" {
 		brief += " of intent " + record.Intent
 	}
+	brief += "\n\nFile: " + filepath.Join(root, record.Path)
 	brief += "\nRepositories: " + strings.Join(record.Repositories, ", ")
 	if len(record.DependsOn) > 0 {
 		brief += "\nDepends on: " + strings.Join(record.DependsOn, ", ") +
-			"\nTheir completed work is expected in this branch's ancestry. Build on it rather than reimplementing it." +
+			"\n\nTheir completed work is expected in this branch's ancestry. Build on it rather than reimplementing it." +
 			"\nAny plan running beside you is invisible in a separate worktree and is reconciled later by the coordinator. Do not guess at its changes; report an interface you assume it may also be changing."
 	}
-	_, body, err := splitRecord([]byte(record.Content))
-	if err == nil && len(strings.TrimSpace(string(body))) > 0 {
-		brief += "\n\nPlan record (authoritative):\n" + strings.TrimSpace(string(body))
+	return brief + recordBody(record, "plan")
+}
+
+// intentBrief carries the approved outcome a planner plans against. No plan is
+// named, because deciding whether there is one plan or several is the planner's
+// answer to return rather than a number it is handed.
+func intentBrief(record Record, root string) string {
+	brief := "# Intent " + record.ID +
+		"\n\nFile: " + filepath.Join(root, record.Path) +
+		"\nApproved: " + string(record.ApprovedAt)
+	if len(record.Repositories) > 0 {
+		brief += "\nRepositories: " + strings.Join(record.Repositories, ", ")
 	}
-	return brief
+	return brief + recordBody(record, "intent")
+}
+
+// A quoted record is the copy the agent works from. Sending the agent to open
+// the file instead costs a search of the whole repository to find it.
+//
+// The record is fenced because its own headings would otherwise read as sections
+// of the brief that contains it, and a plan quoting code carries fences of its
+// own, so the fence is always longer than the longest run already inside.
+func recordBody(record Record, kind string) string {
+	_, raw, err := splitRecord([]byte(record.Content))
+	body := strings.TrimSpace(string(raw))
+	if err != nil || body == "" {
+		return ""
+	}
+	fence := strings.Repeat("`", max(3, longestRun(body, '`')+1))
+	return "\n\nThe full " + kind + " follows and is authoritative. You do not need to open the file.\n\n" +
+		fence + "markdown\n" + body + "\n" + fence
+}
+
+func longestRun(text string, char byte) int {
+	longest, run := 0, 0
+	for i := 0; i < len(text); i++ {
+		if text[i] == char {
+			run++
+			longest = max(longest, run)
+		} else {
+			run = 0
+		}
+	}
+	return longest
 }

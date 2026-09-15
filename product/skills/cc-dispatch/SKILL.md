@@ -41,8 +41,12 @@ context-circuit-cli --workspace <root> --json agent dispatch \
   --task '<bounded assignment and references>'
 ```
 
-Omit `--plan` when the task is not plan work. Add `--shared` only when several
-workers use one worktree.
+Dispatch a planner against `--intent <intent-id>`, never `--plan`: the planner
+returns the plan shape, so numbering a plan first settles the split it was asked
+to propose, and an intent that turns out to hold several plans has no single ID
+to pass. Create the plan records afterwards, from what it returns. Omit both when
+the task is not record work. Add `--shared` only when several workers use one
+worktree.
 
 Use `--review-requested` only to represent the actual user request for review.
 It supplies no human approval by itself. Include the intended base/head revisions
@@ -59,6 +63,14 @@ role, working directory, and supported model/effort settings. The CLI returns
 `launch_required: true`; it has not launched or completed an agent. Prefer a fresh
 context, and always use a fresh independent reviewer context. Never reuse the
 implementer's session as its independent reviewer.
+
+**Pass `prompt` unmodified.** It is the whole brief: working directory, ownership,
+the quoted intent or plan body, the task, and what to return. Appending a line is
+allowed; rewriting, summarizing, or retyping it from memory is not. A shortened
+brief looks equivalent and is not — the quoted record is the copy that stops the
+agent from searching the repository for a file it was never given, and dropping it
+costs far more time than the paragraph saved. If a detail is missing, put it in
+`--task` and dispatch again rather than editing the returned text.
 
 - Codex: use the registered `cc_<role>` agent or the available spawn tool's role,
   model and reasoning-effort fields. For tools where full-history inheritance
@@ -96,6 +108,16 @@ integration merge rather than stopping the run.
 
 Give workers explicit ownership and the actual prepared worktree paths. Tell them
 they share the codebase and must preserve other agents' edits. Wait for results,
-inspect changes, integrate in dependency order, and update the existing plan with
-progress and limitations. Preserve interrupted work. Do not create automatic
-repair loops, nested agent chains, execution records, or delivery side effects.
+then integrate in dependency order and record progress and limitations against
+the plan. Preserve interrupted work. Do not create automatic repair loops, nested
+agent chains, execution records, or delivery side effects.
+
+**Do not re-run a worker's checks or re-read its diff to satisfy yourself.** The
+worker reports the commands it ran and their real outcome; read that report and
+integrate from it. Repeating the reading and the test run is the expensive half
+of the work done twice, and it is why delegation saves nothing. Read the diff
+when integration needs it — resolving a merge, or a report that names a conflict,
+a failure, or an assumption — not as a routine audit of work already reported. A
+worker that reports a failure is reporting, not failing: carry it forward. If you
+want a second pair of eyes on the change, that is independent review, which is
+read-only, separately dispatched, and only on the user's request.
