@@ -118,10 +118,12 @@ repositories, code this session has not read, or a read that would take a seriou
 part of the remaining context. Investigate in the session when it already holds
 that code, since a planner would re-derive what is present and add only latency.
 One planner runs per intent; splitting it per repository destroys the
-cross-repository order it exists to produce. A `not-feasible` return is a complete
-answer: write no plan, and report it with its evidence. A return that the outcome
-or success criteria must change goes back for renewed approval. The coordinator
-writes every record either way.
+cross-repository order it exists to produce. Dispatch it against the intent: the
+plan shape is what it returns, so create the plan records from its answer rather
+than numbering one first and handing it over. A `not-feasible` return is a
+complete answer: write no plan, and report it with its evidence. A return that the
+outcome or success criteria must change goes back for renewed approval. The
+coordinator writes every record either way.
 
 Dispatch explorers when several independent codebase questions stand between this
 session and a grounded intent or plan. Each is narrow and read-only, they run in
@@ -197,9 +199,12 @@ See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
 Implement the approved outcome in dependency order across the relevant
 repositories. Run appropriate tests, lint, and builds as ordinary implementation
-checks. Record useful progress, observed results, remaining work, and repository
-or PR references in the same plan. On resume, inspect actual branches and diffs
-before trusting old notes. Preserve failed, partial, and interrupted work; failure
+checks. A plan record holds the plan — approach, tasks and order, risks and
+checks — so record progress against it when there is something a later reader
+needs and would not otherwise have: a partial result, a failing check, an
+assumption, a repository or PR reference. Completion carries its own summary, so
+do not append a running log of work that finished as planned. On resume, inspect
+actual branches and diffs before trusting old notes. Preserve failed, partial, and interrupted work; failure
 in one repository does not discard successful work in another.
 
 Do not start independent verification during execution, trigger a reviewer from
@@ -223,11 +228,20 @@ without re-asking. Confirm the shape once before starting.
 
 Then run to completion without further prompting: prepare each worktree from the
 reported start, perform any reported integration merge with ordinary Git, dispatch
-a worker per plan, wait, inspect real diffs, run the repositories' ordinary checks,
-and record progress. Mark a plan complete only when it actually landed and its
-checks passed; `record order` reads that to release the next wave, so an unfinished
-plan holds its dependents automatically. Recompute the order after each wave
-instead of trusting the first result.
+a worker per plan, wait, and carry what each worker reports into completion. Mark a
+plan complete only when it actually landed and its checks passed; `record order`
+reads that to release the next wave, so an unfinished plan holds its dependents
+automatically. Recompute the order after each wave instead of trusting the first
+result.
+
+A worker reports the checks it ran and their real outcome, and that report is what
+you integrate from. Do not re-read its diff or re-run its checks to satisfy
+yourself: that repeats the expensive half of the work and is why delegation stops
+paying. Read the diff where integration needs it — a merge to resolve, or a report
+naming a conflict, a failure, or an assumption — not as a routine audit. A report
+of failing checks is information; carry it into the plan's progress and leave the
+plan incomplete rather than repairing in a loop. An implementation this session
+performed itself is checked by this session as usual; nothing above changes that.
 
 Resolve a conflict from an integration merge directly: both sides are plans of this
 same approved intent, and their records and diffs are available. Preserve both

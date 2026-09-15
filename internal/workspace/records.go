@@ -290,7 +290,7 @@ func (s *Store) CreateRecord(kind, slug, title, intent string, repos, dependenci
 	if kind == "plan" {
 		folder = "plans"
 		record.Intent, record.Repositories, record.DependsOn = intent, unique(repos), unique(dependencies)
-		body = "## Approach\n\nGround the approach in the selected repositories.\n\n## Tasks and order\n\n- Describe implementation steps and dependencies.\n\n## Risks and checks\n\nRecord useful risks and ordinary test, lint, or build commands.\n\n## Progress and result\n\nRecord changes, observed checks, remaining work, and delivery references here.\n"
+		body = "## Approach\n\nGround the approach in the selected repositories.\n\n## Tasks and order\n\n- Describe implementation steps and dependencies.\n\n## Risks and checks\n\nRecord useful risks and ordinary test, lint, or build commands.\n"
 	}
 	header, err := yaml.Marshal(record)
 	if err != nil {

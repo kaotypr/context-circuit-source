@@ -59,8 +59,9 @@ agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEV
                       [--local] (write this machine's override, not the shared setting)
 agent setup           [--host codex|claude-code|cursor] (default: every host)
 agent dispatch        --host HOST --role ROLE --task TEXT --path DIRECTORY
-                      [--plan ID] [--shared] [--review-requested]
-                      (host must launch returned specification)
+                      [--intent ID] [--plan ID] [--shared] [--review-requested]
+                      (--intent plans an approved intent; --plan implements one.
+                      Host must launch the returned prompt unmodified.)
 version
 
 Approval, completion, fetch, and removal are explicit operations. The caller must
@@ -213,7 +214,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("host", "role", "model", "effort")
 		f.BoolVar(&localTiering, "local", false, "write this machine's override instead of the shared setting")
 	case "agent dispatch":
-		add("host", "role", "task", "path", "plan")
+		add("host", "role", "task", "path", "plan", "intent")
 		f.BoolVar(&shared, "shared", false, "several workers share this worktree")
 		f.BoolVar(&reviewRequested, "review-requested", false, "user explicitly requested independent review")
 	case "agent settings":
@@ -242,14 +243,17 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return ""
 	}
 	optional := map[string]bool{"remote": true}
-	optional["intent"] = command == "record create" || command == "record order"
+	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
 			optional[k] = true
 		}
 	}
+	// A planner takes --intent and a worker takes --plan; neither is universal,
+	// so the command accepts both as optional and refuses the wrong pairing by
+	// role, where the reason can be stated.
 	if command == "agent dispatch" {
-		optional["plan"] = true
+		optional["plan"], optional["intent"] = true, true
 	}
 	// A workspace is opened in more than one host, so setup covers them all
 	// unless the caller narrows it to one.
@@ -305,7 +309,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "agent setup":
 			return s.SetupAgents(get("host"))
 		case "agent dispatch":
-			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), get("plan"), shared, reviewRequested)
+			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), get("plan"), get("intent"), shared, reviewRequested)
 		case "check":
 			issues, e := s.Check(ctx)
 			checkFailed = len(issues) > 0

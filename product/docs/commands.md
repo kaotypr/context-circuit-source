@@ -108,6 +108,8 @@ Subagent setup and dispatch:
 context-circuit-cli agent settings
 context-circuit-cli agent configure --host codex --role worker --model MODEL_ID --effort high
 context-circuit-cli agent setup
+context-circuit-cli --json agent dispatch --host codex --role planner \
+  --intent i001 --path /actual/repository --task 'Plan the approved outcome of i001'
 context-circuit-cli --json agent dispatch --host codex --role worker \
   --plan p0001 --path /actual/worktree --task 'Implement the assigned tasks from p0001'
 ```
@@ -128,11 +130,20 @@ that never ran setup on this host names an agent type the host cannot resolve. I
 is a report, not a refusal: the prompt remains complete, so a live spawn tool can
 still carry it when native roles are unavailable.
 
-`--plan` adds the plan's repositories, dependencies, and record to the brief, and
-states that its dependencies' work is already in the branch's ancestry and that a
-concurrent sibling plan is invisible. `--shared` is for several workers inside one
-worktree: it replaces sole ownership of the directory with a duty to preserve the
-other workers' edits. Omit it when each worker has its own worktree.
+The returned `prompt` is the complete brief and is launched unmodified: it opens
+with the working directory, then ownership, then the quoted record, then the task,
+and ends with what the role must return. Quoting the record in full is what stops
+an agent from searching a repository for a file it was never handed.
+
+`--plan` adds the plan's file path, repositories, dependencies, and full record to
+the brief, and states that its dependencies' work is already in the branch's
+ancestry and that a concurrent sibling plan is invisible. `--intent` does the same
+for an approved intent and is how a planner is dispatched; a planner refuses
+`--plan`, because the plan shape is the answer it returns rather than a number it
+is handed, and it refuses an intent that is not yet approved. `--shared` is for
+several workers inside one worktree: it replaces sole ownership of the directory
+with a duty to preserve the other workers' edits. Omit it when each worker has its
+own worktree.
 
 Worktree `--copy-path` adds a specific ignored runtime entry. `--copy-mode` accepts
 `auto`, `required`, `copy`, or `off`. The reuse report distinguishes native CoW

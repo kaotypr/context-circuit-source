@@ -33,6 +33,22 @@ criteria must change returns for renewed approval instead. Because read-only
 roles run nothing, a check either role names is one it read, never one it saw
 pass.
 
+Plan shape being the planner's answer is why a planner is dispatched against an
+approved intent and refuses a plan ID: numbering a plan first settles the split
+it was asked to propose, and an intent that turns out to hold several plans has
+no single ID to hand it. The same reasoning refuses an unapproved intent, since
+planning one plans an outcome nobody agreed to.
+
+## A brief is the whole context
+
+A subagent starts with nothing, so the brief is read top to bottom and is
+composed in that order: working directory, ownership, the record, the task, and
+last what to return. Every record it names is quoted in full, because an agent
+sent to open a file searches the repository to find it and arrives having read
+far more than the file. For the same reason the returned prompt is launched
+unmodified — a coordinator that retypes it in its own words drops the quoted
+record, and the agent then re-derives everything the coordinator already knew.
+
 ## Settings without a model catalog
 
 Role tiering is a concrete model-and-effort pair per role and host, every pair
@@ -121,6 +137,18 @@ reimplemented, and the fact that a concurrent sibling is invisible and must not
 be guessed at. A worker reporting an interface it assumes a sibling may also be
 changing is supplying information, not failing; that goes to the integration
 merge rather than stopping the run.
+
+## Integration reads the report, not the diff
+
+A worker reports the files it changed, the checks it ran, and their real outcome,
+and the coordinator integrates from that report. Re-reading the diff and re-running
+the checks as a routine audit repeats the expensive half of the work and is what
+makes delegation cost more than doing it directly. The coordinator reads the diff
+where integration needs it — a merge to resolve, or a report naming a conflict, a
+failure, or an assumption — and a report of failing checks is carried into the
+plan rather than repaired in a loop. Wanting a second pair of eyes on the change
+is independent review, which is read-only, separately dispatched, and requested by
+the user.
 
 ## Independent review
 

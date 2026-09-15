@@ -33,9 +33,18 @@ re-asking, and confirm the shape once before starting.
 
 Confirm once, then run to completion without further prompting: prepare each
 worktree from the reported start, perform any reported integration merge with
-ordinary Git, dispatch a worker per plan, wait, inspect real diffs rather than
-workers' claims, run the repositories' ordinary checks, record progress, and
-mark work complete only when it actually landed and its checks passed.
+ordinary Git, dispatch a worker per plan, wait, and mark work complete only when
+it actually landed and its checks passed.
+
+Completion is judged from what the worker reports: the files it changed, the
+checks it ran, and their real outcome. Re-reading the diff and re-running those
+checks as a routine audit repeats the expensive half of the work and is what
+makes a delegated wave slower than doing it directly. The trade is deliberate and
+worth naming: the coordinator is trusting a report it did not reproduce, so the
+worker is told that a check it did not run is one nobody ran, and that a failure
+is reported plainly rather than worked around. Read the diff where integration
+needs it — a merge to resolve, or a report naming a conflict, a failure, or an
+assumption — not to satisfy yourself that work already reported was really done.
 
 That last condition is load-bearing. Ordering reads completion to release the
 next wave, so unfinished work holds its dependents automatically and there is no

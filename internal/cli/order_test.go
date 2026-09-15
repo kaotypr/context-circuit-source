@@ -239,7 +239,10 @@ func TestDispatchBriefsWorkerOnPlanAncestry(t *testing.T) {
 		"Depends on: p0001, p0002",
 		"expected in this branch's ancestry",
 		"invisible in a separate worktree",
-		"Plan record (authoritative)",
+		"The full plan follows and is authoritative",
+		// A brief names the file in the host's own path syntax, so the
+		// expectation is built the same way rather than assuming a separator.
+		filepath.Join("plans", "p0003-three.md"),
 	} {
 		if !strings.Contains(spec.Prompt, want) {
 			t.Fatalf("brief missing %q:\n%s", want, spec.Prompt)
@@ -247,6 +250,66 @@ func TestDispatchBriefsWorkerOnPlanAncestry(t *testing.T) {
 	}
 	if !spec.LaunchRequired {
 		t.Fatal("a specification is not a launched agent")
+	}
+	// An agent reads the brief top to bottom with nothing else in context, so
+	// where the work happens precedes what the work is.
+	if !strings.HasPrefix(spec.Prompt, "# Working directory\n\n"+spec.WorkingDirectory) {
+		t.Fatalf("a brief opens with its working directory:\n%s", spec.Prompt)
+	}
+	if strings.Index(spec.Prompt, "# Plan p0003") > strings.Index(spec.Prompt, "# Task") {
+		t.Fatalf("the plan precedes the task it assigns:\n%s", spec.Prompt)
+	}
+	// Quoting the record is what stops a worker from searching the repository
+	// for a plan file it was never handed.
+	for _, heading := range []string{"## Approach", "## Tasks and order", "## Risks and checks"} {
+		if !strings.Contains(spec.Prompt, heading) {
+			t.Fatalf("brief missing quoted %q:\n%s", heading, spec.Prompt)
+		}
+	}
+	if strings.Contains(spec.Prompt, "## Progress and result") {
+		t.Fatalf("a plan holds the plan; progress is not a template section:\n%s", spec.Prompt)
+	}
+}
+
+// A planner returns the plan shape, so handing it a numbered plan settles the
+// split it was dispatched to propose, and an intent that turns out to hold
+// several plans has no single ID to pass.
+func TestPlannerDispatchesAgainstAnApprovedIntent(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "planner",
+		"--plan", "p0001", "--path", f.root, "--task", "Plan it."); !strings.Contains(out, "not an already numbered --plan") {
+		t.Fatalf("unexpected error: %s", out)
+	}
+	// Planning an unapproved intent plans an outcome nobody agreed to.
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "planner",
+		"--intent", "i001", "--path", f.root, "--task", "Plan it."); !strings.Contains(out, "not approved") {
+		t.Fatalf("unexpected error: %s", out)
+	}
+	f.ok("record", "approve", "--id", "i001", "--text", "User approved the billing outcome.")
+	var spec workspace.Dispatch
+	out := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "planner",
+		"--intent", "i001", "--path", f.root, "--task", "Plan the approved outcome.")
+	if err := json.Unmarshal([]byte(out), &spec); err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{
+		"# Intent i001",
+		filepath.Join("intent", "i001-billing.md"),
+		"The full intent follows and is authoritative",
+		"none is yours to number",
+	} {
+		if !strings.Contains(spec.Prompt, want) {
+			t.Fatalf("planner brief missing %q:\n%s", want, spec.Prompt)
+		}
+	}
+	if strings.Contains(spec.Prompt, "# Plan p") {
+		t.Fatalf("a planner is handed no plan number:\n%s", spec.Prompt)
+	}
+	// --intent is the planner's pairing; a worker implements a numbered plan.
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "worker",
+		"--intent", "i001", "--path", f.root, "--task", "Implement."); !strings.Contains(out, "other roles take --plan") {
+		t.Fatalf("unexpected error: %s", out)
 	}
 }
 
@@ -297,11 +360,12 @@ func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	f.ok("record", "approve", "--id", "i001", "--text", "User approved the billing outcome.")
 	read := func() workspace.Dispatch {
 		t.Helper()
 		var spec workspace.Dispatch
 		out := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "planner",
-			"--path", f.root, "--task", "Investigate the approved intent.")
+			"--intent", "i001", "--path", f.root, "--task", "Investigate the approved intent.")
 		if err := json.Unmarshal([]byte(out), &spec); err != nil {
 			t.Fatal(err)
 		}
@@ -335,7 +399,7 @@ func TestDispatchReportsMissingRoleDefinition(t *testing.T) {
 	// Another host's definitions are separate; setup for one says nothing of it.
 	var other workspace.Dispatch
 	out := f.ok("agent", "dispatch", "--host", "cursor", "--role", "planner",
-		"--path", f.root, "--task", "Investigate the approved intent.")
+		"--intent", "i001", "--path", f.root, "--task", "Investigate the approved intent.")
 	if err := json.Unmarshal([]byte(out), &other); err != nil {
 		t.Fatal(err)
 	}
