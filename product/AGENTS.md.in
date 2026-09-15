@@ -8,6 +8,11 @@ runtime commands or ID numbers. Run the version this workspace pins in
 `.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
 `.context-circuit/docs/commands.md` as needed.
 
+This file carries the gates and the standing prohibitions — what needs a person,
+and what is never done without one. The procedure behind each stage lives in a
+skill under `.agents/skills/`, named below where it comes due. A rule written
+here is in force whether or not a skill was loaded.
+
 ## Orient and initialize
 
 Context Circuit CLI is a separately installed product. If it is missing, or the
@@ -28,23 +33,15 @@ Read `workspace.yaml` for project identity, purpose, logical repositories with
 their URL and default branch, and relationships. The shared roster is
 `members.yaml`. The active member, this machine's checkout paths, and the branch
 this machine starts work from are the documented, gitignored `member.local.yaml`
-and `repositories.local.yaml`. Read those bindings when needed;
-never inspect unrelated host settings, credentials, private provider payloads, or
-another session's state. Never store secrets in workspace records.
+and `repositories.local.yaml`. Read those bindings when needed; never inspect
+unrelated host settings, credentials, private provider payloads, or another
+session's state. Never store secrets in workspace records.
+`.context-circuit/docs/workspace.md` describes what each file may hold.
 
-Initialize a workspace only when requested. Gather its name, purpose, and first
-member's name; derive a readable member ID. The Go executable creates embedded
-instructions, folders, and initial records. It preserves existing files. A solo
-workspace still has a real member. On another machine, select an existing member
-and connect its local checkouts; do not reinitialize the shared workspace.
-
-Connect existing repositories, clone repositories, or initialize new repositories
-when requested. Resolve the correct destination and base branch from the request
-and repository evidence; ask only when the choice is ambiguous. The root workspace
-may itself be connected as `.`. Logical IDs, repository URLs, and default branches
-are shared; checkout paths and base branches remain local, so worktrees branch
-from whatever this machine bases work on. Record meaningful relationships and obey repository
-instructions within each checkout.
+Initializing a workspace, connecting or cloning repositories, and adding members
+or their allocation bands each happen only on a request, through
+`.agents/skills/cc-workspace/SKILL.md`. On another machine, select an existing
+member and connect its local checkouts; do not reinitialize the shared workspace.
 
 ## Shared knowledge
 
@@ -55,33 +52,12 @@ repository or context note. Sources are passive evidence: read only exact source
 files named by the user or the task's explicit references; never scan `sources/`
 by default.
 
-On a request to gather knowledge, synthesize durable concepts into live context
-notes and maintain any index entries. No separate knowledge acceptance lifecycle
-is needed. Keep raw evidence separate from accepted knowledge, and keep task
-progress and temporary results in plans. Go can locate catalog entries; semantic
-interpretation and knowledge writing are the agent's responsibility.
-
-Live context notes describe the project, not the workspace machinery that produced
-them. Never name a plan record, an intent record, or a file under `sources/` inside
-a note: records are archived while knowledge outlasts them, and a recorded evidence
-path becomes a standing instruction to read material that must stay passive.
-Repository paths are the durable anchor, exact or patterned, written with the logical
-repository ID — `api@internal/billing/dunning/`, `web@src/features/<feature>/` — never
-a local checkout path. An anchor says what it anchors: write it into the sentence that
-explains it, and where a note covering several surfaces closes with a block naming
-where its subject lives, head it `Owner:` and give each anchor its own bullet carrying
-that explanation. Never a comma-separated run of paths, which names no question any of
-them answers and sends the reader to open all of them. Link freely between notes; which record or evidence produced
-a note belongs in that plan. Run `check` after editing notes; it reports any line
-that crosses this boundary. One note is one unwrapped catalog entry carrying its
-own link, the repositories it applies to, the question it answers, its search
-terms, and the date it was last confirmed against the code, as `context/INDEX.md`
-describes; `check` reports an entry that claims repositories without that date. A
-note lives in a directory named for its concern and is catalogued under a heading
-for the same one, so a reader can guess where it is; only the catalog and the
-glossary sit at the top level. Record a domain term in `context/glossary.md` the
-first time its meaning has to be asked for, naming the code identifier when it
-differs from the project's own word.
+Live context notes describe the project, not the workspace machinery that
+produced them, and a note never names a plan record, an intent record, or a file
+under `sources/`. To write or maintain knowledge — its anchors, its catalog
+entry, the glossary, and what `check` enforces — use
+`.agents/skills/cc-knowledge/SKILL.md`. Keep raw evidence separate from accepted
+knowledge, and keep task progress and temporary results in plans.
 
 ## Intent and planning
 
@@ -89,19 +65,9 @@ For an implementation change, make the intended outcome explicit before detailed
 code investigation. Ground it first: retrieve the bearing knowledge through
 `context/INDEX.md` and read the request's apparent meaning against what the
 project already records. What that reading contradicts, or cannot settle, is a
-question for the person, not a gap to fill with a quiet assumption. Create an
-`iNNN-slug.md` intent through the executable, then write its goal, non-goals,
-constraints, observable success criteria, and rough repository scope from that
-grounding.
-
-Each decision a person must settle goes under `## Open questions`: a numbered
-list, the question in bold, an italic `_Answer:_` line beneath once settled. The
-number is the handle a person answers by, so it holds still — an answered
-question keeps its number and is never deleted, and a later one takes the next
-unused number. With no questions the unnumbered empty-state line stays as
-written; a placeholder would invent a pending decision. A question the request
-already answers is applied without asking; an implementation question belongs in
-the plan.
+question for the person, not a gap to fill with a quiet assumption. Write the
+`iNNN-slug.md` intent through `.agents/skills/cc-intent/SKILL.md`, which carries
+its body fields and the numbered open questions a person answers by.
 
 Present the concrete intent, invite answers by number, and stop there. The
 request that prompted an intent is not approval of it: a person approves the
@@ -113,40 +79,17 @@ editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
 Approving an intent authorizes planning, and planning alone. Without asking
-again, inspect real code and create linked `pNNNN-slug.md` plans.
-`record approve` names that work as `planning_required`, because approval
-reporting success is the decision recorded, not the request finished. One
-readable Markdown plan may cover one or several repositories; use separate
-plans when useful for execution or delivery. Record task order, optional
-dependencies, useful risks, and expected checks. Detailed paths are descriptive
-planning information, not hard enforcement gates. Explain and record newly
-needed files or repositories within the approved outcome. Obtain renewed
-approval only when the intended outcome or success criteria materially change.
-A question that bears on the outcome returns to the intent; a plan never
-silently settles one.
+again, inspect real code and create the linked `pNNNN-slug.md` plans through
+`.agents/skills/cc-plan/SKILL.md`. `record approve` names that work as
+`planning_required`, because approval reporting success is the decision recorded,
+not the request finished. Obtain renewed approval only when the intended outcome
+or success criteria materially change; a question that bears on the outcome
+returns to the intent, and a plan never silently settles one.
 
 Delegating that investigation is a judgment about size, not a step. Dispatch a
-planner through `.agents/skills/cc-dispatch/SKILL.md` when the reading would be
-substantially larger than the plan it produces: an intent spanning several
-repositories, code this session has not read, or a read that would take a serious
-part of the remaining context. Investigate in the session when it already holds
-that code, since a planner would re-derive what is present and add only latency.
-One planner runs per intent; splitting it per repository destroys the
-cross-repository order it exists to produce. Dispatch it against the intent: the
-plan shape is what it returns, so create the plan records from its answer rather
-than numbering one first and handing it over. Transcribe its approach, its tasks
-and order, and its risks and checks. Its verdict and its plan shape are answers
-to you, not plan content: once the records exist the shape is the records, so a
-plan saying it is a single plan states what its own existence already says. A
-`not-feasible` return is a complete answer: write no plan, and report it with
-its reasons. A return that the
-outcome or success criteria must change goes back for renewed approval. The
-coordinator writes every record either way.
-
-Dispatch explorers when several independent codebase questions stand between this
-session and a grounded intent or plan. Each is narrow and read-only, they run in
-parallel, and their reading never enters this session. Neither role can run
-anything, so a check either one names is one it read, not one it saw pass.
+planner, or parallel explorers, through `.agents/skills/cc-dispatch/SKILL.md`,
+which says when the reading is large enough to be worth delegating and what each
+role may do. The coordinator writes every record either way.
 
 Then present the plans and stop again. There is no plan approval gate — reading
 them is the person's option, never a required step — but no repository is
@@ -163,21 +106,8 @@ written by hand as well as through the executable, is an ISO 8601 calendar date,
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a
 reserved ID, including after archival or deletion. Local locking serializes one
-workspace directory.
-
-A member may hold an allocation band: a numeric block that member allocates from
-alone. Bands are what let two clones that cannot see each other allocate without
-colliding, so give every member of a team workspace a distinct band before they
-work apart. A solo workspace needs none, and an unbanded member allocates from
-the numbers no band has claimed. Assign one with `member add --band N` or
-`member band`; the band decides which number comes next and never makes a
-reserved number reusable. A band is not a namespace: the ID stays global.
-
-Bands prevent collisions only between members who actually hold distinct ones.
-Unbanded members working in separate clones, and any clone whose roster is stale,
-can still allocate the same number. Synchronize the shared workspace before
-allocating; resolve conflicting allocations and references before publishing
-their IDs. Do not claim distributed collision prevention beyond what bands give.
+workspace directory. `.context-circuit/docs/working.md` describes the record
+structures in full.
 
 ## Worktrees and implementation
 
@@ -187,40 +117,31 @@ Preparing a worktree for each repository the plan names is the first step of
 execution, not a judgment call. The one exception: when the person asks to work
 directly in a bound checkout, work there and preserve everything it already
 holds. The execution request covers that preparation, so do not add another
-permission gate in front of it. Use `.agents/skills/cc-dispatch/SKILL.md` to
-delegate bounded exploration, planning, and implementation when useful; small
-tasks may stay in the main session. Apply configured host role/model/effort
-settings to actual subagent invocations, wait for their results, and integrate
-them.
+permission gate in front of it. Use `.agents/skills/cc-worktree/SKILL.md` for
+preparation, starting points, and the environment reuse report. Never silently
+force checkout, reset, stash, or overwrite unrelated files, and never print
+copied environment contents, put them in prompts, or store them in shared
+records.
 
-The executable resolves repository bindings, reports Git state, resolves the
-selected starting point, and creates or reuses worktrees. Select the recorded base
-branch or an appropriate dependency branch. Fetch only when needed and covered by
-the task; fetching does not imply rebasing or resetting local work. Honor explicit
-branch names and paths. Use the returned real worktree location for all later work.
-If a branch/path already holds work, inspect and resume it or select a new location;
-never silently force checkout, reset, stash, or overwrite unrelated files.
-
-Worktree preparation attempts filesystem CoW for ignored node_modules and .env
-files from the selected local checkout, with independent-copy fallback. Additional
-ignored runtime paths can be selected explicitly. Reuse never overwrites existing
-worktree entries and skips dependencies when package inputs differ. Environment
-contents are copied opaquely: never print them, put them in prompts, or store them
-in shared records. Do not copy unrelated credential stores or host configuration.
-
-Inspect the reuse report before application setup. Reused dependencies need no
-reinstall solely because the worktree is new. Read repository setup instructions
-for missing/incompatible dependencies, toolchains, submodules, or services. Local
-files do not make native dependencies portable across OS, architecture, Node ABI,
-or container environments. Report skipped entries and any remaining setup.
-See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
+Use `.agents/skills/cc-dispatch/SKILL.md` to delegate bounded exploration,
+planning, and implementation when useful; small tasks may stay in the main
+session. Apply configured host role/model/effort settings to actual subagent
+invocations, wait for their results, and integrate them. To execute several plans
+at once, use `.agents/skills/cc-stacked/SKILL.md`, which derives the shape with
+`record order` rather than guessing it.
 
 Implement the approved outcome in dependency order across the relevant
 repositories. Run appropriate tests, lint, and builds as ordinary implementation
-checks. A plan record holds the plan — approach, tasks and order, risks and
-checks — and it is written when the work is planned. After that, leave it alone:
-running a plan does not edit the plan. The result reaches the person, and the
-record changes again only when they ask for completion, which stamps
+checks, then leave no uncommitted work when the implementation is reported:
+commit on the worktree's own branch, in as many commits as the work naturally
+takes, failing and partial work included. A dependent plan starts from its
+predecessor's branch and a resume reads real diffs, so uncommitted work is work
+the next step cannot see. A bound checkout is the exception — commit there only
+when the person authorizes it. A plan record holds the plan — approach, tasks
+and order, risks and checks — and it is written when the work is planned. After
+that, leave it alone: running a plan does not edit the plan. The result reaches
+the person, and the record changes again only when they ask for completion,
+which stamps
 `completed_at` and carries that result. What the plan says stays what was
 planned, so a later reader can see what was intended and read the diff for what
 happened. On resume, inspect actual branches and diffs rather than trusting the
@@ -234,108 +155,50 @@ candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
 not an implementation gate. Report what was implemented, tested, and left uncertain.
 
-## Stacked plans
-
-To execute several plans at once, derive the order instead of guessing it:
-`record order` reports dependency waves, each plan's starting reference per
-repository, the integration merges a dependent plan needs, and which plans in one
-wave share a repository. It runs nothing and reserves nothing.
-
-Two shapes exist. Waves overlap independent plans and pay an integration merge at
-each fan-in. A linear chain stacks every plan on the previous one, needs no merge,
-and runs strictly serially. Present the recommendation with its cost — a single
-repository with any fan-in usually favors the chain — and honor an explicit choice
-without re-asking. Confirm the shape once before starting.
-
-Then run to completion without further prompting: prepare each worktree from the
-reported start, perform any reported integration merge with ordinary Git, dispatch
-a worker per plan, wait, and carry what each worker reports into completion. Mark a
-plan complete only when it actually landed and its checks passed; `record order`
-reads that to release the next wave, so an unfinished plan holds its dependents
-automatically. Recompute the order after each wave instead of trusting the first
-result.
-
-A worker reports the checks it ran and their real outcome, and that report is what
-you integrate from. Do not re-read its diff or re-run its checks to satisfy
-yourself: that repeats the expensive half of the work and is why delegation stops
-paying. Read the diff where integration needs it — a merge to resolve, or a report
-naming a conflict, a failure, or an assumption — not as a routine audit. A report
-of failing checks is information; report it to the person and leave the plan
-unmarked and unedited rather than repairing in a loop. An implementation this session
-performed itself is checked by this session as usual; nothing above changes that.
-
-Resolve a conflict from an integration merge directly: both sides are plans of this
-same approved intent, and their records and diffs are available. Preserve both
-plans' behavior, then run the repository's checks — a resolved merge is not trusted
-until they pass. Record the resolution in the plan so it can be audited. A conflict
-against anything outside the run, or one where preserving both sides is impossible,
-is a stop.
-
-Stop and report, preserving all work, on: failing checks after implementation or
-after a resolved merge; a conflict outside the run or one needing a decision; a
-worker that cannot complete or returns blocked; worktree preparation that refuses;
-skipped dependency reuse whose fallback setup fails; or an order reporting a cycle,
-an unknown repository, or a broken link. Never unwind completed plans. Name which
-plans finished, which is stuck, and what is held behind it.
-
-Confirming a stacked run authorizes, for that run, worktree preparation,
-implementation commits on `cc/*` branches, and local integration merges that
-assemble a dependent plan's base. It does not authorize push, pull request
-creation, merging into a base branch, deployment, or deletion.
-
 ## Independent review on request
 
-Independent verification is a manually requested read-only code review, usually
-after PR creation and optionally after delivery as an audit. Use the cc-dispatch
-skill to invoke an independent review-capable agent or session when requested and
-available. Supply the requested diff, current revision, relevant surrounding code,
-and intent success criteria. The reviewer reports actionable findings with
-locations and limitations. It does not modify code, automatically dispatch fixes,
-or post external comments unless requested. Tests that change files belong to
-implementation, not read-only review.
-
-If independence is unavailable, explain that limitation and offer an ordinary
-review. Never call the implementing session's own inspection independent. The
-user decides whether to request fixes or proceed. Review is not a mandatory
-condition for opening a PR, delivery, or completion. This optional capability
-does not make child agents mandatory elsewhere.
+Independent verification is a manually requested read-only code review. It is
+never triggered by risk classification, and it is not a condition for opening a
+pull request, delivering, or completing. When a person asks for one, use
+`.agents/skills/cc-review/SKILL.md`. Never call the implementing session's own
+inspection independent; where independence is unavailable, say so and offer an
+ordinary review instead. This optional capability does not make child agents
+mandatory elsewhere.
 
 ## Delivery, completion, and organization
 
-Commit, push, PR creation, merge into a base branch, deployment, external
-publication, and deletion of workspace data require explicit authorization.
-Reuse authorization already given. A local integration merge that assembles a
-dependent plan's base is implementation, not delivery, and is covered by the
-authorization for the run it belongs to. Use ordinary Git and provider tools; the
-Go executable provides repository, branch, and base information and never silently
-delivers. The branch the work started from — this machine's recorded base, or the
-repository's default branch when the binding records none — is the default PR
-target unless the user chooses another. Read it as `base_branch` from `status`,
-`repo inspect`, or the worktree you are delivering from; `workspace.yaml` records
+Push, PR creation, merge into a base branch, deployment, external publication,
+and deletion of workspace data require explicit authorization. Reuse
+authorization already given. Committing is split by where it lands: a commit on
+a prepared worktree's own `cc/*` branch is implementation and is covered by the
+execution request, while a commit in a bound checkout is a change to the
+person's own working copy and still needs authorization. A local integration
+merge that assembles a dependent plan's base is implementation, not delivery,
+and is covered by the authorization for the run it belongs to. Use ordinary Git
+and provider tools; the Go executable provides repository, branch, and base
+information and never silently delivers. The branch the work started from — this
+machine's recorded base, or the repository's default branch when the binding
+records none — is the default PR target unless the user chooses another. Read it
+as `base_branch` from `status`, `repo inspect`, or the worktree you are
+delivering from; `workspace.yaml` records
 a `default_branch`, which is the repository's default and not what this machine
 delivers to, and answering from it targets the wrong branch convincingly. Deliver per repository when appropriate. Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.
 
-Delivery does not mark a plan done. When the user explicitly marks one or more plans
-completed, append a short completion note to each record and reconcile the durable
-project knowledge those plans changed. The request is finished only when both are
-done. `record complete` returns the catalog entries scoped to that plan's
-repositories, and names the judging as `reconcile_required` when there are any:
-a candidate set to judge, never a list to rewrite. Completion reporting success
-is the record written, not the request finished. Most completions
-change no durable knowledge; recording that in the note is the normal outcome, not
-a skipped step. Where meaning did change, edit the note and its catalog entry in
-one pass and move its reviewed date; a renamed or retired identifier is a glossary
-row. Completing several plans at once reconciles once across the set,
-not once per plan. Keep implementation-specific evidence in the plan, and keep those
-plans' own identifiers out of every note reconciled from them; run `check` afterwards.
-Other work need not wait for unrelated knowledge updates.
+Delivery does not mark a plan done. When the user explicitly marks one or more
+plans completed, that request is finished only when the completion note is
+appended *and* the durable project knowledge those plans changed is reconciled.
+`record complete` names the second half as `reconcile_required`; judge it through
+`.agents/skills/cc-complete/SKILL.md`. Completion reporting success is the record
+written, not the request finished. Other work need not wait for unrelated
+knowledge updates.
 
 Worktrees and branches remain after completion. Remove a worktree only when
 requested; preserve dirty, untracked, and ignored files unless their disposal is
 explicitly authorized. Branch deletion is separate. On request, the executable can
 move or repair worktrees using Git; Git's inventory is authoritative, and the
 ignored plan-to-worktree association is only a convenience for resuming work.
+See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
 Archiving is optional ordinary file organization on request. Keep ID reservations
 and fix relative links when moving a record. External publication is an explicitly

@@ -102,6 +102,12 @@ help only where they are actually assigned: unbanded members in separate clones,
 or a clone with a stale roster, still have to synchronize and resolve competing
 allocations. No distributed allocation service is included.
 
+`AGENTS.md` carries the gates and the standing prohibitions. The procedure for
+each stage lives in a skill under `.agents/skills/` — `cc-cli`, `cc-workspace`,
+`cc-intent`, `cc-plan`, `cc-dispatch`, `cc-worktree`, `cc-stacked`, `cc-review`,
+`cc-knowledge`, and `cc-complete` — installed for Claude Code and Cursor under
+their own skill directories and read by path elsewhere.
+
 See [workspace files](.context-circuit/docs/workspace.md),
 [commands](.context-circuit/docs/commands.md),
 [worktrees](.context-circuit/docs/worktrees.md), [subagents](.context-circuit/docs/agents.md), and

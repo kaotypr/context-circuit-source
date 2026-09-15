@@ -295,8 +295,13 @@ func TestARecordAssignsTheRolesItBriefs(t *testing.T) {
 	if !strings.Contains(whole.Prompt, "The full plan follows and is authoritative") {
 		t.Fatalf("dropping the task must not drop the plan:\n%s", whole.Prompt)
 	}
-	// The prohibition the coordinator kept restating belongs to the role.
-	for _, want := range []string{"open a pull request", "merge into the base branch"} {
+	// The prohibition the coordinator kept restating belongs to the role, and so
+	// does the commit: a dependent plan starts from a predecessor's branch, so
+	// work a worker leaves uncommitted is work the next plan cannot start from.
+	for _, want := range []string{
+		"opening a pull request", "merging into the base branch",
+		"leave nothing uncommitted when you report",
+	} {
 		if !strings.Contains(whole.Prompt, want) {
 			t.Fatalf("worker instructions missing %q:\n%s", want, whole.Prompt)
 		}
@@ -604,5 +609,37 @@ func TestApprovalNamesWhatItAuthorized(t *testing.T) {
 	required, _ := approved["planning_required"].(string)
 	if !strings.Contains(required, "plan") {
 		t.Fatalf("approval named no outstanding act: %+v", approved)
+	}
+}
+
+// Preparation does not derive order, so a dependent plan started from the base
+// branch gets a worktree missing the work it was meant to build on. Naming the
+// start is the coordinator's job; refusing is how it learns that.
+func TestPreparingADependentPlanNamesItsStart(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	i := f.intent("billing")
+	first := f.plan(i.ID, "one", "api")
+	second := f.plan(i.ID, "two", "api")
+	f.ok("record", "dependencies", "--id", second.ID, "--depends-on", first.ID)
+
+	// The predecessor has no branch yet, which is a different fault than
+	// forgetting the flag and is reported as one.
+	out := f.fail("worktree", "prepare", "--repo", "api", "--plan", second.ID)
+	if !strings.Contains(out, "does not have yet") || !strings.Contains(out, "implement and commit") {
+		t.Fatalf("an unimplemented dependency was not named: %s", out)
+	}
+
+	// Once the predecessor exists, the refusal names the exact start to pass.
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", first.ID))
+	out = f.fail("worktree", "prepare", "--repo", "api", "--plan", second.ID)
+	if !strings.Contains(out, "--start "+w.Branch) {
+		t.Fatalf("the refusal did not name the predecessor branch: %s", out)
+	}
+
+	// An explicit start is honored, including one that is not the predecessor.
+	dependent := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", second.ID, "--start", w.Branch))
+	if dependent.StartCommit != w.Head {
+		t.Fatalf("dependent worktree did not start from the predecessor: %+v", dependent)
 	}
 }

@@ -106,6 +106,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		return Worktree{}, err
 	}
 	repo := checkout.Path
+	var record Record
 	if plan != "" {
 		r, err := s.FindRecord(plan)
 		if err != nil {
@@ -114,6 +115,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		if !strings.HasPrefix(plan, "p") || !slices.Contains(r.Repositories, repoID) {
 			return Worktree{}, errors.New("plan does not include this repository")
 		}
+		record = r
 	}
 	if branch == "" && plan != "" {
 		branch = PlanBranch(plan, repoID)
@@ -184,6 +186,15 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		}
 	} else {
 		if start == "" {
+			// Preparation does not derive order, so a dependent plan started
+			// from the base branch gets a worktree missing the work it was
+			// meant to build on — which reads as the dependency having produced
+			// nothing. Name the start rather than choose it: with several
+			// predecessors the extras are integration merges, and that is the
+			// coordinator's to perform.
+			if dependency := s.dependencyStart(record, repoID); dependency.Base != "" {
+				return Worktree{}, dependencyStartError(ctx, repo, plan, dependency)
+			}
 			start = "refs/heads/" + checkout.BaseBranch
 			if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}"); err != nil {
 				start = "refs/remotes/origin/" + checkout.BaseBranch
@@ -375,4 +386,36 @@ func (s *Store) RepairWorktree(ctx context.Context, repoID, input string) error 
 		}
 	}
 	return nil
+}
+
+// dependencyStart reports the branch a dependent plan's worktree must start from
+// in one repository, plus any integration merges a second predecessor adds. An
+// empty base means the plan depends on nothing that touches this repository.
+func (s *Store) dependencyStart(plan Record, repo string) OrderStart {
+	if plan.ID == "" || len(plan.DependsOn) == 0 {
+		return OrderStart{}
+	}
+	return s.startFor(map[string]Record{}, plan, repo, "")
+}
+
+// dependencyStartError names the exact starting point to pass. A predecessor
+// whose branch does not exist yet has not been implemented and committed, which
+// is a different fault than forgetting the flag, so it is reported as one.
+func dependencyStartError(ctx context.Context, repo, plan string, start OrderStart) error {
+	missing := []string{}
+	for _, branch := range append([]string{start.Base}, start.Merge...) {
+		if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err != nil {
+			missing = append(missing, branch)
+		}
+	}
+	if len(missing) > 0 {
+		return fmt.Errorf("%s depends on work this repository does not have yet: %s missing; implement and commit those plans first, or name another starting point with --start",
+			plan, strings.Join(missing, ", "))
+	}
+	if len(start.Merge) > 0 {
+		return fmt.Errorf("%s depends on several plans in this repository: prepare with --start %s, then merge %s; run `record order` for the full shape",
+			plan, start.Base, strings.Join(start.Merge, ", "))
+	}
+	return fmt.Errorf("%s depends on work in this repository: prepare with --start %s, or name another starting point explicitly; the base branch does not contain it",
+		plan, start.Base)
 }

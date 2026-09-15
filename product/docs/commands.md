@@ -98,8 +98,12 @@ context-circuit-cli check
 ```
 
 `--reuse` explicitly selects an existing branch/worktree, without resetting it.
-`--discard` on removal explicitly authorizes disposing of its files; never add it
-merely to bypass a failure. No command auto-deletes branches, commits, delivers,
+Preparation derives no order, so a plan that records a dependency in the same
+repository is refused without `--start`, and the refusal names the predecessor
+branch to pass — or says which predecessor has not been implemented and committed
+yet. An explicit start is always honored, including one that is not the
+predecessor. `--discard` on removal explicitly authorizes disposing of its files;
+never add it merely to bypass a failure. No command auto-deletes branches, commits, delivers,
 runs application setup, executes a plan, or starts independent review.
 
 `template export --path NEW_DIRECTORY` writes the exact blank embedded seed for

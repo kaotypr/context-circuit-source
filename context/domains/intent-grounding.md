@@ -48,7 +48,9 @@ or its success criteria materially change.
 
 Owner:
 
-- `context-circuit-source@product/AGENTS.md.in` — what an intent is written
-  against and how a question reaches the person.
+- `context-circuit-source@product/AGENTS.md.in` — the approval gate an intent is
+  presented into, and that a request for a change is not consent to it.
+- `context-circuit-source@product/skills/cc-intent/SKILL.md` — what an intent is
+  written against, its body fields, and the numbered open-question convention.
 - `context-circuit-source@internal/workspace/records.go` `Store.CreateRecord` —
   the scaffold that seeds the sections.

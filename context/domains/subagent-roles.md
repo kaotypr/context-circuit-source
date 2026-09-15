@@ -151,7 +151,11 @@ edits it cannot see, or lets it overwrite edits it can.
 Plan context adds the repositories, the dependencies, the fact that those
 dependencies' work is already in the branch's ancestry and need not be
 reimplemented, and the fact that a concurrent sibling is invisible and must not
-be guessed at. A worker reporting an interface it assumes a sibling may also be
+be guessed at. That ancestry claim is only true because a worker commits: the
+brief ends by requiring the work be committed on the branch it was given, so
+what a worker leaves behind is something the next plan can start from and an
+integration merge can merge. Pushing, opening a pull request, and merging into a
+base branch remain outside the role. A worker reporting an interface it assumes a sibling may also be
 changing is supplying information, not failing; that goes to the integration
 merge rather than stopping the run.
 

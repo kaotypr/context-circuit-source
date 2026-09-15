@@ -43,7 +43,13 @@ The coordinator writes the plan record and decides any split, so no plan exists 
 Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, true},
 	"worker": {"Implement a bounded part of an approved plan and run normal checks.", `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
 
-Run the repositories' ordinary checks and report, as your result:
+Run the repositories' ordinary checks, then commit on the branch this working
+directory is already on — leave nothing uncommitted when you report. Take as many
+commits as the work naturally needs, and commit failing or partial work too: what
+you leave uncommitted is work the coordinator's next step cannot see. Follow the
+repository's commit convention and add no attribution of any kind.
+
+Report, as your result:
 
 - every file you changed, and what changed in it;
 - the exact check commands you ran and their real outcome, failures included;
@@ -51,7 +57,7 @@ Run the repositories' ordinary checks and report, as your result:
 
 The coordinator integrates your work from that report and does not re-run your checks, so a check you did not run is one nobody ran. Report a failure plainly rather than working around it.
 
-Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents. Do not push, open a pull request, merge into the base branch, or deliver changes any other way without explicit authorization.`, false},
+Do not write or reconcile durable project knowledge; report what the coordinator should record. Do not launch other agents. Committing on your own branch is part of the work; pushing, opening a pull request, merging into the base branch, or delivering changes any other way needs explicit authorization.`, false},
 	"reviewer": {"Independently review a diff only when the user requests review.", "Perform the explicitly requested independent read-only review. Inspect the supplied diff and current revision against the intent's success criteria and relevant surrounding code. Report actionable findings with file locations and limitations. Never edit files, run commands that change files, dispatch repairs, or post external comments. Do not launch other agents.", true},
 }
 

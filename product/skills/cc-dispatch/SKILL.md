@@ -117,6 +117,26 @@ configured pair is a request, not proof of the model that ran. Report any reject
 or substituted setting; do not silently downgrade. If the host cannot apply a pin,
 resolve the mismatch with the user. Inherited defaults need no extra confirmation.
 
+## When to dispatch a planner or an explorer
+
+Delegating a plan's code investigation is a judgment about size, not a step.
+Dispatch a planner when the reading would be substantially larger than the plan
+it produces: an intent spanning several repositories, code this session has not
+read, or a read that would take a serious part of the remaining context.
+Investigate in the session when it already holds that code, since a planner would
+re-derive what is present and add only latency.
+
+One planner runs per intent; splitting it per repository destroys the
+cross-repository order it exists to produce. Dispatch it against the intent
+rather than a plan: the plan shape is what it returns, so create the plan records
+from its answer rather than numbering one first and handing it over.
+`.agents/skills/cc-plan/SKILL.md` covers what to write from that answer.
+
+Dispatch explorers when several independent codebase questions stand between this
+session and a grounded intent or plan. Each is narrow and read-only, they run in
+parallel, and their reading never enters this session. Neither role can run
+anything, so a check either one names is one it read, not one it saw pass.
+
 ## Two kinds of parallel work
 
 Parallelism happens on two axes and the correct brief is opposite in each. One
