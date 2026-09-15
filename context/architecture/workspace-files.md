@@ -55,6 +55,11 @@ retrieval and comparison: a catalog entry's reviewed date and a plan's completio
 instant must sort without a parser, and a localized format in a shared file
 breaks both.
 
-Owner: `context-circuit-source@internal/workspace/store.go` and
-`workspace.go`; the shipped description is
-`context-circuit-source@product/docs/workspace.md`.
+Owner:
+
+- `context-circuit-source@internal/workspace/store.go` — locking, atomic writes,
+  and the document-preserving YAML edit.
+- `context-circuit-source@internal/workspace/workspace.go` — the shared and
+  machine-local files and what each may hold.
+- `context-circuit-source@product/docs/workspace.md` — the description shipped
+  to a workspace.

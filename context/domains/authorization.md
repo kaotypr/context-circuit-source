@@ -108,5 +108,9 @@ includes inspecting authored messages and removing injected attribution before
 reporting delivery complete, because some hosts add it and "I did not write it"
 is not the same as "it is not there".
 
-Owner: `context-circuit-source@product/AGENTS.md.in`; the recording operations
-are `context-circuit-source@internal/workspace/records.go` `Store.Note`.
+Owner:
+
+- `context-circuit-source@product/AGENTS.md.in` — which acts need a person and
+  what one authorization covers.
+- `context-circuit-source@internal/workspace/records.go` `Store.Note` — the
+  operations that record approval and completion.

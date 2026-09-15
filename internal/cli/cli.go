@@ -37,7 +37,6 @@ record create         --kind intent|plan --slug SLUG --title TITLE
                       [--intent ID --repo ID ... --depends-on ID ...]
 record show           --id ID
 record list           [--archived]
-record note           --id ID --text TEXT
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
@@ -182,7 +181,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("id")
 	case "record list":
 		f.BoolVar(&archived, "archived", false, "include archived records")
-	case "record note", "record approve", "record complete":
+	case "record approve", "record complete":
 		add("id", "text")
 	case "record dependencies":
 		add("id")
@@ -352,8 +351,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			return s.FindRecord(get("id"))
 		case "record list":
 			return s.ListRecords(archived)
-		case "record note", "record approve":
-			err = s.Note(get("id"), get("text"), strings.TrimPrefix(command, "record "))
+		case "record approve":
+			err = s.Note(get("id"), get("text"), "approve")
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
 				return nil, err

@@ -122,27 +122,37 @@ a rule for hand-written ones. The reason is retrieval: a catalog entry's
 `reviewed 2026-02-04` and a plan's `completed` field must sort and compare
 without a parser, and localized formats in shared files break both.
 
-## Notes are append-only by default
+## A record is written at its gates
 
-`record note` appends `## Update — <date>` with the text. `record complete`
-appends `## Completion — <date>`. Approval is the exception: `record approve`
-replaces a single existing `Approval:` line, and *refuses* when it finds several,
-because silently picking one of two approvals is exactly the kind of guess the
-design forbids.
+Only the two gates append. `record complete` appends `## Completion — <date>`
+and stamps `completed_at`; `record approve` appends `## Approval — <date>` and
+stamps `approved_at`. Nothing else writes to a record after it is created.
 
-Direct Markdown editing is equally legitimate. The commands exist for
+Direct Markdown editing by a person is equally legitimate. The commands exist for
 consistency and date discipline, not to own the file.
 
-## Progress, and why it is not trusted
+Through 2.0.0-rc.5 a third command, `record note`, appended `## Update — <date>`,
+and it was removed in 2.0.0-rc.6. What an agent put there was the result of
+running the plan — the same summary completion writes — parked in the body
+because completion is a person's request and had not come yet. Two places
+recording one thing disagree the moment either is written first, and the parked
+copy was always the one a later reader hit before the gate.
 
-A plan carries useful progress, observed results, remaining work, and repository
-or PR references. On resume, those notes are read **after** the real branches and
-diffs, never instead of them (P1). The instruction states it plainly: *a note is
-not proof of current implementation.*
+## A plan is an intention, not a history
+
+A plan carries the approach, the tasks and their order, and the risks and checks.
+Running it does not edit it. The result of a run reaches the person, and reaches
+the record only when they request completion.
 
 This is the difference between a plan record in v2 and an execution record in v1.
-The v1 record was constructed to be evidence; the v2 note is constructed to be a
-useful message to the next session, which is all a written note can honestly be.
+The v1 record was constructed to be evidence and was reliably staler than the
+diff. The v2 plan does not compete with the diff at all: it says what was
+intended, the diff says what happened, and on resume the real branches and diffs
+are read first (P1) because a record was never a claim about them.
+
+Progress, remaining work, and PR references are not recorded against the plan
+while work is in flight. They are what the session reports to the person, who is
+the one deciding whether the work is done.
 
 ## Archival
 

@@ -271,6 +271,12 @@ func (s *Store) knowledgeIssues() ([]string, error) {
 
 var catalogLink = regexp.MustCompile(`\]\(([^)\s]+)(?:\s+"[^"]*")?\)`)
 
+// An entry naming repositories claims to describe their code, so it carries the
+// date that claim was last confirmed. The glossary and anything else describing
+// the project rather than a repository names none and needs no date.
+var catalogRepositories = regexp.MustCompile(`\{[a-z0-9][a-z0-9-]*(?:\s*,\s*[a-z0-9][a-z0-9-]*)*\}`)
+var catalogReviewed = regexp.MustCompile(`reviewed\s+\d{4}-\d{2}-\d{2}\s*$`)
+
 // The catalog is the only way into a note, so an entry naming a note that is not
 // there is a confident miss, and a note no entry names is reachable only by
 // someone who already knows its filename. An absent catalog is not an error: the
@@ -293,6 +299,9 @@ func (s *Store) catalogIssues(notes map[string]string) ([]string, error) {
 		// A fenced example teaches the entry shape; it catalogs nothing.
 		if fenced || !catalogEntry.MatchString(line) {
 			continue
+		}
+		if catalogRepositories.MatchString(line) && !catalogReviewed.MatchString(strings.TrimRight(line, " \t")) {
+			issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: catalog entry names repositories without a `reviewed YYYY-MM-DD` date", index+1))
 		}
 		for _, match := range catalogLink.FindAllStringSubmatch(line, -1) {
 			target := match[1]

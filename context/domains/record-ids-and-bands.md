@@ -69,6 +69,9 @@ in separate clones, and any clone whose roster is stale, can still collide, so
 the shared workspace is synchronized before allocating. There is no distributed
 allocation service, and none is claimed.
 
-Owner: `context-circuit-source@internal/workspace/records.go` `Store.allocate`
-and `bandWidth`; roster validation in
-`context-circuit-source@internal/workspace/workspace.go` `Members`.
+Owner:
+
+- `context-circuit-source@internal/workspace/records.go` `Store.allocate` and
+  `bandWidth` — how a number is chosen and which band it falls in.
+- `context-circuit-source@internal/workspace/workspace.go` `Members` — the
+  roster validation the bands are derived from.

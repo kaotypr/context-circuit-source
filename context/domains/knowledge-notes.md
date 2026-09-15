@@ -78,6 +78,11 @@ reconciliation is outstanding. Absence is visible debt, not a hidden gate, since
 blocking new work on documentation hygiene trains people to record that nothing
 changed.
 
-Owner: `context-circuit-source@internal/workspace/inspect.go`
-`knowledgeIssues` and `catalogIssues`;
-`context-circuit-source@internal/workspace/records.go` `KnowledgeCandidates`.
+Owner:
+
+- `context-circuit-source@internal/workspace/inspect.go` `knowledgeIssues` and
+  `catalogIssues` — the durable-content boundary and catalog consistency.
+- `context-circuit-source@internal/workspace/records.go` `KnowledgeCandidates` —
+  the entries offered for reconciliation at completion.
+- `context-circuit-source@template/context/INDEX.md` — the catalog and note
+  conventions shipped to a workspace.

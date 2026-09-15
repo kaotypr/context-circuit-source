@@ -36,8 +36,8 @@ worktree from the reported start, perform any reported integration merge with
 ordinary Git, dispatch a worker per plan, wait, and mark work complete only when
 it actually landed and its checks passed.
 
-Completion is judged from what the worker reports: the files it changed, the
-checks it ran, and their real outcome. Re-reading the diff and re-running those
+A wave is judged from what each worker reports: the files it changed, the checks
+it ran, and their real outcome. Re-reading the diff and re-running those
 checks as a routine audit repeats the expensive half of the work and is what
 makes a delegated wave slower than doing it directly. The trade is deliberate and
 worth naming: the coordinator is trusting a report it did not reproduce, so the

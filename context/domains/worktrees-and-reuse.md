@@ -93,5 +93,10 @@ services, migrates no databases, and makes no local port unique. The correct
 posture is to reuse a working local environment, read the reuse report before
 application setup, and run the project's normal checks.
 
-Owner: `context-circuit-source@internal/workspace/worktrees.go` and
-`reuse.go`; platform cloning in `context-circuit-source@internal/cow/`.
+Owner:
+
+- `context-circuit-source@internal/workspace/worktrees.go` — preparation,
+  reuse, removal, and the refusals that keep them safe.
+- `context-circuit-source@internal/workspace/reuse.go` — what is carried into a
+  prepared worktree.
+- `context-circuit-source@internal/cow/` — the platform cloning underneath.

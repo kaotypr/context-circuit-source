@@ -65,10 +65,19 @@ a note: records are archived while knowledge outlasts them, and a recorded evide
 path becomes a standing instruction to read material that must stay passive.
 Repository paths are the durable anchor, exact or patterned, written with the logical
 repository ID — `api@internal/billing/dunning/`, `web@src/features/<feature>/` — never
-a local checkout path. Link freely between notes; which record or evidence produced
+a local checkout path. An anchor says what it anchors: write it into the sentence that
+explains it, and where a note covering several surfaces closes with a block naming
+where its subject lives, head it `Owner:` and give each anchor its own bullet carrying
+that explanation. Never a comma-separated run of paths, which names no question any of
+them answers and sends the reader to open all of them. Link freely between notes; which record or evidence produced
 a note belongs in that plan. Run `check` after editing notes; it reports any line
-that crosses this boundary. One note is one unwrapped catalog entry, as
-`context/INDEX.md` describes. Record a domain term in `context/glossary.md` the
+that crosses this boundary. One note is one unwrapped catalog entry carrying its
+own link, the repositories it applies to, the question it answers, its search
+terms, and the date it was last confirmed against the code, as `context/INDEX.md`
+describes; `check` reports an entry that claims repositories without that date. A
+note lives in a directory named for its concern and is catalogued under a heading
+for the same one, so a reader can guess where it is; only the catalog and the
+glossary sit at the top level. Record a domain term in `context/glossary.md` the
 first time its meaning has to be asked for, naming the code identifier when it
 differs from the project's own word.
 
@@ -120,7 +129,11 @@ that code, since a planner would re-derive what is present and add only latency.
 One planner runs per intent; splitting it per repository destroys the
 cross-repository order it exists to produce. Dispatch it against the intent: the
 plan shape is what it returns, so create the plan records from its answer rather
-than numbering one first and handing it over. A `not-feasible` return is a
+than numbering one first and handing it over. Transcribe its approach, its tasks
+and order, its risks and checks, and the evidence and uncertainties a later
+reader needs. Its verdict and its plan shape are answers to you, not plan
+content: once the records exist the shape is the records, so a plan saying it is
+a single plan states what its own existence already says. A `not-feasible` return is a
 complete answer: write no plan, and report it with its evidence. A return that the
 outcome or success criteria must change goes back for renewed approval. The
 coordinator writes every record either way.
@@ -200,12 +213,15 @@ See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 Implement the approved outcome in dependency order across the relevant
 repositories. Run appropriate tests, lint, and builds as ordinary implementation
 checks. A plan record holds the plan — approach, tasks and order, risks and
-checks — so record progress against it when there is something a later reader
-needs and would not otherwise have: a partial result, a failing check, an
-assumption, a repository or PR reference. Completion carries its own summary, so
-do not append a running log of work that finished as planned. On resume, inspect
-actual branches and diffs before trusting old notes. Preserve failed, partial, and interrupted work; failure
-in one repository does not discard successful work in another.
+checks — and it is written when the work is planned. After that, leave it alone:
+running a plan does not edit the plan. The result reaches the person, and the
+record changes again only when they ask for completion, which stamps
+`completed_at` and carries that result. What the plan says stays what was
+planned, so a later reader can see what was intended and read the diff for what
+happened. On resume, inspect actual branches and diffs rather than trusting the
+record, which describes an intention and never an outcome. Preserve failed,
+partial, and interrupted work; failure in one repository does not discard
+successful work in another.
 
 Do not start independent verification during execution, trigger a reviewer from
 risk classification, or create automatic repair loops. Do not introduce execution,
@@ -239,8 +255,8 @@ you integrate from. Do not re-read its diff or re-run its checks to satisfy
 yourself: that repeats the expensive half of the work and is why delegation stops
 paying. Read the diff where integration needs it — a merge to resolve, or a report
 naming a conflict, a failure, or an assumption — not as a routine audit. A report
-of failing checks is information; carry it into the plan's progress and leave the
-plan incomplete rather than repairing in a loop. An implementation this session
+of failing checks is information; report it to the person and leave the plan
+unmarked and unedited rather than repairing in a loop. An implementation this session
 performed itself is checked by this session as usual; nothing above changes that.
 
 Resolve a conflict from an integration merge directly: both sides are plans of this
