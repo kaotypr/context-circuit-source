@@ -19,7 +19,10 @@ func productFile(t *testing.T, rel string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return string(data)
+	// Git checks these files out with CRLF on Windows, so an assertion carrying
+	// a line break would fail there on the separator rather than the sentence.
+	// Releases are built on Linux, so the shipped bytes are unaffected either way.
+	return strings.ReplaceAll(string(data), "\r\n", "\n")
 }
 
 // documentedCommands returns every complete `context-circuit-cli ...` invocation in
