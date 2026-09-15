@@ -227,6 +227,13 @@ func TestCatalogConsistency(t *testing.T) {
 		{"fragment resolves to the note", "- [Billing](domains/billing.md#voiding) — voiding rules", []string{"domains/billing.md"}, ""},
 		{"external link is skipped", "- [Vendor](https://example.invalid/spec) — vendor behavior", nil, ""},
 		{"entry leaving the catalog", "- [Elsewhere](../README.md) — outside", nil, "links outside the catalog"},
+		// An entry naming repositories claims to describe their code, so it
+		// says when that claim was last confirmed; one naming none does not.
+		{"repository entry without a date", "- [Billing](domains/billing.md) {api} — voiding rules · billing", []string{"domains/billing.md"}, "without a `reviewed"},
+		{"repository entry with a date", "- [Billing](domains/billing.md) {api} — voiding rules · billing · reviewed 2026-02-04", []string{"domains/billing.md"}, ""},
+		{"several repositories still need one", "- [Billing](domains/billing.md) {api, web} — voiding rules · billing", []string{"domains/billing.md"}, "without a `reviewed"},
+		{"an entry naming none needs no date", "- [Glossary](glossary.md) — project vocabulary · glossary", []string{"glossary.md"}, ""},
+		{"a fenced example is still exempt", "```\n- [Example](domains/example.md) {api} — shape only\n```", nil, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()

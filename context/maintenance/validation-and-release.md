@@ -18,8 +18,12 @@ Linux. The matrix exists because **cross-compilation alone is not proof of
 behavior on another operating system**, and the filesystem cloning this product
 depends on is exactly where that bites.
 
-Owner: `context-circuit-source@scripts/check-release.sh` and
-`context-circuit-source@.github/workflows/`.
+Owner:
+
+- `context-circuit-source@scripts/check-release.sh` — the broad check a change
+  here runs before it is published.
+- `context-circuit-source@.github/workflows/` — the matrix that proves behavior
+  per operating system, and the publication runs.
 
 ## Build outputs
 

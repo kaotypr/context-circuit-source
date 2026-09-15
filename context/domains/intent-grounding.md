@@ -46,6 +46,9 @@ bears on the outcome; a plan never silently settles one. Whether answering it
 reopens approval is the ordinary test — renewed approval only when the outcome
 or its success criteria materially change.
 
-Owner: `context-circuit-source@product/AGENTS.md.in`; the scaffold that seeds
-the section is `context-circuit-source@internal/workspace/records.go`
-`Store.CreateRecord`.
+Owner:
+
+- `context-circuit-source@product/AGENTS.md.in` — what an intent is written
+  against and how a question reaches the person.
+- `context-circuit-source@internal/workspace/records.go` `Store.CreateRecord` —
+  the scaffold that seeds the sections.

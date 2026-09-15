@@ -169,7 +169,11 @@ delivery, or completion, and never feeds an automatic repair loop. Where
 independence is unavailable the agent says so and offers an ordinary review,
 never calling the implementing session's own inspection independent.
 
-Owner: `context-circuit-source@internal/workspace/agents.go`;
-`context-circuit-source@template/role-tiering.yaml` carries the shipped
-reasoning; dispatch procedure is
-`context-circuit-source@product/skills/cc-dispatch/SKILL.md`.
+Owner:
+
+- `context-circuit-source@internal/workspace/agents.go` — the roles, the
+  settings that reach a host, and the composed brief.
+- `context-circuit-source@template/role-tiering.yaml` — the shipped reasoning
+  about which role earns which settings.
+- `context-circuit-source@product/skills/cc-dispatch/SKILL.md` — the dispatch
+  procedure a coordinator follows.

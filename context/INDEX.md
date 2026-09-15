@@ -31,6 +31,22 @@ filename, and an entry naming a note that is not there is a confident miss, so
 the entry and the note are written in the same edit. The `check` diagnostic
 reports either half when it is missing.
 
+## Where a note lives
+
+A note goes in a directory named for the concern it belongs to, and its entry
+sits under a heading for that same concern, so the directory listing and this
+catalog tell one story rather than two. `architecture/`, `domains/`, `product/`,
+`operations/`, and `references/` are a usual starting set; prefer the names this
+project's own concerns suggest, and add a directory when a concern earns one
+rather than in advance.
+
+`INDEX.md` and `glossary.md` stay at the top level, because they describe the
+whole project rather than one part of it. Everything else earns a directory. A
+flat `context/` is what a project looks like before it has concerns to separate,
+and it stops being readable well before this catalog does — which is the failure
+this layout exists to postpone, since a reader who cannot guess where a note
+lives is back to scanning.
+
 ## Durable content only
 
 A note describes the project, not the machinery that produced it. Never name a
@@ -39,9 +55,19 @@ archived and rewritten while knowledge is meant to outlast them, and a recorded
 evidence path becomes a standing invitation to read material that is supposed
 to stay passive. Anchor to code instead, with the logical repository ID from
 `workspace.yaml`, exact or patterned: `api@internal/billing/dunning/`, or
-`web@src/features/<feature>/`. Link freely to other notes here. Which record or
-which evidence produced a note belongs in that plan record. The `check`
-diagnostic reports any line in a note that crosses this boundary.
+`web@src/features/<feature>/`.
+
+An anchor earns its place by saying what it anchors. Write one into the sentence
+that explains it — *the format layer in `api@internal/billing/format/` owns the
+schema* — and where several are collected together, give each its own bullet
+carrying that same explanation. A run of paths separated by commas is the one
+shape to avoid: it reads as a string rather than a list, nothing says which path
+answers which question, and a reader who cannot tell them apart opens all of
+them, which is the scanning a note exists to prevent.
+
+Link freely to other notes here. Which record or which evidence produced a note
+belongs in that plan record. The `check` diagnostic reports any line in a note
+that crosses this boundary.
 
 ## Knowledge units
 
