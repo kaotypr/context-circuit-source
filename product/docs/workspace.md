@@ -8,7 +8,7 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/VERSION | Workspace template version | Yes |
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
-| workspace.yaml | Version, name, purpose, repository IDs, default base branches, relationships | Yes |
+| workspace.yaml | Version, name, purpose, optional CLI release mirror, repository IDs, default base branches, relationships | Yes |
 | members.yaml | Member ID to display name and optional allocation band | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, approval note, created_by, linked plans | Yes |
@@ -36,6 +36,12 @@ relationships:
     to: api
     description: Consumes the billing API
 ```
+
+An organization that mirrors CLI releases into its own GitLab project records it
+once as `cli_registry`, an https project URL. The value is shared, so everyone who
+clones the workspace installs from that mirror without setting anything up on
+their own machine; only the credential stays personal. Unset, the CLI installs
+from the product's own releases.
 
 Use a separate checkout for each execution environment (native Windows, WSL,
 remote server, or container). Shared files synchronize through Git; local paths,

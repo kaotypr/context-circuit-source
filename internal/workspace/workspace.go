@@ -17,10 +17,16 @@ type Relationship struct {
 	To          string `yaml:"to" json:"to"`
 	Description string `yaml:"description" json:"description"`
 }
+
+// CLIRegistry names a GitLab project mirroring CLI releases. It is shared, so
+// one member records the mirror and everyone who clones the workspace installs
+// from it without configuring their own environment. Unset, the installer reads
+// the product's own GitHub releases.
 type Config struct {
 	Version       int                   `yaml:"version" json:"version"`
 	Name          string                `yaml:"name" json:"name"`
 	Purpose       string                `yaml:"purpose" json:"purpose"`
+	CLIRegistry   string                `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
 	Repositories  map[string]Repository `yaml:"repositories" json:"repositories"`
 	Relationships []Relationship        `yaml:"relationships" json:"relationships"`
 }
@@ -72,6 +78,9 @@ func (s *Store) Config() (Config, error) {
 	}
 	if cfg.Repositories == nil || cfg.Relationships == nil {
 		return cfg, errors.New("workspace.yaml needs repositories and relationships collections")
+	}
+	if cfg.CLIRegistry != "" && !strings.HasPrefix(cfg.CLIRegistry, "https://") {
+		return cfg, errors.New("cli_registry must be an https project URL")
 	}
 	for id, repo := range cfg.Repositories {
 		if err := Name(id); err != nil {
@@ -225,7 +234,7 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	} else if len(paths) != 0 {
 		return errors.New("existing intent or plan records; initialization stopped")
 	}
-	cfg := Config{2, name, purpose, map[string]Repository{}, []Relationship{}}
+	cfg := Config{Version: 2, Name: name, Purpose: purpose, Repositories: map[string]Repository{}, Relationships: []Relationship{}}
 	if err := s.Export(missing); err != nil {
 		return err
 	}
