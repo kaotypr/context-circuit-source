@@ -168,6 +168,15 @@ func (s *Store) ConfigureAgent(host, role, model, effort string, local bool) err
 	} else if err != nil {
 		return err
 	}
+	// A later override of a second host has no node to attach to yet, so the
+	// host is opened before the role is written into it.
+	var current RoleTiering
+	if err := s.YAML(LocalTiering, &current); err != nil {
+		return err
+	}
+	if current.Hosts[host] == nil {
+		return s.Update(LocalTiering, []string{"hosts", host}, map[string]AgentSetting{role: setting}, 0600)
+	}
 	return s.Update(LocalTiering, []string{"hosts", host, role}, setting, 0600)
 }
 

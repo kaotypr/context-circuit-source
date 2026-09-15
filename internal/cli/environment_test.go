@@ -129,6 +129,16 @@ func TestLocalRoleTieringOverridesTheSharedSetting(t *testing.T) {
 		t.Fatal("the merged view must name what this machine overrode", effective.LocalOverrides)
 	}
 
+	// A second host has no node in the local file yet; opening one must not
+	// depend on which host happened to create the file.
+	f.ok("agent", "configure", "--host", "claude-code", "--role", "planner", "--model", "other-model", "--effort", "high", "--local")
+	if err := json.Unmarshal([]byte(f.ok("agent", "settings")), &effective); err != nil {
+		t.Fatal(err)
+	}
+	if effective.Hosts["claude-code"]["planner"].Model != "other-model" || effective.Hosts["codex"]["worker"].Model != "my-model" {
+		t.Fatal("a second host must join the local file, not replace it", effective.Hosts)
+	}
+
 	// The override reaches the native definitions the host actually loads.
 	f.ok("agent", "setup", "--host", "codex")
 	if text := read(t, filepath.Join(f.root, ".codex/agents/cc-worker.toml")); !strings.Contains(text, "my-model") {

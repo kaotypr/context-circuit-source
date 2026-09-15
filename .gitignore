@@ -10,11 +10,9 @@ dist/
 /template/repositories/
 /template/repositories.local.yaml
 
-# Keep historical and current machine-local selections out of source control.
+# Keep machine-local selections out of source control.
 /.context-circuit/role-tiering.local.yaml
 /template/.context-circuit/role-tiering.local.yaml
-/role-tiering.local.yaml
-/template/role-tiering.local.yaml
 /member.local.yaml
 /template/member.local.yaml
 /.context-circuit/local/
