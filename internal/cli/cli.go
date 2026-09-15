@@ -26,10 +26,13 @@ member add            --id ID --name NAME [--band N]
 member band           --id ID --band N|0 (allocation block; 0 clears it)
 member use            --id ID
 member list
-repo connect          --id ID --path PATH --base BRANCH
+repo connect          --id ID --path PATH --base BRANCH [--url URL]
+                      [--default-branch BRANCH] (--base is this machine's)
 repo clone            --id ID --path NEW_PATH --base BRANCH --url URL
-repo init             --id ID --path NEW_PATH --base BRANCH
-repo base             --id ID --branch BRANCH
+                      [--default-branch BRANCH]
+repo init             --id ID --path NEW_PATH --base BRANCH [--default-branch BRANCH]
+repo base             --id ID --branch BRANCH (this machine's base branch)
+repo remote           --id ID [--url URL] [--default-branch BRANCH] (shared)
 repo relate           --from ID --to ID --description TEXT
 repo fetch            --id ID [--remote origin]
 repo inspect          --id ID
@@ -163,10 +166,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
 	case "member use", "repo inspect":
 		add("id")
-	case "repo connect", "repo init":
-		add("id", "path", "base")
-	case "repo clone":
-		add("id", "path", "base", "url")
+	case "repo connect", "repo clone":
+		add("id", "path", "base", "url", "default-branch")
+	case "repo init":
+		add("id", "path", "base", "default-branch")
+	case "repo remote":
+		add("id", "url", "default-branch")
 	case "repo base":
 		add("id", "branch")
 	case "repo fetch":
@@ -241,7 +246,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		}
 		return ""
 	}
-	optional := map[string]bool{"remote": true}
+	optional := map[string]bool{"remote": true, "default-branch": true}
+	// A URL is how a clone finds its source; everywhere else it is one shared
+	// detail the checkout usually already knows.
+	optional["url"] = command != "repo clone"
 	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
@@ -322,18 +330,21 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":
-			err = s.Connect(ctx, get("id"), get("path"), get("base"))
+			err = s.Connect(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"))
 		case "repo clone", "repo init":
-			err = s.CreateRepository(ctx, get("id"), get("path"), get("base"), get("url"))
+			err = s.CreateRepository(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"))
 		case "repo base":
 			err = s.SetBase(ctx, get("id"), get("branch"))
+		case "repo remote":
+			err = s.SetRemote(ctx, get("id"), get("url"), get("default-branch"))
 		case "repo relate":
 			err = s.Relate(get("from"), get("to"), get("description"))
 		case "repo inspect", "repo fetch":
-			_, path, e := s.Repository(ctx, get("id"))
+			checkout, e := s.Repository(ctx, get("id"))
 			if e != nil {
 				return nil, e
 			}
+			path := checkout.Path
 			if command == "repo inspect" {
 				return workspace.Inspect(ctx, path)
 			}

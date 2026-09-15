@@ -19,8 +19,9 @@ For a plan the defaults are a branch and path named from the plan and repository
 IDs under the workspace. Explicit branch, start, and path values override.
 Preparation without a plan works with an explicit branch and path.
 
-An unspecified start uses the recorded local base branch if available, otherwise
-its remote tracking branch. **No fetch happens implicitly**, and fetching
+An unspecified start uses the base branch this machine's binding records, falling
+back to the repository's shared default branch when it records none, and then to
+that branch's remote tracking branch when the checkout has no local copy. **No fetch happens implicitly**, and fetching
 implies neither rebase nor reset. An explicit start may be another plan's branch
 or a commit, resolved before the worktree is created; it applies to new branches
 only, since a reused branch keeps its commits.

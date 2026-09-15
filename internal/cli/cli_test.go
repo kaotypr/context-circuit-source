@@ -179,9 +179,9 @@ func TestYAMLEditTrial(t *testing.T) {
 		t.Fatalf("unexpected record: %+v", r)
 	}
 	f.repository("api")
-	before := "version: 2\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    base_branch: main # preferred target\nrelationships: []\n"
+	before := "version: 2\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    default_branch: main # preferred target\nrelationships: []\n"
 	write(t, filepath.Join(f.root, "workspace.yaml"), before)
-	f.ok("repo", "base", "--id", "api", "--branch", "development")
+	f.ok("repo", "remote", "--id", "api", "--default-branch", "development")
 	updated = read(t, filepath.Join(f.root, "workspace.yaml"))
 	if !strings.Contains(updated, "and invoicing") || !strings.Contains(updated, "# preferred target") {
 		t.Fatalf("lost description/comment: %s", updated)
@@ -332,6 +332,73 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	if read(t, filepath.Join(api, "dirty.txt")) != "preserve" {
 		t.Fatal("lost dirty work")
 	}
+}
+
+// A base branch describes one machine, not the repository: the checkout path and
+// the branch work starts from travel together in the local binding, while the
+// shared record keeps the URL and the default branch everyone agrees on.
+func TestBaseBranchBelongsToTheLocalBinding(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	git(t, api, "checkout", "-b", "release")
+	write(t, filepath.Join(api, "release.txt"), "release work")
+	git(t, api, "add", "release.txt")
+	git(t, api, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: advance the release branch")
+	release := git(t, api, "rev-parse", "HEAD")
+	git(t, api, "checkout", "main")
+	main := git(t, api, "rev-parse", "HEAD")
+
+	f.ok("repo", "base", "--id", "api", "--branch", "release")
+	if bindings := read(t, filepath.Join(f.root, "repositories.local.yaml")); !strings.Contains(bindings, "base_branch: release") {
+		t.Fatalf("base branch is not recorded locally: %s", bindings)
+	}
+	shared := read(t, filepath.Join(f.root, "workspace.yaml"))
+	if strings.Contains(shared, "base_branch") || !strings.Contains(shared, "default_branch: main") {
+		t.Fatalf("shared record carries one machine's base branch: %s", shared)
+	}
+
+	i := f.intent("release-work")
+	p := f.plan(i.ID, "api", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+	if w.Head != release {
+		t.Fatalf("worktree did not start from the local base branch: %+v", w)
+	}
+	// An order is derived where it will be run, so it names the same base.
+	if start := order(t, f.ok("record", "order", "--mode", "waves")).Layers[0].Plans[0].Start["api"]; start.Base != "release" {
+		t.Fatalf("order started from %q rather than the local base branch", start.Base)
+	}
+
+	// A binding written before the base moved here still resolves, through the
+	// shared default.
+	write(t, filepath.Join(f.root, "repositories.local.yaml"), "bindings:\n  api:\n    path: "+api+"\n")
+	q := f.plan(i.ID, "default-base", "api")
+	if w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", q.ID)); w.Head != main {
+		t.Fatalf("a binding with no base did not fall back to the default branch: %+v", w)
+	}
+}
+
+// The shared record says where a repository lives. Connecting takes that from
+// the checkout Git already has, and a URL carrying a password is refused rather
+// than committed.
+func TestSharedRepositoryRecordKeepsTheURL(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	f.ok("repo", "clone", "--id", "copy", "--path", filepath.Join(f.home, "copy"), "--base", "main", "--url", api)
+	if shared := read(t, filepath.Join(f.root, "workspace.yaml")); !strings.Contains(shared, "url: "+api) {
+		t.Fatalf("clone did not record where the repository came from: %s", shared)
+	}
+	f.ok("repo", "remote", "--id", "api", "--url", "https://example.invalid/api.git")
+	if shared := read(t, filepath.Join(f.root, "workspace.yaml")); !strings.Contains(shared, "url: https://example.invalid/api.git") {
+		t.Fatalf("repo remote did not record the URL: %s", shared)
+	}
+	f.fail("repo", "remote", "--id", "api", "--url", "https://user:secret@example.invalid/api.git")
+	f.fail("repo", "remote", "--id", "api")
+	f.fail("repo", "remote", "--id", "missing", "--url", "https://example.invalid/missing.git")
+	if shared := read(t, filepath.Join(f.root, "workspace.yaml")); strings.Contains(shared, "secret") {
+		t.Fatalf("a password reached a shared file: %s", shared)
+	}
+	// Connecting another machine's checkout describes that machine only.
+	f.fail("repo", "connect", "--id", "copy", "--path", filepath.Join(f.home, "copy"), "--base", "main", "--default-branch", "develop")
 }
 
 func TestWorktreePrepareResumeMoveRepairRemove(t *testing.T) {

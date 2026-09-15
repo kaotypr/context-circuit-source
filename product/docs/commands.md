@@ -25,6 +25,7 @@ context-circuit-cli repo connect --id api --path ../api --base main
 context-circuit-cli repo clone --id web --path repositories/web --base main --url GIT_URL
 context-circuit-cli repo init --id docs --path repositories/docs --base main
 context-circuit-cli repo base --id api --branch development
+context-circuit-cli repo remote --id api --url GIT_URL --default-branch main
 context-circuit-cli repo relate --from web --to api --description 'Consumes the API'
 context-circuit-cli repo inspect --id api
 context-circuit-cli repo fetch --id api --remote origin

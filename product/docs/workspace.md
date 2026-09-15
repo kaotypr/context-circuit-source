@@ -9,14 +9,14 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
-| workspace.yaml | Version, name, purpose, optional CLI release mirror, repository IDs, default base branches, relationships | Yes |
+| workspace.yaml | Version, name, purpose, optional CLI release mirror, repository IDs with their URL and default branch, relationships | Yes |
 | members.yaml | Member ID to display name and optional allocation band | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine | No |
-| repositories.local.yaml | Repository ID to checkout path | No |
+| repositories.local.yaml | Repository ID to this machine's checkout path and base branch | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
 | repositories/, .worktrees/ | Local Git working copies | No |
@@ -29,9 +29,11 @@ name: Acme
 purpose: Billing software
 repositories:
   api:
-    base_branch: main
+    url: https://git.example.com/acme/api.git
+    default_branch: main
   web:
-    base_branch: main
+    url: https://git.example.com/acme/web.git
+    default_branch: main
 relationships:
   - from: web
     to: api
@@ -47,11 +49,28 @@ from the product's own releases.
 Use a separate checkout for each execution environment (native Windows, WSL,
 remote server, or container). Shared files synchronize through Git; local paths,
 worktrees, installed dependencies, and uncommitted work do not migrate automatically.
-Local bindings contain paths only, including `.` for the workspace repository.
+A local binding holds this machine's checkout path, including `.` for the
+workspace repository, and the branch that machine starts work from:
+
+```yaml
+bindings:
+  api:
+    path: ../api
+    base_branch: release/24.4
+```
+
+The base branch is local because it differs per machine: one checkout follows a
+release branch while another stays on the default. Worktrees branch from it, and
+a binding that records none falls back to the repository's shared
+`default_branch`. `repo base` changes this machine's base; `repo remote` changes
+the shared URL and default branch.
+
 After cloning a shared workspace onto another machine, use `member use` and
-`repo connect` with the existing IDs. Do not initialize it again. A new repository
-can be registered before its first commit; worktree preparation needs a commit.
-Setting a default base records the intended branch without creating or resetting it.
+`repo connect` with the existing IDs. Do not initialize it again. `repo connect`
+writes the shared record only when the ID is new, taking the URL from the
+checkout's `origin` unless `--url` names one. A new repository can be registered
+before its first commit; worktree preparation needs a commit. Setting a base
+records the intended branch without creating or resetting it.
 
 A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
 ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; every other date is an ISO 8601

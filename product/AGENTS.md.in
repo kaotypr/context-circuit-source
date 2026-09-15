@@ -24,10 +24,11 @@ preserves customized definitions. Check while orienting, not when something need
 to delegate: writing a definition is not loading it, and a host may not register a
 role until it reloads. Dispatch reports whether the definition it names is there.
 
-Read `workspace.yaml` for project identity, purpose, logical repositories, default
-base branches, and relationships. The shared roster is `members.yaml`. The active
-member and this machine's checkout paths are the documented, gitignored
-`member.local.yaml` and `repositories.local.yaml`. Read those bindings when needed;
+Read `workspace.yaml` for project identity, purpose, logical repositories with
+their URL and default branch, and relationships. The shared roster is
+`members.yaml`. The active member, this machine's checkout paths, and the branch
+this machine starts work from are the documented, gitignored `member.local.yaml`
+and `repositories.local.yaml`. Read those bindings when needed;
 never inspect unrelated host settings, credentials, private provider payloads, or
 another session's state. Never store secrets in workspace records.
 
@@ -38,10 +39,11 @@ workspace still has a real member. On another machine, select an existing member
 and connect its local checkouts; do not reinitialize the shared workspace.
 
 Connect existing repositories, clone repositories, or initialize new repositories
-when requested. Resolve the correct destination and default base branch from the
-request and repository evidence; ask only when the choice is ambiguous. The root
-workspace may itself be connected as `.`. Logical IDs and base branches are shared;
-checkout paths remain local. Record meaningful relationships and obey repository
+when requested. Resolve the correct destination and base branch from the request
+and repository evidence; ask only when the choice is ambiguous. The root workspace
+may itself be connected as `.`. Logical IDs, repository URLs, and default branches
+are shared; checkout paths and base branches remain local, so worktrees branch
+from whatever this machine bases work on. Record meaningful relationships and obey repository
 instructions within each checkout.
 
 ## Shared knowledge
@@ -303,8 +305,9 @@ Reuse authorization already given. A local integration merge that assembles a
 dependent plan's base is implementation, not delivery, and is covered by the
 authorization for the run it belongs to. Use ordinary Git and provider tools; the
 Go executable provides repository, branch, and base information and never silently
-delivers. The recorded base branch is the default PR target unless the user
-chooses another. Deliver per repository when appropriate. Explain relevant drift
+delivers. The branch the work started from — this machine's recorded base, or the
+repository's default branch when the binding records none — is the default PR
+target unless the user chooses another. Deliver per repository when appropriate. Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more plans

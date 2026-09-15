@@ -6,14 +6,14 @@ they travel with the project or belong to one machine.
 ## Shared versus local
 
 **Shared** (committed): the workspace record carrying schema version, name,
-purpose, logical repository IDs with their default base branches, and recorded
+purpose, logical repository IDs with their URL and default branch, and recorded
 relationships; the member roster with each member's optional allocation band;
 the permanent ID ledger; the per-host role settings; intent and plan records;
 and the knowledge tree.
 
 **Local** (ignored): the active member on this machine; the map from logical
-repository ID to this machine's checkout path; optional plan-to-worktree
-associations; the lock file; and the working copies themselves.
+repository ID to this machine's checkout path and base branch; optional
+plan-to-worktree associations; the lock file; and the working copies themselves.
 
 The split is what lets one workspace travel. Cloning it onto a second machine is
 selecting an existing member and connecting the existing repository IDs to local
@@ -22,10 +22,20 @@ Windows, a container, a remote host) gets its own checkout, its own installed
 executable, and its own bindings; installed dependencies and uncommitted work do
 not migrate with the shared files.
 
-A local binding holds a path only, including `.` when the workspace directory is
-itself a bound repository. A new repository can be registered before its first
-commit, though worktree preparation needs one. Setting a default base records
-the intended branch without creating or resetting it.
+A local binding holds a path, including `.` when the workspace directory is
+itself a bound repository, and the branch that machine starts work from.
+
+The base branch is local because it is the one repository fact that differs per
+machine: one checkout follows a release branch while another stays on the
+default, and a single shared value made one of them wrong. Worktrees branch from
+the binding's base, and a binding recording none falls back to the repository's
+shared default branch, so a binding written before the split still resolves. The
+shared record keeps what everyone agrees on — where the repository lives and
+which branch it defaults to — and never carries a URL with a password in it.
+
+A new repository can be registered before its first commit, though worktree
+preparation needs one. Setting a base records the intended branch without
+creating or resetting it.
 
 ## Editing guarantees
 

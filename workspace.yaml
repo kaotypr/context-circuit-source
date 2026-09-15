@@ -5,5 +5,6 @@ purpose: |
   workspace template, and the product instruction they are generated from.
 repositories:
   context-circuit-source:
-    base_branch: main
+    url: git@github.com:kaotypr/context-circuit-source.git
+    default_branch: main
 relationships: []
