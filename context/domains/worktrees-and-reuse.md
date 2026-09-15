@@ -26,6 +26,11 @@ implies neither rebase nor reset. An explicit start may be another plan's branch
 or a commit, resolved before the worktree is created; it applies to new branches
 only, since a reused branch keeps its commits.
 
+A dependent plan therefore needs its start named. Preparation does not read
+recorded dependencies, so preparing one without a start silently produces a
+worktree that does not hold the work it was meant to build on — `record order`
+reports the predecessor branch per repository, and that is the value to pass.
+
 ## The preservation rules
 
 Every one is a refusal, and together they are what make isolation safe to

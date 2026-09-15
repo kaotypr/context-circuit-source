@@ -39,11 +39,24 @@ does not start execution — otherwise "add billing and implement it" carries th
 agent from an unread intent through unread plans into repository edits, which is
 the failure the two stops exist to prevent.
 
-**Authorizing an outward action.** Commit, push, pull-request creation, merge
+**Authorizing an outward action.** Push, pull-request creation, merge into a base
+branch, deployment, external publication, and deletion of workspace data each
+require explicit authorization, and authorization already given is reused rather
+than re-requested.
 
-into a base branch, deployment, external publication, and deletion of workspace
-data each require explicit authorization, and authorization already given is
-reused rather than re-requested.
+Committing is split by where it lands. A commit on a prepared worktree's own
+branch is implementation: it leaves the machine no more than an edit does, the
+branch belongs to the workspace, and three things downstream read commits and
+nothing else — a dependent plan's starting point, an integration merge, and a
+resume that inspects real diffs rather than trusting a record. So implementation
+ends with its work committed, and nothing is left uncommitted when it is
+reported. A commit in a bound checkout is a change to the person's own working
+copy and stays authorized-only, the same carve-out direct execution already has.
+
+The rule exists because the alternative was observed: a plan's work sat
+uncommitted, its dependent plan prepared a worktree from the base branch that
+therefore held none of it, and the agent copied files between worktrees to
+stand in for ancestry it had no other way to get.
 
 ## What the execution request is not
 
