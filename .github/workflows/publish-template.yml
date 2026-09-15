@@ -88,8 +88,14 @@ jobs:
           V="$RELEASE_VERSION"
           awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
             "release/requests/$V.md" > release-notes.md
+          # A SemVer pre-release identifier — the -rc.4, -alpha.1 or -beta.2
+          # after the hyphen — is what makes a candidate a candidate, so it is
+          # marked as one rather than becoming the repository's Latest release.
+          # The CLI publication decides this the same way.
+          case "$V" in *-*) set -- --prerelease ;; *) set -- ;; esac
           gh release create "v$V" \
             --repo kaotypr/context-circuit \
+            "$@" \
             --title "v$V" \
             --notes-file release-notes.md \
             "$ASSETS"/*.tar.gz "$ASSETS/SHA256SUMS"
