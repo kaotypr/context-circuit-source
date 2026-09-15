@@ -518,3 +518,73 @@ func TestInitInstallsRolesForEveryHost(t *testing.T) {
 		t.Fatalf("setup after init: %s", out)
 	}
 }
+
+// A base branch is what work starts from and delivers back to. The shared
+// configuration records only default_branch, which is a plausible and wrong
+// answer, so every shape describing a repository or worktree reports the
+// recorded base rather than leaving a coordinator to find it.
+func TestTheRecordedBaseBranchIsReported(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	git(t, api, "branch", "release")
+	f.ok("repo", "base", "--id", "api", "--branch", "release")
+
+	var snapshot workspace.Snapshot
+	if err := json.Unmarshal([]byte(f.ok("repo", "inspect", "--id", "api")), &snapshot); err != nil {
+		t.Fatal(err)
+	}
+	if snapshot.BaseBranch != "release" {
+		t.Fatalf("repo inspect reported base %q", snapshot.BaseBranch)
+	}
+	// The checked-out branch and the base differ routinely; both are reported.
+	if snapshot.Branch == snapshot.BaseBranch {
+		t.Fatalf("fixture cannot distinguish current from base: %+v", snapshot)
+	}
+
+	var orientation workspace.Orientation
+	if err := json.Unmarshal([]byte(f.ok("status")), &orientation); err != nil {
+		t.Fatal(err)
+	}
+	if got := orientation.Repositories["api"].BaseBranch; got != "release" {
+		t.Fatalf("status reported base %q", got)
+	}
+
+	// Delivery happens from a worktree, so it carries the base too.
+	i := f.intent("billing")
+	p := f.plan(i.ID, "api", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+	if w.BaseBranch != "release" {
+		t.Fatalf("prepared worktree did not name its base: %+v", w)
+	}
+	var inspected workspace.Snapshot
+	if err := json.Unmarshal([]byte(f.ok("worktree", "inspect", "--repo", "api", "--path", w.Path)), &inspected); err != nil {
+		t.Fatal(err)
+	}
+	if inspected.BaseBranch != "release" {
+		t.Fatalf("worktree inspect reported base %q", inspected.BaseBranch)
+	}
+}
+
+// Completion returns candidates to judge, and a caller just told "completed"
+// treats the request as finished. The outstanding act is named beside the data.
+func TestCompletionNamesTheOutstandingReconciliation(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	i := f.intent("billing")
+	p := f.plan(i.ID, "api", "api")
+	var done map[string]any
+	if err := json.Unmarshal([]byte(f.ok("record", "complete", "--id", p.ID, "--text", "Delivered.")), &done); err != nil {
+		t.Fatal(err)
+	}
+	if done["completed"] != p.ID {
+		t.Fatalf("completion did not name the plan: %+v", done)
+	}
+	candidates, _ := done["knowledge_candidates"].([]any)
+	required, _ := done["reconcile_required"].(string)
+	if len(candidates) > 0 && required == "" {
+		t.Fatalf("candidates returned with no outstanding act named: %+v", done)
+	}
+	if len(candidates) == 0 && required != "" {
+		t.Fatalf("nothing to reconcile, yet an act was named: %+v", done)
+	}
+}

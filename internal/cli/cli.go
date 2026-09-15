@@ -351,7 +351,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			}
 			path := checkout.Path
 			if command == "repo inspect" {
-				return workspace.Inspect(ctx, path)
+				snapshot, e := workspace.Inspect(ctx, path)
+				if e != nil {
+					return nil, e
+				}
+				snapshot.BaseBranch = checkout.BaseBranch
+				return snapshot, nil
 			}
 			remote := get("remote")
 			if remote == "" {
@@ -374,7 +379,15 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				return nil, err
 			}
 			entries, e := s.KnowledgeCandidates(get("id"))
-			return map[string]any{"completed": get("id"), "knowledge_candidates": entries}, e
+			result := map[string]any{"completed": get("id"), "knowledge_candidates": entries}
+			// A bare list of catalog lines reads as information, and a caller
+			// that has just been told "completed" treats the request as done.
+			// Naming the outstanding act beside the data is what `setup_required`
+			// does for a dispatch, so completion says it the same way.
+			if len(entries) > 0 {
+				result["reconcile_required"] = "judge each entry above against what this plan changed: edit the note and its catalog entry together and move its reviewed date, or record in the completion note that it changed nothing"
+			}
+			return result, e
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":

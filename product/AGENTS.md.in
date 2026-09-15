@@ -307,14 +307,19 @@ authorization for the run it belongs to. Use ordinary Git and provider tools; th
 Go executable provides repository, branch, and base information and never silently
 delivers. The branch the work started from — this machine's recorded base, or the
 repository's default branch when the binding records none — is the default PR
-target unless the user chooses another. Deliver per repository when appropriate. Explain relevant drift
+target unless the user chooses another. Read it as `base_branch` from `status`,
+`repo inspect`, or the worktree you are delivering from; `workspace.yaml` records
+a `default_branch`, which is the repository's default and not what this machine
+delivers to, and answering from it targets the wrong branch convincingly. Deliver per repository when appropriate. Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more plans
 completed, append a short completion note to each record and reconcile the durable
 project knowledge those plans changed. The request is finished only when both are
 done. `record complete` returns the catalog entries scoped to that plan's
-repositories: a candidate set to judge, never a list to rewrite. Most completions
+repositories, and names the judging as `reconcile_required` when there are any:
+a candidate set to judge, never a list to rewrite. Completion reporting success
+is the record written, not the request finished. Most completions
 change no durable knowledge; recording that in the note is the normal outcome, not
 a skipped step. Where meaning did change, edit the note and its catalog entry in
 one pass and move its reviewed date; a renamed or retired identifier is a glossary

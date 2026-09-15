@@ -295,11 +295,17 @@ func (s *Store) SetRemote(ctx context.Context, id, remote, defaultBranch string)
 	return s.Update("workspace.yaml", []string{"repositories", id, "default_branch"}, defaultBranch, 0644)
 }
 
+// A snapshot says which branch is checked out now; BaseBranch says which branch
+// work here starts from and delivers back to. The two differ routinely, and the
+// shared configuration records only a default_branch, which is a plausible and
+// wrong answer to "what does this deliver to" — so the recorded base is reported
+// wherever a repository or worktree is described rather than left to be found.
 type Snapshot struct {
-	Path    string   `json:"path"`
-	Branch  string   `json:"branch"`
-	Head    string   `json:"head"`
-	Changes []string `json:"changes"`
+	Path       string   `json:"path"`
+	Branch     string   `json:"branch"`
+	BaseBranch string   `json:"base_branch,omitempty"`
+	Head       string   `json:"head"`
+	Changes    []string `json:"changes"`
 }
 
 func Inspect(ctx context.Context, path string) (Snapshot, error) {

@@ -19,6 +19,7 @@ type Worktree struct {
 	Prunable    bool         `json:"prunable"`
 	Plan        string       `json:"plan,omitempty"`
 	StartCommit string       `json:"start_commit,omitempty"`
+	BaseBranch  string       `json:"base_branch,omitempty"`
 	Reused      bool         `json:"reused,omitempty"`
 	Environment []ReuseEntry `json:"environment,omitempty"`
 }
@@ -201,7 +202,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err != nil {
 		return Worktree{}, err
 	}
-	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit}
+	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch}
 	if err := s.saveAssociation(repoID, result); err != nil {
 		return result, fmt.Errorf("worktree exists at %s but local association could not be saved: %w", actual, err)
 	}
@@ -229,7 +230,18 @@ func (s *Store) InspectWorktree(ctx context.Context, repoID, input string) (Snap
 	if err != nil {
 		return Snapshot{}, err
 	}
-	return Inspect(ctx, tree.Path)
+	snapshot, err := Inspect(ctx, tree.Path)
+	if err != nil {
+		return snapshot, err
+	}
+	// Delivery happens from a worktree, long after preparation, so the branch
+	// this work delivers back to belongs in the description of the worktree.
+	checkout, err := s.Repository(ctx, repoID)
+	if err != nil {
+		return snapshot, err
+	}
+	snapshot.BaseBranch = checkout.BaseBranch
+	return snapshot, nil
 }
 
 func (s *Store) selectedTree(ctx context.Context, repoID, input string) (string, Worktree, error) {
