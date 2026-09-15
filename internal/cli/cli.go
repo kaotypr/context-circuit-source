@@ -53,8 +53,10 @@ worktree move          --repo ID --path PATH --to NEW_PATH
 worktree repair        --repo ID --path PATH
 worktree remove        --repo ID --path PATH [--discard]
 template export       --path NEW_DIRECTORY (blank workspace files)
-agent settings        inspect per-host role model and effort preferences
+agent settings        inspect effective per-host role model and effort preferences
+                      (shared, with any role-tiering.local.yaml override applied)
 agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEVEL|inherit
+                      [--local] (write this machine's override, not the shared setting)
 agent setup           [--host codex|claude-code|cursor] (default: every host)
 agent dispatch        --host HOST --role ROLE --task TEXT --path DIRECTORY
                       [--plan ID] [--shared] [--review-requested]
@@ -149,7 +151,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	var repos, dependencies, copyPaths listFlag
 	var band int
-	var archived, reuse, discard, reviewRequested, shared bool
+	var archived, reuse, discard, reviewRequested, shared, localTiering bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
@@ -209,6 +211,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("host")
 	case "agent configure":
 		add("host", "role", "model", "effort")
+		f.BoolVar(&localTiering, "local", false, "write this machine's override instead of the shared setting")
 	case "agent dispatch":
 		add("host", "role", "task", "path", "plan")
 		f.BoolVar(&shared, "shared", false, "several workers share this worktree")
@@ -296,9 +299,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "status":
 			return s.Status(ctx)
 		case "agent settings":
-			return s.AgentSettings()
+			return s.EffectiveAgentSettings()
 		case "agent configure":
-			err = s.ConfigureAgent(get("host"), get("role"), get("model"), get("effort"))
+			err = s.ConfigureAgent(get("host"), get("role"), get("model"), get("effort"), localTiering)
 		case "agent setup":
 			return s.SetupAgents(get("host"))
 		case "agent dispatch":

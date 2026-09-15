@@ -53,6 +53,22 @@ supports.
 A configured pair is a **request**, not proof of what ran. A rejected or
 substituted setting is reported, never silently downgraded.
 
+## Shared agreement, local answer
+
+The tiering is shared because a roster should agree on which role earns the
+strongest settings. What a member can actually run is not shared: one runs a
+different host, another pays for a different model. So a machine-local file
+overrides the shared one, and the override is per host/role rather than
+whole-file — a member who raises their reviewer keeps tracking every later change
+the team makes to the other three, which a forked copy would silently stop doing.
+
+Its host must already appear in the shared file, since a local answer responds to
+a host the workspace supports rather than introducing one nobody else has. Both
+files face the same validation, so a local file cannot hold a setting the shared
+one would have been refused. The settings report names which pairs this machine
+overrode: a merged view that cannot say which half supplied a value claims more
+than it established.
+
 ## Native host mapping
 
 Setup materializes four native role definitions under each host's agents
