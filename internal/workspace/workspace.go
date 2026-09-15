@@ -79,8 +79,14 @@ func (s *Store) Config() (Config, error) {
 	if cfg.Repositories == nil || cfg.Relationships == nil {
 		return cfg, errors.New("workspace.yaml needs repositories and relationships collections")
 	}
-	if cfg.CLIRegistry != "" && !strings.HasPrefix(cfg.CLIRegistry, "https://") {
-		return cfg, errors.New("cli_registry must be an https project URL")
+	if cfg.CLIRegistry != "" {
+		// Reject here what the installer would reject later, so a mirror that
+		// cannot be resolved fails where it is recorded rather than at install.
+		rest, https := strings.CutPrefix(cfg.CLIRegistry, "https://")
+		host, project, split := strings.Cut(rest, "/")
+		if !https || !split || host == "" || strings.Trim(project, "/") == "" {
+			return cfg, errors.New("cli_registry must be an https project URL, such as https://gitlab.example.com/group/project")
+		}
 	}
 	for id, repo := range cfg.Repositories {
 		if err := Name(id); err != nil {
