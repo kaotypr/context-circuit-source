@@ -42,7 +42,6 @@ context-circuit-cli record create --kind plan --slug billing-web --title 'Billin
   --intent i001 --repo web --depends-on p0001
 context-circuit-cli record show --id p0001
 context-circuit-cli record list
-context-circuit-cli record note --id p0001 --text 'Implemented API; normal tests passed.'
 context-circuit-cli record dependencies --id p0002 --depends-on p0001
 context-circuit-cli record complete --id p0001 --text 'User requested completion.'
 context-circuit-cli record order --intent i001 --mode waves

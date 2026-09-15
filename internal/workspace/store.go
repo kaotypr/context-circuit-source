@@ -15,6 +15,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/goccy/go-yaml/ast"
 	"github.com/goccy/go-yaml/parser"
+	"github.com/goccy/go-yaml/token"
 	"github.com/gofrs/flock"
 )
 
@@ -261,20 +262,97 @@ func replaceYAMLNode(doc *ast.File, path *yaml.Path, old ast.Node, encoded []byt
 	// Preserve a populated container's flow style when replacing it within a
 	// flow map. An empty container has no entries whose style must be matched,
 	// so it adopts block style and stays readable as entries accumulate.
+	grew := false
 	switch previous := old.(type) {
 	case *ast.MappingNode:
-		if mapping, ok := next.(*ast.MappingNode); ok && len(previous.Values) > 0 {
-			mapping.SetIsFlowStyle(previous.IsFlowStyle)
+		if mapping, ok := next.(*ast.MappingNode); ok {
+			if len(previous.Values) > 0 {
+				mapping.SetIsFlowStyle(previous.IsFlowStyle)
+			} else {
+				grew = true
+			}
 		}
 	case *ast.SequenceNode:
-		if sequence, ok := next.(*ast.SequenceNode); ok && len(previous.Values) > 0 {
-			sequence.SetIsFlowStyle(previous.IsFlowStyle)
+		if sequence, ok := next.(*ast.SequenceNode); ok {
+			if len(previous.Values) > 0 {
+				sequence.SetIsFlowStyle(previous.IsFlowStyle)
+			} else {
+				grew = true
+			}
 		}
 	}
 	if err := next.SetComment(old.GetComment()); err != nil {
 		return err
 	}
-	return path.ReplaceWithNode(doc, next)
+	column := keyColumn(doc, old)
+	if err := path.ReplaceWithNode(doc, next); err != nil {
+		return err
+	}
+	// A block container prints itself from its own start column, and replacing
+	// carries over the column the `[]` or `{}` occupied after the key. Left
+	// alone the first entry lands under the value, so the indent depends on how
+	// long the key happens to be. Align it with the key, after the replace that
+	// would otherwise overwrite it.
+	if grew && column > 0 {
+		indentNode(next, column)
+	}
+	return nil
+}
+
+// keyColumn reports the column of the key whose value is target, or 0 when the
+// node is not a mapping value (a document root has no key to align to).
+func keyColumn(doc *ast.File, target ast.Node) int {
+	found := 0
+	var walk func(ast.Node)
+	walk = func(node ast.Node) {
+		if found > 0 || node == nil {
+			return
+		}
+		switch typed := node.(type) {
+		case *ast.MappingNode:
+			for _, value := range typed.Values {
+				walk(value)
+			}
+		case *ast.MappingValueNode:
+			if typed.Value == target {
+				if token := typed.Key.GetToken(); token != nil {
+					found = token.Position.Column
+				}
+				return
+			}
+			walk(typed.Value)
+		case *ast.SequenceNode:
+			for _, value := range typed.Values {
+				walk(value)
+			}
+		}
+	}
+	for _, document := range doc.Docs {
+		walk(document.Body)
+	}
+	return found
+}
+
+// indentNode moves a block container's own start column, which is what its
+// printer measures every entry's indentation from.
+func indentNode(node ast.Node, column int) {
+	set := func(t *token.Token) {
+		if t != nil {
+			t.Position.Column = column
+		}
+	}
+	switch typed := node.(type) {
+	case *ast.SequenceNode:
+		set(typed.Start)
+		for _, value := range typed.Values {
+			set(value.GetToken())
+		}
+	case *ast.MappingNode:
+		set(typed.Start)
+		for _, value := range typed.Values {
+			set(value.GetToken())
+		}
+	}
 }
 
 func (s *Store) Update(rel string, keys []string, value any, mode fs.FileMode) error {

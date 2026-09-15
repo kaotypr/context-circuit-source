@@ -61,10 +61,13 @@ them — the decision about when work starts, made once the plans are visible. T
 request prepares a worktree per repository unless the user asks to work directly
 in a bound checkout.
 
-The agent runs appropriate tests/lint/builds, interprets failures, and records
-observed progress in the same file. Resume by resolving a record ID, then examining
-its current working copy and diff. A note is not proof of current implementation.
-Use `record note` for append-only progress, or edit the Markdown directly.
+The agent runs appropriate tests/lint/builds and interprets failures. A plan
+record holds the plan; the result of running it reaches the person, and
+`record complete` — which a person requests — carries it into the record with
+`completed_at`. Between planning and that request the record is not edited:
+running a plan does not edit the plan. Resume by resolving a record ID, then
+examining its current working copy and diff, because a record describes what was
+intended and never proves what was implemented.
 
 Independent review is manually requested, usually after PR creation and optionally
 after delivery as an audit. An independent reviewer receives the diff, relevant

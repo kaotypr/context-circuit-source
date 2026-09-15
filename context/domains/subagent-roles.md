@@ -25,9 +25,11 @@ independent questions are answered at once and none of that reading enters the
 session.
 
 A planner answers under fixed headings: verdict, approach, tasks and order,
-risks and checks, evidence, uncertainties, and plan shape. The first three
-transcribe into the record; the rest exist so the coordinator can judge them
-without repeating the investigation. `not-feasible` is a complete answer that
+risks and checks, evidence, uncertainties, and plan shape. Approach, tasks and
+order, risks and checks, evidence, and uncertainties transcribe into the record.
+Verdict and plan shape are answers to the coordinator rather than plan content:
+both are spent the moment the records are created, and a plan recording that it
+is a single plan states what its own existence already says. `not-feasible` is a complete answer that
 ends planning with no record written, and a verdict that the outcome or success
 criteria must change returns for renewed approval instead. Because read-only
 roles run nothing, a check either role names is one it read, never one it saw
@@ -100,7 +102,9 @@ absent definition is what makes that visible. Codex expresses model, reasoning e
 mode for read-only roles; Claude Code expresses model, effort, and a read-only
 tool allowlist; Cursor expresses model with an optional effort parameter and a
 read-only flag, and requires an explicit model whenever an effort is explicit.
-Inherit omits the override entirely. A customized native file is preserved and
+Codex omits an inherited setting, because its configuration has no word for
+inheriting; Claude Code and Cursor both accept `inherit` as a model value and
+receive it written out, which says the same thing in a file a person may read. A customized native file is preserved and
 reported rather than overwritten. Because read-only roles cannot run Git, the
 coordinator supplies diff text to them directly.
 

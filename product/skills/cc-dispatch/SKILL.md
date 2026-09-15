@@ -72,14 +72,21 @@ agent from searching the repository for a file it was never given, and dropping 
 costs far more time than the paragraph saved. If a detail is missing, put it in
 `--task` and dispatch again rather than editing the returned text.
 
-- Codex: use the registered `cc_<role>` agent or the available spawn tool's role,
-  model and reasoning-effort fields. For tools where full-history inheritance
+- Codex: spawn with `multi_agent_v1__spawn_agent` and wait with
+  `multi_agent_v1__wait_agent`, passing `agent_type` from the specification.
+  These live in the exec sandbox's tool registry rather than the top-level tool
+  list, so call them directly; wrapping one in `exec_command` makes it yield on
+  `yield_time_ms` and turns a single wait into a poll loop, each poll a full
+  round-trip carrying the whole session. Set a `timeout_ms` that matches the work
+  rather than polling a short one. For tools where full-history inheritance
   prevents overrides, choose a fresh context. Omit overrides for `inherit`.
 - Claude Code: invoke the registered `cc-<role>` with the host's Agent tool.
   Model and effort are set in its native definition. Read-only roles have only
   Read/Glob/Grep; the coordinator supplies diff text because they cannot run Git.
 - Cursor: invoke `cc-<role>` with its Task tool. The native definition sets model,
-  optional model effort parameter, and read-only access.
+  optional model effort parameter, and read-only access. A read-only role there
+  is under the same constraint as on Claude Code: supply diff text rather than
+  expecting it to run Git.
 
 Check requested settings against the host's actual available models/efforts. A
 configured pair is a request, not proof of the model that ran. Report any rejected
@@ -108,8 +115,9 @@ integration merge rather than stopping the run.
 
 Give workers explicit ownership and the actual prepared worktree paths. Tell them
 they share the codebase and must preserve other agents' edits. Wait for results,
-then integrate in dependency order and record progress and limitations against
-the plan. Preserve interrupted work. Do not create automatic repair loops, nested
+then integrate in dependency order and report what they reported. Nothing appends
+a progress log to the plan; completion is a person's request and carries the
+result. Preserve interrupted work. Do not create automatic repair loops, nested
 agent chains, execution records, or delivery side effects.
 
 **Do not re-run a worker's checks or re-read its diff to satisfy yourself.** The

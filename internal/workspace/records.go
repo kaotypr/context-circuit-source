@@ -398,8 +398,6 @@ func (s *Store) Note(id, text, kind string) error {
 			return errors.New("completion is recorded on a plan")
 		}
 		next += "\n\n## Completion — " + stamp + "\n\n" + text
-	case "note":
-		next += "\n\n## Update — " + stamp + "\n\n" + text
 	default:
 		return errors.New("unknown note operation")
 	}

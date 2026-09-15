@@ -256,7 +256,11 @@ func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 	}
 	f.ok("record", "dependencies", "--id", q.ID, "--depends-on", p.ID)
 	f.fail("record", "dependencies", "--id", p.ID, "--depends-on", q.ID)
-	f.ok("record", "note", "--id", p.ID, "--text", "Normal checks passed.")
+	// A plan record holds the plan. Progress has no append command: the result
+	// reaches the person, and completion — which a person requests — carries it.
+	if out := f.fail("record", "note", "--id", p.ID, "--text", "Normal checks passed."); !strings.Contains(out, "unknown command") {
+		t.Fatalf("unexpected error: %s", out)
+	}
 	f.ok("record", "complete", "--id", p.ID, "--text", "User requested completion.")
 	f.ok("check")
 	archive := filepath.Join(f.root, "plans", "archive")
