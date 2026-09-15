@@ -65,7 +65,11 @@ func TestDocumentedCommandsExist(t *testing.T) {
 	f := setup(t)
 	f.repository("api")
 	var checked int
-	for _, source := range []string{"docs/commands.md", "skills/cc-dispatch/SKILL.md", "README.md"} {
+	sources := []string{"docs/commands.md", "README.md"}
+	for _, name := range shippedSkills(t) {
+		sources = append(sources, filepath.Join("skills", name, "SKILL.md"))
+	}
+	for _, source := range sources {
 		for _, command := range documentedCommands(productFile(t, source)) {
 			if isTemplate(command) {
 				continue
@@ -128,18 +132,26 @@ func unquote(args []string) []string {
 	return out
 }
 
-// The entry instruction is always loaded; the detailed docs are read on demand.
-// A capability the entry instruction never names is one the agent never looks up.
-func TestEntryInstructionNamesTheStackedFlow(t *testing.T) {
+// The entry instruction is always loaded; skills and docs are read on demand.
+// A capability the entry instruction never names is one the agent never looks
+// up, so every shipped skill and doc must be reachable from it — directly, or
+// through a skill it names.
+func TestEverythingShippedIsReachableFromTheEntryInstruction(t *testing.T) {
 	agents := productFile(t, "AGENTS.md.in")
-	for _, want := range []string{
-		"`record order`", // the command, on one line so it can be searched
-		"`.context-circuit/docs/commands.md`",
-		"`.agents/skills/cc-dispatch/SKILL.md`",
-		"## Stacked plans",
-	} {
-		if !strings.Contains(agents, want) {
-			t.Errorf("entry instruction never mentions %s", want)
+	reachable := agents
+	for _, name := range shippedSkills(t) {
+		if strings.Contains(agents, "`.agents/skills/"+name+"/SKILL.md`") {
+			reachable += productFile(t, filepath.Join("skills", name, "SKILL.md"))
+		}
+	}
+	for _, name := range shippedSkills(t) {
+		if !strings.Contains(agents, "`.agents/skills/"+name+"/SKILL.md`") {
+			t.Errorf("entry instruction never names the %s skill", name)
+		}
+	}
+	for _, doc := range shippedDocs(t) {
+		if !strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`") {
+			t.Errorf("%s is shipped but named by nothing an agent loads", doc)
 		}
 	}
 	// A backtick command split over a line break cannot be found by search and
@@ -152,25 +164,69 @@ func TestEntryInstructionNamesTheStackedFlow(t *testing.T) {
 	}
 }
 
-// Placement matters: rules that apply to all implementation must not sit under a
-// heading an agent skips when it is running a single plan.
-func TestStackedSectionDoesNotCaptureGeneralRules(t *testing.T) {
+// shippedSkills lists the skill directories carrying a canonical SKILL.md.
+func shippedSkills(t *testing.T) []string {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join("..", "..", "product", "skills"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			names = append(names, entry.Name())
+		}
+	}
+	if len(names) < 2 {
+		t.Fatalf("expected shipped skills, found %d", len(names))
+	}
+	return names
+}
+
+// shippedDocs lists the on-demand reference the product installs.
+func shippedDocs(t *testing.T) []string {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join("..", "..", "product", "docs"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".md") {
+			names = append(names, entry.Name())
+		}
+	}
+	return names
+}
+
+// Placement matters: rules that apply to all implementation must stay in the
+// always-loaded instruction, not move into a skill an agent loads only when it
+// is running several plans at once.
+func TestGeneralRulesStayOutOfTheStackedSkill(t *testing.T) {
 	agents := productFile(t, "AGENTS.md.in")
-	start := strings.Index(agents, "## Stacked plans")
-	if start < 0 {
-		t.Fatal("missing stacked plans section")
-	}
-	section := agents[start:]
-	if next := strings.Index(section[3:], "\n## "); next >= 0 {
-		section = section[:next+3]
-	}
+	stacked := productFile(t, filepath.Join("skills", "cc-stacked", "SKILL.md"))
 	for _, general := range []string{
 		"Do not start independent verification during execution",
 		"The `check` command is an explicitly invoked diagnostic",
 		"Report what was implemented, tested, and left uncertain.",
 	} {
-		if strings.Contains(section, general) {
-			t.Errorf("general implementation rule is trapped under Stacked plans: %q", general)
+		if !strings.Contains(agents, general) {
+			t.Errorf("general implementation rule left the entry instruction: %q", general)
+		}
+		if strings.Contains(stacked, general) {
+			t.Errorf("general implementation rule is trapped in cc-stacked: %q", general)
+		}
+	}
+	// The gates and prohibitions are the entry instruction's job. A skill that
+	// is never loaded must not be the only place one of them is written.
+	for _, gate := range []string{
+		"Implementation starts on a request to execute a plan",
+		"require explicit authorization",
+		"Never add agent attribution",
+		"an intent is not\napproved because a field says so",
+	} {
+		if !strings.Contains(agents, gate) {
+			t.Errorf("gate or prohibition missing from the entry instruction: %q", gate)
 		}
 	}
 }
