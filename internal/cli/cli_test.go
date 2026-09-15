@@ -383,13 +383,24 @@ func TestBaseBranchBelongsToTheLocalBinding(t *testing.T) {
 func TestSharedRepositoryRecordKeepsTheURL(t *testing.T) {
 	f := setup(t)
 	api := f.repository("api")
+	// A recorded URL is compared as a value rather than as a line of the file:
+	// a local path is a valid Git URL, and on Windows it carries backslashes
+	// that YAML must quote and escape, so the serialized form is not the input.
+	recorded := func(id string) string {
+		t.Helper()
+		cfg, err := (&workspace.Store{Root: f.root}).Config()
+		if err != nil {
+			t.Fatal(err)
+		}
+		return cfg.Repositories[id].URL
+	}
 	f.ok("repo", "clone", "--id", "copy", "--path", filepath.Join(f.home, "copy"), "--base", "main", "--url", api)
-	if shared := read(t, filepath.Join(f.root, "workspace.yaml")); !strings.Contains(shared, "url: "+api) {
-		t.Fatalf("clone did not record where the repository came from: %s", shared)
+	if got := recorded("copy"); got != api {
+		t.Fatalf("clone recorded %q rather than where the repository came from, %q", got, api)
 	}
 	f.ok("repo", "remote", "--id", "api", "--url", "https://example.invalid/api.git")
-	if shared := read(t, filepath.Join(f.root, "workspace.yaml")); !strings.Contains(shared, "url: https://example.invalid/api.git") {
-		t.Fatalf("repo remote did not record the URL: %s", shared)
+	if got := recorded("api"); got != "https://example.invalid/api.git" {
+		t.Fatalf("repo remote recorded %q", got)
 	}
 	f.fail("repo", "remote", "--id", "api", "--url", "https://user:secret@example.invalid/api.git")
 	f.fail("repo", "remote", "--id", "api")
