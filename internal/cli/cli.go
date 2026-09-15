@@ -373,7 +373,17 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "record list":
 			return s.ListRecords(archived)
 		case "record approve":
-			err = s.Note(get("id"), get("text"), "approve")
+			if err := s.Note(get("id"), get("text"), "approve"); err != nil {
+				return nil, err
+			}
+			// Approval hands work back rather than finishing it, and a bare
+			// `ok: true` reads as the request being done. What it authorized
+			// is said here, where the caller is standing, rather than only in
+			// instructions read once at the start of a session.
+			return map[string]any{
+				"approved":          get("id"),
+				"planning_required": "approval authorizes planning and planning alone: without asking again, inspect real code and create the linked pNNNN-slug.md plans, then present them and stop",
+			}, nil
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
 				return nil, err

@@ -113,14 +113,17 @@ editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
 Approving an intent authorizes planning, and planning alone. Without asking
-again, inspect real code and create linked `pNNNN-slug.md` plans. One readable
-Markdown plan may cover one or several repositories; use separate plans when
-useful for execution or delivery. Record task order, optional dependencies,
-useful risks, and expected checks. Detailed paths are descriptive planning
-information, not hard enforcement gates. Explain and record newly needed files or
-repositories within the approved outcome. Obtain renewed approval only when the
-intended outcome or success criteria materially change. A question that bears on
-the outcome returns to the intent; a plan never silently settles one.
+again, inspect real code and create linked `pNNNN-slug.md` plans.
+`record approve` names that work as `planning_required`, because approval
+reporting success is the decision recorded, not the request finished. One
+readable Markdown plan may cover one or several repositories; use separate
+plans when useful for execution or delivery. Record task order, optional
+dependencies, useful risks, and expected checks. Detailed paths are descriptive
+planning information, not hard enforcement gates. Explain and record newly
+needed files or repositories within the approved outcome. Obtain renewed
+approval only when the intended outcome or success criteria materially change.
+A question that bears on the outcome returns to the intent; a plan never
+silently settles one.
 
 Delegating that investigation is a judgment about size, not a step. Dispatch a
 planner through `.agents/skills/cc-dispatch/SKILL.md` when the reading would be

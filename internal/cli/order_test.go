@@ -588,3 +588,21 @@ func TestCompletionNamesTheOutstandingReconciliation(t *testing.T) {
 		t.Fatalf("nothing to reconcile, yet an act was named: %+v", done)
 	}
 }
+
+// Approval is the gate that hands work back instead of finishing it, so a bare
+// success reads as the request being done. It names what it authorized.
+func TestApprovalNamesWhatItAuthorized(t *testing.T) {
+	f := setup(t)
+	i := f.intent("billing")
+	var approved map[string]any
+	if err := json.Unmarshal([]byte(f.ok("record", "approve", "--id", i.ID, "--text", "Go ahead.")), &approved); err != nil {
+		t.Fatal(err)
+	}
+	if approved["approved"] != i.ID {
+		t.Fatalf("approval did not name the intent: %+v", approved)
+	}
+	required, _ := approved["planning_required"].(string)
+	if !strings.Contains(required, "plan") {
+		t.Fatalf("approval named no outstanding act: %+v", approved)
+	}
+}

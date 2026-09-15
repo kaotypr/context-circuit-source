@@ -61,8 +61,12 @@ Approval and completion notes require the actual corresponding user decision.
 Approval records the instant in the intent's frontmatter `approved_at` and appends
 the person's words under a heading carrying the same instant; an unapproved
 intent has no such field. It records a decision and never establishes one, and
-commands do not independently authorize anything. Dependency updates detect
-cycles; omit `--depends-on` to clear a plan's dependencies. Completion also
+commands do not independently authorize anything. Approval returns
+`planning_required`, and completion returns `reconcile_required` whenever the
+plan's repositories hold catalog entries: each names the work its own gate has
+just made due, because a gate reporting success has recorded a decision and not
+finished a request. Dependency updates detect cycles; omit `--depends-on` to
+clear a plan's dependencies. Completion also
 records `completed_at` in the plan's frontmatter beside its written note. Every
 record also carries the `created_at` instant of its creation. Instants are
 canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
