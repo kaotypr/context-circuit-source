@@ -192,6 +192,24 @@ func TestYAMLEditTrial(t *testing.T) {
 	f.fail("member", "list")
 }
 
+// 2.0.0-rc.4 renamed the record gates and converts nothing. The decoder can only
+// report an unknown key, which reads as a corrupt file, so the boundary says
+// which candidate wrote the record and what replaced the field.
+func TestRecordFromAnEarlierCandidateNamesTheBoundary(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	i := f.intent("legacy")
+	p := f.plan(i.ID, "api", "api")
+	legacy := filepath.Join(f.root, p.Path)
+	write(t, legacy, strings.Replace(read(t, legacy), "created_at:", "completed: 2026-09-01\ncreated_at:", 1))
+	out := f.fail("record", "show", "--id", p.ID)
+	for _, want := range []string{"2.0.0-rc.3 or earlier", "completed_at", "start a fresh workspace"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("the refusal must name %q: %s", want, out)
+		}
+	}
+}
+
 func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 	f := setup(t)
 	f.repository("api")

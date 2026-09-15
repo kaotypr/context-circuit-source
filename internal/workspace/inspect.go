@@ -104,7 +104,9 @@ func (s *Store) Check(ctx context.Context) ([]string, error) {
 		// An instant that no longer parses is reported rather than read as an event
 		// that never happened. Each gate belongs to one kind of record: nothing
 		// approves a plan, and an intent is never the thing that completes.
-		if _, err := time.Parse(TimeLayout, string(record.CreatedAt)); err != nil {
+		if record.CreatedAt == "" {
+			issues = append(issues, record.ID+": created_at is missing; a record written before 2.0.0-rc.4 is not readable by this candidate")
+		} else if _, err := time.Parse(TimeLayout, string(record.CreatedAt)); err != nil {
 			issues = append(issues, record.ID+": created_at is not a canonical ISO 8601 UTC timestamp: "+string(record.CreatedAt))
 		}
 		for _, gate := range []struct {
