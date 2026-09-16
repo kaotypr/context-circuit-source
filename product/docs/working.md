@@ -99,8 +99,9 @@ One note is one unwrapped index entry holding its link, the repositories it appl
 to, the question it answers, its search terms, and the date it was last confirmed.
 `context/glossary.md` is a table of project vocabulary mapped to the code identifiers
 that implement it. A note anchors to repository paths written with the logical
-repository ID; it never names a plan record, an intent record, or a file under
-`sources/`, because those are archived while the knowledge outlasts them and a
+repository ID, collected in one `Owner:` block at its end rather than scattered
+through its sentences; it never names a plan record, an intent record, or a file
+under `sources/`, because those are archived while the knowledge outlasts them and a
 recorded evidence path would reopen material that must stay passive. `check` reports
 the lines in `context/` that cross that boundary.
 
