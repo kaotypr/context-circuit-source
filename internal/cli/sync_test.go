@@ -206,3 +206,26 @@ func TestSeveralUnmergedPlansNameTheDeclarationNotABranch(t *testing.T) {
 		t.Errorf("several siblings were answered with one arbitrary start: %s", w.UnmergedPlans)
 	}
 }
+
+// The two reasons a schema does not match need different answers. A workspace
+// written by a newer CLI is this CLI being old, and answering it with migration
+// advice sends the reader to rewrite a workspace that is not broken.
+func TestSchemaMismatchSaysWhichSideIsBehind(t *testing.T) {
+	f := setup(t)
+	config := filepath.Join(f.root, "workspace.yaml")
+	current := read(t, config)
+
+	write(t, config, strings.Replace(current, "version: 2", "version: 3", 1))
+	ahead := f.fail("status")
+	if !strings.Contains(ahead, "requires a newer CLI") {
+		t.Errorf("a schema this CLI is too old for read as a migration problem: %s", ahead)
+	}
+	if strings.Contains(ahead, "v1 migration") {
+		t.Errorf("a forward schema was answered with migration advice: %s", ahead)
+	}
+
+	write(t, config, strings.Replace(current, "version: 2", "version: 1", 1))
+	if behind := f.fail("status"); !strings.Contains(behind, "v1 migration is not automatic") {
+		t.Errorf("an older workspace lost its migration answer: %s", behind)
+	}
+}

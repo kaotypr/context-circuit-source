@@ -89,6 +89,12 @@ func (s *Store) Config() (Config, error) {
 		}
 		return cfg, err
 	}
+	// Separate the two reasons a version does not match, as initialization
+	// already does: a higher schema is this CLI being old, and answering it with
+	// migration advice sends the reader to rewrite a workspace that is fine.
+	if cfg.Version > 2 {
+		return cfg, fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schema 2", cfg.Version)
+	}
 	if cfg.Version != 2 || cfg.Name == "" {
 		return cfg, errors.New("initialize a fresh v2 workspace first; v1 migration is not automatic")
 	}
