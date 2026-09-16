@@ -61,6 +61,17 @@ knowledge, and keep task progress and temporary results in plans.
 
 ## Intent and planning
 
+The path below is how an implementation change is normally made. A person may
+bypass it: a request to change something directly — because it is small, or
+because its outcome is already exactly what they said — is carried out in a bound
+checkout through `.agents/skills/cc-direct/SKILL.md`, with no intent, no plan, and
+no worktree. That choice is theirs to make. Offer it where a request is already
+its own specification, never take it unasked, and stop and offer this path as
+soon as the change needs an outcome nobody has approved. Nothing else relaxes:
+committing in a bound checkout, pushing, opening a pull request, merging, and
+deleting still require explicit authorization, and the durable knowledge a direct
+change alters is reconciled the same way a completed plan's is.
+
 For an implementation change, make the intended outcome explicit before detailed
 code investigation. Ground it first: retrieve the bearing knowledge through
 `context/INDEX.md` and read the request's apparent meaning against what the

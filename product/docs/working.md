@@ -5,6 +5,15 @@ plan to be executed. The agent interprets the project and writes meaningful
 content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
 
+A third decision is theirs as well: to skip both. A request to make a change
+directly bypasses intent, planning, and worktree preparation, and the change is
+made in the bound checkout on its current branch, uncommitted until they
+authorize a commit. No record is written and no ID is allocated, so the diff and
+the knowledge it touches are the only trace; `context find --repo ID` returns the
+catalog entries claiming that repository and names the reconciliation the same
+way completion does for a plan. Nothing else relaxes, and a change that turns out
+to need an outcome nobody approved returns to the path below.
+
 An intent has a global `id`, `created_by`, a `created_at` instant, linked
 `plans`, and an `approved_at` instant once a person approves it. Its Markdown body contains goal, non-goals,
 constraints, success criteria, rough repository scope, and open questions.

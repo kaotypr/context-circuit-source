@@ -49,8 +49,10 @@ constitutes that decision, and no command executes a plan. Order derives
 dependency waves, starting references, and integration merges without running or
 reserving anything.`,
 
-	"context": `Finds catalog entries in context/INDEX.md by substring. It locates candidates;
-judging relevance and writing knowledge stay with the agent.`,
+	"context": `Finds catalog entries in context/INDEX.md by substring, or, with --repo, the
+entries claiming one repository and the reconciliation they leave outstanding —
+what completion names for a plan, for a change made without one. It locates
+candidates; judging relevance and writing knowledge stay with the agent.`,
 
 	"worktree": `Prepares, inspects, moves, repairs, and removes isolated working copies.
 Preparation may reuse ignored runtime files from the bound checkout through
