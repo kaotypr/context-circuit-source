@@ -28,9 +28,6 @@ on the error stream and continues, leaving structured output untouched. The
 warning is framed as a caller mistake — the workspace recorded what it wanted
 and something ran the wrong binary.
 
-Owner: `context-circuit-source@internal/cli/cli.go` `pinnedVersionWarning`, and
-the installer under `context-circuit-source@product/skills/cc-cli/`.
-
 The executable is tagged and built in this checkout, where its source is, so a
 released binary stays traceable to the commit that produced it. Its assets are
 published on the template repository and its GitLab mirror instead, so installing
@@ -42,20 +39,37 @@ release notes carry the source commit.
 
 Installation targets the **execution environment**, not the user's desktop: a
 container or remote Linux host installs Linux packages. An organization that
-mirrors releases into its own GitLab project installs from that project's generic
-package registry, which the workspace records as `cli_registry` so one member
-configures it for everyone; the credential reaches only the registry in use. It needs no
-administrator access, verifies a checksum and the executable's own reported
-version before switching the shared command, leaves the current command
-untouched on any failure, and supports offline install from a trusted release.
-Rollback is reinstalling the older version, which is still in the store.
-Installation never initializes, migrates, or rewrites a workspace.
+mirrors releases into its own GitLab project installs from that project's
+generic package registry, which the workspace records as `cli_registry` so one
+member configures it for everyone; the credential reaches only the registry in
+use.
+
+Installation itself:
+
+- needs no administrator access;
+- verifies a checksum and the executable's own reported version before switching
+  the shared command;
+- leaves the current command untouched on any failure;
+- supports an offline install from a trusted release;
+- rolls back by reinstalling the older version, which is still in the store;
+- never initializes, migrates, or rewrites a workspace.
 
 ## The embedded seed
 
-The executable embeds a blank workspace used by initialization and by export.
-It is a convenience, not a second source of truth: the exact source-to-output
-mapping is `context-circuit-source@scripts/release-manifest.txt`, the embedding
-reads only what that manifest names, and the release check verifies the embedded
-inventory against it so the seed cannot drift from the shipped template by
-accident. An initialized workspace is never automatically rewritten.
+The executable embeds a blank workspace used by initialization and by export. It
+is a convenience, not a second source of truth: an exact source-to-output
+manifest is the authority, the embedding reads only what that manifest names,
+and the release check verifies the embedded inventory against it so the seed
+cannot drift from the shipped template by accident. An initialized workspace is
+never automatically rewritten.
+
+Owner:
+
+- `context-circuit-source@internal/cli/cli.go` `pinnedVersionWarning` — the
+  warning a workspace gets when the wrong binary runs against it.
+- `context-circuit-source@product/skills/cc-cli/` — the installer, its version
+  store, and the pinned resolution.
+- `context-circuit-source@scripts/release-manifest.txt` — the exact
+  source-to-output mapping the embedded seed is built from.
+- `context-circuit-source@VERSION`, `context-circuit-source@CLI_VERSION` — the
+  two independent version lines.

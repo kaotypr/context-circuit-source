@@ -27,15 +27,18 @@ because it looks complete.
 
 ## What it refuses
 
-The refusals are the product boundary, not gaps waiting to be filled. The
-executable holds no model credentials and calls no model API. It launches
-nothing — a dispatch specification returns a flag saying a launch is still
-required, and is never evidence that an agent ran or finished. It runs no
-application setup, executes no plan, and never commits, pushes, opens a pull
-request, merges, deploys, or deletes a branch; it supplies the repository,
-branch, and base facts that ordinary Git and provider tools act on. Its approval
-and completion operations *record* a decision a person already made rather than
-constituting one. Its diagnostic reports and exits, and nothing waits on it.
+The refusals are the product boundary, not gaps waiting to be filled:
+
+- It holds no model credentials and calls no model API.
+- It launches nothing. A dispatch specification returns a flag saying a launch
+  is still required, and is never evidence that an agent ran or finished.
+- It runs no application setup and executes no plan.
+- It never commits, pushes, opens a pull request, merges, deploys, or deletes a
+  branch. It supplies the repository, branch, and base facts that ordinary Git
+  and provider tools act on.
+- Its approval and completion operations *record* a decision a person already
+  made rather than constituting one.
+- Its diagnostic reports and exits, and nothing waits on it.
 
 The shipped help text carries these refusals verbatim, so they are visible to
 whoever is about to use the tool.
@@ -43,13 +46,13 @@ whoever is about to use the tool.
 ## What the agent owns
 
 Everything interpretive, and the list is long precisely because the executable's
-is short: understanding the request, retrieving the right knowledge, writing an
-intent's goal and success criteria, deciding which repositories a change
-touches, reading real code, writing plans, choosing whether isolation is
-warranted, finishing the environment setup a reuse report left open, deciding
-what to delegate, launching and integrating subagent results, running and
-interpreting checks, judging which durable knowledge a completed plan changed,
-and asking for authorization where a person decides.
+is short. Understanding the request. Retrieving the right knowledge. Writing an
+intent's goal and success criteria. Deciding which repositories a change
+touches. Reading real code and writing plans. Choosing whether isolation is
+warranted, and finishing the environment setup a reuse report left open.
+Deciding what to delegate, launching it, and integrating what comes back.
+Running and interpreting checks. Judging which durable knowledge a completed plan
+changed. Asking for authorization wherever a person decides.
 
 It also owns the honesty obligations that cannot be compiled in: reporting what
 was implemented, tested, and left uncertain; distinguishing a written role file

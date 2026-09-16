@@ -1,6 +1,11 @@
 # Authorization boundaries
 
+What a person decides, and what one decision covers afterwards.
+
 ## Three decisions belong to a person
+
+A fourth is theirs too, below: whether any of this applies to the change at
+hand.
 
 **Approving the intended outcome.** Before detailed code investigation the agent
 writes the intent, presents it, and stops. What it is written against, and how a
@@ -57,6 +62,18 @@ The rule exists because the alternative was observed: a plan's work sat
 uncommitted, its dependent plan prepared a worktree from the base branch that
 therefore held none of it, and the agent copied files between worktrees to
 stand in for ancestry it had no other way to get.
+
+## A fourth decision: which path to take at all
+
+A person may skip the intent and the plans entirely and ask for the change
+directly. That choice is theirs alone — the agent may offer the lane where a
+request is already its own specification, and never takes it unasked. What the
+bypass does and does not relax is [changing something
+directly](direct-changes.md).
+
+It relaxes nothing here. The request stands in for the approval only because
+nothing was derived to approve; every outward action, and a commit in the bound
+checkout, still needs the same word from the same person.
 
 ## What the execution request is not
 
@@ -118,11 +135,13 @@ So each gate names its own consequence in its own output: `planning_required` on
 approval, and `reconcile_required` on completion whenever the plan's repositories
 hold catalog entries, the way a dispatch names `setup_required`. A field whose
 name is the obligation arrives at the moment that obligation comes due, which a
-paragraph read once at session start does not. This is the same reason
-[workspace files and safe editing](../architecture/workspace-files.md) reports a
-resolved base branch instead of leaving it in a file: what the executable knows
-and never states is reconstructed by the agent from whatever is nearest, and a
-gate that states only `ok` leaves the agent to infer that nothing follows.
+paragraph read once at session start does not.
+
+This is the same reason [workspace files and safe
+editing](../architecture/workspace-files.md) reports a resolved base branch
+instead of leaving it in a file: what the executable knows and never states is
+reconstructed by the agent from whatever is nearest, and a gate that states only
+`ok` leaves the agent to infer that nothing follows.
 
 ## Delivery mechanics and attribution
 

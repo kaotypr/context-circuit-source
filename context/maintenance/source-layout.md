@@ -23,15 +23,13 @@ generated workspaces, not this one.
 
 ## Three classes of material
 
-**Shipped instruction** — everything under `context-circuit-source@product/`,
-which is the product's behavior.
+| Class | What it holds |
+| --- | --- |
+| Shipped instruction | The product's behavior: `context-circuit-source@product/` |
+| Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
+| Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer design and evidence material |
 
-**Mutable seed** — `context-circuit-source@template/`, copied into a new
-workspace.
-
-**Never shipped** — this knowledge tree, the workspace's own records, release
-requests, the Go implementation, scripts, and the maintainer design and evidence
-material. Product history and maintainer data never reach a release asset.
+Product history and maintainer data never reach a release asset.
 
 The manifest is the single place that decides which class a file is in, the
 embedding reads only what it names, and the release check verifies the embedded

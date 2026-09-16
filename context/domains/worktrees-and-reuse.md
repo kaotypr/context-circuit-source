@@ -79,13 +79,17 @@ entirely. Additional ignored runtime entries are selected explicitly, must be
 repository-relative and ignored in both source and target, and discovery does
 not descend into arbitrary ignored parent directories.
 
-Safety properties: entries are staged and published only when complete, so a
-failure preserves the worktree and finished entries and a rerun resumes;
-existing destination files are preserved and never overwritten; internal
-symlinks are translated while external symlinks and special files are rejected;
-hard links to the source are never created; paths naming control directories are
-refused; and environment contents are copied opaquely — never printed, never
-placed in a prompt, never stored in a shared record.
+Safety properties, each one a refusal that makes copying safe to automate:
+
+- Entries are staged and published only when complete, so a failure preserves
+  the worktree and the finished entries, and a rerun resumes.
+- Existing destination files are preserved and never overwritten.
+- Internal symlinks are translated; external symlinks and special files are
+  rejected.
+- Hard links to the source are never created.
+- Paths naming control directories are refused.
+- Environment contents are copied opaquely — never printed, never placed in a
+  prompt, never stored in a shared record.
 
 Before reusing dependencies the executable compares the tracked package
 manifests, lockfiles, workspace definitions, and runtime version files between

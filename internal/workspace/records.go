@@ -492,9 +492,16 @@ func (s *Store) KnowledgeCandidates(id string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	return s.CatalogEntriesFor(record.Repositories)
+}
+
+// CatalogEntriesFor lists the entries claiming any of these repositories. A
+// change made without a plan reconciles the same knowledge, so the lookup takes
+// repositories rather than a record.
+func (s *Store) CatalogEntriesFor(repositories []string) ([]string, error) {
 	seen := map[string]bool{}
 	entries := []string{}
-	for _, repository := range record.Repositories {
+	for _, repository := range repositories {
 		lines, err := s.FindContext("{" + repository + "}")
 		if err != nil {
 			return nil, err

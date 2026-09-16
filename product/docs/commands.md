@@ -30,6 +30,7 @@ context-circuit-cli repo relate --from web --to api --description 'Consumes the 
 context-circuit-cli repo inspect --id api
 context-circuit-cli repo fetch --id api --remote origin
 context-circuit-cli context find --query billing
+context-circuit-cli context find --repo api
 ```
 
 Records:
@@ -47,6 +48,12 @@ context-circuit-cli record dependencies --id p0002 --depends-on p0001
 context-circuit-cli record complete --id p0001 --text 'User requested completion.'
 context-circuit-cli record order --intent i001 --mode waves
 ```
+
+`context find` takes one of the two: a query searches the catalog, and a
+repository returns the entries claiming it together with `reconcile_required`,
+which is what completion names for a plan and what a change made without one
+still owes. An unknown repository is refused rather than answered with an empty
+list, because nothing to reconcile and nothing found read the same.
 
 `--band` is optional. A member holding band N allocates intents from `N*100` and
 plans from `N*1000`, so band 2 writes `i200` and `p2000`; members without one

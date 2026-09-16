@@ -23,8 +23,11 @@ and connect local checkouts instead.`,
 each bound repository. Read-only: it changes nothing and waits on nothing.`,
 
 	"check": `Reports record, binding, dependency, and worktree problems, including a note
-that names a record or evidence path it should not. It is an explicitly invoked
-diagnostic that reports and exits, never an implementation or delivery gate.`,
+that names a record or evidence path it should not. Findings marked readability
+report the shape of a note instead: an anchor written into a sentence, a
+paragraph carrying a list it never made, a catalog heading that never says what
+belongs under it. It is an explicitly invoked diagnostic that reports and exits,
+never an implementation or delivery gate.`,
 
 	"member": `The roster in members.yaml is shared; the active member in member.local.yaml is
 this machine's alone. A band is a numeric block one member allocates from, which
@@ -46,8 +49,10 @@ constitutes that decision, and no command executes a plan. Order derives
 dependency waves, starting references, and integration merges without running or
 reserving anything.`,
 
-	"context": `Finds catalog entries in context/INDEX.md by substring. It locates candidates;
-judging relevance and writing knowledge stay with the agent.`,
+	"context": `Finds catalog entries in context/INDEX.md by substring, or, with --repo, the
+entries claiming one repository and the reconciliation they leave outstanding —
+what completion names for a plan, for a change made without one. It locates
+candidates; judging relevance and writing knowledge stay with the agent.`,
 
 	"worktree": `Prepares, inspects, moves, repairs, and removes isolated working copies.
 Preparation may reuse ignored runtime files from the bound checkout through

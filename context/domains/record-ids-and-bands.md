@@ -1,5 +1,7 @@
 # Record identity and allocation bands
 
+Two record kinds, numbered so that two clones never collide.
+
 ## Two record kinds
 
 An **intent** states the outcome a change should produce — goal, non-goals,

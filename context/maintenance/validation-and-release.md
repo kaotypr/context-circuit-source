@@ -1,5 +1,7 @@
 # Validation and release checks
 
+How a change here is proven before it ships, and what stays unproven.
+
 ## What a change here runs
 
 Format changed Go files, then the test suite, then vetting, then the release

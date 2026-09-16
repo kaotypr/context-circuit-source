@@ -38,6 +38,9 @@ product/skills/cc-intent/route.md .cursor/skills/cc-intent/SKILL.md
 product/skills/cc-plan/SKILL.md .agents/skills/cc-plan/SKILL.md
 product/skills/cc-plan/route.md .claude/skills/cc-plan/SKILL.md
 product/skills/cc-plan/route.md .cursor/skills/cc-plan/SKILL.md
+product/skills/cc-direct/SKILL.md .agents/skills/cc-direct/SKILL.md
+product/skills/cc-direct/route.md .claude/skills/cc-direct/SKILL.md
+product/skills/cc-direct/route.md .cursor/skills/cc-direct/SKILL.md
 product/skills/cc-knowledge/SKILL.md .agents/skills/cc-knowledge/SKILL.md
 product/skills/cc-knowledge/route.md .claude/skills/cc-knowledge/SKILL.md
 product/skills/cc-knowledge/route.md .cursor/skills/cc-knowledge/SKILL.md

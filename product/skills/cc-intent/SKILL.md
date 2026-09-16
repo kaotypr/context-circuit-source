@@ -15,6 +15,11 @@ apparent meaning against what the project already records. What that reading
 contradicts, or cannot settle, is a question for the person — not a gap to fill
 with a quiet assumption.
 
+Where the project records the actors it serves, read the stories of the ones
+this request touches. A request cutting across a standing need is a question for
+the person, and naming the actor an outcome serves tells the next reader who it
+is for.
+
 Create the record through the executable, which reserves the ID:
 
 ```sh

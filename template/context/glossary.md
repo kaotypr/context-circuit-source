@@ -10,7 +10,8 @@ its own note, linked from the catalog, with the row pointing there. Write code
 anchors with the logical repository ID from `workspace.yaml`, never a local
 checkout path, and name the identifier whenever the code calls the thing
 something else. That mapping is the reason this file exists: a reader searching
-the repositories for the business word finds nothing without it.
+the repositories for the business word finds nothing without it. It is also why
+this file is the one place anchors sit outside an `Owner:` block.
 
 No terms recorded yet.
 

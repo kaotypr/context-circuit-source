@@ -5,6 +5,15 @@ plan to be executed. The agent interprets the project and writes meaningful
 content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
 
+A third decision is theirs as well: to skip both. A request to make a change
+directly bypasses intent, planning, and worktree preparation, and the change is
+made in the bound checkout on its current branch, uncommitted until they
+authorize a commit. No record is written and no ID is allocated, so the diff and
+the knowledge it touches are the only trace; `context find --repo ID` returns the
+catalog entries claiming that repository and names the reconciliation the same
+way completion does for a plan. Nothing else relaxes, and a change that turns out
+to need an outcome nobody approved returns to the path below.
+
 An intent has a global `id`, `created_by`, a `created_at` instant, linked
 `plans`, and an `approved_at` instant once a person approves it. Its Markdown body contains goal, non-goals,
 constraints, success criteria, rough repository scope, and open questions.
@@ -99,8 +108,9 @@ One note is one unwrapped index entry holding its link, the repositories it appl
 to, the question it answers, its search terms, and the date it was last confirmed.
 `context/glossary.md` is a table of project vocabulary mapped to the code identifiers
 that implement it. A note anchors to repository paths written with the logical
-repository ID; it never names a plan record, an intent record, or a file under
-`sources/`, because those are archived while the knowledge outlasts them and a
+repository ID, collected in one `Owner:` block at its end rather than scattered
+through its sentences; it never names a plan record, an intent record, or a file
+under `sources/`, because those are archived while the knowledge outlasts them and a
 recorded evidence path would reopen material that must stay passive. `check` reports
 the lines in `context/` that cross that boundary.
 

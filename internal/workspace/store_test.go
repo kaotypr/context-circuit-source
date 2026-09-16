@@ -190,9 +190,17 @@ func TestKnowledgeIssues(t *testing.T) {
 				t.Fatal(err)
 			}
 			store := &Store{Root: root}
-			issues, err := store.knowledgeIssues()
+			found, err := store.knowledgeIssues()
 			if err != nil {
 				t.Fatal(err)
+			}
+			// This boundary is about what a note may name. Where the same line
+			// also reads badly, the readability pass reports that separately.
+			issues := []string{}
+			for _, issue := range found {
+				if !strings.Contains(issue, "readability:") {
+					issues = append(issues, issue)
+				}
 			}
 			if tc.flagged != (len(issues) > 0) {
 				t.Fatalf("flagged=%v for %q: %v", tc.flagged, tc.line, issues)
@@ -234,6 +242,12 @@ func TestCatalogConsistency(t *testing.T) {
 		{"several repositories still need one", "- [Billing](domains/billing.md) {api, web} — voiding rules · billing", []string{"domains/billing.md"}, "without a `reviewed"},
 		{"an entry naming none needs no date", "- [Glossary](glossary.md) — project vocabulary · glossary", []string{"glossary.md"}, ""},
 		{"a fenced example is still exempt", "```\n- [Example](domains/example.md) {api} — shape only\n```", nil, ""},
+		// A group says what belongs under it, so the next note has somewhere
+		// obvious to go, and one directory answers to one group.
+		{"heading without a scope line", "## Domains\n\n- [Billing](domains/billing.md) — voiding rules", []string{"domains/billing.md"}, "no line saying what belongs under it"},
+		{"heading with a scope line", "## Domains\n\n*What the system does in each area.*\n\n- [Billing](domains/billing.md) — voiding rules", []string{"domains/billing.md"}, ""},
+		{"one concern under two headings", "## Domains\n\n*Scope.*\n\n- [Billing](domains/billing.md) — voiding rules\n\n## Elsewhere\n\n*Scope.*\n\n- [Dunning](domains/dunning.md) — retry schedule", []string{"domains/billing.md", "domains/dunning.md"}, "catalogued under two headings"},
+		{"uncatalogued top-level note needs no group", "- [Glossary](glossary.md) — project vocabulary", []string{"glossary.md"}, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()

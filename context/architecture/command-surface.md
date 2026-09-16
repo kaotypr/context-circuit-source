@@ -44,13 +44,19 @@ everything that writes runs under the workspace lock.
 
 ## Documentation parity
 
-The shipped reference is `context-circuit-source@product/docs/commands.md`, and
-`context-circuit-source@internal/cli/documentation_test.go` holds it to the
-implemented surface by extracting every complete invocation from the docs'
-fenced examples and checking it against the real command table. A usage template
-that teaches shape rather than a runnable line is recognized and skipped.
+The shipped reference cannot drift from the implemented surface. A test extracts
+every complete invocation from the reference's fenced examples and checks it
+against the real command table; a usage template teaching shape rather than a
+runnable line is recognized and skipped.
 
 This is why a new command lands with its documentation in the same change: the
 test fails otherwise, which is the intended coupling.
 
-Owner: `context-circuit-source@internal/cli/cli.go`.
+Owner:
+
+- `context-circuit-source@internal/cli/cli.go` — the command table, its flags,
+  and the output contract.
+- `context-circuit-source@product/docs/commands.md` — the reference a workspace
+  is shipped.
+- `context-circuit-source@internal/cli/documentation_test.go` — the check that
+  holds one to the other.

@@ -45,7 +45,7 @@ record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
 record order          [--intent ID] [--mode auto|waves|linear]
                       derive dependency waves, start refs, and integration merges
-context find          --query TEXT (optional index only)
+context find          --query TEXT | --repo ID (optional index only)
 worktree prepare      --repo ID [--plan ID] [--branch NAME] [--start REF]
                       [--path PATH] [--reuse] [--copy-mode auto|required|copy|off]
                       [--copy-path IGNORED_PATH ...]
@@ -196,7 +196,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("intent")
 		values["mode"] = f.String("mode", "auto", "auto, waves, or linear")
 	case "context find":
-		add("query")
+		add("query", "repo")
 	case "worktree prepare":
 		add("repo", "plan", "branch", "start", "path")
 		values["copy-mode"] = f.String("copy-mode", "auto", "runtime file reuse: auto, required, copy, off")
@@ -256,6 +256,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		for _, k := range []string{"plan", "branch", "start", "path"} {
 			optional[k] = true
 		}
+	}
+	// A search takes a query and a reconciliation takes a repository. Either one
+	// is a whole call, so both are optional here and an empty call is refused
+	// below, where the alternative can be named.
+	if command == "context find" {
+		optional["query"], optional["repo"] = true, true
 	}
 	// A planner takes --intent and a worker takes --plan; neither is universal,
 	// so the command accepts both as optional and refuses the wrong pairing by
@@ -403,6 +409,30 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "record order":
 			return s.Order(get("intent"), get("mode"))
 		case "context find":
+			// Completion names the knowledge a plan made due; a change made
+			// without a plan has no record to name it, so the repository asks
+			// for the same candidates and is told the same act is outstanding.
+			if get("query") == "" && get("repo") == "" {
+				return nil, fmt.Errorf("pass --query to search, or --repo for the entries claiming one repository")
+			}
+			if repository := get("repo"); repository != "" {
+				if get("query") != "" {
+					return nil, fmt.Errorf("pass --query or --repo, not both")
+				}
+				cfg, e := s.Config()
+				if e != nil {
+					return nil, e
+				}
+				if _, known := cfg.Repositories[repository]; !known {
+					return nil, fmt.Errorf("unknown repository: %s", repository)
+				}
+				entries, e := s.CatalogEntriesFor([]string{repository})
+				result := map[string]any{"repository": repository, "knowledge_candidates": entries}
+				if len(entries) > 0 {
+					result["reconcile_required"] = "judge each entry above against what this change actually altered: edit the note and its catalog entry together and move its reviewed date, or report that it changed nothing"
+				}
+				return result, e
+			}
 			return s.FindContext(get("query"))
 		case "worktree prepare":
 			return s.Prepare(ctx, get("repo"), get("plan"), get("branch"), get("start"), get("path"), reuse, workspace.ReuseOptions{Mode: get("copy-mode"), Paths: copyPaths})
