@@ -193,10 +193,13 @@ and provider tools; the Go executable provides repository, branch, and base
 information and never silently delivers. The branch the work started from — this
 machine's recorded base, or the repository's default branch when the binding
 records none — is the default PR target unless the user chooses another. Read it
-as `base_branch` from `status`, `repo inspect`, or the worktree you are
-delivering from; `workspace.yaml` records
+as `base_branch`; `workspace.yaml` records
 a `default_branch`, which is the repository's default and not what this machine
-delivers to, and answering from it targets the wrong branch convincingly. Deliver per repository when appropriate. Explain relevant drift
+delivers to, and answering from it targets the wrong branch convincingly. When
+the user asks to deliver changes or open a pull request, use
+`.agents/skills/cc-deliver/SKILL.md`, which says which branch each request opens
+from and against what, per repository and for the chain ends of a stacked run.
+Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more

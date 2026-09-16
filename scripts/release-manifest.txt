@@ -53,3 +53,6 @@ product/skills/cc-review/route.md .cursor/skills/cc-review/SKILL.md
 product/skills/cc-complete/SKILL.md .agents/skills/cc-complete/SKILL.md
 product/skills/cc-complete/route.md .claude/skills/cc-complete/SKILL.md
 product/skills/cc-complete/route.md .cursor/skills/cc-complete/SKILL.md
+product/skills/cc-deliver/SKILL.md .agents/skills/cc-deliver/SKILL.md
+product/skills/cc-deliver/route.md .claude/skills/cc-deliver/SKILL.md
+product/skills/cc-deliver/route.md .cursor/skills/cc-deliver/SKILL.md
