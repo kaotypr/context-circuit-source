@@ -18,18 +18,27 @@ import (
 // on it and fail where the network is absent. So it answers from what the
 // checkout already knows, and a branch with no fetched counterpart reports
 // nothing rather than claiming the branch is current.
-func behindRemote(ctx context.Context, repo, branch string) (int, string) {
+func remoteCounterpart(ctx context.Context, repo, branch string) string {
 	if branch == "" || strings.HasPrefix(branch, "-") {
-		return 0, ""
+		return ""
 	}
 	// --end-of-options is echoed back by --abbrev-ref rather than consumed, so
 	// this call is guarded by the branch-name check above instead.
 	remote, err := Git(ctx, repo, "rev-parse", "--abbrev-ref", branch+"@{upstream}")
-	if err != nil || remote == "" || strings.ContainsAny(remote, "\n\r") {
-		remote = "origin/" + branch
-		if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/remotes/"+remote+"^{commit}"); err != nil {
-			return 0, ""
-		}
+	if err == nil && remote != "" && !strings.ContainsAny(remote, "\n\r") {
+		return remote
+	}
+	remote = "origin/" + branch
+	if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/remotes/"+remote+"^{commit}"); err != nil {
+		return ""
+	}
+	return remote
+}
+
+func behindRemote(ctx context.Context, repo, branch string) (int, string) {
+	remote := remoteCounterpart(ctx, repo, branch)
+	if remote == "" {
+		return 0, ""
 	}
 	count, err := Git(ctx, repo, "rev-list", "--count", "--end-of-options", "refs/heads/"+branch+".."+remote)
 	if err != nil {

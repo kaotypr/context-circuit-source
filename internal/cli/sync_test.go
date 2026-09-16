@@ -229,3 +229,41 @@ func TestSchemaMismatchSaysWhichSideIsBehind(t *testing.T) {
 		t.Errorf("an older workspace lost its migration answer: %s", behind)
 	}
 }
+
+// Work merged upstream is not work to declare a dependency on; it is work this
+// checkout has not pulled. Telling the caller to depend on it would record a
+// relationship that does not exist and branch from a merged branch instead of
+// the updated base, so only the staleness report — which names the real act —
+// should speak.
+func TestWorkMergedUpstreamIsNotReportedAsADependency(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	bare := filepath.Join(f.home, "api.git")
+	git(t, f.home, "init", "--bare", "-b", "main", bare)
+	git(t, api, "remote", "add", "origin", bare)
+	git(t, api, "push", "-u", "origin", "main")
+
+	i := f.intent("billing")
+	first := f.plan(i.ID, "ledger", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", first.ID))
+	commitIn(t, w.Path, "ledger.go", "test: implement the ledger")
+
+	// The pull request merges on the provider: the branch lands on origin/main
+	// while this checkout's own main stays where it was.
+	git(t, w.Path, "push", "origin", "HEAD:main")
+	git(t, api, "fetch", "origin")
+
+	second := f.plan(i.ID, "next", "api")
+	if second.UnmergedPlans != "" {
+		t.Errorf("work already merged upstream was reported as a dependency to declare: %s", second.UnmergedPlans)
+	}
+
+	next := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", second.ID))
+	if next.UnmergedPlans != "" {
+		t.Errorf("work already merged upstream was reported at preparation: %s", next.UnmergedPlans)
+	}
+	// The real fault is still named, once.
+	if !strings.Contains(next.SyncRequired, "behind origin/main") {
+		t.Errorf("a base behind its remote went unreported: %q", next.SyncRequired)
+	}
+}

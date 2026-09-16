@@ -346,7 +346,8 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 			if _, err := Git(ctx, checkout.Path, "rev-parse", "--verify", "--end-of-options", base+"^{commit}"); err != nil {
 				continue
 			}
-			found := s.unmergedSiblings(ctx, checkout.Path, repoID, id, base)
+			remoteBase := remoteCounterpart(ctx, checkout.Path, checkout.BaseBranch)
+			found := s.unmergedSiblings(ctx, checkout.Path, repoID, id, base, remoteBase)
 			for _, item := range found {
 				if slices.Contains(record.DependsOn, item.Plan) {
 					continue

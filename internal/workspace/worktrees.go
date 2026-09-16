@@ -228,7 +228,8 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		// An explicit --start is the coordinator saying what they meant, so only
 		// a start this command derived is questioned.
 		if derived {
-			unmerged = describeUnmerged(s.unmergedSiblings(ctx, repo, repoID, plan, commit), repoID, plan, checkout.BaseBranch)
+			remoteBase := remoteCounterpart(ctx, repo, checkout.BaseBranch)
+			unmerged = describeUnmerged(s.unmergedSiblings(ctx, repo, repoID, plan, commit, remoteBase), repoID, plan, checkout.BaseBranch)
 		}
 		_, err = Git(ctx, repo, "worktree", "add", "-b", branch, "--", path, commit)
 		if err != nil {
@@ -443,7 +444,7 @@ type unmergedPlan struct {
 	Count  string
 }
 
-func (s *Store) unmergedSiblings(ctx context.Context, repo, repoID, plan, start string) []unmergedPlan {
+func (s *Store) unmergedSiblings(ctx context.Context, repo, repoID, plan, start, remoteBase string) []unmergedPlan {
 	records, err := s.ListRecords(false)
 	if err != nil || start == "" {
 		return nil
@@ -459,6 +460,16 @@ func (s *Store) unmergedSiblings(ctx context.Context, repo, repoID, plan, start 
 		}
 		if _, err := Git(ctx, repo, "merge-base", "--is-ancestor", "--end-of-options", branch, start); err == nil {
 			continue
+		}
+		// Work already merged upstream is not work this plan has to declare a
+		// dependency on; it is work this checkout has not pulled. Saying
+		// "depend on it" there would record a relationship that does not exist
+		// and branch from a merged branch instead of the updated base. The
+		// staleness report names the real act, so leave that to it.
+		if remoteBase != "" {
+			if _, err := Git(ctx, repo, "merge-base", "--is-ancestor", "--end-of-options", branch, remoteBase); err == nil {
+				continue
+			}
 		}
 		count, err := Git(ctx, repo, "rev-list", "--count", "--end-of-options", start+".."+branch)
 		if err != nil {
