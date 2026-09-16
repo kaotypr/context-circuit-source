@@ -251,6 +251,11 @@ func (s *Store) knowledgeIssues() ([]string, error) {
 		if err != nil {
 			return err
 		}
+		// The glossary is a table of terms rather than a note, and is the one
+		// place an anchor belongs outside an Owner block.
+		if entry.Name() != "INDEX.md" && entry.Name() != "README.md" && entry.Name() != "glossary.md" {
+			issues = append(issues, noteReadability(relative, data)...)
+		}
 		for index, line := range strings.Split(string(data), "\n") {
 			for _, pattern := range []*regexp.Regexp{knowledgeMachinery, knowledgeRecord} {
 				if match := pattern.FindStringSubmatch(line); match != nil {
@@ -272,6 +277,9 @@ func (s *Store) knowledgeIssues() ([]string, error) {
 
 var catalogLink = regexp.MustCompile(`\]\(([^)\s]+)(?:\s+"[^"]*")?\)`)
 
+// Groups carry entries; the document's own title does not.
+var catalogHeading = regexp.MustCompile(`^#{2,6}\s+\S`)
+
 // An entry naming repositories claims to describe their code, so it carries the
 // date that claim was last confirmed. The glossary and anything else describing
 // the project rather than a repository names none and needs no date.
@@ -292,14 +300,30 @@ func (s *Store) catalogIssues(notes map[string]string) ([]string, error) {
 	}
 	var issues []string
 	referenced, fenced := map[string]bool{}, false
+	heading, headingLine, scoped := "", 0, false
+	concerns, flagged := map[string]string{}, map[string]bool{}
 	for index, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(strings.TrimSpace(line), "```") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
 			fenced = !fenced
+			continue
+		}
+		if !fenced && catalogHeading.MatchString(trimmed) {
+			heading, headingLine, scoped = strings.TrimLeft(trimmed, "# "), index, false
 			continue
 		}
 		// A fenced example teaches the entry shape; it catalogs nothing.
 		if fenced || !catalogEntry.MatchString(line) {
+			// A group says what belongs under it before its first entry, so the
+			// next note has somewhere obvious to go rather than a guess.
+			if !fenced && trimmed != "" {
+				scoped = true
+			}
 			continue
+		}
+		if heading != "" && !scoped && !flagged[heading] {
+			flagged[heading] = true
+			issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: heading has no line saying what belongs under it (%s)", headingLine+1, heading))
 		}
 		if catalogRepositories.MatchString(line) && !catalogReviewed.MatchString(strings.TrimRight(line, " \t")) {
 			issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: catalog entry names repositories without a `reviewed YYYY-MM-DD` date", index+1))
@@ -321,6 +345,18 @@ func (s *Store) catalogIssues(notes map[string]string) ([]string, error) {
 			referenced[target] = true
 			if _, ok := notes[target]; !ok && target != "INDEX.md" {
 				issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: catalog entry links to a missing note (%s)", index+1, target))
+			}
+			// One directory, one heading: notes split across two groups leave a
+			// reader guessing which of them a new note belongs under.
+			if concern, _, nested := strings.Cut(target, "/"); nested && heading != "" {
+				if other, seen := concerns[concern]; seen && other != heading {
+					if key := concern + "/"; !flagged[key] {
+						flagged[key] = true
+						issues = append(issues, fmt.Sprintf("context/INDEX.md:%d: notes in %s/ are catalogued under two headings (%s and %s)", index+1, concern, other, heading))
+					}
+				} else if !seen {
+					concerns[concern] = heading
+				}
 			}
 		}
 	}

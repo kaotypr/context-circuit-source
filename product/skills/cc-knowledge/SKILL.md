@@ -52,6 +52,11 @@ a handful of paths a two-column table reads better than bullets, and both are
 the same block. Never a comma-separated run of paths, which names no question
 any of them answers and sends the reader to open all of them.
 
+A table that pairs paths with what each one owns is the other place an anchor
+belongs, wherever the mapping is the note's subject rather than its appendix — a
+column heading does the same work as the `Owner:` block. `check` reports an
+anchor written in a sentence.
+
 `context/glossary.md` is the exception, because mapping a project word to the
 identifier the code uses is the reason that file exists.
 

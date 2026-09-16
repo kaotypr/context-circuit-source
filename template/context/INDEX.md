@@ -134,12 +134,16 @@ reads as a string rather than a list, nothing says which path answers which
 question, and a reader who cannot tell them apart opens all of them, which is
 the scanning a note exists to prevent.
 
+Where the mapping is the note's subject rather than its appendix, a table
+pairing paths with what each one owns carries them instead: a column heading
+does the same work the `Owner:` block does. A sentence never does.
+
 `glossary.md` is the exception, because mapping a project word to the identifier
 the code uses is the reason that file exists.
 
 Link freely to other notes here. Which record or which evidence produced a note
 belongs in that plan record. The `check` diagnostic reports any line in a note
-that crosses this boundary, and any anchor written outside an `Owner:` block.
+that crosses this boundary, and any anchor written into a sentence.
 
 ## Knowledge units
 

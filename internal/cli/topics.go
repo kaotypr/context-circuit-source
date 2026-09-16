@@ -23,8 +23,11 @@ and connect local checkouts instead.`,
 each bound repository. Read-only: it changes nothing and waits on nothing.`,
 
 	"check": `Reports record, binding, dependency, and worktree problems, including a note
-that names a record or evidence path it should not. It is an explicitly invoked
-diagnostic that reports and exits, never an implementation or delivery gate.`,
+that names a record or evidence path it should not. Findings marked readability
+report the shape of a note instead: an anchor written into a sentence, a
+paragraph carrying a list it never made, a catalog heading that never says what
+belongs under it. It is an explicitly invoked diagnostic that reports and exits,
+never an implementation or delivery gate.`,
 
 	"member": `The roster in members.yaml is shared; the active member in member.local.yaml is
 this machine's alone. A band is a numeric block one member allocates from, which
