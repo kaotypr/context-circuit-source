@@ -70,8 +70,8 @@ concerns are the better names wherever they differ:
 | Directory | What belongs in it |
 | --- | --- |
 | `architecture/` | How the system is built, and why it is shaped that way |
-| `domains/` | What the system does in one area of the business, and the rules that govern it |
-| `actors/` | Who interacts with this project, and what each one needs from it |
+| `domains/` | What the system does in one area of the business, the rules that govern it, and which actors take part |
+| `actors/` | Who deals with this project, and what each one needs from it, as stories grouped by the flow they take part in |
 | `product/` | What the product is for, who it serves, and the decisions behind it |
 | `operations/` | How it is run, released, watched, and recovered |
 | `references/` | Facts looked up rather than read — formats, codes, external contracts |
@@ -84,7 +84,7 @@ confused:
 ### Domains
 
 *What the system does in each area of the business, and the rules that govern
-it. How it is built is `architecture/`.*
+it. Who it does that for is `actors/`; how it is built is `architecture/`.*
 
 - [Invoice lifecycle](domains/billing/invoice-lifecycle.md) {api} — when an invoice is voided rather than credited · invoices, dunning, proration · reviewed 2026-02-04
 ```

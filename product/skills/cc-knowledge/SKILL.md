@@ -79,6 +79,59 @@ directives, because some readers see the source rather than a picture.
 More than eight lines of unbroken prose usually has a list or a table hiding
 inside it.
 
+## An actor note
+
+`actors/` holds one note per actor that deals with the project — a person in a
+role, a team, or an external system — and what each one needs from it. These are
+the notes an intent is grounded against, so they record what an actor needs
+today rather than what the next change will give them.
+
+Group the stories under the business flow they belong to, and head each group
+with a link to the `domains/` note describing that flow:
+
+```markdown
+# Support agent
+
+Answers customer contact after an order is placed, and is the only actor who can
+return money to a customer without finance review.
+
+## [Order lookup](../domains/order-lookup.md)
+
+1. **As a support agent, I want to find an order from a phone number alone,** so
+   that I can help a caller who never received a confirmation email.
+2. **As a support agent, I want to see where the courier is,** so that "where is
+   my order" is answered without contacting the courier.
+
+## [Refunds](../domains/refunds.md)
+
+3. **As a support agent, I want to refund up to the goodwill limit myself,** so
+   that a small complaint closes in one call.
+4. **As a support agent, I want a larger refund to reach finance with the case
+   attached,** so that the customer does not restate it to a second person.
+
+Owner:
+
+- `api@internal/support/` — case handling and the goodwill limit.
+- `console@src/routes/orders/` — the surface this actor works in.
+```
+
+Four rules hold that shape up:
+
+- **The flow itself is described once, in `domains/`.** An actor note carries
+  only that actor's stake in it. A flow retold in every participating actor's
+  note becomes several copies that disagree within a quarter.
+- **Stories are numbered once through the note**, not per group, so a number
+  stays a handle worth citing while groups are renamed and reordered. A story
+  that stops being true goes, and the numbers around it stay put.
+- **A story says what the project does for that actor now.** A capability
+  someone wants is an intent; a wish list kept here rots into a backlog nobody
+  trusts, and takes the reviewed date's meaning with it.
+- **Everything else is a note like any other**: anchors in `Owner:` only, and
+  nothing about the workspace machinery.
+
+An actor earns a note once the project has to ask who a request is for, or once
+two actors want incompatible things from the same flow.
+
 ## Write it so a person can read it
 
 A note is read by someone deciding something and by an agent about to change
