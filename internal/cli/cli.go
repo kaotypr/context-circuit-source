@@ -367,7 +367,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			}
 			_, err = workspace.Git(ctx, path, "fetch", "--", remote)
 		case "record create":
-			return s.CreateRecord(get("kind"), get("slug"), get("title"), get("intent"), repos, dependencies)
+			return s.CreateRecord(ctx, get("kind"), get("slug"), get("title"), get("intent"), repos, dependencies)
 		case "record show":
 			return s.FindRecord(get("id"))
 		case "record list":

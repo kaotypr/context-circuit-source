@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -33,6 +34,11 @@ type Record struct {
 	Plans        []string `yaml:"plans,omitempty" json:"plans,omitempty"`
 	Path         string   `yaml:"-" json:"path"`
 	Content      string   `yaml:"-" json:"content,omitempty"`
+
+	// Set only when a record is created in a workspace behind its remote, where
+	// the number just reserved may already be taken in another clone. Never
+	// written to the record: it describes this allocation, not this record.
+	SyncRequired string `yaml:"-" json:"sync_required,omitempty"`
 }
 
 var legacyRecordKey = regexp.MustCompile(`(?m)^completed:`)
@@ -236,7 +242,7 @@ func (s *Store) allocate(kind, author string) (string, error) {
 	return id, s.Update(".context-circuit/ids.yaml", []string{key}, append(values, id), 0644)
 }
 
-func (s *Store) CreateRecord(kind, slug, title, intent string, repos, dependencies []string) (Record, error) {
+func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent string, repos, dependencies []string) (Record, error) {
 	if kind != "intent" && kind != "plan" {
 		return Record{}, errors.New("record kind must be intent or plan")
 	}
@@ -320,6 +326,17 @@ func (s *Store) CreateRecord(kind, slug, title, intent string, repos, dependenci
 		}
 	}
 	record.Content = string(data)
+	// Bands keep two members apart; nothing keeps one workspace apart from its
+	// own unsynchronized clone, and a number is reserved before its file exists.
+	// The ledger that would have shown the collision is the thing not pulled, so
+	// say it where the number is handed out rather than leaving it to `check`
+	// after both records are written and referenced.
+	if branch, err := Git(ctx, s.Root, "symbolic-ref", "--quiet", "--short", "HEAD"); err == nil {
+		if n, remote := behindRemote(ctx, s.Root, branch); n > 0 {
+			record.SyncRequired = fmt.Sprintf("this workspace is %d commit(s) behind %s, so %s may already be reserved in another clone. Pull the workspace and run `check` before publishing this ID or branching from it.",
+				n, remote, id)
+		}
+	}
 	return record, nil
 }
 

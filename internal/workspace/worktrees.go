@@ -22,6 +22,12 @@ type Worktree struct {
 	BaseBranch  string       `json:"base_branch,omitempty"`
 	Reused      bool         `json:"reused,omitempty"`
 	Environment []ReuseEntry `json:"environment,omitempty"`
+
+	// The base branch this worktree started from was behind its fetched remote.
+	// Preparation succeeded, so this is reported rather than refused: the work
+	// is recoverable, and only the caller knows whether the missing commits
+	// matter. Naming it here is what stops it being discovered at review.
+	SyncRequired string `json:"sync_required,omitempty"`
 }
 type Association struct {
 	Repository  string `yaml:"repository"`
@@ -171,7 +177,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if _, err := os.Lstat(path); !os.IsNotExist(err) {
 		return Worktree{}, fmt.Errorf("destination already exists: %s", path)
 	}
-	var commit string
+	var commit, stale string
 	if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err == nil {
 		if !reuse {
 			return Worktree{}, errors.New("branch already exists; use --reuse to preserve and check out its existing commits")
@@ -198,6 +204,13 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 			start = "refs/heads/" + checkout.BaseBranch
 			if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}"); err != nil {
 				start = "refs/remotes/origin/" + checkout.BaseBranch
+			} else if n, remote := behindRemote(ctx, repo, checkout.BaseBranch); n > 0 {
+				// A local base branch nobody synchronized is the quietest way to
+				// get a worktree missing work that already exists: preparation
+				// reports the branch it used and nothing about how old it is, so
+				// the gap is found at review or not at all.
+				stale = fmt.Sprintf("%s is %d commit(s) behind %s and this worktree starts from it, so that work is not here. Fast-forward %s in the bound checkout and rebase %s onto it, or remove this worktree and prepare again.",
+					checkout.BaseBranch, n, remote, checkout.BaseBranch, branch)
 			}
 		}
 		commit, err = Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", start+"^{commit}")
@@ -213,7 +226,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err != nil {
 		return Worktree{}, err
 	}
-	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch}
+	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch, SyncRequired: stale}
 	if err := s.saveAssociation(repoID, result); err != nil {
 		return result, fmt.Errorf("worktree exists at %s but local association could not be saved: %w", actual, err)
 	}
