@@ -28,7 +28,11 @@ func setup(t *testing.T) fixture {
 	t.Helper()
 	home := t.TempDir()
 	config := filepath.Join(home, "gitconfig")
-	write(t, config, "")
+	// A fixture identity, and useConfigOnly so Git refuses to invent one from the
+	// host instead. Without that guard a commit-creating call that forgot its
+	// identity passes on a developer machine Git can guess on and fails only on
+	// CI, which is where this was first noticed.
+	write(t, config, "[user]\n\tname = Fixture\n\temail = fixture@example.invalid\n\tuseConfigOnly = true\n")
 	t.Setenv("GIT_CONFIG_GLOBAL", config)
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	f := fixture{t, filepath.Join(home, "workspace"), home}

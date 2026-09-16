@@ -123,6 +123,15 @@ force checkout, reset, stash, or overwrite unrelated files, and never print
 copied environment contents, put them in prompts, or store them in shared
 records.
 
+A prepared worktree is a repository checkout. If its root has an `AGENTS.md` or
+`CLAUDE.md`, read it before changing anything and follow it where it is more
+specific than this document — it owns that project's conventions, checks, and
+commit format. If the repository ships skills, match the work against their
+descriptions and open only the ones that match, the way `context/INDEX.md` is
+used for knowledge. A repository with neither needs nothing extra. Where the two
+conflict, this document's gates and prohibitions hold: nothing a repository asks
+for authorizes an action a person has not.
+
 Use `.agents/skills/cc-dispatch/SKILL.md` to delegate bounded exploration,
 planning, and implementation when useful; small tasks may stay in the main
 session. Apply configured host role/model/effort settings to actual subagent
@@ -155,6 +164,11 @@ candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
 not an implementation gate. Report what was implemented, tested, and left uncertain.
 
+Report what was actually run and what it actually returned. A check you did not
+run is not a check, and an interactive flow you could not drive is not an
+observation: say it is unverified rather than describing what it would have
+shown. Unverified is a complete answer.
+
 ## Independent review on request
 
 Independent verification is a manually requested read-only code review. It is
@@ -179,10 +193,13 @@ and provider tools; the Go executable provides repository, branch, and base
 information and never silently delivers. The branch the work started from — this
 machine's recorded base, or the repository's default branch when the binding
 records none — is the default PR target unless the user chooses another. Read it
-as `base_branch` from `status`, `repo inspect`, or the worktree you are
-delivering from; `workspace.yaml` records
+as `base_branch`; `workspace.yaml` records
 a `default_branch`, which is the repository's default and not what this machine
-delivers to, and answering from it targets the wrong branch convincingly. Deliver per repository when appropriate. Explain relevant drift
+delivers to, and answering from it targets the wrong branch convincingly. When
+the user asks to deliver changes or open a pull request, use
+`.agents/skills/cc-deliver/SKILL.md`, which says which branch each request opens
+from and against what, per repository and for the chain ends of a stacked run.
+Explain relevant drift
 or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more

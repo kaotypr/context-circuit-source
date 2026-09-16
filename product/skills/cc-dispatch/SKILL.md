@@ -145,6 +145,10 @@ and branches, so they cannot touch each other's files, and a sibling's work
 arrives later through an integration merge. Several workers inside one plan's
 worktree genuinely share files and must preserve each other's edits.
 
+A plan naming several repositories has a worktree and a branch in each, so it
+takes one sole-owner worker per repository rather than one for the plan. Each is
+briefed with the whole plan and sees only its own working directory.
+
 Pass `--shared` only for the second case. The default brief tells a worker it is
 the sole owner of its directory; `--shared` replaces that with shared-ownership
 language. Claiming the wrong one either invites a worker to guess at edits it

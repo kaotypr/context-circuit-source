@@ -43,6 +43,12 @@ The coordinator writes the plan record and decides any split, so no plan exists 
 Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, true},
 	"worker": {"Implement a bounded part of an approved plan and run normal checks.", `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
 
+The working directory is a repository checkout. Read the AGENTS.md or CLAUDE.md
+at its root if there is one, and follow it where it is more specific than this
+brief. If the repository ships skills, match your assignment against their
+descriptions and open only the ones that match. A repository with neither needs
+nothing extra.
+
 Run the repositories' ordinary checks, then commit on the branch this working
 directory is already on — leave nothing uncommitted when you report. Take as many
 commits as the work naturally needs, and commit failing or partial work too: what

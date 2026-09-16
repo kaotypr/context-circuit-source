@@ -47,3 +47,12 @@ Other work need not wait for unrelated knowledge updates.
 It does not remove a worktree, delete a branch, or deliver anything. Worktrees
 and branches remain after completion, and each of those is a separate act needing
 its own request.
+
+Completing a plan does not mean its work was merged. When another approach
+replaces a plan, complete it anyway and say so in the note: the record should
+describe what happened, and the alternative is a plan left open forever.
+
+One consequence needs care. `record order` treats any plan carrying
+`completed_at` as a satisfied dependency, so a plan that merged nothing still
+satisfies whatever depends on it. Move those dependencies to the plan that did
+the work.
