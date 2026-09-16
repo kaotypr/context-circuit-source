@@ -649,3 +649,94 @@ func TestPreparingADependentPlanNamesItsStart(t *testing.T) {
 		t.Fatalf("dependent worktree did not start from the predecessor: %+v", dependent)
 	}
 }
+
+// deliverMarks collapses an order into plan -> repositories it ends the chain
+// for, across every wave.
+func deliverMarks(o workspace.Order) map[string][]string {
+	marks := map[string][]string{}
+	for _, wave := range o.Layers {
+		for _, plan := range wave.Plans {
+			if len(plan.Deliver) > 0 {
+				marks[plan.ID] = plan.Deliver
+			}
+		}
+	}
+	for _, plan := range o.Chain {
+		if len(plan.Deliver) > 0 {
+			marks[plan.ID] = plan.Deliver
+		}
+	}
+	return marks
+}
+
+// The order already holds the graph; what it never said is where each chain
+// ends. The intuitive shortcut is the last wave, and it is wrong: waves answer
+// readiness, so a plan nothing depends on sits in wave 1 and still ends its
+// chain. Delivering the last wave drops it without saying so.
+func TestOrderMarksWhereEachChainEnds(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	f.ok("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing")
+	plan := func(slug string, dependencies ...string) {
+		args := []string{"record", "create", "--kind", "plan", "--slug", slug, "--title", slug,
+			"--intent", "i001", "--repo", "api"}
+		for _, dependency := range dependencies {
+			args = append(args, "--depends-on", dependency)
+		}
+		f.ok(args...)
+	}
+	plan("root")               // p0001
+	plan("dependent", "p0001") // p0002, wave 2
+	plan("independent")        // p0003, wave 1 and also a chain end
+
+	o := order(t, f.ok("record", "order", "--intent", "i001", "--mode", "waves"))
+	marks := deliverMarks(o)
+	if len(marks["p0001"]) != 0 {
+		t.Errorf("a plan with a dependent was marked as ending its chain: %v", marks)
+	}
+	for _, id := range []string{"p0002", "p0003"} {
+		if len(marks[id]) != 1 || marks[id][0] != "api" {
+			t.Errorf("%s ends its chain in api and was not marked: %v", id, marks)
+		}
+	}
+	// The failure this guards: p0003 sits in wave 1, so the last wave is not
+	// the set to deliver.
+	last := o.Layers[len(o.Layers)-1]
+	if len(last.Plans) != 1 || last.Plans[0].ID != "p0002" {
+		t.Fatalf("fixture changed shape: %+v", last)
+	}
+}
+
+// Ancestry is per repository, because a predecessor that does not share a
+// repository contributes no commits to that repository's branch. A plan can end
+// one repository's chain while sitting mid-chain in another.
+func TestChainEndsAreReportedPerRepository(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	f.repository("web")
+	f.ok("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing")
+	f.ok("record", "create", "--kind", "plan", "--slug", "both", "--title", "both",
+		"--intent", "i001", "--repo", "api", "--repo", "web")
+	f.ok("record", "create", "--kind", "plan", "--slug", "api-only", "--title", "api-only",
+		"--intent", "i001", "--repo", "api", "--depends-on", "p0001")
+
+	marks := deliverMarks(order(t, f.ok("record", "order", "--intent", "i001", "--mode", "waves")))
+	if len(marks["p0001"]) != 1 || marks["p0001"][0] != "web" {
+		t.Errorf("p0001 still ends the web chain and no longer ends api: %v", marks)
+	}
+	if len(marks["p0002"]) != 1 || marks["p0002"][0] != "api" {
+		t.Errorf("p0002 ends the api chain: %v", marks)
+	}
+}
+
+// A linear chain stacks on the previous member sharing the repository whatever
+// the records declare, so the last member holding a repository ends it.
+func TestLinearChainMarksItsLastMemberPerRepository(t *testing.T) {
+	f := setup(t)
+	diamond(f)
+	o := order(t, f.ok("record", "order", "--intent", "i001", "--mode", "linear"))
+	marks := deliverMarks(o)
+	if len(marks) != 1 || len(marks["p0005"]) != 1 || marks["p0005"][0] != "api" {
+		t.Errorf("a linear chain ends at its last member alone: %v", marks)
+	}
+}

@@ -24,6 +24,9 @@ type OrderPlan struct {
 	DependsOn    []string              `yaml:"depends_on,omitempty" json:"depends_on,omitempty"`
 	Start        map[string]OrderStart `yaml:"start" json:"start"`
 	Shares       []string              `yaml:"shares_repository_with,omitempty" json:"shares_repository_with,omitempty"`
+	// Repositories whose branch for this plan ends its chain, and so is the one
+	// to deliver. Naming which branch, never permitting the delivery.
+	Deliver []string `yaml:"deliver,omitempty" json:"deliver,omitempty"`
 }
 
 type OrderWave struct {
@@ -194,6 +197,12 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 	}
 	result.Strategy.Repositories = len(repositories)
 
+	var selected []string
+	for _, wave := range waves {
+		selected = append(selected, wave...)
+	}
+	ends := deliverable(plans, selected)
+
 	for number, wave := range waves {
 		entry := OrderWave{Wave: number + 1, Concurrency: len(wave)}
 		for _, id := range wave {
@@ -203,6 +212,7 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 				Repositories: plan.Repositories,
 				DependsOn:    plan.DependsOn,
 				Start:        map[string]OrderStart{},
+				Deliver:      ends[id],
 			}
 			for _, repo := range plan.Repositories {
 				start := s.startFor(plans, plan, repo, bindings.BaseBranch(cfg, repo))
@@ -304,10 +314,48 @@ func (s *Store) linearChain(plans map[string]Record, order []string, cfg Config,
 				}
 			}
 			item.Start[repo] = OrderStart{Base: base}
+			// A linear chain stacks on the previous member sharing the
+			// repository whatever the records declare, so the last member
+			// holding a repository is where that repository's chain ends.
+			last := true
+			for later := position + 1; later < len(order); later++ {
+				if slices.Contains(plans[order[later]].Repositories, repo) {
+					last = false
+					break
+				}
+			}
+			if last {
+				item.Deliver = append(item.Deliver, repo)
+			}
 		}
 		chain = append(chain, item)
 	}
 	return chain
+}
+
+// deliverable reports, per plan, the repositories whose branch for that plan is
+// the end of its chain — the branch that already contains the predecessors it
+// was prepared from, and therefore the one a pull request should carry.
+//
+// It is per repository because ancestry is: startFor stacks only a predecessor
+// that shares the repository, so a plan can end the chain in one repository and
+// sit mid-chain in another. And it is not the last wave. Waves answer
+// readiness, so a plan nothing depends on sits in wave 1 and still ends its
+// chain; delivering the last wave would drop it without saying so.
+func deliverable(plans map[string]Record, selected []string) map[string][]string {
+	result := map[string][]string{}
+	for _, id := range selected {
+		for _, repo := range plans[id].Repositories {
+			covered := slices.ContainsFunc(selected, func(other string) bool {
+				return other != id && slices.Contains(plans[other].Repositories, repo) &&
+					slices.Contains(plans[other].DependsOn, id)
+			})
+			if !covered {
+				result[id] = append(result[id], repo)
+			}
+		}
+	}
+	return result
 }
 
 func sharesRepository(left, right []string) bool {
