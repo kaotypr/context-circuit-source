@@ -42,6 +42,10 @@ between those two points is ordinary work done in the open — there is no secon
 approval between a plan and its execution. See
 [authorization boundaries](../domains/authorization.md).
 
+Whether that path applies at all is also theirs. A change whose outcome is
+already the request can be made [directly](../domains/direct-changes.md), with no
+intent, no plan, and no worktree, and with every outward gate still in force.
+
 ## What v2 deliberately does not have
 
 Consequence tiers, frozen criteria digests, candidate identities, path leases,

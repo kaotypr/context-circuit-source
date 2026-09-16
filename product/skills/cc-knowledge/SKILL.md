@@ -109,9 +109,9 @@ return money to a customer without finance review.
 
 ## [Refunds](../domains/refunds.md)
 
-3. **As a support agent, I want to refund up to the goodwill limit myself,** so
+1. **As a support agent, I want to refund up to the goodwill limit myself,** so
    that a small complaint closes in one call.
-4. **As a support agent, I want a larger refund to reach finance with the case
+2. **As a support agent, I want a larger refund to reach finance with the case
    attached,** so that the customer does not restate it to a second person.
 
 Owner:
@@ -125,9 +125,11 @@ Four rules hold that shape up:
 - **The flow itself is described once, in `domains/`.** An actor note carries
   only that actor's stake in it. A flow retold in every participating actor's
   note becomes several copies that disagree within a quarter.
-- **Stories are numbered once through the note**, not per group, so a number
-  stays a handle worth citing while groups are renamed and reordered. A story
-  that stops being true goes, and the numbers around it stay put.
+- **Stories are numbered within their group**, restarting at 1 under each flow,
+  and a story is cited by flow and number. Inserting one then renumbers that
+  group alone; numbering straight through the note would move every story below
+  an insertion and break every citation at once. A story that stops being true
+  goes, and the numbers around it stay put.
 - **A story says what the project does for that actor now.** A capability
   someone wants is an intent; a wish list kept here rots into a backlog nobody
   trusts, and takes the reviewed date's meaning with it.

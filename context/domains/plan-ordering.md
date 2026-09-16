@@ -20,11 +20,13 @@ a report that looks like a plan of record invites being treated as one.
 | Waves | Independent plans overlap | One integration merge per fan-in | Several repositories with independent plans |
 | Linear chain | Strictly serial | None | A single repository with any fan-in |
 
-The recommendation is mechanical and reported with its reason: a parallel peak
-of one recommends the chain because it is the same work; a single repository
-with any fan-in recommends the chain because waves buy wall clock and cost
-merges exactly where they are most likely to conflict; otherwise waves, because
-independent plans in separate repositories overlap without a merge at all.
+The recommendation is mechanical and reported with its reason:
+
+- A parallel peak of one recommends the chain, because it is the same work.
+- A single repository with any fan-in recommends the chain, because waves buy
+  wall clock and cost merges exactly where they are most likely to conflict.
+- Anything else recommends waves, because independent plans in separate
+  repositories overlap without a merge at all.
 
 Present the recommendation with its cost, honor an explicit choice without
 re-asking, and confirm the shape once before starting.
@@ -37,14 +39,17 @@ ordinary Git, dispatch a worker per plan, wait, and mark work complete only when
 it actually landed and its checks passed.
 
 A wave is judged from what each worker reports: the files it changed, the checks
-it ran, and their real outcome. Re-reading the diff and re-running those
-checks as a routine audit repeats the expensive half of the work and is what
-makes a delegated wave slower than doing it directly. The trade is deliberate and
-worth naming: the coordinator is trusting a report it did not reproduce, so the
-worker is told that a check it did not run is one nobody ran, and that a failure
-is reported plainly rather than worked around. Read the diff where integration
-needs it — a merge to resolve, or a report naming a conflict, a failure, or an
-assumption — not to satisfy yourself that work already reported was really done.
+it ran, and their real outcome. Re-reading the diff and re-running those checks
+as a routine audit repeats the expensive half of the work, which is what makes a
+delegated wave slower than doing it directly.
+
+The trade is deliberate and worth naming. The coordinator is trusting a report it
+did not reproduce, so the worker is told that a check it did not run is one
+nobody ran, and that a failure is reported plainly rather than worked around.
+
+Read the diff where integration needs it — a merge to resolve, or a report
+naming a conflict, a failure, or an assumption — not to satisfy yourself that
+work already reported was really done.
 
 That last condition is load-bearing. Ordering reads completion to release the
 next wave, so unfinished work holds its dependents automatically and there is no
@@ -77,4 +82,7 @@ Start references also name a predecessor's branch: once that work is merged and
 its branch is gone the reference needs adjusting by hand, since the derivation
 reads records and records do not know what a provider merged.
 
-Owner: `context-circuit-source@internal/workspace/order.go`.
+Owner:
+
+- `context-circuit-source@internal/workspace/order.go` — the derivation, its
+  waves, start references, and integration merges.

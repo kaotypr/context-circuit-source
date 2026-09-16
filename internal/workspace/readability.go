@@ -25,7 +25,7 @@ var noteAnchor = regexp.MustCompile(`(^|[^A-Za-z0-9_@.-])([a-z0-9][a-z0-9-]*@(?:
 
 // The documented actor story shape: numbered once through the note, so the number
 // stays a handle, and opening with the actor so the need is readable on its own.
-var noteStory = regexp.MustCompile(`(?i)^\s*\d+\.\s+\*\*as an? `)
+var noteStory = regexp.MustCompile(`(?i)^\s*\d+\.\s+\*\*as (a|an|the) `)
 
 var listNumber = regexp.MustCompile(`^\d+[.)]\s`)
 

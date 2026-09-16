@@ -84,6 +84,7 @@ func TestActorNoteCarriesStories(t *testing.T) {
 		{"a story in the documented shape", body + "## Refunds\n\n3. **As a support agent, I want to refund small amounts,** so that a call ends once.\n", "context/actors/support-agent.md", false},
 		{"prose where stories belong", body + "## Refunds\n\nThis actor can refund small amounts without review.\n", "context/actors/support-agent.md", true},
 		{"an unnumbered story is not a handle", body + "## Refunds\n\n- **As a support agent, I want to refund small amounts,** so that a call ends once.\n", "context/actors/support-agent.md", true},
+		{"a singular actor takes the article it needs", body + "## Refunds\n\n3. **As the billing service, I want a voided invoice to stay readable,** so that a dispute has something to read.\n", "context/actors/billing-service.md", false},
 		{"other notes carry no stories", body + "## Refunds\n\nThis is how refunds work.\n", "context/domains/refunds.md", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

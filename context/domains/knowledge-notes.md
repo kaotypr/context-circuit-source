@@ -15,13 +15,59 @@ evidence. Two failures motivate this, both observed in practice:
    instruction to read material that is supposed to stay passive.
 
 The durable anchor is a repository path written with the logical repository ID,
-exact or patterned — `api@internal/billing/dunning/`,
-`web@src/features/<feature>/` — never a local checkout path, because those are
-per-machine. Links between notes are free. Which record or which evidence
-produced a note belongs in that record.
+exact or patterned, never a local checkout path, because those are per-machine:
+
+```
+api@internal/billing/dunning/
+web@src/features/<feature>/
+```
+
+Links between notes are free. Which record or which evidence produced a note
+belongs in that record.
 
 The diagnostic reports any line in the tree that crosses this boundary, by line
 number, naming the match.
+
+## Anchors sit in one place
+
+The body of a note calls things by their project names, and a closing `Owner:`
+block says where each one lives. A path dropped into a sentence stops a reader on
+a string they cannot act on and lengthens the sentence around it to explain why
+it is there, which is most of what made gathered notes tiring to read. A table
+pairing paths with what each one owns carries them just as well, because a column
+heading does the work the block does. A sentence never does. The glossary is the
+exception, since mapping a word to the identifier behind it is that file's whole
+purpose.
+
+## Shape is a rule, not a preference
+
+A note that is accurate and unreadable still fails the reader it was written for,
+so form follows content: a table for things sharing attributes, a diagram where
+the relation between them is the fact, bullets for rules that stand alone, a
+numbered list for an order, prose for why it is this way.
+
+The diagnostic reports the part a machine can see — an anchor in a sentence, a
+paragraph past eight lines, a sentence past sixty words, a title with no line
+under it, a fence that never closes, a mermaid type that will not render, an
+actor note with no stories. Whether a sentence is any good is not mechanical and
+stays with whoever writes it.
+
+Both thresholds came from measuring this tree rather than from taste. At
+forty-five words seventeen sentences tripped that read perfectly well; at sixty
+the four that trip run from 62 to 84 words. Anchors inside a table were reported
+until it was clear that 24 of the first 31 findings were owner maps doing their
+job.
+
+## An actor note is a note like any other
+
+`actors/` holds one note per person, team, or system that deals with the project,
+carrying their standing needs as stories grouped under the flow each belongs to.
+The flow stays in `domains/`, described once: an actor note carries only that
+actor's stake in it, because a flow retold in every participating actor's note
+becomes copies that disagree. Stories are numbered within their group and cited
+by flow and number, because numbering straight through a note moves every story
+below an insertion, and a story says what the project does for that actor now — a capability someone wants is an intent, and a wish list kept
+here rots into a backlog nobody trusts.
 
 ## One note is one unwrapped catalog entry
 
@@ -64,7 +110,7 @@ There is no proposal sidecar, no acceptance record, and no knowledge lifecycle �
 a separate acceptance step only produces a queue of knowledge waiting to become
 knowledge.
 
-Explicit completion is where the circuit closes. It returns the catalog entries
+Explicit completion is where the circuit closes for planned work. It returns the catalog entries
 whose braced repositories intersect the completed work's repositories: a
 **candidate set to judge, never a list to rewrite**. Most completions change no
 durable concept, and recording that is the normal outcome rather than a skipped
@@ -72,6 +118,11 @@ step — a mechanism implying every completion should produce an edit would
 produce edits. Where meaning did change, the note and its entry move in one edit
 and the reviewed date advances. Several completions together reconcile once
 across the set.
+
+A change made without a plan has no record to name that work, so the repository
+is asked directly and the entries claiming it come back carrying the same
+outstanding act. The obligation does not depend on a record existing; it depends
+on code having changed.
 
 The circuit is deliberately non-blocking: later work may begin while an earlier
 reconciliation is outstanding. Absence is visible debt, not a hidden gate, since
@@ -82,7 +133,11 @@ Owner:
 
 - `context-circuit-source@internal/workspace/inspect.go` `knowledgeIssues` and
   `catalogIssues` — the durable-content boundary and catalog consistency.
-- `context-circuit-source@internal/workspace/records.go` `KnowledgeCandidates` —
-  the entries offered for reconciliation at completion.
+- `context-circuit-source@internal/workspace/readability.go` — the shape pass and
+  the thresholds it reports against.
+- `context-circuit-source@internal/workspace/records.go` `CatalogEntriesFor` —
+  the entries offered for reconciliation, by plan or by repository.
 - `context-circuit-source@template/context/INDEX.md` — the catalog and note
   conventions shipped to a workspace.
+- `context-circuit-source@product/skills/cc-knowledge/SKILL.md` — how a note is
+  written, shaped, and refined.
