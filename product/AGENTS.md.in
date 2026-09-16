@@ -164,6 +164,11 @@ candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
 not an implementation gate. Report what was implemented, tested, and left uncertain.
 
+Report what was actually run and what it actually returned. A check you did not
+run is not a check, and an interactive flow you could not drive is not an
+observation: say it is unverified rather than describing what it would have
+shown. Unverified is a complete answer.
+
 ## Independent review on request
 
 Independent verification is a manually requested read-only code review. It is
