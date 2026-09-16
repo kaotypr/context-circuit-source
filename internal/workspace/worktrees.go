@@ -28,6 +28,12 @@ type Worktree struct {
 	// is recoverable, and only the caller knows whether the missing commits
 	// matter. Naming it here is what stops it being discovered at review.
 	SyncRequired string `json:"sync_required,omitempty"`
+
+	// Plans holding work in this repository that this worktree's starting point
+	// does not contain. Reported, never refused: parallel plans on one
+	// repository are ordinary, and only the caller knows which it meant to
+	// build on.
+	UnmergedPlans string `json:"unmerged_plans,omitempty"`
 }
 type Association struct {
 	Repository  string `yaml:"repository"`
@@ -177,7 +183,8 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if _, err := os.Lstat(path); !os.IsNotExist(err) {
 		return Worktree{}, fmt.Errorf("destination already exists: %s", path)
 	}
-	var commit, stale string
+	var commit, stale, unmerged string
+	derived := false
 	if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err == nil {
 		if !reuse {
 			return Worktree{}, errors.New("branch already exists; use --reuse to preserve and check out its existing commits")
@@ -192,6 +199,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		}
 	} else {
 		if start == "" {
+			derived = true
 			// Preparation does not derive order, so a dependent plan started
 			// from the base branch gets a worktree missing the work it was
 			// meant to build on — which reads as the dependency having produced
@@ -217,6 +225,11 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 		if err != nil {
 			return Worktree{}, fmt.Errorf("cannot resolve starting point %s (new repositories need a first commit): %w", start, err)
 		}
+		// An explicit --start is the coordinator saying what they meant, so only
+		// a start this command derived is questioned.
+		if derived {
+			unmerged = describeUnmerged(s.unmergedSiblings(ctx, repo, repoID, plan, commit), repoID, plan, checkout.BaseBranch)
+		}
 		_, err = Git(ctx, repo, "worktree", "add", "-b", branch, "--", path, commit)
 		if err != nil {
 			return Worktree{}, fmt.Errorf("worktree preparation failed; inspect branch %s and path %s: %w", branch, path, err)
@@ -226,7 +239,7 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	if err != nil {
 		return Worktree{}, err
 	}
-	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch, SyncRequired: stale}
+	result := Worktree{Path: actual, Branch: branch, Head: commit, Plan: plan, StartCommit: commit, BaseBranch: checkout.BaseBranch, SyncRequired: stale, UnmergedPlans: unmerged}
 	if err := s.saveAssociation(repoID, result); err != nil {
 		return result, fmt.Errorf("worktree exists at %s but local association could not be saved: %w", actual, err)
 	}
@@ -409,6 +422,73 @@ func (s *Store) dependencyStart(plan Record, repo string) OrderStart {
 		return OrderStart{}
 	}
 	return s.startFor(map[string]Record{}, plan, repo, "")
+}
+
+// unmergedSiblings names the plans holding work in this repository that a given
+// starting point does not contain. It answers the question a declared
+// dependency answers explicitly, for the far more common case where nobody
+// declared one: the guard in preparation is armed by `depends_on`, and a plan
+// that builds on another without saying so gets a worktree missing its work.
+//
+// Containment is the test rather than completion, because the two disagree in
+// both directions — a plan can be completed and never merged, or merged while
+// still open — and it is containment that decides what a worktree will hold.
+//
+// This reports and never refuses. Two plans touching one repository are
+// ordinary parallel work, so a refusal here would block what waves exist to
+// allow; only the coordinator knows whether the missing work is wanted.
+type unmergedPlan struct {
+	Plan   string
+	Branch string
+	Count  string
+}
+
+func (s *Store) unmergedSiblings(ctx context.Context, repo, repoID, plan, start string) []unmergedPlan {
+	records, err := s.ListRecords(false)
+	if err != nil || start == "" {
+		return nil
+	}
+	found := []unmergedPlan{}
+	for _, other := range records {
+		if other.ID == plan || !strings.HasPrefix(other.ID, "p") || !slices.Contains(other.Repositories, repoID) {
+			continue
+		}
+		branch := PlanBranch(other.ID, repoID)
+		if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err != nil {
+			continue
+		}
+		if _, err := Git(ctx, repo, "merge-base", "--is-ancestor", "--end-of-options", branch, start); err == nil {
+			continue
+		}
+		count, err := Git(ctx, repo, "rev-list", "--count", "--end-of-options", start+".."+branch)
+		if err != nil {
+			continue
+		}
+		found = append(found, unmergedPlan{other.ID, branch, count})
+	}
+	return found
+}
+
+// describeUnmerged reports work a starting point lacks. One sibling has a
+// direct answer and is given it. Several do not: the correct start is a base
+// plus integration merges, and `record order` derives that from `depends_on`
+// alone — which is empty here, or this report would not exist. Pointing at it
+// now would answer "start from the base", the very thing being questioned. So
+// the several-sibling case names the declaration that makes ordering possible
+// rather than one arbitrary branch that would quietly exclude the rest.
+func describeUnmerged(found []unmergedPlan, repoID, plan, start string) string {
+	if len(found) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(found))
+	for _, item := range found {
+		parts = append(parts, fmt.Sprintf("%s (%s, %s commit(s))", item.Plan, item.Branch, item.Count))
+	}
+	lead := fmt.Sprintf("%s does not contain work in %s from %s.", start, repoID, strings.Join(parts, ", "))
+	if len(found) == 1 {
+		return lead + fmt.Sprintf(" Start from %s to build on it, or continue if this plan is independent of it.", found[0].Branch)
+	}
+	return lead + fmt.Sprintf(" Record the ones this plan builds on with `record dependencies --id %s --depends-on ID`, then `record order` derives the start and any integration merges. Continue if this plan is independent of them.", plan)
 }
 
 // dependencyStartError names the exact starting point to pass. A predecessor

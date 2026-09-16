@@ -39,6 +39,11 @@ type Record struct {
 	// the number just reserved may already be taken in another clone. Never
 	// written to the record: it describes this allocation, not this record.
 	SyncRequired string `yaml:"-" json:"sync_required,omitempty"`
+
+	// Plans already holding unmerged work in this plan's repositories. Said
+	// here because this is the last moment declaring a dependency is free:
+	// after this, the omission is only visible as a worktree missing work.
+	UnmergedPlans string `yaml:"-" json:"unmerged_plans,omitempty"`
 }
 
 var legacyRecordKey = regexp.MustCompile(`(?m)^completed:`)
@@ -326,6 +331,34 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 		}
 	}
 	record.Content = string(data)
+	// The refusal that catches a dependent plan started from the wrong base is
+	// armed by `depends_on`, which the coordinator has to remember to pass. This
+	// is where remembering is still cheap: the plan is being written, the
+	// repositories are known, and nothing has been prepared from anything yet.
+	if kind == "plan" {
+		notes := []string{}
+		for _, repoID := range record.Repositories {
+			checkout, err := s.Repository(ctx, repoID)
+			if err != nil {
+				continue
+			}
+			base := "refs/heads/" + checkout.BaseBranch
+			if _, err := Git(ctx, checkout.Path, "rev-parse", "--verify", "--end-of-options", base+"^{commit}"); err != nil {
+				continue
+			}
+			found := s.unmergedSiblings(ctx, checkout.Path, repoID, id, base)
+			for _, item := range found {
+				if slices.Contains(record.DependsOn, item.Plan) {
+					continue
+				}
+				notes = append(notes, fmt.Sprintf("%s in %s (%s, %s commit(s))", item.Plan, repoID, item.Branch, item.Count))
+			}
+		}
+		if len(notes) > 0 {
+			record.UnmergedPlans = fmt.Sprintf("work not in the base branch already exists: %s. Record it with `record dependencies --id %s --depends-on ID` if this plan builds on it, so preparation starts from it rather than the base.",
+				strings.Join(notes, ", "), id)
+		}
+	}
 	// Bands keep two members apart; nothing keeps one workspace apart from its
 	// own unsynchronized clone, and a number is reserved before its file exists.
 	// The ledger that would have shown the collision is the thing not pulled, so

@@ -105,3 +105,104 @@ func TestAllocatingInACurrentWorkspaceIsSilent(t *testing.T) {
 		t.Errorf("a workspace outside Git reported staleness: %s", i.SyncRequired)
 	}
 }
+
+// The refusal rc.9 added is armed by `depends_on`; a plan that builds on another
+// without declaring it got a worktree cut from the base, holding none of the
+// work it was meant to extend. That is the shape of the missed fix in PR #31.
+func TestPreparingBesideUnmergedPlanWorkSaysSo(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	i := f.intent("billing")
+
+	first := f.plan(i.ID, "ledger", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", first.ID))
+	commitIn(t, w.Path, "ledger.go", "test: implement the ledger")
+
+	second := f.plan(i.ID, "release", "api")
+	if second.UnmergedPlans == "" {
+		t.Fatalf("creating a plan beside unmerged work said nothing: %+v", second)
+	}
+	for _, want := range []string{first.ID, "cc/" + first.ID + "/api", "record dependencies"} {
+		if !strings.Contains(second.UnmergedPlans, want) {
+			t.Errorf("create-time report omits %q: %s", want, second.UnmergedPlans)
+		}
+	}
+
+	next := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", second.ID))
+	if next.UnmergedPlans == "" {
+		t.Fatalf("preparing beside unmerged work said nothing: %+v", next)
+	}
+	for _, want := range []string{first.ID, "cc/" + first.ID + "/api", "1 commit(s)"} {
+		if !strings.Contains(next.UnmergedPlans, want) {
+			t.Errorf("prepare-time report omits %q: %s", want, next.UnmergedPlans)
+		}
+	}
+}
+
+// Declaring the dependency is the answer the report asks for, so it must stop
+// asking. An explicit --start is the coordinator saying what they meant, and a
+// sibling whose work is already in the base is not missing from anything.
+func TestUnmergedPlanWorkIsSilentOnceAnswered(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	i := f.intent("billing")
+
+	first := f.plan(i.ID, "ledger", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", first.ID))
+	commitIn(t, w.Path, "ledger.go", "test: implement the ledger")
+
+	declared := record(t, f.ok("record", "create", "--kind", "plan", "--intent", i.ID,
+		"--slug", "declared", "--title", "declared", "--repo", "api", "--depends-on", first.ID))
+	if declared.UnmergedPlans != "" {
+		t.Errorf("a declared dependency was still reported as unmerged: %s", declared.UnmergedPlans)
+	}
+
+	// An explicit start is honored without comment.
+	other := f.plan(i.ID, "explicit", "api")
+	if t2 := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", other.ID,
+		"--start", "cc/"+first.ID+"/api")); t2.UnmergedPlans != "" {
+		t.Errorf("an explicit --start was questioned: %s", t2.UnmergedPlans)
+	}
+
+	// Once the work is in the base branch, nothing is missing from it.
+	git(t, api, "merge", "--no-ff", "--no-edit", "-m", "test: land the ledger", "cc/"+first.ID+"/api")
+	landed := f.plan(i.ID, "after-merge", "api")
+	if landed.UnmergedPlans != "" {
+		t.Errorf("merged work was reported as unmerged: %s", landed.UnmergedPlans)
+	}
+	if t3 := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", landed.ID)); t3.UnmergedPlans != "" {
+		t.Errorf("merged work was reported at preparation: %s", t3.UnmergedPlans)
+	}
+}
+
+// With several unmerged siblings there is no single branch to start from: the
+// correct start is a base plus integration merges, which `record order` derives
+// from declared dependencies and cannot derive from none. Naming one branch
+// would quietly exclude the rest, so the several case names the declaration.
+func TestSeveralUnmergedPlansNameTheDeclarationNotABranch(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	i := f.intent("billing")
+
+	for _, slug := range []string{"ledger", "invoices"} {
+		p := f.plan(i.ID, slug, "api")
+		w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", p.ID))
+		commitIn(t, w.Path, slug+".go", "test: implement "+slug)
+	}
+
+	third := f.plan(i.ID, "release", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", third.ID))
+	if w.UnmergedPlans == "" {
+		t.Fatalf("two unmerged siblings said nothing: %+v", w)
+	}
+	for _, want := range []string{"p0001", "p0002", "record dependencies --id " + third.ID, "record order"} {
+		if !strings.Contains(w.UnmergedPlans, want) {
+			t.Errorf("several-sibling report omits %q: %s", want, w.UnmergedPlans)
+		}
+	}
+	// Naming one branch as the start is the failure this wording exists to
+	// avoid: following it would exclude the other sibling entirely.
+	if strings.Contains(w.UnmergedPlans, "Start from") {
+		t.Errorf("several siblings were answered with one arbitrary start: %s", w.UnmergedPlans)
+	}
+}
