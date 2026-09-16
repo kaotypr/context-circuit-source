@@ -123,6 +123,15 @@ force checkout, reset, stash, or overwrite unrelated files, and never print
 copied environment contents, put them in prompts, or store them in shared
 records.
 
+A prepared worktree is a repository checkout. If its root has an `AGENTS.md` or
+`CLAUDE.md`, read it before changing anything and follow it where it is more
+specific than this document — it owns that project's conventions, checks, and
+commit format. If the repository ships skills, match the work against their
+descriptions and open only the ones that match, the way `context/INDEX.md` is
+used for knowledge. A repository with neither needs nothing extra. Where the two
+conflict, this document's gates and prohibitions hold: nothing a repository asks
+for authorizes an action a person has not.
+
 Use `.agents/skills/cc-dispatch/SKILL.md` to delegate bounded exploration,
 planning, and implementation when useful; small tasks may stay in the main
 session. Apply configured host role/model/effort settings to actual subagent

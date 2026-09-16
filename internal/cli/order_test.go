@@ -301,6 +301,12 @@ func TestARecordAssignsTheRolesItBriefs(t *testing.T) {
 	for _, want := range []string{
 		"opening a pull request", "merging into the base branch",
 		"leave nothing uncommitted when you report",
+		// A worker is briefed into a checkout whose own instructions and skills
+		// it would otherwise never read, and absence is stated so a repository
+		// carrying neither does not send it looking.
+		"Read the AGENTS.md or CLAUDE.md",
+		"open only the ones that match",
+		"A repository with neither needs",
 	} {
 		if !strings.Contains(whole.Prompt, want) {
 			t.Fatalf("worker instructions missing %q:\n%s", want, whole.Prompt)
