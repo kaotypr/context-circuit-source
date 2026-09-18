@@ -9,7 +9,6 @@ product/assets/readme/context-circuit-mark.png .context-circuit/assets/readme/co
 product/assets/readme/context-circuit-logo.png .context-circuit/assets/readme/context-circuit-logo.png
 product/assets/readme/knowledge-circuit.png .context-circuit/assets/readme/knowledge-circuit.png
 product/assets/readme/workflow-overview.png .context-circuit/assets/readme/workflow-overview.png
-product/assets/readme/shared-vs-local.png .context-circuit/assets/readme/shared-vs-local.png
 product/assets/readme/social-preview.png .context-circuit/assets/readme/social-preview.png
 product/docs/how-it-works.md .context-circuit/docs/how-it-works.md
 product/docs/commands.md .context-circuit/docs/commands.md
