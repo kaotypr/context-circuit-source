@@ -86,6 +86,27 @@ func (s *Store) workspaceRepositoryIssues(ctx context.Context, state Orientation
 	return []string{"the workspace is a Git checkout but describes no workspace repository; record it with workspace connect so status reports its branch and a second machine knows where to clone it"}
 }
 
+// unbandedMembers reports members allocating from the shared range in a
+// workspace that has more than one. Bands are what let clones that cannot see
+// each other allocate without colliding; a solo workspace needs none, so the
+// finding waits until a second member makes collision possible.
+func unbandedMembers(members Members) []string {
+	if len(members.Members) < 2 {
+		return nil
+	}
+	var unbanded []string
+	for id, member := range members.Members {
+		if member.Band == 0 {
+			unbanded = append(unbanded, id)
+		}
+	}
+	if len(unbanded) == 0 {
+		return nil
+	}
+	sort.Strings(unbanded)
+	return []string{fmt.Sprintf("members allocating from the shared range in a workspace of %d: %s; give each a distinct band with member band before they work apart", len(members.Members), strings.Join(unbanded, ", "))}
+}
+
 // Check is an explicitly invoked diagnostic, not an execution admission gate.
 func recordKind(prefix string) string {
 	if prefix == "i" {
@@ -101,6 +122,7 @@ func (s *Store) Check(ctx context.Context) ([]string, error) {
 	}
 	issues := state.Issues
 	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
+	issues = append(issues, unbandedMembers(state.Members)...)
 	records, err := s.ListRecords(false)
 	if err != nil {
 		return append(issues, err.Error()), nil

@@ -399,6 +399,26 @@ func TestWorkspaceRepositoryIsDescribedSeparately(t *testing.T) {
 	}
 }
 
+// Bands are what let clones that cannot see each other allocate without
+// colliding. A solo workspace needs none, so the finding waits for a second
+// member to make a collision possible.
+func TestUnbandedMembersAreReportedOnlyOnceSharingIsPossible(t *testing.T) {
+	f := setup(t)
+	if out := f.ok("check"); strings.Contains(out, "shared range") {
+		t.Fatal("a solo workspace was asked for allocation bands", out)
+	}
+	f.ok("member", "add", "--id", "rina", "--name", "Rina")
+	out := f.fail("check")
+	if !strings.Contains(out, "maya") || !strings.Contains(out, "rina") {
+		t.Fatal("unbanded members went unreported", out)
+	}
+	f.ok("member", "band", "--id", "maya", "--band", "1")
+	f.ok("member", "band", "--id", "rina", "--band", "2")
+	if out := f.ok("check"); strings.Contains(out, "shared range") {
+		t.Fatal("banded members are still reported", out)
+	}
+}
+
 // A base branch describes one machine, not the repository: the checkout path and
 // the branch work starts from travel together in the local binding, while the
 // shared record keeps the URL and the default branch everyone agrees on.
