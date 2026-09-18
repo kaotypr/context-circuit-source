@@ -19,7 +19,7 @@ creates the shared instruction and folders alongside these small records:
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
-| repositories/, knowledge/, .worktrees/ | Local Git working copies | No |
+| repositories/, .worktrees/ | Local Git working copies | No |
 
 Example shared repository definition:
 
@@ -142,8 +142,8 @@ will ever invalidate it. So it is mounted rather than copied:
 
 ```yaml
 knowledge_repositories:
-  sheknows:
-    url: git@git.example.com:platform/sheknows.git
+  core-service-knowledge:
+    url: git@git.example.com:platform/core-service-knowledge.git
     default_branch: main
     index: index.md
 ```
@@ -165,7 +165,10 @@ so the value is recorded rather than assumed; `knowledge connect` detects the
 usual spellings and `check` reports the gap when it cannot.
 
 The checkout path is local, like every other checkout path. `knowledge clone`
-puts it under `knowledge/<id>`, which the shipped `.gitignore` excludes.
+puts it under `repositories/<id>`, beside the working copies, which the shipped
+`.gitignore` already excludes; `--path` keeps it anywhere else. The record is
+what separates knowledge from work, not the directory, and the shared ID
+namespace is what makes one directory safe.
 
 **Read-only here is enforced rather than asked for.** Obtaining one disables its
 push URL, and every sync reasserts that, so a push fails instead of

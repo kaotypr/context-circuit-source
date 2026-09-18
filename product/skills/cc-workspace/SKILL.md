@@ -87,12 +87,12 @@ workspaces read — mounts it here instead of copying from it. Do this on reques
 naming the repository:
 
 ```sh
-context-circuit-cli --workspace <root> knowledge clone --id sheknows --url GIT_URL
-context-circuit-cli --workspace <root> knowledge connect --id sheknows --path ../sheknows
+context-circuit-cli --workspace <root> knowledge clone --id core-service-knowledge --url GIT_URL
+context-circuit-cli --workspace <root> knowledge connect --id core-service-knowledge --path ../core-service-knowledge
 ```
 
-`clone` puts the checkout under `knowledge/<id>`, which is gitignored; `connect`
-binds one the user already has. Either way the shared record is written once and
+`clone` puts the checkout under `repositories/<id>`, beside the working copies
+and already gitignored; `connect` binds one the user already has. Either way the shared record is written once and
 the path stays local to this machine, the same split every other checkout makes.
 On a second machine, clone or connect an ID the workspace already describes and
 pass no URL.

@@ -265,7 +265,11 @@ func (s *Store) CloneKnowledge(ctx context.Context, id, destination, url, defaul
 		return errors.New("provide --url, or --id naming a knowledge repository this workspace already describes")
 	}
 	if destination == "" {
-		destination = "knowledge/" + id
+		// Checkouts live under repositories/, which the shipped .gitignore
+		// already excludes. The record is what separates knowledge from work,
+		// not the directory, and the shared ID namespace is what makes one
+		// directory safe: no knowledge ID can collide with a repository's.
+		destination = "repositories/" + id
 	}
 	path, err := s.LocalPath(destination)
 	if err != nil {

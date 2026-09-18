@@ -1,6 +1,5 @@
 .DS_Store
 /repositories/
-/knowledge/
 /.worktrees/
 /repositories.local.yaml
 /member.local.yaml

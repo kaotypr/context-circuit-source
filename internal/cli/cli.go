@@ -44,7 +44,7 @@ workspace remote      [--url URL] [--default-branch BRANCH] (shared)
 knowledge connect     --id ID --path PATH [--url URL] [--default-branch BRANCH]
                       [--index PATH] (a repository this workspace reads and never writes)
 knowledge clone       --id ID [--path NEW_PATH] [--url URL] [--default-branch BRANCH]
-                      [--index PATH] (--path defaults to knowledge/<id>)
+                      [--index PATH] (--path defaults to repositories/<id>)
 knowledge sync        --id ID (fetch, then fast-forward only when clean and
                       on the shared branch; never merges, resets, or discards)
 knowledge remote      --id ID [--url URL] [--default-branch BRANCH] [--index PATH] (shared)
@@ -293,7 +293,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	// A borrowed repository names its own index, and a layout this product
 	// recognizes is detected rather than demanded. Obtaining one lands under
-	// knowledge/<id> unless the caller keeps it somewhere else.
+	// repositories/<id> unless the caller keeps it somewhere else.
 	if strings.HasPrefix(command, "knowledge ") {
 		optional["index"] = true
 		optional["path"] = command != "knowledge connect"

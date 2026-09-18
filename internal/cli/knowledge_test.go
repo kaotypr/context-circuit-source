@@ -42,16 +42,16 @@ func (f fixture) advance(path, rel, body string) {
 
 func TestBorrowedKnowledgeIsMountedReadOnlyAndSearched(t *testing.T) {
 	f := setup(t)
-	origin := f.upstream("sheknows", map[string]string{
+	origin := f.upstream("core-service-knowledge", map[string]string{
 		"index.md":               "# Knowledge\n\n- [File service](services/file-svc.md) — uploads, retention\n",
 		"services/file-svc.md":   "# file-svc\n\nUploads go through the signed URL flow.\n",
 		"services/ums-notify.md": "# UMS notifications\n\nInsert writes in-app rows only; it does not send email.\n",
 	})
 
-	f.ok("knowledge", "clone", "--id", "sheknows", "--url", origin)
-	local := filepath.Join(f.root, "knowledge", "sheknows")
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
+	local := filepath.Join(f.root, "repositories", "core-service-knowledge")
 	if _, err := os.Stat(filepath.Join(local, "index.md")); err != nil {
-		t.Fatalf("expected the knowledge checkout at the default path: %v", err)
+		t.Fatalf("expected the knowledge checkout beside the working copies: %v", err)
 	}
 
 	// The shared record carries the mount; the path stays local to this machine.
@@ -74,18 +74,18 @@ func TestBorrowedKnowledgeIsMountedReadOnlyAndSearched(t *testing.T) {
 	// Retrieval reads the borrowed index beside this workspace's own catalog,
 	// and says which side a match came from.
 	found := f.ok("context", "find", "--query", "file-svc")
-	if !strings.Contains(found, `"borrowed": true`) || !strings.Contains(found, "sheknows/index.md") {
+	if !strings.Contains(found, `"borrowed": true`) || !strings.Contains(found, "core-service-knowledge/index.md") {
 		t.Fatalf("expected a borrowed match naming its source:\n%s", found)
 	}
 }
 
 func TestBorrowedKnowledgeIsNeverNamedAsKnowledgeToReconcile(t *testing.T) {
 	f := setup(t)
-	origin := f.upstream("sheknows", map[string]string{
+	origin := f.upstream("core-service-knowledge", map[string]string{
 		"index.md":   "# Knowledge\n\n- [Billing contract](billing.md) {api} — invoice fields · billing, invoice · reviewed 2026-01-05\n",
 		"billing.md": "# Billing contract\n",
 	})
-	f.ok("knowledge", "clone", "--id", "sheknows", "--url", origin)
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
 	f.repository("api")
 
 	// The borrowed entry names {api} in this workspace's own vocabulary, and is
@@ -98,16 +98,16 @@ func TestBorrowedKnowledgeIsNeverNamedAsKnowledgeToReconcile(t *testing.T) {
 
 func TestKnowledgeSyncFastForwardsOnlyWhenItIsSafe(t *testing.T) {
 	f := setup(t)
-	origin := f.upstream("sheknows", map[string]string{"index.md": "# Knowledge\n"})
-	f.ok("knowledge", "clone", "--id", "sheknows", "--url", origin)
-	local := filepath.Join(f.root, "knowledge", "sheknows")
+	origin := f.upstream("core-service-knowledge", map[string]string{"index.md": "# Knowledge\n"})
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
+	local := filepath.Join(f.root, "repositories", "core-service-knowledge")
 
-	if out := f.ok("knowledge", "sync", "--id", "sheknows"); !strings.Contains(out, `"status": "current"`) {
+	if out := f.ok("knowledge", "sync", "--id", "core-service-knowledge"); !strings.Contains(out, `"status": "current"`) {
 		t.Fatalf("expected a clean checkout to report current:\n%s", out)
 	}
 
 	f.advance(origin, "index.md", "# Knowledge\n\n- [New](new.md) — added upstream\n")
-	if out := f.ok("knowledge", "sync", "--id", "sheknows"); !strings.Contains(out, `"status": "updated"`) {
+	if out := f.ok("knowledge", "sync", "--id", "core-service-knowledge"); !strings.Contains(out, `"status": "updated"`) {
 		t.Fatalf("expected a fast-forward:\n%s", out)
 	}
 	if body := read(t, filepath.Join(local, "index.md")); !strings.Contains(body, "added upstream") {
@@ -116,7 +116,7 @@ func TestKnowledgeSyncFastForwardsOnlyWhenItIsSafe(t *testing.T) {
 
 	// Local work is reported and kept, never merged away.
 	write(t, filepath.Join(local, "scratch.md"), "# in progress\n")
-	out := f.ok("knowledge", "sync", "--id", "sheknows")
+	out := f.ok("knowledge", "sync", "--id", "core-service-knowledge")
 	if !strings.Contains(out, `"status": "dirty"`) || !strings.Contains(out, "nothing was changed") {
 		t.Fatalf("expected a dirty checkout to be reported and left alone:\n%s", out)
 	}
@@ -131,7 +131,7 @@ func TestKnowledgeSyncFastForwardsOnlyWhenItIsSafe(t *testing.T) {
 	// command has no standing to resolve.
 	f.advance(local, "local-only.md", "# written in the wrong checkout\n")
 	f.advance(origin, "index.md", "# Knowledge\n\n- [Newer](newer.md) — added upstream again\n")
-	out = f.ok("knowledge", "sync", "--id", "sheknows")
+	out = f.ok("knowledge", "sync", "--id", "core-service-knowledge")
 	if !strings.Contains(out, `"status": "diverged"`) || !strings.Contains(out, "nothing was changed or discarded") {
 		t.Fatalf("expected a diverged checkout to be reported and left alone:\n%s", out)
 	}
@@ -142,12 +142,12 @@ func TestKnowledgeSyncFastForwardsOnlyWhenItIsSafe(t *testing.T) {
 
 func TestKnowledgeAndRepositoryIDsShareOneNamespace(t *testing.T) {
 	f := setup(t)
-	origin := f.upstream("sheknows", map[string]string{"index.md": "# Knowledge\n"})
-	f.ok("knowledge", "clone", "--id", "sheknows", "--url", origin)
+	origin := f.upstream("core-service-knowledge", map[string]string{"index.md": "# Knowledge\n"})
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
 
 	// An anchor names a repository by ID, so one ID may not mean two things.
 	other := f.upstream("other", map[string]string{"README.md": "# Other\n"})
-	if out := f.fail("repo", "connect", "--id", "sheknows", "--path", other, "--base", "main"); !strings.Contains(out, "already names a knowledge repository") {
+	if out := f.fail("repo", "connect", "--id", "core-service-knowledge", "--path", other, "--base", "main"); !strings.Contains(out, "already names a knowledge repository") {
 		t.Fatalf("expected the ID clash to be refused:\n%s", out)
 	}
 	api := f.repository("api")
@@ -162,8 +162,8 @@ func TestKnowledgeAndRepositoryIDsShareOneNamespace(t *testing.T) {
 
 func TestCheckReportsBorrowedKnowledgeThisMachineLacks(t *testing.T) {
 	f := setup(t)
-	origin := f.upstream("sheknows", map[string]string{"index.md": "# Knowledge\n"})
-	f.ok("knowledge", "clone", "--id", "sheknows", "--url", origin)
+	origin := f.upstream("core-service-knowledge", map[string]string{"index.md": "# Knowledge\n"})
+	f.ok("knowledge", "clone", "--id", "core-service-knowledge", "--url", origin)
 
 	// A clone carries the shared record and none of this machine's state, which
 	// is what joining a workspace looks like from the second machine.
@@ -174,7 +174,7 @@ func TestCheckReportsBorrowedKnowledgeThisMachineLacks(t *testing.T) {
 	if code == 0 {
 		t.Fatalf("expected check to report the missing knowledge checkout:\n%s", out)
 	}
-	if !strings.Contains(out, "is not obtained on this machine") || !strings.Contains(out, "knowledge clone --id sheknows") {
+	if !strings.Contains(out, "is not obtained on this machine") || !strings.Contains(out, "knowledge clone --id core-service-knowledge") {
 		t.Fatalf("expected the finding to name what to run:\n%s", out)
 	}
 }

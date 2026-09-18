@@ -34,10 +34,10 @@ context-circuit-cli repo fetch --id api --remote origin
 context-circuit-cli workspace connect --base main
 context-circuit-cli workspace base --branch development
 context-circuit-cli workspace remote --url GIT_URL --default-branch main
-context-circuit-cli knowledge clone --id sheknows --url GIT_URL
-context-circuit-cli knowledge connect --id sheknows --path ../sheknows --index index.md
-context-circuit-cli knowledge sync --id sheknows
-context-circuit-cli knowledge remote --id sheknows --index docs/index.md
+context-circuit-cli knowledge clone --id core-service-knowledge --url GIT_URL
+context-circuit-cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
+context-circuit-cli knowledge sync --id core-service-knowledge
+context-circuit-cli knowledge remote --id core-service-knowledge --index docs/index.md
 context-circuit-cli knowledge list
 context-circuit-cli context find --query billing
 context-circuit-cli context find --repo api
@@ -46,7 +46,7 @@ context-circuit-cli context find --repo api
 A knowledge repository is one this workspace reads and never owns. It records no
 base branch, takes no worktree, and is never named by a plan, and it shares one
 ID namespace with `repositories` so a note's anchor means one thing. `clone`
-puts it under `knowledge/<id>` unless `--path` says otherwise, and takes no
+puts it under `repositories/<id>` unless `--path` says otherwise, and takes no
 `--url` for an ID the workspace already describes. `sync` fetches, then
 fast-forwards only when the checkout is clean and on the shared branch; a dirty
 or diverged checkout is reported and left exactly as it is, and nothing is ever
