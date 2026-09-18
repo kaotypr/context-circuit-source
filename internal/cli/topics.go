@@ -6,7 +6,7 @@ import "strings"
 // dispatcher and the help topics from disagreeing about what a group is.
 var groups = map[string]bool{
 	"member": true, "repo": true, "record": true, "worktree": true,
-	"context": true, "template": true, "agent": true,
+	"context": true, "template": true, "agent": true, "workspace": true,
 }
 
 // Topics carry what a signature line cannot: what the command decides, what it
@@ -40,8 +40,9 @@ and its default branch are shared in workspace.yaml; the checkout path and the
 branch this machine starts work from stay in repositories.local.yaml. Worktrees
 branch from that local base, so one machine can work off a release branch while
 another stays on the default. Connect an existing checkout, clone, or initialize
-a new repository; the workspace root itself may be connected as ".". Fetch
-updates refs only and implies no rebase or reset.`,
+a new repository. The workspace's own checkout is refused here and described by
+the workspace commands instead, because an entry in this map is somewhere work
+happens. Fetch updates refs only and implies no rebase or reset.`,
 
 	"record": `Creates and updates intents and plans, allocating IDs that are never reused.
 Approve and complete record a decision a person already made; neither command
@@ -70,6 +71,15 @@ narrows it, because one workspace is opened in several. A dispatch specification
 reports the definition it names and whether it is installed, and returns a flag
 saying a launch is still required: this executable holds no model credentials,
 launches nothing, and a specification is never evidence that an agent ran.`,
+
+	"workspace": `Describes the Git repository carrying the workspace itself, so status reports
+its branch and working state and a second machine is told where to clone it. It
+splits like a repository and for the same reason: the URL and default branch are
+shared in workspace.yaml under workspace_repository, while the checkout root and
+the branch this machine works from stay in repositories.local.yaml. It is kept
+out of the repositories map because a plan, a relationship, and a worktree all
+read an entry there as somewhere work happens. No command commits, pushes, or
+merges the workspace.`,
 
 	"version": `Prints the running CLI version. A workspace pins its own in
 .context-circuit/CLI_VERSION, and the two need not match; the CLI warns when they

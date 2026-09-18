@@ -27,13 +27,21 @@ type Relationship struct {
 // one member records the mirror and everyone who clones the workspace installs
 // from it without configuring their own environment. Unset, the installer reads
 // the product's own GitHub releases.
+//
+// WorkspaceRepository describes the Git repository carrying this workspace
+// itself. It sits beside `repositories` rather than inside it because every
+// consumer of that map treats an entry as somewhere work happens: a plan names
+// repositories, a relationship joins two, and a worktree is cut from one. The
+// workspace is none of those — a worktree of it would duplicate the records the
+// CLI is reading — so it is described separately and reported separately.
 type Config struct {
-	Version       int                   `yaml:"version" json:"version"`
-	Name          string                `yaml:"name" json:"name"`
-	Purpose       string                `yaml:"purpose" json:"purpose"`
-	CLIRegistry   string                `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
-	Repositories  map[string]Repository `yaml:"repositories" json:"repositories"`
-	Relationships []Relationship        `yaml:"relationships" json:"relationships"`
+	Version             int                   `yaml:"version" json:"version"`
+	Name                string                `yaml:"name" json:"name"`
+	Purpose             string                `yaml:"purpose" json:"purpose"`
+	CLIRegistry         string                `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
+	WorkspaceRepository *Repository           `yaml:"workspace_repository,omitempty" json:"workspace_repository,omitempty"`
+	Repositories        map[string]Repository `yaml:"repositories" json:"repositories"`
+	Relationships       []Relationship        `yaml:"relationships" json:"relationships"`
 }
 
 // Band is an optional allocation block index. Members holding distinct bands
@@ -59,8 +67,14 @@ type Binding struct {
 	Path       string `yaml:"path" json:"path"`
 	BaseBranch string `yaml:"base_branch,omitempty" json:"base_branch,omitempty"`
 }
+
+// Workspace is this machine's binding for the workspace repository itself. It
+// is separate from the map for the same reason the shared record is, and it
+// carries a path because a workspace need not sit at its repository's root: a
+// workspace kept in a subdirectory records the containing root as `..`.
 type Bindings struct {
-	Bindings map[string]Binding `yaml:"bindings" json:"bindings"`
+	Workspace *Binding           `yaml:"workspace,omitempty" json:"workspace,omitempty"`
+	Bindings  map[string]Binding `yaml:"bindings" json:"bindings"`
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`)
@@ -198,6 +212,18 @@ func (b Bindings) BaseBranch(cfg Config, id string) string {
 	return cfg.Repositories[id].DefaultBranch
 }
 
+// WorkspaceBase reports the branch workspace edits start from on this machine,
+// falling back to the shared default the same way a repository's does.
+func (b Bindings) WorkspaceBase(cfg Config) string {
+	if b.Workspace != nil && b.Workspace.BaseBranch != "" {
+		return b.Workspace.BaseBranch
+	}
+	if cfg.WorkspaceRepository != nil {
+		return cfg.WorkspaceRepository.DefaultBranch
+	}
+	return ""
+}
+
 func (s *Store) ActiveMember() (string, error) {
 	var local Identity
 	if err := s.YAML("member.local.yaml", &local); err != nil {
@@ -245,7 +271,7 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 		if blank.Version != 2 {
 			return fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schema 2", blank.Version)
 		}
-		if blank.Name != "" || blank.Purpose != "" || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
+		if blank.Name != "" || blank.Purpose != "" || blank.WorkspaceRepository != nil || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
 			return errors.New("existing workspace data; initialization stopped")
 		}
 		var members Members
@@ -287,7 +313,7 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	if err := s.WriteYAML("members.yaml", Members{map[string]Member{member: {Name: display}}}, 0644); err != nil {
 		return err
 	}
-	if err := s.WriteYAML("repositories.local.yaml", Bindings{map[string]Binding{}}, 0600); err != nil {
+	if err := s.WriteYAML("repositories.local.yaml", Bindings{Bindings: map[string]Binding{}}, 0600); err != nil {
 		return err
 	}
 	if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {

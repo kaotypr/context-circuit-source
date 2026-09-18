@@ -34,6 +34,11 @@ repo init             --id ID --path NEW_PATH --base BRANCH [--default-branch BR
 repo base             --id ID --branch BRANCH (this machine's base branch)
 repo remote           --id ID [--url URL] [--default-branch BRANCH] (shared)
 repo relate           --from ID --to ID --description TEXT
+workspace connect     [--path PATH] --base BRANCH [--url URL]
+                      [--default-branch BRANCH] (the workspace's own repository;
+                      --path defaults to the workspace root, --base is this machine's)
+workspace base        --branch BRANCH (this machine's workspace base branch)
+workspace remote      [--url URL] [--default-branch BRANCH] (shared)
 repo fetch            --id ID [--remote origin]
 repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
@@ -179,6 +184,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("id", "remote")
 	case "repo relate":
 		add("from", "to", "description")
+	case "workspace connect":
+		add("path", "base", "url", "default-branch")
+	case "workspace base":
+		add("branch")
+	case "workspace remote":
+		add("url", "default-branch")
 	case "record create":
 		add("kind", "slug", "title", "intent")
 		f.Var(&repos, "repo", "repository (repeatable)")
@@ -248,6 +259,16 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return ""
 	}
 	optional := map[string]bool{"remote": true, "default-branch": true}
+	// The workspace's own checkout is the workspace root unless a workspace
+	// kept inside a larger repository names the root above it.
+	if command == "workspace connect" {
+		optional["path"] = true
+	}
+	// Either half of the shared record is a whole call; an empty one is refused
+	// below, where the alternative can be named.
+	if command == "workspace remote" {
+		optional["url"], optional["default-branch"] = true, true
+	}
 	// A URL is how a clone finds its source; everywhere else it is one shared
 	// detail the checkout usually already knows.
 	optional["url"] = command != "repo clone"
@@ -350,6 +371,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			err = s.SetRemote(ctx, get("id"), get("url"), get("default-branch"))
 		case "repo relate":
 			err = s.Relate(get("from"), get("to"), get("description"))
+		case "workspace connect":
+			err = s.ConnectWorkspace(ctx, get("path"), get("base"), get("url"), get("default-branch"))
+		case "workspace base":
+			err = s.SetWorkspaceBase(ctx, get("branch"))
+		case "workspace remote":
+			err = s.SetWorkspaceRemote(ctx, get("url"), get("default-branch"))
 		case "repo inspect", "repo fetch":
 			checkout, e := s.Repository(ctx, get("id"))
 			if e != nil {

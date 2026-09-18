@@ -29,19 +29,20 @@ preserves customized definitions. Check while orienting, not when something need
 to delegate: writing a definition is not loading it, and a host may not register a
 role until it reloads. Dispatch reports whether the definition it names is there.
 
-Read `workspace.yaml` for project identity, purpose, logical repositories with
-their URL and default branch, and relationships. The shared roster is
-`members.yaml`. The active member, this machine's checkout paths, and the branch
+Read `workspace.yaml` for project identity, purpose, the workspace's own
+repository, logical repositories with their URL and default branch, and
+relationships. The shared roster is `members.yaml`. The active member, this machine's checkout paths, and the branch
 this machine starts work from are the documented, gitignored `member.local.yaml`
 and `repositories.local.yaml`. Read those bindings when needed; never inspect
 unrelated host settings, credentials, private provider payloads, or another
 session's state. Never store secrets in workspace records.
 `.context-circuit/docs/workspace.md` describes what each file may hold.
 
-Initializing a workspace, connecting or cloning repositories, and adding members
-or their allocation bands each happen only on a request, through
-`.agents/skills/cc-workspace/SKILL.md`. On another machine, select an existing
-member and connect its local checkouts; do not reinitialize the shared workspace.
+Initializing a workspace, describing the workspace's own repository, connecting
+or cloning repositories, and adding members or their allocation bands each happen
+only on a request, through `.agents/skills/cc-workspace/SKILL.md`. On another
+machine, select an existing member and connect its local checkouts; do not
+reinitialize the shared workspace.
 
 ## Shared knowledge
 

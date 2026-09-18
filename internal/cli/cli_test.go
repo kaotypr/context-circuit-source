@@ -323,10 +323,16 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	f.ok("repo", "relate", "--from", "copy", "--to", "api", "--description", "Consumes API")
 	f.fail("repo", "relate", "--from", "copy", "--to", "missing", "--description", "Bad")
 	git(t, f.root, "init", "-b", "main")
-	f.ok("repo", "connect", "--id", "workspace", "--path", ".", "--base", "main")
+	// The workspace's own checkout is described by its own commands, because
+	// every consumer of the repositories map reads an entry as somewhere work
+	// happens.
+	if out := f.fail("repo", "connect", "--id", "workspace", "--path", ".", "--base", "main"); !strings.Contains(out, "workspace connect") {
+		t.Fatal("connecting the workspace as a repository should name workspace connect", out)
+	}
+	f.ok("workspace", "connect", "--base", "main")
 	bindings := read(t, filepath.Join(f.root, "repositories.local.yaml"))
 	if !strings.Contains(bindings, "path: .") {
-		t.Fatal("root binding is not relative", bindings)
+		t.Fatal("workspace binding is not relative", bindings)
 	}
 	for _, path := range []string{"repositories.local.yaml", "member.local.yaml", ".context-circuit/local/write.lock", ".worktrees/test/file", "repositories/test/file"} {
 		git(t, f.root, "check-ignore", path)
@@ -335,6 +341,61 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	f.ok("repo", "inspect", "--id", "api")
 	if read(t, filepath.Join(api, "dirty.txt")) != "preserve" {
 		t.Fatal("lost dirty work")
+	}
+}
+
+// The shared records travel through the workspace's own repository, so its Git
+// state is part of what orientation answers. It splits the way a repository
+// does, and stays out of the repositories map, whose entries every consumer
+// reads as somewhere work happens.
+func TestWorkspaceRepositoryIsDescribedSeparately(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+
+	// Nothing to describe until the workspace is under version control.
+	if out := f.ok("check"); strings.Contains(out, "workspace connect") {
+		t.Fatal("asked to describe a workspace that is not a Git checkout", out)
+	}
+	git(t, f.root, "init", "-b", "main")
+	git(t, f.root, "remote", "add", "origin", "git@example.invalid:acme/workspace.git")
+	if out := f.fail("check"); !strings.Contains(out, "workspace connect") {
+		t.Fatal("an undescribed workspace repository goes unreported", out)
+	}
+
+	f.ok("workspace", "connect", "--base", "main")
+	shared := read(t, filepath.Join(f.root, "workspace.yaml"))
+	if !strings.Contains(shared, "workspace_repository:") || !strings.Contains(shared, "acme/workspace.git") {
+		t.Fatalf("the shared record does not describe the workspace repository: %s", shared)
+	}
+	if strings.Contains(shared, "base_branch") {
+		t.Fatalf("the shared record carries one machine's base branch: %s", shared)
+	}
+	if out := f.ok("check"); strings.Contains(out, "workspace connect") {
+		t.Fatal("still asking for a workspace repository that is recorded", out)
+	}
+
+	// A base describes this machine alone, exactly as a repository's does.
+	f.ok("workspace", "base", "--branch", "integration")
+	bindings := read(t, filepath.Join(f.root, "repositories.local.yaml"))
+	if !strings.Contains(bindings, "base_branch: integration") {
+		t.Fatalf("the workspace base is not local: %s", bindings)
+	}
+	if strings.Contains(read(t, filepath.Join(f.root, "workspace.yaml")), "integration") {
+		t.Fatal("a machine's workspace base reached the shared record")
+	}
+
+	f.ok("workspace", "remote", "--default-branch", "trunk")
+	if !strings.Contains(read(t, filepath.Join(f.root, "workspace.yaml")), "default_branch: trunk") {
+		t.Fatal("the shared default branch did not change")
+	}
+	f.fail("workspace", "remote")
+
+	var state workspace.Orientation
+	if err := json.Unmarshal([]byte(f.ok("status")), &state); err != nil {
+		t.Fatal(err)
+	}
+	if state.Self == nil || state.Self.Branch != "main" || state.Self.BaseBranch != "integration" {
+		t.Fatalf("status does not report the workspace's own Git state: %+v", state.Self)
 	}
 }
 

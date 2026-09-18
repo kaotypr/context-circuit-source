@@ -9,14 +9,14 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
-| workspace.yaml | Version, name, purpose, optional CLI release mirror, repository IDs with their URL and default branch, relationships | Yes |
+| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, relationships | Yes |
 | members.yaml | Member ID to display name and optional allocation band | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine | No |
-| repositories.local.yaml | Repository ID to this machine's checkout path and base branch | No |
+| repositories.local.yaml | This machine's workspace checkout, and repository ID to its checkout path and base branch | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
 | repositories/, .worktrees/ | Local Git working copies | No |
@@ -27,6 +27,9 @@ Example shared repository definition:
 version: 2
 name: Acme
 purpose: Billing software
+workspace_repository:
+  url: git@github.com:acme/acme-workspace.git
+  default_branch: main
 repositories:
   api:
     url: https://git.example.com/acme/api.git
@@ -49,10 +52,13 @@ from the product's own releases.
 Use a separate checkout for each execution environment (native Windows, WSL,
 remote server, or container). Shared files synchronize through Git; local paths,
 worktrees, installed dependencies, and uncommitted work do not migrate automatically.
-A local binding holds this machine's checkout path, including `.` for the
-workspace repository, and the branch that machine starts work from:
+A local binding holds this machine's checkout path and the branch that machine
+starts work from:
 
 ```yaml
+workspace:
+  path: .
+  base_branch: main
 bindings:
   api:
     path: ../api
@@ -71,12 +77,34 @@ all report `base_branch` beside the branch currently checked out. Read the base
 from one of those rather than from `workspace.yaml`, whose `default_branch` is
 the repository's default and not what this machine delivers to.
 
-After cloning a shared workspace onto another machine, use `member use` and
-`repo connect` with the existing IDs. Do not initialize it again. `repo connect`
-writes the shared record only when the ID is new, taking the URL from the
-checkout's `origin` unless `--url` names one. A new repository can be registered
-before its first commit; worktree preparation needs a commit. Setting a base
-records the intended branch without creating or resetting it.
+## The workspace's own repository
+
+The shared records travel through the Git repository carrying the workspace
+itself, so a member reads plans from whatever commit that checkout sits on.
+`workspace connect` describes it: where it lives and which branch it defaults to
+go into `workspace_repository`, and this machine's checkout root and base branch
+into the `workspace` binding. `workspace base` changes this machine's base and
+`workspace remote` changes the shared record, the same split `repo base` and
+`repo remote` make. Once described, `status` reports the workspace's branch,
+base, and uncommitted records beside every repository's, and `check` stops asking
+for it.
+
+`--path` defaults to the workspace root and needs naming only when the workspace
+sits inside a larger repository, where it names the containing root. The URL is
+read from that checkout's `origin` unless `--url` gives one.
+
+It is deliberately not an entry in `repositories`. Every consumer of that map
+reads an entry as somewhere work happens — a plan names repositories, a
+relationship joins two, a worktree is cut from one — and a worktree of the
+workspace would duplicate the records the CLI is reading. `repo connect` refuses
+the workspace's own checkout and names `workspace connect` instead.
+
+No command commits, pushes, or merges the workspace. Members share one branch of
+it; a member who keeps the workspace on another branch records that in the local
+binding, where it describes that machine and nobody else.
+
+After cloning a shared workspace onto another machine, use `member use`,
+`workspace connect`, and `repo connect` with the existing IDs.
 
 A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
 ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; every other date is an ISO 8601

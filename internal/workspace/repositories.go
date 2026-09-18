@@ -187,6 +187,14 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 	if root != path {
 		return errors.New("connect the root of a Git checkout")
 	}
+	// The workspace's own repository is described by `workspace connect`, not
+	// here: an entry in this map is somewhere work happens, and a plan, a
+	// relationship, or a worktree cut from the workspace is never what the
+	// caller meant. Connecting it here once read as the way to record it, so
+	// name the command that replaced it rather than only refusing.
+	if within(path, s.Root) {
+		return errors.New("this checkout holds the workspace itself; describe it with workspace connect")
+	}
 	if err := checkBranch(ctx, path, base); err != nil {
 		return err
 	}
@@ -209,6 +217,14 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 		otherCommon, err := Git(ctx, otherPath, "rev-parse", "--path-format=absolute", "--git-common-dir")
 		if err == nil && otherCommon == common {
 			return fmt.Errorf("this repository is already connected as %s", other)
+		}
+	}
+	// A worktree of the workspace's repository sits outside the workspace, so
+	// the containment check above does not see it, but it shares the object
+	// store and every commit made in it lands in the workspace's history.
+	if selfPath, err := s.selfPath(bindings.Workspace); err == nil && bindings.Workspace != nil {
+		if selfCommon, err := Git(ctx, selfPath, "rev-parse", "--path-format=absolute", "--git-common-dir"); err == nil && selfCommon == common {
+			return errors.New("this checkout belongs to the workspace's own repository; describe it with workspace connect")
 		}
 	}
 	if existing, registered := cfg.Repositories[id]; registered {
@@ -239,13 +255,9 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 			return err
 		}
 	}
-	local := path
-	if path == s.Root {
-		local = "."
-	}
-	binding := Binding{local, base}
+	binding := Binding{path, base}
 	if _, err := s.Read("repositories.local.yaml"); os.IsNotExist(err) {
-		return s.WriteYAML("repositories.local.yaml", Bindings{map[string]Binding{id: binding}}, 0600)
+		return s.WriteYAML("repositories.local.yaml", Bindings{Bindings: map[string]Binding{id: binding}}, 0600)
 	} else if err != nil {
 		return err
 	}

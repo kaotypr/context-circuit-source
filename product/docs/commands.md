@@ -29,6 +29,9 @@ context-circuit-cli repo remote --id api --url GIT_URL --default-branch main
 context-circuit-cli repo relate --from web --to api --description 'Consumes the API'
 context-circuit-cli repo inspect --id api
 context-circuit-cli repo fetch --id api --remote origin
+context-circuit-cli workspace connect --base main
+context-circuit-cli workspace base --branch development
+context-circuit-cli workspace remote --url GIT_URL --default-branch main
 context-circuit-cli context find --query billing
 context-circuit-cli context find --repo api
 ```
