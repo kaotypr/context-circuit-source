@@ -13,7 +13,7 @@ install side by side, so several workspaces on one machine can pin different one
 Read that file first and treat it as the version to run for that workspace.
 For an explicit update request, resolve the requested version, or the latest stable
 compatible `cli-v2.*` release from
-[CLI releases](https://github.com/kaotypr/context-circuit/releases).
+[CLI releases](https://github.com/kaotypr/context-circuit-source/releases).
 Use available GitHub tools or the releases API; exclude drafts/prereleases unless
 requested. The workspace template and the CLI release on the same repository:
 template releases are tagged `v*` and CLI releases `cli-v*`. Pass

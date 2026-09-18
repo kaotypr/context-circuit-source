@@ -77,7 +77,7 @@ try {
       # the Authorization header on the redirect to signed storage, which is
       # what that storage requires.
       $host_ = if ($env:CONTEXT_CIRCUIT_API) { $env:CONTEXT_CIRCUIT_API } else { 'https://api.github.com' }
-      $api = "$host_/repos/kaotypr/context-circuit"
+      $api = "$host_/repos/kaotypr/context-circuit-source"
       $auth = @{ Authorization = "Bearer $Token" }
       try {
         $release = Invoke-RestMethod -UseBasicParsing -Uri "$api/releases/tags/$releaseTag" -Headers ($auth + @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' })
@@ -88,7 +88,7 @@ try {
         Invoke-WebRequest -UseBasicParsing -Uri $asset.url -Headers ($auth + @{ Accept = 'application/octet-stream' }) -OutFile $wanted.File
       }
     } else {
-      $base = "https://github.com/kaotypr/context-circuit/releases/download/$releaseTag"
+      $base = "https://github.com/kaotypr/context-circuit-source/releases/download/$releaseTag"
       Invoke-WebRequest -UseBasicParsing -Uri "$base/$package" -OutFile $download
       Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS" -OutFile $sums
     }

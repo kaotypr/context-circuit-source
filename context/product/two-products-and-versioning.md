@@ -5,7 +5,7 @@ One checkout assembles two separately released products.
 | Product | Version file | Tags | Contents |
 | --- | --- | --- | --- |
 | Workspace template | `context-circuit-source@VERSION` | `v*` on the published template repository | shared instruction, docs, skills, blank seed |
-| Executable | `context-circuit-source@CLI_VERSION` | `cli-v*` here, assets published on the template repository | Go binaries for six platform targets |
+| Executable | `context-circuit-source@CLI_VERSION` | `cli-v*` here, where it is built and released | Go binaries for six platform targets |
 
 The tag and the assets under it are named differently on purpose. A tag is read
 in a release list that already says which product it belongs to, so `cli-v2.0.0`
@@ -35,18 +35,18 @@ on the error stream and continues, leaving structured output untouched. The
 warning is framed as a caller mistake — the workspace recorded what it wanted
 and something ran the wrong binary.
 
-The executable is tagged and built in this checkout, where its source is, so a
-released binary stays traceable to the commit that produced it. Its assets are
-published on the template repository instead, so installing the CLI never needs
-read access to this maintainer checkout. The tag created there is a distribution
-marker rather than a build reference — it names a commit that built nothing — and
-the release notes carry the source commit and the license.
+Each product is tagged, built and released from the repository that owns it. The
+executable's `cli-v*` tag, its build and its release all live in this checkout,
+where its source is, so a released binary is traceable to the commit that produced
+it by the tag itself. The template's `v*` releases live on the published template
+repository, whose tree is what they ship.
 
-That split is a consequence of this checkout being private, not a preference. It
-costs a tag with two meanings, a cross-repository token, and assets whose terms
-the hosting repository's own label contradicts. If this checkout becomes readable
-by the people who install the CLI, the release belongs here, where the code is,
-and each repository's label then matches the assets it serves.
+That was not always so. While this checkout was private, installing could not
+depend on reading it, so the executable's assets were published on the template
+repository instead. It cost a tag that meant two things in two places, a token
+with write access to another repository, and Apache-2.0 assets served under a
+0BSD label. Opening this checkout removed the reason, and the release followed the
+code.
 
 Publication targets GitHub only. A private mirror is a deployment of this
 product's own `cli_registry` feature rather than part of its release pipeline: an

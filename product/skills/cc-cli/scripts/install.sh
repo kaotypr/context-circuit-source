@@ -87,7 +87,7 @@ else
     # A private repository serves release assets only through the API, by asset
     # id; the public download path answers 404. curl does not carry the
     # Authorization header across the redirect to signed storage.
-    api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit"
+    api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit-source"
     fetch_auth --header 'Accept: application/vnd.github+json' \
       --header 'X-GitHub-Api-Version: 2022-11-28' \
       "$api/releases/tags/$release_tag" -o "$work/release.json" ||
@@ -115,7 +115,7 @@ else
       fetch_auth --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
     done
   else
-    base="https://github.com/kaotypr/context-circuit/releases/download/$release_tag"
+    base="https://github.com/kaotypr/context-circuit-source/releases/download/$release_tag"
     fetch "$base/$package" -o "$work/$package"
     fetch "$base/SHA256SUMS" -o "$work/SHA256SUMS"
   fi

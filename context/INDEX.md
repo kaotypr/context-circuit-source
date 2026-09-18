@@ -95,7 +95,7 @@ as concerns earn them, each with its own scope line.*
 is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-17
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, mirror, publication target · reviewed 2026-09-19
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, mirror, publication target, release repository · reviewed 2026-09-19
 - [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the executable, which cover a workspace, and where each text lives · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge · reviewed 2026-09-19
 
 ### Architecture

@@ -2,16 +2,15 @@ name: Publish CLI
 
 # Deliberately separate from template publication. Trigger only with a CLI tag.
 #
-# The tag and the build live here, where the Go source is, so a released binary
-# stays traceable to the commit that produced it. The assets are published on the
-# product repository instead, so installing the CLI never needs read access to
-# this maintainer checkout. The tag created on that repository is a distribution
-# marker, not a build reference; the release notes carry the real provenance.
+# The tag, the build and the release all live here, where the Go source is, so a
+# released binary is traceable to the commit that produced it by the tag itself
+# rather than by a sentence in its notes. They were split while this repository
+# was private and installing could not depend on reading it.
 #
 # The tag is `cli-v<version>`; the assets under it stay `context-circuit-cli-v…`.
-# They are deliberately different: the tag is read in a release list beside the
-# template's own `v<version>`, where the context is already given, while an asset
-# is read in whatever directory someone downloaded it into, where it is not.
+# They are deliberately different: the tag is read in a release list that already
+# says which product it belongs to, while an asset is read in whatever directory
+# someone downloaded it into, where nothing does.
 on:
   push:
     tags: ['cli-v*']
@@ -37,6 +36,8 @@ jobs:
   release:
     needs: native
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -53,29 +54,24 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Compose release notes
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
-          SOURCE_REPO: ${{ github.repository }}
           SOURCE_SHA: ${{ github.sha }}
         run: |
-          # The destination tag points at that repository's branch tip, which did
-          # not build these binaries. State where they actually came from.
           cat CLI.md > cli-notes.md
-          printf '\n---\n\nBuilt from `%s` at commit `%s`, tag `%s`.\n' \
-            "$SOURCE_REPO" "$SOURCE_SHA" "$RELEASE_TAG" >> cli-notes.md
-          # This repository is labeled 0BSD, because the repository is the
-          # workspace template. These assets are not, so say so where they are
-          # downloaded rather than leaving the repository label to answer it.
-          printf '\nApache-2.0; the archive carries the license. The `v*` workspace template released here is 0BSD.\n' >> cli-notes.md
-      - name: Publish CLI assets on the product repository
+          printf '\n---\n\nBuilt at commit `%s`.\n' "$SOURCE_SHA" >> cli-notes.md
+          # The workspace template is a separate product under a separate license,
+          # so the archive says which one it carries rather than leaving a reader
+          # to assume one release list means one set of terms.
+          printf '\nApache-2.0; the archive carries the license. The workspace template is 0BSD.\n' >> cli-notes.md
+      - name: Publish the CLI release
         env:
-          GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.ref_name }}
           VERSION: ${{ steps.build.outputs.version }}
         run: |
+          # The tag already exists here and is what triggered this run, so the
+          # release hangs on the commit that actually built these binaries.
           case "$VERSION" in *-*) set -- --prerelease ;; *) set -- ;; esac
           gh release create "$RELEASE_TAG" \
-            --repo kaotypr/context-circuit \
-            --target main \
             "$@" \
             --title "Context Circuit CLI $VERSION" \
             --notes-file cli-notes.md \

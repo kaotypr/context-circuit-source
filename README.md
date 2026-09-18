@@ -8,11 +8,10 @@
   <strong>Maintainer source for the Context Circuit workspace and CLI.</strong>
 </p>
 
-<!-- This repository is private, so shields.io cannot read it. Only the badge
-     GitHub serves itself reflects live state; the others are static. -->
 <p align="center">
   <a href="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml"><img alt="Source checks" src="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml/badge.svg"></a>
-  <a href="go.mod"><img alt="Go" src="https://img.shields.io/badge/go-1.25%2B-00add8"></a>
+  <a href="go.mod"><img alt="Go" src="https://img.shields.io/github/go-mod/go-version/kaotypr/context-circuit-source?label=go&color=00add8"></a>
+  <a href="https://github.com/kaotypr/context-circuit-source/releases"><img alt="CLI release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit-source?filter=cli-v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"></a>
   <a href="LICENSE"><img alt="Executable license" src="https://img.shields.io/badge/executable-Apache--2.0-2f855a"></a>
   <a href="product/LICENSE"><img alt="Template license" src="https://img.shields.io/badge/template-0BSD-2f855a"></a>
   <a href="https://context-circuit.kaotypr.com"><img alt="Website" src="https://img.shields.io/badge/website-context--circuit.kaotypr.com-0b7285"></a>

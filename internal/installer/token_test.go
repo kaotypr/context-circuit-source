@@ -94,7 +94,7 @@ func runTokenInstall(t *testing.T, indent bool) {
 			http.ServeFile(w, r, path)
 		}
 	}
-	const prefix = "/repos/kaotypr/context-circuit/releases"
+	const prefix = "/repos/kaotypr/context-circuit-source/releases"
 	mux.HandleFunc(prefix+"/assets/564138120", serve(archive))
 	mux.HandleFunc(prefix+"/assets/564138121", serve(sums))
 	mux.HandleFunc(prefix+"/tags/", func(w http.ResponseWriter, r *http.Request) {
@@ -115,7 +115,7 @@ func runTokenInstall(t *testing.T, indent bool) {
 				ContentType:        "application/octet-stream",
 				State:              "uploaded",
 				Size:               1,
-				BrowserDownloadURL: "https://github.com/kaotypr/context-circuit/releases/download/cli-v" + version + "/" + name,
+				BrowserDownloadURL: "https://github.com/kaotypr/context-circuit-source/releases/download/cli-v" + version + "/" + name,
 			}
 		}
 		payload := release{

@@ -11,12 +11,12 @@
 </p>
 
 <!-- context-circuit:badges -->
-<!-- Both products release on this repository: v* is the workspace template and
-     everything else is the CLI, so !v* survives a rename of the CLI tag prefix.
-     Date ordering avoids a semver sort that cannot parse a prefixed tag. -->
+<!-- Each product's release badge reads the repository that publishes it: the
+     template here, the CLI where its source is built. Date ordering avoids a
+     semver sort that cannot parse a prefixed tag. -->
 <p align="center">
   <a href="https://github.com/kaotypr/context-circuit/releases"><img alt="Workspace template release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit?filter=v*&display_name=tag&include_prereleases&sort=date&label=workspace&color=1f6feb"></a>
-  <a href="https://github.com/kaotypr/context-circuit/releases"><img alt="CLI release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit?filter=!v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"></a>
+  <a href="https://github.com/kaotypr/context-circuit-source/releases"><img alt="CLI release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit-source?filter=cli-v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"></a>
   <a href="https://context-circuit.kaotypr.com"><img alt="Website" src="https://img.shields.io/badge/website-context--circuit.kaotypr.com-0b7285"></a>
   <a href="https://github.com/kaotypr/context-circuit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-0BSD-2f855a"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8b949e">
