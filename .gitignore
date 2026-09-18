@@ -10,12 +10,14 @@ dist/
 /template/repositories/
 /template/repositories.local.yaml
 
-# Keep machine-local selections out of source control.
-/.context-circuit/role-tiering.local.yaml
+# Keep machine-local selections out of source control. The source root carries no
+# `.context-circuit/` of its own. `template/` is a blank schema-2 workspace a
+# maintainer can initialize for a scratch run, and initialization itself writes a
+# per-host agent inventory and a lock under that workspace's local directory.
 /template/.context-circuit/role-tiering.local.yaml
+/template/.context-circuit/local/
 /member.local.yaml
 /template/member.local.yaml
-/.context-circuit/local/
 /.worktrees/
 /bin/
 # Tool-generated local graph cache; never project material.
