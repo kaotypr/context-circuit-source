@@ -18,6 +18,9 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/skills/: packaged CLI installation/update and subagent dispatch skills.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and explicitly invoked publication.
+- LICENSE: Apache-2.0, covering this checkout and the executable.
+- product/LICENSE: 0BSD, covering everything a workspace receives.
+- release/template-repo/: landing-page files the published repository owns.
 
 The Go executable handles workspace mechanics. The agent owns interpretation,
 planning, implementation, application-specific setup, subagent dispatch, and
@@ -30,6 +33,14 @@ context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
 never ships. sources/, publication/, and release requests are passive maintainer
 history and never ship. The remaining source design skill is maintainer tooling
 and is excluded from the binary and exported workspace.
+
+release/template-repo/ is a fourth class: not shipped to a workspace and not
+history either. Publication restores those files over the extracted artifact and
+holds them out of the comparison that decides whether there is anything to
+publish, so the published repository keeps its own license, conduct, contributing
+and security pages while no workspace ever receives them. A README.md there is
+refused, because the published README is the product guide the manifest
+assembles.
 
 ## This checkout as a workspace
 

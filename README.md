@@ -2,12 +2,20 @@
   <img src="product/assets/readme/social-preview.png" alt="Context Circuit" width="840">
 </p>
 
+<h1 align="center">Context Circuit Source</h1>
+
 <p align="center">
   <strong>Maintainer source for the Context Circuit workspace and CLI.</strong>
 </p>
 
+<!-- This repository is private, so shields.io cannot read it. Only the badge
+     GitHub serves itself reflects live state; the others are static. -->
 <p align="center">
-  <a href="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml"><img src="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml/badge.svg" alt="Source checks"></a>
+  <a href="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml"><img alt="Source checks" src="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml/badge.svg"></a>
+  <a href="go.mod"><img alt="Go" src="https://img.shields.io/badge/go-1.25%2B-00add8"></a>
+  <a href="LICENSE"><img alt="Executable license" src="https://img.shields.io/badge/executable-Apache--2.0-2f855a"></a>
+  <a href="product/LICENSE"><img alt="Template license" src="https://img.shields.io/badge/template-0BSD-2f855a"></a>
+  <a href="https://context-circuit.kaotypr.com"><img alt="Website" src="https://img.shields.io/badge/website-context--circuit.kaotypr.com-0b7285"></a>
 </p>
 
 <p align="center">
@@ -15,7 +23,8 @@
   <a href="WORKFLOW.md">Source workflow</a> ·
   <a href="CLI.md">CLI architecture</a> ·
   <a href="#development">Development</a> ·
-  <a href="#release-assembly">Release assembly</a>
+  <a href="#release-assembly">Release assembly</a> ·
+  <a href="#licensing">Licensing</a>
 </p>
 
 Context Circuit gives coding agents shared project context, a grounded plan,
@@ -69,6 +78,7 @@ context-circuit-source/
 │   ├── cow/                   Copy-on-write cloning with copy fallback
 │   └── installer/             Acceptance tests for the shipped install scripts
 ├── product/                   Instructions, skills, docs, and artwork a workspace receives
+│   ├── LICENSE                0BSD, covering everything a workspace receives
 │   ├── assets/readme/         Product and README artwork
 │   ├── docs/                  Workspace and command documentation
 │   └── skills/                Agent procedures for each workflow stage
@@ -76,11 +86,13 @@ context-circuit-source/
 ├── context/                   Maintainer product knowledge; never shipped
 ├── release/
 │   ├── binding.yaml           Where the workspace template publishes
+│   ├── template-repo/         Landing-page files the published repository owns
 │   └── requests/              One release request per version
 ├── scripts/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
 │   └── …                      Build, validation, and publication tooling
 ├── assets.go                  Embedded product inventory
+├── LICENSE                    Apache-2.0, covering this checkout and the executable
 ├── VERSION                    Workspace-template version
 └── CLI_VERSION                Native CLI version
 ```
@@ -183,3 +195,20 @@ release publication, and deployment require an explicit maintainer request.
 See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
 [CLI.md](CLI.md) for the executable boundary and packaging behavior, and the
 [product documentation](product/docs/) for the workspace contract.
+
+## Licensing
+
+This checkout carries two licenses, because it builds two things with different
+relationships to the people who receive them.
+
+| What | License | Why |
+| --- | --- | --- |
+| This repository and the `context-circuit-cli` executable | [Apache-2.0](LICENSE) | A binary organizations install fleet-wide; the explicit patent grant is what carries it through legal review |
+| Everything a workspace receives, under `product/` and `template/` | [0BSD](product/LICENSE) | Scaffolding copied into somebody else's repository and edited there, so it imposes no attribution obligation on their project |
+
+GitHub detects the root `LICENSE` only, so this repository is labeled Apache-2.0.
+The 0BSD text travels with the files it covers: it ships to
+`.context-circuit/LICENSE` in every workspace, and `publish-template.sh` puts the
+same text at the root of the published template repository.
+
+A contribution is offered under the license covering the tree it touches.

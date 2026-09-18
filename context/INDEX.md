@@ -95,7 +95,8 @@ as concerns earn them, each with its own scope line.*
 is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-17
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration · reviewed 2026-09-19
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, mirror, publication target · reviewed 2026-09-19
+- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the executable, which cover a workspace, and where each text lives · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge · reviewed 2026-09-19
 
 ### Architecture
 
@@ -137,4 +138,4 @@ it does that for is `actors/`.*
 does once installed.*
 
 - [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-19
-- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, unverified · reviewed 2026-09-15
+- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, destination-owned, unverified · reviewed 2026-09-19

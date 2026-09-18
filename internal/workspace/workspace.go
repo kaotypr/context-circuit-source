@@ -395,6 +395,11 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
 		return err
 	}
+	// The README travels with the workspace, so it carries the workspace's name
+	// and the versions it received rather than the product's newest release.
+	if err := s.TitleReadme(name); err != nil {
+		return err
+	}
 	// Write role definitions for every host now, from this CLI, rather than
 	// leaving a setup step between a new workspace and its first delegation.
 	// Seeding them from the template instead would ship files no inventory

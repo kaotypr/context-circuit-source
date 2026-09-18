@@ -123,7 +123,7 @@ fi
 expected=$(awk -v name="$package" '{file=$2; sub(/^\*/, "", file); sub(/^\.\//, "", file); if(file==name) print $1}' "$work/SHA256SUMS")
 [ "${#expected}" -eq 64 ] || fail 'missing or ambiguous checksum entry'
 [ "$(hash "$work/$package")" = "$expected" ] || fail 'checksum mismatch'
-printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit-cli | LC_ALL=C sort > "$work/expected"
+printf '%s\n' README.md LICENSE THIRD_PARTY_NOTICES.txt context-circuit-cli | LC_ALL=C sort > "$work/expected"
 tar -tzf "$work/$package" | LC_ALL=C sort > "$work/actual"
 cmp "$work/expected" "$work/actual" >/dev/null || fail 'unexpected archive contents'
 mkdir "$work/package"

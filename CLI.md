@@ -31,3 +31,13 @@ Release packages cover macOS, Linux, and Windows on amd64 and arm64. Git, Node,
 package managers, and application services are separate environment dependencies.
 CoW attempts native filesystem cloning and falls back to independent file copies
 in auto mode. Reused dependencies must match the target branch and local runtime.
+
+## License
+
+`context-circuit-cli` is licensed under the Apache License 2.0, and every release
+archive carries that license beside the binary along with the third-party notices
+for its dependencies and the Go runtime.
+
+The workspace template is a separate product under a separate license — 0BSD,
+which asks nothing of the repository it is copied into. A release list carrying
+both is not carrying one license; see the `LICENSE` in whichever archive you took.

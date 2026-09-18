@@ -26,8 +26,8 @@ release_output=$(CDPATH= cd -- "$release_output" && pwd -P)
   if command -v sha256sum >/dev/null 2>&1; then sha256sum -c SHA256SUMS; else shasum -a 256 -c SHA256SUMS; fi
 )
 # Inspect all binary archives, including the Windows targets.
-printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit-cli | LC_ALL=C sort > "$work/unix-inventory"
-printf '%s\n' README.md THIRD_PARTY_NOTICES.txt context-circuit-cli.exe | LC_ALL=C sort > "$work/windows-inventory"
+printf '%s\n' README.md LICENSE THIRD_PARTY_NOTICES.txt context-circuit-cli | LC_ALL=C sort > "$work/unix-inventory"
+printf '%s\n' README.md LICENSE THIRD_PARTY_NOTICES.txt context-circuit-cli.exe | LC_ALL=C sort > "$work/windows-inventory"
 for archive in "$release_output/cli"/*-darwin-*.tar.gz "$release_output/cli"/*-linux-*.tar.gz; do
   tar -tzf "$archive" | LC_ALL=C sort > "$work/inventory"
   cmp "$work/unix-inventory" "$work/inventory"

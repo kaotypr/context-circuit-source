@@ -29,6 +29,17 @@ accounts of the same rules free to drift — with the descriptive one reading as
 though it explained the authoritative one. Its reader arrives through the
 workspace README instead.
 
+That README is the product guide, and in an installed workspace it is also that
+workspace's own front page. Two spans of it are therefore wrong as shipped:
+
+- the heading names the product rather than the workspace;
+- the badges look up the newest published release rather than the pinned versions.
+
+Initialization rewrites both, using delimiters in the shipped file so the rewrite
+has an exact anchor rather than a guess about where a heading ends. A README whose
+markers are gone has been edited by whoever owns that workspace and is left alone.
+Initialization records data; it does not rewrite prose to find a foothold.
+
 ## Why a prohibition never becomes a skill
 
 A skill is retrieved by an agent that has recognized its moment. That works for

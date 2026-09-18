@@ -66,3 +66,4 @@ product/skills/cc-complete/route.md .cursor/skills/cc-complete/SKILL.md
 product/skills/cc-deliver/SKILL.md .agents/skills/cc-deliver/SKILL.md
 product/skills/cc-deliver/route.md .claude/skills/cc-deliver/SKILL.md
 product/skills/cc-deliver/route.md .cursor/skills/cc-deliver/SKILL.md
+product/LICENSE .context-circuit/LICENSE

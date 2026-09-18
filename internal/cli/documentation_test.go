@@ -336,3 +336,61 @@ func TestEveryCommandHasATopic(t *testing.T) {
 		}
 	}
 }
+
+// Initialization titles a workspace's README and pins its version badges by
+// replacing marked spans. Losing a marker fails nothing at build time: it would
+// quietly ship workspaces titled with the product's own name, carrying badges
+// that report whatever was published since rather than what the workspace runs.
+func TestTheShippedReadmeKeepsTheSpansInitializationRewrites(t *testing.T) {
+	readme := productFile(t, "README.md")
+	for _, marker := range []string{
+		"<!-- context-circuit:title -->", "<!-- /context-circuit:title -->",
+		"<!-- context-circuit:badges -->", "<!-- /context-circuit:badges -->",
+	} {
+		if count := strings.Count(readme, marker); count != 1 {
+			t.Errorf("%s appears %d times; the rewrite needs exactly one", marker, count)
+		}
+	}
+	if !strings.Contains(readme, `<h1 align="center">Context Circuit</h1>`) {
+		t.Error("the marked title span no longer holds the heading a workspace name replaces")
+	}
+	// The product repository keeps a LICENSE at its root; a workspace does not,
+	// so a relative link here resolves nowhere once the file is installed.
+	if strings.Contains(readme, `<a href="LICENSE">`) {
+		t.Error("the license badge links relatively, which breaks in an installed workspace")
+	}
+}
+
+// The two licenses answer different questions, so neither may quietly become the
+// other. The executable is Apache-2.0; everything a workspace receives is 0BSD,
+// whose point is that it asks nothing of the repository it is copied into.
+func TestTheTwoLicensesStaySeparate(t *testing.T) {
+	root := func(name string) string {
+		data, err := os.ReadFile(filepath.Join("..", "..", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	if !strings.Contains(root("LICENSE"), "Apache License") {
+		t.Error("the root LICENSE no longer carries the Apache text GitHub detects")
+	}
+	product := productFile(t, "LICENSE")
+	if !strings.Contains(product, "BSD Zero Clause License") {
+		t.Error("the shipped license no longer carries the 0BSD text")
+	}
+	if strings.Contains(product, "Apache") {
+		t.Error("the executable's license reached the tree a workspace receives")
+	}
+	manifest := root(filepath.Join("scripts", "release-manifest.txt"))
+	if !strings.Contains(manifest, "product/LICENSE .context-circuit/LICENSE") {
+		t.Error("the shipped license does not travel with the files it covers")
+	}
+	// A LICENSE at a workspace root would make GitHub label somebody else's
+	// project with this one's terms.
+	for _, line := range strings.Split(manifest, "\n") {
+		if fields := strings.Fields(line); len(fields) == 2 && fields[1] == "LICENSE" {
+			t.Error("a license installs at the workspace root, where it describes the wrong project")
+		}
+	}
+}

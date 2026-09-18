@@ -112,7 +112,7 @@ func packageFixture(t *testing.T, root, version string, reported ...string) (str
 	if err != nil {
 		t.Fatal(err)
 	}
-	payload := map[string][]byte{binaryName: binary, "README.md": []byte("Installer fixture"), "THIRD_PARTY_NOTICES.txt": []byte("Fixture")}
+	payload := map[string][]byte{binaryName: binary, "README.md": []byte("Installer fixture"), "LICENSE": []byte("Fixture license"), "THIRD_PARTY_NOTICES.txt": []byte("Fixture")}
 	name := fmt.Sprintf("context-circuit-cli-v%s-%s-%s", version, runtime.GOOS, runtime.GOARCH)
 	ext := ".tar.gz"
 	if runtime.GOOS == "windows" {

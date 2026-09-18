@@ -101,7 +101,7 @@ try {
   $zip = [IO.Compression.ZipFile]::OpenRead($download)
   try {
     $names = @($zip.Entries | ForEach-Object { $_.FullName } | Sort-Object)
-    $expected = @('README.md', 'THIRD_PARTY_NOTICES.txt', 'context-circuit-cli.exe' | Sort-Object)
+    $expected = @('README.md', 'LICENSE', 'THIRD_PARTY_NOTICES.txt', 'context-circuit-cli.exe' | Sort-Object)
     if (($names -join "`n") -cne ($expected -join "`n")) { throw 'Unexpected archive contents.' }
   } finally { $zip.Dispose() }
   $staged = Join-Path $work 'package'

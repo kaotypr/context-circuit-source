@@ -22,17 +22,22 @@ generated workspaces, not this one.
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
-| `context-circuit-source@release/` | The published destination identity, and one release request per version |
+| `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files that repository owns |
+| `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the executable, 0BSD for everything a workspace receives |
 
-## Three classes of material
+## Four classes of material
 
 | Class | What it holds |
 | --- | --- |
 | Shipped instruction | The product's behavior: `context-circuit-source@product/` |
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
+| Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/`, restored over the artifact at publication and reaching no workspace |
 | Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer design and evidence material |
 
-Product history and maintainer data never reach a release asset.
+Product history and maintainer data never reach a release asset. The
+destination-owned class exists because a workspace root belongs to somebody
+else's project; see [licensing](../product/licensing.md) for what that rules out
+and why.
 
 The manifest is the single place that decides which class a file is in, the
 embedding reads only what it names, and the release check verifies the embedded

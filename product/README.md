@@ -2,9 +2,26 @@
   <img src=".context-circuit/assets/readme/context-circuit-logo.png" alt="Context Circuit" width="480">
 </p>
 
+<!-- context-circuit:title -->
+<h1 align="center">Context Circuit</h1>
+<!-- /context-circuit:title -->
+
 <p align="center">
   <strong>Give your coding agent project context and a grounded plan—while you stay in control across every repository in your project.</strong>
 </p>
+
+<!-- context-circuit:badges -->
+<!-- Both products release on this repository: v* is the workspace template and
+     everything else is the CLI, so !v* survives a rename of the CLI tag prefix.
+     Date ordering avoids a semver sort that cannot parse a prefixed tag. -->
+<p align="center">
+  <a href="https://github.com/kaotypr/context-circuit/releases"><img alt="Workspace template release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit?filter=v*&display_name=tag&include_prereleases&sort=date&label=workspace&color=1f6feb"></a>
+  <a href="https://github.com/kaotypr/context-circuit/releases"><img alt="CLI release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit?filter=!v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"></a>
+  <a href="https://context-circuit.kaotypr.com"><img alt="Website" src="https://img.shields.io/badge/website-context--circuit.kaotypr.com-0b7285"></a>
+  <a href="https://github.com/kaotypr/context-circuit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-0BSD-2f855a"></a>
+  <img alt="Platforms" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8b949e">
+</p>
+<!-- /context-circuit:badges -->
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
@@ -708,6 +725,19 @@ visible:
 `AGENTS.md` carries the standing safety rules your agent reads whenever it works
 in this workspace. Skills under `.agents/skills/` provide the procedure for the
 stage currently in progress.
+
+## License
+
+The workspace template — these instructions, skills, and documents — is released
+under the [BSD Zero Clause License](.context-circuit/LICENSE), which permits use,
+modification, and redistribution with **no attribution requirement**. These files
+become yours the moment they are copied into your repository, so keeping a notice
+of ours in your project is not a condition of using them.
+
+Your own code, your project knowledge, and everything your agent writes here are
+yours and are covered by whatever license your repository already carries. The
+`context-circuit-cli` executable is separate, and is released under the Apache
+License 2.0.
 
 ## Requirements and limits
 

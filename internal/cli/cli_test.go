@@ -881,3 +881,30 @@ func TestCompletionReportsScopedKnowledgeCandidates(t *testing.T) {
 		t.Errorf("{api} matched {api-gateway}: %s", out)
 	}
 }
+
+// A workspace repository is shared with a team, so its front page says whose
+// workspace it is, and its badges report the versions this workspace received
+// rather than whatever the product has published since.
+func TestInitializationTitlesTheWorkspaceReadme(t *testing.T) {
+	f := setup(t)
+	readme := read(t, filepath.Join(f.root, "README.md"))
+	if !strings.Contains(readme, `<h1 align="center">Context Circuit - Acme</h1>`) {
+		t.Errorf("README is not titled with the workspace name:\n%s", readme[:min(len(readme), 600)])
+	}
+	if strings.Contains(readme, "img.shields.io/github/v/release") {
+		t.Error("the README still looks up the newest release instead of the pinned versions")
+	}
+	version := strings.TrimSpace(read(t, filepath.Join(f.root, ".context-circuit", "VERSION")))
+	cliVersion := strings.TrimSpace(read(t, filepath.Join(f.root, ".context-circuit", "CLI_VERSION")))
+	for _, pinned := range []string{"label=workspace&message=v" + version, "label=cli&message=v" + cliVersion} {
+		if !strings.Contains(readme, pinned) {
+			t.Errorf("README does not pin %q", pinned)
+		}
+	}
+	// The name is placed inside markup, so it is escaped rather than trusted.
+	g := fixture{t, filepath.Join(f.home, "escaped"), f.home}
+	g.ok("init", "--name", `R&D <b>`, "--purpose", "p", "--member", "a", "--member-name", "A")
+	if escaped := read(t, filepath.Join(g.root, "README.md")); !strings.Contains(escaped, "R&amp;D &lt;b&gt;") {
+		t.Error("the workspace name reached the heading unescaped")
+	}
+}
