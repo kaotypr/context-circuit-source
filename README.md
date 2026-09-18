@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="product/assets/readme/context-circuit-logo.png" alt="Context Circuit" width="480">
+  <img src="product/assets/readme/social-preview.png" alt="Context Circuit" width="840">
 </p>
 
 <p align="center">
@@ -33,29 +33,25 @@ If you want to use Context Circuit, begin with the
 [product guide](https://github.com/kaotypr/context-circuit). If you are changing how Context Circuit
 works or ships, this is the repository to edit.
 
-<p align="center">
-  <img src="product/assets/readme/social-preview.png" alt="Context Circuit product overview" width="840">
-</p>
+## What belongs in the executable
 
-## Product model
+The line between the executable and the coding agent is the design constraint
+this repository implements. Before adding behavior, decide which side it is on.
 
-The coding agent and the executable have deliberately different jobs.
-
-| Coding agent | Context Circuit CLI |
+| The executable does | The coding agent does |
 | --- | --- |
-| Understands a request and retrieves relevant project context | Allocates stable IDs and edits structured workspace files |
-| Writes goals and implementation plans | Records approvals, dependencies, completion, and local bindings |
-| Inspects code, implements changes, and runs project checks | Prepares and tracks isolated Git working copies |
-| Decides when bounded exploration or sub-agents are useful | Produces deterministic diagnostics and dispatch specifications |
-| Reports real results and unresolved decisions | Refuses invalid state without making product judgments |
+| Allocates stable IDs and edits structured workspace files | Understands a request and retrieves relevant project context |
+| Records approvals, dependencies, completion, and local bindings | Writes goals and implementation plans |
+| Prepares and tracks isolated Git working copies | Inspects code, implements changes, and runs project checks |
+| Produces deterministic diagnostics and dispatch specifications | Decides when bounded exploration or sub-agents are useful |
+| Refuses invalid state without making product judgments | Reports real results and unresolved decisions |
 
-The executable owns mechanisms that should be deterministic. The agent owns
-interpretation and work that depends on the actual project. Human authorization
-remains outside both.
+Anything whose answer depends on reading the actual project belongs to the agent,
+not to Go. Anything that must return the same result every time belongs here. The
+executable holds no LLM credentials and never calls a model API, so a feature that
+needs judgment is a skill or an instruction change, not a command.
 
-<p align="center">
-  <img src="product/assets/readme/workflow-overview.png" alt="How Context Circuit helps an agent finish safely" width="840">
-</p>
+Human authorization sits outside both and is never inferred by either.
 
 ## Repository layout
 
@@ -70,13 +66,17 @@ context-circuit-source/
 ├── internal/
 │   ├── cli/                   Commands and human/JSON output
 │   ├── workspace/             Records, YAML edits, Git, and working copies
-│   └── cow/                   Copy-on-write cloning with copy fallback
-├── product/                   Everything shipped in a workspace
+│   ├── cow/                   Copy-on-write cloning with copy fallback
+│   └── installer/             Acceptance tests for the shipped install scripts
+├── product/                   Instructions, skills, docs, and artwork a workspace receives
 │   ├── assets/readme/         Product and README artwork
 │   ├── docs/                  Workspace and command documentation
 │   └── skills/                Agent procedures for each workflow stage
 ├── template/                  Blank workspace records and configuration
 ├── context/                   Maintainer product knowledge; never shipped
+├── release/
+│   ├── binding.yaml           Where the workspace template publishes
+│   └── requests/              One release request per version
 ├── scripts/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
 │   └── …                      Build, validation, and publication tooling
@@ -85,8 +85,17 @@ context-circuit-source/
 └── CLI_VERSION                Native CLI version
 ```
 
-`sources/`, `publication/`, and release-request material are passive maintainer
-history. They are not the current product specification and never ship.
+`product/` and `template/` are the two shipped trees; `scripts/release-manifest.txt`
+maps every file in them to its destination in a generated workspace.
+
+`sources/` and `publication/` are passive maintainer history: not the current
+product specification, and never shipped. `release/` is not history — `binding.yaml`
+names the published destination, and each version's request lives beside it.
+
+This checkout is also registered as a Context Circuit workspace, which is why
+`workspace.yaml`, `members.yaml`, `intent/`, and `plans/` sit at its root. Do not
+work through the product's intent and plan flow here. Maintainer changes are made
+directly on the current branch, as `AGENTS.md` sets out.
 
 ## Development
 

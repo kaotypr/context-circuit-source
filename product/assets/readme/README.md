@@ -10,7 +10,7 @@ interface.
 | `context-circuit-logo.png` | 520 × 160 | README brand lockup or documentation header |
 | `knowledge-circuit.png` | 1400 × 820 | Primary product explanation |
 | `workflow-overview.png` | 1400 × 760 | Outcome-oriented product overview |
-| `social-preview.png` | 1280 × 640 | Uploadable GitHub social preview |
+| `social-preview.png` | 1280 × 640 | Uploadable GitHub social preview; header of the source README |
 
 The workspace release maps shipped assets to
 `.context-circuit/assets/readme/`. A generated workspace README should use that
