@@ -47,8 +47,8 @@ assembles.
 The checkout is itself a schema-2 workspace, so `check`, `status`, and
 `context find` run against the real `context/` here instead of a copied fixture.
 That is the only reason the workspace files exist. Source work still goes
-directly on the branch under AGENTS.md: `intent/` and `plans/` stay empty, and
-no ID is allocated for source changes. `.context-circuit/docs/` is deliberately
+directly on the branch under AGENTS.md, so this checkout carries no `intent/` or
+`plans/` and allocates no ID for source changes. `.context-circuit/docs/` is deliberately
 absent, because `product/docs/` owns that text and a second copy here would
 drift from it.
 

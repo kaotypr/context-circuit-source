@@ -104,9 +104,11 @@ specification, and never shipped. `release/` is not history — `binding.yaml`
 names the published destination, and each version's request lives beside it.
 
 This checkout is also registered as a Context Circuit workspace, which is why
-`workspace.yaml`, `members.yaml`, `intent/`, and `plans/` sit at its root. Do not
-work through the product's intent and plan flow here. Maintainer changes are made
-directly on the current branch, as `AGENTS.md` sets out.
+`workspace.yaml`, `members.yaml`, and `.context-circuit/` sit at its root: they
+let `check`, `status`, and `context find` run against the real `context/` tree
+rather than a fixture. There is no `intent/` or `plans/`, because the product's
+intent and plan flow is not used here — maintainer changes are made directly on
+the current branch, as `AGENTS.md` sets out.
 
 ## Development
 
