@@ -84,10 +84,14 @@ func TestRecordStructureStaysEnglishInTheEntryInstruction(t *testing.T) {
 		}
 	}
 
-	// The worked examples are what actually transfers the register; an abstract
-	// rule on its own is the part that does not.
+	// The rules name operations rather than virtues, because "write naturally"
+	// gives a model nothing to apply. The skill stays language-agnostic: a
+	// worked example in one language is noise to a member writing another, and
+	// a team that wants specifics records a tone instead.
 	intent := productFile(t, "skills/cc-intent/SKILL.md")
-	if !strings.Contains(intent, "| Translated | Written |") {
-		t.Error("cc-intent carries the rule without the contrastive examples")
+	for _, phrase := range []string{"clause order", "nominalize", "engineers in that language actually"} {
+		if !strings.Contains(intent, phrase) {
+			t.Errorf("cc-intent does not name the operation %q", phrase)
+		}
 	}
 }

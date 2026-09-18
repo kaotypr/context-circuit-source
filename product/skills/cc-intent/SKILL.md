@@ -50,19 +50,6 @@ Where the member records a `tone` in `members.yaml`, follow it; it is that
 team's own answer and it overrides the guidance above. A workspace writing
 Bahasa Indonesia might record `semi-formal; keep technical terms in English`.
 
-Three pairs of the same sentence, translated and then written:
-
-| Translated | Written |
-| --- | --- |
-| Quarter adalah rentang tanggal yang dikonfigurasi, bukan konvensi kalender, jadi tulisan `Q3` saja tidak memberi tahu pembaca tanggal berapa saja yang tercakup. | Quarter adalah rentang tanggal yang dikonfigurasi, bukan konvensi kalender. Label `Q3` saja tidak memberi tahu pembaca tanggal berapa yang tercakup. |
-| …disegarkan pada jadwal per jam yang sudah berjalan, dan tidak ada perubahan pada jadwal penyegarannya. | …di-refresh pada jadwal per jam yang sudah berjalan, dan jadwal refresh-nya tidak berubah. |
-| Tidak ada perubahan pada cara quarter berjalan ditentukan. | Cara menentukan quarter berjalan tidak berubah. |
-
-The first splits a sentence that kept its English hinge. The second stops
-translating a word engineers say in English — and note that the original was
-already inconsistent, keeping `cache` and `backend` while rendering `refresh`.
-The third turns a nominalization back into a verb.
-
 ## Ground it first
 
 Retrieve the bearing knowledge through `context/INDEX.md` and read the request's
