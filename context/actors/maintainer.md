@@ -21,6 +21,10 @@ Owns this checkout and decides what reaches a workspace.
 3. **As a maintainer, I want host behavior reported as unverified when it was
    not exercised,** so that a claim about a coding host is never stronger than
    the evidence behind it.
+4. **As a maintainer, I want a new shipped document to fail the build until I
+   have said who reads it,** so that one written for a person cannot quietly
+   start spending an agent's always-loaded context, and one written for the
+   agent cannot ship unreachable.
 
 ## [Two products and their version lines](../product/two-products-and-versioning.md)
 

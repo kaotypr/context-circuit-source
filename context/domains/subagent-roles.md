@@ -67,7 +67,11 @@ in that order:
    so a planner takes the whole intent and refuses a task and a worker owning
    its whole plan needs none; what remains is a role no record assigns, or one
    slice of a plan several workers share.
-5. **What the role must return.**
+5. **The language boundary**, where a record is written in one. A subagent that
+   receives a record in another language has to be told which of it is prose that
+   stays in that language and which is structure that stays English, or it
+   answers in whichever the record led with.
+6. **What the role must return.**
 
 The returned prompt is launched unmodified for the same reason: a coordinator
 that retypes it in its own words drops the quoted record, and the agent then

@@ -11,15 +11,18 @@ generated workspaces, not this one.
 | `context-circuit-source@product/AGENTS.md.in` | The always-loaded gates and prohibitions, and the pointer to each stage's skill |
 | `context-circuit-source@product/docs/` | Workspace files, agent-facing commands, subagents, working records, worktrees |
 | `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus executable installation and subagent dispatch |
+| `context-circuit-source@product/assets/readme/` | The artwork the workspace README and the template repository listing use |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
+| `context-circuit-source@internal/installer/` | Acceptance tests for the shipped install scripts; it carries no non-test source |
 | `context-circuit-source@cmd/context-circuit/` | Executable entry point |
 | `context-circuit-source@template/` | Blank workspace files embedded with the product instruction |
 | `context-circuit-source@scripts/release-manifest.txt` | The exact source-to-output file mapping |
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
+| `context-circuit-source@release/` | The published destination identity, and one release request per version |
 
 ## Three classes of material
 
@@ -35,6 +38,9 @@ The manifest is the single place that decides which class a file is in, the
 embedding reads only what it names, and the release check verifies the embedded
 inventory against it. A new shipped file that is not in the manifest is simply
 absent from the product, which is why the manifest and the file land together.
+Artwork is shipped on the same terms as instruction — named once in the manifest
+and once in the embed list — so removing an image means editing both, and an
+image nothing references keeps shipping until someone does.
 
 ## Working rules for this checkout
 

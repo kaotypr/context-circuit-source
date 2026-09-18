@@ -95,7 +95,7 @@ as concerns earn them, each with its own scope line.*
 is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-17
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration · reviewed 2026-09-15
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration · reviewed 2026-09-19
 
 ### Architecture
 
@@ -103,9 +103,9 @@ is built is `architecture/`.*
 executable and agent, the command surface, the instruction layers, the file
 contract.*
 
-- [The executable and agent seam](architecture/executable-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go executable and which to the agent · seam, boundary, executable, refusals, model-blind, judgment, mechanism · reviewed 2026-09-15
+- [The executable and agent seam](architecture/executable-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go executable and which to the agent · seam, boundary, executable, refusals, model-blind, judgment, mechanism, remedy · reviewed 2026-09-19
 - [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the executable exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-18
-- [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability · reviewed 2026-09-16
+- [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability, audience · reviewed 2026-09-19
 - [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema · reviewed 2026-09-18
 
 ### Actors
@@ -113,9 +113,9 @@ contract.*
 *Who deals with this project, and what each one needs from it. What the product
 does for them is `domains/`.*
 
-- [Maintainer](actors/maintainer.md) {context-circuit-source} — who owns this checkout and what they need from it · actor, maintainer, ships, release, manifest, validation, versioning · reviewed 2026-09-17
-- [Workspace member](actors/workspace-member.md) {context-circuit-source} — who runs the product against a project and what they need from it · actor, member, user, team, roster, approval, isolation, retrieval · reviewed 2026-09-17
-- [Coding agent](actors/coding-agent.md) {context-circuit-source} — what the agent reading this workspace needs in order to act correctly · actor, agent, host, instruction, brief, dispatch, output, refusal · reviewed 2026-09-17
+- [Maintainer](actors/maintainer.md) {context-circuit-source} — who owns this checkout and what they need from it · actor, maintainer, ships, release, manifest, validation, versioning · reviewed 2026-09-19
+- [Workspace member](actors/workspace-member.md) {context-circuit-source} — who runs the product against a project and what they need from it · actor, member, user, team, roster, approval, isolation, retrieval · reviewed 2026-09-19
+- [Coding agent](actors/coding-agent.md) {context-circuit-source} — what the agent reading this workspace needs in order to act correctly · actor, agent, host, instruction, brief, dispatch, output, refusal · reviewed 2026-09-19
 
 ### Coordination domains
 
@@ -123,18 +123,18 @@ does for them is `domains/`.*
 it does that for is `actors/`.*
 
 - [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen and kept unique across clones, and which language each record is written in · id, allocation, band, reservation, ledger, member, offline, collision, language, approval gate · reviewed 2026-09-18
-- [Grounding an intent and its open questions](domains/intent-grounding.md) {context-circuit-source} — what an intent is written against and how unsettled decisions reach the person · intent, grounding, open questions, numbered, answer, assumption, contradiction · reviewed 2026-09-16
+- [Grounding an intent and its open questions](domains/intent-grounding.md) {context-circuit-source} — what an intent is written against and how unsettled decisions reach the person · intent, grounding, open questions, numbered, answer, assumption, contradiction · reviewed 2026-09-19
 - [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-09-18
 - [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start · reviewed 2026-09-16
-- [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how several plans of one intent are sequenced, merged, and released · order, waves, chain, dependency, integration merge, concurrency, stop · reviewed 2026-09-15
-- [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review, commit · reviewed 2026-09-16
-- [Changing something directly](domains/direct-changes.md) {context-circuit-source} — when a person skips intent and planning, and what still holds when they do · direct, bypass, small change, quick fix, bound checkout, lane, routing, uncommitted, reconcile · reviewed 2026-09-17
-- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_required, reconcile_required, commit, ancestry, bypass · reviewed 2026-09-17
+- [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how several plans of one intent are sequenced, merged, and released · order, waves, chain, chain end, deliver, dependency, integration merge, concurrency, stop · reviewed 2026-09-19
+- [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review, commit · reviewed 2026-09-19
+- [Changing something directly](domains/direct-changes.md) {context-circuit-source} — when a person skips intent and planning, and what still holds when they do · direct, bypass, small change, quick fix, bound checkout, lane, routing, uncommitted, reconcile · reviewed 2026-09-19
+- [Authorization boundaries](domains/authorization.md) {context-circuit-source} — which actions need a person and what one authorization covers · approval, execution request, authorization, delivery, completion, cleanup, scope, consent, gate, obligation, planning_required, reconcile_required, commit, ancestry, bypass · reviewed 2026-09-19
 
 ### Maintaining this source
 
 *How this checkout is laid out, validated, and released. Not what the product
 does once installed.*
 
-- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-16
+- [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-19
 - [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, unverified · reviewed 2026-09-15

@@ -29,7 +29,10 @@ Reads the instruction, runs the executable, and does the work a member asked for
    to reconstruct it.
 2. **As the agent, I want to integrate from what a worker reported,** so that
    delegation stays cheaper than doing the work myself.
-3. **As the agent, I want a written role definition reported as written rather
+3. **As the agent, I want a brief to say which language its prose is in and
+   which parts stay English,** so that a delegate handed a record in another
+   language does not answer in whichever one the record opened with.
+4. **As the agent, I want a written role definition reported as written rather
    than loaded,** so that I do not claim a capability the host has not
    registered.
 

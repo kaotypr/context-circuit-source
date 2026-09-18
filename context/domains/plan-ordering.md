@@ -73,6 +73,22 @@ skipped dependency reuse whose fallback setup fails; or an order reporting a
 cycle, an unknown repository, or a broken link. Completed work is never unwound,
 and the report names what finished, what is stuck, and what is held behind it.
 
+## Where a chain ends, and why delivery reads that
+
+The derivation also marks, per plan, the repositories whose chain ends there. A
+chain end's branch already contains the plans it was prepared from, so it is the
+only branch that needs a request: delivering its predecessors as well would offer
+the same commits twice.
+
+The mark is per repository rather than per plan, because a plan can end a chain in
+one repository and sit mid-chain in another — it is delivered where nothing
+follows it and skipped where a successor's branch already carries it. One
+repository can also hold two chain ends and take two requests.
+
+Reading the last wave instead is the mistake this replaces. Waves answer
+readiness, not completion: a plan nothing depends on sits in the first wave and
+still ends its chain, so anything reasoning from waves drops it in silence.
+
 ## The coarseness the report admits
 
 Shared-repository reporting reflects repositories, not paths, because plan

@@ -19,6 +19,8 @@ because it looks complete.
 | Workspace and member records, local bindings | `context-circuit-source@internal/workspace/workspace.go` |
 | Repository connect, clone, init, base, relate, fetch | `context-circuit-source@internal/workspace/repositories.go` |
 | Git state inspection and the diagnostic | `context-circuit-source@internal/workspace/inspect.go` |
+| Mounted knowledge the workspace does not own | `context-circuit-source@internal/workspace/knowledge.go` |
+| Reading a note's reviewed date against the code it anchors to | `context-circuit-source@internal/workspace/review.go` |
 | Worktree preparation, listing, move, repair, removal | `context-circuit-source@internal/workspace/worktrees.go` |
 | Ignored runtime reuse and filesystem cloning | `context-circuit-source@internal/workspace/reuse.go`, `internal/cow/` |
 | Execution order derivation | `context-circuit-source@internal/workspace/order.go` |
@@ -39,9 +41,18 @@ The refusals are the product boundary, not gaps waiting to be filled:
 - Its approval and completion operations *record* a decision a person already
   made rather than constituting one.
 - Its diagnostic reports and exits, and nothing waits on it.
+- It never edits a mounted knowledge repository, and never merges, rebases,
+  resets, or discards one to make a sync succeed.
 
 The shipped help text carries these refusals verbatim, so they are visible to
 whoever is about to use the tool.
+
+Naming the remedy is not a crossing. Every diagnostic finding carries the command,
+edit, or decision that discharges it, which reads like judgment and is not: the
+remedy is fixed by the fault, and where no fixed remedy exists the finding says a
+person is needed and stops rather than guessing. The same holds for a stale
+reviewed date — the executable counts the commits under a note's anchors, and
+whether the note is now wrong is the reader's call.
 
 ## What the agent owns
 
