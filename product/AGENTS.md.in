@@ -259,7 +259,7 @@ or conflicts without imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more
 plans completed, that request is finished only when the completion note is
-appended *and* the durable project knowledge those plans changed is reconciled.
+appended *and* the durable product knowledge those plans changed is reconciled.
 `record complete` names the second half as `reconcile_required`; judge it through
 `.agents/skills/cc-complete/SKILL.md`. Completion reporting success is the record
 written, not the request finished. Other work need not wait for unrelated

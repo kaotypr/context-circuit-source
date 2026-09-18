@@ -1,4 +1,4 @@
-# Shared project knowledge
+# Shared product knowledge
 
 This optional catalog points to durable architecture, conventions, decisions,
 terminology, domain rules, and repository relationships. Retrieve relevant
