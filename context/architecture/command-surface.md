@@ -9,7 +9,8 @@ command the agent will get wrong.
 ```
 init · status · check
 member add|band|use|list
-repo connect|clone|init|base|relate|fetch|inspect
+repo connect|clone|init|base|remote|relate|fetch|inspect
+workspace connect|base|remote
 record create|show|list|note|approve|complete|dependencies|order
 context find
 worktree prepare|list|inspect|move|repair|remove
