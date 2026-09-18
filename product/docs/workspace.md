@@ -10,7 +10,7 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, relationships | Yes |
-| members.yaml | Member ID to display name, optional allocation band, and optional record language | Yes |
+| members.yaml | Member ID to display name, optional allocation band, and optional record language and tone | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
@@ -115,12 +115,21 @@ means English.
 | An approval or completion note | exactly what the person said |
 | `context/` notes, the catalog, the glossary | English, always |
 | Anything written inside a repository | that repository's convention, English where it states none |
+| A record's headings and field names | English, always |
 | IDs, slugs, repository IDs, branch names, dates | unchanged |
 
 Knowledge is English because a note outlives the member who wrote it and anchors
 to code, and because the catalog is searched by substring, which a
 mixed-language index quietly breaks. An intent is in its author's language
 because a person can only approve an outcome they understand.
+
+A member may also record a `tone` beside their language: the register that
+language is written in, as one line of prose — `semi-formal; keep technical
+terms in English` — quoted into the instruction that writes a record rather than
+parsed. It exists because naming a language decides the words and not how they
+are put together, and an agent composing in English and translating produces
+prose that is grammatical and formal in a way nobody chose. Unset leaves the
+general composition guidance in `cc-intent` to decide.
 
 `agent dispatch` names the record author's language in the brief and states that
 what goes into the repository is English. That boundary lives in the brief

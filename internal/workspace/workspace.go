@@ -71,10 +71,20 @@ type Config struct {
 // dispatch brief quoting it into a sentence. A tag would need a table mapping
 // it to a name, and that table is wrong for the first language it omits. Unset
 // means English, which is what every record written before this field assumed.
+//
+// Tone is the register that language is written in, recorded the same way and
+// for the same reason: it is quoted into the instruction that writes a record,
+// never parsed. It exists because naming a language settles which words are
+// used and nothing about how they are put together, and an agent composing in
+// English and translating produces prose that is grammatical, stiff, and
+// formal in a way nobody chose. A team says what it wants once —
+// "semi-formal; keep technical terms in English" — instead of reading it back
+// in every record. Unset leaves the general composition guidance to decide.
 type Member struct {
 	Name     string `yaml:"name" json:"name"`
 	Band     int    `yaml:"band,omitempty" json:"band,omitempty"`
 	Language string `yaml:"language,omitempty" json:"language,omitempty"`
+	Tone     string `yaml:"tone,omitempty" json:"tone,omitempty"`
 }
 type Members struct {
 	Members map[string]Member `yaml:"members" json:"members"`
@@ -227,6 +237,23 @@ func Language(language string) error {
 	return nil
 }
 
+// Tone is quoted into the instruction that writes a record, so it is one line
+// of prose describing a register, not free text carrying instructions of its
+// own. It is allowed more room than a language name because naming a register
+// usually takes a clause and an example rather than a word.
+func Tone(tone string) error {
+	if tone == "" {
+		return nil
+	}
+	if err := Text(tone); err != nil {
+		return err
+	}
+	if len(tone) > 200 {
+		return errors.New("describe the register in one line, such as 'semi-formal; keep technical terms in English'")
+	}
+	return nil
+}
+
 func Band(band int) error {
 	if band < 0 || band > 9999 {
 		return errors.New("band must be between 1 and 9999, or absent")
@@ -373,7 +400,7 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	return err
 }
 
-func (s *Store) AddMember(id, name string, band int, language string) error {
+func (s *Store) AddMember(id, name string, band int, language, tone string) error {
 	if _, err := s.Config(); err != nil {
 		return err
 	}
@@ -389,6 +416,9 @@ func (s *Store) AddMember(id, name string, band int, language string) error {
 	if err := Language(language); err != nil {
 		return err
 	}
+	if err := Tone(tone); err != nil {
+		return err
+	}
 	members, err := s.Members()
 	if err != nil {
 		return err
@@ -400,6 +430,9 @@ func (s *Store) AddMember(id, name string, band int, language string) error {
 		if language != "" && existing.Language != language {
 			return fmt.Errorf("member %s already writes in %s; use member language to change it", id, existingLanguage(existing))
 		}
+		if tone != "" && existing.Tone != tone {
+			return fmt.Errorf("member %s already records a tone; use member tone to change it", id)
+		}
 		if band == 0 || existing.Band == band {
 			return nil
 		}
@@ -408,7 +441,7 @@ func (s *Store) AddMember(id, name string, band int, language string) error {
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	return s.Update("members.yaml", []string{"members", id}, Member{name, band, language}, 0644)
+	return s.Update("members.yaml", []string{"members", id}, Member{name, band, language, tone}, 0644)
 }
 
 // existingLanguage names what a member writes in, including the unset case, so
@@ -440,6 +473,32 @@ func (s *Store) SetMemberLanguage(id, language string) error {
 		return fmt.Errorf("unknown member: %s", id)
 	}
 	member.Language = language
+	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+}
+
+// SetMemberTone records the register a member's intents and plans are written
+// in. It is set and cleared rather than only set, because a team that recorded
+// a register and changed its mind wants the general guidance back, and there is
+// no sentinel value for prose the way band 0 clears a band.
+func (s *Store) SetMemberTone(id, tone string, clear bool) error {
+	if err := Tone(tone); err != nil {
+		return err
+	}
+	if tone == "" && !clear {
+		return errors.New("describe the register, such as 'semi-formal; keep technical terms in English', or pass --clear")
+	}
+	if tone != "" && clear {
+		return errors.New("pass --tone or --clear, not both")
+	}
+	members, err := s.Members()
+	if err != nil {
+		return err
+	}
+	member, ok := members.Members[id]
+	if !ok {
+		return fmt.Errorf("unknown member: %s", id)
+	}
+	member.Tone = tone
 	return s.Update("members.yaml", []string{"members", id}, member, 0644)
 }
 

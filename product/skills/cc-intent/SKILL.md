@@ -16,6 +16,53 @@ used rather than a translation of them. Identifiers and the project's own domain
 vocabulary keep their form whatever language the prose is in, and the slug stays
 a lowercase ASCII slug.
 
+## Writing in a language that is not English
+
+A recorded language settles which words a record uses and nothing about how they
+are put together. Composing in English and translating produces prose that is
+grammatical and wrong in register — stiff, formal, and formal in a way nobody
+chose, because words that are neutral in English land as bureaucratic once
+carried across literally.
+
+**The record's structure stays English whatever the prose is.** The headings —
+`Goal`, `Non-goals`, `Constraints`, `Success criteria`, `Repository scope`,
+`Open questions` — are the record's shape, like `created_by` and the slug, and
+they are named in the language table for that reason. Translating one makes two
+members produce differently-shaped records, and a translation that varies per
+session is not a field name.
+
+Then compose in that language rather than into it:
+
+- **Let the sentence structure follow the target language.** Do not carry
+  English clause order or sentence length across. A sentence that hinges on
+  `, so` in English is often two sentences elsewhere.
+- **Prefer the verb where English would nominalize.** "No change to how the
+  current quarter is determined" is ordinary English and heavy almost everywhere
+  else.
+- **Technical vocabulary keeps the form engineers in that language actually
+  say**, which is usually the English word. Translating `refresh`, `cache`, or
+  `deploy` into a native equivalent produces manual-register prose, not clearer
+  prose. Be consistent: half-translated technical vocabulary reads worse than
+  either choice made whole.
+- **Names are quoted, never translated**, in either direction, as always.
+
+Where the member records a `tone` in `members.yaml`, follow it; it is that
+team's own answer and it overrides the guidance above. A workspace writing
+Bahasa Indonesia might record `semi-formal; keep technical terms in English`.
+
+Three pairs of the same sentence, translated and then written:
+
+| Translated | Written |
+| --- | --- |
+| Quarter adalah rentang tanggal yang dikonfigurasi, bukan konvensi kalender, jadi tulisan `Q3` saja tidak memberi tahu pembaca tanggal berapa saja yang tercakup. | Quarter adalah rentang tanggal yang dikonfigurasi, bukan konvensi kalender. Label `Q3` saja tidak memberi tahu pembaca tanggal berapa yang tercakup. |
+| …disegarkan pada jadwal per jam yang sudah berjalan, dan tidak ada perubahan pada jadwal penyegarannya. | …di-refresh pada jadwal per jam yang sudah berjalan, dan jadwal refresh-nya tidak berubah. |
+| Tidak ada perubahan pada cara quarter berjalan ditentukan. | Cara menentukan quarter berjalan tidak berubah. |
+
+The first splits a sentence that kept its English hinge. The second stops
+translating a word engineers say in English — and note that the original was
+already inconsistent, keeping `cache` and `backend` while rendering `refresh`.
+The third turns a nominalization back into a verb.
+
 ## Ground it first
 
 Retrieve the bearing knowledge through `context/INDEX.md` and read the request's

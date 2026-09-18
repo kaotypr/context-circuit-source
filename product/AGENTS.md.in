@@ -55,11 +55,19 @@ the artifact, not the conversation.
 | An approval or completion note | exactly what the person said, never translated into another language |
 | `context/` notes, the catalog, the glossary | English, always |
 | Anything written inside a repository | that repository's convention, English where it states none |
+| A record's headings and field names | English, always |
 | IDs, slugs, repository IDs, branch names, dates | unchanged |
 
 Knowledge is English because a note outlives the member who wrote it and anchors
 to code; an intent is in its author's language because a person can only approve
-an outcome they actually understand.
+an outcome they actually understand. A record's headings are English because
+they are its shape rather than its content, and two members must not produce
+differently-shaped records.
+
+A language settles which words are used and nothing about how they are put
+together. Compose in that language rather than translating into it, and follow
+the `tone` a member records in `members.yaml` where there is one;
+`.agents/skills/cc-intent/SKILL.md` carries what that means.
 
 Names are quoted, never translated, in either direction. Domain vocabulary keeps
 the project's own form inside an English note, and code identifiers keep the

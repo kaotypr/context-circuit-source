@@ -172,6 +172,21 @@ person actually used. The brief a worker receives names this language and tells
 it that what goes into the repository is English, because a worker works under a
 repository's instructions and never reads these.
 
+Beside it, a member may record the register that language is written in:
+
+```sh
+context-circuit-cli --workspace <root> member tone --id ID --tone 'semi-formal; keep technical terms in English'
+context-circuit-cli --workspace <root> member tone --id ID --clear
+```
+
+One line of prose, quoted into the instruction that writes a record rather than
+parsed. Naming a language settles which words a record uses and nothing about
+how they are put together, and an agent that composes in English and translates
+produces prose that is grammatical and formal in a way nobody chose. Record it
+when a team knows the register it wants; unset leaves the general composition
+guidance in `.agents/skills/cc-intent/SKILL.md` to decide. Ask the member for
+the wording rather than inventing a register on their behalf.
+
 Bands prevent collisions only between members who actually hold distinct ones.
 Unbanded members working in separate clones, and any clone whose roster is
 stale, can still allocate the same number. Synchronize the shared workspace
