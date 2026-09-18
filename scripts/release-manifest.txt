@@ -4,6 +4,13 @@ product/CLAUDE.md.in CLAUDE.md
 product/CURSOR.md.in CURSOR.md
 product/cursor.mdc.in .cursor/rules/context-circuit.mdc
 product/README.md README.md
+product/assets/readme/context-circuit-mark.svg .context-circuit/assets/readme/context-circuit-mark.svg
+product/assets/readme/context-circuit-mark.png .context-circuit/assets/readme/context-circuit-mark.png
+product/assets/readme/context-circuit-logo.png .context-circuit/assets/readme/context-circuit-logo.png
+product/assets/readme/knowledge-circuit.png .context-circuit/assets/readme/knowledge-circuit.png
+product/assets/readme/workflow-overview.png .context-circuit/assets/readme/workflow-overview.png
+product/assets/readme/shared-vs-local.png .context-circuit/assets/readme/shared-vs-local.png
+product/assets/readme/social-preview.png .context-circuit/assets/readme/social-preview.png
 product/docs/commands.md .context-circuit/docs/commands.md
 product/docs/workspace.md .context-circuit/docs/workspace.md
 product/docs/worktrees.md .context-circuit/docs/worktrees.md
