@@ -1,120 +1,176 @@
-# Context Circuit v2
+<p align="center">
+  <img src="product/assets/readme/context-circuit-logo.png" alt="Context Circuit" width="480">
+</p>
 
-Context Circuit is a shared workspace station for AI-assisted development across
-one or more Git repositories. Solo developers and teams share project knowledge,
-repository relationships, members, intents, and plans.
+<p align="center">
+  <strong>Maintainer source for the Context Circuit workspace and CLI.</strong>
+</p>
 
-The separately released Context Circuit CLI manages workspace files, global IDs,
-repository bindings, CoW worktrees, dependency-ordered execution, knowledge
-consistency, and native subagent role settings. The workspace ships skills to
-install/update the CLI and dispatch subagents. Your coding agent handles
-understanding, planning, implementation, environment setup, ordinary checks, and
-explicitly requested review and delivery.
+<p align="center">
+  <a href="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml"><img src="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml/badge.svg" alt="Source checks"></a>
+</p>
 
-## User journey
+<p align="center">
+  <a href="https://github.com/kaotypr/context-circuit">Product guide</a> ·
+  <a href="WORKFLOW.md">Source workflow</a> ·
+  <a href="CLI.md">CLI architecture</a> ·
+  <a href="#development">Development</a> ·
+  <a href="#release-assembly">Release assembly</a>
+</p>
 
-1. Clone the workspace template, ask its cc-cli skill to install the CLI, and
-   initialize a named workspace with a purpose and first member.
-2. Connect existing repositories, clone them, or initialize new repositories,
-   and describe the repository carrying the workspace itself. Record repository
-   URLs, default branches, and relationships; keep concrete checkout paths and
-   base branches local to each machine.
-3. Gather durable knowledge from named sources into `context/` notes, catalogued
-   one unwrapped entry each in `context/INDEX.md`, with project vocabulary in
-   `context/glossary.md`. A note describes the project and anchors to repository
-   paths; it never names a record or a file of raw evidence. Knowledge the
-   workspace does not own — an organization's knowledge center, shared by many
-   workspaces — is mounted as a knowledge repository instead of copied: read-only
-   here, fast-forwarded only when clean, and retrieved beside the catalog.
-4. Describe a change; the agent writes an intent and stops. Approving it is what
-   sends the agent into the code to create linked Markdown plans, which it
-   presents and stops on again. Reading them is optional and there is no plan
-   approval gate, but nothing is implemented until execution is requested.
-5. Ask to execute. That prepares a worktree per repository — unless you ask to
-   work directly in a bound checkout — then implements and runs normal tests,
-   lint, and builds. For several plans at once,
-   `record order` derives dependency waves or a linear chain and reports the
-   cost of each; the agent confirms the shape once and runs it to completion,
-   preparing worktrees, performing integration merges, dispatching workers, and
-   stopping with all work preserved on a failed check or a decision it should
-   not make alone.
-6. Request delivery and independent code review separately. Review reports
-   findings without modifying code. It never starts automatically during
-   execution, and never blocks a pull request, delivery, or completion.
-7. Explicitly mark plans done and reconcile relevant durable project knowledge.
-   Completion returns the catalog entries scoped to those plans' repositories as
-   candidates to judge; where meaning changed, the note and its entry move
-   together.
+Context Circuit gives coding agents shared project context, a grounded plan,
+and explicit human control points across one or more Git repositories.
 
-Member attribution is created_by only. Plan IDs are workspace-global, never
-member namespaces. The p prefix distinguishes plans (p0001) from intents (i001).
-Numbers are allocated automatically; an optional per-member allocation band
-divides the range so members holding distinct bands never choose the same
-number, however long they work in separate clones.
+This repository is the maintainer source checkout. It builds two separately
+versioned products:
 
-`context-circuit-cli check` is an explicitly invoked diagnostic over records,
-local bindings, dependency cycles, stale worktree associations, and knowledge
-consistency — a note that crosses the durable-only boundary, a catalog entry
-naming a missing note, a note no entry lists. It is not an execution gate and
-nothing waits on it.
+1. A **workspace template** containing the files, instructions, skills, and
+   documentation an agent uses with a project.
+2. A **native CLI** that handles workspace records, repository bindings,
+   isolated working copies, ordering, diagnostics, and release-safe mechanics.
 
-## Build and use
+If you want to use Context Circuit, begin with the
+[product guide](https://github.com/kaotypr/context-circuit). If you are changing how Context Circuit
+works or ships, this is the repository to edit.
 
-Go 1.25+ is needed by contributors. Users need the executable for their platform
-and installed Git; no Python, Go toolchain, or YAML package installation is
-needed.
+<p align="center">
+  <img src="product/assets/readme/social-preview.png" alt="Context Circuit product overview" width="840">
+</p>
+
+## Product model
+
+The coding agent and the executable have deliberately different jobs.
+
+| Coding agent | Context Circuit CLI |
+| --- | --- |
+| Understands a request and retrieves relevant project context | Allocates stable IDs and edits structured workspace files |
+| Writes goals and implementation plans | Records approvals, dependencies, completion, and local bindings |
+| Inspects code, implements changes, and runs project checks | Prepares and tracks isolated Git working copies |
+| Decides when bounded exploration or sub-agents are useful | Produces deterministic diagnostics and dispatch specifications |
+| Reports real results and unresolved decisions | Refuses invalid state without making product judgments |
+
+The executable owns mechanisms that should be deterministic. The agent owns
+interpretation and work that depends on the actual project. Human authorization
+remains outside both.
+
+<p align="center">
+  <img src="product/assets/readme/workflow-overview.png" alt="How Context Circuit helps an agent finish safely" width="840">
+</p>
+
+## Repository layout
+
+This is the maintainer-source layout. The repository structure users receive is
+shown in the product guide under
+[Workspace repository structure](product/README.md#workspace-repository-structure).
+
+```text
+context-circuit-source/
+├── cmd/
+│   └── context-circuit/       Native executable entry point
+├── internal/
+│   ├── cli/                   Commands and human/JSON output
+│   ├── workspace/             Records, YAML edits, Git, and working copies
+│   └── cow/                   Copy-on-write cloning with copy fallback
+├── product/                   Everything shipped in a workspace
+│   ├── assets/readme/         Product and README artwork
+│   ├── docs/                  Workspace and command documentation
+│   └── skills/                Agent procedures for each workflow stage
+├── template/                  Blank workspace records and configuration
+├── context/                   Maintainer product knowledge; never shipped
+├── scripts/
+│   ├── release-manifest.txt   Exact source-to-workspace mapping
+│   └── …                      Build, validation, and publication tooling
+├── assets.go                  Embedded product inventory
+├── VERSION                    Workspace-template version
+└── CLI_VERSION                Native CLI version
+```
+
+`sources/`, `publication/`, and release-request material are passive maintainer
+history. They are not the current product specification and never ship.
+
+## Development
+
+Contributors need Go 1.25 or newer and Git.
+
+Build the native CLI:
 
 ```sh
 go build -o /tmp/context-circuit-cli ./cmd/context-circuit
-/tmp/context-circuit-cli --workspace /tmp/acme-new init \
-  --name Acme --purpose 'Billing software' --member maya --member-name Maya
+/tmp/context-circuit-cli version
 ```
 
-Native binary archives are built for macOS, Linux, and Windows on amd64/arm64.
-With no output argument each build clean-rebuilds its own directory under
-`dist/` (`dist/workspace-<version>` and `dist/cli-<version>`), so repeated runs
-replace rather than fail and neither build removes the other's assets. An
-explicit output directory must be new; builds never replace existing output
-there:
+Run the normal validation:
+
+```sh
+gofmt -w path/to/changed.go
+go test ./...
+go vet ./...
+sh scripts/check-release.sh
+```
+
+`scripts/check-release.sh` is the full product check. In fresh temporary
+directories it tests the Go packages, builds the workspace archive, builds all
+six CLI targets, verifies checksums, exercises installation and initialization,
+and checks publication safeguards.
+
+Cross-compilation proves that a binary builds for another platform; it does not
+prove native behavior there. CI supplies native Linux, macOS, and Windows
+coverage.
+
+## Build outputs
+
+Build both release inventories:
 
 ```sh
 sh scripts/build-dist.sh
 sh scripts/build-cli.sh
-sh scripts/build-dist.sh v2.0.0-dev /tmp/cc-v2-workspace
-sh scripts/build-cli.sh 2.0.0-dev /tmp/cc-v2-cli
-sh scripts/check-release.sh
 ```
 
-Workspace publication uses VERSION and publishes the template repository's v*
-releases. CLI publication uses CLI_VERSION and this repository's
-context-circuit-cli-v* tags, which build here and publish their assets on the
-template repository and its GitLab mirror, so installing needs no access to this
-checkout. The two products have separate release workflows and package inventories.
-Each workspace pins the CLI version it expects and versions install side by
-side, so workspaces pinning different versions coexist on one machine. The CLI
-also embeds a seed as a convenience for new workspaces; updates do not rewrite
-existing workspaces. See [CLI product](CLI.md).
+With no explicit destination, each script clean-rebuilds its own versioned
+directory under `dist/`. The workspace and CLI builds do not remove one
+another's output.
 
-Pass a new directory to `check-release.sh` to retain both sets of checked
-assets.
+To keep a checked build in a specific location, provide a new directory:
 
-See [the product guide](product/README.md),
-[workspace files](product/docs/workspace.md),
-[commands](product/docs/commands.md),
-[working records](product/docs/working.md),
-[subagents](product/docs/agents.md),
-[worktree responsibilities](product/docs/worktrees.md), and
-[source workflow](WORKFLOW.md).
+```sh
+sh scripts/build-dist.sh v2.0.0-dev /tmp/context-circuit-workspace
+sh scripts/build-cli.sh 2.0.0-dev /tmp/context-circuit-cli
+sh scripts/check-release.sh /tmp/context-circuit-release-check
+```
 
-Workspace data remains readable YAML and Markdown. Local locking coordinates
-edits in one directory, and allocation bands keep members holding distinct bands
-out of each other's numbers offline. Neither is a distributed allocation
-service: unbanded members in separate clones, and any clone whose roster is
-stale, must still synchronize the workspace and resolve competing allocations
-before sharing new IDs. Initialization is for fresh workspaces; existing v1
-workspaces are not migrated automatically.
+Explicit output directories must not already exist. Release assembly never
+overwrites a caller-selected directory.
 
-The YAML dependency is goccy/go-yaml, pinned in go.mod. A portable file-locking
-library supplies the small operating-system-specific locking primitive. Release
-assets include dependency licenses. Product history and maintainer data never
-ship.
+## Release assembly
+
+The products have separate version lines and package inventories:
+
+| Product | Version source | Tag family | Output |
+| --- | --- | --- | --- |
+| Workspace template | `VERSION` | `v*` | Versioned workspace archive and checksum |
+| Native CLI | `CLI_VERSION` | `context-circuit-cli-v*` | macOS, Linux, and Windows archives for amd64/arm64 |
+
+The CLI embeds the blank workspace seed as a convenience for `init` and
+`template export`. That seed does not make the two products one release: an
+existing workspace pins its expected CLI version in
+`.context-circuit/CLI_VERSION`, and installed CLI versions coexist side by side.
+
+Publication is never an implicit part of validation. Commits, tags, pushes,
+release publication, and deployment require an explicit maintainer request.
+
+## Maintaining product behavior
+
+- Edit source files under `product/` and `template/`; do not patch a generated
+  workspace and copy it back by guesswork.
+- Keep `scripts/release-manifest.txt` and `assets.go` consistent with every file
+  that ships.
+- Retrieve current product decisions through `context/INDEX.md` instead of
+  scanning every knowledge note.
+- Keep a context note and its catalog entry in the same change.
+- Preserve unrelated working-tree changes and validate release behavior in
+  fresh temporary directories.
+- Do not revive retired v1 lifecycle machinery.
+
+See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
+[CLI.md](CLI.md) for the executable boundary and packaging behavior, and the
+[product documentation](product/docs/) for the workspace contract.

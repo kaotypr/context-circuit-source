@@ -11,6 +11,7 @@ product/assets/readme/knowledge-circuit.png .context-circuit/assets/readme/knowl
 product/assets/readme/workflow-overview.png .context-circuit/assets/readme/workflow-overview.png
 product/assets/readme/shared-vs-local.png .context-circuit/assets/readme/shared-vs-local.png
 product/assets/readme/social-preview.png .context-circuit/assets/readme/social-preview.png
+product/docs/how-it-works.md .context-circuit/docs/how-it-works.md
 product/docs/commands.md .context-circuit/docs/commands.md
 product/docs/workspace.md .context-circuit/docs/workspace.md
 product/docs/worktrees.md .context-circuit/docs/worktrees.md
