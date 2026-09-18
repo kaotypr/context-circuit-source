@@ -19,6 +19,7 @@ The examples assume the current directory is the initialized workspace.
 context-circuit-cli status
 context-circuit-cli member add --id alex --name Alex --band 2
 context-circuit-cli member band --id alex --band 3
+context-circuit-cli member language --id alex --language 'Bahasa Indonesia'
 context-circuit-cli member use --id alex
 context-circuit-cli member list
 context-circuit-cli repo connect --id api --path ../api --base main

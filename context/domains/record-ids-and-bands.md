@@ -9,6 +9,24 @@ constraints, observable success criteria, rough repository scope — and is
 written *before* detailed code investigation, because an outcome in the
 project's own language is the only form a person can meaningfully approve.
 
+That sentence decides the language question too. A member may record the
+language their intents and plans are written in, because an outcome someone
+skims in a second language is an approval gate in name only. Knowledge does not
+follow: a note outlives the member who wrote it, anchors to code, and is found
+by substring search that a mixed-language catalog breaks, so `context/` is
+English whatever a member records. An approval or completion note keeps the
+words the person used, because it is evidence of what someone said rather than
+prose about it.
+
+The boundary that makes this safe lives in the dispatch brief, not here. A
+record is quoted into the brief as authoritative, and a worker works inside a
+repository worktree under that repository's instructions and never reads the
+workspace's — so the brief names the author's language and says that code,
+comments, identifiers, and commit messages are English. Names are quoted and
+never translated in either direction: the failure worth preventing is not a
+Bahasa comment, which review catches, but a domain term rendered into English in
+an identifier, where it silently disagrees with the glossary that named it.
+
 A **plan** says how an approved intent maps to real code and what actually
 happened, and is written *after* approval from the code itself. One plan may
 cover several repositories; it is split when execution or delivery wants it

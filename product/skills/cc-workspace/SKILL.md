@@ -120,6 +120,22 @@ context-circuit-cli --workspace <root> member band --id ID --band 200
 The band decides which number comes next and never makes a reserved number
 reusable. A band is not a namespace: the ID stays global.
 
+## The language a member writes records in
+
+A member may record the language their intents and plans are written in. It is
+the language's name as a person says it, because a dispatch brief quotes it into
+a sentence:
+
+```sh
+context-circuit-cli --workspace <root> member language --id ID --language 'Bahasa Indonesia'
+```
+
+Unset means English. Knowledge is English whatever this says — a note outlives
+the member who wrote it — and an approval or completion note keeps the words the
+person actually used. The brief a worker receives names this language and tells
+it that what goes into the repository is English, because a worker works under a
+repository's instructions and never reads these.
+
 Bands prevent collisions only between members who actually hold distinct ones.
 Unbanded members working in separate clones, and any clone whose roster is
 stale, can still allocate the same number. Synchronize the shared workspace

@@ -98,6 +98,16 @@ stateDiagram-v2
 More than eight lines of unbroken prose usually has a list or a table hiding
 inside it.
 
+Notes, the catalog, and the glossary are written in English, whatever language
+the project is discussed in and whatever a member records for their own records.
+A note outlives the member who wrote it and anchors to code, and the catalog is
+searched by substring, which a mixed-language index quietly breaks.
+
+Domain vocabulary is never translated. A word the project uses for its own
+subject matter keeps that word in an English note, because the glossary exists
+to map the project's words to the identifiers behind them and a translated term
+maps nothing.
+
 ## An actor note
 
 `actors/` holds one note per actor that deals with the project — a person in a

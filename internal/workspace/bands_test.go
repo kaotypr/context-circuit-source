@@ -142,10 +142,10 @@ func TestDuplicateBandsAreRefused(t *testing.T) {
 
 func TestBandAssignmentGuardsCollisionAndClearing(t *testing.T) {
 	store := banded(t, map[string]int{"maya": 1}, Ledger{})
-	if err := store.AddMember("alex", "Alex", 1); err == nil {
+	if err := store.AddMember("alex", "Alex", 1, ""); err == nil {
 		t.Fatal("added a member holding an occupied band")
 	}
-	if err := store.AddMember("alex", "Alex", 2); err != nil {
+	if err := store.AddMember("alex", "Alex", 2, ""); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.SetMemberBand("alex", 1); err == nil {

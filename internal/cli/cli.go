@@ -22,8 +22,10 @@ Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
-member add            --id ID --name NAME [--band N]
+member add            --id ID --name NAME [--band N] [--language NAME]
 member band           --id ID --band N|0 (allocation block; 0 clears it)
+member language       --id ID --language NAME (the language this member's
+                      intents and plans are written in; knowledge stays English)
 member use            --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH [--url URL]
@@ -165,8 +167,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "init":
 		add("name", "purpose", "member", "member-name")
 	case "member add":
-		add("id", "name")
+		add("id", "name", "language")
 		f.IntVar(&band, "band", 0, "allocation block for this member")
+	case "member language":
+		add("id", "language")
 	case "member band":
 		add("id")
 		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
@@ -259,6 +263,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return ""
 	}
 	optional := map[string]bool{"remote": true, "default-branch": true}
+	// A member writing in the workspace's usual language records nothing; the
+	// field exists for the member who does not.
+	optional["language"] = command == "member add"
 	// The workspace's own checkout is the workspace root unless a workspace
 	// kept inside a larger repository names the root above it.
 	if command == "workspace connect" {
@@ -358,9 +365,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
-			err = s.AddMember(get("id"), get("name"), band)
+			err = s.AddMember(get("id"), get("name"), band, get("language"))
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)
+		case "member language":
+			err = s.SetMemberLanguage(get("id"), get("language"))
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":

@@ -49,9 +49,16 @@ type Config struct {
 // other still never choose the same ID. Band 0 means unbanded: those members
 // share the range outside every declared band, which is how a solo workspace
 // and every workspace predating a band keeps allocating from i001 and p0001.
+//
+// Language names the language this member's intents and plans are written in,
+// as a person would say it rather than as a tag, because the only reader is a
+// dispatch brief quoting it into a sentence. A tag would need a table mapping
+// it to a name, and that table is wrong for the first language it omits. Unset
+// means English, which is what every record written before this field assumed.
 type Member struct {
-	Name string `yaml:"name" json:"name"`
-	Band int    `yaml:"band,omitempty" json:"band,omitempty"`
+	Name     string `yaml:"name" json:"name"`
+	Band     int    `yaml:"band,omitempty" json:"band,omitempty"`
+	Language string `yaml:"language,omitempty" json:"language,omitempty"`
 }
 type Members struct {
 	Members map[string]Member `yaml:"members" json:"members"`
@@ -183,6 +190,21 @@ func (m Members) claimed(number, block int) bool {
 }
 
 // Band validates an allocation block index. Zero is unbanded.
+// Language is quoted into a brief, so it is one short line of prose naming a
+// language, not free text carrying instructions of its own.
+func Language(language string) error {
+	if language == "" {
+		return nil
+	}
+	if err := Text(language); err != nil {
+		return err
+	}
+	if len(language) > 40 {
+		return errors.New("name the language as a person would say it, such as English or Bahasa Indonesia")
+	}
+	return nil
+}
+
 func Band(band int) error {
 	if band < 0 || band > 9999 {
 		return errors.New("band must be between 1 and 9999, or absent")
@@ -329,7 +351,7 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 	return err
 }
 
-func (s *Store) AddMember(id, name string, band int) error {
+func (s *Store) AddMember(id, name string, band int, language string) error {
 	if _, err := s.Config(); err != nil {
 		return err
 	}
@@ -342,6 +364,9 @@ func (s *Store) AddMember(id, name string, band int) error {
 	if err := Band(band); err != nil {
 		return err
 	}
+	if err := Language(language); err != nil {
+		return err
+	}
 	members, err := s.Members()
 	if err != nil {
 		return err
@@ -349,6 +374,9 @@ func (s *Store) AddMember(id, name string, band int) error {
 	if existing, ok := members.Members[id]; ok {
 		if existing.Name != name {
 			return fmt.Errorf("member %s already has another name", id)
+		}
+		if language != "" && existing.Language != language {
+			return fmt.Errorf("member %s already writes in %s; use member language to change it", id, existingLanguage(existing))
 		}
 		if band == 0 || existing.Band == band {
 			return nil
@@ -358,7 +386,39 @@ func (s *Store) AddMember(id, name string, band int) error {
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	return s.Update("members.yaml", []string{"members", id}, Member{name, band}, 0644)
+	return s.Update("members.yaml", []string{"members", id}, Member{name, band, language}, 0644)
+}
+
+// existingLanguage names what a member writes in, including the unset case, so
+// a refusal says what is already recorded rather than leaving a blank.
+func existingLanguage(member Member) string {
+	if member.Language == "" {
+		return "English"
+	}
+	return member.Language
+}
+
+// SetMemberLanguage records the language a member's intents and plans are
+// written in. Knowledge is English whatever this says: a note outlives the
+// member who wrote it and anchors to code, while an intent is approved by a
+// person who has to understand it.
+func (s *Store) SetMemberLanguage(id, language string) error {
+	if err := Language(language); err != nil {
+		return err
+	}
+	if language == "" {
+		return errors.New("name the language, such as English or Bahasa Indonesia")
+	}
+	members, err := s.Members()
+	if err != nil {
+		return err
+	}
+	member, ok := members.Members[id]
+	if !ok {
+		return fmt.Errorf("unknown member: %s", id)
+	}
+	member.Language = language
+	return s.Update("members.yaml", []string{"members", id}, member, 0644)
 }
 
 // SetMemberBand assigns or clears an existing member's allocation band. Records

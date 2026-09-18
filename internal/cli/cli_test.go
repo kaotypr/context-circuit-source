@@ -344,6 +344,53 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	}
 }
 
+// A record is quoted into a dispatch brief as authoritative, so a record in one
+// language invites a worker to answer it in that language — in comments, in
+// commit messages, and worst of all in identifiers. The worker never reads the
+// workspace's own instructions, so the boundary travels in the brief.
+func TestABriefDrawsTheLanguageBoundary(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	i := f.intent("tambah-penagihan")
+	f.ok("record", "approve", "--id", i.ID, "--text", "Disetujui oleh pengguna")
+	p := f.plan(i.ID, "penagihan-api", "api")
+
+	// A member who records no language writes English, which is what every
+	// record written before the field assumed.
+	brief := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
+	if !strings.Contains(brief, "stated in English") {
+		t.Fatal("an unset language is not reported as English", brief)
+	}
+
+	f.ok("member", "language", "--id", "maya", "--language", "Bahasa Indonesia")
+	brief = f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
+	for _, want := range []string{
+		"stated in Bahasa Indonesia",
+		"put into the repository in English",
+		"Names are quoted, never translated",
+		"Domain vocabulary keeps the form used here",
+	} {
+		if !strings.Contains(brief, want) {
+			t.Fatalf("the brief does not draw the boundary (%q):\n%s", want, brief)
+		}
+	}
+
+	// The language reported is the one the record was written in, not the one
+	// whoever is dispatching happens to write in.
+	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--language", "English")
+	f.ok("member", "use", "--id", "rina")
+	brief = f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
+	if !strings.Contains(brief, "stated in Bahasa Indonesia") {
+		t.Fatal("the brief reports the dispatcher's language rather than the author's", brief)
+	}
+
+	// It is quoted into a sentence, so it is a language's name and not prose
+	// carrying instructions of its own.
+	f.fail("member", "language", "--id", "rina", "--language", strings.Repeat("long ", 20))
+	f.fail("member", "language", "--id", "nobody", "--language", "English")
+	f.fail("member", "add", "--id", "maya", "--name", "Maya", "--language", "English")
+}
+
 // The whole of joining a published workspace, driven against a real clone: a
 // member arrives, describes this machine, obtains the repositories the record
 // already names, and writes the role definitions a clone cannot carry. It ends

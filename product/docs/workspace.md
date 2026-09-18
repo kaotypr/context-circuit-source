@@ -10,7 +10,7 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, relationships | Yes |
-| members.yaml | Member ID to display name and optional allocation band | Yes |
+| members.yaml | Member ID to display name, optional allocation band, and optional record language | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
@@ -102,6 +102,35 @@ the workspace's own checkout and names `workspace connect` instead.
 No command commits, pushes, or merges the workspace. Members share one branch of
 it; a member who keeps the workspace on another branch records that in the local
 binding, where it describes that machine and nobody else.
+
+## Language
+
+What gets written down follows the artifact rather than the conversation. A
+member may record the language their intents and plans are written in; unset
+means English.
+
+| What is written | In what language |
+| --- | --- |
+| An intent or a plan | its author's recorded language, English where none is |
+| An approval or completion note | exactly what the person said |
+| `context/` notes, the catalog, the glossary | English, always |
+| Anything written inside a repository | that repository's convention, English where it states none |
+| IDs, slugs, repository IDs, branch names, dates | unchanged |
+
+Knowledge is English because a note outlives the member who wrote it and anchors
+to code, and because the catalog is searched by substring, which a
+mixed-language index quietly breaks. An intent is in its author's language
+because a person can only approve an outcome they understand.
+
+`agent dispatch` names the record author's language in the brief and states that
+what goes into the repository is English. That boundary lives in the brief
+because a worker works inside a repository worktree, under that repository's
+instructions, and never reads the workspace's.
+
+Names are quoted, never translated, in either direction: domain vocabulary keeps
+the project's own form inside an English note, and code identifiers keep the
+code's form inside a record written in another language. Slugs stay lowercase
+ASCII whatever the title says, so a title in another script is transliterated.
 
 ## Joining a workspace
 

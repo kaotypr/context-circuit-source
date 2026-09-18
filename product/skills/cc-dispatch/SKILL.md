@@ -70,7 +70,12 @@ context, and always use a fresh independent reviewer context. Never reuse the
 implementer's session as its independent reviewer.
 
 **Pass `prompt` unmodified.** It is the whole brief: working directory, ownership,
-the quoted intent or plan body, the task, and what to return. Appending a line is
+the quoted intent or plan body, the task, the language boundary, and what to
+return. The boundary names the language the record's author wrote it in and says
+that what goes into the repository is English; a worker works under a
+repository's instructions and never reads the workspace's, so dropping that
+section is how a record in one language turns into comments, commit messages,
+and identifiers in it. Appending a line is
 allowed; rewriting, summarizing, or retyping it from memory is not. A shortened
 brief looks equivalent and is not — the quoted record is the copy that stops the
 agent from searching the repository for a file it was never given, and dropping it

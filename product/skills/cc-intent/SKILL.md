@@ -8,6 +8,14 @@ description: Write a Context Circuit intent record — grounding it in existing 
 An intent says what outcome is wanted, before any detailed code investigation.
 It is written for a person to read and approve.
 
+Write it in the language recorded for the active member in `members.yaml`, and
+in English where none is. Approval is the product's central gate, and a person
+can only approve an outcome they actually understand; an intent they skim in a
+second language is a gate in name only. Record their approval in the words they
+used rather than a translation of them. Identifiers and the project's own domain
+vocabulary keep their form whatever language the prose is in, and the slug stays
+a lowercase ASCII slug.
+
 ## Ground it first
 
 Retrieve the bearing knowledge through `context/INDEX.md` and read the request's
