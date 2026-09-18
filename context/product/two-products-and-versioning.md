@@ -37,10 +37,21 @@ and something ran the wrong binary.
 
 The executable is tagged and built in this checkout, where its source is, so a
 released binary stays traceable to the commit that produced it. Its assets are
-published on the template repository and its GitLab mirror instead, so installing
-the CLI never needs read access to this maintainer checkout. The tag created on
-those destinations is a distribution marker rather than a build reference, and the
-release notes carry the source commit.
+published on the template repository instead, so installing the CLI never needs
+read access to this maintainer checkout. The tag created there is a distribution
+marker rather than a build reference — it names a commit that built nothing — and
+the release notes carry the source commit and the license.
+
+That split is a consequence of this checkout being private, not a preference. It
+costs a tag with two meanings, a cross-repository token, and assets whose terms
+the hosting repository's own label contradicts. If this checkout becomes readable
+by the people who install the CLI, the release belongs here, where the code is,
+and each repository's label then matches the assets it serves.
+
+Publication targets GitHub only. A private mirror is a deployment of this
+product's own `cli_registry` feature rather than part of its release pipeline: an
+organization that wants one configures it in its workspace, which is exactly what
+that field exists for, and the pipeline stays the same for everyone.
 
 ## Installation properties
 

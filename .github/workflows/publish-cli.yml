@@ -62,6 +62,10 @@ jobs:
           cat CLI.md > cli-notes.md
           printf '\n---\n\nBuilt from `%s` at commit `%s`, tag `%s`.\n' \
             "$SOURCE_REPO" "$SOURCE_SHA" "$RELEASE_TAG" >> cli-notes.md
+          # This repository is labeled 0BSD, because the repository is the
+          # workspace template. These assets are not, so say so where they are
+          # downloaded rather than leaving the repository label to answer it.
+          printf '\nApache-2.0; the archive carries the license. The `v*` workspace template released here is 0BSD.\n' >> cli-notes.md
       - name: Publish CLI assets on the product repository
         env:
           GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
@@ -76,34 +80,3 @@ jobs:
             --title "Context Circuit CLI $VERSION" \
             --notes-file cli-notes.md \
             cli-release/*.tar.gz cli-release/*.zip cli-release/SHA256SUMS
-      - name: Publish CLI assets on the GitLab mirror
-        env:
-          GITLAB_TEMPLATE_PROJECT: ${{ vars.GITLAB_TEMPLATE_PROJECT }}
-          GITLAB_TEMPLATE_TOKEN: ${{ secrets.GITLAB_TEMPLATE_TOKEN }}
-          RELEASE_TAG: ${{ github.ref_name }}
-          VERSION: ${{ steps.build.outputs.version }}
-        run: |
-          : "${GITLAB_TEMPLATE_PROJECT:?GITLAB_TEMPLATE_PROJECT is not set}"
-          : "${GITLAB_TEMPLATE_TOKEN:?GITLAB_TEMPLATE_TOKEN is not set}"
-          ENC=$(jq -rn --arg project "$GITLAB_TEMPLATE_PROJECT" '$project|@uri')
-          API="https://gitlab.sicepat.tech/api/v4/projects/${ENC}"
-          # The package name is the CLI's own, beside the template's packages.
-          PACKAGE="${API}/packages/generic/context-circuit-cli/${VERSION}"
-          printf '[]\n' > cli-asset-links.json
-          for file in cli-release/*.tar.gz cli-release/*.zip cli-release/SHA256SUMS; do
-            name=${file##*/}
-            curl --fail --silent --show-error --request PUT \
-              --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" \
-              --upload-file "$file" "${PACKAGE}/${name}"
-            jq --arg name "$name" --arg url "${PACKAGE}/${name}" \
-              '. + [{name:$name,url:$url,link_type:"package"}]' cli-asset-links.json > cli-asset-links.next.json
-            mv cli-asset-links.next.json cli-asset-links.json
-          done
-          # No CLI tag exists on the mirror, so the release API creates one from
-          # the branch tip, matching the marker created on the product repository.
-          jq -n --arg name "$RELEASE_TAG" --rawfile desc cli-notes.md \
-            --slurpfile links cli-asset-links.json \
-            '{name:$name,tag_name:$name,ref:"main",description:$desc,assets:{links:$links[0]}}' \
-          | curl --fail --silent --show-error \
-              --header "PRIVATE-TOKEN: ${GITLAB_TEMPLATE_TOKEN}" \
-              --header "Content-Type: application/json" --data @- "${API}/releases"

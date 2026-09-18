@@ -37,10 +37,19 @@ passed output directory must be new: builds never replace existing output there.
 ## Publication
 
 The two products publish separately. The workspace template publishes from its
-version file to the published template repository's release tags; the executable
-publishes from its own version file to this repository's prefixed tags. Changing
-a version file does not publish — publication is explicitly invoked and requires
-authorization.
+version file to the published template repository's `v*` release tags; the
+executable is tagged `cli-v*` here, where its source is, and its assets are
+published on that same template repository. Changing a version file does not
+publish — publication is explicitly invoked and requires authorization.
+
+Publishing the template replaces the destination's whole tree, so the files that
+repository owns rather than a workspace — its license, conduct, contributing and
+security pages — are restored over the extracted artifact and held out of the
+comparison that decides whether there is anything to publish. The fixture proves
+all of it: that they land, that the license shown there is byte-identical to the
+one a workspace receives, that an exported workspace carries none of them at its
+root, and that a `README.md` among them is refused rather than replacing the
+assembled product guide.
 
 Release assets carry dependency licenses. Dependencies are deliberately few: a
 document-preserving YAML library and a portable file-locking library. Go is a
