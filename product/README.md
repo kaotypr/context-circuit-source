@@ -67,6 +67,47 @@ The workspace is ordinary Markdown and YAML committed with your project. The
 companion CLI handles dependable bookkeeping and Git mechanics; the coding agent
 still does the reasoning, implementation, and project-specific checks.
 
+## Workspace repository structure
+
+A Context Circuit workspace is itself a small Git repository. It holds the
+shared understanding and coordination files for the project; the application
+repositories it coordinates can live beside it, inside its ignored
+`repositories/` directory, or elsewhere on the machine.
+
+```text
+context-circuit/
+├── README.md                    Product guide
+├── AGENTS.md                    Standing workflow and safety rules
+├── CLAUDE.md                    Claude Code entry instruction
+├── CURSOR.md                    Cursor entry instruction
+├── workspace.yaml              Project identity and repository relationships
+├── members.yaml                People who share this workspace
+├── context/                    Product knowledge shared through Git
+│   ├── INDEX.md                Searchable knowledge catalog
+│   └── glossary.md             Shared project vocabulary
+├── intent/                     Goals, boundaries, and open questions
+├── plans/                      Repository-specific plans and dependencies
+├── sources/                    Optional evidence supplied for a task
+├── repositories/               Optional local application checkouts (ignored)
+├── member.local.yaml           Active person on this machine (ignored)
+├── repositories.local.yaml     Local paths and starting branches (ignored)
+├── .context-circuit/
+│   ├── docs/                   Detailed workspace and CLI documentation
+│   ├── assets/readme/          README artwork
+│   ├── role-tiering.yaml       Shared defaults for AI-agent roles
+│   ├── role-tiering.local.yaml Optional machine overrides (ignored)
+│   ├── local/                  Host-local settings and locks (ignored)
+│   ├── VERSION                 Workspace-template version
+│   └── CLI_VERSION             CLI version this workspace expects
+├── .agents/skills/             Canonical Context Circuit agent skills
+├── .claude/                    Claude Code skills and agent roles
+├── .codex/                     Codex agent roles
+└── .cursor/                    Cursor rules, skills, and agent roles
+```
+
+Files marked as ignored are recreated or connected on each machine. Everything
+else can be reviewed and shared like normal project documentation.
+
 ## Quick start
 
 ### 1. Create and open the workspace
@@ -226,7 +267,7 @@ the decisions that remain yours.
 
 ### 1. Ground the request
 
-Describe the outcome, not a list of internal Context Circuit steps:
+Describe the outcome:
 
 ```text
 Add recurring billing to the API and web app. Monthly plans only; keep the
@@ -234,7 +275,8 @@ existing payment provider.
 ```
 
 The agent retrieves the relevant product knowledge and repository relationships,
-writes the goal, calls out assumptions or missing decisions, and stops. Answer its
+writes the goal, calls out assumptions or missing decisions, list the open questions,
+create the INTENT.md file for you to read and stops. You might need to answers its
 numbered questions and correct anything it misunderstood:
 
 ```text
@@ -243,8 +285,8 @@ numbered questions and correct anything it misunderstood:
 The rest of the goal looks right. I approve it.
 ```
 
-Approval lets the agent inspect the actual repositories and prepare grounded
-plans. It does not start implementation.
+Approval lets the agent or spawned sub-agent with role `planner` to inspect the 
+actual repositories and prepare grounded plans. It does not start implementation.
 
 ### 2. Read the plan—or ask for the summary
 
@@ -264,10 +306,23 @@ and returns to approval instead of quietly expanding the work.
 When the plans look ready, ask the agent to run them:
 
 ```text
-Run the billing plans using the recommended execution order.
+Run all the billing plans using the recommended execution order.
 ```
 
-That request starts implementation. The agent prepares isolated working copies,
+If you start the execution in a new coding agent session, you mention intent ID 
+/ intent number / intent slug:
+
+```text
+Run all intent <intent-id> plans using the recommended execution order.
+```
+
+You also can specificly ask AI agent to execute a single plan:
+
+```text
+Run plan <plan-id>
+```
+
+Any of that request will starts implementation. The agent prepares isolated working copies,
 runs independent plans together where safe, waits for unfinished dependencies,
 follows each repository's instructions, and runs the relevant tests, lint, and
 builds. It reports actual results and labels anything it could not verify.
@@ -284,30 +339,72 @@ The agent checks the real branches, working copies, commits, and diffs before it
 continues. Failed or partial work stays available; Context Circuit does not reset,
 stash, or discard it to make the records look clean.
 
-### 5. Request review, delivery, and completion separately
+### 5. Request review and delivery
 
-Implementation does not silently become publication. Ask for each consequential
-next step when you want it:
+Implementation does not silently become publication. Review and delivery are
+separate requests, and neither happens unless you ask.
+
+Review is optional and read-only: it reports findings and changes nothing. Ask
+for one before delivery, while the work is still yours alone:
 
 ```text
-Review the completed changes independently.
-Open pull requests for the API and web plans.
-Mark the plans complete now that they have landed.
+Review the completed changes independently before we open anything.
 ```
 
-Review is optional and read-only. Delivery uses the real work branches and target
-branches. Completion records the result and updates any product knowledge the
-change made stale; it does not automatically delete branches or working copies.
+Or after, as a second read on work already in flight:
+
+```text
+The API pull request is open. Review it independently.
+```
+
+A review never blocks delivery and is never required before it. Asking for one
+is your judgment about a particular change, not a gate the workspace imposes.
+
+Delivery is the consequential half. Pushes, pull requests, and merges act on the
+real work branches and their target branches, so each one needs your
+authorization:
+
+```text
+Open pull requests for the API and web plans.
+```
+
+### 6. Mark the work complete once it has landed
+
+Delivering is not completing. Completion is normally yours to request after the
+merge, and that order is deliberate: it confirms the change actually shipped
+before the project records anything as true because of it.
+
+```text
+The billing pull requests are merged. Mark the plans complete.
+```
+
+Completion is two acts, not one. The agent appends a completion note to each
+record, then brings back the product knowledge those plans could have made stale
+and judges which of it actually changed meaning. Most completions change no
+knowledge at all; recording that is the normal outcome, not a skipped step.
+
+Completion does not delete branches or working copies. Cleanup stays a separate
+request.
 
 For a small, already-specific edit, you can ask the agent to work directly in a
-connected repository without creating a goal or plan:
+connected repository without creating a goal or plan. Describing it plainly is
+usually enough, and invoking the `cc-direct` skill takes that path with no
+negotiation:
 
 ```text
-Make this small copy change directly in the web checkout. Do not create a plan.
+/cc-direct make this small copy change in the web checkout...
 ```
 
-The same rules for preserving existing work and asking before delivery still
-apply.
+Codex invokes skills with `$` instead, as `$cc-direct`.
+
+Asking is what authorizes the bypass. The agent offers this path where a request
+is already its own specification, but never takes it unasked, and it stops and
+returns you to the normal flow as soon as the change needs an outcome nobody has
+approved. The work happens in the connected checkout on its current branch.
+
+Nothing else relaxes. Preserving your existing work, authorizing every commit,
+push, and pull request, and reconciling the product knowledge the change alters
+all apply exactly as they do to a plan.
 
 <p align="center">
   <img src=".context-circuit/assets/readme/knowledge-circuit.png" alt="The project learns from every change" width="840">
@@ -329,86 +426,155 @@ change, its dependency information, and the correct working copy and starting
 point. A plan whose dependency is unfinished stays blocked instead of running
 against the wrong code.
 
-For example, a billing launch might become:
+For example, one approved goal to launch recurring billing becomes five plans
+across three repositories:
 
-```text
-Launch recurring billing
-├── Add the billing API
-│   ├── Build the web checkout
-│   └── Add the admin controls
-└── Update the notification worker
+```mermaid
+graph LR
+  subgraph g["i001 · Launch recurring billing"]
+    direction LR
+    p1["p0001 · Billing API<br/><b>api</b>"]
+    p2["p0002 · Web checkout<br/><b>web</b>"]
+    p3["p0003 · Admin controls<br/><b>web</b>"]
+    p4["p0004 · Billing e2e suite<br/><b>web</b>"]
+    p5["p0005 · Notification worker<br/><b>worker</b>"]
+
+    p1 --> p2
+    p1 --> p3
+    p2 --> p4
+    p3 --> p4
+  end
 ```
 
-Context Circuit can run the independent API and notification work together,
-then release the web and admin plans when the API they need is complete:
+Each plan names the repository it changes, and an arrow is a dependency. The
+checkout and the admin controls both need the API. The end-to-end suite needs
+both of them, because it exercises the two together. The notification worker
+needs nothing and is free to run immediately.
 
-```text
-Wave 1  Billing API ─────────────┐
-        Notification worker     │ run together
-                                │
-Wave 2  Web checkout            ├ start after the API
-        Admin controls ─────────┘
+Three plans change `web`, and one of them waits on two predecessors at once.
+That shape is what decides everything below.
+
+### Waves
+
+Independent plans run together, and a dependent plan starts when the work it
+needs is finished:
+
+```mermaid
+graph LR
+  subgraph w1["Wave 1"]
+    a["p0001 · Billing API<br/><b>api</b>"]
+    e["p0005 · Notification worker<br/><b>worker</b>"]
+  end
+
+  subgraph w2["Wave 2"]
+    b["p0002 · Web checkout<br/><b>web</b>"]
+    c["p0003 · Admin controls<br/><b>web</b>"]
+  end
+
+  subgraph w3["Wave 3"]
+    d["p0004 · Billing e2e suite<br/><b>web</b>"]
+  end
+
+  a --> b
+  a --> c
+  b --> d
+  c --> d
 ```
 
-It supports two execution shapes:
+This is the shorter route in wall-clock time. Its cost shows up where branches
+converge: `p0002` and `p0003` develop `web` in parallel, so before `p0004` can
+start, Context Circuit has to merge both of their branches into the working copy
+it prepares. That integration is implementation work, not delivery.
 
-- **Waves** overlap independent plans to shorten wall-clock time. When branches
-  converge, Context Circuit identifies the integration work that must happen
-  before a dependent plan starts.
-- **A linear chain** stacks every plan on the previous one. It is slower but
-  avoids integration merges, which is often the safer choice when several plans
-  modify the same repository.
+### A linear chain
 
-The recommended shape is derived from every plan's recorded dependencies and
-repository overlap, with its cost explained before anything runs. You confirm
-the shape once. After each wave, Context Circuit recalculates what is ready from
-the work that actually completed, then gives the next agents the dependency and
-starting-point information they need.
+Every plan stacks on the one before it, so no plan ever runs against code
+another plan is still writing:
 
-If one plan fails, completed plans are not unwound. Their branches and commits
-remain available, the blocked plan is named, and everything waiting behind it
-stays paused. That makes parallel agent work faster without making it disposable.
+```mermaid
+graph LR
+  a["p0001 · Billing API<br/><b>api</b>"]
+  b["p0002 · Web checkout<br/><b>web</b>"]
+  c["p0003 · Admin controls<br/><b>web</b>"]
+  d["p0004 · Billing e2e suite<br/><b>web</b>"]
+  e["p0005 · Notification worker<br/><b>worker</b>"]
 
-## Workspace repository structure
-
-A Context Circuit workspace is itself a small Git repository. It holds the
-shared understanding and coordination files for the project; the application
-repositories it coordinates can live beside it, inside its ignored
-`repositories/` directory, or elsewhere on the machine.
-
-```text
-context-circuit/
-├── README.md                    Product guide
-├── AGENTS.md                    Standing workflow and safety rules
-├── CLAUDE.md                    Claude Code entry instruction
-├── CURSOR.md                    Cursor entry instruction
-├── workspace.yaml              Project identity and repository relationships
-├── members.yaml                People who share this workspace
-├── context/                    Product knowledge shared through Git
-│   ├── INDEX.md                Searchable knowledge catalog
-│   └── glossary.md             Shared project vocabulary
-├── intent/                     Goals, boundaries, and open questions
-├── plans/                      Repository-specific plans and dependencies
-├── sources/                    Optional evidence supplied for a task
-├── repositories/               Optional local application checkouts (ignored)
-├── member.local.yaml           Active person on this machine (ignored)
-├── repositories.local.yaml     Local paths and starting branches (ignored)
-├── .context-circuit/
-│   ├── docs/                   Detailed workspace and CLI documentation
-│   ├── assets/readme/          README artwork
-│   ├── role-tiering.yaml       Shared defaults for AI-agent roles
-│   ├── role-tiering.local.yaml Optional machine overrides (ignored)
-│   ├── local/                  Host-local settings and locks (ignored)
-│   ├── VERSION                 Workspace-template version
-│   └── CLI_VERSION             CLI version this workspace expects
-├── .agents/skills/             Canonical Context Circuit agent skills
-├── .claude/                    Claude Code skills and agent roles
-├── .codex/                     Codex agent roles
-└── .cursor/                    Cursor rules, skills, and agent roles
+  a --> b --> c --> d --> e
 ```
 
-Files marked as ignored are recreated or connected on each machine. Everything
-else can be reviewed and shared like normal project documentation.
+Slower, and no integration merges at all: `p0003` starts from the finished
+`p0002`, and `p0004` from the finished `p0003`, so the three `web` plans never
+diverge in the first place. When several plans crowd one repository, that is
+often the cheaper trade despite the wait.
+
+### Choosing the shape
+
+You do not pick the shape off a diagram. Context Circuit derives the
+recommendation from every plan's recorded dependencies and repository overlap,
+and explains what that shape costs before anything runs. You confirm it once.
+After each wave, it recalculates what is genuinely ready from the work that
+finished, then gives the next agents their dependency and starting-point
+information.
+
+### Delivery follows the chains, not the plans
+
+Five plans do not become five pull requests. Delivery is per repository, and it
+opens one request from the branch where that repository's chain **ends** —
+because that branch already contains the plans it was prepared from. Opening
+requests for those too would deliver the same commits twice.
+
+```mermaid
+graph LR
+  subgraph api["api"]
+    a["p0001 · Billing API"]
+  end
+  subgraph web["web"]
+    b["p0002 · Web checkout"] --> c["p0003 · Admin controls"] --> d["p0004 · Billing e2e suite"]
+  end
+  subgraph worker["worker"]
+    e["p0005 · Notification worker"]
+  end
+
+  a -- "PR" --> pr1["cc/p0001/api → main"]
+  d -- "PR" --> pr2["cc/p0004/web → main"]
+  e -- "PR" --> pr3["cc/p0005/worker → main"]
+```
+
+So this goal delivers as three pull requests. `cc/p0004/web` carries the
+checkout and the admin controls along with the suite, and `p0002` and `p0003`
+get no request of their own.
+
+Note that `p0005` runs in the very first wave and still ends its chain. Chain
+ends are not the last wave, and a plan nothing depends on would be dropped
+silently by anyone reasoning from waves instead.
+
+Each request targets that repository's base branch on this machine. A branch
+holding no commits beyond its base is skipped rather than opened empty, since a
+plan can name a repository it turned out not to change. Merging remains separate
+and still needs a person.
+
+### When a plan fails
+
+Completed plans are not unwound because a sibling failed:
+
+```mermaid
+graph LR
+  a["p0001 · Billing API<br/>checks failed ✗"]
+  b["p0002 · Web checkout<br/>blocked, waiting"]
+  c["p0003 · Admin controls<br/>blocked, waiting"]
+  d["p0004 · Billing e2e suite<br/>blocked, waiting"]
+  e["p0005 · Notification worker<br/>finished ✓"]
+
+  a --> b
+  a --> c
+  b --> d
+  c --> d
+```
+
+The notification worker's branch and commits stay exactly where they are. The
+failed plan is named, everything waiting behind it stays paused, and nothing is
+reset, stashed, or discarded to tidy up the records. That is what makes parallel
+agent work faster without making it disposable.
 
 ## What Context Circuit adds
 
@@ -423,19 +589,24 @@ else can be reviewed and shared like normal project documentation.
 | Actionable diagnostics | Workspace checks explain both the problem and the command, edit, or human decision needed to resolve it. |
 | Reviewable files | Shared state is Markdown and YAML that your team can diff, discuss, and version in Git. |
 
-## What is shared
+## What is shared and what stays personal
 
-<p align="center">
-  <img src=".context-circuit/assets/readme/shared-vs-local.png" alt="What is shared and what is set locally" width="840">
-</p>
+| Shared through Git | Stays on personal machine |
+| --- | --- |
+| `workspace.yaml` — purpose, repository IDs, their URLs and default branches, and how they relate | `repositories.local.yaml` — where each repository is checked out here, and the branch you work from |
+| `members.yaml` — who shares the workspace, with each member's record language and tone | `member.local.yaml` — which of those members you are |
+| `.context-circuit/role-tiering.yaml` — model and effort defaults for each agent role | `.context-circuit/role-tiering.local.yaml` — your overrides, and the generated `cc-*` role files |
+| `intent/` and `plans/` — approved goals, their plans, and the dependencies between them | `.worktrees/` and `repositories/` — the Git working copies themselves |
+| `context/` — product knowledge and its catalog | `.context-circuit/local/` — plan-to-worktree links and the edit lock |
 
-Project purpose, repository relationships, approved goals, plans, and product
-knowledge travel through Git. Machine paths, active AI-agent roles,
-temporary locks, dependencies, and unfinished edits stay on the machine where
-the work is running.
+The pattern holds down the table: the workspace records a decision, and your
+machine records how that decision is carried out here. `workspace.yaml` says the
+billing API is a repository of this project; `repositories.local.yaml` says where
+your copy of it lives and which branch you are working from.
 
 That split lets a team share the truth about the project without pretending that
 every developer, container, or remote agent has the same local setup.
+[Workspace files](.context-circuit/docs/workspace.md) lists every record.
 
 ## Safety model
 
@@ -477,5 +648,3 @@ stage currently in progress.
 - CLI packages are available for macOS, Linux, and Windows on amd64 and arm64.
 - Each operating system, container, or remote host installs the CLI and records
   its local repository paths independently.
-- Context Circuit v2 is for fresh workspaces. It does not automatically migrate
-  v1 workspace data.
