@@ -48,9 +48,15 @@ numbered list for an order, prose for why it is this way.
 
 The diagnostic reports the part a machine can see — an anchor in a sentence, a
 paragraph past eight lines, a sentence past sixty words, a title with no line
-under it, a fence that never closes, a mermaid type that will not render, an
-actor note with no stories. Whether a sentence is any good is not mechanical and
-stays with whoever writes it.
+under it, a fence that never closes, a mermaid type that will not render, a
+diagram fenced under its own type, an actor note with no stories. Whether a
+sentence is any good is not mechanical and stays with whoever writes it.
+
+A fence opened with the diagram type instead of `mermaid` is the failure worth
+naming separately, because it costs nothing to write and renders nowhere: the
+fence names the language and the first line inside it names the type. It was
+found in notes agents had written, where it survived review by looking
+deliberate in the source and blank in the reader.
 
 Both thresholds came from measuring this tree rather than from taste. At
 forty-five words seventeen sentences tripped that read perfectly well; at sixty

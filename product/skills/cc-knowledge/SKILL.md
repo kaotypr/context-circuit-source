@@ -81,8 +81,32 @@ recording. One that redraws the list beside it is noise. Keep to `flowchart`,
 `sequenceDiagram`, and `stateDiagram`, with short labels and no styling or theme
 directives, because some readers see the source rather than a picture.
 
+The fence names the language and the first line inside it names the diagram
+type. Opening the fence with the diagram type instead renders the diagram as
+plain text everywhere, which looks deliberate in the source and blank in the
+reader, so write it this way:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Drafted
+  Drafted --> Approved
+```
+
+`check` reports a fence opened with a diagram type, and a type inside a
+`mermaid` fence that would not render.
+
 More than eight lines of unbroken prose usually has a list or a table hiding
 inside it.
+
+Notes, the catalog, and the glossary are written in English, whatever language
+the project is discussed in and whatever a member records for their own records.
+A note outlives the member who wrote it and anchors to code, and the catalog is
+searched by substring, which a mixed-language index quietly breaks.
+
+Domain vocabulary is never translated. A word the project uses for its own
+subject matter keeps that word in an English note, because the glossary exists
+to map the project's words to the identifiers behind them and a translated term
+maps nothing.
 
 ## An actor note
 

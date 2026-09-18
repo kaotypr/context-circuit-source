@@ -15,7 +15,12 @@ import (
 )
 
 type Orientation struct {
-	Workspace    Config              `json:"workspace"`
+	Workspace Config `json:"workspace"`
+	// Self is the Git state of the workspace's own repository, present only
+	// once it has been described. Shared records are read from whatever commit
+	// this checkout is sitting on, so a stale or dirty workspace is part of
+	// what orientation has to report rather than something to go looking for.
+	Self         *Snapshot           `json:"workspace_repository,omitempty"`
 	Members      Members             `json:"members"`
 	ActiveMember string              `json:"active_member,omitempty"`
 	Repositories map[string]Snapshot `json:"repositories"`
@@ -36,6 +41,17 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	if err != nil {
 		result.Issues = append(result.Issues, err.Error())
 	}
+	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
+		result.Issues = append(result.Issues, "workspace repository: "+err.Error())
+	} else if described {
+		snapshot, err := Inspect(ctx, checkout.Path)
+		if err != nil {
+			result.Issues = append(result.Issues, "workspace repository: "+err.Error())
+		} else {
+			snapshot.BaseBranch = checkout.BaseBranch
+			result.Self = &snapshot
+		}
+	}
 	for id := range cfg.Repositories {
 		checkout, err := s.Repository(ctx, id)
 		if err != nil {
@@ -54,6 +70,43 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	return result, nil
 }
 
+// workspaceRepositoryIssues reports what the workspace's own Git state costs
+// when it is left undescribed. Shared records travel through that repository,
+// so a workspace nobody can locate is one a second machine cannot be told how
+// to obtain, and an undescribed one is invisible to status.
+func (s *Store) workspaceRepositoryIssues(ctx context.Context, state Orientation) []string {
+	if state.Workspace.WorkspaceRepository != nil {
+		return nil
+	}
+	if _, err := rootOf(ctx, s.Root); err != nil {
+		// A workspace that is not under version control has nothing to
+		// describe. Sharing it is a choice, not an omission.
+		return nil
+	}
+	return []string{"the workspace is a Git checkout but describes no workspace repository; record it with workspace connect so status reports its branch and a second machine knows where to clone it"}
+}
+
+// unbandedMembers reports members allocating from the shared range in a
+// workspace that has more than one. Bands are what let clones that cannot see
+// each other allocate without colliding; a solo workspace needs none, so the
+// finding waits until a second member makes collision possible.
+func unbandedMembers(members Members) []string {
+	if len(members.Members) < 2 {
+		return nil
+	}
+	var unbanded []string
+	for id, member := range members.Members {
+		if member.Band == 0 {
+			unbanded = append(unbanded, id)
+		}
+	}
+	if len(unbanded) == 0 {
+		return nil
+	}
+	sort.Strings(unbanded)
+	return []string{fmt.Sprintf("members allocating from the shared range in a workspace of %d: %s; give each a distinct band with member band before they work apart", len(members.Members), strings.Join(unbanded, ", "))}
+}
+
 // Check is an explicitly invoked diagnostic, not an execution admission gate.
 func recordKind(prefix string) string {
 	if prefix == "i" {
@@ -68,6 +121,8 @@ func (s *Store) Check(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	issues := state.Issues
+	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
+	issues = append(issues, unbandedMembers(state.Members)...)
 	records, err := s.ListRecords(false)
 	if err != nil {
 		return append(issues, err.Error()), nil

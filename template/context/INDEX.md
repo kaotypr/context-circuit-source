@@ -54,6 +54,24 @@ recording; one that redraws the list beside it is noise. Keep to `flowchart`,
 directives, because some readers see the source rather than a picture. More than
 eight lines of unbroken prose usually has a list or a table hiding inside it.
 
+The fence names the language and the first line inside it names the diagram
+type. A fence opened with the diagram type renders as plain text everywhere, so
+write it this way:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Drafted
+  Drafted --> Approved
+```
+
+Notes, this catalog, and the glossary are written in English, whatever language
+the project is discussed in. A note outlives the member who wrote it and anchors
+to code, and this catalog is searched by substring, which a mixed-language index
+quietly breaks. Domain vocabulary is never translated: a word the project uses
+for its own subject matter keeps that word here, because the glossary maps the
+project's words to the identifiers behind them and a translated term maps
+nothing.
+
 Write plainly. Lead with the answer and then the reason, keep one idea to a
 paragraph, prefer the project's own words to invented synonyms, and cut any
 sentence that only restates its heading. The test is whether a reader can answer

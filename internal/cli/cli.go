@@ -22,8 +22,10 @@ Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
-member add            --id ID --name NAME [--band N]
+member add            --id ID --name NAME [--band N] [--language NAME]
 member band           --id ID --band N|0 (allocation block; 0 clears it)
+member language       --id ID --language NAME (the language this member's
+                      intents and plans are written in; knowledge stays English)
 member use            --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH [--url URL]
@@ -34,6 +36,11 @@ repo init             --id ID --path NEW_PATH --base BRANCH [--default-branch BR
 repo base             --id ID --branch BRANCH (this machine's base branch)
 repo remote           --id ID [--url URL] [--default-branch BRANCH] (shared)
 repo relate           --from ID --to ID --description TEXT
+workspace connect     [--path PATH] --base BRANCH [--url URL]
+                      [--default-branch BRANCH] (the workspace's own repository;
+                      --path defaults to the workspace root, --base is this machine's)
+workspace base        --branch BRANCH (this machine's workspace base branch)
+workspace remote      [--url URL] [--default-branch BRANCH] (shared)
 repo fetch            --id ID [--remote origin]
 repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
@@ -160,8 +167,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "init":
 		add("name", "purpose", "member", "member-name")
 	case "member add":
-		add("id", "name")
+		add("id", "name", "language")
 		f.IntVar(&band, "band", 0, "allocation block for this member")
+	case "member language":
+		add("id", "language")
 	case "member band":
 		add("id")
 		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
@@ -179,6 +188,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("id", "remote")
 	case "repo relate":
 		add("from", "to", "description")
+	case "workspace connect":
+		add("path", "base", "url", "default-branch")
+	case "workspace base":
+		add("branch")
+	case "workspace remote":
+		add("url", "default-branch")
 	case "record create":
 		add("kind", "slug", "title", "intent")
 		f.Var(&repos, "repo", "repository (repeatable)")
@@ -248,9 +263,24 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return ""
 	}
 	optional := map[string]bool{"remote": true, "default-branch": true}
-	// A URL is how a clone finds its source; everywhere else it is one shared
-	// detail the checkout usually already knows.
-	optional["url"] = command != "repo clone"
+	// A member writing in the workspace's usual language records nothing; the
+	// field exists for the member who does not.
+	optional["language"] = command == "member add"
+	// The workspace's own checkout is the workspace root unless a workspace
+	// kept inside a larger repository names the root above it.
+	if command == "workspace connect" {
+		optional["path"] = true
+	}
+	// Either half of the shared record is a whole call; an empty one is refused
+	// below, where the alternative can be named.
+	if command == "workspace remote" {
+		optional["url"], optional["default-branch"] = true, true
+	}
+	// A URL is one shared detail the checkout usually already knows. Even a
+	// clone may omit it, because an ID this workspace already describes
+	// carries the source in the shared record — which is what joining one
+	// looks like.
+	optional["url"] = true
 	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
@@ -335,21 +365,31 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
-			err = s.AddMember(get("id"), get("name"), band)
+			err = s.AddMember(get("id"), get("name"), band, get("language"))
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)
+		case "member language":
+			err = s.SetMemberLanguage(get("id"), get("language"))
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":
 			err = s.Connect(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"))
 		case "repo clone", "repo init":
-			err = s.CreateRepository(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"))
+			// A clone needs a source: --url, or a shared record already naming
+			// one. An init never takes one, so the store tells them apart.
+			err = s.CreateRepository(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"), command == "repo clone")
 		case "repo base":
 			err = s.SetBase(ctx, get("id"), get("branch"))
 		case "repo remote":
 			err = s.SetRemote(ctx, get("id"), get("url"), get("default-branch"))
 		case "repo relate":
 			err = s.Relate(get("from"), get("to"), get("description"))
+		case "workspace connect":
+			err = s.ConnectWorkspace(ctx, get("path"), get("base"), get("url"), get("default-branch"))
+		case "workspace base":
+			err = s.SetWorkspaceBase(ctx, get("branch"))
+		case "workspace remote":
+			err = s.SetWorkspaceRemote(ctx, get("url"), get("default-branch"))
 		case "repo inspect", "repo fetch":
 			checkout, e := s.Repository(ctx, get("id"))
 			if e != nil {

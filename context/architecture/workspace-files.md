@@ -6,14 +6,15 @@ they travel with the project or belong to one machine.
 ## Shared versus local
 
 **Shared** (committed): the workspace record carrying schema version, name,
-purpose, logical repository IDs with their URL and default branch, and recorded
-relationships; the member roster with each member's optional allocation band;
-the permanent ID ledger; the per-host role settings; intent and plan records;
-and the knowledge tree.
+purpose, the workspace's own repository, logical repository IDs with their URL
+and default branch, and recorded relationships; the member roster with each
+member's optional allocation band; the permanent ID ledger; the per-host role
+settings; intent and plan records; and the knowledge tree.
 
-**Local** (ignored): the active member on this machine; the map from logical
-repository ID to this machine's checkout path and base branch; optional
-plan-to-worktree associations; the lock file; and the working copies themselves.
+**Local** (ignored): the active member on this machine; this machine's workspace
+checkout and the map from logical repository ID to its checkout path and base
+branch; optional plan-to-worktree associations; the lock file; and the working
+copies themselves.
 
 The split is what lets one workspace travel. Cloning it onto a second machine is
 selecting an existing member and connecting the existing repository IDs to local
@@ -22,8 +23,7 @@ Windows, a container, a remote host) gets its own checkout, its own installed
 executable, and its own bindings; installed dependencies and uncommitted work do
 not migrate with the shared files.
 
-A local binding holds a path, including `.` when the workspace directory is
-itself a bound repository, and the branch that machine starts work from.
+A local binding holds a path and the branch that machine starts work from.
 
 The base branch is local because it is the one repository fact that differs per
 machine: one checkout follows a release branch while another stays on the
@@ -44,6 +44,31 @@ whatever is nearest.
 A new repository can be registered before its first commit, though worktree
 preparation needs one. Setting a base records the intended branch without
 creating or resetting it.
+
+## The workspace's own repository
+
+The shared records travel through the Git repository carrying the workspace, so
+a member reads plans from whatever commit that checkout sits on. That made the
+workspace's own branch and uncommitted records part of what orientation must
+answer, and nothing answered it: `status` and `check` walked the repositories
+map, which the workspace was not in.
+
+It is described beside that map rather than inside it, as `workspace_repository`
+in the shared record and a `workspace` binding in the local one, splitting the
+same way every repository does. Inside the map it would have been wrong in a way
+nothing refuses: a plan names repositories, a relationship joins two, and a
+worktree is cut from one — and a worktree of the workspace duplicates the
+records the CLI is reading. So `repo connect` refuses the workspace's own
+checkout and names the command that replaced it.
+
+The path stays in the binding because a workspace need not sit at its
+repository's root; one kept in a subdirectory records the containing root.
+Members share one branch of the workspace. A per-member branch was considered
+and rejected: a reservation in the ID ledger on an unmerged branch is invisible
+to everyone else, which would make allocation bands mandatory rather than
+optional, and `record order` would derive waves from a partial set of plans. A
+machine that works from another branch records that in its own binding, where it
+describes that machine and nobody else.
 
 ## Editing guarantees
 
@@ -79,5 +104,7 @@ Owner:
   and the document-preserving YAML edit.
 - `context-circuit-source@internal/workspace/workspace.go` — the shared and
   machine-local files and what each may hold.
+- `context-circuit-source@internal/workspace/self.go` — describing and binding
+  the workspace's own repository.
 - `context-circuit-source@product/docs/workspace.md` — the description shipped
   to a workspace.

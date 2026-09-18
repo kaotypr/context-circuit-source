@@ -9,6 +9,13 @@ Approval authorizes planning, and planning alone. `record approve` returns
 `planning_required` naming this work, because approval reporting success is the
 decision recorded, not the request finished.
 
+Write a plan in the language recorded for the active member in `members.yaml`,
+and in English where none is. A plan is quoted whole into the brief a worker
+receives, and that brief tells the worker that what goes into the repository is
+English regardless. Identifiers and the project's own domain vocabulary keep
+their form whatever language the prose is in, and the slug stays a lowercase
+ASCII slug.
+
 Without asking again, inspect real code and create the linked plan records:
 
 ```sh

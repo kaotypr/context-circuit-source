@@ -27,6 +27,11 @@ func TestNoteReadability(t *testing.T) {
 		{"a sentence past sixty words", strings.Repeat("word ", 61) + "ends.", "a sentence of"},
 		{"mermaid with a known type", "```mermaid\nflowchart TD\n  a --> b\n```", ""},
 		{"mermaid with an unknown type", "```mermaid\nflowChart TD\n  a --> b\n```", "not recognized"},
+		// A fence opened with the diagram type is not a mermaid fence at all,
+		// so it renders as plain text wherever the note is read.
+		{"a diagram fenced as its own type", "```stateDiagram-v2\n[*] --> a\n```", "open the fence with mermaid"},
+		{"a flowchart fenced with its direction", "```flowchart TD\n  a --> b\n```", "open the fence with mermaid"},
+		{"an ordinary language fence is untouched", "```go\nfunc main() {}\n```", ""},
 		{"an unclosed fence", "```sh\nmake build", "never closed"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {

@@ -104,9 +104,9 @@ executable and agent, the command surface, the instruction layers, the file
 contract.*
 
 - [The executable and agent seam](architecture/executable-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go executable and which to the agent · seam, boundary, executable, refusals, model-blind, judgment, mechanism · reviewed 2026-09-15
-- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the executable exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-15
+- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the executable exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-18
 - [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability · reviewed 2026-09-16
-- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, base branch, default branch, repository url, lock, atomic, document edit, schema · reviewed 2026-09-15
+- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema · reviewed 2026-09-18
 
 ### Actors
 
@@ -122,9 +122,9 @@ does for them is `domains/`.*
 *What the product does for a project, and the rules that govern each area. Who
 it does that for is `actors/`.*
 
-- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen and kept unique across clones · id, allocation, band, reservation, ledger, member, offline, collision · reviewed 2026-09-15
+- [Record identity and allocation bands](domains/record-ids-and-bands.md) {context-circuit-source} — how intent and plan numbers are chosen and kept unique across clones, and which language each record is written in · id, allocation, band, reservation, ledger, member, offline, collision, language, approval gate · reviewed 2026-09-18
 - [Grounding an intent and its open questions](domains/intent-grounding.md) {context-circuit-source} — what an intent is written against and how unsettled decisions reach the person · intent, grounding, open questions, numbered, answer, assumption, contradiction · reviewed 2026-09-16
-- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors · reviewed 2026-09-17
+- [Durable notes and the retrieval catalog](domains/knowledge-notes.md) {context-circuit-source} — what belongs in a project note, how it is shaped, and how a reader finds it again · knowledge, note, catalog, index, glossary, reconcile, durable, boundary, shape, readability, anchor, owner block, actors, mermaid, fence · reviewed 2026-09-18
 - [Worktrees and environment reuse](domains/worktrees-and-reuse.md) {context-circuit-source} — how isolated working copies are prepared and what is carried into them · worktree, branch, base branch, start, isolation, execution, copy-on-write, clone, dependency, environment, predecessor start · reviewed 2026-09-16
 - [Deriving stacked plan order](domains/plan-ordering.md) {context-circuit-source} — how several plans of one intent are sequenced, merged, and released · order, waves, chain, dependency, integration merge, concurrency, stop · reviewed 2026-09-15
 - [Subagent roles and host settings](domains/subagent-roles.md) {context-circuit-source} — what each role may do, how a brief is composed, and how model and effort reach the coding host · role, explorer, planner, worker, reviewer, model, effort, dispatch, brief, prompt, integration, review, commit · reviewed 2026-09-16

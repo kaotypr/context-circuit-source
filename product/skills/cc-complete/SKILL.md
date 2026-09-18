@@ -14,6 +14,11 @@ request is finished only when both are done.
 context-circuit-cli --workspace <root> --json record complete --id p0001 --text 'User requested completion.'
 ```
 
+Write the note in the words the person used, including their language. It
+records that someone asked for this, so a translation of it is a paraphrase of
+evidence rather than a tidier form of it. The knowledge reconciled afterwards is
+English regardless.
+
 The result carries `completed_at`, the catalog entries scoped to that plan's
 repositories, and `reconcile_required` naming the judging whenever there are any.
 Completion reporting success is the record written, not the request finished.

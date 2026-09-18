@@ -323,10 +323,16 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	f.ok("repo", "relate", "--from", "copy", "--to", "api", "--description", "Consumes API")
 	f.fail("repo", "relate", "--from", "copy", "--to", "missing", "--description", "Bad")
 	git(t, f.root, "init", "-b", "main")
-	f.ok("repo", "connect", "--id", "workspace", "--path", ".", "--base", "main")
+	// The workspace's own checkout is described by its own commands, because
+	// every consumer of the repositories map reads an entry as somewhere work
+	// happens.
+	if out := f.fail("repo", "connect", "--id", "workspace", "--path", ".", "--base", "main"); !strings.Contains(out, "workspace connect") {
+		t.Fatal("connecting the workspace as a repository should name workspace connect", out)
+	}
+	f.ok("workspace", "connect", "--base", "main")
 	bindings := read(t, filepath.Join(f.root, "repositories.local.yaml"))
 	if !strings.Contains(bindings, "path: .") {
-		t.Fatal("root binding is not relative", bindings)
+		t.Fatal("workspace binding is not relative", bindings)
 	}
 	for _, path := range []string{"repositories.local.yaml", "member.local.yaml", ".context-circuit/local/write.lock", ".worktrees/test/file", "repositories/test/file"} {
 		git(t, f.root, "check-ignore", path)
@@ -335,6 +341,219 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	f.ok("repo", "inspect", "--id", "api")
 	if read(t, filepath.Join(api, "dirty.txt")) != "preserve" {
 		t.Fatal("lost dirty work")
+	}
+}
+
+// A record is quoted into a dispatch brief as authoritative, so a record in one
+// language invites a worker to answer it in that language — in comments, in
+// commit messages, and worst of all in identifiers. The worker never reads the
+// workspace's own instructions, so the boundary travels in the brief.
+func TestABriefDrawsTheLanguageBoundary(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	i := f.intent("tambah-penagihan")
+	f.ok("record", "approve", "--id", i.ID, "--text", "Disetujui oleh pengguna")
+	p := f.plan(i.ID, "penagihan-api", "api")
+
+	// A member who records no language writes English, which is what every
+	// record written before the field assumed.
+	brief := f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
+	if !strings.Contains(brief, "stated in English") {
+		t.Fatal("an unset language is not reported as English", brief)
+	}
+
+	f.ok("member", "language", "--id", "maya", "--language", "Bahasa Indonesia")
+	brief = f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
+	for _, want := range []string{
+		"stated in Bahasa Indonesia",
+		"put into the repository in English",
+		"Names are quoted, never translated",
+		"Domain vocabulary keeps the form used here",
+	} {
+		if !strings.Contains(brief, want) {
+			t.Fatalf("the brief does not draw the boundary (%q):\n%s", want, brief)
+		}
+	}
+
+	// The language reported is the one the record was written in, not the one
+	// whoever is dispatching happens to write in.
+	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--language", "English")
+	f.ok("member", "use", "--id", "rina")
+	brief = f.ok("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--plan", p.ID, "--path", api)
+	if !strings.Contains(brief, "stated in Bahasa Indonesia") {
+		t.Fatal("the brief reports the dispatcher's language rather than the author's", brief)
+	}
+
+	// It is quoted into a sentence, so it is a language's name and not prose
+	// carrying instructions of its own.
+	f.fail("member", "language", "--id", "rina", "--language", strings.Repeat("long ", 20))
+	f.fail("member", "language", "--id", "nobody", "--language", "English")
+	f.fail("member", "add", "--id", "maya", "--name", "Maya", "--language", "English")
+}
+
+// The whole of joining a published workspace, driven against a real clone: a
+// member arrives, describes this machine, obtains the repositories the record
+// already names, and writes the role definitions a clone cannot carry. It ends
+// on a clean diagnostic with one shared file touched, which is what the shipped
+// instruction promises a joining member.
+func TestJoiningAPublishedWorkspace(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	// A published workspace records where its repositories live; the fixture
+	// checkout has no origin to read one from.
+	f.ok("repo", "remote", "--id", "api", "--url", api)
+
+	git(t, f.root, "init", "-b", "main")
+	f.ok("workspace", "connect", "--base", "main")
+	git(t, f.root, "add", "-A")
+	git(t, f.root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: publish the workspace")
+	origin := filepath.Join(f.home, "workspace.git")
+	git(t, f.home, "clone", "--bare", f.root, origin)
+
+	joined := filepath.Join(f.home, "joined")
+	git(t, f.home, "clone", origin, joined)
+	ok := func(args ...string) {
+		t.Helper()
+		if code, out, errOut := call(joined, args...); code != 0 {
+			t.Fatalf("%v: exit=%d %s %s", args, code, out, errOut)
+		}
+	}
+
+	// A clone carries the shared records and none of this machine's state, and
+	// the diagnostic is what says so.
+	code, out, _ := call(joined, "check")
+	for _, want := range []string{"select a workspace member", "connect this machine's checkout for repository api", "workspace connect"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("a fresh clone does not report %q:\n%s", want, out)
+		}
+	}
+	if code == 0 {
+		t.Fatal("a fresh clone reported nothing to do")
+	}
+
+	// Nothing here names a URL or reaches for git: the record carries both.
+	ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "2")
+	ok("member", "band", "--id", "maya", "--band", "1")
+	ok("member", "use", "--id", "rina")
+	ok("workspace", "connect", "--base", "main")
+	ok("repo", "clone", "--id", "api", "--path", "repositories/api", "--base", "main")
+	ok("agent", "setup")
+
+	if code, out, errOut := call(joined, "check"); code != 0 {
+		t.Fatalf("joining left the workspace unhealthy: %s %s", out, errOut)
+	}
+	if read(t, filepath.Join(joined, "repositories/api/README.md")) != "# Fixture\n" {
+		t.Fatal("the described repository was not obtained")
+	}
+	if _, err := os.Stat(filepath.Join(joined, ".claude/agents/cc-worker.md")); err != nil {
+		t.Fatal("role definitions a clone cannot carry were not written", err)
+	}
+	// The roster is the only thing a member arriving has to say to everyone
+	// else; a path or a branch of theirs reaching the shared record would be a
+	// machine describing the project.
+	dirty := git(t, joined, "status", "--porcelain")
+	if dirty != "M members.yaml" {
+		t.Fatalf("joining changed more than the roster:\n%s", dirty)
+	}
+}
+
+// Joining a workspace means obtaining checkouts of repositories it already
+// describes. The URL is in the shared record, so a clone need not repeat it,
+// and nothing shared is rewritten by a member arriving.
+func TestCloningARepositoryTheWorkspaceAlreadyDescribes(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	f.ok("repo", "remote", "--id", "api", "--url", api)
+	before := read(t, filepath.Join(f.root, "workspace.yaml"))
+
+	f.ok("repo", "clone", "--id", "api", "--path", "repositories/api", "--base", "main")
+	if read(t, filepath.Join(f.root, "repositories/api/README.md")) != "# Fixture\n" {
+		t.Fatal("the described repository was not obtained")
+	}
+	if after := read(t, filepath.Join(f.root, "workspace.yaml")); after != before {
+		t.Fatalf("joining rewrote the shared record:\n%s\n%s", before, after)
+	}
+
+	// An ID nobody describes still needs a source, and starting one empty is
+	// refused where a repository already exists to obtain.
+	f.fail("repo", "clone", "--id", "fresh", "--path", filepath.Join(f.home, "fresh"), "--base", "main")
+	if out := f.fail("repo", "init", "--id", "api", "--path", filepath.Join(f.home, "empty"), "--base", "main"); !strings.Contains(out, "already registered") {
+		t.Fatal("initializing a described repository should be refused", out)
+	}
+}
+
+// The shared records travel through the workspace's own repository, so its Git
+// state is part of what orientation answers. It splits the way a repository
+// does, and stays out of the repositories map, whose entries every consumer
+// reads as somewhere work happens.
+func TestWorkspaceRepositoryIsDescribedSeparately(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+
+	// Nothing to describe until the workspace is under version control.
+	if out := f.ok("check"); strings.Contains(out, "workspace connect") {
+		t.Fatal("asked to describe a workspace that is not a Git checkout", out)
+	}
+	git(t, f.root, "init", "-b", "main")
+	git(t, f.root, "remote", "add", "origin", "git@example.invalid:acme/workspace.git")
+	if out := f.fail("check"); !strings.Contains(out, "workspace connect") {
+		t.Fatal("an undescribed workspace repository goes unreported", out)
+	}
+
+	f.ok("workspace", "connect", "--base", "main")
+	shared := read(t, filepath.Join(f.root, "workspace.yaml"))
+	if !strings.Contains(shared, "workspace_repository:") || !strings.Contains(shared, "acme/workspace.git") {
+		t.Fatalf("the shared record does not describe the workspace repository: %s", shared)
+	}
+	if strings.Contains(shared, "base_branch") {
+		t.Fatalf("the shared record carries one machine's base branch: %s", shared)
+	}
+	if out := f.ok("check"); strings.Contains(out, "workspace connect") {
+		t.Fatal("still asking for a workspace repository that is recorded", out)
+	}
+
+	// A base describes this machine alone, exactly as a repository's does.
+	f.ok("workspace", "base", "--branch", "integration")
+	bindings := read(t, filepath.Join(f.root, "repositories.local.yaml"))
+	if !strings.Contains(bindings, "base_branch: integration") {
+		t.Fatalf("the workspace base is not local: %s", bindings)
+	}
+	if strings.Contains(read(t, filepath.Join(f.root, "workspace.yaml")), "integration") {
+		t.Fatal("a machine's workspace base reached the shared record")
+	}
+
+	f.ok("workspace", "remote", "--default-branch", "trunk")
+	if !strings.Contains(read(t, filepath.Join(f.root, "workspace.yaml")), "default_branch: trunk") {
+		t.Fatal("the shared default branch did not change")
+	}
+	f.fail("workspace", "remote")
+
+	var state workspace.Orientation
+	if err := json.Unmarshal([]byte(f.ok("status")), &state); err != nil {
+		t.Fatal(err)
+	}
+	if state.Self == nil || state.Self.Branch != "main" || state.Self.BaseBranch != "integration" {
+		t.Fatalf("status does not report the workspace's own Git state: %+v", state.Self)
+	}
+}
+
+// Bands are what let clones that cannot see each other allocate without
+// colliding. A solo workspace needs none, so the finding waits for a second
+// member to make a collision possible.
+func TestUnbandedMembersAreReportedOnlyOnceSharingIsPossible(t *testing.T) {
+	f := setup(t)
+	if out := f.ok("check"); strings.Contains(out, "shared range") {
+		t.Fatal("a solo workspace was asked for allocation bands", out)
+	}
+	f.ok("member", "add", "--id", "rina", "--name", "Rina")
+	out := f.fail("check")
+	if !strings.Contains(out, "maya") || !strings.Contains(out, "rina") {
+		t.Fatal("unbanded members went unreported", out)
+	}
+	f.ok("member", "band", "--id", "maya", "--band", "1")
+	f.ok("member", "band", "--id", "rina", "--band", "2")
+	if out := f.ok("check"); strings.Contains(out, "shared range") {
+		t.Fatal("banded members are still reported", out)
 	}
 }
 

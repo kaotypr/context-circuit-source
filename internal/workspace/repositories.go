@@ -187,6 +187,14 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 	if root != path {
 		return errors.New("connect the root of a Git checkout")
 	}
+	// The workspace's own repository is described by `workspace connect`, not
+	// here: an entry in this map is somewhere work happens, and a plan, a
+	// relationship, or a worktree cut from the workspace is never what the
+	// caller meant. Connecting it here once read as the way to record it, so
+	// name the command that replaced it rather than only refusing.
+	if within(path, s.Root) {
+		return errors.New("this checkout holds the workspace itself; describe it with workspace connect")
+	}
 	if err := checkBranch(ctx, path, base); err != nil {
 		return err
 	}
@@ -209,6 +217,14 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 		otherCommon, err := Git(ctx, otherPath, "rev-parse", "--path-format=absolute", "--git-common-dir")
 		if err == nil && otherCommon == common {
 			return fmt.Errorf("this repository is already connected as %s", other)
+		}
+	}
+	// A worktree of the workspace's repository sits outside the workspace, so
+	// the containment check above does not see it, but it shares the object
+	// store and every commit made in it lands in the workspace's history.
+	if selfPath, err := s.selfPath(bindings.Workspace); err == nil && bindings.Workspace != nil {
+		if selfCommon, err := Git(ctx, selfPath, "rev-parse", "--path-format=absolute", "--git-common-dir"); err == nil && selfCommon == common {
+			return errors.New("this checkout belongs to the workspace's own repository; describe it with workspace connect")
 		}
 	}
 	if existing, registered := cfg.Repositories[id]; registered {
@@ -239,20 +255,21 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 			return err
 		}
 	}
-	local := path
-	if path == s.Root {
-		local = "."
-	}
-	binding := Binding{local, base}
+	binding := Binding{path, base}
 	if _, err := s.Read("repositories.local.yaml"); os.IsNotExist(err) {
-		return s.WriteYAML("repositories.local.yaml", Bindings{map[string]Binding{id: binding}}, 0600)
+		return s.WriteYAML("repositories.local.yaml", Bindings{Bindings: map[string]Binding{id: binding}}, 0600)
 	} else if err != nil {
 		return err
 	}
 	return s.Update("repositories.local.yaml", []string{"bindings", id}, binding, 0600)
 }
 
-func (s *Store) CreateRepository(ctx context.Context, id, destination, base, remote, defaultBranch string) error {
+// CreateRepository obtains a working copy and binds it. Cloning an ID the
+// workspace already describes is the ordinary case for a member joining one:
+// the URL is in the shared record, so the caller need not repeat it, and
+// nothing shared is rewritten. Initializing is refused there instead, because
+// an ID that already names a repository somewhere is not one to start empty.
+func (s *Store) CreateRepository(ctx context.Context, id, destination, base, remote, defaultBranch string, clone bool) error {
 	if err := Name(id); err != nil {
 		return err
 	}
@@ -260,8 +277,24 @@ func (s *Store) CreateRepository(ctx context.Context, id, destination, base, rem
 	if err != nil {
 		return err
 	}
-	if _, ok := cfg.Repositories[id]; ok {
-		return errors.New("repository ID is already registered; connect its checkout instead")
+	if existing, registered := cfg.Repositories[id]; registered {
+		if !clone {
+			return errors.New("repository ID is already registered; clone or connect its checkout instead")
+		}
+		switch {
+		case remote == "":
+			remote = existing.URL
+		case remote != existing.URL:
+			return fmt.Errorf("%s already records another URL; use repo remote to change it explicitly", id)
+		}
+		if remote == "" {
+			return fmt.Errorf("%s records no URL to clone from; obtain the checkout yourself and use repo connect", id)
+		}
+		if defaultBranch != "" && defaultBranch != existing.DefaultBranch {
+			return fmt.Errorf("%s already records another default branch; use repo remote to change it explicitly", id)
+		}
+	} else if clone && remote == "" {
+		return errors.New("provide --url, or --id naming a repository this workspace already describes")
 	}
 	if err := checkBranch(ctx, s.Root, base); err != nil {
 		return err

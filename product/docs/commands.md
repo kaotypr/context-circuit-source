@@ -19,16 +19,21 @@ The examples assume the current directory is the initialized workspace.
 context-circuit-cli status
 context-circuit-cli member add --id alex --name Alex --band 2
 context-circuit-cli member band --id alex --band 3
+context-circuit-cli member language --id alex --language 'Bahasa Indonesia'
 context-circuit-cli member use --id alex
 context-circuit-cli member list
 context-circuit-cli repo connect --id api --path ../api --base main
 context-circuit-cli repo clone --id web --path repositories/web --base main --url GIT_URL
+context-circuit-cli repo clone --id api --path repositories/api --base main
 context-circuit-cli repo init --id docs --path repositories/docs --base main
 context-circuit-cli repo base --id api --branch development
 context-circuit-cli repo remote --id api --url GIT_URL --default-branch main
 context-circuit-cli repo relate --from web --to api --description 'Consumes the API'
 context-circuit-cli repo inspect --id api
 context-circuit-cli repo fetch --id api --remote origin
+context-circuit-cli workspace connect --base main
+context-circuit-cli workspace base --branch development
+context-circuit-cli workspace remote --url GIT_URL --default-branch main
 context-circuit-cli context find --query billing
 context-circuit-cli context find --repo api
 ```

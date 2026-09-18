@@ -29,19 +29,43 @@ preserves customized definitions. Check while orienting, not when something need
 to delegate: writing a definition is not loading it, and a host may not register a
 role until it reloads. Dispatch reports whether the definition it names is there.
 
-Read `workspace.yaml` for project identity, purpose, logical repositories with
-their URL and default branch, and relationships. The shared roster is
-`members.yaml`. The active member, this machine's checkout paths, and the branch
+Read `workspace.yaml` for project identity, purpose, the workspace's own
+repository, logical repositories with their URL and default branch, and
+relationships. The shared roster is `members.yaml`. The active member, this machine's checkout paths, and the branch
 this machine starts work from are the documented, gitignored `member.local.yaml`
 and `repositories.local.yaml`. Read those bindings when needed; never inspect
 unrelated host settings, credentials, private provider payloads, or another
 session's state. Never store secrets in workspace records.
 `.context-circuit/docs/workspace.md` describes what each file may hold.
 
-Initializing a workspace, connecting or cloning repositories, and adding members
-or their allocation bands each happen only on a request, through
-`.agents/skills/cc-workspace/SKILL.md`. On another machine, select an existing
-member and connect its local checkouts; do not reinitialize the shared workspace.
+Initializing a workspace, describing the workspace's own repository, connecting
+or cloning repositories, and adding members or their allocation bands each happen
+only on a request, through `.agents/skills/cc-workspace/SKILL.md`. On another
+machine, select an existing member and connect its local checkouts; do not
+reinitialize the shared workspace.
+
+## Language
+
+Talk to a person in whatever language they use. What gets written down follows
+the artifact, not the conversation.
+
+| What is written | In what language |
+| --- | --- |
+| An intent or a plan | the language recorded for its author in `members.yaml`, English where none is |
+| An approval or completion note | exactly what the person said, never translated into another language |
+| `context/` notes, the catalog, the glossary | English, always |
+| Anything written inside a repository | that repository's convention, English where it states none |
+| IDs, slugs, repository IDs, branch names, dates | unchanged |
+
+Knowledge is English because a note outlives the member who wrote it and anchors
+to code; an intent is in its author's language because a person can only approve
+an outcome they actually understand.
+
+Names are quoted, never translated, in either direction. Domain vocabulary keeps
+the project's own form inside an English note, and code identifiers keep the
+code's form inside a record written in another language. Translating either
+breaks the thing it names. A slug stays a lowercase ASCII slug whatever the
+title says, so a title in a script without one is transliterated.
 
 ## Shared knowledge
 

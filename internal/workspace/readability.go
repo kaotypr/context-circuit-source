@@ -85,7 +85,16 @@ func noteReadability(relative string, data []byte) []string {
 				continue
 			}
 			fenced, fenceAt = true, index
-			mermaid = strings.TrimSpace(strings.TrimLeft(trimmed, "`")) == "mermaid"
+			info := strings.TrimSpace(strings.TrimLeft(trimmed, "`"))
+			mermaid = info == "mermaid"
+			// A diagram fenced under its own type renders as plain text
+			// everywhere: the info string names the language, and the diagram
+			// type belongs on the first line inside a `mermaid` fence. The
+			// result looks deliberate in the source and blank in the reader,
+			// so it survives review unless something says it.
+			if kind, _, _ := strings.Cut(info, " "); !mermaid && mermaidDiagrams[kind] {
+				report(index, "diagram fenced as %s; open the fence with mermaid and put %s on its first line", kind, kind)
+			}
 			continue
 		}
 		if fenced {

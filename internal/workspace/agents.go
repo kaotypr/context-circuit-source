@@ -428,6 +428,9 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		}
 	}
 	prompt += "\n\n# Ownership\n\n" + ownership
+	// Whoever wrote the record wrote it in their own language, so the brief
+	// reports that one rather than the language of whoever is dispatching.
+	author := ""
 	if plan != "" {
 		record, err := s.FindRecord(plan)
 		if err != nil {
@@ -436,6 +439,7 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		if !strings.HasPrefix(record.ID, "p") {
 			return Dispatch{}, errors.New("--plan needs a plan ID")
 		}
+		author = record.CreatedBy
 		prompt += "\n\n" + planBrief(record, s.Root)
 	}
 	if intent != "" {
@@ -450,11 +454,13 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		if record.ApprovedAt == "" {
 			return Dispatch{}, fmt.Errorf("intent %s is not approved; approve it before planning it", record.ID)
 		}
+		author = record.CreatedBy
 		prompt += "\n\n" + intentBrief(record, s.Root)
 	}
 	if task != "" {
 		prompt += "\n\n# Task\n\n" + task
 	}
+	prompt += "\n\n" + languageBrief(s.authorLanguage(author))
 	prompt += "\n\n# What to return\n\n" + r.Instructions
 	definition, _, err := roleFile(host, role, setting)
 	if err != nil {
@@ -471,6 +477,37 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		setup = "context-circuit-cli --workspace " + s.Root + " agent setup --host " + host
 	}
 	return Dispatch{host, role, name, setting, work.Root, r.ReadOnly, prompt, true, definition, installed, setup}, nil
+}
+
+// authorLanguage reports the language a record's prose is written in: the
+// authoring member's setting, and English for a member who records none, which
+// is what every record written before the field assumed. A member the roster no
+// longer carries reads as English rather than failing the dispatch, because a
+// missing name is not a reason to refuse to start work.
+func (s *Store) authorLanguage(member string) string {
+	if member != "" {
+		if members, err := s.Members(); err == nil {
+			if recorded, ok := members.Members[member]; ok && recorded.Language != "" {
+				return recorded.Language
+			}
+		}
+	}
+	return "English"
+}
+
+// languageBrief draws the boundary a worker cannot infer. A record in one
+// language is quoted into the brief as authoritative, which invites a worker to
+// answer it in that language — in comments, in commit messages, and worst of
+// all in identifiers, where a domain term rendered into English silently
+// disagrees with the glossary that named it.
+//
+// The worker never reads the workspace's own instructions: it works inside a
+// repository worktree, under that repository's. So the boundary travels in the
+// brief or nowhere.
+func languageBrief(language string) string {
+	return "# Language\n\nThe work described here is stated in " + language +
+		". Write everything you put into the repository in English — code, comments, identifiers, tests, commit messages — unless this repository's own instructions say otherwise." +
+		"\n\nNames are quoted, never translated, in either direction. Domain vocabulary keeps the form used here, and code identifiers keep the form the code uses. Translating either breaks the thing it names."
 }
 
 // planBrief states the facts the CLI can verify. A dependent plan's branch is
