@@ -157,7 +157,7 @@ The products have separate version lines and package inventories:
 | Product | Version source | Tag family | Output |
 | --- | --- | --- | --- |
 | Workspace template | `VERSION` | `v*` | Versioned workspace archive and checksum |
-| Native CLI | `CLI_VERSION` | `context-circuit-cli-v*` | macOS, Linux, and Windows archives for amd64/arm64 |
+| Native CLI | `CLI_VERSION` | `cli-v*` | macOS, Linux, and Windows archives for amd64/arm64 |
 
 The CLI embeds the blank workspace seed as a convenience for `init` and
 `template export`. That seed does not make the two products one release: an

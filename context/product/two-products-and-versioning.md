@@ -5,7 +5,14 @@ One checkout assembles two separately released products.
 | Product | Version file | Tags | Contents |
 | --- | --- | --- | --- |
 | Workspace template | `context-circuit-source@VERSION` | `v*` on the published template repository | shared instruction, docs, skills, blank seed |
-| Executable | `context-circuit-source@CLI_VERSION` | `context-circuit-cli-v*` here, assets published on the template repository | Go binaries for six platform targets |
+| Executable | `context-circuit-source@CLI_VERSION` | `cli-v*` here, assets published on the template repository | Go binaries for six platform targets |
+
+The tag and the assets under it are named differently on purpose. A tag is read
+in a release list that already says which product it belongs to, so `cli-v2.0.0`
+sits beside the template's `v2.0.0` and the two are told apart at a glance. An
+asset is read wherever somebody downloaded it, where nothing says what it is, so
+it keeps the executable's own name — `context-circuit-cli-v2.0.0-darwin-arm64`.
+Neither name reaches the installed binary, which is always `context-circuit-cli`.
 
 They change for different reasons and at different rates. A wording fix in the
 shared instruction should not force anyone to reinstall a binary, and a

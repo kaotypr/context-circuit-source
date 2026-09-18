@@ -7,9 +7,14 @@ name: Publish CLI
 # product repository instead, so installing the CLI never needs read access to
 # this maintainer checkout. The tag created on that repository is a distribution
 # marker, not a build reference; the release notes carry the real provenance.
+#
+# The tag is `cli-v<version>`; the assets under it stay `context-circuit-cli-v…`.
+# They are deliberately different: the tag is read in a release list beside the
+# template's own `v<version>`, where the context is already given, while an asset
+# is read in whatever directory someone downloaded it into, where it is not.
 on:
   push:
-    tags: ['context-circuit-cli-v*']
+    tags: ['cli-v*']
 permissions:
   contents: read
 concurrency:
@@ -42,7 +47,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          version=${RELEASE_TAG#context-circuit-cli-v}
+          version=${RELEASE_TAG#cli-v}
           test "$version" = "$(cat CLI_VERSION)"
           sh scripts/build-cli.sh "$version" cli-release
           echo "version=$version" >> "$GITHUB_OUTPUT"

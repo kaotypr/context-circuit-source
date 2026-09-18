@@ -101,7 +101,7 @@ func runTokenInstall(t *testing.T, indent bool) {
 		if !authorized(w, r) {
 			return
 		}
-		if !strings.HasSuffix(r.URL.Path, "/context-circuit-cli-v"+version) {
+		if !strings.HasSuffix(r.URL.Path, "/cli-v"+version) {
 			http.Error(w, `{"message":"Not Found"}`, http.StatusNotFound)
 			return
 		}
@@ -115,12 +115,12 @@ func runTokenInstall(t *testing.T, indent bool) {
 				ContentType:        "application/octet-stream",
 				State:              "uploaded",
 				Size:               1,
-				BrowserDownloadURL: "https://github.com/kaotypr/context-circuit/releases/download/context-circuit-cli-v" + version + "/" + name,
+				BrowserDownloadURL: "https://github.com/kaotypr/context-circuit/releases/download/cli-v" + version + "/" + name,
 			}
 		}
 		payload := release{
 			URL: base + prefix + "/7", ID: 7, NodeID: "RE_7",
-			TagName: "context-circuit-cli-v" + version, Name: "Context Circuit CLI " + version,
+			TagName: "cli-v" + version, Name: "Context Circuit CLI " + version,
 			// Release notes carry braces and quotes, which must not be mistaken
 			// for asset structure.
 			Body:       "Run `context-circuit-cli help`.\nSeeds write {} for an empty container.\n",

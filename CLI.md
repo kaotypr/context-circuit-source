@@ -5,7 +5,7 @@ workspace records, Git repositories, CoW worktree preparation, and subagent role
 configuration. Coding agents provide planning, implementation, and orchestration.
 
 Download a platform package from the product repository's
-`context-circuit-cli-v<version>` release, or ask the workspace's `cc-cli` skill to
+`cli-v<version>` release, or ask the workspace's `cc-cli` skill to
 install or update it. The skill detects the execution environment, verifies the
 package checksum, and installs in a user-writable directory. While the product
 repository is private, a download needs a GitHub token with read access to it; the

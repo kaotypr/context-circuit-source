@@ -12,11 +12,11 @@ Each workspace pins its own CLI version in `.context-circuit/CLI_VERSION`. Versi
 install side by side, so several workspaces on one machine can pin different ones.
 Read that file first and treat it as the version to run for that workspace.
 For an explicit update request, resolve the requested version, or the latest stable
-compatible `context-circuit-cli-v2.*` release from
+compatible `cli-v2.*` release from
 [CLI releases](https://github.com/kaotypr/context-circuit/releases).
 Use available GitHub tools or the releases API; exclude drafts/prereleases unless
 requested. The workspace template and the CLI release on the same repository:
-template releases are tagged `v*` and CLI releases `context-circuit-cli-v*`. Pass
+template releases are tagged `v*` and CLI releases `cli-v*`. Pass
 an exact version to the installer; do not guess an unpublished version exists.
 
 Run the bundled script, using absolute paths when outside this skill directory:

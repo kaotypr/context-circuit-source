@@ -40,6 +40,9 @@ case "$version" in 2.*) ;; *) fail 'supply an exact compatible v2 CLI version wi
 case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
 case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; x86_64|amd64) arch=amd64 ;; *) fail 'unsupported architecture' ;; esac
+# The release is tagged `cli-v<version>`; the assets under it keep the
+# executable's own name, so a downloaded archive still says what it holds.
+release_tag="cli-v$version"
 package="context-circuit-cli-v$version-$platform-$arch.tar.gz"
 mkdir -p "$bin_dir"
 bin_dir=$(CDPATH= cd -- "$bin_dir" && pwd -P)
@@ -87,8 +90,8 @@ else
     api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit"
     fetch_auth --header 'Accept: application/vnd.github+json' \
       --header 'X-GitHub-Api-Version: 2022-11-28' \
-      "$api/releases/tags/context-circuit-cli-v$version" -o "$work/release.json" ||
-      fail "cannot read release context-circuit-cli-v$version; confirm it exists and the token grants access"
+      "$api/releases/tags/$release_tag" -o "$work/release.json" ||
+      fail "cannot read release $release_tag; confirm it exists and the token grants access"
     # Read each brace-delimited object as one record, so the asset URL and the
     # name beside it are matched together whether the API pretty-prints the
     # payload or returns it compact. An asset's own URL precedes the nested
@@ -108,11 +111,11 @@ else
     }
     for name in "$package" SHA256SUMS; do
       url=$(asset_url "$name")
-      [ -n "$url" ] || fail "release context-circuit-cli-v$version publishes no asset named $name"
+      [ -n "$url" ] || fail "release $release_tag publishes no asset named $name"
       fetch_auth --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
     done
   else
-    base="https://github.com/kaotypr/context-circuit/releases/download/context-circuit-cli-v$version"
+    base="https://github.com/kaotypr/context-circuit/releases/download/$release_tag"
     fetch "$base/$package" -o "$work/$package"
     fetch "$base/SHA256SUMS" -o "$work/SHA256SUMS"
   fi

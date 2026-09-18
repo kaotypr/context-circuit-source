@@ -32,6 +32,9 @@ if ($Version -notmatch '^2\.[A-Za-z0-9.+-]+$' -or $Version.Contains('..')) { thr
 if ($env:OS -ne 'Windows_NT') { throw 'Use install.sh on macOS/Linux.' }
 $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 $arch = switch ($architecture) { 'x64' { 'amd64' }; 'arm64' { 'arm64' }; default { throw "Unsupported architecture: $_" } }
+# The release is tagged `cli-v<version>`; the assets under it keep the
+# executable's own name, so a downloaded archive still says what it holds.
+$releaseTag = "cli-v$Version"
 $package = "context-circuit-cli-v$Version-windows-$arch.zip"
 [void](New-Item -ItemType Directory -Force -Path $BinDir)
 $BinDir = (Resolve-Path -LiteralPath $BinDir).Path
@@ -77,15 +80,15 @@ try {
       $api = "$host_/repos/kaotypr/context-circuit"
       $auth = @{ Authorization = "Bearer $Token" }
       try {
-        $release = Invoke-RestMethod -UseBasicParsing -Uri "$api/releases/tags/context-circuit-cli-v$Version" -Headers ($auth + @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' })
-      } catch { throw "Cannot read release context-circuit-cli-v$Version; confirm it exists and the token grants access." }
+        $release = Invoke-RestMethod -UseBasicParsing -Uri "$api/releases/tags/$releaseTag" -Headers ($auth + @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' })
+      } catch { throw "Cannot read release $releaseTag; confirm it exists and the token grants access." }
       foreach ($wanted in @(@{ Name = $package; File = $download }, @{ Name = 'SHA256SUMS'; File = $sums })) {
         $asset = @($release.assets | Where-Object { $_.name -eq $wanted.Name })[0]
-        if (!$asset) { throw "Release context-circuit-cli-v$Version publishes no asset named $($wanted.Name)." }
+        if (!$asset) { throw "Release $releaseTag publishes no asset named $($wanted.Name)." }
         Invoke-WebRequest -UseBasicParsing -Uri $asset.url -Headers ($auth + @{ Accept = 'application/octet-stream' }) -OutFile $wanted.File
       }
     } else {
-      $base = "https://github.com/kaotypr/context-circuit/releases/download/context-circuit-cli-v$Version"
+      $base = "https://github.com/kaotypr/context-circuit/releases/download/$releaseTag"
       Invoke-WebRequest -UseBasicParsing -Uri "$base/$package" -OutFile $download
       Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS" -OutFile $sums
     }
