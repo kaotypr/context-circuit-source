@@ -64,6 +64,14 @@ stateDiagram-v2
   Drafted --> Approved
 ```
 
+Notes, this catalog, and the glossary are written in English, whatever language
+the project is discussed in. A note outlives the member who wrote it and anchors
+to code, and this catalog is searched by substring, which a mixed-language index
+quietly breaks. Domain vocabulary is never translated: a word the project uses
+for its own subject matter keeps that word here, because the glossary maps the
+project's words to the identifiers behind them and a translated term maps
+nothing.
+
 Write plainly. Lead with the answer and then the reason, keep one idea to a
 paragraph, prefer the project's own words to invented synonyms, and cut any
 sentence that only restates its heading. The test is whether a reader can answer
