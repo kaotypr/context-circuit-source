@@ -142,6 +142,18 @@ for our billing platform. Add me as Maya.
 The bundled installation skill selects the correct macOS, Linux, or Windows
 package, verifies its checksum, and installs it without administrator access.
 
+If your team does not write in English, say so now and say how you write. Records
+are then composed in that language rather than translated into it, which is what
+keeps them from reading like a machine translation of something else:
+
+```text
+I write records in Bahasa Indonesia, semi-formal, with technical terms left in
+English.
+```
+
+Headings and field names stay English either way, so the records stay diffable
+and every agent reads them the same. Only the prose follows you.
+
 ### 3. Connect the repositories
 
 Tell the agent which repositories belong to the project, where each one can be
@@ -192,6 +204,20 @@ This gives later goals a useful starting point instead of making each new agent
 session rediscover the product from code alone. The knowledge stays readable and
 versioned in the workspace, where it can be corrected and kept current as the
 project changes.
+
+If your organization already keeps a knowledge center that several teams share,
+mount it instead of copying it:
+
+```text
+Mount https://github.com/acme/core-service-knowledge as a knowledge repository
+called core-service-knowledge. Its index is index.md.
+```
+
+It is read beside your own notes and retrieval says which side each answer came
+from. It is never written here: the checkout is read-only, syncing fast-forwards
+only when it is clean, and nothing is ever merged, reset, or discarded to make a
+sync succeed. Corrections go upstream, where that knowledge is actually kept —
+which is the point, since a copy would read as current while quietly drifting.
 
 ### 5. Optional: tune the subagent roles
 
@@ -406,6 +432,24 @@ Nothing else relaxes. Preserving your existing work, authorizing every commit,
 push, and pull request, and reconciling the product knowledge the change alters
 all apply exactly as they do to a plan.
 
+### Asking what has gone out of date
+
+Knowledge rots quietly, so you can ask at any time:
+
+```text
+Check the workspace.
+```
+
+This reports records that stopped lining up, repositories this machine has not
+obtained, dependency cycles — and any note whose code has moved since the note
+was last confirmed, with how many commits have landed under it. A note nobody has
+disturbed is never reported, however old its date, so the list stays worth
+reading.
+
+Every finding names what settles it: a command to run, an edit to make, or a
+decision that is yours. It is a report, not a gate — nothing waits on it and it
+blocks nothing.
+
 <p align="center">
   <img src=".context-circuit/assets/readme/knowledge-circuit.png" alt="The project learns from every change" width="840">
 </p>
@@ -601,12 +645,15 @@ agent work faster without making it disposable.
 | Capability | What it means for you |
 | --- | --- |
 | Product knowledge | Architecture, conventions, decisions, and domain rules are retrieved when relevant instead of rediscovered every session. |
+| Borrowed knowledge | An organization's shared knowledge center is mounted read-only beside your own notes and retrieved with them, rather than copied in to drift. |
+| Knowledge that reports its own age | A note is flagged when the code it points at has moved since it was last confirmed — evidence, not a calendar reminder. |
+| Records in your language | A team that does not work in English records in its own language and register, while headings and field names stay English so records stay diffable. |
 | Stacked multi-repository plans | Every AI agent receives its plan dependencies, waits for prerequisites, and runs in the correct parallel wave or linear order. |
 | Isolated implementation | Each plan gets a separate working copy by default, protecting unrelated and unfinished work. |
 | Human control points | The agent waits for approval of the goal and a later request to begin implementation. Delivery and cleanup remain separate choices. |
 | Preserved failures | Partial work and failed checks are kept and reported instead of reset, stashed, or hidden. |
 | Optional sub-agents | Exploration, implementation, and independent review can be delegated when useful; they are not mandatory ceremony. |
-| Actionable diagnostics | Workspace checks explain both the problem and the command, edit, or human decision needed to resolve it. |
+| Actionable diagnostics | Every finding names what discharges it: a command to run, an edit to make, or a decision only a person can take. |
 | Reviewable files | Shared state is Markdown and YAML that your team can diff, discuss, and version in Git. |
 
 ## What is shared and what stays personal
