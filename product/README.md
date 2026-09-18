@@ -433,11 +433,16 @@ across three repositories:
 graph LR
   subgraph g["i001 · Launch recurring billing"]
     direction LR
-    p1["p0001 · Billing API<br/><b>api</b>"]
-    p2["p0002 · Web checkout<br/><b>web</b>"]
-    p3["p0003 · Admin controls<br/><b>web</b>"]
-    p4["p0004 · Billing e2e suite<br/><b>web</b>"]
-    p5["p0005 · Notification worker<br/><b>worker</b>"]
+    p1["`p0001 · Billing API
+**api**`"]
+    p2["`p0002 · Web checkout
+**web**`"]
+    p3["`p0003 · Admin controls
+**web**`"]
+    p4["`p0004 · Billing e2e suite
+**web**`"]
+    p5["`p0005 · Notification worker
+**worker**`"]
 
     p1 --> p2
     p1 --> p3
@@ -462,17 +467,22 @@ needs is finished:
 ```mermaid
 graph LR
   subgraph w1["Wave 1"]
-    a["p0001 · Billing API<br/><b>api</b>"]
-    e["p0005 · Notification worker<br/><b>worker</b>"]
+    a["`p0001 · Billing API
+**api**`"]
+    e["`p0005 · Notification worker
+**worker**`"]
   end
 
   subgraph w2["Wave 2"]
-    b["p0002 · Web checkout<br/><b>web</b>"]
-    c["p0003 · Admin controls<br/><b>web</b>"]
+    b["`p0002 · Web checkout
+**web**`"]
+    c["`p0003 · Admin controls
+**web**`"]
   end
 
   subgraph w3["Wave 3"]
-    d["p0004 · Billing e2e suite<br/><b>web</b>"]
+    d["`p0004 · Billing e2e suite
+**web**`"]
   end
 
   a --> b
@@ -493,11 +503,16 @@ another plan is still writing:
 
 ```mermaid
 graph LR
-  a["p0001 · Billing API<br/><b>api</b>"]
-  b["p0002 · Web checkout<br/><b>web</b>"]
-  c["p0003 · Admin controls<br/><b>web</b>"]
-  d["p0004 · Billing e2e suite<br/><b>web</b>"]
-  e["p0005 · Notification worker<br/><b>worker</b>"]
+  a["`p0001 · Billing API
+**api**`"]
+  b["`p0002 · Web checkout
+**web**`"]
+  c["`p0003 · Admin controls
+**web**`"]
+  d["`p0004 · Billing e2e suite
+**web**`"]
+  e["`p0005 · Notification worker
+**worker**`"]
 
   a --> b --> c --> d --> e
 ```
@@ -559,11 +574,16 @@ Completed plans are not unwound because a sibling failed:
 
 ```mermaid
 graph LR
-  a["p0001 · Billing API<br/>checks failed ✗"]
-  b["p0002 · Web checkout<br/>blocked, waiting"]
-  c["p0003 · Admin controls<br/>blocked, waiting"]
-  d["p0004 · Billing e2e suite<br/>blocked, waiting"]
-  e["p0005 · Notification worker<br/>finished ✓"]
+  a["`p0001 · Billing API
+checks failed ✗`"]
+  b["`p0002 · Web checkout
+blocked, waiting`"]
+  c["`p0003 · Admin controls
+blocked, waiting`"]
+  d["`p0004 · Billing e2e suite
+blocked, waiting`"]
+  e["`p0005 · Notification worker
+finished ✓`"]
 
   a --> b
   a --> c
