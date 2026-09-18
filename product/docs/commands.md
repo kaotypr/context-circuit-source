@@ -143,6 +143,12 @@ issues:
 ok: false
 ```
 
+`check` also reads each catalog entry's `reviewed` date against the code its note
+anchors to, and reports a note whose anchors have moved since — with how many
+commits. A note whose code has not moved is not reported, however old its date
+is. `knowledge_review_days` in `workspace.yaml` additionally reports a note that
+anchors to no code and has gone that long unconfirmed; unset, those are silent.
+
 A resolution names the command where one exists, the edit where an edit is the
 whole of it, and opens with `needs a person` where the next step is somebody's
 judgment. That last kind is the one worth reading closely: it means no command

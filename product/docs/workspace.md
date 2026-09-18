@@ -9,7 +9,7 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
-| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, relationships | Yes |
+| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
 | members.yaml | Member ID to display name, optional allocation band, and optional record language and tone | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
@@ -140,6 +140,36 @@ Names are quoted, never translated, in either direction: domain vocabulary keeps
 the project's own form inside an English note, and code identifiers keep the
 code's form inside a record written in another language. Slugs stay lowercase
 ASCII whatever the title says, so a title in another script is transliterated.
+
+## When a note stops being true
+
+A catalog entry carries the date its note was last confirmed against the code.
+`check` reads that date against the code the note itself points at, through the
+anchors in its `Owner:` block: a note with commits under its anchors since it was
+last confirmed is reported, with how many.
+
+The comparison is against the code rather than the calendar because age is not
+evidence. A note whose anchors nobody has touched is not stale however old its
+date is, and reporting it would produce a list that never reaches zero and
+teaches people to scroll past findings. Commits on the day of the review do not
+count: a note confirmed that day was confirmed against them.
+
+This is the second way a note comes back for judgment, and it covers what the
+first cannot. Completion returns the entries scoped to a plan's repositories,
+which only ever fires for work done through this workspace; a merge by somebody
+else, a commit from before the workspace existed, or a hotfix pushed directly
+reaches nothing. The finding is always a person's to settle — re-read the note,
+then edit it with its entry or move the date alone if nothing it says changed.
+
+A note that anchors to no code has no evidence to read. Calendar age is all there
+is for it, and it is reported only where a workspace asks:
+
+```yaml
+knowledge_review_days: 180
+```
+
+Unset, nothing is reported for those notes. It is shared, because how long a fact
+may go unconfirmed is a project judgment rather than one machine's.
 
 ## Borrowed knowledge
 

@@ -57,7 +57,12 @@ type Config struct {
 	WorkspaceRepository   *Repository                    `yaml:"workspace_repository,omitempty" json:"workspace_repository,omitempty"`
 	Repositories          map[string]Repository          `yaml:"repositories" json:"repositories"`
 	KnowledgeRepositories map[string]KnowledgeRepository `yaml:"knowledge_repositories,omitempty" json:"knowledge_repositories,omitempty"`
-	Relationships         []Relationship                 `yaml:"relationships" json:"relationships"`
+	// KnowledgeReviewDays reports a note that anchors to no code and has gone
+	// this long unconfirmed. It is off unless a workspace sets it, because age
+	// alone is evidence of nothing: a note whose anchors nobody touched is not
+	// stale however old it is, and that case is answered from the code instead.
+	KnowledgeReviewDays int            `yaml:"knowledge_review_days,omitempty" json:"knowledge_review_days,omitempty"`
+	Relationships       []Relationship `yaml:"relationships" json:"relationships"`
 }
 
 // Band is an optional allocation block index. Members holding distinct bands

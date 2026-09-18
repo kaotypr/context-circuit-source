@@ -341,6 +341,7 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		issues = append(issues, knowledge...)
 	}
 	issues = append(issues, borrowedIssues(state.Knowledge)...)
+	issues = append(issues, s.reviewIssues(ctx)...)
 	return uniqueFindings(issues), nil
 }
 

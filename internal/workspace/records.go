@@ -419,6 +419,10 @@ type ISOTime string
 // TimeLayout is the one format every instant in a workspace record uses.
 const TimeLayout = time.RFC3339
 
+// DateLayout is the calendar date every workspace file carries where an instant
+// is not wanted: a catalog entry's reviewed date, and any date written by hand.
+const DateLayout = "2006-01-02"
+
 func (t ISOTime) MarshalYAML() ([]byte, error) { return []byte(string(t)), nil }
 
 func isoTime(moment time.Time) string { return moment.UTC().Format(TimeLayout) }

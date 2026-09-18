@@ -212,6 +212,9 @@ facts.
   does not, and say so.
 - Move the `reviewed` date only when the note was actually re-confirmed against
   the code. A rewrite that changed only the shape leaves the date where it is.
+  `check` reads this date against the commits under the note's own anchors, so a
+  date moved without a reading makes a stale note look current and silences the
+  one thing that would have caught it.
 - Report what could not be verified instead of smoothing it into a confident
   sentence. Removing a claim nobody can confirm is a real outcome, not a loss.
 
@@ -243,6 +246,19 @@ A borrowed repository writes its index its own way, and nothing here holds it to
 this product's catalog shape. `check` reports what stands between this machine
 and reading it — an unobtained checkout, an unreadable index, local edits in a
 read-only checkout — and never a fault inside content nobody here may fix.
+
+## Reconciling when the code moved underneath
+
+`check` reports a note whose anchors have commits under them since it was last
+confirmed, naming how many. That is the second way a note comes back: completion
+covers work done through this workspace, and this covers everything else — a
+merge by somebody else, a commit from before the workspace existed, a hotfix
+pushed straight to the branch.
+
+Read the note against that code, then either edit the note and its entry together
+and move the reviewed date, or move the date alone because nothing it says
+changed. Both are real outcomes. What is not an outcome is moving the date
+without reading, which converts a stale note into a confident one.
 
 ## Reconciling after a plan completes
 
