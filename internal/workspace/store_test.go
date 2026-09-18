@@ -196,16 +196,16 @@ func TestKnowledgeIssues(t *testing.T) {
 			}
 			// This boundary is about what a note may name. Where the same line
 			// also reads badly, the readability pass reports that separately.
-			issues := []string{}
+			issues := []Finding{}
 			for _, issue := range found {
-				if !strings.Contains(issue, "readability:") {
+				if !strings.Contains(issue.Issue, "readability:") {
 					issues = append(issues, issue)
 				}
 			}
 			if tc.flagged != (len(issues) > 0) {
 				t.Fatalf("flagged=%v for %q: %v", tc.flagged, tc.line, issues)
 			}
-			if tc.flagged && !strings.HasPrefix(issues[0], "context/domains/billing.md:3:") {
+			if tc.flagged && !strings.HasPrefix(issues[0].Issue, "context/domains/billing.md:3:") {
 				t.Fatalf("expected a located finding: %v", issues)
 			}
 		})
@@ -277,8 +277,12 @@ func TestCatalogConsistency(t *testing.T) {
 				}
 				return
 			}
-			if len(issues) != 1 || !strings.Contains(issues[0], tc.want) {
+			if len(issues) != 1 || !strings.Contains(issues[0].Issue, tc.want) {
 				t.Fatalf("expected %q: %v", tc.want, issues)
+			}
+			// Every finding carries what discharges it, or says a person must.
+			if issues[0].Resolve == "" {
+				t.Fatalf("finding names no resolution: %v", issues[0])
 			}
 		})
 	}

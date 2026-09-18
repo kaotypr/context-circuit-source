@@ -215,7 +215,9 @@ Do not start independent verification during execution, trigger a reviewer from
 risk classification, or create automatic repair loops. Do not introduce execution,
 candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
-not an implementation gate. Report what was implemented, tested, and left uncertain.
+not an implementation gate. Each of its findings names what discharges it, and a
+finding whose resolution opens with "needs a person" is one to bring to them
+rather than to improvise a command for. Report what was implemented, tested, and left uncertain.
 
 Report what was actually run and what it actually returned. A check you did not
 run is not a check, and an interactive flow you could not drive is not an

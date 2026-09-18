@@ -398,31 +398,38 @@ func (s *Store) KnowledgeStates(ctx context.Context) ([]KnowledgeState, error) {
 // this workspace does not own fails neither half of that. Reporting a fault
 // nobody here may correct would be noise in a diagnostic that has to stay worth
 // reading.
-func borrowedIssues(states []KnowledgeState) []string {
-	var issues []string
+func borrowedIssues(states []KnowledgeState) []Finding {
+	var issues []Finding
 	for _, state := range states {
 		switch state.Status {
 		case "unbound":
-			issues = append(issues, fmt.Sprintf("knowledge repository %s is not obtained on this machine: run knowledge clone --id %s", state.ID, state.ID))
+			issues = append(issues, found(fmt.Sprintf("knowledge repository %s is not obtained on this machine", state.ID),
+				fmt.Sprintf("`knowledge clone --id %s`, which needs no --url because the workspace already describes it", state.ID)))
 		case "unreachable":
-			issues = append(issues, fmt.Sprintf("knowledge repository %s: %s", state.ID, state.Detail))
+			issues = append(issues, found(fmt.Sprintf("knowledge repository %s: %s", state.ID, state.Detail),
+				needsAPerson+"the bound path cannot be read as a Git repository; restore it, or re-point the binding with `knowledge connect`"))
 		case "dirty":
-			issues = append(issues, fmt.Sprintf("knowledge repository %s is read-only here yet has local changes (%s): move them to a separate checkout and open a merge request there", state.ID, state.Detail))
+			issues = append(issues, found(fmt.Sprintf("knowledge repository %s is read-only here yet has local changes (%s)", state.ID, state.Detail),
+				needsAPerson+"the work is somebody's; move it to a separate checkout of that repository and open a merge request there, then sync again. Nothing here will discard it"))
 		case "off-branch":
-			issues = append(issues, fmt.Sprintf("knowledge repository %s is %s: check out %s so this machine reads what everyone else reads", state.ID, state.Detail, state.Tracking))
+			issues = append(issues, found(fmt.Sprintf("knowledge repository %s is %s", state.ID, state.Detail),
+				fmt.Sprintf("check out %s in that repository so this machine reads what everyone else reads, then `knowledge sync --id %s`", state.Tracking, state.ID)))
 		case "behind":
-			issues = append(issues, fmt.Sprintf("knowledge repository %s is %s", state.ID, state.Detail))
+			issues = append(issues, found(fmt.Sprintf("knowledge repository %s is %s", state.ID, state.Detail),
+				fmt.Sprintf("`knowledge sync --id %s`", state.ID)))
 		}
 		if state.Status == "unbound" {
 			continue
 		}
 		if state.Index == "" {
-			issues = append(issues, fmt.Sprintf("knowledge repository %s records no index, so nothing here can retrieve from it: name it with knowledge remote --id %s --index <path>", state.ID, state.ID))
+			issues = append(issues, found(fmt.Sprintf("knowledge repository %s records no index, so nothing here can retrieve from it", state.ID),
+				fmt.Sprintf("read that repository and name the file mapping its contents: `knowledge remote --id %s --index PATH`", state.ID)))
 			continue
 		}
 		if state.Path != "" {
 			if _, err := readBorrowed(state.Path, state.Index); err != nil {
-				issues = append(issues, fmt.Sprintf("knowledge repository %s records index %s, which cannot be read: %s", state.ID, state.Index, err.Error()))
+				issues = append(issues, found(fmt.Sprintf("knowledge repository %s records index %s, which cannot be read: %s", state.ID, state.Index, err.Error()),
+					fmt.Sprintf("name the file that is actually there with `knowledge remote --id %s --index PATH`", state.ID)))
 			}
 		}
 	}

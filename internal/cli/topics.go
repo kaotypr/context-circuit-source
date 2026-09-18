@@ -24,7 +24,12 @@ and connect local checkouts instead.`,
 each bound repository. Read-only: it changes nothing and waits on nothing.`,
 
 	"check": `Reports record, binding, dependency, and worktree problems, including a note
-that names a record or evidence path it should not. Findings marked readability
+that names a record or evidence path it should not.
+
+Every finding carries both what is wrong and what discharges it: the command to
+run where one exists, the edit to make where an edit is the whole of it, or a
+resolution opening with "needs a person" where the next step is somebody's
+judgment and no command should be improvised in its place. Findings marked readability
 report the shape of a note instead: an anchor written into a sentence, a
 paragraph carrying a list it never made, a catalog heading that never says what
 belongs under it. It is an explicitly invoked diagnostic that reports and exits,

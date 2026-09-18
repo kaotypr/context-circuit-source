@@ -131,6 +131,24 @@ context-circuit-cli worktree remove --repo api --path ../api-billing
 context-circuit-cli check
 ```
 
+`check` reports findings as an `issue` and the `resolve` that discharges it:
+
+```yaml
+issues:
+  - issue: knowledge repository core-service-knowledge is not obtained on this machine
+    resolve: "`knowledge clone --id core-service-knowledge`, which needs no --url because the workspace already describes it"
+  - issue: "duplicate record ID: p0003"
+    resolve: "needs a person: two clones allocated the same number; renumber one record
+      and every reference to it before either is shared, and keep both reservations"
+ok: false
+```
+
+A resolution names the command where one exists, the edit where an edit is the
+whole of it, and opens with `needs a person` where the next step is somebody's
+judgment. That last kind is the one worth reading closely: it means no command
+discharges the finding, so none should be improvised in its place. `check` still
+reports and exits, and is never a gate.
+
 `--reuse` explicitly selects an existing branch/worktree, without resetting it.
 Preparation derives no order, so a plan that records a dependency in the same
 repository is refused without `--start`, and the refusal names the predecessor
