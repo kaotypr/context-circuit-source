@@ -81,6 +81,20 @@ recording. One that redraws the list beside it is noise. Keep to `flowchart`,
 `sequenceDiagram`, and `stateDiagram`, with short labels and no styling or theme
 directives, because some readers see the source rather than a picture.
 
+The fence names the language and the first line inside it names the diagram
+type. Opening the fence with the diagram type instead renders the diagram as
+plain text everywhere, which looks deliberate in the source and blank in the
+reader, so write it this way:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Drafted
+  Drafted --> Approved
+```
+
+`check` reports a fence opened with a diagram type, and a type inside a
+`mermaid` fence that would not render.
+
 More than eight lines of unbroken prose usually has a list or a table hiding
 inside it.
 

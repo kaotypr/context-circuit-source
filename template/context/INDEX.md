@@ -54,6 +54,16 @@ recording; one that redraws the list beside it is noise. Keep to `flowchart`,
 directives, because some readers see the source rather than a picture. More than
 eight lines of unbroken prose usually has a list or a table hiding inside it.
 
+The fence names the language and the first line inside it names the diagram
+type. A fence opened with the diagram type renders as plain text everywhere, so
+write it this way:
+
+```mermaid
+stateDiagram-v2
+  [*] --> Drafted
+  Drafted --> Approved
+```
+
 Write plainly. Lead with the answer and then the reason, keep one idea to a
 paragraph, prefer the project's own words to invented synonyms, and cut any
 sentence that only restates its heading. The test is whether a reader can answer
