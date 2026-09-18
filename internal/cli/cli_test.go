@@ -344,6 +344,97 @@ func TestRepositoryBindingsAndCreation(t *testing.T) {
 	}
 }
 
+// The whole of joining a published workspace, driven against a real clone: a
+// member arrives, describes this machine, obtains the repositories the record
+// already names, and writes the role definitions a clone cannot carry. It ends
+// on a clean diagnostic with one shared file touched, which is what the shipped
+// instruction promises a joining member.
+func TestJoiningAPublishedWorkspace(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	// A published workspace records where its repositories live; the fixture
+	// checkout has no origin to read one from.
+	f.ok("repo", "remote", "--id", "api", "--url", api)
+
+	git(t, f.root, "init", "-b", "main")
+	f.ok("workspace", "connect", "--base", "main")
+	git(t, f.root, "add", "-A")
+	git(t, f.root, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid", "commit", "-m", "test: publish the workspace")
+	origin := filepath.Join(f.home, "workspace.git")
+	git(t, f.home, "clone", "--bare", f.root, origin)
+
+	joined := filepath.Join(f.home, "joined")
+	git(t, f.home, "clone", origin, joined)
+	ok := func(args ...string) {
+		t.Helper()
+		if code, out, errOut := call(joined, args...); code != 0 {
+			t.Fatalf("%v: exit=%d %s %s", args, code, out, errOut)
+		}
+	}
+
+	// A clone carries the shared records and none of this machine's state, and
+	// the diagnostic is what says so.
+	code, out, _ := call(joined, "check")
+	for _, want := range []string{"select a workspace member", "connect this machine's checkout for repository api", "workspace connect"} {
+		if !strings.Contains(out, want) {
+			t.Fatalf("a fresh clone does not report %q:\n%s", want, out)
+		}
+	}
+	if code == 0 {
+		t.Fatal("a fresh clone reported nothing to do")
+	}
+
+	// Nothing here names a URL or reaches for git: the record carries both.
+	ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "2")
+	ok("member", "band", "--id", "maya", "--band", "1")
+	ok("member", "use", "--id", "rina")
+	ok("workspace", "connect", "--base", "main")
+	ok("repo", "clone", "--id", "api", "--path", "repositories/api", "--base", "main")
+	ok("agent", "setup")
+
+	if code, out, errOut := call(joined, "check"); code != 0 {
+		t.Fatalf("joining left the workspace unhealthy: %s %s", out, errOut)
+	}
+	if read(t, filepath.Join(joined, "repositories/api/README.md")) != "# Fixture\n" {
+		t.Fatal("the described repository was not obtained")
+	}
+	if _, err := os.Stat(filepath.Join(joined, ".claude/agents/cc-worker.md")); err != nil {
+		t.Fatal("role definitions a clone cannot carry were not written", err)
+	}
+	// The roster is the only thing a member arriving has to say to everyone
+	// else; a path or a branch of theirs reaching the shared record would be a
+	// machine describing the project.
+	dirty := git(t, joined, "status", "--porcelain")
+	if dirty != "M members.yaml" {
+		t.Fatalf("joining changed more than the roster:\n%s", dirty)
+	}
+}
+
+// Joining a workspace means obtaining checkouts of repositories it already
+// describes. The URL is in the shared record, so a clone need not repeat it,
+// and nothing shared is rewritten by a member arriving.
+func TestCloningARepositoryTheWorkspaceAlreadyDescribes(t *testing.T) {
+	f := setup(t)
+	api := f.repository("api")
+	f.ok("repo", "remote", "--id", "api", "--url", api)
+	before := read(t, filepath.Join(f.root, "workspace.yaml"))
+
+	f.ok("repo", "clone", "--id", "api", "--path", "repositories/api", "--base", "main")
+	if read(t, filepath.Join(f.root, "repositories/api/README.md")) != "# Fixture\n" {
+		t.Fatal("the described repository was not obtained")
+	}
+	if after := read(t, filepath.Join(f.root, "workspace.yaml")); after != before {
+		t.Fatalf("joining rewrote the shared record:\n%s\n%s", before, after)
+	}
+
+	// An ID nobody describes still needs a source, and starting one empty is
+	// refused where a repository already exists to obtain.
+	f.fail("repo", "clone", "--id", "fresh", "--path", filepath.Join(f.home, "fresh"), "--base", "main")
+	if out := f.fail("repo", "init", "--id", "api", "--path", filepath.Join(f.home, "empty"), "--base", "main"); !strings.Contains(out, "already registered") {
+		t.Fatal("initializing a described repository should be refused", out)
+	}
+}
+
 // The shared records travel through the workspace's own repository, so its Git
 // state is part of what orientation answers. It splits the way a repository
 // does, and stays out of the repositories map, whose entries every consumer

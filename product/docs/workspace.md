@@ -103,8 +103,26 @@ No command commits, pushes, or merges the workspace. Members share one branch of
 it; a member who keeps the workspace on another branch records that in the local
 binding, where it describes that machine and nobody else.
 
+## Joining a workspace
+
+A clone carries the shared records and none of this machine's state. `check`
+names what is missing: an active member, the workspace binding, and a binding
+per repository. Add the member to the roster if nobody has, select them, run
+`workspace connect`, obtain each repository, and run `agent setup` to write the
+role definitions, which are gitignored and so never arrive with the clone.
+
+Working copies belong under `repositories/<id>`, which the shipped `.gitignore`
+excludes. `repo clone` takes no `--url` for an ID the workspace already
+describes — the shared record carries it, and nothing shared is rewritten, which
+is what obtaining a described repository should mean. `repo init` is refused for
+such an ID, because an ID already naming a repository is not one to start empty.
+
 After cloning a shared workspace onto another machine, use `member use`,
-`workspace connect`, and `repo connect` with the existing IDs.
+`workspace connect`, and `repo clone` or `repo connect` with the existing IDs. Do not initialize it again. `repo connect`
+writes the shared record only when the ID is new, taking the URL from the
+checkout's `origin` unless `--url` names one. A new repository can be registered
+before its first commit; worktree preparation needs a commit. Setting a base
+records the intended branch without creating or resetting it.
 
 A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
 ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; every other date is an ISO 8601

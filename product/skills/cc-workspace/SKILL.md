@@ -24,11 +24,39 @@ preserves existing files. A solo workspace still has a real member.
 
 On another machine, select an existing member and connect its local checkouts;
 do not reinitialize the shared workspace. Cloning a workspace onto a second
-machine is member selection plus local bindings, never a second initialization:
+machine is member selection plus local bindings, never a second initialization.
+The next section is the whole of it.
+
+## Join a workspace someone else created
+
+A cloned workspace carries the shared records and none of this machine's state:
+no active member, no bindings, and no role definitions, because those are
+gitignored. `check` on a fresh clone names what is missing; work through it.
+
+Unless the request says otherwise, put checkouts under `repositories/<id>`,
+which is gitignored and is where the workspace expects its working copies.
 
 ```sh
+context-circuit-cli --workspace <root> member add --id ID --name NAME --band N
 context-circuit-cli --workspace <root> member use --id ID
+context-circuit-cli --workspace <root> workspace connect --base BRANCH
+context-circuit-cli --workspace <root> repo clone --id ID --path repositories/ID --base main
+context-circuit-cli --workspace <root> agent setup
 ```
+
+Add the member only when the roster does not already carry them; someone may
+have added them already. A band is required once a workspace has more than one
+member, and the CLI refuses a band another member holds — read `members.yaml`,
+propose a free one, and confirm it rather than choosing silently.
+
+Cloning a repository the workspace already describes takes no `--url`: the
+shared record carries it, and nothing shared is rewritten. A repository the
+record gives no URL for has to be obtained by hand and bound with `repo
+connect`.
+
+`members.yaml` is the only shared file joining changes. Committing and pushing
+it is the user's decision, as every commit is. Stop when `check` is clean and
+say what changed.
 
 ## Connect repositories
 

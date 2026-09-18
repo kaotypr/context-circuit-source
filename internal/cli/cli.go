@@ -269,9 +269,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	if command == "workspace remote" {
 		optional["url"], optional["default-branch"] = true, true
 	}
-	// A URL is how a clone finds its source; everywhere else it is one shared
-	// detail the checkout usually already knows.
-	optional["url"] = command != "repo clone"
+	// A URL is one shared detail the checkout usually already knows. Even a
+	// clone may omit it, because an ID this workspace already describes
+	// carries the source in the shared record — which is what joining one
+	// looks like.
+	optional["url"] = true
 	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
@@ -364,7 +366,9 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "repo connect":
 			err = s.Connect(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"))
 		case "repo clone", "repo init":
-			err = s.CreateRepository(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"))
+			// A clone needs a source: --url, or a shared record already naming
+			// one. An init never takes one, so the store tells them apart.
+			err = s.CreateRepository(ctx, get("id"), get("path"), get("base"), get("url"), get("default-branch"), command == "repo clone")
 		case "repo base":
 			err = s.SetBase(ctx, get("id"), get("branch"))
 		case "repo remote":
