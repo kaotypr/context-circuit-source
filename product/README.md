@@ -57,8 +57,8 @@ Context Circuit keeps those pieces connected:
   project's architecture, rules, decisions, conventions, and vocabulary, giving
   the next goal more accurate context.
 - **Shared project context** — product knowledge, repository relationships,
-  intens (goals), plans, dependencies, and current work remain available across sessions,
-  people, and machines.
+  intents (goals), plans, dependencies, and current work remain available
+  across sessions, people, and machines.
 - **Human control** — approval, execution, delivery, cleanup, and other consequential
   actions remain explicit human choices; unresolved product decisions are not
   quietly made by the agent.
@@ -123,8 +123,8 @@ Add these repositories to the project:
 
 - The billing API is at https://github.com/acme/billing-api.git. Its default
   branch on the origin is main. For the recurring-billing feature I am working
-  on, use feature/recurring-billing as this machine's base branch. Creates one
-  from main if not exist
+  on, use feature/recurring-billing as this machine's base branch. Create it
+  from main if it does not exist yet.
 - The billing web app is already on this machine at
   /Users/maya/Work/acme/billing-web. Its origin also defaults to main, and this
   machine base branch should be feature/recurring-billing.
@@ -143,7 +143,8 @@ Before starting the first change, ask the agent to learn the durable knowledge
 already present across every connected repository:
 
 ```text
-Gather project context from all connected repositories and writes product knowledge.
+Gather project context from all connected repositories and write it down as
+product knowledge.
 ```
 
 This gives later goals a useful starting point instead of making each new agent

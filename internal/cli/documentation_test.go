@@ -135,11 +135,21 @@ func unquote(args []string) []string {
 	return out
 }
 
+// Not every shipped doc is written for the agent. how-it-works.md explains the
+// division between person, agent, and CLI to somebody deciding whether to adopt
+// Context Circuit; the agent already holds that division normatively, in the
+// entry instruction itself. Naming it there would spend always-loaded context on
+// prose the agent never acts on, and would leave two tellings of the same rules
+// free to drift — with the descriptive one reading as though it explained the
+// authoritative one. Its reader arrives through README.md instead.
+var humanFacingDocs = map[string]bool{"how-it-works.md": true}
+
 // The entry instruction is always loaded; skills and docs are read on demand.
 // A capability the entry instruction never names is one the agent never looks
-// up, so every shipped skill and doc must be reachable from it — directly, or
-// through a skill it names.
-func TestEverythingShippedIsReachableFromTheEntryInstruction(t *testing.T) {
+// up, so every shipped skill and agent-facing doc must be reachable from it —
+// directly, or through a skill it names. A doc written for a person has to be
+// reachable too, from the README that person actually opens.
+func TestEverythingShippedIsReachableFromItsReader(t *testing.T) {
 	agents := productFile(t, "AGENTS.md.in")
 	reachable := agents
 	for _, name := range shippedSkills(t) {
@@ -153,7 +163,18 @@ func TestEverythingShippedIsReachableFromTheEntryInstruction(t *testing.T) {
 		}
 	}
 	for _, doc := range shippedDocs(t) {
-		if !strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`") {
+		named := strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`")
+		if humanFacingDocs[doc] {
+			if named {
+				t.Errorf("%s is written for a person, so naming it in the entry instruction "+
+					"spends always-loaded context on prose the agent does not act on", doc)
+			}
+			if !strings.Contains(productFile(t, "README.md"), "docs/"+doc+")") {
+				t.Errorf("%s is shipped for a person to read but README.md never links it", doc)
+			}
+			continue
+		}
+		if !named {
 			t.Errorf("%s is shipped but named by nothing an agent loads", doc)
 		}
 	}
