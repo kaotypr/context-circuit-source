@@ -133,8 +133,8 @@ a workspace pins, released as `cli-v*`.
 
 ## Retired — terms with no v2 meaning
 
-These appear in v1 material and in `sources/CORE_CONCEPT-v0.6.md`,
-`-v0.7.md`, and `-v1.md`. None of them exists in v2; see
+These appear in v1 and pre-v1 material, which this repository keeps in its
+history rather than its tree. None of them exists in v2; see
 [retired-machinery.md](./retired-machinery.md).
 
 consequence tier · Explore / Standard / Critical · `contract_digest` · candidate ·

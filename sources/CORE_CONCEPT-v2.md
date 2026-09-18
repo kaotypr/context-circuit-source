@@ -123,7 +123,7 @@ Three classes of material exist in the source, and only the first two ship:
 | --- | --- | --- |
 | Shipped instruction | The product's behavior | `product/` — `AGENTS.md.in`, docs, `cc-cli`, `cc-dispatch` |
 | Mutable seed | Copied into a new workspace | `template/` |
-| Never shipped | Maintainer history and user state | `sources/`, `context/`, `plans/`, `publication/`, `release/requests/`, `internal/`, `scripts/` |
+| Never shipped | Maintainer history and user state | `sources/`, `context/`, `plans/`, `release/requests/`, `internal/`, `scripts/` |
 
 `scripts/release-manifest.txt` is the exact source-to-output mapping, and
 `assets.go` embeds only what the manifest names.

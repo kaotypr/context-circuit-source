@@ -12,9 +12,15 @@ interface.
 | `workflow-overview.png` | 1400 × 760 | Outcome-oriented product overview |
 | `social-preview.png` | 1280 × 640 | Uploadable GitHub social preview; header of the source README |
 
-The workspace release maps shipped assets to
-`.context-circuit/assets/readme/`. A generated workspace README should use that
-path; this source checkout can link to `product/assets/readme/` directly.
+The workspace release ships only the assets a workspace README renders —
+`context-circuit-logo.png`, `knowledge-circuit.png`, and
+`workflow-overview.png` — mapping them to `.context-circuit/assets/readme/`. A
+generated workspace README uses that path.
+
+The rest are source-side: an avatar, a favicon source, and a social preview are
+uploaded to a repository or a site, and a workspace that carried them would be
+carrying nearly a megabyte it never renders. This checkout links to
+`product/assets/readme/` directly.
 
 ## DLS application
 

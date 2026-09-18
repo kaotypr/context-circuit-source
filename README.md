@@ -99,8 +99,8 @@ context-circuit-source/
 `product/` and `template/` are the two shipped trees; `scripts/release-manifest.txt`
 maps every file in them to its destination in a generated workspace.
 
-`sources/` and `publication/` are passive maintainer history: not the current
-product specification, and never shipped. `release/` is not history — `binding.yaml`
+`sources/` is passive maintainer design history: not the current product
+specification, and never shipped. `release/` is not history — `binding.yaml`
 names the published destination, and each version's request lives beside it.
 
 This checkout is also registered as a Context Circuit workspace, which is why

@@ -2,12 +2,12 @@
 
 Source design for Context Circuit v2.0.0 — the **rewrite** that replaces the v1
 shell runtime with a separately released Go executable and a smaller instruction
-surface. Unlike [../v1.0.0/](../v1.0.0/), which was an argument to test before it
+surface. Unlike the v1.0.0 study, which was an argument to test before it
 was built, this grouping documents a design **as built**: it was written against
 the 2.0.0-rc.1 candidate and describes decisions already expressed in
 `product/`, `internal/`, and `template/`.
 
-Read [../v1.0.0/](../v1.0.0/) first if you need to understand what v2 declined to
+The v1.0.0 study, kept in this repository's history, records what v2 declined to
 carry forward; `core/retired-machinery.md` is the accounting of exactly that.
 This README is the version index; each scope owns its own design.
 

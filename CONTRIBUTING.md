@@ -24,8 +24,8 @@ judgment is a skill or an instruction change rather than a command.
   with anything you add or remove.
 - Product decisions live in `context/`. Retrieve them through `context/INDEX.md`
   rather than scanning, and keep a note and its catalog entry in the same change.
-- `sources/` and `publication/` are passive history. They are not the current
-  specification, and they are never shipped.
+- `sources/` is passive design history. It is not the current specification,
+  and it is never shipped.
 - Preserve unrelated working-tree changes.
 
 ## Validating
