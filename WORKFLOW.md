@@ -48,13 +48,18 @@ The checkout is itself a schema-2 workspace, so `check`, `status`, and
 `context find` run against the real `context/` here instead of a copied fixture.
 That is the only reason the workspace files exist. Source work still goes
 directly on the branch under AGENTS.md, so this checkout carries no `intent/` or
-`plans/` and allocates no ID for source changes. `.context-circuit/` keeps only the ID
-ledger, which stops the diagnostic reporting a missing file; the shipped
-`docs/`, `assets/`, version stamps and role tiering are deliberately absent,
-because `product/`, `template/`, and the two root version files own them and a
-second copy here would drift. A pinned CLI version would be tautological in the
-checkout that builds the CLI, and was wrong for ten candidates before it was
-removed.
+`plans/` and allocates no ID for source changes. There is no `.context-circuit/`.
+The shipped `docs/` and `assets/` are owned by `product/`, the version stamps by
+the two root version files, and a second copy here would drift from them; a
+pinned CLI version would be tautological in the checkout that builds the CLI,
+and was wrong for ten candidates before it was removed. The ID ledger is for
+record allocation this checkout never performs.
+
+`check` therefore reports the absent ledger on every run, alongside the absent
+workspace repository. Both are accurate: this is a workspace registered for one
+purpose, and the knowledge checks that serve it — catalog consistency,
+readability, and reviewed dates against the code each note anchors to — run
+from `workspace.yaml`, `members.yaml`, and this machine's repository binding.
 
 ## Validation
 
