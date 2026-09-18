@@ -44,6 +44,14 @@ The agent writes durable architecture, conventions, decisions, terminology, and
 domain knowledge into `context/`. Notes and an index are optional. Relevant
 knowledge is retrieved selectively; sources remain separate passive evidence.
 
+> Mount our engineering knowledge center so you read it instead of guessing.
+
+A workspace can also mount knowledge it does not own — an organization's
+knowledge center, shared by many workspaces — as a knowledge repository.
+Retrieval reads it beside `context/` and says which side each match came from.
+It is read-only here and never copied in: a duplicated note goes stale silently,
+and an improvement belongs upstream in the repository that owns it.
+
 ## Build across repositories
 
 > Add recurring billing to the API and web app.

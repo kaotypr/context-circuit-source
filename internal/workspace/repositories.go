@@ -172,6 +172,11 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 	if err != nil {
 		return err
 	}
+	// One namespace across both maps: a note's anchor names a repository by ID,
+	// so an ID meaning two things makes every anchor carrying it ambiguous.
+	if _, clash := cfg.KnowledgeRepositories[id]; clash {
+		return fmt.Errorf("%s already names a knowledge repository, which is read-only here; give this repository another ID", id)
+	}
 	path, err := s.LocalPath(input)
 	if err != nil {
 		return err

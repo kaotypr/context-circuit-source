@@ -9,17 +9,17 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
-| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, relationships | Yes |
+| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, relationships | Yes |
 | members.yaml | Member ID to display name, optional allocation band, and optional record language | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine | No |
-| repositories.local.yaml | This machine's workspace checkout, and repository ID to its checkout path and base branch | No |
+| repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
-| repositories/, .worktrees/ | Local Git working copies | No |
+| repositories/, knowledge/, .worktrees/ | Local Git working copies | No |
 
 Example shared repository definition:
 
@@ -131,6 +131,58 @@ Names are quoted, never translated, in either direction: domain vocabulary keeps
 the project's own form inside an English note, and code identifiers keep the
 code's form inside a record written in another language. Slugs stay lowercase
 ASCII whatever the title says, so a title in another script is transliterated.
+
+## Borrowed knowledge
+
+`context/` holds knowledge this workspace owns: it describes this project, and
+completing a plan brings the notes that plan changed back for judgment. An
+organization's knowledge center works the other way. It is shared by many
+workspaces, it is changed through its own repository, and no plan completed here
+will ever invalidate it. So it is mounted rather than copied:
+
+```yaml
+knowledge_repositories:
+  sheknows:
+    url: git@git.example.com:platform/sheknows.git
+    default_branch: main
+    index: index.md
+```
+
+Copying is the failure this prevents. A note duplicated into `context/` goes
+stale silently while still reading as current, and nothing in the workspace can
+tell that it has. Mounting keeps one copy, upstream, and reads it from there.
+
+It sits beside `repositories` for the reason `workspace_repository` does: every
+consumer of that map treats an entry as somewhere work happens, and a plan, a
+relationship, or a worktree cut from a knowledge repository is never what the
+caller meant. A borrowed repository records no base branch, because work never
+starts in it. Both maps share one ID namespace, so a note's anchor means one
+thing; connecting an ID already used on the other side is refused.
+
+`index` names the file that maps its contents, the way `context/INDEX.md` maps
+this workspace's own notes. A borrowed repository chooses its own entry point,
+so the value is recorded rather than assumed; `knowledge connect` detects the
+usual spellings and `check` reports the gap when it cannot.
+
+The checkout path is local, like every other checkout path. `knowledge clone`
+puts it under `knowledge/<id>`, which the shipped `.gitignore` excludes.
+
+**Read-only here is enforced rather than asked for.** Obtaining one disables its
+push URL, and every sync reasserts that, so a push fails instead of
+half-succeeding. `knowledge sync` fetches and then fast-forwards only when the
+checkout is clean and on the shared branch. It never merges, rebases, resets, or
+discards: a checkout holding local work is reported and left exactly as it is,
+because moving that work is a decision for whoever made it. Improvements go
+upstream through that repository's own review, from a separate checkout of it.
+
+`context find` reads borrowed indexes beside this workspace's catalog and marks
+which side each match came from, so an entry to edit is never confused with one
+to raise upstream. It reports any index it could not read rather than narrowing
+the result in silence. Nothing validates borrowed content the way `check`
+validates `context/`: those rules exist so a person here can fix what they
+break, and neither half holds for a repository this workspace does not own.
+Completion never names a borrowed entry as knowledge to reconcile, because
+nobody here can move it.
 
 ## Joining a workspace
 

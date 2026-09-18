@@ -498,15 +498,27 @@ func (s *Store) KnowledgeCandidates(id string) ([]string, error) {
 // CatalogEntriesFor lists the entries claiming any of these repositories. A
 // change made without a plan reconciles the same knowledge, so the lookup takes
 // repositories rather than a record.
+// It reads this workspace's own catalog and never a borrowed one. Reconciliation
+// is an edit, and an entry in a repository this workspace does not own is not
+// one anybody here can move: naming it would report an obligation that cannot be
+// discharged. Borrowed knowledge goes stale on its owner's schedule and is
+// raised upstream instead.
 func (s *Store) CatalogEntriesFor(repositories []string) ([]string, error) {
+	data, err := s.Read("context/INDEX.md")
+	if os.IsNotExist(err) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
 	seen := map[string]bool{}
 	entries := []string{}
 	for _, repository := range repositories {
-		lines, err := s.FindContext("{" + repository + "}")
-		if err != nil {
-			return nil, err
-		}
-		for _, line := range lines {
+		needle := strings.ToLower("{" + repository + "}")
+		for _, line := range strings.Split(string(data), "\n") {
+			if !strings.Contains(strings.ToLower(line), needle) {
+				continue
+			}
 			if catalogEntry.MatchString(line) && !seen[line] {
 				seen[line] = true
 				entries = append(entries, line)

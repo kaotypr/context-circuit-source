@@ -76,6 +76,16 @@ repository or context note. Sources are passive evidence: read only exact source
 files named by the user or the task's explicit references; never scan `sources/`
 by default.
 
+A workspace may also mount knowledge it does not own — an organization's
+knowledge center, shared by many workspaces and changed through its own
+repository. `workspace.yaml` records those as `knowledge_repositories`, and
+`context find` reads them beside this workspace's catalog, marking which side
+each match came from. **Borrowed knowledge is read-only here, and is never
+copied into `context/`.** An improvement goes upstream through that repository's
+own review, from a separate checkout of it; a note duplicated here goes stale
+silently while still reading as current, which is the failure mounting it
+prevents. Nothing reconciles a borrowed entry, because nobody here can move it.
+
 Live context notes describe the project, not the workspace machinery that
 produced them, and a note never names a plan record, an intent record, or a file
 under `sources/`. To write or maintain knowledge — its anchors, its catalog

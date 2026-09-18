@@ -22,7 +22,10 @@ explicitly requested review and delivery.
 3. Gather durable knowledge from named sources into `context/` notes, catalogued
    one unwrapped entry each in `context/INDEX.md`, with project vocabulary in
    `context/glossary.md`. A note describes the project and anchors to repository
-   paths; it never names a record or a file of raw evidence.
+   paths; it never names a record or a file of raw evidence. Knowledge the
+   workspace does not own — an organization's knowledge center, shared by many
+   workspaces — is mounted as a knowledge repository instead of copied: read-only
+   here, fast-forwarded only when clean, and retrieved beside the catalog.
 4. Describe a change; the agent writes an intent and stops. Approving it is what
    sends the agent into the code to create linked Markdown plans, which it
    presents and stops on again. Reading them is optional and there is no plan

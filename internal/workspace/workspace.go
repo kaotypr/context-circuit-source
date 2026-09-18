@@ -34,14 +34,30 @@ type Relationship struct {
 // repositories, a relationship joins two, and a worktree is cut from one. The
 // workspace is none of those — a worktree of it would duplicate the records the
 // CLI is reading — so it is described separately and reported separately.
+// KnowledgeRepository is a repository of knowledge this workspace reads but
+// does not own: an organization's knowledge center, shared by many workspaces
+// and changed through its own repository. It sits beside `repositories` for the
+// same reason `workspace_repository` does — every consumer of that map treats an
+// entry as somewhere work happens, and a plan, a relationship, or a worktree cut
+// from a knowledge repository is never what the caller meant.
+//
+// Index names the file that maps its contents, the way `context/INDEX.md` maps
+// this workspace's own notes. It is recorded because a borrowed repository
+// chooses its own entry point and nothing here may rename it.
+type KnowledgeRepository struct {
+	URL           string `yaml:"url,omitempty" json:"url,omitempty"`
+	DefaultBranch string `yaml:"default_branch" json:"default_branch"`
+	Index         string `yaml:"index,omitempty" json:"index,omitempty"`
+}
 type Config struct {
-	Version             int                   `yaml:"version" json:"version"`
-	Name                string                `yaml:"name" json:"name"`
-	Purpose             string                `yaml:"purpose" json:"purpose"`
-	CLIRegistry         string                `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
-	WorkspaceRepository *Repository           `yaml:"workspace_repository,omitempty" json:"workspace_repository,omitempty"`
-	Repositories        map[string]Repository `yaml:"repositories" json:"repositories"`
-	Relationships       []Relationship        `yaml:"relationships" json:"relationships"`
+	Version               int                            `yaml:"version" json:"version"`
+	Name                  string                         `yaml:"name" json:"name"`
+	Purpose               string                         `yaml:"purpose" json:"purpose"`
+	CLIRegistry           string                         `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
+	WorkspaceRepository   *Repository                    `yaml:"workspace_repository,omitempty" json:"workspace_repository,omitempty"`
+	Repositories          map[string]Repository          `yaml:"repositories" json:"repositories"`
+	KnowledgeRepositories map[string]KnowledgeRepository `yaml:"knowledge_repositories,omitempty" json:"knowledge_repositories,omitempty"`
+	Relationships         []Relationship                 `yaml:"relationships" json:"relationships"`
 }
 
 // Band is an optional allocation block index. Members holding distinct bands
@@ -79,9 +95,15 @@ type Binding struct {
 // is separate from the map for the same reason the shared record is, and it
 // carries a path because a workspace need not sit at its repository's root: a
 // workspace kept in a subdirectory records the containing root as `..`.
+// Knowledge holds this machine's checkout of each borrowed knowledge
+// repository. A knowledge binding records a path and no base branch: work never
+// starts here, so there is no branch to start it from. The tracked branch is the
+// shared `default_branch`, because every member reads the same knowledge and a
+// machine reading another branch of it is reading something nobody else has.
 type Bindings struct {
 	Workspace *Binding           `yaml:"workspace,omitempty" json:"workspace,omitempty"`
 	Bindings  map[string]Binding `yaml:"bindings" json:"bindings"`
+	Knowledge map[string]Binding `yaml:"knowledge,omitempty" json:"knowledge,omitempty"`
 }
 
 var namePattern = regexp.MustCompile(`^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$`)

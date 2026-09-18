@@ -34,9 +34,25 @@ context-circuit-cli repo fetch --id api --remote origin
 context-circuit-cli workspace connect --base main
 context-circuit-cli workspace base --branch development
 context-circuit-cli workspace remote --url GIT_URL --default-branch main
+context-circuit-cli knowledge clone --id sheknows --url GIT_URL
+context-circuit-cli knowledge connect --id sheknows --path ../sheknows --index index.md
+context-circuit-cli knowledge sync --id sheknows
+context-circuit-cli knowledge remote --id sheknows --index docs/index.md
+context-circuit-cli knowledge list
 context-circuit-cli context find --query billing
 context-circuit-cli context find --repo api
 ```
+
+A knowledge repository is one this workspace reads and never owns. It records no
+base branch, takes no worktree, and is never named by a plan, and it shares one
+ID namespace with `repositories` so a note's anchor means one thing. `clone`
+puts it under `knowledge/<id>` unless `--path` says otherwise, and takes no
+`--url` for an ID the workspace already describes. `sync` fetches, then
+fast-forwards only when the checkout is clean and on the shared branch; a dirty
+or diverged checkout is reported and left exactly as it is, and nothing is ever
+merged, reset, or discarded. Obtaining one disables its push URL and every sync
+reasserts that, so an edit made here fails rather than half-succeeding —
+improvements go upstream from a separate checkout.
 
 Records:
 
@@ -54,11 +70,16 @@ context-circuit-cli record complete --id p0001 --text 'User requested completion
 context-circuit-cli record order --intent i001 --mode waves
 ```
 
-`context find` takes one of the two: a query searches the catalog, and a
+`context find` takes one of the two: a query searches this workspace's catalog
+and every borrowed index, marking which side each match came from and naming any
+index it could not read, and a
 repository returns the entries claiming it together with `reconcile_required`,
 which is what completion names for a plan and what a change made without one
-still owes. An unknown repository is refused rather than answered with an empty
-list, because nothing to reconcile and nothing found read the same.
+still owes. Those entries are always this workspace's own: a borrowed entry
+names an obligation nobody here can discharge, so it is never offered as
+knowledge to reconcile. An unknown repository is refused rather than answered
+with an empty list, because nothing to reconcile and nothing found read the
+same.
 
 `--band` is optional. A member holding band N allocates intents from `N*100` and
 plans from `N*1000`, so band 2 writes `i200` and `p2000`; members without one

@@ -41,6 +41,14 @@ workspace connect     [--path PATH] --base BRANCH [--url URL]
                       --path defaults to the workspace root, --base is this machine's)
 workspace base        --branch BRANCH (this machine's workspace base branch)
 workspace remote      [--url URL] [--default-branch BRANCH] (shared)
+knowledge connect     --id ID --path PATH [--url URL] [--default-branch BRANCH]
+                      [--index PATH] (a repository this workspace reads and never writes)
+knowledge clone       --id ID [--path NEW_PATH] [--url URL] [--default-branch BRANCH]
+                      [--index PATH] (--path defaults to knowledge/<id>)
+knowledge sync        --id ID (fetch, then fast-forward only when clean and
+                      on the shared branch; never merges, resets, or discards)
+knowledge remote      --id ID [--url URL] [--default-branch BRANCH] [--index PATH] (shared)
+knowledge list        every borrowed repository and this machine's state of it
 repo fetch            --id ID [--remote origin]
 repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
@@ -194,6 +202,13 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("branch")
 	case "workspace remote":
 		add("url", "default-branch")
+	case "knowledge connect", "knowledge clone":
+		add("id", "path", "url", "default-branch", "index")
+	case "knowledge remote":
+		add("id", "url", "default-branch", "index")
+	case "knowledge sync":
+		add("id")
+	case "knowledge list":
 	case "record create":
 		add("kind", "slug", "title", "intent")
 		f.Var(&repos, "repo", "repository (repeatable)")
@@ -276,6 +291,13 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	if command == "workspace remote" {
 		optional["url"], optional["default-branch"] = true, true
 	}
+	// A borrowed repository names its own index, and a layout this product
+	// recognizes is detected rather than demanded. Obtaining one lands under
+	// knowledge/<id> unless the caller keeps it somewhere else.
+	if strings.HasPrefix(command, "knowledge ") {
+		optional["index"] = true
+		optional["path"] = command != "knowledge connect"
+	}
 	// A URL is one shared detail the checkout usually already knows. Even a
 	// clone may omit it, because an ID this workspace already describes
 	// carries the source in the shared record — which is what joining one
@@ -333,7 +355,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			fmt.Fprint(errOut, warning)
 		}
 	}
-	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "worktree list" || command == "worktree inspect"
+	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "knowledge list" || command == "worktree list" || command == "worktree inspect"
 	checkFailed := false
 	action := func() (any, error) {
 		var err error
@@ -390,6 +412,16 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			err = s.SetWorkspaceBase(ctx, get("branch"))
 		case "workspace remote":
 			err = s.SetWorkspaceRemote(ctx, get("url"), get("default-branch"))
+		case "knowledge connect":
+			err = s.ConnectKnowledge(ctx, get("id"), get("path"), get("url"), get("default-branch"), get("index"))
+		case "knowledge clone":
+			err = s.CloneKnowledge(ctx, get("id"), get("path"), get("url"), get("default-branch"), get("index"))
+		case "knowledge remote":
+			err = s.SetKnowledgeRemote(ctx, get("id"), get("url"), get("default-branch"), get("index"))
+		case "knowledge sync":
+			return s.SyncKnowledge(ctx, get("id"))
+		case "knowledge list":
+			return s.KnowledgeStates(ctx)
 		case "repo inspect", "repo fetch":
 			checkout, e := s.Repository(ctx, get("id"))
 			if e != nil {
@@ -473,7 +505,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				}
 				return result, e
 			}
-			return s.FindContext(get("query"))
+			return s.FindContext(ctx, get("query"))
 		case "worktree prepare":
 			return s.Prepare(ctx, get("repo"), get("plan"), get("branch"), get("start"), get("path"), reuse, workspace.ReuseOptions{Mode: get("copy-mode"), Paths: copyPaths})
 		case "worktree list":

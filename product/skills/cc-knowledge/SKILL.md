@@ -217,6 +217,33 @@ facts.
 
 The note and its catalog entry move together, as always.
 
+## Knowledge this workspace does not own
+
+A workspace may mount an organization's knowledge center as a knowledge
+repository. `context find` reads its index beside this catalog and marks each
+match `borrowed`. That mark decides what you may do with it.
+
+- **Never copy a borrowed note into `context/`.** Link to it by path. A copy
+  goes stale silently while still reading as current, and nothing here can tell
+  that it has; avoiding that is the whole reason the repository is mounted
+  rather than vendored.
+- **Never edit one here.** The checkout's push URL is disabled, so an attempt
+  fails rather than half-succeeding. An improvement is a merge request in that
+  repository, from a separate checkout of it.
+- **Never reconcile one.** Completion returns this workspace's own entries, and
+  a borrowed entry is an obligation nobody here can discharge. Borrowed
+  knowledge goes stale on its owner's schedule; when you find it wrong, say so
+  and raise it upstream rather than recording the correction here.
+- **Read it before re-deriving anything.** It exists so that what someone
+  already established about a shared service is not worked out again from source
+  or trial and error. Judge relevance from what its own index and frontmatter
+  say, the way `INDEX.md` is used here.
+
+A borrowed repository writes its index its own way, and nothing here holds it to
+this product's catalog shape. `check` reports what stands between this machine
+and reading it — an unobtained checkout, an unreadable index, local edits in a
+read-only checkout — and never a fault inside content nobody here may fix.
+
 ## Reconciling after a plan completes
 
 `record complete` returns the catalog entries scoped to that plan's repositories

@@ -24,7 +24,11 @@ type Orientation struct {
 	Members      Members             `json:"members"`
 	ActiveMember string              `json:"active_member,omitempty"`
 	Repositories map[string]Snapshot `json:"repositories"`
-	Issues       []string            `json:"issues"`
+	// Knowledge is every borrowed repository and what this machine currently
+	// sees of it. It is reported beside the repositories, and separately from
+	// them, because reading it is part of orienting and working in it is not.
+	Knowledge []KnowledgeState `json:"knowledge_repositories,omitempty"`
+	Issues    []string         `json:"issues"`
 }
 
 func (s *Store) Status(ctx context.Context) (Orientation, error) {
@@ -65,6 +69,11 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 		}
 		snapshot.BaseBranch = checkout.BaseBranch
 		result.Repositories[id] = snapshot
+	}
+	if knowledge, err := s.KnowledgeStates(ctx); err != nil {
+		result.Issues = append(result.Issues, err.Error())
+	} else {
+		result.Knowledge = knowledge
 	}
 	sort.Strings(result.Issues)
 	return result, nil
@@ -258,6 +267,7 @@ func (s *Store) Check(ctx context.Context) ([]string, error) {
 	} else {
 		issues = append(issues, knowledge...)
 	}
+	issues = append(issues, borrowedIssues(state.Knowledge)...)
 	issues = unique(issues)
 	sort.Strings(issues)
 	return issues, nil
@@ -423,19 +433,63 @@ func (s *Store) catalogIssues(notes map[string]string) ([]string, error) {
 	return issues, nil
 }
 
-func (s *Store) FindContext(query string) ([]string, error) {
-	data, err := s.Read("context/INDEX.md")
-	if os.IsNotExist(err) {
-		return []string{}, nil
-	}
-	if err != nil {
-		return nil, err
-	}
-	result := []string{}
+// ContextMatch is one line of a knowledge index that matched. Borrowed says the
+// line came from a repository this workspace reads but does not own, which is
+// the difference between an entry to edit and one to raise upstream.
+type ContextMatch struct {
+	Source   string `json:"source"`
+	Borrowed bool   `json:"borrowed,omitempty"`
+	Entry    string `json:"entry"`
+}
+
+// ContextSearch carries what was found and what could not be read. A borrowed
+// index this machine has not obtained would otherwise narrow the result
+// silently, and a search that found nothing reads identically to one that never
+// looked — which is the confident miss the catalog exists to prevent.
+type ContextSearch struct {
+	Matches    []ContextMatch `json:"matches"`
+	Unsearched []string       `json:"unsearched,omitempty"`
+}
+
+func matchLines(source string, borrowed bool, data []byte, query string) []ContextMatch {
+	var found []ContextMatch
 	for _, line := range strings.Split(string(data), "\n") {
 		if strings.TrimSpace(line) != "" && strings.Contains(strings.ToLower(line), strings.ToLower(query)) {
-			result = append(result, line)
+			found = append(found, ContextMatch{Source: source, Borrowed: borrowed, Entry: line})
 		}
+	}
+	return found
+}
+
+// FindContext searches this workspace's catalog and every borrowed knowledge
+// index. Matching stays plain case-insensitive substring over whole lines,
+// because a borrowed repository writes its index its own way and parsing it as
+// this product's catalog would find nothing in a file that is perfectly good.
+func (s *Store) FindContext(ctx context.Context, query string) (ContextSearch, error) {
+	result := ContextSearch{Matches: []ContextMatch{}}
+	data, err := s.Read("context/INDEX.md")
+	if err != nil && !os.IsNotExist(err) {
+		return result, err
+	}
+	if err == nil {
+		result.Matches = append(result.Matches, matchLines("context/INDEX.md", false, data, query)...)
+	}
+	cfg, err := s.Config()
+	if err != nil {
+		return result, err
+	}
+	ids := make([]string, 0, len(cfg.KnowledgeRepositories))
+	for id := range cfg.KnowledgeRepositories {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+	for _, id := range ids {
+		index, data, err := s.KnowledgeIndex(ctx, id)
+		if err != nil {
+			result.Unsearched = append(result.Unsearched, id+": "+err.Error())
+			continue
+		}
+		result.Matches = append(result.Matches, matchLines(id+"/"+index, true, data, query)...)
 	}
 	return result, nil
 }
