@@ -411,7 +411,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				return nil, e
 			}
 			if command == "init" {
-				err = s.Init(files, get("name"), get("purpose"), get("member"), get("member-name"))
+				readme, e := assets.Readme()
+				if e != nil {
+					return nil, e
+				}
+				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"))
 			} else {
 				err = s.Export(files)
 			}

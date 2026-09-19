@@ -11,7 +11,8 @@ generated workspaces, not this one.
 | `context-circuit-source@product/AGENTS.md.in` | The always-loaded gates and prohibitions, and the pointer to each stage's skill |
 | `context-circuit-source@product/docs/` | Workspace files, agent-facing commands, subagents, working records, worktrees |
 | `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus CLI installation and subagent dispatch |
-| `context-circuit-source@product/assets/readme/` | The artwork the workspace README and the template repository listing use |
+| `context-circuit-source@product/README.md`, `product/assets/readme/` | The published template repository's guide and the artwork it renders; restored at publication, shipped to no workspace |
+| `context-circuit-source@product/workspace-README.md` | The front page initialization writes into a new workspace |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
@@ -22,8 +23,8 @@ generated workspaces, not this one.
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
-| `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files that repository owns |
-| `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives |
+| `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files and export rules that repository owns |
+| `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives and shown only at the template repository's root |
 
 ## Four classes of material
 
@@ -31,7 +32,7 @@ generated workspaces, not this one.
 | --- | --- |
 | Shipped instruction | The product's behavior: `context-circuit-source@product/` |
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
-| Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/`, restored over the artifact at publication and reaching no workspace |
+| Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/` plus the guide and license restored from `product/`, marked `export-ignore` so the archive a project is created from carries none of it |
 | Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer design and evidence material |
 
 Product history and maintainer data never reach a release asset. The

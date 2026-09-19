@@ -167,14 +167,23 @@ func TestInitializationAndReleaseSeed(t *testing.T) {
 	g := fixture{t, blank, f.home}
 	g.ok("init", "--name", "Seed", "--purpose", "Seed", "--member", "alex", "--member-name", "Alex")
 	protected := filepath.Join(f.home, "protected")
-	write(t, filepath.Join(protected, "README.md"), "Keep my README")
+	write(t, filepath.Join(protected, "AGENTS.md"), "Keep my instructions")
 	h := fixture{t, protected, f.home}
 	h.fail("init", "--name", "Bad", "--purpose", "Bad", "--member", "bad", "--member-name", "Bad")
-	if read(t, filepath.Join(protected, "README.md")) != "Keep my README" {
+	if read(t, filepath.Join(protected, "AGENTS.md")) != "Keep my instructions" {
 		t.Fatal("existing file overwritten")
 	}
 	if _, err := os.Stat(filepath.Join(protected, "members.yaml")); !os.IsNotExist(err) {
 		t.Fatal("failed preflight partially initialized")
+	}
+	// A README is not template material: a project adopting a workspace may
+	// already have a front page, and initializing around it must leave it whole.
+	adopted := filepath.Join(f.home, "adopted")
+	write(t, filepath.Join(adopted, "README.md"), "Keep my README")
+	a := fixture{t, adopted, f.home}
+	a.ok("init", "--name", "Adopted", "--purpose", "Adopted", "--member", "alex", "--member-name", "Alex")
+	if read(t, filepath.Join(adopted, "README.md")) != "Keep my README" {
+		t.Fatal("initialization replaced a front page it did not write")
 	}
 	f.ok("check")
 }

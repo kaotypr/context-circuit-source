@@ -11,14 +11,16 @@ interface.
 | `knowledge-circuit.webp` | 1400 × 820 | Primary product explanation |
 | `social-preview.png` | 1280 × 640 | Uploadable GitHub social preview; header of the source README |
 
-The workspace release ships only the assets a workspace README renders —
-`context-circuit-logo.webp` and `knowledge-circuit.webp` — mapping them to
-`.context-circuit/assets/readme/`. A generated workspace README uses that path.
+No workspace carries any of these. `context-circuit-logo.webp` and
+`knowledge-circuit.webp` are the two the product guide renders, and publication
+copies them to `assets/readme/` in the published template repository beside the
+guide itself; `.gitattributes` marks that directory `export-ignore`, so the
+archive a project is created from leaves it out. A workspace's own front page is
+written at initialization and renders no images at all.
 
 The rest are source-side: an avatar, a favicon source, and a social preview are
-uploaded to a repository or a site rather than rendered in a workspace, so no
-workspace carries them. This checkout links to `product/assets/readme/`
-directly. The social preview stays PNG because GitHub's social-preview upload
+uploaded to a repository or a site rather than rendered anywhere. This checkout
+links to `product/assets/readme/` directly. The social preview stays PNG because GitHub's social-preview upload
 accepts PNG, JPG and GIF but not WebP, and nothing here can regenerate that
 composed image; the square mark has no such copy, since its `.svg` rasterizes
 on demand for an avatar upload.
@@ -61,4 +63,4 @@ on demand for an avatar upload.
 The mark SVG retains semantic `title`, `desc`, and `aria-labelledby` attributes
 for scalable brand use. Composed README assets are WebP wherever they are only
 rendered, so their layout and Kaotypr font roles remain stable on every host at
-a fraction of the weight a workspace would otherwise carry.
+a fraction of the weight the repository page would otherwise carry.

@@ -96,7 +96,7 @@ is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-17
 - [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, publication target, publication order, release request, release repository · reviewed 2026-09-19
-- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, and where each text lives · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge · reviewed 2026-09-19
+- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, and why a workspace holds no license file · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge, export-ignore, gitattributes · reviewed 2026-09-19
 
 ### Architecture
 

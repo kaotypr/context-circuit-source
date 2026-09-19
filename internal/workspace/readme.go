@@ -8,35 +8,42 @@ import (
 	"strings"
 )
 
-// The shipped README is the product guide, and an initialized workspace keeps it
-// as that workspace's own front page. Two spans of it are therefore generated
-// rather than fixed, and each is delimited so the rewrite has an exact anchor
-// instead of a guess about where a heading ends.
+// A workspace receives its front page at initialization rather than from the
+// template, so the file can say whose workspace it is and which versions it
+// actually got. Three spans of the seed are generated rather than fixed, and
+// each is delimited so the rewrite has an exact anchor instead of a guess about
+// where a heading ends.
 const (
-	readmeTitleOpen   = "<!-- context-circuit:title -->"
-	readmeTitleClose  = "<!-- /context-circuit:title -->"
-	readmeBadgesOpen  = "<!-- context-circuit:badges -->"
-	readmeBadgesClose = "<!-- /context-circuit:badges -->"
-	productWebsite    = "https://context-circuit.kaotypr.com"
+	readmeTitleOpen    = "<!-- context-circuit:title -->"
+	readmeTitleClose   = "<!-- /context-circuit:title -->"
+	readmeBadgesOpen   = "<!-- context-circuit:badges -->"
+	readmeBadgesClose  = "<!-- /context-circuit:badges -->"
+	readmePurposeOpen  = "<!-- context-circuit:purpose -->"
+	readmePurposeClose = "<!-- /context-circuit:purpose -->"
+	productWebsite     = "https://context-circuit.kaotypr.com"
 )
 
-// TitleReadme names the workspace in its README heading and pins the version
-// badges to what this workspace actually received.
+// WriteReadme gives a new workspace its front page, naming the workspace in the
+// heading, stating its purpose, and pinning the version badges to what this
+// workspace actually received.
 //
-// The shipped badges query the newest published release, which is the right
-// answer on the product repository and the wrong one here: a workspace runs the
-// versions recorded in .context-circuit, not whatever was published since. The
-// title is generated for the same reason the name exists — a repository shared
-// with a team should say whose workspace it is on its front page.
+// The badges report .context-circuit rather than the newest published release,
+// because a workspace runs the versions it was given, not whatever was published
+// since. The title is generated for the same reason the name exists — a
+// repository shared with a team should say whose workspace it is on its front
+// page.
 //
-// A README missing its markers has been edited by whoever owns this workspace and
-// is left exactly as it is. Initialization records data; rewriting somebody's
-// prose to find an anchor is not a judgment it may make.
-func (s *Store) TitleReadme(name string) error {
+// A README that already exists belongs to whoever owns this workspace. If it
+// still carries the markers, the generated spans are refreshed and nothing else
+// is touched; without them the file is left exactly as it is. Initialization
+// records data; rewriting somebody's prose to find an anchor is not a judgment
+// it may make, and neither is replacing a front page they wrote.
+func (s *Store) WriteReadme(seed []byte, name, purpose string) error {
 	data, err := s.Read("README.md")
 	if os.IsNotExist(err) {
-		return nil
-	} else if err != nil {
+		data, err = seed, nil
+	}
+	if err != nil {
 		return err
 	}
 	text := string(data)
@@ -57,6 +64,17 @@ func (s *Store) TitleReadme(name string) error {
 			readmeTitleClose,
 		}, nl))
 	text, badged := replaceMarked(text, readmeBadgesOpen, readmeBadgesClose, badges)
+	// An empty purpose collapses the span rather than rendering a stray heading
+	// over nothing; `workspace set` can fill it in later.
+	rendered := strings.Join([]string{readmePurposeOpen, readmePurposeClose}, nl)
+	if purpose != "" {
+		rendered = strings.Join([]string{
+			readmePurposeOpen,
+			fmt.Sprintf("<p align=%q><strong>%s</strong></p>", "center", html.EscapeString(purpose)),
+			readmePurposeClose,
+		}, nl)
+	}
+	text, _ = replaceMarked(text, readmePurposeOpen, readmePurposeClose, rendered)
 	if !titled && !badged {
 		return nil
 	}

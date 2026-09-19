@@ -1,0 +1,17 @@
+# Files this repository owns rather than a workspace. `git archive` — which is
+# how tembiter materializes a tag into a new project — leaves them out, so a
+# workspace starts without a front page about Context Circuit, without release
+# notes for the template, and without a LICENSE at its root that would make
+# GitHub label somebody else's project with this one's license.
+#
+# They stay in the tree, so this repository still renders its guide, its
+# artwork, and its license tab. A tag-to-tag sync must not apply them into a
+# project either; AGENTS.md states that, because a diff cannot read this file.
+.gitattributes     export-ignore
+README.md          export-ignore
+LICENSE            export-ignore
+CHANGELOG.md       export-ignore
+CODE_OF_CONDUCT.md export-ignore
+CONTRIBUTING.md    export-ignore
+SECURITY.md        export-ignore
+assets/            export-ignore
