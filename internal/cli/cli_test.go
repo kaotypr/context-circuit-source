@@ -754,6 +754,13 @@ func TestWorktreeBaseSelectionAndAdoption(t *testing.T) {
 	foreign := f.repository("foreign")
 	t.Setenv("GIT_DIR", filepath.Join(foreign, ".git"))
 	t.Setenv("GIT_WORK_TREE", foreign)
+	// One-shot configuration reaches a child the same way: a host that ran
+	// `git -c` exports it to everything underneath. Both spellings are set, so
+	// filtering only one of them still fails this.
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GIT_CONFIG_KEY_0", "core.abbrev")
+	t.Setenv("GIT_CONFIG_VALUE_0", "bogus")
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'core.abbrev=bogus'")
 	var snapshot workspace.Snapshot
 	if err := json.Unmarshal([]byte(f.ok("repo", "inspect", "--id", "api")), &snapshot); err != nil {
 		t.Fatal(err)
