@@ -23,11 +23,6 @@ type Relationship struct {
 	Description string `yaml:"description" json:"description"`
 }
 
-// CLIRegistry names a GitLab project mirroring CLI releases. It is shared, so
-// one member records the mirror and everyone who clones the workspace installs
-// from it without configuring their own environment. Unset, the installer reads
-// the product's own GitHub releases.
-//
 // WorkspaceRepository describes the Git repository carrying this workspace
 // itself. It sits beside `repositories` rather than inside it because every
 // consumer of that map treats an entry as somewhere work happens: a plan names
@@ -53,7 +48,6 @@ type Config struct {
 	Version               int                            `yaml:"version" json:"version"`
 	Name                  string                         `yaml:"name" json:"name"`
 	Purpose               string                         `yaml:"purpose" json:"purpose"`
-	CLIRegistry           string                         `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
 	WorkspaceRepository   *Repository                    `yaml:"workspace_repository,omitempty" json:"workspace_repository,omitempty"`
 	Repositories          map[string]Repository          `yaml:"repositories" json:"repositories"`
 	KnowledgeRepositories map[string]KnowledgeRepository `yaml:"knowledge_repositories,omitempty" json:"knowledge_repositories,omitempty"`
@@ -158,15 +152,6 @@ func (s *Store) Config() (Config, error) {
 	}
 	if cfg.Repositories == nil || cfg.Relationships == nil {
 		return cfg, errors.New("workspace.yaml needs repositories and relationships collections")
-	}
-	if cfg.CLIRegistry != "" {
-		// Reject here what the installer would reject later, so a mirror that
-		// cannot be resolved fails where it is recorded rather than at install.
-		rest, https := strings.CutPrefix(cfg.CLIRegistry, "https://")
-		host, project, split := strings.Cut(rest, "/")
-		if !https || !split || host == "" || strings.Trim(project, "/") == "" {
-			return cfg, errors.New("cli_registry must be an https project URL, such as https://gitlab.example.com/group/project")
-		}
 	}
 	for id, repo := range cfg.Repositories {
 		if err := Name(id); err != nil {

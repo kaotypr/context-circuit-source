@@ -48,19 +48,21 @@ with write access to another repository, and Apache-2.0 assets served under a
 0BSD label. Opening this checkout removed the reason, and the release followed
 the code.
 
-Publication targets GitHub only. A private mirror is a deployment of this
-product's own `cli_registry` feature rather than part of its release pipeline: an
-organization that wants one configures it in its workspace, which is exactly what
-that field exists for, and the pipeline stays the same for everyone.
+Publication targets GitHub only, and installation reads it directly. An
+organization is free to mirror either published repository into its own hosting,
+but that is a copy of a Git repository and asks nothing of this product: a
+workspace initialized from a mirrored template still installs its CLI from the
+GitHub release. Carrying a second install path would mean a version that
+resolves in one place and not another, and a credential whose destination
+depends on a recorded field — both for an arrangement the product cannot verify
+is current.
 
 ## Installation properties
 
 Installation targets the **execution environment**, not the user's desktop: a
-container or remote Linux host installs Linux packages. An organization that
-mirrors releases into its own GitLab project installs from that project's
-generic package registry, which the workspace records as `cli_registry` so one
-member configures it for everyone; the credential reaches only the registry in
-use.
+container or remote Linux host installs Linux packages. There is one source for
+a release, so a pinned version resolves the same way from every environment, and
+the credential an install may need is a GitHub one or none at all.
 
 Installation itself:
 

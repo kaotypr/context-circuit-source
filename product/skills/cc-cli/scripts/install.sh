@@ -4,9 +4,6 @@ set -eu
 fail() { printf 'CLI installation failed: %s\n' "$1" >&2; exit 1; }
 version= bin_dir=${HOME:?}/.local/bin archive= checksums=
 token=${CONTEXT_CIRCUIT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}
-# An organization that mirrors CLI releases into its own GitLab project names it
-# here. Unset, the installer reads the product's own GitHub releases.
-gitlab_url=${CONTEXT_CIRCUIT_GITLAB_URL:-}
 usage() {
   cat <<'USAGE'
 Usage: install.sh --version <2.x.y> [options]
@@ -15,8 +12,6 @@ Usage: install.sh --version <2.x.y> [options]
   --bin-dir     user-writable command directory (default: $HOME/.local/bin)
   --token       registry credential; also read from CONTEXT_CIRCUIT_TOKEN,
                 GH_TOKEN, or GITHUB_TOKEN
-  --gitlab-url  GitLab project mirroring the CLI releases; also read from
-                CONTEXT_CIRCUIT_GITLAB_URL
   --archive     install this local package instead of downloading one
   --checksums   the SHA256SUMS it is verified against, required with --archive
 USAGE
@@ -28,36 +23,21 @@ while [ "$#" -gt 0 ]; do
   # values. Asking how to run this is answered, not refused.
   case "$1" in
     -h|--help) usage; exit 0 ;;
-    --version|--bin-dir|--archive|--checksums|--token|--gitlab-url) ;;
+    --version|--bin-dir|--archive|--checksums|--token) ;;
     *) fail "unknown option: $1" ;;
   esac
   [ "$#" -ge 2 ] || fail "$1 requires a value"
   case "$1" in
     --version) version=$2 ;; --bin-dir) bin_dir=$2 ;;
     --archive) archive=$2 ;; --checksums) checksums=$2 ;;
-    --token) token=$2 ;; --gitlab-url) gitlab_url=$2 ;;
+    --token) token=$2 ;;
   esac
   shift 2
 done
 # The token is written to a curl configuration line, which has no escape for a
-# quote or backslash. Reject anything outside the character set GitHub and GitLab
-# issue rather than build a malformed request from it.
+# quote or backslash. Reject anything outside the character set GitHub issues
+# rather than build a malformed request from it.
 case "$token" in *[!A-Za-z0-9_-]*) fail 'token contains unexpected characters' ;; esac
-# Derive the API base and the project path from the mirror URL, so this shipped
-# script carries no organization's own address. The credential is presented to
-# whichever registry is selected below and never to both.
-if [ -n "$gitlab_url" ]; then
-  case "$gitlab_url" in https://*) ;; *) fail 'mirror URL must begin with https://' ;; esac
-  rest=${gitlab_url%/}
-  rest=${rest%.git}
-  rest=${rest#https://}
-  gitlab_host=${rest%%/*}
-  gitlab_project=${rest#*/}
-  [ -n "$gitlab_host" ] && [ -n "$gitlab_project" ] && [ "$gitlab_project" != "$rest" ] ||
-    fail 'mirror URL needs a host and a project path'
-  case "$gitlab_host$gitlab_project" in *[!A-Za-z0-9._:/-]*) fail 'mirror URL contains unexpected characters' ;; esac
-  gitlab_project=$(printf '%s' "$gitlab_project" | sed 's|/|%2F|g')
-fi
 case "$version" in 2.*) ;; *) fail 'supply an exact compatible v2 CLI version without a v prefix' ;; esac
 case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
@@ -95,17 +75,7 @@ else
   fetch() { curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' "$@"; }
   # Pass the credential on stdin so it stays out of the process list.
   fetch_auth() { printf 'header = "Authorization: Bearer %s"\n' "$token" | fetch --config - "$@"; }
-  fetch_private() { printf 'header = "PRIVATE-TOKEN: %s"\n' "$token" | fetch --config - "$@"; }
-  if [ -n "$gitlab_url" ]; then
-    # A generic package is addressed by version and file name, so a mirror needs
-    # no release lookup and no asset ids.
-    base="https://$gitlab_host/api/v4/projects/$gitlab_project/packages/generic/context-circuit-cli/$version"
-    fetch_mirror() { if [ -n "$token" ]; then fetch_private "$@"; else fetch "$@"; fi; }
-    for name in "$package" SHA256SUMS; do
-      fetch_mirror "$base/$name" -o "$work/$name" ||
-        fail "cannot download $name from the mirror; confirm the version is published there and the token grants access"
-    done
-  elif [ -n "$token" ]; then
+  if [ -n "$token" ]; then
     # A private repository serves release assets only through the API, by asset
     # id; the public download path answers 404. curl does not carry the
     # Authorization header across the redirect to signed storage.

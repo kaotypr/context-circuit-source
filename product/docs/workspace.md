@@ -9,7 +9,7 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
-| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
+| workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
 | members.yaml | Member ID to display name, optional allocation band, and optional record language and tone | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
@@ -42,12 +42,6 @@ relationships:
     to: api
     description: Consumes the billing API
 ```
-
-An organization that mirrors CLI releases into its own GitLab project records it
-once as `cli_registry`, an https project URL. The value is shared, so everyone who
-clones the workspace installs from that mirror without setting anything up on
-their own machine; only the credential stays personal. Unset, the CLI installs
-from the product's own releases.
 
 Use a separate checkout for each execution environment (native Windows, WSL,
 remote server, or container). Shared files synchronize through Git; local paths,

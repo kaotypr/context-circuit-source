@@ -44,21 +44,6 @@ while a token is set usually means the token lacks access to the repository, not
 that the version is missing. Offline `--archive` / `-Archive` installation from a
 trusted release needs no token.
 
-## Install from an organization's mirror
-
-An organization can mirror CLI releases into its own GitLab project. A workspace
-records that project in `workspace.yaml` as `cli_registry`; read it and pass it as
-`--gitlab-url <value>` / `-GitlabUrl <value>`. The installer then reads the
-release from that project's generic package registry rather than from GitHub, and
-presents the token in the form that registry expects. `CONTEXT_CIRCUIT_GITLAB_URL`
-supplies the same value when no argument is passed, which is how a first install
-works before any workspace exists. The credential reaches only the registry in
-use, never both.
-
-When a mirror is in use, resolve an available version from that host's releases or
-package registry. Do not read the product repository's GitHub releases to pick a
-version the mirror may not carry.
-
 Both install and update use the same script. `--bin-dir` / `-BinDir` selects a
 user-writable command directory. No administrator access is needed. The
 installer verifies SHA-256 and the CLI's version before switching the command to

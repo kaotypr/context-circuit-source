@@ -24,8 +24,6 @@ security report:
   your existing command in place on any failure.
 - Versions install side by side, so installing one for a workspace cannot change
   which version another workspace runs.
-- If your organization mirrors releases into its own registry, the credential for
-  it reaches only that registry.
 - Files ending in `.local.yaml` hold one machine's repository paths and identity.
   They are never committed and never travel with the workspace.
 - Commit, push, merge, delivery, and deletion of workspace data are gated on your

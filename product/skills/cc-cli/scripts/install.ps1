@@ -3,31 +3,13 @@ param(
   [string]$BinDir = (Join-Path $env:LOCALAPPDATA 'ContextCircuit\bin'),
   [string]$Archive,
   [string]$Checksums,
-  [string]$Token,
-  [string]$GitlabUrl
+  [string]$Token
 )
 $ErrorActionPreference = 'Stop'
 foreach ($fallback in $env:CONTEXT_CIRCUIT_TOKEN, $env:GH_TOKEN, $env:GITHUB_TOKEN) {
   if (!$Token) { $Token = $fallback }
 }
 if ($Token -and $Token -notmatch '^[A-Za-z0-9_-]+$') { throw 'Token contains unexpected characters.' }
-# An organization that mirrors CLI releases into its own GitLab project names it
-# here. Unset, the installer reads the product's own GitHub releases. The API
-# base and project path are derived from that URL, so this shipped script carries
-# no organization's own address, and the credential reaches only one registry.
-if (!$GitlabUrl) { $GitlabUrl = $env:CONTEXT_CIRCUIT_GITLAB_URL }
-if ($GitlabUrl) {
-  if ($GitlabUrl -notmatch '^https://') { throw 'Mirror URL must begin with https://.' }
-  $rest = $GitlabUrl.TrimEnd('/')
-  if ($rest.EndsWith('.git')) { $rest = $rest.Substring(0, $rest.Length - 4) }
-  $rest = $rest.Substring(8)
-  $slash = $rest.IndexOf('/')
-  if ($slash -lt 1 -or $slash -ge $rest.Length - 1) { throw 'Mirror URL needs a host and a project path.' }
-  $gitlabHost = $rest.Substring(0, $slash)
-  $gitlabProject = $rest.Substring($slash + 1)
-  if ("$gitlabHost$gitlabProject" -notmatch '^[A-Za-z0-9._:/-]+$') { throw 'Mirror URL contains unexpected characters.' }
-  $gitlabProject = $gitlabProject.Replace('/', '%2F')
-}
 if ($Version -notmatch '^2\.[A-Za-z0-9.+-]+$' -or $Version.Contains('..')) { throw 'Supply an exact compatible v2 CLI version without a v prefix.' }
 if ($env:OS -ne 'Windows_NT') { throw 'Use install.sh on macOS/Linux.' }
 $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
@@ -60,18 +42,7 @@ try {
     Copy-Item -LiteralPath $Checksums -Destination $sums
   } else {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    if ($GitlabUrl) {
-      # A generic package is addressed by version and file name, so a mirror
-      # needs no release lookup and no asset ids.
-      $base = "https://$gitlabHost/api/v4/projects/$gitlabProject/packages/generic/context-circuit-cli/$Version"
-      $mirrorHeaders = @{}
-      if ($Token) { $mirrorHeaders = @{ 'PRIVATE-TOKEN' = $Token } }
-      foreach ($wanted in @(@{ Name = $package; File = $download }, @{ Name = 'SHA256SUMS'; File = $sums })) {
-        try {
-          Invoke-WebRequest -UseBasicParsing -Uri "$base/$($wanted.Name)" -Headers $mirrorHeaders -OutFile $wanted.File
-        } catch { throw "Cannot download $($wanted.Name) from the mirror; confirm the version is published there and the token grants access." }
-      }
-    } elseif ($Token) {
+    if ($Token) {
       # A private repository serves release assets only through the API, by
       # asset id; the public download path answers 404. Invoke-WebRequest drops
       # the Authorization header on the redirect to signed storage, which is
