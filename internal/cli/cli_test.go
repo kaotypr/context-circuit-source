@@ -210,8 +210,8 @@ func TestYAMLEditTrial(t *testing.T) {
 
 // 2.0.0-rc.4 renamed the record gates and converts nothing. The decoder can only
 // report an unknown key, which reads as a corrupt file, so the boundary says
-// which candidate wrote the record and what replaced the field.
-func TestRecordFromAnEarlierCandidateNamesTheBoundary(t *testing.T) {
+// which version wrote the record and what replaced the field.
+func TestRecordFromAnEarlierVersionNamesTheBoundary(t *testing.T) {
 	f := setup(t)
 	f.repository("api")
 	i := f.intent("legacy")

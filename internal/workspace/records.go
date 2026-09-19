@@ -127,12 +127,12 @@ func (s *Store) readRecord(path string) (Record, error) {
 		return record, fmt.Errorf("%s: %w", path, err)
 	}
 	if err := Decode(header, &record); err != nil {
-		// A record from 2.0.0-rc.3 or earlier fails here on a field this
-		// candidate renamed. The decoder can only say the key is unknown, which
-		// reads as a corrupt file rather than a candidate boundary, so the one
+		// A record from 2.0.0-rc.3 or earlier fails here on a field a later
+		// version renamed. The decoder can only say the key is unknown, which
+		// reads as a corrupt file rather than a version boundary, so the one
 		// renamed key that shipped is named along with what replaced it.
 		if legacyRecordKey.Match(header) {
-			return record, fmt.Errorf("%s: written by 2.0.0-rc.3 or earlier, which this candidate cannot read: `completed` is now `completed_at`, approval is now the `approved_at` instant, and every record carries `created_at`. Records are not converted; start a fresh workspace, or rewrite this frontmatter by hand: %w", path, err)
+			return record, fmt.Errorf("%s: written by 2.0.0-rc.3 or earlier, which this CLI cannot read: `completed` is now `completed_at`, approval is now the `approved_at` instant, and every record carries `created_at`. Records are not converted; start a fresh workspace, or rewrite this frontmatter by hand: %w", path, err)
 		}
 		return record, fmt.Errorf("%s: %w", path, err)
 	}

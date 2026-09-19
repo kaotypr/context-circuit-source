@@ -228,8 +228,8 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		// that never happened. Each gate belongs to one kind of record: nothing
 		// approves a plan, and an intent is never the thing that completes.
 		if record.CreatedAt == "" {
-			issues = append(issues, found(record.ID+": created_at is missing; a record written before 2.0.0-rc.4 is not readable by this candidate",
-				needsAPerson+"add the instant this record was created to its frontmatter; a record from an earlier candidate is not migrated for you"))
+			issues = append(issues, found(record.ID+": created_at is missing; a record written before 2.0.0-rc.4 is not readable by this CLI",
+				needsAPerson+"add the instant this record was created to its frontmatter; a record from an earlier version is not migrated for you"))
 		} else if _, err := time.Parse(TimeLayout, string(record.CreatedAt)); err != nil {
 			issues = append(issues, found(record.ID+": created_at is not a canonical ISO 8601 UTC timestamp: "+string(record.CreatedAt),
 				needsAPerson+"rewrite it in frontmatter as 2026-09-15T10:53:00Z; only a person knows which instant was meant"))
