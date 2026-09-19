@@ -31,8 +31,10 @@ No product execution state machine or mandatory child-agent workflow is required
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
 never ships. sources/ and release requests are passive maintainer history and
-never ship. The remaining source design skill is maintainer tooling
-and is excluded from the binary and exported workspace.
+never ship. The source skills under .agents/skills/ — cc-source-develop and
+cc-system-design — are maintainer tooling, excluded from the binary and the
+exported workspace. .claude/skills is a symlink to that directory, so a host
+reading either path finds the same two and neither can drift from the other.
 
 release/template-repo/ is a fourth class: not shipped to a workspace and not
 history either. Publication restores those files over the extracted artifact and
