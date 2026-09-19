@@ -1,0 +1,226 @@
+name: Publish
+
+# Publishes both products from one merge to main, CLI first.
+#
+# The order is not a preference. The template points at the CLI — its README
+# badge reads the CLI's release list, and `.context-circuit/CLI_VERSION` is what
+# the cc-cli skill resolves — while the CLI points at nothing in the template.
+# Publishing the template first leaves a window in which it names a CLI release
+# that does not exist yet; 2.0.0-rc.13 spent six minutes in that state and froze
+# the previous CLI version into GitHub's cached badge image.
+#
+# They were separate workflows, chained by a maintainer creating the CLI tag by
+# hand after the template published. A tag pushed by a job using the automatic
+# token does not start another workflow — GitHub suppresses that to stop a run
+# triggering itself — so ordering them automatically means one workflow, and one
+# workflow is what says the order out loud.
+#
+# Each product publishes only when its own version file names something that is
+# not out yet, so the two version lines move independently: bump CLI_VERSION
+# alone and the template job resolves to a release that already exists and does
+# nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cli_version:
+        description: "CLI version to publish (blank = CLI_VERSION)"
+        required: false
+      template_version:
+        description: "Template version to publish (blank = VERSION)"
+        required: false
+  push:
+    branches: [main]
+    paths:
+      - "release/requests/**"
+      - "VERSION"
+      - "CLI_VERSION"
+
+# Writing to this repository is the CLI job's business alone, and the template
+# job writes only through TEMPLATE_REPO_TOKEN. Neither needs more by default.
+permissions:
+  contents: read
+
+# One release at a time, and never cancelled: a cancelled publication can leave
+# a tag pushed and a release uncreated.
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    # The same gate the pull request passed, run again on what actually merged.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The knowledge checks count commits under each note's code anchors,
+          # so a shallow clone leaves the reviewed-date pass with nothing to
+          # read and it passes vacuously. A release gate weaker than the
+          # pull-request gate is not one.
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go test ./...
+      - run: go vet ./...
+
+  cli:
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      published: ${{ steps.resolve.outputs.publish }}
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve target version
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.cli_version }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: sh scripts/resolve-release-version.sh cli
+
+      - name: Build
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          VERSION: ${{ steps.resolve.outputs.version }}
+        run: sh scripts/build-cli.sh "$VERSION" cli-release
+
+      - name: Compose release notes
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          REQUEST: ${{ steps.resolve.outputs.request }}
+          SOURCE_SHA: ${{ github.sha }}
+        run: |
+          # The request body, frontmatter stripped — the same shape the template
+          # release uses, so a CLI release says what changed in that version
+          # rather than repeating what the CLI is.
+          awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
+            "$REQUEST" > cli-notes.md
+          printf '\n---\n\nBuilt at commit `%s`.\n' "$SOURCE_SHA" >> cli-notes.md
+          # The workspace template is a separate product under a separate
+          # license, so the archive says which one it carries rather than
+          # leaving a reader to assume one release list means one set of terms.
+          printf '\nApache-2.0; the archive carries the license. The workspace template is 0BSD.\n' >> cli-notes.md
+
+      - name: Tag this commit and publish
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.resolve.outputs.version }}
+          MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
+          MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
+        run: |
+          # The tag hangs on the commit that built these binaries, which is what
+          # makes a released binary traceable by the tag itself rather than by a
+          # sentence in its notes.
+          git config user.name "$MAINTAINER_NAME"
+          git config user.email "$MAINTAINER_EMAIL"
+          git tag "cli-v$VERSION"
+          git push origin "cli-v$VERSION"
+          # A SemVer pre-release identifier marks a candidate as one rather than
+          # letting it become the repository's Latest release.
+          case "$VERSION" in *-*) set -- --prerelease ;; *) set -- ;; esac
+          gh release create "cli-v$VERSION" \
+            "$@" \
+            --title "Context Circuit CLI $VERSION" \
+            --notes-file cli-notes.md \
+            cli-release/*.tar.gz cli-release/*.zip cli-release/SHA256SUMS
+
+  template:
+    # Never before the CLI: see the note at the top of this file. `needs` also
+    # holds when the CLI job resolves to an already-published version and does
+    # nothing, which is the ordinary case for a template-only release.
+    needs: [gate, cli]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve target version
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.template_version }}
+          GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+        run: sh scripts/resolve-release-version.sh template
+
+      - name: Check workspace and CLI compatibility
+        if: steps.resolve.outputs.publish == 'true'
+        run: sh scripts/check-release.sh
+
+      - name: Checkout template repository
+        if: steps.resolve.outputs.publish == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: kaotypr/context-circuit
+          ref: main
+          token: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          path: .template-repo
+          fetch-depth: 0
+
+      - name: Configure maintainer identity
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
+          MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
+        run: |
+          git -C .template-repo config user.name "$MAINTAINER_NAME"
+          git -C .template-repo config user.email "$MAINTAINER_EMAIL"
+
+      - name: Publish (assemble, gate, commit, tag)
+        id: publish
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
+          MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          out=$(sh scripts/publish-template.sh "$RELEASE_VERSION" .template-repo)
+          printf '%s\n' "$out"
+          echo "assets=$(printf '%s\n' "$out" | sed -n 's/^release_assets_dir: //p')" >> "$GITHUB_OUTPUT"
+
+      - name: Push commit and tag
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
+        run: |
+          git -C .template-repo push origin main
+          git -C .template-repo push origin "v$RELEASE_VERSION"
+
+      - name: Create GitHub Release
+        if: steps.resolve.outputs.publish == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
+          REQUEST: ${{ steps.resolve.outputs.request }}
+          ASSETS: ${{ steps.publish.outputs.assets }}
+        run: |
+          V="$RELEASE_VERSION"
+          awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
+            "$REQUEST" > release-notes.md
+          case "$V" in *-*) set -- --prerelease ;; *) set -- ;; esac
+          gh release create "v$V" \
+            --repo kaotypr/context-circuit \
+            "$@" \
+            --title "v$V" \
+            --notes-file release-notes.md \
+            "$ASSETS"/*.tar.gz "$ASSETS/SHA256SUMS"

@@ -1,62 +1,63 @@
 #!/bin/sh
-# Resolve the single template version a publication run should target, and print
-# it as "version=<v>" (for $GITHUB_OUTPUT) and "resolved: <v>" (for logs).
+# Resolve what one product should publish, and whether it still needs to.
+#
+# Publication keys off the product's own version file rather than off which
+# request file a push happened to touch. That is what makes the two version
+# lines independent in practice: bump CLI_VERSION alone and only the CLI
+# publishes, bump VERSION alone and only the template does. It also removes a
+# whole class of failure — a push that carried an unrelated request file, or
+# deleted a superseded one, used to resolve to two versions and refuse.
 #
 # Inputs (env):
 #   INPUT_VERSION  explicit version from workflow_dispatch (optional)
-#   EVENT_NAME     github.event_name (workflow_dispatch | push)
-#   BEFORE, SHA    push range, to find the changed request file
+#   GH_TOKEN       credential for the "is it already published" lookup
 # Arg:
-#   $1  path to the checked-out context-circuit-template repository
+#   $1  product: template | cli
 #
-# Resolution:
-#   - explicit input wins;
-#   - on push, the request file added/changed in this push;
-#   - otherwise the single request whose version has no tag yet.
-# Ambiguity (zero or many) is a hard failure, never a guess.
+# Prints "version=<v>" and "publish=true|false" for $GITHUB_OUTPUT, and a
+# human line for the log. Publishing an already-published version is not an
+# error; it is the ordinary case for the product that did not change.
 set -eu
 
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 
-template_dir=${1:-}
-[ -n "$template_dir" ] || fail 'usage: resolve-release-version.sh <template-checkout-dir>'
-
+product=${1:-}
 source_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail 'not a git source checkout'
-requests_dir="$source_root/release/requests"
 
-version_of() { f=${1##*/}; printf '%s' "${f%.md}"; }
-tag_exists() { git -C "$template_dir" rev-parse -q --verify "refs/tags/v$1" >/dev/null 2>&1; }
+case "$product" in
+  template)
+    version=${INPUT_VERSION:-$(cat "$source_root/VERSION")}
+    repository=kaotypr/context-circuit
+    tag="v$version"
+    ;;
+  cli)
+    version=${INPUT_VERSION:-$(cat "$source_root/CLI_VERSION")}
+    repository=kaotypr/context-circuit-source
+    tag="cli-v$version"
+    ;;
+  *) fail 'usage: resolve-release-version.sh <template|cli>' ;;
+esac
 
-resolved=''
+case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
 
-if [ -n "${INPUT_VERSION:-}" ]; then
-  resolved=$INPUT_VERSION
-elif [ "${EVENT_NAME:-}" = push ]; then
-  # Exclude deletions: removing a superseded request is housekeeping, not a
-  # release, and counting one makes an ordinary cleanup commit look like a
-  # second version to publish.
-  changed=$(git -C "$source_root" diff --diff-filter=d --name-only "${BEFORE:?}" "${SHA:?}" -- 'release/requests/*.md' \
-            | sed -n 's|^release/requests/\(.*\)\.md$|\1|p' | sort -u)
-  count=$(printf '%s\n' "$changed" | grep -c . || true)
-  [ "$count" -eq 1 ] || fail "push changed $count request files; expected exactly one"
-  resolved=$changed
-else
-  candidates=''
-  for f in "$requests_dir"/*.md; do
-    [ -f "$f" ] || continue
-    v=$(version_of "$f")
-    tag_exists "$v" || candidates="$candidates $v"
-  done
-  set -- $candidates
-  [ "$#" -eq 1 ] || fail "expected exactly one unpublished request, found $#: $*"
-  resolved=$1
+if gh release view "$tag" --repo "$repository" >/dev/null 2>&1; then
+  # Already out. Say so and stop looking for notes: a release that has shipped
+  # does not need a request, and demanding one would make the product that did
+  # not change this time fail the run for the product that did.
+  printf 'resolved: %s %s already published as %s\n' "$product" "$version" "$tag"
+  if [ -n "${GITHUB_OUTPUT:-}" ]; then
+    printf 'version=%s\npublish=false\n' "$version" >> "$GITHUB_OUTPUT"
+  fi
+  exit 0
 fi
 
-case "$resolved" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $resolved" ;; esac
+# Each product carries its own request, so a release of one describes only what
+# that one changed, and a reader of a CLI release is not handed template notes.
+request="$source_root/release/requests/$product/$version.md"
+[ -f "$request" ] || fail "no $product release request: release/requests/$product/$version.md"
+publish=true
 
-[ -f "$requests_dir/$resolved.md" ] || fail "no release request for: $resolved"
-
-printf 'resolved: %s\n' "$resolved"
+printf 'resolved: %s %s (tag %s, publish %s)\n' "$product" "$version" "$tag" "$publish"
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
-  printf 'version=%s\n' "$resolved" >> "$GITHUB_OUTPUT"
+  printf 'version=%s\npublish=%s\nrequest=%s\n' "$version" "$publish" "release/requests/$product/$version.md" >> "$GITHUB_OUTPUT"
 fi

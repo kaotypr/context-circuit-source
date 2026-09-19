@@ -13,14 +13,14 @@ export GIT_CONFIG_NOSYSTEM=1
 printf '[commit]\n  gpgsign = false\n[tag]\n  gpgsign = false\n' > "$GIT_CONFIG_GLOBAL"
 export MAINTAINER_NAME=Fixture MAINTAINER_EMAIL=fixture@example.invalid
 export CC_FIXTURE_BINARY="$cc_fixture_binary"
-mkdir -p "$work/source/scripts" "$work/source/release/requests" "$work/template"
+mkdir -p "$work/source/scripts" "$work/source/release/requests/template" "$work/template"
 cp "$source_root/scripts/publish-template.sh" "$work/source/scripts/"
 mkdir -p "$work/source/product" "$work/source/release/template-repo"
 printf 'Zero Clause fixture license\n' > "$work/source/product/LICENSE"
 printf '# Contributing fixture\n' > "$work/source/release/template-repo/CONTRIBUTING.md"
 printf '# Security fixture\n' > "$work/source/release/template-repo/SECURITY.md"
 printf 'destination_ref: main\n' > "$work/source/release/binding.yaml"
-printf '%s\n' --- 'version: 2.0.0-test' --- 'Fixture release notes.' > "$work/source/release/requests/2.0.0-test.md"
+printf '%s\n' --- 'version: 2.0.0-test' --- 'Fixture release notes.' > "$work/source/release/requests/template/2.0.0-test.md"
 cat > "$work/source/scripts/release-artifact.sh" <<'ASSEMBLER'
 #!/bin/sh
 set -eu
