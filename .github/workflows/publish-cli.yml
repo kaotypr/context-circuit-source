@@ -28,6 +28,12 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Same reason as check.yml: the knowledge checks count commits under
+          # each note's code anchors, so a shallow clone leaves the
+          # reviewed-date pass with nothing to read and it passes vacuously.
+          # A release gate that is weaker than the pull-request gate is not one.
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
