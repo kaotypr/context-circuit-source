@@ -67,7 +67,11 @@ in that order:
    so a planner takes the whole intent and refuses a task and a worker owning
    its whole plan needs none; what remains is a role no record assigns, or one
    slice of a plan several workers share.
-5. **What the role must return.**
+5. **The language boundary**, where a record is written in one. A subagent that
+   receives a record in another language has to be told which of it is prose that
+   stays in that language and which is structure that stays English, or it
+   answers in whichever the record led with.
+6. **What the role must return.**
 
 The returned prompt is launched unmodified for the same reason: a coordinator
 that retypes it in its own words drops the quoted record, and the agent then
@@ -150,14 +154,14 @@ Because read-only roles cannot run Git, the coordinator supplies diff text to
 them directly.
 
 **Writing a file is not loading it.** The host may need a restart, and neither
-the executable nor the dispatching skill may claim a definition was loaded
-merely because it was written.
+the CLI nor the dispatching skill may claim a definition was loaded merely
+because it was written.
 
 ## Dispatch
 
-The executable resolves settings, composes a brief, and returns the invocation
-with a flag stating that a launch is still required. It has not launched
-anything, and a specification is never evidence that an agent ran or completed.
+The CLI resolves settings, composes a brief, and returns the invocation with a
+flag stating that a launch is still required. It has not launched anything, and
+a specification is never evidence that an agent ran or completed.
 
 Because role files are host-local, gitignored, and written only by setup, a
 specification can name an agent type the host never registered. Dispatch

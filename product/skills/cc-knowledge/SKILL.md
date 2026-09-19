@@ -8,8 +8,8 @@ description: Write and maintain Context Circuit live knowledge — what a contex
 On a request to gather knowledge, synthesize durable concepts into live context
 notes and maintain the catalog entries beside them. There is no separate
 knowledge acceptance lifecycle. Keep raw evidence separate from accepted
-knowledge, and keep task progress and temporary results in plans. The executable
-can locate catalog entries; semantic interpretation and the writing itself are
+knowledge, and keep task progress and temporary results in plans. The CLI can
+locate catalog entries; semantic interpretation and the writing itself are
 yours.
 
 Run the diagnostic after editing notes — it reports any line that crosses the
@@ -212,10 +212,53 @@ facts.
   does not, and say so.
 - Move the `reviewed` date only when the note was actually re-confirmed against
   the code. A rewrite that changed only the shape leaves the date where it is.
+  `check` reads this date against the commits under the note's own anchors, so a
+  date moved without a reading makes a stale note look current and silences the
+  one thing that would have caught it.
 - Report what could not be verified instead of smoothing it into a confident
   sentence. Removing a claim nobody can confirm is a real outcome, not a loss.
 
 The note and its catalog entry move together, as always.
+
+## Knowledge this workspace does not own
+
+A workspace may mount an organization's knowledge center as a knowledge
+repository. `context find` reads its index beside this catalog and marks each
+match `borrowed`. That mark decides what you may do with it.
+
+- **Never copy a borrowed note into `context/`.** Link to it by path. A copy
+  goes stale silently while still reading as current, and nothing here can tell
+  that it has; avoiding that is the whole reason the repository is mounted
+  rather than vendored.
+- **Never edit one here.** The checkout's push URL is disabled, so an attempt
+  fails rather than half-succeeding. An improvement is a merge request in that
+  repository, from a separate checkout of it.
+- **Never reconcile one.** Completion returns this workspace's own entries, and
+  a borrowed entry is an obligation nobody here can discharge. Borrowed
+  knowledge goes stale on its owner's schedule; when you find it wrong, say so
+  and raise it upstream rather than recording the correction here.
+- **Read it before re-deriving anything.** It exists so that what someone
+  already established about a shared service is not worked out again from source
+  or trial and error. Judge relevance from what its own index and frontmatter
+  say, the way `INDEX.md` is used here.
+
+A borrowed repository writes its index its own way, and nothing here holds it to
+this product's catalog shape. `check` reports what stands between this machine
+and reading it — an unobtained checkout, an unreadable index, local edits in a
+read-only checkout — and never a fault inside content nobody here may fix.
+
+## Reconciling when the code moved underneath
+
+`check` reports a note whose anchors have commits under them since it was last
+confirmed, naming how many. That is the second way a note comes back: completion
+covers work done through this workspace, and this covers everything else — a
+merge by somebody else, a commit from before the workspace existed, a hotfix
+pushed straight to the branch.
+
+Read the note against that code, then either edit the note and its entry together
+and move the reviewed date, or move the date alone because nothing it says
+changed. Both are real outcomes. What is not an outcome is moving the date
+without reading, which converts a stale note into a confident one.
 
 ## Reconciling after a plan completes
 

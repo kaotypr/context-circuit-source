@@ -2,9 +2,10 @@
 
 **Status: source material only.** This is design material, not a plan, not
 Product Knowledge, not a release, and not permission to change anything. It
-describes the v2.0.0 core as built against the 2.0.0-rc.1 candidate and argues
+describes the v2.0.0 core as built against the 2.0.0-rc.13 candidate and argues
 why it is shaped this way. Where it disagrees with `product/AGENTS.md.in`,
-`product/docs/`, or `internal/`, those own the answer and this document is stale.
+`product/skills/`, `product/docs/`, or `internal/`, those own the answer and this
+document is stale.
 
 The **core** scope of the Context Circuit v2.0.0 design. For the version index,
 see [../README.md](../README.md).
@@ -13,9 +14,16 @@ see [../README.md](../README.md).
 
 v2 is a **rewrite**, not an evolution. v1's `wrapper/runtime/engine.sh`, its
 invariant catalog, its contract schemas, and its evidence records are gone
-rather than ported. In their place: a ~2,500-line Go executable that does
-bookkeeping and Git, a single shared instruction file that does everything else,
-and two skills — one to install the CLI, one to dispatch subagents.
+rather than ported. In their place: a Go executable that does bookkeeping and
+Git, an entry instruction carrying only what must always be in force, and a set
+of skills carrying the procedure behind each stage — workspace setup, intent,
+planning, worktrees, stacked runs, dispatch, delivery, review, completion,
+knowledge, the direct-change path, and CLI installation.
+
+The instruction was one file through 2.0.0-rc.8. It split in 2.0.0-rc.9, when
+348 always-loaded lines had become gates, procedure, and reference mixed
+together; what must always hold stayed in `AGENTS.md`, and each stage's
+procedure moved behind a skill that loads when that stage is reached.
 
 This scope covers the whole coordination model, because in v2 the model is
 small enough to hold in one scope and its pieces only make sense together.
@@ -47,8 +55,10 @@ Four pressures, all observed on the v1 line rather than theorized:
    apart; reconciliation was remembered only when someone remembered it.
 
 v2 answers (1) with Go, (2) by deletion, (3) by making Git authoritative and
-saying so in the instruction, and (4) with three enforced knowledge rules and a
-completion step that hands the agent the candidate entries.
+saying so in the instruction, and (4) with enforced knowledge rules, a completion
+step that hands the agent the candidate entries, and — from 2.0.0-rc.13 — a
+reviewed date `check` reads back against the code a note anchors to, because a
+date nothing ever reads is a date nothing keeps honest.
 
 ## Reading order
 

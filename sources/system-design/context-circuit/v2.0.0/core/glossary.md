@@ -18,8 +18,24 @@ Bound to a machine-local path in the gitignored `repositories.local.yaml`.
 **Relationship** — a recorded, described link between two logical repositories
 ("web consumes the API from api").
 
-**Local binding** — the machine-specific half of identity: checkout paths and the
-active member. Never shared.
+**Local binding** — the machine-specific half of identity: checkout paths, the
+branch this machine starts work from, and the active member. Never shared.
+
+**Workspace repository** (`workspace_repository`) — the Git repository carrying
+the workspace itself. Described separately from `repositories`, because every
+consumer of that map reads an entry as somewhere work happens.
+
+**Knowledge repository** — a repository of knowledge this workspace reads and
+never owns, mounted read-only and retrieved beside its own catalog. Records no
+base branch, takes no worktree, is never named by a plan, and is never
+reconciled here. Also *borrowed knowledge*.
+
+**Language** — the language a member's intents and plans are written in, recorded
+in `members.yaml`. Unset means English. Knowledge, headings, and field names stay
+English regardless.
+
+**Tone** — one line of prose recording the register that language is written in.
+Quoted into the instruction that writes a record, never parsed.
 
 ## Records
 
@@ -39,9 +55,16 @@ band prevents offline collisions; it is not a namespace and not ownership.
 **Reservation** — a permanently allocated ID in `.context-circuit/ids.yaml`.
 Never reused, including after archival or deletion.
 
-**Completion** — an explicit human-requested act that appends a note, stamps a
-`completed` date, and returns catalog candidates for reconciliation. Not
+**Completion** — an explicit human-requested act that appends a note, stamps the
+`completed_at` instant, and returns catalog candidates for reconciliation. Not
 delivery, and not automatic.
+
+**Instant** — a canonical ISO 8601 UTC timestamp. The form of `created_at`,
+`approved_at`, and `completed_at`. Every other date is an ISO 8601 calendar date.
+
+**Direct change** — a change a person asks for without an intent, a plan, or a
+worktree, made in a bound checkout. Their choice to make; it relaxes no
+authorization and skips no knowledge reconciliation.
 
 ## Knowledge
 
@@ -60,6 +83,23 @@ identifiers implementing it.
 
 **Repository anchor** — a durable code reference written with the logical
 repository ID, exact or patterned: `api@internal/billing/dunning/`.
+
+**`Owner:` block** — the one place a note's anchors live, at its end. An anchor
+written into a sentence is a `check` finding.
+
+**Actor note** — one note per person, team, or external system the project deals
+with, recording what that actor needs from it today. What an intent is grounded
+against.
+
+**Reviewed date** — the date a catalog entry's note was last confirmed against
+the code. Read back by `check` against the commits under that note's anchors.
+
+**Readability finding** — a `check` finding about the shape of a note rather than
+its links: an anchor in a sentence, a paragraph hiding a list, a catalog heading
+with no line under it, a diagram fence that will not render.
+
+**Resolution** — the `resolve` every `check` finding carries: the command, the
+edit, or `needs a person` where no command discharges it.
 
 **Reconciliation** — judging which durable knowledge a completed plan changed,
 and editing the note and its catalog entry in one pass.
@@ -106,7 +146,8 @@ dispatch, integration, and reporting.
 descriptions, never authority levels.
 
 **Role tiering** — the per-host `(model, effort)` pair for each role, defaulting
-to `inherit`.
+to `inherit`. `role-tiering.local.yaml` overrides one host/role pair on this
+machine.
 
 **Dispatch specification** — what `agent dispatch` returns, carrying
 `launch_required: true`. Not evidence that anything ran.
@@ -133,8 +174,8 @@ a workspace pins, released as `cli-v*`.
 
 ## Retired — terms with no v2 meaning
 
-These appear in v1 material and in `sources/CORE_CONCEPT-v0.6.md`,
-`-v0.7.md`, and `-v1.md`. None of them exists in v2; see
+These appear in v1 and pre-v1 material, which this repository keeps in its
+history rather than its tree. None of them exists in v2; see
 [retired-machinery.md](./retired-machinery.md).
 
 consequence tier · Explore / Standard / Critical · `contract_digest` · candidate ·
@@ -142,4 +183,7 @@ acceptance record · execution record · verification record · host evidence ·
 path lease · repair loop · promotion · reconciliation debt · `cc-publish` ·
 publication record · *mandatory* member band · invariant (`INV-*`) ·
 contract schema ·
-wrapper · runtime engine · host adapter · plan status `draft`
+wrapper · runtime engine · host adapter · plan status `draft` ·
+`record note` and the `## Update` section (removed in 2.0.0-rc.6) ·
+the `completed` date field and the bare approval date (superseded by instants in
+2.0.0-rc.4)

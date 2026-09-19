@@ -122,7 +122,7 @@ func TestGlossaryIsExemptFromNoteShape(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, issue := range issues {
-		if strings.Contains(issue, "readability:") {
+		if strings.Contains(issue.Issue, "readability:") {
 			t.Fatalf("the glossary is not a note: %v", issues)
 		}
 	}

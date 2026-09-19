@@ -25,7 +25,11 @@ The rule that carries the weight:
 > human consent.
 
 `record approve` *records* an actual decision; it does not constitute one. The
-approval note carries the real user approval and the date. And in the other
+approval note carries the real user approval and the instant, and approval
+returns `planning_required` — what it authorizes is planning, and planning alone.
+The request that prompted an intent is not approval of it: a person approves the
+outcome after reading how it was written down, so "add billing" is not consent to
+the intent derived from it. And in the other
 direction: approval already supplied in the conversation for that exact outcome
 is honored, not re-requested. Asking twice for the same thing is its own failure
 mode — it teaches people to approve reflexively.
@@ -40,6 +44,31 @@ descriptive planning information, not an enforcement contract.
 Commit, push, PR creation, merge into a base branch, deployment, external
 publication, and deletion of workspace data each require explicit authorization.
 Authorization already given is reused rather than re-requested.
+
+### The direct path a person may choose instead
+
+From 2.0.0-rc.11 the intent path is how an implementation change is *normally*
+made, not the only way one can be made. A person may ask for a change directly —
+because it is small, or because its outcome is already exactly what they said —
+and it is carried out in a bound checkout with no intent, no plan, and no
+worktree.
+
+The boundaries around it are what make it safe to offer:
+
+- **The choice is the person's.** Offer it where a request is already its own
+  specification; never take it unasked.
+- **Stop and offer the intent path** as soon as the change needs an outcome
+  nobody has approved.
+- **Nothing else relaxes.** Committing in a bound checkout, pushing, opening a
+  pull request, merging, and deleting still require explicit authorization.
+- **Knowledge is reconciled the same way**, because a direct change alters
+  durable truth exactly as a completed plan does.
+
+This is not a hole in Decision 1. Decision 1 says a human approves the intended
+outcome; a request that *is* its own outcome has been approved by being made. The
+failure it removes is the opposite one — requiring an intent, an approval, and a
+plan for every change teaches people to route around the product rather than use
+it.
 
 ### Nothing in between
 
@@ -73,8 +102,9 @@ stated when it is granted, and within it nothing is re-asked.
 
 ## Delivery
 
-Delivery uses **ordinary Git and provider tools**. The executable supplies
-repository, branch, and base information and never silently delivers.
+Delivery uses **ordinary Git and provider tools**, through the `cc-deliver`
+skill. The executable supplies repository, branch, and base information and never
+silently delivers.
 
 - The **recorded base branch is the default PR target** unless the user chooses
   another.
@@ -97,7 +127,7 @@ the same as "it is not there."
 | Act | Trigger | Effect | Does not |
 | --- | --- | --- | --- |
 | Delivery | Explicit authorization | Push, PR, merge | Mark a plan done |
-| Completion | Explicit user request | Note + `completed` date + knowledge reconciliation | Remove a worktree or branch |
+| Completion | Explicit user request | Note + `completed_at` instant + knowledge reconciliation | Remove a worktree or branch |
 | Worktree removal | Explicit request | Remove one worktree, preserving files | Delete the branch |
 | Branch deletion | Ordinary Git, separately | Delete the branch | — |
 

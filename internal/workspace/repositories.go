@@ -57,8 +57,20 @@ func Git(ctx context.Context, path string, args ...string) (string, error) {
 	// overrides must not redirect commands away from the selected repository.
 	for _, item := range os.Environ() {
 		key, _, _ := strings.Cut(item, "=")
-		switch strings.ToUpper(key) {
+		key = strings.ToUpper(key)
+		switch key {
 		case "GIT_DIR", "GIT_WORK_TREE", "GIT_COMMON_DIR", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_TERMINAL_PROMPT":
+			continue
+		// One-shot configuration travels the same way and redirects a command
+		// just as effectively: `git -c` exports GIT_CONFIG_PARAMETERS to
+		// everything it runs, and the count/key/value trio is the same
+		// mechanism spelled out. A checkout's own config files are not dropped
+		// with them — GIT_CONFIG_GLOBAL and GIT_CONFIG_SYSTEM are set by a
+		// person isolating their environment, never by a Git operation.
+		case "GIT_CONFIG_PARAMETERS", "GIT_CONFIG_COUNT":
+			continue
+		}
+		if strings.HasPrefix(key, "GIT_CONFIG_KEY_") || strings.HasPrefix(key, "GIT_CONFIG_VALUE_") {
 			continue
 		}
 		command.Env = append(command.Env, item)
@@ -171,6 +183,11 @@ func (s *Store) Connect(ctx context.Context, id, input, base, remote, defaultBra
 	cfg, err := s.Config()
 	if err != nil {
 		return err
+	}
+	// One namespace across both maps: a note's anchor names a repository by ID,
+	// so an ID meaning two things makes every anchor carrying it ambiguous.
+	if _, clash := cfg.KnowledgeRepositories[id]; clash {
+		return fmt.Errorf("%s already names a knowledge repository, which is read-only here; give this repository another ID", id)
 	}
 	path, err := s.LocalPath(input)
 	if err != nil {

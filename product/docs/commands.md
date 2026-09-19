@@ -20,6 +20,7 @@ context-circuit-cli status
 context-circuit-cli member add --id alex --name Alex --band 2
 context-circuit-cli member band --id alex --band 3
 context-circuit-cli member language --id alex --language 'Bahasa Indonesia'
+context-circuit-cli member tone --id alex --tone 'semi-formal; keep technical terms in English'
 context-circuit-cli member use --id alex
 context-circuit-cli member list
 context-circuit-cli repo connect --id api --path ../api --base main
@@ -34,9 +35,25 @@ context-circuit-cli repo fetch --id api --remote origin
 context-circuit-cli workspace connect --base main
 context-circuit-cli workspace base --branch development
 context-circuit-cli workspace remote --url GIT_URL --default-branch main
+context-circuit-cli knowledge clone --id core-service-knowledge --url GIT_URL
+context-circuit-cli knowledge connect --id core-service-knowledge --path ../core-service-knowledge --index index.md
+context-circuit-cli knowledge sync --id core-service-knowledge
+context-circuit-cli knowledge remote --id core-service-knowledge --index docs/index.md
+context-circuit-cli knowledge list
 context-circuit-cli context find --query billing
 context-circuit-cli context find --repo api
 ```
+
+A knowledge repository is one this workspace reads and never owns. It records no
+base branch, takes no worktree, and is never named by a plan, and it shares one
+ID namespace with `repositories` so a note's anchor means one thing. `clone`
+puts it under `repositories/<id>` unless `--path` says otherwise, and takes no
+`--url` for an ID the workspace already describes. `sync` fetches, then
+fast-forwards only when the checkout is clean and on the shared branch; a dirty
+or diverged checkout is reported and left exactly as it is, and nothing is ever
+merged, reset, or discarded. Obtaining one disables its push URL and every sync
+reasserts that, so an edit made here fails rather than half-succeeding —
+improvements go upstream from a separate checkout.
 
 Records:
 
@@ -54,11 +71,16 @@ context-circuit-cli record complete --id p0001 --text 'User requested completion
 context-circuit-cli record order --intent i001 --mode waves
 ```
 
-`context find` takes one of the two: a query searches the catalog, and a
+`context find` takes one of the two: a query searches this workspace's catalog
+and every borrowed index, marking which side each match came from and naming any
+index it could not read, and a
 repository returns the entries claiming it together with `reconcile_required`,
 which is what completion names for a plan and what a change made without one
-still owes. An unknown repository is refused rather than answered with an empty
-list, because nothing to reconcile and nothing found read the same.
+still owes. Those entries are always this workspace's own: a borrowed entry
+names an obligation nobody here can discharge, so it is never offered as
+knowledge to reconcile. An unknown repository is refused rather than answered
+with an empty list, because nothing to reconcile and nothing found read the
+same.
 
 `--band` is optional. A member holding band N allocates intents from `N*100` and
 plans from `N*1000`, so band 2 writes `i200` and `p2000`; members without one
@@ -108,6 +130,30 @@ context-circuit-cli worktree repair --repo api --path ../api-billing
 context-circuit-cli worktree remove --repo api --path ../api-billing
 context-circuit-cli check
 ```
+
+`check` reports findings as an `issue` and the `resolve` that discharges it:
+
+```yaml
+issues:
+  - issue: knowledge repository core-service-knowledge is not obtained on this machine
+    resolve: "`knowledge clone --id core-service-knowledge`, which needs no --url because the workspace already describes it"
+  - issue: "duplicate record ID: p0003"
+    resolve: "needs a person: two clones allocated the same number; renumber one record
+      and every reference to it before either is shared, and keep both reservations"
+ok: false
+```
+
+`check` also reads each catalog entry's `reviewed` date against the code its note
+anchors to, and reports a note whose anchors have moved since — with how many
+commits. A note whose code has not moved is not reported, however old its date
+is. `knowledge_review_days` in `workspace.yaml` additionally reports a note that
+anchors to no code and has gone that long unconfirmed; unset, those are silent.
+
+A resolution names the command where one exists, the edit where an edit is the
+whole of it, and opens with `needs a person` where the next step is somebody's
+judgment. That last kind is the one worth reading closely: it means no command
+discharges the finding, so none should be improvised in its place. `check` still
+reports and exits, and is never a gate.
 
 `--reuse` explicitly selects an existing branch/worktree, without resetting it.
 Preparation derives no order, so a plan that records a dependency in the same

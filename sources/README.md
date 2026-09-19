@@ -15,13 +15,9 @@ This maintainer checkout organizes its own sources with the suggested layout
 
 ```
 sources/
+├── exercise/                                # worked lifecycle scenario
 ├── ideas/till/                              # sample product (Till) + prompts
-├── system-design/context-circuit/
-│   ├── v0.5/ … v0.7.0/                      # release-scoped design
-│   ├── v1.0.0/core/                         # proposed major trust-core study
-│   ├── v2.0.0/core/                         # the v2 rewrite, as built
-│   └── runtime-rearchitecture/              # named grouping (runtime form)
-└── reports/                                 # implementation reports and audits
+└── system-design/context-circuit/v2.0.0/    # the v2 rewrite, as built
 ```
 
 Domains are versioned independently. The layout is ergonomics only; passivity

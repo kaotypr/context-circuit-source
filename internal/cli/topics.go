@@ -7,6 +7,7 @@ import "strings"
 var groups = map[string]bool{
 	"member": true, "repo": true, "record": true, "worktree": true,
 	"context": true, "template": true, "agent": true, "workspace": true,
+	"knowledge": true,
 }
 
 // Topics carry what a signature line cannot: what the command decides, what it
@@ -23,7 +24,12 @@ and connect local checkouts instead.`,
 each bound repository. Read-only: it changes nothing and waits on nothing.`,
 
 	"check": `Reports record, binding, dependency, and worktree problems, including a note
-that names a record or evidence path it should not. Findings marked readability
+that names a record or evidence path it should not.
+
+Every finding carries both what is wrong and what discharges it: the command to
+run where one exists, the edit to make where an edit is the whole of it, or a
+resolution opening with "needs a person" where the next step is somebody's
+judgment and no command should be improvised in its place. Findings marked readability
 report the shape of a note instead: an anchor written into a sentence, a
 paragraph carrying a list it never made, a catalog heading that never says what
 belongs under it. It is an explicitly invoked diagnostic that reports and exits,
@@ -34,6 +40,28 @@ this machine's alone. A band is a numeric block one member allocates from, which
 is what lets clones that cannot see each other avoid colliding. A band is not a
 namespace: IDs stay workspace-global and the member is recorded only as
 created_by.`,
+
+	"knowledge": `Mounts a repository of knowledge this workspace reads and never owns: an
+organization's knowledge center, shared by many workspaces and changed through
+its own repository. The ID, URL, tracked branch, and index file are shared in
+workspace.yaml; the checkout path stays in repositories.local.yaml. It is not a
+repository where work happens, so it holds no base branch, takes no worktree,
+and is never named by a plan; the two ID namespaces are kept apart so a note's
+anchor means one thing.
+
+Read-only here is enforced, not requested: obtaining one disables its push URL,
+and sync reasserts that. Sync fetches, then fast-forwards only when the checkout
+is clean and on the shared branch. It never merges, rebases, resets, or
+discards: a checkout holding local work is reported and left exactly as it is,
+because moving that work is a decision for the person who made it. Improvements
+go upstream through that repository's own review, from a separate checkout.
+
+Retrieval reads it beside this workspace's own catalog, and reports any index it
+could not read rather than narrowing the result in silence. Nothing validates
+its contents the way check validates context/: the catalog rules exist so a
+person here can fix what they break, and neither half holds for a repository
+this workspace does not own. Completion never names a borrowed entry as
+knowledge to reconcile, because nobody here can move it.`,
 
 	"repo": `Binds a logical repository ID to a local checkout. The ID, the repository URL,
 and its default branch are shared in workspace.yaml; the checkout path and the
@@ -69,7 +97,7 @@ init will complete. It never writes over an existing directory.`,
 and composes dispatch specifications. Setup covers every host unless --host
 narrows it, because one workspace is opened in several. A dispatch specification
 reports the definition it names and whether it is installed, and returns a flag
-saying a launch is still required: this executable holds no model credentials,
+saying a launch is still required: this CLI holds no model credentials,
 launches nothing, and a specification is never evidence that an agent ran.`,
 
 	"workspace": `Describes the Git repository carrying the workspace itself, so status reports

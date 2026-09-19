@@ -135,11 +135,21 @@ func unquote(args []string) []string {
 	return out
 }
 
+// Not every shipped doc is written for the agent. how-it-works.md explains the
+// division between person, agent, and CLI to somebody deciding whether to adopt
+// Context Circuit; the agent already holds that division normatively, in the
+// entry instruction itself. Naming it there would spend always-loaded context on
+// prose the agent never acts on, and would leave two tellings of the same rules
+// free to drift — with the descriptive one reading as though it explained the
+// authoritative one. Its reader arrives through README.md instead.
+var humanFacingDocs = map[string]bool{"how-it-works.md": true}
+
 // The entry instruction is always loaded; skills and docs are read on demand.
 // A capability the entry instruction never names is one the agent never looks
-// up, so every shipped skill and doc must be reachable from it — directly, or
-// through a skill it names.
-func TestEverythingShippedIsReachableFromTheEntryInstruction(t *testing.T) {
+// up, so every shipped skill and agent-facing doc must be reachable from it —
+// directly, or through a skill it names. A doc written for a person has to be
+// reachable too, from the README that person actually opens.
+func TestEverythingShippedIsReachableFromItsReader(t *testing.T) {
 	agents := productFile(t, "AGENTS.md.in")
 	reachable := agents
 	for _, name := range shippedSkills(t) {
@@ -153,7 +163,18 @@ func TestEverythingShippedIsReachableFromTheEntryInstruction(t *testing.T) {
 		}
 	}
 	for _, doc := range shippedDocs(t) {
-		if !strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`") {
+		named := strings.Contains(reachable, "`.context-circuit/docs/"+doc+"`")
+		if humanFacingDocs[doc] {
+			if named {
+				t.Errorf("%s is written for a person, so naming it in the entry instruction "+
+					"spends always-loaded context on prose the agent does not act on", doc)
+			}
+			if !strings.Contains(productFile(t, "README.md"), "docs/"+doc+")") {
+				t.Errorf("%s is shipped for a person to read but README.md never links it", doc)
+			}
+			continue
+		}
+		if !named {
 			t.Errorf("%s is shipped but named by nothing an agent loads", doc)
 		}
 	}
@@ -312,6 +333,64 @@ func TestEveryCommandHasATopic(t *testing.T) {
 		}
 		if _, ok := cli.CommandHelp(name); !ok {
 			t.Errorf("topic %q resolves to nothing", name)
+		}
+	}
+}
+
+// Initialization titles a workspace's README and pins its version badges by
+// replacing marked spans. Losing a marker fails nothing at build time: it would
+// quietly ship workspaces titled with the product's own name, carrying badges
+// that report whatever was published since rather than what the workspace runs.
+func TestTheShippedReadmeKeepsTheSpansInitializationRewrites(t *testing.T) {
+	readme := productFile(t, "README.md")
+	for _, marker := range []string{
+		"<!-- context-circuit:title -->", "<!-- /context-circuit:title -->",
+		"<!-- context-circuit:badges -->", "<!-- /context-circuit:badges -->",
+	} {
+		if count := strings.Count(readme, marker); count != 1 {
+			t.Errorf("%s appears %d times; the rewrite needs exactly one", marker, count)
+		}
+	}
+	if !strings.Contains(readme, `<h1 align="center">Context Circuit</h1>`) {
+		t.Error("the marked title span no longer holds the heading a workspace name replaces")
+	}
+	// The product repository keeps a LICENSE at its root; a workspace does not,
+	// so a relative link here resolves nowhere once the file is installed.
+	if strings.Contains(readme, `<a href="LICENSE">`) {
+		t.Error("the license badge links relatively, which breaks in an installed workspace")
+	}
+}
+
+// The two licenses answer different questions, so neither may quietly become the
+// other. The CLI is Apache-2.0; everything a workspace receives is 0BSD,
+// whose point is that it asks nothing of the repository it is copied into.
+func TestTheTwoLicensesStaySeparate(t *testing.T) {
+	root := func(name string) string {
+		data, err := os.ReadFile(filepath.Join("..", "..", name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	if !strings.Contains(root("LICENSE"), "Apache License") {
+		t.Error("the root LICENSE no longer carries the Apache text GitHub detects")
+	}
+	product := productFile(t, "LICENSE")
+	if !strings.Contains(product, "BSD Zero Clause License") {
+		t.Error("the shipped license no longer carries the 0BSD text")
+	}
+	if strings.Contains(product, "Apache") {
+		t.Error("the CLI's license reached the tree a workspace receives")
+	}
+	manifest := root(filepath.Join("scripts", "release-manifest.txt"))
+	if !strings.Contains(manifest, "product/LICENSE .context-circuit/LICENSE") {
+		t.Error("the shipped license does not travel with the files it covers")
+	}
+	// A LICENSE at a workspace root would make GitHub label somebody else's
+	// project with this one's terms.
+	for _, line := range strings.Split(manifest, "\n") {
+		if fields := strings.Fields(line); len(fields) == 2 && fields[1] == "LICENSE" {
+			t.Error("a license installs at the workspace root, where it describes the wrong project")
 		}
 	}
 }

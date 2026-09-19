@@ -1,117 +1,217 @@
-# Context Circuit v2
+<p align="center">
+  <img src="product/assets/readme/social-preview.png" alt="Context Circuit" width="840">
+</p>
 
-Context Circuit is a shared workspace station for AI-assisted development across
-one or more Git repositories. Solo developers and teams share project knowledge,
-repository relationships, members, intents, and plans.
+<h1 align="center">Context Circuit Source</h1>
 
-The separately released Context Circuit CLI manages workspace files, global IDs,
-repository bindings, CoW worktrees, dependency-ordered execution, knowledge
-consistency, and native subagent role settings. The workspace ships skills to
-install/update the CLI and dispatch subagents. Your coding agent handles
-understanding, planning, implementation, environment setup, ordinary checks, and
-explicitly requested review and delivery.
+<p align="center">
+  <strong>Maintainer source for the Context Circuit workspace and CLI.</strong>
+</p>
 
-## User journey
+<p align="center">
+  <a href="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml"><img alt="Source checks" src="https://github.com/kaotypr/context-circuit-source/actions/workflows/check.yml/badge.svg"></a>
+  <a href="go.mod"><img alt="Go" src="https://img.shields.io/github/go-mod/go-version/kaotypr/context-circuit-source?label=go&color=00add8"></a>
+  <a href="https://github.com/kaotypr/context-circuit-source/releases"><img alt="CLI release" src="https://img.shields.io/github/v/release/kaotypr/context-circuit-source?filter=cli-v*&display_name=tag&include_prereleases&sort=date&label=cli&color=1f6feb"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/badge/license-Apache--2.0-2f855a"></a>
+  <a href="https://context-circuit.kaotypr.com"><img alt="Website" src="https://img.shields.io/badge/website-context--circuit.kaotypr.com-0b7285"></a>
+</p>
 
-1. Clone the workspace template, ask its cc-cli skill to install the CLI, and
-   initialize a named workspace with a purpose and first member.
-2. Connect existing repositories, clone them, or initialize new repositories,
-   and describe the repository carrying the workspace itself. Record repository
-   URLs, default branches, and relationships; keep concrete checkout paths and
-   base branches local to each machine.
-3. Gather durable knowledge from named sources into `context/` notes, catalogued
-   one unwrapped entry each in `context/INDEX.md`, with project vocabulary in
-   `context/glossary.md`. A note describes the project and anchors to repository
-   paths; it never names a record or a file of raw evidence.
-4. Describe a change; the agent writes an intent and stops. Approving it is what
-   sends the agent into the code to create linked Markdown plans, which it
-   presents and stops on again. Reading them is optional and there is no plan
-   approval gate, but nothing is implemented until execution is requested.
-5. Ask to execute. That prepares a worktree per repository — unless you ask to
-   work directly in a bound checkout — then implements and runs normal tests,
-   lint, and builds. For several plans at once,
-   `record order` derives dependency waves or a linear chain and reports the
-   cost of each; the agent confirms the shape once and runs it to completion,
-   preparing worktrees, performing integration merges, dispatching workers, and
-   stopping with all work preserved on a failed check or a decision it should
-   not make alone.
-6. Request delivery and independent code review separately. Review reports
-   findings without modifying code. It never starts automatically during
-   execution, and never blocks a pull request, delivery, or completion.
-7. Explicitly mark plans done and reconcile relevant durable project knowledge.
-   Completion returns the catalog entries scoped to those plans' repositories as
-   candidates to judge; where meaning changed, the note and its entry move
-   together.
+<p align="center">
+  <a href="https://github.com/kaotypr/context-circuit">Product guide</a> ·
+  <a href="WORKFLOW.md">Source workflow</a> ·
+  <a href="CLI.md">CLI architecture</a> ·
+  <a href="#development">Development</a> ·
+  <a href="#release-assembly">Release assembly</a> ·
+  <a href="#licensing">Licensing</a>
+</p>
 
-Member attribution is created_by only. Plan IDs are workspace-global, never
-member namespaces. The p prefix distinguishes plans (p0001) from intents (i001).
-Numbers are allocated automatically; an optional per-member allocation band
-divides the range so members holding distinct bands never choose the same
-number, however long they work in separate clones.
+Context Circuit gives coding agents shared project context, a grounded plan,
+and explicit human control points across one or more Git repositories.
 
-`context-circuit-cli check` is an explicitly invoked diagnostic over records,
-local bindings, dependency cycles, stale worktree associations, and knowledge
-consistency — a note that crosses the durable-only boundary, a catalog entry
-naming a missing note, a note no entry lists. It is not an execution gate and
-nothing waits on it.
+This repository is the maintainer source checkout. It builds two separately
+versioned products:
 
-## Build and use
+1. A **workspace template** containing the files, instructions, skills, and
+   documentation an agent uses with a project.
+2. A **native CLI** that handles workspace records, repository bindings,
+   isolated working copies, ordering, diagnostics, and release-safe mechanics.
 
-Go 1.25+ is needed by contributors. Users need the executable for their platform
-and installed Git; no Python, Go toolchain, or YAML package installation is
-needed.
+If you want to use Context Circuit, begin with the
+[product guide](https://github.com/kaotypr/context-circuit). If you are changing how Context Circuit
+works or ships, this is the repository to edit.
+
+## What belongs in the CLI
+
+The line between the CLI and the coding agent is the design constraint this
+repository implements. Before adding behavior, decide which side it is on.
+
+| The CLI does | The coding agent does |
+| --- | --- |
+| Allocates stable IDs and edits structured workspace files | Understands a request and retrieves relevant project context |
+| Records approvals, dependencies, completion, and local bindings | Writes goals and implementation plans |
+| Prepares and tracks isolated Git working copies | Inspects code, implements changes, and runs project checks |
+| Produces deterministic diagnostics and dispatch specifications | Decides when bounded exploration or sub-agents are useful |
+| Refuses invalid state without making product judgments | Reports real results and unresolved decisions |
+
+Anything whose answer depends on reading the actual project belongs to the
+agent, not to Go. Anything that must return the same result every time belongs
+here. The CLI holds no LLM credentials and never calls a model API, so a feature
+that needs judgment is a skill or an instruction change, not a command.
+
+Human authorization sits outside both and is never inferred by either.
+
+## Repository layout
+
+This is the maintainer-source layout. The repository structure users receive is
+shown in the product guide under
+[Workspace repository structure](product/README.md#workspace-repository-structure).
+
+```text
+context-circuit-source/
+├── cmd/
+│   └── context-circuit/       Native CLI entry point
+├── internal/
+│   ├── cli/                   Commands and human/JSON output
+│   ├── workspace/             Records, YAML edits, Git, and working copies
+│   ├── cow/                   Copy-on-write cloning with copy fallback
+│   └── installer/             Acceptance tests for the shipped install scripts
+├── product/                   Instructions, skills, docs, and artwork a workspace receives
+│   ├── LICENSE                0BSD, covering everything a workspace receives
+│   ├── assets/readme/         Product and README artwork
+│   ├── docs/                  Workspace and command documentation
+│   └── skills/                Agent procedures for each workflow stage
+├── template/                  Blank workspace records and configuration
+├── context/                   Maintainer product knowledge; never shipped
+├── release/
+│   ├── binding.yaml           Where the workspace template publishes
+│   ├── template-repo/         Landing-page files the published repository owns
+│   └── requests/              One release request per version
+├── scripts/
+│   ├── release-manifest.txt   Exact source-to-workspace mapping
+│   └── …                      Build, validation, and publication tooling
+├── assets.go                  Embedded product inventory
+├── LICENSE                    Apache-2.0, covering this checkout and the CLI
+├── VERSION                    Workspace-template version
+└── CLI_VERSION                Native CLI version
+```
+
+`product/` and `template/` are the two shipped trees; `scripts/release-manifest.txt`
+maps every file in them to its destination in a generated workspace.
+
+`sources/` is passive maintainer design history: not the current product
+specification, and never shipped. `release/` is not history — `binding.yaml`
+names the published destination, and each version's request lives beside it.
+
+This checkout is not a Context Circuit workspace and carries no workspace
+records. The product's intent and plan flow is not used here; maintainer changes
+are made directly on the current branch, as `AGENTS.md` sets out.
+
+`context/` is still validated by the product's own diagnostic. `go test` builds a
+throwaway workspace around the real tree, binds it to this checkout so each
+note's code anchors resolve, and fails on any finding a command or an edit can
+discharge. That runs for every clone and every pull request, where registering
+this checkout by hand only ever ran on the machine that did it.
+
+## Development
+
+Contributors need Go 1.25 or newer and Git.
+
+Build the native CLI:
 
 ```sh
 go build -o /tmp/context-circuit-cli ./cmd/context-circuit
-/tmp/context-circuit-cli --workspace /tmp/acme-new init \
-  --name Acme --purpose 'Billing software' --member maya --member-name Maya
+/tmp/context-circuit-cli version
 ```
 
-Native binary archives are built for macOS, Linux, and Windows on amd64/arm64.
-With no output argument each build clean-rebuilds its own directory under
-`dist/` (`dist/workspace-<version>` and `dist/cli-<version>`), so repeated runs
-replace rather than fail and neither build removes the other's assets. An
-explicit output directory must be new; builds never replace existing output
-there:
+Run the normal validation:
+
+```sh
+gofmt -w path/to/changed.go
+go test ./...
+go vet ./...
+sh scripts/check-release.sh
+```
+
+`scripts/check-release.sh` is the full product check. In fresh temporary
+directories it tests the Go packages, builds the workspace archive, builds all
+six CLI targets, verifies checksums, exercises installation and initialization,
+and checks publication safeguards.
+
+Cross-compilation proves that a binary builds for another platform; it does not
+prove native behavior there. CI supplies native Linux, macOS, and Windows
+coverage.
+
+## Build outputs
+
+Build both release inventories:
 
 ```sh
 sh scripts/build-dist.sh
 sh scripts/build-cli.sh
-sh scripts/build-dist.sh v2.0.0-dev /tmp/cc-v2-workspace
-sh scripts/build-cli.sh 2.0.0-dev /tmp/cc-v2-cli
-sh scripts/check-release.sh
 ```
 
-Workspace publication uses VERSION and publishes the template repository's v*
-releases. CLI publication uses CLI_VERSION and this repository's
-context-circuit-cli-v* tags, which build here and publish their assets on the
-template repository and its GitLab mirror, so installing needs no access to this
-checkout. The two products have separate release workflows and package inventories.
-Each workspace pins the CLI version it expects and versions install side by
-side, so workspaces pinning different versions coexist on one machine. The CLI
-also embeds a seed as a convenience for new workspaces; updates do not rewrite
-existing workspaces. See [CLI product](CLI.md).
+With no explicit destination, each script clean-rebuilds its own versioned
+directory under `dist/`. The workspace and CLI builds do not remove one
+another's output.
 
-Pass a new directory to `check-release.sh` to retain both sets of checked
-assets.
+To keep a checked build in a specific location, provide a new directory:
 
-See [the product guide](product/README.md),
-[workspace files](product/docs/workspace.md),
-[commands](product/docs/commands.md),
-[working records](product/docs/working.md),
-[subagents](product/docs/agents.md),
-[worktree responsibilities](product/docs/worktrees.md), and
-[source workflow](WORKFLOW.md).
+```sh
+sh scripts/build-dist.sh v2.0.0-dev /tmp/context-circuit-workspace
+sh scripts/build-cli.sh 2.0.0-dev /tmp/context-circuit-cli
+sh scripts/check-release.sh /tmp/context-circuit-release-check
+```
 
-Workspace data remains readable YAML and Markdown. Local locking coordinates
-edits in one directory, and allocation bands keep members holding distinct bands
-out of each other's numbers offline. Neither is a distributed allocation
-service: unbanded members in separate clones, and any clone whose roster is
-stale, must still synchronize the workspace and resolve competing allocations
-before sharing new IDs. Initialization is for fresh workspaces; existing v1
-workspaces are not migrated automatically.
+Explicit output directories must not already exist. Release assembly never
+overwrites a caller-selected directory.
 
-The YAML dependency is goccy/go-yaml, pinned in go.mod. A portable file-locking
-library supplies the small operating-system-specific locking primitive. Release
-assets include dependency licenses. Product history and maintainer data never
-ship.
+## Release assembly
+
+The products have separate version lines and package inventories:
+
+| Product | Version source | Tag family | Output |
+| --- | --- | --- | --- |
+| Workspace template | `VERSION` | `v*` | Versioned workspace archive and checksum |
+| Native CLI | `CLI_VERSION` | `cli-v*` | macOS, Linux, and Windows archives for amd64/arm64 |
+
+The CLI embeds the blank workspace seed as a convenience for `init` and
+`template export`. That seed does not make the two products one release: an
+existing workspace pins its expected CLI version in
+`.context-circuit/CLI_VERSION`, and installed CLI versions coexist side by side.
+
+Publication is never an implicit part of validation. Commits, tags, pushes,
+release publication, and deployment require an explicit maintainer request.
+
+## Maintaining product behavior
+
+- Edit source files under `product/` and `template/`; do not patch a generated
+  workspace and copy it back by guesswork.
+- Keep `scripts/release-manifest.txt` and `assets.go` consistent with every file
+  that ships.
+- Retrieve current product decisions through `context/INDEX.md` instead of
+  scanning every knowledge note.
+- Keep a context note and its catalog entry in the same change.
+- Preserve unrelated working-tree changes and validate release behavior in
+  fresh temporary directories.
+- Do not revive retired v1 lifecycle machinery.
+
+See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
+[CLI.md](CLI.md) for the CLI boundary and packaging behavior, and the [product
+documentation](product/docs/) for the workspace contract.
+
+## Licensing
+
+This checkout carries two licenses, because it builds two things with different
+relationships to the people who receive them.
+
+| What | License | Why |
+| --- | --- | --- |
+| This repository and `context-circuit-cli` | [Apache-2.0](LICENSE) | A binary organizations install fleet-wide; the explicit patent grant is what carries it through legal review |
+| Everything a workspace receives, under `product/` and `template/` | [0BSD](product/LICENSE) | Scaffolding copied into somebody else's repository and edited there, so it imposes no attribution obligation on their project |
+
+GitHub detects the root `LICENSE` only, so this repository is labeled Apache-2.0.
+The 0BSD text travels with the files it covers: it ships to
+`.context-circuit/LICENSE` in every workspace, and `publish-template.sh` puts the
+same text at the root of the published template repository.
+
+A contribution is offered under the license covering the tree it touches.

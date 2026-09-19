@@ -43,9 +43,18 @@ Runs the product against a real project, alone or on a roster.
 
 ## [Durable notes and the retrieval catalog](../domains/knowledge-notes.md)
 
-1. **As a member, I want to retrieve the few notes that bear on my task,** so
+1. **As a member, I want a note reported stale because the code under it moved,
+   not because time passed,** so that a findings list I am asked to read is
+   evidence rather than a birthday.
+2. **As a member whose organization keeps a shared knowledge center, I want to
+   read it here without copying it in,** so that I am not maintaining a second
+   copy that reads as current while drifting.
+3. **As a member who writes records in my own language, I want to say what
+   register I write in,** so that what comes back reads like my team wrote it
+   rather than like it was translated.
+4. **As a member, I want to retrieve the few notes that bear on my task,** so
    that starting work does not mean reading everything the project knows.
-2. **As a member, I want most completions to record that nothing durable
+5. **As a member, I want most completions to record that nothing durable
    changed,** so that the knowledge circuit stays honest instead of producing
    an edit per plan.
 

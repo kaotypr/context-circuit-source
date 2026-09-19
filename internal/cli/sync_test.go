@@ -106,9 +106,9 @@ func TestAllocatingInACurrentWorkspaceIsSilent(t *testing.T) {
 	}
 }
 
-// The refusal rc.9 added is armed by `depends_on`; a plan that builds on another
-// without declaring it got a worktree cut from the base, holding none of the
-// work it was meant to extend. That is the shape of the missed fix in PR #31.
+// The refusal is armed by `depends_on`; a plan that builds on another without
+// declaring it got a worktree cut from the base, holding none of the work it was
+// meant to extend.
 func TestPreparingBesideUnmergedPlanWorkSaysSo(t *testing.T) {
 	f := setup(t)
 	f.repository("api")

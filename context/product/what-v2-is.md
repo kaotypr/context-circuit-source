@@ -26,9 +26,9 @@ Three consequences shape the whole product:
    what a session believed. On resume the real branch and diff are read first
    and the note second.
 2. **Mechanism splits from judgment.** Work that must happen identically every
-   time lives in a compiled executable; everything interpretive stays with the
-   agent, in the conversation, where a person can see it. See
-   [the executable and agent seam](../architecture/executable-and-agent-seam.md).
+   time lives in a compiled CLI; everything interpretive stays with the agent,
+   in the conversation, where a person can see it. See
+   [the CLI and agent seam](../architecture/cli-and-agent-seam.md).
 3. **Nothing claims what has not been established.** A returned subagent
    specification says it launched nothing; a written host role file is not a
    loaded one; derived execution order says it ran, merged, and reserved

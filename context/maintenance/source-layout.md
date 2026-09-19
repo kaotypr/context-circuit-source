@@ -10,31 +10,42 @@ generated workspaces, not this one.
 | --- | --- |
 | `context-circuit-source@product/AGENTS.md.in` | The always-loaded gates and prohibitions, and the pointer to each stage's skill |
 | `context-circuit-source@product/docs/` | Workspace files, agent-facing commands, subagents, working records, worktrees |
-| `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus executable installation and subagent dispatch |
+| `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus CLI installation and subagent dispatch |
+| `context-circuit-source@product/assets/readme/` | The artwork the workspace README and the template repository listing use |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
-| `context-circuit-source@cmd/context-circuit/` | Executable entry point |
+| `context-circuit-source@internal/installer/` | Acceptance tests for the shipped install scripts; it carries no non-test source |
+| `context-circuit-source@cmd/context-circuit/` | CLI entry point |
 | `context-circuit-source@template/` | Blank workspace files embedded with the product instruction |
 | `context-circuit-source@scripts/release-manifest.txt` | The exact source-to-output file mapping |
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
+| `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files that repository owns |
+| `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives |
 
-## Three classes of material
+## Four classes of material
 
 | Class | What it holds |
 | --- | --- |
 | Shipped instruction | The product's behavior: `context-circuit-source@product/` |
 | Mutable seed | Files copied into a new workspace: `context-circuit-source@template/` |
+| Destination-owned | The published repository's own landing page: `context-circuit-source@release/template-repo/`, restored over the artifact at publication and reaching no workspace |
 | Never shipped | This knowledge tree, the workspace's own records, release requests, the Go implementation, scripts, and the maintainer design and evidence material |
 
-Product history and maintainer data never reach a release asset.
+Product history and maintainer data never reach a release asset. The
+destination-owned class exists because a workspace root belongs to somebody
+else's project; see [licensing](../product/licensing.md) for what that rules out
+and why.
 
 The manifest is the single place that decides which class a file is in, the
 embedding reads only what it names, and the release check verifies the embedded
 inventory against it. A new shipped file that is not in the manifest is simply
 absent from the product, which is why the manifest and the file land together.
+Artwork is shipped on the same terms as instruction — named once in the manifest
+and once in the embed list — so removing an image means editing both, and an
+image nothing references keeps shipping until someone does.
 
 ## Working rules for this checkout
 

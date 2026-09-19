@@ -19,7 +19,7 @@ context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
   --member ID --member-name NAME
 ```
 
-The executable creates embedded instructions, folders, and initial records, and
+The CLI creates embedded instructions, folders, and initial records, and
 preserves existing files. A solo workspace still has a real member.
 
 On another machine, select an existing member and connect its local checkouts;
@@ -41,6 +41,7 @@ context-circuit-cli --workspace <root> member add --id ID --name NAME --band N
 context-circuit-cli --workspace <root> member use --id ID
 context-circuit-cli --workspace <root> workspace connect --base BRANCH
 context-circuit-cli --workspace <root> repo clone --id ID --path repositories/ID --base main
+context-circuit-cli --workspace <root> knowledge clone --id ID
 context-circuit-cli --workspace <root> agent setup
 ```
 
@@ -78,6 +79,41 @@ meaningful relationships, and obey repository instructions within each checkout.
 A repository can be registered before its first commit; worktree preparation
 needs one. Setting a base records the intended branch without creating or
 resetting it.
+
+## Mount knowledge this workspace reads but does not own
+
+An organization that keeps a shared knowledge center — one repository many
+workspaces read — mounts it here instead of copying from it. Do this on request,
+naming the repository:
+
+```sh
+context-circuit-cli --workspace <root> knowledge clone --id core-service-knowledge --url GIT_URL
+context-circuit-cli --workspace <root> knowledge connect --id core-service-knowledge --path ../core-service-knowledge
+```
+
+`clone` puts the checkout under `repositories/<id>`, beside the working copies
+and already gitignored; `connect` binds one the user already has. Either way the shared record is written once and
+the path stays local to this machine, the same split every other checkout makes.
+On a second machine, clone or connect an ID the workspace already describes and
+pass no URL.
+
+The ID shares one namespace with `repositories`, because a note's anchor names a
+repository by ID and an ID meaning two things makes every anchor carrying it
+ambiguous. Connecting an ID the other side already holds is refused, as is
+mounting a checkout where work happens.
+
+The `index` is the file mapping its contents. Connecting detects the usual
+spellings; where the layout is unfamiliar, read the repository and name the file
+with `knowledge remote --id ID --index PATH`. Without one, nothing here can
+retrieve from it, and `check` says so.
+
+Keep it current with `knowledge sync`, which fetches and fast-forwards only when
+the checkout is clean and on the shared branch. A dirty or diverged checkout is
+reported and left untouched: say what it holds and where the work should go,
+never resolve it by resetting or discarding. It is read-only here — the push URL
+is disabled — so an improvement is a merge request in that repository, from a
+separate checkout of it. `.agents/skills/cc-knowledge/SKILL.md` carries what may
+and may not be done with what it says.
 
 ## Describe the workspace's own repository
 
@@ -135,6 +171,21 @@ the member who wrote it — and an approval or completion note keeps the words t
 person actually used. The brief a worker receives names this language and tells
 it that what goes into the repository is English, because a worker works under a
 repository's instructions and never reads these.
+
+Beside it, a member may record the register that language is written in:
+
+```sh
+context-circuit-cli --workspace <root> member tone --id ID --tone 'semi-formal; keep technical terms in English'
+context-circuit-cli --workspace <root> member tone --id ID --clear
+```
+
+One line of prose, quoted into the instruction that writes a record rather than
+parsed. Naming a language settles which words a record uses and nothing about
+how they are put together, and an agent that composes in English and translates
+produces prose that is grammatical and formal in a way nobody chose. Record it
+when a team knows the register it wants; unset leaves the general composition
+guidance in `.agents/skills/cc-intent/SKILL.md` to decide. Ask the member for
+the wording rather than inventing a register on their behalf.
 
 Bands prevent collisions only between members who actually hold distinct ones.
 Unbanded members working in separate clones, and any clone whose roster is

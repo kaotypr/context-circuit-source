@@ -22,10 +22,13 @@ Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
-member add            --id ID --name NAME [--band N] [--language NAME]
+member add            --id ID --name NAME [--band N] [--language NAME] [--tone TEXT]
 member band           --id ID --band N|0 (allocation block; 0 clears it)
 member language       --id ID --language NAME (the language this member's
                       intents and plans are written in; knowledge stays English)
+member tone           --id ID --tone TEXT | --clear (the register that language
+                      is written in, such as 'semi-formal; keep technical terms
+                      in English')
 member use            --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH [--url URL]
@@ -41,6 +44,14 @@ workspace connect     [--path PATH] --base BRANCH [--url URL]
                       --path defaults to the workspace root, --base is this machine's)
 workspace base        --branch BRANCH (this machine's workspace base branch)
 workspace remote      [--url URL] [--default-branch BRANCH] (shared)
+knowledge connect     --id ID --path PATH [--url URL] [--default-branch BRANCH]
+                      [--index PATH] (a repository this workspace reads and never writes)
+knowledge clone       --id ID [--path NEW_PATH] [--url URL] [--default-branch BRANCH]
+                      [--index PATH] (--path defaults to repositories/<id>)
+knowledge sync        --id ID (fetch, then fast-forward only when clean and
+                      on the shared branch; never merges, resets, or discards)
+knowledge remote      --id ID [--url URL] [--default-branch BRANCH] [--index PATH] (shared)
+knowledge list        every borrowed repository and this machine's state of it
 repo fetch            --id ID [--remote origin]
 repo inspect          --id ID
 record create         --kind intent|plan --slug SLUG --title TITLE
@@ -83,6 +94,32 @@ type listFlag []string
 
 func (v *listFlag) String() string         { return strings.Join(*v, ",") }
 func (v *listFlag) Set(value string) error { *v = append(*v, value); return nil }
+
+// provided reports whether the caller actually passed a flag, which is the only
+// way to tell an omitted number from one deliberately set to its zero value.
+func provided(f *flag.FlagSet, name string) bool {
+	found := false
+	f.Visit(func(set *flag.Flag) {
+		if set.Name == name {
+			found = true
+		}
+	})
+	return found
+}
+
+// writeYAML renders a result for a human through the public JSON names, so a
+// field is called the same thing whichever stream a caller reads.
+func writeYAML(out io.Writer, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	if data, err = yaml.JSONToYAML(data); err != nil {
+		return err
+	}
+	_, err = out.Write(data)
+	return err
+}
 
 // pinnedVersionWarning reports when the running CLI differs from the version a
 // workspace pins in .context-circuit/CLI_VERSION. Workspaces are installed and
@@ -162,15 +199,18 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	var repos, dependencies, copyPaths listFlag
 	var band int
-	var archived, reuse, discard, reviewRequested, shared, localTiering bool
+	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
 	case "member add":
-		add("id", "name", "language")
+		add("id", "name", "language", "tone")
 		f.IntVar(&band, "band", 0, "allocation block for this member")
 	case "member language":
 		add("id", "language")
+	case "member tone":
+		add("id", "tone")
+		f.BoolVar(&clearTone, "clear", false, "remove this member's recorded register")
 	case "member band":
 		add("id")
 		f.IntVar(&band, "band", 0, "allocation block, or 0 to clear it")
@@ -194,6 +234,13 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("branch")
 	case "workspace remote":
 		add("url", "default-branch")
+	case "knowledge connect", "knowledge clone":
+		add("id", "path", "url", "default-branch", "index")
+	case "knowledge remote":
+		add("id", "url", "default-branch", "index")
+	case "knowledge sync":
+		add("id")
+	case "knowledge list":
 	case "record create":
 		add("kind", "slug", "title", "intent")
 		f.Var(&repos, "repo", "repository (repeatable)")
@@ -241,8 +288,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "status", "check", "member list":
 	default:
 		fmt.Fprintf(errOut, "unknown command: %s\n", command)
-		if topic := strings.Fields(command)[0]; groups[topic] {
-			fmt.Fprintf(errOut, "try: context-circuit-cli help %s\n", topic)
+		// An empty argument is a command name with no fields at all, so there
+		// is no group to offer a topic for. Reporting it is still right; going
+		// looking for its first word is what crashes.
+		if topic := strings.Fields(command); len(topic) > 0 && groups[topic[0]] {
+			fmt.Fprintf(errOut, "try: context-circuit-cli help %s\n", topic[0])
 		}
 		return 2
 	}
@@ -263,9 +313,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		return ""
 	}
 	optional := map[string]bool{"remote": true, "default-branch": true}
-	// A member writing in the workspace's usual language records nothing; the
-	// field exists for the member who does not.
+	// A member writing in the workspace's usual language records nothing, and a
+	// team happy with the general composition guidance records no register; both
+	// fields exist for the member who is neither.
 	optional["language"] = command == "member add"
+	optional["tone"] = command == "member add" || command == "member tone"
 	// The workspace's own checkout is the workspace root unless a workspace
 	// kept inside a larger repository names the root above it.
 	if command == "workspace connect" {
@@ -275,6 +327,13 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// below, where the alternative can be named.
 	if command == "workspace remote" {
 		optional["url"], optional["default-branch"] = true, true
+	}
+	// A borrowed repository names its own index, and a layout this product
+	// recognizes is detected rather than demanded. Obtaining one lands under
+	// repositories/<id> unless the caller keeps it somewhere else.
+	if strings.HasPrefix(command, "knowledge ") {
+		optional["index"] = true
+		optional["path"] = command != "knowledge connect"
 	}
 	// A URL is one shared detail the checkout usually already knows. Even a
 	// clone may omit it, because an ID this workspace already describes
@@ -314,6 +373,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			return 2
 		}
 	}
+	// The required check above reads string flags, and a band is a number whose
+	// zero value is the documented way to clear one. Omitting the flag would
+	// otherwise clear the member's block silently, which is the one outcome a
+	// caller who forgot it cannot have meant.
+	if command == "member band" && !provided(f, "band") {
+		fmt.Fprintln(errOut, "missing --band")
+		return 2
+	}
 	if command == "init" || command == "template export" {
 		if command == "template export" {
 			*root = get("path")
@@ -333,7 +400,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			fmt.Fprint(errOut, warning)
 		}
 	}
-	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "worktree list" || command == "worktree inspect"
+	readOnly := command == "agent settings" || command == "agent dispatch" || command == "template export" || command == "status" || command == "check" || command == "member list" || command == "record show" || command == "record list" || command == "repo inspect" || command == "context find" || command == "knowledge list" || command == "worktree list" || command == "worktree inspect"
 	checkFailed := false
 	action := func() (any, error) {
 		var err error
@@ -365,11 +432,13 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "member list":
 			return s.Members()
 		case "member add":
-			err = s.AddMember(get("id"), get("name"), band, get("language"))
+			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"))
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)
 		case "member language":
 			err = s.SetMemberLanguage(get("id"), get("language"))
+		case "member tone":
+			err = s.SetMemberTone(get("id"), get("tone"), clearTone)
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":
@@ -390,6 +459,16 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			err = s.SetWorkspaceBase(ctx, get("branch"))
 		case "workspace remote":
 			err = s.SetWorkspaceRemote(ctx, get("url"), get("default-branch"))
+		case "knowledge connect":
+			err = s.ConnectKnowledge(ctx, get("id"), get("path"), get("url"), get("default-branch"), get("index"))
+		case "knowledge clone":
+			err = s.CloneKnowledge(ctx, get("id"), get("path"), get("url"), get("default-branch"), get("index"))
+		case "knowledge remote":
+			err = s.SetKnowledgeRemote(ctx, get("id"), get("url"), get("default-branch"), get("index"))
+		case "knowledge sync":
+			return s.SyncKnowledge(ctx, get("id"))
+		case "knowledge list":
+			return s.KnowledgeStates(ctx)
 		case "repo inspect", "repo fetch":
 			checkout, e := s.Repository(ctx, get("id"))
 			if e != nil {
@@ -473,7 +552,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				}
 				return result, e
 			}
-			return s.FindContext(get("query"))
+			return s.FindContext(ctx, get("query"))
 		case "worktree prepare":
 			return s.Prepare(ctx, get("repo"), get("plan"), get("branch"), get("start"), get("path"), reuse, workspace.ReuseOptions{Mode: get("copy-mode"), Paths: copyPaths})
 		case "worktree list":
@@ -499,23 +578,26 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
-	if command == "record show" && !*asJSON {
-		_, err = fmt.Fprint(out, result.(workspace.Record).Content)
-	} else if *asJSON {
+	switch {
+	case *asJSON:
 		enc := json.NewEncoder(out)
 		enc.SetIndent("", "  ")
 		err = enc.Encode(result)
-	} else {
-		var data []byte
-		// Output uses the public JSON names, including record paths; the YAML
-		// tags on records describe frontmatter and deliberately omit content.
-		data, err = json.Marshal(result)
-		if err == nil {
-			data, err = yaml.JSONToYAML(data)
+	case command == "record show":
+		_, err = fmt.Fprint(out, result.(workspace.Record).Content)
+	case command == "record create":
+		// A record's body is a document. Rendered as a YAML scalar it arrives as
+		// one escaped line, which is the shape `record show` already refuses to
+		// print. The reservation and the path lead, because they are what the
+		// caller asked the CLI for, and the body follows as itself.
+		created := result.(workspace.Record)
+		body := created.Content
+		created.Content = ""
+		if err = writeYAML(out, created); err == nil && body != "" {
+			_, err = fmt.Fprintf(out, "\n%s", body)
 		}
-		if err == nil {
-			_, err = out.Write(data)
-		}
+	default:
+		err = writeYAML(out, result)
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, err)

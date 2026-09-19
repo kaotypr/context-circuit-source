@@ -16,7 +16,7 @@ mkdir -p "$output_dir"
 output_dir=$(CDPATH= cd -- "$output_dir" && pwd)
 cd "$source_root"
 
-# A native helper exports its embedded blank seed. Cross-built executables are
+# A native helper exports its embedded blank seed. Cross-built binaries are
 # never run as evidence of native support.
 CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -X main.version=$(cat CLI_VERSION)" -o "$staging_dir/native" ./cmd/context-circuit
 artifact_name="context-circuit-$version"

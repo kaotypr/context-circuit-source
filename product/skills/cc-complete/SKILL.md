@@ -1,13 +1,13 @@
 ---
 name: cc-complete
-description: Mark Context Circuit plans completed and reconcile the durable project knowledge those plans changed, which together finish the request.
+description: Mark Context Circuit plans completed and reconcile the durable product knowledge those plans changed, which together finish the request.
 ---
 
 # Mark a plan completed
 
 Delivery does not mark a plan done. Completion happens when a person explicitly
 asks for it, and it is two acts, not one: append a short completion note to each
-record, **and** reconcile the durable project knowledge those plans changed. The
+record, **and** reconcile the durable product knowledge those plans changed. The
 request is finished only when both are done.
 
 ```sh

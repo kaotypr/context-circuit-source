@@ -127,12 +127,12 @@ func (s *Store) readRecord(path string) (Record, error) {
 		return record, fmt.Errorf("%s: %w", path, err)
 	}
 	if err := Decode(header, &record); err != nil {
-		// A record from 2.0.0-rc.3 or earlier fails here on a field this
-		// candidate renamed. The decoder can only say the key is unknown, which
-		// reads as a corrupt file rather than a candidate boundary, so the one
+		// A record from 2.0.0-rc.3 or earlier fails here on a field a later
+		// version renamed. The decoder can only say the key is unknown, which
+		// reads as a corrupt file rather than a version boundary, so the one
 		// renamed key that shipped is named along with what replaced it.
 		if legacyRecordKey.Match(header) {
-			return record, fmt.Errorf("%s: written by 2.0.0-rc.3 or earlier, which this candidate cannot read: `completed` is now `completed_at`, approval is now the `approved_at` instant, and every record carries `created_at`. Records are not converted; start a fresh workspace, or rewrite this frontmatter by hand: %w", path, err)
+			return record, fmt.Errorf("%s: written by 2.0.0-rc.3 or earlier, which this CLI cannot read: `completed` is now `completed_at`, approval is now the `approved_at` instant, and every record carries `created_at`. Records are not converted; start a fresh workspace, or rewrite this frontmatter by hand: %w", path, err)
 		}
 		return record, fmt.Errorf("%s: %w", path, err)
 	}
@@ -419,6 +419,10 @@ type ISOTime string
 // TimeLayout is the one format every instant in a workspace record uses.
 const TimeLayout = time.RFC3339
 
+// DateLayout is the calendar date every workspace file carries where an instant
+// is not wanted: a catalog entry's reviewed date, and any date written by hand.
+const DateLayout = "2006-01-02"
+
 func (t ISOTime) MarshalYAML() ([]byte, error) { return []byte(string(t)), nil }
 
 func isoTime(moment time.Time) string { return moment.UTC().Format(TimeLayout) }
@@ -498,15 +502,27 @@ func (s *Store) KnowledgeCandidates(id string) ([]string, error) {
 // CatalogEntriesFor lists the entries claiming any of these repositories. A
 // change made without a plan reconciles the same knowledge, so the lookup takes
 // repositories rather than a record.
+// It reads this workspace's own catalog and never a borrowed one. Reconciliation
+// is an edit, and an entry in a repository this workspace does not own is not
+// one anybody here can move: naming it would report an obligation that cannot be
+// discharged. Borrowed knowledge goes stale on its owner's schedule and is
+// raised upstream instead.
 func (s *Store) CatalogEntriesFor(repositories []string) ([]string, error) {
+	data, err := s.Read("context/INDEX.md")
+	if os.IsNotExist(err) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
 	seen := map[string]bool{}
 	entries := []string{}
 	for _, repository := range repositories {
-		lines, err := s.FindContext("{" + repository + "}")
-		if err != nil {
-			return nil, err
-		}
-		for _, line := range lines {
+		needle := strings.ToLower("{" + repository + "}")
+		for _, line := range strings.Split(string(data), "\n") {
+			if !strings.Contains(strings.ToLower(line), needle) {
+				continue
+			}
 			if catalogEntry.MatchString(line) && !seen[line] {
 				seen[line] = true
 				entries = append(entries, line)

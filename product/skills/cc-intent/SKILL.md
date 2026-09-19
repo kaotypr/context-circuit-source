@@ -16,6 +16,40 @@ used rather than a translation of them. Identifiers and the project's own domain
 vocabulary keep their form whatever language the prose is in, and the slug stays
 a lowercase ASCII slug.
 
+## Writing in a language that is not English
+
+A recorded language settles which words a record uses and nothing about how they
+are put together. Composing in English and translating produces prose that is
+grammatical and wrong in register — stiff, formal, and formal in a way nobody
+chose, because words that are neutral in English land as bureaucratic once
+carried across literally.
+
+**The record's structure stays English whatever the prose is.** The headings —
+`Goal`, `Non-goals`, `Constraints`, `Success criteria`, `Repository scope`,
+`Open questions` — are the record's shape, like `created_by` and the slug, and
+they are named in the language table for that reason. Translating one makes two
+members produce differently-shaped records, and a translation that varies per
+session is not a field name.
+
+Then compose in that language rather than into it:
+
+- **Let the sentence structure follow the target language.** Do not carry
+  English clause order or sentence length across. A sentence that hinges on
+  `, so` in English is often two sentences elsewhere.
+- **Prefer the verb where English would nominalize.** "No change to how the
+  current quarter is determined" is ordinary English and heavy almost everywhere
+  else.
+- **Technical vocabulary keeps the form engineers in that language actually
+  say**, which is usually the English word. Translating `refresh`, `cache`, or
+  `deploy` into a native equivalent produces manual-register prose, not clearer
+  prose. Be consistent: half-translated technical vocabulary reads worse than
+  either choice made whole.
+- **Names are quoted, never translated**, in either direction, as always.
+
+Where the member records a `tone` in `members.yaml`, follow it; it is that
+team's own answer and it overrides the guidance above. A workspace writing
+Bahasa Indonesia might record `semi-formal; keep technical terms in English`.
+
 ## Ground it first
 
 Retrieve the bearing knowledge through `context/INDEX.md` and read the request's
@@ -28,7 +62,7 @@ this request touches. A request cutting across a standing need is a question for
 the person, and naming the actor an outcome serves tells the next reader who it
 is for.
 
-Create the record through the executable, which reserves the ID:
+Create the record through the CLI, which reserves the ID:
 
 ```sh
 context-circuit-cli --workspace <root> record create --kind intent --slug SLUG --title TITLE
@@ -59,7 +93,7 @@ re-gated.
 
 Instants — `created_at` and the `approved_at` a gate stamps — are canonical ISO
 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, written by hand or
-through the executable, is an ISO 8601 calendar date, `YYYY-MM-DD`. No other date
+through the CLI, is an ISO 8601 calendar date, `YYYY-MM-DD`. No other date
 format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for

@@ -14,7 +14,15 @@ and in English where none is. A plan is quoted whole into the brief a worker
 receives, and that brief tells the worker that what goes into the repository is
 English regardless. Identifiers and the project's own domain vocabulary keep
 their form whatever language the prose is in, and the slug stays a lowercase
-ASCII slug.
+ASCII slug. So do the headings: a plan's structure is English whatever its prose
+is, for the reason the slug is.
+
+Compose in that language rather than translating into it — let the sentences
+follow that language rather than keeping English clause order, prefer the verb
+where English would nominalize, and keep technical vocabulary in the form
+engineers there actually say. Where the member records a `tone` in
+`members.yaml`, follow it; it overrides that guidance.
+`.agents/skills/cc-intent/SKILL.md` carries the same rules with worked examples.
 
 Without asking again, inspect real code and create the linked plan records:
 

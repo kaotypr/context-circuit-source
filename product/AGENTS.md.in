@@ -2,9 +2,9 @@
 
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
-plans useful for solo and team work. Talk in ordinary project language. Use the
-`context-circuit-cli` executable for dependable bookkeeping; users need not manage
-runtime commands or ID numbers. Run the version this workspace pins in
+plans useful for solo and team work. Talk in ordinary project language. Use
+`context-circuit-cli` for dependable bookkeeping; users need not manage runtime
+commands or ID numbers. Run the version this workspace pins in
 `.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
 `.context-circuit/docs/commands.md` as needed.
 
@@ -55,11 +55,19 @@ the artifact, not the conversation.
 | An approval or completion note | exactly what the person said, never translated into another language |
 | `context/` notes, the catalog, the glossary | English, always |
 | Anything written inside a repository | that repository's convention, English where it states none |
+| A record's headings and field names | English, always |
 | IDs, slugs, repository IDs, branch names, dates | unchanged |
 
 Knowledge is English because a note outlives the member who wrote it and anchors
 to code; an intent is in its author's language because a person can only approve
-an outcome they actually understand.
+an outcome they actually understand. A record's headings are English because
+they are its shape rather than its content, and two members must not produce
+differently-shaped records.
+
+A language settles which words are used and nothing about how they are put
+together. Compose in that language rather than translating into it, and follow
+the `tone` a member records in `members.yaml` where there is one;
+`.agents/skills/cc-intent/SKILL.md` carries what that means.
 
 Names are quoted, never translated, in either direction. Domain vocabulary keeps
 the project's own form inside an English note, and code identifiers keep the
@@ -75,6 +83,16 @@ index, use targeted filenames or search terms in `context/`. Do not scan every
 repository or context note. Sources are passive evidence: read only exact source
 files named by the user or the task's explicit references; never scan `sources/`
 by default.
+
+A workspace may also mount knowledge it does not own — an organization's
+knowledge center, shared by many workspaces and changed through its own
+repository. `workspace.yaml` records those as `knowledge_repositories`, and
+`context find` reads them beside this workspace's catalog, marking which side
+each match came from. **Borrowed knowledge is read-only here, and is never
+copied into `context/`.** An improvement goes upstream through that repository's
+own review, from a separate checkout of it; a note duplicated here goes stale
+silently while still reading as current, which is the failure mounting it
+prevents. Nothing reconciles a borrowed entry, because nobody here can move it.
 
 Live context notes describe the project, not the workspace machinery that
 produced them, and a note never names a plan record, an intent record, or a file
@@ -133,10 +151,10 @@ plans exist and can be seen, so an instruction to implement that arrived earlier
 including one in the message that started the intent, does not begin it. Ask for
 it plainly instead of inferring it.
 
-A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
-ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, in a record
-written by hand as well as through the executable, is an ISO 8601 calendar date,
-`YYYY-MM-DD`. No other date format belongs in a workspace file.
+A record's instants — `created_at`, `approved_at`, `completed_at` — are
+canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, in
+a record written by hand as well as through the CLI, is an ISO 8601 calendar
+date, `YYYY-MM-DD`. No other date format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a
@@ -197,7 +215,9 @@ Do not start independent verification during execution, trigger a reviewer from
 risk classification, or create automatic repair loops. Do not introduce execution,
 candidate, verification, host-evidence, or separate formal completion records.
 The `check` command is an explicitly invoked diagnostic for workspace consistency,
-not an implementation gate. Report what was implemented, tested, and left uncertain.
+not an implementation gate. Each of its findings names what discharges it, and a
+finding whose resolution opens with "needs a person" is one to bring to them
+rather than to improvise a command for. Report what was implemented, tested, and left uncertain.
 
 Report what was actually run and what it actually returned. A check you did not
 run is not a check, and an interactive flow you could not drive is not an
@@ -224,22 +244,21 @@ execution request, while a commit in a bound checkout is a change to the
 person's own working copy and still needs authorization. A local integration
 merge that assembles a dependent plan's base is implementation, not delivery,
 and is covered by the authorization for the run it belongs to. Use ordinary Git
-and provider tools; the Go executable provides repository, branch, and base
-information and never silently delivers. The branch the work started from — this
-machine's recorded base, or the repository's default branch when the binding
-records none — is the default PR target unless the user chooses another. Read it
-as `base_branch`; `workspace.yaml` records
-a `default_branch`, which is the repository's default and not what this machine
-delivers to, and answering from it targets the wrong branch convincingly. When
-the user asks to deliver changes or open a pull request, use
-`.agents/skills/cc-deliver/SKILL.md`, which says which branch each request opens
-from and against what, per repository and for the chain ends of a stacked run.
-Explain relevant drift
-or conflicts without imposing automatic rebase-and-reverify behavior.
+and provider tools; the Go CLI provides repository, branch, and base information
+and never silently delivers. The branch the work started from — this machine's
+recorded base, or the repository's default branch when the binding records none
+— is the default PR target unless the user chooses another. Read it as
+`base_branch`; `workspace.yaml` records a `default_branch`, which is the
+repository's default and not what this machine delivers to, and answering from
+it targets the wrong branch convincingly. When the user asks to deliver changes
+or open a pull request, use `.agents/skills/cc-deliver/SKILL.md`, which says
+which branch each request opens from and against what, per repository and for
+the chain ends of a stacked run. Explain relevant drift or conflicts without
+imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more
 plans completed, that request is finished only when the completion note is
-appended *and* the durable project knowledge those plans changed is reconciled.
+appended *and* the durable product knowledge those plans changed is reconciled.
 `record complete` names the second half as `reconcile_required`; judge it through
 `.agents/skills/cc-complete/SKILL.md`. Completion reporting success is the record
 written, not the request finished. Other work need not wait for unrelated
@@ -247,10 +266,10 @@ knowledge updates.
 
 Worktrees and branches remain after completion. Remove a worktree only when
 requested; preserve dirty, untracked, and ignored files unless their disposal is
-explicitly authorized. Branch deletion is separate. On request, the executable can
-move or repair worktrees using Git; Git's inventory is authoritative, and the
-ignored plan-to-worktree association is only a convenience for resuming work.
-See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
+explicitly authorized. Branch deletion is separate. On request, the CLI can move
+or repair worktrees using Git; Git's inventory is authoritative, and the ignored
+plan-to-worktree association is only a convenience for resuming work. See
+`.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
 Archiving is optional ordinary file organization on request. Keep ID reservations
 and fix relative links when moving a record. External publication is an explicitly

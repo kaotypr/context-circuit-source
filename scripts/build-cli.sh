@@ -24,6 +24,9 @@ trap 'rm -rf "$staging_dir"' EXIT HUP INT TERM
 cd "$source_root"
 artifact_name="context-circuit-cli-v$version"
 # Include the licenses for dependencies and the Go runtime in each binary asset.
+# The CLI's own license ships beside them: Apache-2.0 asks a redistributor
+# to pass the License on with the work, and an archive is read wherever it was
+# downloaded, where nothing else says what its terms are.
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
 printf 'Context Circuit third-party notices\n\n' > "$notices"
 for module in github.com/goccy/go-yaml github.com/gofrs/flock golang.org/x/sys; do
@@ -50,12 +53,13 @@ for target in darwin/amd64 darwin/arm64 linux/amd64 linux/arm64 windows/amd64 wi
   CGO_ENABLED=0 GOOS=$target_os GOARCH=$target_arch go build -trimpath \
     -ldflags "-s -w -X main.version=${version#v}" -o "$package_dir/$binary" ./cmd/context-circuit
   cp CLI.md "$package_dir/README.md"
+  cp LICENSE "$package_dir/LICENSE"
   cp "$notices" "$package_dir/THIRD_PARTY_NOTICES.txt"
   package_name="$artifact_name-$target_os-$target_arch"
   if [ "$target_os" = windows ]; then
-    (cd "$package_dir" && zip -q "$output_dir/$package_name.zip" "$binary" README.md THIRD_PARTY_NOTICES.txt)
+    (cd "$package_dir" && zip -q "$output_dir/$package_name.zip" "$binary" README.md LICENSE THIRD_PARTY_NOTICES.txt)
   else
-    (cd "$package_dir" && tar -cf - "$binary" README.md THIRD_PARTY_NOTICES.txt) | gzip -n > "$output_dir/$package_name.tar.gz"
+    (cd "$package_dir" && tar -cf - "$binary" README.md LICENSE THIRD_PARTY_NOTICES.txt) | gzip -n > "$output_dir/$package_name.tar.gz"
   fi
   printf 'binary_target: %s\n' "$target"
 done

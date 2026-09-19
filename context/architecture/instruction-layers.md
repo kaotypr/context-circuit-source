@@ -20,6 +20,26 @@ command surface, the file contract, the record structures, worktree recovery
 mechanics. It is the oldest of the three layers and the easiest to strand —
 material shipped there reaches an agent only if something it loads names it.
 
+One shipped document has a different reader. `how-it-works.md` explains the
+division between person, agent, workspace, worktree, and CLI to somebody
+deciding whether to adopt the product. The entry instruction deliberately does
+not name it. The agent already holds that division normatively, so a pointer
+would spend always-loaded context on prose it never acts on, and leave two
+accounts of the same rules free to drift — with the descriptive one reading as
+though it explained the authoritative one. Its reader arrives through the
+workspace README instead.
+
+That README is the product guide, and in an installed workspace it is also that
+workspace's own front page. Two spans of it are therefore wrong as shipped:
+
+- the heading names the product rather than the workspace;
+- the badges look up the newest published release rather than the pinned versions.
+
+Initialization rewrites both, using delimiters in the shipped file so the rewrite
+has an exact anchor rather than a guess about where a heading ends. A README whose
+markers are gone has been edited by whoever owns that workspace and is left alone.
+Initialization records data; it does not rewrite prose to find a foothold.
+
 ## Why a prohibition never becomes a skill
 
 A skill is retrieved by an agent that has recognized its moment. That works for
@@ -29,9 +49,12 @@ do-not-push skill before pushing. So "commit, push, merge require explicit
 authorization" and "never add agent attribution" stay resident, and a skill
 never becomes the only place a gate is written.
 
-The layering is enforced rather than trusted: the deferred layers are checked
-for reachability from the entry instruction, and the entry instruction is
-checked for the gates that must not have migrated out of it.
+The layering is enforced rather than trusted: every skill and every agent-facing
+document is checked for reachability from the entry instruction, and the entry
+instruction is checked for the gates that must not have migrated out of it. A
+document written for a person is checked in both directions — reachable from the
+README, and absent from the entry instruction — so the audience split is a
+decision the suite holds rather than a convention someone remembers.
 
 ## What makes a procedure safe to defer
 

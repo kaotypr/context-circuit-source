@@ -15,12 +15,12 @@ neither a command, nor an editable record, nor another agent can supply human
 consent. The approval operation records an actual decision and its date; it does
 not constitute one.
 
-The intent's `approved_at` field is stamped with the instant there, and the person's
-words are kept under a heading carrying the same instant; an unapproved intent
-carries no such field, so absence is the only empty state. The field is a readable
-record of the gate, never the gate itself — anything that can write the record can
-write the timestamp, so an intent is not approved because a field says so. Nothing
-in the executable reads it to decide whether to proceed.
+The intent's `approved_at` field is stamped with the instant there, and the
+person's words are kept under a heading carrying the same instant; an unapproved
+intent carries no such field, so absence is the only empty state. The field is a
+readable record of the gate, never the gate itself — anything that can write the
+record can write the timestamp, so an intent is not approved because a field
+says so. Nothing in the CLI reads it to decide whether to proceed.
 
 Nor does the request that prompted the intent. Reading a change request as
 consent to whatever intent gets derived from it collapses the gate entirely —
@@ -139,19 +139,19 @@ paragraph read once at session start does not.
 
 This is the same reason [workspace files and safe
 editing](../architecture/workspace-files.md) reports a resolved base branch
-instead of leaving it in a file: what the executable knows and never states is
+instead of leaving it in a file: what the CLI knows and never states is
 reconstructed by the agent from whatever is nearest, and a gate that states only
 `ok` leaves the agent to infer that nothing follows.
 
 ## Delivery mechanics and attribution
 
-Delivery uses ordinary Git and provider tools; the executable supplies
-repository, branch, and base information and never silently delivers. The branch
-the work started from — this machine's recorded base, or the repository's shared
-default branch when the binding records none — is the default pull-request target
-unless a person chooses another, delivery can happen per repository, and drift is explained rather than
-resolved by an automatic rebase-and-recheck behavior. Review is not a
-precondition for any of it.
+Delivery uses ordinary Git and provider tools; the CLI supplies repository,
+branch, and base information and never silently delivers. The branch the work
+started from — this machine's recorded base, or the repository's shared default
+branch when the binding records none — is the default pull-request target unless
+a person chooses another, delivery can happen per repository, and drift is
+explained rather than resolved by an automatic rebase-and-recheck behavior.
+Review is not a precondition for any of it.
 
 Agent attribution, credit, co-author, or generated-by text never goes into
 commits, pull requests, reviews, or comments. Repository commit conventions are

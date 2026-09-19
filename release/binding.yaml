@@ -4,7 +4,7 @@
 # destination identity only. The current published version is NOT stored here —
 # it lives in the published template repository's git tags, which are
 # authoritative. See:
-#   sources/system-design/context-circuit/v0.5/10-template-publication.md
+#   sources/system-design/context-circuit/v2.0.0/core/versioning-and-distribution.md
 destination_repo: kaotypr/context-circuit
 destination_ref: main
 product_line: context-circuit

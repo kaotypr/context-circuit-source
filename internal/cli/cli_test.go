@@ -69,6 +69,18 @@ func (f fixture) ok(args ...string) string {
 	}
 	return out
 }
+
+// human runs a command on the default stream, which is what a person sees. The
+// rest of these tests ask for --json, so nothing else exercises it.
+func (f fixture) human(args ...string) string {
+	f.t.Helper()
+	var out, errOut bytes.Buffer
+	if code := cli.Run(context.Background(), append([]string{"--workspace", f.root}, args...), &out, &errOut, "2.0.0-test"); code != 0 {
+		f.t.Fatalf("%v: exit=%d %s %s", args, code, out.String(), errOut.String())
+	}
+	return out.String()
+}
+
 func (f fixture) fail(args ...string) string {
 	f.t.Helper()
 	code, out, err := call(f.root, args...)
@@ -198,8 +210,8 @@ func TestYAMLEditTrial(t *testing.T) {
 
 // 2.0.0-rc.4 renamed the record gates and converts nothing. The decoder can only
 // report an unknown key, which reads as a corrupt file, so the boundary says
-// which candidate wrote the record and what replaced the field.
-func TestRecordFromAnEarlierCandidateNamesTheBoundary(t *testing.T) {
+// which version wrote the record and what replaced the field.
+func TestRecordFromAnEarlierVersionNamesTheBoundary(t *testing.T) {
 	f := setup(t)
 	f.repository("api")
 	i := f.intent("legacy")
@@ -742,6 +754,13 @@ func TestWorktreeBaseSelectionAndAdoption(t *testing.T) {
 	foreign := f.repository("foreign")
 	t.Setenv("GIT_DIR", filepath.Join(foreign, ".git"))
 	t.Setenv("GIT_WORK_TREE", foreign)
+	// One-shot configuration reaches a child the same way: a host that ran
+	// `git -c` exports it to everything underneath. Both spellings are set, so
+	// filtering only one of them still fails this.
+	t.Setenv("GIT_CONFIG_COUNT", "1")
+	t.Setenv("GIT_CONFIG_KEY_0", "core.abbrev")
+	t.Setenv("GIT_CONFIG_VALUE_0", "bogus")
+	t.Setenv("GIT_CONFIG_PARAMETERS", "'core.abbrev=bogus'")
 	var snapshot workspace.Snapshot
 	if err := json.Unmarshal([]byte(f.ok("repo", "inspect", "--id", "api")), &snapshot); err != nil {
 		t.Fatal(err)
@@ -817,6 +836,50 @@ func TestConcurrentAllocation(t *testing.T) {
 	f.ok("check")
 }
 
+// A mistyped argument is reported, never guessed at and never fatal. An empty
+// one names no command and has no first word for the group hint to look up.
+func TestMistypedArgumentsAreReported(t *testing.T) {
+	f := setup(t)
+	if out := f.fail(""); !strings.Contains(out, "unknown command") {
+		t.Errorf("an empty command argument: %s", out)
+	}
+	if out := f.fail("", "trailing"); !strings.Contains(out, "unknown command") {
+		t.Errorf("an empty command argument with more behind it: %s", out)
+	}
+}
+
+// A band is cleared by passing zero, so an omitted --band would otherwise clear
+// the member's block without anybody asking for that.
+func TestClearingABandTakesTheFlagThatClearsIt(t *testing.T) {
+	f := setup(t)
+	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "2")
+	if out := f.fail("member", "band", "--id", "rina"); !strings.Contains(out, "missing --band") {
+		t.Errorf("omitting --band was accepted: %s", out)
+	}
+	if !strings.Contains(f.ok("member", "list"), `"band": 2`) {
+		t.Error("the refused call cleared the band anyway")
+	}
+	f.ok("member", "band", "--id", "rina", "--band", "0")
+	if strings.Contains(f.ok("member", "list"), `"band"`) {
+		t.Error("--band 0 no longer clears the block")
+	}
+}
+
+// A record's body is a document. Rendered as a YAML scalar it arrives as one
+// escaped line, which is the shape `record show` already refuses to print.
+func TestACreatedRecordPrintsItsBodyToAPerson(t *testing.T) {
+	f := setup(t)
+	out := f.human("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing")
+	for _, want := range []string{"id: i001", "path: intent/i001-billing.md", "# Billing", "## Success criteria"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the human stream omits %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, `\n`) {
+		t.Errorf("the body was rendered as an escaped scalar:\n%s", out)
+	}
+}
+
 func TestCLIValidationAndSourceIsolation(t *testing.T) {
 	f := setup(t)
 	for _, args := range [][]string{{"wat"}, {"member", "add", "--id", "alex"}, {"status", "unexpected"}, {"record", "create", "--kind", "intent", "--slug", "../bad", "--title", "Bad"}} {
@@ -879,5 +942,32 @@ func TestCompletionReportsScopedKnowledgeCandidates(t *testing.T) {
 	out = f.ok("--json", "record", "complete", "--id", other.ID, "--text", "Landed.")
 	if strings.Contains(out, "Invoice lifecycle") {
 		t.Errorf("{api} matched {api-gateway}: %s", out)
+	}
+}
+
+// A workspace repository is shared with a team, so its front page says whose
+// workspace it is, and its badges report the versions this workspace received
+// rather than whatever the product has published since.
+func TestInitializationTitlesTheWorkspaceReadme(t *testing.T) {
+	f := setup(t)
+	readme := read(t, filepath.Join(f.root, "README.md"))
+	if !strings.Contains(readme, `<h1 align="center">Context Circuit - Acme</h1>`) {
+		t.Errorf("README is not titled with the workspace name:\n%s", readme[:min(len(readme), 600)])
+	}
+	if strings.Contains(readme, "img.shields.io/github/v/release") {
+		t.Error("the README still looks up the newest release instead of the pinned versions")
+	}
+	version := strings.TrimSpace(read(t, filepath.Join(f.root, ".context-circuit", "VERSION")))
+	cliVersion := strings.TrimSpace(read(t, filepath.Join(f.root, ".context-circuit", "CLI_VERSION")))
+	for _, pinned := range []string{"label=workspace&message=v" + version, "label=cli&message=v" + cliVersion} {
+		if !strings.Contains(readme, pinned) {
+			t.Errorf("README does not pin %q", pinned)
+		}
+	}
+	// The name is placed inside markup, so it is escaped rather than trusted.
+	g := fixture{t, filepath.Join(f.home, "escaped"), f.home}
+	g.ok("init", "--name", `R&D <b>`, "--purpose", "p", "--member", "a", "--member-name", "A")
+	if escaped := read(t, filepath.Join(g.root, "README.md")); !strings.Contains(escaped, "R&amp;D &lt;b&gt;") {
+		t.Error("the workspace name reached the heading unescaped")
 	}
 }

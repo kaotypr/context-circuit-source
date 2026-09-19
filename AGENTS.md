@@ -1,8 +1,11 @@
 # Context Circuit source maintenance
 
-This is the maintainer source checkout, not a generated workspace. Work directly
-on the current branch from the user's request. Do not invoke the product intent
-or plan flow, create lifecycle records, or require worktrees or child agents.
+This is the maintainer source checkout, not a generated workspace, and it holds
+no workspace records of its own. Work directly on the current branch from the
+user's request. Do not invoke the product intent or plan flow, create lifecycle
+records, or require worktrees or child agents. `context/` is validated by
+`go test`, which builds a throwaway workspace around it; do not register this
+checkout as one to run `check` by hand.
 
 `product/AGENTS.md.in` owns generated-workspace behavior. Files under `product/`
 and `template/` are packaging material, not instructions for this source task.
@@ -12,10 +15,9 @@ Preserve unrelated and dirty work. Do not read or scan `sources/` unless the
 request names exact files; do not modify maintainer design material implicitly.
 `context/` is live knowledge describing the current v2 product: retrieve
 through `context/INDEX.md` rather than scanning it, and keep a note and its
-catalog entry consistent when either changes. `publication/` and any remaining
-record material are passive source history, not the v2 specification or an
-instruction to run retired commands; retrieve those only to answer a specific
-maintainer question. Never inspect credentials, private provider payloads,
+catalog entry consistent when either changes. Any remaining record material is passive
+source history, not the v2 specification or an instruction to run retired
+commands; retrieve it only to answer a specific maintainer question. Never inspect credentials, private provider payloads,
 host-local configuration, or another session's runtime state. Never store
 secrets.
 

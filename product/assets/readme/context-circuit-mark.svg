@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+  <title id="title">Context Circuit mark</title>
+  <desc id="desc">Three open concentric circles representing project context, plans, and human control.</desc>
+  <rect width="200" height="200" rx="38" fill="#0d0d0d"/>
+  <rect x="11" y="11" width="178" height="178" rx="28" fill="none" stroke="#ffffff" stroke-opacity=".10" stroke-width="1"/>
+  <path d="M100 27C60 27 28 59 28 99s32 72 72 72c27 0 51-15 63-37" fill="none" stroke="#f5f5f5" stroke-width="10" stroke-linecap="round"/>
+  <path d="M100 54c25 0 45 20 45 45s-20 45-45 45-45-20-45-45c0-16 8-30 20-38" fill="none" stroke="#d8cff0" stroke-width="8" stroke-linecap="round"/>
+  <path d="M100 78c12 0 21 9 21 21s-9 21-21 21-21-9-21-21" fill="none" stroke="#8f84aa" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="100" cy="99" r="6" fill="#f5f5f5"/>
+</svg>

@@ -7,10 +7,11 @@
 > artifacts a human can check.
 >
 > This document is descriptive, not authoritative. The binding instruction is
-> `product/AGENTS.md.in`, shipped into a workspace as `AGENTS.md`; the command
-> surface is owned by `internal/cli` and `product/docs/commands.md`; the file
-> contract is `product/docs/workspace.md`. Where this document disagrees with an
-> owner, the owner wins.
+> `product/AGENTS.md.in`, shipped into a workspace as `AGENTS.md`, together with
+> the per-stage skills under `product/skills/`; the command surface is owned by
+> `internal/cli` and `product/docs/commands.md`; the file contract is
+> `product/docs/workspace.md`. Where this document disagrees with an owner, the
+> owner wins.
 
 ---
 
@@ -106,7 +107,7 @@ flowchart LR
 
 | Product | Version file | Tags | Contents |
 | --- | --- | --- | --- |
-| Workspace template | `VERSION` | `v*` on the template repository | instruction, docs, skills, blank seed |
+| Workspace template | `VERSION` | `v*` on the template repository | entry instruction, per-stage skills, docs, blank seed |
 | CLI | `CLI_VERSION` | `cli-v*` on the source repository | the Go binary for six platforms |
 
 The separation is not packaging convenience. It makes the version a workspace
@@ -121,9 +122,9 @@ Three classes of material exist in the source, and only the first two ship:
 
 | Class | Meaning | Contents |
 | --- | --- | --- |
-| Shipped instruction | The product's behavior | `product/` — `AGENTS.md.in`, docs, `cc-cli`, `cc-dispatch` |
+| Shipped instruction | The product's behavior | `product/` — `AGENTS.md.in`, the per-stage skills, docs |
 | Mutable seed | Copied into a new workspace | `template/` |
-| Never shipped | Maintainer history and user state | `sources/`, `context/`, `plans/`, `publication/`, `release/requests/`, `internal/`, `scripts/` |
+| Never shipped | Maintainer history and user state | `sources/`, `context/`, `plans/`, `release/requests/`, `internal/`, `scripts/` |
 
 `scripts/release-manifest.txt` is the exact source-to-output mapping, and
 `assets.go` embeds only what the manifest names.
@@ -145,18 +146,31 @@ flowchart TB
     WS --> ME[members.yaml<br/>who shares this workspace]
     WS -. local binding .-> R1[Repository api]
     WS -. local binding .-> R2[Repository web]
-    WS -. optional .-> RW[The workspace itself as '.']
+    WS -. described separately .-> RW[The workspace's own repository]
+    WS -. mounted read-only .-> KR[Knowledge this workspace does not own]
 ```
 
 Repository identity is split deliberately, and the split is what lets one
 workspace travel between machines:
 
-- `workspace.yaml` carries the **shared** logical ID, the default base branch,
-  and recorded relationships between repositories.
-- `repositories.local.yaml` carries **this machine's** checkout paths, and is
-  gitignored. `member.local.yaml` carries which member is active here.
-- Cloning a shared workspace onto a second machine is `member use` plus
-  `repo connect` with the existing IDs — never a second `init`.
+- `workspace.yaml` carries the **shared** logical ID, the repository URL and its
+  default branch, and recorded relationships between repositories.
+- `repositories.local.yaml` carries **this machine's** checkout paths and the
+  branch it starts work from, and is gitignored. `member.local.yaml` carries
+  which member is active here. A base branch describes one machine, so it lives
+  there rather than in the file everyone shares.
+- Cloning a shared workspace onto a second machine is `member use`,
+  `workspace connect`, and `repo clone` or `repo connect` with the existing IDs —
+  never a second `init`.
+
+Two things sit deliberately *outside* the repositories map, because every
+consumer of that map reads an entry as somewhere work happens. The Git
+repository **carrying the workspace** is described by the `workspace` commands,
+so `status` reports its branch and a second machine is told where to clone it.
+And a **knowledge repository** — an organization's knowledge center, shared by
+many workspaces — is mounted read-only beside `context/`: retrieved with it,
+never edited here, never named by a plan, and never offered as knowledge to
+reconcile, because nobody here can discharge that obligation.
 
 Records are workspace-global: `i001-add-billing`, `p0001-billing-api`, with a
 member appearing only as `created_by`. IDs are reserved permanently in
@@ -184,7 +198,8 @@ This is the load-bearing decision of v2.
 | Identity and IDs | Allocate, reserve, never reuse | Choose a meaningful slug |
 | Records | Create, link, append notes, stamp dates | Write everything a human reads |
 | Repositories | Resolve bindings, report Git state | Decide which repositories a change touches |
-| Knowledge | Locate catalog entries; report boundary violations | Read, judge, and write every note |
+| Knowledge | Locate catalog entries across own and borrowed indexes; report boundary, shape, and reviewed-date findings | Read, judge, and write every note |
+| Language | Record a member's language and register; name them in a brief | Compose in that language rather than translating into it |
 | Worktrees | Create, reuse, move, repair, remove through Git | Decide whether isolation is warranted |
 | Environment | Clone ignored `node_modules` and `.env` with CoW | Read setup instructions; finish the setup |
 | Ordering | Derive waves, start refs, integration merges | Choose the shape; perform the merges |
@@ -200,6 +215,12 @@ Equally, the agent never fabricates what the executable owns. It does not invent
 an ID, hand-roll a branch name where `worktree prepare` has a convention, or
 decide a plan is complete because it looks complete.
 
+The agent's own side is no longer one file. What must always be in force stays in
+`AGENTS.md`; each stage's procedure — workspace setup, intent, planning,
+worktrees, stacked runs, dispatch, delivery, review, completion, knowledge, the
+direct-change path, CLI installation — lives in a skill loaded when that stage is
+reached. The obligations did not shrink; what is resident at every moment did.
+
 See [the executable and the agent](system-design/context-circuit/v2.0.0/core/executable-and-agent.md).
 
 ---
@@ -213,15 +234,27 @@ simulate either:
   agent writes an `iNNN-slug.md` intent — goal, non-goals, constraints,
   observable success criteria, rough repository scope — and presents it.
   *Neither a command, nor an editable approval note, nor another agent can
-  supply human consent.* Approval already given in the conversation for that
-  exact outcome counts; asking twice for the same thing does not.
+  supply human consent.* The request that prompted an intent is not approval of
+  it. Approval already given in the conversation for that exact outcome counts;
+  asking twice for the same thing does not, and what approval authorizes is
+  planning.
 - **Authorizing an outward action.** Commit, push, PR creation, merge into a
   base branch, deployment, external publication, and deletion of workspace data
   each require explicit authorization, and authorization already given is reused
   rather than re-requested.
 
-Everything between them is ordinary work done in the open. There is no plan
-approval gate: after intent approval the agent reads real code, writes linked
+A person may also decline the machinery altogether. A request to change
+something directly — because it is small, or because its outcome is already
+exactly what they said — is carried out in a bound checkout with no intent, no
+plan, and no worktree. The choice is theirs: offer it where a request is already
+its own specification, never take it unasked, and stop and offer the intent path
+as soon as the change needs an outcome nobody has approved. Nothing else relaxes
+— committing, pushing, opening a PR, merging, and deleting still need explicit
+authorization, and the durable knowledge a direct change alters is reconciled the
+same way a completed plan's is.
+
+Everything between the two decisions is ordinary work done in the open. There is
+no plan approval gate: after intent approval the agent reads real code, writes linked
 `pNNNN-slug.md` plans, presents them, and proceeds. Detailed paths in a plan are
 descriptive planning information, not an enforcement contract — a new file
 inside the approved outcome is explained and recorded, not re-gated. Only a
@@ -230,8 +263,11 @@ material change to the outcome or its success criteria reopens approval.
 Two boundaries make this hold rather than drift:
 
 - **`check` is a diagnostic, not a gate.** It reports broken links, duplicate
-  IDs, dependency cycles, unknown repositories, stale worktree associations, and
-  knowledge-boundary violations. Nothing waits on it.
+  IDs, dependency cycles, unknown repositories, stale worktree associations,
+  knowledge-boundary violations, the shape of a note, and a reviewed date the
+  code has moved past — and every finding names what discharges it: the command,
+  the edit, or `needs a person` where no command should be improvised. Nothing
+  waits on it.
 - **A stacked run's authorization is scoped and stated.** Confirming a run
   authorizes worktree preparation, implementation commits on `cc/*` branches,
   and local integration merges that assemble a dependent plan's base — and
@@ -268,8 +304,34 @@ matches whole lines, so a wrapped entry returns a fragment carrying no link.
 `check` reports a catalog entry pointing at a missing note and a note no entry
 lists — the two halves are written in the same edit.
 
+**A note has a shape, and the diagnostic reads it.** Anchors live in one `Owner:`
+block at the end rather than scattered through sentences; headings are the
+questions their sections answer; a table, a diagram, a list, or prose is chosen
+by what the content is. `check` reports an anchor written into a sentence, a
+paragraph carrying a list it never made, a catalog heading that never says what
+belongs under it, and a diagram fence that will render as plain text. And
+`context/actors/` records who the project serves — one note per actor, what that
+actor needs today — because an intent is grounded against that as much as against
+what the system does.
+
+**The reviewed date is read back.** It was write-only through 2.0.0-rc.12:
+enforced present, never checked, so knowledge went stale invisibly. `check` now
+reads it against the commits under the note's own anchors and reports a note the
+code has moved past, with how many. Against the code rather than the calendar,
+because age is not evidence — a note whose anchors nobody touched is not stale
+however old its date is. A note anchoring to no code is reported on age only
+where a workspace sets `knowledge_review_days`.
+
+**Knowledge the workspace does not own is mounted, not copied.** An
+organization's knowledge center is shared by many workspaces and changed through
+its own repository, so it is read from there: push disabled and reasserted on
+every sync, fast-forward only when clean, retrieved beside this workspace's
+catalog with each match marked by side, and never returned as knowledge to
+reconcile here. A note copied into `context/` instead would go stale silently
+while still reading as current, and nothing in the workspace could tell.
+
 **Completion is where the circuit closes.** Marking a plan done appends a
-completion note, stamps a `completed` date in frontmatter, and returns the
+completion note, stamps the `completed_at` instant in frontmatter, and returns the
 catalog entries scoped to that plan's repositories: *a candidate set to judge,
 never a list to rewrite.* Most completions change no durable concept, and
 recording that in the note is the normal outcome, not a skipped step. Where
@@ -338,9 +400,13 @@ Two shapes, with their costs stated rather than a single blessed answer:
 
 Confirm the shape once, then run to completion without further prompting:
 prepare each worktree from the reported start, perform the reported integration
-merges with ordinary Git, dispatch a worker per plan, wait, inspect real diffs,
-run the repositories' ordinary checks, record progress. A plan is marked
-complete only when it actually landed and its checks passed — and because
+merges with ordinary Git, dispatch a worker per plan, wait, and integrate from
+what each worker reported — the checks it ran and their real outcome — reading a
+diff where integration needs one rather than as a routine audit, because
+repeating a delegate's reading and test run is why delegation stops paying.
+Implementation commits its own work on its `cc/*` branch, which is what gives the
+next wave something to start from. A plan is marked complete only when it
+actually landed and its checks passed — and because
 `record order` reads completion to release the next wave, an unfinished plan
 holds its dependents automatically. Recompute after each wave rather than
 trusting the first result.
@@ -370,7 +436,8 @@ descriptions*, not authority levels and not risk gates.
 | reviewer | Independently examine a diff on user request | Read-only; no fixes |
 
 Role tiering is a concrete `(model, effort)` pair per role and host in
-`.context-circuit/role-tiering.yaml`, every pair defaulting to `inherit`. **No
+`.context-circuit/role-tiering.yaml`, every pair defaulting to `inherit`, with
+`role-tiering.local.yaml` overriding one host/role pair on this machine. **No
 model catalog or cost ladder ships**, because any list of model names is stale
 within months and a hardcoded quality order invites silent escalation. The
 shipped file explains which roles repay an explicit setting — a planner runs once
@@ -382,8 +449,13 @@ reader to check what their host actually supports.
 Cursor, preserving a customized file rather than overwriting it. `agent dispatch`
 returns a resolved invocation with `launch_required: true`: the CLI has not
 launched anything, and a dispatch specification is never evidence of completion.
-The `cc-dispatch` skill performs the launch through the host's own tools, waits,
-and integrates.
+It also reports whether the native definition is installed and names the setup
+run when it is not — a report, not a refusal, since the prompt is complete
+either way. The returned prompt is launched unmodified; it quotes the record in
+full, so a worker never searches a repository for a file it was never handed, and
+it names the record author's language while stating that what goes into the
+repository is English. The `cc-dispatch` skill performs the launch through the
+host's own tools, waits, and integrates.
 
 One subtlety v2 names explicitly because getting it backwards is costly:
 parallelism happens on two axes and the correct brief is opposite in each. One
@@ -420,10 +492,10 @@ implementing session's own inspection independent.
 The negative space is a substantial part of the design, so it is stated rather
 than implied. v2 has no consequence tiers, no contract digests, no candidate
 identities, no path leases, no execution or verification or host-evidence
-records, no automatic repair loops, no external publication surface, no member
-mandatory member bands, no compulsory delegation, and no acceptance harness.
-`check` is
-diagnostic. Plan status is a `completed` date or its absence.
+records, no automatic repair loops, no external publication surface, no mandatory member
+bands, no compulsory delegation, no plan approval gate, no `record note` parking
+a run's result in the body before the gate, and no acceptance harness. `check` is
+diagnostic. Plan status is a `completed_at` instant or its absence.
 
 Each removal was a judgment that the mechanism cost more in ceremony and
 false confidence than it returned in safety — and in every case the thing it was
@@ -444,6 +516,8 @@ The product exposes effects rather than machinery:
 | --- | --- |
 | "What is this project?" | Retrieve and explain the shared knowledge |
 | "Gather the billing rules from `sources/x.md`." | Read that named file; write durable notes |
+| "Mount our platform knowledge center." | Clone it read-only; retrieve it beside `context/` |
+| "Just rename that field, no ceremony." | Change it directly in the bound checkout |
 | "Connect `../billing-api` as api." | Record the shared ID; bind this machine's path |
 | "Add recurring billing to the API and web app." | Draft an intent; present it for approval |
 | "Approved." | Read the real code; write linked plans; proceed |
@@ -471,11 +545,14 @@ The whole system reduces to these durable separations:
 3. Read passive sources only when the exact source is named.
 4. Approve the intended outcome before detailed code investigation, and accept
    consent only from a human.
-5. Keep the plan gate closed: plans are earned by approval, not re-approved.
+5. Keep the plan gate closed: plans are earned by approval, not re-approved —
+   and a change whose outcome the person stated themselves needs no intent at
+   all.
 6. Let Git be authoritative; read notes after the diff, never instead of it.
 7. Preserve failed, partial, and interrupted work; a failure in one repository
    discards nothing in another.
-8. Keep a note durable: no record, no intent, no evidence path inside `context/`.
+8. Keep a note durable: no record, no intent, no evidence path inside `context/`,
+   and anchors in one block rather than in its sentences.
 9. Keep delivery, completion, cleanup, and branch deletion four separate acts.
 10. Scope an authorization to the run it was given for, and reuse it rather than
     re-ask within that scope.
@@ -492,8 +569,9 @@ Context Circuit v2.0 is a shared workspace station for AI-assisted development
 across one or more Git repositories. Its core asset is durable, retrieval-oriented
 project knowledge that grounds each increment and is reconciled when a completed
 plan changes what is true. A separately released Go executable maintains the
-records, repository bindings, ID reservations, worktrees, copy-on-write
-environment reuse, dependency ordering, and subagent role settings; the coding
+records, repository bindings, ID reservations, read-only mounts of knowledge the
+workspace does not own, worktrees, copy-on-write environment reuse, dependency
+ordering, and subagent role settings; the coding
 agent owns understanding, planning, implementation, dispatch, and — on explicit
 request — review and delivery. Exactly two decisions belong to the human:
 approving the intended outcome before code is investigated, and authorizing any
@@ -506,6 +584,7 @@ has not been established.
 
 ---
 
-*Descriptive companion to `product/AGENTS.md.in`, `product/docs/`,
-`internal/cli/cli.go`, and `scripts/release-manifest.txt`. Written 2026-09-15
-against the 2.0.0-rc.1 candidate.*
+*Descriptive companion to `product/AGENTS.md.in`, `product/skills/`,
+`product/docs/`, `internal/cli/cli.go`, and `scripts/release-manifest.txt`.
+Written 2026-09-15 against the 2.0.0-rc.1 candidate; revised 2026-09-19 against
+2.0.0-rc.13.*

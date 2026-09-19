@@ -12,11 +12,11 @@ Each workspace pins its own CLI version in `.context-circuit/CLI_VERSION`. Versi
 install side by side, so several workspaces on one machine can pin different ones.
 Read that file first and treat it as the version to run for that workspace.
 For an explicit update request, resolve the requested version, or the latest stable
-compatible `context-circuit-cli-v2.*` release from
-[CLI releases](https://github.com/kaotypr/context-circuit/releases).
+compatible `cli-v2.*` release from
+[CLI releases](https://github.com/kaotypr/context-circuit-source/releases).
 Use available GitHub tools or the releases API; exclude drafts/prereleases unless
 requested. The workspace template and the CLI release on the same repository:
-template releases are tagged `v*` and CLI releases `context-circuit-cli-v*`. Pass
+template releases are tagged `v*` and CLI releases `cli-v*`. Pass
 an exact version to the installer; do not guess an unpublished version exists.
 
 Run the bundled script, using absolute paths when outside this skill directory:
@@ -44,27 +44,12 @@ while a token is set usually means the token lacks access to the repository, not
 that the version is missing. Offline `--archive` / `-Archive` installation from a
 trusted release needs no token.
 
-## Install from an organization's mirror
-
-An organization can mirror CLI releases into its own GitLab project. A workspace
-records that project in `workspace.yaml` as `cli_registry`; read it and pass it as
-`--gitlab-url <value>` / `-GitlabUrl <value>`. The installer then reads the
-release from that project's generic package registry rather than from GitHub, and
-presents the token in the form that registry expects. `CONTEXT_CIRCUIT_GITLAB_URL`
-supplies the same value when no argument is passed, which is how a first install
-works before any workspace exists. The credential reaches only the registry in
-use, never both.
-
-When a mirror is in use, resolve an available version from that host's releases or
-package registry. Do not read the product repository's GitHub releases to pick a
-version the mirror may not carry.
-
 Both install and update use the same script. `--bin-dir` / `-BinDir` selects a
-user-writable command directory. No administrator access is needed. The installer
-verifies SHA-256 and the executable's version before switching the command to the
-new version. Old versions remain available for rollback by reinstalling that
-version. Offline use accepts `--archive` and `--checksums` (PowerShell `-Archive`
-and `-Checksums`) from the same trusted release.
+user-writable command directory. No administrator access is needed. The
+installer verifies SHA-256 and the CLI's version before switching the command to
+the new version. Old versions remain available for rollback by reinstalling that
+version. Offline use accepts `--archive` and `--checksums` (PowerShell
+`-Archive` and `-Checksums`) from the same trusted release.
 
 Use the reported command path immediately. If its directory is outside PATH,
 explain the directory to add; do not rewrite shell profiles or unrelated host

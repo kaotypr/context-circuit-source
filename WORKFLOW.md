@@ -9,7 +9,7 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/docs/: workspace files, agent-facing commands, and worktree guidance.
 - internal/workspace/: Go bookkeeping, YAML edits, Git and worktree operations.
 - internal/cli/: the command surface and human/JSON output.
-- cmd/context-circuit/: executable entry point.
+- cmd/context-circuit/: CLI entry point.
 - template/: blank workspace files, embedded with the product instruction.
 - scripts/release-manifest.txt: exact source-to-output file mapping.
 - assets.go: embeds only product assets and materializes the manifest.
@@ -18,28 +18,52 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/skills/: packaged CLI installation/update and subagent dispatch skills.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and explicitly invoked publication.
+- LICENSE: Apache-2.0, covering this checkout and the CLI.
+- product/LICENSE: 0BSD, covering everything a workspace receives.
+- release/template-repo/: landing-page files the published repository owns.
 
-The Go executable handles workspace mechanics. The agent owns interpretation,
-planning, implementation, application-specific setup, subagent dispatch, and
+The Go CLI handles workspace mechanics. The agent owns interpretation, planning,
+implementation, application-specific setup, subagent dispatch, and
 user-requested review/delivery. CLI worktree preparation reuses ignored runtime
-files through CoW where available. Role settings materialize as native host files.
-No product execution state machine or mandatory child-agent workflow is required.
+files through CoW where available. Role settings materialize as native host
+files. No product execution state machine or mandatory child-agent workflow is
+required.
 
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
-never ships. sources/, publication/, and release requests are passive maintainer
-history and never ship. The remaining source design skill is maintainer tooling
-and is excluded from the binary and exported workspace.
+never ships. sources/ and release requests are passive maintainer history and
+never ship. The source skills under .agents/skills/ — cc-source-develop and
+cc-system-design — are maintainer tooling, excluded from the binary and the
+exported workspace. .claude/skills is a symlink to that directory, so a host
+reading either path finds the same two and neither can drift from the other.
 
-## This checkout as a workspace
+release/template-repo/ is a fourth class: not shipped to a workspace and not
+history either. Publication restores those files over the extracted artifact and
+holds them out of the comparison that decides whether there is anything to
+publish, so the published repository keeps its own license, conduct, contributing
+and security pages while no workspace ever receives them. A README.md there is
+refused, because the published README is the product guide the manifest
+assembles.
 
-The checkout is itself a schema-2 workspace, so `check`, `status`, and
-`context find` run against the real `context/` here instead of a copied fixture.
-That is the only reason the workspace files exist. Source work still goes
-directly on the branch under AGENTS.md: `intent/` and `plans/` stay empty, and
-no ID is allocated for source changes. `.context-circuit/docs/` is deliberately
-absent, because `product/docs/` owns that text and a second copy here would
-drift from it.
+## How context/ is validated
+
+This checkout is not a workspace. It carries no `workspace.yaml`, no roster, no
+`.context-circuit/`, and no records; the product's lifecycle is for generated
+workspaces, and AGENTS.md bars it here.
+
+`context/` is still checked by the product's own diagnostic.
+`internal/cli/knowledge_tree_test.go` builds a throwaway workspace, copies the
+real tree into it, and binds it to this checkout so each note's code anchors
+resolve against real history. Findings split by the product's own taxonomy: one
+a command or an edit discharges fails the test, and one marked `needs a person:`
+— a note to re-read against code that moved — is reported for a maintainer
+rather than blocking a contributor on somebody else's judgment.
+
+It was registered as a workspace before this, which put the same checks behind
+two gitignored files: they ran on one machine and never in CI, so a fresh clone
+got silence instead of a warning. The job that runs `go test` clones full
+history, because the reviewed-date pass counts commits under those anchors and a
+shallow clone would make it pass without looking.
 
 ## Validation
 

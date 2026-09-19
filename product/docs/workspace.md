@@ -1,7 +1,7 @@
 # Workspace files
 
-The executable carries the blank workspace as embedded assets. Initialization
-creates the shared instruction and folders alongside these small records:
+The CLI carries the blank workspace as embedded assets. Initialization creates
+the shared instruction and folders alongside these small records:
 
 | File | Contents | Shared? |
 | --- | --- | --- |
@@ -9,14 +9,14 @@ creates the shared instruction and folders alongside these small records:
 | .context-circuit/CLI_VERSION | CLI version this workspace pins; installed side by side | Yes |
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
-| workspace.yaml | Version, name, purpose, optional CLI release mirror, the workspace's own repository, repository IDs with their URL and default branch, relationships | Yes |
-| members.yaml | Member ID to display name, optional allocation band, and optional record language | Yes |
+| workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
+| members.yaml | Member ID to display name, optional allocation band, and optional record language and tone | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug.md | Plan, repositories, dependencies, created_by, created_at, completed_at, progress | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
 | member.local.yaml | Active member ID on this machine | No |
-| repositories.local.yaml | This machine's workspace checkout, and repository ID to its checkout path and base branch | No |
+| repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
 | repositories/, .worktrees/ | Local Git working copies | No |
@@ -42,12 +42,6 @@ relationships:
     to: api
     description: Consumes the billing API
 ```
-
-An organization that mirrors CLI releases into its own GitLab project records it
-once as `cli_registry`, an https project URL. The value is shared, so everyone who
-clones the workspace installs from that mirror without setting anything up on
-their own machine; only the credential stays personal. Unset, the CLI installs
-from the product's own releases.
 
 Use a separate checkout for each execution environment (native Windows, WSL,
 remote server, or container). Shared files synchronize through Git; local paths,
@@ -115,12 +109,21 @@ means English.
 | An approval or completion note | exactly what the person said |
 | `context/` notes, the catalog, the glossary | English, always |
 | Anything written inside a repository | that repository's convention, English where it states none |
+| A record's headings and field names | English, always |
 | IDs, slugs, repository IDs, branch names, dates | unchanged |
 
 Knowledge is English because a note outlives the member who wrote it and anchors
 to code, and because the catalog is searched by substring, which a
 mixed-language index quietly breaks. An intent is in its author's language
 because a person can only approve an outcome they understand.
+
+A member may also record a `tone` beside their language: the register that
+language is written in, as one line of prose — `semi-formal; keep technical
+terms in English` — quoted into the instruction that writes a record rather than
+parsed. It exists because naming a language decides the words and not how they
+are put together, and an agent composing in English and translating produces
+prose that is grammatical and formal in a way nobody chose. Unset leaves the
+general composition guidance in `cc-intent` to decide.
 
 `agent dispatch` names the record author's language in the brief and states that
 what goes into the repository is English. That boundary lives in the brief
@@ -131,6 +134,91 @@ Names are quoted, never translated, in either direction: domain vocabulary keeps
 the project's own form inside an English note, and code identifiers keep the
 code's form inside a record written in another language. Slugs stay lowercase
 ASCII whatever the title says, so a title in another script is transliterated.
+
+## When a note stops being true
+
+A catalog entry carries the date its note was last confirmed against the code.
+`check` reads that date against the code the note itself points at, through the
+anchors in its `Owner:` block: a note with commits under its anchors since it was
+last confirmed is reported, with how many.
+
+The comparison is against the code rather than the calendar because age is not
+evidence. A note whose anchors nobody has touched is not stale however old its
+date is, and reporting it would produce a list that never reaches zero and
+teaches people to scroll past findings. Commits on the day of the review do not
+count: a note confirmed that day was confirmed against them.
+
+This is the second way a note comes back for judgment, and it covers what the
+first cannot. Completion returns the entries scoped to a plan's repositories,
+which only ever fires for work done through this workspace; a merge by somebody
+else, a commit from before the workspace existed, or a hotfix pushed directly
+reaches nothing. The finding is always a person's to settle — re-read the note,
+then edit it with its entry or move the date alone if nothing it says changed.
+
+A note that anchors to no code has no evidence to read. Calendar age is all there
+is for it, and it is reported only where a workspace asks:
+
+```yaml
+knowledge_review_days: 180
+```
+
+Unset, nothing is reported for those notes. It is shared, because how long a fact
+may go unconfirmed is a project judgment rather than one machine's.
+
+## Borrowed knowledge
+
+`context/` holds knowledge this workspace owns: it describes this project, and
+completing a plan brings the notes that plan changed back for judgment. An
+organization's knowledge center works the other way. It is shared by many
+workspaces, it is changed through its own repository, and no plan completed here
+will ever invalidate it. So it is mounted rather than copied:
+
+```yaml
+knowledge_repositories:
+  core-service-knowledge:
+    url: git@git.example.com:platform/core-service-knowledge.git
+    default_branch: main
+    index: index.md
+```
+
+Copying is the failure this prevents. A note duplicated into `context/` goes
+stale silently while still reading as current, and nothing in the workspace can
+tell that it has. Mounting keeps one copy, upstream, and reads it from there.
+
+It sits beside `repositories` for the reason `workspace_repository` does: every
+consumer of that map treats an entry as somewhere work happens, and a plan, a
+relationship, or a worktree cut from a knowledge repository is never what the
+caller meant. A borrowed repository records no base branch, because work never
+starts in it. Both maps share one ID namespace, so a note's anchor means one
+thing; connecting an ID already used on the other side is refused.
+
+`index` names the file that maps its contents, the way `context/INDEX.md` maps
+this workspace's own notes. A borrowed repository chooses its own entry point,
+so the value is recorded rather than assumed; `knowledge connect` detects the
+usual spellings and `check` reports the gap when it cannot.
+
+The checkout path is local, like every other checkout path. `knowledge clone`
+puts it under `repositories/<id>`, beside the working copies, which the shipped
+`.gitignore` already excludes; `--path` keeps it anywhere else. The record is
+what separates knowledge from work, not the directory, and the shared ID
+namespace is what makes one directory safe.
+
+**Read-only here is enforced rather than asked for.** Obtaining one disables its
+push URL, and every sync reasserts that, so a push fails instead of
+half-succeeding. `knowledge sync` fetches and then fast-forwards only when the
+checkout is clean and on the shared branch. It never merges, rebases, resets, or
+discards: a checkout holding local work is reported and left exactly as it is,
+because moving that work is a decision for whoever made it. Improvements go
+upstream through that repository's own review, from a separate checkout of it.
+
+`context find` reads borrowed indexes beside this workspace's catalog and marks
+which side each match came from, so an entry to edit is never confused with one
+to raise upstream. It reports any index it could not read rather than narrowing
+the result in silence. Nothing validates borrowed content the way `check`
+validates `context/`: those rules exist so a person here can fix what they
+break, and neither half holds for a repository this workspace does not own.
+Completion never names a borrowed entry as knowledge to reconcile, because
+nobody here can move it.
 
 ## Joining a workspace
 

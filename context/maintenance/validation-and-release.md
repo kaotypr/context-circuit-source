@@ -8,6 +8,25 @@ Format changed Go files, then the test suite, then vetting, then the release
 check. Tests use temporary directories and disposable Git repositories, so they
 establish real file and Git behavior rather than mocked behavior.
 
+The suite also validates this project's own product knowledge with the product's
+own diagnostic. One test builds a throwaway workspace around the real knowledge
+tree and binds it to this checkout, so each note's code anchors resolve against
+real history.
+
+Findings split by the taxonomy the diagnostic already uses:
+
+- one a command or an edit discharges fails the test;
+- one marked as needing a person — a note to re-read against code that moved —
+  is reported instead, rather than blocking a contributor on another's judgment.
+
+Continuous integration clones full history for it, because that pass counts
+commits under those anchors and a shallow clone would let it pass without
+looking.
+
+This replaces registering the checkout as a workspace and running the diagnostic
+by hand, which put the same checks behind two machine-local files: they ran
+where someone had set them up, and nowhere else.
+
 The release check is the broad one: it builds and exercises a native binary,
 verifies the embedded seed inventory against the manifest, cross-compiles every
 supported target, and tests the publication guards and commit and tag behavior
@@ -36,15 +55,25 @@ passed output directory must be new: builds never replace existing output there.
 
 ## Publication
 
-The two products publish separately. The workspace template publishes from its
-version file to the published template repository's release tags; the executable
-publishes from its own version file to this repository's prefixed tags. Changing
-a version file does not publish — publication is explicitly invoked and requires
-authorization.
+The two products publish separately, each from the repository that owns it. The
+workspace template publishes from its version file to the published template
+repository's `v*` release tags. The CLI is tagged `cli-v*` here, where its
+source is, and its release is created here too, on the commit that built it.
+Changing a version file does not publish — publication is explicitly invoked and
+requires authorization.
+
+Publishing the template replaces the destination's whole tree, so the files that
+repository owns rather than a workspace — its license, conduct, contributing and
+security pages — are restored over the extracted artifact and held out of the
+comparison that decides whether there is anything to publish. The fixture proves
+all of it: that they land, that the license shown there is byte-identical to the
+one a workspace receives, that an exported workspace carries none of them at its
+root, and that a `README.md` among them is refused rather than replacing the
+assembled product guide.
 
 Release assets carry dependency licenses. Dependencies are deliberately few: a
 document-preserving YAML library and a portable file-locking library. Go is a
-contributor requirement only; a user needs the executable for their platform and
+contributor requirement only; a user needs the CLI for their platform and
 installed Git, with no other language runtime.
 
 ## What validation does not establish

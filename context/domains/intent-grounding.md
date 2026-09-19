@@ -3,7 +3,10 @@
 An intent is written before detailed code investigation, which leaves accepted
 project knowledge as the only thing it can be grounded in. Retrieval comes first,
 through [the retrieval catalog](knowledge-notes.md), and what the request was
-understood to mean is then read against what the project already records.
+understood to mean is then read against what the project already records. Where
+the workspace mounts a knowledge repository it does not own, retrieval spans that
+too and says which side each match came from — grounding reads borrowed facts,
+and the obligation to correct one stays where the facts are kept.
 
 This is the inbound half of the knowledge circuit that
 [the product](../product/what-v2-is.md) exists for. The outbound half — knowledge

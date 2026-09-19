@@ -2,7 +2,7 @@
 
 The normative overview of the Context Circuit v2.0 core. It states *what* the
 design is and *why*; each concern's *how* lives in its own file and is linked
-from here. Written against the 2.0.0-rc.1 candidate.
+from here. Written against the 2.0.0-rc.13 candidate.
 
 ## The capability
 
@@ -12,15 +12,25 @@ one product across one or more Git repositories. It holds:
 - the project's identity, purpose, logical repositories, default base branches,
   and the relationships between them;
 - durable project knowledge — architecture, conventions, decisions, domain
-  rules, vocabulary — with a catalog that routes a reader to the smallest
-  relevant set of notes;
-- the roster of members who share it;
+  rules, the actors the project serves, vocabulary — with a catalog that routes a
+  reader to the smallest relevant set of notes;
+- read-only mounts of knowledge the workspace does not own, retrieved beside its
+  own and never reconciled here;
+- the Git repository carrying the workspace itself, so a second machine is told
+  where to clone it;
+- the roster of members who share it, and the language and register each one's
+  records are written in;
 - approved intents and the plans derived from them, with their progress.
 
 Around that, v2 provides the coordination a multi-repository change needs:
 worktree preparation with environment reuse, dependency-ordered execution of
 stacked plans, subagent dispatch with per-host role settings, and explicit
 delivery and completion.
+
+Not every change goes through that machinery. A person may ask for a change
+directly — because it is small, or because the request is already its own
+specification — and it is made in a bound checkout with no intent, no plan, and
+no worktree. That choice is theirs; nothing else relaxes with it.
 
 Two products deliver it: a **workspace template** (cloned, then initialized) and
 a separately released **Go CLI** (installed per execution environment, pinned
@@ -90,11 +100,12 @@ depend on an ephemeral one. See [knowledge-circuit.md](./knowledge-circuit.md).
 flowchart TB
     H[Human] <--> A[Coding agent<br/>coordinator]
     A --> CLI[context-circuit-cli<br/>model-blind, credential-free]
+    A --> SK[Skills<br/>one per stage, loaded when reached]
     A --> SUB[Subagents<br/>explorer · planner · worker · reviewer]
     A --> GIT[Ordinary Git and provider tools]
 
     CLI --> WS[Workspace records<br/>workspace.yaml · members.yaml · ids.yaml]
-    CLI --> KN[context/ catalog lookup<br/>and boundary check]
+    CLI --> KN[context/ catalog lookup<br/>+ borrowed indexes, boundary<br/>and shape checks]
     CLI --> WT[Git worktrees<br/>+ CoW environment reuse]
     CLI --> OR[Dependency order derivation]
     CLI --> RS[Native role settings]
@@ -128,7 +139,7 @@ sequenceDiagram
     A->>C: record order --intent i001
     A->>H: Confirm waves or chain, once
     A->>C: worktree prepare (per plan, per repository)
-    A->>A: Dispatch workers; wait; inspect real diffs
+    A->>A: Dispatch workers; wait; integrate what they report
     A->>G: Run the repositories' ordinary checks
     A->>H: Report files changed, checks run, and what failed
     H->>A: "Open a PR." / "Review it." / "Mark them done."
@@ -163,8 +174,14 @@ review, and no completion inference.
 | D16 | Independent review is manually requested, read-only, and never blocks a PR, delivery, or completion | [roles-and-dispatch.md](./roles-and-dispatch.md) |
 | D17 | Delivery, completion, worktree removal, and branch deletion are four separate acts | [authority-and-delivery.md](./authority-and-delivery.md) |
 | D18 | `check` is a diagnostic, never an admission gate | [executable-and-agent.md](./executable-and-agent.md) |
-| D19 | Every date in a workspace file is ISO 8601 `YYYY-MM-DD` in UTC, in frontmatter and in prose alike | [records-and-ids.md](./records-and-ids.md) |
+| D19 | A record's gates are canonical ISO 8601 UTC **instants** (`created_at`, `approved_at`, `completed_at`); every other date is an ISO 8601 calendar date in UTC, in frontmatter and in prose alike | [records-and-ids.md](./records-and-ids.md) |
 | D20 | v2 does not migrate a v1 workspace; `init` is for fresh workspaces only | [versioning-and-distribution.md](./versioning-and-distribution.md) |
+| D21 | A workspace may **mount** knowledge it does not own, read-only and enforced so, retrieved beside its own catalog and never offered as knowledge to reconcile here | [knowledge-circuit.md](./knowledge-circuit.md) |
+| D22 | A person may bypass intent and planning and ask for a change directly; authorization for outward acts and knowledge reconciliation are unchanged by it | [authority-and-delivery.md](./authority-and-delivery.md) |
+| D23 | A member records the language their intents and plans are written in, and optionally the register; knowledge, headings, and field names stay English | [records-and-ids.md](./records-and-ids.md) |
+| D24 | A note's anchors live in one `Owner:` block, not in its sentences, and `check` reports the shape of a note as well as its links | [knowledge-circuit.md](./knowledge-circuit.md) |
+| D25 | `check` reads a catalog entry's reviewed date against the commits under its note's anchors, and every finding names what discharges it | [knowledge-circuit.md](./knowledge-circuit.md) |
+| D26 | The always-loaded instruction carries only what must always be in force; each stage's procedure lives in a skill loaded when that stage is reached | [executable-and-agent.md](./executable-and-agent.md) |
 
 ## What is deliberately absent
 
@@ -211,6 +228,8 @@ not mistake silence for a claim:
    necessary, not sufficient; the source tree is not an atomic snapshot and its
    native modules may not match the target runtime.
 3. **The instruction surface is the product, and it is unverified in the way
-   that matters most.** Everything the agent is asked to do lives in one
-   Markdown file. Tests prove the CLI; nothing in CI proves an agent read
-   `AGENTS.md` and behaved accordingly.
+   that matters most.** Everything the agent is asked to do lives in Markdown —
+   one always-loaded entry instruction and the skills behind it. Tests prove the
+   CLI; nothing in CI proves an agent read `AGENTS.md`, loaded the skill a stage
+   names, and behaved accordingly. Splitting the instruction changed how much is
+   in force at once; it did not make any of it verifiable.

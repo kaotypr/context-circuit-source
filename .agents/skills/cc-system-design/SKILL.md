@@ -38,9 +38,8 @@ sources/system-design/<product-or-project>/<grouping>/<scope>/
   never a single repository**. In a single-product workspace this level may
   collapse to `sources/system-design/<grouping>/<scope>/`.
 - `<grouping>` is the organizing dimension for a body of design work. **Default:
-  a version** — use **3-number semver with a `v` prefix going forward**
-  (`v0.6.1`, not `v0.6`); legacy 2-number folders (`v0.5`, `v0.6`) stay and are
-  **not** retroactively renamed. Optionally a **named grouping** — a slug such as
+  a version** — use **3-number semver with a `v` prefix** (`v2.0.0`, not
+  `v2.0`). Optionally a **named grouping** — a slug such as
   `phase-2`, `Q1`, or a milestone — as a deliberate author choice when a team does
   not organize design by release. Within one product, pick one grouping dimension
   rather than mixing release and phase folders arbitrarily.
