@@ -85,7 +85,7 @@ context-circuit-source/
 ├── release/
 │   ├── binding.yaml           Where the workspace template publishes
 │   ├── template-repo/         Landing-page files the published repository owns
-│   └── requests/              One release request per version
+│   └── requests/              cli/ and template/, one request per version
 ├── scripts/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
 │   └── …                      Build, validation, and publication tooling
@@ -100,7 +100,7 @@ maps every file in them to its destination in a generated workspace.
 
 `sources/` is passive maintainer design history: not the current product
 specification, and never shipped. `release/` is not history — `binding.yaml`
-names the published destination, and each version's request lives beside it.
+names the published destination, and each product's requests live beside it.
 
 This checkout is not a Context Circuit workspace and carries no workspace
 records. The product's intent and plan flow is not used here; maintainer changes

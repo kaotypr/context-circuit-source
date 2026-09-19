@@ -41,6 +41,19 @@ its source is, so a released binary is traceable to the commit that produced it
 by the tag itself. The template's `v*` releases live on the published template
 repository, whose tree is what they ship.
 
+Both publish from one merge, and the CLI publishes first. The dependency runs
+one way: the template names a CLI version and reads its release list, while the
+CLI names nothing in the template. Publishing the template first leaves a window
+where it points at a release that does not exist yet.
+
+Each product publishes only when its own version file names something not yet
+released, so a bump to one leaves the other's job resolving to a release that
+already exists and doing nothing. That is what makes the two lines independent
+in practice rather than only in principle. Each carries its own release request,
+under `release/requests/cli/` or `release/requests/template/`, and that
+request's body is the notes that release is published with — so a reader
+upgrading one product is not handed the other's changes.
+
 That was not always so. While this checkout was private, installing could not
 depend on reading it, so the CLI's assets were published on the template
 repository instead. It cost a tag that meant two things in two places, a token

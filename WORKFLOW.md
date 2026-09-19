@@ -14,10 +14,12 @@ defines the change. Product instructions apply only to generated workspaces.
 - scripts/release-manifest.txt: exact source-to-output file mapping.
 - assets.go: embeds only product assets and materializes the manifest.
 - VERSION: workspace template version.
-- CLI_VERSION: independent CLI version; changing either file does not publish.
+- CLI_VERSION: independent CLI version; each file drives its own publication.
 - product/skills/: packaged CLI installation/update and subagent dispatch skills.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
-- scripts/: build, checks, and explicitly invoked publication.
+- scripts/: build, checks, and publication.
+- release/requests/cli/, release/requests/template/: one request per product
+  per version; the request body is that release's notes.
 - LICENSE: Apache-2.0, covering this checkout and the CLI.
 - product/LICENSE: 0BSD, covering everything a workspace receives.
 - release/template-repo/: landing-page files the published repository owns.

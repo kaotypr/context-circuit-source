@@ -8,8 +8,8 @@ version=$1
 template_dir=$2
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
-request="$source_root/release/requests/$version.md"
-[ -f "$request" ] || fail "missing release request: release/requests/$version.md"
+request="$source_root/release/requests/template/$version.md"
+[ -f "$request" ] || fail "missing release request: release/requests/template/$version.md"
 [ -d "$template_dir/.git" ] || fail "expected a standalone template checkout: $template_dir"
 template_dir=$(CDPATH= cd -- "$template_dir" && pwd -P)
 [ "$template_dir" != "$source_root" ] || fail 'cannot publish over the source checkout'
