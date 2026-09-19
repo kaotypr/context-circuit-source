@@ -385,10 +385,13 @@ func TestTheProductGuideStaysWithTheRepositoryThatShowsIt(t *testing.T) {
 			t.Errorf("the guide or its artwork ships to a workspace: %s", line)
 		}
 	}
-	attributes, attrErr := os.ReadFile(filepath.Join("..", "..", "release", "template-repo", ".gitattributes"))
+	raw, attrErr := os.ReadFile(filepath.Join("..", "..", "release", "template-repo", ".gitattributes"))
 	if attrErr != nil {
 		t.Fatal(attrErr)
 	}
+	// A Windows checkout converts this file to CRLF, and the carriage return
+	// would end every line between the rule and the anchor below.
+	attributes := strings.ReplaceAll(string(raw), "\r\n", "\n")
 	// tembiter materializes a project with `git archive`, which honors this file
 	// and nothing else. A path the repository owns but does not mark here is a
 	// path every new workspace receives.
@@ -396,7 +399,7 @@ func TestTheProductGuideStaysWithTheRepositoryThatShowsIt(t *testing.T) {
 		"README.md", "LICENSE", "CHANGELOG.md", "CODE_OF_CONDUCT.md",
 		"CONTRIBUTING.md", "SECURITY.md", "assets/", ".gitattributes",
 	} {
-		if !regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(owned) + `\s+export-ignore$`).Match(attributes) {
+		if !regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(owned) + `\s+export-ignore$`).MatchString(attributes) {
 			t.Errorf("%s is not marked export-ignore, so a new workspace receives it", owned)
 		}
 	}
