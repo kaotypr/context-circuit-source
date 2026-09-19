@@ -62,7 +62,7 @@ this request touches. A request cutting across a standing need is a question for
 the person, and naming the actor an outcome serves tells the next reader who it
 is for.
 
-Create the record through the executable, which reserves the ID:
+Create the record through the CLI, which reserves the ID:
 
 ```sh
 context-circuit-cli --workspace <root> record create --kind intent --slug SLUG --title TITLE
@@ -93,7 +93,7 @@ re-gated.
 
 Instants — `created_at` and the `approved_at` a gate stamps — are canonical ISO
 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, written by hand or
-through the executable, is an ISO 8601 calendar date, `YYYY-MM-DD`. No other date
+through the CLI, is an ISO 8601 calendar date, `YYYY-MM-DD`. No other date
 format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for

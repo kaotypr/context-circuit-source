@@ -1,8 +1,9 @@
 # Context Circuit CLI
 
-A separately versioned Go executable for Context Circuit workspaces. It handles
+A separately versioned Go CLI for Context Circuit workspaces. It handles
 workspace records, Git repositories, CoW worktree preparation, and subagent role
-configuration. Coding agents provide planning, implementation, and orchestration.
+configuration. Coding agents provide planning, implementation, and
+orchestration.
 
 Download a platform package from this repository's `cli-v<version>` release, or
 ask the workspace's `cc-cli` skill to install or update it. The skill detects the

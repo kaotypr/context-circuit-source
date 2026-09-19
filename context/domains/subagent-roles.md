@@ -154,14 +154,14 @@ Because read-only roles cannot run Git, the coordinator supplies diff text to
 them directly.
 
 **Writing a file is not loading it.** The host may need a restart, and neither
-the executable nor the dispatching skill may claim a definition was loaded
-merely because it was written.
+the CLI nor the dispatching skill may claim a definition was loaded merely
+because it was written.
 
 ## Dispatch
 
-The executable resolves settings, composes a brief, and returns the invocation
-with a flag stating that a launch is still required. It has not launched
-anything, and a specification is never evidence that an agent ran or completed.
+The CLI resolves settings, composes a brief, and returns the invocation with a
+flag stating that a launch is still required. It has not launched anything, and
+a specification is never evidence that an agent ran or completed.
 
 Because role files are host-local, gitignored, and written only by setup, a
 specification can name an agent type the host never registered. Dispatch

@@ -8,8 +8,8 @@ description: Write and maintain Context Circuit live knowledge — what a contex
 On a request to gather knowledge, synthesize durable concepts into live context
 notes and maintain the catalog entries beside them. There is no separate
 knowledge acceptance lifecycle. Keep raw evidence separate from accepted
-knowledge, and keep task progress and temporary results in plans. The executable
-can locate catalog entries; semantic interpretation and the writing itself are
+knowledge, and keep task progress and temporary results in plans. The CLI can
+locate catalog entries; semantic interpretation and the writing itself are
 yours.
 
 Run the diagnostic after editing notes — it reports any line that crosses the

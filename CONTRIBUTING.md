@@ -8,13 +8,13 @@ generated workspace.
 ## Before you write code
 
 Decide which side of the seam your change belongs on. The
-[README](README.md#what-belongs-in-the-executable) states the rule: anything whose
+[README](README.md#what-belongs-in-the-cli) states the rule: anything whose
 answer depends on reading the actual project belongs to the coding agent, and
-anything that must return the same result every time belongs to Go. The executable
+anything that must return the same result every time belongs to Go. The CLI
 holds no model credentials and never calls a model API, so a feature needing
 judgment is a skill or an instruction change rather than a command.
 
-[CLI.md](CLI.md) describes the executable boundary and packaging.
+[CLI.md](CLI.md) describes the CLI boundary and packaging.
 [WORKFLOW.md](WORKFLOW.md) describes source ownership and validation.
 
 ## Making a change

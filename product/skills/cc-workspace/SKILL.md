@@ -19,7 +19,7 @@ context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
   --member ID --member-name NAME
 ```
 
-The executable creates embedded instructions, folders, and initial records, and
+The CLI creates embedded instructions, folders, and initial records, and
 preserves existing files. A solo workspace still has a real member.
 
 On another machine, select an existing member and connect its local checkouts;

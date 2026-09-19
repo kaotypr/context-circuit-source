@@ -28,7 +28,7 @@ Owns this checkout and decides what reaches a workspace.
 
 ## [Two products and their version lines](../product/two-products-and-versioning.md)
 
-1. **As a maintainer, I want the template and the executable to version
+1. **As a maintainer, I want the template and the CLI to version
    independently,** so that a workspace can pin one without being dragged by the
    other's release cadence.
 2. **As a maintainer, I want the embedded seed checked against the manifest,**

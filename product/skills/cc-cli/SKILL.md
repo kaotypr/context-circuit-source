@@ -60,11 +60,11 @@ package registry. Do not read the product repository's GitHub releases to pick a
 version the mirror may not carry.
 
 Both install and update use the same script. `--bin-dir` / `-BinDir` selects a
-user-writable command directory. No administrator access is needed. The installer
-verifies SHA-256 and the executable's version before switching the command to the
-new version. Old versions remain available for rollback by reinstalling that
-version. Offline use accepts `--archive` and `--checksums` (PowerShell `-Archive`
-and `-Checksums`) from the same trusted release.
+user-writable command directory. No administrator access is needed. The
+installer verifies SHA-256 and the CLI's version before switching the command to
+the new version. Old versions remain available for rollback by reinstalling that
+version. Offline use accepts `--archive` and `--checksums` (PowerShell
+`-Archive` and `-Checksums`) from the same trusted release.
 
 Use the reported command path immediately. If its directory is outside PATH,
 explain the directory to add; do not rewrite shell profiles or unrelated host

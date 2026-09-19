@@ -1,7 +1,7 @@
 # Workspace files
 
-The executable carries the blank workspace as embedded assets. Initialization
-creates the shared instruction and folders alongside these small records:
+The CLI carries the blank workspace as embedded assets. Initialization creates
+the shared instruction and folders alongside these small records:
 
 | File | Contents | Shared? |
 | --- | --- | --- |

@@ -5,9 +5,9 @@ Isolation cheap enough to actually use.
 ## Prepared by execution, not chosen per task
 
 A request to execute a plan prepares a worktree for each repository that plan
-names; the executable performs the Git mechanics. Asking to work directly in a
-bound checkout is the one exception, which makes where the work happens a
-person's choice rather than a strategy the agent re-decides each time.
+names; the CLI performs the Git mechanics. Asking to work directly in a bound
+checkout is the one exception, which makes where the work happens a person's
+choice rather than a strategy the agent re-decides each time.
 
 Leaving it to per-task judgment is what made isolation rare in practice: an agent
 weighing risk against convenience mid-task reliably chose the checkout already
@@ -91,10 +91,10 @@ Safety properties, each one a refusal that makes copying safe to automate:
 - Environment contents are copied opaquely — never printed, never placed in a
   prompt, never stored in a shared record.
 
-Before reusing dependencies the executable compares the tracked package
-manifests, lockfiles, workspace definitions, and runtime version files between
-source and target. Any difference, including a file present on one side only,
-skips dependencies with a reason.
+Before reusing dependencies the CLI compares the tracked package manifests,
+lockfiles, workspace definitions, and runtime version files between source and
+target. Any difference, including a file present on one side only, skips
+dependencies with a reason.
 
 ## What reuse does not prove
 

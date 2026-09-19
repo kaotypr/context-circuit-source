@@ -9,7 +9,7 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/docs/: workspace files, agent-facing commands, and worktree guidance.
 - internal/workspace/: Go bookkeeping, YAML edits, Git and worktree operations.
 - internal/cli/: the command surface and human/JSON output.
-- cmd/context-circuit/: executable entry point.
+- cmd/context-circuit/: CLI entry point.
 - template/: blank workspace files, embedded with the product instruction.
 - scripts/release-manifest.txt: exact source-to-output file mapping.
 - assets.go: embeds only product assets and materializes the manifest.
@@ -18,15 +18,16 @@ defines the change. Product instructions apply only to generated workspaces.
 - product/skills/: packaged CLI installation/update and subagent dispatch skills.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and explicitly invoked publication.
-- LICENSE: Apache-2.0, covering this checkout and the executable.
+- LICENSE: Apache-2.0, covering this checkout and the CLI.
 - product/LICENSE: 0BSD, covering everything a workspace receives.
 - release/template-repo/: landing-page files the published repository owns.
 
-The Go executable handles workspace mechanics. The agent owns interpretation,
-planning, implementation, application-specific setup, subagent dispatch, and
+The Go CLI handles workspace mechanics. The agent owns interpretation, planning,
+implementation, application-specific setup, subagent dispatch, and
 user-requested review/delivery. CLI worktree preparation reuses ignored runtime
-files through CoW where available. Role settings materialize as native host files.
-No product execution state machine or mandatory child-agent workflow is required.
+files through CoW where available. Role settings materialize as native host
+files. No product execution state machine or mandatory child-agent workflow is
+required.
 
 Source context/ is live knowledge about the current product, catalogued by
 context/INDEX.md and validated by the knowledge checks the diagnostic runs; it

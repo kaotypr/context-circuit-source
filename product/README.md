@@ -733,7 +733,7 @@ of ours in your project is not a condition of using them.
 
 Your own code, your project knowledge, and everything your agent writes here are
 yours and are covered by whatever license your repository already carries. The
-`context-circuit-cli` executable is separate, and is released under the Apache
+`context-circuit-cli` itself is separate, and is released under the Apache
 License 2.0.
 
 ## Requirements and limits

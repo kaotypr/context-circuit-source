@@ -1,12 +1,12 @@
 # Worktree responsibilities
 
-Executing a plan prepares a worktree for each repository that plan names. The one
-exception is a person asking to work directly in a bound checkout, which is how
-a change gets made in place when isolation is not wanted. Where the work happens
-is therefore the person's choice, not a strategy the agent selects per task. The
-executable performs the corresponding Git mechanics.
+Executing a plan prepares a worktree for each repository that plan names. The
+one exception is a person asking to work directly in a bound checkout, which is
+how a change gets made in place when isolation is not wanted. Where the work
+happens is therefore the person's choice, not a strategy the agent selects per
+task. The CLI performs the corresponding Git mechanics.
 
-| Concern | Executable | Agent |
+| Concern | CLI | Agent |
 | --- | --- | --- |
 | Repository selection | Resolve logical ID and local checkout | Decide which repositories are affected |
 | Existing work | Report branch, changes, and Git worktree inventory | Preserve unrelated work; resume an existing location or select a new one |
@@ -39,9 +39,10 @@ can reconnect a manually moved working copy; `worktree move` moves it through Gi
 No automatic cleanup or pruning occurs after failure or completion.
 
 Successful preparation means a usable Git working copy. The agent still needs to
-follow repository setup instructions for package managers, toolchains, submodules,
-generated files, databases, and development services. The executable does not run arbitrary setup hooks. It reuses selected ignored
-runtime files as described below; unrelated credentials remain in host facilities.
+follow repository setup instructions for package managers, toolchains,
+submodules, generated files, databases, and development services. The CLI does
+not run arbitrary setup hooks. It reuses selected ignored runtime files as
+described below; unrelated credentials remain in host facilities.
 
 For changes across repositories, prepare each needed working copy independently.
 The agent orders tasks and checks combined behavior; a failure in one repository

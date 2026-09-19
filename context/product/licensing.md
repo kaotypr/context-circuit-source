@@ -5,10 +5,10 @@ different relationships to them, so they carry different terms.
 
 | What | License | Text |
 | --- | --- | --- |
-| This checkout and the `context-circuit-cli` executable | Apache-2.0 | `context-circuit-source@LICENSE` |
+| This checkout and `context-circuit-cli` | Apache-2.0 | `context-circuit-source@LICENSE` |
 | Everything a workspace receives | 0BSD | `context-circuit-source@product/LICENSE` |
 
-The executable is a binary an organization installs across its machines. Apache's
+The CLI is a binary an organization installs across its machines. Apache's
 explicit patent grant is what carries that past a legal review without a
 conversation, and its notice conventions already match a product shipping
 `THIRD_PARTY_NOTICES.txt` in every archive.
@@ -40,11 +40,11 @@ published README is the product guide the manifest assembles.
 
 ## A binary is read where it was downloaded
 
-The executable's assets are published on the template repository, which is labeled
-0BSD because that repository is the template. The assets are not 0BSD, and a
-repository label is the wrong thing to be answering that question — the misreading
-it invites is the permissive one, where somebody redistributes an Apache-2.0
-binary without the notices it asks for.
+The CLI's assets are published on the template repository, which is labeled 0BSD
+because that repository is the template. The assets are not 0BSD, and a
+repository label is the wrong thing to be answering that question — the
+misreading it invites is the permissive one, where somebody redistributes an
+Apache-2.0 binary without the notices it asks for.
 
 Two things close that. Every archive carries its own `LICENSE` beside the binary,
 which Apache-2.0 asks of a redistributor and which makes the archive answer for

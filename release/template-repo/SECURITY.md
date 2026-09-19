@@ -17,10 +17,10 @@ useful than a description.
 These are design constraints, so a report that one of them is violated is a
 security report:
 
-- The executable holds no model credentials and never calls a model API. Your
-  coding agent's provider relationship is yours and is untouched by it.
-- Installing the CLI needs no administrator access. It verifies a checksum and the
-  executable's reported version before switching the shared command, and leaves
+- The CLI holds no model credentials and never calls a model API. Your coding
+  agent's provider relationship is yours and is untouched by it.
+- Installing the CLI needs no administrator access. It verifies a checksum and
+  the CLI's reported version before switching the shared command, and leaves
   your existing command in place on any failure.
 - Versions install side by side, so installing one for a workspace cannot change
   which version another workspace runs.

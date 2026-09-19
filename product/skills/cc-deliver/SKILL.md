@@ -23,8 +23,8 @@ checkout is already on. Deliver that branch; there is no `cc/*` branch involved.
 
 **One plan.** Deliver `cc/<plan>/<repo>` for each repository the plan names.
 
-**Several plans run together, or "deliver all changes".** Ask the executable
-rather than reading the dependency graph yourself:
+**Several plans run together, or "deliver all changes".** Ask the CLI rather
+than reading the dependency graph yourself:
 
 ```sh
 context-circuit-cli --workspace <root> --json record order --intent i001
@@ -75,7 +75,7 @@ delivers to; answering from it targets the wrong branch convincingly. Use
 
 ## Opening the request
 
-Use ordinary Git and provider tools. The executable never delivers.
+Use ordinary Git and provider tools. The CLI never delivers.
 
 ```sh
 git -C <worktree> push --set-upstream origin cc/p0001/api

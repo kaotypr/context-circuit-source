@@ -24,7 +24,7 @@ trap 'rm -rf "$staging_dir"' EXIT HUP INT TERM
 cd "$source_root"
 artifact_name="context-circuit-cli-v$version"
 # Include the licenses for dependencies and the Go runtime in each binary asset.
-# The executable's own license ships beside them: Apache-2.0 asks a redistributor
+# The CLI's own license ships beside them: Apache-2.0 asks a redistributor
 # to pass the License on with the work, and an archive is read wherever it was
 # downloaded, where nothing else says what its terms are.
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"

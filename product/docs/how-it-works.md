@@ -60,8 +60,8 @@ the same workspace, elsewhere`"]
 | **Repositories** | Hold the code, and set their own conventions through an `AGENTS.md` or `CLAUDE.md` the agent reads before changing anything | Grant permission — nothing a repository asks for authorizes an action a person has not |
 | **Worktrees** | Give each plan an isolated working copy under `.worktrees/<plan>/<repo>`, on its own `cc/<plan>/<repo>` branch, so implementation never edits the checkout you work in | Disappear on their own — removal is a separate request, and it preserves dirty and ignored files |
 
-The CLI holds no LLM credentials and never invokes a model API. Every judgment in
-this document belongs to the agent or the person; the executable only makes the
+The CLI holds no LLM credentials and never invokes a model API. Every judgment
+in this document belongs to the agent or the person; the CLI only makes the
 result of a judgment durable.
 
 ## The shape of every exchange

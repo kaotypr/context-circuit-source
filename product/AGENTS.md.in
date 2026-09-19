@@ -2,9 +2,9 @@
 
 Coordinate this shared project workspace across one or more Git repositories.
 Keep its identity, repositories, relationships, knowledge, members, intents, and
-plans useful for solo and team work. Talk in ordinary project language. Use the
-`context-circuit-cli` executable for dependable bookkeeping; users need not manage
-runtime commands or ID numbers. Run the version this workspace pins in
+plans useful for solo and team work. Talk in ordinary project language. Use
+`context-circuit-cli` for dependable bookkeeping; users need not manage runtime
+commands or ID numbers. Run the version this workspace pins in
 `.context-circuit/CLI_VERSION`; the `cc-cli` skill installs and resolves it. See
 `.context-circuit/docs/commands.md` as needed.
 
@@ -151,10 +151,10 @@ plans exist and can be seen, so an instruction to implement that arrived earlier
 including one in the message that started the intent, does not begin it. Ask for
 it plainly instead of inferring it.
 
-A record's instants — `created_at`, `approved_at`, `completed_at` — are canonical
-ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, in a record
-written by hand as well as through the executable, is an ISO 8601 calendar date,
-`YYYY-MM-DD`. No other date format belongs in a workspace file.
+A record's instants — `created_at`, `approved_at`, `completed_at` — are
+canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, in
+a record written by hand as well as through the CLI, is an ISO 8601 calendar
+date, `YYYY-MM-DD`. No other date format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
 metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a
@@ -244,18 +244,17 @@ execution request, while a commit in a bound checkout is a change to the
 person's own working copy and still needs authorization. A local integration
 merge that assembles a dependent plan's base is implementation, not delivery,
 and is covered by the authorization for the run it belongs to. Use ordinary Git
-and provider tools; the Go executable provides repository, branch, and base
-information and never silently delivers. The branch the work started from — this
-machine's recorded base, or the repository's default branch when the binding
-records none — is the default PR target unless the user chooses another. Read it
-as `base_branch`; `workspace.yaml` records
-a `default_branch`, which is the repository's default and not what this machine
-delivers to, and answering from it targets the wrong branch convincingly. When
-the user asks to deliver changes or open a pull request, use
-`.agents/skills/cc-deliver/SKILL.md`, which says which branch each request opens
-from and against what, per repository and for the chain ends of a stacked run.
-Explain relevant drift
-or conflicts without imposing automatic rebase-and-reverify behavior.
+and provider tools; the Go CLI provides repository, branch, and base information
+and never silently delivers. The branch the work started from — this machine's
+recorded base, or the repository's default branch when the binding records none
+— is the default PR target unless the user chooses another. Read it as
+`base_branch`; `workspace.yaml` records a `default_branch`, which is the
+repository's default and not what this machine delivers to, and answering from
+it targets the wrong branch convincingly. When the user asks to deliver changes
+or open a pull request, use `.agents/skills/cc-deliver/SKILL.md`, which says
+which branch each request opens from and against what, per repository and for
+the chain ends of a stacked run. Explain relevant drift or conflicts without
+imposing automatic rebase-and-reverify behavior.
 
 Delivery does not mark a plan done. When the user explicitly marks one or more
 plans completed, that request is finished only when the completion note is
@@ -267,10 +266,10 @@ knowledge updates.
 
 Worktrees and branches remain after completion. Remove a worktree only when
 requested; preserve dirty, untracked, and ignored files unless their disposal is
-explicitly authorized. Branch deletion is separate. On request, the executable can
-move or repair worktrees using Git; Git's inventory is authoritative, and the
-ignored plan-to-worktree association is only a convenience for resuming work.
-See `.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
+explicitly authorized. Branch deletion is separate. On request, the CLI can move
+or repair worktrees using Git; Git's inventory is authoritative, and the ignored
+plan-to-worktree association is only a convenience for resuming work. See
+`.context-circuit/docs/worktrees.md` for recovery and cleanup mechanics.
 
 Archiving is optional ordinary file organization on request. Keep ID reservations
 and fix relative links when moving a record. External publication is an explicitly

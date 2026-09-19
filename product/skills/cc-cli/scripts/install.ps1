@@ -33,7 +33,7 @@ if ($env:OS -ne 'Windows_NT') { throw 'Use install.sh on macOS/Linux.' }
 $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
 $arch = switch ($architecture) { 'x64' { 'amd64' }; 'arm64' { 'arm64' }; default { throw "Unsupported architecture: $_" } }
 # The release is tagged `cli-v<version>`; the assets under it keep the
-# executable's own name, so a downloaded archive still says what it holds.
+# CLI's own name, so a downloaded archive still says what it holds.
 $releaseTag = "cli-v$Version"
 $package = "context-circuit-cli-v$Version-windows-$arch.zip"
 [void](New-Item -ItemType Directory -Force -Path $BinDir)
@@ -48,7 +48,7 @@ try {
   [void](New-Item -ItemType Directory -Path $work)
   $commandPath = Join-Path $BinDir 'context-circuit-cli.cmd'
   $commandHash = Join-Path $versions 'launcher.sha256'
-  if (Test-Path -LiteralPath (Join-Path $BinDir 'context-circuit-cli.exe')) { throw 'An existing executable would shadow the launcher; use another -BinDir.' }
+  if (Test-Path -LiteralPath (Join-Path $BinDir 'context-circuit-cli.exe')) { throw 'An existing CLI executable would shadow the launcher; use another -BinDir.' }
   if (Test-Path -LiteralPath $commandPath) {
     if (!(Test-Path -LiteralPath $commandHash) -or ((Get-FileHash -Algorithm SHA256 -LiteralPath $commandPath).Hash -ne (Get-Content -Raw -LiteralPath $commandHash).Trim())) { throw 'Existing command is unmanaged or modified; preserved.' }
   }
@@ -108,13 +108,13 @@ try {
   [IO.Compression.ZipFile]::ExtractToDirectory($download, $staged)
   $binary = Join-Path $staged 'context-circuit-cli.exe'
   $reported = & $binary version
-  if ($LASTEXITCODE -ne 0 -or $reported -ne $Version) { throw 'Executable version does not match the release.' }
+  if ($LASTEXITCODE -ne 0 -or $reported -ne $Version) { throw 'CLI version does not match the release.' }
   $target = Join-Path $versions "$Version-windows-$arch"
   if (Test-Path -LiteralPath $target) {
     if ((Get-Item -LiteralPath $target).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Existing version path is a link.' }
     if ((Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $target 'context-circuit-cli.exe')).Hash -ne (Get-FileHash -Algorithm SHA256 -LiteralPath $binary).Hash) { throw 'Existing version differs; preserved.' }
   } else { Move-Item -LiteralPath $staged -Destination $target }
-  # A small command shim allows updates while an older executable is in use.
+  # A small command shim allows updates while an older CLI is in use.
   $launcher = Join-Path $work 'context-circuit-cli.cmd'
   $content = '@"%~dp0.context-circuit-versions\' + "$Version-windows-$arch" + '\context-circuit-cli.exe" %*' + "`r`n"
   [IO.File]::WriteAllText($launcher, $content, [Text.Encoding]::ASCII)

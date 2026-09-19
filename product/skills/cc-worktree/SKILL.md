@@ -16,10 +16,10 @@ context-circuit-cli --workspace <root> worktree prepare --repo api --plan p0001 
 
 ## Choosing the starting point
 
-The executable resolves repository bindings, reports Git state, resolves the
-selected starting point, and creates or reuses worktrees. Select the recorded
-base branch — reported as `base_branch` beside the checked-out branch — or an
-appropriate dependency branch.
+The CLI resolves repository bindings, reports Git state, resolves the selected
+starting point, and creates or reuses worktrees. Select the recorded base branch
+— reported as `base_branch` beside the checked-out branch — or an appropriate
+dependency branch.
 
 Preparation defaults to the recorded base branch and derives no order, so a plan
 that depends on another needs its start named explicitly:

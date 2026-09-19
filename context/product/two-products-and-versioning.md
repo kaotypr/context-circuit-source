@@ -5,14 +5,14 @@ One checkout assembles two separately released products.
 | Product | Version file | Tags | Contents |
 | --- | --- | --- | --- |
 | Workspace template | `context-circuit-source@VERSION` | `v*` on the published template repository | shared instruction, docs, skills, blank seed |
-| Executable | `context-circuit-source@CLI_VERSION` | `cli-v*` here, where it is built and released | Go binaries for six platform targets |
+| CLI | `context-circuit-source@CLI_VERSION` | `cli-v*` here, where it is built and released | Go binaries for six platform targets |
 
 The tag and the assets under it are named differently on purpose. A tag is read
 in a release list that already says which product it belongs to, so `cli-v2.0.0`
 sits beside the template's `v2.0.0` and the two are told apart at a glance. An
 asset is read wherever somebody downloaded it, where nothing says what it is, so
-it keeps the executable's own name — `context-circuit-cli-v2.0.0-darwin-arm64`.
-Neither name reaches the installed binary, which is always `context-circuit-cli`.
+it keeps the CLI's own name — `context-circuit-cli-v2.0.0-darwin-arm64`. Neither
+name reaches the installed binary, which is always `context-circuit-cli`.
 
 They change for different reasons and at different rates. A wording fix in the
 shared instruction should not force anyone to reinstall a binary, and a
@@ -22,31 +22,31 @@ version file does not publish; publication is explicitly invoked.
 
 ## Per-workspace pinning
 
-A workspace records the executable version it expects, and that record is shared
-— it travels with the workspace through Git. Versions install side by side in a
+A workspace records the CLI version it expects, and that record is shared — it
+travels with the workspace through Git. Versions install side by side in a
 version store, one directory per version and platform, and the shared command on
 PATH is a link into one of them. Installing a version for one workspace repoints
 that shared command and must not change which version another workspace runs.
 
 Resolution is therefore: read the workspace's pinned version, locate the store,
-run that exact path, and install it first if it is absent. When the executable
-notices it is running against a workspace pinning a different version it warns
-on the error stream and continues, leaving structured output untouched. The
-warning is framed as a caller mistake — the workspace recorded what it wanted
-and something ran the wrong binary.
+run that exact path, and install it first if it is absent. When the CLI notices
+it is running against a workspace pinning a different version it warns on the
+error stream and continues, leaving structured output untouched. The warning is
+framed as a caller mistake — the workspace recorded what it wanted and something
+ran the wrong binary.
 
 Each product is tagged, built and released from the repository that owns it. The
-executable's `cli-v*` tag, its build and its release all live in this checkout,
-where its source is, so a released binary is traceable to the commit that produced
-it by the tag itself. The template's `v*` releases live on the published template
+CLI's `cli-v*` tag, its build and its release all live in this checkout, where
+its source is, so a released binary is traceable to the commit that produced it
+by the tag itself. The template's `v*` releases live on the published template
 repository, whose tree is what they ship.
 
 That was not always so. While this checkout was private, installing could not
-depend on reading it, so the executable's assets were published on the template
+depend on reading it, so the CLI's assets were published on the template
 repository instead. It cost a tag that meant two things in two places, a token
 with write access to another repository, and Apache-2.0 assets served under a
-0BSD label. Opening this checkout removed the reason, and the release followed the
-code.
+0BSD label. Opening this checkout removed the reason, and the release followed
+the code.
 
 Publication targets GitHub only. A private mirror is a deployment of this
 product's own `cli_registry` feature rather than part of its release pipeline: an
@@ -65,8 +65,8 @@ use.
 Installation itself:
 
 - needs no administrator access;
-- verifies a checksum and the executable's own reported version before switching
-  the shared command;
+- verifies a checksum and the CLI's own reported version before switching the
+  shared command;
 - leaves the current command untouched on any failure;
 - supports an offline install from a trusted release;
 - rolls back by reinstalling the older version, which is still in the store;
@@ -74,12 +74,12 @@ Installation itself:
 
 ## The embedded seed
 
-The executable embeds a blank workspace used by initialization and by export. It
-is a convenience, not a second source of truth: an exact source-to-output
-manifest is the authority, the embedding reads only what that manifest names,
-and the release check verifies the embedded inventory against it so the seed
-cannot drift from the shipped template by accident. An initialized workspace is
-never automatically rewritten.
+The CLI embeds a blank workspace used by initialization and by export. It is a
+convenience, not a second source of truth: an exact source-to-output manifest is
+the authority, the embedding reads only what that manifest names, and the
+release check verifies the embedded inventory against it so the seed cannot
+drift from the shipped template by accident. An initialized workspace is never
+automatically rewritten.
 
 Owner:
 

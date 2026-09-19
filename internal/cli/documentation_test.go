@@ -362,7 +362,7 @@ func TestTheShippedReadmeKeepsTheSpansInitializationRewrites(t *testing.T) {
 }
 
 // The two licenses answer different questions, so neither may quietly become the
-// other. The executable is Apache-2.0; everything a workspace receives is 0BSD,
+// other. The CLI is Apache-2.0; everything a workspace receives is 0BSD,
 // whose point is that it asks nothing of the repository it is copied into.
 func TestTheTwoLicensesStaySeparate(t *testing.T) {
 	root := func(name string) string {
@@ -380,7 +380,7 @@ func TestTheTwoLicensesStaySeparate(t *testing.T) {
 		t.Error("the shipped license no longer carries the 0BSD text")
 	}
 	if strings.Contains(product, "Apache") {
-		t.Error("the executable's license reached the tree a workspace receives")
+		t.Error("the CLI's license reached the tree a workspace receives")
 	}
 	manifest := root(filepath.Join("scripts", "release-manifest.txt"))
 	if !strings.Contains(manifest, "product/LICENSE .context-circuit/LICENSE") {

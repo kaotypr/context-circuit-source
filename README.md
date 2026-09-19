@@ -40,12 +40,12 @@ If you want to use Context Circuit, begin with the
 [product guide](https://github.com/kaotypr/context-circuit). If you are changing how Context Circuit
 works or ships, this is the repository to edit.
 
-## What belongs in the executable
+## What belongs in the CLI
 
-The line between the executable and the coding agent is the design constraint
-this repository implements. Before adding behavior, decide which side it is on.
+The line between the CLI and the coding agent is the design constraint this
+repository implements. Before adding behavior, decide which side it is on.
 
-| The executable does | The coding agent does |
+| The CLI does | The coding agent does |
 | --- | --- |
 | Allocates stable IDs and edits structured workspace files | Understands a request and retrieves relevant project context |
 | Records approvals, dependencies, completion, and local bindings | Writes goals and implementation plans |
@@ -53,10 +53,10 @@ this repository implements. Before adding behavior, decide which side it is on.
 | Produces deterministic diagnostics and dispatch specifications | Decides when bounded exploration or sub-agents are useful |
 | Refuses invalid state without making product judgments | Reports real results and unresolved decisions |
 
-Anything whose answer depends on reading the actual project belongs to the agent,
-not to Go. Anything that must return the same result every time belongs here. The
-executable holds no LLM credentials and never calls a model API, so a feature that
-needs judgment is a skill or an instruction change, not a command.
+Anything whose answer depends on reading the actual project belongs to the
+agent, not to Go. Anything that must return the same result every time belongs
+here. The CLI holds no LLM credentials and never calls a model API, so a feature
+that needs judgment is a skill or an instruction change, not a command.
 
 Human authorization sits outside both and is never inferred by either.
 
@@ -69,7 +69,7 @@ shown in the product guide under
 ```text
 context-circuit-source/
 ├── cmd/
-│   └── context-circuit/       Native executable entry point
+│   └── context-circuit/       Native CLI entry point
 ├── internal/
 │   ├── cli/                   Commands and human/JSON output
 │   ├── workspace/             Records, YAML edits, Git, and working copies
@@ -90,7 +90,7 @@ context-circuit-source/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
 │   └── …                      Build, validation, and publication tooling
 ├── assets.go                  Embedded product inventory
-├── LICENSE                    Apache-2.0, covering this checkout and the executable
+├── LICENSE                    Apache-2.0, covering this checkout and the CLI
 ├── VERSION                    Workspace-template version
 └── CLI_VERSION                Native CLI version
 ```
@@ -196,8 +196,8 @@ release publication, and deployment require an explicit maintainer request.
 - Do not revive retired v1 lifecycle machinery.
 
 See [WORKFLOW.md](WORKFLOW.md) for source ownership and validation details,
-[CLI.md](CLI.md) for the executable boundary and packaging behavior, and the
-[product documentation](product/docs/) for the workspace contract.
+[CLI.md](CLI.md) for the CLI boundary and packaging behavior, and the [product
+documentation](product/docs/) for the workspace contract.
 
 ## Licensing
 
@@ -206,7 +206,7 @@ relationships to the people who receive them.
 
 | What | License | Why |
 | --- | --- | --- |
-| This repository and the `context-circuit-cli` executable | [Apache-2.0](LICENSE) | A binary organizations install fleet-wide; the explicit patent grant is what carries it through legal review |
+| This repository and `context-circuit-cli` | [Apache-2.0](LICENSE) | A binary organizations install fleet-wide; the explicit patent grant is what carries it through legal review |
 | Everything a workspace receives, under `product/` and `template/` | [0BSD](product/LICENSE) | Scaffolding copied into somebody else's repository and edited there, so it imposes no attribution obligation on their project |
 
 GitHub detects the root `LICENSE` only, so this repository is labeled Apache-2.0.

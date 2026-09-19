@@ -20,8 +20,8 @@ The split is what lets one workspace travel. Cloning it onto a second machine is
 selecting an existing member and connecting the existing repository IDs to local
 paths — never a second initialization. Each execution environment (native
 Windows, a container, a remote host) gets its own checkout, its own installed
-executable, and its own bindings; installed dependencies and uncommitted work do
-not migrate with the shared files.
+CLI, and its own bindings; installed dependencies and uncommitted work do not
+migrate with the shared files.
 
 A local binding holds a path and the branch that machine starts work from.
 
@@ -33,12 +33,12 @@ shared default branch, so a binding written before the split still resolves. The
 shared record keeps what everyone agrees on — where the repository lives and
 which branch it defaults to — and never carries a URL with a password in it.
 
-Splitting the two created a decoy: an agent asked which branch to deliver to read
-`default_branch` from the shared file, answered confidently, and targeted a pull
-request at the wrong branch. So `base_branch` is reported wherever a repository
-or worktree is described — `status`, `repo inspect`, `worktree prepare`,
-`worktree inspect` — rather than left in a file to be found. A value the
-executable resolves and never states is one the agent will reconstruct from
+Splitting the two created a decoy: an agent asked which branch to deliver to
+read `default_branch` from the shared file, answered confidently, and targeted a
+pull request at the wrong branch. So `base_branch` is reported wherever a
+repository or worktree is described — `status`, `repo inspect`, `worktree
+prepare`, `worktree inspect` — rather than left in a file to be found. A value
+the CLI resolves and never states is one the agent will reconstruct from
 whatever is nearest.
 
 A new repository can be registered before its first commit, though worktree

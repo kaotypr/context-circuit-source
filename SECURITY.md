@@ -21,10 +21,10 @@ backported.
 These properties are design constraints, so a report that one of them is violated
 is a security report:
 
-- The executable holds no model credentials and never calls a model API.
-- Installation needs no administrator access, verifies a checksum and the
-  executable's reported version before switching the shared command, and leaves
-  the existing command in place on any failure.
+- The CLI holds no model credentials and never calls a model API.
+- Installation needs no administrator access, verifies a checksum and the CLI's
+  reported version before switching the shared command, and leaves the existing
+  command in place on any failure.
 - A registry credential reaches only the registry in use.
 - Files ending in `.local.yaml` hold one machine's paths and identity. They are
   never committed and never travel with the workspace.

@@ -97,7 +97,7 @@ init will complete. It never writes over an existing directory.`,
 and composes dispatch specifications. Setup covers every host unless --host
 narrows it, because one workspace is opened in several. A dispatch specification
 reports the definition it names and whether it is installed, and returns a flag
-saying a launch is still required: this executable holds no model credentials,
+saying a launch is still required: this CLI holds no model credentials,
 launches nothing, and a specification is never evidence that an agent ran.`,
 
 	"workspace": `Describes the Git repository carrying the workspace itself, so status reports

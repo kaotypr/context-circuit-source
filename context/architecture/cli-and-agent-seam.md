@@ -1,17 +1,17 @@
-# The executable and agent seam
+# The CLI and agent seam
 
 The division that defines v2.
 
-> Anything that must happen identically every time belongs to the executable.
+> Anything that must happen identically every time belongs to the CLI.
 > Anything requiring interpretation belongs to the agent, in the conversation,
 > where a person can see it.
 
-Neither side crosses. The executable does not interpret; the agent does not
-hand-roll what the executable owns — it does not invent a number, improvise a
-branch name where preparation has a convention, or decide work is complete
-because it looks complete.
+Neither side crosses. The CLI does not interpret; the agent does not hand-roll
+what the CLI owns — it does not invent a number, improvise a branch name where
+preparation has a convention, or decide work is complete because it looks
+complete.
 
-## What the executable owns
+## What the CLI owns
 
 | Concern | Owner |
 | --- | --- |
@@ -47,29 +47,29 @@ The refusals are the product boundary, not gaps waiting to be filled:
 The shipped help text carries these refusals verbatim, so they are visible to
 whoever is about to use the tool.
 
-Naming the remedy is not a crossing. Every diagnostic finding carries the command,
-edit, or decision that discharges it, which reads like judgment and is not: the
-remedy is fixed by the fault, and where no fixed remedy exists the finding says a
-person is needed and stops rather than guessing. The same holds for a stale
-reviewed date — the executable counts the commits under a note's anchors, and
-whether the note is now wrong is the reader's call.
+Naming the remedy is not a crossing. Every diagnostic finding carries the
+command, edit, or decision that discharges it, which reads like judgment and is
+not: the remedy is fixed by the fault, and where no fixed remedy exists the
+finding says a person is needed and stops rather than guessing. The same holds
+for a stale reviewed date — the CLI counts the commits under a note's anchors,
+and whether the note is now wrong is the reader's call.
 
 ## What the agent owns
 
-Everything interpretive, and the list is long precisely because the executable's
-is short. Understanding the request. Retrieving the right knowledge. Writing an
+Everything interpretive, and the list is long precisely because the CLI's is
+short. Understanding the request. Retrieving the right knowledge. Writing an
 intent's goal and success criteria. Deciding which repositories a change
 touches. Reading real code and writing plans. Choosing whether isolation is
 warranted, and finishing the environment setup a reuse report left open.
 Deciding what to delegate, launching it, and integrating what comes back.
-Running and interpreting checks. Judging which durable knowledge a completed plan
-changed. Asking for authorization wherever a person decides.
+Running and interpreting checks. Judging which durable knowledge a completed
+plan changed. Asking for authorization wherever a person decides.
 
 It also owns the honesty obligations that cannot be compiled in: reporting what
 was implemented, tested, and left uncertain; distinguishing a written role file
 from a loaded one; and never calling its own inspection an independent review.
 
-## Why a compiled executable
+## Why a compiled CLI
 
 The predecessor was a large POSIX shell runtime. It forced Windows users through
 WSL, edited structured records as text, had no practical test story, and grew as

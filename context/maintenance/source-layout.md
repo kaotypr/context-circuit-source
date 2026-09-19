@@ -10,20 +10,20 @@ generated workspaces, not this one.
 | --- | --- |
 | `context-circuit-source@product/AGENTS.md.in` | The always-loaded gates and prohibitions, and the pointer to each stage's skill |
 | `context-circuit-source@product/docs/` | Workspace files, agent-facing commands, subagents, working records, worktrees |
-| `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus executable installation and subagent dispatch |
+| `context-circuit-source@product/skills/` | One skill per lifecycle stage, plus CLI installation and subagent dispatch |
 | `context-circuit-source@product/assets/readme/` | The artwork the workspace README and the template repository listing use |
 | `context-circuit-source@internal/workspace/` | Bookkeeping, structured edits, Git and worktree operations |
 | `context-circuit-source@internal/cli/` | The command surface and human or structured output |
 | `context-circuit-source@internal/cow/` | Native filesystem cloning with independent-copy fallback |
 | `context-circuit-source@internal/installer/` | Acceptance tests for the shipped install scripts; it carries no non-test source |
-| `context-circuit-source@cmd/context-circuit/` | Executable entry point |
+| `context-circuit-source@cmd/context-circuit/` | CLI entry point |
 | `context-circuit-source@template/` | Blank workspace files embedded with the product instruction |
 | `context-circuit-source@scripts/release-manifest.txt` | The exact source-to-output file mapping |
 | `context-circuit-source@assets.go` | Embeds only product assets and materializes the manifest |
 | `context-circuit-source@VERSION`, `CLI_VERSION` | The two independent version lines |
 | `context-circuit-source@scripts/` | Build, checks, and explicitly invoked publication |
 | `context-circuit-source@release/` | The published destination identity, one release request per version, and the landing-page files that repository owns |
-| `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the executable, 0BSD for everything a workspace receives |
+| `context-circuit-source@LICENSE`, `product/LICENSE` | The two license lines: Apache-2.0 for this checkout and the CLI, 0BSD for everything a workspace receives |
 
 ## Four classes of material
 

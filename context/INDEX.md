@@ -95,17 +95,16 @@ as concerns earn them, each with its own scope line.*
 is built is `architecture/`.*
 
 - [What Context Circuit v2 is](product/what-v2-is.md) {context-circuit-source} — what the product is for and which decisions stay human · product, purpose, knowledge circuit, thesis, gates, approval, coordination · reviewed 2026-09-17
-- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the executable release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, mirror, publication target, release repository · reviewed 2026-09-19
-- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the executable, which cover a workspace, and where each text lives · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge · reviewed 2026-09-19
+- [Two products and their version lines](product/two-products-and-versioning.md) {context-circuit-source} — why the template and the CLI release separately and how a workspace pins one · version, release, pinning, version store, install, seed, migration, mirror, publication target, release repository · reviewed 2026-09-19
+- [What each product is licensed under](product/licensing.md) {context-circuit-source} — which terms cover the CLI, which cover a workspace, and where each text lives · license, licensing, apache, 0bsd, attribution, notice, landing page, contributing, security, code of conduct, badge · reviewed 2026-09-19
 
 ### Architecture
 
-*How the product is built and why it is shaped that way — the seam between
-executable and agent, the command surface, the instruction layers, the file
-contract.*
+*How the product is built and why it is shaped that way — the seam between CLI
+and agent, the command surface, the instruction layers, the file contract.*
 
-- [The executable and agent seam](architecture/executable-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go executable and which to the agent · seam, boundary, executable, refusals, model-blind, judgment, mechanism, remedy · reviewed 2026-09-19
-- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the executable exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-18
+- [The CLI and agent seam](architecture/cli-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go CLI and which to the agent · seam, boundary, cli, refusals, model-blind, judgment, mechanism, remedy · reviewed 2026-09-19
+- [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the CLI exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-18
 - [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability, audience · reviewed 2026-09-19
 - [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema · reviewed 2026-09-18
 

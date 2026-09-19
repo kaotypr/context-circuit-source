@@ -57,7 +57,7 @@ passed output directory must be new: builds never replace existing output there.
 
 The two products publish separately, each from the repository that owns it. The
 workspace template publishes from its version file to the published template
-repository's `v*` release tags. The executable is tagged `cli-v*` here, where its
+repository's `v*` release tags. The CLI is tagged `cli-v*` here, where its
 source is, and its release is created here too, on the commit that built it.
 Changing a version file does not publish — publication is explicitly invoked and
 requires authorization.
@@ -73,7 +73,7 @@ assembled product guide.
 
 Release assets carry dependency licenses. Dependencies are deliberately few: a
 document-preserving YAML library and a portable file-locking library. Go is a
-contributor requirement only; a user needs the executable for their platform and
+contributor requirement only; a user needs the CLI for their platform and
 installed Git, with no other language runtime.
 
 ## What validation does not establish

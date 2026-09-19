@@ -12,16 +12,17 @@ What belongs where:
 
 - A problem with the workspace instructions, the skills, or the shipped
   documentation — the source repository, under `product/`.
-- A problem with the `context-circuit-cli` executable — the source repository,
-  under `cmd/` and `internal/`.
+- A problem with `context-circuit-cli` itself — the source repository, under
+  `cmd/` and `internal/`.
 - A question about using Context Circuit in your own project, or something the
   documentation does not answer — an issue on the source repository. An
   unanswerable question is a documentation defect.
 
-Its [contributing guide](https://github.com/kaotypr/context-circuit-source/blob/main/CONTRIBUTING.md)
-describes the seam between the executable and the coding agent, and how to
-validate a change.
+Its [contributing
+guide](https://github.com/kaotypr/context-circuit-source/blob/main/CONTRIBUTING.md)
+describes the seam between the CLI and the coding agent, and how to validate a
+change.
 
 Releases here are tagged `v*`. The `cli-v*` tags live on the source repository,
-where the executable is built, while its downloadable packages are published
-here — so installing the CLI never needs access to the source checkout.
+where the CLI is built, while its downloadable packages are published here — so
+installing the CLI never needs access to the source checkout.

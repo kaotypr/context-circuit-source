@@ -63,7 +63,7 @@ case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
 case "$(uname -m)" in arm64|aarch64) arch=arm64 ;; x86_64|amd64) arch=amd64 ;; *) fail 'unsupported architecture' ;; esac
 # The release is tagged `cli-v<version>`; the assets under it keep the
-# executable's own name, so a downloaded archive still says what it holds.
+# CLI's own name, so a downloaded archive still says what it holds.
 release_tag="cli-v$version"
 package="context-circuit-cli-v$version-$platform-$arch.tar.gz"
 mkdir -p "$bin_dir"
@@ -154,7 +154,7 @@ for file in context-circuit-cli README.md THIRD_PARTY_NOTICES.txt; do
   [ -f "$work/package/$file" ] && [ ! -L "$work/package/$file" ] || fail 'archive contains non-regular files'
 done
 chmod 755 "$work/package/context-circuit-cli"
-[ "$("$work/package/context-circuit-cli" version)" = "$version" ] || fail 'executable version does not match the release'
+[ "$("$work/package/context-circuit-cli" version)" = "$version" ] || fail 'CLI version does not match the release'
 target="$versions/$version-$platform-$arch"
 if [ -e "$target" ] || [ -L "$target" ]; then
   [ -d "$target" ] && [ ! -L "$target" ] || fail 'existing version path is not a directory'

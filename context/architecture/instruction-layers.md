@@ -21,7 +21,7 @@ mechanics. It is the oldest of the three layers and the easiest to strand —
 material shipped there reaches an agent only if something it loads names it.
 
 One shipped document has a different reader. `how-it-works.md` explains the
-division between person, agent, workspace, worktree, and executable to somebody
+division between person, agent, workspace, worktree, and CLI to somebody
 deciding whether to adopt the product. The entry instruction deliberately does
 not name it. The agent already holds that division normatively, so a pointer
 would spend always-loaded context on prose it never acts on, and leave two

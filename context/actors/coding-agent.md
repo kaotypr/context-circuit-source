@@ -1,6 +1,6 @@
 # Coding agent
 
-Reads the instruction, runs the executable, and does the work a member asked for.
+Reads the instruction, runs the CLI, and does the work a member asked for.
 
 ## [How workspace behavior is taught](../architecture/instruction-layers.md)
 
