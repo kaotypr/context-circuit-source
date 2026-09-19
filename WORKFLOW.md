@@ -21,8 +21,14 @@ defines the change. Product instructions apply only to generated workspaces.
 - release/requests/cli/, release/requests/template/: one request per product
   per version; the request body is that release's notes.
 - LICENSE: Apache-2.0, covering this checkout and the CLI.
-- product/LICENSE: 0BSD, covering everything a workspace receives.
-- release/template-repo/: landing-page files the published repository owns.
+- product/LICENSE: 0BSD, covering everything a workspace receives, shown only at
+  the published template repository's root.
+- product/README.md, product/assets/readme/: the published repository's guide
+  and artwork; restored at publication and shipped to no workspace.
+- product/workspace-README.md: the front page initialization writes; not
+  exported, because a blank seed has no workspace to name.
+- release/template-repo/: landing-page files and the .gitattributes that keeps
+  every repository-owned path out of the archive a project is created from.
 
 The Go CLI handles workspace mechanics. The agent owns interpretation, planning,
 implementation, application-specific setup, subagent dispatch, and
@@ -42,10 +48,20 @@ reading either path finds the same two and neither can drift from the other.
 release/template-repo/ is a fourth class: not shipped to a workspace and not
 history either. Publication restores those files over the extracted artifact and
 holds them out of the comparison that decides whether there is anything to
-publish, so the published repository keeps its own license, conduct, contributing
-and security pages while no workspace ever receives them. A README.md there is
-refused, because the published README is the product guide the manifest
-assembles.
+publish, so the published repository keeps its own conduct, contributing and
+security pages while no workspace ever receives them. The guide, its artwork and
+the license are restored the same way from product/, so a README.md or LICENSE
+defined in template-repo/ is refused: those have one source each.
+
+A dist/ build is therefore the workspace only, not a preview of the published
+repository: everything in this class joins the tree at publication.
+
+The .gitattributes restored with them marks every repository-owned path
+export-ignore. tembiter creates a project with `git archive`, which honors that
+file, so a new workspace starts with no front page about Context Circuit, no
+release notes for the template, and no LICENSE at its root. A tag-to-tag sync
+reads the git tree rather than an archive and cannot see the mark, so
+product/AGENTS.md.in names the same paths for the agent performing that update.
 
 ## How context/ is validated
 

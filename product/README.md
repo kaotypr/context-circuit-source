@@ -1,16 +1,13 @@
 <p align="center">
-  <img src=".context-circuit/assets/readme/context-circuit-logo.webp" alt="Context Circuit" width="480">
+  <img src="assets/readme/context-circuit-logo.webp" alt="Context Circuit" width="480">
 </p>
 
-<!-- context-circuit:title -->
 <h1 align="center">Context Circuit</h1>
-<!-- /context-circuit:title -->
 
 <p align="center">
   <strong>Give your coding agent project context and a grounded plan—while you stay in control across every repository in your project.</strong>
 </p>
 
-<!-- context-circuit:badges -->
 <!-- Each product's release badge reads the repository that publishes it: the
      template here, the CLI where its source is built. Date ordering avoids a
      semver sort that cannot parse a prefixed tag. -->
@@ -21,7 +18,6 @@
   <a href="https://github.com/kaotypr/context-circuit/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/badge/license-0BSD-2f855a"></a>
   <img alt="Platforms" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Linux%20%7C%20Windows-8b949e">
 </p>
-<!-- /context-circuit:badges -->
 
 <p align="center">
   <a href="#quick-start">Quick start</a> ·
@@ -89,7 +85,7 @@ repositories it coordinates can live beside it, inside its ignored
 
 ```text
 context-circuit/
-├── README.md                    Product guide
+├── README.md                    This workspace's front page, written at initialization
 ├── AGENTS.md                    Standing workflow and safety rules
 ├── CLAUDE.md                    Claude Code entry instruction
 ├── CURSOR.md                    Cursor entry instruction
@@ -106,7 +102,6 @@ context-circuit/
 ├── repositories.local.yaml     Local paths and starting branches (ignored)
 ├── .context-circuit/
 │   ├── docs/                   Detailed workspace and CLI documentation
-│   ├── assets/readme/          README artwork
 │   ├── role-tiering.yaml       Shared defaults for AI-agent roles
 │   ├── role-tiering.local.yaml Optional machine overrides (ignored)
 │   ├── local/                  Host-local settings and locks (ignored)
@@ -142,6 +137,10 @@ Tembiter copies that release without carrying over the template repository's Git
 history, initializes a new repository, and records which template version it came
 from. It requires Node.js 20 or later.
 
+What it copies is the workspace, not this repository: the page you are reading,
+the license, the changelog and the contributing and security pages stay here.
+The new directory has no README until the next step writes one for your project.
+
 Open the new directory in Codex, Claude Code, or Cursor. The workspace includes
 instructions and skills for each host.
 
@@ -155,9 +154,9 @@ for our billing platform. Add me as Maya.
 The bundled installation skill selects the correct macOS, Linux, or Windows
 package, verifies its checksum, and installs it without administrator access.
 
-If you does not want the conversation, intent and plan docs written in English,
-say so now and say how you write. Records are then composed in that language 
-rather than translated into it, which is what keeps them from reading like a 
+If you do not want the conversation, intent and plan docs written in English,
+say so now and say how you write. Records are then composed in that language
+rather than translated into it, which is what keeps them from reading like a
 machine translation of something else:
 
 ```text
@@ -325,8 +324,8 @@ numbered questions and correct anything it misunderstood:
 The rest of the goal looks right. I approve it.
 ```
 
-Approval lets the agent or spawned sub-agent with role `planner` to inspect the 
-actual repositories and prepare grounded plans. It does not start implementation.
+Approval lets the agent, or a spawned sub-agent with the `planner` role, inspect
+the actual repositories and prepare grounded plans. It does not start implementation.
 
 ### 2. Read the plan—or ask for the summary
 
@@ -349,8 +348,8 @@ When the plans look ready, ask the agent to run them:
 Run all the billing plans using the recommended execution order.
 ```
 
-If you start the execution in a new coding agent session, you mention intent ID 
-/ intent number / intent slug:
+If you start the execution in a new coding agent session, mention the intent ID,
+number, or slug:
 
 ```text
 Run all intent <intent-id> plans using the recommended execution order.
@@ -465,7 +464,7 @@ decision that is yours. It is a report, not a gate — nothing waits on it and i
 blocks nothing.
 
 <p align="center">
-  <img src=".context-circuit/assets/readme/knowledge-circuit.webp" alt="The project learns from every change" width="840">
+  <img src="assets/readme/knowledge-circuit.webp" alt="The project learns from every change" width="840">
 </p>
 
 For the behavior behind these conversations, including the division between the
@@ -726,7 +725,7 @@ stage currently in progress.
 ## License
 
 The workspace template — these instructions, skills, and documents — is released
-under the [BSD Zero Clause License](.context-circuit/LICENSE), which permits use,
+under the [BSD Zero Clause License](LICENSE), which permits use,
 modification, and redistribution with **no attribution requirement**. These files
 become yours the moment they are copied into your repository, so keeping a notice
 of ours in your project is not a condition of using them.

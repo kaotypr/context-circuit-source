@@ -300,7 +300,7 @@ func (s *Store) ActiveMember() (string, error) {
 	return local.Member, nil
 }
 
-func (s *Store) Init(files map[string][]byte, name, purpose, member, display string) error {
+func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, member, display string) error {
 	for _, value := range []string{name, purpose, display} {
 		if err := Text(value); err != nil {
 			return err
@@ -381,8 +381,10 @@ func (s *Store) Init(files map[string][]byte, name, purpose, member, display str
 		return err
 	}
 	// The README travels with the workspace, so it carries the workspace's name
-	// and the versions it received rather than the product's newest release.
-	if err := s.TitleReadme(name); err != nil {
+	// and the versions it received rather than the product's newest release. It
+	// is written here rather than exported, because a blank seed has no name to
+	// carry and a front page belongs to a workspace, not to the template.
+	if err := s.WriteReadme(readme, name, purpose); err != nil {
 		return err
 	}
 	// Write role definitions for every host now, from this CLI, rather than

@@ -27,21 +27,33 @@ if git -C "$template_dir" rev-parse -q --verify "refs/tags/v$version" >/dev/null
 # because a workspace is somebody else's repository: a CONTRIBUTING.md about
 # Context Circuit is noise in their checkout, and a LICENSE at their root would
 # make GitHub label their own project with this one's license.
+#
+# The .gitattributes restored with them marks every one export-ignore, so the
+# `git archive` a project is created from carries none of them. That is what
+# keeps this list a property of the repository rather than a promise.
 repo_owned_dir="$source_root/release/template-repo"
 [ -d "$repo_owned_dir" ] || fail 'missing release/template-repo'
 repo_owned=''
-for path in "$repo_owned_dir"/*; do
+# A plain glob skips dotfiles, and .gitattributes is the file the whole
+# arrangement rests on.
+for path in $(find "$repo_owned_dir" -mindepth 1 -maxdepth 1 | LC_ALL=C sort); do
   [ -f "$path" ] || fail "expected regular files in release/template-repo: $path"
   owned=${path##*/}
   case "$owned" in *[!A-Za-z0-9._-]*) fail "unexpected name in release/template-repo: $owned" ;; esac
-  # The published README is the product guide, assembled from the manifest.
-  case "$owned" in README.md) fail 'release/template-repo must not define README.md' ;; esac
+  # The guide and its artwork are product material restored below, not
+  # landing-page files this directory defines.
+  case "$owned" in README.md|LICENSE) fail "release/template-repo must not define $owned" ;; esac
   repo_owned="$repo_owned $owned"
 done
 [ -n "$repo_owned" ] || fail 'release/template-repo is empty'
-# The license is not duplicated there. The repository shows the same 0BSD text a
-# workspace receives at .context-circuit/LICENSE, so the terms on display and the
-# terms travelling with the files cannot disagree.
+case " $repo_owned " in *' .gitattributes '*) ;; *) fail 'release/template-repo must define .gitattributes' ;; esac
+# The guide is the repository's landing page and reaches no workspace: a
+# workspace is given its own front page at initialization, naming that workspace
+# rather than this product. The artwork the guide renders travels with it.
+[ -f "$source_root/product/README.md" ] || fail 'missing product/README.md'
+[ -d "$source_root/product/assets/readme" ] || fail 'missing product/assets/readme'
+# The license is not duplicated into a workspace. This repository is the
+# template, so its root LICENSE is the 0BSD text on display and the only copy.
 [ -f "$source_root/product/LICENSE" ] || fail 'missing product/LICENSE'
 
 name=${MAINTAINER_NAME:-$(git -C "$source_root" config user.name 2>/dev/null || true)}
@@ -59,7 +71,8 @@ artifact="$output_dir/context-circuit-v$version"
 # Compare only the committed tree, excluding release notes and version stamps.
 normalize() {
   directory=$1
-  rm -f "$directory/CHANGELOG.md" "$directory/LICENSE"
+  rm -f "$directory/CHANGELOG.md" "$directory/LICENSE" "$directory/README.md"
+  rm -rf "$directory/assets"
   for owned in $repo_owned; do rm -f "$directory/$owned"; done
   if [ -f "$directory/.context-circuit/VERSION" ]; then printf 'NORMALIZED\n' > "$directory/.context-circuit/VERSION"; fi
 }
@@ -81,6 +94,9 @@ find "$template_dir" -mindepth 1 -maxdepth 1 ! -name .git ! -name CHANGELOG.md -
 # Restore the destination's own landing-page files over the assembled artifact.
 for owned in $repo_owned; do cp "$repo_owned_dir/$owned" "$template_dir/$owned"; done
 cp "$source_root/product/LICENSE" "$template_dir/LICENSE"
+cp "$source_root/product/README.md" "$template_dir/README.md"
+mkdir -p "$template_dir/assets/readme"
+for art in "$source_root"/product/assets/readme/*.webp; do cp "$art" "$template_dir/assets/readme/"; done
 {
   printf '# Changelog\n\n## v%s — %s\n\n' "$version" "$(date +%Y-%m-%d)"
   awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' "$request"

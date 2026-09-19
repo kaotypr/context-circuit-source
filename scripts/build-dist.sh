@@ -1,6 +1,12 @@
 #!/bin/sh
 # Build into a directory. The default output under dist/ is clean-rebuilt each
 # run. An explicit output directory must be new and is never cleaned or replaced.
+#
+# What this builds is the workspace a user receives, which is not the tree the
+# published template repository carries. That repository's own landing page —
+# its README, license, changelog, conduct, contributing and security pages, and
+# the artwork the guide renders — is restored by publish-template.sh over this
+# artifact and reaches no workspace, so it is absent here by design.
 set -eu
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
 [ "$#" -le 2 ] || { printf 'usage: sh scripts/build-dist.sh [version] [new-output-dir]\n' >&2; exit 2; }
@@ -20,3 +26,5 @@ staging_dir=$(mktemp -d)
 trap 'rm -rf "$staging_dir"' EXIT HUP INT TERM
 sh "$source_root/scripts/release-artifact.sh" "$staging_dir" "$output_dir" "$version"
 printf 'dist_dir: %s\n' "$output_dir"
+printf 'contents: the workspace a user receives, without the landing page the\n'
+printf '          published repository owns and publication restores\n'

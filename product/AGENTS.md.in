@@ -20,6 +20,27 @@ user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
 agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
 the template version and existing records unchanged during CLI updates.
 
+## Updating the workspace template
+
+A later template version is brought in by diffing the tag this workspace records
+against the newer one and applying that delta, never by recopying the tag over
+this workspace. These paths in the template repository belong to that
+repository and not to any workspace, and a delta touching them is read, not
+applied:
+
+    README.md  LICENSE  CHANGELOG.md
+    CODE_OF_CONDUCT.md  CONTRIBUTING.md  SECURITY.md  assets/
+
+A fresh workspace never received them — the template repository marks them
+`export-ignore`, so the archive a workspace is created from leaves them out. A
+diff between two tags cannot see that mark, which is why it is written here. Do
+not create any of them, and do not update one that exists: this workspace's
+`README.md` was written for this project at initialization and says so.
+
+Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
+`.context-circuit/CLI_VERSION` take the template's value, because they record
+what this workspace received.
+
 Subagent role definitions are host-local and gitignored, so initialization writes
 them for every host this workspace may later be opened in. A clone carries none,
 and `agent configure` makes existing ones stale: if this host's `cc-*` definitions

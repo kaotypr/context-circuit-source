@@ -17,8 +17,14 @@ mkdir -p "$work/source/scripts" "$work/source/release/requests/template" "$work/
 cp "$source_root/scripts/publish-template.sh" "$work/source/scripts/"
 mkdir -p "$work/source/product" "$work/source/release/template-repo"
 printf 'Zero Clause fixture license\n' > "$work/source/product/LICENSE"
+printf '# Product guide fixture\n' > "$work/source/product/README.md"
+mkdir -p "$work/source/product/assets/readme"
+printf 'WEBPfixture\n' > "$work/source/product/assets/readme/logo.webp"
 printf '# Contributing fixture\n' > "$work/source/release/template-repo/CONTRIBUTING.md"
 printf '# Security fixture\n' > "$work/source/release/template-repo/SECURITY.md"
+for owned in .gitattributes README.md LICENSE CHANGELOG.md CONTRIBUTING.md SECURITY.md assets/; do
+  printf '%s export-ignore\n' "$owned"
+done > "$work/source/release/template-repo/.gitattributes"
 printf 'destination_ref: main\n' > "$work/source/release/binding.yaml"
 printf '%s\n' --- 'version: 2.0.0-test' --- 'Fixture release notes.' > "$work/source/release/requests/template/2.0.0-test.md"
 cat > "$work/source/scripts/release-artifact.sh" <<'ASSEMBLER'
@@ -40,11 +46,19 @@ git -C "$work/template" add .
 git -C "$work/template" -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m 'test: seed publication fixture'
 original=$(git -C "$work/template" rev-parse HEAD)
 publish() { sh "$work/source/scripts/publish-template.sh" 2.0.0-test "$work/template"; }
-# The published README is the assembled product guide, so a README.md among the
-# destination's own files would silently replace it.
-printf 'Not the product guide\n' > "$work/source/release/template-repo/README.md"
-if publish > "$work/owned-readme.log" 2>&1; then printf 'FAIL: accepted a README.md in release/template-repo\n' >&2; exit 1; fi
-rm "$work/source/release/template-repo/README.md"
+# The published README is the product guide and the published LICENSE is the
+# 0BSD text; a copy among the destination's own files would silently replace one
+# of them with something nothing else validates.
+for shadow in README.md LICENSE; do
+  printf 'Not the real one\n' > "$work/source/release/template-repo/$shadow"
+  if publish > "$work/owned-$shadow.log" 2>&1; then printf 'FAIL: accepted a %s in release/template-repo\n' "$shadow" >&2; exit 1; fi
+  rm "$work/source/release/template-repo/$shadow"
+done
+# The arrangement rests on .gitattributes, so its absence is a publication error
+# rather than a workspace that quietly receives this repository's landing page.
+mv "$work/source/release/template-repo/.gitattributes" "$work/attributes.held"
+if publish > "$work/no-attributes.log" 2>&1; then printf 'FAIL: published without .gitattributes\n' >&2; exit 1; fi
+mv "$work/attributes.held" "$work/source/release/template-repo/.gitattributes"
 # A tracked edit must remain untouched.
 printf 'Keep my edit\n' >> "$work/template/README.md"
 if publish > "$work/dirty.log" 2>&1; then printf 'FAIL: published dirty checkout\n' >&2; exit 1; fi
@@ -76,11 +90,20 @@ git -C "$work/template" rev-parse --verify 'refs/tags/v2.0.0-test^{commit}' >/de
 [ "$(cat "$work/template/CONTRIBUTING.md")" = '# Contributing fixture' ]
 [ "$(cat "$work/template/SECURITY.md")" = '# Security fixture' ]
 cmp -s "$work/source/product/LICENSE" "$work/template/LICENSE"
+cmp -s "$work/source/product/README.md" "$work/template/README.md"
+cmp -s "$work/source/product/assets/readme/logo.webp" "$work/template/assets/readme/logo.webp"
 # None of them reach a workspace, whose root belongs to somebody else's project.
 "$CC_FIXTURE_BINARY" template export --path "$work/exported" >/dev/null
-for owned in LICENSE CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md; do
+for owned in LICENSE README.md CONTRIBUTING.md SECURITY.md CODE_OF_CONDUCT.md assets; do
   [ ! -e "$work/exported/$owned" ] || { printf 'FAIL: %s reached a workspace root\n' "$owned" >&2; exit 1; }
 done
-[ -f "$work/exported/.context-circuit/LICENSE" ]
+[ ! -e "$work/exported/.context-circuit/LICENSE" ] || { printf 'FAIL: a license reached .context-circuit\n' >&2; exit 1; }
+# A project is materialized from the published tag with `git archive`, so prove
+# against git itself that export-ignore holds rather than trusting the file.
+git -C "$work/template" archive 'v2.0.0-test' | tar -tf - | sed 's|^\./||' > "$work/archived"
+for owned in README.md LICENSE CONTRIBUTING.md SECURITY.md .gitattributes; do
+  if grep -qx "$owned" "$work/archived"; then printf 'FAIL: %s survives git archive\n' "$owned" >&2; exit 1; fi
+done
+grep -qx 'AGENTS.md' "$work/archived" || { printf 'FAIL: the archive carries no workspace files\n' >&2; exit 1; }
 if publish > "$work/repeated.log" 2>&1; then printf 'FAIL: republished an existing tag\n' >&2; exit 1; fi
 printf 'PASS: publication preserves user files and creates a clean versioned fixture\n'

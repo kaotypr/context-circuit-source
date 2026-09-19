@@ -64,7 +64,9 @@ Human authorization sits outside both and is never inferred by either.
 
 This is the maintainer-source layout. The repository structure users receive is
 shown in the product guide under
-[Workspace repository structure](product/README.md#workspace-repository-structure).
+[Workspace repository structure](product/README.md#workspace-repository-structure),
+which `publish-template.sh` restores as that repository's landing page rather
+than shipping into a workspace.
 
 ```text
 context-circuit-source/
@@ -75,8 +77,9 @@ context-circuit-source/
 │   ├── workspace/             Records, YAML edits, Git, and working copies
 │   ├── cow/                   Copy-on-write cloning with copy fallback
 │   └── installer/             Acceptance tests for the shipped install scripts
-├── product/                   Instructions, skills, docs, and artwork a workspace receives
-│   ├── LICENSE                0BSD, covering everything a workspace receives
+├── product/                   Instructions, skills, docs, and the guide
+│   ├── LICENSE                0BSD, shown at that repository's root
+│   ├── README.md              The guide the template repository's page renders
 │   ├── assets/readme/         Product and README artwork
 │   ├── docs/                  Workspace and command documentation
 │   └── skills/                Agent procedures for each workflow stage
@@ -84,7 +87,7 @@ context-circuit-source/
 ├── context/                   Maintainer product knowledge; never shipped
 ├── release/
 │   ├── binding.yaml           Where the workspace template publishes
-│   ├── template-repo/         Landing-page files the published repository owns
+│   ├── template-repo/         Landing page and export rules that repo owns
 │   └── requests/              cli/ and template/, one request per version
 ├── scripts/
 │   ├── release-manifest.txt   Exact source-to-workspace mapping
@@ -154,6 +157,12 @@ With no explicit destination, each script clean-rebuilds its own versioned
 directory under `dist/`. The workspace and CLI builds do not remove one
 another's output.
 
+`dist/` is not a preview of the published template repository. The workspace
+build produces what a user receives; the repository's own landing page — its
+README, license, changelog, conduct, contributing and security pages, and the
+artwork that guide renders — is restored over the artifact by
+`publish-template.sh` and reaches no workspace, so none of it appears here.
+
 To keep a checked build in a specific location, provide a new directory:
 
 ```sh
@@ -210,8 +219,10 @@ relationships to the people who receive them.
 | Everything a workspace receives, under `product/` and `template/` | [0BSD](product/LICENSE) | Scaffolding copied into somebody else's repository and edited there, so it imposes no attribution obligation on their project |
 
 GitHub detects the root `LICENSE` only, so this repository is labeled Apache-2.0.
-The 0BSD text travels with the files it covers: it ships to
-`.context-circuit/LICENSE` in every workspace, and `publish-template.sh` puts the
-same text at the root of the published template repository.
+`publish-template.sh` puts the 0BSD text at the root of the published template
+repository, which is the one place it appears. A workspace receives no license
+file: 0BSD asks nothing of the project the scaffolding is copied into, so a
+`LICENSE` at that project's root would only make GitHub label somebody else's
+work with this one's terms.
 
 A contribution is offered under the license covering the tree it touches.

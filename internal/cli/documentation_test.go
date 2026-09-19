@@ -3,6 +3,7 @@ package cli_test
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -337,15 +338,17 @@ func TestEveryCommandHasATopic(t *testing.T) {
 	}
 }
 
-// Initialization titles a workspace's README and pins its version badges by
-// replacing marked spans. Losing a marker fails nothing at build time: it would
-// quietly ship workspaces titled with the product's own name, carrying badges
-// that report whatever was published since rather than what the workspace runs.
+// Initialization writes a workspace's README, titling it, stating its purpose,
+// and pinning its version badges by replacing marked spans. Losing a marker
+// fails nothing at build time: it would quietly write workspaces titled with the
+// product's own name, carrying badges that report whatever was published since
+// rather than what the workspace runs.
 func TestTheShippedReadmeKeepsTheSpansInitializationRewrites(t *testing.T) {
-	readme := productFile(t, "README.md")
+	readme := productFile(t, "workspace-README.md")
 	for _, marker := range []string{
 		"<!-- context-circuit:title -->", "<!-- /context-circuit:title -->",
 		"<!-- context-circuit:badges -->", "<!-- /context-circuit:badges -->",
+		"<!-- context-circuit:purpose -->", "<!-- /context-circuit:purpose -->",
 	} {
 		if count := strings.Count(readme, marker); count != 1 {
 			t.Errorf("%s appears %d times; the rewrite needs exactly one", marker, count)
@@ -354,10 +357,51 @@ func TestTheShippedReadmeKeepsTheSpansInitializationRewrites(t *testing.T) {
 	if !strings.Contains(readme, `<h1 align="center">Context Circuit</h1>`) {
 		t.Error("the marked title span no longer holds the heading a workspace name replaces")
 	}
-	// The product repository keeps a LICENSE at its root; a workspace does not,
-	// so a relative link here resolves nowhere once the file is installed.
-	if strings.Contains(readme, `<a href="LICENSE">`) {
-		t.Error("the license badge links relatively, which breaks in an installed workspace")
+	// This file is written into somebody else's repository, so every path it
+	// names must resolve there. The template repository's own landing page, its
+	// artwork, and its license stay behind.
+	for _, absent := range []string{"assets/readme/", `href="LICENSE"`, "CONTRIBUTING.md"} {
+		if strings.Contains(readme, absent) {
+			t.Errorf("the workspace README names %q, which does not exist in a workspace", absent)
+		}
+	}
+}
+
+// The guide is the template repository's landing page and reaches no workspace.
+// It renders artwork and links a license from that repository's root, so a copy
+// installed into somebody else's project would show broken images and point at
+// terms that are not theirs.
+func TestTheProductGuideStaysWithTheRepositoryThatShowsIt(t *testing.T) {
+	manifest, err := os.ReadFile(filepath.Join("..", "..", "scripts", "release-manifest.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(string(manifest), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) != 2 {
+			continue
+		}
+		if fields[0] == "product/README.md" || strings.HasPrefix(fields[0], "product/assets/") {
+			t.Errorf("the guide or its artwork ships to a workspace: %s", line)
+		}
+	}
+	raw, attrErr := os.ReadFile(filepath.Join("..", "..", "release", "template-repo", ".gitattributes"))
+	if attrErr != nil {
+		t.Fatal(attrErr)
+	}
+	// A Windows checkout converts this file to CRLF, and the carriage return
+	// would end every line between the rule and the anchor below.
+	attributes := strings.ReplaceAll(string(raw), "\r\n", "\n")
+	// tembiter materializes a project with `git archive`, which honors this file
+	// and nothing else. A path the repository owns but does not mark here is a
+	// path every new workspace receives.
+	for _, owned := range []string{
+		"README.md", "LICENSE", "CHANGELOG.md", "CODE_OF_CONDUCT.md",
+		"CONTRIBUTING.md", "SECURITY.md", "assets/", ".gitattributes",
+	} {
+		if !regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(owned) + `\s+export-ignore$`).MatchString(attributes) {
+			t.Errorf("%s is not marked export-ignore, so a new workspace receives it", owned)
+		}
 	}
 }
 
@@ -383,14 +427,14 @@ func TestTheTwoLicensesStaySeparate(t *testing.T) {
 		t.Error("the CLI's license reached the tree a workspace receives")
 	}
 	manifest := root(filepath.Join("scripts", "release-manifest.txt"))
-	if !strings.Contains(manifest, "product/LICENSE .context-circuit/LICENSE") {
-		t.Error("the shipped license does not travel with the files it covers")
-	}
-	// A LICENSE at a workspace root would make GitHub label somebody else's
-	// project with this one's terms.
+	// The 0BSD text is shown by the repository that is the template, and copied
+	// nowhere else. At a workspace root it would make GitHub label somebody
+	// else's project with this one's terms; under .context-circuit it would be a
+	// second copy of terms that ask nothing, in a directory nobody reads for
+	// them.
 	for _, line := range strings.Split(manifest, "\n") {
-		if fields := strings.Fields(line); len(fields) == 2 && fields[1] == "LICENSE" {
-			t.Error("a license installs at the workspace root, where it describes the wrong project")
+		if fields := strings.Fields(line); len(fields) == 2 && fields[0] == "product/LICENSE" {
+			t.Errorf("a license installs into a workspace: %s", line)
 		}
 	}
 }
