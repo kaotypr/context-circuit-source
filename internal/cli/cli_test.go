@@ -69,6 +69,18 @@ func (f fixture) ok(args ...string) string {
 	}
 	return out
 }
+
+// human runs a command on the default stream, which is what a person sees. The
+// rest of these tests ask for --json, so nothing else exercises it.
+func (f fixture) human(args ...string) string {
+	f.t.Helper()
+	var out, errOut bytes.Buffer
+	if code := cli.Run(context.Background(), append([]string{"--workspace", f.root}, args...), &out, &errOut, "2.0.0-test"); code != 0 {
+		f.t.Fatalf("%v: exit=%d %s %s", args, code, out.String(), errOut.String())
+	}
+	return out.String()
+}
+
 func (f fixture) fail(args ...string) string {
 	f.t.Helper()
 	code, out, err := call(f.root, args...)
@@ -815,6 +827,50 @@ func TestConcurrentAllocation(t *testing.T) {
 		t.Fatalf("got %d IDs", len(seen))
 	}
 	f.ok("check")
+}
+
+// A mistyped argument is reported, never guessed at and never fatal. An empty
+// one names no command and has no first word for the group hint to look up.
+func TestMistypedArgumentsAreReported(t *testing.T) {
+	f := setup(t)
+	if out := f.fail(""); !strings.Contains(out, "unknown command") {
+		t.Errorf("an empty command argument: %s", out)
+	}
+	if out := f.fail("", "trailing"); !strings.Contains(out, "unknown command") {
+		t.Errorf("an empty command argument with more behind it: %s", out)
+	}
+}
+
+// A band is cleared by passing zero, so an omitted --band would otherwise clear
+// the member's block without anybody asking for that.
+func TestClearingABandTakesTheFlagThatClearsIt(t *testing.T) {
+	f := setup(t)
+	f.ok("member", "add", "--id", "rina", "--name", "Rina", "--band", "2")
+	if out := f.fail("member", "band", "--id", "rina"); !strings.Contains(out, "missing --band") {
+		t.Errorf("omitting --band was accepted: %s", out)
+	}
+	if !strings.Contains(f.ok("member", "list"), `"band": 2`) {
+		t.Error("the refused call cleared the band anyway")
+	}
+	f.ok("member", "band", "--id", "rina", "--band", "0")
+	if strings.Contains(f.ok("member", "list"), `"band"`) {
+		t.Error("--band 0 no longer clears the block")
+	}
+}
+
+// A record's body is a document. Rendered as a YAML scalar it arrives as one
+// escaped line, which is the shape `record show` already refuses to print.
+func TestACreatedRecordPrintsItsBodyToAPerson(t *testing.T) {
+	f := setup(t)
+	out := f.human("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing")
+	for _, want := range []string{"id: i001", "path: intent/i001-billing.md", "# Billing", "## Success criteria"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("the human stream omits %q:\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, `\n`) {
+		t.Errorf("the body was rendered as an escaped scalar:\n%s", out)
+	}
 }
 
 func TestCLIValidationAndSourceIsolation(t *testing.T) {

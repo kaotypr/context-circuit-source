@@ -95,6 +95,32 @@ type listFlag []string
 func (v *listFlag) String() string         { return strings.Join(*v, ",") }
 func (v *listFlag) Set(value string) error { *v = append(*v, value); return nil }
 
+// provided reports whether the caller actually passed a flag, which is the only
+// way to tell an omitted number from one deliberately set to its zero value.
+func provided(f *flag.FlagSet, name string) bool {
+	found := false
+	f.Visit(func(set *flag.Flag) {
+		if set.Name == name {
+			found = true
+		}
+	})
+	return found
+}
+
+// writeYAML renders a result for a human through the public JSON names, so a
+// field is called the same thing whichever stream a caller reads.
+func writeYAML(out io.Writer, value any) error {
+	data, err := json.Marshal(value)
+	if err != nil {
+		return err
+	}
+	if data, err = yaml.JSONToYAML(data); err != nil {
+		return err
+	}
+	_, err = out.Write(data)
+	return err
+}
+
 // pinnedVersionWarning reports when the running CLI differs from the version a
 // workspace pins in .context-circuit/CLI_VERSION. Workspaces are installed and
 // pinned independently, so a mismatch is a caller mistake rather than a
@@ -262,8 +288,11 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	case "status", "check", "member list":
 	default:
 		fmt.Fprintf(errOut, "unknown command: %s\n", command)
-		if topic := strings.Fields(command)[0]; groups[topic] {
-			fmt.Fprintf(errOut, "try: context-circuit-cli help %s\n", topic)
+		// An empty argument is a command name with no fields at all, so there
+		// is no group to offer a topic for. Reporting it is still right; going
+		// looking for its first word is what crashes.
+		if topic := strings.Fields(command); len(topic) > 0 && groups[topic[0]] {
+			fmt.Fprintf(errOut, "try: context-circuit-cli help %s\n", topic[0])
 		}
 		return 2
 	}
@@ -343,6 +372,14 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			fmt.Fprintf(errOut, "missing --%s\n", key)
 			return 2
 		}
+	}
+	// The required check above reads string flags, and a band is a number whose
+	// zero value is the documented way to clear one. Omitting the flag would
+	// otherwise clear the member's block silently, which is the one outcome a
+	// caller who forgot it cannot have meant.
+	if command == "member band" && !provided(f, "band") {
+		fmt.Fprintln(errOut, "missing --band")
+		return 2
 	}
 	if command == "init" || command == "template export" {
 		if command == "template export" {
@@ -541,23 +578,26 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		fmt.Fprintln(errOut, err)
 		return 1
 	}
-	if command == "record show" && !*asJSON {
-		_, err = fmt.Fprint(out, result.(workspace.Record).Content)
-	} else if *asJSON {
+	switch {
+	case *asJSON:
 		enc := json.NewEncoder(out)
 		enc.SetIndent("", "  ")
 		err = enc.Encode(result)
-	} else {
-		var data []byte
-		// Output uses the public JSON names, including record paths; the YAML
-		// tags on records describe frontmatter and deliberately omit content.
-		data, err = json.Marshal(result)
-		if err == nil {
-			data, err = yaml.JSONToYAML(data)
+	case command == "record show":
+		_, err = fmt.Fprint(out, result.(workspace.Record).Content)
+	case command == "record create":
+		// A record's body is a document. Rendered as a YAML scalar it arrives as
+		// one escaped line, which is the shape `record show` already refuses to
+		// print. The reservation and the path lead, because they are what the
+		// caller asked the CLI for, and the body follows as itself.
+		created := result.(workspace.Record)
+		body := created.Content
+		created.Content = ""
+		if err = writeYAML(out, created); err == nil && body != "" {
+			_, err = fmt.Fprintf(out, "\n%s", body)
 		}
-		if err == nil {
-			_, err = out.Write(data)
-		}
+	default:
+		err = writeYAML(out, result)
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, err)
