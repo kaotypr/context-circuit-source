@@ -32,7 +32,10 @@ resolved=''
 if [ -n "${INPUT_VERSION:-}" ]; then
   resolved=$INPUT_VERSION
 elif [ "${EVENT_NAME:-}" = push ]; then
-  changed=$(git -C "$source_root" diff --name-only "${BEFORE:?}" "${SHA:?}" -- 'release/requests/*.md' \
+  # Exclude deletions: removing a superseded request is housekeeping, not a
+  # release, and counting one makes an ordinary cleanup commit look like a
+  # second version to publish.
+  changed=$(git -C "$source_root" diff --diff-filter=d --name-only "${BEFORE:?}" "${SHA:?}" -- 'release/requests/*.md' \
             | sed -n 's|^release/requests/\(.*\)\.md$|\1|p' | sort -u)
   count=$(printf '%s\n' "$changed" | grep -c . || true)
   [ "$count" -eq 1 ] || fail "push changed $count request files; expected exactly one"
