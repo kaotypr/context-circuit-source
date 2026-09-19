@@ -14,6 +14,12 @@ on:
     paths:
       - "release/requests/**"
 
+# This job only reads its own repository. Everything it writes lands in the
+# published template repository, through TEMPLATE_REPO_TOKEN, so the automatic
+# token needs nothing beyond the checkout it performs here.
+permissions:
+  contents: read
+
 concurrency:
   group: publish-template
   cancel-in-progress: false
