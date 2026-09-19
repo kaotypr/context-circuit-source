@@ -1,8 +1,11 @@
 # Context Circuit source maintenance
 
-This is the maintainer source checkout, not a generated workspace. Work directly
-on the current branch from the user's request. Do not invoke the product intent
-or plan flow, create lifecycle records, or require worktrees or child agents.
+This is the maintainer source checkout, not a generated workspace, and it holds
+no workspace records of its own. Work directly on the current branch from the
+user's request. Do not invoke the product intent or plan flow, create lifecycle
+records, or require worktrees or child agents. `context/` is validated by
+`go test`, which builds a throwaway workspace around it; do not register this
+checkout as one to run `check` by hand.
 
 `product/AGENTS.md.in` owns generated-workspace behavior. Files under `product/`
 and `template/` are packaging material, not instructions for this source task.

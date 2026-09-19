@@ -103,12 +103,15 @@ maps every file in them to its destination in a generated workspace.
 specification, and never shipped. `release/` is not history — `binding.yaml`
 names the published destination, and each version's request lives beside it.
 
-This checkout is also registered as a Context Circuit workspace, which is why
-`workspace.yaml`, `members.yaml`, and `.context-circuit/` sit at its root: they
-let `check`, `status`, and `context find` run against the real `context/` tree
-rather than a fixture. There is no `intent/` or `plans/`, because the product's
-intent and plan flow is not used here — maintainer changes are made directly on
-the current branch, as `AGENTS.md` sets out.
+This checkout is not a Context Circuit workspace and carries no workspace
+records. The product's intent and plan flow is not used here; maintainer changes
+are made directly on the current branch, as `AGENTS.md` sets out.
+
+`context/` is still validated by the product's own diagnostic. `go test` builds a
+throwaway workspace around the real tree, binds it to this checkout so each
+note's code anchors resolve, and fails on any finding a command or an edit can
+discharge. That runs for every clone and every pull request, where registering
+this checkout by hand only ever ran on the machine that did it.
 
 ## Development
 

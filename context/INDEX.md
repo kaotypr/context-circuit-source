@@ -138,4 +138,4 @@ it does that for is `actors/`.*
 does once installed.*
 
 - [Source layout and what ships](maintenance/source-layout.md) {context-circuit-source} — which component owns what, and what never leaves this checkout · layout, ownership, manifest, ships, embed, seed, packaging, history · reviewed 2026-09-19
-- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, destination-owned, unverified · reviewed 2026-09-19
+- [Validation and release checks](maintenance/validation-and-release.md) {context-circuit-source} — how a change here is proven before it is published, and what stays unproven · test, vet, format, ci, release check, build output, publish, destination-owned, knowledge tree, unverified · reviewed 2026-09-19

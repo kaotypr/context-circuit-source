@@ -3,10 +3,9 @@
 dist/
 
 # Repository bindings and checkout contents are host-local and never shipped.
-# Anchored to the workspace root and the template seed ONLY — a bare `repositories/`
-# also matched test/repositories/ and left that acceptance suite untracked.
-/repositories/
-/repositories.local.yaml
+# Anchored to the template seed ONLY — a bare `repositories/` also matched
+# test/repositories/ and left that acceptance suite untracked. The source root
+# is not a workspace, so nothing writes either of these beside it.
 /template/repositories/
 /template/repositories.local.yaml
 
@@ -16,9 +15,8 @@ dist/
 # per-host agent inventory and a lock under that workspace's local directory.
 /template/.context-circuit/role-tiering.local.yaml
 /template/.context-circuit/local/
-/member.local.yaml
 /template/member.local.yaml
-/.worktrees/
+/template/.worktrees/
 /bin/
 # Tool-generated local graph cache; never project material.
 .code-review-graph/

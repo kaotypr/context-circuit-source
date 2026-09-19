@@ -42,24 +42,25 @@ and security pages while no workspace ever receives them. A README.md there is
 refused, because the published README is the product guide the manifest
 assembles.
 
-## This checkout as a workspace
+## How context/ is validated
 
-The checkout is itself a schema-2 workspace, so `check`, `status`, and
-`context find` run against the real `context/` here instead of a copied fixture.
-That is the only reason the workspace files exist. Source work still goes
-directly on the branch under AGENTS.md, so this checkout carries no `intent/` or
-`plans/` and allocates no ID for source changes. There is no `.context-circuit/`.
-The shipped `docs/` and `assets/` are owned by `product/`, the version stamps by
-the two root version files, and a second copy here would drift from them; a
-pinned CLI version would be tautological in the checkout that builds the CLI,
-and was wrong for ten candidates before it was removed. The ID ledger is for
-record allocation this checkout never performs.
+This checkout is not a workspace. It carries no `workspace.yaml`, no roster, no
+`.context-circuit/`, and no records; the product's lifecycle is for generated
+workspaces, and AGENTS.md bars it here.
 
-`check` therefore reports the absent ledger on every run, alongside the absent
-workspace repository. Both are accurate: this is a workspace registered for one
-purpose, and the knowledge checks that serve it — catalog consistency,
-readability, and reviewed dates against the code each note anchors to — run
-from `workspace.yaml`, `members.yaml`, and this machine's repository binding.
+`context/` is still checked by the product's own diagnostic.
+`internal/cli/knowledge_tree_test.go` builds a throwaway workspace, copies the
+real tree into it, and binds it to this checkout so each note's code anchors
+resolve against real history. Findings split by the product's own taxonomy: one
+a command or an edit discharges fails the test, and one marked `needs a person:`
+— a note to re-read against code that moved — is reported for a maintainer
+rather than blocking a contributor on somebody else's judgment.
+
+It was registered as a workspace before this, which put the same checks behind
+two gitignored files: they ran on one machine and never in CI, so a fresh clone
+got silence instead of a warning. The job that runs `go test` clones full
+history, because the reviewed-date pass counts commits under those anchors and a
+shallow clone would make it pass without looking.
 
 ## Validation
 

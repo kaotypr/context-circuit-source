@@ -8,6 +8,25 @@ Format changed Go files, then the test suite, then vetting, then the release
 check. Tests use temporary directories and disposable Git repositories, so they
 establish real file and Git behavior rather than mocked behavior.
 
+The suite also validates this project's own product knowledge with the product's
+own diagnostic. One test builds a throwaway workspace around the real knowledge
+tree and binds it to this checkout, so each note's code anchors resolve against
+real history.
+
+Findings split by the taxonomy the diagnostic already uses:
+
+- one a command or an edit discharges fails the test;
+- one marked as needing a person — a note to re-read against code that moved —
+  is reported instead, rather than blocking a contributor on another's judgment.
+
+Continuous integration clones full history for it, because that pass counts
+commits under those anchors and a shallow clone would let it pass without
+looking.
+
+This replaces registering the checkout as a workspace and running the diagnostic
+by hand, which put the same checks behind two machine-local files: they ran
+where someone had set them up, and nowhere else.
+
 The release check is the broad one: it builds and exercises a native binary,
 verifies the embedded seed inventory against the manifest, cross-compiles every
 supported target, and tests the publication guards and commit and tag behavior
