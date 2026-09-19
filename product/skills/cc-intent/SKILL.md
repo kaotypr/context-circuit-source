@@ -71,6 +71,14 @@ context-circuit-cli --workspace <root> record create --kind intent --slug SLUG -
 Then write its body from that grounding: goal, non-goals, constraints,
 observable success criteria, and rough repository scope.
 
+Where a system design under `sources/system-design/` already settles the shape
+this outcome depends on, name that path in the body — beside the constraint or
+the scope it bears on, not as a heading of its own. Cite it only where the
+outcome genuinely rests on it: most intents say what they want in their own
+words and name no file. A citation points a reader at material they may open;
+it neither replaces the post-approval read of real code nor adds a second gate,
+and an unwritten design is not a reason to delay an intent.
+
 ## Open questions
 
 Each decision a person must settle goes under `## Open questions`: a numbered

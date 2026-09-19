@@ -1,179 +1,156 @@
 ---
 name: cc-system-design
-description: Author and structure a system design as source material under sources/system-design/ or an intent's fuller by-concern write-up under intent/<id>/detail/ — the three-tier layout, how much detail per file, and scope separation by concern. Drafts structured source files only; never approves, accepts, plans, executes, or writes Product Knowledge.
+description: Author a system design for this source checkout as source material under sources/system-design/ — the three-tier layout, how much detail belongs in each file, and why scopes separate by concern rather than by repository. Drafts structured source files only; never plans, executes, publishes, or writes knowledge.
 ---
 
-## When to use
+# Design a system before building it
 
-On a request to design or structure the shape of a larger change — "design the
-system for X", "write up the architecture", "structure the system design" — or to
-write out **one intent** in full by topic so a human can see what they are
-agreeing to. This skill owns the authoring rubric for **both homes**. It never
-approves, accepts, plans, executes, or writes Product Knowledge.
+Use this on a request to work out the shape of something larger than a single
+change to Context Circuit — a new command surface, a change to how the two
+products are assembled or published, a reworking of the workspace contract.
+It is for settling that shape, legibly, before any of it is implemented.
 
-Choose the home from the request:
+What it produces is **source material**: passive, durable, written to be read by
+a person deciding whether the shape is right. It has no status, no gate, and no
+runtime record. Drafting a design is not approving one.
 
-- A **product, version, or cross-cutting picture** that will spawn several
-  intents → `sources/system-design/`. A bounded change needs no product-level
-  design; go straight from Product Knowledge to a plan (or to an intent).
-- **One intent's several concerns**, requested by the human or recommended by
-  `cc-intent` → `intent/<id>/detail/`. A small single-outcome intent stays short
-  and needs no detail write-up.
-
-A system design and an intent detail write-up are **sources, not lifecycle
-stages**. They have no status, no acceptance gate, and no runtime record. Intent
-detail is not Product Knowledge and is not a second approval of the intent.
+A bounded change does not need this. Maintainer work runs directly on the
+current branch from the user's request, as `AGENTS.md` sets out; a design with
+five near-empty files is worse than no design at all.
 
 ## Where it goes
 
-### Product-level design
-
-Author under `sources/`, which is passive source material:
+Author under `sources/`, which stays passive material in this checkout exactly
+as it does in a generated workspace:
 
 ```
 sources/system-design/<product-or-project>/<grouping>/<scope>/
 ```
 
-- `<product-or-project>` (or `<initiative>`) names the product **as a whole —
-  never a single repository**. In a single-product workspace this level may
-  collapse to `sources/system-design/<grouping>/<scope>/`.
+- `<product-or-project>` names the product **as a whole — never a single
+  repository**. Where a design concerns only one of this repository's two
+  products, that product is the level; where the whole system is in view, this
+  level may collapse to `sources/system-design/<grouping>/<scope>/`.
 - `<grouping>` is the organizing dimension for a body of design work. **Default:
-  a version** — use **3-number semver with a `v` prefix** (`v2.0.0`, not
-  `v2.0`). Optionally a **named grouping** — a slug such as
-  `phase-2`, `Q1`, or a milestone — as a deliberate author choice when a team does
-  not organize design by release. Within one product, pick one grouping dimension
-  rather than mixing release and phase folders arbitrarily.
-- When the author does not specify a grouping, derive it from the version the
-  design targets: the project's **next** version for forthcoming design (the
-  normal case), or the **current** version when documenting as-built state. Read
-  the version token from the project's own source of truth (`workspace.yaml`
-  `template_version`, release manifests) — never invent it; if the targeted
-  version is genuinely ambiguous, surface the choice rather than guessing.
+  a version** — 3-number semver with a `v` prefix (`v2.0.0`, not `v2.0`).
+  A **named grouping** — `phase-2`, a milestone slug — is a deliberate choice
+  where a body of work does not line up with a release. Pick one dimension
+  within a product rather than mixing release and phase folders.
 - `<scope>` is a **concern**.
 
-Writing these files is a normal authoring write; `sources/` stays passive for
-later reads (read only when a request names a file).
+Where the request does not name a grouping, derive it from the version the
+design targets: the **next** version for forthcoming design, which is the normal
+case, or the **current** version when documenting as-built state. Read it from
+this repository's own source of truth — `VERSION` for the workspace template,
+`CLI_VERSION` for the CLI. The two version lines are separate and each drives
+its own publication, so a design spanning both says which one it targets rather
+than implying a single number. Never invent a version; where the target is
+genuinely ambiguous, surface the choice rather than guessing.
 
-### Intent detail
-
-Author the fuller write-up of **one intent** at:
-
-```
-intent/<id>/detail/
-```
-
-Use `detail/`, never `design/`. The inner layout is the same three-tier rubric as
-a product-level design. Draft it **without reading the codebase** (INV-INTENT-01),
-the same as the short intent page. Do not put this write-up under
-`sources/system-design/` — that home is for a product-level picture, not for
-specifying a single intent.
+Writing these files is an ordinary authoring write. Afterwards `sources/` is
+passive again: read a file in it only when a request names that file.
 
 ## The three-tier layout
 
-Every folder has a `README.md` index; each scope's normative content is
-`design.md`; detail splits into files or sub-folders **as it grows**. The inner
-layout is the same in both homes:
-
-```text
-<home>/
-  README.md                 # index (landing + reading order)
-  design.md                 # overview — NORMATIVE, readable end to end
-  <concern>.md              # one concern each, split when it outgrows a section
-  <concern>/                # a concern that itself has parts (README + a file per part)
-```
-
-For a product-level design, `<home>` is
-`sources/system-design/<product-or-project>/<grouping>/<scope>/`, and the product
-and grouping folders above it keep their own `README.md` indexes:
+Every folder carries a `README.md` index; each scope's normative content is
+`design.md`; detail splits into files or sub-folders **as it grows**.
 
 ```text
 sources/system-design/<product-or-project>/
   README.md                 # index of groupings (landing + reading order)
   <grouping>/
-    README.md               # grouping index: the scopes + the reading order
+    README.md               # grouping index: the scopes and the reading order
     <scope>/
-      README.md
-      design.md
-      <concern>.md
-      <concern>/
+      README.md             # scope index
+      design.md             # overview — NORMATIVE, readable end to end
+      <concern>.md          # one concern each
+      <concern>/            # a concern with parts: README + a file per part
 ```
 
-For intent detail, `<home>` is `intent/<id>/detail/` — there is no extra product
-or grouping prefix. Split by **concern**, never by repository.
-
-## How much detail per file (altitude)
+## How much detail per file
 
 Calibrate by what a reader needs from the file, not by filling it:
 
-- **`README.md` — orientation only.** What exists here and the reading order. No
-  design content, decisions, or mechanism.
-- **`design.md` — the normative overview a reviewer can stop at.** The capability,
-  the problem, the principles, the **fixed decisions**, and the shape of the whole
-  — readable start to finish to understand the design *without* opening every
-  detail file. It states *what* and *why*; it **defers** *how* to detail files and
-  links to them. Not exhaustive, not code-level.
+- **`README.md` — orientation only.** What exists here and in what order to read
+  it. No design content, decisions, or mechanism.
+- **`design.md` — the normative overview a reviewer can stop at.** The
+  capability, the problem, the principles, the fixed decisions, and the shape of
+  the whole — readable start to finish without opening a single detail file. It
+  states *what* and *why*, and defers *how* to the detail files it links.
 - **`<concern>.md` — one concern at implementation depth.** Its mechanism,
-  interfaces, edge cases, and the diagram that explains it. Name it for the concern
-  (`scheduling.md`), never `details.md`. It continues from `design.md`; it never
-  restates it.
+  interfaces, edge cases, and the diagram that explains it. Name it for the
+  concern (`publication.md`), never `details.md`. It continues from `design.md`
+  and never restates it.
 
-Every fact lives once: `design.md` references a detail file rather than inlining
-it. If a reviewer must open five detail files to grasp the design, too much left
-`design.md`; if `design.md` is many screens of mechanism, too much stayed.
+Every fact lives once. If a reviewer must open five files to grasp the design,
+too much left `design.md`; if `design.md` runs many screens of mechanism, too
+much stayed.
 
-## Split only when a concern earns it — do not pre-fragment
+## Split only when a concern earns it
 
 - A one-paragraph concern is a **paragraph in `design.md`**, not a file.
-- A concern that grows past a section becomes its **own `<concern>.md`**.
-- A concern with distinct parts becomes a **sub-folder** (a `README.md` index plus
-  one file per part).
-- Start minimal — a `README.md` and a `design.md` — and grow. A new design with
-  five near-empty detail files is worse than one honest `design.md`.
+- A concern that outgrows a section becomes its **own `<concern>.md`**.
+- A concern with distinct parts becomes a **sub-folder** — a `README.md` index
+  and one file per part.
+
+Start minimal, with a `README.md` and a `design.md`, and grow from there. Do not
+pre-fragment.
 
 ## Separate scopes by concern, never by repository
 
-A system design's value is describing how the pieces fit across the system, so
-scopes cut by **concern** — a backend topology, a domain, a SPA, a cross-cutting
-flow — matching the product, not the git layout. The same rule applies to intent
-detail: split by concern, never by repository.
+A system design earns its keep by describing how the pieces fit across the
+system, so scopes cut by **concern** — the command surface, release assembly,
+the workspace contract, a cross-cutting flow — matching the product rather than
+the git layout.
 
-- **Never one scope folder per git repository**; that fragments the cross-repo
+- **Never one scope folder per repository.** That fragments exactly the
   coherence the design exists to capture.
-- If one repository needs deep design detail, that is a **scope** within the
-  product's design (e.g. a `backend/` scope), not a separate top-level design and
-  not a new `<product>`.
+- Where one area needs deep design detail, that is a **scope** within the
+  product's design, not a separate top-level design and not a new
+  `<product-or-project>`.
 
 ## Diagrams
 
-Embed diagrams as fenced ` ```mermaid ` blocks directly in the file they explain —
-the durable form that renders on GitHub and most editors. You may preview via a
-host mermaid plugin if one exists, but never depend on it: with no plugin, still
-emit the fenced mermaid.
+Embed diagrams as fenced ` ```mermaid ` blocks in the file they explain. That is
+the durable form: it renders on GitHub and in most editors, and it survives in
+the file rather than in a tool. You may preview through a host plugin where one
+exists, but never depend on one — with no plugin, still emit the fenced mermaid.
 
-## How it feeds the rest
+## How it reaches the rest of the checkout
 
-A **product-level** system design feeds Product Knowledge and plans through the
-**normal workspace flow**, with nothing new: the coordinator gathers context from
-the named design source and writes live `context/` files in place (keeping
-`INDEX.md` consistent). This skill still must not itself write Product
-Knowledge and must not feed PK through a proposal sidecar. There is no
-separate design-acceptance gate and no accept-the-context-update gate.
+A design is source material, so it feeds this repository the way all source
+material does, with nothing new added.
 
-**Intent detail** is different. It is the confirmed shape of *one* intent. After
-the human approves that intent, `cc-plan` uses `intent/<id>/detail/` (when it
-exists) so plans and tasks follow those topics. It does **not** replace the
-post-approval read of the real code, is **not** folded into `contract_digest`, and
-is **not** Product Knowledge. There is no second approval of the detail.
+**Knowledge.** What the design settles durably becomes a note in `context/`,
+written through `.agents/skills/cc-source-develop/SKILL.md`, with its catalog
+entry in `context/INDEX.md` kept consistent in the same change. The note carries
+the concept in its own words and anchors to code; it never cites the design
+file, because `sources/` is passive while the knowledge outlasts it. This skill
+never writes knowledge itself.
+
+**Records.** There are none here. This checkout holds no `workspace.yaml`, no
+intents, and no plans, and `AGENTS.md` bars the product's lifecycle from it, so
+a design is read by a person and by `context/` and by nothing else. The product
+skill a generated workspace receives lets an intent cite a design path; that
+does not apply here, because there are no intents to cite one.
+
+## Relationship to the shipped skill
+
+`product/skills/cc-system-design/SKILL.md` is the same rubric written for a
+generated workspace, and it ships. This file is the source checkout's own, and
+the two differ only where a workspace and a maintainer checkout genuinely
+differ: the version source, how knowledge is written, and the absence of
+records. Keep the layout, altitude, splitting, and scope-separation rules
+identical in both when either changes — they are one rubric, and a reader
+comparing them should find no daylight.
 
 ## Boundaries
 
-- **Draft structured source files only.** Never approve, accept, plan, execute,
-  merge, or write Product Knowledge. This skill grants no route, role, or authority
-  (INV-SKILL-01); it is read-as-procedure guidance resolved by path.
-- **No status, no gate, no runtime record** — a system design is a source; so is
-  intent detail.
-- **Two homes, one rubric.** Do not add a second skill. Do not specify a product
-  capability by writing a new `sources/system-design/` scope for it.
-- **Reference model:** this repository's own `sources/system-design/` is the
-  dogfooded example of the layout, altitude, and scope separation above; follow
-  the same convention in both homes.
+- **Draft structured source files only.** Never plan, execute, commit, publish,
+  or write knowledge. This skill grants no route, role, or authority.
+- **No status, no gate, no runtime record.** A system design is a source.
+- **One home.** Design material lives under `sources/system-design/` and
+  nowhere else.
+- **`sources/system-design/` here is the dogfooded example** of the layout and
+  altitude above. It is still passive: read a file in it only when a request
+  names that file.

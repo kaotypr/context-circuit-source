@@ -10,6 +10,20 @@ case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $versio
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
 request="$source_root/release/requests/template/$version.md"
 [ -f "$request" ] || fail "missing release request: release/requests/template/$version.md"
+# A release may start the published changelog over instead of prepending to it.
+# A first stable release is the case that needs it: its published history is a
+# list of its own candidates, which describes how the release was made rather
+# than what it is. The request declares this, so the decision is reviewed in
+# source and carried out by the release commit — not by a hand-made deletion
+# on the published repository, which would put "I removed the changelog" in
+# that repository's history as a change nobody made to the product.
+changelog=$(awk 'BEGIN{fm=0}
+  /^---[[:space:]]*$/{fm++; if (fm>=2) exit; next}
+  fm==1 && /^changelog:[[:space:]]*/{sub(/^changelog:[[:space:]]*/,""); print; exit}' "$request")
+case "${changelog:=keep}" in
+  keep|reset) ;;
+  *) fail "unknown changelog mode in $version.md: $changelog (expected keep or reset)" ;;
+esac
 [ -d "$template_dir/.git" ] || fail "expected a standalone template checkout: $template_dir"
 template_dir=$(CDPATH= cd -- "$template_dir" && pwd -P)
 [ "$template_dir" != "$source_root" ] || fail 'cannot publish over the source checkout'
@@ -101,7 +115,9 @@ for art in "$source_root"/product/assets/readme/*.webp; do cp "$art" "$template_
   printf '# Changelog\n\n## v%s — %s\n\n' "$version" "$(date +%Y-%m-%d)"
   awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' "$request"
   printf '\n'
-  if [ -f "$template_dir/CHANGELOG.md" ]; then tail -n +3 "$template_dir/CHANGELOG.md"; fi
+  if [ "$changelog" = keep ] && [ -f "$template_dir/CHANGELOG.md" ]; then
+    tail -n +3 "$template_dir/CHANGELOG.md"
+  fi
 } > "$work/CHANGELOG.md"
 mv "$work/CHANGELOG.md" "$template_dir/CHANGELOG.md"
 # Disable hooks for this release commit so hosts cannot inject agent attribution.

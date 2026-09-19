@@ -15,11 +15,15 @@ defines the change. Product instructions apply only to generated workspaces.
 - assets.go: embeds only product assets and materializes the manifest.
 - VERSION: workspace template version.
 - CLI_VERSION: independent CLI version; each file drives its own publication.
-- product/skills/: packaged CLI installation/update and subagent dispatch skills.
+- product/skills/: the workspace skills, including cc-system-design, which
+  authors design material under sources/system-design/ and ships from here.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and publication.
 - release/requests/cli/, release/requests/template/: one request per product
-  per version; the request body is that release's notes.
+  per version; the request body is that release's notes. A template request may
+  carry `changelog: reset` in its frontmatter to start the published changelog
+  over at that release instead of prepending to it; absent or `keep`, entries
+  before it are retained.
 - LICENSE: Apache-2.0, covering this checkout and the CLI.
 - product/LICENSE: 0BSD, covering everything a workspace receives, shown only at
   the published template repository's root.
@@ -42,8 +46,13 @@ context/INDEX.md and validated by the knowledge checks the diagnostic runs; it
 never ships. sources/ and release requests are passive maintainer history and
 never ship. The source skills under .agents/skills/ — cc-source-develop and
 cc-system-design — are maintainer tooling, excluded from the binary and the
-exported workspace. .claude/skills is a symlink to that directory, so a host
-reading either path finds the same two and neither can drift from the other.
+exported workspace. cc-system-design states the same design rubric that
+product/skills/cc-system-design/SKILL.md ships to a workspace, differing only
+where a maintainer checkout genuinely differs: the version source, how knowledge
+is written, and the absence of records. Change the layout, altitude, splitting,
+or scope-separation rules in one and change them in the other. .claude/skills is
+a symlink to that directory, so a host reading either path finds the same
+skills.
 
 release/template-repo/ is a fourth class: not shipped to a workspace and not
 history either. Publication restores those files over the extracted artifact and
