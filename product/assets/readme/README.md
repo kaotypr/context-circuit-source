@@ -6,21 +6,22 @@ interface.
 
 | Asset | Size | Intended use |
 | --- | --- | --- |
-| `context-circuit-mark.svg` / `.png` | 512 × 512 | Repository avatar, favicon source, square brand mark |
-| `context-circuit-logo.png` | 520 × 160 | README brand lockup or documentation header |
-| `knowledge-circuit.png` | 1400 × 820 | Primary product explanation |
-| `workflow-overview.png` | 1400 × 760 | Outcome-oriented product overview |
+| `context-circuit-mark.svg` / `.webp` | 512 × 512 | Repository avatar, favicon source, square brand mark |
+| `context-circuit-logo.webp` | 520 × 160 | README brand lockup or documentation header |
+| `knowledge-circuit.webp` | 1400 × 820 | Primary product explanation |
 | `social-preview.png` | 1280 × 640 | Uploadable GitHub social preview; header of the source README |
 
 The workspace release ships only the assets a workspace README renders —
-`context-circuit-logo.png`, `knowledge-circuit.png`, and
-`workflow-overview.png` — mapping them to `.context-circuit/assets/readme/`. A
-generated workspace README uses that path.
+`context-circuit-logo.webp` and `knowledge-circuit.webp` — mapping them to
+`.context-circuit/assets/readme/`. A generated workspace README uses that path.
 
 The rest are source-side: an avatar, a favicon source, and a social preview are
-uploaded to a repository or a site, and a workspace that carried them would be
-carrying nearly a megabyte it never renders. This checkout links to
-`product/assets/readme/` directly.
+uploaded to a repository or a site rather than rendered in a workspace, so no
+workspace carries them. This checkout links to `product/assets/readme/`
+directly. The social preview stays PNG because GitHub's social-preview upload
+accepts PNG, JPG and GIF but not WebP, and nothing here can regenerate that
+composed image; the square mark has no such copy, since its `.svg` rasterizes
+on demand for an avatar upload.
 
 ## DLS application
 
@@ -58,5 +59,6 @@ carrying nearly a megabyte it never renders. This checkout links to
   layout or command vocabulary.
 
 The mark SVG retains semantic `title`, `desc`, and `aria-labelledby` attributes
-for scalable brand use. Composed README assets ship only as PNG files so their
-layout and Kaotypr font roles remain stable on every host.
+for scalable brand use. Composed README assets are WebP wherever they are only
+rendered, so their layout and Kaotypr font roles remain stable on every host at
+a fraction of the weight a workspace would otherwise carry.
