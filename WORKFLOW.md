@@ -20,7 +20,10 @@ defines the change. Product instructions apply only to generated workspaces.
 - internal/cow/: native filesystem cloning with independent-copy fallback.
 - scripts/: build, checks, and publication.
 - release/requests/cli/, release/requests/template/: one request per product
-  per version; the request body is that release's notes.
+  per version; the request body is that release's notes. A template request may
+  carry `changelog: reset` in its frontmatter to start the published changelog
+  over at that release instead of prepending to it; absent or `keep`, entries
+  before it are retained.
 - LICENSE: Apache-2.0, covering this checkout and the CLI.
 - product/LICENSE: 0BSD, covering everything a workspace receives, shown only at
   the published template repository's root.

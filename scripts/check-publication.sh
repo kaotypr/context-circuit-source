@@ -106,4 +106,37 @@ for owned in README.md LICENSE CONTRIBUTING.md SECURITY.md .gitattributes; do
 done
 grep -qx 'AGENTS.md' "$work/archived" || { printf 'FAIL: the archive carries no workspace files\n' >&2; exit 1; }
 if publish > "$work/repeated.log" 2>&1; then printf 'FAIL: republished an existing tag\n' >&2; exit 1; fi
+grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
+  printf 'FAIL: the release notes never reached the changelog\n' >&2; exit 1; }
+
+# A later release prepends to the published changelog, and a release that says
+# so starts it over. The reset exists so a first stable release is not handed a
+# history of its own candidates, and so that reset is performed by the release
+# commit rather than by a person deleting the file on the published repository.
+printf '%s\n' --- 'version: 2.0.0-keep' --- 'Second fixture notes.' \
+  > "$work/source/release/requests/template/2.0.0-keep.md"
+sh "$work/source/scripts/publish-template.sh" 2.0.0-keep "$work/template" >/dev/null
+grep -q 'Second fixture notes.' "$work/template/CHANGELOG.md" || {
+  printf 'FAIL: a later release did not reach the changelog\n' >&2; exit 1; }
+grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
+  printf 'FAIL: a later release dropped the entries before it\n' >&2; exit 1; }
+
+printf '%s\n' --- 'version: 2.0.0-reset' 'changelog: reset' --- 'Only entry.' \
+  > "$work/source/release/requests/template/2.0.0-reset.md"
+sh "$work/source/scripts/publish-template.sh" 2.0.0-reset "$work/template" >/dev/null
+grep -q 'Only entry.' "$work/template/CHANGELOG.md" || {
+  printf 'FAIL: the resetting release wrote no entry\n' >&2; exit 1; }
+for stale in 'Fixture release notes.' 'Second fixture notes.'; do
+  if grep -q "$stale" "$work/template/CHANGELOG.md"; then
+    printf 'FAIL: reset kept an earlier entry: %s\n' "$stale" >&2; exit 1
+  fi
+done
+
+printf '%s\n' --- 'version: 2.0.0-bogus' 'changelog: sometimes' --- 'x.' \
+  > "$work/source/release/requests/template/2.0.0-bogus.md"
+if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" >/dev/null 2>&1; then
+  printf 'FAIL: published with an unknown changelog mode\n' >&2; exit 1
+fi
+
+printf 'PASS: a release prepends to the changelog, and a resetting release starts it over\n'
 printf 'PASS: publication preserves user files and creates a clean versioned fixture\n'
