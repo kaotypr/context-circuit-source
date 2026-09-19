@@ -7,13 +7,35 @@ token=${CONTEXT_CIRCUIT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}
 # An organization that mirrors CLI releases into its own GitLab project names it
 # here. Unset, the installer reads the product's own GitHub releases.
 gitlab_url=${CONTEXT_CIRCUIT_GITLAB_URL:-}
+usage() {
+  cat <<'USAGE'
+Usage: install.sh --version <2.x.y> [options]
+
+  --version     exact CLI version to install, without a v prefix (required)
+  --bin-dir     user-writable command directory (default: $HOME/.local/bin)
+  --token       registry credential; also read from CONTEXT_CIRCUIT_TOKEN,
+                GH_TOKEN, or GITHUB_TOKEN
+  --gitlab-url  GitLab project mirroring the CLI releases; also read from
+                CONTEXT_CIRCUIT_GITLAB_URL
+  --archive     install this local package instead of downloading one
+  --checksums   the SHA256SUMS it is verified against, required with --archive
+USAGE
+}
 while [ "$#" -gt 0 ]; do
-  [ "$#" -ge 2 ] || fail 'options require a value'
+  # Validate the name before asking for its value, so an option nobody defined
+  # is reported as unknown rather than as one missing an argument, and a bare
+  # `--version` names itself rather than reporting that options in general take
+  # values. Asking how to run this is answered, not refused.
+  case "$1" in
+    -h|--help) usage; exit 0 ;;
+    --version|--bin-dir|--archive|--checksums|--token|--gitlab-url) ;;
+    *) fail "unknown option: $1" ;;
+  esac
+  [ "$#" -ge 2 ] || fail "$1 requires a value"
   case "$1" in
     --version) version=$2 ;; --bin-dir) bin_dir=$2 ;;
     --archive) archive=$2 ;; --checksums) checksums=$2 ;;
     --token) token=$2 ;; --gitlab-url) gitlab_url=$2 ;;
-    *) fail "unknown option: $1" ;;
   esac
   shift 2
 done
