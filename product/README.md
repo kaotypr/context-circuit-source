@@ -159,9 +159,10 @@ for our billing platform. Add me as Maya.
 The bundled installation skill selects the correct macOS, Linux, or Windows
 package, verifies its checksum, and installs it without administrator access.
 
-If your team does not write in English, say so now and say how you write. Records
-are then composed in that language rather than translated into it, which is what
-keeps them from reading like a machine translation of something else:
+If you does not want the conversation, intent and plan docs written in English,
+say so now and say how you write. Records are then composed in that language 
+rather than translated into it, which is what keeps them from reading like a 
+machine translation of something else:
 
 ```text
 I write records in Bahasa Indonesia, semi-formal, with technical terms left in
@@ -223,7 +224,7 @@ versioned in the workspace, where it can be corrected and kept current as the
 project changes.
 
 If your organization already keeps a knowledge center that several teams share,
-mount it instead of copying it:
+mount it, before gathering context:
 
 ```text
 Mount https://github.com/acme/core-service-knowledge as a knowledge repository
