@@ -1,5 +1,5 @@
 <p align="center">
-  <img src=".context-circuit/assets/readme/context-circuit-logo.png" alt="Context Circuit" width="480">
+  <img src=".context-circuit/assets/readme/context-circuit-logo.webp" alt="Context Circuit" width="480">
 </p>
 
 <!-- context-circuit:title -->
@@ -38,10 +38,6 @@ Context Circuit gives an agent a shared place to learn the project, help prepare
 goal before coding, coordinate work across repositories, update product knowledge
 when the code changes, and preserve what the team learned afterward. You stay in
 control of the decisions that matter.
-
-<p align="center">
-  <img src=".context-circuit/assets/readme/workflow-overview.png" alt="How Context Circuit helps an agent finish safely" width="840">
-</p>
 
 ## Why Context Circuit
 
@@ -469,7 +465,7 @@ decision that is yours. It is a report, not a gate — nothing waits on it and i
 blocks nothing.
 
 <p align="center">
-  <img src=".context-circuit/assets/readme/knowledge-circuit.png" alt="The project learns from every change" width="840">
+  <img src=".context-circuit/assets/readme/knowledge-circuit.webp" alt="The project learns from every change" width="840">
 </p>
 
 For the behavior behind these conversations, including the division between the
