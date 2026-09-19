@@ -32,6 +32,9 @@ product/skills/cc-dispatch/route.md .cursor/skills/cc-dispatch/SKILL.md
 product/skills/cc-workspace/SKILL.md .agents/skills/cc-workspace/SKILL.md
 product/skills/cc-workspace/route.md .claude/skills/cc-workspace/SKILL.md
 product/skills/cc-workspace/route.md .cursor/skills/cc-workspace/SKILL.md
+product/skills/cc-system-design/SKILL.md .agents/skills/cc-system-design/SKILL.md
+product/skills/cc-system-design/route.md .claude/skills/cc-system-design/SKILL.md
+product/skills/cc-system-design/route.md .cursor/skills/cc-system-design/SKILL.md
 product/skills/cc-intent/SKILL.md .agents/skills/cc-intent/SKILL.md
 product/skills/cc-intent/route.md .claude/skills/cc-intent/SKILL.md
 product/skills/cc-intent/route.md .cursor/skills/cc-intent/SKILL.md

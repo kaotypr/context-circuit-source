@@ -122,6 +122,13 @@ entry, the glossary, and what `check` enforces — use
 `.agents/skills/cc-knowledge/SKILL.md`. Keep raw evidence separate from accepted
 knowledge, and keep task progress and temporary results in plans.
 
+Where a change is large enough that its shape must be settled and read before it
+is built, author that design as source material through
+`.agents/skills/cc-system-design/SKILL.md`, which writes under
+`sources/system-design/`. A design is passive evidence, not a stage: it carries
+no status and no gate, and drafting one approves nothing. A bounded change needs
+none — go straight to an intent.
+
 ## Intent and planning
 
 The path below is how an implementation change is normally made. A person may
@@ -142,6 +149,12 @@ project already records. What that reading contradicts, or cannot settle, is a
 question for the person, not a gap to fill with a quiet assumption. Write the
 `iNNN-slug.md` intent through `.agents/skills/cc-intent/SKILL.md`, which carries
 its body fields and the numbered open questions a person answers by.
+
+Where the outcome genuinely rests on a system design already authored under
+`sources/system-design/`, the intent may name that path. Only where it does: an
+intent normally settles its outcome in its own words and names nothing. A cited
+design does not replace reading real code after approval, and is not a second
+gate.
 
 Present the concrete intent, invite answers by number, and stop there. The
 request that prompted an intent is not approval of it: a person approves the
