@@ -29,10 +29,19 @@ For a plan: branch `cc/<plan-id>/<repository-id>`, path
 explicit branch and path.
 
 An unspecified start uses the recorded local base branch if available, otherwise
-its `origin` tracking branch. **No fetch happens implicitly**, and fetching
-implies neither rebase nor reset. An explicit start may be another plan's branch
-or a commit, resolved before the worktree is created. `--start` applies to new
-branches; a reused branch keeps its commits.
+its `origin` tracking branch. The base is **this machine's** binding, recorded in
+`repositories.local.yaml` since 2.0.0-rc.7, so one machine can work off a release
+branch while another stays on the default. **No fetch happens implicitly**, and
+fetching implies neither rebase nor reset. An explicit start may be another
+plan's branch or a commit, resolved before the worktree is created. `--start`
+applies to new branches; a reused branch keeps its commits.
+
+**Preparation derives no order.** A plan that records a dependency in the same
+repository is refused without `--start`, rather than silently branching from a
+base that does not contain its predecessor — the failure 2.0.0-rc.9 closed. The
+refusal names the predecessor branch to pass, or says which predecessor has not
+been implemented and committed yet. An explicit start is always honored,
+including one that is not the predecessor.
 
 ## The preservation rules
 

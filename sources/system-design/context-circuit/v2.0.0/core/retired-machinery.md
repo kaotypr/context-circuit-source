@@ -27,7 +27,10 @@ actually occur.
 | **Inferred completion** | Derived done-ness from evidence | A plan is done when a human says the work landed; inferring it meant inferring it wrong sometimes, silently | Explicit `record complete`, which also stamps the date ordering reads |
 | **The one-plan-per-repository *constraint*** | Forced every plan to name exactly one repository | Fragmented one coherent change across records that had to be reassembled by hand | Per-repository plans remain first-class and are often the right shape — `--repo` is repeatable, and `record order` reports which plans in a wave share a repository. What went is the *constraint*: a plan **may** span repositories when that reads better |
 | **Invariant catalog (`INV-*`)** + contract schemas | A registry mapping each rule to one canonical owner | Real value for a large shell runtime with many parallel readers; disproportionate for one instruction file plus a typed Go package | The shared instruction states each rule once; Go's types and tests own the mechanical half |
-| **Shell runtime (`engine.sh`)** | ~2,000 lines driving every state transition | Windows needed WSL; YAML edits were text manipulation; the engine was the ceiling on the product | A Go executable, ~2,500 lines across typed packages, tested on three operating systems |
+| **Shell runtime (`engine.sh`)** | ~2,000 lines driving every state transition | Windows needed WSL; YAML edits were text manipulation; the engine was the ceiling on the product | A Go executable across typed packages, tested on three operating systems |
+| **`record note`** (v2, rc.1–rc.5) | Appended `## Update — <date>` to a plan while work was in flight | What an agent put there was the result of running the plan — the same summary completion writes — parked in the body because completion is a person's request and had not come yet. Two places recording one thing disagree the moment either is written first, and the parked copy was the one a later reader hit before the gate | The worker's report reaches the person; `record complete` carries the result into the plan when they ask for it |
+| **The single always-loaded instruction** (v2, rc.1–rc.8) | One `AGENTS.md` carrying gates, procedure, and reference together | At 348 lines it was mostly not in force at any given moment, and the parts that must always hold were buried among the parts that apply once per stage | An entry instruction carrying only what must always be in force, plus one skill per stage loaded when that stage is reached |
+| **The mandatory intent path** (v2, rc.1–rc.10) | Every implementation change passed through an intent, an approval, and a plan | A change that is already its own specification gained nothing from the ceremony, and requiring it teaches people to route around the product | The direct-change path, chosen by the person. Outward authorization and knowledge reconciliation are unchanged by it |
 | **Acceptance harness** | Scenario fixtures asserting product behavior end to end | Asserted that scripted scenarios passed, not that a host follows instructions — precisely the thing v2 declines to claim | Deterministic Go tests for file and Git behavior; `check-release.sh` for assembly; and an explicit statement that host behavior is unverified |
 
 ## One removal that was reversed: member bands
@@ -90,6 +93,9 @@ The removals only make sense beside what survived unchanged in substance:
 - **Per-repository plans.** Kept as a first-class shape, no longer compulsory.
 - **Member allocation bands.** Restored after being dropped, now optional rather
   than mandatory; see above.
+- **The intent gate itself.** What rc.11 made optional is the *route*, not the
+  rule: a direct change is one whose outcome the person stated themselves, and
+  the moment it needs an outcome nobody approved, the intent path is offered.
 - **No AI attribution in commits, PRs, reviews, or comments.** Unchanged, with
   the added obligation to inspect and remove injected attribution.
 

@@ -24,7 +24,8 @@ With it, each increment leaves the project better understood than it found it.
 | Location | Meaning | How it is read |
 | --- | --- | --- |
 | `sources/` | Passive raw evidence | Only exact files the user or the task names; never scanned |
-| `context/` | Durable accepted knowledge | Retrieved selectively through the catalog; edited in place |
+| `context/` | Durable accepted knowledge this workspace owns | Retrieved selectively through the catalog; edited in place |
+| Mounted knowledge repositories | Durable knowledge somebody else owns | Retrieved beside the catalog; never edited here |
 | `plans/`, `intent/` | What was decided and what happened | Resolved by ID; archived over time |
 
 The separation is not filing tidiness. Each class has a different lifetime, and
@@ -60,6 +61,36 @@ evidence produced a note belongs in that plan.
 `check` reports any line in `context/` that crosses this boundary, by line
 number, naming the match.
 
+### Anchors live in one block
+
+From 2.0.0-rc.11 an anchor does not go in a sentence. Every note collects its
+anchors in an `Owner:` block at the end, and the body calls things by their
+project names:
+
+```
+Owner:
+
+- `api@internal/billing/dunning/` — the retry schedule and its wind-down.
+- `api@internal/billing/invoice.go` `Void` — the one path that voids rather
+  than credits.
+```
+
+A path dropped mid-sentence is most of what makes a note tiring to read: the
+reader stops on a string they cannot act on, and the sentence grows longer to
+explain why it is there. Collecting them costs one stop and puts every path
+where a reader looks twice. A table pairing paths with what each one owns is the
+same block by another shape, and is right wherever the mapping is the note's
+subject rather than its appendix. `context/glossary.md` is the exception,
+because mapping a project word to the identifier behind it is why that file
+exists.
+
+`check` reports an anchor written into a sentence — and, in the same family of
+findings, a paragraph carrying a list it never made, a catalog heading that never
+says what belongs under it, and a fence opened with a diagram type rather than
+`mermaid`, which renders as plain text everywhere while passing every other
+check. These are *readability* findings: the diagnostic reports the shape of a
+note, not only its links.
+
 ## Rule 2 — one note is one unwrapped catalog entry
 
 `context/INDEX.md` is the catalog, and an entry looks like:
@@ -93,6 +124,37 @@ shape rather than cataloging anything.
 
 An absent catalog is not an error. Without one the agent falls back to targeted
 filenames and search terms in `context/`.
+
+A note lives in a directory named for its concern and is catalogued under a
+heading for the same one, with one line under that heading saying what belongs
+there — written before its first entry, so the next note has somewhere obvious to
+go. `check` reports a heading missing that line, a directory catalogued under two
+headings, and an entry claiming repositories without a reviewed date.
+
+## Actor notes
+
+`context/actors/` holds one note per actor that deals with the project — a person
+in a role, a team, or an external system — and what each one needs from it. These
+are the notes an intent is grounded against, which is why they record what an
+actor needs *today* rather than what the next change will give them.
+
+Four rules hold the shape up:
+
+- **The flow itself is described once, in `domains/`.** An actor note carries
+  only that actor's stake in it; a flow retold in every participating actor's
+  note becomes several copies that disagree within a quarter.
+- **Stories are numbered within their group**, restarting at 1 under each flow's
+  heading, and cited by flow and number. Inserting one renumbers that group
+  alone; numbering straight through would break every citation below an
+  insertion at once.
+- **A story says what the project does for that actor now.** A capability
+  someone wants is an intent. A wish list kept here rots into a backlog nobody
+  trusts, and takes the reviewed date's meaning with it.
+- **Everything else is a note like any other**: anchors in `Owner:` only, and
+  nothing about the workspace machinery.
+
+An actor earns a note once the project has to ask who a request is for, or once
+two actors want incompatible things from the same flow.
 
 ## Rule 3 — the glossary maps words to identifiers
 
@@ -137,7 +199,7 @@ sequenceDiagram
 
     H->>A: "Mark the billing plans done."
     A->>C: record complete --id p0001 --text ...
-    C->>C: Append the note; stamp completed: YYYY-MM-DD
+    C->>C: Append the note; stamp completed_at
     C-->>A: Catalog entries scoped to {api} {web}
     A->>A: Judge which entries' meaning actually changed
     A->>A: Edit note + entry together; move the reviewed date
@@ -161,6 +223,89 @@ intersect the plan's repositories. Four properties matter:
 
 The plan's own identifiers stay out of every note reconciled from them (Rule 1),
 implementation-specific evidence stays in the plan, and `check` runs afterwards.
+
+## When a note stops being true
+
+Completion is one way a note comes back for judgment, and on its own it is not
+enough. It only ever fires for work done through this workspace: a merge by
+somebody else, a commit from before the workspace existed, or a hotfix pushed
+directly reaches nothing. Through 2.0.0-rc.12 the reviewed date recorded that
+gap and never closed it — `check` enforced the date's presence and never read it
+back, which made it write-only and let knowledge go stale invisibly.
+
+From 2.0.0-rc.13 `check` reads that date **against the code the note itself
+points at**, through the anchors in its `Owner:` block, and reports a note with
+commits under its anchors since it was last confirmed, with how many.
+
+The comparison is against the code rather than the calendar because age is not
+evidence. A note whose anchors nobody has touched is not stale however old its
+date is, and reporting it would produce a list that never reaches zero and
+teaches people to scroll past findings. Commits on the day of the review do not
+count: a note confirmed that day was confirmed against them.
+
+A note that anchors to no code has no evidence to read, so calendar age is all
+there is for it — and it is reported only where a workspace asks:
+
+```yaml
+knowledge_review_days: 180
+```
+
+Unset, nothing is reported for those notes. The setting is shared, because how
+long a fact may go unconfirmed is a project judgment rather than one machine's.
+
+The finding is always a person's to settle: re-read the note, then edit it with
+its entry, or move the date alone when nothing it says changed. Which is also
+why the date moves only on an actual reading. A rewrite that changed a note's
+shape and not its facts leaves the date where it is — moving it makes a stale
+note look current and silences the one check that would have caught it.
+
+## Borrowed knowledge
+
+`context/` holds knowledge this workspace owns: it describes this project, and
+completing a plan brings the notes that plan changed back for judgment. An
+organization's knowledge center works the other way. It is shared by many
+workspaces, it is changed through its own repository, and no plan completed here
+will ever invalidate it. So from 2.0.0-rc.13 it is **mounted rather than
+copied**:
+
+```yaml
+knowledge_repositories:
+  core-service-knowledge:
+    url: git@git.example.com:platform/core-service-knowledge.git
+    default_branch: main
+    index: index.md
+```
+
+Copying is the failure this prevents. A note duplicated into `context/` goes
+stale silently while still reading as current, and nothing in the workspace can
+tell that it has. The two moves available before this existed were that copy, or
+leaving the knowledge out and letting every agent re-derive the same facts from
+source and trial and error.
+
+Four properties define the mount:
+
+1. **Read-only is enforced, not requested.** Obtaining one disables its push
+   URL, and every `knowledge sync` reasserts that, so an edit made here fails
+   rather than half-succeeding. Improvements go upstream from a separate
+   checkout, through that repository's own review.
+2. **Sync fast-forwards or reports.** It fetches, then fast-forwards only when
+   the checkout is clean and on the shared branch. It never merges, rebases,
+   resets, or discards: a checkout holding local work is reported and left
+   exactly as it is, because moving that work is a decision for whoever made it.
+3. **It is not somewhere work happens.** It records no base branch, takes no
+   worktree, and is never named by a plan or a relationship — for the same
+   reason `workspace_repository` sits outside the repositories map. Both maps
+   share one ID namespace so a note's anchor means one thing, and an ID already
+   used on the other side is refused.
+4. **It is never reconciled here.** `context find` reads borrowed indexes beside
+   this workspace's catalog, marks which side each match came from, and names
+   any index it could not read rather than narrowing the result in silence. But
+   completion never offers a borrowed entry as knowledge to reconcile: it would
+   name an obligation nobody here can discharge.
+
+Nothing validates a borrowed repository's contents the way `check` validates
+`context/`. The catalog rules exist so a person *here* can fix what they break,
+and neither half of that holds for a repository this workspace does not own.
 
 ## Non-blocking by design
 

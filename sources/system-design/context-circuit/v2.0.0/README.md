@@ -3,8 +3,8 @@
 Source design for Context Circuit v2.0.0 — the **rewrite** that replaces the v1
 shell runtime with a separately released Go executable and a smaller instruction
 surface. Unlike the v1.0.0 study, which was an argument to test before it
-was built, this grouping documents a design **as built**: it was written against
-the 2.0.0-rc.1 candidate and describes decisions already expressed in
+was built, this grouping documents a design **as built**: it tracks the candidate
+line through 2.0.0-rc.13 and describes decisions already expressed in
 `product/`, `internal/`, and `template/`.
 
 The v1.0.0 study, kept in this repository's history, records what v2 declined to
@@ -37,4 +37,5 @@ These documents are maintainer design material. They have no status, no
 authority, and change nothing on their own. They are not copied into an
 instantiated workspace, are not Product Knowledge, and are not normal agent
 context. Where a document here disagrees with `product/AGENTS.md.in`,
-`product/docs/`, or the code, the owner wins and this material is stale.
+`product/skills/`, `product/docs/`, or the code, the owner wins and this material
+is stale.

@@ -71,9 +71,12 @@ Confirm once, then run to completion without further prompting:
 1. Prepare each worktree from the reported start.
 2. Perform any reported integration merge with ordinary Git.
 3. Dispatch a worker per plan; wait.
-4. Inspect real diffs — not the workers' claims.
-5. Run the repositories' ordinary checks.
-6. Record progress in the plan.
+4. Integrate from **what each worker reported** — the checks it ran and their
+   real outcome.
+5. Read a diff where integration needs it: a merge to resolve, or a report
+   naming a conflict, a failure, or an assumption. Not as a routine audit.
+6. Implementation commits its own work on its `cc/*` branch before it is
+   reported, which is what gives the next wave something to start from.
 7. Mark a plan complete only when it **actually landed and its checks passed**.
 8. **Recompute the order** before the next wave.
 
@@ -85,6 +88,21 @@ it must never be recorded optimistically.
 Step 8 matters because the world changed during the wave. Trusting the first
 result across a whole run reintroduces exactly the staleness the derivation
 exists to remove.
+
+Steps 4 and 5 read the way they do because of a correction. The first v2 draft
+said *inspect real diffs, not the workers' claims* — which is P1 applied to the
+wrong thing. P1 makes Git authoritative over a **record**, a note written at one
+time about work done at another. A worker's report is neither: it is a live
+account of a run that just happened, naming the checks it ran and what they did.
+Re-reading its diff and re-running its checks as a matter of course repeats the
+expensive half of the work, which is why delegation stops paying. Failing checks
+are information — report them to the person and leave the plan unmarked and
+unedited rather than repairing in a loop.
+
+Step 6 closes a failure seen in practice rather than in review: a plan prepared
+beside another plan's uncommitted work was shipped without it. Since 2.0.0-rc.9
+implementation commits its own work, and worktree preparation for a dependent
+plan refuses rather than branching from a base that does not contain it.
 
 ## Integration merge conflicts
 

@@ -16,7 +16,7 @@ flowchart LR
 
 | | Version file | Tags | Published from | Contents |
 | --- | --- | --- | --- | --- |
-| Workspace template | `VERSION` | `v*` | the template repository | instruction, docs, skills, blank seed |
+| Workspace template | `VERSION` | `v*` | the template repository | entry instruction, per-stage skills, docs, blank seed |
 | CLI | `CLI_VERSION` | `cli-v*` | the source repository | Go binaries, six platform packages |
 
 The two have separate release workflows and package inventories. Changing either
@@ -115,6 +115,16 @@ Native archives cover macOS, Linux, and Windows on amd64 and arm64. Release
 assets include dependency licenses. Product history and maintainer data never
 ship.
 
+## Licensing
+
+The two products carry different terms, for the same reason they carry different
+version lines. The executable and this source checkout are **Apache-2.0**;
+everything a workspace receives — the instruction, the skills, the docs, the
+seed — is **0BSD**, which asks nothing at all of the repository it is copied
+into. A workspace template that imposed a notice requirement on every repository
+that adopted it would be a cost paid forever for nothing. Both were unlicensed
+until 2.0.0-rc.13, which is the one answer a legal review cannot act on.
+
 ## Dependencies
 
 Deliberately few: `goccy/go-yaml` for document-preserving YAML edits, and a
@@ -137,9 +147,15 @@ inventing a mapping is not.
 
 ## Candidate status
 
-The 2.0.0-rc.1 candidate is published for evaluation before 2.0.0. Its release
-notes state the limit directly: deterministic tests cover file and Git behavior,
-the documented command surface, and the installer on Linux, macOS, and Windows —
-and whether a coding host loads and follows the shared instruction **is not
-established by those tests**. Exercise the flows you rely on before depending on
-the release.
+The candidate line runs through 2.0.0-rc.13 ahead of 2.0.0, each one published
+for evaluation. Every candidate's release notes state the same limit directly:
+deterministic tests cover file and Git behavior, the documented command surface,
+and the installer on Linux, macOS, and Windows — and whether a coding host loads
+and follows the shared instruction **is not established by those tests**.
+Exercise the flows you rely on before depending on the release.
+
+Records are not converted between candidates. A record written by 2.0.0-rc.3 or
+earlier is refused with the rename spelled out rather than reinterpreted, and a
+workspace configuration file that moved is not migrated for you. The candidates
+have changed instruction shape, command surface, and configuration; what they
+have not done is rewrite a workspace behind its owner.

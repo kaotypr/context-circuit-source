@@ -43,13 +43,15 @@ longer needs WSL.*
 | Identity and IDs | Allocate, reserve permanently, never reuse | `internal/workspace/records.go` |
 | Records | Create, link plan↔intent, append notes, stamp `completed` | `internal/workspace/records.go` |
 | Workspace state | Read/edit `workspace.yaml`, `members.yaml`, local bindings | `internal/workspace/store.go`, `workspace.go` |
-| Repositories | Connect, clone, init, set base, relate, fetch, inspect | `internal/workspace/repositories.go` |
+| Repositories | Connect, clone, init, set base and remote, relate, fetch, inspect | `internal/workspace/repositories.go` |
+| The workspace's own repository | Describe its URL, default branch, and this machine's checkout and base | `internal/workspace/self.go` |
+| Borrowed knowledge | Connect, clone with push disabled, fast-forward-only sync, list | `internal/workspace/knowledge.go` |
 | Git state | Branch, HEAD, dirtiness, worktree inventory | `internal/workspace/inspect.go` |
 | Worktrees | Prepare, list, inspect, move, repair, remove | `internal/workspace/worktrees.go` |
 | Environment reuse | Discover ignored entries, CoW clone, fall back, report | `internal/workspace/reuse.go`, `internal/cow/` |
 | Ordering | Derive waves, chain, start refs, integration merges | `internal/workspace/order.go` |
 | Role settings | Resolve tiering, write native files, build dispatch specs | `internal/workspace/agents.go` |
-| Diagnostics | `check` — links, duplicates, cycles, knowledge boundary | `internal/workspace/inspect.go` |
+| Diagnostics | `check` — links, duplicates, cycles, knowledge boundary, note shape, reviewed dates, and the resolution for each finding | `internal/workspace/inspect.go`, `readability.go`, `review.go` |
 | Seed | Embed and materialize the blank workspace | `assets.go` |
 
 ### What it refuses
@@ -80,7 +82,12 @@ about to use the tool:
 ## What the agent owns
 
 Everything interpretive, and it is a long list precisely because the executable's
-list is short: understanding the request; retrieving the right knowledge; writing
+list is short. Since 2.0.0-rc.9 it is not carried in one always-loaded file: the
+entry instruction holds what must always be in force, and each stage's procedure
+lives in a skill loaded when that stage is reached — workspace setup, intent,
+planning, worktrees, stacked runs, dispatch, delivery, review, completion,
+knowledge, the direct-change path, and CLI installation. What the agent owns did
+not shrink; what is resident at every moment did. understanding the request; retrieving the right knowledge; writing
 the intent's goal, non-goals, constraints, and success criteria; deciding which
 repositories a change touches; reading real code; writing plans; choosing whether
 isolation is warranted; finishing environment setup the reuse report left open;
@@ -117,9 +124,11 @@ best-effort substitution.
 
 ```
 init · status · check
-member add|use|list
-repo connect|clone|init|base|relate|fetch|inspect
-record create|show|list|note|approve|complete|dependencies|order
+member add|band|language|tone|use|list
+repo connect|clone|init|base|remote|relate|fetch|inspect
+workspace connect|base|remote
+knowledge connect|clone|sync|remote|list
+record create|show|list|approve|complete|dependencies|order
 context find
 worktree prepare|list|inspect|move|repair|remove
 template export
@@ -127,8 +136,27 @@ agent settings|configure|setup|dispatch
 version
 ```
 
+`record note` is not in that list: it appended `## Update — <date>` through
+2.0.0-rc.5 and was removed in 2.0.0-rc.6. `member band|language|tone`,
+`repo remote`, and the `workspace` and `knowledge` groups arrived later than the
+first candidate, which is why the surface is read out of the shipped help rather
+than restated anywhere it can drift.
+
 `product/docs/commands.md` is the shipped reference and
 `internal/cli/documentation_test.go` holds it to the implemented surface.
+`internal/cli/topics.go` carries what a signature line cannot — what a command
+decides, what it refuses, and what the caller still owns afterwards — and `help`
+with a command name returns it.
+
+### Findings name their own resolution
+
+From 2.0.0-rc.13 every `check` finding carries both the `issue` and the
+`resolve` that discharges it: the command where one exists, the edit where an
+edit is the whole of it, and an opening `needs a person` where the next step is
+somebody's judgment. That last form is the load-bearing one. A diagnostic that
+reports a problem and nothing else leaves the caller to improvise a fix in the
+state where improvising costs most; saying *no command discharges this* is the
+refusal that stops one being invented.
 
 ## Data handling
 

@@ -47,6 +47,14 @@ Then: check what the host actually supports. Settings are a **request**, not
 proof of what ran. A rejected or substituted setting is reported, never silently
 downgraded.
 
+`.context-circuit/role-tiering.local.yaml` is this machine's answer to the shared
+file: optional, gitignored, and overriding one host/role pair at a time rather
+than replacing the file — so an overridden role is the only one that stops
+tracking the team's later changes. Its host must already appear in the shared
+file, and the same validation applies to both. `agent settings` reports the
+values in force and names what this machine overrode; `agent configure --local`
+writes there instead of the shared file.
+
 ## Native host mapping
 
 `agent setup --host <codex|claude-code|cursor>` materializes four native role
@@ -78,7 +86,23 @@ context-circuit-cli --workspace <root> --json agent dispatch \
 ```
 
 The CLI resolves settings and composes a brief, then returns the invocation with
-**`launch_required: true`**. It has not launched anything. The `cc-dispatch`
+**`launch_required: true`**. It has not launched anything.
+
+The specification also reports `definition_path` and `definition_installed` for
+the host's native role file, and `setup_required` naming the exact `agent setup`
+run when that file is absent — role files are host-local and gitignored, so a
+fresh clone names an agent type the host cannot resolve. It is a report, not a
+refusal: the prompt is complete either way, so a live spawn tool can still carry
+it when native roles are unavailable.
+
+The returned `prompt` is launched **unmodified**. It opens with the working
+directory, then ownership, then the quoted record, then the task, and ends with
+what the role must return. Quoting the record in full is what stops an agent
+from searching a repository for a file it was never handed. The brief also names
+the record author's language and states that what goes into the repository is
+English — that boundary lives in the brief because a worker works inside a
+repository worktree, under that repository's instructions, and never reads the
+workspace's. The `cc-dispatch`
 skill calls the host's own subagent tool with the returned prompt, role, working
 directory, and supported settings, waits, and integrates the result.
 
