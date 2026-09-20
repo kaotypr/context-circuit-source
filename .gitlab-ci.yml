@@ -37,6 +37,13 @@ default:
     # build-cli.sh packages the Windows targets with zip, which the Go image
     # does not carry.
     - apt-get update -qq && apt-get install -y -qq zip curl git jq
+    # The runner leaves the job token embedded in origin's URL. The CLI refuses
+    # to record a remote carrying a password — correctly, because connecting
+    # one would write a credential into workspace.yaml — and this project's own
+    # knowledge test connects this very checkout. Point origin at the plain URL
+    # it came from. Nothing here pushes to origin: the CLI release creates its
+    # tag through the API, and the template is pushed from its own clone.
+    - git remote set-url origin "$CI_SERVER_URL/$CI_PROJECT_PATH.git"
 
 variables:
   # The knowledge checks count commits under each note's code anchors, so a
