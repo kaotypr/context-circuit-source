@@ -23,6 +23,28 @@ artifact_name="context-circuit-$version"
 artifact_dir="$output_dir/$artifact_name"
 "$staging_dir/native" template export --path "$artifact_dir" >/dev/null
 printf '%s\n' "${version#v}" > "$artifact_dir/.context-circuit/VERSION"
+
+# Record which registry this template's workspaces install their CLI from. The
+# seed carries none, which the installer reads as its own default; a release
+# published anywhere else writes the registry it was published to, because a
+# developer's machine has no CI variables to learn it from. This is done here
+# rather than after assembly so the published tree and the release archive are
+# the same bytes.
+if [ -n "${CLI_REGISTRY_SOURCE:-}" ]; then
+  registry_repository=${CLI_REGISTRY_REPOSITORY:-}
+  [ -n "$registry_repository" ] || fail 'set CLI_REGISTRY_REPOSITORY beside CLI_REGISTRY_SOURCE'
+  case "$CLI_REGISTRY_SOURCE" in
+    github) ;;
+    gitlab) [ -n "${CLI_REGISTRY_API:-}" ] || fail 'a gitlab CLI_REGISTRY_SOURCE needs CLI_REGISTRY_API' ;;
+    *) fail "unknown CLI_REGISTRY_SOURCE: $CLI_REGISTRY_SOURCE" ;;
+  esac
+  {
+    printf 'cli_registry:\n'
+    printf '  source: %s\n' "$CLI_REGISTRY_SOURCE"
+    printf '  repository: %s\n' "$registry_repository"
+    if [ -n "${CLI_REGISTRY_API:-}" ]; then printf '  api: %s\n' "$CLI_REGISTRY_API"; fi
+  } >> "$artifact_dir/workspace.yaml"
+fi
 awk 'NF && $1 !~ /^#/ {print $2}' scripts/release-manifest.txt | LC_ALL=C sort > "$staging_dir/expected"
 (cd "$artifact_dir" && find . -type f -print | sed 's|^./||' | LC_ALL=C sort) > "$staging_dir/actual"
 cmp "$staging_dir/expected" "$staging_dir/actual" || fail 'seed contains missing or unexpected files'

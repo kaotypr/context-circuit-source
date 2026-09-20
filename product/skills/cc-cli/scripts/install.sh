@@ -4,14 +4,24 @@ set -eu
 fail() { printf 'CLI installation failed: %s\n' "$1" >&2; exit 1; }
 version= bin_dir=${HOME:?}/.local/bin archive= checksums=
 token=${CONTEXT_CIRCUIT_TOKEN:-${GH_TOKEN:-${GITHUB_TOKEN:-}}}
+source=${CONTEXT_CIRCUIT_SOURCE:-github}
+repo=${CONTEXT_CIRCUIT_REPO:-}
+api=${CONTEXT_CIRCUIT_API:-}
 usage() {
   cat <<'USAGE'
 Usage: install.sh --version <2.x.y> [options]
 
   --version     exact CLI version to install, without a v prefix (required)
   --bin-dir     user-writable command directory (default: $HOME/.local/bin)
+  --source      github (default) or gitlab; also read from CONTEXT_CIRCUIT_SOURCE
+  --repo        owner/repo (github) or group/project (gitlab); also read from
+                CONTEXT_CIRCUIT_REPO. Defaults to kaotypr/context-circuit-source
+                for github; required for gitlab.
+  --api         API base URL; also read from CONTEXT_CIRCUIT_API. Defaults to
+                https://api.github.com for github; required for gitlab (e.g.
+                https://gitlab.example.com/api/v4).
   --token       registry credential; also read from CONTEXT_CIRCUIT_TOKEN,
-                GH_TOKEN, or GITHUB_TOKEN
+                GH_TOKEN, or GITHUB_TOKEN. Required for gitlab.
   --archive     install this local package instead of downloading one
   --checksums   the SHA256SUMS it is verified against, required with --archive
 USAGE
@@ -23,7 +33,7 @@ while [ "$#" -gt 0 ]; do
   # values. Asking how to run this is answered, not refused.
   case "$1" in
     -h|--help) usage; exit 0 ;;
-    --version|--bin-dir|--archive|--checksums|--token) ;;
+    --version|--bin-dir|--archive|--checksums|--token|--source|--repo|--api) ;;
     *) fail "unknown option: $1" ;;
   esac
   [ "$#" -ge 2 ] || fail "$1 requires a value"
@@ -31,13 +41,23 @@ while [ "$#" -gt 0 ]; do
     --version) version=$2 ;; --bin-dir) bin_dir=$2 ;;
     --archive) archive=$2 ;; --checksums) checksums=$2 ;;
     --token) token=$2 ;;
+    --source) source=$2 ;; --repo) repo=$2 ;; --api) api=$2 ;;
   esac
   shift 2
 done
 # The token is written to a curl configuration line, which has no escape for a
-# quote or backslash. Reject anything outside the character set GitHub issues
-# rather than build a malformed request from it.
+# quote or backslash. Reject anything outside the character set GitHub and
+# GitLab issue rather than build a malformed request from it.
 case "$token" in *[!A-Za-z0-9_-]*) fail 'token contains unexpected characters' ;; esac
+case "$source" in
+  github) repo=${repo:-kaotypr/context-circuit-source}; api=${api:-https://api.github.com} ;;
+  gitlab)
+    [ -n "$repo" ] || fail 'gitlab installs require --repo (the group/project path)'
+    [ -n "$api" ] || fail 'gitlab installs require --api (the instance API base, e.g. https://gitlab.example.com/api/v4)'
+    [ -n "$token" ] || fail 'gitlab installs require --token (a personal or project access token); this registry has no public download path'
+    ;;
+  *) fail 'unknown --source: expected github or gitlab' ;;
+esac
 case "$version" in 2.*) ;; *) fail 'supply an exact compatible v2 CLI version without a v prefix' ;; esac
 case "$version" in *[!A-Za-z0-9.+-]*|*..*) fail 'invalid version' ;; esac
 case "$(uname -s)" in Darwin) platform=darwin ;; Linux) platform=linux ;; *) fail 'use install.ps1 on native Windows' ;; esac
@@ -74,20 +94,24 @@ else
   command -v curl >/dev/null 2>&1 || fail 'curl is required to download the CLI'
   fetch() { curl --fail --location --silent --show-error --proto '=https' --proto-redir '=https' "$@"; }
   # Pass the credential on stdin so it stays out of the process list.
-  fetch_auth() { printf 'header = "Authorization: Bearer %s"\n' "$token" | fetch --config - "$@"; }
-  if [ -n "$token" ]; then
-    # A private repository serves release assets only through the API, by asset
-    # id; the public download path answers 404. curl does not carry the
-    # Authorization header across the redirect to signed storage.
-    api="${CONTEXT_CIRCUIT_API:-https://api.github.com}/repos/kaotypr/context-circuit-source"
-    fetch_auth --header 'Accept: application/vnd.github+json' \
-      --header 'X-GitHub-Api-Version: 2022-11-28' \
-      "$api/releases/tags/$release_tag" -o "$work/release.json" ||
+  fetch_bearer() { printf 'header = "Authorization: Bearer %s"\n' "$token" | fetch --config - "$@"; }
+  fetch_private_token() { printf 'header = "PRIVATE-TOKEN: %s"\n' "$token" | fetch --config - "$@"; }
+  case "$source" in
+  gitlab)
+    # GitLab's project path can itself contain slashes, which the API expects
+    # percent-encoded rather than literal in the path segment.
+    encoded_repo=$(printf '%s' "$repo" | sed 's,/,%2F,g')
+    fetch_private_token "$api/projects/$encoded_repo/releases/$release_tag" -o "$work/release.json" ||
       fail "cannot read release $release_tag; confirm it exists and the token grants access"
-    # Read each brace-delimited object as one record, so the asset URL and the
-    # name beside it are matched together whether the API pretty-prints the
-    # payload or returns it compact. An asset's own URL precedes the nested
-    # uploader object that ends the record.
+    # Read each brace-delimited object as one record, so an asset link's name
+    # and its own url are matched together whether the API pretty-prints the
+    # payload or returns it compact.
+    #
+    # The url must be a generic-package one, which is where publication puts
+    # these assets. A name alone is not enough to identify a record: the
+    # release's author and its commit each carry a "name" and a "url" of their
+    # own, and a release whose author happened to match would otherwise send
+    # this installer to that author's profile.
     asset_url() {
       awk -v want="$1" '
         BEGIN { RS = "{" }
@@ -95,8 +119,10 @@ else
           record = $0
           gsub(/[ \t\r\n]+/, "", record)
           if (index(record, "\"name\":\"" want "\"") == 0) next
-          if (match(record, /"url":"[^"]*\/releases\/assets\/[0-9]+"/) == 0) next
-          print substr(record, RSTART + 7, RLENGTH - 8)
+          if (match(record, /"url":"[^"]*\/packages\/generic\/[^"]*"/) == 0) next
+          value = substr(record, RSTART + 7, RLENGTH - 8)
+          gsub(/\\\//, "/", value)
+          print value
           exit
         }
       ' "$work/release.json"
@@ -104,13 +130,43 @@ else
     for name in "$package" SHA256SUMS; do
       url=$(asset_url "$name")
       [ -n "$url" ] || fail "release $release_tag publishes no asset named $name"
-      fetch_auth --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
+      fetch_private_token "$url" -o "$work/$name"
     done
-  else
-    base="https://github.com/kaotypr/context-circuit-source/releases/download/$release_tag"
-    fetch "$base/$package" -o "$work/$package"
-    fetch "$base/SHA256SUMS" -o "$work/SHA256SUMS"
-  fi
+    ;;
+  github|*)
+    if [ -n "$token" ]; then
+      # A private repository serves release assets only through the API, by asset
+      # id; the public download path answers 404. curl does not carry the
+      # Authorization header across the redirect to signed storage.
+      asset_url() {
+        awk -v want="$1" '
+          BEGIN { RS = "{" }
+          {
+            record = $0
+            gsub(/[ \t\r\n]+/, "", record)
+            if (index(record, "\"name\":\"" want "\"") == 0) next
+            if (match(record, /"url":"[^"]*\/releases\/assets\/[0-9]+"/) == 0) next
+            print substr(record, RSTART + 7, RLENGTH - 8)
+            exit
+          }
+        ' "$work/release.json"
+      }
+      fetch_bearer --header 'Accept: application/vnd.github+json' \
+        --header 'X-GitHub-Api-Version: 2022-11-28' \
+        "$api/repos/$repo/releases/tags/$release_tag" -o "$work/release.json" ||
+        fail "cannot read release $release_tag; confirm it exists and the token grants access"
+      for name in "$package" SHA256SUMS; do
+        url=$(asset_url "$name")
+        [ -n "$url" ] || fail "release $release_tag publishes no asset named $name"
+        fetch_bearer --header 'Accept: application/octet-stream' "$url" -o "$work/$name"
+      done
+    else
+      base="https://github.com/$repo/releases/download/$release_tag"
+      fetch "$base/$package" -o "$work/$package"
+      fetch "$base/SHA256SUMS" -o "$work/SHA256SUMS"
+    fi
+    ;;
+  esac
 fi
 expected=$(awk -v name="$package" '{file=$2; sub(/^\*/, "", file); sub(/^\.\//, "", file); if(file==name) print $1}' "$work/SHA256SUMS")
 [ "${#expected}" -eq 64 ] || fail 'missing or ambiguous checksum entry'

@@ -3,13 +3,25 @@ param(
   [string]$BinDir = (Join-Path $env:LOCALAPPDATA 'ContextCircuit\bin'),
   [string]$Archive,
   [string]$Checksums,
-  [string]$Token
+  [string]$Token,
+  [string]$Source = $(if ($env:CONTEXT_CIRCUIT_SOURCE) { $env:CONTEXT_CIRCUIT_SOURCE } else { 'github' }),
+  [string]$Repo = $env:CONTEXT_CIRCUIT_REPO,
+  [string]$Api = $env:CONTEXT_CIRCUIT_API
 )
 $ErrorActionPreference = 'Stop'
 foreach ($fallback in $env:CONTEXT_CIRCUIT_TOKEN, $env:GH_TOKEN, $env:GITHUB_TOKEN) {
   if (!$Token) { $Token = $fallback }
 }
 if ($Token -and $Token -notmatch '^[A-Za-z0-9_-]+$') { throw 'Token contains unexpected characters.' }
+switch ($Source) {
+  'github' { if (!$Repo) { $Repo = 'kaotypr/context-circuit-source' }; if (!$Api) { $Api = 'https://api.github.com' } }
+  'gitlab' {
+    if (!$Repo) { throw 'Gitlab installs require -Repo (the group/project path).' }
+    if (!$Api) { throw 'Gitlab installs require -Api (the instance API base, e.g. https://gitlab.example.com/api/v4).' }
+    if (!$Token) { throw 'Gitlab installs require -Token (a personal or project access token); this registry has no public download path.' }
+  }
+  default { throw 'Unknown -Source: expected github or gitlab.' }
+}
 if ($Version -notmatch '^2\.[A-Za-z0-9.+-]+$' -or $Version.Contains('..')) { throw 'Supply an exact compatible v2 CLI version without a v prefix.' }
 if ($env:OS -ne 'Windows_NT') { throw 'Use install.sh on macOS/Linux.' }
 $architecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant()
@@ -42,16 +54,27 @@ try {
     Copy-Item -LiteralPath $Checksums -Destination $sums
   } else {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    if ($Token) {
+    if ($Source -eq 'gitlab') {
+      # GitLab's release links already carry a direct, ready-to-fetch url —
+      # no separate asset-id/redirect step, unlike GitHub's private-repo path.
+      $encodedRepo = $Repo -replace '/', '%2F'
+      $auth = @{ 'PRIVATE-TOKEN' = $Token }
+      try {
+        $release = Invoke-RestMethod -UseBasicParsing -Uri "$Api/projects/$encodedRepo/releases/$releaseTag" -Headers $auth
+      } catch { throw "Cannot read release $releaseTag; confirm it exists and the token grants access." }
+      foreach ($wanted in @(@{ Name = $package; File = $download }, @{ Name = 'SHA256SUMS'; File = $sums })) {
+        $asset = @($release.assets.links | Where-Object { $_.name -eq $wanted.Name })[0]
+        if (!$asset) { throw "Release $releaseTag publishes no asset named $($wanted.Name)." }
+        Invoke-WebRequest -UseBasicParsing -Uri $asset.url -Headers $auth -OutFile $wanted.File
+      }
+    } elseif ($Token) {
       # A private repository serves release assets only through the API, by
       # asset id; the public download path answers 404. Invoke-WebRequest drops
       # the Authorization header on the redirect to signed storage, which is
       # what that storage requires.
-      $host_ = if ($env:CONTEXT_CIRCUIT_API) { $env:CONTEXT_CIRCUIT_API } else { 'https://api.github.com' }
-      $api = "$host_/repos/kaotypr/context-circuit-source"
       $auth = @{ Authorization = "Bearer $Token" }
       try {
-        $release = Invoke-RestMethod -UseBasicParsing -Uri "$api/releases/tags/$releaseTag" -Headers ($auth + @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' })
+        $release = Invoke-RestMethod -UseBasicParsing -Uri "$Api/repos/$Repo/releases/tags/$releaseTag" -Headers ($auth + @{ Accept = 'application/vnd.github+json'; 'X-GitHub-Api-Version' = '2022-11-28' })
       } catch { throw "Cannot read release $releaseTag; confirm it exists and the token grants access." }
       foreach ($wanted in @(@{ Name = $package; File = $download }, @{ Name = 'SHA256SUMS'; File = $sums })) {
         $asset = @($release.assets | Where-Object { $_.name -eq $wanted.Name })[0]
@@ -59,7 +82,7 @@ try {
         Invoke-WebRequest -UseBasicParsing -Uri $asset.url -Headers ($auth + @{ Accept = 'application/octet-stream' }) -OutFile $wanted.File
       }
     } else {
-      $base = "https://github.com/kaotypr/context-circuit-source/releases/download/$releaseTag"
+      $base = "https://github.com/$Repo/releases/download/$releaseTag"
       Invoke-WebRequest -UseBasicParsing -Uri "$base/$package" -OutFile $download
       Invoke-WebRequest -UseBasicParsing -Uri "$base/SHA256SUMS" -OutFile $sums
     }

@@ -57,6 +57,23 @@ type Config struct {
 	// stale however old it is, and that case is answered from the code instead.
 	KnowledgeReviewDays int            `yaml:"knowledge_review_days,omitempty" json:"knowledge_review_days,omitempty"`
 	Relationships       []Relationship `yaml:"relationships" json:"relationships"`
+	// CLIRegistry names where this workspace's CLI releases are published. It
+	// is absent in a workspace whose CLI comes from the public repository the
+	// installer already defaults to. A workspace published from anywhere else
+	// records it, because nothing on a developer's machine could otherwise
+	// know: the publishing pipeline is told its own address by the forge
+	// running it, and that knowledge reaches a workspace only if it is written
+	// down here.
+	CLIRegistry *CLIRegistry `yaml:"cli_registry,omitempty" json:"cli_registry,omitempty"`
+}
+
+// CLIRegistry is the release registry the cc-cli skill installs from.
+type CLIRegistry struct {
+	Source     string `yaml:"source" json:"source"`
+	Repository string `yaml:"repository" json:"repository"`
+	// API is the forge's API base. A gitlab registry needs one because a
+	// self-managed instance has no address anyone could assume.
+	API string `yaml:"api,omitempty" json:"api,omitempty"`
 }
 
 // Band is an optional allocation block index. Members holding distinct bands
@@ -152,6 +169,33 @@ func (s *Store) Config() (Config, error) {
 	}
 	if cfg.Repositories == nil || cfg.Relationships == nil {
 		return cfg, errors.New("workspace.yaml needs repositories and relationships collections")
+	}
+	if registry := cfg.CLIRegistry; registry != nil {
+		if err := Text(registry.Repository); err != nil {
+			return cfg, fmt.Errorf("cli_registry repository: %w", err)
+		}
+		switch registry.Source {
+		case "github":
+		case "gitlab":
+			// Without it the installer has no host to ask, and a registry that
+			// cannot be reached is worse than none: the default it would
+			// otherwise have used is a registry that works.
+			if registry.API == "" {
+				return cfg, errors.New("cli_registry: a gitlab source needs api")
+			}
+		default:
+			return cfg, fmt.Errorf("cli_registry: unknown source %q; expected github or gitlab", registry.Source)
+		}
+		if registry.API != "" {
+			if err := Text(registry.API); err != nil {
+				return cfg, fmt.Errorf("cli_registry api: %w", err)
+			}
+			// The installer refuses a plain-HTTP download, so an api recorded
+			// here that it would refuse is a workspace that cannot install.
+			if !strings.HasPrefix(registry.API, "https://") {
+				return cfg, errors.New("cli_registry api must be an https URL")
+			}
+		}
 	}
 	for id, repo := range cfg.Repositories {
 		if err := Name(id); err != nil {
@@ -364,7 +408,11 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	} else if len(paths) != 0 {
 		return errors.New("existing intent or plan records; initialization stopped")
 	}
-	cfg := Config{Version: 2, Name: name, Purpose: purpose, Repositories: map[string]Repository{}, Relationships: []Relationship{}}
+	// Initialization replaces the seed's data, not the registry a published
+	// template recorded about itself. That value describes where this workspace
+	// came from, which initializing it does not change — and losing it here
+	// would strand the workspace with no way to install the CLI it pins.
+	cfg := Config{Version: 2, Name: name, Purpose: purpose, Repositories: map[string]Repository{}, Relationships: []Relationship{}, CLIRegistry: blank.CLIRegistry}
 	if err := s.Export(missing); err != nil {
 		return err
 	}

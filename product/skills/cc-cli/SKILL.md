@@ -27,15 +27,40 @@ Run the bundled script, using absolute paths when outside this skill directory:
 The Windows policy flag applies only to this installer process; it does not change
 the user's saved execution policy. Honor any organization policy that blocks it.
 
-## Authenticate while the product repository is private
+## Choose which registry hosts this workspace's CLI
 
-The product repository is private, so its release assets are not publicly
-downloadable and the plain download path answers 404. Supply a GitHub token with
-read access to it: `--token <value>` / `-Token <value>`, or the environment
-variable `CONTEXT_CIRCUIT_TOKEN` (`GH_TOKEN` and `GITHUB_TOKEN` are read as
-fallbacks). With a token the installer resolves the release through the API and
-downloads each asset by id; without one it uses the public download path, which
-works unchanged if the repository is ever published.
+Read `cli_registry` in the workspace's `workspace.yaml` before installing. A
+workspace published from somewhere other than the public repository records the
+registry it came from:
+
+```yaml
+cli_registry:
+  source: gitlab
+  repository: acme/context-circuit-source
+  api: https://gitlab.example.com/api/v4
+```
+
+Pass those three values as `--source` / `--repo` / `--api` (PowerShell `-Source`
+/ `-Repo` / `-Api`; the environment variables `CONTEXT_CIRCUIT_SOURCE`,
+`CONTEXT_CIRCUIT_REPO`, `CONTEXT_CIRCUIT_API` are read as fallbacks).
+
+No `cli_registry` key means the public GitHub repository the installer already
+defaults to; pass none of these and it resolves correctly. Never guess a
+registry that is not written there — a wrong host is not a failed install, it is
+a request for a CLI binary sent somewhere nobody chose.
+
+## Authenticate while the registry is private
+
+A private repository or project serves release assets only through its API, not
+the plain download path (which answers 404 on GitHub, and does not exist at all
+for a private GitLab project — gitlab installs always require a token). Supply a
+credential with read access: `--token <value>` / `-Token <value>`, or the
+environment variable `CONTEXT_CIRCUIT_TOKEN` (`GH_TOKEN` and `GITHUB_TOKEN` are
+read as github-specific fallbacks). For github, a token makes the installer
+resolve the release through the API and download each asset by id; without one
+it uses the public download path, which works unchanged if the repository is
+ever published. For gitlab, the token is a personal or project access token with
+at least read access to the project, sent as `PRIVATE-TOKEN`.
 
 Ask the user for the token or read it from an environment variable they already
 set. Never write it into workspace files, a shell profile, a commit, or the
