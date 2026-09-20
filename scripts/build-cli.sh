@@ -27,10 +27,16 @@ artifact_name="context-circuit-cli-v$version"
 # The CLI's own license ships beside them: Apache-2.0 asks a redistributor
 # to pass the License on with the work, and an archive is read wherever it was
 # downloaded, where nothing else says what its terms are.
+# The notices are read out of the module cache, and `go list -m` reports an
+# empty directory for a module the cache holds but has not extracted. A builder
+# with a warm cache never sees it; one starting clean reads the empty directory
+# as a missing license and blames the dependency for its own environment.
+go mod download
 notices="$staging_dir/THIRD_PARTY_NOTICES.txt"
 printf 'Context Circuit third-party notices\n\n' > "$notices"
 for module in github.com/goccy/go-yaml github.com/gofrs/flock golang.org/x/sys; do
   module_dir=$(go list -m -f '{{.Dir}}' "$module")
+  [ -n "$module_dir" ] || fail "module is not extracted in the cache: $module"
   [ -f "$module_dir/LICENSE" ] || fail "missing license for $module"
   printf '\n%s\n\n' "$module" >> "$notices"
   cat "$module_dir/LICENSE" >> "$notices"
