@@ -3,9 +3,11 @@
 # checkout, commit, and tag. Push and hosted releases remain separate caller steps.
 set -eu
 fail() { printf 'FAIL: %s\n' "$1" >&2; exit 1; }
-[ "$#" -eq 2 ] || fail 'usage: publish-template.sh <version-without-v> <template-checkout-dir>'
+[ "$#" -eq 3 ] || fail 'usage: publish-template.sh <version-without-v> <template-checkout-dir> <template-repo-url>'
 version=$1
 template_dir=$2
+template_repo_url=$3
+[ -n "$template_repo_url" ] || fail 'template repo url must not be empty'
 case "$version" in ''|v*|*[!A-Za-z0-9.+-]*|.*|-*) fail "invalid version: $version" ;; esac
 source_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
 request="$source_root/release/requests/template/$version.md"
@@ -108,7 +110,10 @@ find "$template_dir" -mindepth 1 -maxdepth 1 ! -name .git ! -name CHANGELOG.md -
 # Restore the destination's own landing-page files over the assembled artifact.
 for owned in $repo_owned; do cp "$repo_owned_dir/$owned" "$template_dir/$owned"; done
 cp "$source_root/product/LICENSE" "$template_dir/LICENSE"
-cp "$source_root/product/README.md" "$template_dir/README.md"
+# The quick-start block names this template's own clone URL, which differs by
+# where this release is published; the source carries a placeholder because
+# the same product/README.md is the source for every publish target.
+sed "s|__TEMPLATE_REPO_URL__|$template_repo_url|g" "$source_root/product/README.md" > "$template_dir/README.md"
 mkdir -p "$template_dir/assets/readme"
 for art in "$source_root"/product/assets/readme/*.webp; do cp "$art" "$template_dir/assets/readme/"; done
 {

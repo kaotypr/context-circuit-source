@@ -91,6 +91,9 @@ jobs:
         env:
           INPUT_VERSION: ${{ github.event.inputs.cli_version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The CLI publishes from whichever source repository is running this,
+          # so this side needs no variable to name itself.
+          CLI_REPOSITORY: ${{ github.repository }}
         run: sh scripts/resolve-release-version.sh cli
 
       - name: Build
@@ -161,6 +164,7 @@ jobs:
         env:
           INPUT_VERSION: ${{ github.event.inputs.template_version }}
           GH_TOKEN: ${{ secrets.TEMPLATE_REPO_TOKEN }}
+          TEMPLATE_REPOSITORY: ${{ vars.TEMPLATE_REPO }}
         run: sh scripts/resolve-release-version.sh template
 
       - name: Check workspace and CLI compatibility
@@ -171,7 +175,7 @@ jobs:
         if: steps.resolve.outputs.publish == 'true'
         uses: actions/checkout@v4
         with:
-          repository: kaotypr/context-circuit
+          repository: ${{ vars.TEMPLATE_REPO }}
           ref: main
           token: ${{ secrets.TEMPLATE_REPO_TOKEN }}
           path: .template-repo
@@ -193,8 +197,11 @@ jobs:
           MAINTAINER_NAME: ${{ vars.MAINTAINER_NAME }}
           MAINTAINER_EMAIL: ${{ vars.MAINTAINER_EMAIL }}
           RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
+          # The clone URL the published quick start tells a reader to use, which
+          # is this forge's address for the repository being published to.
+          TEMPLATE_REPO_URL: ${{ github.server_url }}/${{ vars.TEMPLATE_REPO }}.git
         run: |
-          out=$(sh scripts/publish-template.sh "$RELEASE_VERSION" .template-repo)
+          out=$(sh scripts/publish-template.sh "$RELEASE_VERSION" .template-repo "$TEMPLATE_REPO_URL")
           printf '%s\n' "$out"
           echo "assets=$(printf '%s\n' "$out" | sed -n 's/^release_assets_dir: //p')" >> "$GITHUB_OUTPUT"
 
@@ -213,13 +220,14 @@ jobs:
           RELEASE_VERSION: ${{ steps.resolve.outputs.version }}
           REQUEST: ${{ steps.resolve.outputs.request }}
           ASSETS: ${{ steps.publish.outputs.assets }}
+          TEMPLATE_REPO: ${{ vars.TEMPLATE_REPO }}
         run: |
           V="$RELEASE_VERSION"
           awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
             "$REQUEST" > release-notes.md
           case "$V" in *-*) set -- --prerelease ;; *) set -- ;; esac
           gh release create "v$V" \
-            --repo kaotypr/context-circuit \
+            --repo "$TEMPLATE_REPO" \
             "$@" \
             --title "v$V" \
             --notes-file release-notes.md \

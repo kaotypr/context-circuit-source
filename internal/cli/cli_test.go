@@ -188,6 +188,39 @@ func TestInitializationAndReleaseSeed(t *testing.T) {
 	f.ok("check")
 }
 
+// A template published somewhere other than the default registry records where
+// its workspaces install the CLI from, because a developer's machine has no CI
+// variables to learn it from. Initialization replaces the seed's data, and an
+// earlier version of it rebuilt the config from scratch — dropping this and
+// leaving the workspace with no way to find the CLI it pins.
+func TestInitKeepsTheRecordedCLIRegistry(t *testing.T) {
+	f := setup(t)
+	seeded := filepath.Join(f.home, "seeded")
+	f.ok("template", "export", "--path", seeded)
+	config := filepath.Join(seeded, "workspace.yaml")
+	recorded := "cli_registry:\n  source: gitlab\n  repository: acme/context-circuit-source\n  api: https://gitlab.example.com/api/v4\n"
+	write(t, config, read(t, config)+recorded)
+	g := fixture{t, seeded, f.home}
+	g.ok("init", "--name", "Acme", "--purpose", "Billing", "--member", "alex", "--member-name", "Alex")
+	if got := read(t, config); !strings.Contains(got, "repository: acme/context-circuit-source") ||
+		!strings.Contains(got, "api: https://gitlab.example.com/api/v4") ||
+		!strings.Contains(got, "source: gitlab") {
+		t.Fatalf("initialization dropped the recorded registry:\n%s", got)
+	}
+	// The workspace must still read back: a preserved value that fails
+	// validation is a workspace nothing can open.
+	g.ok("check")
+	// A workspace from the default registry records none, rather than one the
+	// installer would have to interpret.
+	plain := filepath.Join(f.home, "plain")
+	f.ok("template", "export", "--path", plain)
+	p := fixture{t, plain, f.home}
+	p.ok("init", "--name", "Plain", "--purpose", "Plain", "--member", "alex", "--member-name", "Alex")
+	if got := read(t, filepath.Join(plain, "workspace.yaml")); strings.Contains(got, "cli_registry") {
+		t.Fatalf("initialization invented a registry:\n%s", got)
+	}
+}
+
 func TestYAMLEditTrial(t *testing.T) {
 	f := setup(t)
 	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n")

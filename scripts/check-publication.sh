@@ -45,7 +45,7 @@ printf '*.local\n' > "$work/template/.gitignore"
 git -C "$work/template" add .
 git -C "$work/template" -c user.name=Fixture -c user.email=fixture@example.invalid commit -q -m 'test: seed publication fixture'
 original=$(git -C "$work/template" rev-parse HEAD)
-publish() { sh "$work/source/scripts/publish-template.sh" 2.0.0-test "$work/template"; }
+publish() { sh "$work/source/scripts/publish-template.sh" 2.0.0-test "$work/template" https://example.invalid/fixture-template.git; }
 # The published README is the product guide and the published LICENSE is the
 # 0BSD text; a copy among the destination's own files would silently replace one
 # of them with something nothing else validates.
@@ -115,7 +115,7 @@ grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
 # commit rather than by a person deleting the file on the published repository.
 printf '%s\n' --- 'version: 2.0.0-keep' --- 'Second fixture notes.' \
   > "$work/source/release/requests/template/2.0.0-keep.md"
-sh "$work/source/scripts/publish-template.sh" 2.0.0-keep "$work/template" >/dev/null
+sh "$work/source/scripts/publish-template.sh" 2.0.0-keep "$work/template" https://example.invalid/fixture-template.git >/dev/null
 grep -q 'Second fixture notes.' "$work/template/CHANGELOG.md" || {
   printf 'FAIL: a later release did not reach the changelog\n' >&2; exit 1; }
 grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
@@ -123,7 +123,7 @@ grep -q 'Fixture release notes.' "$work/template/CHANGELOG.md" || {
 
 printf '%s\n' --- 'version: 2.0.0-reset' 'changelog: reset' --- 'Only entry.' \
   > "$work/source/release/requests/template/2.0.0-reset.md"
-sh "$work/source/scripts/publish-template.sh" 2.0.0-reset "$work/template" >/dev/null
+sh "$work/source/scripts/publish-template.sh" 2.0.0-reset "$work/template" https://example.invalid/fixture-template.git >/dev/null
 grep -q 'Only entry.' "$work/template/CHANGELOG.md" || {
   printf 'FAIL: the resetting release wrote no entry\n' >&2; exit 1; }
 for stale in 'Fixture release notes.' 'Second fixture notes.'; do
@@ -134,7 +134,7 @@ done
 
 printf '%s\n' --- 'version: 2.0.0-bogus' 'changelog: sometimes' --- 'x.' \
   > "$work/source/release/requests/template/2.0.0-bogus.md"
-if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" >/dev/null 2>&1; then
+if sh "$work/source/scripts/publish-template.sh" 2.0.0-bogus "$work/template" https://example.invalid/fixture-template.git >/dev/null 2>&1; then
   printf 'FAIL: published with an unknown changelog mode\n' >&2; exit 1
 fi
 

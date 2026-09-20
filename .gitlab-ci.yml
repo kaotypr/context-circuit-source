@@ -1,0 +1,161 @@
+# Publishes both products from one push to the default branch, CLI first.
+#
+# This is the GitLab half of a source checkout that is hosted on two forges. It
+# publishes the same two products, from the same version files and the same
+# release requests, to this forge's own pair of projects. Neither half is the
+# mirror of the other: each runs when its own remote is pushed, and each decides
+# what to publish by asking its own release list what is already out there.
+#
+# The order is not a preference. The template points at the CLI — its README
+# badge reads the CLI's release list, and `.context-circuit/CLI_VERSION` is what
+# the cc-cli skill resolves — while the CLI points at nothing in the template.
+# Publishing the template first leaves a window in which it names a CLI release
+# that does not exist yet. Stages give that order, and the template stage is
+# never reached before the CLI stage finishes.
+#
+# Assets live in the generic package registry rather than beside the release,
+# because a GitLab release links to files, it does not store them. The links a
+# release carries are what `install.sh --source gitlab` reads, and each one is
+# fetched with the same PRIVATE-TOKEN that read the release.
+#
+# Required CI/CD variables:
+#   GITLAB_TOKEN    token that can read this project's releases, and write
+#                   releases, packages and commits on TEMPLATE_REPOSITORY
+#                   (masked; a project or group access token)
+#   TEMPLATE_REPOSITORY  group/project the template publishes to
+#   MAINTAINER_NAME      release commit author name
+#   MAINTAINER_EMAIL     release commit author email
+
+stages:
+  - gate
+  - cli
+  - template
+
+default:
+  image: golang:1.25
+  before_script:
+    # build-cli.sh packages the Windows targets with zip, which the Go image
+    # does not carry.
+    - apt-get update -qq && apt-get install -y -qq zip curl git jq
+    # The runner leaves the job token embedded in origin's URL. The CLI refuses
+    # to record a remote carrying a password — correctly, because connecting
+    # one would write a credential into workspace.yaml — and this project's own
+    # knowledge test connects this very checkout. Point origin at the plain URL
+    # it came from. Nothing here pushes to origin: the CLI release creates its
+    # tag through the API, and the template is pushed from its own clone.
+    - git remote set-url origin "$CI_SERVER_URL/$CI_PROJECT_PATH.git"
+
+variables:
+  # The knowledge checks count commits under each note's code anchors, so a
+  # shallow clone leaves the reviewed-date pass with nothing to read and it
+  # passes vacuously. A release gate weaker than the merge-request gate is not
+  # one.
+  GIT_DEPTH: "0"
+  FORGE: gitlab
+
+# One release at a time, and never interrupted: an interrupted publication can
+# leave a tag pushed and a release uncreated.
+workflow:
+  auto_cancel:
+    on_new_commit: none
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      changes:
+        - release/requests/**/*
+        - VERSION
+        - CLI_VERSION
+
+gate:
+  stage: gate
+  interruptible: false
+  script:
+    - go test ./...
+    - go vet ./...
+
+cli:
+  stage: cli
+  interruptible: false
+  resource_group: publish
+  script:
+    - RESOLVE_OUTPUT=resolve.env CLI_REPOSITORY="$CI_PROJECT_PATH"
+      sh scripts/resolve-release-version.sh cli
+    - . ./resolve.env
+    - |
+      if [ "$publish" != true ]; then
+        echo "CLI $version is already published; nothing to do."
+        exit 0
+      fi
+    - sh scripts/build-cli.sh "$version" cli-release
+    # The request body, frontmatter stripped — the same shape the template
+    # release uses, so a CLI release says what changed in that version rather
+    # than repeating what the CLI is.
+    - |
+      awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
+        "$request" > cli-notes.md
+      printf '\n---\n\nBuilt at commit `%s`.\n' "$CI_COMMIT_SHA" >> cli-notes.md
+      # The workspace template is a separate product under a separate license,
+      # so the archive says which one it carries rather than leaving a reader to
+      # assume one release list means one set of terms.
+      printf '\nApache-2.0; the archive carries the license. The workspace template is 0BSD.\n' >> cli-notes.md
+    - sh scripts/publish-gitlab-release.sh
+        --project "$CI_PROJECT_ID"
+        --package context-circuit-cli
+        --version "$version"
+        --tag "cli-v$version"
+        --name "Context Circuit CLI $version"
+        --notes cli-notes.md
+        --ref "$CI_COMMIT_SHA"
+        --assets cli-release
+
+template:
+  stage: template
+  interruptible: false
+  resource_group: publish
+  script:
+    - RESOLVE_OUTPUT=resolve.env sh scripts/resolve-release-version.sh template
+    - . ./resolve.env
+    - |
+      if [ "$publish" != true ]; then
+        echo "Template $version is already published; nothing to do."
+        exit 0
+      fi
+    - sh scripts/check-release.sh
+    - |
+      # A token in the remote URL would be written into .git/config and echoed
+      # by any command that prints the remote; carry it in a header instead.
+      # Git over HTTP authenticates with Basic, not the PRIVATE-TOKEN header the
+      # REST API takes, and a header passed with `-c` is not persisted into the
+      # clone's own configuration.
+      GIT_AUTH="Authorization: Basic $(printf 'oauth2:%s' "$GITLAB_TOKEN" | base64 -w0)"
+      git -c http.extraheader="$GIT_AUTH" \
+        clone "$CI_SERVER_URL/$TEMPLATE_REPOSITORY.git" .template-repo
+      git -C .template-repo config user.name "$MAINTAINER_NAME"
+      git -C .template-repo config user.email "$MAINTAINER_EMAIL"
+    - |
+      # A workspace made from this template installs its CLI from the project
+      # publishing it, on the instance publishing it. Both are what the forge
+      # told this pipeline about itself, so neither is configuration anyone has
+      # to keep in step by hand.
+      export CLI_REGISTRY_SOURCE=gitlab
+      export CLI_REGISTRY_REPOSITORY="$CI_PROJECT_PATH"
+      export CLI_REGISTRY_API="$CI_API_V4_URL"
+      out=$(sh scripts/publish-template.sh "$version" .template-repo \
+        "$CI_SERVER_URL/$TEMPLATE_REPOSITORY.git")
+      printf '%s\n' "$out"
+      echo "assets=$(printf '%s\n' "$out" | sed -n 's/^release_assets_dir: //p')" > assets.env
+    - . ./assets.env
+    - |
+      git -C .template-repo -c http.extraheader="$GIT_AUTH" push origin main
+      git -C .template-repo -c http.extraheader="$GIT_AUTH" push origin "v$version"
+    - |
+      awk 'BEGIN{fm=0} /^---[[:space:]]*$/{fm++; next} fm>=2{print}' \
+        "$request" > release-notes.md
+    - sh scripts/publish-gitlab-release.sh
+        --project "$TEMPLATE_REPOSITORY"
+        --package context-circuit
+        --version "$version"
+        --tag "v$version"
+        --name "v$version"
+        --notes release-notes.md
+        --assets "$assets"
