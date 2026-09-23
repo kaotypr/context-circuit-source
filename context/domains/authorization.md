@@ -2,7 +2,7 @@
 
 What a person decides, and what one decision covers afterwards.
 
-## Three decisions belong to a person
+## Decisions belong to a person
 
 A fourth is theirs too, below: whether any of this applies to the change at
 hand.
@@ -32,6 +32,11 @@ change. A newly needed file or repository *within* the approved outcome is
 explained and recorded, not re-gated, because recorded paths are descriptive
 planning information rather than an enforcement contract. Asking twice for the
 same thing teaches people to approve reflexively.
+
+An explicit request for a detailed plan of an already specified outcome may
+create a standalone plan without an intent. It authorizes investigation and
+drafting, not implementation. The agent presents its complete entry and
+supporting files before execution is requested.
 
 **Starting execution.** Plans are derived, presented, and then left alone until a
 person asks for them to be run. This is a decision about *when work begins*, not
@@ -77,13 +82,9 @@ checkout, still needs the same word from the same person.
 
 ## What the execution request is not
 
-It is not plan approval. A plan is *derived* from an approved outcome, so
-approving it again asks a person to ratify a derivation they are not positioned
-to check — which is how ratification becomes a rubber stamp. Reading the plans
-stays optional, and a person who asks to execute without reading them has
-withheld nothing. The two are separable because they answer different questions:
-whether the derivation is right, and whether now is the time to run it. Only the
-second is asked for. The diagnostic is not a gate either; nothing waits on it.
+It is not a machine-recorded plan approval. The person receives the complete
+plan and may revise it; a separate request after that presentation starts work.
+There is no approval field or command on a plan. The diagnostic is not a gate.
 
 ## What the execution request covers
 

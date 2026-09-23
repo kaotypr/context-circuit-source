@@ -64,11 +64,14 @@ context-circuit-cli record create --kind plan --slug billing-api --title 'Billin
   --intent i001 --repo api
 context-circuit-cli record create --kind plan --slug billing-web --title 'Billing UI' \
   --intent i001 --repo web --depends-on p0001
+context-circuit-cli record create --kind plan --slug specified-change --title 'Specified change' \
+  --repo api
 context-circuit-cli record show --id p0001
 context-circuit-cli record list
 context-circuit-cli record dependencies --id p0002 --depends-on p0001
 context-circuit-cli record complete --id p0001 --text 'User requested completion.'
 context-circuit-cli record order --intent i001 --mode waves
+context-circuit-cli record order --plan p0003 --mode waves
 ```
 
 `context find` takes one of the two: a query searches this workspace's catalog
@@ -90,7 +93,8 @@ two members share one. Assigning, changing, or clearing a band never renumbers a
 existing record or releases its reservation.
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
-are repeatable. Creation reserves IDs and links a new plan from its intent.
+are repeatable. Creation reserves IDs and links a new plan from its intent when
+`--intent` is supplied. Otherwise it creates a standalone plan folder.
 Approval and completion notes require the actual corresponding user decision.
 Approval records the instant in the intent's frontmatter `approved_at` and appends
 the person's words under a heading carrying the same instant; an unapproved
@@ -107,6 +111,10 @@ canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`; other dates are ISO
 8601 `YYYY-MM-DD` in UTC.
 
 `record order` derives execution shape from recorded dependencies and completion.
+Repeat `--plan ID` to select an exact run, or use `--intent ID` to select linked
+plans; the two filters are exclusive. With neither, all active plans are selected.
+The result names `plan_ids` and `selection`. Unfinished dependencies outside an
+explicit selection are blocked, never added silently.
 `--mode auto` reports a recommendation and follows it; `waves` and `linear`
 select explicitly without changing the recommendation. Waves list each layer, its
 concurrency, every plan's start reference per repository, any integration merge a
@@ -176,8 +184,10 @@ context-circuit-cli agent configure --host codex --role worker --model MODEL_ID 
 context-circuit-cli agent setup
 context-circuit-cli --json agent dispatch --host codex --role planner \
   --intent i001 --path /actual/repository
+context-circuit-cli --json agent dispatch --host codex --role planner \
+  --task 'Plan the specified outcome' --path /actual/repository
 context-circuit-cli --json agent dispatch --host codex --role worker \
-  --plan p0001 --path /actual/worktree
+  --plan p0001 --repo api --path /actual/worktree
 context-circuit-cli --json agent dispatch --host codex --role explorer \
   --path /actual/repository --task 'Which module owns invoice voiding?'
 ```
@@ -208,9 +218,13 @@ with the working directory, then ownership, then the quoted record, then the tas
 and ends with what the role must return. Quoting the record in full is what stops
 an agent from searching a repository for a file it was never handed.
 
-`--plan` adds the plan's file path, repositories, dependencies, and full record to
+`--plan` adds the plan's file path, repositories, dependencies, and Markdown body to
 the brief, and states that its dependencies' work is already in the branch's
-ancestry and that a concurrent sibling plan is invisible. `--intent` does the same
+ancestry and that a concurrent sibling plan is invisible. For a worker, `--repo`
+selects the assigned repository's required supporting files along with shared
+files; the brief lists workspace-relative paths under the absolute workspace root
+and tells the worker to read them before editing. A multi-repository plan requires
+`--repo`. `--intent` does the same
 for an approved intent and is how a planner is dispatched; a planner refuses
 `--plan`, because the plan shape is the answer it returns rather than a number it
 is handed, and it refuses an intent that is not yet approved. `--shared` is for

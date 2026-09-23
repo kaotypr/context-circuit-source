@@ -239,10 +239,10 @@ func TestDispatchBriefsWorkerOnPlanAncestry(t *testing.T) {
 		"Depends on: p0001, p0002",
 		"expected in this branch's ancestry",
 		"invisible in a separate worktree",
-		"The full plan follows and is authoritative",
+		"The plan entry body follows and is authoritative",
 		// A brief names the file in the host's own path syntax, so the
 		// expectation is built the same way rather than assuming a separator.
-		filepath.Join("plans", "p0003-three.md"),
+		filepath.Join("plans", "p0003-three", "plan.md"),
 	} {
 		if !strings.Contains(spec.Prompt, want) {
 			t.Fatalf("brief missing %q:\n%s", want, spec.Prompt)
@@ -292,7 +292,7 @@ func TestARecordAssignsTheRolesItBriefs(t *testing.T) {
 	if strings.Contains(whole.Prompt, "\n# Task\n") {
 		t.Fatalf("a worker owning its whole plan is assigned by the plan:\n%s", whole.Prompt)
 	}
-	if !strings.Contains(whole.Prompt, "The full plan follows and is authoritative") {
+	if !strings.Contains(whole.Prompt, "The plan entry body follows and is authoritative") {
 		t.Fatalf("dropping the task must not drop the plan:\n%s", whole.Prompt)
 	}
 	// The prohibition the coordinator kept restating belongs to the role, and so

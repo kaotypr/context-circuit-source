@@ -325,7 +325,7 @@ func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 	if err := os.Mkdir(archive, 0755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(filepath.Join(f.root, p.Path), filepath.Join(archive, filepath.Base(p.Path))); err != nil {
+	if err := os.Rename(filepath.Dir(filepath.Join(f.root, p.Path)), filepath.Join(archive, filepath.Base(filepath.Dir(p.Path)))); err != nil {
 		t.Fatal(err)
 	}
 	r := f.plan(i.ID, "more", "api")
@@ -357,7 +357,7 @@ func TestGlobalRecordsDependenciesAndCompletion(t *testing.T) {
 	if !strings.Contains(f.ok("record", "list", "--archived"), "p0001") {
 		t.Fatal("archive not listed")
 	}
-	if err := os.Remove(filepath.Join(f.root, r.Path)); err != nil {
+	if err := os.RemoveAll(filepath.Dir(filepath.Join(f.root, r.Path))); err != nil {
 		t.Fatal(err)
 	}
 	x := f.plan(i.ID, "after-delete", "api")

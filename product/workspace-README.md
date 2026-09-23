@@ -40,7 +40,7 @@ versions *this* workspace received, not whatever was published since.
 | --- | --- |
 | `context/` | What the project knows, catalogued by `context/INDEX.md` |
 | `intent/` | Goals, with the reasoning and approval behind each one |
-| `plans/` | Implementation plans derived from an intent |
+| `plans/` | Standalone or intent-linked plan folders, with optional supporting design files; legacy single-file plans remain readable |
 | `sources/` | Reference material the project did not write |
 | `workspace.yaml` | Repositories, relationships, and this workspace's name |
 | `members.yaml` | Who works here |

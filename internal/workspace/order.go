@@ -66,6 +66,8 @@ type OrderBlocked struct {
 
 type Order struct {
 	Intent      string             `yaml:"intent,omitempty" json:"intent,omitempty"`
+	PlanIDs     []string           `yaml:"plan_ids" json:"plan_ids"`
+	Selection   string             `yaml:"selection" json:"selection"`
 	Selected    string             `yaml:"selected" json:"selected"`
 	Strategy    OrderStrategy      `yaml:"strategy" json:"strategy"`
 	Layers      []OrderWave        `yaml:"layers,omitempty" json:"layers,omitempty"`
@@ -79,7 +81,24 @@ type Order struct {
 // PlanBranch is the default branch for one plan's work in one repository.
 func PlanBranch(plan, repo string) string { return "cc/" + plan + "/" + repo }
 
-func (s *Store) Order(intent, mode string) (Order, error) {
+func (s *Store) Order(intent, mode string, selectedPlans ...string) (Order, error) {
+	if intent != "" && len(selectedPlans) > 0 {
+		return Order{}, errors.New("--intent and --plan are mutually exclusive")
+	}
+	if len(selectedPlans) != len(unique(selectedPlans)) {
+		return Order{}, errors.New("duplicate --plan ID")
+	}
+	selectedSet := map[string]bool{}
+	for _, id := range selectedPlans {
+		record, err := s.FindRecord(id)
+		if err != nil {
+			return Order{}, err
+		}
+		if !strings.HasPrefix(record.ID, "p") {
+			return Order{}, fmt.Errorf("--plan needs a plan ID: %s", id)
+		}
+		selectedSet[id] = true
+	}
 	switch mode {
 	case "", "auto":
 		mode = "auto"
@@ -119,15 +138,28 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 		if intent != "" && record.Intent != intent {
 			continue
 		}
+		if len(selectedSet) > 0 && !selectedSet[record.ID] {
+			continue
+		}
 		plans[record.ID] = record
 		ids = append(ids, record.ID)
 	}
 	sort.Strings(ids)
+	if len(selectedSet) > 0 && len(ids) != len(selectedSet) {
+		return Order{}, errors.New("selected plan is not active")
+	}
 	if len(ids) == 0 {
 		return Order{}, errors.New("no plans to order")
 	}
 
-	result := Order{Intent: intent}
+	selection := "all-active"
+	if intent != "" {
+		selection = "intent"
+	}
+	if len(selectedSet) > 0 {
+		selection = "plans"
+	}
+	result := Order{Intent: intent, PlanIDs: ids, Selection: selection}
 	satisfied := map[string]bool{}
 	blocked := map[string]string{}
 	for _, id := range ids {
@@ -153,6 +185,21 @@ func (s *Store) Order(intent, mode string) (Order, error) {
 				continue
 			}
 			blocked[id] = "dependency " + dep + " is outside this selection and not completed"
+		}
+	}
+	for changed := true; changed; {
+		changed = false
+		for _, id := range ids {
+			if blocked[id] != "" || satisfied[id] {
+				continue
+			}
+			for _, dep := range plans[id].DependsOn {
+				if blocked[dep] != "" {
+					blocked[id] = "dependency " + dep + " is blocked: " + blocked[dep]
+					changed = true
+					break
+				}
+			}
 		}
 	}
 

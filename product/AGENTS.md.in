@@ -142,7 +142,7 @@ committing in a bound checkout, pushing, opening a pull request, merging, and
 deleting still require explicit authorization, and the durable knowledge a direct
 change alters is reconciled the same way a completed plan's is.
 
-For an implementation change, make the intended outcome explicit before detailed
+For an implementation change without a specified outcome, make the intended outcome explicit before detailed
 code investigation. Ground it first: retrieve the bearing knowledge through
 `context/INDEX.md` and read the request's apparent meaning against what the
 project already records. What that reading contradicts, or cannot settle, is a
@@ -166,7 +166,7 @@ editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
 Approving an intent authorizes planning, and planning alone. Without asking
-again, inspect real code and create the linked `pNNNN-slug.md` plans through
+again, inspect real code and create linked `plans/pNNNN-slug/plan.md` folders through
 `.agents/skills/cc-plan/SKILL.md`. `record approve` names that work as
 `planning_required`, because approval reporting success is the decision recorded,
 not the request finished. Obtain renewed approval only when the intended outcome
@@ -178,12 +178,16 @@ planner, or parallel explorers, through `.agents/skills/cc-dispatch/SKILL.md`,
 which says when the reading is large enough to be worth delegating and what each
 role may do. The coordinator writes every record either way.
 
-Then present the plans and stop again. There is no plan approval gate — reading
-them is the person's option, never a required step — but no repository is
-touched until they ask for execution. That request is a decision made after the
-plans exist and can be seen, so an instruction to implement that arrived earlier,
-including one in the message that started the intent, does not begin it. Ask for
-it plainly instead of inferring it.
+When a person explicitly requests a detailed plan for an already specified
+outcome, investigate code and create a standalone plan folder without an intent.
+That request authorizes planning only. For either route, `plan.md` is the entry;
+add supporting files only when they help explain the design. Link every detail
+in its Details section and assign it in `required_files.shared` or
+`required_files.by_repository.<repo>`. Present the complete plan and its links,
+incorporate revisions, and stop. A separate execution request after presentation
+authorizes implementation. If the plan materially changes after presentation,
+present the change again before starting. There is no plan approval field or
+command.
 
 A record's instants — `created_at`, `approved_at`, `completed_at` — are
 canonical ISO 8601 UTC timestamps, `2026-09-15T10:53:00Z`. Every other date, in
@@ -199,6 +203,9 @@ structures in full.
 ## Worktrees and implementation
 
 Implementation starts on a request to execute a plan, and never before one.
+Read the current entry and supporting files before dispatch. For a run of one
+or more standalone plans, select the exact IDs with repeatable `record order
+--plan ID`; use the same selection for execution and delivery.
 
 Preparing a worktree for each repository the plan names is the first step of
 execution, not a judgment call. The one exception: when the person asks to work
@@ -226,7 +233,7 @@ invocations, wait for their results, and integrate them. To execute several plan
 at once, use `.agents/skills/cc-stacked/SKILL.md`, which derives the shape with
 `record order` rather than guessing it.
 
-Implement the approved outcome in dependency order across the relevant
+Implement the plan's specified outcome in dependency order across the relevant
 repositories. Run appropriate tests, lint, and builds as ordinary implementation
 checks, then leave no uncommitted work when the implementation is reported:
 commit on the worktree's own branch, in as many commits as the work naturally

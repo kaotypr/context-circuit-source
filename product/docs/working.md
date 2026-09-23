@@ -1,7 +1,8 @@
 # Intents, plans, knowledge, and review
 
-The user makes two decisions: approving the intended outcome, and asking for a
-plan to be executed. The agent interprets the project and writes meaningful
+For an intent-led change, the user approves the intended outcome and later asks
+for a plan to be executed. A developer may request a grounded plan directly for
+an outcome they have already specified, with no intent. The agent interprets the project and writes meaningful
 content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
 
@@ -41,7 +42,7 @@ A plan's metadata looks like:
 ```yaml
 id: p0001
 created_by: maya
-intent: i001
+intent: i001 # omit for a standalone plan
 repositories:
   - api
   - web
@@ -64,9 +65,18 @@ and optional affected paths. Paths are descriptive, not an enforcement contract.
 Changes to the intended outcome reopen approval; an additional file within the
 approved outcome does not automatically do so.
 
-Plans are then presented and left alone. Reading them is optional, so there is no
-plan approval gate, but implementation waits for a separate request to execute
-them — the decision about when work starts, made once the plans are visible. That
+New plans live in `plans/pNNNN-slug/plan.md`. Add optional supporting files in
+the same folder only when useful. Link each from the entry's Details section and
+assign it in `required_files.shared` or `required_files.by_repository.<repo>`.
+These paths are relative to the plan folder; each worker's brief lists only its
+assigned files as paths relative to the stated absolute workspace root. Existing
+single-file plans remain readable without migration. A direct planning request
+authorizes investigation and drafting, then the agent presents the whole folder
+for review. Material revisions are presented again before implementation.
+
+Plans are presented and may be revised before execution. There is no
+plan approval field or command, but implementation waits for a separate request to execute
+them — the decision about when work starts, made once the complete plans are visible. That
 request prepares a worktree per repository unless the user asks to work directly
 in a bound checkout.
 

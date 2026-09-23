@@ -61,7 +61,7 @@ record list           [--archived]
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
-record order          [--intent ID] [--mode auto|waves|linear]
+record order          [--intent ID | --plan ID ...] [--mode auto|waves|linear]
                       derive dependency waves, start refs, and integration merges
 context find          --query TEXT | --repo ID (optional index only)
 worktree prepare      --repo ID [--plan ID] [--branch NAME] [--start REF]
@@ -79,8 +79,8 @@ agent configure       --host HOST --role ROLE --model MODEL|inherit --effort LEV
                       [--local] (write this machine's override, not the shared setting)
 agent setup           [--host codex|claude-code|cursor] (default: every host)
 agent dispatch        --host HOST --role ROLE --path DIRECTORY [--task TEXT]
-                      [--intent ID] [--plan ID] [--shared] [--review-requested]
-                      (--intent plans an approved intent; --plan implements one.
+                      [--intent ID] [--plan ID] [--repo ID] [--shared] [--review-requested]
+                      (--intent plans an approved intent; planner --task plans a specified standalone outcome; --plan implements one.
                       --task is the assignment where no record carries it.
                       Host must launch the returned prompt unmodified.)
 version
@@ -197,7 +197,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			values[name] = f.String(name, "", name)
 		}
 	}
-	var repos, dependencies, copyPaths listFlag
+	var repos, dependencies, copyPaths, plans listFlag
 	var band int
 	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone bool
 	switch command {
@@ -256,6 +256,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		f.Var(&dependencies, "depends-on", "plan dependency (repeatable)")
 	case "record order":
 		add("intent")
+		f.Var(&plans, "plan", "selected plan (repeatable)")
 		values["mode"] = f.String("mode", "auto", "auto, waves, or linear")
 	case "context find":
 		add("query", "repo")
@@ -281,7 +282,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		add("host", "role", "model", "effort")
 		f.BoolVar(&localTiering, "local", false, "write this machine's override instead of the shared setting")
 	case "agent dispatch":
-		add("host", "role", "task", "path", "plan", "intent")
+		add("host", "role", "task", "path", "plan", "intent", "repo")
 		f.BoolVar(&shared, "shared", false, "several workers share this worktree")
 		f.BoolVar(&reviewRequested, "review-requested", false, "user explicitly requested independent review")
 	case "agent settings":
@@ -356,7 +357,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// so the command accepts both as optional and refuses the wrong pairing by
 	// role, where the reason can be stated.
 	if command == "agent dispatch" {
-		optional["plan"], optional["intent"] = true, true
+		optional["plan"], optional["intent"], optional["repo"] = true, true, true
 		// A planner and a whole-plan worker are assigned by the record quoted
 		// in the brief; only a role without one, or a worker taking a slice of
 		// a shared plan, has something left to say.
@@ -428,7 +429,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "agent setup":
 			return s.SetupAgents(get("host"))
 		case "agent dispatch":
-			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), get("plan"), get("intent"), shared, reviewRequested)
+			return s.DispatchAgent(get("host"), get("role"), get("task"), get("path"), get("plan"), get("intent"), shared, reviewRequested, get("repo"))
 		case "check":
 			issues, e := s.Check(ctx)
 			checkFailed = len(issues) > 0
@@ -511,7 +512,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			// instructions read once at the start of a session.
 			return map[string]any{
 				"approved":          get("id"),
-				"planning_required": "approval authorizes planning and planning alone: without asking again, inspect real code and create the linked pNNNN-slug.md plans, then present them and stop",
+				"planning_required": "approval authorizes planning and planning alone: without asking again, inspect real code and create linked pNNNN-slug/plan.md folders, then present the complete plans and stop",
 			}, nil
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {
@@ -530,7 +531,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":
-			return s.Order(get("intent"), get("mode"))
+			return s.Order(get("intent"), get("mode"), plans...)
 		case "context find":
 			// Completion names the knowledge a plan made due; a change made
 			// without a plan has no record to name it, so the repository asks

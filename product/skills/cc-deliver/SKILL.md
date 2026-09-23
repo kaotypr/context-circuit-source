@@ -27,8 +27,12 @@ checkout is already on. Deliver that branch; there is no `cc/*` branch involved.
 than reading the dependency graph yourself:
 
 ```sh
-context-circuit-cli --workspace <root> --json record order --intent i001
+context-circuit-cli --workspace <root> --json record order --plan p0001 --plan p0002
 ```
+
+Use the exact `plan_ids` selected for the execution run, whether the plans are
+standalone or intent-linked. An intent-scoped run may use `--intent i001` instead.
+An omitted filter selects all active plans and may include unrelated work.
 
 Each plan carries `deliver`: the repositories whose chain ends at that plan.
 Open one request for every mark, from `cc/<plan>/<repo>`. A chain end's branch

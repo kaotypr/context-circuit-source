@@ -184,6 +184,25 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	issues := state.Issues
 	issues = append(issues, s.workspaceRepositoryIssues(ctx, state)...)
 	issues = append(issues, unbandedMembers(state.Members)...)
+	for _, baseRel := range []string{"plans", "plans/archive"} {
+		base, err := s.Path(baseRel)
+		if err != nil {
+			continue
+		}
+		entries, err := os.ReadDir(base)
+		if err != nil {
+			continue
+		}
+		for _, entry := range entries {
+			if !entry.IsDir() || !recordFilename.MatchString(entry.Name()+".md") {
+				continue
+			}
+			rel := filepath.ToSlash(filepath.Join(baseRel, entry.Name(), "plan.md"))
+			if _, err := s.Read(rel); err != nil {
+				issues = append(issues, found("missing or invalid plan entry: "+rel, "restore a regular plan.md in this plan folder"))
+			}
+		}
+	}
 	records, err := s.ListRecords(false)
 	if err != nil {
 		return append(issues, found(err.Error(),
@@ -208,7 +227,11 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	}
 	seen := map[string]bool{}
 	for _, path := range paths {
-		id := strings.SplitN(strings.TrimPrefix(path[strings.LastIndex(path, "/")+1:], "/"), "-", 2)[0]
+		name := filepath.Base(path)
+		if name == "plan.md" {
+			name = filepath.Base(filepath.Dir(path))
+		}
+		id := strings.SplitN(name, "-", 2)[0]
 		if seen[id] {
 			issues = append(issues, found("duplicate record ID: "+id,
 				needsAPerson+"two clones allocated the same number; renumber one record and every reference to it before either is shared, and keep both reservations"))
@@ -249,13 +272,24 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 		}
 		if strings.HasPrefix(record.ID, "p") {
-			parent, err := s.FindRecord(record.Intent)
-			if err != nil || !strings.HasPrefix(record.Intent, "i") {
-				issues = append(issues, found(record.ID+": missing intent reference",
-					needsAPerson+"set the plan's intent to the intent it was created from, and list the plan under that intent's plans"))
-			} else if !slices.Contains(parent.Plans, record.ID) {
-				issues = append(issues, found(record.ID+": not linked from intent "+parent.ID,
-					needsAPerson+"add this plan to that intent's plans; the link is written at creation and nothing relinks it afterwards"))
+			if !folderPlan(record) && record.RequiredFiles != nil {
+				issues = append(issues, found(record.ID+": legacy plan cannot assign required_files", "remove required_files from the single-file plan"))
+			}
+			if record.Intent != "" {
+				parent, err := s.FindRecord(record.Intent)
+				if err != nil || !strings.HasPrefix(record.Intent, "i") {
+					issues = append(issues, found(record.ID+": invalid intent reference",
+						needsAPerson+"correct the intent ID and its backlink, or remove the field for a standalone plan"))
+				} else if !slices.Contains(parent.Plans, record.ID) {
+					issues = append(issues, found(record.ID+": not linked from intent "+parent.ID,
+						needsAPerson+"add this plan to that intent's plans; the link is written at creation and nothing relinks it afterwards"))
+				}
+			}
+			if folderPlan(record) {
+				full, err := s.readRecord(record.Path)
+				if err == nil {
+					issues = append(issues, s.planFileIssues(full)...)
+				}
 			}
 			if len(record.Repositories) == 0 {
 				issues = append(issues, found(record.ID+": no repositories",

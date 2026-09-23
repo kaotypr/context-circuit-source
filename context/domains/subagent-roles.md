@@ -7,7 +7,7 @@ What a delegated agent may do, and what it is handed to do it with.
 | Role | Responsibility | Access |
 | --- | --- | --- |
 | explorer | Answer a specific codebase question with evidence | Read-only |
-| planner | Investigate an approved intent and return a grounded plan | Read-only; the coordinator writes the plan |
+| planner | Investigate an approved intent or specified standalone outcome and return a grounded plan | Read-only; the coordinator writes the plan |
 | worker | Implement assigned work and run normal checks | Repository edits within its assignment |
 | reviewer | Independently examine a diff on request | Read-only; no fixes, no follow-up |
 
@@ -19,7 +19,7 @@ never carries ownership, consequence, or permission to proceed.
 Which delegation repays its cost follows from shape, and the two read-only roles
 have opposite ones:
 
-- **A planner** runs once per intent, so nothing overlaps and dispatching one
+- **A planner** runs once per planning request, so nothing overlaps and dispatching one
   always costs latency. What it buys is a large read kept out of the
   coordinator, which pays only when that read would dwarf the plan it produces.
   A session already holding the code gains nothing, because a planner re-derives
@@ -45,10 +45,9 @@ for renewed approval instead. Because read-only roles run nothing, a check
 either role names is one it read, never one it saw pass.
 
 Plan shape being the planner's answer is why a planner is dispatched against an
-approved intent and refuses a plan ID: numbering a plan first settles the split
-it was asked to propose, and an intent that turns out to hold several plans has
-no single ID to hand it. The same reasoning refuses an unapproved intent, since
-planning one plans an outcome nobody agreed to.
+approved intent or an explicit task specifying a standalone outcome, and refuses
+a plan ID: numbering a plan first settles the split it was asked to propose.
+An unapproved intent is refused.
 
 ## A brief is the whole context
 
@@ -61,8 +60,9 @@ in that order:
    it open, and a host offering GUI automation and web search will occasionally
    answer that badly: read and search the files directly, drive no other
    application, consult nothing external.
-3. **The record**, quoted in full, because an agent sent to open a file searches
-   the repository to find it and arrives having read far more than the file.
+3. **The record body**, quoted for record-based work, so an agent can read its
+   assignment without searching the repository. A folder plan's supporting
+   files are instead listed by workspace-relative path for its repository.
 4. **The task**, where one is given. The quoted record is itself the assignment,
    so a planner takes the whole intent and refuses a task and a worker owning
    its whole plan needs none; what remains is a role no record assigns, or one
@@ -184,7 +184,9 @@ edits it cannot see, or lets it overwrite edits it can.
 Plan context adds the repositories, the dependencies, the fact that those
 dependencies' work is already in the branch's ancestry and need not be
 reimplemented, and the fact that a concurrent sibling is invisible and must not
-be guessed at.
+be guessed at. A multi-repository plan assigns each worker a repository; the
+brief lists only its assigned and shared required files and the absolute
+workspace root they resolve against.
 
 That ancestry claim is only true because a worker commits: the brief ends by
 requiring the work be committed on the branch it was given, so what a worker
