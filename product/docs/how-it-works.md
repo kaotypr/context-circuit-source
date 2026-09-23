@@ -180,10 +180,15 @@ sequenceDiagram
   Note over A: stops again — nothing is built yet
 ```
 
-There is no plan approval gate. Reading the plans is optional. But no repository
-is touched until a person asks for execution, and an instruction to implement
-that arrived earlier — including in the message that started the intent — does
-not count.
+The same planning step can start from a person's explicit request for a detailed
+plan of a specified outcome. In that case `record create --kind plan` omits
+`--intent`, and no intent record or backlink is created. New plans use
+`plans/pNNNN-slug/plan.md`; optional supporting files live beside it and are
+linked from its Details section. The plan entry assigns shared files and files
+required by each repository's workers. Present the complete plan and its links.
+There is no plan approval field or command. No repository is touched until a
+person requests execution after that presentation; an earlier instruction to
+implement does not count.
 
 ---
 

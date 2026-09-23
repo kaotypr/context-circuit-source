@@ -23,17 +23,18 @@ type Ledger struct {
 	Plans   []string `yaml:"plans" json:"plans"`
 }
 type Record struct {
-	ID           string   `yaml:"id" json:"id"`
-	CreatedBy    string   `yaml:"created_by" json:"created_by"`
-	CreatedAt    ISOTime  `yaml:"created_at" json:"created_at"`
-	ApprovedAt   ISOTime  `yaml:"approved_at,omitempty" json:"approved_at,omitempty"`
-	Intent       string   `yaml:"intent,omitempty" json:"intent,omitempty"`
-	Repositories []string `yaml:"repositories,omitempty" json:"repositories,omitempty"`
-	DependsOn    []string `yaml:"depends_on,omitempty" json:"depends_on,omitempty"`
-	CompletedAt  ISOTime  `yaml:"completed_at,omitempty" json:"completed_at,omitempty"`
-	Plans        []string `yaml:"plans,omitempty" json:"plans,omitempty"`
-	Path         string   `yaml:"-" json:"path"`
-	Content      string   `yaml:"-" json:"content,omitempty"`
+	ID            string         `yaml:"id" json:"id"`
+	CreatedBy     string         `yaml:"created_by" json:"created_by"`
+	CreatedAt     ISOTime        `yaml:"created_at" json:"created_at"`
+	ApprovedAt    ISOTime        `yaml:"approved_at,omitempty" json:"approved_at,omitempty"`
+	Intent        string         `yaml:"intent,omitempty" json:"intent,omitempty"`
+	Repositories  []string       `yaml:"repositories,omitempty" json:"repositories,omitempty"`
+	DependsOn     []string       `yaml:"depends_on,omitempty" json:"depends_on,omitempty"`
+	RequiredFiles *RequiredFiles `yaml:"required_files,omitempty" json:"required_files,omitempty"`
+	CompletedAt   ISOTime        `yaml:"completed_at,omitempty" json:"completed_at,omitempty"`
+	Plans         []string       `yaml:"plans,omitempty" json:"plans,omitempty"`
+	Path          string         `yaml:"-" json:"path"`
+	Content       string         `yaml:"-" json:"content,omitempty"`
 
 	// Set only when a record is created in a workspace behind its remote, where
 	// the number just reserved may already be taken in another clone. Never
@@ -46,9 +47,24 @@ type Record struct {
 	UnmergedPlans string `yaml:"-" json:"unmerged_plans,omitempty"`
 }
 
+type RequiredFiles struct {
+	Shared       []string            `yaml:"shared,omitempty" json:"shared,omitempty"`
+	ByRepository map[string][]string `yaml:"by_repository,omitempty" json:"by_repository,omitempty"`
+}
+
 var legacyRecordKey = regexp.MustCompile(`(?m)^completed:`)
+var intentField = regexp.MustCompile(`(?m)^intent\s*:`)
+var requiredFilesField = regexp.MustCompile(`(?m)^required_files\s*:`)
 var recordPattern = regexp.MustCompile(`^(i[0-9]{3,}|p[0-9]{4,})$`)
 var recordFilename = regexp.MustCompile(`^(i[0-9]{3,}|p[0-9]{4,})-[a-z][a-z0-9-]*\.md$`)
+
+func recordPathID(file string) string {
+	name := filepath.Base(file)
+	if name == "plan.md" {
+		name = filepath.Base(filepath.Dir(file))
+	}
+	return strings.SplitN(name, "-", 2)[0]
+}
 
 func splitRecord(data []byte) ([]byte, []byte, error) {
 	data = bytes.ReplaceAll(data, []byte("\r\n"), []byte("\n"))
@@ -77,12 +93,19 @@ func (s *Store) RecordPaths(archived bool) ([]string, error) {
 				return fmt.Errorf("record directories cannot contain symlinks: %s", path)
 			}
 			if entry.IsDir() {
-				if path != base && !archived {
+				if path != base && !archived && entry.Name() == "archive" {
+					return filepath.SkipDir
+				}
+				if folder == "intent" && path != base && entry.Name() != "archive" {
 					return filepath.SkipDir
 				}
 				return nil
 			}
-			if recordFilename.MatchString(entry.Name()) {
+			parent := filepath.Dir(path)
+			recordLevel := parent == base || archived && parent == filepath.Join(base, "archive")
+			folderEntry := folder == "plans" && entry.Name() == "plan.md" && recordFilename.MatchString(filepath.Base(parent)+".md") &&
+				(filepath.Dir(parent) == base || archived && filepath.Dir(parent) == filepath.Join(base, "archive"))
+			if recordLevel && recordFilename.MatchString(entry.Name()) || folderEntry {
 				rel, _ := filepath.Rel(s.Root, path)
 				paths = append(paths, filepath.ToSlash(rel))
 			}
@@ -106,7 +129,7 @@ func (s *Store) FindRecord(id string) (Record, error) {
 	}
 	var matches []string
 	for _, path := range paths {
-		if strings.HasPrefix(filepath.Base(path), id+"-") {
+		if strings.HasPrefix(filepath.Base(path), id+"-") || filepath.Base(path) == "plan.md" && strings.HasPrefix(filepath.Base(filepath.Dir(path)), id+"-") {
 			matches = append(matches, path)
 		}
 	}
@@ -136,7 +159,17 @@ func (s *Store) readRecord(path string) (Record, error) {
 		}
 		return record, fmt.Errorf("%s: %w", path, err)
 	}
-	if !recordPattern.MatchString(record.ID) || !strings.HasPrefix(filepath.Base(path), record.ID+"-") {
+	if intentField.Match(header) && record.Intent == "" {
+		return record, fmt.Errorf("%s: omit intent for a standalone plan rather than writing an empty or null value", path)
+	}
+	if requiredFilesField.Match(header) && record.RequiredFiles == nil {
+		return record, fmt.Errorf("%s: required_files must be a mapping or omitted", path)
+	}
+	entryName := filepath.Base(path)
+	if entryName == "plan.md" {
+		entryName = filepath.Base(filepath.Dir(path)) + ".md"
+	}
+	if !recordPattern.MatchString(record.ID) || !strings.HasPrefix(entryName, record.ID+"-") {
 		return record, fmt.Errorf("record ID and filename do not match: %s", path)
 	}
 	if err := Name(record.CreatedBy); err != nil {
@@ -189,7 +222,7 @@ func (s *Store) allocate(kind, author string) (string, error) {
 	}
 	fileIDs := map[string]bool{}
 	for _, path := range paths {
-		id := strings.SplitN(filepath.Base(path), "-", 2)[0]
+		id := recordPathID(path)
 		if fileIDs[id] {
 			return "", fmt.Errorf("duplicate record ID: %s", id)
 		}
@@ -267,12 +300,14 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	}
 	var parent Record
 	if kind == "plan" {
-		if !strings.HasPrefix(intent, "i") {
-			return Record{}, errors.New("plan needs an intent ID")
-		}
-		parent, err = s.FindRecord(intent)
-		if err != nil {
-			return Record{}, err
+		if intent != "" {
+			if !strings.HasPrefix(intent, "i") {
+				return Record{}, errors.New("--intent needs an intent ID")
+			}
+			parent, err = s.FindRecord(intent)
+			if err != nil {
+				return Record{}, err
+			}
 		}
 		if len(repos) == 0 {
 			return Record{}, errors.New("plan needs at least one repository")
@@ -301,17 +336,25 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	if kind == "plan" {
 		folder = "plans"
 		record.Intent, record.Repositories, record.DependsOn = intent, unique(repos), unique(dependencies)
-		body = "## Approach\n\nGround the approach in the selected repositories.\n\n## Tasks and order\n\n- Describe implementation steps and dependencies.\n\n## Risks and checks\n\nRecord useful risks and ordinary test, lint, or build commands.\n"
+		body = "## Outcome and repository scope\n\nDescribe the requested result and each repository's responsibility.\n\n## Approach\n\nGround the approach in the selected repositories.\n\n## Tasks and order\n\n- Describe implementation steps and dependencies.\n\n## Risks and checks\n\nRecord useful risks and ordinary test, lint, or build commands.\n\n## Details\n\nLink each supporting file here and assign it in required_files. Remove this section when there are no supporting files.\n"
 	}
 	header, err := yaml.Marshal(record)
 	if err != nil {
 		return Record{}, err
 	}
 	record.Path = fmt.Sprintf("%s/%s-%s.md", folder, id, slug)
+	if kind == "plan" {
+		record.Path = fmt.Sprintf("plans/%s-%s/plan.md", id, slug)
+	}
 	data := []byte("---\n" + string(header) + "---\n\n# " + title + "\n\n" + body)
 	p, err := s.Path(record.Path)
 	if err != nil {
 		return Record{}, err
+	}
+	if kind == "plan" {
+		if err := os.Mkdir(filepath.Dir(p), 0755); err != nil {
+			return Record{}, err
+		}
 	}
 	f, err := os.OpenFile(p, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
@@ -325,7 +368,7 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	if closeErr != nil {
 		return Record{}, closeErr
 	}
-	if kind == "plan" {
+	if kind == "plan" && intent != "" {
 		if err := s.editRecord(parent, "plans", append(parent.Plans, id)); err != nil {
 			return record, fmt.Errorf("created %s but could not link it from %s: %w", record.Path, parent.Path, err)
 		}

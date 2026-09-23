@@ -37,7 +37,7 @@ For each bounded task, obtain its dispatch specification:
 ```sh
 context-circuit-cli --workspace <root> --json agent dispatch \
   --host <host> --role <explorer|planner|worker|reviewer> \
-  --plan <plan-id> --path <actual-working-directory>
+  --plan <plan-id> --repo <repo-id> --path <actual-working-directory>
 ```
 
 The quoted record is the assignment. A planner plans the whole intent and refuses
@@ -46,7 +46,8 @@ the plan it was already handed. Add `--task '<the assignment>'` where no record
 assigns the role — an explorer's question, a reviewer's criteria — or to name the
 single slice a worker owns when several share a plan, which is said nowhere else.
 
-Dispatch a planner against `--intent <intent-id>`, never `--plan`: the planner
+Dispatch an intent planner against `--intent <intent-id>` and a standalone
+planner against `--task '<specified outcome>'`, never `--plan`: the planner
 returns the plan shape, so numbering a plan first settles the split it was asked
 to propose, and an intent that turns out to hold several plans has no single ID
 to pass. Create the plan records afterwards, from what it returns. Omit both when
@@ -131,9 +132,9 @@ read, or a read that would take a serious part of the remaining context.
 Investigate in the session when it already holds that code, since a planner would
 re-derive what is present and add only latency.
 
-One planner runs per intent; splitting it per repository destroys the
-cross-repository order it exists to produce. Dispatch it against the intent
-rather than a plan: the plan shape is what it returns, so create the plan records
+One planner runs per planning request; splitting it per repository destroys the
+cross-repository order it exists to produce. Dispatch it against the intent or
+specified standalone outcome rather than a plan: the plan shape is what it returns, so create the plan records
 from its answer rather than numbering one first and handing it over.
 `.agents/skills/cc-plan/SKILL.md` covers what to write from that answer.
 
@@ -152,7 +153,15 @@ worktree genuinely share files and must preserve each other's edits.
 
 A plan naming several repositories has a worktree and a branch in each, so it
 takes one sole-owner worker per repository rather than one for the plan. Each is
-briefed with the whole plan and sees only its own working directory.
+briefed with the plan body and sees only its own working directory. Pass
+`--repo` for each worker; a single-repository plan can infer it. The brief
+states the absolute workspace root once and lists only the workspace-relative
+files assigned through `required_files.shared` and that repository's
+`required_files.by_repository` list. The worker resolves and reads every listed
+file before editing. The CLI validates them and refuses a missing or unsafe
+assignment. Do not quote or copy the whole frontmatter map into each prompt.
+Before dispatch, reread the current entry and details; present material changes
+that appeared since the person saw the plan.
 
 Pass `--shared` only for the second case. The default brief tells a worker it is
 the sole owner of its directory; `--shared` replaces that with shared-ownership

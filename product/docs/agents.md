@@ -8,7 +8,7 @@ it has no LLM credentials and does not invoke model APIs.
 | Role | Responsibility | Access |
 | --- | --- | --- |
 | explorer | Answer a specific codebase question with evidence | Read-only |
-| planner | Investigate an approved intent and return a grounded plan | Read-only; coordinator writes the plan |
+| planner | Investigate an approved intent or specified standalone outcome and return a grounded plan | Read-only; coordinator writes the plan |
 | worker | Implement assigned work and run normal checks | Repository edits within its assignment |
 | reviewer | Independently examine a diff on user request | Read-only; no fixes or automatic follow-up |
 

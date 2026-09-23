@@ -29,7 +29,7 @@ type Role struct {
 
 var Roles = map[string]Role{
 	"explorer": {"Investigate a bounded codebase question and return evidence.", "Inspect only the assigned repository question. Return file locations, observed behavior, and uncertainties. Run no tests, linters, or builds: report behavior you read, never behavior you confirmed. Do not edit files or launch other agents.", true},
-	"planner": {"Plan an approved intent using evidence from the repositories.", `Read the intent above and the code it names, then answer under these headings:
+	"planner": {"Plan an approved intent or specified standalone outcome using repository evidence.", `Read the approved intent above, or the specified standalone outcome in the task, and the relevant code. Then answer under these headings:
 
 - Verdict: feasible, feasible-with-changes, or not-feasible.
 - Approach: how the outcome is reached.
@@ -41,7 +41,7 @@ Run no tests, linters, or builds: a check you name is one you read, never one yo
 Not-feasible is a complete answer: return it with its reasons instead of a plan.
 The coordinator writes the plan record and decides any split, so no plan exists yet and none is yours to number.
 Do not implement, do not request a separate plan approval, do not edit files, and do not launch other agents.`, true},
-	"worker": {"Implement a bounded part of an approved plan and run normal checks.", `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
+	"worker": {"Implement a bounded part of a requested plan and run normal checks.", `Implement the plan above in the working directory above. Own only your assignment and the paths it names.
 
 The working directory is a repository checkout. Read the AGENTS.md or CLAUDE.md
 at its root if there is one, and follow it where it is more specific than this
@@ -357,7 +357,14 @@ type Dispatch struct {
 	SetupRequired       string `json:"setup_required,omitempty"`
 }
 
-func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, shared, reviewRequested bool) (Dispatch, error) {
+func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, shared, reviewRequested bool, repository ...string) (Dispatch, error) {
+	repo := ""
+	if len(repository) > 0 {
+		repo = repository[0]
+	}
+	if repo != "" && role != "worker" {
+		return Dispatch{}, errors.New("--repo assigns a worker")
+	}
 	setting, err := s.agentSetting(host, role)
 	if err != nil {
 		return Dispatch{}, err
@@ -368,8 +375,8 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 	// required flag leaves the coordinator nothing to write but that
 	// restatement. A worker splitting one plan with others is the exception:
 	// its slice is named in the task and nowhere else.
-	if role == "planner" && task != "" {
-		return Dispatch{}, errors.New("a planner plans the whole approved intent quoted in its brief, so it takes no --task")
+	if role == "planner" && intent != "" && task != "" {
+		return Dispatch{}, errors.New("an intent planner takes the whole approved intent, so it takes no --task")
 	}
 	briefed := role == "planner" || role == "worker"
 	if task != "" || !briefed {
@@ -390,8 +397,8 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		if plan != "" {
 			return Dispatch{}, errors.New("a planner proposes the plan shape, so it is dispatched against --intent, not an already numbered --plan")
 		}
-		if intent == "" {
-			return Dispatch{}, errors.New("a planner needs --intent naming the approved intent to plan")
+		if intent == "" && task == "" {
+			return Dispatch{}, errors.New("a planner needs --intent or --task specifying the standalone outcome")
 		}
 	} else if intent != "" {
 		return Dispatch{}, errors.New("--intent dispatches a planner; other roles take --plan")
@@ -441,6 +448,27 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		}
 		author = record.CreatedBy
 		prompt += "\n\n" + planBrief(record, s.Root)
+		if role == "worker" {
+			if repo == "" {
+				if len(record.Repositories) != 1 {
+					return Dispatch{}, errors.New("multi-repository worker dispatch needs --repo")
+				}
+				repo = record.Repositories[0]
+			}
+			files, err := s.requiredPlanFiles(record, repo)
+			if err != nil {
+				return Dispatch{}, err
+			}
+			prompt += "\n\nRepository assignment: " + repo
+			if len(files) > 0 {
+				prompt += "\n\n# Required files relative to workspace root\n\n"
+				for _, file := range files {
+					prompt += "- " + file + "\n"
+				}
+				prompt += "\nResolve these paths against the workspace root above and read every required file before editing."
+			}
+			prompt += "\n\nWork only in your assigned repository worktree. Links in the plan body to other repositories' files are for human review; do not open them unless assigned here."
+		}
 	}
 	if intent != "" {
 		record, err := s.FindRecord(intent)
@@ -456,6 +484,9 @@ func (s *Store) DispatchAgent(host, role, task, directory, plan, intent string, 
 		}
 		author = record.CreatedBy
 		prompt += "\n\n" + intentBrief(record, s.Root)
+	}
+	if role == "planner" && intent == "" {
+		author, _ = s.ActiveMember()
 	}
 	if task != "" {
 		prompt += "\n\n# Task\n\n" + task
@@ -554,7 +585,11 @@ func recordBody(record Record, kind string) string {
 		return ""
 	}
 	fence := strings.Repeat("`", max(3, longestRun(body, '`')+1))
-	return "\n\nThe full " + kind + " follows and is authoritative. You do not need to open the file.\n\n" +
+	intro := "The full " + kind + " follows and is authoritative. You do not need to open the file."
+	if kind == "plan" {
+		intro = "The plan entry body follows and is authoritative. You do not need to open the entry file. If a required-files list follows, read those files before editing."
+	}
+	return "\n\n" + intro + "\n\n" +
 		fence + "markdown\n" + body + "\n" + fence
 }
 

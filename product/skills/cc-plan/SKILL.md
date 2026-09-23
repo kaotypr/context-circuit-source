@@ -1,9 +1,9 @@
 ---
 name: cc-plan
-description: Create Context Circuit plan records from an approved intent — what a plan holds, how many to write, and what stays out of them.
+description: Create Context Circuit plan folders from an approved intent or a direct request for a grounded plan.
 ---
 
-# Write the plans an approved intent authorizes
+# Write grounded plan folders
 
 Approval authorizes planning, and planning alone. `record approve` returns
 `planning_required` naming this work, because approval reporting success is the
@@ -24,15 +24,20 @@ engineers there actually say. Where the member records a `tone` in
 `members.yaml`, follow it; it overrides that guidance.
 `.agents/skills/cc-intent/SKILL.md` carries the same rules with worked examples.
 
-Without asking again, inspect real code and create the linked plan records:
+For an approved intent, inspect real code and create linked plan folders:
 
 ```sh
 context-circuit-cli --workspace <root> record create --kind plan --slug SLUG --title TITLE --intent i001 --repo api
 ```
 
+For a person's explicit request for a detailed plan of an already specified
+outcome, do the same grounding and omit `--intent`. Do not invent an intent.
+Neither planning request authorizes execution. Present the complete plan and
+wait for a separate request to execute it.
+
 ## How many plans
 
-One readable Markdown plan may cover one or several repositories. Use separate
+One plan folder may cover one or several repositories. Use separate
 plans when that helps execution or delivery — work that lands in different
 repositories at different times, or that a person may want to run in stages.
 
@@ -45,18 +50,36 @@ context-circuit-cli --workspace <root> record dependencies --id p0001 --depends-
 
 ## What a plan holds
 
-Approach, task order, optional dependencies, useful risks, and the checks the
-work is expected to pass. Detailed paths are descriptive planning information,
-not hard enforcement gates.
+`plans/pNNNN-slug/plan.md` holds the outcome, repository scope, approach, task
+order, optional dependencies, useful risks, expected checks, and a Details
+section. Add concern files such as `api-contract.md` or `data-model.md` only when
+the extra detail helps a person inspect the proposal. Link every supporting file
+from Details and assign it in frontmatter, relative to the plan folder:
+
+```yaml
+required_files:
+  shared: [data-model.md]
+  by_repository:
+    api: [api-contract.md]
+    web: [ui-structure.md]
+```
+
+Omit `required_files` when there are no supporting files. Every regular file
+inside the folder besides `plan.md` must be assigned. Paths stay inside the
+folder, do not pass through symlinks, and refer to regular files. Use Markdown
+for text details; diagrams and assets can also live inside the folder. The
+entry remains a readable map of all details, including those assigned to other
+repositories. Present its links and material choices to the person, then revise
+the folder as requested. Re-present any material change made after presentation.
 
 Explain and record newly needed files or repositories within the approved
 outcome. Obtain renewed approval only when the intended outcome or its success
 criteria materially change; a question that bears on the outcome returns to the
 intent record.
 
-A plan is written when the work is planned, and then left alone. Running a plan
-does not edit it, so a later reader can see what was intended and read the diff
-for what happened.
+Revise the plan during review and present material changes again. Once execution
+starts, running a plan does not edit it, so a later reader can see what was
+intended and read the diff for what happened.
 
 ## When a planner produced it
 

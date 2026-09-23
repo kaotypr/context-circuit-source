@@ -1,14 +1,16 @@
 # Deriving stacked plan order
 
-Running several plans of one intent without guessing what may run beside what.
+Running a selected set of plans without guessing what may run beside what.
 
 ## Derivation, not execution
 
-Ordering reads recorded dependencies and completion dates and reports the waves
+Ordering reads recorded dependencies and completion dates for all active plans,
+an intent's linked plans, or exact IDs selected with repeatable `--plan`. It reports the waves
 and their concurrency, each plan's start reference per repository, the
 integration merges a fan-in needs, which plans in one wave share a repository, a
 strategy summary with the cost of each shape, the completed and blocked plans,
-and how many remain.
+and how many remain. The result names its selected plan IDs. An unfinished
+dependency outside that selection blocks its dependents; it is not added.
 
 It **runs nothing, merges nothing, and reserves nothing**, and says so, because
 a report that looks like a plan of record invites being treated as one.
@@ -28,15 +30,15 @@ The recommendation is mechanical and reported with its reason:
 - Anything else recommends waves, because independent plans in separate
   repositories overlap without a merge at all.
 
-Present the recommendation with its cost, honor an explicit choice without
-re-asking, and confirm the shape once before starting.
+Present the recommendation with its cost and honor an explicit choice. The
+separate request to execute the presented plans authorizes the run; use the
+recommended shape when no shape was chosen.
 
 ## The run
 
-Confirm once, then run to completion without further prompting: prepare each
-worktree from the reported start, perform any reported integration merge with
-ordinary Git, dispatch a worker per plan, wait, and mark work complete only when
-it actually landed and its checks passed.
+After the person requests execution, prepare each worktree from the reported
+start, perform any reported integration merge with ordinary Git, dispatch the
+workers, and wait. Completion is a later person-requested act.
 
 A wave is judged from what each worker reports: the files it changed, the checks
 it ran, and their real outcome. Re-reading the diff and re-running those checks
@@ -51,16 +53,14 @@ Read the diff where integration needs it — a merge to resolve, or a report
 naming a conflict, a failure, or an assumption — not to satisfy yourself that
 work already reported was really done.
 
-That last condition is load-bearing. Ordering reads completion to release the
-next wave, so unfinished work holds its dependents automatically and there is no
-separate readiness state to maintain — which is why completion must never be
-recorded optimistically. Recompute the order after each wave rather than
-trusting the first result; the world changed during the wave.
+Ordering reads previously recorded completion to judge dependencies outside the
+run. Within a run, follow the selected waves and actual Git ancestry; do not
+stamp completion merely to advance the next wave.
 
 ## Conflicts and stops
 
 A conflict from an integration merge inside the run is resolved directly: both
-sides belong to the same approved intent and both their records and diffs are
+sides belong to the selected run and both their records and diffs are
 available. The resolution preserves both behaviors, then runs the repository's
 checks — a resolved merge is not trusted until they pass — and is recorded so it
 can be audited. A conflict against anything outside the run, or one where
