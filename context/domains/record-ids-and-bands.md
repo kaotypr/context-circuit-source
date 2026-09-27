@@ -45,10 +45,53 @@ and four plan digits, expanding beyond that width rather than wrapping. The
 prefix exists so an intent cannot be mistaken for a plan in a reference, a
 branch name, or conversation.
 
-A reserved number is **never reused**, including after archival or deletion.
-Allocation inventories filenames including archives without reading archived
-content, and the diagnostic reports a number present in a record but missing
-from the permanent ledger, or the reverse.
+A reserved number is **not reused while it stays in the ledger**, and archiving
+a record or removing its file by hand leaves it there. Allocation inventories
+filenames including archives without reading archived content, and the
+diagnostic reports a number present in a record but missing from the permanent
+ledger. The reverse — a reservation with no record — is not a fault: it is what
+an interrupted create leaves behind, and what a hand-removed record leaves too.
+
+## Releasing numbers
+
+Deletion is the one deliberate way a number goes back. It removes every intent
+and plan one member created, active and archived, or in a solo workspace every
+record, and takes their numbers out of the ledger so the next allocation hands
+them out again. That exists for work that should never have been recorded — a
+trial run, a member's abandoned direction — where keeping the gap would only
+preserve noise.
+
+Selecting by author is what keeps it from reaching into anyone else's work, and
+the refusals keep the selection honest. It deletes nothing while another
+member's record would be left naming a deleted one, or while a worktree on this
+machine was prepared for a deleted plan, because a released number is about to
+mean something else and a stale pointer to it would then be silently wrong. Its
+first run is a preview: the person sees the records and numbers and agrees to
+that list before the confirmed run deletes anything.
+
+The ledger is updated before the files go. Interrupted between the two, the
+files still stand and allocation still counts their filenames as taken, so no
+number is handed out twice, and running the same deletion again finishes it.
+
+What a released number already reached is not recalled. A branch name, a pull
+request, or a conversation that carried it now names two records, and a clone
+that has not pulled the deletion still holds the originals.
+
+## Who is allocating
+
+A workspace whose roster is empty is a solo one: nobody selects an identity,
+records carry no author, and allocation takes the lowest free numbers. Once the
+roster lists anyone, each machine says which member is working, because the
+author decides the band and the band decides the number. Until it does, record
+creation is refused and orientation reports the identity as outstanding; the
+agent declines changing requests and asks who the person is, offering an
+existing member or adding a new one. A record written before the roster existed
+keeps its missing author and stays valid.
+
+The answer is taken as given. A person could name someone else's member, and
+nothing checks: the roster attributes records and divides numbers, and it was
+never access control. Building verification into it would cost every member a
+ceremony to prevent a mistake nobody gains from.
 
 ## Allocation bands
 
@@ -94,4 +137,7 @@ Owner:
 - `context-circuit-source@internal/workspace/records.go` `Store.allocate` and
   `bandWidth` — how a number is chosen and which band it falls in.
 - `context-circuit-source@internal/workspace/workspace.go` `Members` — the
-  roster validation the bands are derived from.
+  roster validation the bands are derived from, and `ActiveMember`, which tells
+  a solo workspace from an unidentified machine in a team one.
+- `context-circuit-source@internal/workspace/deletion.go` `DeleteRecords` —
+  selection by author, the refusals, and releasing numbers from the ledger.

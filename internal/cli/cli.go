@@ -19,7 +19,8 @@ const Help = `Context Circuit — shared workspace operations
 
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 
-init                  --name NAME --purpose TEXT --member ID --member-name NAME
+init                  --name NAME --purpose TEXT [--member ID --member-name NAME]
+                      (no member makes a solo workspace, with no roster)
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
 member add            --id ID --name NAME [--band N] [--language NAME] [--tone TEXT]
@@ -61,6 +62,9 @@ record list           [--archived]
 record approve        --id INTENT_ID --text USER_APPROVAL
 record complete       --id PLAN_ID --text RESULT
 record dependencies   --id PLAN_ID [--depends-on ID ...]
+record delete         --member ID | --all [--confirm] (a member's intents and plans,
+                      or every record in a solo workspace, releasing their IDs;
+                      without --confirm it previews and deletes nothing)
 record order          [--intent ID | --plan ID ...] [--mode auto|waves|linear]
                       derive dependency waves, start refs, and integration merges
 context find          --query TEXT | --repo ID (optional index only)
@@ -199,7 +203,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	}
 	var repos, dependencies, copyPaths, plans listFlag
 	var band int
-	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone bool
+	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone, all, confirm bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
@@ -251,6 +255,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		f.BoolVar(&archived, "archived", false, "include archived records")
 	case "record approve", "record complete":
 		add("id", "text")
+	case "record delete":
+		add("member")
+		f.BoolVar(&all, "all", false, "every record in a solo workspace")
+		f.BoolVar(&confirm, "confirm", false, "delete, after the person agreed to the previewed list")
 	case "record dependencies":
 		add("id")
 		f.Var(&dependencies, "depends-on", "plan dependency (repeatable)")
@@ -341,6 +349,10 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// carries the source in the shared record — which is what joining one
 	// looks like.
 	optional["url"] = true
+	// A solo workspace is initialized with no member, and a solo deletion
+	// names none; the store refuses a half-given pair where it can say why.
+	optional["member"] = command == "init" || command == "record delete"
+	optional["member-name"] = command == "init"
 	optional["intent"] = command == "record create" || command == "record order" || command == "agent dispatch"
 	if command == "worktree prepare" {
 		for _, k := range []string{"plan", "branch", "start", "path"} {
@@ -528,6 +540,8 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				result["reconcile_required"] = "judge each entry above against what this plan changed: edit the note and its catalog entry together and move its reviewed date, or record in the completion note that it changed nothing"
 			}
 			return result, e
+		case "record delete":
+			return s.DeleteRecords(get("member"), all, confirm)
 		case "record dependencies":
 			err = s.SetDependencies(get("id"), dependencies)
 		case "record order":

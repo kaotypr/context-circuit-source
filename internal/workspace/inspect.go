@@ -2,6 +2,7 @@ package workspace
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -64,10 +65,16 @@ type Orientation struct {
 	// once it has been described. Shared records are read from whatever commit
 	// this checkout is sitting on, so a stale or dirty workspace is part of
 	// what orientation has to report rather than something to go looking for.
-	Self         *Snapshot           `json:"workspace_repository,omitempty"`
-	Members      Members             `json:"members"`
-	ActiveMember string              `json:"active_member,omitempty"`
-	Repositories map[string]Snapshot `json:"repositories"`
+	Self         *Snapshot `json:"workspace_repository,omitempty"`
+	Members      Members   `json:"members"`
+	ActiveMember string    `json:"active_member,omitempty"`
+	// IdentityRequired names the outstanding act when a workspace lists members
+	// and this machine has selected none of them. It is said beside the data,
+	// the way approval says planning_required, because an agent reading an
+	// empty active_member cannot tell a solo workspace from an unidentified
+	// person in a team one.
+	IdentityRequired string              `json:"identity_required,omitempty"`
+	Repositories     map[string]Snapshot `json:"repositories"`
 	// Knowledge is every borrowed repository and what this machine currently
 	// sees of it. It is reported beside the repositories, and separately from
 	// them, because reading it is part of orienting and working in it is not.
@@ -89,6 +96,9 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 	if err != nil {
 		result.Issues = append(result.Issues, found(err.Error(),
 			"select this machine's member with `member use --id ID`; add them to the roster first with `member add` if nobody has"))
+		if errors.Is(err, ErrIdentityRequired) {
+			result.IdentityRequired = "decline any request that changes the workspace, its repositories, or its records until the person says which member they are: select them with `member use --id ID`, or add them with `member add` and then select them, and continue the request they made"
+		}
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
 		result.Issues = append(result.Issues, found("workspace repository: "+err.Error(),
@@ -217,7 +227,7 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	for _, id := range append(append([]string{}, ledger.Intents...), ledger.Plans...) {
 		if reserved[id] || !recordPattern.MatchString(id) {
 			issues = append(issues, found("invalid/duplicate reserved ID: "+id,
-				needsAPerson+"an ID is reserved twice or is malformed; correct .context-circuit/ids.yaml by hand and never release a reservation"))
+				needsAPerson+"an ID is reserved twice or is malformed; correct .context-circuit/ids.yaml by hand without dropping a reservation; only `record delete` releases one"))
 		}
 		reserved[id] = true
 	}
@@ -243,7 +253,9 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		}
 	}
 	for _, record := range records {
-		if _, ok := state.Members.Members[record.CreatedBy]; !ok {
+		// A record with no author was written while the workspace had no
+		// roster, and stays valid once members are added.
+		if _, ok := state.Members.Members[record.CreatedBy]; !ok && record.CreatedBy != "" {
 			issues = append(issues, found(record.ID+": unknown created_by member",
 				"add them with `member add --id ID --name NAME`, or correct the record's created_by to a member the roster carries"))
 		}

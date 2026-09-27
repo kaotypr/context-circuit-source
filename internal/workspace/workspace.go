@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"regexp"
 	"strings"
@@ -329,29 +330,55 @@ func (b Bindings) WorkspaceBase(cfg Config) string {
 	return ""
 }
 
+// ErrIdentityRequired reports a workspace with a roster on a machine that has not
+// said which member is working. A workspace without a roster is a solo one, and
+// nobody there has anyone to be told apart from.
+var ErrIdentityRequired = errors.New("select a workspace member: this workspace lists members and this machine has selected none of them; run `member use --id ID`, after `member add` if the person is not on the roster")
+
+// ActiveMember returns this machine's member, or "" in a solo workspace, whose
+// roster is empty. Selection is a statement, not a proof: nothing here verifies
+// that the person is who member.local.yaml says, because a roster is for
+// attribution and allocation, and neither is a security boundary.
 func (s *Store) ActiveMember() (string, error) {
-	var local Identity
-	if err := s.YAML("member.local.yaml", &local); err != nil {
-		return "", fmt.Errorf("select a workspace member: %w", err)
-	}
 	members, err := s.Members()
 	if err != nil {
 		return "", err
 	}
+	if len(members.Members) == 0 {
+		return "", nil
+	}
+	var local Identity
+	if err := s.YAML("member.local.yaml", &local); err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			return "", ErrIdentityRequired
+		}
+		return "", fmt.Errorf("member.local.yaml: %w", err)
+	}
 	if _, ok := members.Members[local.Member]; !ok {
-		return "", errors.New("active member is absent from members.yaml")
+		return "", fmt.Errorf("active member %q is absent from members.yaml: %w", local.Member, ErrIdentityRequired)
 	}
 	return local.Member, nil
 }
 
 func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, member, display string) error {
-	for _, value := range []string{name, purpose, display} {
+	for _, value := range []string{name, purpose} {
 		if err := Text(value); err != nil {
 			return err
 		}
 	}
-	if err := Name(member); err != nil {
-		return err
+	// A workspace initialized without a member is a solo one: no roster, no
+	// identity to select on another machine, and records carrying no author.
+	// Adding the first member later is what makes it a team workspace.
+	if (member == "") != (display == "") {
+		return errors.New("pass --member and --member-name together, or neither for a solo workspace")
+	}
+	if member != "" {
+		if err := Name(member); err != nil {
+			return err
+		}
+		if err := Text(display); err != nil {
+			return err
+		}
 	}
 	for _, rel := range []string{"member.local.yaml", "repositories.local.yaml"} {
 		p, err := s.Path(rel)
@@ -419,14 +446,20 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if err := s.WriteYAML("workspace.yaml", cfg, 0644); err != nil {
 		return err
 	}
-	if err := s.WriteYAML("members.yaml", Members{map[string]Member{member: {Name: display}}}, 0644); err != nil {
+	roster := map[string]Member{}
+	if member != "" {
+		roster[member] = Member{Name: display}
+	}
+	if err := s.WriteYAML("members.yaml", Members{roster}, 0644); err != nil {
 		return err
 	}
 	if err := s.WriteYAML("repositories.local.yaml", Bindings{Bindings: map[string]Binding{}}, 0600); err != nil {
 		return err
 	}
-	if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
-		return err
+	if member != "" {
+		if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
+			return err
+		}
 	}
 	// The README travels with the workspace, so it carries the workspace's name
 	// and the versions it received rather than the product's newest release. It

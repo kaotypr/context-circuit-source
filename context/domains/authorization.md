@@ -54,6 +54,18 @@ branch, deployment, external publication, and deletion of workspace data each
 require explicit authorization, and authorization already given is reused rather
 than re-requested.
 
+Deleting records is the sharpest case, because it also releases their numbers.
+The request names whose records go, and the person then agrees to the exact list
+a preview returns before anything is removed; the request alone does not cover a
+list nobody had seen, for the same reason an early instruction to implement
+does not cover unread plans. Committing and pushing that deletion stay separate
+authorizations.
+
+Identity is not an authorization. A team workspace asks an unidentified person
+which member they are before changing anything, and takes the answer as given;
+that attributes the work and chooses its numbers, and grants nothing the person
+could not otherwise do.
+
 Committing is split by where it lands. A commit on a prepared worktree's own
 branch is implementation: it leaves the machine no more than an edit does, the
 branch belongs to the workspace, and three things downstream read commits and
