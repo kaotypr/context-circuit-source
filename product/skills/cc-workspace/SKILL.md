@@ -11,16 +11,22 @@ already has the shared files.
 
 ## Initialize
 
-Initialize a workspace only when requested. Gather its name, purpose, and first
-member's name; derive a readable member ID.
+Initialize a workspace only when requested. Gather its name and purpose, and ask
+whether other people will work in it. A team workspace starts with its first
+member: gather their name and derive a readable member ID. A solo workspace
+starts with no member at all.
 
 ```sh
 context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
   --member ID --member-name NAME
+context-circuit-cli --workspace <root> init --name NAME --purpose TEXT
 ```
 
 The CLI creates embedded instructions, folders, and initial records, and
-preserves existing files. A solo workspace still has a real member.
+preserves existing files. A solo workspace has an empty roster: nobody selects an
+identity and its records carry no author. It becomes a team workspace when its
+first member is added, and every machine then selects one — so a solo developer
+bringing someone in adds themselves as well as the teammate.
 
 On another machine, select an existing member and connect its local checkouts;
 do not reinitialize the shared workspace. Cloning a workspace onto a second
@@ -32,6 +38,14 @@ The next section is the whole of it.
 A cloned workspace carries the shared records and none of this machine's state:
 no active member, no bindings, and no role definitions, because those are
 gitignored. `check` on a fresh clone names what is missing; work through it.
+
+In a workspace that lists members, a person this machine has not identified is
+asked who they are before anything changes, which is the entry instruction's
+gate. Show the members `members.yaml` lists and ask whether they are one of them
+or someone new. An existing member is selected with `member use`. Someone new is
+added with a readable ID, their name, and a band nobody holds, then selected.
+Take their answer as given; nothing verifies it. Once selected, return to the
+request they made.
 
 Unless the request says otherwise, put checkouts under `repositories/<id>`,
 which is gitignored and is where the workspace expects its working copies.
@@ -145,8 +159,8 @@ binding alone.
 A member may hold an allocation band: a numeric block that member allocates from
 alone. Bands are what let two clones that cannot see each other allocate without
 colliding, so give every member of a team workspace a distinct band before they
-work apart. A solo workspace needs none, and an unbanded member allocates from
-the numbers no band has claimed.
+work apart. A solo workspace has no members to band, and an unbanded member
+allocates from the numbers no band has claimed.
 
 ```sh
 context-circuit-cli --workspace <root> member add --id ID --name NAME --band 100
@@ -154,7 +168,8 @@ context-circuit-cli --workspace <root> member band --id ID --band 200
 ```
 
 The band decides which number comes next and never makes a reserved number
-reusable. A band is not a namespace: the ID stays global.
+reusable; only `record delete` releases one. A band is not a namespace: the ID
+stays global.
 
 ## The language a member writes records in
 

@@ -65,6 +65,32 @@ only on a request, through `.agents/skills/cc-workspace/SKILL.md`. On another
 machine, select an existing member and connect its local checkouts; do not
 reinitialize the shared workspace.
 
+## Who is working
+
+A workspace whose `members.yaml` lists anyone is a team workspace, and every
+change made in it is made as one of those members. When this machine has no
+`member.local.yaml`, or it names someone the roster does not carry, `status`
+reports `identity_required`. Until that is settled, decline any request that
+would change something: creating, editing, approving, completing, or deleting a
+record, preparing a worktree, implementing, committing, or changing a member or
+repository. Say why it was declined. Reading, answering questions, and reporting
+status still proceed.
+
+Settle it by asking who the person is, offering both answers: one of the members
+the roster lists, or someone new to add. Adding follows
+`.agents/skills/cc-workspace/SKILL.md`, including a free band, and the person's
+answer is the request that step needs. Select them with `member use`, then carry
+out the request they originally made without asking them to repeat it.
+
+Take the answer as given. Nothing verifies that a person is the member they
+name, and nothing should be built to: the roster attributes records and divides
+ID numbers, and it is not access control.
+
+A workspace whose roster is empty is a solo workspace. Nobody is asked who they
+are, and its records carry no `created_by`. Adding the first member makes it a
+team workspace, and from then on every machine selects a member, including the
+one that added them — a solo developer adding a teammate adds themselves too.
+
 ## Language
 
 Talk to a person in whatever language they use. What gets written down follows
@@ -195,8 +221,10 @@ a record written by hand as well as through the CLI, is an ISO 8601 calendar
 date, `YYYY-MM-DD`. No other date format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for member-related
-metadata; no assignee, owner, reviewer, or member namespaces. Never reuse a
-reserved ID, including after archival or deletion. Local locking serializes one
+metadata; no assignee, owner, reviewer, or member namespaces. A reserved ID is
+never reused while it stays reserved: archiving a record, or removing its file by
+hand, releases nothing. `record delete` is the one operation that releases IDs,
+together with the records that held them. Local locking serializes one
 workspace directory. `.context-circuit/docs/working.md` describes the record
 structures in full.
 
@@ -316,6 +344,17 @@ Archiving is optional ordinary file organization on request. Keep ID reservation
 and fix relative links when moving a record. External publication is an explicitly
 requested task through available host tools; no automatic provider synchronization
 is part of core v2.
+
+Deleting records happens only on request, through `record delete`. In a team
+workspace it takes one member's intents and plans, active and archived; in a solo
+workspace it takes every record. Either way it releases their IDs, so those
+numbers are handed out again. Run it first without `--confirm`, which previews
+the records and IDs and deletes nothing. Show the person the whole list, say that
+the numbers become reusable, and run it with `--confirm` only once they agree to
+that list. A refusal naming another member's record, or a worktree on this
+machine, is resolved by whoever owns it, not by editing around it. Deletion is a
+change in this checkout: committing and pushing it are separate authorizations,
+and until every clone pulls it, another clone still holds those records.
 
 Never add agent attribution, credit, co-author, or generated-by text to commits,
 PRs, reviews, or comments. Follow repository commit conventions; default to
