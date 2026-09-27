@@ -72,6 +72,9 @@ context-circuit-cli record dependencies --id p0002 --depends-on p0001
 context-circuit-cli record complete --id p0001 --text 'User requested completion.'
 context-circuit-cli record order --intent i001 --mode waves
 context-circuit-cli record order --plan p0003 --mode waves
+context-circuit-cli record delete --member alex
+context-circuit-cli record delete --member alex --confirm
+context-circuit-cli record delete --all
 ```
 
 `context find` takes one of the two: a query searches this workspace's catalog
@@ -91,6 +94,25 @@ allocate from the numbers no band claims. `member band --band 0` clears a band.
 Bands must be distinct across the roster, and every command refuses to run while
 two members share one. Assigning, changing, or clearing a band never renumbers an
 existing record or releases its reservation.
+
+`record delete` is the one command that releases reservations. `--member` takes
+every intent and plan that member created, active and archived, in a workspace
+that lists members; `--all` takes every record in a solo workspace, whose roster
+is empty, and resets the ledger. Each is refused in the other kind of workspace.
+Without `--confirm` it returns the records and `released_ids` with
+`confirmation_required` and deletes nothing; with it, the ledger is updated and
+the files and plan folders are removed, and `sync_required` says the deletion
+lives in this checkout until it is committed and pulled everywhere. It refuses,
+deleting nothing, while another member's record would be left naming a deleted
+one — a plan under a deleted intent, a dependency, or an intent linking a deleted
+plan — or while a worktree on this machine was prepared for a deleted plan.
+Interrupted after the ledger is updated, the remaining files still count as taken;
+run the same deletion again to finish.
+
+`status` reports `identity_required` when a workspace lists members and this
+machine has selected none of them, or names one the roster does not carry, and
+`record create` is refused until `member use` settles it. A solo workspace, with
+an empty roster, never reports it.
 
 Use the actual returned IDs, not the example numbers. `--repo` and `--depends-on`
 are repeatable. Creation reserves IDs and links a new plan from its intent when

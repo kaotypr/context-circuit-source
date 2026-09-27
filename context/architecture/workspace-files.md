@@ -83,7 +83,9 @@ describes that machine and nobody else.
 - **Multi-file operations may leave partial output** on interruption, and a
   number is reserved before its file is created and never rolled back. The
   command reports the path so the work can be resumed or repaired — silently
-  reusing a reserved number would be worse.
+  reusing a reserved number would be worse. Deletion is the one deliberate
+  release, and it updates the ledger before removing files so an interruption
+  still leaves the numbers counted as taken.
 
 ## Dates
 

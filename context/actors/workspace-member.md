@@ -40,6 +40,14 @@ Runs the product against a real project, alone or on a roster.
 1. **As a member on a roster, I want my record numbers not to collide with a
    teammate's,** so that two people can work offline and merge without
    renumbering anything.
+2. **As a member joining a workspace, I want to be asked who I am before my first
+   change,** so that my records carry my name and my band rather than failing
+   halfway or landing in someone else's range.
+3. **As a solo developer, I want no roster to maintain,** so that working alone
+   costs nothing for a feature built for teams.
+4. **As a member, I want to delete my own trial records and get their numbers
+   back,** so that a direction I abandoned does not stay in the workspace as
+   noise.
 
 ## [Durable notes and the retrieval catalog](../domains/knowledge-notes.md)
 

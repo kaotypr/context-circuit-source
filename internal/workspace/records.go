@@ -22,9 +22,12 @@ type Ledger struct {
 	Intents []string `yaml:"intents" json:"intents"`
 	Plans   []string `yaml:"plans" json:"plans"`
 }
+
+// A Record's CreatedBy is empty only for one written while the workspace had no
+// roster: a solo workspace has nobody to attribute a record to.
 type Record struct {
 	ID            string         `yaml:"id" json:"id"`
-	CreatedBy     string         `yaml:"created_by" json:"created_by"`
+	CreatedBy     string         `yaml:"created_by,omitempty" json:"created_by,omitempty"`
 	CreatedAt     ISOTime        `yaml:"created_at" json:"created_at"`
 	ApprovedAt    ISOTime        `yaml:"approved_at,omitempty" json:"approved_at,omitempty"`
 	Intent        string         `yaml:"intent,omitempty" json:"intent,omitempty"`
@@ -172,8 +175,10 @@ func (s *Store) readRecord(path string) (Record, error) {
 	if !recordPattern.MatchString(record.ID) || !strings.HasPrefix(entryName, record.ID+"-") {
 		return record, fmt.Errorf("record ID and filename do not match: %s", path)
 	}
-	if err := Name(record.CreatedBy); err != nil {
-		return record, err
+	if record.CreatedBy != "" {
+		if err := Name(record.CreatedBy); err != nil {
+			return record, err
+		}
 	}
 	if strings.HasPrefix(record.ID, "i") && !strings.HasPrefix(path, "intent/") || strings.HasPrefix(record.ID, "p") && !strings.HasPrefix(path, "plans/") {
 		return record, fmt.Errorf("record is in the wrong directory: %s", path)
@@ -194,8 +199,9 @@ func bandWidth(kind string) int {
 
 // allocate reserves the next free number for a record kind. An author holding a
 // band draws from that band's block alone; an author without one draws from the
-// numbers no band has claimed. Either way a reserved number is never reused, so
-// a band changes which number comes next and nothing about the ledger's rules.
+// numbers no band has claimed. Either way a reserved number is not reused while
+// it stays in the ledger, so a band changes which number comes next and nothing
+// about the ledger's rules. Only DeleteRecords takes a number back out.
 func (s *Store) allocate(kind, author string) (string, error) {
 	var ledger Ledger
 	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
@@ -276,7 +282,8 @@ func (s *Store) allocate(kind, author string) (string, error) {
 		values = ledger.Plans
 	}
 	// Reserve before creating a record: an interrupted write consumes a number,
-	// and removing or archiving its file will never make that number reusable.
+	// and removing or archiving its file by hand never makes that number
+	// reusable. Releasing one is DeleteRecords' job, done with the files.
 	return id, s.Update(".context-circuit/ids.yaml", []string{key}, append(values, id), 0644)
 }
 

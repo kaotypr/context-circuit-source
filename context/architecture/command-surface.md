@@ -11,7 +11,7 @@ init · status · check
 member add|band|use|list
 repo connect|clone|init|base|remote|relate|fetch|inspect
 workspace connect|base|remote
-record create|show|list|note|approve|complete|dependencies|order
+record create|show|list|approve|complete|dependencies|order|delete
 context find
 worktree prepare|list|inspect|move|repair|remove
 template export

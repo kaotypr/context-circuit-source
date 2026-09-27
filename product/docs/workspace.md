@@ -10,14 +10,14 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
-| members.yaml | Member ID to display name, optional allocation band, and optional record language and tone | Yes |
+| members.yaml | Member ID to display name, optional allocation band, and optional record language and tone; empty in a solo workspace | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
 | plans/pNNNN-slug/* | Optional supporting design files assigned in the plan entry | Yes |
 | plans/pNNNN-slug.md | Legacy single-file plan, still readable and editable | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
-| member.local.yaml | Active member ID on this machine | No |
+| member.local.yaml | Active member ID on this machine; absent in a solo workspace | No |
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
@@ -226,7 +226,9 @@ nobody here can move it.
 
 A clone carries the shared records and none of this machine's state. `check`
 names what is missing: an active member, the workspace binding, and a binding
-per repository. Add the member to the roster if nobody has, select them, run
+per repository. Until a member is selected, `status` reports `identity_required`
+and the agent declines changing requests; reading still works. A solo workspace,
+initialized without a member, has an empty roster and asks nobody who they are. Add the member to the roster if nobody has, select them, run
 `workspace connect`, obtain each repository, and run `agent setup` to write the
 role definitions, which are gitignored and so never arrive with the clone.
 
@@ -256,7 +258,9 @@ keys produce errors. User notes remain ordinary Markdown with no schema registry
 
 Atomic single-file replacements and a portable OS lock protect cooperating
 commands in one directory. Multi-file operations may leave useful partial output
-on interruption; IDs are reserved before file creation and are never rolled back.
+on interruption; IDs are reserved before file creation and are not rolled back.
+`record delete` releases IDs deliberately, updating the ledger before it removes
+the files, so an interrupted deletion leaves numbers still counted as taken.
 Check the reported path and resume or repair the named files. Locks are released
 when the process exits, including abnormal exit; the empty local lock file remains.
 

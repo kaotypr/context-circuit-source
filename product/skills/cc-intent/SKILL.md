@@ -106,6 +106,7 @@ format belongs in a workspace file.
 
 Intent and plan IDs are workspace-global. Use only `created_by` for
 member-related metadata; there are no assignee, owner, reviewer, or member
-namespaces. Never reuse a reserved ID, including after archival or deletion.
+namespaces. A reserved ID is never reused while it stays reserved; archiving or
+removing a file by hand releases nothing, and only `record delete` does.
 
 `.context-circuit/docs/working.md` describes the record structures in full.

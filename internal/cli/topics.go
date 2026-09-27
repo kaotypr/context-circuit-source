@@ -16,7 +16,9 @@ var groups = map[string]bool{
 var Topics = map[string]string{
 	"init": `Creates a workspace in place from the embedded seed: instructions, folders,
 initial records, and native subagent role definitions for every supported host.
-Existing files are preserved. It neither migrates a v1 workspace nor
+Existing files are preserved. Without --member it creates a solo workspace, whose
+empty roster means nobody selects an identity and records carry no author; adding
+the first member later makes it a team workspace. It neither migrates a v1 workspace nor
 reinitializes an active v2 one; on a second machine, select an existing member
 and connect local checkouts instead.`,
 
@@ -39,7 +41,10 @@ never an implementation or delivery gate.`,
 this machine's alone. A band is a numeric block one member allocates from, which
 is what lets clones that cannot see each other avoid colliding. A band is not a
 namespace: IDs stay workspace-global and the member is recorded only as
-created_by.`,
+created_by. A workspace whose roster is empty is a solo one; once the roster lists
+anyone, a machine that has selected none of them is told so by status as
+identity_required, and record creation waits for member use. Selection is taken
+as given: nothing verifies who a person is.`,
 
 	"knowledge": `Mounts a repository of knowledge this workspace reads and never owns: an
 organization's knowledge center, shared by many workspaces and changed through
@@ -72,9 +77,13 @@ a new repository. The workspace's own checkout is refused here and described by
 the workspace commands instead, because an entry in this map is somewhere work
 happens. Fetch updates refs only and implies no rebase or reset.`,
 
-	"record": `Creates and updates intents and plans, allocating IDs that are never reused.
+	"record": `Creates and updates intents and plans, allocating IDs from a permanent ledger.
 Approve and complete record a decision a person already made; neither command
-constitutes that decision, and no command executes a plan. Order derives
+constitutes that decision, and no command executes a plan. Delete removes one
+member's intents and plans, active and archived, or every record in a solo
+workspace, and is the only operation that releases a reserved ID. Without
+--confirm it previews what would go and deletes nothing; it refuses while another
+member's record, or a worktree on this machine, still points at one of them. Order derives
 dependency waves, starting references, and integration merges without running or
 reserving anything.`,
 
