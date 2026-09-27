@@ -17,7 +17,7 @@ mkdir -p "$work/source/scripts" "$work/source/release/requests/template" "$work/
 cp "$source_root/scripts/publish-template.sh" "$work/source/scripts/"
 mkdir -p "$work/source/product" "$work/source/release/template-repo"
 printf 'Zero Clause fixture license\n' > "$work/source/product/LICENSE"
-printf '# Product guide fixture\n' > "$work/source/product/README.md"
+printf '%s\n' '# Product guide fixture' '--tag v__TEMPLATE_VERSION__' > "$work/source/product/README.md"
 mkdir -p "$work/source/product/assets/readme"
 printf 'WEBPfixture\n' > "$work/source/product/assets/readme/logo.webp"
 printf '# Contributing fixture\n' > "$work/source/release/template-repo/CONTRIBUTING.md"
@@ -90,7 +90,11 @@ git -C "$work/template" rev-parse --verify 'refs/tags/v2.0.0-test^{commit}' >/de
 [ "$(cat "$work/template/CONTRIBUTING.md")" = '# Contributing fixture' ]
 [ "$(cat "$work/template/SECURITY.md")" = '# Security fixture' ]
 cmp -s "$work/source/product/LICENSE" "$work/template/LICENSE"
-cmp -s "$work/source/product/README.md" "$work/template/README.md"
+grep -q -- '--tag v2.0.0-test' "$work/template/README.md" || {
+  printf 'FAIL: publication did not substitute the template version\n' >&2; exit 1; }
+if grep -q '__TEMPLATE_VERSION__' "$work/template/README.md"; then
+  printf 'FAIL: published README retained the template version placeholder\n' >&2; exit 1
+fi
 cmp -s "$work/source/product/assets/readme/logo.webp" "$work/template/assets/readme/logo.webp"
 # None of them reach a workspace, whose root belongs to somebody else's project.
 "$CC_FIXTURE_BINARY" template export --path "$work/exported" >/dev/null

@@ -113,7 +113,9 @@ cp "$source_root/product/LICENSE" "$template_dir/LICENSE"
 # The quick-start block names this template's own clone URL, which differs by
 # where this release is published; the source carries a placeholder because
 # the same product/README.md is the source for every publish target.
-sed "s|__TEMPLATE_REPO_URL__|$template_repo_url|g" "$source_root/product/README.md" > "$template_dir/README.md"
+sed -e "s|__TEMPLATE_REPO_URL__|$template_repo_url|g" \
+  -e "s|__TEMPLATE_VERSION__|$version|g" \
+  "$source_root/product/README.md" > "$template_dir/README.md"
 mkdir -p "$template_dir/assets/readme"
 for art in "$source_root"/product/assets/readme/*.webp; do cp "$art" "$template_dir/assets/readme/"; done
 {
