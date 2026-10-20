@@ -95,23 +95,46 @@ is a band like any other and starts at `i001` and `p0001`, never `i000` or
 `p0000`. `member band --band 0` sets band 0; there is no clearing a band. Bands
 must be distinct across the roster, band 0 included, and every command refuses
 to run while two members share one. Allocation skips every number already
-reserved or held by a record file, inside any band, and a full band is refused
-naming the member, the band, and its range. Assigning or changing a band never
-renumbers an existing record or releases its reservation.
+reserved in any member's ID file or held by a record file, inside any band, and
+a full band is refused naming the member, the band, and its range. The new
+number is reserved in the author's own `.context-circuit/ids/MEMBER.yaml` and in
+no other file. Assigning or changing a band never renumbers an existing record or
+releases its reservation.
 
 `record delete` is the one command that releases reservations. `--member` takes
 every intent and plan that member created, active and archived. `--all` takes
 every record, including any an earlier version wrote without an author, and
-resets the ledger; it is refused unless the roster lists exactly one member.
-Without `--confirm` it returns the records and `released_ids` with
-`confirmation_required` and deletes nothing; with it, the ledger is updated and
-the files and plan folders are removed, and `sync_required` says the deletion
-lives in this checkout until it is committed and pulled everywhere. It refuses,
-deleting nothing, while another member's record would be left naming a deleted
-one — a plan under a deleted intent, a dependency, or an intent linking a deleted
-plan — or while a worktree on this machine was prepared for a deleted plan.
-Interrupted after the ledger is updated, the remaining files still count as taken;
-run the same deletion again to finish.
+empties every ID file while keeping the files; it is refused unless the roster
+lists exactly one member. Without `--confirm` it returns the records and
+`released_ids` with `confirmation_required` and deletes nothing; with it, each
+released ID is removed from every ID file holding it, the files and plan folders
+are removed, and `sync_required` says the deletion lives in this checkout until
+it is committed and pulled everywhere. It refuses, deleting nothing, while
+another member's record would be left naming a deleted one — a plan under a
+deleted intent, a dependency, or an intent linking a deleted plan — or while a
+worktree on this machine was prepared for a deleted plan. Interrupted after the
+ID files are updated, the remaining files still count as taken; run the same
+deletion again to finish.
+
+A workspace written by a CLI before 2.4.0 is at schema 2, with every reservation
+in one shared `.context-circuit/ids.yaml`. The first changing command run once
+setup is complete splits it into one file per member: each reservation goes to
+the file of its record's `created_by`, and one with no author or no record file
+goes to the member selected on this machine. The shared file is removed and
+`workspace.yaml` moves to `version: 3`. A shared file that comes back later, from
+a clone that had not pulled the split, is split again on the next changing
+command, skipping numbers a member file already holds. The split is reported as
+one `notice:` paragraph on the error stream, in `--json` mode too, so no
+command's result changes shape. `status`, `check`, the other reading commands,
+`init`, and `record delete` without `--confirm` never split.
+
+The split is the one time a CLI rewrites an existing workspace's files on its
+own, and it is a cut-over: CLIs before 2.4.0 refuse a schema 3 workspace with
+"requires a newer CLI", so every member needs 2.4.0 before they pull it. Commit
+and push `workspace.yaml` and `.context-circuit/` after it, like any record
+change, so teammates see the same reservations; committing is the person's
+decision. If a merge leaves Git conflict markers in `ids.yaml`, the split refuses
+until a person resolves them, keeping every entry.
 
 Setup is complete when the roster lists at least one member, every member holds a
 band, and this machine has selected one of them. Until then every changing
@@ -194,8 +217,17 @@ issues:
   - issue: "duplicate record ID: p0003"
     resolve: "needs a person: two clones allocated the same number; renumber one record
       and every reference to it before either is shared, and keep both reservations"
+  - issue: "i050 is reserved in more than one ID file: .context-circuit/ids/alex.yaml, .context-circuit/ids/maya.yaml"
+    resolve: "needs a person: two clones each moved it into their own member's file; keep it
+      in the file of the member who created the record and remove the extra entry by hand"
 ok: false
 ```
+
+For ID files, `check` reports a file it cannot read, a malformed or misplaced
+ID, a number reserved twice in one file or across member files, a record whose
+ID no file reserves, and a file in `.context-circuit/ids/` not named after a
+member ID, whose numbers still count as taken. Numbers outside a member's band,
+and files of members no longer on the roster, are valid and not reported.
 
 `check` also reads each catalog entry's `reviewed` date against the code its note
 anchors to, and reports a note whose anchors have moved since — with how many

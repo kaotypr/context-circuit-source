@@ -243,18 +243,9 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		return append(issues, found(err.Error(),
 			needsAPerson+"the records could not be listed; inspect intent/ and plans/ for an unreadable file")), nil
 	}
-	var ledger Ledger
-	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
-		issues = append(issues, found(err.Error(),
-			needsAPerson+"the permanent ID ledger cannot be read; repair .context-circuit/ids.yaml by hand, preserving every reservation it already held"))
-	}
-	reserved := map[string]bool{}
-	for _, id := range append(append([]string{}, ledger.Intents...), ledger.Plans...) {
-		if reserved[id] || !recordPattern.MatchString(id) {
-			issues = append(issues, found("invalid/duplicate reserved ID: "+id,
-				needsAPerson+"an ID is reserved twice or is malformed; correct .context-circuit/ids.yaml by hand without dropping a reservation; only `record delete` releases one"))
-		}
-		reserved[id] = true
+	issues, reserved, err := s.checkIDFiles(issues)
+	if err != nil {
+		return nil, err
 	}
 	paths, err := s.RecordPaths(true)
 	if err != nil {
@@ -273,8 +264,14 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 		}
 		seen[id] = true
 		if !reserved[id] {
-			issues = append(issues, found("record ID missing from permanent ledger: "+id,
-				needsAPerson+"add the ID to .context-circuit/ids.yaml so nothing allocates it again"))
+			owner := "<member>"
+			if record, err := s.readRecord(path); err == nil && record.CreatedBy != "" {
+				owner = record.CreatedBy
+			} else if active, err := s.ActiveMember(); err == nil {
+				owner = active
+			}
+			issues = append(issues, found("record ID reserved in no ID file: "+id,
+				needsAPerson+"add the ID to "+IDFilesDir+"/"+owner+".yaml, the file of the record's created_by or, when it has none, of the local member, so nothing allocates it again"))
 		}
 	}
 	// An unreadable roster is already reported; reading every author as unknown

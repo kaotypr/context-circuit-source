@@ -423,11 +423,32 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 	// change waits for it. A command missing from readOnly is refused here by
 	// default, which is the safe direction for one added later.
 	setupStep := command == "init" || command == "member add" || command == "member use" || command == "member band"
+	// The ID split is a change of its own, so only a changing command makes it,
+	// and only once setup has named the member who receives authorless
+	// reservations. Init writes the new layout itself, and a deletion preview
+	// promises to write nothing.
+	splits := !readOnly && command != "init" && !(command == "record delete" && !confirm)
+	splitNotice := ""
 	checkFailed := false
 	action := func() (any, error) {
 		if !readOnly && !setupStep {
 			if err := s.RequireSetup(); err != nil {
 				return nil, fmt.Errorf("setup is incomplete, so nothing was changed: %w", err)
+			}
+		}
+		if splits {
+			if state, err := s.Setup(); err == nil {
+				pending, err := s.IDSplitPending()
+				if err != nil {
+					return nil, err
+				}
+				if pending {
+					split, err := s.SplitIDLedger(state.Active)
+					if err != nil {
+						return nil, fmt.Errorf("the ID files could not be moved to one file per member, so nothing was changed: %w", err)
+					}
+					splitNotice = split.Notice()
+				}
 			}
 		}
 		var err error
@@ -621,6 +642,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		result, err = action()
 	} else {
 		result, err = s.WithLock(ctx, action)
+	}
+	// The split is reported on the error stream in both output modes, the way
+	// the pinned-version warning is, so no command's result changes shape. It
+	// is reported even when the command then failed, because it still happened.
+	if splitNotice != "" {
+		fmt.Fprint(errOut, splitNotice)
 	}
 	if err != nil {
 		fmt.Fprintln(errOut, err)

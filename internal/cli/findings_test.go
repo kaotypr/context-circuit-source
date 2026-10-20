@@ -78,12 +78,12 @@ func TestAResolutionIsACommandAnEditOrAPerson(t *testing.T) {
 	findings := checkFindings(t, f.root)
 
 	want := map[string]string{
-		"is not obtained on this machine":         "`knowledge clone --id core-service-knowledge`",
-		"member alex holds no band":               "`member band --id alex --band 1`",
-		"describes no workspace repository":       "`workspace connect --base BRANCH`",
-		"record ID missing from permanent ledger": "needs a person:",
-		"note is not listed in the catalog":       "add its entry to context/INDEX.md",
-		"catalog entry links to a missing note":   "write the note, or correct the link",
+		"is not obtained on this machine":       "`knowledge clone --id core-service-knowledge`",
+		"member alex holds no band":             "`member band --id alex --band 1`",
+		"describes no workspace repository":     "`workspace connect --base BRANCH`",
+		"record ID reserved in no ID file":      "needs a person:",
+		"note is not listed in the catalog":     "add its entry to context/INDEX.md",
+		"catalog entry links to a missing note": "write the note, or correct the link",
 	}
 	for issue, resolve := range want {
 		var seen bool
