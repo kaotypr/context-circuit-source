@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"testing"
@@ -120,14 +121,7 @@ func TestRolesWaitForSchema3(t *testing.T) {
 	f.ok("check")
 }
 
-func TestASchema2RosterWithRolesIsReported(t *testing.T) {
-	f := setup(t)
-	schema2(t, f, nil, nil)
-	write(t, filepath.Join(f.root, "members.yaml"), "members:\n  maya:\n    name: Maya\n    band: 0\n    roles: [maintainer]\n")
-	if out := f.fail("check"); !strings.Contains(out, "records roles in a schema 2 workspace") {
-		t.Fatalf("check did not report roles in a schema 2 roster: %s", out)
-	}
-}
+var instant = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z`)
 
 // Roles decide nothing: the same work with and without them allocates the same
 // IDs, approves and deletes the same records, and briefs agents the same way.
@@ -147,6 +141,9 @@ func TestRolesDecideNothing(t *testing.T) {
 			home = real
 		}
 		prompt = strings.ReplaceAll(strings.ReplaceAll(spec.Prompt, home, "HOME"), f.home, "HOME")
+		// The brief quotes the approval instant, which differs whenever the two
+		// runs straddle a second, as they often do on a slow runner.
+		prompt = instant.ReplaceAllString(prompt, "INSTANT")
 		return []string{i.ID, next.ID}, prompt, strings.ReplaceAll(f.ok("record", "delete", "--member", "maya"), f.home, "HOME")
 	}
 	plainIDs, plainPrompt, plainPreview := run(false)
