@@ -14,7 +14,7 @@ task. The CLI performs the corresponding Git mechanics.
 | Branch and path | Validate names and collisions; create/reuse using Git | Honor explicit choices and repository conventions |
 | Result | Return path, branch, HEAD, starting commit, association | Use the returned directory for work |
 | Environment setup | Supply location and Git facts | Follow setup instructions; install dependencies and prepare services |
-| Recovery | List, inspect, move, or repair through Git | Compare plan notes to real changes and decide next steps |
+| Recovery | List, inspect, move, or repair through Git; prune associations of worktrees Git no longer lists | Compare plan notes to real changes and decide next steps |
 | Cleanup | Remove a selected worktree only when invoked | Obtain or reuse authorization; preserve work; handle branch deletion separately |
 
 For a plan, the default branch is `cc/<plan-id>/<repository-id>` and the default
@@ -32,6 +32,14 @@ selecting an existing branch or adopting another worktree association. Repeating
 preparation for the same existing association returns its actual Git state.
 `--start` applies to new branches; reused branches retain their existing commits.
 
+A plan branch already checked out in another working copy is refused, because Git
+checks a branch out in one place at a time. The refusal names the branch, where it
+is checked out, and whether that is the worktree this workspace prepared for the
+plan, the bound checkout, or a worktree it does not know for the plan. It lists
+the safe next steps: resume in that worktree, switch that checkout to another
+branch, or remove that worktree, then prepare again. The bound checkout is never
+offered for removal. Nothing is checked out, switched, or reset to get past it.
+
 Git's inventory is authoritative. Local plan associations help locate work but
 do not prove that a path exists or still holds the same branch. Resume with
 `worktree list` and `worktree inspect`; then inspect the real diff. `worktree repair`
@@ -41,6 +49,14 @@ with `git worktree remove` or by hand leaves its association behind, and `check`
 it; `worktree prune --repo ID` drops the associations of that repository whose path Git
 no longer lists. It rewrites only the local association file, so no worktree, branch, or
 file is touched.
+
+Run prune after removing a worktree with `git worktree remove` or deleting it by
+hand, when `check` reports a stale association, or when `record delete` is blocked
+by one. `worktree repair` cannot fix these, because it works only on a path Git
+still lists. The result's `dropped` list carries each association it dropped. An
+association whose worktree Git still lists is left alone, even when Git marks that
+worktree prunable or it now holds another branch; use `worktree repair` or
+`git worktree prune` for those.
 
 Successful preparation means a usable Git working copy. The agent still needs to
 follow repository setup instructions for package managers, toolchains,
