@@ -20,18 +20,21 @@ const Help = `Context Circuit — shared workspace operations
 Usage: context-circuit-cli [--workspace PATH] [--json] COMMAND [OPTIONS]
 
 init                  --name NAME --purpose TEXT --member ID --member-name NAME
-                      [--member-band N] (the first member, selected here; band 1
-                      unless another is given)
+                      [--member-band N] [--member-role ROLE ...] (the first member,
+                      selected here; band 1 unless another is given)
 status                inspect workspace, members, bindings, and Git state
 check                 report record, binding, dependency, and worktree issues
 member add            --id ID --name NAME --band N [--language NAME] [--tone TEXT]
-member band           --id ID --band N (allocation block, 0-9999; 0 is a band)
+                      [--role ROLE ...]
+member band          --id ID --band N (allocation block, 0-9999; 0 is a band)
 member language       --id ID --language NAME (the language this member's
                       intents and plans are written in; knowledge stays English)
 member tone           --id ID --tone TEXT | --clear (the register that language
                       is written in, such as 'semi-formal; keep technical terms
                       in English')
-member use            --id ID
+member roles          --id ID --role ROLE ... | --clear (what this member
+                      contributes, such as maintainer; informational, decides nothing)
+member use           --id ID
 member list
 repo connect          --id ID --path PATH --base BRANCH [--url URL]
                       [--default-branch BRANCH] (--base is this machine's)
@@ -207,16 +210,22 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			values[name] = f.String(name, "", name)
 		}
 	}
-	var repos, dependencies, copyPaths, plans listFlag
+	var repos, dependencies, copyPaths, plans, roles listFlag
 	var band int
-	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone, all, confirm bool
+	var archived, reuse, discard, reviewRequested, shared, localTiering, clearTone, clearRoles, all, confirm bool
 	switch command {
 	case "init":
 		add("name", "purpose", "member", "member-name")
 		f.IntVar(&band, "member-band", 1, "allocation block for the first member")
+		f.Var(&roles, "member-role", "informational role of the first member (repeatable)")
 	case "member add":
 		add("id", "name", "language", "tone")
 		f.IntVar(&band, "band", 0, "allocation block for this member")
+		f.Var(&roles, "role", "informational role of this member (repeatable)")
+	case "member roles":
+		add("id")
+		f.Var(&roles, "role", "informational role, replacing those recorded (repeatable)")
+		f.BoolVar(&clearRoles, "clear", false, "remove this member's recorded roles")
 	case "member language":
 		add("id", "language")
 	case "member tone":
@@ -463,7 +472,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				if e != nil {
 					return nil, e
 				}
-				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"), band)
+				err = s.Init(files, readme, get("name"), get("purpose"), get("member"), get("member-name"), band, roles)
 			} else {
 				err = s.Export(files)
 			}
@@ -493,13 +502,15 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				}
 				return nil, fmt.Errorf("pass --band N; the next free band is %d", suggestions.Next)
 			}
-			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"))
+			err = s.AddMember(get("id"), get("name"), band, get("language"), get("tone"), roles)
 		case "member band":
 			err = s.SetMemberBand(get("id"), band)
 		case "member language":
 			err = s.SetMemberLanguage(get("id"), get("language"))
 		case "member tone":
 			err = s.SetMemberTone(get("id"), get("tone"), clearTone)
+		case "member roles":
+			err = s.SetMemberRoles(get("id"), roles, clearRoles)
 		case "member use":
 			err = s.UseMember(get("id"))
 		case "repo connect":
