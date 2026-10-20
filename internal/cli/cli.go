@@ -520,12 +520,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 				return nil, err
 			}
 			// Approval hands work back rather than finishing it, and a bare
-			// `ok: true` reads as the request being done. What it authorized
-			// is said here, where the caller is standing, rather than only in
-			// instructions read once at the start of a session.
+			// `ok: true` reads as the request being done. The next step to
+			// recommend is said here, where the caller is standing, rather
+			// than only in instructions read once at the start of a session.
 			return map[string]any{
-				"approved":          get("id"),
-				"planning_required": "approval authorizes planning and planning alone: without asking again, inspect real code and create linked pNNNN-slug/plan.md folders, then present the complete plans and stop",
+				"approved":             get("id"),
+				"planning_recommended": "approval is recorded; planning is the next step: recommend creating linked pNNNN-slug/plan.md folders to the person and stop, unless the same request already asked for plans, in which case inspect real code, create them, present the complete plans and stop",
 			}, nil
 		case "record complete":
 			if err := s.Note(get("id"), get("text"), "complete"); err != nil {

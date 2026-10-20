@@ -19,7 +19,7 @@ import (
 // this diagnostic reported for its whole life, and it left the caller to derive
 // the remedy in the one situation where the workspace is already inconsistent
 // and deriving is most expensive. Every other command here hands back the next
-// move — `record approve` returns planning_required, `worktree prepare` names
+// move — `record approve` returns planning_recommended, `worktree prepare` names
 // the branch to pass — and this was the exception.
 //
 // Resolve is an instruction, not a category: it names the command where one
@@ -70,7 +70,7 @@ type Orientation struct {
 	ActiveMember string    `json:"active_member,omitempty"`
 	// IdentityRequired names the outstanding act when a workspace lists members
 	// and this machine has selected none of them. It is said beside the data,
-	// the way approval says planning_required, because an agent reading an
+	// the way approval says planning_recommended, because an agent reading an
 	// empty active_member cannot tell a solo workspace from an unidentified
 	// person in a team one.
 	IdentityRequired string              `json:"identity_required,omitempty"`
