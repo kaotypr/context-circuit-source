@@ -1,7 +1,8 @@
 # Plan artifacts and their reading map
 
 A developer may ask for a grounded plan of an already specified outcome without
-creating an intent. An approved intent also leads to planning. Either route
+creating an intent. An approved intent leads to planning once a person asks for
+it, later or in the same request as the approval. Either route
 creates a folder with `plan.md` as its entry; only the linked route writes an
 `intent` field and backlink. A planning request authorizes investigation and
 drafting. Implementation starts after the complete plan is presented and the
