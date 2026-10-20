@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -67,33 +68,18 @@ func noteAnchors(body []byte) map[string][]string {
 		if !ok {
 			continue
 		}
-		if !contains(anchors[id], target) {
+		if !slices.Contains(anchors[id], target) {
 			anchors[id] = append(anchors[id], target)
 		}
 	}
 	return anchors
 }
 
-func contains(values []string, value string) bool {
-	for _, item := range values {
-		if item == value {
-			return true
-		}
-	}
-	return false
-}
-
 // movedSince counts commits touching these paths after the day a note was last
 // confirmed. The day itself is excluded: a note confirmed on the same day the
 // code changed was confirmed against that change, and reporting it would fire on
 // every note the moment it is written.
-func movedSince(ctx context.Context, checkout Checkout, reviewed time.Time, paths []string) int {
-	revision := "HEAD"
-	if checkout.BaseBranch != "" {
-		if _, err := Git(ctx, checkout.Path, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+checkout.BaseBranch); err == nil {
-			revision = "refs/heads/" + checkout.BaseBranch
-		}
-	}
+func movedSince(ctx context.Context, checkout Checkout, revision string, reviewed time.Time, paths []string) int {
 	args := []string{"log", "--format=%H", "--since=" + reviewed.AddDate(0, 0, 1).Format(DateLayout), "--end-of-options", revision, "--"}
 	out, err := Git(ctx, checkout.Path, append(args, paths...)...)
 	if err != nil || strings.TrimSpace(out) == "" {
@@ -115,7 +101,7 @@ func (s *Store) reviewIssues(ctx context.Context) []Finding {
 	if err != nil {
 		return nil
 	}
-	checkouts, missing := map[string]Checkout{}, map[string]bool{}
+	checkouts, revisions, missing := map[string]Checkout{}, map[string]string{}, map[string]bool{}
 	var issues []Finding
 	fenced := false
 	for index, line := range strings.Split(string(data), "\n") {
@@ -167,10 +153,11 @@ func (s *Store) reviewIssues(ctx context.Context) []Finding {
 					continue
 				}
 				checkouts[id] = checkout
+				revisions[id] = logRevision(ctx, checkout)
 			}
 			paths := anchors[id]
 			sort.Strings(paths)
-			if moved := movedSince(ctx, checkout, reviewed, paths); moved > 0 {
+			if moved := movedSince(ctx, checkout, revisions[id], reviewed, paths); moved > 0 {
 				evidence = append(evidence, fmt.Sprintf("%s@%s has %s since", id, paths[0], plural(moved, "commit")))
 			}
 		}
@@ -182,6 +169,18 @@ func (s *Store) reviewIssues(ctx context.Context) []Finding {
 			needsAPerson+"read the note against the code it anchors to, then edit the note and its catalog entry together and move the reviewed date — or move the date alone if nothing it says changed"))
 	}
 	return issues
+}
+
+// logRevision names the branch a checkout's history is read from: its base
+// branch when that exists locally, and HEAD otherwise. It is resolved once per
+// checkout, because every catalog entry anchored there reads the same history.
+func logRevision(ctx context.Context, checkout Checkout) string {
+	if checkout.BaseBranch != "" {
+		if _, err := Git(ctx, checkout.Path, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+checkout.BaseBranch); err == nil {
+			return "refs/heads/" + checkout.BaseBranch
+		}
+	}
+	return "HEAD"
 }
 
 // unanchoredReview falls back to calendar age for a note that anchors to no

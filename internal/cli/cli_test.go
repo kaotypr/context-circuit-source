@@ -256,6 +256,22 @@ func TestInitKeepsTheRecordedCLIRegistry(t *testing.T) {
 	}
 }
 
+// The README is written last. A symlinked one used to stop initialization only
+// after every other file was written, leaving a workspace init then refused.
+func TestInitRefusesASymlinkedReadmeBeforeWriting(t *testing.T) {
+	f := setup(t)
+	linked := filepath.Join(f.home, "linked")
+	write(t, filepath.Join(linked, "docs", "README.md"), "Keep my README")
+	if err := os.Symlink(filepath.Join("docs", "README.md"), filepath.Join(linked, "README.md")); err != nil {
+		t.Fatal(err)
+	}
+	g := fixture{t, linked, f.home}
+	g.fail("init", "--name", "Linked", "--purpose", "Linked")
+	if _, err := os.Stat(filepath.Join(linked, "members.yaml")); !os.IsNotExist(err) {
+		t.Fatal("a refused README left a partially initialized workspace")
+	}
+}
+
 func TestYAMLEditTrial(t *testing.T) {
 	f := setup(t)
 	write(t, filepath.Join(f.root, "members.yaml"), "# Team roster\nmembers:\n  # Keep this author\n  maya:\n    name: \"Maya\" # display name\n    band: 0\n")
@@ -265,6 +281,20 @@ func TestYAMLEditTrial(t *testing.T) {
 		if !strings.Contains(updated, text) {
 			t.Fatalf("lost %s:\n%s", text, updated)
 		}
+	}
+	// Setting one field of a member must keep that member's own comments too.
+	f.ok("member", "language", "--id", "maya", "--language", "Bahasa Indonesia")
+	f.ok("member", "tone", "--id", "maya", "--tone", "semi-formal")
+	f.ok("member", "band", "--id", "maya", "--band", "2")
+	updated = read(t, filepath.Join(f.root, "members.yaml"))
+	for _, text := range []string{"# display name", `"Maya"`, "language: Bahasa Indonesia", "tone: semi-formal", "band: 2"} {
+		if !strings.Contains(updated, text) {
+			t.Fatalf("member edit lost %s:\n%s", text, updated)
+		}
+	}
+	f.ok("member", "tone", "--id", "maya", "--clear")
+	if updated = read(t, filepath.Join(f.root, "members.yaml")); strings.Contains(updated, "tone:") {
+		t.Fatalf("clearing left the field behind:\n%s", updated)
 	}
 	f.ok("member", "use", "--id", "alex")
 	r := f.intent("first")
@@ -1316,5 +1346,16 @@ func TestInitializationTitlesTheWorkspaceReadme(t *testing.T) {
 	g.ok("init", "--name", `R&D <b>`, "--purpose", "p", "--member", "a", "--member-name", "A")
 	if escaped := read(t, filepath.Join(g.root, "README.md")); !strings.Contains(escaped, "R&amp;D &lt;b&gt;") {
 		t.Error("the workspace name reached the heading unescaped")
+	}
+}
+
+// Flags are checked in name order, so a call missing several of them is told
+// the same one on every run rather than whichever a map happened to yield.
+func TestMissingFlagsAreReportedInAStableOrder(t *testing.T) {
+	f := setup(t)
+	for range 5 {
+		if out := f.fail("repo", "connect"); !strings.Contains(out, "missing --base") {
+			t.Fatalf("expected the first missing flag by name: %s", out)
+		}
 	}
 }

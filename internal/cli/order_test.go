@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -745,5 +746,54 @@ func TestLinearChainMarksItsLastMemberPerRepository(t *testing.T) {
 	marks := deliverMarks(o)
 	if len(marks) != 1 || len(marks["p0005"]) != 1 || marks["p0005"][0] != "api" {
 		t.Errorf("a linear chain ends at its last member alone: %v", marks)
+	}
+}
+
+// A plan sharing ancestors with its siblings is walked once, not once per path.
+// Forty plans that each depend on the two before them have more paths than any
+// check could finish walking, so a walk without that memory never returns.
+func TestDependencyChecksWalkEachPlanOnce(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	f.ok("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing")
+	for n := 1; n <= 40; n++ {
+		args := []string{"record", "create", "--kind", "plan", "--slug", fmt.Sprintf("step-%d", n), "--title", "Step",
+			"--intent", "i001", "--repo", "api"}
+		for _, back := range []int{n - 1, n - 2} {
+			if back > 0 {
+				args = append(args, "--depends-on", fmt.Sprintf("p%04d", back))
+			}
+		}
+		f.ok(args...)
+	}
+	if _, out, _ := call(f.root, "check"); strings.Contains(out, "dependency cycle") {
+		t.Fatalf("a ladder has no cycle:\n%s", out)
+	}
+	f.ok("record", "dependencies", "--id", "p0040", "--depends-on", "p0039", "--depends-on", "p0038")
+	if out := f.fail("record", "dependencies", "--id", "p0001", "--depends-on", "p0040"); !strings.Contains(out, "dependency cycle") {
+		t.Fatalf("a path back to the edited plan is a cycle: %s", out)
+	}
+}
+
+// The worker brief says "implement the plan above", so a worker launched with
+// no plan and no task would be told to implement nothing and commit it.
+func TestWorkerDispatchNeedsAnAssignment(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--path", f.root); !strings.Contains(out, "a worker needs --plan") {
+		t.Fatalf("worker without an assignment: %s", out)
+	}
+	if out := f.fail("agent", "dispatch", "--host", "claude-code", "--role", "worker", "--task", "Fix it", "--repo", "api", "--path", f.root); !strings.Contains(out, "pass --plan") {
+		t.Fatalf("--repo without --plan was dropped silently: %s", out)
+	}
+}
+
+// Repositories and dependencies are read only for a plan, so an intent given
+// them used to drop them silently while the caller believed them recorded.
+func TestIntentRefusesPlanFlags(t *testing.T) {
+	f := setup(t)
+	f.repository("api")
+	if out := f.fail("record", "create", "--kind", "intent", "--slug", "billing", "--title", "Billing", "--repo", "api"); !strings.Contains(out, "describe a plan") {
+		t.Fatalf("an intent accepted --repo: %s", out)
 	}
 }

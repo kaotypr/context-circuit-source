@@ -394,30 +394,10 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 		}
 	}
-	var visit func(string, map[string]bool) error
-	visit = func(id string, trail map[string]bool) error {
-		if trail[id] {
-			return fmt.Errorf("dependency cycle at %s", id)
-		}
-		if !strings.HasPrefix(id, "p") {
-			return fmt.Errorf("invalid plan dependency: %s", id)
-		}
-		record, err := s.FindRecord(id)
-		if err != nil {
-			return err
-		}
-		trail[id] = true
-		defer delete(trail, id)
-		for _, dep := range record.DependsOn {
-			if err := visit(dep, trail); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+	sound := map[string]bool{}
 	for _, record := range records {
 		if strings.HasPrefix(record.ID, "p") {
-			if err := visit(record.ID, map[string]bool{}); err != nil {
+			if err := s.walkDependencies(record.ID, map[string]bool{}, sound); err != nil {
 				issues = append(issues, found(err.Error(),
 					"break the cycle with `record dependencies --id PLAN --depends-on ID ...`, naming only the plans that truly precede it; omit --depends-on to clear them"))
 			}

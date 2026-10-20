@@ -284,6 +284,9 @@ func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent stri
 	if kind != "intent" && kind != "plan" {
 		return Record{}, errors.New("record kind must be intent or plan")
 	}
+	if kind == "intent" && (intent != "" || len(repos) > 0 || len(dependencies) > 0) {
+		return Record{}, errors.New("--intent, --repo, and --depends-on describe a plan; an intent takes none of them")
+	}
 	if err := Name(slug); err != nil {
 		return Record{}, err
 	}
@@ -590,30 +593,43 @@ func (s *Store) SetDependencies(id string, dependencies []string) error {
 		return errors.New("dependencies belong to a plan")
 	}
 	dependencies = unique(dependencies)
-	var visit func(string, map[string]bool) error
-	visit = func(current string, trail map[string]bool) error {
-		if !strings.HasPrefix(current, "p") || current == id || trail[current] {
-			return fmt.Errorf("invalid or cyclic dependency at %s", current)
-		}
-		dep, err := s.FindRecord(current)
-		if err != nil {
-			return err
-		}
-		trail[current] = true
-		defer delete(trail, current)
-		for _, next := range dep.DependsOn {
-			if err := visit(next, trail); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
+	// The plan being edited sits on the trail, so any path back to it is a cycle.
+	trail, sound := map[string]bool{id: true}, map[string]bool{}
 	for _, dep := range dependencies {
-		if err := visit(dep, map[string]bool{}); err != nil {
+		if err := s.walkDependencies(dep, trail, sound); err != nil {
 			return err
 		}
 	}
 	return s.editRecord(record, "depends_on", dependencies)
+}
+
+// walkDependencies reports the first invalid, missing, or cyclic plan reachable
+// from id. sound remembers plans already walked without fault, so each plan is
+// read once; without it a graph where plans share ancestors is walked once per
+// path, which doubles with every rung of a ladder of plans.
+func (s *Store) walkDependencies(id string, trail, sound map[string]bool) error {
+	if sound[id] {
+		return nil
+	}
+	if trail[id] {
+		return fmt.Errorf("dependency cycle at %s", id)
+	}
+	if !strings.HasPrefix(id, "p") {
+		return fmt.Errorf("invalid plan dependency: %s", id)
+	}
+	record, err := s.FindRecord(id)
+	if err != nil {
+		return err
+	}
+	trail[id] = true
+	for _, dep := range record.DependsOn {
+		if err := s.walkDependencies(dep, trail, sound); err != nil {
+			return err
+		}
+	}
+	delete(trail, id)
+	sound[id] = true
+	return nil
 }
 
 func (s *Store) ListRecords(archived bool) ([]Record, error) {
