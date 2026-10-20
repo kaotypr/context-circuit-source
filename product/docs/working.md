@@ -55,9 +55,9 @@ Dependencies are optional, and `record order` derives waves, start references,
 and integration merges from them. Separate repository plans may be useful; no
 one-plan-per-repository constraint applies. IDs are global and prefixed, with a minimum of
 three intent digits and four plan digits; numbering expands beyond that width.
-A member holding a band allocates from that band's block alone — intents from
-`band*100` and plans from `band*1000`, so band 1 writes `i100` and `p1000` — and
-an unbanded member allocates from the numbers no band claims. Plans use
+Every member holds a band and allocates from that band's block alone — intents
+from `band*100` and plans from `band*1000`, so band 1 writes `i100` and `p1000`,
+and band 0 writes `i001` and `p0001` — skipping every number already taken. Plans use
 `created_by` only for member data; a band changes numbering, never ownership.
 
 Approval alone stops with a recommendation to plan. The agent writes the plan from
@@ -134,7 +134,7 @@ reservations and fix any handwritten relative links when records move.
 
 Deletion is not archival. `record delete --member ID` removes one member's intents
 and plans, archived ones included, and `record delete --all` removes every record
-in a solo workspace; both release the deleted IDs from `ids.yaml`, so allocation
+while the roster lists exactly one member; both release the deleted IDs from `ids.yaml`, so allocation
 hands those numbers out again. A preview without `--confirm` comes first and
 deletes nothing, and the person agrees to its list before `--confirm` runs.
 Records by another member that point at a deleted one block the deletion rather

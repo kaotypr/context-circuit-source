@@ -10,14 +10,14 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
-| members.yaml | Member ID to display name, optional allocation band, and optional record language and tone; empty in a solo workspace | Yes |
+| members.yaml | Member ID to display name, allocation band, and optional record language and tone; lists at least one member | Yes |
 | .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
 | plans/pNNNN-slug/* | Optional supporting design files assigned in the plan entry | Yes |
 | plans/pNNNN-slug.md | Legacy single-file plan, still readable and editable | Yes |
 | context/ | Optional durable project notes and catalog | Yes |
-| member.local.yaml | Active member ID on this machine; absent in a solo workspace | No |
+| member.local.yaml | Active member ID on this machine; written by init, and by member use on every other machine | No |
 | repositories.local.yaml | This machine's workspace checkout, repository ID to its checkout path and base branch, and each borrowed knowledge repository's checkout path | No |
 | .context-circuit/local/worktrees.yaml | Optional plan/worktree associations | No |
 | .context-circuit/local/write.lock | OS-managed edit lock | No |
@@ -226,9 +226,10 @@ nobody here can move it.
 
 A clone carries the shared records and none of this machine's state. `check`
 names what is missing: an active member, the workspace binding, and a binding
-per repository. Until a member is selected, `status` reports `identity_required`
-and the agent declines changing requests; reading still works. A solo workspace,
-initialized without a member, has an empty roster and asks nobody who they are. Add the member to the roster if nobody has, select them, run
+per repository. Until a member is selected, `status` reports `identity_required`,
+every changing command is refused, and the agent declines changing requests;
+reading still works. Add the member to the roster with a band if nobody has,
+select them, run
 `workspace connect`, obtain each repository, and run `agent setup` to write the
 role definitions, which are gitignored and so never arrive with the clone.
 
@@ -264,12 +265,16 @@ the files, so an interrupted deletion leaves numbers still counted as taken.
 Check the reported path and resume or repair the named files. Locks are released
 when the process exits, including abnormal exit; the empty local lock file remains.
 
-An optional per-member allocation band divides the numeric range so members can
-allocate offline without colliding. A member holding band N takes intents from
-`N*100` and plans from `N*1000`; unbanded members take the numbers no band
-claims. Bands must be distinct, and a roster with two members on one band is
-refused until it is resolved. Changing or clearing a band leaves existing records
-and their reservations untouched.
+Every member holds an allocation band, which divides the numeric range so
+members can allocate offline without colliding. A member holding band N takes
+intents from `N*100` and plans from `N*1000`. Band 0 is a band like any other,
+written as `band: 0`, and covers `i001`-`i099` and `p0001`-`p0999`. Allocation
+skips every number already taken inside the band. Bands must be distinct, band 0
+included, and a roster with two members on one band is refused until it is
+resolved. A member with no `band` key, which only a roster written by an earlier
+version holds, leaves setup incomplete: every change is refused until that
+member is given one. Changing a band leaves existing records and their
+reservations untouched.
 
 ```yaml
 members:
