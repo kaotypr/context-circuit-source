@@ -255,13 +255,51 @@ func team(t *testing.T) fixture {
 	return f
 }
 
-func ledger(t *testing.T, f fixture) workspace.Ledger {
+// idFileNames lists every ID file in the fixture, legacy one included.
+func idFileNames(t *testing.T, f fixture) []string {
+	t.Helper()
+	s, err := workspace.Open(f.root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	files, err := s.IDFiles()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return files
+}
+
+// idFiles is every ID file's name and content, so a test can tell whether any
+// of them changed.
+func idFiles(t *testing.T, f fixture) string {
+	t.Helper()
+	var b strings.Builder
+	for _, rel := range idFileNames(t, f) {
+		b.WriteString(rel + "\n" + read(t, filepath.Join(f.root, rel)))
+	}
+	return b.String()
+}
+
+// idFile reads one ID file.
+func idFile(t *testing.T, f fixture, rel string) workspace.Ledger {
 	t.Helper()
 	var l workspace.Ledger
-	if err := workspace.Decode([]byte(read(t, filepath.Join(f.root, ".context-circuit/ids.yaml"))), &l); err != nil {
+	if err := workspace.Decode([]byte(read(t, filepath.Join(f.root, rel))), &l); err != nil {
 		t.Fatal(err)
 	}
 	return l
+}
+
+// ledger is every reservation across the ID files, in file order.
+func ledger(t *testing.T, f fixture) workspace.Ledger {
+	t.Helper()
+	all := workspace.Ledger{Intents: []string{}, Plans: []string{}}
+	for _, rel := range idFileNames(t, f) {
+		l := idFile(t, f, rel)
+		all.Intents = append(all.Intents, l.Intents...)
+		all.Plans = append(all.Plans, l.Plans...)
+	}
+	return all
 }
 
 func TestDeletingAMembersRecordsReleasesTheirNumbers(t *testing.T) {
@@ -318,6 +356,17 @@ func TestDeletingAMembersRecordsReleasesTheirNumbers(t *testing.T) {
 	}
 	if out := f.fail("record", "delete", "--member", "nobody"); !strings.Contains(out, "no intents or plans were created by member nobody") {
 		t.Fatalf("deleting for a member with no records did not say so: %s", out)
+	}
+
+	// Two clones that split before pulling each other can leave maya's number
+	// in alex's file too. Deleting her record releases it from every file.
+	write(t, filepath.Join(f.root, ".context-circuit/ids/alex.yaml"), "intents:\n  - i200\n  - i100\nplans: []\n")
+	deletion(t, f.ok("record", "delete", "--member", "maya", "--confirm"))
+	if l := idFile(t, f, ".context-circuit/ids/alex.yaml"); !slices.Equal(l.Intents, []string{"i200"}) {
+		t.Fatalf("a number reserved in another member's file was not released there: %+v", l)
+	}
+	if l := idFile(t, f, ".context-circuit/ids/maya.yaml"); len(l.Intents)+len(l.Plans) != 0 {
+		t.Fatalf("maya's file kept a released number: %+v", l)
 	}
 }
 

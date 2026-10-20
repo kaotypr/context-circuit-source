@@ -9,7 +9,9 @@ import (
 )
 
 // banded builds a minimal workspace whose roster holds the given bands. A nil
-// band is a member with no band at all, which only an upgraded roster has.
+// band is a member with no band at all, which only an upgraded roster has. The
+// reserved numbers sit in a member file nobody on the roster allocates into, so
+// every allocation shows a number in another member's file is still taken.
 func banded(t *testing.T, bands map[string]*int, reserved Ledger) *Store {
 	t.Helper()
 	root := t.TempDir()
@@ -23,7 +25,7 @@ func banded(t *testing.T, bands map[string]*int, reserved Ledger) *Store {
 	for id, band := range bands {
 		members.Members[id] = Member{Name: strings.ToUpper(id), Band: band}
 	}
-	if err := store.WriteYAML("workspace.yaml", Config{Version: 2, Name: "Acme", Purpose: "Billing", Repositories: map[string]Repository{}, Relationships: []Relationship{}}, 0o644); err != nil {
+	if err := store.WriteYAML("workspace.yaml", Config{Version: CurrentSchema, Name: "Acme", Purpose: "Billing", Repositories: map[string]Repository{}, Relationships: []Relationship{}}, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.WriteYAML("members.yaml", members, 0o644); err != nil {
@@ -35,10 +37,60 @@ func banded(t *testing.T, bands map[string]*int, reserved Ledger) *Store {
 	if reserved.Plans == nil {
 		reserved.Plans = []string{}
 	}
-	if err := store.WriteYAML(".context-circuit/ids.yaml", reserved, 0o644); err != nil {
+	if err := store.WriteYAML(IDFilesDir+"/reserved.yaml", reserved, 0o644); err != nil {
 		t.Fatal(err)
 	}
 	return store
+}
+
+// A number one clone moved into its member's file and another clone into its
+// own is reserved twice. That is check's to report, and allocation treats it
+// as taken rather than refusing.
+func TestANumberReservedInTwoFilesIsTaken(t *testing.T) {
+	store := banded(t, map[string]*int{"maya": BandOf(1), "alex": BandOf(2)}, Ledger{Intents: []string{"i100"}})
+	if err := store.WriteYAML(IDFilesDir+"/alex.yaml", Ledger{Intents: []string{"i100"}, Plans: []string{}}, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	allocates(t, store, "maya", "intent", "i101")
+}
+
+// A member's record creation writes their own file and no other, which is what
+// keeps two members' clones from conflicting.
+func TestAllocationWritesOnlyTheAuthorsFile(t *testing.T) {
+	store := banded(t, map[string]*int{"maya": BandOf(1), "alex": BandOf(2)}, Ledger{Plans: []string{"p1000"}})
+	before, err := store.Read(IDFilesDir + "/reserved.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	allocates(t, store, "maya", "intent", "i100")
+	allocates(t, store, "maya", "plan", "p1001")
+	allocates(t, store, "alex", "intent", "i200")
+	if after, _ := store.Read(IDFilesDir + "/reserved.yaml"); string(after) != string(before) {
+		t.Fatalf("allocating changed another member's file:\n%s", after)
+	}
+	var maya, alex Ledger
+	if err := store.YAML(IDFilesDir+"/maya.yaml", &maya); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.YAML(IDFilesDir+"/alex.yaml", &alex); err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(maya) != "{[i100] [p1001]}" || fmt.Sprint(alex) != "{[i200] []}" {
+		t.Fatalf("unexpected member files: maya %v, alex %v", maya, alex)
+	}
+	// The header a new file opens with survives every later append.
+	if data, _ := store.Read(IDFilesDir + "/maya.yaml"); !strings.HasPrefix(string(data), idFileHeader("maya")) {
+		t.Fatalf("maya's file lost its header:\n%s", data)
+	}
+}
+
+// A duplicate inside one file is a merge nobody resolved, and allocation still
+// refuses it.
+func TestADuplicateInsideOneFileIsRefused(t *testing.T) {
+	store := banded(t, map[string]*int{"maya": BandOf(1)}, Ledger{Intents: []string{"i100", "i100"}})
+	if _, err := store.allocate("intent", "maya"); err == nil || !strings.Contains(err.Error(), "reserved twice") {
+		t.Fatalf("allocated through a duplicate reservation: %v", err)
+	}
 }
 
 func allocates(t *testing.T, store *Store, author, kind string, want ...string) {

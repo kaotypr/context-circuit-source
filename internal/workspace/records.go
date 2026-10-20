@@ -18,11 +18,6 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-type Ledger struct {
-	Intents []string `yaml:"intents" json:"intents"`
-	Plans   []string `yaml:"plans" json:"plans"`
-}
-
 // A Record's CreatedBy is empty only for one written by an earlier version
 // while the workspace had no roster. Such a record stays valid; every record
 // written now carries its author.
@@ -199,38 +194,26 @@ func bandWidth(kind string) int {
 }
 
 // takenNumbers reports every number of one record kind that allocation must not
-// hand out: those reserved in the ledger and those a record file already holds,
-// archived ones included. It returns the ledger as well, because allocation
-// appends to it.
-func (s *Store) takenNumbers(kind string) (map[int]bool, Ledger, error) {
-	var ledger Ledger
-	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
-		return nil, ledger, err
-	}
-	if ledger.Intents == nil || ledger.Plans == nil {
-		return nil, ledger, errors.New("ID ledger needs intents and plans lists; restore it from workspace history")
+// hand out: those reserved in any member's ID file and those a record file
+// already holds, archived ones included.
+func (s *Store) takenNumbers(kind string) (map[int]bool, error) {
+	reserved, err := s.reservedIDs()
+	if err != nil {
+		return nil, err
 	}
 	seen := map[string]bool{}
-	for _, group := range []struct {
-		prefix string
-		values []string
-	}{{"i", ledger.Intents}, {"p", ledger.Plans}} {
-		for _, id := range group.values {
-			if !recordPattern.MatchString(id) || !strings.HasPrefix(id, group.prefix) || seen[id] {
-				return nil, ledger, errors.New("invalid or duplicate reserved ID; resolve the workspace merge first")
-			}
-			seen[id] = true
-		}
+	for id := range reserved {
+		seen[id] = true
 	}
 	paths, err := s.RecordPaths(true)
 	if err != nil {
-		return nil, ledger, err
+		return nil, err
 	}
 	fileIDs := map[string]bool{}
 	for _, path := range paths {
 		id := recordPathID(path)
 		if fileIDs[id] {
-			return nil, ledger, fmt.Errorf("duplicate record ID: %s", id)
+			return nil, fmt.Errorf("duplicate record ID: %s", id)
 		}
 		fileIDs[id], seen[id] = true, true
 	}
@@ -243,19 +226,20 @@ func (s *Store) takenNumbers(kind string) (map[int]bool, Ledger, error) {
 		if strings.HasPrefix(id, prefix) {
 			n, err := strconv.Atoi(id[1:])
 			if err != nil || n >= 999999999 {
-				return nil, ledger, errors.New("numeric ID is outside the supported range")
+				return nil, errors.New("numeric ID is outside the supported range")
 			}
 			taken[n] = true
 		}
 	}
-	return taken, ledger, nil
+	return taken, nil
 }
 
 // allocate reserves the next free number for a record kind inside the author's
-// band. A reserved number is not reused while it stays in the ledger, and a
-// number an old record already holds inside the band is stepped over, so a band
-// changes which number comes next and nothing about the ledger's rules. Only
-// DeleteRecords takes a number back out.
+// band, in the author's own ID file and no other. A number reserved in any
+// member's file is not reused while it stays there, and a number an old record
+// already holds inside the band is stepped over, so a band changes which number
+// comes next and nothing about the reservation rules. Only DeleteRecords takes a
+// number back out.
 func (s *Store) allocate(kind, author string) (string, error) {
 	members, err := s.Members()
 	if err != nil {
@@ -265,13 +249,13 @@ func (s *Store) allocate(kind, author string) (string, error) {
 	if !ok || member.Band == nil {
 		return "", fmt.Errorf("member %s holds no band; give them one with `member band --id %s --band N`", author, author)
 	}
-	taken, ledger, err := s.takenNumbers(kind)
+	taken, err := s.takenNumbers(kind)
 	if err != nil {
 		return "", err
 	}
-	width, key := 3, "intents"
+	width := 3
 	if kind == "plan" {
-		width, key = 4, "plans"
+		width = 4
 	}
 	block, band := bandWidth(kind), *member.Band
 	// Band 0 starts at 1: there is never an i000 or a p0000.
@@ -287,14 +271,13 @@ func (s *Store) allocate(kind, author string) (string, error) {
 		return "", fmt.Errorf("member %s has used every %s number in band %d (%d-%d); assign a further band with `member band`", author, kind, band, low, high)
 	}
 	id := fmt.Sprintf("%s%0*d", kind[:1], width, number)
-	values := ledger.Intents
-	if kind == "plan" {
-		values = ledger.Plans
-	}
 	// Reserve before creating a record: an interrupted write consumes a number,
 	// and removing or archiving its file by hand never makes that number
 	// reusable. Releasing one is DeleteRecords' job, done with the files.
-	return id, s.Update(".context-circuit/ids.yaml", []string{key}, append(values, id), 0644)
+	if kind == "plan" {
+		return id, s.reserve(author, nil, []string{id})
+	}
+	return id, s.reserve(author, []string{id}, nil)
 }
 
 func (s *Store) CreateRecord(ctx context.Context, kind, slug, title, intent string, repos, dependencies []string) (Record, error) {

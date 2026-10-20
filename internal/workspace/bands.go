@@ -27,7 +27,7 @@ func (s *Store) SuggestBands() (BandSuggestions, error) {
 		}
 	}
 	for _, kind := range []string{"intent", "plan"} {
-		taken, _, err := s.takenNumbers(kind)
+		taken, err := s.takenNumbers(kind)
 		if err != nil {
 			return suggestions, fmt.Errorf("bands cannot be suggested while the taken numbers cannot be read: %w", err)
 		}

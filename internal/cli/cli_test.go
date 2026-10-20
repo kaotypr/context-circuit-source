@@ -153,6 +153,17 @@ func TestInitializationAndReleaseSeed(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// A new workspace starts in the per-member ID layout and never holds the
+	// shared file a schema 2 workspace had.
+	if got := read(t, filepath.Join(f.root, "workspace.yaml")); !strings.Contains(got, "version: 3") {
+		t.Fatalf("a new workspace is not at schema 3:\n%s", got)
+	}
+	if l := idFile(t, f, ".context-circuit/ids/maya.yaml"); len(l.Intents)+len(l.Plans) != 0 {
+		t.Fatalf("a new member's ID file is not empty: %+v", l)
+	}
+	if exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) {
+		t.Fatal("a new workspace holds the shared ID file")
+	}
 	before := read(t, filepath.Join(f.root, "workspace.yaml"))
 	f.fail("init", "--name", "Other", "--purpose", "Other", "--member", "other", "--member-name", "Other")
 	if after := read(t, filepath.Join(f.root, "workspace.yaml")); after != before {
@@ -168,8 +179,25 @@ func TestInitializationAndReleaseSeed(t *testing.T) {
 		path := filepath.Join(blank, filepath.FromSlash(name))
 		write(t, path, strings.ReplaceAll(read(t, path), "\n", "\r\n"))
 	}
+	if paths, _ := filepath.Glob(filepath.Join(blank, ".context-circuit", "ids*")); len(paths) != 0 {
+		t.Fatalf("the exported seed carries an ID file: %v", paths)
+	}
 	g := fixture{t, blank, f.home}
 	g.ok("init", "--name", "Seed", "--purpose", "Seed", "--member", "alex", "--member-name", "Alex")
+	// A seed exported by an earlier CLI is at schema 2 with an empty shared ID
+	// file, and initializing it ends in the same layout as a new seed.
+	older := filepath.Join(f.home, "older")
+	f.ok("template", "export", "--path", older)
+	config := filepath.Join(older, "workspace.yaml")
+	write(t, config, strings.Replace(read(t, config), "version: 3", "version: 2", 1))
+	write(t, filepath.Join(older, ".context-circuit", "ids.yaml"), "intents: []\nplans: []\n")
+	o := fixture{t, older, f.home}
+	o.ok("init", "--name", "Older", "--purpose", "Older", "--member", "alex", "--member-name", "Alex")
+	if exists(filepath.Join(older, ".context-circuit", "ids.yaml")) || !exists(filepath.Join(older, ".context-circuit", "ids", "alex.yaml")) ||
+		!strings.Contains(read(t, config), "version: 3") {
+		t.Fatal("initializing an older seed did not end in the per-member ID layout at schema 3")
+	}
+	o.ok("check")
 	protected := filepath.Join(f.home, "protected")
 	write(t, filepath.Join(protected, "AGENTS.md"), "Keep my instructions")
 	h := fixture{t, protected, f.home}
@@ -241,7 +269,7 @@ func TestYAMLEditTrial(t *testing.T) {
 		t.Fatalf("unexpected record: %+v", r)
 	}
 	f.repository("api")
-	before := "version: 2\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    default_branch: main # preferred target\nrelationships: []\n"
+	before := "version: 3\nname: Acme\npurpose: |\n  Billing software\n  and invoicing\nrepositories:\n  api:\n    default_branch: main # preferred target\nrelationships: []\n"
 	write(t, filepath.Join(f.root, "workspace.yaml"), before)
 	f.ok("repo", "remote", "--id", "api", "--default-branch", "development")
 	updated = read(t, filepath.Join(f.root, "workspace.yaml"))
@@ -992,9 +1020,9 @@ func TestHumanOutputAndDuplicateRecordProtection(t *testing.T) {
 	duplicate := filepath.Join(f.root, "intent", "archive", i.ID+"-duplicate.md")
 	write(t, duplicate, i.Content)
 	f.fail("record", "show", "--id", i.ID)
-	before := read(t, filepath.Join(f.root, ".context-circuit", "ids.yaml"))
+	before := idFiles(t, f)
 	f.fail("record", "create", "--kind", "intent", "--slug", "another", "--title", "Another")
-	if read(t, filepath.Join(f.root, ".context-circuit", "ids.yaml")) != before {
+	if idFiles(t, f) != before {
 		t.Fatal("allocated through an unresolved duplicate")
 	}
 	if err := os.Remove(duplicate); err != nil {

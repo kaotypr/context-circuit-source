@@ -11,7 +11,7 @@ import (
 )
 
 // Deletion describes removing a member's records, or every record in a
-// workspace of one member, together with the ledger reservations they held. Without
+// workspace of one member, together with the ID reservations they held. Without
 // confirmation it is a preview that deletes nothing, because the person asked
 // has to see exactly which records and numbers go before they agree to it.
 type Deletion struct {
@@ -40,7 +40,7 @@ type DeletedRecord struct {
 // DeleteRecords removes every intent and plan one member created, active and
 // archived, and releases their numbers so allocation can hand them out again.
 // While the roster lists exactly one member it can instead remove every record
-// and empty the ledger, which is how records written without an author by an
+// and empty every ID file, which is how records written without an author by an
 // earlier version are removed: nothing selects them by member. It refuses
 // rather than leave another member's record pointing at something gone, or
 // this machine's worktree prepared for a plan whose number is about to become
@@ -60,12 +60,21 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 			return Deletion{}, err
 		}
 	}
-	var ledger Ledger
-	if err := s.YAML(".context-circuit/ids.yaml", &ledger); err != nil {
+	// Every ID file is read, the legacy shared one included: a preview runs
+	// before any split and writes nothing, so it sees whichever layout is there.
+	idFiles, err := s.IDFiles()
+	if err != nil {
 		return Deletion{}, err
 	}
-	if ledger.Intents == nil || ledger.Plans == nil {
-		return Deletion{}, errors.New("ID ledger needs intents and plans lists; restore it from workspace history")
+	ledgers := map[string]Ledger{}
+	reservedCount := 0
+	for _, rel := range idFiles {
+		ledger, err := s.readIDFile(rel)
+		if err != nil {
+			return Deletion{}, err
+		}
+		ledgers[rel] = ledger
+		reservedCount += len(ledger.Intents) + len(ledger.Plans)
 	}
 	paths, err := s.RecordPaths(true)
 	if err != nil {
@@ -91,7 +100,7 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 			result.Records = append(result.Records, DeletedRecord{record.ID, record.CreatedBy, path})
 		}
 	}
-	if len(result.Records) == 0 && (!all || len(ledger.Intents)+len(ledger.Plans) == 0) {
+	if len(result.Records) == 0 && (!all || reservedCount == 0) {
 		if all {
 			return Deletion{}, errors.New("there are no intents, plans, or reserved IDs to delete")
 		}
@@ -136,8 +145,9 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 		sort.Strings(blockers)
 		return Deletion{}, fmt.Errorf("nothing was deleted, because these would be left pointing at deleted records: %s. Resolve each first: its author edits the link out or deletes the record", strings.Join(blockers, "; "))
 	}
-	// Deleting everything resets the ledger outright, including numbers an
-	// interrupted create reserved and never wrote a file for.
+	// Deleting everything empties every ID file outright, including numbers an
+	// interrupted create reserved and never wrote a file for. The files stay,
+	// so each member keeps the file their next record is reserved in.
 	keep := func(ids []string) []string {
 		kept := []string{}
 		for _, id := range ids {
@@ -147,9 +157,13 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 		}
 		return kept
 	}
-	for _, id := range append(append([]string{}, ledger.Intents...), ledger.Plans...) {
-		if all || selected[id] {
-			result.Released = append(result.Released, id)
+	released := map[string]bool{}
+	for _, rel := range idFiles {
+		for _, id := range append(append([]string{}, ledgers[rel].Intents...), ledgers[rel].Plans...) {
+			if (all || selected[id]) && !released[id] {
+				released[id] = true
+				result.Released = append(result.Released, id)
+			}
 		}
 	}
 	sort.Strings(result.Released)
@@ -157,20 +171,23 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 		result.ConfirmationRequired = "nothing was deleted: show the person every record above and the IDs it releases, and run again with --confirm only after they agree to this list"
 		return result, nil
 	}
-	// The ledger goes first. Interrupted after it, the files still stand and
-	// allocation still counts their filenames as taken, so no number is handed
-	// out twice; running the same deletion again finishes the job. Interrupted
-	// the other way round, the numbers would stay reserved with nothing left to
-	// select them by.
-	intents, plans := keep(ledger.Intents), keep(ledger.Plans)
-	if !slices.Equal(intents, ledger.Intents) {
-		if err := s.Update(".context-circuit/ids.yaml", []string{"intents"}, intents, 0644); err != nil {
-			return Deletion{}, err
+	// The ID files go first, each released number from every file holding it.
+	// Interrupted after them, the record files still stand and allocation still
+	// counts their filenames as taken, so no number is handed out twice; running
+	// the same deletion again finishes the job. Interrupted the other way round,
+	// the numbers would stay reserved with nothing left to select them by.
+	for _, rel := range idFiles {
+		ledger := ledgers[rel]
+		intents, plans := keep(ledger.Intents), keep(ledger.Plans)
+		if !slices.Equal(intents, ledger.Intents) {
+			if err := s.Update(rel, []string{"intents"}, intents, 0644); err != nil {
+				return Deletion{}, err
+			}
 		}
-	}
-	if !slices.Equal(plans, ledger.Plans) {
-		if err := s.Update(".context-circuit/ids.yaml", []string{"plans"}, plans, 0644); err != nil {
-			return Deletion{}, err
+		if !slices.Equal(plans, ledger.Plans) {
+			if err := s.Update(rel, []string{"plans"}, plans, 0644); err != nil {
+				return Deletion{}, err
+			}
 		}
 	}
 	for _, record := range result.Records {

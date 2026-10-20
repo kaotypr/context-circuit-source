@@ -165,10 +165,12 @@ func (s *Store) Config() (Config, error) {
 	// Separate the two reasons a version does not match, as initialization
 	// already does: a higher schema is this CLI being old, and answering it with
 	// migration advice sends the reader to rewrite a workspace that is fine.
-	if cfg.Version > 2 {
-		return cfg, fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schema 2", cfg.Version)
+	// Schema 2 is still read: it is the shared ID file layout, which the first
+	// changing command splits into member files and moves to schema 3.
+	if cfg.Version > CurrentSchema {
+		return cfg, fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schemas 2 and %d", cfg.Version, CurrentSchema)
 	}
-	if cfg.Version != 2 || cfg.Name == "" {
+	if cfg.Version < 2 || cfg.Name == "" {
 		return cfg, errors.New("initialize a fresh v2 workspace first; v1 migration is not automatic")
 	}
 	if cfg.Repositories == nil || cfg.Relationships == nil {
@@ -456,7 +458,7 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if member == "" || display == "" {
 		return errors.New("pass --member and --member-name: every workspace lists its members, one person working alone included")
 	}
-	if err := Name(member); err != nil {
+	if err := MemberID(member); err != nil {
 		return err
 	}
 	if err := Text(display); err != nil {
@@ -485,8 +487,10 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if err := s.YAML("workspace.yaml", &blank); err == nil {
 		// Separate the two reasons a template cannot be initialized. An
 		// incompatible schema is a CLI problem; data is a workspace problem.
-		if blank.Version != 2 {
-			return fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schema 2", blank.Version)
+		// A seed exported before schema 3 is still blank, and initializing it
+		// moves it forward like any other schema 2 workspace.
+		if blank.Version != 2 && blank.Version != CurrentSchema {
+			return fmt.Errorf("workspace schema %d requires a newer CLI; this CLI supports schemas 2 and %d", blank.Version, CurrentSchema)
 		}
 		if blank.Name != "" || blank.Purpose != "" || blank.WorkspaceRepository != nil || len(blank.Repositories) != 0 || len(blank.Relationships) != 0 {
 			return errors.New("existing workspace data; initialization stopped")
@@ -524,7 +528,7 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	// template recorded about itself. That value describes where this workspace
 	// came from, which initializing it does not change — and losing it here
 	// would strand the workspace with no way to install the CLI it pins.
-	cfg := Config{Version: 2, Name: name, Purpose: purpose, Repositories: map[string]Repository{}, Relationships: []Relationship{}, CLIRegistry: blank.CLIRegistry}
+	cfg := Config{Version: CurrentSchema, Name: name, Purpose: purpose, Repositories: map[string]Repository{}, Relationships: []Relationship{}, CLIRegistry: blank.CLIRegistry}
 	if err := s.Export(missing); err != nil {
 		return err
 	}
@@ -539,6 +543,12 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 		return err
 	}
 	if err := s.WriteYAML("member.local.yaml", Identity{member}, 0600); err != nil {
+		return err
+	}
+	// A seed exported before schema 3 carries an empty shared ID file. Splitting
+	// it here, rather than on the first change, means a new workspace never
+	// holds one; with no seed file it just writes the member's own.
+	if _, err := s.SplitIDLedger(member); err != nil {
 		return err
 	}
 	// The README travels with the workspace, so it carries the workspace's name
@@ -598,6 +608,10 @@ func (s *Store) AddMember(id, name string, band int, language, tone string) erro
 			return nil
 		}
 		return fmt.Errorf("member %s already holds band %d; use member band to change it", id, *existing.Band)
+	}
+	// A new member's ID becomes the name of their ID file on every clone.
+	if err := MemberID(id); err != nil {
+		return err
 	}
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
