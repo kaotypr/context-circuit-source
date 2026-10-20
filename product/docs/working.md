@@ -134,8 +134,9 @@ reservations and fix any handwritten relative links when records move.
 
 Deletion is not archival. `record delete --member ID` removes one member's intents
 and plans, archived ones included, and `record delete --all` removes every record
-while the roster lists exactly one member; both release the deleted IDs from `ids.yaml`, so allocation
-hands those numbers out again. A preview without `--confirm` comes first and
+while the roster lists exactly one member; both release the deleted IDs from every
+ID file under `.context-circuit/ids/` holding them, so allocation hands those
+numbers out again. A preview without `--confirm` comes first and
 deletes nothing, and the person agrees to its list before `--confirm` runs.
 Records by another member that point at a deleted one block the deletion rather
 than being edited or removed with it. Once deleted, a number that reached a

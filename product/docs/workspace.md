@@ -11,7 +11,7 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
 | members.yaml | Member ID to display name, allocation band, and optional record language and tone; lists at least one member | Yes |
-| .context-circuit/ids.yaml | Permanent intent and plan ID reservations | Yes |
+| .context-circuit/ids/MEMBER.yaml | One member's permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
 | plans/pNNNN-slug/* | Optional supporting design files assigned in the plan entry | Yes |
@@ -26,7 +26,7 @@ the shared instruction and folders alongside these small records:
 Example shared repository definition:
 
 ```yaml
-version: 2
+version: 3
 name: Acme
 purpose: Billing software
 workspace_repository:
@@ -260,8 +260,9 @@ keys produce errors. User notes remain ordinary Markdown with no schema registry
 Atomic single-file replacements and a portable OS lock protect cooperating
 commands in one directory. Multi-file operations may leave useful partial output
 on interruption; IDs are reserved before file creation and are not rolled back.
-`record delete` releases IDs deliberately, updating the ledger before it removes
-the files, so an interrupted deletion leaves numbers still counted as taken.
+`record delete` releases IDs deliberately, from every ID file holding them,
+before it removes the record files, so an interrupted deletion leaves numbers
+still counted as taken. `--all` empties every ID file and keeps the files.
 Check the reported path and resume or repair the named files. Locks are released
 when the process exits, including abnormal exit; the empty local lock file remains.
 
@@ -285,6 +286,44 @@ members:
     name: Alex
     band: 2
 ```
+
+## ID files
+
+Each member's reservations live in their own file,
+`.context-circuit/ids/MEMBER.yaml`, holding an `intents` list and a `plans`
+list. Creating a record appends to its author's file and to no other, so two
+members who create records on separate clones change different files, and
+merging the workspace never conflicts on reserved IDs. Allocation treats a
+number as taken when any member's file reserves it or any record file holds it,
+archived ones included.
+
+A member's file may hold numbers outside that member's current band, such as
+records an earlier version wrote without an author, or ones made before bands
+changed. That is valid, and `check` does not report it. A member ID that is a
+Windows device name (`con`, `nul`, `com1`, and the like) is refused, because no
+clone on Windows could check its file out.
+
+A workspace an earlier CLI wrote is at schema 2, with every reservation in one
+shared `.context-circuit/ids.yaml`. The first command that changes something,
+once a member is selected and every member holds a band, splits that file: each
+reservation goes to the file of the member its record names in `created_by`,
+and one with no author, or whose record file is gone, goes to the member
+selected on this machine. The shared file is removed and `workspace.yaml` moves
+to `version: 3`. CLIs before 2.4.0 refuse a schema 3 workspace with "requires a
+newer CLI", so every member needs 2.4.0 from then on. Reading commands, and a
+`record delete` preview, never split.
+
+If the shared file comes back, typically merged from a teammate's clone that had
+not pulled the split, the next changing command splits it again: numbers a member
+file already holds are skipped, new ones are moved by the same rules, and the
+file is removed again. If Git reports a conflict in it, resolve it first,
+keeping every entry. If Git reports the shared file renamed to two different
+member files, keep both member files and remove the shared file.
+
+Two clones may each split before pulling the other, giving the same authorless
+numbers to two different members. Nothing is handed out twice, because
+allocation reads every file. `check` reports each number reserved in more than
+one file, and a person removes the extra entry by hand.
 
 Bands are the only offline collision prevention here, and they only cover members
 who hold distinct ones against a current roster. Before allocating from separate

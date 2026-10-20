@@ -42,6 +42,11 @@ diff between two tags cannot see that mark, which is why it is written here. Do
 not create any of them, and do not update one that exists: this workspace's
 `README.md` was written for this project at initialization and says so.
 
+A delta that deletes `.context-circuit/ids.yaml` or changes `version` in
+`workspace.yaml` is read, not applied, too. Those are this workspace's data, and
+the CLI migrates them: applying the deletion would drop reservations no record
+file holds.
+
 Everything else is ordinary which-side judgment. `.context-circuit/VERSION` and
 `.context-circuit/CLI_VERSION` take the template's value, because they record
 what this workspace received.
