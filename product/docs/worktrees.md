@@ -72,8 +72,14 @@ Preparation never resumes another plan's work silently. The association records
 the plan's `created_at`, so a worktree or branch left from an earlier plan that
 held the same number is refused without `--reuse`, and the refusal says how to
 remove it; an association written before 2.4.0 is judged by its commits instead,
-and is refused when any was made before the plan was created. Preparing again for
-the plan a worktree was made for resumes it as before.
+and is refused when any was made before the plan was created. One whose branch
+holds no commit past its start has nothing to judge, so it is resumed only when
+it has no uncommitted changes and sits at the tip of the base branch, exactly
+where a fresh prepare would start; otherwise it is refused the same way.
+Preparing again for the plan a worktree was made for resumes it as before.
+`check` names a worktree whose association records a different `created_at` from
+its plan's, which is removed with its branch, or pruned if Git no longer lists
+it.
 
 Successful preparation means a usable Git working copy. The agent still needs to
 follow repository setup instructions for package managers, toolchains,

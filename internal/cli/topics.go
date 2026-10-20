@@ -119,8 +119,9 @@ longer lists, such as ones removed with git itself; it touches no worktree,
 branch, or file, and reports what it dropped as dropped. Preparation refuses a
 branch already checked out elsewhere, says where and what is safe to do next, and
 changes nothing. Without --reuse it also refuses a worktree or branch left from an
-earlier plan that held the same number, judged by the plan's created_at; preparing
-again for the same plan resumes its worktree.`,
+earlier plan that held the same number, judged by the plan's created_at, and a
+worktree from before 2.4.0 holding no commits unless it is clean and at the base
+tip; preparing again for the same plan resumes its worktree.`,
 
 	"template": `Exports blank workspace files to a new directory, for seeding a workspace that
 init will complete. It never writes over an existing directory.`,

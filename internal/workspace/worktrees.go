@@ -183,8 +183,14 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 					return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
 				}
 			}
-			if _, err := Inspect(ctx, tree.Path); err != nil {
+			snapshot, err := Inspect(ctx, tree.Path)
+			if err != nil {
 				return Worktree{}, err
+			}
+			if !reuse && record.ID != "" && tree.planCreatedAt == "" {
+				if why := unprovenWorktree(ctx, repo, checkout.BaseBranch, record, tree, snapshot); why != "" {
+					return Worktree{}, earlierPlanError(repoID, plan, branch, tree.Path, why)
+				}
 			}
 			if tree.Plan != plan || tree.StartCommit == "" || tree.planCreatedAt != string(record.CreatedAt) {
 				tree.Plan, tree.planCreatedAt = plan, string(record.CreatedAt)
@@ -210,10 +216,9 @@ func (s *Store) Prepare(ctx context.Context, repoID, plan, branch, start, destin
 	derived := false
 	if _, err := Git(ctx, repo, "show-ref", "--verify", "refs/heads/"+branch); err == nil {
 		if !reuse {
-			base := ""
-			if _, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", "refs/heads/"+checkout.BaseBranch+"^{commit}"); err == nil {
-				base = "refs/heads/" + checkout.BaseBranch
-			}
+			// A clone with only origin's base branch would otherwise date the
+			// branch's whole history.
+			base, _ := baseRef(ctx, repo, checkout.BaseBranch)
 			if why := earlierPlan(ctx, repo, record, "", base, branch); why != "" {
 				return Worktree{}, fmt.Errorf("branch %s already exists and %s, so it is likely left from an earlier plan given the number %s. Delete that branch once its work no longer matters, or pass --reuse to start from its commits deliberately. Nothing was checked out", branch, why, plan)
 			}
@@ -349,6 +354,40 @@ func earlierPlan(ctx context.Context, repo string, plan Record, recorded, start,
 		}
 	}
 	return ""
+}
+
+// unprovenWorktree says why a worktree whose association predates
+// plan_created_at, and whose branch holds no commit past its start, is not safe
+// to resume, or returns "". With no commit there is nothing to date, so it is
+// resumed only when it is exactly what a fresh prepare would create: clean, and
+// at the tip of the base branch. Anything else may be the earlier plan's.
+func unprovenWorktree(ctx context.Context, repo, base string, plan Record, tree Worktree, snapshot Snapshot) string {
+	count, err := Git(ctx, repo, "rev-list", "--count", "--end-of-options", tree.StartCommit+"..refs/heads/"+tree.Branch)
+	if err != nil {
+		return "its association predates 2.4.0 and its commits could not be read"
+	}
+	if count != "0" {
+		return ""
+	}
+	if len(snapshot.Changes) > 0 {
+		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and its uncommitted changes are tied to no %s", plan.ID)
+	}
+	if ref, commit := baseRef(ctx, repo, base); ref == "" || snapshot.Head != tree.StartCommit || commit != snapshot.Head {
+		return fmt.Sprintf("its association predates 2.4.0, it holds no commit to date it by, and it is not at the tip of %s, where a fresh prepare for this %s would start", base, plan.ID)
+	}
+	return ""
+}
+
+// baseRef is the ref a fresh prepare starts from, and its commit: the local
+// base branch, or origin's when this clone has none. Both are "" when neither
+// exists.
+func baseRef(ctx context.Context, repo, base string) (string, string) {
+	for _, ref := range []string{"refs/heads/" + base, "refs/remotes/origin/" + base} {
+		if commit, err := Git(ctx, repo, "rev-parse", "--verify", "--end-of-options", ref+"^{commit}"); err == nil {
+			return ref, commit
+		}
+	}
+	return "", ""
 }
 
 // earlierPlanError refuses to resume another plan's worktree under a reused

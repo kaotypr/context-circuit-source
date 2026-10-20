@@ -267,6 +267,13 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 			}
 			rel := filepath.ToSlash(filepath.Join(baseRel, entry.Name(), "plan.md"))
 			if _, err := s.Read(rel); err != nil {
+				// An interrupted record delete can leave a plan folder emptied of
+				// everything; there is nothing in it to restore.
+				if left, err := os.ReadDir(filepath.Join(base, entry.Name())); err == nil && len(left) == 0 {
+					issues = append(issues, found("empty plan folder: "+filepath.ToSlash(filepath.Join(baseRel, entry.Name())),
+						"remove the empty folder, which an interrupted `record delete` leaves behind; restore its plan.md instead only if the plan was meant to stay"))
+					continue
+				}
 				issues = append(issues, found("missing or invalid plan entry: "+rel, "restore a regular plan.md in this plan folder"))
 			}
 		}
@@ -439,9 +446,14 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 					"`worktree repair --repo "+assoc.Repository+" --path "+assoc.Path+"` where the checkout moved; Git's own inventory is authoritative, and this association is only a convenience"))
 			}
 			if assoc.Plan != "" {
-				if _, err := s.FindRecord(assoc.Plan); err != nil {
+				if plan, err := s.FindRecord(assoc.Plan); err != nil {
 					issues = append(issues, found("worktree has missing plan: "+assoc.Plan,
 						needsAPerson+"the plan this worktree was prepared for is gone; the worktree and its branch are untouched, and removing one is a separate authorized request"))
+				} else if assoc.PlanCreatedAt != "" && assoc.PlanCreatedAt != plan.CreatedAt {
+					// The number was released and handed out again: the worktree
+					// holds the earlier plan's work, which this one must not meet.
+					issues = append(issues, found("worktree "+assoc.Path+" was prepared for an earlier "+assoc.Plan+", created at "+string(assoc.PlanCreatedAt)+", not the "+assoc.Plan+" created at "+string(plan.CreatedAt),
+						needsAPerson+"remove it with `worktree remove --repo "+assoc.Repository+" --path \""+assoc.Path+"\"` (dirty work is kept unless discard is explicitly authorized) and delete branch "+assoc.Branch+" once its work no longer matters, or run `worktree prune --repo "+assoc.Repository+"` if Git no longer lists it; removing either is a separate authorized request"))
 				}
 			}
 		}

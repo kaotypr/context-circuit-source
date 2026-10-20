@@ -51,7 +51,11 @@ automate:
   another machine may still hold the old plan's worktree under the same path and
   branch. An association remembers the `created_at` of the plan it was made for,
   and one that differs, or (for an association older than that field) commits
-  made before the plan record existed, is refused without the reuse flag.
+  made before the plan record existed, is refused without the reuse flag. An
+  older association with no commit to date has nothing to judge, so it resumes
+  only when clean and at the base tip a fresh preparation would start from. The
+  explicit diagnostic names a worktree whose remembered `created_at` differs
+  from its plan's.
 - A plan branch already checked out elsewhere is refused, and the refusal says
   whether that place is the plan's own worktree, the bound checkout, or a
   worktree the workspace does not know for the plan. It offers only steps that

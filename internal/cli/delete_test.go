@@ -316,3 +316,104 @@ func TestPreparingAReusedPlanNumberRefusesTheOldWorktree(t *testing.T) {
 		t.Fatalf("a branch from an earlier plan was not named as one: %s", out)
 	}
 }
+
+// legacyAssociations strips plan_created_at, as an association written before
+// 2.4.0 has none.
+func legacyAssociations(t *testing.T, f fixture) {
+	t.Helper()
+	path := filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")
+	lines := []string{}
+	for _, line := range strings.Split(read(t, path), "\n") {
+		if !strings.Contains(line, "plan_created_at") {
+			lines = append(lines, line)
+		}
+	}
+	write(t, path, strings.Join(lines, "\n"))
+}
+
+// A worktree from before 2.4.0 whose branch holds no commit has nothing to date
+// it by: it resumes only when clean and where a fresh prepare would start it.
+// Once recorded, the same plan resumes it with no flag wherever the base is.
+func TestPreparingALegacyWorktreeWithNoCommits(t *testing.T) {
+	f := team(t)
+	api := filepath.Join(f.home, "api")
+	plan := f.plan(f.intent("billing").ID, "billing-api", "api")
+	w := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID))
+
+	legacyAssociations(t, f)
+	draft := filepath.Join(w.Path, "draft.txt")
+	write(t, draft, "uncommitted\n")
+	out := f.fail("worktree", "prepare", "--repo", "api", "--plan", plan.ID)
+	for _, want := range []string{"not this plan's to resume", "uncommitted changes", "worktree remove --repo api", "--reuse"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("want %q in the refusal of a dirty legacy worktree: %s", want, out)
+		}
+	}
+	if err := os.Remove(draft); err != nil {
+		t.Fatal(err)
+	}
+
+	if again := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID)); !again.Reused || again.Path != w.Path {
+		t.Fatalf("a clean legacy worktree at the base tip was not resumed: %+v", again)
+	}
+	if assocs := read(t, filepath.Join(f.root, ".context-circuit", "local", "worktrees.yaml")); !strings.Contains(assocs, "plan_created_at: "+string(plan.CreatedAt)) {
+		t.Fatalf("the resumed association did not record the plan's created_at:\n%s", assocs)
+	}
+
+	legacyAssociations(t, f)
+	git(t, api, "commit", "--allow-empty", "-m", "later base work")
+	if out := f.fail("worktree", "prepare", "--repo", "api", "--plan", plan.ID); !strings.Contains(out, "not at the tip of main") {
+		t.Fatalf("a legacy worktree behind the base tip was resumed: %s", out)
+	}
+	f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID, "--reuse")
+	if again := tree(t, f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID)); !again.Reused {
+		t.Fatalf("a recorded association for the same plan was not resumed: %+v", again)
+	}
+}
+
+// check names a worktree whose association was recorded for an earlier plan
+// that held the same number, and how to be rid of it.
+func TestCheckNamesAWorktreeFromAnEarlierPlan(t *testing.T) {
+	f := team(t)
+	plan := f.plan(f.intent("billing").ID, "billing-api", "api")
+	f.ok("worktree", "prepare", "--repo", "api", "--plan", plan.ID)
+	f.ok("check")
+	path := filepath.Join(f.root, plan.Path)
+	write(t, path, strings.Replace(read(t, path), "created_at: "+string(plan.CreatedAt), "created_at: 2099-01-01T00:00:00Z", 1))
+	out := f.fail("check")
+	for _, want := range []string{"prepared for an earlier " + plan.ID, "worktree remove --repo api", "cc/" + plan.ID + "/api", "worktree prune --repo api"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("want %q in the check finding: %s", want, out)
+		}
+	}
+}
+
+// An empty plan folder, as an interrupted deletion can leave, is reported as
+// one to remove rather than as a plan.md to restore.
+func TestCheckNamesAnEmptyPlanFolder(t *testing.T) {
+	f := team(t)
+	if err := os.MkdirAll(filepath.Join(f.root, "plans", "p0999-left-over"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	out := f.fail("check")
+	if !strings.Contains(out, "empty plan folder: plans/p0999-left-over") || !strings.Contains(out, "remove the empty folder") || strings.Contains(out, "restore a regular plan.md") {
+		t.Fatalf("check did not name the empty plan folder: %s", out)
+	}
+}
+
+// A clone with only origin's base branch dates a bare plan branch from that
+// base, not from the start of history.
+func TestABarePlanBranchIsDatedFromOriginsBase(t *testing.T) {
+	f := team(t)
+	api := filepath.Join(f.home, "api")
+	plan := f.plan(f.intent("billing").ID, "billing-api", "api")
+	git(t, api, "update-ref", "refs/remotes/origin/trunk", "HEAD")
+	git(t, api, "branch", "cc/"+plan.ID+"/api", "HEAD")
+	f.ok("repo", "base", "--id", "api", "--branch", "trunk")
+	path := filepath.Join(f.root, plan.Path)
+	write(t, path, strings.Replace(read(t, path), "created_at: "+string(plan.CreatedAt), "created_at: 2099-01-01T00:00:00Z", 1))
+	out := f.fail("worktree", "prepare", "--repo", "api", "--plan", plan.ID)
+	if strings.Contains(out, "earlier plan") || !strings.Contains(out, "use --reuse") {
+		t.Fatalf("a branch holding nothing past origin's base was dated by its whole history: %s", out)
+	}
+}
