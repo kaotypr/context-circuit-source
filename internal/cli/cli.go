@@ -76,6 +76,7 @@ worktree inspect       --repo ID --path PATH
 worktree move          --repo ID --path PATH --to NEW_PATH
 worktree repair        --repo ID --path PATH
 worktree remove        --repo ID --path PATH [--discard]
+worktree prune         --repo ID (drops associations of worktrees Git no longer lists)
 template export       --path NEW_DIRECTORY (blank workspace files)
 agent settings        inspect effective per-host role model and effort preferences
                       (shared, with any role-tiering.local.yaml override applied)
@@ -273,7 +274,7 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 		values["copy-mode"] = f.String("copy-mode", "auto", "runtime file reuse: auto, required, copy, off")
 		f.Var(&copyPaths, "copy-path", "additional ignored runtime path (repeatable)")
 		f.BoolVar(&reuse, "reuse", false, "explicitly reuse existing work")
-	case "worktree list":
+	case "worktree list", "worktree prune":
 		add("repo")
 	case "worktree inspect", "worktree repair":
 		add("repo", "path")
@@ -584,6 +585,12 @@ func Run(ctx context.Context, args []string, out, errOut io.Writer, version stri
 			err = s.RemoveWorktree(ctx, get("repo"), get("path"), discard)
 		case "worktree repair":
 			err = s.RepairWorktree(ctx, get("repo"), get("path"))
+		case "worktree prune":
+			dropped, e := s.PruneWorktreeAssociations(ctx, get("repo"))
+			if e != nil {
+				return nil, e
+			}
+			return map[string]any{"operation": command, "workspace": s.Root, "ok": true, "repository": get("repo"), "removed": dropped}, nil
 		}
 		return map[string]any{"operation": command, "workspace": s.Root, "ok": err == nil}, err
 	}

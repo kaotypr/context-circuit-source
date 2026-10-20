@@ -367,7 +367,10 @@ func (s *Store) Check(ctx context.Context) ([]Finding, error) {
 	} else {
 		for _, assoc := range local.Worktrees {
 			_, tree, err := s.selectedTree(ctx, assoc.Repository, assoc.Path)
-			if err != nil || tree.Prunable || tree.Branch != assoc.Branch {
+			if errors.Is(err, errNotWorktree) {
+				issues = append(issues, found("worktree association needs attention: "+assoc.Path,
+					"Git no longer lists this worktree: `worktree prune --repo "+assoc.Repository+"` drops the associations of worktrees that are gone and touches no worktree, branch, or file; use `worktree repair --repo "+assoc.Repository+" --path PATH` instead if the checkout only moved"))
+			} else if err != nil || tree.Prunable || tree.Branch != assoc.Branch {
 				issues = append(issues, found("worktree association needs attention: "+assoc.Path,
 					"`worktree repair --repo "+assoc.Repository+" --path "+assoc.Path+"` where the checkout moved; Git's own inventory is authoritative, and this association is only a convenience"))
 			}

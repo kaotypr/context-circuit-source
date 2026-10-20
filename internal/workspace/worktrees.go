@@ -36,11 +36,11 @@ type Worktree struct {
 	UnmergedPlans string `json:"unmerged_plans,omitempty"`
 }
 type Association struct {
-	Repository  string `yaml:"repository"`
-	Plan        string `yaml:"plan,omitempty"`
-	Path        string `yaml:"path"`
-	Branch      string `yaml:"branch"`
-	StartCommit string `yaml:"start_commit"`
+	Repository  string `yaml:"repository" json:"repository"`
+	Plan        string `yaml:"plan,omitempty" json:"plan,omitempty"`
+	Path        string `yaml:"path" json:"path"`
+	Branch      string `yaml:"branch" json:"branch"`
+	StartCommit string `yaml:"start_commit" json:"start_commit"`
 }
 type Associations struct {
 	Worktrees []Association `yaml:"worktrees"`
@@ -54,6 +54,10 @@ func (s *Store) associations() (Associations, error) {
 	}
 	return result, err
 }
+
+// errNotWorktree is the refusal for a path Git does not list as a worktree of the repository, kept apart
+// so that a caller can tell a worktree that is gone from a repository that cannot be read.
+var errNotWorktree = errors.New("path is not a registered worktree of this repository")
 
 func (s *Store) Worktrees(ctx context.Context, repoID string) ([]Worktree, error) {
 	checkout, err := s.Repository(ctx, repoID)
@@ -304,7 +308,7 @@ func (s *Store) selectedTree(ctx context.Context, repoID, input string) (string,
 			return repo, tree, nil
 		}
 	}
-	return "", Worktree{}, errors.New("path is not a registered worktree of this repository")
+	return "", Worktree{}, errNotWorktree
 }
 
 func (s *Store) updateAssociation(repo, old, next string) error {
@@ -380,6 +384,46 @@ func (s *Store) RemoveWorktree(ctx context.Context, repoID, input string, discar
 		return fmt.Errorf("worktree removed; local association update failed: %w", err)
 	}
 	return nil
+}
+
+// PruneWorktreeAssociations drops the plan-to-worktree associations of one repository whose path Git no
+// longer lists as a worktree, which is what remains when a worktree is removed with `git worktree remove`
+// or by hand. It reads Git's inventory and rewrites only the local association file: no worktree, branch,
+// or file is touched, and an association whose worktree Git still lists (even one it marks prunable, or one
+// now on another branch) is left for `worktree repair` and `git worktree prune` to judge. It returns what
+// it dropped, never nil.
+func (s *Store) PruneWorktreeAssociations(ctx context.Context, repoID string) ([]Association, error) {
+	list, err := s.Worktrees(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	listed := make(map[string]bool, len(list))
+	for _, tree := range list {
+		listed[filepath.Clean(tree.Path)] = true
+	}
+	local, err := s.associations()
+	if err != nil {
+		return nil, err
+	}
+	kept, dropped := []Association{}, []Association{}
+	for _, assoc := range local.Worktrees {
+		path := filepath.Clean(assoc.Path)
+		if resolved, e := filepath.EvalSymlinks(path); e == nil {
+			path = resolved
+		}
+		if assoc.Repository == repoID && !listed[path] {
+			dropped = append(dropped, assoc)
+			continue
+		}
+		kept = append(kept, assoc)
+	}
+	if len(dropped) == 0 {
+		return dropped, nil
+	}
+	if err := s.WriteYAML(".context-circuit/local/worktrees.yaml", Associations{kept}, 0600); err != nil {
+		return nil, err
+	}
+	return dropped, nil
 }
 
 func (s *Store) RepairWorktree(ctx context.Context, repoID, input string) error {

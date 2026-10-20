@@ -130,7 +130,7 @@ func (s *Store) DeleteRecords(member string, all, confirm bool) (Deletion, error
 	}
 	for _, assoc := range local.Worktrees {
 		if selected[assoc.Plan] {
-			blockers = append(blockers, fmt.Sprintf("worktree %s in %s was prepared for %s; remove it with `worktree remove --repo %s --path %s` first, or keep the plan", assoc.Path, assoc.Repository, assoc.Plan, assoc.Repository, assoc.Path))
+			blockers = append(blockers, fmt.Sprintf("worktree %s in %s was prepared for %s; remove it with `worktree remove --repo %s --path %s` first (if Git no longer lists it, `worktree prune --repo %s` drops the leftover association), or keep the plan", assoc.Path, assoc.Repository, assoc.Plan, assoc.Repository, assoc.Path, assoc.Repository))
 		}
 	}
 	if len(blockers) > 0 {

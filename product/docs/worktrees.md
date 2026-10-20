@@ -36,7 +36,11 @@ Git's inventory is authoritative. Local plan associations help locate work but
 do not prove that a path exists or still holds the same branch. Resume with
 `worktree list` and `worktree inspect`; then inspect the real diff. `worktree repair`
 can reconnect a manually moved working copy; `worktree move` moves it through Git.
-No automatic cleanup or pruning occurs after failure or completion.
+No automatic cleanup or pruning occurs after failure or completion. A worktree removed
+with `git worktree remove` or by hand leaves its association behind, and `check` reports
+it; `worktree prune --repo ID` drops the associations of that repository whose path Git
+no longer lists. It rewrites only the local association file, so no worktree, branch, or
+file is touched.
 
 Successful preparation means a usable Git working copy. The agent still needs to
 follow repository setup instructions for package managers, toolchains,

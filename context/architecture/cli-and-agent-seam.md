@@ -21,7 +21,7 @@ complete.
 | Git state inspection and the diagnostic | `context-circuit-source@internal/workspace/inspect.go` |
 | Mounted knowledge the workspace does not own | `context-circuit-source@internal/workspace/knowledge.go` |
 | Reading a note's reviewed date against the code it anchors to | `context-circuit-source@internal/workspace/review.go` |
-| Worktree preparation, listing, move, repair, removal | `context-circuit-source@internal/workspace/worktrees.go` |
+| Worktree preparation, listing, move, repair, pruning of stale associations, removal | `context-circuit-source@internal/workspace/worktrees.go` |
 | Ignored runtime reuse and filesystem cloning | `context-circuit-source@internal/workspace/reuse.go`, `internal/cow/` |
 | Execution order derivation | `context-circuit-source@internal/workspace/order.go` |
 | Role settings, native role files, dispatch specifications | `context-circuit-source@internal/workspace/agents.go` |

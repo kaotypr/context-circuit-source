@@ -92,12 +92,14 @@ entries claiming one repository and the reconciliation they leave outstanding â€
 what completion names for a plan, for a change made without one. It locates
 candidates; judging relevance and writing knowledge stay with the agent.`,
 
-	"worktree": `Prepares, inspects, moves, repairs, and removes isolated working copies.
+	"worktree": `Prepares, inspects, moves, repairs, prunes, and removes isolated working copies.
 Preparation may reuse ignored runtime files from the bound checkout through
 filesystem cloning, skipping dependencies whose package inputs differ. Git's own
 inventory is authoritative; the plan-to-worktree association is a convenience for
 resuming. Removal preserves dirty, untracked, and ignored files unless discard is
-explicitly authorized.`,
+explicitly authorized. Prune only drops the associations of worktrees Git no
+longer lists, such as ones removed with git itself; it touches no worktree,
+branch, or file.`,
 
 	"template": `Exports blank workspace files to a new directory, for seeding a workspace that
 init will complete. It never writes over an existing directory.`,

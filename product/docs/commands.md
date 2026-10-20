@@ -158,6 +158,7 @@ context-circuit-cli worktree inspect --repo api --path .worktrees/p0001/api
 context-circuit-cli worktree move --repo api --path .worktrees/p0001/api --to ../api-billing
 context-circuit-cli worktree repair --repo api --path ../api-billing
 context-circuit-cli worktree remove --repo api --path ../api-billing
+context-circuit-cli worktree prune --repo api
 context-circuit-cli check
 ```
 
