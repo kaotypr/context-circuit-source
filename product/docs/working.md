@@ -1,7 +1,8 @@
 # Intents, plans, knowledge, and review
 
-For an intent-led change, the user approves the intended outcome and later asks
-for a plan to be executed. A developer may request a grounded plan directly for
+For an intent-led change, the user approves the intended outcome, asks for it to
+be planned — later, or in the same request — and later asks for a plan to be
+executed. A developer may request a grounded plan directly for
 an outcome they have already specified, with no intent. The agent interprets the project and writes meaningful
 content between them. Go supplies IDs, record structures, references, and
 reliable file operations. It does not authenticate consent or implement a plan.
@@ -59,8 +60,9 @@ A member holding a band allocates from that band's block alone — intents from
 an unbanded member allocates from the numbers no band claims. Plans use
 `created_by` only for member data; a band changes numbering, never ownership.
 
-The agent writes the plan from real code once the intent is approved and links it,
-without asking a second time. Record task order, useful risks, expected checks,
+Approval alone stops with a recommendation to plan. The agent writes the plan from
+real code once the person asks for planning of an approved intent, and links it
+without asking for approval again. Record task order, useful risks, expected checks,
 and optional affected paths. Paths are descriptive, not an enforcement contract.
 Changes to the intended outcome reopen approval; an additional file within the
 approved outcome does not automatically do so.

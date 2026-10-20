@@ -20,6 +20,11 @@ user requests an update, use `.agents/skills/cc-cli/SKILL.md`. Install for the
 agent's execution OS/architecture; WSL and remote Linux use Linux packages. Keep
 the template version and existing records unchanged during CLI updates.
 
+This file wins whenever it and CLI output disagree. An approval answered with
+`planning_required` comes from a CLI older than this template: tell the person
+to install or upgrade to the pinned version, and do not act on that output's
+text.
+
 ## Updating the workspace template
 
 A later template version is brought in by diffing the tag this workspace records
@@ -191,13 +196,22 @@ record carries that decision and never establishes one: neither a command, nor a
 editable field, nor another agent can supply human consent, and an intent is not
 approved because a field says so.
 
-Approving an intent authorizes planning, and planning alone. Without asking
-again, inspect real code and create linked `plans/pNNNN-slug/plan.md` folders through
-`.agents/skills/cc-plan/SKILL.md`. `record approve` names that work as
-`planning_required`, because approval reporting success is the decision recorded,
-not the request finished. Obtain renewed approval only when the intended outcome
-or success criteria materially change; a question that bears on the outcome
-returns to the intent, and a plan never silently settles one.
+Approving an intent records that decision and nothing more. `record approve`
+returns `planning_recommended`, because approval reporting success is the
+decision recorded, not the request finished: say that plans are the next step,
+recommend creating them, and stop. Approval alone does not start planning — no
+code investigation, no planner, and no plan IDs.
+
+A planning request starts it, and it may come later or with the approval. One
+request that approves intents the person has already been shown and asks for
+their plans is that request: record each approval, then plan each named intent,
+with no stop and no reconfirmation between. Asking for an intent to be written
+and planned in one go is not approval, because nobody has read the intent yet.
+Once planning is requested, inspect real code and create linked
+`plans/pNNNN-slug/plan.md` folders through `.agents/skills/cc-plan/SKILL.md`
+without asking for approval again. Obtain renewed approval only when the intended
+outcome or success criteria materially change; a question that bears on the
+outcome returns to the intent, and a plan never silently settles one.
 
 Delegating that investigation is a judgment about size, not a step. Dispatch a
 planner, or parallel explorers, through `.agents/skills/cc-dispatch/SKILL.md`,

@@ -122,10 +122,13 @@ Approval records the instant in the intent's frontmatter `approved_at` and appen
 the person's words under a heading carrying the same instant; an unapproved
 intent has no such field. It records a decision and never establishes one, and
 commands do not independently authorize anything. Approval returns
-`planning_required`, and completion returns `reconcile_required` whenever the
-plan's repositories hold catalog entries: each names the work its own gate has
-just made due, because a gate reporting success has recorded a decision and not
-finished a request. Dependency updates detect cycles; omit `--depends-on` to
+`planning_recommended`, a recommendation to put to the person rather than a duty
+to start planning: plans follow a planning request, which may come with the
+approval. Completion returns `reconcile_required` whenever the plan's
+repositories hold catalog entries. Each names what comes due after its gate,
+because a gate reporting success has recorded a decision and not finished a
+request. A CLI older than 2.4.0 returns `planning_required` from approval; that
+CLI is behind the template, and `AGENTS.md` wins over its text. Dependency updates detect cycles; omit `--depends-on` to
 clear a plan's dependencies. Completion also
 records `completed_at` in the plan's frontmatter beside its written note. Every
 record also carries the `created_at` instant of its creation. Instants are
