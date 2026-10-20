@@ -47,6 +47,11 @@ automate:
   a caller selects an existing branch or adopts an existing association.
 - Repeating preparation for the same association returns its actual Git state
   rather than recreating anything.
+- The same plan ID is not proof of the same plan: deletion releases numbers, and
+  another machine may still hold the old plan's worktree under the same path and
+  branch. An association remembers the `created_at` of the plan it was made for,
+  and one that differs, or (for an association older than that field) commits
+  made before the plan record existed, is refused without the reuse flag.
 - A plan branch already checked out elsewhere is refused, and the refusal says
   whether that place is the plan's own worktree, the bound checkout, or a
   worktree the workspace does not know for the plan. It offers only steps that

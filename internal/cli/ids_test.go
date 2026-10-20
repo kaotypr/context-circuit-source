@@ -241,6 +241,7 @@ func TestARefusedCallLeavesASchema2WorkspaceUnsplit(t *testing.T) {
 		{[]string{"member", "roles", "--id", "maya"}, "--clear"},
 		{[]string{"member", "roles", "--id", "maya", "--role", "docs", "--clear"}, "not both"},
 		{[]string{"member", "roles", "--id", "maya", "--role", ""}, "single-line"},
+		{[]string{"record", "delete", "--id", "i999", "--confirm"}, "no record or reserved ID matches i999"},
 	} {
 		if out := f.fail(tc.args...); !strings.Contains(out, tc.want) {
 			t.Fatalf("%v: expected a refusal naming %q: %s", tc.args, tc.want, out)
@@ -248,6 +249,35 @@ func TestARefusedCallLeavesASchema2WorkspaceUnsplit(t *testing.T) {
 		if !exists(legacy) || !strings.Contains(read(t, config), "version: 2") || exists(filepath.Join(f.root, ".context-circuit", "ids")) {
 			t.Fatalf("%v was refused but split the ID file", tc.args)
 		}
+	}
+}
+
+// A confirmed deletion by ID is a change, so on a schema 2 workspace it splits
+// first and then releases the number from the member file the split wrote.
+func TestAConfirmedDeletionByIDOnASchema2Workspace(t *testing.T) {
+	f := setup(t)
+	kept := f.intent("kept")
+	gone := f.intent("gone")
+	schema2(t, f, []string{kept.ID, gone.ID, "i050"}, nil)
+
+	code, out, errOut := call(f.root, "record", "delete", "--id", gone.ID, "--id", "i050", "--confirm")
+	if code != 0 {
+		t.Fatalf("exit=%d %s %s", code, out, errOut)
+	}
+	if d := deletion(t, out); !d.Deleted || !slices.Equal(d.Released, []string{gone.ID, "i050"}) {
+		t.Fatalf("the deletion did not release what it named: %+v", d)
+	}
+	if !strings.Contains(errOut, "notice: moved this workspace's ID reservations") {
+		t.Fatalf("the split was not reported: %s", errOut)
+	}
+	if exists(filepath.Join(f.root, ".context-circuit", "ids.yaml")) || !strings.Contains(read(t, filepath.Join(f.root, "workspace.yaml")), "version: 3") {
+		t.Fatal("the confirmed deletion did not split the workspace")
+	}
+	if l := ledger(t, f); !slices.Equal(l.Intents, []string{kept.ID}) {
+		t.Fatalf("the member file holds %v after the deletion", l.Intents)
+	}
+	if exists(filepath.Join(f.root, gone.Path)) || !exists(filepath.Join(f.root, kept.Path)) {
+		t.Fatal("the deletion removed the wrong record")
 	}
 }
 

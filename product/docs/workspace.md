@@ -276,10 +276,16 @@ Atomic single-file replacements and a portable OS lock protect cooperating
 commands in one directory. Multi-file operations may leave useful partial output
 on interruption; IDs are reserved before file creation and are not rolled back.
 `record delete` releases IDs deliberately, from every ID file holding them,
-before it removes the record files, so an interrupted deletion leaves numbers
-still counted as taken. `--all` empties every ID file and keeps the files.
-`--id` first takes each deleted plan out of its own intent's `plans:` list, so
-a deletion interrupted at any point is finished by running it again.
+only after it has removed the record files — plans before intents, and each
+`plan.md` after the rest of its folder — so an interrupted deletion leaves every
+selected number reserved and every partly removed plan still a record. `--all`
+empties every ID file and keeps the files. `--id` first takes each deleted plan
+out of its own intent's `plans:` list. A deletion interrupted at any point is
+finished by running `record delete --id` with the IDs left, which a failed
+removal names, or the same `--id` or `--all` call again. Deleting another
+member's records edits their ID file, so if they create a record before pulling
+the deletion, Git reports a conflict in that file; keeping the union of both
+sides is safe, since a released number left reserved is only a gap.
 Check the reported path and resume or repair the named files. Locks are released
 when the process exits, including abnormal exit; the empty local lock file remains.
 

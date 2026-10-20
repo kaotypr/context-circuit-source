@@ -395,7 +395,12 @@ agree to that list. A refusal naming a record outside the selection, or a
 worktree on this machine, is resolved by whoever owns it or by the person naming
 those records too, not by editing around it. Deletion is a
 change in this checkout: committing and pushing it are separate authorizations,
-and until every clone pulls it, another clone still holds those records.
+and until every clone pulls it, another clone still holds those records. On
+another machine, after pulling a deletion, run `check` before creating plans:
+it names a worktree prepared there for a deleted plan, which is removed, with
+its branch once the person agrees, before `worktree prune`. A deletion that
+stops part-way names the `record delete --id ... --confirm` call that finishes
+it.
 
 Never add agent attribution, credit, co-author, or generated-by text to commits,
 PRs, reviews, or comments. Follow repository commit conventions; default to
