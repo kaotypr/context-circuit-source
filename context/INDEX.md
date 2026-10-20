@@ -108,7 +108,7 @@ and agent, the command surface, the instruction layers, the file contract.*
 - [The CLI and agent seam](architecture/cli-and-agent-seam.md) {context-circuit-source} — which work belongs to the Go CLI and which to the agent · seam, boundary, cli, refusals, model-blind, judgment, mechanism, remedy, id file · reviewed 2026-10-20
 - [Command surface and output contract](architecture/command-surface.md) {context-circuit-source} — what the CLI exposes and how its output and failures behave · cli, command, json, yaml, exit status, flags, help, documentation parity · reviewed 2026-09-18
 - [How workspace behavior is taught](architecture/instruction-layers.md) {context-circuit-source} — which layer a rule belongs in and what brings it back when it applies · instruction, entry instruction, skill, docs, layering, retrieval, trigger, prohibition, gate, reachability, audience, next step · reviewed 2026-10-20
-- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema, interrupted deletion, roster, band, id file, split, schema 3 · reviewed 2026-10-20
+- [Workspace files and safe editing](architecture/workspace-files.md) {context-circuit-source} — which records are shared, which are machine-local, and how edits stay safe · file contract, shared, local binding, workspace repository, base branch, default branch, repository url, lock, atomic, document edit, schema, interrupted deletion, roster, band, id file, split, schema 3, roles, member roles · reviewed 2026-10-20
 
 ### Actors
 
@@ -116,7 +116,7 @@ and agent, the command surface, the instruction layers, the file contract.*
 does for them is `domains/`.*
 
 - [Maintainer](actors/maintainer.md) {context-circuit-source} — who owns this checkout and what they need from it · actor, maintainer, ships, release, manifest, validation, versioning · reviewed 2026-09-19
-- [Workspace member](actors/workspace-member.md) {context-circuit-source} — who runs the product against a project and what they need from it · actor, member, user, team, roster, team of one, working alone, setup, identity, joining, approval, isolation, retrieval, deletion · reviewed 2026-10-20
+- [Workspace member](actors/workspace-member.md) {context-circuit-source} — who runs the product against a project and what they need from it · actor, member, user, team, roster, team of one, working alone, setup, identity, joining, approval, isolation, retrieval, deletion, roles, contribution · reviewed 2026-10-20
 - [Coding agent](actors/coding-agent.md) {context-circuit-source} — what the agent reading this workspace needs in order to act correctly · actor, agent, host, instruction, brief, dispatch, output, refusal · reviewed 2026-09-19
 
 ### Coordination domains
