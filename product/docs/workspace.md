@@ -10,7 +10,7 @@ the shared instruction and folders alongside these small records:
 | .context-circuit/role-tiering.yaml | Per-host role model and effort preferences | Yes |
 | .context-circuit/role-tiering.local.yaml | This machine's overrides of those preferences | No |
 | workspace.yaml | Version, name, purpose, the workspace's own repository, repository IDs with their URL and default branch, borrowed knowledge repositories, an optional knowledge review threshold, relationships | Yes |
-| members.yaml | Member ID to display name, allocation band, and optional record language and tone; lists at least one member | Yes |
+| members.yaml | Member ID to display name, allocation band, optional record language and tone, and optional informational roles; lists at least one member | Yes |
 | .context-circuit/ids/MEMBER.yaml | One member's permanent intent and plan ID reservations | Yes |
 | intent/iNNN-slug.md | Intent content, created_by, created_at, approved_at, approval note, linked plans | Yes |
 | plans/pNNNN-slug/plan.md | New plan entry, repositories, dependencies, optional intent and required_files, created_by, created_at, completed_at | Yes |
@@ -98,6 +98,20 @@ the workspace's own checkout and names `workspace connect` instead.
 No command commits, pushes, or merges the workspace. Members share one branch of
 it; a member who keeps the workspace on another branch records that in the local
 binding, where it describes that machine and nobody else.
+
+## Member roles
+
+A member may carry `roles`, a list of free text saying what they contribute,
+such as `[maintainer, docs]`, shown wherever the roster is shown. Roles are
+informational and decide nothing: approval, allocation, deletion, and dispatch
+behave the same with or without them, and the roster is still not access
+control. `member roles` sets or clears them, `member add --role` and
+`init --member-role` record them with the member, and nothing validates their
+text.
+
+Roles are written only at schema 3. A CLI too old to know the field reads the
+roster strictly, so roles wait until the workspace is at a schema that CLI has
+already refused to work in. `check` reports roles found in a schema 2 roster.
 
 ## Language
 

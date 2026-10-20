@@ -676,7 +676,7 @@ agent work faster without making it disposable.
 | Shared through Git | Stays on personal machine |
 | --- | --- |
 | `workspace.yaml` — purpose, repository IDs, their URLs and default branches, and how they relate | `repositories.local.yaml` — where each repository is checked out here, and the branch you work from |
-| `members.yaml` — who shares the workspace, with each member's record language and tone | `member.local.yaml` — which of those members you are |
+| `members.yaml` — who shares the workspace, with each member's record language and tone, and the roles they contribute in | `member.local.yaml` — which of those members you are |
 | `.context-circuit/role-tiering.yaml` — model and effort defaults for each agent role | `.context-circuit/role-tiering.local.yaml` — your overrides, and the generated `cc-*` role files |
 | `intent/` and `plans/` — approved goals, their plans, and the dependencies between them | `.worktrees/` and `repositories/` — the Git working copies themselves |
 | `context/` — product knowledge and its catalog | `.context-circuit/local/` — plan-to-worktree links and the edit lock |

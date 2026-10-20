@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"os"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
@@ -100,11 +101,19 @@ type CLIRegistry struct {
 // formal in a way nobody chose. A team says what it wants once —
 // "semi-formal; keep technical terms in English" — instead of reading it back
 // in every record. Unset leaves the general composition guidance to decide.
+//
+// Roles says what a member contributes, such as maintainer or docs, so people
+// reading the roster can see who works on what. It is informational and decides
+// nothing: approval, allocation, deletion, and dispatch never read it, and it is
+// not the subagent role a dispatch names. A role is free text with no list of
+// allowed values. Roles are written only at schema 3, so a CLI too old to know
+// the field has already refused the workspace by its schema.
 type Member struct {
-	Name     string `yaml:"name" json:"name"`
-	Band     *int   `yaml:"band,omitempty" json:"band,omitempty"`
-	Language string `yaml:"language,omitempty" json:"language,omitempty"`
-	Tone     string `yaml:"tone,omitempty" json:"tone,omitempty"`
+	Name     string   `yaml:"name" json:"name"`
+	Band     *int     `yaml:"band,omitempty" json:"band,omitempty"`
+	Language string   `yaml:"language,omitempty" json:"language,omitempty"`
+	Tone     string   `yaml:"tone,omitempty" json:"tone,omitempty"`
+	Roles    []string `yaml:"roles,omitempty" json:"roles,omitempty"`
 }
 type Members struct {
 	Members map[string]Member `yaml:"members" json:"members"`
@@ -449,7 +458,7 @@ func (s *Store) RequireSetup() error {
 // Init writes a new workspace and its first member, who is selected on this
 // machine. A person working alone is a team of one: the roster is never empty,
 // so nobody is asked later who they are and every record carries an author.
-func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, member, display string, band int) error {
+func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, member, display string, band int, roles []string) error {
 	for _, value := range []string{name, purpose} {
 		if err := Text(value); err != nil {
 			return err
@@ -535,7 +544,7 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	if err := s.WriteYAML("workspace.yaml", cfg, 0644); err != nil {
 		return err
 	}
-	roster := map[string]Member{member: {Name: display, Band: BandOf(band)}}
+	roster := map[string]Member{member: {Name: display, Band: BandOf(band), Roles: roles}}
 	if err := s.WriteYAML("members.yaml", Members{roster}, 0644); err != nil {
 		return err
 	}
@@ -568,9 +577,14 @@ func (s *Store) Init(files map[string][]byte, readme []byte, name, purpose, memb
 	return err
 }
 
-func (s *Store) AddMember(id, name string, band int, language, tone string) error {
+func (s *Store) AddMember(id, name string, band int, language, tone string, roles []string) error {
 	if _, err := s.Config(); err != nil {
 		return err
+	}
+	if len(roles) > 0 {
+		if err := s.requireRolesSchema(); err != nil {
+			return err
+		}
 	}
 	if err := Name(id); err != nil {
 		return err
@@ -601,6 +615,9 @@ func (s *Store) AddMember(id, name string, band int, language, tone string) erro
 		if tone != "" && existing.Tone != tone {
 			return fmt.Errorf("member %s already records a tone; use member tone to change it", id)
 		}
+		if len(roles) > 0 && !slices.Equal(existing.Roles, roles) {
+			return fmt.Errorf("member %s already records roles; use member roles to change them", id)
+		}
 		if existing.Band == nil {
 			return fmt.Errorf("member %s holds no band yet; use member band to give it one", id)
 		}
@@ -616,7 +633,23 @@ func (s *Store) AddMember(id, name string, band int, language, tone string) erro
 	if err := s.freeBand(members, id, band); err != nil {
 		return err
 	}
-	return s.Update("members.yaml", []string{"members", id}, Member{Name: name, Band: BandOf(band), Language: language, Tone: tone}, 0644)
+	return s.Update("members.yaml", []string{"members", id}, Member{Name: name, Band: BandOf(band), Language: language, Tone: tone, Roles: roles}, 0644)
+}
+
+// requireRolesSchema refuses to write roles below schema 3. A 2.3.0 CLI reads the
+// roster strictly and stops at a field it does not know, so roles are written
+// only where its schema check has already sent that teammate to upgrade. In a
+// schema 2 workspace the first changing command after setup moves it to schema
+// 3, so the only way to arrive here at schema 2 is with setup unfinished.
+func (s *Store) requireRolesSchema() error {
+	cfg, err := s.Config()
+	if err != nil {
+		return err
+	}
+	if cfg.Version >= CurrentSchema {
+		return nil
+	}
+	return fmt.Errorf("roles need workspace schema %d and this workspace is at schema %d, so nothing was changed; finish setup without roles, and the next changing command moves the workspace to schema %d; then set them with `member roles --id ID --role ROLE`", CurrentSchema, cfg.Version, CurrentSchema)
 }
 
 // existingLanguage names what a member writes in, including the unset case, so
@@ -673,6 +706,33 @@ func (s *Store) SetMemberTone(id, tone string, clear bool) error {
 		return fmt.Errorf("unknown member: %s", id)
 	}
 	member.Tone = tone
+	return s.Update("members.yaml", []string{"members", id}, member, 0644)
+}
+
+// SetMemberRoles records what a member contributes, replacing any roles already
+// recorded, or clears them. Roles are informational: nothing reads them to
+// decide who may do what, so any text is accepted as it was given.
+func (s *Store) SetMemberRoles(id string, roles []string, clear bool) error {
+	if len(roles) == 0 && !clear {
+		return errors.New("name a role with --role, repeated for several, or pass --clear")
+	}
+	if len(roles) > 0 && clear {
+		return errors.New("pass --role or --clear, not both")
+	}
+	members, err := s.Members()
+	if err != nil {
+		return err
+	}
+	member, ok := members.Members[id]
+	if !ok {
+		return fmt.Errorf("unknown member: %s", id)
+	}
+	if len(roles) > 0 {
+		if err := s.requireRolesSchema(); err != nil {
+			return err
+		}
+	}
+	member.Roles = roles
 	return s.Update("members.yaml", []string{"members", id}, member, 0644)
 }
 

@@ -29,6 +29,7 @@ the repositories for the business word finds nothing without it.
 | Linear chain | An execution shape stacking every plan on the previous one, serial and merge-free | `context-circuit-source@internal/workspace/order.go` `Order.Chain` |
 | Local binding | This machine's checkout path for a shared repository ID | `context-circuit-source@internal/workspace/workspace.go` `Bindings` |
 | Logical repository ID | The shared name for a repository, independent of where anyone checked it out | `context-circuit-source@internal/workspace/workspace.go` `Config.Repositories` |
+| Member role | Free text in the roster saying what a member contributes, informational only and unrelated to role tiering or a dispatched subagent role | `context-circuit-source@internal/workspace/workspace.go` `Member.Roles`, `Store.SetMemberRoles` |
 | Plan | How an approved intent maps to real code, plus what actually happened | `context-circuit-source@internal/workspace/records.go` `Record` |
 | Reservation | An allocated number an ID file keeps, never reused while any ID file holds it; archiving leaves it, and only deletion releases it | `context-circuit-source@internal/workspace/ids.go` `reserve`, `reservedIDs` |
 | Role tiering | The per-host model and effort preference for each subagent role, shared and optionally overridden per machine | `context-circuit-source@template/role-tiering.yaml`, `internal/workspace/agents.go` |

@@ -48,7 +48,14 @@ it, names the next free band. Until the roster lists this machine's selected
 member and every member holds a band, status reports identity_required or
 band_required with band_suggestions, and every changing command except these
 setup steps is refused. Selection is taken as given: nothing verifies who a
-person is.`,
+person is.
+
+Roles are free text saying what a member contributes, such as maintainer or
+docs, shown wherever the roster is. They are informational and decide nothing:
+approval, allocation, deletion, and dispatch never read them, and they are not
+the subagent --role that agent configure and agent dispatch take. They are
+written only at workspace schema 3, so a member added while an upgrade is still
+mid-setup is added without roles, which member roles sets afterwards.`,
 
 	"knowledge": `Mounts a repository of knowledge this workspace reads and never owns: an
 organization's knowledge center, shared by many workspaces and changed through

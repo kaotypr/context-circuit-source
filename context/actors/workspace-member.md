@@ -49,6 +49,8 @@ Runs the product against a real project, on a roster of one or of many.
 4. **As a member, I want to delete my own trial records and get their numbers
    back,** so that a direction I abandoned does not stay in the workspace as
    noise.
+5. **As a member, I want the roster to show what each of us contributes,** so
+   that I can see who works on what without that deciding who may do what.
 
 ## [Durable notes and the retrieval catalog](../domains/knowledge-notes.md)
 

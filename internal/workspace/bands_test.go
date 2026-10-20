@@ -231,11 +231,11 @@ func TestConflictMarkersAreNamed(t *testing.T) {
 func TestBandAssignmentGuardsCollision(t *testing.T) {
 	store := banded(t, map[string]*int{"maya": BandOf(1), "lutfi": BandOf(0)}, Ledger{})
 	for _, band := range []int{0, 1} {
-		if err := store.AddMember("alex", "Alex", band, "", ""); err == nil {
+		if err := store.AddMember("alex", "Alex", band, "", "", nil); err == nil {
 			t.Fatalf("added a member holding occupied band %d", band)
 		}
 	}
-	if err := store.AddMember("alex", "Alex", 2, "", ""); err != nil {
+	if err := store.AddMember("alex", "Alex", 2, "", "", nil); err != nil {
 		t.Fatal(err)
 	}
 	if err := store.SetMemberBand("alex", 1); err == nil {

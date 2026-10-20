@@ -32,7 +32,7 @@ func TestIDFilePathValidatesTheMember(t *testing.T) {
 
 func TestAddingAMemberNamedLikeADeviceIsRefused(t *testing.T) {
 	store := banded(t, map[string]*int{"maya": BandOf(1)}, Ledger{})
-	if err := store.AddMember("nul", "Nul", 2, "", ""); err == nil || !strings.Contains(err.Error(), "Windows device name") {
+	if err := store.AddMember("nul", "Nul", 2, "", "", nil); err == nil || !strings.Contains(err.Error(), "Windows device name") {
 		t.Fatalf("added a member whose ID file no Windows clone could hold: %v", err)
 	}
 }

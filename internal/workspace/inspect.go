@@ -126,6 +126,9 @@ func (s *Store) Status(ctx context.Context) (Orientation, error) {
 			result.Issues = append(result.Issues, unbanded...)
 			result.BandRequired = "decline any request that changes the workspace, its repositories, or its records until every member holds a band: offer each member in band_suggestions that band, let the person confirm it or pick another unused one, record it with `member band --id ID --band N`, and continue the request they made"
 		}
+		if cfg.Version < CurrentSchema {
+			result.Issues = append(result.Issues, schema2Roles(members)...)
+		}
 	}
 	if checkout, described, err := s.WorkspaceCheckout(ctx); err != nil {
 		result.Issues = append(result.Issues, found("workspace repository: "+err.Error(),
@@ -200,6 +203,21 @@ func unbandedMembers(members Members, suggestions map[string]int) []Finding {
 			resolve = fmt.Sprintf("give it a band with `member band --id %s --band %d`, or another band nobody holds that the person picks", id, band)
 		}
 		out = append(out, found("member "+id+" holds no band", resolve))
+	}
+	return out
+}
+
+// schema2Roles reports roles in a schema 2 roster, which only a hand edit can
+// write. A 2.3.0 CLI still reads that workspace and stops at the unknown field
+// instead of asking its user to upgrade, which is why roles wait for schema 3.
+func schema2Roles(members Members) []Finding {
+	var out []Finding
+	for _, id := range members.IDs() {
+		if len(members.Members[id].Roles) == 0 {
+			continue
+		}
+		out = append(out, found("member "+id+" records roles in a schema 2 workspace, which a 2.3.0 CLI cannot read",
+			"remove the roles from members.yaml by hand, or finish setup so the next changing command moves the workspace to schema 3"))
 	}
 	return out
 }

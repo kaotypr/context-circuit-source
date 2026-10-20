@@ -15,13 +15,15 @@ Initialize a workspace only when requested. Gather its name and purpose, and the
 first member, who is the person initializing it — a person working alone is a
 team of one. Suggest their name and a readable member ID from
 `git config user.name` and `git config user.email`, and use them only after the
-person confirms or changes them. Their band is 1 unless they pick another.
+person confirms or changes them. Their band is 1 unless they pick another. Ask
+what roles they contribute in, such as maintainer or docs; the question may be
+skipped, and a skipped one records no roles.
 
 ```sh
 context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
   --member ID --member-name NAME
 context-circuit-cli --workspace <root> init --name NAME --purpose TEXT \
-  --member ID --member-name NAME --member-band N
+  --member ID --member-name NAME --member-band N --member-role maintainer
 ```
 
 The CLI creates embedded instructions, folders, and initial records, and
@@ -45,7 +47,8 @@ changes, which is the entry instruction's gate. Show the members `members.yaml`
 lists and ask whether they are one of them or someone new. An existing member is
 selected with `member use`. Someone new is added with a readable ID, their name,
 and a band: offer the `next_band` that `status` reports and let them confirm it
-or pick another nobody holds. Then select them. Take their answer as given;
+or pick another nobody holds, and ask what roles they contribute in, which they
+may skip. Then select them. Take their answer as given;
 nothing verifies it. Once selected, return to the request they made.
 
 Unless the request says otherwise, put checkouts under `repositories/<id>`,
@@ -217,6 +220,28 @@ produces prose that is grammatical and formal in a way nobody chose. Record it
 when a team knows the register it wants; unset leaves the general composition
 guidance in `.agents/skills/cc-intent/SKILL.md` to decide. Ask the member for
 the wording rather than inventing a register on their behalf.
+
+## The roles a member contributes in
+
+A member may record roles: free text saying what they contribute, such as
+maintainer or docs, so people reading the roster can see who works on what.
+
+```sh
+context-circuit-cli --workspace <root> member add --id ID --name NAME --band N --role docs
+context-circuit-cli --workspace <root> member roles --id ID --role maintainer --role docs
+context-circuit-cli --workspace <root> member roles --id ID --clear
+```
+
+`member roles` replaces whatever roles were recorded. Record the roles the person
+names, in their words; there is no list of allowed values, and none is
+invented for them. Roles are informational and decide nothing: never treat one
+as authority to approve, plan, execute, deliver, complete, or delete. They are
+not the subagent `--role` that `agent configure` and `agent dispatch` take.
+
+Roles are written only at workspace schema 3. While a workspace written by an
+earlier version is still mid-setup, `member add --role` is refused: add the
+member without roles, finish setup, and set them with `member roles`, by which
+time the next change has moved the workspace to schema 3.
 
 Bands prevent collisions only between members who actually hold distinct ones.
 Two clones of the same member, and any clone whose roster is stale, can still
